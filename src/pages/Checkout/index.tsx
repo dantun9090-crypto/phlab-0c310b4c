@@ -602,6 +602,55 @@ export default function CheckoutPage() {
                 </div>
               )}
 
+              {/* ── Always-visible Discount Code ── */}
+              <div className="rounded-2xl border border-emerald-500/20 bg-[#0b1a30] p-4">
+                <label htmlFor="promoCodeTop" className="block text-xs font-medium text-gray-300 mb-1.5 flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-emerald-400" /> Discount Code
+                </label>
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-3 py-2.5">
+                    <div className="flex flex-col">
+                      <span className="text-emerald-400 text-sm font-semibold flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5" /> {appliedCoupon.code} applied
+                      </span>
+                      <span className="text-emerald-300/80 text-[11px]">
+                        {appliedCoupon.type === 'percentage' && `${appliedCoupon.value}% off subtotal`}
+                        {appliedCoupon.type === 'fixed' && `£${appliedCoupon.value.toFixed(2)} off`}
+                        {appliedCoupon.type === 'free_shipping' && 'Free shipping'}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => { setAppliedCoupon(null); setCouponCode(''); setCouponError(''); }}
+                      aria-label="Remove discount code"
+                      className="text-gray-400 hover:text-white transition-colors p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <input
+                      id="promoCodeTop"
+                      type="text"
+                      value={couponCode}
+                      onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError(''); }}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleApplyCoupon(); } }}
+                      placeholder="Enter code"
+                      style={{ ...inputStyle(!!couponError), flex: 1, padding: '10px 14px' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !couponCode.trim()}
+                      className="px-5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-[10px] transition-colors shrink-0"
+                    >
+                      {couponLoading ? '...' : 'Apply'}
+                    </button>
+                  </div>
+                )}
+                {couponError && <p className="text-red-400 text-xs mt-1.5">{couponError}</p>}
+              </div>
+
               {/* ── STEP 1: Personal Details ── */}
               <div
                 ref={el => { stepRefs.current[1] = el; }}
