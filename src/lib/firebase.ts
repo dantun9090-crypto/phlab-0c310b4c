@@ -220,7 +220,7 @@ export interface ProductVariant {
 export interface Coupon {
   id: string;
   code: string;
-  type: 'percentage' | 'fixed';
+  type: 'percentage' | 'fixed' | 'free_shipping';
   value: number;
   minOrderValue?: number;
   // Support both naming conventions
