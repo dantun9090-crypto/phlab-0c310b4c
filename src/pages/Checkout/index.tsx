@@ -365,9 +365,13 @@ export default function CheckoutPage() {
         paymentMethod: 'bank_transfer',
         status: 'pending_payment',
         userId: userId || null,
-        // T&C compliance — required for legal audit trail
+        // T&C compliance — required for legal audit trail (both field names for admin panel compatibility)
         tcAccepted: form.acceptedTerms,
         tcAcceptedAt: form.acceptedTerms ? now : null,
+        termsAccepted: form.acceptedTerms,
+        termsAcceptedAt: form.acceptedTerms ? now : null,
+        termsVersion: '1.0',
+        termsAcceptedIp: typeof window !== 'undefined' ? window.location.hostname : null,
         createdAt: now,
         orderDate: now,
       };
