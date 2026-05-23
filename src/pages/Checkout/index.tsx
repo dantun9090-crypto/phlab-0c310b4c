@@ -169,11 +169,17 @@ export default function CheckoutPage() {
   const discount = appliedCoupon ? (
     appliedCoupon.type === 'percentage'
       ? +(subtotal * appliedCoupon.value / 100).toFixed(2)
-      : Math.min(appliedCoupon.value, subtotal)
+      : appliedCoupon.type === 'fixed'
+        ? Math.min(appliedCoupon.value, subtotal)
+        : 0
   ) : 0;
   const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
-  const shippingCost = isFreeShipping ? 0 : (SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod)?.price ?? 4.99);
+  const baseShipping = isFreeShipping ? 0 : (SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod)?.price ?? 4.99);
+  const couponFreeShipping = appliedCoupon?.type === 'free_shipping';
+  const shippingCost = couponFreeShipping ? 0 : baseShipping;
+  const originalTotal = subtotal + baseShipping;
   const total = Math.max(0, subtotal - discount + shippingCost).toFixed(2);
+  const hasDiscount = discount > 0 || couponFreeShipping;
   const totalItems = cart.reduce((s, i) => s + i.quantity, 0);
   const hasItemsWithoutVariant = cart.some(item => !item.dosage || item.dosage === '');
 
@@ -849,7 +855,90 @@ export default function CheckoutPage() {
                       </p>
                     </div>
 
-                    {/* Order summary on mobile inside payment step */}
+                    {/* Discount code */}
+                    <div>
+                      <label htmlFor="promoCode" className="block text-xs font-medium text-gray-300 mb-1.5 flex items-center gap-1.5">
+                        <Tag className="w-3.5 h-3.5 text-emerald-400" /> Discount Code
+                      </label>
+                      {appliedCoupon ? (
+                        <div className="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-3 py-2.5">
+                          <div className="flex flex-col">
+                            <span className="text-emerald-400 text-sm font-semibold flex items-center gap-1.5">
+                              <Check className="w-3.5 h-3.5" /> {appliedCoupon.code} applied
+                            </span>
+                            <span className="text-emerald-300/80 text-[11px]">
+                              {appliedCoupon.type === 'percentage' && `${appliedCoupon.value}% off subtotal`}
+                              {appliedCoupon.type === 'fixed' && `£${appliedCoupon.value.toFixed(2)} off`}
+                              {appliedCoupon.type === 'free_shipping' && 'Free shipping'}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => { setAppliedCoupon(null); setCouponCode(''); setCouponError(''); }}
+                            aria-label="Remove discount code"
+                            className="text-gray-400 hover:text-white transition-colors p-1"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <input
+                            id="promoCode"
+                            type="text"
+                            value={couponCode}
+                            onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError(''); }}
+                            onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleApplyCoupon(); } }}
+                            placeholder="Enter code"
+                            style={{ ...inputStyle(!!couponError), flex: 1, padding: '10px 14px' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleApplyCoupon}
+                            disabled={couponLoading || !couponCode.trim()}
+                            className="px-5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-[10px] transition-colors shrink-0"
+                          >
+                            {couponLoading ? '...' : 'Apply'}
+                          </button>
+                        </div>
+                      )}
+                      {couponError && <p className="text-red-400 text-xs mt-1.5">{couponError}</p>}
+                    </div>
+
+                    {/* Totals (with discount breakdown) */}
+                    <div className="bg-[#060f1e] border border-white/[0.07] rounded-xl p-4 space-y-1.5 text-xs">
+                      <div className="flex justify-between text-gray-400">
+                        <span>Subtotal</span><span className="text-white">£{subtotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-400">
+                        <span>Shipping</span>
+                        <span className={shippingCost === 0 ? 'text-emerald-400' : 'text-white'}>
+                          {shippingCost === 0 ? 'FREE' : `£${shippingCost.toFixed(2)}`}
+                        </span>
+                      </div>
+                      {discount > 0 && (
+                        <div className="flex justify-between text-emerald-400">
+                          <span>Discount ({appliedCoupon?.code})</span>
+                          <span>−£{discount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {couponFreeShipping && baseShipping > 0 && (
+                        <div className="flex justify-between text-emerald-400">
+                          <span>Free shipping ({appliedCoupon?.code})</span>
+                          <span>−£{baseShipping.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-baseline pt-2 mt-1 border-t border-white/10">
+                        <span className="text-white font-semibold text-sm">Total</span>
+                        <span className="flex items-baseline gap-2">
+                          {hasDiscount && originalTotal.toFixed(2) !== total && (
+                            <span className="text-gray-500 text-xs line-through">£{originalTotal.toFixed(2)}</span>
+                          )}
+                          <span className="text-white font-bold text-base">£{total}</span>
+                        </span>
+                      </div>
+                    </div>
+
+
                     <div className="lg:hidden bg-[#060f1e] border border-white/[0.07] rounded-xl p-4">
                       <button
                         onClick={() => setSummaryExpanded(v => !v)}

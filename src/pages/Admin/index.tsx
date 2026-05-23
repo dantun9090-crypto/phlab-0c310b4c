@@ -28,8 +28,9 @@ import SEOTab from './tabs/SEOTab';
 import { FeaturedProductsTab } from './tabs/FeaturedProductsTab';
 import QCDashboardTab from './tabs/QCDashboardTab';
 import SitemapTab from './tabs/SitemapTab';
+import PromoCodesTab from './tabs/PromoCodesTab';
 
-type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap';
+type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes';
 
 async function checkIpAllowed(): Promise<boolean> {
   try {
@@ -316,6 +317,7 @@ export default function AdminPage() {
         case 'seo': return <SEOTab />;
         case 'sitemap': return <SitemapTab />;
         case 'qc': return <QCDashboardTab />;
+        case 'promocodes': return <PromoCodesTab />;
         default: return <DashboardTab />;
       }
     })();
@@ -333,7 +335,7 @@ export default function AdminPage() {
     marketing: 'Marketing', emailmarketing: 'Email Campaigns', emailpreview: 'Email Preview',
     seo: 'SEO Settings', sitemap: 'Sitemap Manager', settings: 'Site Settings',
     tools: 'Tools', themes: 'Themes', database: 'Database', backup: 'Backup',
-    ipwhitelist: 'IP Whitelist',
+    ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes',
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
 
