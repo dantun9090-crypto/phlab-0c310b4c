@@ -6,7 +6,7 @@ import {
   Shield, AlertTriangle, ChevronUp, ChevronDown,
   FlaskConical, BookOpen,
   ArrowRight, Microscope, TestTube, Dna, Settings as SettingsIcon,
-  Lock, Landmark, BadgeCheck, Search, Truck
+  Lock, Landmark, BadgeCheck, Search, Truck, Menu
 } from 'lucide-react';
 import { auth, db, doc, getDoc, onAuthStateChanged, FirebaseUser, subscribeToProducts } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
