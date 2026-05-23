@@ -43,9 +43,9 @@ export default function ComplianceTab() {
         const totalSpend = userOrders
           .filter((o: any) => o.status !== 'cancelled')
           .reduce((s: number, o: any) => s + (o.totalAmount || 0), 0);
-        const termsOrder = userOrders.find((o: any) => o.termsAccepted === true) as any;
-        const termsAccepted = termsOrder ? true : (u.termsAccepted || false);
-        const termsAcceptedAt = termsOrder ? termsOrder.termsAcceptedAt : u.termsAcceptedAt;
+        const termsOrder = userOrders.find((o: any) => o.termsAccepted === true || o.tcAccepted === true) as any;
+        const termsAccepted = termsOrder ? true : (u.termsAccepted || u.tcAccepted || false);
+        const termsAcceptedAt = termsOrder ? (termsOrder.termsAcceptedAt || termsOrder.tcAcceptedAt) : (u.termsAcceptedAt || u.tcAcceptedAt);
         return {
           uid: u.uid,
           email: u.email || '',
