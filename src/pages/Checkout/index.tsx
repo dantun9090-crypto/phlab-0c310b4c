@@ -169,11 +169,17 @@ export default function CheckoutPage() {
   const discount = appliedCoupon ? (
     appliedCoupon.type === 'percentage'
       ? +(subtotal * appliedCoupon.value / 100).toFixed(2)
-      : Math.min(appliedCoupon.value, subtotal)
+      : appliedCoupon.type === 'fixed'
+        ? Math.min(appliedCoupon.value, subtotal)
+        : 0
   ) : 0;
   const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
-  const shippingCost = isFreeShipping ? 0 : (SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod)?.price ?? 4.99);
+  const baseShipping = isFreeShipping ? 0 : (SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod)?.price ?? 4.99);
+  const couponFreeShipping = appliedCoupon?.type === 'free_shipping';
+  const shippingCost = couponFreeShipping ? 0 : baseShipping;
+  const originalTotal = subtotal + baseShipping;
   const total = Math.max(0, subtotal - discount + shippingCost).toFixed(2);
+  const hasDiscount = discount > 0 || couponFreeShipping;
   const totalItems = cart.reduce((s, i) => s + i.quantity, 0);
   const hasItemsWithoutVariant = cart.some(item => !item.dosage || item.dosage === '');
 
