@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Users, LogOut,
   Database, FileText, Image, Settings,
   Zap, Palette, Megaphone, HardDrive, Radio, FlaskConical,
-  Scale, Rocket, Shield, PanelLeftClose, PanelLeft, Mail, Lock, Star, Eye, Search, ShieldCheck, Map, X, ChevronDown
+  Scale, Rocket, Shield, PanelLeftClose, PanelLeft, Mail, Lock, Star, Eye, Search, ShieldCheck, Map, X, ChevronDown, Tag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { auth, signOut } from '@/lib/firebase';
@@ -50,6 +50,7 @@ const navGroups = [
     label: 'Marketing',
     items: [
       { id: 'marketing', label: 'Marketing', icon: Megaphone },
+      { id: 'promocodes', label: 'Promo Codes', icon: Tag },
       { id: 'emailmarketing', label: 'Email Campaigns', icon: Mail },
       { id: 'emailpreview', label: 'Email Preview', icon: Eye },
     ],
@@ -98,6 +99,7 @@ const ITEM_ACCENTS: Record<string, string> = {
   backup: 'from-teal-500 to-teal-600',
   featured: 'from-amber-400 to-yellow-500',
   qc: 'from-emerald-400 to-teal-500',
+  promocodes: 'from-emerald-500 to-green-600',
 };
 
 export default function AdminSidebar({ activeTab, setActiveTab, collapsed, setCollapsed, isMobileOpen, onMobileClose }: SidebarProps) {
