@@ -492,7 +492,7 @@ export function Layout({ children }: LayoutProps) {
 
               {/* Hamburger — mobile only, always last on the right */}
               <button
-                className="lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-all duration-200"
+                className="md:hidden min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-all duration-200"
                 style={{ color: '#8caad4' }}
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
