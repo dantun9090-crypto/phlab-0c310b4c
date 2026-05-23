@@ -127,18 +127,52 @@ export default function Contact() {
         subject: form.subject || 'Contact Form Enquiry',
         message: form.message,
       });
-      await addDoc(collection(db, 'mail'), {
-        to: settings.contactEmail || 'info@prohealthpeptides.co.uk',
-        replyTo: form.email,
-        message: {
-          subject: `[PHP Contact] ${form.subject || 'New Enquiry'} — from ${form.name}`,
-          html: emailHtml,
-        },
+      const toAddress = settings.contactEmail || 'info@prohealthpeptides.co.uk';
+      const subjectLine = `[PHP Contact] ${form.subject || 'New Enquiry'} — from ${form.name}`;
+
+      // 1) Persist the enquiry to a contactMessages collection (durable record,
+      //    independent of the Trigger Email extension).
+      const enquiryPayload = {
+        name: form.name,
+        email: form.email,
+        subject: form.subject || 'Contact Form Enquiry',
+        message: form.message,
         createdAt: Timestamp.now(),
-      });
-      setSent(true);
-    } catch {
-      setError('Something went wrong. Please try again or email us directly.');
+        status: 'new' as const,
+      };
+      let savedEnquiry = false;
+      try {
+        await addDoc(collection(db, 'contactMessages'), enquiryPayload);
+        savedEnquiry = true;
+      } catch (persistErr) {
+        console.error('[Contact] contactMessages write failed:', persistErr);
+      }
+
+      // 2) Try to enqueue an email via the Firebase Trigger Email extension.
+      let mailedOk = false;
+      try {
+        await addDoc(collection(db, 'mail'), {
+          to: toAddress,
+          replyTo: form.email,
+          message: { subject: subjectLine, html: emailHtml },
+          createdAt: Timestamp.now(),
+        });
+        mailedOk = true;
+      } catch (mailErr) {
+        console.error('[Contact] mail collection write failed:', mailErr);
+      }
+
+      if (mailedOk || savedEnquiry) {
+        setSent(true);
+      } else {
+        setError(
+          `We couldn't deliver your message right now. Please email us directly at ${toAddress}.`
+        );
+      }
+    } catch (err) {
+      console.error('[Contact] submit error:', err);
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      setError(`Something went wrong: ${msg}. Please email us directly.`);
     } finally {
       setSending(false);
     }
