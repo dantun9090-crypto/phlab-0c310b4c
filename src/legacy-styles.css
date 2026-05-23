@@ -2,9 +2,6 @@
 @import './styles/cls-fixes.css';
 
 /* Tailwind directives */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════
    CRITICAL CLS PREVENTION — INLINE FOR LCP

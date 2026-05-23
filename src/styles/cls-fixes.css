@@ -1,0 +1,380 @@
+/* ═══════════════════════════════════════════════════════
+   CUMULATIVE LAYOUT SHIFT (CLS) FIXES
+   Core Web Vitals Optimization
+   ═══════════════════════════════════════════════════════ */
+
+/* ── 1. RESERVE SPACE FOR ALL IMAGES ──────────────────── */
+
+/* Product card images — fixed aspect ratio */
+.product-card-image-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: rgba(15, 38, 64, 0.3);
+}
+
+.product-card-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Hero images — fixed height */
+.hero-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  overflow: hidden;
+  background: rgba(15, 38, 64, 0.3);
+}
+
+@media (min-width: 768px) {
+  .hero-image-wrapper {
+    height: 500px;
+  }
+}
+
+/* Logo — fixed dimensions */
+.header-logo {
+  width: 140px;
+  height: 40px;
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .header-logo {
+    width: 160px;
+    height: 46px;
+  }
+}
+
+/* ── 2. PREVENT DYNAMIC CONTENT SHIFTS ───────────────── */
+
+/* Banner placeholder — prevents page jump when banner loads */
+body.has-promo-banner {
+  padding-top: 40px;
+}
+
+/* Navigation height — fixed to prevent shift */
+.main-navigation {
+  height: 64px;
+  min-height: 64px;
+}
+
+@media (min-width: 1024px) {
+  .main-navigation {
+    height: 80px;
+    min-height: 80px;
+  }
+}
+
+/* Footer — minimum height to prevent collapse */
+.main-footer {
+  min-height: 400px;
+}
+
+/* ── 3. FONT LOADING — PREVENT FOIT/FOUT ──────────────── */
+
+/* Ensure font-display: swap in all @font-face rules */
+@font-face {
+  font-family: 'Inter';
+  font-display: swap;
+  /* Other font properties */
+}
+
+/* System font fallback during load */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 
+               'Helvetica Neue', Arial, sans-serif;
+}
+
+body.fonts-loaded {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 
+               'Roboto', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ── 4. SKELETON LOADERS — PREVENT EMPTY SPACE COLLAPSE ── */
+
+/* Product grid skeleton */
+.product-skeleton {
+  width: 100%;
+  aspect-ratio: 0.75;
+  background: linear-gradient(
+    90deg,
+    rgba(15, 38, 64, 0.3) 0%,
+    rgba(26, 58, 92, 0.3) 50%,
+    rgba(15, 38, 64, 0.3) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: 16px;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Minimum height for loading containers */
+.loading-container {
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 5. PREVENT ANIMATION-TRIGGERED SHIFTS ────────────── */
+
+/* Transform animations should not affect layout */
+.animate-scale {
+  transform: scale(1);
+  transition: transform 0.3s ease;
+  will-change: transform;
+}
+
+.animate-scale:hover {
+  transform: scale(1.02);
+}
+
+/* Opacity animations — no layout shift */
+.animate-fade-in {
+  opacity: 0;
+  animation: fade-in 0.3s ease forwards;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Prevent scroll animations from shifting layout */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(0); /* No Y-axis shift */
+  transition: opacity 0.6s ease;
+}
+
+.scroll-reveal.is-visible {
+  opacity: 1;
+}
+
+/* ── 6. MODAL & OVERLAY — NO BODY SHIFT ───────────────── */
+
+/* Prevent body scroll jump when modal opens */
+body.modal-open {
+  overflow: hidden;
+  padding-right: var(--scrollbar-width, 0px);
+}
+
+/* Calculate scrollbar width */
+:root {
+  --scrollbar-width: 0px;
+}
+
+/* ── 7. LAZY LOADED IMAGES — EXPLICIT DIMENSIONS ──────── */
+
+img[loading="lazy"] {
+  min-height: 200px;
+  background: rgba(15, 38, 64, 0.3);
+}
+
+/* ── 8. GRID LAYOUTS — FIXED SIZES ────────────────────── */
+
+/* Product grid — explicit dimensions */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 640px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+/* Prevent grid item collapse */
+.product-grid > * {
+  min-height: 400px;
+}
+
+/* ── 9. TESTIMONIALS & CARDS — FIXED HEIGHT ───────────── */
+
+/* Testimonial cards — prevent height jump */
+.testimonial-card {
+  min-height: 200px;
+}
+
+/* Feature cards */
+.feature-card {
+  min-height: 280px;
+}
+
+/* ── 10. DYNAMIC BANNERS — RESERVED SPACE ─────────────── */
+
+/* Promo banner placeholder */
+.promo-banner-placeholder {
+  height: 40px;
+  background: transparent;
+}
+
+/* WhatsApp button — fixed position, no layout shift */
+.whatsapp-floating {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  z-index: 50;
+}
+
+/* ── 11. FORMS — PREVENT VALIDATION SHIFT ─────────────── */
+
+/* Error messages — fixed height */
+.form-error {
+  min-height: 20px;
+  margin-top: 4px;
+}
+
+/* Success messages */
+.form-success {
+  min-height: 20px;
+  margin-top: 4px;
+}
+
+/* ── 12. CART BADGE — NO SHIFT ────────────────────────── */
+
+/* Cart count badge — absolute positioned */
+.cart-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 13. SEARCH RESULTS — PREVENT COLLAPSE ───────────── */
+
+/* Search container — minimum height */
+.search-results {
+  min-height: 300px;
+}
+
+/* No results state */
+.search-empty {
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── 14. ACCORDION/FAQ — SMOOTH EXPAND ────────────────── */
+
+/* Prevent height jump on FAQ expand */
+.faq-answer {
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+/* ── 15. MOBILE MENU — NO BODY SHIFT ──────────────────── */
+
+/* Mobile menu overlay — fixed position */
+.mobile-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+/* Mobile menu drawer */
+.mobile-menu-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  z-index: 50;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+}
+
+.mobile-menu-drawer.open {
+  transform: translateX(0);
+}
+
+/* ── 16. CRITICAL CSS — INLINE FOR LCP ────────────────── */
+
+/* Inline critical styles in <head> to prevent FOUC */
+
+/* ── 17. WEBFONT PRELOAD ──────────────────────────────── */
+
+/* Preload fonts in HTML <head>:
+<link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin>
+*/
+
+/* ── 18. IMAGE PRELOAD FOR LCP ────────────────────────── */
+
+/* Preload hero images:
+<link rel="preload" href="/hero-image.webp" as="image">
+*/
+
+/* ── 19. CONTAIN LAYOUT ───────────────────────────────── */
+
+/* Contain paint and layout for heavy components */
+.contain-layout {
+  contain: layout paint;
+}
+
+/* Product cards */
+.product-card {
+  contain: layout;
+}
+
+/* ── 20. REDUCE MOTION ────────────────────────────────── */
+
+/* Respect user preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .scroll-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════
+   PERFORMANCE HINTS
+   ══════════════════════════════════════════════════════
+   
+   1. Add width/height attributes to ALL <img> tags
+   2. Use aspect-ratio CSS for responsive images
+   3. Preload LCP images with <link rel="preload">
+   4. Add font-display: swap to all @font-face rules
+   5. Reserve space for dynamic content (banners, ads)
+   6. Use transform instead of position/size for animations
+   7. Add skeleton loaders for async content
+   8. Set explicit dimensions on all containers
+   9. Prevent body scroll lock from shifting layout
+   10. Test with Chrome DevTools CLS metric
+   
+   Target CLS: < 0.1 (Good)
+   ═════════════════════════════════════════════════════ */
