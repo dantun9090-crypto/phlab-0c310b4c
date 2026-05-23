@@ -416,14 +416,14 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex items-center justify-between h-[64px]">
 
             {/* ── Logo ── */}
-            <Link to="/" className="flex items-center gap-3 flex-shrink-0 group">
-              <div className="relative">
+            <Link to="/" className="flex items-center gap-2 sm:gap-3 min-w-0 group">
+              <div className="relative shrink-0">
                 <div className="absolute inset-0 bg-emerald-500/15 rounded-xl blur-lg group-hover:bg-emerald-500/28 transition-all duration-300" />
                 <Logo size="md" />
               </div>
-              <div className="hidden sm:flex flex-col leading-none">
-                <span className="font-bold text-white text-[15px] tracking-tight group-hover:text-emerald-300 transition-colors duration-200">Pro Health Peptides</span>
-                <span className="text-[10px] text-emerald-400/55 font-medium tracking-widest uppercase">Research Grade</span>
+              <div className="flex flex-col leading-none min-w-0">
+                <span className="font-bold text-white text-[13px] sm:text-[15px] tracking-tight group-hover:text-emerald-300 transition-colors duration-200 truncate">Pro Health Peptides</span>
+                <span className="text-[9px] sm:text-[10px] text-emerald-400/55 font-medium tracking-widest uppercase">Research Grade</span>
               </div>
             </Link>
 
@@ -434,7 +434,8 @@ export function Layout({ children }: LayoutProps) {
               onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             />
             {/* ── Right actions ── */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
+
 
               {/* Browse CTA */}
               <a
