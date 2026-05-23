@@ -3,7 +3,7 @@ import { useEffect, useState, lazy, Suspense } from "react";
 
 const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/$")({
   ssr: false,
   component: LegacyMount,
 });
