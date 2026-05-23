@@ -28,8 +28,9 @@ import SEOTab from './tabs/SEOTab';
 import { FeaturedProductsTab } from './tabs/FeaturedProductsTab';
 import QCDashboardTab from './tabs/QCDashboardTab';
 import SitemapTab from './tabs/SitemapTab';
+import PromoCodesTab from './tabs/PromoCodesTab';
 
-type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap';
+type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes';
 
 async function checkIpAllowed(): Promise<boolean> {
   try {
@@ -316,7 +317,7 @@ export default function AdminPage() {
         case 'seo': return <SEOTab />;
         case 'sitemap': return <SitemapTab />;
         case 'qc': return <QCDashboardTab />;
-        default: return <DashboardTab />;
+        case 'promocodes': return <PromoCodesTab />;
       }
     })();
     return <TabErrorBoundary key={activeTab}>{tab}</TabErrorBoundary>;
