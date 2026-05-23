@@ -421,7 +421,7 @@ export function Layout({ children }: LayoutProps) {
                 <div className="absolute inset-0 bg-emerald-500/15 rounded-xl blur-lg group-hover:bg-emerald-500/28 transition-all duration-300" />
                 <Logo size="md" />
               </div>
-              <div className="flex flex-col leading-none">
+              <div className="hidden sm:flex flex-col leading-none">
                 <span className="font-bold text-white text-[15px] tracking-tight group-hover:text-emerald-300 transition-colors duration-200">Pro Health Peptides</span>
                 <span className="text-[10px] text-emerald-400/55 font-medium tracking-widest uppercase">Research Grade</span>
               </div>
