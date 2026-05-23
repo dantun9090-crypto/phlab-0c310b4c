@@ -318,6 +318,7 @@ export default function AdminPage() {
         case 'sitemap': return <SitemapTab />;
         case 'qc': return <QCDashboardTab />;
         case 'promocodes': return <PromoCodesTab />;
+        default: return <DashboardTab />;
       }
     })();
     return <TabErrorBoundary key={activeTab}>{tab}</TabErrorBoundary>;
