@@ -492,17 +492,12 @@ export function Layout({ children }: LayoutProps) {
 
               {/* Hamburger — mobile only, always last on the right */}
               <button
-                className="md:hidden min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-all duration-200"
-                style={{ color: '#8caad4' }}
+                className="md:hidden min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-all duration-200 text-white hover:bg-white/10"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
                 aria-expanded={isMobileMenuOpen}
               >
-                <div className="flex flex-col gap-[5px] w-5">
-                  <span className={`h-[1.5px] bg-current rounded-full transition-all duration-300 origin-center ${isMobileMenuOpen ? 'rotate-45 translate-y-[6.5px]' : ''}`} />
-                  <span className={`h-[1.5px] bg-current rounded-full transition-all duration-300 ${isMobileMenuOpen ? 'opacity-0 scale-x-0' : ''}`} />
-                  <span className={`h-[1.5px] bg-current rounded-full transition-all duration-300 origin-center ${isMobileMenuOpen ? '-rotate-45 -translate-y-[6.5px]' : ''}`} />
-                </div>
+                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
 
             </div>
