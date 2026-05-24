@@ -30,7 +30,7 @@ export interface AdminIpGateResult {
   reason?: string;
 }
 
-function extractIp(req: Request): string | null {
+export function extractIp(req: Request): string | null {
   const cf = req.headers.get('cf-connecting-ip');
   if (cf) return cf.trim();
   const xff = req.headers.get('x-forwarded-for');
@@ -43,7 +43,7 @@ function extractIp(req: Request): string | null {
   return null;
 }
 
-function ipv4ToInt(s: string): number | null {
+export function ipv4ToInt(s: string): number | null {
   const parts = s.split('.');
   if (parts.length !== 4) return null;
   let acc = 0;
@@ -55,7 +55,8 @@ function ipv4ToInt(s: string): number | null {
   return acc >>> 0;
 }
 
-function matchesEntry(entry: string, ip: string): boolean {
+export function matchesEntry(entry: string, ip: string): boolean {
+
   if (!entry) return false;
   if (entry.includes('/')) {
     const [range, bitsStr] = entry.split('/');
