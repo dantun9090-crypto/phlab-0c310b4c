@@ -86,10 +86,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f6b18287-69a0-4528-9f13-9b46bc90eb18/id-preview-e25b3142--1f12c255-a30a-4bea-bbab-28d9e6f70804.lovable.app-1779576464361.png" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "preconnect", href: "https://firestore.googleapis.com", crossOrigin: "" },
+      { rel: "preconnect", href: "https://firebaseinstallations.googleapis.com", crossOrigin: "" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
+      { rel: "preconnect", href: "https://cdn.wegic.ai" },
+      { rel: "dns-prefetch", href: "https://firestore.googleapis.com" },
+      { rel: "dns-prefetch", href: "https://cdn.wegic.ai" },
     ],
   }),
   shellComponent: RootShell,
