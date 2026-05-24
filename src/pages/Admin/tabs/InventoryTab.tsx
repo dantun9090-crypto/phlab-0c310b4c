@@ -7,8 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Product,
   getAllProducts, updateProduct, deleteProduct,
-  db, doc, getDoc,
 } from '@/lib/firebase';
+
 import { ProductEditor } from '@/components/ProductEditor';
 
 const LOW_STOCK_THRESHOLD = 10;
