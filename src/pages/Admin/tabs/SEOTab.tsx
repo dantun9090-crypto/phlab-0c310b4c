@@ -65,39 +65,28 @@ export default function SEOTab() {
   const [loadingCacheStatus, setLoadingCacheStatus] = useState(false);
   const [cacheStatusError, setCacheStatusError] = useState('');
 
-  // Direct fetch to Prerender.io — they support CORS for authenticated requests
+  // Direct fetch to Prerender.io — they support CORS for authenticated requests.
+  // NOTE: We intentionally do NOT fall back to public CORS proxies (e.g. corsproxy.io)
+  // because the request body contains the prerenderToken — a third-party proxy operator
+  // could log/capture it. If the direct call fails, surface the error and instruct the
+  // admin to use the curl commands below (token never leaves their machine).
   const prerenderFetch = async (endpoint: string, body: Record<string, unknown>): Promise<Response> => {
     const target = `https://api.prerender.io${endpoint}`;
     const payload = JSON.stringify({ prerenderToken: prerenderToken.trim(), ...body });
 
-    // Try direct first (Prerender.io supports CORS with token)
-    try {
-      const res = await Promise.race([
-        fetch(target, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: payload,
-        }),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000)),
-      ]);
-      return res as Response;
-    } catch (directErr) {
-      // Fallback: corsproxy.io
-      try {
-        const res = await Promise.race([
-          fetch(`https://corsproxy.io/?${encodeURIComponent(target)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-cors-api-key': 'temp_' },
-            body: payload,
-          }),
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000)),
-        ]);
-        return res as Response;
-      } catch {
-        throw directErr instanceof Error ? directErr : new Error('Network error — Prerender.io API can only be called server-side. Use the curl commands below.');
-      }
-    }
+    const res = await Promise.race([
+      fetch(target, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: payload,
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Prerender.io request timed out — use the curl commands below from a terminal.')), 10000),
+      ),
+    ]);
+    return res as Response;
   };
+
 
   const SITEMAP_URL = 'https://www.prohealthpeptides.co.uk/sitemap.xml';
 
