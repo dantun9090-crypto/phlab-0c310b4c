@@ -301,6 +301,8 @@ export default function ArticlePage() {
     if (canonical) canonical.setAttribute('href', articleUrl);
 
     // Article + BreadcrumbList schema
+    const fallbackImage = 'https://cdn.wegic.ai/assets/onepage/uploads/2031481443271393281/image/2026/03/14/01KKPB20SGJ3T4RK47TQPSAV0N.png';
+    const articleImage = (article as any).image || (article as any).coverImage || fallbackImage;
     const schema = [
       {
         '@context': 'https://schema.org',
@@ -308,6 +310,7 @@ export default function ArticlePage() {
         headline: article.title,
         description: metaDesc,
         url: articleUrl,
+        image: [articleImage],
         datePublished: article.publishDate,
         dateModified: article.publishDate,
         author: { '@type': 'Organization', name: 'Pro Health Peptides', url: 'https://www.prohealthpeptides.co.uk' },
@@ -324,6 +327,7 @@ export default function ArticlePage() {
         inLanguage: 'en-GB',
         mainEntityOfPage: { '@type': 'WebPage', '@id': articleUrl },
       },
+
       {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
