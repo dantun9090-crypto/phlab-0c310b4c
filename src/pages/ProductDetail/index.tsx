@@ -483,7 +483,7 @@ export default function ProductDetail() {
       logo: 'https://www.prohealthpeptides.co.uk/logo.png',
       contactPoint: {
         '@type': 'ContactPoint',
-        telephone: '+44-20-XXXX-XXXX',
+        telephone: '+447826549934',
         contactType: 'Customer Service',
         areaServed: 'GB',
         availableLanguage: 'English',
