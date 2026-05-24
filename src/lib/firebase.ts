@@ -696,8 +696,15 @@ export const addProduct = async (product: Omit<Product, 'id'>) => {
     updatedAt: Timestamp.now(),
   };
   const ref = await addDoc(collection(db, PRODUCTS_COL), data);
+  invalidateProductsCache();
   return ref.id;
 };
+
+function invalidateProductsCache() {
+  try {
+    if (typeof window !== 'undefined') localStorage.removeItem(PRODUCTS_CACHE_KEY);
+  } catch { /* ignore */ }
+}
 
 export const updateProduct = async (id: string, updates: Partial<Product>) => {
   // Ensure images array is preserved and properly formatted
@@ -729,10 +736,12 @@ export const updateProduct = async (id: string, updates: Partial<Product>) => {
   }
   
   await updateDoc(doc(db, PRODUCTS_COL, id), data);
+  invalidateProductsCache();
 };
 
 export const deleteProduct = async (id: string) => {
   await deleteDoc(doc(db, PRODUCTS_COL, id));
+  invalidateProductsCache();
 };
 
 export const bulkUpdateProducts = async (updates: { id: string; stock?: number; price?: number }[]) => {
