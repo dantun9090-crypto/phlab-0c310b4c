@@ -15,7 +15,11 @@ export const Route = createFileRoute("/$")({
     const title = clamp(pageMeta.title, SEO_LIMITS.titleMax);
     const description = clamp(pageMeta.description, SEO_LIMITS.descriptionMax);
 
-    const url = `${SITE_URL}/${splat.replace(/^\/+/, "")}`;
+    // Normalise canonical: strip leading/trailing slashes so /products and
+    // /products/ produce the same URL the sitemap advertises. Home stays "/".
+    const normalised = splat.replace(/^\/+|\/+$/g, "");
+    const url = normalised ? `${SITE_URL}/${normalised}` : `${SITE_URL}/`;
+
     return {
       meta: [
         { title },
