@@ -75,6 +75,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "author", content: "Pro Health Peptides UK" },
       { property: "og:site_name", content: "Pro Health Peptides UK" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "google-site-verification", content: "tYtU-dRlfAq14D7lyPTYf8noiJH-b0LifcvvrGi8AZw" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
