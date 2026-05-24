@@ -434,7 +434,7 @@ export function Layout({ children }: LayoutProps) {
               onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             />
             {/* ── Right actions ── */}
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-0.5 sm:gap-1.5 shrink-0">
 
 
               {/* Browse CTA */}
