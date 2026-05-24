@@ -12,8 +12,10 @@ import {
   onAuthStateChanged, FirebaseUser, registerUser
 } from '@/lib/firebase';
 import type { Coupon } from '@/lib/firebase';
+import { validateCartPrices } from '@/lib/cart-validation.functions';
 import { buildProfessionalInvoiceEmail } from '@/templates/professionalInvoiceEmail';
 import type { CartItem } from '@/components/Layout';
+
 
 interface CheckoutForm {
   firstName: string;
@@ -327,11 +329,63 @@ export default function CheckoutPage() {
         }
       }
 
+      // SECURITY: Re-validate prices server-side from the Firestore product_stock
+      // collection. Never trust priceNum from localStorage — a user can edit it
+      // in DevTools and create a £0 order. The server returns the canonical unit
+      // price for each line; we use those values when writing the order document.
+      let serverItems: Awaited<ReturnType<typeof validateCartPrices>>['items'];
+      let serverSubtotal: number;
+      try {
+        const validation = await validateCartPrices({
+          data: {
+            items: cart.map(item => ({
+              productId: String(item.id),
+              variantId: item.variantId ? String(item.variantId) : null,
+              quantity: item.quantity,
+            })),
+          },
+        });
+        if (!validation.ok) {
+          setErrors(prev => ({
+            ...prev,
+            stock: validation.errors[0] ?? 'We could not verify your cart prices. Please refresh and try again.',
+          }));
+          setIsPlacing(false);
+          return;
+        }
+        serverItems = validation.items;
+        serverSubtotal = validation.subtotal;
+      } catch {
+        setErrors(prev => ({
+          ...prev,
+          stock: 'We could not verify your cart prices. Please refresh and try again.',
+        }));
+        setIsPlacing(false);
+        return;
+      }
+
+      // Recompute discount + total using the SERVER-validated subtotal.
+      const verifiedDiscount = appliedCoupon
+        ? (appliedCoupon.type === 'percentage'
+            ? +(serverSubtotal * appliedCoupon.value / 100).toFixed(2)
+            : Math.min(appliedCoupon.value, serverSubtotal))
+        : 0;
+      const verifiedIsFreeShipping = serverSubtotal >= FREE_SHIPPING_THRESHOLD;
+      const verifiedShippingCost = verifiedIsFreeShipping ? 0 : (SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod)?.price ?? 4.99);
+      const verifiedTotal = +Math.max(0, serverSubtotal - verifiedDiscount + verifiedShippingCost).toFixed(2);
+
       const orderId = 'PHP-' + Date.now().toString(36).toUpperCase();
-      const totalAmount = parseFloat(total);
+      const totalAmount = verifiedTotal;
       const shippingOption = SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod);
-      const shippingLabel = isFreeShipping ? 'Free Delivery (order over £50)' : (shippingOption?.label ?? 'Standard Delivery');
+      const shippingLabel = verifiedIsFreeShipping ? 'Free Delivery (order over £50)' : (shippingOption?.label ?? 'Standard Delivery');
       const now = Timestamp.now();
+
+      // Build items from cart but OVERWRITE price + total with server-validated values.
+      const serverPriceById = new Map<string, typeof serverItems[number]>();
+      for (const s of serverItems) {
+        serverPriceById.set(`${s.productId}::${s.variantId ?? ''}`, s);
+      }
+
 
       const orderData = {
         orderId,
@@ -345,19 +399,24 @@ export default function CheckoutPage() {
           postcode: form.postcode,
           country: form.country,
         },
-        items: cart.map(item => ({
-          productId: String(item.id),
-          productName: item.name,
-          variantId: item.variantId,
-          variantName: item.variantName || item.dosage,
-          quantity: item.quantity,
-          price: item.priceNum,
-          total: item.priceNum * item.quantity,
-        })),
-        subtotal,
-        discount,
+        items: cart.map(item => {
+          const key = `${String(item.id)}::${item.variantId ? String(item.variantId) : ''}`;
+          const verified = serverPriceById.get(key);
+          const unit = verified?.unitPrice ?? item.priceNum;
+          return {
+            productId: String(item.id),
+            productName: item.name,
+            variantId: item.variantId,
+            variantName: item.variantName || item.dosage,
+            quantity: item.quantity,
+            price: unit,
+            total: +(unit * item.quantity).toFixed(2),
+          };
+        }),
+        subtotal: serverSubtotal,
+        discount: verifiedDiscount,
         couponCode: appliedCoupon?.code || null,
-        shippingCost,
+        shippingCost: verifiedShippingCost,
         shippingMethod: form.shippingMethod,
         shippingLabel,
         total: totalAmount,
@@ -375,6 +434,7 @@ export default function CheckoutPage() {
         createdAt: now,
         orderDate: now,
       };
+
 
       // Check stock first
       for (const item of cart) {
