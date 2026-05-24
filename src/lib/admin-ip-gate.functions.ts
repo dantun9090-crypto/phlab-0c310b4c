@@ -19,6 +19,8 @@
  */
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
+import { log } from './worker-log';
+
 
 const FIREBASE_PROJECT_ID = 'prohealthpeptides-a0808';
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents`;
