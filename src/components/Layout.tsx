@@ -412,7 +412,7 @@ export function Layout({ children }: LayoutProps) {
         }`}
         style={{ background: '#030a14', top: 'calc(var(--rg-banner-h, 34px) + 32px)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}
       >
-        <div className="container mx-auto px-4 sm:px-6">
+        <div className="w-full pl-2 pr-4 sm:pl-3 sm:pr-6">
           <div className="flex items-center justify-between h-[64px]">
 
             {/* ── Logo (far left) ── */}
