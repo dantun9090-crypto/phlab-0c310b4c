@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { 
+import {
   Database, AlertTriangle, CheckCircle2, Loader2, Package, Zap, Shield,
-  RefreshCw, Globe, Clock, ExternalLink
+  RefreshCw, Globe, Clock, ExternalLink, Copy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -72,6 +72,87 @@ export default function ToolsTab() {
   const [lastRecache, setLastRecache] = useState<string | null>(() => {
     try { return localStorage.getItem('php_last_recache'); } catch { return null; }
   });
+
+  // Dedupe state
+  type DupGroup = { slug: string; keepId: string; deleteIds: string[]; names: string[] };
+  const [dedupeLoading, setDedupeLoading] = useState(false);
+  const [dedupeGroups, setDedupeGroups] = useState<DupGroup[] | null>(null);
+  const [dedupeResult, setDedupeResult] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+
+  const scanDuplicates = async () => {
+    setDedupeLoading(true);
+    setDedupeResult(null);
+    setDedupeGroups(null);
+    try {
+      const snap = await getDocs(collection(db, 'product_stock'));
+      const bySlug = new Map<string, Array<{ id: string; name: string; updatedAt: number }>>();
+      snap.docs.forEach(d => {
+        const data = d.data() as Record<string, unknown>;
+        const name = (data.name as string) || '';
+        const slug = ((data.slug as string) || nameToSlug(name) || '').toLowerCase().trim();
+        if (!slug) return;
+        // updatedAt may be Firestore Timestamp, number, or missing — coerce to ms
+        let ts = 0;
+        const u = data.updatedAt as { toMillis?: () => number; seconds?: number } | number | undefined;
+        if (typeof u === 'number') ts = u;
+        else if (u && typeof u.toMillis === 'function') ts = u.toMillis();
+        else if (u && typeof u.seconds === 'number') ts = u.seconds * 1000;
+        const arr = bySlug.get(slug) || [];
+        arr.push({ id: d.id, name, updatedAt: ts });
+        bySlug.set(slug, arr);
+      });
+
+      const groups: DupGroup[] = [];
+      bySlug.forEach((rows, slug) => {
+        if (rows.length < 2) return;
+        // Keep newest by updatedAt; tiebreak by doc id (stable)
+        rows.sort((a, b) => b.updatedAt - a.updatedAt || b.id.localeCompare(a.id));
+        const [keep, ...rest] = rows;
+        groups.push({
+          slug,
+          keepId: keep.id,
+          deleteIds: rest.map(r => r.id),
+          names: [keep.name, ...rest.map(r => r.name)],
+        });
+      });
+
+      if (groups.length === 0) {
+        setDedupeResult({ type: 'success', message: `No duplicate slugs found across ${snap.size} products.` });
+      } else {
+        const total = groups.reduce((n, g) => n + g.deleteIds.length, 0);
+        setDedupeGroups(groups);
+        setDedupeResult({ type: 'info', message: `Found ${groups.length} duplicated slug(s); ${total} document(s) would be deleted. Review and click Apply to remove.` });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setDedupeResult({ type: 'error', message: `Scan failed: ${msg}` });
+    } finally {
+      setDedupeLoading(false);
+    }
+  };
+
+  const applyDedupe = async () => {
+    if (!dedupeGroups || dedupeGroups.length === 0) return;
+    const total = dedupeGroups.reduce((n, g) => n + g.deleteIds.length, 0);
+    if (!confirm(`Delete ${total} duplicate product document(s)?\n\nThis keeps the newest entry per slug and cannot be undone.`)) return;
+    setDedupeLoading(true);
+    try {
+      let deleted = 0;
+      for (const g of dedupeGroups) {
+        for (const id of g.deleteIds) {
+          await deleteDoc(doc(db, 'product_stock', id));
+          deleted++;
+        }
+      }
+      setDedupeGroups(null);
+      setDedupeResult({ type: 'success', message: `Removed ${deleted} duplicate product document(s). Run scan again to verify.` });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setDedupeResult({ type: 'error', message: `Apply failed: ${msg}` });
+    } finally {
+      setDedupeLoading(false);
+    }
+  };
 
   const handleReplaceCatalog = async () => {
     if (!confirm(
@@ -297,6 +378,88 @@ export default function ToolsTab() {
                       <pre className="text-[10px] text-[#6b8fba] bg-[#04101f] rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">{curlLines}</pre>
                     </div>
                   )}
+                </details>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      {/* ── Dedupe Products by Slug ───────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-[#0b1a30]/70 border border-white/[0.08] rounded-2xl p-6 space-y-4"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-purple-600/20 flex items-center justify-center shrink-0">
+            <Copy className="w-5 h-5 text-purple-400" />
+          </div>
+          <div>
+            <h3 className="text-[#f0f6ff] font-semibold">Dedupe Products by Slug</h3>
+            <p className="text-[#6b8fba] text-xs mt-0.5">
+              Scan <code className="bg-[#04101f] px-1.5 py-0.5 rounded text-[#8caad4]">product_stock</code> for duplicate slugs. Keeps the newest entry per slug (by <code className="bg-[#04101f] px-1.5 py-0.5 rounded text-[#8caad4]">updatedAt</code>).
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3 items-center">
+          <button
+            onClick={scanDuplicates}
+            disabled={dedupeLoading}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {dedupeLoading
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Working…</>
+              : <><RefreshCw className="w-4 h-4" /> Scan (dry-run)</>}
+          </button>
+          {dedupeGroups && dedupeGroups.length > 0 && (
+            <button
+              onClick={applyDedupe}
+              disabled={dedupeLoading}
+              className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <AlertTriangle className="w-4 h-4" /> Apply: delete {dedupeGroups.reduce((n, g) => n + g.deleteIds.length, 0)} duplicate(s)
+            </button>
+          )}
+        </div>
+
+        <AnimatePresence>
+          {dedupeResult && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className={`rounded-xl p-4 text-sm border ${
+                dedupeResult.type === 'success'
+                  ? 'bg-emerald-900/20 border-emerald-500/20 text-emerald-300'
+                  : dedupeResult.type === 'error'
+                  ? 'bg-red-900/20 border-red-500/20 text-red-300'
+                  : 'bg-blue-900/20 border-blue-500/20 text-blue-300'
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                {dedupeResult.type === 'success'
+                  ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                  : <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />}
+                <span>{dedupeResult.message}</span>
+              </div>
+              {dedupeGroups && dedupeGroups.length > 0 && (
+                <details className="mt-3" open>
+                  <summary className="cursor-pointer text-xs text-[#6b8fba] hover:text-white transition-colors">
+                    {dedupeGroups.length} duplicated slug(s) ▸
+                  </summary>
+                  <div className="mt-2 max-h-72 overflow-y-auto rounded-lg bg-[#04101f] p-3 space-y-2">
+                    {dedupeGroups.map(g => (
+                      <div key={g.slug} className="text-[11px] font-mono">
+                        <div className="text-[#8caad4]">{g.slug}</div>
+                        <div className="text-emerald-400 pl-3">keep: {g.keepId}</div>
+                        {g.deleteIds.map(id => (
+                          <div key={id} className="text-red-400 pl-3">delete: {id}</div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 </details>
               )}
             </motion.div>
