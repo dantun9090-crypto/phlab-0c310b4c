@@ -11,6 +11,7 @@ import { getProductImage } from '@/lib/productImages';
 import { nameToSlug } from '@/lib/seedProducts';
 import { PRODUCT_SEO_CONTENT } from '@/lib/productSEO';
 import { SEO_LIMITS, clamp } from '@/lib/seo-meta';
+import { markPrerenderPending, flipPrerenderReadyWhen } from '@/lib/prerender-ready';
 
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
