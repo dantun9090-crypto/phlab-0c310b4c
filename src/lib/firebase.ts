@@ -76,8 +76,18 @@ const initAppCheck = () => {
   } catch { /* already initialised on HMR reload */ }
 };
 
-// Initialise as early as possible — don't defer, App Check blocking Firestore reads
-initAppCheck();
+// Defer App Check init until the browser is idle so the reCAPTCHA Enterprise
+// script (~365KB + iframe) doesn't block first paint. Firestore reads that
+// need App Check tokens wait via `onAppCheckReady` below.
+if (typeof window !== 'undefined') {
+  const schedule: (cb: () => void) => void =
+    typeof (window as any).requestIdleCallback === 'function'
+      ? (cb) => (window as any).requestIdleCallback(cb, { timeout: 2000 })
+      : (cb) => setTimeout(cb, 1200);
+  schedule(initAppCheck);
+} else {
+  initAppCheck();
+}
 
 export function onAppCheckReady(cb: () => void) {
   if (appCheckInitialised) { cb(); return; }
