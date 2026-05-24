@@ -233,10 +233,36 @@ export const validateCartPrices = createServerFn({ method: 'POST' })
     );
 
     const subtotal = +validated.reduce((s, l) => s + l.lineTotal, 0).toFixed(2);
+
+    // SECURITY: Re-validate coupon server-side and compute the authoritative
+    // discount. Never trust discount/coupon values sent from the client.
+    let coupon: ValidatedCoupon | null = null;
+    let couponError: string | null = null;
+    let discount = 0;
+    let shippingDiscount = 0;
+    if (data.couponCode) {
+      const result = await lookupCoupon(data.couponCode, subtotal);
+      coupon = result.coupon;
+      couponError = result.error;
+      if (coupon) {
+        if (coupon.type === 'percentage') {
+          discount = +(subtotal * coupon.value / 100).toFixed(2);
+        } else if (coupon.type === 'fixed') {
+          discount = +Math.min(coupon.value, subtotal).toFixed(2);
+        } else if (coupon.type === 'free_shipping' && typeof data.shippingCost === 'number') {
+          shippingDiscount = +data.shippingCost.toFixed(2);
+        }
+      }
+    }
+
     return {
-      ok: errors.length === 0 && validated.length === data.items.length,
+      ok: errors.length === 0 && validated.length === data.items.length && !couponError,
       items: validated,
       subtotal,
-      errors,
+      discount,
+      shippingDiscount,
+      coupon,
+      couponError,
+      errors: couponError ? [...errors, couponError] : errors,
     };
   });
