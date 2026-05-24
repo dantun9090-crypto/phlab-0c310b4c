@@ -17,7 +17,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { SEO_LIMITS, metaForPath } from "../src/lib/seo-meta";
+import { SEO_LIMITS, SITE_URL, canonicalUrl, metaForPath } from "../src/lib/seo-meta";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const ROUTES_DIR = join(ROOT, "src", "routes");
