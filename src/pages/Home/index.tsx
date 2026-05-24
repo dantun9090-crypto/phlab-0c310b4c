@@ -225,10 +225,11 @@ export default function HomePage() {
   );
 
   useSEO('home', {
-    title: 'Research Peptides UK | HPLC-Verified | Pro Health Peptides',
-    metaDescription: 'Buy HPLC-tested research peptides in the UK — BPC-157, TB-500, GLP-1 compounds. ≥99% purity, CoA included, free shipping over £50. Laboratory use only.',
-    canonical: 'https://www.prohealthpeptides.co.uk',
+    title: 'HPLC-Verified Research Peptides UK | Pro Health',
+    metaDescription: 'UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals.',
+    canonical: 'https://www.prohealthpeptides.co.uk/',
   });
+
 
   useEffect(() => {
     const injectSchemas = () => {
