@@ -479,7 +479,7 @@ export function Layout({ children }: LayoutProps) {
 
               {/* Cart */}
               <button
-                onClick={() => { if (getTotalItems() > 0) { navigate('/checkout'); } else { setIsCartOpen(true); } }}
+                onClick={() => setIsCartOpen(true)}
                 aria-label="Open shopping cart"
                 className="group relative min-w-[44px] min-h-[44px] flex items-center justify-center text-[#7a9ec8] hover:text-white transition-all duration-300 rounded-xl hover:bg-white/[0.06] border border-transparent hover:border-white/[0.08]"
               >
