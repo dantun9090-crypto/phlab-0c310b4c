@@ -3,7 +3,7 @@ import {
   ShoppingCart, Search, Clock, Package, Truck, CheckCircle, XCircle,
   Eye, Printer, RefreshCw, ChevronDown, X, Send, Hash, Copy,
   Banknote, CheckCheck, AlertCircle, Loader2, CreditCard, ExternalLink,
-  Trash2, ChevronRight, RotateCcw
+  Trash2, ChevronRight, RotateCcw, ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAllOrders, updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
