@@ -412,11 +412,11 @@ export function Layout({ children }: LayoutProps) {
         }`}
         style={{ background: '#030a14', top: 'calc(var(--rg-banner-h, 34px) + 32px)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}
       >
-        <div className="w-full pl-2 pr-4 sm:pl-3 sm:pr-6">
+        <div className="w-full pl-4 pr-4 sm:pl-4 sm:pr-6">
           <div className="flex items-center justify-between h-[64px]">
 
             {/* ── Logo (far left) ── */}
-            <Link to="/" className="flex items-center self-center gap-2 sm:gap-3 min-w-0 mr-auto pl-1 sm:pl-0 group">
+            <Link to="/" className="flex items-center self-center gap-2 sm:gap-3 min-w-0 mr-auto group">
               <div className="relative shrink-0 flex items-center">
                 <div className="absolute inset-0 bg-emerald-500/15 rounded-xl blur-lg group-hover:bg-emerald-500/28 transition-all duration-300" />
                 <Logo size="md" />
