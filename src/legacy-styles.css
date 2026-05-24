@@ -291,22 +291,17 @@ body.modal-open {
     scrollbar-color: var(--color-navy-700) transparent;
   }
 
-  /* Card glass effect — refined luxury, no backdrop-filter on mobile */
+  /* Card glass effect — refined luxury, Firefox-safe */
   .card-glass {
     background: linear-gradient(145deg, rgba(9,20,40,0.96) 0%, rgba(4,12,24,0.98) 100%);
     border: 1px solid rgba(255,255,255,0.06);
     box-shadow: var(--shadow-card);
-    transition: border-color 0.35s var(--ease-luxury), box-shadow 0.4s var(--ease-luxury), transform 0.3s var(--ease-luxury);
-  }
-  @media (min-width: 768px) {
-    .card-glass {
-      -webkit-backdrop-filter: blur(8px);
-      backdrop-filter: blur(8px);
-    }
+    transition: border-color 0.35s var(--ease-luxury), outline-color 0.35s var(--ease-luxury), transform 0.3s var(--ease-luxury);
+    outline: 1px solid transparent;
   }
   .card-glass:hover {
     border-color: rgba(56,182,255,0.18);
-    box-shadow: var(--shadow-hover);
+    outline-color: rgba(56,182,255,0.08);
     transform: translateY(-3px);
   }
 
@@ -335,7 +330,8 @@ body.modal-open {
     border-radius: 0.625rem;
     padding: 0.625rem 0.875rem;
     font-size: 1rem; /* min 16px — zapobiega auto-zoom na iOS */
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color 0.2s, outline-color 0.2s;
+    outline: 3px solid transparent;
     outline: none;
     width: 100%;
     -webkit-appearance: none;
@@ -343,7 +339,7 @@ body.modal-open {
   }
   .input-base:focus {
     border-color: #10b981;
-    box-shadow: 0 0 0 3px rgba(16,185,129,0.15);
+    outline-color: rgba(16,185,129,0.15);
   }
   .input-base::placeholder { color: var(--color-text-muted); }
 
@@ -399,7 +395,7 @@ body.modal-open {
     position: absolute;
     border-radius: 50%;
     pointer-events: none;
-    filter: blur(70px);
+    opacity: 0;
     animation: orbFloat 8s ease-in-out infinite;
   }
   .hero-orb:nth-child(2n) { animation-delay: -3s; animation-duration: 10s; }
