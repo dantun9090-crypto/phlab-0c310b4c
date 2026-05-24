@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  worker-build-and-check:
+    name: Production build + Worker import guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      # Runs the EXACT production build that ships to Cloudflare Workers.
+      # No --mode development, no dev-only shortcuts.
+      - name: Production build
+        run: bun run build
+
+      # Scans dist/server/** (the Worker bundle) and fails if any Node-only
+      # module slipped in. Catches regressions like a transitive dep pulling
+      # in child_process / sharp / puppeteer before they reach prod.
+      - name: Verify no Node-only imports in Worker bundle
+        run: bun run worker:check-imports
