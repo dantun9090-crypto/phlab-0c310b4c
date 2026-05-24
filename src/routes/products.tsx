@@ -36,20 +36,20 @@ export const Route = createFileRoute("/products")({
     };
     return {
       meta: [
-        { title: TITLE },
-        { name: "description", content: DESCRIPTION },
+        { key: "title", title: TITLE },
+        { key: "description", name: "description", content: DESCRIPTION },
         // Tell prerender.io to wait for window.prerenderReady = true
         // before capturing the DOM (set by Products page after Firestore load).
-        { name: "prerender-ready", content: "false" },
-        { name: "fragment", content: "!" },
-        { property: "og:title", content: TITLE },
-        { property: "og:description", content: DESCRIPTION },
-        { property: "og:type", content: "website" },
-        { property: "og:url", content: URL },
-        { property: "og:image", content: OG_IMAGE },
-        { name: "twitter:title", content: TITLE },
-        { name: "twitter:description", content: DESCRIPTION },
-        { name: "twitter:image", content: OG_IMAGE },
+        { key: "prerender-ready", name: "prerender-ready", content: "false" },
+        { key: "fragment", name: "fragment", content: "!" },
+        { key: "og:title", property: "og:title", content: TITLE },
+        { key: "og:description", property: "og:description", content: DESCRIPTION },
+        { key: "og:type", property: "og:type", content: "website" },
+        { key: "og:url", property: "og:url", content: URL },
+        { key: "og:image", property: "og:image", content: OG_IMAGE },
+        { key: "twitter:title", name: "twitter:title", content: TITLE },
+        { key: "twitter:description", name: "twitter:description", content: DESCRIPTION },
+        { key: "twitter:image", name: "twitter:image", content: OG_IMAGE },
       ],
       links: [{ rel: "canonical", href: URL }],
       scripts: [
