@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { 
+import {
   Database, AlertTriangle, CheckCircle2, Loader2, Package, Zap, Shield,
-  RefreshCw, Globe, Clock, ExternalLink
+  RefreshCw, Globe, Clock, ExternalLink, Copy
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
