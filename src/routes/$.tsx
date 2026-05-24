@@ -147,6 +147,7 @@ export const Route = createFileRoute("/$")({
         { name: "twitter:title", content: pageMeta.title },
         { name: "twitter:description", content: pageMeta.description },
       ],
+      links: [{ rel: "canonical", href: url }],
     };
   },
   component: LegacyMount,
