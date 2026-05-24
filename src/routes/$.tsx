@@ -5,6 +5,7 @@ const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
 const SITE_URL = "https://www.prohealthpeptides.co.uk";
 const SITE_NAME = "Pro Health Peptides UK";
+const BRAND = "Pro Health UK";
 
 type PageMeta = {
   title: string;
@@ -20,31 +21,44 @@ function titleize(slug: string): string {
     .join(" ");
 }
 
+// Clamp a string to a max length, trimming on a word boundary where possible.
+function clamp(s: string, max: number): string {
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max - 1);
+  const sp = cut.lastIndexOf(" ");
+  return (sp > max * 0.6 ? cut.slice(0, sp) : cut).trimEnd() + "…";
+}
+
 function metaForPath(splat: string): PageMeta {
   const path = (splat || "").replace(/^\/+|\/+$/g, "");
   const segments = path.split("/").filter(Boolean);
   const first = segments[0] ?? "";
   const last = segments[segments.length - 1] ?? "";
 
-  // Product detail pages
+  // Product detail pages — keep title <60 incl. parent segment for uniqueness.
   if (first === "products" && segments.length > 1) {
     const name = titleize(last);
-    return {
-      title: `${name} — Research Peptide | ${SITE_NAME}`,
-      description: `Buy ${name}, an HPLC-verified research peptide from ${SITE_NAME}. Lab-tested purity with full Certificate of Analysis and fast UK dispatch.`,
-      ogType: "product",
-    };
+    const title = clamp(`${name} — Peptide | ${BRAND}`, 60);
+    const description = clamp(
+      `${name}: HPLC-verified research peptide with COA. UK dispatch from Pro Health Peptides.`,
+      160,
+    );
+    return { title, description, ogType: "product" };
   }
 
-  // Research / article pages
+  // Research / article pages — include parent segment so /research/x and
+  // /resources/x produce distinct titles and og:titles.
   if ((first === "research" || first === "resources") && segments.length > 1) {
     const name = titleize(last);
-    return {
-      title: `${name} — Research | ${SITE_NAME}`,
-      description: `${name}: research notes, protocols, and references from ${SITE_NAME}.`,
-      ogType: "article",
-    };
+    const parent = first === "research" ? "Research" : "Resource";
+    const title = clamp(`${name} — ${parent} | ${BRAND}`, 60);
+    const description = clamp(
+      `${name}: ${parent.toLowerCase()} notes and references from Pro Health Peptides UK.`,
+      160,
+    );
+    return { title, description, ogType: "article" };
   }
+
 
   const presets: Record<string, PageMeta> = {
     products: {
@@ -134,26 +148,33 @@ function metaForPath(splat: string): PageMeta {
 
 }
 
+const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
+
 export const Route = createFileRoute("/$")({
   ssr: false,
   head: ({ params }) => {
     const splat = (params as { _splat?: string })._splat ?? "";
     const pageMeta = metaForPath(splat);
+    const title = clamp(pageMeta.title, 60);
+    const description = clamp(pageMeta.description, 160);
     const url = `${SITE_URL}/${splat.replace(/^\/+/, "")}`;
     return {
       meta: [
-        { title: pageMeta.title },
-        { name: "description", content: pageMeta.description },
-        { property: "og:title", content: pageMeta.title },
-        { property: "og:description", content: pageMeta.description },
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
         { property: "og:type", content: pageMeta.ogType },
         { property: "og:url", content: url },
-        { name: "twitter:title", content: pageMeta.title },
-        { name: "twitter:description", content: pageMeta.description },
+        { property: "og:image", content: OG_IMAGE },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: OG_IMAGE },
       ],
       links: [{ rel: "canonical", href: url }],
     };
   },
+
   component: LegacyMount,
 });
 
