@@ -182,16 +182,20 @@ export default function Products() {
     // this excludes nav links and the SSR-only crawler-visible catalogue block.
     const signalWhenRendered = (expectedCount: number) => {
       if (typeof window === 'undefined') return;
+      // Zero-product case: no cards will ever appear. Wait one frame so the
+      // empty-state markup commits, then flip prerenderReady immediately.
+      if (expectedCount === 0) {
+        requestAnimationFrame(() => {
+          (window as any).prerenderReady = true;
+        });
+        return;
+      }
       const start = Date.now();
       const MAX_WAIT_MS = 8000;
+      const target = Math.min(expectedCount, 3);
       const check = () => {
         const cards = document.querySelectorAll('[data-product-card]');
-        const target = expectedCount === 0 ? 1 : Math.min(expectedCount, 3);
-        if (cards.length >= target) {
-          (window as any).prerenderReady = true;
-          return;
-        }
-        if (Date.now() - start > MAX_WAIT_MS) {
+        if (cards.length >= target || Date.now() - start > MAX_WAIT_MS) {
           (window as any).prerenderReady = true;
           return;
         }
