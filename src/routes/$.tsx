@@ -3,7 +3,7 @@ import { useEffect, useState, lazy, Suspense } from "react";
 
 const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
-const SITE_URL = "https://phlab.lovable.app";
+const SITE_URL = "https://www.prohealthpeptides.co.uk";
 const SITE_NAME = "Pro Health Peptides UK";
 
 type PageMeta = {
@@ -123,11 +123,15 @@ function metaForPath(splat: string): PageMeta {
 
   // Generic fallback derived from path
   const label = path ? titleize(last) : SITE_NAME;
+  const trail = segments.length > 1 ? segments.slice(0, -1).map(titleize).join(" › ") : "";
   return {
     title: path ? `${label} | ${SITE_NAME}` : `${SITE_NAME} — HPLC-Verified Research Peptides`,
-    description: `${SITE_NAME} — UK supplier of HPLC-verified research peptides with transparent COAs and fast dispatch.`,
+    description: path
+      ? `${label}${trail ? ` (${trail})` : ""} — information and resources from ${SITE_NAME}, UK supplier of HPLC-verified research peptides.`
+      : `${SITE_NAME} — UK supplier of HPLC-verified research peptides with transparent COAs and fast dispatch.`,
     ogType: "website",
   };
+
 }
 
 export const Route = createFileRoute("/$")({
