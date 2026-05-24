@@ -27,6 +27,27 @@ export const Route = createFileRoute("/products/$slug")({
     const url = `${SITE_URL}/products/${params.slug}`;
     const image = product?.imageUrl || OG_IMAGE_FALLBACK;
 
+    // Parse a measurement (e.g. "10 mg", "5mg", "100 mcg", "2 IU", "30 ml")
+    // from the product name so Google Merchant has a unit of measure.
+    const measureMatch = (name || "").match(
+      /(\d+(?:\.\d+)?)\s*(mg|mcg|µg|ug|iu|g|ml)\b/i,
+    );
+    const unitMap: Record<string, { code: string; label: string }> = {
+      mg: { code: "MGM", label: "mg" },
+      mcg: { code: "MC", label: "mcg" },
+      µg: { code: "MC", label: "mcg" },
+      ug: { code: "MC", label: "mcg" },
+      g: { code: "GRM", label: "g" },
+      iu: { code: "IU", label: "IU" },
+      ml: { code: "MLT", label: "ml" },
+    };
+    const measure = measureMatch
+      ? {
+          value: Number(measureMatch[1]),
+          ...unitMap[measureMatch[2].toLowerCase()],
+        }
+      : null;
+
     const jsonLd: Record<string, any> = {
       "@context": "https://schema.org",
       "@type": "Product",
@@ -37,6 +58,22 @@ export const Route = createFileRoute("/products/$slug")({
       brand: { "@type": "Brand", name: "Pro Health Peptides" },
       category: product?.category,
     };
+    if (measure) {
+      // Google Merchant unit-of-measure signals (size + weight + property).
+      jsonLd.weight = {
+        "@type": "QuantitativeValue",
+        value: measure.value,
+        unitCode: measure.code,
+      };
+      jsonLd.size = `${measure.value} ${measure.label}`;
+      jsonLd.additionalProperty = [
+        {
+          "@type": "PropertyValue",
+          name: "unit_pricing_measure",
+          value: `${measure.value} ${measure.label}`,
+        },
+      ];
+    }
     if (product?.price) {
       jsonLd.offers = {
         "@type": "Offer",
@@ -44,6 +81,15 @@ export const Route = createFileRoute("/products/$slug")({
         priceCurrency: "GBP",
         price: product.price.toFixed(2),
         availability: "https://schema.org/InStock",
+        ...(measure
+          ? {
+              eligibleQuantity: {
+                "@type": "QuantitativeValue",
+                value: measure.value,
+                unitCode: measure.code,
+              },
+            }
+          : {}),
       };
     }
 
