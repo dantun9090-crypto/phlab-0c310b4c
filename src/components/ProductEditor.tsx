@@ -488,7 +488,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
   const imageSlots: (string | null)[] = Array.from({ length: MAX_IMAGES }, (_, i) => formData.images?.[i] || null);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75">
       <motion.div
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}

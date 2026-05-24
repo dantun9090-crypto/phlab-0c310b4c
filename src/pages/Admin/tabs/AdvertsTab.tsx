@@ -275,7 +275,7 @@ export default function AdvertsTab() {
             exit={{ opacity: 0 }}
           >
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setEditing(null)} />
+            <div className="absolute inset-0 bg-black/70" onClick={() => setEditing(null)} />
 
             {/* Panel */}
             <motion.div

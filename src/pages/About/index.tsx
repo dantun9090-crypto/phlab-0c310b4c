@@ -200,7 +200,7 @@ export default function AboutPage() {
               </Link>
               <Link
                 to="/contact"
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.12] text-[#e8f0fe] font-semibold rounded-2xl transition-all duration-300 backdrop-blur-sm"
+                className="inline-flex items-center gap-2 px-7 py-3.5 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.12] text-[#e8f0fe] font-semibold rounded-2xl transition-all duration-300"
               >
                 <Mail className="w-4 h-4" />
                 Get in Touch
@@ -282,14 +282,14 @@ export default function AboutPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#060f1e]/40 to-transparent" />
               </div>
               {/* Floating badge */}
-              <div className="absolute -bottom-6 -left-4 md:-left-8 bg-[#0b1a30]/90 backdrop-blur-xl border border-blue-500/30 rounded-2xl px-5 py-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+              <div className="absolute -bottom-6 -left-4 md:-left-8 bg-[#0b1a30]/90 border border-blue-500/30 rounded-2xl px-5 py-3.5">
                 <div className="flex items-center gap-3">
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
                   <span className="text-[#e8f0fe] text-sm font-semibold">HPLC data on file for every batch</span>
                 </div>
               </div>
               {/* Corner accent */}
-              <div className="absolute -top-4 -right-4 w-28 h-28 rounded-full blur-3xl bg-blue-600/20 pointer-events-none" />
+              <div className="absolute -top-4 -right-4 w-28 h-28 rounded-full bg-blue-600/20 pointer-events-none" />
             </div>
           </FadeIn>
         </div>
@@ -325,7 +325,7 @@ export default function AboutPage() {
                   onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 0 0 0 transparent'; }}
                 >
                   {/* Corner glow */}
-                  <div className={`absolute top-0 right-0 w-24 h-24 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${p.iconBg}`} />
+                  <div className={`absolute top-0 right-0 w-24 h-24 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${p.iconBg}`} />
 
                   <div className={`relative w-11 h-11 rounded-xl ${p.iconBg} flex items-center justify-center mb-5 border ${p.border}`}>
                     <p.icon className={`w-5 h-5 ${p.iconColor}`} />
@@ -355,8 +355,8 @@ export default function AboutPage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#060f1e]/30 to-transparent" />
             </div>
-            <div className="absolute -top-4 -right-4 w-28 h-28 rounded-full blur-3xl bg-blue-600/20 pointer-events-none" />
-            <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full blur-2xl bg-emerald-600/15 pointer-events-none" />
+            <div className="absolute -top-4 -right-4 w-28 h-28 rounded-full bg-blue-600/20 pointer-events-none" />
+            <div className="absolute -bottom-4 -left-4 w-20 h-20 rounded-full bg-emerald-600/15 pointer-events-none" />
           </FadeIn>
 
           {/* Text */}
@@ -423,7 +423,7 @@ export default function AboutPage() {
               <FadeIn key={m.name} delay={i * 100} direction="up">
                 <div className="group relative bg-[#0b1a30]/60 border border-white/[0.07] rounded-2xl p-8 hover:border-blue-500/25 hover:bg-[#0d1e35]/80 transition-all duration-400 text-center overflow-hidden">
                   {/* Hover glow */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-blue-600/15 pointer-events-none" />
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-blue-600/15 pointer-events-none" />
 
                   {/* Avatar */}
                   <div className={`relative w-16 h-16 rounded-2xl bg-gradient-to-br ${m.gradient} flex items-center justify-center text-xl font-bold text-white mx-auto mb-5 shadow-lg`}>
@@ -445,8 +445,8 @@ export default function AboutPage() {
         <FadeIn direction="up">
           <div className="relative rounded-3xl overflow-hidden border border-blue-500/20 bg-gradient-to-br from-[#0d1f3c] via-[#091628] to-[#060f1e]">
             {/* Glow spots */}
-            <div className="absolute top-0 left-1/4 w-72 h-72 rounded-full blur-3xl bg-blue-600/15 pointer-events-none" />
-            <div className="absolute bottom-0 right-1/4 w-48 h-48 rounded-full blur-3xl bg-cyan-600/10 pointer-events-none" />
+            <div className="absolute top-0 left-1/4 w-72 h-72 rounded-full bg-blue-600/15 pointer-events-none" />
+            <div className="absolute bottom-0 right-1/4 w-48 h-48 rounded-full bg-cyan-600/10 pointer-events-none" />
 
             <div className="relative px-8 md:px-14 py-14 md:py-16 flex flex-col md:flex-row items-center justify-between gap-8">
               <div>

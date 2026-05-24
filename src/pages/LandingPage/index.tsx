@@ -154,14 +154,14 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="page-hero relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-950/60 via-transparent to-transparent" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-700/8 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-700/8 rounded-full" />
         <div className="container mx-auto px-6 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
             {data.heroBadge && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-2 bg-blue-600/12 border border-blue-500/25 text-blue-300 px-4 py-2 rounded-full text-sm font-medium backdrop-blur-sm mb-6"
+                className="inline-flex items-center gap-2 bg-blue-600/12 border border-blue-500/25 text-blue-300 px-4 py-2 rounded-full text-sm font-medium mb-6"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 {data.heroBadge}
@@ -249,7 +249,7 @@ export default function LandingPage() {
                         )}
                         {/* Purity badge */}
                         {p.purity && (
-                          <div className="absolute top-2 left-2 bg-blue-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          <div className="absolute top-2 left-2 bg-blue-600/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                             {p.purity} purity
                           </div>
                         )}

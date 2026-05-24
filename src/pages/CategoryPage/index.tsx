@@ -211,7 +211,7 @@ export default function CategoryPage() {
       <section id="hero" className="relative pt-28 pb-14 px-4 overflow-hidden">
         {/* Accent glow */}
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full blur-[120px] pointer-events-none"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full pointer-events-none"
           style={{ background: `${accent}18` }}
         />
 

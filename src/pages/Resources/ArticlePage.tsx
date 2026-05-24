@@ -393,7 +393,7 @@ export default function ArticlePage() {
         <div className="absolute inset-0" style={{ background: 'radial-gradient(ellipse 100% 80% at 50% -10%, #071d44 0%, #040e1e 50%, #010608 100%)' }} />
         <MolecularBackground opacity={0.4} />
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/2 left-1/4 w-[500px] h-[200px] rounded-full" style={{ background: 'rgba(26,86,232,0.04)', filter: 'blur(60px)' }} />
+          <div className="absolute top-1/2 left-1/4 w-[500px] h-[200px] rounded-full" style={{ background: 'rgba(26,86,232,0.04)', opacity: 0 }} />
         </div>
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6">
           <Link

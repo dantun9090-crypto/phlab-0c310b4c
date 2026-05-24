@@ -107,8 +107,8 @@ export default function Resources() {
         <div className="absolute pointer-events-none" style={{ top: '10%', right: '10%', width: 1, height: '80%', background: 'linear-gradient(to bottom, transparent, rgba(129,140,248,0.12) 50%, transparent)' }} />
 
         {/* Central glow */}
-        <div className="absolute pointer-events-none" style={{ top: '-10%', right: '15%', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 65%)', filter: 'blur(60px)' }} />
-        <div className="absolute pointer-events-none" style={{ bottom: '0%', left: '10%', width: 500, height: 300, background: 'radial-gradient(ellipse, rgba(37,99,235,0.08) 0%, transparent 65%)', filter: 'blur(40px)' }} />
+        <div className="absolute pointer-events-none" style={{ top: '-10%', right: '15%', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 65%)', opacity: 0 }} />
+        <div className="absolute pointer-events-none" style={{ bottom: '0%', left: '10%', width: 500, height: 300, background: 'radial-gradient(ellipse, rgba(37,99,235,0.08) 0%, transparent 65%)', opacity: 0 }} />
 
         <div className="hero-top-shimmer pointer-events-none" />
         <div className="absolute inset-x-0 bottom-0 h-24"
@@ -154,7 +154,7 @@ export default function Resources() {
           <p className="text-[#3a5a82] text-xs font-semibold uppercase tracking-widest mb-4">Featured Article</p>
           <Link
             to={`/resources/${featured.slug}`}
-            className="group block rounded-2xl border border-white/[0.07] hover:border-blue-500/30 transition-all duration-300 overflow-hidden hover:shadow-[0_0_40px_rgba(59,130,246,0.08)]"
+            className="group block rounded-2xl border border-white/[0.07] hover:border-blue-500/30 transition-all duration-300 overflow-hidden"
             style={{ background: 'var(--theme-surface)' }}
           >
             <div className="p-8 sm:p-10">
@@ -202,7 +202,7 @@ export default function Resources() {
                     <Link
                       key={article.slug}
                       to={`/resources/${article.slug}`}
-                      className="group flex flex-col rounded-xl border border-white/[0.07] hover:border-blue-500/25 transition-all duration-300 overflow-hidden hover:shadow-[0_0_24px_rgba(59,130,246,0.07)] p-6"
+                      className="group flex flex-col rounded-xl border border-white/[0.07] hover:border-blue-500/25 transition-all duration-300 overflow-hidden p-6"
                       style={{ background: 'var(--theme-surface)' }}
                     >
                       <div className="flex flex-wrap items-center gap-2 mb-3">

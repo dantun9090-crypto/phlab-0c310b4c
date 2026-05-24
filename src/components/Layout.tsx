@@ -125,7 +125,6 @@ export function Layout({ children }: LayoutProps) {
     // setSettingsLoaded removed - no longer needed without Age Gate
   }, []);
   
-  const [scrolled, setScrolled] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -295,13 +294,6 @@ export function Layout({ children }: LayoutProps) {
     setActiveSuggestion(-1);
   }, [searchQuery, searchProducts, searchArticles]);
 
-  // Scroll detection for nav style change
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
   const totalItems = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
   const getTotalItems = useCallback(() => totalItems, [totalItems]);
   
@@ -418,11 +410,7 @@ export function Layout({ children }: LayoutProps) {
           PREMIUM NAVBAR — hidden on auth pages
       ═══════════════════════════════════════════════════════════════ */}
       {!isAuthPage && <header
-        className={`fixed left-0 right-0 z-50 transition-all duration-500 ${
-          scrolled
-            ? 'border-b border-white/[0.10]'
-            : 'border-b border-white/[0.06]'
-        }`}
+        className="fixed left-0 right-0 z-50 border-b border-white/[0.06]"
         style={{ background: '#030a14', top: 'calc(var(--rg-banner-h, 34px) + 32px)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}
       >
         <div className="w-full pl-4 pr-4 sm:pl-4 sm:pr-6">
@@ -431,7 +419,7 @@ export function Layout({ children }: LayoutProps) {
             {/* ── Logo (far left) ── */}
             <Link to="/" className="flex items-center self-center gap-2 sm:gap-3 min-w-0 mr-auto group">
               <div className="relative shrink-0 flex items-center">
-                <div className="absolute inset-0 bg-emerald-500/15 rounded-xl blur-lg group-hover:bg-emerald-500/28 transition-all duration-300" />
+                <div className="absolute inset-0 bg-emerald-500/15 rounded-xl" />
                 <Logo size="md" />
               </div>
               <div className="flex flex-col leading-none min-w-0">
@@ -453,7 +441,7 @@ export function Layout({ children }: LayoutProps) {
               {/* Browse CTA */}
               <a
                 href="/products"
-                className="group hidden lg:inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 hover:from-emerald-500 hover:via-emerald-400 hover:to-emerald-500 text-white text-[13px] font-bold rounded-xl transition-all duration-300 shadow-[0_2px_18px_rgba(16,185,129,0.35)] hover:shadow-[0_4px_28px_rgba(16,185,129,0.55)] hover:-translate-y-0.5 border border-emerald-400/30 hover:border-emerald-400/50 relative overflow-hidden"
+                className="group hidden lg:inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-600 hover:from-emerald-500 hover:via-emerald-400 hover:to-emerald-500 text-white text-[13px] font-bold rounded-xl transition-all duration-300 border border-emerald-400/30 hover:border-emerald-400/50 relative overflow-hidden"
               >
                 <span className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12" />
                 <FlaskConical className="w-3.5 h-3.5 relative z-10" />
@@ -523,7 +511,7 @@ export function Layout({ children }: LayoutProps) {
           className={`overflow-hidden transition-all duration-300 ease-in-out ${
             isSearchOpen ? 'max-h-[400px] opacity-100' : 'max-h-0 opacity-0'
           }`}
-          style={{ background: 'rgba(4,16,31,0.98)', borderTop: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(20px)' }}
+          style={{ background: 'rgba(4,16,31,0.98)', borderTop: '1px solid rgba(255,255,255,0.06)' }}
         >
           <div className="px-4 py-3 max-w-2xl mx-auto relative">
             <form
@@ -676,7 +664,7 @@ export function Layout({ children }: LayoutProps) {
       {/* Cart / Checkout Drawer */}
       {isCartOpen && (
         <div className="fixed inset-0 z-[10001] flex justify-end" onClick={(e) => { if (e.target === e.currentTarget) closeCart(); }}>
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm pointer-events-none" />
+          <div className="absolute inset-0 bg-black/75 pointer-events-none" />
 
           <div className="relative w-full max-w-lg bg-gray-900 shadow-2xl border-l border-white/10 flex flex-col" style={{ height: '100dvh', maxHeight: '100dvh' }} onClick={e => e.stopPropagation()}>
             {/* Scroll Up/Down buttons — desktop only */}
@@ -854,7 +842,7 @@ export function Layout({ children }: LayoutProps) {
                       className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
                         hasItemsWithoutVariant
                           ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white shadow-[0_4px_24px_rgba(37,99,235,0.4)]'
+                          : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white '
                       }`}
                     >
                       <Lock className="w-4 h-4" />
@@ -894,8 +882,8 @@ export function Layout({ children }: LayoutProps) {
       ═══════════════════════════════════════════════════════════════ */}
       {!isAuthPage && <footer className="relative bg-[#03080f] mt-auto overflow-hidden">
         {/* Background glow */}
-        <div className="absolute top-0 left-1/4 w-[500px] h-[300px] bg-blue-600/[0.04] rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-0 right-1/4 w-[400px] h-[250px] bg-indigo-600/[0.03] rounded-full blur-3xl pointer-events-none" />
+
+
 
         {/* Top divider */}
         <div className="h-px bg-gradient-to-r from-transparent via-blue-600/30 to-transparent" />
@@ -927,7 +915,7 @@ export function Layout({ children }: LayoutProps) {
             <div className="col-span-2 lg:col-span-1">
               <a href="/" className="inline-flex items-center gap-3 mb-5 group">
                 <div className="relative">
-                  <div className="absolute inset-0 bg-blue-500/15 rounded-xl blur-md group-hover:bg-blue-500/25 transition-all duration-300" />
+                  <div className="absolute inset-0 bg-blue-500/15 rounded-xl" />
                   <Logo size="md" />
                 </div>
                 <div className="flex flex-col leading-none">

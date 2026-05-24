@@ -136,7 +136,6 @@ body.fonts-loaded {
 .animate-scale {
   transform: scale(1);
   transition: transform 0.3s ease;
-  will-change: transform;
 }
 
 .animate-scale:hover {

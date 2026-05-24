@@ -374,7 +374,7 @@ export default function BannerTab() {
                 {/* Crosshair dot */}
                 <div className="absolute w-5 h-5 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
                   style={{ left: `${banner.objectPositionX}%`, top: `${banner.objectPositionY}%` }}>
-                  <div className="w-5 h-5 rounded-full border-2 border-white shadow-lg bg-white/30 backdrop-blur-sm" />
+                  <div className="w-5 h-5 rounded-full border-2 border-white bg-white/40" />
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="w-1 h-1 bg-white rounded-full" />
                   </div>

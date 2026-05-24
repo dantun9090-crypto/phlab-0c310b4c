@@ -436,10 +436,9 @@ export default function HomePage() {
                   className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-sm text-white transition-all duration-300"
                   style={{
                     background: 'linear-gradient(135deg, #0ea572 0%, #10b981 50%, #059669 100%)',
-                    boxShadow: '0 4px 24px rgba(16,185,129,0.35)',
                   }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 32px rgba(16,185,129,0.55)'}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(16,185,129,0.35)'}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(74,222,128,0.42)'}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = 'rgba(74,222,128,0.2)'}
                 >
                   Browse Catalogue
                   <ArrowRight className="w-4 h-4" />
@@ -467,7 +466,6 @@ export default function HomePage() {
                 <div className="rounded-2xl p-8 space-y-6" style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.07)',
-                  backdropFilter: 'blur(16px)',
                 }}>
                   {/* Header */}
                   <div className="flex items-center justify-between pb-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -523,7 +521,6 @@ export default function HomePage() {
                 <div className="absolute -bottom-4 -left-4 px-4 py-2.5 rounded-xl" style={{
                   background: 'rgba(3,10,20,0.95)',
                   border: '1px solid rgba(16,185,129,0.25)',
-                  backdropFilter: 'blur(12px)',
                 }}>
                   <div className="flex items-center gap-2">
                     <ShieldCheck style={{ width: 16, height: 16, color: '#10b981' }} />
@@ -669,7 +666,7 @@ export default function HomePage() {
                     </div>
                     {/* HPLC badge */}
                     <div className="absolute top-3 right-3">
-                      <span className="px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1" style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)', color: '#4ade80', backdropFilter: 'blur(8px)' }}>
+                      <span className="px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1" style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)', color: '#4ade80', textShadow: '0 1px 2px rgba(0,0,0,0.65)' }}>
                         <CheckCircle2 style={{ width: 10, height: 10 }} />
                         ≥99%
                       </span>
@@ -1089,7 +1086,6 @@ export default function HomePage() {
       ════════════════════════════════ */}
       <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50" style={{
         background: 'rgba(3,10,20,0.97)',
-        backdropFilter: 'blur(12px)',
         borderTop: '1px solid rgba(16,185,129,0.15)',
         padding: 'max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left))',
       }}>

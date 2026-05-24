@@ -291,22 +291,17 @@ body.modal-open {
     scrollbar-color: var(--color-navy-700) transparent;
   }
 
-  /* Card glass effect — refined luxury, no backdrop-filter on mobile */
+  /* Card glass effect — refined luxury, Firefox-safe */
   .card-glass {
     background: linear-gradient(145deg, rgba(9,20,40,0.96) 0%, rgba(4,12,24,0.98) 100%);
     border: 1px solid rgba(255,255,255,0.06);
     box-shadow: var(--shadow-card);
-    transition: border-color 0.35s var(--ease-luxury), box-shadow 0.4s var(--ease-luxury), transform 0.3s var(--ease-luxury);
-  }
-  @media (min-width: 768px) {
-    .card-glass {
-      -webkit-backdrop-filter: blur(8px);
-      backdrop-filter: blur(8px);
-    }
+    transition: border-color 0.35s var(--ease-luxury), outline-color 0.35s var(--ease-luxury), transform 0.3s var(--ease-luxury);
+    outline: 1px solid transparent;
   }
   .card-glass:hover {
     border-color: rgba(56,182,255,0.18);
-    box-shadow: var(--shadow-hover);
+    outline-color: rgba(56,182,255,0.08);
     transform: translateY(-3px);
   }
 
@@ -335,7 +330,8 @@ body.modal-open {
     border-radius: 0.625rem;
     padding: 0.625rem 0.875rem;
     font-size: 1rem; /* min 16px — zapobiega auto-zoom na iOS */
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color 0.2s, outline-color 0.2s;
+    outline: 3px solid transparent;
     outline: none;
     width: 100%;
     -webkit-appearance: none;
@@ -343,7 +339,7 @@ body.modal-open {
   }
   .input-base:focus {
     border-color: #10b981;
-    box-shadow: 0 0 0 3px rgba(16,185,129,0.15);
+    outline-color: rgba(16,185,129,0.15);
   }
   .input-base::placeholder { color: var(--color-text-muted); }
 
@@ -399,16 +395,13 @@ body.modal-open {
     position: absolute;
     border-radius: 50%;
     pointer-events: none;
-    filter: blur(70px);
+    opacity: 0;
     animation: orbFloat 8s ease-in-out infinite;
   }
   .hero-orb:nth-child(2n) { animation-delay: -3s; animation-duration: 10s; }
   .hero-orb:nth-child(3n) { animation-delay: -6s; animation-duration: 12s; }
   /* Only promote to own layer on desktop — saves mobile GPU memory */
-  @media (min-width: 768px) {
-    .hero-orb { will-change: transform; }
-  }
-
+  
   /* Scan-line sweep — luxury CRT detail */
   .hero-scanline::after {
     content: '';
@@ -456,15 +449,12 @@ body.modal-open {
       0 2px 16px rgba(0,0,0,0.65),
       0 0 0 0.5px rgba(255,255,255,0.03),
       inset 0 1px 0 rgba(255,255,255,0.04);
-    transition: border-color 0.35s var(--ease-luxury), box-shadow 0.4s var(--ease-luxury), transform 0.3s var(--ease-luxury);
+    transition: border-color 0.35s var(--ease-luxury), outline-color 0.35s var(--ease-luxury), transform 0.3s var(--ease-luxury);
+    outline: 1px solid transparent;
   }
   .card-luxury:hover {
     border-color: rgba(56,182,255,0.16);
-    box-shadow:
-      0 20px 60px rgba(0,0,0,0.75),
-      0 0 50px rgba(37,99,235,0.10),
-      0 0 0 0.5px rgba(56,182,255,0.08),
-      inset 0 1px 0 rgba(255,255,255,0.06);
+    outline-color: rgba(56,182,255,0.08);
     transform: translateY(-3px);
   }
 
@@ -656,7 +646,6 @@ body.modal-open {
   @media (min-width: 768px) {
     .molecular-bg svg {
       animation: moleculeDrift 22s ease-in-out infinite;
-      will-change: transform;
     }
     .molecular-bg circle {
       animation: moleculePulse 4s ease-in-out infinite;
@@ -669,7 +658,7 @@ body.modal-open {
 
   /* Purity badge — animated glow */
   .purity-badge {
-    animation: purityGlow 3s ease-in-out infinite;
+    border-color: rgba(34,197,94,0.22);
   }
 
   /* COA button gradient shimmer */
@@ -731,11 +720,7 @@ body.modal-open {
     100% { background-position: 200% center; }
   }
 
-  /* Purity badge pulse glow */
-  @keyframes purityGlow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
-    50%       { box-shadow: 0 0 8px 1px rgba(34,197,94,0.18); }
-  }
+  /* Purity badge pulse removed — animated box-shadow repaints in Firefox */
 
   /* Luxury entrance animations */
   .animate-slide-in-left  { animation: slideInLeft  0.7s cubic-bezier(0.16,1,0.3,1) both; }
@@ -752,8 +737,8 @@ body.modal-open {
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes borderGlowPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); border-color: rgba(255,255,255,0.08); }
-  50%       { box-shadow: 0 0 20px rgba(37,99,235,0.25), 0 0 40px rgba(56,182,255,0.1); border-color: rgba(96,165,250,0.35); }
+  0%, 100% { outline-color: transparent; border-color: rgba(255,255,255,0.08); }
+  50%       { outline-color: rgba(96,165,250,0.18); border-color: rgba(96,165,250,0.35); }
 }
 @keyframes slideInLeft {
   from { opacity: 0; transform: translateX(-32px); }
@@ -912,33 +897,6 @@ footer {
   .h-screen      { height: 100dvh !important; }
 }
 
-/* 2. -webkit-backdrop-filter — Safari requires vendor prefix */
-[class*="backdrop-blur"] {
-  -webkit-backdrop-filter: var(--tw-backdrop-blur, blur(8px)) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
-  backdrop-filter: var(--tw-backdrop-blur, blur(8px)) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
-}
-
-/* ── Firefox / mobile perf — disable backdrop-filter and decorative blurs on small screens.
-   backdrop-filter and filter:blur() re-sample the layer below on every frame, which
-   tanks Firefox Android (Chrome handles it but FF blocks the main thread). Desktop
-   visuals are unchanged. */
-@media (max-width: 767px) {
-  [class*="backdrop-blur"] {
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-  }
-  /* Decorative glow orbs — these are absolutely-positioned background blobs
-     using Tailwind's blur-2xl / blur-3xl / blur-[Npx]. Hiding them on mobile
-     removes the GPU cost without affecting layout (they're pointer-events:none). */
-  [class*="blur-2xl"][class*="absolute"],
-  [class*="blur-3xl"][class*="absolute"],
-  [class*="blur-[100px]"][class*="absolute"],
-  [class*="blur-[120px]"][class*="absolute"] {
-    display: none !important;
-  }
-  .hero-orb { filter: none !important; opacity: 0 !important; }
-}
-
 /* 3. Momentum scroll for iOS */
 .overflow-y-auto,
 .overflow-x-auto,
@@ -1010,7 +968,7 @@ footer {
   }
   .btn-green:hover::after { left: 160%; }
   .btn-green:hover {
-    box-shadow: 0 8px 44px rgba(22,163,74,0.65), 0 0 60px rgba(22,163,74,0.15), inset 0 1px 0 rgba(255,255,255,0.2);
+    border-color: rgba(74,222,128,0.48);
     transform: translateY(-2px);
   }
   .btn-green:active { transform: translateY(0); }
@@ -1036,7 +994,6 @@ footer {
   .btn-gold:hover {
     background: rgba(201,162,39,0.16);
     border-color: rgba(201,162,39,0.55);
-    box-shadow: 0 8px 32px rgba(201,162,39,0.25), 0 0 50px rgba(201,162,39,0.08);
     transform: translateY(-2px);
     color: #f0d060;
   }
@@ -1110,7 +1067,6 @@ footer {
   }
   .card-benefit:hover {
     border-color: rgba(22,163,74,0.2);
-    box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 50px rgba(22,163,74,0.08);
     transform: translateY(-4px);
   }
 
@@ -1158,7 +1114,6 @@ footer {
   }
   .stat-block:hover {
     border-color: rgba(22,163,74,0.25);
-    box-shadow: 0 8px 40px rgba(0,0,0,0.6), 0 0 30px rgba(22,163,74,0.07);
     transform: translateY(-2px);
   }
   .stat-block::after {
@@ -1305,10 +1260,11 @@ footer {
     border-radius: 50%;
     background: #22c55e;
     animation: pulseDotGreen 2s ease-in-out infinite;
+    outline: 0 solid transparent;
   }
   @keyframes pulseDotGreen {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
-    50% { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+    0%, 100% { outline-color: rgba(34,197,94,0); }
+    50% { outline: 6px solid rgba(34,197,94,0); }
   }
 
   /* Section divider — green shimmer */
@@ -1329,7 +1285,7 @@ footer {
 /* 6. GPU acceleration for animated elements — desktop only to prevent layer explosion on mobile */
 @media (min-width: 768px) {
   .will-change-transform {
-    will-change: transform;
+    will-change: auto;
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
   }
@@ -1442,4 +1398,10 @@ html[data-theme]:not([data-theme="navy-professional"]) .border-blue-500\/30 {
   #admin-panel select {
     font-size: 16px !important;
   }
+}
+
+@font-face {
+  font-family: 'Inter';
+  src: local('Inter');
+  font-display: swap !important;
 }

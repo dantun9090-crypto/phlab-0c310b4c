@@ -260,8 +260,6 @@ export default function ResearchGate() {
             padding: '16px',
             // Overlay: deep navy, not pure black — feels on-brand
             background: 'rgba(3, 8, 18, 0.84)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
           }}
         >
           <div

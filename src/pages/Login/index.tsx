@@ -105,8 +105,8 @@ export default function Login() {
       {/* Left panel — decorative */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/25 via-gray-950 to-teal-900/20" />
-        <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-emerald-500/8 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-emerald-500/8 rounded-full" />
+        <div className="absolute bottom-1/3 right-1/4 w-64 h-64 bg-purple-500/10 rounded-full" />
         {/* Floating DNA-like circles — CSS-only, GPU composited */}
         {[...Array(5)].map((_, i) => (
           <div
