@@ -144,15 +144,17 @@ export default function InvoicesTab() {
     if (amountNum !== null) invoiceRecord.amount_due = Math.round(amountNum * 100);
     if (form.dueDate) invoiceRecord.due_date = new Date(form.dueDate).getTime() / 1000;
 
-    // 1. Save invoice record — try dedicated invoices collection, fall back to settings sub-doc
+    // 1. Save invoice record to the dedicated invoices collection.
+    // Do NOT fall back to the publicly-readable `settings` collection — that
+    // would leak customer PII (name, email, UID, amount) to any visitor.
     try {
       await addDoc(collection(db, 'invoices'), invoiceRecord);
-    } catch {
-      // invoices collection blocked by rules — store under settings instead
-      try {
-        await setDoc(doc(db, 'settings', `invoice_${invoiceRef}`), invoiceRecord);
-      } catch { /* non-blocking — email will still send */ }
+    } catch (err) {
+      console.error('Failed to write invoice record', err);
+      alert('Could not save invoice. Check Firestore rules for the "invoices" collection and try again.');
+      return;
     }
+
 
     // 2. Send via `mail` collection (Firebase Trigger Email extension)
     try {
