@@ -19,9 +19,9 @@ import {
   User as FirebaseUser,
 } from 'firebase/auth';
 import { getStorage, ref as storageRef, uploadBytesResumable, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from 'firebase/storage';
-import { buildWelcomeEmail } from '@/templates/welcomeEmail';
-import { buildOrderStatusEmail } from '@/templates/orderStatusEmail';
-import { buildReferralRewardEmail } from '@/templates/referralRewardEmail';
+// Email template builders are dynamically imported inside their send-helpers
+// (sendWelcomeEmail / sendOrderStatusEmail / processReferralReward) so the
+// large HTML template strings don't ship in the home/PDP bundles.
 import {
   getFirestore,
   doc,
@@ -278,6 +278,7 @@ export const sendTransactionalEmail = async (to: string, subject: string, html: 
 
 /** Welcome email on account creation */
 export const sendWelcomeEmail = async (email: string, firstName: string) => {
+  const { buildWelcomeEmail } = await import('@/templates/welcomeEmail');
   const html = buildWelcomeEmail({ firstName, email });
   await sendTransactionalEmail(email, 'Welcome to Pro Health Peptides — Your Account is Ready', html);
 };
@@ -296,6 +297,7 @@ export const sendOrderStatusEmail = async (
   totalAmount?: number,
 ) => {
   const validStatus = status as 'processing' | 'shipped' | 'delivered' | 'canceled' | 'paid' | 'refunded';
+  const { buildOrderStatusEmail } = await import('@/templates/orderStatusEmail');
   const html = buildOrderStatusEmail({
     firstName,
     email,
@@ -394,6 +396,7 @@ export const processReferralReward = async (
       // Notify referrer by email
       if (referrerData.email) {
         const referrerFirstName = referrerData.displayName?.split(' ')[0] || 'there';
+        const { buildReferralRewardEmail } = await import('@/templates/referralRewardEmail');
         const html = buildReferralRewardEmail({
           firstName: referrerFirstName,
           newReferralBalance: (referrerData.referralBalance || 0) + 5,
@@ -972,6 +975,7 @@ export const redeemReferralBalance = async (userId: string): Promise<string> => 
   // Send email with the coupon code
   if (userData.email) {
     const firstName = userData.displayName?.split(' ')[0] || 'there';
+    const { buildReferralRewardEmail } = await import('@/templates/referralRewardEmail');
     const html = buildReferralRewardEmail({
       firstName,
       newReferralBalance: 0,
