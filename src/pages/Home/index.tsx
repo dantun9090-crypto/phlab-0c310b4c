@@ -251,7 +251,7 @@ export default function HomePage() {
         logo: { '@type': 'ImageObject', url: 'https://www.prohealthpeptides.co.uk/logo.png', width: 512, height: 512 },
         description: 'UK supplier of HPLC-verified research peptides including BPC-157, Retatrutide, Tirzepatide, TB-500, NAD+ and more. For laboratory research use only.',
         address: { '@type': 'PostalAddress', addressCountry: 'GB', addressRegion: 'England' },
-        contactPoint: { '@type': 'ContactPoint', email: siteSettings.contactEmail || 'info@prohealthpeptides.co.uk', contactType: 'customer service', areaServed: 'GB', availableLanguage: 'English' },
+        contactPoint: { '@type': 'ContactPoint', telephone: siteSettings.contactPhone || '+447826549934', email: siteSettings.contactEmail || 'info@prohealthpeptides.co.uk', contactType: 'customer service', areaServed: 'GB', availableLanguage: 'English' },
         ...(sameAs.length > 0 && { sameAs }),
       };
       const orgScript = document.createElement('script');

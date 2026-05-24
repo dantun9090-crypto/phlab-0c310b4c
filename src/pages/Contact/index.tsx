@@ -81,6 +81,7 @@ export default function Contact() {
       '@type': 'LocalBusiness',
       name: 'Pro Health Peptides',
       url: 'https://www.prohealthpeptides.co.uk',
+      telephone: '+447826549934',
       email: 'info@prohealthpeptides.co.uk',
       address: { '@type': 'PostalAddress', addressCountry: 'GB', addressRegion: 'England' },
       areaServed: { '@type': 'Country', name: 'United Kingdom' },
