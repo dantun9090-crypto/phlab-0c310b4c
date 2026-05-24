@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, lazy, Suspense } from "react";
-import { SEO_LIMITS, SITE_URL, clamp, metaForPath } from "@/lib/seo-meta";
+import { SEO_LIMITS, SITE_URL, canonicalUrl, clamp, metaForPath } from "@/lib/seo-meta";
 
 const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
@@ -15,7 +15,9 @@ export const Route = createFileRoute("/$")({
     const title = clamp(pageMeta.title, SEO_LIMITS.titleMax);
     const description = clamp(pageMeta.description, SEO_LIMITS.descriptionMax);
 
-    const url = `${SITE_URL}/${splat.replace(/^\/+/, "")}`;
+    const url = canonicalUrl(splat);
+
+
     return {
       meta: [
         { title },

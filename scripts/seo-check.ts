@@ -17,7 +17,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { SEO_LIMITS, metaForPath } from "../src/lib/seo-meta";
+import { SEO_LIMITS, SITE_URL, canonicalUrl, metaForPath } from "../src/lib/seo-meta";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 const ROUTES_DIR = join(ROOT, "src", "routes");
@@ -105,18 +105,53 @@ for (const p of SAMPLE_PATHS) {
   check(label, "description", meta.description);
 }
 
+// ── 3. Sitemap canonical alignment ────────────────────────────────────────
+// Every <loc> the sitemap advertises must equal the canonical URL the splat
+// route emits for the same path. Otherwise crawlers see a sitemap URL and a
+// rel=canonical that disagree, which fragments indexing.
+const sitemapSrc = readFileSync(join(ROUTES_DIR, "sitemap[.]xml.ts"), "utf8");
+const sitemapPaths = Array.from(
+  sitemapSrc.matchAll(/\{\s*path:\s*"(\/[^"]*)"/g),
+  (m) => m[1],
+);
+
+const mismatches: { path: string; loc: string; canonical: string }[] = [];
+for (const p of sitemapPaths) {
+  const loc = `${SITE_URL}${p}`;
+  // Strip the leading slash to feed the splat-style input to canonicalUrl().
+  const canonical = canonicalUrl(p.replace(/^\//, ""));
+  if (loc !== canonical) {
+    mismatches.push({ path: p, loc, canonical });
+  }
+}
+
+
+
 // ── Report ────────────────────────────────────────────────────────────────
-if (violations.length === 0) {
+if (violations.length === 0 && mismatches.length === 0) {
   console.log(
-    `✓ SEO check passed — title ≤ ${SEO_LIMITS.titleMax}, description ≤ ${SEO_LIMITS.descriptionMax}`,
+    `✓ SEO check passed — title ≤ ${SEO_LIMITS.titleMax}, description ≤ ${SEO_LIMITS.descriptionMax}, ${sitemapPaths.length} sitemap paths align with canonical URLs`,
   );
   process.exit(0);
 }
 
-console.error(`✗ SEO check failed — ${violations.length} violation(s):\n`);
-for (const v of violations) {
-  console.error(
-    `  [${v.field}] ${v.length}/${v.limit} chars\n    at ${v.source}\n    "${v.value}"\n`,
-  );
+if (violations.length > 0) {
+  console.error(`✗ Length violations — ${violations.length}:\n`);
+  for (const v of violations) {
+    console.error(
+      `  [${v.field}] ${v.length}/${v.limit} chars\n    at ${v.source}\n    "${v.value}"\n`,
+    );
+  }
 }
+
+if (mismatches.length > 0) {
+  console.error(`✗ Sitemap/canonical mismatches — ${mismatches.length}:\n`);
+  for (const m of mismatches) {
+    console.error(
+      `  path ${m.path}\n    sitemap loc: ${m.loc}\n    canonical:   ${m.canonical}\n`,
+    );
+  }
+}
+
 process.exit(1);
+

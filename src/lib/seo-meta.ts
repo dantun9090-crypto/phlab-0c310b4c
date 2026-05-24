@@ -19,6 +19,17 @@ export const SITE_URL = "https://www.prohealthpeptides.co.uk";
 export const SITE_NAME = "Pro Health Peptides UK";
 export const BRAND = "Pro Health UK";
 
+/**
+ * Build the canonical URL for a splat-rendered path. Strips leading and
+ * trailing slashes from the splat so /products and /products/ produce the
+ * exact URL the sitemap advertises. Home ("") stays as "${SITE_URL}/".
+ */
+export function canonicalUrl(splat: string): string {
+  const normalised = (splat || "").replace(/^\/+|\/+$/g, "");
+  return normalised ? `${SITE_URL}/${normalised}` : `${SITE_URL}/`;
+}
+
+
 export type PageMeta = {
   title: string;
   description: string;
