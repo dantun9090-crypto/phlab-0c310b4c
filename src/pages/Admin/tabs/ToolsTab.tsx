@@ -24,30 +24,41 @@ const STATIC_PAGES = [
 ];
 
 // Firebase storage rules template
+// SECURITY: Writes/deletes are restricted to admin accounts only.
+// `request.auth != null` would allow ANY signed-in customer to overwrite or delete
+// product images, banners, adverts and manuals — we gate on the `customers/{uid}.isAdmin`
+// flag in Firestore instead.
 const STORAGE_RULES = `rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/customers/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/customers/$(request.auth.uid)).data.isAdmin == true;
+    }
+
     match /banners/{fileName} {
       allow read: if true;
-      allow write, delete: if request.auth != null;
+      allow write, delete: if isAdmin();
     }
     match /products/{allPaths=**} {
       allow read: if true;
-      allow write, delete: if request.auth != null;
+      allow write, delete: if isAdmin();
     }
     match /adverts/{fileName} {
       allow read: if true;
-      allow write, delete: if request.auth != null;
+      allow write, delete: if isAdmin();
     }
     match /manuals/{fileName} {
       allow read: if true;
-      allow write, delete: if request.auth != null;
+      allow write, delete: if isAdmin();
     }
     match /{allPaths=**} {
       allow read, write: if false;
     }
   }
 }`;
+
 
 export default function ToolsTab() {
   const [loading, setLoading] = useState(false);

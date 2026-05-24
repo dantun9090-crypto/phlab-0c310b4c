@@ -65,39 +65,28 @@ export default function SEOTab() {
   const [loadingCacheStatus, setLoadingCacheStatus] = useState(false);
   const [cacheStatusError, setCacheStatusError] = useState('');
 
-  // Direct fetch to Prerender.io — they support CORS for authenticated requests
+  // Direct fetch to Prerender.io — they support CORS for authenticated requests.
+  // NOTE: We intentionally do NOT fall back to public CORS proxies (e.g. corsproxy.io)
+  // because the request body contains the prerenderToken — a third-party proxy operator
+  // could log/capture it. If the direct call fails, surface the error and instruct the
+  // admin to use the curl commands below (token never leaves their machine).
   const prerenderFetch = async (endpoint: string, body: Record<string, unknown>): Promise<Response> => {
     const target = `https://api.prerender.io${endpoint}`;
     const payload = JSON.stringify({ prerenderToken: prerenderToken.trim(), ...body });
 
-    // Try direct first (Prerender.io supports CORS with token)
-    try {
-      const res = await Promise.race([
-        fetch(target, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: payload,
-        }),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000)),
-      ]);
-      return res as Response;
-    } catch (directErr) {
-      // Fallback: corsproxy.io
-      try {
-        const res = await Promise.race([
-          fetch(`https://corsproxy.io/?${encodeURIComponent(target)}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-cors-api-key': 'temp_' },
-            body: payload,
-          }),
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), 10000)),
-        ]);
-        return res as Response;
-      } catch {
-        throw directErr instanceof Error ? directErr : new Error('Network error — Prerender.io API can only be called server-side. Use the curl commands below.');
-      }
-    }
+    const res = await Promise.race([
+      fetch(target, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: payload,
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Prerender.io request timed out — use the curl commands below from a terminal.')), 10000),
+      ),
+    ]);
+    return res as Response;
   };
+
 
   const SITEMAP_URL = 'https://www.prohealthpeptides.co.uk/sitemap.xml';
 
@@ -133,21 +122,22 @@ export default function SEOTab() {
   const saveToken = async () => {
     if (!prerenderToken.trim()) return;
     setTokenSaving(true);
-    // Always save to localStorage first (works even if Firestore fails)
-    localStorage.setItem('php_prerender_token', prerenderToken.trim());
+    // Store ONLY in localStorage — never write to Firestore. The `settings` collection
+    // is publicly readable, so persisting the Prerender.io API token there would expose
+    // it to any visitor. localStorage keeps it on the admin's device only.
     try {
-      await setDoc(doc(db, 'settings', 'prerenderio'), { token: prerenderToken.trim() }, { merge: true });
+      localStorage.setItem('php_prerender_token', prerenderToken.trim());
+      // Clean up any previously-stored token in Firestore (best-effort).
+      try {
+        await setDoc(doc(db, 'settings', 'prerenderio'), { token: '' }, { merge: true });
+      } catch { /* ignore */ }
       setTokenSaved(true);
       setTimeout(() => setTokenSaved(false), 3000);
-    } catch {
-      // localStorage already saved — still usable
-      setTokenSaved(true);
-      setTimeout(() => setTokenSaved(false), 3000);
-      addLog('info', 'Token saved locally (Firestore unavailable)');
     } finally {
       setTokenSaving(false);
     }
   };
+
 
   const BASE = 'https://www.prohealthpeptides.co.uk';
 
@@ -418,14 +408,13 @@ export default function SEOTab() {
         const pagesSnap = await getDoc(doc(db, 'settings', 'seoPages'));
         if (pagesSnap.exists()) setPagesSEO(pagesSnap.data() as PagesSEO);
 
-        const prerenderSnap = await getDoc(doc(db, 'settings', 'prerenderio'));
-        const firestoreToken = prerenderSnap.exists() ? (prerenderSnap.data().token || '') : '';
+        // Prerender.io token is stored ONLY in localStorage (never Firestore — the
+        // settings collection is publicly readable). Load from local device only.
         const localToken = localStorage.getItem('php_prerender_token') || '';
-        const resolvedToken = firestoreToken || localToken;
-        if (resolvedToken) {
-          setPrerenderToken(resolvedToken);
-          localStorage.setItem('php_prerender_token', resolvedToken);
+        if (localToken) {
+          setPrerenderToken(localToken);
         }
+
       } catch (e) {
         console.error('Failed to load SEO settings:', e);
       }
