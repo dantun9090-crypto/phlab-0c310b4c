@@ -3,7 +3,7 @@ import {
   ShoppingCart, Search, Clock, Package, Truck, CheckCircle, XCircle,
   Eye, Printer, RefreshCw, ChevronDown, X, Send, Hash, Copy,
   Banknote, CheckCheck, AlertCircle, Loader2, CreditCard, ExternalLink,
-  Trash2, ChevronRight, RotateCcw
+  Trash2, ChevronRight, RotateCcw, ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAllOrders, updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
@@ -670,6 +670,35 @@ export default function OrdersTab() {
                     </select>
                     <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#6b8fba] pointer-events-none" />
                   </div>
+
+                  {/* Quick-advance to next workflow status */}
+                  {(() => {
+                    const idx = WORKFLOW.indexOf(order.status as Order['status']);
+                    if (idx < 0 || idx >= WORKFLOW.length - 1) return null;
+                    const next = WORKFLOW[idx + 1];
+                    const nextCfg = STATUS_CONFIG[next];
+                    const needsDispatch = next === 'shipped';
+                    return (
+                      <button
+                        onClick={() => {
+                          if (needsDispatch) {
+                            setSelected(order);
+                          } else {
+                            handleStatusChange(order.id, next);
+                          }
+                        }}
+                        disabled={updating === order.id}
+                        title={needsDispatch ? `Open dispatch — requires tracking number` : `Advance to ${nextCfg.label}`}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-500/50 text-emerald-300 hover:text-emerald-200 rounded-lg text-xs font-medium transition-all disabled:opacity-50"
+                      >
+                        {updating === order.id
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <ArrowRight className="w-3.5 h-3.5" />}
+                        {nextCfg.label}
+                      </button>
+                    );
+                  })()}
+
 
                   <button
                     onClick={() => setSelected(order)}
