@@ -10,6 +10,8 @@ import type { Product } from '@/lib/firebase';
 import { getProductImage } from '@/lib/productImages';
 import { nameToSlug } from '@/lib/seedProducts';
 import { PRODUCT_SEO_CONTENT } from '@/lib/productSEO';
+import { SEO_LIMITS, clamp } from '@/lib/seo-meta';
+
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 
@@ -335,7 +337,7 @@ export default function ProductDetail() {
     const titleDosage = dosage ? ` ${dosage}` : '';
     
     // Dynamic Title: {{Product Name}} | ≥99% HPLC | Pro Health Peptides UK
-    document.title = `${product.name}${titleDosage} | ≥99% HPLC | Pro Health Peptides UK`;
+    document.title = clamp(`${product.name}${titleDosage} | ≥99% HPLC | Pro Health Peptides UK`, SEO_LIMITS.titleMax);
 
     // Dynamic Meta Description — 150–158 chars, keyword-rich
     const cat = product.category ? ` ${product.category} research` : ' laboratory research';
