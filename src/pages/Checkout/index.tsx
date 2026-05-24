@@ -421,7 +421,7 @@ export default function CheckoutPage() {
         }),
         subtotal: serverSubtotal,
         discount: verifiedDiscount,
-        couponCode: appliedCoupon?.code || null,
+        couponCode: serverCoupon?.code || null,
         shippingCost: verifiedShippingCost,
         shippingMethod: form.shippingMethod,
         shippingLabel,
