@@ -335,7 +335,11 @@ export default function CheckoutPage() {
       // price for each line; we use those values when writing the order document.
       let serverItems: Awaited<ReturnType<typeof validateCartPrices>>['items'];
       let serverSubtotal: number;
+      let verifiedDiscount = 0;
+      let serverShippingDiscount = 0;
+      let serverCoupon: Awaited<ReturnType<typeof validateCartPrices>>['coupon'] = null;
       try {
+        const baseShippingForCall = SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod)?.price ?? 4.99;
         const validation = await validateCartPrices({
           data: {
             items: cart.map(item => ({
@@ -343,6 +347,8 @@ export default function CheckoutPage() {
               variantId: item.variantId ? String(item.variantId) : null,
               quantity: item.quantity,
             })),
+            couponCode: appliedCoupon?.code ?? null,
+            shippingCost: baseShippingForCall,
           },
         });
         if (!validation.ok) {
@@ -355,6 +361,9 @@ export default function CheckoutPage() {
         }
         serverItems = validation.items;
         serverSubtotal = validation.subtotal;
+        verifiedDiscount = validation.discount;
+        serverShippingDiscount = validation.shippingDiscount;
+        serverCoupon = validation.coupon;
       } catch {
         setErrors(prev => ({
           ...prev,
@@ -364,14 +373,11 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Recompute discount + total using the SERVER-validated subtotal.
-      const verifiedDiscount = appliedCoupon
-        ? (appliedCoupon.type === 'percentage'
-            ? +(serverSubtotal * appliedCoupon.value / 100).toFixed(2)
-            : Math.min(appliedCoupon.value, serverSubtotal))
-        : 0;
+      // Server-validated shipping + total. Discount and free-shipping come from
+      // the server — never from client React state (`appliedCoupon.value`).
       const verifiedIsFreeShipping = serverSubtotal >= FREE_SHIPPING_THRESHOLD;
-      const verifiedShippingCost = verifiedIsFreeShipping ? 0 : (SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod)?.price ?? 4.99);
+      const baseShippingCost = verifiedIsFreeShipping ? 0 : (SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod)?.price ?? 4.99);
+      const verifiedShippingCost = +Math.max(0, baseShippingCost - serverShippingDiscount).toFixed(2);
       const verifiedTotal = +Math.max(0, serverSubtotal - verifiedDiscount + verifiedShippingCost).toFixed(2);
 
       const orderId = 'PHP-' + Date.now().toString(36).toUpperCase();
