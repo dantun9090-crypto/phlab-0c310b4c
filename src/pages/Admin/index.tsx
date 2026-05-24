@@ -2,6 +2,7 @@ import { useState, useEffect, Component, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { auth, db, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
+import { checkAdminIpAllowed } from '@/lib/admin-ip-gate.functions';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Loader2, Menu, WifiOff, RefreshCw } from 'lucide-react';
 import AdminSidebar from './components/AdminSidebar';
