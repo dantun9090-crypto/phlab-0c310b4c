@@ -3,7 +3,7 @@ import { useEffect, useState, lazy, Suspense } from "react";
 
 const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
-const SITE_URL = "https://phlab.lovable.app";
+const SITE_URL = "https://www.prohealthpeptides.co.uk";
 const SITE_NAME = "Pro Health Peptides UK";
 
 type PageMeta = {
