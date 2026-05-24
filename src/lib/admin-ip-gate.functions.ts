@@ -76,6 +76,20 @@ export function matchesEntry(entry: string, ip: string): boolean {
 
 export const checkAdminIpAllowed = createServerFn({ method: 'GET' }).handler(
   async (): Promise<AdminIpGateResult> => {
+    const started = Date.now();
+    const logResult = (result: AdminIpGateResult, matchedEntry?: string) => {
+      log.info({
+        event: 'admin_ip_gate.decision',
+        allowed: result.allowed,
+        enforced: result.enforced,
+        ip: result.ip,
+        matchedEntry,
+        reason: result.reason,
+        ms: Date.now() - started,
+      });
+      return result;
+    };
+
     // 1. Read settings/ipWhitelist to see if the guard is enabled.
     let enforced = false;
     try {
@@ -92,25 +106,33 @@ export const checkAdminIpAllowed = createServerFn({ method: 'GET' }).handler(
       } else {
         // Reading the config failed unexpectedly — be safe and treat as
         // enforced so we fail closed below.
+        log.warn({
+          event: 'admin_ip_gate.config_fetch_failed',
+          status: cfgRes.status,
+        });
         enforced = true;
       }
-    } catch {
+    } catch (err) {
+      log.warn({
+        event: 'admin_ip_gate.config_fetch_threw',
+        error: err instanceof Error ? err.message : String(err),
+      });
       enforced = true;
     }
 
     if (!enforced) {
-      return { allowed: true, enforced: false, ip: extractIp(getRequest()) };
+      return logResult({ allowed: true, enforced: false, ip: extractIp(getRequest()) });
     }
 
     // 2. Determine the caller IP from Worker request headers.
     const ip = extractIp(getRequest());
     if (!ip) {
-      return {
+      return logResult({
         allowed: false,
         enforced: true,
         ip: null,
         reason: 'Could not determine caller IP',
-      };
+      });
     }
 
     // 3. Read whitelist entries and compare.
@@ -119,12 +141,12 @@ export const checkAdminIpAllowed = createServerFn({ method: 'GET' }).handler(
         headers: { Accept: 'application/json' },
       });
       if (!listRes.ok) {
-        return {
+        return logResult({
           allowed: false,
           enforced: true,
           ip,
           reason: `Whitelist unavailable (status ${listRes.status})`,
-        };
+        });
       }
       const body = (await listRes.json()) as {
         documents?: Array<{ fields?: { ip?: { stringValue?: string } } }>;
@@ -133,20 +155,30 @@ export const checkAdminIpAllowed = createServerFn({ method: 'GET' }).handler(
         .map((d) => d.fields?.ip?.stringValue)
         .filter((v): v is string => typeof v === 'string' && v.length > 0);
 
-      const allowed = entries.some((e) => matchesEntry(e, ip));
-      return {
-        allowed,
-        enforced: true,
+      const matchedEntry = entries.find((e) => matchesEntry(e, ip));
+      const allowed = matchedEntry !== undefined;
+      return logResult(
+        {
+          allowed,
+          enforced: true,
+          ip,
+          reason: allowed ? undefined : 'IP not in whitelist',
+        },
+        matchedEntry,
+      );
+    } catch (err) {
+      log.error({
+        event: 'admin_ip_gate.whitelist_fetch_threw',
         ip,
-        reason: allowed ? undefined : 'IP not in whitelist',
-      };
-    } catch {
-      return {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return logResult({
         allowed: false,
         enforced: true,
         ip,
         reason: 'Whitelist lookup failed',
-      };
+      });
     }
   },
 );
+
