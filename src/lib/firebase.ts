@@ -278,6 +278,7 @@ export const sendTransactionalEmail = async (to: string, subject: string, html: 
 
 /** Welcome email on account creation */
 export const sendWelcomeEmail = async (email: string, firstName: string) => {
+  const { buildWelcomeEmail } = await import('@/templates/welcomeEmail');
   const html = buildWelcomeEmail({ firstName, email });
   await sendTransactionalEmail(email, 'Welcome to Pro Health Peptides — Your Account is Ready', html);
 };
