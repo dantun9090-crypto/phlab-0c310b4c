@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
+import { articles } from "@/pages/Resources/data/articles";
 
-const BASE_URL = "https://phlab.lovable.app";
+const BASE_URL = "https://www.prohealthpeptides.co.uk";
 
 interface SitemapEntry {
   path: string;
@@ -9,7 +10,7 @@ interface SitemapEntry {
   priority?: string;
 }
 
-const entries: SitemapEntry[] = [
+const staticEntries: SitemapEntry[] = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
   { path: "/products", changefreq: "daily", priority: "0.9" },
   { path: "/research", changefreq: "weekly", priority: "0.8" },
@@ -30,6 +31,15 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
+        // Dynamic article entries served by the /$ splat route
+        const articleEntries: SitemapEntry[] = articles.map((a) => ({
+          path: `/resources/${a.slug}`,
+          changefreq: "monthly",
+          priority: "0.6",
+        }));
+
+        const entries = [...staticEntries, ...articleEntries];
+
         const urls = entries.map((e) =>
           [
             `  <url>`,
