@@ -27,6 +27,18 @@ const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string }>
 
 const WORKFLOW: Order['status'][] = ['pending', 'processing', 'shipped', 'delivered'];
 
+// Escape HTML special chars to prevent stored XSS from customer-supplied fields
+// (first/last name, shipping address, tracking number, courier) when written
+// into the print-label window via document.write.
+function esc(s: unknown): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function generateShippingLabelPDF(order: Order) {
   // Generate printable shipping label using browser print - no dependencies needed
   const printWindow = window.open('', '_blank');
@@ -34,15 +46,21 @@ function generateShippingLabelPDF(order: Order) {
     alert('Please allow popups to print shipping labels');
     return;
   }
-  
-  const customerName = `${(order as any).customer?.firstName || ''} ${(order as any).customer?.lastName || ''}`.trim() || 'Customer';
-  const orderDate = order.orderDate?.toDate?.()?.toLocaleDateString('en-GB') || 'N/A';
-  
+
+  const rawName = `${(order as any).customer?.firstName || ''} ${(order as any).customer?.lastName || ''}`.trim();
+  const customerName = esc(rawName || 'Customer');
+  const orderDate = esc(order.orderDate?.toDate?.()?.toLocaleDateString('en-GB') || 'N/A');
+  const orderIdShort = esc(order.id?.slice(-8) || '');
+  const orderIdUpper = esc(order.id?.slice(-8).toUpperCase() || 'N/A');
+  const shippingAddress = esc(order.shippingAddress || 'No address').replace(/\n/g, '<br>');
+  const trackingNumber = order.trackingNumber ? esc(order.trackingNumber) : '';
+  const courier = order.courier ? esc(order.courier) : '';
+
   printWindow.document.write(`
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Shipping Label - ${order.id?.slice(-8)}</title>
+      <title>Shipping Label - ${orderIdShort}</title>
       <style>
         @media print {
           body { margin: 0; padding: 0; }
@@ -83,15 +101,15 @@ function generateShippingLabelPDF(order: Order) {
         <div class="section">
           <div class="section-title">TO:</div>
           <p><strong>${customerName}</strong></p>
-          <p>${order.shippingAddress?.replace(/\n/g, '<br>') || 'No address'}</p>
+          <p>${shippingAddress}</p>
         </div>
         
         <div class="section">
           <div class="section-title">Order Information:</div>
-          <p><strong>Order #:</strong> ${order.id?.slice(-8).toUpperCase() || 'N/A'}</p>
+          <p><strong>Order #:</strong> ${orderIdUpper}</p>
           <p><strong>Date:</strong> ${orderDate}</p>
-          ${order.trackingNumber ? `<p class="tracking">Tracking: ${order.trackingNumber}</p>` : ''}
-          ${order.courier ? `<p><strong>Courier:</strong> ${order.courier}</p>` : ''}
+          ${trackingNumber ? `<p class="tracking">Tracking: ${trackingNumber}</p>` : ''}
+          ${courier ? `<p><strong>Courier:</strong> ${courier}</p>` : ''}
         </div>
       </div>
       <div class="no-print">
@@ -103,6 +121,7 @@ function generateShippingLabelPDF(order: Order) {
   
   printWindow.document.close();
 }
+
 
 function StatusBadge({ status }: { status: Order['status'] }) {
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
