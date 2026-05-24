@@ -63,7 +63,7 @@ function metaForPath(splat: string): PageMeta {
       ogType: "website",
     },
     "lab-reports": {
-      title: `Lab Reports & Certificates of Analysis | ${SITE_NAME}`,
+      title: `Lab Reports & Purity Certificates | ${SITE_NAME}`,
       description: `Third-party HPLC and mass-spectrometry reports for every batch of ${SITE_NAME} peptides.`,
       ogType: "website",
     },
