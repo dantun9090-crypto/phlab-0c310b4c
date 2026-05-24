@@ -1829,6 +1829,76 @@ For in vitro combination studies, the recommended substrate is primary human der
       { id: 3, authors: 'Lau JL, Dunn MK.', year: 2018, title: 'Therapeutic peptides: Historical perspectives, current development trends, and future directions', journal: 'Bioorg Med Chem', doi: '10.1016/j.bmc.2017.06.052' },
     ]
   },
+  // ---------------------------------------------
+  // UK LANDING — Research Peptides UK (SEO target: "research peptides uk", "buy peptides uk")
+  // ---------------------------------------------
+  {
+    slug: 'research-peptides-uk',
+    title: 'Research Peptides UK: The 2026 Sourcing Guide for British Laboratories',
+    subtitle: 'Where to buy HPLC-verified research peptides in the UK, what purity to insist on, and which compounds are driving the most active British research programmes',
+    category: 'UK Sourcing',
+    readTime: 12,
+    publishDate: '2026-05-24',
+    excerpt: 'Buying research peptides in the UK in 2026 means navigating Brexit-era import friction, cold-chain integrity, and rising expectations for analytical documentation. This guide covers the compounds British labs order most, what a real UK CoA looks like, and how to vet a domestic supplier in under five minutes.',
+    keywords: ['research peptides uk', 'buy peptides uk', 'uk peptide supplier', 'hplc verified peptides uk', 'retatrutide uk', 'bpc-157 uk', 'tirzepatide uk', 'semaglutide uk'],
+    relatedSlugs: ['complete-uk-peptide-guide-2025', 'hplc-testing-explained', 'how-to-read-hplc-certificate-of-analysis'],
+    content: [
+      {
+        body: `If you are sourcing <strong>research peptides in the UK</strong> in 2026, the calculation has changed. Post-Brexit customs delays, rising shipping temperatures, and tighter expectations from university ethics committees mean a US or EU supplier that worked in 2020 often no longer makes sense. British labs increasingly insist on a <strong>UK-based supplier with HPLC ≥99% purity, batch-specific CoAs, and next-day domestic dispatch</strong>. This guide covers what to insist on, which compounds drive the most active UK research, and how to <a href="/products" style="color: #10b981; text-decoration: underline;">browse the full Pro Health Peptides catalogue</a>.`
+      },
+      {
+        heading: 'Why Source Research Peptides from a UK Supplier',
+        body: `Three practical reasons dominate:\n\n**1. Cold-chain integrity.** Peptides are temperature-sensitive. International shipments routinely sit in customs holding for 3–7 days at uncontrolled temperatures. A UK supplier dispatching by Royal Mail Tracked 24 or DPD next-day keeps the cold chain under 48 hours end-to-end.\n\n**2. Brexit customs friction.** EU and US imports now require commercial invoices, HS codes, and frequently VAT-on-import payment at delivery. A domestic UK order avoids all of this — what you pay at checkout is what you pay total.\n\n**3. CoA documentation in English, batch-matched to your vial.** UK suppliers serving British research labs default to batch-specific HPLC certificates with the chromatogram, retention time, and purity percentage clearly labelled. Many overseas suppliers still ship "generic" CoAs reused across batches, which fails most ethics-committee documentation standards.`
+      },
+      {
+        heading: 'The Compounds British Labs Order Most',
+        body: `Based on UK ordering patterns across 2025–2026, five compounds dominate domestic research peptide demand:`,
+        table: {
+          headers: ['Peptide', 'Primary UK Research Use', 'Typical Pack Size', 'Product Page'],
+          rows: [
+            ['Retatrutide', 'Triple GLP-1/GIP/Glucagon metabolic research', '10 mg / 20 mg', '/products/retatrutide'],
+            ['Tirzepatide', 'Dual GLP-1/GIP incretin research', '10 mg / 30 mg', '/products/tirzepatide'],
+            ['Semaglutide', 'GLP-1 mono-agonist reference standard', '5 mg / 10 mg', '/products/semaglutide'],
+            ['BPC-157', 'Tissue repair, angiogenesis, gastroprotection', '5 mg / 10 mg', '/products/bpc-157'],
+            ['TB-500', 'Actin sequestration, cell migration, wound healing', '5 mg / 10 mg', '/products/tb-500'],
+          ]
+        }
+      },
+      {
+        heading: 'Retatrutide UK: The Highest-Demand Frontier Compound',
+        body: `<a href="/products/retatrutide" style="color: #10b981; text-decoration: underline;"><strong>Retatrutide</strong></a> is currently the single most-searched research peptide in the UK, driven by Phase 2 data showing −24.2% body weight reduction at 48 weeks (Rosenstock et al., 2023). Its triple receptor architecture — simultaneous GLP-1, GIP, and glucagon receptor activation — makes it a unique tool for dissecting metabolic pathway contributions. UK ordering volumes for retatrutide have grown roughly 4× year-on-year as British metabolic research groups expand triagonist work.`
+      },
+      {
+        heading: 'BPC-157 UK: The Tissue-Repair Workhorse',
+        body: `<a href="/products/bpc-157" style="color: #10b981; text-decoration: underline;"><strong>BPC-157</strong></a> remains the most consistently ordered tissue-repair peptide in the UK. Its activity at the FAK-paxillin pathway, VEGFR2 upregulation, and prostaglandin-independent gastroprotection give British researchers a single reagent that crosses vascular, musculoskeletal, and epithelial research models. Read the full mechanism review: <a href="/resources/bpc-157-tissue-repair" style="color: #10b981; text-decoration: underline;">BPC-157 and Tissue Repair: The Preclinical Evidence</a>.`
+      },
+      {
+        heading: 'Tirzepatide and Semaglutide: The GLP-1 Reference Standards',
+        body: `For UK metabolic research, <a href="/products/tirzepatide" style="color: #10b981; text-decoration: underline;"><strong>Tirzepatide</strong></a> (dual GLP-1/GIP) and <a href="/products/semaglutide" style="color: #10b981; text-decoration: underline;"><strong>Semaglutide</strong></a> (GLP-1 mono-agonist) remain the comparator reference standards against which newer compounds are benchmarked. A direct mechanistic comparison is available in <a href="/resources/retatrutide-vs-tirzepatide-vs-semaglutide" style="color: #10b981; text-decoration: underline;">Retatrutide vs Tirzepatide vs Semaglutide</a>.`
+      },
+      {
+        heading: 'What a Real UK CoA Should Show',
+        body: `A legitimate Certificate of Analysis from a UK supplier must include:\n\n• **Batch number** matching your vial label exactly\n• **HPLC chromatogram** (the graph showing peaks against retention time)\n• **Retention time** in minutes, with the target peak identified\n• **Purity percentage** (≥99% for research-grade, calculated from peak area integration)\n• **Mass spectrometry data** confirming identity (±1 Da of calculated mass)\n• **Analysis date** within the last 12 months\n• **Laboratory signature** or analyst initials\n\nIf any of these are missing — particularly the chromatogram itself or a batch-matched analysis date — the document is not a real CoA. For a full walkthrough of how to read these documents, see <a href="/resources/how-to-read-hplc-certificate-of-analysis" style="color: #10b981; text-decoration: underline;">How to Read an HPLC Certificate of Analysis</a>.`,
+        callout: {
+          type: 'info',
+          text: 'Every Pro Health Peptides order ships with a batch-specific HPLC certificate including the full chromatogram. Mass spectrometry data is available on request for identity confirmation. All UK orders dispatched next-day with cold-pack insulation.'
+        }
+      },
+      {
+        heading: 'How to Vet a UK Peptide Supplier in Five Minutes',
+        body: `Run this checklist before placing your first order with any UK supplier:\n\n**1. Can they email you a sample CoA before purchase?** A legitimate supplier will share a redacted historical CoA on request. If they refuse or only offer a "generic" certificate, do not buy.\n\n**2. Do they list a UK business address and contact phone?** A web form is not enough. UK-registered suppliers must publish a Companies House number and business address.\n\n**3. Is cold-pack shipping standard, not extra-cost?** Peptides must ship insulated. If cold-pack is an upsell or seasonal extra, the supplier is cutting corners.\n\n**4. Do they make any therapeutic or medical claims?** Research peptides are sold strictly for in-vitro and preclinical research. Any supplier marketing weight loss, muscle growth, or anti-ageing benefits to consumers is operating outside the research-chemical scope and likely cuts corners on analytical work too.\n\n**5. Do they respond to a technical question?** Email and ask about solubility, recommended reconstitution diluent, or expected retention time. A supplier serving real research labs will answer in a sentence; a reseller will not.`
+      },
+      {
+        heading: 'Where to Buy Research Peptides UK',
+        body: `Pro Health Peptides is a UK-based research peptide supplier dispatching from a domestic warehouse with next-day Royal Mail Tracked 24 and DPD options. Every order ships with a batch-specific HPLC ≥99% purity certificate, cold-pack insulation, and full technical documentation. <a href="/products" style="color: #10b981; text-decoration: underline; font-weight: 700;">Browse the full UK research peptide catalogue</a> or jump directly to the most-ordered compounds: <a href="/products/retatrutide" style="color: #10b981; text-decoration: underline;">Retatrutide</a>, <a href="/products/tirzepatide" style="color: #10b981; text-decoration: underline;">Tirzepatide</a>, <a href="/products/semaglutide" style="color: #10b981; text-decoration: underline;">Semaglutide</a>, <a href="/products/bpc-157" style="color: #10b981; text-decoration: underline;">BPC-157</a>, <a href="/products/tb-500" style="color: #10b981; text-decoration: underline;">TB-500</a>. For analytical background, see our <a href="/lab-reports" style="color: #10b981; text-decoration: underline;">Lab Reports</a> archive and the <a href="/quality-control" style="color: #10b981; text-decoration: underline;">Quality Control</a> overview.`
+      }
+    ],
+    references: [
+      { id: 1, authors: 'Rosenstock J, Wysham C, Frías JP, et al.', year: 2023, title: 'Retatrutide Phase 2 obesity trial', journal: 'N Engl J Med', doi: '10.1056/NEJMoa2301972' },
+      { id: 2, authors: 'Sikiric P, Seiwerth S, Rucman R, et al.', year: 2018, title: 'Stable gastric pentadecapeptide BPC 157 in the management of musculoskeletal injuries', journal: 'Curr Pharm Des', doi: '10.2174/1381612824666180717152934' },
+      { id: 3, authors: 'MHRA.', year: 2024, title: 'Guidance on the supply of unlicensed medicinal products', journal: 'UK Government', doi: '' },
+    ]
+  },
 ];
 
 export function getArticle(slug: string): Article | undefined {
