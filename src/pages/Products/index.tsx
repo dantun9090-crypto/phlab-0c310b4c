@@ -177,17 +177,28 @@ export default function Products() {
     const slowTimer = setTimeout(() => setSlowLoad(true), 4000);
     if (typeof window !== 'undefined') (window as any).prerenderReady = false;
 
-    // Only flip prerenderReady once product markup is actually in the DOM.
-    // Crawlers must see real <a href="/products/..."> nodes before snapshotting.
+    // Only flip prerenderReady once real ProductCard markup is in the DOM.
+    // We match the [data-product-card] attribute rendered by <ProductCard /> —
+    // this excludes nav links and the SSR-only crawler-visible catalogue block.
     const signalWhenRendered = (expectedCount: number) => {
       if (typeof window === 'undefined') return;
       const start = Date.now();
       const MAX_WAIT_MS = 8000;
       const check = () => {
-        const nodes = document.querySelectorAll(
-          '[data-product-card], a[href^="/products/"]'
-        );
-        if (nodes.length > 0 && (expectedCount === 0 || nodes.length >= Math.min(expectedCount, 3))) {
+        const cards = document.querySelectorAll('[data-product-card]');
+        const target = expectedCount === 0 ? 1 : Math.min(expectedCount, 3);
+        if (cards.length >= target) {
+          (window as any).prerenderReady = true;
+          return;
+        }
+        if (Date.now() - start > MAX_WAIT_MS) {
+          (window as any).prerenderReady = true;
+          return;
+        }
+        requestAnimationFrame(check);
+      };
+      requestAnimationFrame(check);
+    };
           (window as any).prerenderReady = true;
           return;
         }
