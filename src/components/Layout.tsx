@@ -415,9 +415,9 @@ export function Layout({ children }: LayoutProps) {
         <div className="container mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-[64px]">
 
-            {/* ── Logo ── */}
-            <Link to="/" className="flex items-center gap-2 sm:gap-3 min-w-0 group">
-              <div className="relative shrink-0">
+            {/* ── Logo (far left) ── */}
+            <Link to="/" className="flex items-center self-center gap-2 sm:gap-3 min-w-0 mr-auto pl-1 sm:pl-0 group">
+              <div className="relative shrink-0 flex items-center">
                 <div className="absolute inset-0 bg-emerald-500/15 rounded-xl blur-lg group-hover:bg-emerald-500/28 transition-all duration-300" />
                 <Logo size="md" />
               </div>
@@ -434,7 +434,7 @@ export function Layout({ children }: LayoutProps) {
               onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             />
             {/* ── Right actions ── */}
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-0.5 sm:gap-1.5 shrink-0">
 
 
               {/* Browse CTA */}
