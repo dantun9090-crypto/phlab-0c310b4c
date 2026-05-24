@@ -26,7 +26,17 @@ const cartItemSchema = z.object({
 
 const inputSchema = z.object({
   items: z.array(cartItemSchema).min(1).max(50),
+  couponCode: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/).optional().nullable(),
+  shippingCost: z.number().min(0).max(1000).optional(),
 });
+
+type CouponType = 'percentage' | 'fixed' | 'free_shipping';
+interface ValidatedCoupon {
+  id: string;
+  code: string;
+  type: CouponType;
+  value: number;
+}
 
 // ---- Firestore REST value decoding -----------------------------------------
 type FsValue =
