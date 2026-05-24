@@ -11,7 +11,9 @@ import {
 import { auth, db, doc, getDoc, onAuthStateChanged, FirebaseUser, subscribeToProducts } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
 
-import { articles } from '@/pages/Resources/data/articles';
+// Articles bundle (~196KB) is loaded lazily — only when the search panel opens —
+// to keep it off the critical path of every page render.
+type ArticleLite = { title: string; subtitle?: string; slug: string };
 import { CookieConsent } from '@/components/CookieConsent';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import { getRecentlyViewed } from '@/hooks/useRecentlyViewed';
