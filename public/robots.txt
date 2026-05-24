@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://phlab.lovable.app/sitemap.xml
+Sitemap: https://www.prohealthpeptides.co.uk/sitemap.xml
