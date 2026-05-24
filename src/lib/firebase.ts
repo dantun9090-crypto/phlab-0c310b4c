@@ -297,6 +297,7 @@ export const sendOrderStatusEmail = async (
   totalAmount?: number,
 ) => {
   const validStatus = status as 'processing' | 'shipped' | 'delivered' | 'canceled' | 'paid' | 'refunded';
+  const { buildOrderStatusEmail } = await import('@/templates/orderStatusEmail');
   const html = buildOrderStatusEmail({
     firstName,
     email,
