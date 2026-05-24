@@ -38,7 +38,13 @@ export const Route = createFileRoute("/sitemap.xml")({
           priority: "0.6",
         }));
 
-        const entries = [...staticEntries, ...articleEntries];
+        // Dedupe by path to guarantee each URL appears exactly once
+        const seen = new Set<string>();
+        const entries = [...staticEntries, ...articleEntries].filter((e) => {
+          if (seen.has(e.path)) return false;
+          seen.add(e.path);
+          return true;
+        });
 
         const urls = entries.map((e) =>
           [
