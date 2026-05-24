@@ -296,23 +296,13 @@ export default function ProductDetail() {
         console.error('Failed to load product:', error);
       } finally {
         setLoading(false);
-        // Only flip prerenderReady once the detail markup is actually in the DOM.
+        // Flip prerenderReady only once the detail markup is actually in the DOM.
         // Crawlers must see the product <h1> and image before snapshotting.
-        if (typeof window !== 'undefined') {
-          const start = Date.now();
-          const MAX_WAIT_MS = 8000;
-          const check = () => {
-            const h1 = document.querySelector('h1');
-            const img = document.querySelector('main img, article img, img[alt]');
-            const hasContent = !!(h1 && (h1.textContent || '').trim().length > 0 && img);
-            if (hasContent || Date.now() - start > MAX_WAIT_MS) {
-              (window as any).prerenderReady = true;
-              return;
-            }
-            requestAnimationFrame(check);
-          };
-          requestAnimationFrame(check);
-        }
+        flipPrerenderReadyWhen(() => {
+          const h1 = document.querySelector('h1');
+          const img = document.querySelector('main img, article img, img[alt]');
+          return !!(h1 && (h1.textContent || '').trim().length > 0 && img);
+        });
       }
     };
     loadProduct();
