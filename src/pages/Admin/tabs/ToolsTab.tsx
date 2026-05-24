@@ -73,6 +73,87 @@ export default function ToolsTab() {
     try { return localStorage.getItem('php_last_recache'); } catch { return null; }
   });
 
+  // Dedupe state
+  type DupGroup = { slug: string; keepId: string; deleteIds: string[]; names: string[] };
+  const [dedupeLoading, setDedupeLoading] = useState(false);
+  const [dedupeGroups, setDedupeGroups] = useState<DupGroup[] | null>(null);
+  const [dedupeResult, setDedupeResult] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+
+  const scanDuplicates = async () => {
+    setDedupeLoading(true);
+    setDedupeResult(null);
+    setDedupeGroups(null);
+    try {
+      const snap = await getDocs(collection(db, 'product_stock'));
+      const bySlug = new Map<string, Array<{ id: string; name: string; updatedAt: number }>>();
+      snap.docs.forEach(d => {
+        const data = d.data() as Record<string, unknown>;
+        const name = (data.name as string) || '';
+        const slug = ((data.slug as string) || nameToSlug(name) || '').toLowerCase().trim();
+        if (!slug) return;
+        // updatedAt may be Firestore Timestamp, number, or missing — coerce to ms
+        let ts = 0;
+        const u = data.updatedAt as { toMillis?: () => number; seconds?: number } | number | undefined;
+        if (typeof u === 'number') ts = u;
+        else if (u && typeof u.toMillis === 'function') ts = u.toMillis();
+        else if (u && typeof u.seconds === 'number') ts = u.seconds * 1000;
+        const arr = bySlug.get(slug) || [];
+        arr.push({ id: d.id, name, updatedAt: ts });
+        bySlug.set(slug, arr);
+      });
+
+      const groups: DupGroup[] = [];
+      bySlug.forEach((rows, slug) => {
+        if (rows.length < 2) return;
+        // Keep newest by updatedAt; tiebreak by doc id (stable)
+        rows.sort((a, b) => b.updatedAt - a.updatedAt || b.id.localeCompare(a.id));
+        const [keep, ...rest] = rows;
+        groups.push({
+          slug,
+          keepId: keep.id,
+          deleteIds: rest.map(r => r.id),
+          names: [keep.name, ...rest.map(r => r.name)],
+        });
+      });
+
+      if (groups.length === 0) {
+        setDedupeResult({ type: 'success', message: `No duplicate slugs found across ${snap.size} products.` });
+      } else {
+        const total = groups.reduce((n, g) => n + g.deleteIds.length, 0);
+        setDedupeGroups(groups);
+        setDedupeResult({ type: 'info', message: `Found ${groups.length} duplicated slug(s); ${total} document(s) would be deleted. Review and click Apply to remove.` });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setDedupeResult({ type: 'error', message: `Scan failed: ${msg}` });
+    } finally {
+      setDedupeLoading(false);
+    }
+  };
+
+  const applyDedupe = async () => {
+    if (!dedupeGroups || dedupeGroups.length === 0) return;
+    const total = dedupeGroups.reduce((n, g) => n + g.deleteIds.length, 0);
+    if (!confirm(`Delete ${total} duplicate product document(s)?\n\nThis keeps the newest entry per slug and cannot be undone.`)) return;
+    setDedupeLoading(true);
+    try {
+      let deleted = 0;
+      for (const g of dedupeGroups) {
+        for (const id of g.deleteIds) {
+          await deleteDoc(doc(db, 'product_stock', id));
+          deleted++;
+        }
+      }
+      setDedupeGroups(null);
+      setDedupeResult({ type: 'success', message: `Removed ${deleted} duplicate product document(s). Run scan again to verify.` });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setDedupeResult({ type: 'error', message: `Apply failed: ${msg}` });
+    } finally {
+      setDedupeLoading(false);
+    }
+  };
+
   const handleReplaceCatalog = async () => {
     if (!confirm(
       'This will DELETE ALL existing products and replace them with the new research peptide catalog.\n\n' +
