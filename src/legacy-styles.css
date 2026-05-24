@@ -897,34 +897,6 @@ footer {
   .h-screen      { height: 100dvh !important; }
 }
 
-  /* 2. Disable backdrop-filter globally — Firefox Android performance */
-[class*="backdrop-blur"] {
-  -webkit-backdrop-filter: none !important;
-  backdrop-filter: none !important;
-}
-
-/* ── Firefox / mobile perf — disable blur filters and decorative blur utilities.
-   These force Gecko to re-sample pixels under animated/fixed layers. */
-  [class*="backdrop-blur"] {
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-  }
-  [class*="blur-sm"],
-  [class*="blur-md"],
-  [class*="blur-lg"],
-  [class*="blur-xl"],
-  [class*="blur-2xl"][class*="absolute"],
-  [class*="blur-3xl"][class*="absolute"],
-  [class*="blur-[40px]"][class*="absolute"],
-  [class*="blur-[60px]"][class*="absolute"],
-  [class*="blur-[80px]"][class*="absolute"],
-  [class*="blur-[100px]"][class*="absolute"],
-  [class*="blur-[120px]"][class*="absolute"] {
-    filter: none !important;
-    --tw-blur: ;
-  }
-  .hero-orb { filter: none !important; opacity: 0 !important; }
-
 /* 3. Momentum scroll for iOS */
 .overflow-y-auto,
 .overflow-x-auto,
