@@ -385,6 +385,88 @@ export default function ToolsTab() {
         </AnimatePresence>
       </motion.div>
 
+      {/* ── Dedupe Products by Slug ───────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-[#0b1a30]/70 border border-white/[0.08] rounded-2xl p-6 space-y-4"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-purple-600/20 flex items-center justify-center shrink-0">
+            <Copy className="w-5 h-5 text-purple-400" />
+          </div>
+          <div>
+            <h3 className="text-[#f0f6ff] font-semibold">Dedupe Products by Slug</h3>
+            <p className="text-[#6b8fba] text-xs mt-0.5">
+              Scan <code className="bg-[#04101f] px-1.5 py-0.5 rounded text-[#8caad4]">product_stock</code> for duplicate slugs. Keeps the newest entry per slug (by <code className="bg-[#04101f] px-1.5 py-0.5 rounded text-[#8caad4]">updatedAt</code>).
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-3 items-center">
+          <button
+            onClick={scanDuplicates}
+            disabled={dedupeLoading}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {dedupeLoading
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> Working…</>
+              : <><RefreshCw className="w-4 h-4" /> Scan (dry-run)</>}
+          </button>
+          {dedupeGroups && dedupeGroups.length > 0 && (
+            <button
+              onClick={applyDedupe}
+              disabled={dedupeLoading}
+              className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <AlertTriangle className="w-4 h-4" /> Apply: delete {dedupeGroups.reduce((n, g) => n + g.deleteIds.length, 0)} duplicate(s)
+            </button>
+          )}
+        </div>
+
+        <AnimatePresence>
+          {dedupeResult && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className={`rounded-xl p-4 text-sm border ${
+                dedupeResult.type === 'success'
+                  ? 'bg-emerald-900/20 border-emerald-500/20 text-emerald-300'
+                  : dedupeResult.type === 'error'
+                  ? 'bg-red-900/20 border-red-500/20 text-red-300'
+                  : 'bg-blue-900/20 border-blue-500/20 text-blue-300'
+              }`}
+            >
+              <div className="flex items-start gap-2">
+                {dedupeResult.type === 'success'
+                  ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+                  : <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />}
+                <span>{dedupeResult.message}</span>
+              </div>
+              {dedupeGroups && dedupeGroups.length > 0 && (
+                <details className="mt-3" open>
+                  <summary className="cursor-pointer text-xs text-[#6b8fba] hover:text-white transition-colors">
+                    {dedupeGroups.length} duplicated slug(s) ▸
+                  </summary>
+                  <div className="mt-2 max-h-72 overflow-y-auto rounded-lg bg-[#04101f] p-3 space-y-2">
+                    {dedupeGroups.map(g => (
+                      <div key={g.slug} className="text-[11px] font-mono">
+                        <div className="text-[#8caad4]">{g.slug}</div>
+                        <div className="text-emerald-400 pl-3">keep: {g.keepId}</div>
+                        {g.deleteIds.map(id => (
+                          <div key={id} className="text-red-400 pl-3">delete: {id}</div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
       {/* Firebase Storage Fix Instructions */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
