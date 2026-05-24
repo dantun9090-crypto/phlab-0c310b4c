@@ -95,20 +95,20 @@ export const Route = createFileRoute("/products/$slug")({
 
     return {
       meta: [
-        { title },
-        { name: "description", content: description },
+        { key: "title", title },
+        { key: "description", name: "description", content: description },
         // Tell prerender.io to wait for window.prerenderReady = true
         // before capturing the DOM (set by ProductDetail page after Firestore load).
-        { name: "prerender-ready", content: "false" },
-        { property: "og:title", content: title },
-        { property: "og:description", content: description },
-        { property: "og:type", content: "product" },
-        { property: "og:url", content: url },
-        { property: "og:image", content: image },
-        { name: "twitter:card", content: "summary_large_image" },
-        { name: "twitter:title", content: title },
-        { name: "twitter:description", content: description },
-        { name: "twitter:image", content: image },
+        { key: "prerender-ready", name: "prerender-ready", content: "false" },
+        { key: "og:title", property: "og:title", content: title },
+        { key: "og:description", property: "og:description", content: description },
+        { key: "og:type", property: "og:type", content: "product" },
+        { key: "og:url", property: "og:url", content: url },
+        { key: "og:image", property: "og:image", content: image },
+        { key: "twitter:card", name: "twitter:card", content: "summary_large_image" },
+        { key: "twitter:title", name: "twitter:title", content: title },
+        { key: "twitter:description", name: "twitter:description", content: description },
+        { key: "twitter:image", name: "twitter:image", content: image },
       ],
       links: [{ rel: "canonical", href: url }],
       scripts: [
