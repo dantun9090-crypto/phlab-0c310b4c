@@ -82,6 +82,7 @@ export function ProductCard({
   return (
     <div
       ref={isAboveFold ? undefined : revealRef}
+      data-product-card={slug || product.id || 'product'}
       className={`group relative rounded-2xl overflow-hidden flex flex-col transition-all duration-300 ${isAboveFold ? '' : 'scroll-reveal'}`}
       style={{
         background: 'rgba(255,255,255,0.025)',
