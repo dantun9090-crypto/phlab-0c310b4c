@@ -6,7 +6,7 @@ const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 const HOME_TITLE = "HPLC-Verified Research Peptides UK | Pro Health";
 const HOME_DESCRIPTION =
   "UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals.";
-const HOME_URL = "https://phlab.lovable.app/";
+const HOME_URL = "https://www.prohealthpeptides.co.uk/";
 
 export const Route = createFileRoute("/")({
   ssr: false,
