@@ -337,7 +337,7 @@ export default function ProductDetail() {
     const titleDosage = dosage ? ` ${dosage}` : '';
     
     // Dynamic Title: {{Product Name}} | ≥99% HPLC | Pro Health Peptides UK
-    document.title = `${product.name}${titleDosage} | ≥99% HPLC | Pro Health Peptides UK`;
+    document.title = clamp(`${product.name}${titleDosage} | ≥99% HPLC | Pro Health Peptides UK`, SEO_LIMITS.titleMax);
 
     // Dynamic Meta Description — 150–158 chars, keyword-rich
     const cat = product.category ? ` ${product.category} research` : ' laboratory research';
