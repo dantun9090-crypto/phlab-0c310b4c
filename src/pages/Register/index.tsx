@@ -124,7 +124,7 @@ export default function Register() {
       } else if (err.code === 'auth/network-request-failed') {
         setError('Network error. Please check your connection and try again.');
       } else {
-        setError(`Registration failed: ${err.message || 'Unknown error'}. Code: ${err.code || 'N/A'}`);
+        setError('An unexpected error occurred. Please try again.');
       }
     } finally {
       setLoading(false);
