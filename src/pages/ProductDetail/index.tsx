@@ -200,7 +200,7 @@ export default function ProductDetail() {
   useEffect(() => {
     if (!id) return;
     // Signal prerender.io to wait until product data has loaded before snapshotting.
-    if (typeof window !== 'undefined') (window as any).prerenderReady = false;
+    markPrerenderPending();
     const loadProduct = async () => {
       setLoading(true);
       try {
