@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "seo:check": "bun scripts/seo-check.ts"
+    "seo:check": "bun scripts/seo-check.ts",
+    "worker:smoke": "bun scripts/worker-smoke.ts"
 
   },
   "dependencies": {
