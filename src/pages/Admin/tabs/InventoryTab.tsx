@@ -72,32 +72,25 @@ export default function InventoryTab() {
     }
   };
 
-  // Silently trigger Prerender.io recache for a product URL after save
+  // Silently trigger Prerender.io recache for a product URL after save.
+  // Token is read from localStorage (admin-only, never persisted to Firestore)
+  // and sent directly to api.prerender.io — never through third-party CORS proxies,
+  // which would expose the token to proxy operators. Matches SEOTab pattern.
   const autoRecacheProduct = async (slug: string) => {
     try {
-      const snap = await getDoc(doc(db, 'settings', 'prerenderio'));
-      if (!snap.exists()) return;
-      const token = snap.data()?.token;
+      const token = localStorage.getItem('php_prerender_token');
       if (!token) return;
       const url = `https://www.prohealthpeptides.co.uk/products/${slug}`;
-      const target = 'https://api.prerender.io/recache';
-      const payload = JSON.stringify({ prerenderToken: token, urls: [url] });
-      const headers = { 'Content-Type': 'application/json' };
-      const proxies = [
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`,
-        `https://corsproxy.io/?url=${encodeURIComponent(target)}`,
-        `https://thingproxy.freeboard.io/fetch/${target}`,
-      ];
-      for (const proxy of proxies) {
-        try {
-          await fetch(proxy, { method: 'POST', headers, body: payload });
-          break;
-        } catch { /* try next */ }
-      }
+      await fetch('https://api.prerender.io/recache', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prerenderToken: token, urls: [url] }),
+      });
     } catch {
       // Silent — recache is best-effort
     }
   };
+
 
   const filtered = products.filter(
     (p) =>
