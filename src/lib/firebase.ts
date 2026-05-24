@@ -396,6 +396,7 @@ export const processReferralReward = async (
       // Notify referrer by email
       if (referrerData.email) {
         const referrerFirstName = referrerData.displayName?.split(' ')[0] || 'there';
+        const { buildReferralRewardEmail } = await import('@/templates/referralRewardEmail');
         const html = buildReferralRewardEmail({
           firstName: referrerFirstName,
           newReferralBalance: (referrerData.referralBalance || 0) + 5,
