@@ -198,6 +198,8 @@ export default function ProductDetail() {
   // Load product from Firestore — supports both slug (SEO) and raw Firestore ID (legacy)
   useEffect(() => {
     if (!id) return;
+    // Signal prerender.io to wait until product data has loaded before snapshotting.
+    if (typeof window !== 'undefined') (window as any).prerenderReady = false;
     const loadProduct = async () => {
       setLoading(true);
       try {
@@ -293,6 +295,7 @@ export default function ProductDetail() {
         console.error('Failed to load product:', error);
       } finally {
         setLoading(false);
+        if (typeof window !== 'undefined') (window as any).prerenderReady = true;
       }
     };
     loadProduct();
