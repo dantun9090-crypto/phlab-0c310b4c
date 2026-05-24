@@ -453,8 +453,8 @@ export default function CheckoutPage() {
 
       const ref = await addDoc(collection(db, 'orders'), orderData);
 
-      if (appliedCoupon) {
-        try { await redeemCoupon(appliedCoupon.id); } catch { /* ignore */ }
+      if (serverCoupon) {
+        try { await redeemCoupon(serverCoupon.id); } catch { /* ignore */ }
       }
 
       for (const item of cart) {
