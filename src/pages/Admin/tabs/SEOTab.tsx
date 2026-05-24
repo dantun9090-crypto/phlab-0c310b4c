@@ -408,14 +408,13 @@ export default function SEOTab() {
         const pagesSnap = await getDoc(doc(db, 'settings', 'seoPages'));
         if (pagesSnap.exists()) setPagesSEO(pagesSnap.data() as PagesSEO);
 
-        const prerenderSnap = await getDoc(doc(db, 'settings', 'prerenderio'));
-        const firestoreToken = prerenderSnap.exists() ? (prerenderSnap.data().token || '') : '';
+        // Prerender.io token is stored ONLY in localStorage (never Firestore — the
+        // settings collection is publicly readable). Load from local device only.
         const localToken = localStorage.getItem('php_prerender_token') || '';
-        const resolvedToken = firestoreToken || localToken;
-        if (resolvedToken) {
-          setPrerenderToken(resolvedToken);
-          localStorage.setItem('php_prerender_token', resolvedToken);
+        if (localToken) {
+          setPrerenderToken(localToken);
         }
+
       } catch (e) {
         console.error('Failed to load SEO settings:', e);
       }
