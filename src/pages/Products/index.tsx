@@ -175,6 +175,7 @@ export default function Products() {
     setFirestoreError(false);
     setSlowLoad(false);
     const slowTimer = setTimeout(() => setSlowLoad(true), 4000);
+    if (typeof window !== 'undefined') (window as any).prerenderReady = false;
     const unsub = subscribeToProducts(
       (products) => {
         clearTimeout(slowTimer);
@@ -185,12 +186,14 @@ export default function Products() {
             .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999))
         );
         setLoading(false);
+        if (typeof window !== 'undefined') (window as any).prerenderReady = true;
       },
       () => {
         clearTimeout(slowTimer);
         setSlowLoad(false);
         setFirestoreError(true);
         setLoading(false);
+        if (typeof window !== 'undefined') (window as any).prerenderReady = true;
       }
     );
     return () => { unsub(); clearTimeout(slowTimer); };
