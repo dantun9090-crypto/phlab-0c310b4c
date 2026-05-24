@@ -147,7 +147,6 @@ export function ProductCard({
               background: 'rgba(0,0,0,0.7)',
               border: '1px solid rgba(245,158,11,0.4)',
               color: '#fbbf24',
-              backdropFilter: 'blur(8px)',
             }}>
               #{bestSellerRank} Best Seller
             </span>
@@ -156,7 +155,7 @@ export function ProductCard({
 
         {/* Out of stock overlay */}
         {isOutOfStock && (
-          <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(2px)' }}>
+          <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.72)' }}>
             <span className="px-4 py-2 rounded-xl font-bold text-sm" style={{ background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}>
               Out of Stock
             </span>
@@ -255,19 +254,16 @@ export function ProductCard({
               background: 'linear-gradient(135deg, #0ea572, #10b981, #059669)',
               color: '#fff',
               border: '1px solid rgba(74,222,128,0.2)',
-              boxShadow: '0 2px 16px rgba(16,185,129,0.3)',
               cursor: 'pointer',
             }}
             onMouseEnter={e => {
               if (!isOutOfStock && !isAdded) {
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 24px rgba(16,185,129,0.5)';
-                (e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(74,222,128,0.38)';
               }
             }}
             onMouseLeave={e => {
               if (!isOutOfStock && !isAdded) {
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 16px rgba(16,185,129,0.3)';
-                (e.currentTarget as HTMLElement).style.transform = 'translateY(0)';
+                (e.currentTarget as HTMLElement).style.borderColor = 'rgba(74,222,128,0.2)';
               }
             }}
           >

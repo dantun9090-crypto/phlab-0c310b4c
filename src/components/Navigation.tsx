@@ -191,8 +191,7 @@ function DesktopNavItem({ link, isActive }: { link: NavLink; isActive: (href: st
             top: '100%',
             opacity: isOpen ? 1 : 0,
             visibility: isOpen ? 'visible' : 'hidden',
-            transform: isOpen ? 'translateY(0)' : 'translateY(-8px)',
-            transition: 'opacity 0.16s ease, transform 0.16s ease, visibility 0.16s',
+            transition: 'opacity 0.16s ease, visibility 0.16s',
             pointerEvents: isOpen ? 'auto' : 'none',
           }}>
           <div className="py-2 rounded-2xl"
@@ -270,7 +269,7 @@ export function Navigation({
       {/* MOBILE DRAWER */}
       <div className="fixed inset-0 z-[98] md:hidden transition-opacity duration-300"
         style={{
-          background: 'rgba(0,4,12,0.8)', backdropFilter: 'blur(4px)',
+          background: 'rgba(0,4,12,0.86)',
           opacity: isMobileMenuOpen ? 1 : 0,
           pointerEvents: isMobileMenuOpen ? 'auto' : 'none',
         }}

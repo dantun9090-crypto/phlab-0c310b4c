@@ -416,7 +416,7 @@ export default function InvoicesTab() {
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             onClick={() => setShowModal(false)}
           >
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-black/75" />
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -642,7 +642,7 @@ export default function InvoicesTab() {
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
             onClick={() => setSelectedInvoice(null)}
           >
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+            <div className="absolute inset-0 bg-black/75" />
             <motion.div
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}

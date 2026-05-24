@@ -710,11 +710,11 @@ export default function ProductDetail() {
       {/* ── Ambient background ── */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-0">
         <div className="absolute top-0 left-1/4 w-[800px] h-[600px] rounded-full opacity-30"
-          style={{ background: 'radial-gradient(ellipse, rgba(37,99,235,0.08) 0%, transparent 70%)', filter: 'blur(120px)' }} />
+          style={{ background: 'radial-gradient(ellipse, rgba(37,99,235,0.08) 0%, transparent 70%)', opacity: 0 }} />
         <div className="absolute top-1/3 right-0 w-[600px] h-[500px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.06) 0%, transparent 70%)', filter: 'blur(100px)' }} />
+          style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.06) 0%, transparent 70%)', opacity: 0 }} />
         <div className="absolute bottom-0 left-0 w-[500px] h-[400px] rounded-full opacity-20"
-          style={{ background: 'radial-gradient(ellipse, rgba(37,99,235,0.05) 0%, transparent 70%)', filter: 'blur(100px)' }} />
+          style={{ background: 'radial-gradient(ellipse, rgba(37,99,235,0.05) 0%, transparent 70%)', opacity: 0 }} />
       </div>
 
       {/* ── Slim disclaimer / research bar ── */}
@@ -752,7 +752,7 @@ export default function ProductDetail() {
         <nav aria-label="Breadcrumb" className="mb-8">
           <div
             className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl"
-            style={{ background: 'rgba(11,26,48,0.6)', border: '1px solid rgba(255,255,255,0.07)', backdropFilter: 'blur(12px)' }}
+            style={{ background: 'rgba(11,26,48,0.6)', border: '1px solid rgba(255,255,255,0.07)', boxShadow: 'none' }}
           >
             {/* Crumbs */}
             <ol className="flex items-center gap-1.5 min-w-0" itemScope itemType="https://schema.org/BreadcrumbList">
@@ -902,12 +902,12 @@ export default function ProductDetail() {
                       </AnimatePresence>
 
                       {/* Zoom hint */}
-                      <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-black/60 backdrop-blur-md text-white/80 text-xs px-3 py-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none border border-white/10">
+                      <div className="absolute top-4 left-4 flex items-center gap-1.5 bg-black/60 text-white/80 text-xs px-3 py-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none border border-white/10">
                         <ZoomIn className="w-3 h-3" /> Click to zoom
                       </div>
 
                       {/* Purity badge */}
-                      <div className="absolute top-4 right-4 bg-emerald-500/15 text-emerald-400 px-3 py-1.5 rounded-full text-xs font-bold border border-emerald-500/30 pointer-events-none backdrop-blur-sm tracking-wide">
+                      <div className="absolute top-4 right-4 bg-emerald-500/15 text-emerald-400 px-3 py-1.5 rounded-full text-xs font-bold border border-emerald-500/30 pointer-events-none tracking-wide">
                         {product.purity} Purity
                       </div>
 
@@ -934,7 +934,7 @@ export default function ProductDetail() {
                           onClick={(e) => { e.stopPropagation(); setSelectedImageIdx(i => Math.max(i - 1, 0)); }}
                           disabled={selectedImageIdx === 0}
                           aria-label="Previous product image"
-                          className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 hover:bg-black/75 backdrop-blur-sm flex items-center justify-center text-white disabled:opacity-20 transition-all opacity-0 group-hover:opacity-100 z-10"
+                          className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 hover:bg-black/75 flex items-center justify-center text-white disabled:opacity-20 transition-all opacity-0 group-hover:opacity-100 z-10"
                         >
                           <ChevronLeft className="w-4 h-4" />
                         </button>
@@ -942,7 +942,7 @@ export default function ProductDetail() {
                           onClick={(e) => { e.stopPropagation(); setSelectedImageIdx(i => Math.min(i + 1, count - 1)); }}
                           disabled={selectedImageIdx === count - 1}
                           aria-label="Next product image"
-                          className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 hover:bg-black/75 backdrop-blur-sm flex items-center justify-center text-white disabled:opacity-20 transition-all opacity-0 group-hover:opacity-100 z-10"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/50 hover:bg-black/75 flex items-center justify-center text-white disabled:opacity-20 transition-all opacity-0 group-hover:opacity-100 z-10"
                         >
                           <ChevronRight className="w-4 h-4" />
                         </button>
@@ -1028,7 +1028,7 @@ export default function ProductDetail() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.18 }}
-                  className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center"
+                  className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center"
                   onClick={() => setLightboxOpen(false)}
                   onKeyDown={(e) => {
                     if (e.key === 'Escape') setLightboxOpen(false);
@@ -1081,7 +1081,7 @@ export default function ProductDetail() {
                           onClick={(e) => { e.stopPropagation(); setSelectedImageIdx(i => Math.max(i - 1, 0)); }}
                           disabled={selectedImageIdx === 0}
                           aria-label="Previous image"
-                          className="absolute left-2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm flex items-center justify-center text-white disabled:opacity-20 transition-all hover:scale-110"
+                          className="absolute left-2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white disabled:opacity-20 transition-all hover:scale-110"
                         >
                           <ChevronLeft className="w-5 h-5" />
                         </button>
@@ -1089,7 +1089,7 @@ export default function ProductDetail() {
                           onClick={(e) => { e.stopPropagation(); setSelectedImageIdx(i => Math.min(i + 1, count - 1)); }}
                           disabled={selectedImageIdx === count - 1}
                           aria-label="Next image"
-                          className="absolute right-2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur-sm flex items-center justify-center text-white disabled:opacity-20 transition-all hover:scale-110"
+                          className="absolute right-2 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white disabled:opacity-20 transition-all hover:scale-110"
                         >
                           <ChevronRight className="w-5 h-5" />
                         </button>
@@ -1670,7 +1670,7 @@ export default function ProductDetail() {
               transition={{ type: 'spring', stiffness: 380, damping: 35 }}
               className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
             >
-              <div className="bg-[#060f1e]/97 backdrop-blur-2xl border-t border-white/[0.1] flex items-center gap-3" style={{ padding: 'max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left))' }}>
+              <div className="bg-[#060f1e]/97 border-t border-white/[0.1] flex items-center gap-3" style={{ padding: 'max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left))' }}>
                 <div className="flex-1 min-w-0">
                   <p className="text-blue-400 font-bold text-base">£{variantPrice.toFixed(2)}</p>
                   <p className="text-[#4ade80] text-xs font-semibold">

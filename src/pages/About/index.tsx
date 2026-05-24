@@ -200,7 +200,7 @@ export default function AboutPage() {
               </Link>
               <Link
                 to="/contact"
-                className="inline-flex items-center gap-2 px-7 py-3.5 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.12] text-[#e8f0fe] font-semibold rounded-2xl transition-all duration-300 backdrop-blur-sm"
+                className="inline-flex items-center gap-2 px-7 py-3.5 bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.12] text-[#e8f0fe] font-semibold rounded-2xl transition-all duration-300"
               >
                 <Mail className="w-4 h-4" />
                 Get in Touch
@@ -282,7 +282,7 @@ export default function AboutPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#060f1e]/40 to-transparent" />
               </div>
               {/* Floating badge */}
-              <div className="absolute -bottom-6 -left-4 md:-left-8 bg-[#0b1a30]/90 backdrop-blur-xl border border-blue-500/30 rounded-2xl px-5 py-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+              <div className="absolute -bottom-6 -left-4 md:-left-8 bg-[#0b1a30]/90 border border-blue-500/30 rounded-2xl px-5 py-3.5">
                 <div className="flex items-center gap-3">
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.6)]" />
                   <span className="text-[#e8f0fe] text-sm font-semibold">HPLC data on file for every batch</span>

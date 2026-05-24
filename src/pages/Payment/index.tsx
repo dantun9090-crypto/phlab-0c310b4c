@@ -104,7 +104,6 @@ export default function PaymentPage() {
               style={{
                 background: 'linear-gradient(135deg, #0b1a30 0%, #0d1f38 100%)',
                 border: '1px solid rgba(16, 185, 129, 0.3)',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.4)',
               }}
             >
               <div className="text-center mb-5">
@@ -237,11 +236,11 @@ export default function PaymentPage() {
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = '#e94560';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(233, 69, 96, 0.1)';
+                  e.target.style.outline = '3px solid rgba(233, 69, 96, 0.1)';
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                  e.target.style.boxShadow = 'none';
+                  e.target.style.outline = 'none';
                 }}
               />
             </div>
@@ -269,11 +268,11 @@ export default function PaymentPage() {
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = '#e94560';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(233, 69, 96, 0.1)';
+                  e.target.style.outline = '3px solid rgba(233, 69, 96, 0.1)';
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                  e.target.style.boxShadow = 'none';
+                  e.target.style.outline = 'none';
                 }}
               />
             </div>
@@ -301,11 +300,11 @@ export default function PaymentPage() {
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = '#e94560';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(233, 69, 96, 0.1)';
+                  e.target.style.outline = '3px solid rgba(233, 69, 96, 0.1)';
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                  e.target.style.boxShadow = 'none';
+                  e.target.style.outline = 'none';
                 }}
               />
             </div>
@@ -333,11 +332,11 @@ export default function PaymentPage() {
                 }}
                 onFocus={(e) => {
                   e.target.style.borderColor = '#e94560';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(233, 69, 96, 0.1)';
+                  e.target.style.outline = '3px solid rgba(233, 69, 96, 0.1)';
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)';
-                  e.target.style.boxShadow = 'none';
+                  e.target.style.outline = 'none';
                 }}
               />
             </div>
@@ -355,13 +354,11 @@ export default function PaymentPage() {
               }}
               onMouseEnter={(e) => {
                 if (!isLoading) {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.boxShadow = '0 10px 30px rgba(233, 69, 96, 0.4)';
+                  e.currentTarget.style.border = '1px solid rgba(255,255,255,0.18)';
                 }
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.border = '1px solid transparent';
               }}
             >
               {isLoading ? (

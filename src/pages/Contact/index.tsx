@@ -274,11 +274,11 @@ export default function Contact() {
       {/* ── Ambient background ── */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-0">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] rounded-full"
-          style={{ background: 'radial-gradient(ellipse, rgba(37,99,235,0.08) 0%, transparent 70%)', filter: 'blur(80px)' }} />
+          style={{ background: 'radial-gradient(ellipse, rgba(37,99,235,0.08) 0%, transparent 70%)', opacity: 0 }} />
         <div className="absolute top-1/3 -left-40 w-96 h-96 rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+          style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.06) 0%, transparent 70%)', opacity: 0 }} />
         <div className="absolute bottom-1/4 -right-32 w-96 h-96 rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.06) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+          style={{ background: 'radial-gradient(circle, rgba(124,58,237,0.06) 0%, transparent 70%)', opacity: 0 }} />
       </div>
 
       {/* ── HERO ── */}

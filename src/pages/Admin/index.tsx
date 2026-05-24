@@ -354,7 +354,6 @@ export default function AdminPage() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
             className="lg:hidden fixed inset-0 z-40 bg-black/75"
-            style={{ backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
             onClick={() => setIsMobileSidebarOpen(false)}
           />
         )}
@@ -369,7 +368,7 @@ export default function AdminPage() {
             exit={{ x: -280 }}
             transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
             className="lg:hidden fixed top-0 left-0 h-screen z-50 w-64 flex flex-col"
-            style={{ boxShadow: '8px 0 40px rgba(0,0,0,0.8)' }}
+            style={{ borderRight: '1px solid rgba(255,255,255,0.08)' }}
           >
             <AdminSidebar
               activeTab={activeTab}
@@ -394,8 +393,6 @@ export default function AdminPage() {
           style={{
             background: 'rgba(4,12,24,0.97)',
             borderColor: 'rgba(59,130,246,0.1)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
           }}
         >
           <button
@@ -428,7 +425,6 @@ export default function AdminPage() {
           style={{
             background: 'rgba(4,12,24,0.7)',
             borderColor: 'rgba(59,130,246,0.07)',
-            backdropFilter: 'blur(8px)',
           }}
         >
           <div className="flex items-center gap-2">

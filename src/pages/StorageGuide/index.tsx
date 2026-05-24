@@ -439,7 +439,7 @@ export default function StorageGuide() {
               </p>
               <Link 
                 to="/products" 
-                className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-green-500/20"
+                className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-8 py-3.5 rounded-xl font-semibold transition-all duration-300 hover:border-green-400/40 border border-transparent"
               >
                 View All Products
                 <ChevronRight className="w-5 h-5" />
