@@ -111,15 +111,19 @@ async function testFirestoreRest() {
 async function testWorkerSsr() {
   try {
     const { status, body } = await fetchText(`${BASE}/products`);
+    // The /products loader emits an ItemList JSON-LD built from Firestore data.
+    // If Firestore REST worked in the Worker, the rendered HTML will contain
+    // both the schema marker and at least one /products/<slug> link.
     const ok =
       status === 200 &&
-      body.includes("data-product-card") &&
+      body.includes('"@type":"ItemList"') &&
       /\/products\/[a-z0-9-]+/i.test(body);
     record(
-      `Worker SSR /products renders product cards`,
+      `Worker SSR /products embeds ItemList from Firestore`,
       ok,
       `status=${status} bytes=${body.length}`,
     );
+
   } catch (e) {
     record("Worker SSR /products renders product cards", false, String(e));
   }
