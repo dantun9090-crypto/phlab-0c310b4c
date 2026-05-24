@@ -146,13 +146,20 @@ export default function AdminPage() {
     };
   }, []);
 
-  // IP whitelist check — runs once after auth confirms admin
+  // IP whitelist check — runs once after auth confirms admin. Enforcement
+  // happens server-side (Worker reads cf-connecting-ip); the client only
+  // renders the result. Fail closed on RPC errors.
   useEffect(() => {
     if (!authChecked || !isAdmin) return;
-    checkIpAllowed().then(allowed => {
-      setIpAllowed(allowed);
-      setIpChecked(true);
-    });
+    checkAdminIpAllowed()
+      .then((result) => {
+        setIpAllowed(result.allowed);
+        setIpChecked(true);
+      })
+      .catch(() => {
+        setIpAllowed(false);
+        setIpChecked(true);
+      });
   }, [authChecked, isAdmin]);
 
   if (!authChecked) {
