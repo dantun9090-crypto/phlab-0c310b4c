@@ -1,65 +1,56 @@
-## What's in the upload
+## Goal
 
-A ~214-file Vite + React 19 ecommerce/research-peptides app:
-- **Routing:** `react-router-dom` v7, pages under `src/pages/*/index.tsx` (Home, About, Account, Admin with ~20 tabs, Products, ProductDetail, Checkout, Payment, Calculator, Resources, Research, Login/Register, many policy pages, etc.)
-- **Backend:** Firebase (Firestore, Auth, Storage) is the primary data layer (`src/lib/firebase.ts` ≈ 39 KB); a thin `supabase.ts` stub also present
-- **Other heavy deps:** `@react-three/fiber` + `drei` + `three`, `framer-motion`, `@stripe/stripe-js`, `react-helmet-async`, `jszip`
-- **Custom infra in `main.tsx`:** CLS prevention, prerender.io readiness flag, dynamic GA/Plausible injection from Firestore, `ThemeProvider` context
+Move the admin IP whitelist check off the client so an authenticated admin can't bypass it in DevTools, and make it fail **closed** (not open) on errors when the guard is enabled.
 
-The current Lovable project is the empty TanStack Start template (file-routes under `src/routes/`, Tailwind v4, no Firebase, no Three.js, no Stripe, no React Router).
+## What changes
 
-## Why a full one-shot port isn't realistic
+### 1. New server function — `src/lib/admin-ip-gate.functions.ts`
 
-The two stacks differ in ways that touch nearly every file:
+A TanStack `createServerFn` that runs in the Cloudflare Worker:
 
-| Concern | Uploaded app | This template |
-|---|---|---|
-| Router | `react-router-dom` (`<Routes>`, `useNavigate`, `Link`, `useParams`) | TanStack Router (`createFileRoute`, typed `<Link to>`) |
-| Page location | `src/pages/Foo/index.tsx` | `src/routes/foo.tsx` (flat dot-separated) |
-| Head/SEO | `react-helmet-async` `<Helmet>` | `head()` option on each route |
-| Backend | Firebase (Firestore/Auth/Storage) | Lovable Cloud / Supabase (no Firebase available) |
-| CSS | Tailwind v3 + `tailwind.config.ts` + 44 KB `index.css` | Tailwind v4 via `@import` in `src/styles.css` |
-| Entry | custom `main.tsx` with CLS / prerender / analytics | `src/start.ts` + `__root.tsx` shell |
+- Reads the caller's IP from request headers, in this priority:
+  - `cf-connecting-ip` (Cloudflare — authoritative for our deploy)
+  - first entry of `x-forwarded-for`
+  - `x-real-ip`
+- Fetches `settings/ipWhitelist` and the `ipWhitelist` collection from Firestore via the REST API (same pattern already used in `cart-validation.functions.ts`).
+- Returns `{ allowed: boolean, ip: string | null, enforced: boolean, reason?: string }`.
 
-Almost every page imports `react-router-dom` and Firebase, so every page needs touch-ups. Doing all 30+ pages, the 20-tab Admin, Three.js scenes, Stripe checkout, Firestore data models, and the 44 KB stylesheet in one turn would almost certainly produce a broken build.
+Behaviour:
 
-## Recommended approach — phased port
+- If `settings/ipWhitelist.enabled !== true` → `allowed: true, enforced: false` (no change in behaviour for projects that haven't turned the guard on).
+- If enabled and Firestore reads succeed → match `ip` against entries (exact match + basic IPv4 CIDR, mirroring today's logic).
+- If enabled and we **cannot determine the IP** or Firestore is unreachable → `allowed: false` (fail closed). This fixes the current `catch { return true; }` fail-open bug called out in the finding.
 
-I'll do it in stages, verifying the build at each step. Please pick the scope below.
+The function does **not** verify the Firebase user identity — IP gating is independent of who you are. Identity is still enforced by the existing `isAdmin` check on `customers/{uid}`.
 
-### Phase 1 — Foundation (always)
-1. Install missing deps the template doesn't have: `framer-motion`, `lucide-react`, `clsx`, `tailwind-merge`, `tailwindcss-animate`, `@stripe/stripe-js`, `jszip`, `three`, `@react-three/fiber`, `@react-three/drei`. Skip `react-router-dom` and `react-helmet-async` (replaced by TanStack equivalents). Skip `firebase` initially — see Phase 3.
-2. Port the design system: translate `tailwind.config.ts` + the relevant tokens from the old `index.css` into `src/styles.css` (Tailwind v4 `@theme` + `oklch` tokens).
-3. Bring over presentational components that don't need routing or Firebase: `Logo`, `SocialIcons`, `ErrorBoundary`, `ScrollToTop`, `CookieConsent`, `MolecularBackground`, `AnimatedBackground`, `UnderConstruction`, `Layout`, `Navigation` (with `react-router-dom` → TanStack `<Link>` rewrite).
-4. Set up `__root.tsx` with the shared layout (Navigation + footer + Outlet) and port `ThemeContext`.
+### 2. Wire the server gate into `src/pages/Admin/index.tsx`
 
-### Phase 2 — Public pages
-Convert each `src/pages/<Name>/index.tsx` to `src/routes/<name>.tsx` with `createFileRoute` and a `head()` block, rewriting `useNavigate`/`Link`/`useParams` and `<Helmet>` calls. Pages I'd port in this phase:
-Home, About, Contact, Products, ProductDetail (`/products/$slug`), CategoryPage, Search, Calculator, Resources + ArticlePage, Research, LabReports, QualityControl, StorageGuide, LandingPage, VipStore, Privacy/PrivacyPolicy, Terms/TermsOfService, ShippingPolicy, RefundPolicy, CookiePolicy, NotFound.
+- Remove the local `checkIpAllowed()` function and the dynamic `firebase/firestore` import inside it.
+- Replace the `useEffect` that calls `checkIpAllowed()` with a call to the new server fn via `useServerFn`.
+- Keep the same `ipChecked` / `ipAllowed` state flow and the existing "Access Restricted" UI — only the source of truth changes.
+- Render nothing admin-related until the server responds; the existing loading spinner already covers this.
 
-### Phase 3 — Backend decisions (need your input)
-The uploaded app is deeply tied to Firebase. Options:
+### 3. Keep `IpWhitelistTab` as-is
 
-- **A. Keep Firebase as-is.** Add `firebase` package, port `src/lib/firebase.ts`, mark all Firebase calls as client-only (Firebase SDK doesn't run in the Cloudflare Worker SSR runtime — need `'use client'`-style guards / dynamic imports). Login/Register/Account/Admin/Checkout keep working against your existing Firebase project. **Fastest path to a working port.**
-- **B. Migrate to Lovable Cloud (Supabase).** Enable Lovable Cloud, recreate Firestore collections as tables with RLS, rewrite all `firebase.ts` calls. **Much larger effort — effectively a rebuild of the data layer.** Recommend only if you want to leave Firebase behind.
-- **C. Skip backend pages for now.** Port only the public/marketing pages in Phase 2 and stub Login/Register/Account/Admin/Checkout. Decide on backend later.
+The admin tab that manages whitelist entries (`src/pages/Admin/tabs/IpWhitelistTab.tsx`) still uses `api.ipify.org` and direct Firestore reads. That's fine — it's just a UI for showing "your current IP" and editing entries. The **enforcement** is what moves server-side.
 
-### Phase 4 — Auth-gated areas (depends on Phase 3)
-Login, Register, Account, Admin (20 tabs), Checkout, Payment. Admin alone is ~25 files and may need its own follow-up turn.
+### 4. Mark the security finding fixed
 
-## Technical notes
+After implementation, call `manage_security_finding` with `mark_as_fixed` for `agent_security:ip_whitelist_clientside`, explaining that enforcement moved to a Worker-side server function that reads `cf-connecting-ip` and fails closed.
 
-- `src/pages/Home/index.tsx` is 63 KB and `src/pages/Account/index.tsx` is 78 KB — they likely need to be split into smaller route + component files during the port (current files exceed comfortable single-file edits).
-- `react-helmet-async` is banned in this template — every `<Helmet>` becomes a `head()` entry on its route.
-- `tailwindcss-animate` and the v3 config style won't map 1:1 to Tailwind v4; I'll translate the tokens you actually use.
-- Three.js / R3F work fine in the browser but must be client-only (dynamic import or guard against SSR).
-- `react-router-dom` will NOT be installed — every `Link`, `NavLink`, `useNavigate`, `useParams`, `useLocation`, `Outlet` import is rewritten to `@tanstack/react-router`.
-- `main.tsx` customizations (CLS, prerender flag, GA/Plausible injection) move into `__root.tsx` inside a client-only effect.
+## What this fix does NOT do (important caveat)
 
-## What I need from you before I start
+This gate blocks the **Admin UI shell** from rendering for off-whitelist IPs. It does **not** prevent an attacker who already has admin Firebase credentials from talking to Firestore directly with the Firebase SDK from any IP — Firestore security rules see the user but not the request IP, and there's no Cloud Function proxy in this project. A complete fix would also require either:
 
-1. **Backend choice (Phase 3):** A (keep Firebase), B (migrate to Lovable Cloud), or C (skip auth pages for now)?
-2. **Scope of this first turn:** just Phase 1, Phase 1+2, or push through Phase 1+2+3 in one go (will take a while and may need follow-ups)?
-3. **Anything to drop?** Anything in the file list you do NOT want ported (e.g. specific Admin tabs, Three.js intro, calculator, VIP store)?
+- Tightening Firestore security rules + adding Firebase App Check, or
+- Routing admin writes through server functions that enforce IP there too.
 
-Once you answer I'll execute. If you'd rather I just dive in, I'll default to **Phase 1 + Phase 2 + Option A (keep Firebase)** and stop there for review.
+I'll flag this in the "mark as fixed" explanation so it's tracked, and we can do that as a follow-up if you want full data-layer enforcement.
+
+## Files touched
+
+- **Create** `src/lib/admin-ip-gate.functions.ts`
+- **Edit** `src/pages/Admin/index.tsx` (remove client check, call server fn)
+- No design/layout changes; admin shell, header, sidebar untouched.
+
+Ready to switch to build mode and apply this?
