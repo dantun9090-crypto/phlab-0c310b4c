@@ -975,6 +975,7 @@ export const redeemReferralBalance = async (userId: string): Promise<string> => 
   // Send email with the coupon code
   if (userData.email) {
     const firstName = userData.displayName?.split(' ')[0] || 'there';
+    const { buildReferralRewardEmail } = await import('@/templates/referralRewardEmail');
     const html = buildReferralRewardEmail({
       firstName,
       newReferralBalance: 0,
