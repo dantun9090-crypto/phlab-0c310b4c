@@ -105,6 +105,28 @@ for (const p of SAMPLE_PATHS) {
   check(label, "description", meta.description);
 }
 
+// ── 3. Sitemap canonical alignment ────────────────────────────────────────
+// Every <loc> the sitemap advertises must equal the canonical URL the splat
+// route emits for the same path. Otherwise crawlers see a sitemap URL and a
+// rel=canonical that disagree, which fragments indexing.
+const sitemapSrc = readFileSync(join(ROUTES_DIR, "sitemap[.]xml.ts"), "utf8");
+const sitemapPaths = Array.from(
+  sitemapSrc.matchAll(/\{\s*path:\s*"(\/[^"]*)"/g),
+  (m) => m[1],
+);
+
+const mismatches: { path: string; loc: string; canonical: string }[] = [];
+for (const p of sitemapPaths) {
+  const loc = `${SITE_URL}${p}`;
+  // Strip the leading slash to feed the splat-style input to canonicalUrl().
+  const canonical = canonicalUrl(p.replace(/^\//, ""));
+  if (loc !== canonical) {
+    mismatches.push({ path: p, loc, canonical });
+  }
+}
+
+
+
 // ── Report ────────────────────────────────────────────────────────────────
 if (violations.length === 0) {
   console.log(
