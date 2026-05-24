@@ -38,6 +38,10 @@ export const Route = createFileRoute("/products")({
       meta: [
         { title: TITLE },
         { name: "description", content: DESCRIPTION },
+        // Tell prerender.io to wait for window.prerenderReady = true
+        // before capturing the DOM (set by Products page after Firestore load).
+        { name: "prerender-ready", content: "false" },
+        { name: "fragment", content: "!" },
         { property: "og:title", content: TITLE },
         { property: "og:description", content: DESCRIPTION },
         { property: "og:type", content: "website" },
