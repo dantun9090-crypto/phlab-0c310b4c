@@ -24,7 +24,7 @@ export function Logo({ className = '', size = 'md' }: LogoProps) {
       alt="Pro Health Peptides Logo"
       width={width}
       height={height}
-      className={`${sizeClasses[size]} ${className} header-logo`}
+      className={`${sizeClasses[size]} ${className}`}
       style={{ objectFit: 'contain' }}
       loading="eager"
     />
