@@ -381,9 +381,11 @@ export default function CheckoutPage() {
       const now = Timestamp.now();
 
       // Build items from cart but OVERWRITE price + total with server-validated values.
-      const serverPriceById = new Map(
-        serverItems.map(s => [`${s.productId}::${s.variantId ?? ''}`, s] as const),
-      );
+      const serverPriceById = new Map<string, typeof serverItems[number]>();
+      for (const s of serverItems) {
+        serverPriceById.set(`${s.productId}::${s.variantId ?? ''}`, s);
+      }
+
 
       const orderData = {
         orderId,
