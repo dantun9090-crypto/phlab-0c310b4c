@@ -287,13 +287,13 @@ export function Layout({ children }: LayoutProps) {
       .filter(p => p.name?.toLowerCase().includes(q))
       .slice(0, 4)
       .map(p => ({ type: 'product' as const, label: p.name, href: `/products/${p.slug || p.name?.toLowerCase().replace(/\s+/g, '-')}` }));
-    const artSuggs = articles
+    const artSuggs = searchArticles
       .filter(a => a.title.toLowerCase().includes(q) || a.subtitle?.toLowerCase().includes(q))
       .slice(0, 3)
       .map(a => ({ type: 'article' as const, label: a.title, href: `/resources/${a.slug}` }));
     setSuggestions([...prodSuggs, ...artSuggs].slice(0, 6));
     setActiveSuggestion(-1);
-  }, [searchQuery, searchProducts]);
+  }, [searchQuery, searchProducts, searchArticles]);
 
   // Scroll detection for nav style change
   useEffect(() => {
