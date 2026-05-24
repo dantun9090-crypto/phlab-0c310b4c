@@ -199,18 +199,6 @@ export default function Products() {
       };
       requestAnimationFrame(check);
     };
-          (window as any).prerenderReady = true;
-          return;
-        }
-        if (Date.now() - start > MAX_WAIT_MS) {
-          // Fallback so we never block prerender indefinitely
-          (window as any).prerenderReady = true;
-          return;
-        }
-        requestAnimationFrame(check);
-      };
-      requestAnimationFrame(check);
-    };
 
     const unsub = subscribeToProducts(
       (products) => {
