@@ -20,16 +20,16 @@ export const Route = createFileRoute("/$")({
 
     return {
       meta: [
-        { title },
-        { name: "description", content: description },
-        { property: "og:title", content: title },
-        { property: "og:description", content: description },
-        { property: "og:type", content: pageMeta.ogType },
-        { property: "og:url", content: url },
-        { property: "og:image", content: OG_IMAGE },
-        { name: "twitter:title", content: title },
-        { name: "twitter:description", content: description },
-        { name: "twitter:image", content: OG_IMAGE },
+        { key: "title", title },
+        { key: "description", name: "description", content: description },
+        { key: "og:title", property: "og:title", content: title },
+        { key: "og:description", property: "og:description", content: description },
+        { key: "og:type", property: "og:type", content: pageMeta.ogType },
+        { key: "og:url", property: "og:url", content: url },
+        { key: "og:image", property: "og:image", content: OG_IMAGE },
+        { key: "twitter:title", name: "twitter:title", content: title },
+        { key: "twitter:description", name: "twitter:description", content: description },
+        { key: "twitter:image", name: "twitter:image", content: OG_IMAGE },
       ],
       links: [{ rel: "canonical", href: url }],
     };
