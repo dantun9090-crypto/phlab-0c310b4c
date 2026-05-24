@@ -162,6 +162,9 @@ function ProductCard({ product, query }: { product: Product; query: string }) {
             src={imgUrl}
             alt={product.name}
             loading="lazy"
+            decoding="async"
+            width="240"
+            height="144"
             className="w-full h-full object-contain p-3 transition-transform duration-500 group-hover:scale-105"
           />
         ) : (

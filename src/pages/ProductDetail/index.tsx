@@ -1637,6 +1637,9 @@ export default function ProductDetail() {
                         src={rpImg}
                         alt={rp.name}
                         loading="lazy"
+                        decoding="async"
+                        width="240"
+                        height="240"
                         className="w-full h-full object-contain p-3 group-hover:scale-110 transition-transform duration-500"
                       />
                     </div>
