@@ -67,7 +67,7 @@ const initAppCheck = () => {
   if (appCheckInitialised) return;
   try {
     initializeAppCheck(app, {
-      provider: new ReCaptchaEnterpriseProvider('6Le_T5UsAAAAAGwDL-39uolQXR_F8K486p6uZk2u'),
+      provider: new ReCaptchaEnterpriseProvider('6LfOsvksAAAAAHfxMJ_DFedEq55DjUafI2w-Urq0'),
       isTokenAutoRefreshEnabled: true,
     });
     appCheckInitialised = true;
