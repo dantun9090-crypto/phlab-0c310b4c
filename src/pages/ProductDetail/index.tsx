@@ -295,6 +295,7 @@ export default function ProductDetail() {
         console.error('Failed to load product:', error);
       } finally {
         setLoading(false);
+        if (typeof window !== 'undefined') (window as any).prerenderReady = true;
       }
     };
     loadProduct();
