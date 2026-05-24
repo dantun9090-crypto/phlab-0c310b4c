@@ -901,32 +901,33 @@ footer {
   .h-screen      { height: 100dvh !important; }
 }
 
-/* 2. -webkit-backdrop-filter — Safari requires vendor prefix */
+  /* 2. Disable backdrop-filter globally — Firefox Android performance */
 [class*="backdrop-blur"] {
-  -webkit-backdrop-filter: var(--tw-backdrop-blur, blur(8px)) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
-  backdrop-filter: var(--tw-backdrop-blur, blur(8px)) var(--tw-backdrop-brightness, ) var(--tw-backdrop-contrast, ) var(--tw-backdrop-grayscale, ) var(--tw-backdrop-hue-rotate, ) var(--tw-backdrop-invert, ) var(--tw-backdrop-opacity, ) var(--tw-backdrop-saturate, ) var(--tw-backdrop-sepia, );
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
-/* ── Firefox / mobile perf — disable backdrop-filter and decorative blurs on small screens.
-   backdrop-filter and filter:blur() re-sample the layer below on every frame, which
-   tanks Firefox Android (Chrome handles it but FF blocks the main thread). Desktop
-   visuals are unchanged. */
-@media (max-width: 767px) {
+/* ── Firefox / mobile perf — disable blur filters and decorative blur utilities.
+   These force Gecko to re-sample pixels under animated/fixed layers. */
   [class*="backdrop-blur"] {
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
   }
-  /* Decorative glow orbs — these are absolutely-positioned background blobs
-     using Tailwind's blur-2xl / blur-3xl / blur-[Npx]. Hiding them on mobile
-     removes the GPU cost without affecting layout (they're pointer-events:none). */
+  [class*="blur-sm"],
+  [class*="blur-md"],
+  [class*="blur-lg"],
+  [class*="blur-xl"],
   [class*="blur-2xl"][class*="absolute"],
   [class*="blur-3xl"][class*="absolute"],
+  [class*="blur-[40px]"][class*="absolute"],
+  [class*="blur-[60px]"][class*="absolute"],
+  [class*="blur-[80px]"][class*="absolute"],
   [class*="blur-[100px]"][class*="absolute"],
   [class*="blur-[120px]"][class*="absolute"] {
-    display: none !important;
+    filter: none !important;
+    --tw-blur: ;
   }
   .hero-orb { filter: none !important; opacity: 0 !important; }
-}
 
 /* 3. Momentum scroll for iOS */
 .overflow-y-auto,
