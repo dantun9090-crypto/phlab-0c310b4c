@@ -10,6 +10,11 @@ const AnimatedBackground = lazy(() =>
 );
 import { dispatchAddToCart, CartItem } from '@/components/Layout';
 import { auth, db, subscribeToProducts, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
+import {
+  markPrerenderPending,
+  markPrerenderReady,
+  flipPrerenderReadyWhenRendered,
+} from '@/lib/prerender-ready';
 import { ProductEditor } from '@/components/ProductEditor';
 import { ProductCard } from '@/components/ProductCard';
 import type { Product } from '@/lib/firebase';
