@@ -122,21 +122,22 @@ export default function SEOTab() {
   const saveToken = async () => {
     if (!prerenderToken.trim()) return;
     setTokenSaving(true);
-    // Always save to localStorage first (works even if Firestore fails)
-    localStorage.setItem('php_prerender_token', prerenderToken.trim());
+    // Store ONLY in localStorage — never write to Firestore. The `settings` collection
+    // is publicly readable, so persisting the Prerender.io API token there would expose
+    // it to any visitor. localStorage keeps it on the admin's device only.
     try {
-      await setDoc(doc(db, 'settings', 'prerenderio'), { token: prerenderToken.trim() }, { merge: true });
+      localStorage.setItem('php_prerender_token', prerenderToken.trim());
+      // Clean up any previously-stored token in Firestore (best-effort).
+      try {
+        await setDoc(doc(db, 'settings', 'prerenderio'), { token: '' }, { merge: true });
+      } catch { /* ignore */ }
       setTokenSaved(true);
       setTimeout(() => setTokenSaved(false), 3000);
-    } catch {
-      // localStorage already saved — still usable
-      setTokenSaved(true);
-      setTimeout(() => setTokenSaved(false), 3000);
-      addLog('info', 'Token saved locally (Firestore unavailable)');
     } finally {
       setTokenSaving(false);
     }
   };
+
 
   const BASE = 'https://www.prohealthpeptides.co.uk';
 
