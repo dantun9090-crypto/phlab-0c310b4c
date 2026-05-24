@@ -452,15 +452,12 @@ body.modal-open {
       0 2px 16px rgba(0,0,0,0.65),
       0 0 0 0.5px rgba(255,255,255,0.03),
       inset 0 1px 0 rgba(255,255,255,0.04);
-    transition: border-color 0.35s var(--ease-luxury), box-shadow 0.4s var(--ease-luxury), transform 0.3s var(--ease-luxury);
+    transition: border-color 0.35s var(--ease-luxury), outline-color 0.35s var(--ease-luxury), transform 0.3s var(--ease-luxury);
+    outline: 1px solid transparent;
   }
   .card-luxury:hover {
     border-color: rgba(56,182,255,0.16);
-    box-shadow:
-      0 20px 60px rgba(0,0,0,0.75),
-      0 0 50px rgba(37,99,235,0.10),
-      0 0 0 0.5px rgba(56,182,255,0.08),
-      inset 0 1px 0 rgba(255,255,255,0.06);
+    outline-color: rgba(56,182,255,0.08);
     transform: translateY(-3px);
   }
 
@@ -665,7 +662,7 @@ body.modal-open {
 
   /* Purity badge — animated glow */
   .purity-badge {
-    animation: purityGlow 3s ease-in-out infinite;
+    border-color: rgba(34,197,94,0.22);
   }
 
   /* COA button gradient shimmer */
@@ -727,11 +724,7 @@ body.modal-open {
     100% { background-position: 200% center; }
   }
 
-  /* Purity badge pulse glow */
-  @keyframes purityGlow {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
-    50%       { box-shadow: 0 0 8px 1px rgba(34,197,94,0.18); }
-  }
+  /* Purity badge pulse removed — animated box-shadow repaints in Firefox */
 
   /* Luxury entrance animations */
   .animate-slide-in-left  { animation: slideInLeft  0.7s cubic-bezier(0.16,1,0.3,1) both; }
@@ -748,8 +741,8 @@ body.modal-open {
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes borderGlowPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0); border-color: rgba(255,255,255,0.08); }
-  50%       { box-shadow: 0 0 20px rgba(37,99,235,0.25), 0 0 40px rgba(56,182,255,0.1); border-color: rgba(96,165,250,0.35); }
+  0%, 100% { outline-color: transparent; border-color: rgba(255,255,255,0.08); }
+  50%       { outline-color: rgba(96,165,250,0.18); border-color: rgba(96,165,250,0.35); }
 }
 @keyframes slideInLeft {
   from { opacity: 0; transform: translateX(-32px); }
