@@ -10,6 +10,11 @@ const AnimatedBackground = lazy(() =>
 );
 import { dispatchAddToCart, CartItem } from '@/components/Layout';
 import { auth, db, subscribeToProducts, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
+import {
+  markPrerenderPending,
+  markPrerenderReady,
+  flipPrerenderReadyWhenRendered,
+} from '@/lib/prerender-ready';
 import { ProductEditor } from '@/components/ProductEditor';
 import { ProductCard } from '@/components/ProductCard';
 import type { Product } from '@/lib/firebase';
@@ -175,34 +180,7 @@ export default function Products() {
     setFirestoreError(false);
     setSlowLoad(false);
     const slowTimer = setTimeout(() => setSlowLoad(true), 4000);
-    if (typeof window !== 'undefined') (window as any).prerenderReady = false;
-
-    // Only flip prerenderReady once real ProductCard markup is in the DOM.
-    // We match the [data-product-card] attribute rendered by <ProductCard /> —
-    // this excludes nav links and the SSR-only crawler-visible catalogue block.
-    const signalWhenRendered = (expectedCount: number) => {
-      if (typeof window === 'undefined') return;
-      // Zero-product case: no cards will ever appear. Wait one frame so the
-      // empty-state markup commits, then flip prerenderReady immediately.
-      if (expectedCount === 0) {
-        requestAnimationFrame(() => {
-          (window as any).prerenderReady = true;
-        });
-        return;
-      }
-      const start = Date.now();
-      const MAX_WAIT_MS = 8000;
-      const target = Math.min(expectedCount, 3);
-      const check = () => {
-        const cards = document.querySelectorAll('[data-product-card]');
-        if (cards.length >= target || Date.now() - start > MAX_WAIT_MS) {
-          (window as any).prerenderReady = true;
-          return;
-        }
-        requestAnimationFrame(check);
-      };
-      requestAnimationFrame(check);
-    };
+    markPrerenderPending();
 
     const unsub = subscribeToProducts(
       (products) => {
@@ -213,14 +191,17 @@ export default function Products() {
           .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
         setAllProducts(visible);
         setLoading(false);
-        signalWhenRendered(visible.length);
+        // Flip prerenderReady only once real ProductCard markup is in the DOM.
+        // Matches the [data-product-card] attribute set by <ProductCard /> —
+        // excludes nav links and the SSR-only crawler catalogue block.
+        flipPrerenderReadyWhenRendered('[data-product-card]', visible.length);
       },
       () => {
         clearTimeout(slowTimer);
         setSlowLoad(false);
         setFirestoreError(true);
         setLoading(false);
-        if (typeof window !== 'undefined') (window as any).prerenderReady = true;
+        markPrerenderReady();
       }
     );
     return () => { unsub(); clearTimeout(slowTimer); };
