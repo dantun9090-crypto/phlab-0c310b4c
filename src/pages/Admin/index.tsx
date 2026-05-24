@@ -33,32 +33,11 @@ import PromoCodesTab from './tabs/PromoCodesTab';
 
 type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes';
 
-async function checkIpAllowed(): Promise<boolean> {
-  try {
-    const cfgSnap = await getDoc(doc(db, 'settings', 'ipWhitelist'));
-    if (!cfgSnap.exists() || cfgSnap.data()?.enabled !== true) return true; // guard disabled
-    const res = await fetch('https://api.ipify.org?format=json');
-    const { ip } = await res.json();
-    if (!ip) return true;
-    const { getDocs, collection } = await import('firebase/firestore');
-    const snap = await getDocs(collection(db, 'ipWhitelist'));
-    const allowed = snap.docs.map(d => d.data().ip as string);
-    return allowed.some(entry => {
-      if (entry.includes('/')) {
-        // basic CIDR check
-        try {
-          const [range, bits] = entry.split('/');
-          const mask = ~((1 << (32 - parseInt(bits))) - 1);
-          const toInt = (s: string) => s.split('.').reduce((acc, o) => (acc << 8) + parseInt(o), 0);
-          return (toInt(ip) & mask) === (toInt(range) & mask);
-        } catch { return false; }
-      }
-      return entry === ip;
-    });
-  } catch {
-    return true; // fail open — don't lock out admin if Firestore is unreachable
-  }
-}
+// IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
+// (a TanStack server function running in the Cloudflare Worker). The Worker
+// reads cf-connecting-ip from the request — the client cannot forge it from
+// JS, and the server fails closed if the whitelist is enabled but unreadable.
+
 
 // Per-tab error boundary — crashes one tab without killing the whole Admin
 class TabErrorBoundary extends Component<{ children: ReactNode; }, { hasError: boolean; error?: Error }> {
