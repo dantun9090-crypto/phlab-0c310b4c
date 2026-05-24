@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, lazy, Suspense } from "react";
-import { SEO_LIMITS, SITE_URL, clamp, metaForPath } from "@/lib/seo-meta";
+import { SEO_LIMITS, SITE_URL, canonicalUrl, clamp, metaForPath } from "@/lib/seo-meta";
 
 const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
