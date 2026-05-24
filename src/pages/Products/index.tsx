@@ -150,6 +150,52 @@ export default function Products() {
     desc.setAttribute('content', info.intro.slice(0, 158));
   }, [activeCategory]);
 
+  // Structured data: CollectionPage + ItemList of visible products
+  useEffect(() => {
+    const info = CATEGORY_INTROS[activeCategory] ?? CATEGORY_INTROS.all;
+    const baseUrl = 'https://www.prohealthpeptides.co.uk';
+    const pageUrl = activeCategory === 'all'
+      ? `${baseUrl}/products`
+      : `${baseUrl}/products?category=${activeCategory}`;
+
+    const items = filteredProducts.slice(0, 30).map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `${baseUrl}/product/${nameToSlug(p.name ?? '')}`,
+      name: p.name,
+      image: p.imageUrl,
+    }));
+
+    const schema = [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: info.h1,
+        description: info.intro,
+        url: pageUrl,
+        inLanguage: 'en-GB',
+        isPartOf: { '@type': 'WebSite', name: 'Pro Health Peptides', url: baseUrl },
+      },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        name: info.h1,
+        numberOfItems: items.length,
+        itemListElement: items,
+      },
+    ];
+
+    document.getElementById('products-schema')?.remove();
+    if (items.length === 0) return;
+    const el = document.createElement('script');
+    el.type = 'application/ld+json';
+    el.id = 'products-schema';
+    el.textContent = JSON.stringify(schema);
+    document.head.appendChild(el);
+    return () => { document.getElementById('products-schema')?.remove(); };
+  }, [activeCategory, filteredProducts]);
+
+
   // Cart sync
   useEffect(() => {
     const loadCart = () => {
