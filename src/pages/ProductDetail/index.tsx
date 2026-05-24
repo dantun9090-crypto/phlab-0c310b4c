@@ -1300,6 +1300,20 @@ export default function ProductDetail() {
                 <span className="text-5xl font-bold text-[#f0f6ff] tracking-tight">£{variantPrice.toFixed(2)}</span>
                 <span className="text-[#3a5a82] text-sm font-medium">per vial</span>
               </div>
+
+              {/* ── Trust signals row ── */}
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-[11px] font-semibold">
+                  <Microscope className="w-3 h-3" /> HPLC-verified ≥98%
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/25 text-blue-300 text-[11px] font-semibold">
+                  <FileText className="w-3 h-3" /> COA per batch
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 text-[11px] font-semibold">
+                  <Truck className="w-3 h-3" /> Same-day UK dispatch · order by 2pm
+                </span>
+              </div>
+
               {!isOutOfStock && variant && variant.stock <= 10 && variant.stock > 0 && (
                 <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
                   <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
