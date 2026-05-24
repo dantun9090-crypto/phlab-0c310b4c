@@ -12,8 +12,9 @@ export const Route = createFileRoute("/$")({
   head: ({ params }) => {
     const splat = (params as { _splat?: string })._splat ?? "";
     const pageMeta = metaForPath(splat);
-    const title = clamp(pageMeta.title, 60);
-    const description = clamp(pageMeta.description, 160);
+    const title = clamp(pageMeta.title, SEO_LIMITS.titleMax);
+    const description = clamp(pageMeta.description, SEO_LIMITS.descriptionMax);
+
     const url = `${SITE_URL}/${splat.replace(/^\/+/, "")}`;
     return {
       meta: [
