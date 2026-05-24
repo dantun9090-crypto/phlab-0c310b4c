@@ -12,8 +12,10 @@ import {
   onAuthStateChanged, FirebaseUser, registerUser
 } from '@/lib/firebase';
 import type { Coupon } from '@/lib/firebase';
+import { validateCartPrices } from '@/lib/cart-validation.functions';
 import { buildProfessionalInvoiceEmail } from '@/templates/professionalInvoiceEmail';
 import type { CartItem } from '@/components/Layout';
+
 
 interface CheckoutForm {
   firstName: string;
