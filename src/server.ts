@@ -70,13 +70,49 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const start = Date.now();
+    const url = new URL(request.url);
+    const ip = extractClientIp(request);
+    const ray = request.headers.get("cf-ray");
+    const country = request.headers.get("cf-ipcountry");
+    const ua = truncate(request.headers.get("user-agent"));
+    const referer = truncate(request.headers.get("referer"));
+    const baseFields = {
+      method: request.method,
+      path: url.pathname,
+      query: url.search || undefined,
+      ip,
+      country,
+      ua,
+      referer,
+      cfRay: ray,
+    };
+
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalized = await normalizeCatastrophicSsrResponse(response);
+      const ms = Date.now() - start;
+      log.info({
+        event: "worker.request",
+        status: normalized.status,
+        ms,
+        ...baseFields,
+      });
+      return normalized;
     } catch (error) {
+      const ms = Date.now() - start;
+      log.error({
+        event: "worker.request.error",
+        status: 500,
+        ms,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        ...baseFields,
+      });
       console.error(error);
       return brandedErrorResponse();
     }
   },
 };
+
