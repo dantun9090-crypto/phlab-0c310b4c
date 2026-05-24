@@ -38,6 +38,9 @@ export default function RecentlyViewedProducts({ items, currentProductId, varian
                     src={getProductImage(item.name, item.imageUrl)}
                     alt={item.name}
                     loading="lazy"
+                    decoding="async"
+                    width="40"
+                    height="40"
                     className="w-full h-full object-cover"
                   />
                 </div>
