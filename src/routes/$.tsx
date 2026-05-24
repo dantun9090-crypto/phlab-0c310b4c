@@ -148,26 +148,33 @@ function metaForPath(splat: string): PageMeta {
 
 }
 
+const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
+
 export const Route = createFileRoute("/$")({
   ssr: false,
   head: ({ params }) => {
     const splat = (params as { _splat?: string })._splat ?? "";
     const pageMeta = metaForPath(splat);
+    const title = clamp(pageMeta.title, 60);
+    const description = clamp(pageMeta.description, 160);
     const url = `${SITE_URL}/${splat.replace(/^\/+/, "")}`;
     return {
       meta: [
-        { title: pageMeta.title },
-        { name: "description", content: pageMeta.description },
-        { property: "og:title", content: pageMeta.title },
-        { property: "og:description", content: pageMeta.description },
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
         { property: "og:type", content: pageMeta.ogType },
         { property: "og:url", content: url },
-        { name: "twitter:title", content: pageMeta.title },
-        { name: "twitter:description", content: pageMeta.description },
+        { property: "og:image", content: OG_IMAGE },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        { name: "twitter:image", content: OG_IMAGE },
       ],
       links: [{ rel: "canonical", href: url }],
     };
   },
+
   component: LegacyMount,
 });
 
