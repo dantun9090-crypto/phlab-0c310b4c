@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { articles } from "@/pages/Resources/data/articles";
+import { fetchAllProducts } from "@/lib/firestore-rest";
 
 const BASE_URL = "https://www.prohealthpeptides.co.uk";
 
@@ -38,9 +39,22 @@ export const Route = createFileRoute("/sitemap.xml")({
           priority: "0.6",
         }));
 
+        // Dynamic product entries — one URL per active product
+        let productEntries: SitemapEntry[] = [];
+        try {
+          const products = await fetchAllProducts();
+          productEntries = products.map((p) => ({
+            path: `/products/${p.slug}`,
+            changefreq: "weekly",
+            priority: "0.8",
+          }));
+        } catch {
+          productEntries = [];
+        }
+
         // Dedupe by path to guarantee each URL appears exactly once
         const seen = new Set<string>();
-        const entries = [...staticEntries, ...articleEntries].filter((e) => {
+        const entries = [...staticEntries, ...productEntries, ...articleEntries].filter((e) => {
           if (seen.has(e.path)) return false;
           seen.add(e.path);
           return true;
