@@ -55,8 +55,8 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 // App Check — reCAPTCHA Enterprise provider
-// Debug token for sandbox/dev environments
-if (typeof self !== 'undefined') {
+// Debug token only injected in DEV builds — never shipped to production users.
+if (import.meta.env.DEV && typeof self !== 'undefined') {
   (self as any).FIREBASE_APPCHECK_DEBUG_TOKEN = '5D028939-E89D-41E9-8391-741947BCD274';
 }
 

@@ -138,7 +138,9 @@ export const router = createBrowserRouter([
     element: (
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
-          <Admin />
+          <RequireAuth>
+            <Admin />
+          </RequireAuth>
         </Suspense>
       </ErrorBoundary>
     ),
