@@ -57,6 +57,7 @@ export const Route = createFileRoute("/products")({
     };
   },
   component: ProductsRoute,
+  errorComponent: () => <LegacyMount />,
 });
 
 function ProductsRoute() {
