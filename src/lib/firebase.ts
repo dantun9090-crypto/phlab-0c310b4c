@@ -627,10 +627,34 @@ function normaliseProduct(id: string, data: any): Product {
   };
 }
 
+const PRODUCTS_CACHE_KEY = 'php_products_cache_v1';
+const PRODUCTS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export const getAllProducts = async (): Promise<Product[]> => {
+  // Serve from localStorage cache when fresh — avoids repeated Firestore reads
   try {
-    const snap = await getDocs(collection(db, PRODUCTS_COL));
-    return snap.docs.map((d) => normaliseProduct(d.id, d.data()));
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem(PRODUCTS_CACHE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { ts: number; products: Product[] };
+        if (parsed && Date.now() - parsed.ts < PRODUCTS_CACHE_TTL && Array.isArray(parsed.products)) {
+          return parsed.products;
+        }
+      }
+    }
+  } catch { /* ignore cache errors */ }
+
+  try {
+    // Cap at 50 products to keep payload small
+    const q = query(collection(db, PRODUCTS_COL), limit(50));
+    const snap = await getDocs(q);
+    const products = snap.docs.map((d) => normaliseProduct(d.id, d.data()));
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify({ ts: Date.now(), products }));
+      }
+    } catch { /* ignore quota errors */ }
+    return products;
   } catch (e) {
     console.warn('getAllProducts error:', e);
     return [];
