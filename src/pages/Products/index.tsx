@@ -176,17 +176,41 @@ export default function Products() {
     setSlowLoad(false);
     const slowTimer = setTimeout(() => setSlowLoad(true), 4000);
     if (typeof window !== 'undefined') (window as any).prerenderReady = false;
+
+    // Only flip prerenderReady once product markup is actually in the DOM.
+    // Crawlers must see real <a href="/products/..."> nodes before snapshotting.
+    const signalWhenRendered = (expectedCount: number) => {
+      if (typeof window === 'undefined') return;
+      const start = Date.now();
+      const MAX_WAIT_MS = 8000;
+      const check = () => {
+        const nodes = document.querySelectorAll(
+          '[data-product-card], a[href^="/products/"]'
+        );
+        if (nodes.length > 0 && (expectedCount === 0 || nodes.length >= Math.min(expectedCount, 3))) {
+          (window as any).prerenderReady = true;
+          return;
+        }
+        if (Date.now() - start > MAX_WAIT_MS) {
+          // Fallback so we never block prerender indefinitely
+          (window as any).prerenderReady = true;
+          return;
+        }
+        requestAnimationFrame(check);
+      };
+      requestAnimationFrame(check);
+    };
+
     const unsub = subscribeToProducts(
       (products) => {
         clearTimeout(slowTimer);
         setSlowLoad(false);
-        setAllProducts(
-          products
-            .filter(p => p.isActive !== false && p.visibility !== 'hidden')
-            .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999))
-        );
+        const visible = products
+          .filter(p => p.isActive !== false && p.visibility !== 'hidden')
+          .sort((a, b) => (a.displayOrder ?? 999) - (b.displayOrder ?? 999));
+        setAllProducts(visible);
         setLoading(false);
-        if (typeof window !== 'undefined') (window as any).prerenderReady = true;
+        signalWhenRendered(visible.length);
       },
       () => {
         clearTimeout(slowTimer);
