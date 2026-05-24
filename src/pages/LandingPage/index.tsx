@@ -154,7 +154,7 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="page-hero relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-blue-950/60 via-transparent to-transparent" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-700/8 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-700/8 rounded-full" />
         <div className="container mx-auto px-6 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
             {data.heroBadge && (

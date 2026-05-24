@@ -34,7 +34,7 @@ const StatCard = ({
     className="relative overflow-hidden bg-gradient-to-b from-[#0d1f38] to-[#091528] border border-white/[0.08] rounded-2xl p-5 flex flex-col gap-3 hover:border-white/[0.16] transition-all duration-300 hover:shadow-[0_12px_40px_rgba(0,0,0,0.6)] group"
   >
     <div className={`absolute top-0 left-0 right-0 h-px ${accent} opacity-70`} />
-    <div className={`absolute -top-8 -right-8 w-28 h-28 rounded-full blur-3xl opacity-0 group-hover:opacity-15 transition-opacity duration-500 ${glowColor || 'bg-blue-400'}`} />
+    <div className={`absolute -top-8 -right-8 w-28 h-28 rounded-full opacity-0 group-hover:opacity-15 transition-opacity duration-500 ${glowColor || 'bg-blue-400'}`} />
     <div className="flex items-start justify-between relative z-10">
       <p className="text-[#4a6a8a] text-[11px] font-semibold uppercase tracking-widest">{title}</p>
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${accent} shadow-[0_4px_16px_rgba(0,0,0,0.4)]`}>

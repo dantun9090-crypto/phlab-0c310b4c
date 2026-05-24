@@ -21,8 +21,8 @@ export default function NotFoundPage() {
   return (
     <section id="not-found" className="flex flex-col items-center justify-center min-h-screen bg-[#060f1e] px-6 py-20">
       {/* Ambient glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-blue-600/[0.06] rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[200px] bg-emerald-600/[0.04] rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-blue-600/[0.06] rounded-full pointer-events-none" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[200px] bg-emerald-600/[0.04] rounded-full pointer-events-none" />
 
       <div className="relative text-center max-w-2xl mx-auto space-y-8">
         {/* 404 badge */}

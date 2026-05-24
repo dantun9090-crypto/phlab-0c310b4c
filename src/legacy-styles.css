@@ -401,10 +401,7 @@ body.modal-open {
   .hero-orb:nth-child(2n) { animation-delay: -3s; animation-duration: 10s; }
   .hero-orb:nth-child(3n) { animation-delay: -6s; animation-duration: 12s; }
   /* Only promote to own layer on desktop — saves mobile GPU memory */
-  @media (min-width: 768px) {
-    .hero-orb { will-change: transform; }
-  }
-
+  
   /* Scan-line sweep — luxury CRT detail */
   .hero-scanline::after {
     content: '';
@@ -649,7 +646,6 @@ body.modal-open {
   @media (min-width: 768px) {
     .molecular-bg svg {
       animation: moleculeDrift 22s ease-in-out infinite;
-      will-change: transform;
     }
     .molecular-bg circle {
       animation: moleculePulse 4s ease-in-out infinite;

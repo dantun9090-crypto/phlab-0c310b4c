@@ -390,8 +390,8 @@ export default function AccountPage() {
   return (
     <div className="min-h-screen bg-[#060f1e] pt-24 pb-20 relative overflow-hidden">
       {/* Ambient background */}
-      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-blue-600/[0.04] blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-violet-600/[0.04] blur-[100px] pointer-events-none" />
+      <div className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full bg-blue-600/[0.04] pointer-events-none" />
+      <div className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full bg-violet-600/[0.04] pointer-events-none" />
 
       <div className="container mx-auto px-4 sm:px-6 max-w-5xl relative">
 
@@ -460,7 +460,7 @@ export default function AccountPage() {
             <div className={`${cardBase} p-6 overflow-hidden`}>
               {/* Top glow accent */}
               <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
-              <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl" />
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-24 h-24 bg-blue-500/10 rounded-full" />
 
               <div className="flex flex-col items-center text-center relative">
                 {/* Avatar */}

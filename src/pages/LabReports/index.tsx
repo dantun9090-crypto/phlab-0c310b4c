@@ -185,11 +185,11 @@ export default function LabReports() {
         {/* Background layers */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-950/50 via-[#060f1e] to-[#060f1e]" />
         <div
-          className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full blur-[120px] transition-all duration-1000"
+          className="absolute top-0 left-1/4 w-[600px] h-[600px] rounded-full transition-all duration-1000"
           style={{ background: 'radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%)', opacity: heroVisible ? 1 : 0 }}
         />
         <div
-          className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full blur-[100px] transition-all duration-1200 delay-300"
+          className="absolute bottom-0 right-1/4 w-[400px] h-[400px] rounded-full transition-all duration-1200 delay-300"
           style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)', opacity: heroVisible ? 1 : 0 }}
         />
 

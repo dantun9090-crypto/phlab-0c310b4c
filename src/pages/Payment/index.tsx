@@ -100,7 +100,7 @@ export default function PaymentPage() {
           {/* Bank Transfer Fallback */}
           {showBankFallback ? (
             <div
-              className="p-6 rounded-[20px] shadow-2xl"
+              className="p-6 rounded-[20px] border border-white/10"
               style={{
                 background: 'linear-gradient(135deg, #0b1a30 0%, #0d1f38 100%)',
                 border: '1px solid rgba(16, 185, 129, 0.3)',
@@ -164,7 +164,7 @@ export default function PaymentPage() {
 
           /* Payment Container */
           <div
-            className="p-6 rounded-[20px] shadow-2xl"
+            className="p-6 rounded-[20px] border border-white/10"
             style={{
               background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)',
               border: '1px solid rgba(233, 69, 96, 0.2)',
