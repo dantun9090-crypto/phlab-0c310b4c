@@ -257,6 +257,17 @@ export function Layout({ children }: LayoutProps) {
     return () => unsub?.();
   }, []);
 
+  // Lazy-load the articles bundle the first time the search panel opens.
+  const [searchArticles, setSearchArticles] = useState<ArticleLite[]>([]);
+  useEffect(() => {
+    if (!isSearchOpen || searchArticles.length > 0) return;
+    let cancelled = false;
+    import('@/pages/Resources/data/articles').then(m => {
+      if (!cancelled) setSearchArticles(m.articles as ArticleLite[]);
+    });
+    return () => { cancelled = true; };
+  }, [isSearchOpen, searchArticles.length]);
+
   // Save a search term to recent history
   const saveRecentSearch = useCallback((term: string) => {
     const trimmed = term.trim();
