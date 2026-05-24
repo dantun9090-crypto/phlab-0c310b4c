@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://phlab.lovable.app/sitemap.xml
