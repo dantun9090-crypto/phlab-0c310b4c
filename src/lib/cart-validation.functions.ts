@@ -26,7 +26,17 @@ const cartItemSchema = z.object({
 
 const inputSchema = z.object({
   items: z.array(cartItemSchema).min(1).max(50),
+  couponCode: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/).optional().nullable(),
+  shippingCost: z.number().min(0).max(1000).optional(),
 });
+
+type CouponType = 'percentage' | 'fixed' | 'free_shipping';
+interface ValidatedCoupon {
+  id: string;
+  code: string;
+  type: CouponType;
+  value: number;
+}
 
 // ---- Firestore REST value decoding -----------------------------------------
 type FsValue =
@@ -79,7 +89,66 @@ export interface ValidateCartResult {
   ok: boolean;
   items: ValidatedLine[];
   subtotal: number;
+  discount: number;
+  shippingDiscount: number;
+  coupon: ValidatedCoupon | null;
+  couponError: string | null;
   errors: string[];
+}
+
+async function lookupCoupon(code: string, subtotal: number): Promise<{ coupon: ValidatedCoupon | null; error: string | null }> {
+  const upper = code.toUpperCase();
+  try {
+    const res = await fetch(`${FIRESTORE_BASE}:runQuery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        structuredQuery: {
+          from: [{ collectionId: 'coupons' }],
+          where: {
+            compositeFilter: {
+              op: 'AND',
+              filters: [
+                { fieldFilter: { field: { fieldPath: 'code' }, op: 'EQUAL', value: { stringValue: upper } } },
+                { fieldFilter: { field: { fieldPath: 'isActive' }, op: 'EQUAL', value: { booleanValue: true } } },
+              ],
+            },
+          },
+          limit: 1,
+        },
+      }),
+    });
+    if (!res.ok) return { coupon: null, error: 'Could not validate coupon.' };
+    const rows = (await res.json()) as Array<{ document?: { name: string; fields?: Record<string, FsValue> } }>;
+    const docRow = rows.find((r) => r.document)?.document;
+    if (!docRow) return { coupon: null, error: 'Invalid or expired coupon code.' };
+    const fields = docRow.fields ?? {};
+    const id = docRow.name.split('/').pop() ?? '';
+    const type = decode(fields.type) as CouponType | undefined;
+    const value = parsePrice(decode(fields.value));
+    const expiryRaw = fields.expiryDate as { timestampValue?: string } | undefined;
+    if (expiryRaw?.timestampValue && new Date(expiryRaw.timestampValue) < new Date()) {
+      return { coupon: null, error: 'Coupon has expired.' };
+    }
+    const maxUses = (decode(fields.maxUses) ?? decode(fields.maxUsage)) as number | undefined;
+    const usedCount = (decode(fields.usedCount) ?? decode(fields.usageCount) ?? 0) as number;
+    if (typeof maxUses === 'number' && maxUses > 0 && usedCount >= maxUses) {
+      return { coupon: null, error: 'Coupon usage limit reached.' };
+    }
+    const minOrderValue = (decode(fields.minOrderValue) as number | undefined) ?? 0;
+    if (minOrderValue && subtotal < minOrderValue) {
+      return { coupon: null, error: `Order must be at least £${minOrderValue.toFixed(2)} to use this coupon.` };
+    }
+    if (!type || !['percentage', 'fixed', 'free_shipping'].includes(type)) {
+      return { coupon: null, error: 'Invalid coupon configuration.' };
+    }
+    if (type !== 'free_shipping' && (!Number.isFinite(value) || value < 0)) {
+      return { coupon: null, error: 'Invalid coupon configuration.' };
+    }
+    return { coupon: { id, code: upper, type, value: Number.isFinite(value) ? value : 0 }, error: null };
+  } catch {
+    return { coupon: null, error: 'Could not validate coupon.' };
+  }
 }
 
 export const validateCartPrices = createServerFn({ method: 'POST' })
@@ -164,10 +233,36 @@ export const validateCartPrices = createServerFn({ method: 'POST' })
     );
 
     const subtotal = +validated.reduce((s, l) => s + l.lineTotal, 0).toFixed(2);
+
+    // SECURITY: Re-validate coupon server-side and compute the authoritative
+    // discount. Never trust discount/coupon values sent from the client.
+    let coupon: ValidatedCoupon | null = null;
+    let couponError: string | null = null;
+    let discount = 0;
+    let shippingDiscount = 0;
+    if (data.couponCode) {
+      const result = await lookupCoupon(data.couponCode, subtotal);
+      coupon = result.coupon;
+      couponError = result.error;
+      if (coupon) {
+        if (coupon.type === 'percentage') {
+          discount = +(subtotal * coupon.value / 100).toFixed(2);
+        } else if (coupon.type === 'fixed') {
+          discount = +Math.min(coupon.value, subtotal).toFixed(2);
+        } else if (coupon.type === 'free_shipping' && typeof data.shippingCost === 'number') {
+          shippingDiscount = +data.shippingCost.toFixed(2);
+        }
+      }
+    }
+
     return {
-      ok: errors.length === 0 && validated.length === data.items.length,
+      ok: errors.length === 0 && validated.length === data.items.length && !couponError,
       items: validated,
       subtotal,
-      errors,
+      discount,
+      shippingDiscount,
+      coupon,
+      couponError,
+      errors: couponError ? [...errors, couponError] : errors,
     };
   });
