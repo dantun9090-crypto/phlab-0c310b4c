@@ -579,11 +579,11 @@ export default function HomePage() {
           })()}
           {banner.ctaUrl ? (
             <a href={banner.ctaUrl} className="block">
-              <img src={banner.imageUrl} alt={banner.altText || 'Promotion'} className="w-full" fetchPriority="high"
+              <img src={banner.imageUrl} alt={banner.altText || 'Promotion'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
                 style={{ height: banner.heightPx ? `${banner.heightPx}px` : '320px', objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
             </a>
           ) : (
-            <img src={banner.imageUrl} alt={banner.altText || 'Promotion'} className="w-full" fetchPriority="high"
+            <img src={banner.imageUrl} alt={banner.altText || 'Promotion'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
               style={{ height: banner.heightPx ? `${banner.heightPx}px` : '320px', objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
           )}
           {banner.overlayText && (
