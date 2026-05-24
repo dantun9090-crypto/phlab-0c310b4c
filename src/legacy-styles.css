@@ -1431,3 +1431,9 @@ html[data-theme]:not([data-theme="navy-professional"]) .border-blue-500\/30 {
     font-size: 16px !important;
   }
 }
+
+@font-face {
+  font-family: 'Inter';
+  src: local('Inter');
+  font-display: swap !important;
+}
