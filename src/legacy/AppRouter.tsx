@@ -8,11 +8,11 @@ import { auth, onAuthStateChanged } from '@/lib/firebase-auth';
 // Lazy-load intro animation — keeps it out of the critical-path bundle
 const MolecularIntro = lazy(() => import('@/components/MolecularIntro'));
 
-// Critical path — loaded eagerly (LCP pages)
+// Critical path — Home loaded eagerly (LCP/homepage)
 import Home from '@/pages/Home';
-import Products from '@/pages/Products';
-import ProductDetail from '@/pages/ProductDetail';
-const CategoryPage = lazy(() => import('@/pages/CategoryPage'));
+const Products       = lazy(() => import('@/pages/Products'));
+const ProductDetail  = lazy(() => import('@/pages/ProductDetail'));
+const CategoryPage   = lazy(() => import('@/pages/CategoryPage'));
 
 // Everything else — lazy loaded to reduce initial bundle
 const SearchPage     = lazy(() => import('@/pages/Search'));
