@@ -128,17 +128,30 @@ for (const p of sitemapPaths) {
 
 
 // ── Report ────────────────────────────────────────────────────────────────
-if (violations.length === 0) {
+if (violations.length === 0 && mismatches.length === 0) {
   console.log(
-    `✓ SEO check passed — title ≤ ${SEO_LIMITS.titleMax}, description ≤ ${SEO_LIMITS.descriptionMax}`,
+    `✓ SEO check passed — title ≤ ${SEO_LIMITS.titleMax}, description ≤ ${SEO_LIMITS.descriptionMax}, ${sitemapPaths.length} sitemap paths align with canonical URLs`,
   );
   process.exit(0);
 }
 
-console.error(`✗ SEO check failed — ${violations.length} violation(s):\n`);
-for (const v of violations) {
-  console.error(
-    `  [${v.field}] ${v.length}/${v.limit} chars\n    at ${v.source}\n    "${v.value}"\n`,
-  );
+if (violations.length > 0) {
+  console.error(`✗ Length violations — ${violations.length}:\n`);
+  for (const v of violations) {
+    console.error(
+      `  [${v.field}] ${v.length}/${v.limit} chars\n    at ${v.source}\n    "${v.value}"\n`,
+    );
+  }
 }
+
+if (mismatches.length > 0) {
+  console.error(`✗ Sitemap/canonical mismatches — ${mismatches.length}:\n`);
+  for (const m of mismatches) {
+    console.error(
+      `  path ${m.path}\n    sitemap loc: ${m.loc}\n    canonical:   ${m.canonical}\n`,
+    );
+  }
+}
+
 process.exit(1);
+
