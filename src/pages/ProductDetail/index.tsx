@@ -903,7 +903,9 @@ export default function ProductDetail() {
                           width="400"
                           height="400"
                           className="w-full h-full object-cover pointer-events-none"
-                          loading="lazy"
+                          loading="eager"
+                          fetchPriority="high"
+                          decoding="async"
                           initial={{ opacity: 0, scale: 1.03 }}
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.97 }}
