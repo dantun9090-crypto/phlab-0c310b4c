@@ -11,7 +11,9 @@ import {
 import { auth, db, doc, getDoc, onAuthStateChanged, FirebaseUser, subscribeToProducts } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
 
-import { articles } from '@/pages/Resources/data/articles';
+// Articles bundle (~196KB) is loaded lazily — only when the search panel opens —
+// to keep it off the critical path of every page render.
+type ArticleLite = { title: string; subtitle?: string; slug: string };
 import { CookieConsent } from '@/components/CookieConsent';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import { getRecentlyViewed } from '@/hooks/useRecentlyViewed';
@@ -255,6 +257,17 @@ export function Layout({ children }: LayoutProps) {
     return () => unsub?.();
   }, []);
 
+  // Lazy-load the articles bundle the first time the search panel opens.
+  const [searchArticles, setSearchArticles] = useState<ArticleLite[]>([]);
+  useEffect(() => {
+    if (!isSearchOpen || searchArticles.length > 0) return;
+    let cancelled = false;
+    import('@/pages/Resources/data/articles').then(m => {
+      if (!cancelled) setSearchArticles(m.articles as ArticleLite[]);
+    });
+    return () => { cancelled = true; };
+  }, [isSearchOpen, searchArticles.length]);
+
   // Save a search term to recent history
   const saveRecentSearch = useCallback((term: string) => {
     const trimmed = term.trim();
@@ -274,13 +287,13 @@ export function Layout({ children }: LayoutProps) {
       .filter(p => p.name?.toLowerCase().includes(q))
       .slice(0, 4)
       .map(p => ({ type: 'product' as const, label: p.name, href: `/products/${p.slug || p.name?.toLowerCase().replace(/\s+/g, '-')}` }));
-    const artSuggs = articles
+    const artSuggs = searchArticles
       .filter(a => a.title.toLowerCase().includes(q) || a.subtitle?.toLowerCase().includes(q))
       .slice(0, 3)
       .map(a => ({ type: 'article' as const, label: a.title, href: `/resources/${a.slug}` }));
     setSuggestions([...prodSuggs, ...artSuggs].slice(0, 6));
     setActiveSuggestion(-1);
-  }, [searchQuery, searchProducts]);
+  }, [searchQuery, searchProducts, searchArticles]);
 
   // Scroll detection for nav style change
   useEffect(() => {
