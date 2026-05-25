@@ -136,7 +136,8 @@ export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [emailInput, setEmailInput] = useState('');
-  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error' | 'already_claimed'>('idle');
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'retrying' | 'sent' | 'error' | 'already_claimed'>('idle');
+  const [retryAttempt, setRetryAttempt] = useState(0);
   const [revealedCode, setRevealedCode] = useState<string>('PROTOCOL10');
   const [codeCopied, setCodeCopied] = useState(false);
   const [banner, setBanner] = useState<any>(null);
