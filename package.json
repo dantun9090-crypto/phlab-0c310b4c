@@ -14,7 +14,6 @@
     "worker:smoke": "bun scripts/worker-smoke.ts",
     "worker:check-imports": "bun scripts/check-worker-imports.ts",
     "ci": "bun run build && bun run worker:check-imports"
-
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
@@ -48,6 +47,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@stripe/stripe-js": "^9.6.0",
+    "@supabase/supabase-js": "^2.106.1",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-router": "^1.168.25",
