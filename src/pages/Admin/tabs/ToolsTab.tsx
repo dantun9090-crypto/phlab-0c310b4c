@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { db, collection, getDocs, doc, deleteDoc, getAllProducts, updateProduct } from '@/lib/firebase';
+import { db, collection, getDocs, doc, deleteDoc, getAllProducts, updateProduct, addDoc, query, where, updateDoc, Timestamp } from '@/lib/firebase';
 import { seedProducts, nameToSlug } from '@/lib/seedProducts';
 import { findMerchantEntry, MERCHANT_SEO_ENTRIES } from '@/lib/merchantSeoData';
 
