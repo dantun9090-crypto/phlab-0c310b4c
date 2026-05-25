@@ -307,16 +307,51 @@ export default function HomePage() {
     const email = emailInput.trim().toLowerCase();
     if (!email || !email.includes('@')) return;
     setEmailStatus('sending');
+    setRetryAttempt(0);
     const discountCode = 'PROTOCOL10';
     const now = Timestamp.now();
 
+    // Transient Firestore / network error codes worth retrying
+    const TRANSIENT = new Set([
+      'unavailable', 'deadline-exceeded', 'internal', 'aborted',
+      'resource-exhausted', 'cancelled', 'unknown',
+    ]);
+    const isTransient = (err: any) => {
+      const code = String(err?.code || '').toLowerCase();
+      const msg = String(err?.message || '').toLowerCase();
+      if (TRANSIENT.has(code)) return true;
+      return /network|fetch|timeout|offline|failed to/.test(msg);
+    };
+    const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+    // Retry wrapper: up to 3 attempts with exponential backoff for transient errors.
+    // Updates UI to "retrying" + attempt counter so the user sees we're trying again.
+    const withRetry = async <T,>(label: string, fn: () => Promise<T>, maxAttempts = 3): Promise<T> => {
+      let lastErr: any;
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+          return await fn();
+        } catch (err) {
+          lastErr = err;
+          if (attempt >= maxAttempts || !isTransient(err)) throw err;
+          const delay = 500 * 2 ** (attempt - 1); // 500ms, 1s, 2s
+          console.warn(`[${label}] transient error, retrying in ${delay}ms (attempt ${attempt}/${maxAttempts}):`, err);
+          setRetryAttempt(attempt);
+          setEmailStatus('retrying');
+          await sleep(delay);
+          setEmailStatus('sending');
+        }
+      }
+      throw lastErr;
+    };
+
     // ── One-time-per-email guard (non-fatal: if Firestore rules block read, just continue) ──
     try {
-      const existingSnap = await getDocs(query(
+      const existingSnap = await withRetry('duplicate-check', () => getDocs(query(
         collection(db, 'emailSubscribers'),
         where('email', '==', email),
         where('source', '==', 'homepage_protocol_library'),
-      ));
+      )));
       if (!existingSnap.empty) {
         setRevealedCode(discountCode);
         setEmailStatus('already_claimed');
@@ -328,14 +363,14 @@ export default function HomePage() {
 
     // ── Ensure PROTOCOL10 coupon exists (non-fatal) ──
     try {
-      const couponSnap = await getDocs(query(
+      const couponSnap = await withRetry('coupon-check', () => getDocs(query(
         collection(db, 'coupons'),
         where('code', '==', discountCode),
-      ));
+      )));
       if (couponSnap.empty) {
         const expiry = new Date();
         expiry.setFullYear(expiry.getFullYear() + 2);
-        await addDoc(collection(db, 'coupons'), {
+        await withRetry('coupon-create', () => addDoc(collection(db, 'coupons'), {
           code: discountCode,
           type: 'percentage',
           value: 10,
@@ -344,42 +379,44 @@ export default function HomePage() {
           expiryDate: Timestamp.fromDate(expiry),
           description: 'Research Protocol Library — 10% off (lead magnet)',
           createdAt: now,
-        });
+        }));
       }
     } catch (couponErr) {
       console.warn('Coupon ensure skipped (non-fatal):', couponErr);
     }
 
-    // ── Critical writes: subscriber + email ──
+    // ── Critical writes: subscriber + email (with retry) ──
     try {
-      await addDoc(collection(db, 'emailSubscribers'), {
+      await withRetry('subscriber-create', () => addDoc(collection(db, 'emailSubscribers'), {
         email,
         source: 'homepage_protocol_library',
         discountCode,
         subscribedAt: now,
         timestamp: new Date().toISOString(),
-      });
+      }));
       const pdfUrl = 'https://www.prohealthpeptides.co.uk/downloads/protocol-library.pdf';
       const html = protocolLibraryEmail({ recipientEmail: email, discountCode, pdfDownloadUrl: pdfUrl });
       try {
-        await addDoc(collection(db, 'mail'), {
+        await withRetry('mail-enqueue', () => addDoc(collection(db, 'mail'), {
           to: email,
           message: {
             subject: 'Your Free Research Protocol Library — Pro Health Peptides',
             html,
           },
           createdAt: now,
-        });
+        }));
       } catch (mailErr) {
         console.warn('Mail enqueue failed (non-fatal, code still shown):', mailErr);
       }
       setRevealedCode(discountCode);
       setEmailStatus('sent');
+      setRetryAttempt(0);
     } catch (err) {
       console.error('Protocol library submit failed:', err);
       setEmailStatus('error');
     }
   };
+
 
   const copyDiscountCode = async () => {
     try {
