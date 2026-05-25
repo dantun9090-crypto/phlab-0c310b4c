@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, lazy, Suspense } from "react";
 import { SEO_LIMITS, SITE_URL, canonicalUrl, clamp, metaForPath } from "@/lib/seo-meta";
+import { articles } from "@/pages/Resources/data/articles";
 
 const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
@@ -17,6 +18,39 @@ export const Route = createFileRoute("/$")({
 
     const url = canonicalUrl(splat);
 
+    const scripts: Array<{ type: string; children: string }> = [];
+    const resourcesMatch = splat.match(/^resources\/([^/?#]+)/);
+    if (resourcesMatch) {
+      const article = articles.find((a) => a.slug === resourcesMatch[1]);
+      if (article) {
+        scripts.push({
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: clamp(article.title, 110),
+            description: clamp(article.excerpt, SEO_LIMITS.descriptionMax),
+            datePublished: article.publishDate,
+            dateModified: article.publishDate,
+            inLanguage: "en-GB",
+            articleSection: article.category,
+            keywords: article.keywords?.join(", "),
+            author: {
+              "@type": "Organization",
+              name: "Pro Health Peptides UK",
+              url: SITE_URL,
+            },
+            publisher: {
+              "@type": "Organization",
+              name: "Pro Health Peptides UK",
+              url: SITE_URL,
+              logo: { "@type": "ImageObject", url: `${SITE_URL}/og-image.jpg` },
+            },
+            mainEntityOfPage: { "@type": "WebPage", "@id": url },
+          }),
+        });
+      }
+    }
 
     return {
       meta: [
@@ -32,6 +66,7 @@ export const Route = createFileRoute("/$")({
         { key: "twitter:image", name: "twitter:image", content: OG_IMAGE },
       ],
       links: [{ rel: "canonical", href: url }],
+      scripts,
     };
   },
 
