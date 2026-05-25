@@ -149,7 +149,7 @@ export default function TermsOfService() {
             <p className="text-red-300/80 text-sm font-semibold uppercase tracking-wide mb-2">
               Important Notice
             </p>
-            <p className="text-red-200/60 text-sm leading-relaxed">
+            <p className="text-red-100/90 text-sm leading-relaxed">
               By using this website and placing any order, you acknowledge that you have read,
               understood, and agree to be bound by these Terms of Service. You confirm that you are a
               qualified researcher aged 18 or over and that all products will be used solely for
