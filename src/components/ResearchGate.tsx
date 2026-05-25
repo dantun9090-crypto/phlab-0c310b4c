@@ -115,7 +115,7 @@ export default function ResearchGate() {
         }
         @media (max-width: 480px) {
           .rg-modal-card { border-radius: 14px !important; }
-          .rg-banner-text-full { display: none !important; }
+          .rg-banner-text-full { display: none !important; text-align: center !important; }
           .rg-banner-text-short { display: block !important; }
         }
         @media (min-width: 481px) {
