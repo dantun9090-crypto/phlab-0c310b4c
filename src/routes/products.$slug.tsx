@@ -16,12 +16,16 @@ export const Route = createFileRoute("/products/$slug")({
   head: ({ params, loaderData }) => {
     const product = loaderData?.product;
     const name = product?.name ?? params.slug;
-    const title = clamp(
-      `${name} — Research Grade | Pro Health Peptides`,
-      SEO_LIMITS.titleMax,
-    );
+    // Prefer Firestore-managed seoTitle / seoDescription. Fall back to
+    // a generated title/description so older docs without SEO fields
+    // still render compliant tags.
+    const rawTitle =
+      product?.seoTitle?.trim() ||
+      `${name} — Research Grade | Pro Health Peptides`;
+    const title = clamp(rawTitle, SEO_LIMITS.titleMax);
     const baseDesc =
-      product?.description ??
+      product?.seoDescription?.trim() ||
+      product?.description ||
       `${name}: HPLC-verified research peptide from Pro Health Peptides UK.`;
     const description = clamp(baseDesc.replace(/\s+/g, " ").trim(), SEO_LIMITS.descriptionMax);
     const url = `${SITE_URL}/products/${params.slug}`;
