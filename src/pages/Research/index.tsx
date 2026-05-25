@@ -297,13 +297,13 @@ function ExpandableRow({ p, isOpen, cls, Icon, onToggle }: ExpandableRowProps) {
           }}
         >
           <div>
-            <p className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-2">Mechanism of Action</p>
+            <p className="text-[11px] font-semibold text-white/70 uppercase tracking-widest mb-2">Mechanism of Action</p>
             <p className="text-[#8ab0d0] text-sm leading-relaxed">{p.mechanism}</p>
           </div>
           <div>
-            <p className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-2">Research Models</p>
+            <p className="text-[11px] font-semibold text-white/70 uppercase tracking-widest mb-2">Research Models</p>
             <p className="text-[#8ab0d0] text-sm leading-relaxed mb-3">{p.models}</p>
-            <p className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-2">Key Preclinical Finding</p>
+            <p className="text-[11px] font-semibold text-white/70 uppercase tracking-widest mb-2">Key Preclinical Finding</p>
             <p className="text-[#8ab0d0] text-sm leading-relaxed">{p.keyFinding}</p>
           </div>
           <div className="md:col-span-2 flex flex-wrap gap-2 pt-1">
@@ -450,19 +450,19 @@ export default function Research() {
 
                   <div className="space-y-3 text-xs">
                     <div>
-                      <p className="text-white/30 mb-0.5">Targets</p>
+                      <p className="text-white/70 mb-0.5">Targets</p>
                       <p className="text-white/80 font-semibold">{c.targets}</p>
                     </div>
                     <div>
-                      <p className="text-white/30 mb-0.5">Primary Effect</p>
+                      <p className="text-white/70 mb-0.5">Primary Effect</p>
                       <p className="text-white/80">{c.primaryEffect}</p>
                     </div>
                     <div>
-                      <p className="text-white/30 mb-0.5">Mechanism</p>
+                      <p className="text-white/70 mb-0.5">Mechanism</p>
                       <p className="text-white/60">{c.mechanism}</p>
                     </div>
                     <div className="pt-1 flex items-center justify-between">
-                      <span className="text-white/30">{c.clinicalPhase}</span>
+                      <span className="text-white/70">{c.clinicalPhase}</span>
                       <Link to={`/resources/${c.slug}`} className="inline-flex items-center gap-1 text-white/60 hover:text-white transition-colors font-semibold">
                         Full article <ArrowRight className="w-3 h-3" />
                       </Link>
@@ -485,7 +485,7 @@ export default function Research() {
                 <thead>
                   <tr className="border-b border-white/[0.06]">
                     {['Compound', 'GLP-1R', 'GIPR', 'GCGR', 'Half-life', 'Route', 'Max Weight Loss'].map(h => (
-                      <th key={h} className="px-4 py-3 text-left text-white/30 font-semibold uppercase tracking-wider whitespace-nowrap">{h}</th>
+                      <th key={h} className="px-4 py-3 text-left text-white/70 font-semibold uppercase tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -508,7 +508,7 @@ export default function Research() {
               </table>
             </div>
             <div className="px-5 py-2.5 bg-white/[0.02] border-t border-white/[0.04]">
-              <p className="text-white/20 text-[11px]">Sources: NEJM Jastreboff 2022, 2023; Frias et al. 2021; Davies et al. SCALE programme. All weight loss figures are mean at highest approved/studied dose vs placebo-controlled trials.</p>
+              <p className="text-white/60 text-[11px]">Sources: NEJM Jastreboff 2022, 2023; Frias et al. 2021; Davies et al. SCALE programme. All weight loss figures are mean at highest approved/studied dose vs placebo-controlled trials.</p>
             </div>
           </div>
           </FadeIn>
@@ -581,7 +581,7 @@ export default function Research() {
                 <thead>
                   <tr className="border-b border-white/[0.06] bg-white/[0.02]">
                     {['Molecule', 'Role', 'Source / Entry Point', 'Pathway', 'Relevance to Ageing'].map(h => (
-                      <th key={h} className="px-5 py-3 text-left text-white/30 font-semibold text-xs uppercase tracking-wider whitespace-nowrap">{h}</th>
+                      <th key={h} className="px-5 py-3 text-left text-white/70 font-semibold text-xs uppercase tracking-wider whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -611,7 +611,7 @@ export default function Research() {
               <FadeIn key={s.sirt} delay={idx * 80} direction="up">
               <div className="rounded-xl bg-amber-500/[0.05] border border-amber-500/20 p-4 h-full">
                 <p className="text-amber-400 font-black text-lg mb-1">{s.sirt}</p>
-                <p className="text-white/30 text-xs mb-2">{s.location}</p>
+                <p className="text-white/70 text-xs mb-2">{s.location}</p>
                 <p className="text-white/50 text-xs mb-2"><span className="text-white/25">Substrates: </span>{s.substrates}</p>
                 <p className="text-white/60 text-xs leading-relaxed">{s.effect}</p>
               </div>
@@ -665,7 +665,7 @@ export default function Research() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span className={`text-[11px] font-bold ${cls.split(' ')[3]}`}>{study.compound}</span>
-                      <span className="text-white/20 text-[11px]">{study.authors}</span>
+                      <span className="text-white/60 text-[11px]">{study.authors}</span>
                     </div>
                     <p className="text-white/80 text-xs font-semibold leading-snug mb-1 group-hover:text-white transition-colors line-clamp-2">{study.title}</p>
                     <div className="flex items-center gap-1 text-[11px] text-white/25">
