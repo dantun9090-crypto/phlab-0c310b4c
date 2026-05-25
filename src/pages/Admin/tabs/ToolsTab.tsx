@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { db, collection, getDocs, doc, deleteDoc, getAllProducts, updateProduct } from '@/lib/firebase';
+import { db, collection, getDocs, doc, deleteDoc, getAllProducts, updateProduct, addDoc, query, where, updateDoc, Timestamp } from '@/lib/firebase';
 import { seedProducts, nameToSlug } from '@/lib/seedProducts';
 import { findMerchantEntry, MERCHANT_SEO_ENTRIES } from '@/lib/merchantSeoData';
 
@@ -591,6 +591,9 @@ export default function ToolsTab() {
 
       {/* ── Merchant Center SEO Migration ───────────────────── */}
       <MerchantSeoMigration />
+
+      {/* ── Protocol Library lead-magnet coupon ───────────────── */}
+      <ProtocolLibraryCouponTool />
     </div>
   );
 }
@@ -698,6 +701,135 @@ function MerchantSeoMigration() {
           </motion.div>
         )}
       </AnimatePresence>
+    </motion.div>
+  );
+}
+
+function ProtocolLibraryCouponTool() {
+  const [running, setRunning] = useState(false);
+  const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
+  const [result, setResult] = useState<
+    | { ok: true; action: 'created' | 'updated' | 'unchanged'; subscribers: number }
+    | { ok: false; error: string }
+    | null
+  >(null);
+
+  const ensure = async () => {
+    setRunning(true);
+    setResult(null);
+    try {
+      const code = 'PROTOCOL10';
+      const expiry = new Date();
+      expiry.setFullYear(expiry.getFullYear() + 2);
+
+      const couponSnap = await getDocs(query(collection(db, 'coupons'), where('code', '==', code)));
+      let action: 'created' | 'updated' | 'unchanged';
+      if (couponSnap.empty) {
+        await addDoc(collection(db, 'coupons'), {
+          code,
+          type: 'percentage',
+          value: 10,
+          isActive: true,
+          usedCount: 0,
+          expiryDate: Timestamp.fromDate(expiry),
+          description: 'Research Protocol Library — 10% off (lead magnet)',
+          createdAt: Timestamp.now(),
+        });
+        action = 'created';
+      } else {
+        const docSnap = couponSnap.docs[0];
+        const data: any = docSnap.data();
+        const needsUpdate = data.isActive !== true || data.value !== 10 || data.type !== 'percentage';
+        if (needsUpdate) {
+          await updateDoc(doc(db, 'coupons', docSnap.id), {
+            isActive: true,
+            type: 'percentage',
+            value: 10,
+            expiryDate: Timestamp.fromDate(expiry),
+          });
+          action = 'updated';
+        } else {
+          action = 'unchanged';
+        }
+      }
+
+      const subSnap = await getDocs(query(
+        collection(db, 'emailSubscribers'),
+        where('source', '==', 'homepage_protocol_library'),
+      ));
+      setSubscriberCount(subSnap.size);
+      setResult({ ok: true, action, subscribers: subSnap.size });
+    } catch (e: any) {
+      setResult({ ok: false, error: e?.message || 'Failed to ensure coupon' });
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-[#0b1a30]/70 border border-white/[0.08] rounded-2xl p-6 space-y-4"
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-emerald-600/20 flex items-center justify-center shrink-0">
+          <Shield className="w-5 h-5 text-emerald-400" />
+        </div>
+        <div>
+          <h3 className="text-[#f0f6ff] font-semibold">Protocol Library — PROTOCOL10 coupon</h3>
+          <p className="text-[#6b8fba] text-xs mt-0.5">
+            Ensures the <code className="bg-[#04101f] px-1.5 py-0.5 rounded text-[#8caad4]">PROTOCOL10</code> 10% coupon
+            exists and is active in the <code className="bg-[#04101f] px-1.5 py-0.5 rounded text-[#8caad4]">coupons</code> collection,
+            and shows how many users have claimed the free Research Protocol Library.
+          </p>
+        </div>
+      </div>
+
+      <button
+        onClick={ensure}
+        disabled={running}
+        className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50"
+      >
+        {running
+          ? <><Loader2 className="w-4 h-4 animate-spin" /> Checking…</>
+          : <><RefreshCw className="w-4 h-4" /> Ensure PROTOCOL10 coupon &amp; count claims</>}
+      </button>
+
+      <AnimatePresence>
+        {result && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className={`rounded-xl p-4 text-sm border ${
+              result.ok
+                ? 'bg-emerald-900/20 border-emerald-500/20 text-emerald-300'
+                : 'bg-red-900/20 border-red-500/20 text-red-300'
+            }`}
+          >
+            {result.ok ? (
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 font-semibold">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Coupon {result.action === 'created' ? 'created' : result.action === 'updated' ? 'refreshed' : 'already active'} — valid 10% off for 2 years.
+                </div>
+                <div className="text-xs text-[#8caad4]">
+                  {result.subscribers} subscriber{result.subscribers === 1 ? '' : 's'} have claimed the Protocol Library so far.
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" /> {result.error}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {subscriberCount !== null && !result && (
+        <p className="text-xs text-[#6b8fba]">{subscriberCount} claims so far.</p>
+      )}
     </motion.div>
   );
 }

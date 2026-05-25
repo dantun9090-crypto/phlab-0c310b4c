@@ -136,7 +136,9 @@ export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [emailInput, setEmailInput] = useState('');
-  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error' | 'already_claimed'>('idle');
+  const [revealedCode, setRevealedCode] = useState<string>('PROTOCOL10');
+  const [codeCopied, setCodeCopied] = useState(false);
   const [banner, setBanner] = useState<any>(null);
   const [bannerResolved, setBannerResolved] = useState(false);
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
@@ -301,33 +303,83 @@ export default function HomePage() {
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailInput || !emailInput.includes('@')) return;
+    const email = emailInput.trim().toLowerCase();
+    if (!email || !email.includes('@')) return;
     setEmailStatus('sending');
     try {
+      const discountCode = 'PROTOCOL10';
+
+      // ── One-time-per-email guard ──
+      const existingSnap = await getDocs(query(
+        collection(db, 'emailSubscribers'),
+        where('email', '==', email),
+        where('source', '==', 'homepage_protocol_library'),
+      ));
+      if (!existingSnap.empty) {
+        setRevealedCode(discountCode);
+        setEmailStatus('already_claimed');
+        return;
+      }
+
       const now = Timestamp.now();
+
+      // ── Ensure PROTOCOL10 coupon exists in Firestore so checkout accepts it ──
+      try {
+        const couponSnap = await getDocs(query(
+          collection(db, 'coupons'),
+          where('code', '==', discountCode),
+        ));
+        if (couponSnap.empty) {
+          const expiry = new Date();
+          expiry.setFullYear(expiry.getFullYear() + 2);
+          await addDoc(collection(db, 'coupons'), {
+            code: discountCode,
+            type: 'percentage',
+            value: 10,
+            isActive: true,
+            usedCount: 0,
+            expiryDate: Timestamp.fromDate(expiry),
+            description: 'Research Protocol Library — 10% off (lead magnet)',
+            createdAt: now,
+          });
+        }
+      } catch (couponErr) {
+        console.warn('Coupon ensure failed (non-fatal):', couponErr);
+      }
+
       // Save subscriber
       await addDoc(collection(db, 'emailSubscribers'), {
-        email: emailInput,
+        email,
         source: 'homepage_protocol_library',
+        discountCode,
         subscribedAt: now,
         timestamp: new Date().toISOString(),
       });
       // Send lead magnet email via Firebase mail trigger
-      const pdfUrl = 'https://prohealthpeptides.co.uk/downloads/protocol-library.pdf';
-      const discountCode = 'PROTOCOL10';
-      const html = protocolLibraryEmail({ recipientEmail: emailInput, discountCode, pdfDownloadUrl: pdfUrl });
+      const pdfUrl = 'https://www.prohealthpeptides.co.uk/downloads/protocol-library.pdf';
+      const html = protocolLibraryEmail({ recipientEmail: email, discountCode, pdfDownloadUrl: pdfUrl });
       await addDoc(collection(db, 'mail'), {
-        to: emailInput,
+        to: email,
         message: {
           subject: 'Your Free Research Protocol Library — Pro Health Peptides',
           html,
         },
         createdAt: now,
       });
+      setRevealedCode(discountCode);
       setEmailStatus('sent');
-    } catch {
+    } catch (err) {
+      console.error('Protocol library submit failed:', err);
       setEmailStatus('error');
     }
+  };
+
+  const copyDiscountCode = async () => {
+    try {
+      await navigator.clipboard.writeText(revealedCode);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 1800);
+    } catch { /* noop */ }
   };
 
   return (
@@ -916,13 +968,34 @@ export default function HomePage() {
                 </div>
               </div>
               <div>
-                {emailStatus === 'sent' ? (
-                  <div className="text-center py-10">
+                {emailStatus === 'sent' || emailStatus === 'already_claimed' ? (
+                  <div className="text-center py-6">
                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)' }}>
                       <CheckCircle2 style={{ width: 28, height: 28, color: '#10b981' }} />
                     </div>
-                    <p className="font-bold text-base mb-1" style={{ color: '#e4f0ff' }}>Protocol Library sent!</p>
-                    <p className="text-sm" style={{ color: '#4a6e8a' }}>Check your inbox — discount code included.</p>
+                    <p className="font-bold text-base mb-1" style={{ color: '#e4f0ff' }}>
+                      {emailStatus === 'sent' ? 'Protocol Library sent!' : 'You\u2019ve already claimed this'}
+                    </p>
+                    <p className="text-sm mb-5" style={{ color: '#4a6e8a' }}>
+                      {emailStatus === 'sent'
+                        ? 'Check your inbox for the PDF download link.'
+                        : 'Your discount code is still valid \u2014 use it at checkout.'}
+                    </p>
+                    <div className="rounded-xl p-5" style={{ background: 'rgba(16,185,129,0.06)', border: '1px dashed rgba(16,185,129,0.35)' }}>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#4ade80' }}>Your 10% Discount Code</p>
+                      <div className="flex items-center justify-center gap-3 flex-wrap">
+                        <code style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '0.18em', color: '#f0f8ff', fontFamily: 'monospace' }}>{revealedCode}</code>
+                        <button
+                          type="button"
+                          onClick={copyDiscountCode}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                          style={{ background: 'rgba(16,185,129,0.18)', color: '#4ade80', border: '1px solid rgba(16,185,129,0.35)' }}
+                        >
+                          {codeCopied ? 'Copied!' : 'Copy'}
+                        </button>
+                      </div>
+                      <p className="text-[11px] mt-3" style={{ color: '#6b8fba' }}>Apply at checkout for 10% off your first order.</p>
+                    </div>
                   </div>
                 ) : (
                   <form onSubmit={handleEmailSubmit} className="flex flex-col gap-4">
