@@ -74,6 +74,20 @@ export default function DatabaseTab() {
     }
   };
 
+  const handleMigrateMerchantSEO = async () => {
+    if (!confirm('This will overwrite seoTitle and seoDescription on every matching product with Google Merchant Center–safe copy. Continue?')) return;
+    setSeoMigrating(true);
+    setSeoMigrateResult(null);
+    try {
+      const res = await migrateMerchantSEO();
+      setSeoMigrateResult(res);
+    } catch (error: any) {
+      setSeoMigrateResult({ success: false, message: error.message || 'Migration failed' });
+    } finally {
+      setSeoMigrating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
