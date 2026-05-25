@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, lazy, Suspense } from "react";
+import { lazy, Suspense } from "react";
 import { SEO_LIMITS, SITE_URL, canonicalUrl, clamp, metaForPath } from "@/lib/seo-meta";
 import { articles } from "@/pages/Resources/data/articles";
 
@@ -74,9 +74,6 @@ export const Route = createFileRoute("/$")({
 });
 
 function LegacyMount() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
   return (
     <Suspense fallback={null}>
       <LegacyApp />
