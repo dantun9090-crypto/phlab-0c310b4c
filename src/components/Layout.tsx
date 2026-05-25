@@ -841,7 +841,7 @@ export function Layout({ children }: LayoutProps) {
                       aria-label="Proceed to checkout"
                       className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
                         hasItemsWithoutVariant
-                          ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                          ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                           : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white '
                       }`}
                     >

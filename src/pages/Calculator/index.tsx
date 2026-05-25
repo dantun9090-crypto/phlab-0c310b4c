@@ -87,7 +87,7 @@ function Hint({ text }: { text: string }) {
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onClick={() => setOpen(o => !o)}
-        className="text-gray-500 hover:text-blue-400 transition-colors align-middle"
+        className="text-gray-400 hover:text-blue-400 transition-colors align-middle"
         aria-label="Info"
         type="button"
       >
@@ -126,7 +126,7 @@ function InputRow({
           onChange={e => onChange(Number(e.target.value))}
           className="flex-1 px-4 py-3 bg-transparent text-white text-base focus:outline-none"
         />
-        <span className="px-4 text-gray-500 text-sm font-mono border-l border-white/10 py-3 bg-gray-800/50">
+        <span className="px-4 text-gray-400 text-sm font-mono border-l border-white/10 py-3 bg-gray-800/50">
           {unit}
         </span>
       </div>
@@ -149,7 +149,7 @@ function ResultCard({
     <div className={`rounded-xl border p-4 ${colors[color]}`}>
       <p className="text-gray-400 text-xs mb-1">{label}</p>
       <p className="text-xl sm:text-2xl font-bold">{value}</p>
-      {sub && <p className="text-gray-500 text-xs mt-1">{sub}</p>}
+      {sub && <p className="text-gray-400 text-xs mt-1">{sub}</p>}
     </div>
   );
 }
@@ -413,7 +413,7 @@ export default function Calculator() {
             <div className="bg-gray-800/50 border border-white/10 rounded-2xl p-5 sm:p-6">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-base sm:text-lg font-semibold">Reconstitution Calculator</h2>
-                <button onClick={handleResetReconstitution} className="text-gray-500 hover:text-gray-300 transition-colors" title="Reset" aria-label="Reset">
+                <button onClick={handleResetReconstitution} className="text-gray-400 hover:text-gray-300 transition-colors" title="Reset" aria-label="Reset">
                   <RotateCcw className="w-4 h-4" />
                 </button>
               </div>
@@ -486,7 +486,7 @@ export default function Calculator() {
                     color="blue"
                   />
                 </div>
-                <p className="mt-4 text-xs text-gray-500">
+                <p className="mt-4 text-xs text-gray-400">
                   Draw to the <span className="text-white font-mono font-semibold">{reconstitutionResults.syringeUnits}</span> mark on a 100-unit insulin syringe.
                 </p>
               </div>
@@ -500,7 +500,7 @@ export default function Calculator() {
             <div className="bg-gray-800/50 border border-white/10 rounded-2xl p-5 sm:p-6">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-base sm:text-lg font-semibold">Concentration Calculator</h2>
-                <button onClick={handleResetDose} className="text-gray-500 hover:text-gray-300 transition-colors" title="Reset" aria-label="Reset">
+                <button onClick={handleResetDose} className="text-gray-400 hover:text-gray-300 transition-colors" title="Reset" aria-label="Reset">
                   <RotateCcw className="w-4 h-4" />
                 </button>
               </div>
@@ -569,7 +569,7 @@ export default function Calculator() {
                     color="purple"
                   />
                 </div>
-                <p className="mt-4 text-xs text-gray-500">
+                <p className="mt-4 text-xs text-gray-400">
                   Draw to the <span className="text-white font-mono font-semibold">{doseCalculatorResults.unitsToDraw}</span> mark on a {syringeType}-unit syringe.
                 </p>
               </div>
@@ -697,7 +697,7 @@ export default function Calculator() {
                       onChange={e => setPenDoseIU(Number(e.target.value))}
                       className="w-28 sm:w-36 px-4 py-3 bg-transparent text-white text-lg focus:outline-none"
                     />
-                    <span className="px-4 text-gray-500 text-sm font-mono border-l border-white/10 py-3 bg-gray-800/50">IU</span>
+                    <span className="px-4 text-gray-400 text-sm font-mono border-l border-white/10 py-3 bg-gray-800/50">IU</span>
                   </div>
                   {penResults && (
                     <div className="flex flex-wrap gap-3 flex-1">
@@ -726,7 +726,7 @@ export default function Calculator() {
                 <h2 className="text-sm font-semibold text-gray-300 mb-1">
                   IU reference table — {penResults.pen.label}
                   {penResults.mcgPerMl !== undefined && (
-                    <span className="text-gray-500 font-normal ml-2 text-xs">
+                    <span className="text-gray-400 font-normal ml-2 text-xs">
                       ({vialContentValue} {vialContentUnit} in vial)
                     </span>
                   )}
@@ -736,7 +736,7 @@ export default function Calculator() {
                 </p>
 
                 {/* Column headers */}
-                <div className={`grid gap-2 mb-2 px-3 text-xs text-gray-500 ${penResults.mcgPerMl !== undefined ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                <div className={`grid gap-2 mb-2 px-3 text-xs text-gray-400 ${penResults.mcgPerMl !== undefined ? 'grid-cols-3' : 'grid-cols-2'}`}>
                   <span>IU</span><span>ml</span>
                   {penResults.mcgPerMl !== undefined && <span>Dose</span>}
                 </div>
@@ -765,7 +765,7 @@ export default function Calculator() {
 
                 {/* Scale bar */}
                 <div className="mt-5 pt-4 border-t border-white/10">
-                  <p className="text-xs text-gray-500 mb-2">Pen fill level</p>
+                  <p className="text-xs text-gray-400 mb-2">Pen fill level</p>
                   <div className="relative h-7 sm:h-8 bg-gray-900 rounded-full overflow-hidden border border-white/10">
                     <div
                       className="absolute left-0 top-0 h-full bg-gradient-to-r from-blue-600 to-blue-400 rounded-full transition-all duration-500"
@@ -794,7 +794,7 @@ export default function Calculator() {
 
       {/* ── Disclaimer ── */}
       <div className="max-w-4xl mx-auto mt-10 sm:mt-12 pt-6 sm:pt-8 border-t border-white/10">
-        <p className="text-center text-gray-500 text-xs sm:text-sm">
+        <p className="text-center text-gray-400 text-xs sm:text-sm">
           ⚠️ For research purposes only. Not for human use. Always verify calculations with a qualified professional.
         </p>
       </div>
