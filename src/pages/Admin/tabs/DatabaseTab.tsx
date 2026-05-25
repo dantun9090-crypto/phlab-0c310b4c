@@ -9,6 +9,8 @@ export default function DatabaseTab() {
   const [clearing, setClearing] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [migrateResult, setMigrateResult] = useState<any>(null);
+  const [seoMigrating, setSeoMigrating] = useState(false);
+  const [seoMigrateResult, setSeoMigrateResult] = useState<any>(null);
 
   const handleCheckStatus = async () => {
     setLoading(true);
