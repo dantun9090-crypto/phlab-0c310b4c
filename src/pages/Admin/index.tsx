@@ -324,7 +324,7 @@ export default function AdminPage() {
     marketing: 'Marketing', emailmarketing: 'Email Campaigns', emailpreview: 'Email Preview',
     seo: 'SEO Settings', sitemap: 'Sitemap Manager', settings: 'Site Settings',
     tools: 'Tools', themes: 'Themes', database: 'Database', backup: 'Backup',
-    ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes',
+    ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', diagnostics: 'Diagnostics',
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
 
