@@ -306,6 +306,7 @@ export default function AdminPage() {
         case 'sitemap': return <SitemapTab />;
         case 'qc': return <QCDashboardTab />;
         case 'promocodes': return <PromoCodesTab />;
+        case 'diagnostics': return <DiagnosticsTab />;
         default: return <DashboardTab />;
       }
     })();
