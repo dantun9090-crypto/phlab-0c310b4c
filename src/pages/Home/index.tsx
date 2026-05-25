@@ -1061,22 +1061,32 @@ export default function HomePage() {
                         onBlur={e => (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.1)'}
                       />
                     </div>
-                    <button type="submit" disabled={emailStatus === 'sending'}
+                    <button type="submit" disabled={emailStatus === 'sending' || emailStatus === 'retrying'}
                       className="w-full py-3.5 rounded-xl font-bold text-sm text-white transition-all duration-300 flex items-center justify-center gap-2"
                       style={{
                         background: 'linear-gradient(135deg, #0ea572 0%, #10b981 50%, #059669 100%)',
                         boxShadow: '0 4px 20px rgba(16,185,129,0.3)',
-                        opacity: emailStatus === 'sending' ? 0.7 : 1,
+                        opacity: (emailStatus === 'sending' || emailStatus === 'retrying') ? 0.7 : 1,
                       }}
                     >
                       <Mail style={{ width: 15, height: 15 }} />
-                      {emailStatus === 'sending' ? 'Sending…' : 'Send My Protocol Library'}
+                      {emailStatus === 'sending'
+                        ? 'Sending…'
+                        : emailStatus === 'retrying'
+                          ? `Retrying… (attempt ${retryAttempt + 1})`
+                          : 'Send My Protocol Library'}
                     </button>
+                    {emailStatus === 'retrying' && (
+                      <p className="text-center text-xs font-semibold" style={{ color: '#fbbf24' }}>
+                        Connection hiccup — trying again automatically…
+                      </p>
+                    )}
                     {emailStatus === 'error' && (
                       <p className="text-center text-xs font-semibold" style={{ color: '#f87171' }}>
                         Something went wrong. Please try again or email info@prohealthpeptides.co.uk.
                       </p>
                     )}
+
                     <p className="text-center text-xs" style={{ color: '#3a5a82' }}>
                       <Lock style={{ width: 10, height: 10, display: 'inline', marginRight: 4 }} />
                       No spam. Unsubscribe anytime.
