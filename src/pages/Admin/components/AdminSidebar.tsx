@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Users, LogOut,
   Database, FileText, Image, Settings,
   Zap, Palette, Megaphone, HardDrive, Radio, FlaskConical,
-  Scale, Rocket, Shield, PanelLeftClose, PanelLeft, Mail, Lock, Star, Eye, Search, ShieldCheck, Map, X, ChevronDown, Tag
+  Scale, Rocket, Shield, PanelLeftClose, PanelLeft, Mail, Lock, Star, Eye, Search, ShieldCheck, Map, X, ChevronDown, Tag, Activity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { auth, signOut } from '@/lib/firebase';
@@ -71,6 +71,7 @@ const navGroups = [
       { id: 'database', label: 'Database', icon: Database },
       { id: 'backup', label: 'Backup', icon: HardDrive },
       { id: 'ipwhitelist', label: 'IP Whitelist', icon: Lock },
+      { id: 'diagnostics', label: 'Diagnostics', icon: Activity },
     ],
   },
 ];

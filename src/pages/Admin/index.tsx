@@ -30,8 +30,9 @@ import { FeaturedProductsTab } from './tabs/FeaturedProductsTab';
 import QCDashboardTab from './tabs/QCDashboardTab';
 import SitemapTab from './tabs/SitemapTab';
 import PromoCodesTab from './tabs/PromoCodesTab';
+import DiagnosticsTab from './tabs/DiagnosticsTab';
 
-type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes';
+type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics';
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
 // (a TanStack server function running in the Cloudflare Worker). The Worker
@@ -305,6 +306,7 @@ export default function AdminPage() {
         case 'sitemap': return <SitemapTab />;
         case 'qc': return <QCDashboardTab />;
         case 'promocodes': return <PromoCodesTab />;
+        case 'diagnostics': return <DiagnosticsTab />;
         default: return <DashboardTab />;
       }
     })();
@@ -322,7 +324,7 @@ export default function AdminPage() {
     marketing: 'Marketing', emailmarketing: 'Email Campaigns', emailpreview: 'Email Preview',
     seo: 'SEO Settings', sitemap: 'Sitemap Manager', settings: 'Site Settings',
     tools: 'Tools', themes: 'Themes', database: 'Database', backup: 'Backup',
-    ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes',
+    ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', diagnostics: 'Diagnostics',
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
 
