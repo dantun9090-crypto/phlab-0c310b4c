@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Database, Upload, CheckCircle2, AlertCircle, Loader2, Trash2, RefreshCw, Tag } from 'lucide-react';
-import { seedProducts, checkSeedStatus, clearAllProducts, migrateAddSlugs } from '@/lib/seedProducts';
+import { seedProducts, checkSeedStatus, clearAllProducts, migrateAddSlugs, migrateMerchantSEO } from '@/lib/seedProducts';
 
 export default function DatabaseTab() {
   const [loading, setLoading] = useState(false);
