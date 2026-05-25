@@ -64,9 +64,6 @@ export const Route = createFileRoute("/")({
 });
 
 function LegacyMount() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
   return (
     <Suspense fallback={null}>
       <LegacyApp />
