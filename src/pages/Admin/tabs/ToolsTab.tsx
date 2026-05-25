@@ -591,6 +591,9 @@ export default function ToolsTab() {
 
       {/* ── Merchant Center SEO Migration ───────────────────── */}
       <MerchantSeoMigration />
+
+      {/* ── Protocol Library lead-magnet coupon ───────────────── */}
+      <ProtocolLibraryCouponTool />
     </div>
   );
 }
