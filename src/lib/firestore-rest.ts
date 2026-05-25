@@ -23,6 +23,8 @@ export interface SeoProduct {
   isActive: boolean;
   visibility: string;
   displayOrder: number;
+  seoTitle?: string;
+  seoDescription?: string;
 }
 
 function slugify(name: string): string {
