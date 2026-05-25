@@ -424,7 +424,7 @@ export function Layout({ children }: LayoutProps) {
               </div>
               <div className="flex flex-col leading-none min-w-0">
                 <span className="font-bold text-white text-[13px] sm:text-[15px] tracking-tight group-hover:text-emerald-300 transition-colors duration-200 truncate">Pro Health Peptides</span>
-                <span className="text-[9px] sm:text-[10px] text-emerald-400/55 font-medium tracking-widest uppercase">Research Grade</span>
+                <span className="text-[9px] sm:text-[10px] text-emerald-300/90 font-medium tracking-widest uppercase">Research Grade</span>
               </div>
             </Link>
 
@@ -920,7 +920,7 @@ export function Layout({ children }: LayoutProps) {
                 </div>
                 <div className="flex flex-col leading-none">
                   <span className="font-bold text-white text-[15px] tracking-tight group-hover:text-blue-300 transition-colors">Pro Health Peptides</span>
-                  <span className="text-[10px] text-blue-400/50 font-medium tracking-widest uppercase">Research Grade</span>
+                  <span className="text-[10px] text-blue-300/90 font-medium tracking-widest uppercase">Research Grade</span>
                 </div>
               </a>
               <p className="text-[#5a80a6] text-sm leading-relaxed mb-4 max-w-[260px]">

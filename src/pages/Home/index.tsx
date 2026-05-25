@@ -1006,7 +1006,7 @@ export default function HomePage() {
                         : 'Your discount code is still valid \u2014 use it at checkout.'}
                     </p>
                     <div className="rounded-xl p-5" style={{ background: 'rgba(16,185,129,0.06)', border: '1px dashed rgba(16,185,129,0.35)' }}>
-                      <p className="text-[9px] sm:text-[10px] text-emerald-400/55 font-medium tracking-widest uppercase shadow-none mb-2">Your 10% Discount Code</p>
+                      <p className="text-[9px] sm:text-[10px] text-emerald-300/90 font-medium tracking-widest uppercase shadow-none mb-2">Your 10% Discount Code</p>
                       <div className="flex items-center justify-center gap-3 flex-wrap">
                         <code style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '0.18em', color: '#f0f8ff', fontFamily: 'monospace' }}>{revealedCode}</code>
                         <button

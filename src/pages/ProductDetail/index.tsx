@@ -735,7 +735,7 @@ export default function ProductDetail() {
         <div className="container mx-auto px-4 md:px-6 py-2 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 min-w-0">
             <ShieldCheck className="w-3 h-3 text-amber-400/70 shrink-0" />
-            <span className="text-amber-300/50 text-[10px] font-semibold uppercase tracking-[0.12em] truncate">
+            <span className="text-amber-200/90 text-[10px] font-semibold uppercase tracking-[0.12em] truncate">
               For laboratory research use only · Not for human or veterinary consumption
             </span>
           </div>
@@ -1162,7 +1162,7 @@ export default function ProductDetail() {
               {/* GLOW — 3-peptide blend tag, directly under product name */}
               {/glow/i.test(product.name) && !/klow/i.test(product.name) && (
                 <div className="inline-flex items-center gap-2 mt-2 mb-1 px-3 py-1.5 rounded-lg border border-yellow-400/25 bg-yellow-400/[0.06]">
-                  <span className="text-yellow-300/60 text-[10px] font-bold uppercase tracking-widest">3-Peptide Blend</span>
+                  <span className="text-yellow-200/95 text-[10px] font-bold uppercase tracking-widest">3-Peptide Blend</span>
                   <span className="w-px h-3 bg-yellow-400/20" />
                   <span className="text-yellow-200/80 text-[11px] font-mono tracking-tight">BPC-157 10mg · TB-500 10mg · GHK-Cu 50mg</span>
                 </div>
@@ -1171,7 +1171,7 @@ export default function ProductDetail() {
               {/* KLOW — 4-peptide blend tag, directly under product name */}
               {/klow/i.test(product.name) && (
                 <div className="inline-flex items-center gap-2 mt-2 mb-1 px-3 py-1.5 rounded-lg border border-yellow-400/25 bg-yellow-400/[0.06]">
-                  <span className="text-yellow-300/60 text-[10px] font-bold uppercase tracking-widest">4-Peptide Blend</span>
+                  <span className="text-yellow-200/95 text-[10px] font-bold uppercase tracking-widest">4-Peptide Blend</span>
                   <span className="w-px h-3 bg-yellow-400/20" />
                   <span className="text-yellow-200/80 text-[11px] font-mono tracking-tight">BPC-157 10mg · TB-500 10mg · GHK-Cu 50mg · KPV 10mg</span>
                 </div>
