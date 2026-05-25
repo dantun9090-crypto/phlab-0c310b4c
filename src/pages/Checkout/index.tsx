@@ -733,13 +733,13 @@ export default function CheckoutPage() {
                   aria-expanded={currentStep === 1}
                 >
                   <div className="flex items-center gap-3">
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border ${currentStep === 1 ? 'bg-emerald-500 border-emerald-500 text-white' : completedSteps.has(1) ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'border-white/15 text-gray-500'}`}>
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border ${currentStep === 1 ? 'bg-emerald-500 border-emerald-500 text-white' : completedSteps.has(1) ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'border-white/15 text-gray-400'}`}>
                       {completedSteps.has(1) ? <Check className="w-3.5 h-3.5" /> : '1'}
                     </span>
                     <div>
-                      <p className={`text-sm font-semibold ${currentStep === 1 ? 'text-white' : completedSteps.has(1) ? 'text-gray-300' : 'text-gray-500'}`}>Your Details</p>
+                      <p className={`text-sm font-semibold ${currentStep === 1 ? 'text-white' : completedSteps.has(1) ? 'text-gray-300' : 'text-gray-400'}`}>Your Details</p>
                       {completedSteps.has(1) && step1Summary && currentStep !== 1 && (
-                        <p className="text-xs text-gray-500 truncate max-w-[240px]">{step1Summary}</p>
+                        <p className="text-xs text-gray-400 truncate max-w-[240px]">{step1Summary}</p>
                       )}
                     </div>
                   </div>
@@ -782,7 +782,7 @@ export default function CheckoutPage() {
                     </div>
 
                     <div>
-                      <label htmlFor="phone" className="block text-xs font-medium text-gray-300 mb-1">Phone <span className="text-gray-500 font-normal">(optional)</span></label>
+                      <label htmlFor="phone" className="block text-xs font-medium text-gray-300 mb-1">Phone <span className="text-gray-400 font-normal">(optional)</span></label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                         <input id="phone" type="tel" autoComplete="tel" value={form.phone} onChange={e => setField('phone', e.target.value)} placeholder="07911 123456" style={iconInputStyle(!!errors.phone)} />
@@ -835,13 +835,13 @@ export default function CheckoutPage() {
                   disabled={!completedSteps.has(1) && currentStep < 2}
                 >
                   <div className="flex items-center gap-3">
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border ${currentStep === 2 ? 'bg-emerald-500 border-emerald-500 text-white' : completedSteps.has(2) ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'border-white/15 text-gray-500'}`}>
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border ${currentStep === 2 ? 'bg-emerald-500 border-emerald-500 text-white' : completedSteps.has(2) ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'border-white/15 text-gray-400'}`}>
                       {completedSteps.has(2) ? <Check className="w-3.5 h-3.5" /> : '2'}
                     </span>
                     <div>
-                      <p className={`text-sm font-semibold ${currentStep === 2 ? 'text-white' : completedSteps.has(2) ? 'text-gray-300' : 'text-gray-500'}`}>Delivery Address</p>
+                      <p className={`text-sm font-semibold ${currentStep === 2 ? 'text-white' : completedSteps.has(2) ? 'text-gray-300' : 'text-gray-400'}`}>Delivery Address</p>
                       {completedSteps.has(2) && step2Summary && currentStep !== 2 && (
-                        <p className="text-xs text-gray-500 truncate max-w-[240px]">{step2Summary}</p>
+                        <p className="text-xs text-gray-400 truncate max-w-[240px]">{step2Summary}</p>
                       )}
                     </div>
                   </div>
@@ -954,10 +954,10 @@ export default function CheckoutPage() {
                   disabled={currentStep < 3 && !completedSteps.has(2)}
                 >
                   <div className="flex items-center gap-3">
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border ${currentStep === 3 ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/15 text-gray-500'}`}>
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border ${currentStep === 3 ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/15 text-gray-400'}`}>
                       3
                     </span>
-                    <p className={`text-sm font-semibold ${currentStep === 3 ? 'text-white' : 'text-gray-500'}`}>Payment</p>
+                    <p className={`text-sm font-semibold ${currentStep === 3 ? 'text-white' : 'text-gray-400'}`}>Payment</p>
                   </div>
                 </button>
 
@@ -1050,7 +1050,7 @@ export default function CheckoutPage() {
                         <span className="text-white font-semibold text-sm">Total</span>
                         <span className="flex items-baseline gap-2">
                           {hasDiscount && originalTotal.toFixed(2) !== total && (
-                            <span className="text-gray-500 text-xs line-through">£{originalTotal.toFixed(2)}</span>
+                            <span className="text-gray-400 text-xs line-through">£{originalTotal.toFixed(2)}</span>
                           )}
                           <span className="text-white font-bold text-base">£{total}</span>
                         </span>
@@ -1119,7 +1119,7 @@ export default function CheckoutPage() {
                         { icon: BadgeCheck, label: '≥99% HPLC', color: 'text-emerald-400' },
                         { icon: Truck, label: 'UK Based', color: 'text-cyan-400' },
                       ].map(({ icon: Icon, label, color }) => (
-                        <div key={label} className="flex items-center gap-1.5 text-xs text-gray-500">
+                        <div key={label} className="flex items-center gap-1.5 text-xs text-gray-400">
                           <Icon className={`w-3.5 h-3.5 ${color}`} />
                           <span>{label}</span>
                         </div>
@@ -1138,7 +1138,7 @@ export default function CheckoutPage() {
                   <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
                     <ShoppingCart className="w-4 h-4 text-gray-400" />
                     Order Summary
-                    <span className="ml-auto text-gray-500 text-xs font-normal">{totalItems} item{totalItems !== 1 ? 's' : ''}</span>
+                    <span className="ml-auto text-gray-400 text-xs font-normal">{totalItems} item{totalItems !== 1 ? 's' : ''}</span>
                   </h2>
 
                   {/* Items */}
@@ -1152,7 +1152,7 @@ export default function CheckoutPage() {
                           )}
                           <div className="flex-1 min-w-0">
                             <p className="text-white text-xs font-medium truncate">{item.name}</p>
-                            {item.dosage && <p className="text-gray-500 text-xs">{item.dosage}</p>}
+                            {item.dosage && <p className="text-gray-400 text-xs">{item.dosage}</p>}
                             <div className="flex items-center gap-1.5 mt-1">
                               <button onClick={() => updateQty(key, -1)} aria-label="Decrease" className="w-5 h-5 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
                                 <Minus className="w-2.5 h-2.5 text-gray-300" />
