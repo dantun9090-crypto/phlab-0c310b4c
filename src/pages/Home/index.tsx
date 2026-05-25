@@ -1034,6 +1034,11 @@ export default function HomePage() {
                       <Mail style={{ width: 15, height: 15 }} />
                       {emailStatus === 'sending' ? 'Sending…' : 'Send My Protocol Library'}
                     </button>
+                    {emailStatus === 'error' && (
+                      <p className="text-center text-xs font-semibold" style={{ color: '#f87171' }}>
+                        Something went wrong. Please try again or email info@prohealthpeptides.co.uk.
+                      </p>
+                    )}
                     <p className="text-center text-xs" style={{ color: '#3a5a82' }}>
                       <Lock style={{ width: 10, height: 10, display: 'inline', marginRight: 4 }} />
                       No spam. Unsubscribe anytime.
