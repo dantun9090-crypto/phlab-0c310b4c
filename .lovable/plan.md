@@ -1,56 +1,90 @@
 ## Goal
 
-Move the admin IP whitelist check off the client so an authenticated admin can't bypass it in DevTools, and make it fail **closed** (not open) on errors when the guard is enabled.
+Run Firebase and Supabase side-by-side. Nothing currently on Firebase moves. Supabase becomes the home for new content + analytics features.
 
-## What changes
+## Responsibility split (the rule of thumb)
 
-### 1. New server function — `src/lib/admin-ip-gate.functions.ts`
+| Domain | Database |
+|---|---|
+| Auth (login, register, sessions, anon) | **Firebase** |
+| Orders, payments, cart, invoices | **Firebase** |
+| Products, coupons, inventory | **Firebase** (already there) |
+| Customers / user profiles | **Firebase** |
+| Blog / Resources / Articles content | **Supabase** |
+| SEO metadata, sitemap data, redirects | **Supabase** |
+| Analytics events, page views, funnels | **Supabase** |
+| Email logs, contact form submissions, audit trail | **Supabase** |
+| Banners / landing page CMS content | **Supabase** |
 
-A TanStack `createServerFn` that runs in the Cloudflare Worker:
+Rule: if it touches money, auth, or an existing Firestore collection → Firebase. If it's new content or telemetry → Supabase.
 
-- Reads the caller's IP from request headers, in this priority:
-  - `cf-connecting-ip` (Cloudflare — authoritative for our deploy)
-  - first entry of `x-forwarded-for`
-  - `x-real-ip`
-- Fetches `settings/ipWhitelist` and the `ipWhitelist` collection from Firestore via the REST API (same pattern already used in `cart-validation.functions.ts`).
-- Returns `{ allowed: boolean, ip: string | null, enforced: boolean, reason?: string }`.
+## Step 1 — Enable Lovable Cloud
 
-Behaviour:
+Provision a new Supabase project via Lovable Cloud. This auto-injects:
+- `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (browser)
+- `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (server)
+- Generates `src/integrations/supabase/client.ts`, `client.server.ts`, `auth-middleware.ts`
 
-- If `settings/ipWhitelist.enabled !== true` → `allowed: true, enforced: false` (no change in behaviour for projects that haven't turned the guard on).
-- If enabled and Firestore reads succeed → match `ip` against entries (exact match + basic IPv4 CIDR, mirroring today's logic).
-- If enabled and we **cannot determine the IP** or Firestore is unreachable → `allowed: false` (fail closed). This fixes the current `catch { return true; }` fail-open bug called out in the finding.
+No Firebase config changes. `src/lib/firebase.ts` and `src/lib/firebase-auth.ts` stay untouched.
 
-The function does **not** verify the Firebase user identity — IP gating is independent of who you are. Identity is still enforced by the existing `isAdmin` check on `customers/{uid}`.
+## Step 2 — Add a thin DB-selection helper
 
-### 2. Wire the server gate into `src/pages/Admin/index.tsx`
+New file `src/lib/db.ts` — a single import surface so feature code is explicit:
 
-- Remove the local `checkIpAllowed()` function and the dynamic `firebase/firestore` import inside it.
-- Replace the `useEffect` that calls `checkIpAllowed()` with a call to the new server fn via `useServerFn`.
-- Keep the same `ipChecked` / `ipAllowed` state flow and the existing "Access Restricted" UI — only the source of truth changes.
-- Render nothing admin-related until the server responds; the existing loading spinner already covers this.
+```ts
+// Firebase — auth + transactional
+export { db as firebaseDb, auth } from '@/lib/firebase';
+// Supabase — content + analytics (browser)
+export { supabase } from '@/integrations/supabase/client';
+```
 
-### 3. Keep `IpWhitelistTab` as-is
+Convention doc at the top of the file listing the responsibility table above, so future edits stay consistent.
 
-The admin tab that manages whitelist entries (`src/pages/Admin/tabs/IpWhitelistTab.tsx`) still uses `api.ipify.org` and direct Firestore reads. That's fine — it's just a UI for showing "your current IP" and editing entries. The **enforcement** is what moves server-side.
+## Step 3 — Server access
 
-### 4. Mark the security finding fixed
+- Browser: import `supabase` from `@/integrations/supabase/client` for RLS-scoped reads/writes (anonymous content reads, analytics inserts).
+- Server: use `createServerFn` + `requireSupabaseAuth` for user-scoped writes; use `supabaseAdmin` from `client.server.ts` only for admin/maintenance.
+- Register `attachSupabaseAuth` in `src/start.ts` `functionMiddleware` so bearer tokens flow to protected server fns.
 
-After implementation, call `manage_security_finding` with `mark_as_fixed` for `agent_security:ip_whitelist_clientside`, explaining that enforcement moved to a Worker-side server function that reads `cf-connecting-ip` and fails closed.
+No changes to existing Firebase data flow in `Home`, `Checkout`, `Payment`, `Admin`.
 
-## What this fix does NOT do (important caveat)
+## Step 4 — Worked examples (delivered as `docs/dual-database.md`)
 
-This gate blocks the **Admin UI shell** from rendering for off-whitelist IPs. It does **not** prevent an attacker who already has admin Firebase credentials from talking to Firestore directly with the Firebase SDK from any IP — Firestore security rules see the user but not the request IP, and there's no Cloud Function proxy in this project. A complete fix would also require either:
+Four short, copy-pasteable snippets:
 
-- Tightening Firestore security rules + adding Firebase App Check, or
-- Routing admin writes through server functions that enforce IP there too.
+1. **Firebase read/write** (existing pattern — orders): `addDoc(collection(firebaseDb, 'orders'), …)`.
+2. **Supabase read (browser)** — fetching blog posts: `supabase.from('articles').select('*').eq('published', true)`.
+3. **Supabase write (browser)** — analytics event: `supabase.from('analytics_events').insert({ type, path, ts })`.
+4. **Supabase server fn** — admin-only content publish via `createServerFn` + `supabaseAdmin`.
 
-I'll flag this in the "mark as fixed" explanation so it's tracked, and we can do that as a follow-up if you want full data-layer enforcement.
+Plus a "which DB?" decision flowchart in the same doc.
 
-## Files touched
+## Step 5 — Seed Supabase with two starter tables (so it's "ready to use")
 
-- **Create** `src/lib/admin-ip-gate.functions.ts`
-- **Edit** `src/pages/Admin/index.tsx` (remove client check, call server fn)
-- No design/layout changes; admin shell, header, sidebar untouched.
+Schema migration creating:
+- `articles` (id, slug, title, body, published, created_at) — RLS: public read where `published=true`, admin write.
+- `analytics_events` (id, type, path, user_agent, created_at) — RLS: public insert, admin read.
 
-Ready to switch to build mode and apply this?
+These are minimum demos showing the pattern. No existing pages are rewired to Supabase — they only get used when you ask for the blog/analytics features.
+
+## What does NOT change
+
+- Header, footer, layout, design tokens — untouched.
+- Firebase Auth guard (`RequireAuth`) — untouched.
+- All existing pages, admin tabs, Firestore collections — untouched.
+- No Firebase → Supabase migration of any kind.
+
+## Files to be created/edited
+
+**Created**
+- `src/lib/db.ts` (selector + rule-of-thumb doc)
+- `docs/dual-database.md` (examples + decision guide)
+- Supabase migration: `articles`, `analytics_events` + RLS
+- `src/lib/content.functions.ts` (one example server fn)
+
+**Edited (minimal)**
+- `src/start.ts` — append `attachSupabaseAuth` to `functionMiddleware` (if not already)
+- `.env-like injection` — handled automatically by Lovable Cloud
+
+**Untouched**
+- All Firebase files, all existing pages, all admin tabs.
