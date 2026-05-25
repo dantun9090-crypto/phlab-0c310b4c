@@ -5,8 +5,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { db, collection, getDocs, doc, deleteDoc } from '@/lib/firebase';
+import { db, collection, getDocs, doc, deleteDoc, getAllProducts, updateProduct } from '@/lib/firebase';
 import { seedProducts, nameToSlug } from '@/lib/seedProducts';
+import { findMerchantEntry, MERCHANT_SEO_ENTRIES } from '@/lib/merchantSeoData';
 
 const SITE_BASE = 'https://www.prohealthpeptides.co.uk';
 
@@ -587,6 +588,116 @@ export default function ToolsTab() {
           Click "Replace Catalog" to delete all existing products and load the complete research peptide catalog with laboratory descriptions, CAS numbers, and specifications.
         </p>
       </div>
+
+      {/* ── Merchant Center SEO Migration ───────────────────── */}
+      <MerchantSeoMigration />
     </div>
+  );
+}
+
+function MerchantSeoMigration() {
+  const [running, setRunning] = useState(false);
+  const [report, setReport] = useState<
+    | { ok: true; updated: string[]; skipped: string[] }
+    | { ok: false; error: string }
+    | null
+  >(null);
+
+  const apply = async () => {
+    if (!confirm(`Apply Google Merchant Center–compliant titles and descriptions to all matching products in Firestore? This updates the product name and description fields for the ${MERCHANT_SEO_ENTRIES.length} mapped compounds. Prices, stock, images, and variants are not touched.`)) return;
+    setRunning(true);
+    setReport(null);
+    try {
+      const products = await getAllProducts();
+      const updated: string[] = [];
+      const skipped: string[] = [];
+      for (const p of products) {
+        const entry = findMerchantEntry(p.name || '');
+        if (!entry) { skipped.push(p.name); continue; }
+        await updateProduct(p.id!, { name: entry.name, description: entry.description });
+        updated.push(`${p.name} → ${entry.name}`);
+      }
+      setReport({ ok: true, updated, skipped });
+    } catch (e: any) {
+      setReport({ ok: false, error: e?.message || 'Update failed' });
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-[#0b1a30]/70 border border-white/[0.08] rounded-2xl p-6 space-y-4"
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-amber-600/20 flex items-center justify-center shrink-0">
+          <Shield className="w-5 h-5 text-amber-400" />
+        </div>
+        <div>
+          <h3 className="text-[#f0f6ff] font-semibold">Apply Merchant Center SEO to Products</h3>
+          <p className="text-[#6b8fba] text-xs mt-0.5">
+            Rewrites each product's name and description in Firestore with British-English,
+            Merchant-Center–compliant copy (no medical claims; explicit "laboratory research use only").
+          </p>
+        </div>
+      </div>
+
+      <button
+        onClick={apply}
+        disabled={running}
+        className="flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white text-sm font-semibold rounded-xl transition-all disabled:opacity-50"
+      >
+        {running
+          ? <><Loader2 className="w-4 h-4 animate-spin" /> Updating products…</>
+          : <><Shield className="w-4 h-4" /> Apply Merchant SEO to all matching products</>}
+      </button>
+
+      <AnimatePresence>
+        {report && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className={`rounded-xl p-4 text-sm border ${
+              report.ok
+                ? 'bg-emerald-900/20 border-emerald-500/20 text-emerald-300'
+                : 'bg-red-900/20 border-red-500/20 text-red-300'
+            }`}
+          >
+            {report.ok ? (
+              <>
+                <div className="flex items-center gap-2 font-semibold">
+                  <CheckCircle2 className="w-4 h-4" /> Updated {report.updated.length} product(s).
+                </div>
+                {report.updated.length > 0 && (
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-xs text-[#6b8fba]">Show updated</summary>
+                    <ul className="mt-2 space-y-1 text-xs text-[#8caad4]">
+                      {report.updated.map((line) => <li key={line}>• {line}</li>)}
+                    </ul>
+                  </details>
+                )}
+                {report.skipped.length > 0 && (
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-xs text-[#6b8fba]">
+                      {report.skipped.length} product(s) had no SEO mapping (skipped)
+                    </summary>
+                    <ul className="mt-2 space-y-1 text-xs text-[#8caad4]">
+                      {report.skipped.map((n) => <li key={n}>• {n}</li>)}
+                    </ul>
+                  </details>
+                )}
+              </>
+            ) : (
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" /> {report.error}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
