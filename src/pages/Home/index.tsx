@@ -968,13 +968,34 @@ export default function HomePage() {
                 </div>
               </div>
               <div>
-                {emailStatus === 'sent' ? (
-                  <div className="text-center py-10">
+                {emailStatus === 'sent' || emailStatus === 'already_claimed' ? (
+                  <div className="text-center py-6">
                     <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)' }}>
                       <CheckCircle2 style={{ width: 28, height: 28, color: '#10b981' }} />
                     </div>
-                    <p className="font-bold text-base mb-1" style={{ color: '#e4f0ff' }}>Protocol Library sent!</p>
-                    <p className="text-sm" style={{ color: '#4a6e8a' }}>Check your inbox — discount code included.</p>
+                    <p className="font-bold text-base mb-1" style={{ color: '#e4f0ff' }}>
+                      {emailStatus === 'sent' ? 'Protocol Library sent!' : 'You\u2019ve already claimed this'}
+                    </p>
+                    <p className="text-sm mb-5" style={{ color: '#4a6e8a' }}>
+                      {emailStatus === 'sent'
+                        ? 'Check your inbox for the PDF download link.'
+                        : 'Your discount code is still valid \u2014 use it at checkout.'}
+                    </p>
+                    <div className="rounded-xl p-5" style={{ background: 'rgba(16,185,129,0.06)', border: '1px dashed rgba(16,185,129,0.35)' }}>
+                      <p className="text-[10px] font-semibold uppercase tracking-widest mb-2" style={{ color: '#4ade80' }}>Your 10% Discount Code</p>
+                      <div className="flex items-center justify-center gap-3 flex-wrap">
+                        <code style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '0.18em', color: '#f0f8ff', fontFamily: 'monospace' }}>{revealedCode}</code>
+                        <button
+                          type="button"
+                          onClick={copyDiscountCode}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                          style={{ background: 'rgba(16,185,129,0.18)', color: '#4ade80', border: '1px solid rgba(16,185,129,0.35)' }}
+                        >
+                          {codeCopied ? 'Copied!' : 'Copy'}
+                        </button>
+                      </div>
+                      <p className="text-[11px] mt-3" style={{ color: '#6b8fba' }}>Apply at checkout for 10% off your first order.</p>
+                    </div>
                   </div>
                 ) : (
                   <form onSubmit={handleEmailSubmit} className="flex flex-col gap-4">
