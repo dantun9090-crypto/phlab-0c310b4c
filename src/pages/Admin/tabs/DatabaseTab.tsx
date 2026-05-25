@@ -11,6 +11,27 @@ export default function DatabaseTab() {
   const [migrateResult, setMigrateResult] = useState<any>(null);
   const [seoMigrating, setSeoMigrating] = useState(false);
   const [seoMigrateResult, setSeoMigrateResult] = useState<any>(null);
+  const [validating, setValidating] = useState(false);
+  const [validationReport, setValidationReport] = useState<MerchantSEOValidationReport | null>(null);
+
+  const handleValidateSEO = async () => {
+    setValidating(true);
+    setValidationReport(null);
+    try {
+      const report = await validateMerchantSEO();
+      setValidationReport(report);
+    } catch (err: any) {
+      setValidationReport({
+        success: false,
+        message: err.message || 'Validation failed',
+        total: 0,
+        valid: 0,
+        issues: [],
+      });
+    } finally {
+      setValidating(false);
+    }
+  };
 
   const handleCheckStatus = async () => {
     setLoading(true);
