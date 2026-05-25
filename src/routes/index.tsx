@@ -3,9 +3,9 @@ import { useEffect, useState, lazy, Suspense } from "react";
 
 const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
-const HOME_TITLE = "Pro Health Peptides UK | Research Reference Compounds";
+const HOME_TITLE = "Research Peptides UK — HPLC-Tested with Batch CoA | PHP";
 const HOME_DESCRIPTION =
-  "UK supplier of HPLC-verified research reference compounds and laboratory peptides. Batch CoA included. Strictly for in-vitro laboratory research use only — not for human or veterinary consumption.";
+  "Shop HPLC-tested research peptides in the UK with batch CoAs and tracked next-day dispatch. Strictly for in-vitro laboratory research use.";
 const HOME_URL = "https://www.prohealthpeptides.co.uk/";
 
 export const Route = createFileRoute("/")({
