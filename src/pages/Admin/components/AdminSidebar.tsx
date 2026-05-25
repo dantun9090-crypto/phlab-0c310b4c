@@ -71,6 +71,7 @@ const navGroups = [
       { id: 'database', label: 'Database', icon: Database },
       { id: 'backup', label: 'Backup', icon: HardDrive },
       { id: 'ipwhitelist', label: 'IP Whitelist', icon: Lock },
+      { id: 'diagnostics', label: 'Diagnostics', icon: Activity },
     ],
   },
 ];
