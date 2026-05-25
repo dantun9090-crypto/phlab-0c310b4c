@@ -23,6 +23,8 @@ export interface SeoProduct {
   isActive: boolean;
   visibility: string;
   displayOrder: number;
+  seoTitle?: string;
+  seoDescription?: string;
 }
 
 function slugify(name: string): string {
@@ -81,6 +83,8 @@ function toProduct(doc: any): SeoProduct | null {
     isActive: f.isActive !== false,
     visibility: f.visibility ?? "active",
     displayOrder: typeof f.displayOrder === "number" ? f.displayOrder : 999,
+    seoTitle: typeof f.seoTitle === "string" && f.seoTitle.trim() ? f.seoTitle : undefined,
+    seoDescription: typeof f.seoDescription === "string" && f.seoDescription.trim() ? f.seoDescription : undefined,
   };
 }
 
