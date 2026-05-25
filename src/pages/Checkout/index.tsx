@@ -733,11 +733,11 @@ export default function CheckoutPage() {
                   aria-expanded={currentStep === 1}
                 >
                   <div className="flex items-center gap-3">
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border ${currentStep === 1 ? 'bg-emerald-500 border-emerald-500 text-white' : completedSteps.has(1) ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'border-white/15 text-gray-500'}`}>
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border ${currentStep === 1 ? 'bg-emerald-500 border-emerald-500 text-white' : completedSteps.has(1) ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'border-white/15 text-gray-400'}`}>
                       {completedSteps.has(1) ? <Check className="w-3.5 h-3.5" /> : '1'}
                     </span>
                     <div>
-                      <p className={`text-sm font-semibold ${currentStep === 1 ? 'text-white' : completedSteps.has(1) ? 'text-gray-300' : 'text-gray-500'}`}>Your Details</p>
+                      <p className={`text-sm font-semibold ${currentStep === 1 ? 'text-white' : completedSteps.has(1) ? 'text-gray-300' : 'text-gray-400'}`}>Your Details</p>
                       {completedSteps.has(1) && step1Summary && currentStep !== 1 && (
                         <p className="text-xs text-gray-400 truncate max-w-[240px]">{step1Summary}</p>
                       )}
@@ -835,11 +835,11 @@ export default function CheckoutPage() {
                   disabled={!completedSteps.has(1) && currentStep < 2}
                 >
                   <div className="flex items-center gap-3">
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border ${currentStep === 2 ? 'bg-emerald-500 border-emerald-500 text-white' : completedSteps.has(2) ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'border-white/15 text-gray-500'}`}>
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border ${currentStep === 2 ? 'bg-emerald-500 border-emerald-500 text-white' : completedSteps.has(2) ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' : 'border-white/15 text-gray-400'}`}>
                       {completedSteps.has(2) ? <Check className="w-3.5 h-3.5" /> : '2'}
                     </span>
                     <div>
-                      <p className={`text-sm font-semibold ${currentStep === 2 ? 'text-white' : completedSteps.has(2) ? 'text-gray-300' : 'text-gray-500'}`}>Delivery Address</p>
+                      <p className={`text-sm font-semibold ${currentStep === 2 ? 'text-white' : completedSteps.has(2) ? 'text-gray-300' : 'text-gray-400'}`}>Delivery Address</p>
                       {completedSteps.has(2) && step2Summary && currentStep !== 2 && (
                         <p className="text-xs text-gray-400 truncate max-w-[240px]">{step2Summary}</p>
                       )}
@@ -954,10 +954,10 @@ export default function CheckoutPage() {
                   disabled={currentStep < 3 && !completedSteps.has(2)}
                 >
                   <div className="flex items-center gap-3">
-                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border ${currentStep === 3 ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/15 text-gray-500'}`}>
+                    <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border ${currentStep === 3 ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-white/15 text-gray-400'}`}>
                       3
                     </span>
-                    <p className={`text-sm font-semibold ${currentStep === 3 ? 'text-white' : 'text-gray-500'}`}>Payment</p>
+                    <p className={`text-sm font-semibold ${currentStep === 3 ? 'text-white' : 'text-gray-400'}`}>Payment</p>
                   </div>
                 </button>
 
