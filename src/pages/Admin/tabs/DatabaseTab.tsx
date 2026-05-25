@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Database, Upload, CheckCircle2, AlertCircle, Loader2, Trash2, RefreshCw, Tag } from 'lucide-react';
-import { seedProducts, checkSeedStatus, clearAllProducts, migrateAddSlugs, migrateMerchantSEO } from '@/lib/seedProducts';
+import { Database, Upload, CheckCircle2, AlertCircle, Loader2, Trash2, RefreshCw, Tag, ShieldCheck } from 'lucide-react';
+import { seedProducts, checkSeedStatus, clearAllProducts, migrateAddSlugs, migrateMerchantSEO, validateMerchantSEO, MERCHANT_SEO_LIMITS, type MerchantSEOValidationReport } from '@/lib/seedProducts';
 
 export default function DatabaseTab() {
   const [loading, setLoading] = useState(false);
@@ -11,6 +11,27 @@ export default function DatabaseTab() {
   const [migrateResult, setMigrateResult] = useState<any>(null);
   const [seoMigrating, setSeoMigrating] = useState(false);
   const [seoMigrateResult, setSeoMigrateResult] = useState<any>(null);
+  const [validating, setValidating] = useState(false);
+  const [validationReport, setValidationReport] = useState<MerchantSEOValidationReport | null>(null);
+
+  const handleValidateSEO = async () => {
+    setValidating(true);
+    setValidationReport(null);
+    try {
+      const report = await validateMerchantSEO();
+      setValidationReport(report);
+    } catch (err: any) {
+      setValidationReport({
+        success: false,
+        message: err.message || 'Validation failed',
+        total: 0,
+        valid: 0,
+        issues: [],
+      });
+    } finally {
+      setValidating(false);
+    }
+  };
 
   const handleCheckStatus = async () => {
     setLoading(true);
@@ -337,6 +358,97 @@ export default function DatabaseTab() {
           </div>
         )}
       </div>
+
+      {/* Merchant SEO Validation */}
+      <div className="bg-[#0b1a30]/60 border border-blue-500/20 rounded-xl p-6">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-10 h-10 bg-blue-600/20 rounded-lg flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-5 h-5 text-blue-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-white mb-1">Validate Merchant SEO Lengths</h3>
+            <p className="text-sm text-[#6b8fba]">
+              Checks every product's <span className="font-mono">seoTitle</span> ({MERCHANT_SEO_LIMITS.titleMin}–{MERCHANT_SEO_LIMITS.titleMax} chars) and <span className="font-mono">seoDescription</span> ({MERCHANT_SEO_LIMITS.descriptionMin}–{MERCHANT_SEO_LIMITS.descriptionMax} chars) against Google Merchant Center limits. Read-only — does not modify Firestore.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleValidateSEO}
+          disabled={validating || seoMigrating || migrating || loading || clearing}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+        >
+          {validating ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Validating...
+            </>
+          ) : (
+            <>
+              <ShieldCheck className="w-4 h-4" />
+              Run SEO Validation
+            </>
+          )}
+        </button>
+
+        {validationReport && (
+          <div className="mt-4 space-y-3">
+            <div className={`p-3 rounded-lg border ${
+              validationReport.success
+                ? 'bg-green-900/20 border-green-500/30'
+                : 'bg-amber-900/20 border-amber-500/30'
+            }`}>
+              <div className="flex items-start gap-2">
+                {validationReport.success ? (
+                  <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                )}
+                <div>
+                  <p className={`text-sm font-medium ${validationReport.success ? 'text-green-300' : 'text-amber-300'}`}>
+                    {validationReport.message}
+                  </p>
+                  <p className="text-xs text-[#6b8fba] mt-1">
+                    {validationReport.valid} valid · {validationReport.issues.length} issue(s) · {validationReport.total} total
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {validationReport.issues.length > 0 && (
+              <div className="overflow-hidden rounded-lg border border-white/10">
+                <table className="w-full text-xs">
+                  <thead className="bg-[#04101f]/80 text-[#6b8fba]">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">Product</th>
+                      <th className="px-3 py-2 text-left font-medium">Field</th>
+                      <th className="px-3 py-2 text-left font-medium">Problem</th>
+                      <th className="px-3 py-2 text-right font-medium">Length</th>
+                      <th className="px-3 py-2 text-right font-medium">Limit</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {validationReport.issues.map((iss, i) => {
+                      const colour = iss.problem === 'missing' ? 'text-red-300' : iss.problem === 'too_long' ? 'text-amber-300' : 'text-yellow-300';
+                      const label = iss.problem === 'missing' ? 'Missing' : iss.problem === 'too_long' ? 'Too long' : 'Too short';
+                      return (
+                        <tr key={i} className="bg-[#0b1a30]/40">
+                          <td className="px-3 py-2 text-white">{iss.name}</td>
+                          <td className="px-3 py-2 font-mono text-[#6b8fba]">{iss.field}</td>
+                          <td className={`px-3 py-2 font-medium ${colour}`}>{label}</td>
+                          <td className="px-3 py-2 text-right text-white">{iss.length}</td>
+                          <td className="px-3 py-2 text-right text-[#6b8fba]">{iss.limit}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+
 
 
       {/* Result */}

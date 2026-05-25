@@ -638,3 +638,92 @@ export async function migrateMerchantSEO(): Promise<{
     return { success: false, message: error.message || 'Migration failed', error };
   }
 }
+
+// Google Merchant Center character-limit rules.
+// Title: max 150 (hard cap), recommend ≥ 30 for clarity.
+// Description: max 5000 (hard cap), recommend 70–500 for previews.
+export const MERCHANT_SEO_LIMITS = {
+  titleMin: 30,
+  titleMax: 150,
+  descriptionMin: 70,
+  descriptionMax: 500,
+} as const;
+
+export interface MerchantSEOValidationIssue {
+  name: string;
+  field: 'seoTitle' | 'seoDescription';
+  problem: 'missing' | 'too_short' | 'too_long';
+  length: number;
+  limit: number;
+}
+
+export interface MerchantSEOValidationReport {
+  success: boolean;
+  message: string;
+  total: number;
+  valid: number;
+  issues: MerchantSEOValidationIssue[];
+  error?: any;
+}
+
+/**
+ * Reads every product and validates seoTitle / seoDescription against
+ * Google Merchant Center character-limit recommendations. Read-only —
+ * does not modify Firestore.
+ */
+export async function validateMerchantSEO(): Promise<MerchantSEOValidationReport> {
+  try {
+    const snap = await getDocs(collection(db, PRODUCTS_COL));
+    const issues: MerchantSEOValidationIssue[] = [];
+    let valid = 0;
+
+    for (const d of snap.docs) {
+      const data = d.data();
+      const name = (data.name || d.id) as string;
+      const title = (data.seoTitle ?? '') as string;
+      const description = (data.seoDescription ?? '') as string;
+      const before = issues.length;
+
+      // Title checks
+      if (!title) {
+        issues.push({ name, field: 'seoTitle', problem: 'missing', length: 0, limit: MERCHANT_SEO_LIMITS.titleMax });
+      } else if (title.length < MERCHANT_SEO_LIMITS.titleMin) {
+        issues.push({ name, field: 'seoTitle', problem: 'too_short', length: title.length, limit: MERCHANT_SEO_LIMITS.titleMin });
+      } else if (title.length > MERCHANT_SEO_LIMITS.titleMax) {
+        issues.push({ name, field: 'seoTitle', problem: 'too_long', length: title.length, limit: MERCHANT_SEO_LIMITS.titleMax });
+      }
+
+      // Description checks
+      if (!description) {
+        issues.push({ name, field: 'seoDescription', problem: 'missing', length: 0, limit: MERCHANT_SEO_LIMITS.descriptionMax });
+      } else if (description.length < MERCHANT_SEO_LIMITS.descriptionMin) {
+        issues.push({ name, field: 'seoDescription', problem: 'too_short', length: description.length, limit: MERCHANT_SEO_LIMITS.descriptionMin });
+      } else if (description.length > MERCHANT_SEO_LIMITS.descriptionMax) {
+        issues.push({ name, field: 'seoDescription', problem: 'too_long', length: description.length, limit: MERCHANT_SEO_LIMITS.descriptionMax });
+      }
+
+      if (issues.length === before) valid++;
+    }
+
+    const total = snap.size;
+    return {
+      success: issues.length === 0,
+      message:
+        issues.length === 0
+          ? `All ${total} products pass Merchant SEO validation (title ${MERCHANT_SEO_LIMITS.titleMin}–${MERCHANT_SEO_LIMITS.titleMax}, description ${MERCHANT_SEO_LIMITS.descriptionMin}–${MERCHANT_SEO_LIMITS.descriptionMax} chars).`
+          : `${valid} of ${total} products pass · ${issues.length} issue(s) found.`,
+      total,
+      valid,
+      issues,
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.message || 'Validation failed',
+      total: 0,
+      valid: 0,
+      issues: [],
+      error,
+    };
+  }
+}
