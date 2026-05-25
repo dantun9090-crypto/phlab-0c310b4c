@@ -515,3 +515,126 @@ export async function migrateAddSlugs(): Promise<{
     return { success: false, message: error.message || 'Migration failed', error };
   }
 }
+
+/**
+ * Google Merchant Center–safe SEO copy. Keyed by a normalised product name
+ * (lower-case, alphanumerics only) so it matches regardless of casing or
+ * punctuation drift in Firestore.
+ */
+const MERCHANT_SEO: Record<string, { seoTitle: string; seoDescription: string }> = {
+  retatrutide: {
+    seoTitle: 'Retatrutide Research Reagent — Lyophilised Powder, Laboratory Research Use Only | Pro Health Peptides UK',
+    seoDescription: 'Retatrutide supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-tested purity with a Certificate of Analysis provided. Sold strictly for scientific research purposes. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmaceutical or medical product.',
+  },
+  tirzepatide: {
+    seoTitle: 'Tirzepatide Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoDescription: 'Tirzepatide supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-verified purity with a Certificate of Analysis included. For scientific research purposes only. Not for human consumption, not for veterinary use, not a dietary supplement, and not intended as a pharmaceutical or medical product.',
+  },
+  bpc157: {
+    seoTitle: 'BPC-157 Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoDescription: 'BPC-157 supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-tested with a Certificate of Analysis provided. Sold strictly for scientific research purposes. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmaceutical or medical product.',
+  },
+  kpvtripeptide: {
+    seoTitle: 'KPV Tripeptide Research Reagent — Lyophilised Powder, Laboratory Research Use Only | Pro Health Peptides UK',
+    seoDescription: 'KPV tripeptide supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-verified purity with a Certificate of Analysis included. For scientific research purposes only. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmaceutical or medical product.',
+  },
+  tb500thymosinbeta4: {
+    seoTitle: 'TB-500 (Thymosin Beta-4 Fragment) Research Reagent — Laboratory Research Use Only | Pro Health Peptides UK',
+    seoDescription: 'TB-500 (Thymosin Beta-4 fragment) supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-tested with a Certificate of Analysis provided. For scientific research purposes only. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmaceutical or medical product.',
+  },
+  motsc: {
+    seoTitle: 'MOTS-c Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoDescription: 'MOTS-c supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-verified purity with a Certificate of Analysis included. Sold strictly for scientific research purposes. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmaceutical or medical product.',
+  },
+  ghkcu: {
+    seoTitle: 'GHK-Cu Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoDescription: 'GHK-Cu (copper tripeptide) supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-tested with a Certificate of Analysis provided. For scientific research purposes only. Not for human consumption, not for veterinary use, not a cosmetic, not a dietary supplement, and not a pharmaceutical or medical product.',
+  },
+  nadnicotinamideadeninedinucleotide: {
+    seoTitle: 'NAD+ (Nicotinamide Adenine Dinucleotide) Research Reagent — Laboratory Research Use Only | Pro Health Peptides UK',
+    seoDescription: 'NAD+ (nicotinamide adenine dinucleotide) supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-verified purity with a Certificate of Analysis included. For scientific research purposes only. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmaceutical or medical product.',
+  },
+  pt141: {
+    seoTitle: 'PT-141 Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoDescription: 'PT-141 supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-tested with a Certificate of Analysis provided. Sold strictly for scientific research purposes. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmaceutical or medical product.',
+  },
+  melanotan2: {
+    seoTitle: 'Melanotan-2 Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoDescription: 'Melanotan-2 supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-verified purity with a Certificate of Analysis included. For scientific research purposes only. Not for human consumption, not for veterinary use, not a cosmetic, not a dietary supplement, and not a pharmaceutical or medical product.',
+  },
+  glowblend: {
+    seoTitle: 'GLOW Blend Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoDescription: 'GLOW research blend supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-tested with a Certificate of Analysis provided. Sold strictly for scientific research purposes. Not for human consumption, not for veterinary use, not a cosmetic, not a dietary supplement, and not a pharmaceutical or medical product.',
+  },
+  klowblend: {
+    seoTitle: 'KLOW Blend Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoDescription: 'KLOW research blend supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-verified purity with a Certificate of Analysis included. For scientific research purposes only. Not for human consumption, not for veterinary use, not a cosmetic, not a dietary supplement, and not a pharmaceutical or medical product.',
+  },
+  bacteriostaticwater: {
+    seoTitle: 'Bacteriostatic Water — 0.9% Benzyl Alcohol, Laboratory Reagent for Research Use Only | Pro Health Peptides UK',
+    seoDescription: 'Bacteriostatic water (0.9% benzyl alcohol in sterile water) supplied as a laboratory reagent for in-vitro research use only. For reconstitution of research compounds in a laboratory setting. Not for human consumption, not for injection into humans or animals, not a dietary supplement, and not a pharmaceutical or medical product.',
+  },
+};
+
+function normaliseProductKey(name: string): string {
+  return (name || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+}
+
+/**
+ * Writes Merchant Center–safe seoTitle / seoDescription onto every matching
+ * product in Firestore. Safe to re-run — overwrites existing values with
+ * the canonical compliance copy.
+ */
+export async function migrateMerchantSEO(): Promise<{
+  success: boolean;
+  message: string;
+  updated?: number;
+  skipped?: number;
+  error?: any;
+}> {
+  try {
+    const snap = await getDocs(collection(db, PRODUCTS_COL));
+    let updated = 0;
+    let skipped = 0;
+    const errors: string[] = [];
+
+    for (const d of snap.docs) {
+      const data = d.data();
+      const key = normaliseProductKey(data.name || '');
+      // Try exact match, then prefix match in either direction (handles
+      // trailing keywords like "Fragment", "Tripeptide", etc.).
+      let entry = MERCHANT_SEO[key];
+      if (!entry) {
+        const found = Object.entries(MERCHANT_SEO).find(
+          ([k]) => k.startsWith(key.slice(0, 6)) || key.startsWith(k.slice(0, 6)),
+        );
+        if (found) entry = found[1];
+      }
+      if (!entry) {
+        skipped++;
+        continue;
+      }
+      try {
+        await updateDoc(doc(db, PRODUCTS_COL, d.id), {
+          seoTitle: entry.seoTitle,
+          seoDescription: entry.seoDescription,
+        });
+        updated++;
+      } catch (err: any) {
+        errors.push(`${data.name || d.id}: ${err.message}`);
+      }
+    }
+
+    return {
+      success: errors.length === 0,
+      message:
+        errors.length === 0
+          ? `Merchant SEO migration complete: ${updated} updated, ${skipped} skipped`
+          : `Migration finished with ${errors.length} error(s): ${updated} updated, ${skipped} skipped`,
+      updated,
+      skipped,
+    };
+  } catch (error: any) {
+    return { success: false, message: error.message || 'Migration failed', error };
+  }
+}

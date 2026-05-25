@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Database, Upload, CheckCircle2, AlertCircle, Loader2, Trash2, RefreshCw, Tag } from 'lucide-react';
-import { seedProducts, checkSeedStatus, clearAllProducts, migrateAddSlugs } from '@/lib/seedProducts';
+import { seedProducts, checkSeedStatus, clearAllProducts, migrateAddSlugs, migrateMerchantSEO } from '@/lib/seedProducts';
 
 export default function DatabaseTab() {
   const [loading, setLoading] = useState(false);
@@ -9,6 +9,8 @@ export default function DatabaseTab() {
   const [clearing, setClearing] = useState(false);
   const [migrating, setMigrating] = useState(false);
   const [migrateResult, setMigrateResult] = useState<any>(null);
+  const [seoMigrating, setSeoMigrating] = useState(false);
+  const [seoMigrateResult, setSeoMigrateResult] = useState<any>(null);
 
   const handleCheckStatus = async () => {
     setLoading(true);
@@ -69,6 +71,20 @@ export default function DatabaseTab() {
       setMigrateResult({ success: false, message: error.message || 'Migration failed' });
     } finally {
       setMigrating(false);
+    }
+  };
+
+  const handleMigrateMerchantSEO = async () => {
+    if (!confirm('This will overwrite seoTitle and seoDescription on every matching product with Google Merchant Center–safe copy. Continue?')) return;
+    setSeoMigrating(true);
+    setSeoMigrateResult(null);
+    try {
+      const res = await migrateMerchantSEO();
+      setSeoMigrateResult(res);
+    } catch (error: any) {
+      setSeoMigrateResult({ success: false, message: error.message || 'Migration failed' });
+    } finally {
+      setSeoMigrating(false);
     }
   };
 
@@ -258,6 +274,70 @@ export default function DatabaseTab() {
           </div>
         )}
       </div>
+
+      {/* Merchant SEO Migration */}
+      <div className="bg-[#0b1a30]/60 border border-emerald-500/20 rounded-xl p-6">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-10 h-10 bg-emerald-600/20 rounded-lg flex items-center justify-center shrink-0">
+            <Tag className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-white mb-1">Apply Merchant Center SEO Copy</h3>
+            <p className="text-sm text-[#6b8fba]">
+              Writes Google Merchant Center–safe <span className="font-mono">seoTitle</span> and <span className="font-mono">seoDescription</span> onto every matching product. Compliant wording: "for laboratory research use only", "not for human consumption".
+            </p>
+          </div>
+        </div>
+        <div className="p-3 bg-emerald-900/20 border border-emerald-500/20 rounded-lg mb-4">
+          <p className="text-xs text-emerald-300">
+            Safe to re-run. Overwrites existing seoTitle / seoDescription with the canonical compliance copy.
+          </p>
+        </div>
+        <button
+          onClick={handleMigrateMerchantSEO}
+          disabled={seoMigrating || migrating || loading || clearing}
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50"
+        >
+          {seoMigrating ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Applying SEO copy...
+            </>
+          ) : (
+            <>
+              <Tag className="w-4 h-4" />
+              Apply Merchant SEO Copy
+            </>
+          )}
+        </button>
+
+        {seoMigrateResult && (
+          <div className={`mt-4 p-3 rounded-lg border ${
+            seoMigrateResult.success
+              ? 'bg-green-900/20 border-green-500/30'
+              : 'bg-red-900/20 border-red-500/30'
+          }`}>
+            <div className="flex items-start gap-2">
+              {seoMigrateResult.success ? (
+                <CheckCircle2 className="w-4 h-4 text-green-400 shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              )}
+              <div>
+                <p className={`text-sm font-medium ${seoMigrateResult.success ? 'text-green-300' : 'text-red-300'}`}>
+                  {seoMigrateResult.message}
+                </p>
+                {seoMigrateResult.updated !== undefined && (
+                  <p className="text-xs text-[#6b8fba] mt-1">
+                    {seoMigrateResult.updated} updated · {seoMigrateResult.skipped} skipped
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
 
       {/* Result */}
       {result && (
