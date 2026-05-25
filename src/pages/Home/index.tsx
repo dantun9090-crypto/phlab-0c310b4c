@@ -136,7 +136,9 @@ export default function HomePage() {
   const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [emailInput, setEmailInput] = useState('');
-  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'sent' | 'error' | 'already_claimed'>('idle');
+  const [revealedCode, setRevealedCode] = useState<string>('PROTOCOL10');
+  const [codeCopied, setCodeCopied] = useState(false);
   const [banner, setBanner] = useState<any>(null);
   const [bannerResolved, setBannerResolved] = useState(false);
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
