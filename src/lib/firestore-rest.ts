@@ -83,6 +83,8 @@ function toProduct(doc: any): SeoProduct | null {
     isActive: f.isActive !== false,
     visibility: f.visibility ?? "active",
     displayOrder: typeof f.displayOrder === "number" ? f.displayOrder : 999,
+    seoTitle: typeof f.seoTitle === "string" && f.seoTitle.trim() ? f.seoTitle : undefined,
+    seoDescription: typeof f.seoDescription === "string" && f.seoDescription.trim() ? f.seoDescription : undefined,
   };
 }
 
