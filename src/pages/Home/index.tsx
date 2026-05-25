@@ -361,29 +361,9 @@ export default function HomePage() {
       console.warn('Duplicate check skipped (non-fatal):', dupErr);
     }
 
-    // ── Ensure PROTOCOL10 coupon exists (non-fatal) ──
-    try {
-      const couponSnap = await withRetry('coupon-check', () => getDocs(query(
-        collection(db, 'coupons'),
-        where('code', '==', discountCode),
-      )));
-      if (couponSnap.empty) {
-        const expiry = new Date();
-        expiry.setFullYear(expiry.getFullYear() + 2);
-        await withRetry('coupon-create', () => addDoc(collection(db, 'coupons'), {
-          code: discountCode,
-          type: 'percentage',
-          value: 10,
-          isActive: true,
-          usedCount: 0,
-          expiryDate: Timestamp.fromDate(expiry),
-          description: 'Research Protocol Library — 10% off (lead magnet)',
-          createdAt: now,
-        }));
-      }
-    } catch (couponErr) {
-      console.warn('Coupon ensure skipped (non-fatal):', couponErr);
-    }
+    // PROTOCOL10 coupon is pre-seeded by an admin via the Promo Codes tab.
+    // We intentionally do NOT create coupons from the client — public write
+    // access to `coupons` would let anyone mint 100%-off codes.
 
     // ── Critical writes: subscriber + email (with retry) ──
     try {
