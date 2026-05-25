@@ -306,10 +306,11 @@ export default function HomePage() {
     const email = emailInput.trim().toLowerCase();
     if (!email || !email.includes('@')) return;
     setEmailStatus('sending');
-    try {
-      const discountCode = 'PROTOCOL10';
+    const discountCode = 'PROTOCOL10';
+    const now = Timestamp.now();
 
-      // ── One-time-per-email guard ──
+    // ── One-time-per-email guard (non-fatal: if Firestore rules block read, just continue) ──
+    try {
       const existingSnap = await getDocs(query(
         collection(db, 'emailSubscribers'),
         where('email', '==', email),
@@ -320,34 +321,36 @@ export default function HomePage() {
         setEmailStatus('already_claimed');
         return;
       }
+    } catch (dupErr) {
+      console.warn('Duplicate check skipped (non-fatal):', dupErr);
+    }
 
-      const now = Timestamp.now();
-
-      // ── Ensure PROTOCOL10 coupon exists in Firestore so checkout accepts it ──
-      try {
-        const couponSnap = await getDocs(query(
-          collection(db, 'coupons'),
-          where('code', '==', discountCode),
-        ));
-        if (couponSnap.empty) {
-          const expiry = new Date();
-          expiry.setFullYear(expiry.getFullYear() + 2);
-          await addDoc(collection(db, 'coupons'), {
-            code: discountCode,
-            type: 'percentage',
-            value: 10,
-            isActive: true,
-            usedCount: 0,
-            expiryDate: Timestamp.fromDate(expiry),
-            description: 'Research Protocol Library — 10% off (lead magnet)',
-            createdAt: now,
-          });
-        }
-      } catch (couponErr) {
-        console.warn('Coupon ensure failed (non-fatal):', couponErr);
+    // ── Ensure PROTOCOL10 coupon exists (non-fatal) ──
+    try {
+      const couponSnap = await getDocs(query(
+        collection(db, 'coupons'),
+        where('code', '==', discountCode),
+      ));
+      if (couponSnap.empty) {
+        const expiry = new Date();
+        expiry.setFullYear(expiry.getFullYear() + 2);
+        await addDoc(collection(db, 'coupons'), {
+          code: discountCode,
+          type: 'percentage',
+          value: 10,
+          isActive: true,
+          usedCount: 0,
+          expiryDate: Timestamp.fromDate(expiry),
+          description: 'Research Protocol Library — 10% off (lead magnet)',
+          createdAt: now,
+        });
       }
+    } catch (couponErr) {
+      console.warn('Coupon ensure skipped (non-fatal):', couponErr);
+    }
 
-      // Save subscriber
+    // ── Critical writes: subscriber + email ──
+    try {
       await addDoc(collection(db, 'emailSubscribers'), {
         email,
         source: 'homepage_protocol_library',
@@ -355,17 +358,20 @@ export default function HomePage() {
         subscribedAt: now,
         timestamp: new Date().toISOString(),
       });
-      // Send lead magnet email via Firebase mail trigger
       const pdfUrl = 'https://www.prohealthpeptides.co.uk/downloads/protocol-library.pdf';
       const html = protocolLibraryEmail({ recipientEmail: email, discountCode, pdfDownloadUrl: pdfUrl });
-      await addDoc(collection(db, 'mail'), {
-        to: email,
-        message: {
-          subject: 'Your Free Research Protocol Library — Pro Health Peptides',
-          html,
-        },
-        createdAt: now,
-      });
+      try {
+        await addDoc(collection(db, 'mail'), {
+          to: email,
+          message: {
+            subject: 'Your Free Research Protocol Library — Pro Health Peptides',
+            html,
+          },
+          createdAt: now,
+        });
+      } catch (mailErr) {
+        console.warn('Mail enqueue failed (non-fatal, code still shown):', mailErr);
+      }
       setRevealedCode(discountCode);
       setEmailStatus('sent');
     } catch (err) {
