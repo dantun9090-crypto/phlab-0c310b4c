@@ -303,33 +303,83 @@ export default function HomePage() {
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!emailInput || !emailInput.includes('@')) return;
+    const email = emailInput.trim().toLowerCase();
+    if (!email || !email.includes('@')) return;
     setEmailStatus('sending');
     try {
+      const discountCode = 'PROTOCOL10';
+
+      // ── One-time-per-email guard ──
+      const existingSnap = await getDocs(query(
+        collection(db, 'emailSubscribers'),
+        where('email', '==', email),
+        where('source', '==', 'homepage_protocol_library'),
+      ));
+      if (!existingSnap.empty) {
+        setRevealedCode(discountCode);
+        setEmailStatus('already_claimed');
+        return;
+      }
+
       const now = Timestamp.now();
+
+      // ── Ensure PROTOCOL10 coupon exists in Firestore so checkout accepts it ──
+      try {
+        const couponSnap = await getDocs(query(
+          collection(db, 'coupons'),
+          where('code', '==', discountCode),
+        ));
+        if (couponSnap.empty) {
+          const expiry = new Date();
+          expiry.setFullYear(expiry.getFullYear() + 2);
+          await addDoc(collection(db, 'coupons'), {
+            code: discountCode,
+            type: 'percentage',
+            value: 10,
+            isActive: true,
+            usedCount: 0,
+            expiryDate: Timestamp.fromDate(expiry),
+            description: 'Research Protocol Library — 10% off (lead magnet)',
+            createdAt: now,
+          });
+        }
+      } catch (couponErr) {
+        console.warn('Coupon ensure failed (non-fatal):', couponErr);
+      }
+
       // Save subscriber
       await addDoc(collection(db, 'emailSubscribers'), {
-        email: emailInput,
+        email,
         source: 'homepage_protocol_library',
+        discountCode,
         subscribedAt: now,
         timestamp: new Date().toISOString(),
       });
       // Send lead magnet email via Firebase mail trigger
-      const pdfUrl = 'https://prohealthpeptides.co.uk/downloads/protocol-library.pdf';
-      const discountCode = 'PROTOCOL10';
-      const html = protocolLibraryEmail({ recipientEmail: emailInput, discountCode, pdfDownloadUrl: pdfUrl });
+      const pdfUrl = 'https://www.prohealthpeptides.co.uk/downloads/protocol-library.pdf';
+      const html = protocolLibraryEmail({ recipientEmail: email, discountCode, pdfDownloadUrl: pdfUrl });
       await addDoc(collection(db, 'mail'), {
-        to: emailInput,
+        to: email,
         message: {
           subject: 'Your Free Research Protocol Library — Pro Health Peptides',
           html,
         },
         createdAt: now,
       });
+      setRevealedCode(discountCode);
       setEmailStatus('sent');
-    } catch {
+    } catch (err) {
+      console.error('Protocol library submit failed:', err);
       setEmailStatus('error');
     }
+  };
+
+  const copyDiscountCode = async () => {
+    try {
+      await navigator.clipboard.writeText(revealedCode);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 1800);
+    } catch { /* noop */ }
   };
 
   return (
