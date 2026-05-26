@@ -196,6 +196,12 @@ export default function ProductDetail() {
     else setSelectedImageIdx(i => Math.max(i - 1, 0));
   }, []);
 
+  // Slug → Firestore doc ID overrides. Keep short, stable URLs even after
+  // the Firestore `name`/`slug` field changes for SEO/Merchant reasons.
+  const SLUG_TO_DOC_ID: Record<string, string> = {
+    'bpc-157': 'kONztvd1Xj5FQwAYMaT4',
+  };
+
   // Load product from Firestore — supports both slug (SEO) and raw Firestore ID (legacy)
   useEffect(() => {
     if (!id) return;
@@ -204,27 +210,37 @@ export default function ProductDetail() {
     const loadProduct = async () => {
       setLoading(true);
       try {
-        // 1. Try slug lookup first (new SEO-friendly URLs)
-        const slugQuery = query(
-          collection(db, 'product_stock'),
-          where('slug', '==', id),
-          limit(1)
-        );
-        const slugSnap = await getDocs(slugQuery);
-
         let productDoc: any = null;
-        if (!slugSnap.empty) {
-          productDoc = slugSnap.docs[0];
-        } else {
-          // 2. Fallback: try direct Firestore document ID (legacy URLs)
-          const directDoc = await getDoc(doc(db, 'product_stock', id));
-          if (directDoc.exists()) {
-            productDoc = directDoc;
+
+        // 0. Stable short-slug override → fetch by known doc ID
+        const overrideDocId = SLUG_TO_DOC_ID[id];
+        if (overrideDocId) {
+          const overrideDoc = await getDoc(doc(db, 'product_stock', overrideDocId));
+          if (overrideDoc.exists()) productDoc = overrideDoc;
+        }
+
+        if (!productDoc) {
+          // 1. Try slug lookup first (new SEO-friendly URLs)
+          const slugQuery = query(
+            collection(db, 'product_stock'),
+            where('slug', '==', id),
+            limit(1)
+          );
+          const slugSnap = await getDocs(slugQuery);
+
+          if (!slugSnap.empty) {
+            productDoc = slugSnap.docs[0];
           } else {
-            // 3. Last resort: query by name-derived slug (for products not yet re-seeded)
-            const allSnap = await getDocs(collection(db, 'product_stock'));
-            const match = allSnap.docs.find(d => nameToSlug(d.data().name || '') === id);
-            if (match) productDoc = match;
+            // 2. Fallback: try direct Firestore document ID (legacy URLs)
+            const directDoc = await getDoc(doc(db, 'product_stock', id));
+            if (directDoc.exists()) {
+              productDoc = directDoc;
+            } else {
+              // 3. Last resort: query by name-derived slug (for products not yet re-seeded)
+              const allSnap = await getDocs(collection(db, 'product_stock'));
+              const match = allSnap.docs.find(d => nameToSlug(d.data().name || '') === id);
+              if (match) productDoc = match;
+            }
           }
         }
 
