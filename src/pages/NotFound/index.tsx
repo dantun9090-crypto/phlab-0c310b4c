@@ -86,7 +86,7 @@ export default function NotFoundPage() {
         </div>
 
         {/* MHRA disclaimer */}
-        <p className="text-[10px] text-[#2a4a7a] leading-relaxed max-w-lg mx-auto">
+        <p className="text-[11px] text-[#7090b8] leading-relaxed max-w-lg mx-auto">
           All products supplied by Pro Health Peptides are for laboratory research use only. Not for human or veterinary consumption.
         </p>
       </div>
