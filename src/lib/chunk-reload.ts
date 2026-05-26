@@ -1,12 +1,20 @@
-// Auto-recovery for stale chunk errors after a deploy.
-// When the browser tries to lazy-load a chunk that no longer exists
-// (e.g. after a new build), Vite throws "Failed to fetch dynamically
-// imported module" / "Importing a module script failed". The page
-// appears frozen until the user manually refreshes. We detect this
-// and trigger a one-shot hard reload.
+// Robust auto-recovery for a frozen / stuck page.
+//
+// Three layers:
+// 1) Stale-chunk detection — when a lazy import fails (typically after a
+//    new deploy), the page appears frozen. We trigger a one-shot reload.
+// 2) Generic runtime error / unhandled rejection capture — if the same
+//    error fires repeatedly in a short window the app is stuck in a loop;
+//    reload once.
+// 3) Tab-revisit revalidation — when the user returns to the tab after a
+//    long pause, ping the server. If the current build no longer exists
+//    or the page has been hidden > 30 min, soft reload.
 
-const RELOAD_KEY = "__phl_chunk_reloaded_at";
-const COOLDOWN_MS = 10_000;
+const RELOAD_KEY = "__phl_reloaded_at";
+const COOLDOWN_MS = 15_000;
+const REVISIT_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
+const ERROR_BURST_WINDOW_MS = 4_000;
+const ERROR_BURST_LIMIT = 6;
 
 function isChunkLoadError(err: unknown): boolean {
   if (!err) return false;
@@ -16,27 +24,64 @@ function isChunkLoadError(err: unknown): boolean {
     /Importing a module script failed/i.test(msg) ||
     /Loading chunk [\w-]+ failed/i.test(msg) ||
     /ChunkLoadError/i.test(msg) ||
-    /error loading dynamically imported module/i.test(msg)
+    /error loading dynamically imported module/i.test(msg) ||
+    /Unable to preload CSS/i.test(msg)
   );
 }
 
-function reloadOnce() {
+function reloadOnce(reason: string) {
   try {
     const last = Number(sessionStorage.getItem(RELOAD_KEY) ?? "0");
-    if (Date.now() - last < COOLDOWN_MS) return; // avoid reload loops
+    if (Date.now() - last < COOLDOWN_MS) return; // avoid loops
     sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
   } catch {
-    /* ignore storage errors */
+    /* ignore */
   }
+  // eslint-disable-next-line no-console
+  console.warn("[chunk-reload] reloading:", reason);
   window.location.reload();
 }
 
 if (typeof window !== "undefined") {
+  // --- Layer 1: chunk errors ---
   window.addEventListener("error", (event) => {
-    if (isChunkLoadError(event.error ?? event.message)) reloadOnce();
+    if (isChunkLoadError(event.error ?? event.message)) {
+      reloadOnce("chunk error");
+    }
   });
   window.addEventListener("unhandledrejection", (event) => {
-    if (isChunkLoadError(event.reason)) reloadOnce();
+    if (isChunkLoadError(event.reason)) {
+      reloadOnce("chunk rejection");
+    }
+  });
+
+  // --- Layer 2: error-burst detection (app stuck in a render loop) ---
+  let burst: number[] = [];
+  const recordError = () => {
+    const now = Date.now();
+    burst = burst.filter((t) => now - t < ERROR_BURST_WINDOW_MS);
+    burst.push(now);
+    if (burst.length >= ERROR_BURST_LIMIT) {
+      reloadOnce("error burst");
+    }
+  };
+  window.addEventListener("error", recordError);
+  window.addEventListener("unhandledrejection", recordError);
+
+  // --- Layer 3: tab-revisit ---
+  let hiddenAt: number | null = null;
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      hiddenAt = Date.now();
+      return;
+    }
+    if (document.visibilityState === "visible" && hiddenAt) {
+      const away = Date.now() - hiddenAt;
+      hiddenAt = null;
+      if (away > REVISIT_THRESHOLD_MS) {
+        reloadOnce("long tab-away");
+      }
+    }
   });
 }
 
