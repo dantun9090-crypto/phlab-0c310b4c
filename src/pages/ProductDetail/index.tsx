@@ -349,7 +349,7 @@ export default function ProductDetail() {
 
     // Use slug for SEO-friendly canonical URLs; fall back to nameToSlug or id
     const productSlug = product.slug || nameToSlug(product.name) || product.id;
-    const productUrl = `https://www.prohealthpeptides.co.uk/products/${productSlug}`;
+    const productUrl = `https://www.phlabs.co.uk/products/${productSlug}`;
 
     // For multi-variant products, calculate price range for AggregateOffer
     const variants = product.variants ?? [];
@@ -464,7 +464,7 @@ export default function ProductDetail() {
           sku: v.sku || `${product.id}-v${idx + 1}`,
           name: `${product.name} — ${v.name}`,
         })),
-        seller: { '@type': 'Organization', name: 'PH Labs', url: 'https://www.prohealthpeptides.co.uk' },
+        seller: { '@type': 'Organization', name: 'PH Labs', url: 'https://www.phlabs.co.uk' },
       } : {
         '@type': 'Offer',
         url: productUrl,
@@ -473,7 +473,7 @@ export default function ProductDetail() {
         priceValidUntil: `${new Date().getFullYear() + 1}-12-31`,
         itemCondition: 'https://schema.org/NewCondition',
         availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-        seller: { '@type': 'Organization', name: 'PH Labs', url: 'https://www.prohealthpeptides.co.uk' },
+        seller: { '@type': 'Organization', name: 'PH Labs', url: 'https://www.phlabs.co.uk' },
         shippingDetails: {
           '@type': 'OfferShippingDetails',
           shippingRate: { '@type': 'MonetaryAmount', currency: 'GBP', value: '0' },
@@ -505,8 +505,8 @@ export default function ProductDetail() {
       '@context': 'https://schema.org',
       '@type': 'Organization',
       name: 'PH Labs UK',
-      url: 'https://www.prohealthpeptides.co.uk',
-      logo: 'https://www.prohealthpeptides.co.uk/logo.png',
+      url: 'https://www.phlabs.co.uk',
+      logo: 'https://www.phlabs.co.uk/logo.png',
       contactPoint: {
         '@type': 'ContactPoint',
         telephone: '+447826549934',
@@ -536,15 +536,15 @@ export default function ProductDetail() {
       : null;
 
     const breadcrumbItems: any[] = [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.prohealthpeptides.co.uk/' },
-      { '@type': 'ListItem', position: 2, name: 'Products', item: 'https://www.prohealthpeptides.co.uk/products' },
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.phlabs.co.uk/' },
+      { '@type': 'ListItem', position: 2, name: 'Products', item: 'https://www.phlabs.co.uk/products' },
     ];
     if (categoryName && categorySlug) {
       breadcrumbItems.push({
         '@type': 'ListItem',
         position: 3,
         name: categoryName,
-        item: `https://www.prohealthpeptides.co.uk${categorySlug}`,
+        item: `https://www.phlabs.co.uk${categorySlug}`,
       });
       breadcrumbItems.push({ '@type': 'ListItem', position: 4, name: product.name, item: productUrl });
     } else {
@@ -615,9 +615,9 @@ export default function ProductDetail() {
     const returnPolicy = {
       '@context': 'https://schema.org',
       '@type': 'MerchantReturnPolicy',
-      '@id': 'https://www.prohealthpeptides.co.uk/refund-policy#return-policy',
+      '@id': 'https://www.phlabs.co.uk/refund-policy#return-policy',
       name: 'PH Labs Return Policy',
-      url: 'https://www.prohealthpeptides.co.uk/refund-policy',
+      url: 'https://www.phlabs.co.uk/refund-policy',
       applicableCountry: 'GB',
       returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
       merchantReturnDays: 14,
@@ -643,7 +643,7 @@ export default function ProductDetail() {
       const d = document.querySelector('meta[name="description"]');
       if (d) d.setAttribute('content', 'Premium research compounds with HPLC-verified purity. For laboratory research use only. Fast UK shipping.');
       const c = document.querySelector('link[rel="canonical"]');
-      if (c) c.setAttribute('href', 'https://www.prohealthpeptides.co.uk/');
+      if (c) c.setAttribute('href', 'https://www.phlabs.co.uk/');
       // Remove OG / Twitter tags added per-product
       ['og:title','og:description','og:url','og:type','og:image'].forEach(p => document.querySelector(`meta[property="${p}"]`)?.remove());
       ['twitter:card','twitter:title','twitter:description','twitter:image'].forEach(n => document.querySelector(`meta[name="${n}"]`)?.remove());
@@ -1047,7 +1047,7 @@ export default function ProductDetail() {
                       data-stars="5"
                     >
                       <a
-                        href="https://uk.trustpilot.com/review/www.prohealthpeptides.co.uk"
+                        href="https://uk.trustpilot.com/review/www.phlabs.co.uk"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[#00b67a] text-xs font-semibold hover:underline"
@@ -1597,7 +1597,7 @@ export default function ProductDetail() {
             },
             {
               q: 'What is your returns policy for research peptides?',
-              a: 'We accept returns on unopened products within 14 days of delivery. Products must be in their original sealed condition. As these are specialist research compounds, opened vials cannot be accepted for return. Contact info@prohealthpeptides.co.uk to initiate a return.'
+              a: 'We accept returns on unopened products within 14 days of delivery. Products must be in their original sealed condition. As these are specialist research compounds, opened vials cannot be accepted for return. Contact info@phlabs.co.uk to initiate a return.'
             },
             {
               q: `How quickly is ${product.name} dispatched across the UK?`,

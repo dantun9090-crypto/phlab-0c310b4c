@@ -153,7 +153,7 @@ export function buildProfessionalInvoiceEmail(opts: InvoiceEmailOptions): string
                     alt="PH Labs" width="48" height="48"
                     style="border-radius:12px;display:block;margin-bottom:12px;" />
                   <p style="color:${BLUE};font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin:0 0 4px 0;">PH Labs</p>
-                  <p style="color:${DIMMED};font-size:11px;margin:0;">www.prohealthpeptides.co.uk</p>
+                  <p style="color:${DIMMED};font-size:11px;margin:0;">www.phlabs.co.uk</p>
                 </td>
                 <td align="right" valign="top">
                   <p style="color:${MUTED};font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin:0 0 6px 0;">Invoice</p>
@@ -253,7 +253,7 @@ export function buildProfessionalInvoiceEmail(opts: InvoiceEmailOptions): string
         <!-- CTA Button -->
         <tr>
           <td style="padding:28px 40px;background:${BG};border-left:1px solid ${BORDER};border-right:1px solid ${BORDER};text-align:center;">
-            <a href="https://www.prohealthpeptides.co.uk/account"
+            <a href="https://www.phlabs.co.uk/account"
               style="display:inline-block;background:linear-gradient(135deg,${BLUE_D},${BLUE});color:#fff;font-weight:700;font-size:14px;padding:14px 36px;border-radius:12px;text-decoration:none;letter-spacing:0.5px;">
               View Your Order
             </a>
@@ -267,8 +267,8 @@ export function buildProfessionalInvoiceEmail(opts: InvoiceEmailOptions): string
               All products are sold strictly for <strong>research and laboratory use only</strong>. Not for human consumption.
             </p>
             <p style="color:#1a3a5c;font-size:10px;margin:0;text-align:center;">
-              PH Labs UK &bull; info@prohealthpeptides.co.uk &bull;
-              <a href="https://www.prohealthpeptides.co.uk" style="color:${BLUE};text-decoration:none;">www.prohealthpeptides.co.uk</a>
+              PH Labs UK &bull; info@phlabs.co.uk &bull;
+              <a href="https://www.phlabs.co.uk" style="color:${BLUE};text-decoration:none;">www.phlabs.co.uk</a>
             </p>
           </td>
         </tr>

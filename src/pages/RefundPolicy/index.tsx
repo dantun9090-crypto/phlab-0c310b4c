@@ -7,7 +7,7 @@ export default function RefundPolicy() {
   useSEO('refund-policy', {
     title: 'Return & Refund Policy | PH Labs UK',
     metaDescription: 'Return and refund policy for PH Labs Ltd. We accept returns for defective items within 14 days of delivery. UK research peptide supplier.',
-    canonical: 'https://www.prohealthpeptides.co.uk/refund-policy',
+    canonical: 'https://www.phlabs.co.uk/refund-policy',
   });
 
   // Inject MerchantReturnPolicy schema for Google Merchant Center
@@ -15,9 +15,9 @@ export default function RefundPolicy() {
     const schema = {
       '@context': 'https://schema.org',
       '@type': 'MerchantReturnPolicy',
-      '@id': 'https://www.prohealthpeptides.co.uk/refund-policy#return-policy',
+      '@id': 'https://www.phlabs.co.uk/refund-policy#return-policy',
       name: 'PH Labs Return Policy',
-      url: 'https://www.prohealthpeptides.co.uk/refund-policy',
+      url: 'https://www.phlabs.co.uk/refund-policy',
       applicableCountry: 'GB',
       returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
       merchantReturnDays: 14,
@@ -180,8 +180,8 @@ export default function RefundPolicy() {
                 <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">How to Request a Return</h2>
                 <p className="text-[#9cb8d9] text-sm leading-relaxed mb-3">
                   Contact us at{' '}
-                  <a href="mailto:info@prohealthpeptides.co.uk" className="text-blue-400 hover:text-blue-300 transition-colors">
-                    info@prohealthpeptides.co.uk
+                  <a href="mailto:info@phlabs.co.uk" className="text-blue-400 hover:text-blue-300 transition-colors">
+                    info@phlabs.co.uk
                   </a>{' '}
                   within 14 days of delivery and include:
                 </p>
@@ -289,8 +289,8 @@ export default function RefundPolicy() {
         <div className="mt-8 text-center">
           <p className="text-[#2a4a7a] text-xs">
             PH Labs Ltd &mdash; Registered in England &amp; Wales &mdash;{' '}
-            <a href="mailto:info@prohealthpeptides.co.uk" className="hover:text-[#9cb8d9] transition-colors">
-              info@prohealthpeptides.co.uk
+            <a href="mailto:info@phlabs.co.uk" className="hover:text-[#9cb8d9] transition-colors">
+              info@phlabs.co.uk
             </a>
           </p>
         </div>

@@ -66,7 +66,7 @@ interface SiteSettings {
 
 const DEFAULTS: SiteSettings = {
   whatsappNumber: '',
-  contactEmail: 'info@prohealthpeptides.co.uk',
+  contactEmail: 'info@phlabs.co.uk',
   contactPhone: '',
   contactAddress: '',
   contactHours: 'Monday – Friday, 9 am – 6 pm GMT',
@@ -159,7 +159,7 @@ const SECTIONS: { title: string; icon: any; color: string; fields: Field[] }[] =
     color: 'text-purple-400',
     fields: [
       { key: 'googleAnalyticsId', label: 'Google Analytics GA4 ID', placeholder: 'G-XXXXXXXXXX', hint: 'Your Google Analytics 4 property ID' },
-      { key: 'plausibleDomain', label: 'Plausible Domain', placeholder: 'prohealthpeptides.co.uk', hint: 'Your domain for Plausible analytics' },
+      { key: 'plausibleDomain', label: 'Plausible Domain', placeholder: 'phlabs.co.uk', hint: 'Your domain for Plausible analytics' },
     ],
   },
 ];
@@ -656,7 +656,7 @@ export default function SiteSettingsTab() {
         <p className="text-[#9cb8d9] text-xs">Configure Google Analytics GA4 and Plausible analytics for tracking visitor behavior.</p>
         {[
           { key: 'googleAnalyticsId' as const, label: 'Google Analytics GA4 ID', placeholder: 'G-XXXXXXXXXX', hint: 'Your Google Analytics 4 property ID' },
-          { key: 'plausibleDomain' as const, label: 'Plausible Domain', placeholder: 'prohealthpeptides.co.uk', hint: 'Your domain for Plausible analytics' },
+          { key: 'plausibleDomain' as const, label: 'Plausible Domain', placeholder: 'phlabs.co.uk', hint: 'Your domain for Plausible analytics' },
         ].map(({ key, label, placeholder, hint }) => (
           <div key={key}>
             <label className="block text-[#9cb8d9] text-xs font-medium mb-1.5">{label}</label>

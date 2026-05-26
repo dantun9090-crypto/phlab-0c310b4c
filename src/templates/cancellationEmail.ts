@@ -92,7 +92,7 @@ export function buildCancellationEmail({
           <p style="color:#4ade80;font-size:13px;font-weight:600;margin:0 0 4px;font-family:${EMAIL_FONT};">No charge has been made</p>
           <p style="color:${C.text};font-size:13px;margin:0;line-height:1.6;font-family:${EMAIL_FONT};">
             You have not been charged. If you sent a bank transfer after this notification, 
-            please contact us immediately at <a href="mailto:info@prohealthpeptides.co.uk" style="color:${C.accent};text-decoration:none;">info@prohealthpeptides.co.uk</a> 
+            please contact us immediately at <a href="mailto:info@phlabs.co.uk" style="color:${C.accent};text-decoration:none;">info@phlabs.co.uk</a> 
             and we will reinstate your order.
           </p>
         </td>
@@ -105,12 +105,12 @@ export function buildCancellationEmail({
       and your details are saved in your account.
     </p>
 
-    ${ctaButton('Browse Products', 'https://www.prohealthpeptides.co.uk/products')}
+    ${ctaButton('Browse Products', 'https://www.phlabs.co.uk/products')}
 
     ${divider()}
 
     <p style="color:${C.textDimmed};font-size:12px;line-height:1.6;margin:0;text-align:center;font-family:${EMAIL_FONT};">
-      Questions? Contact us at <a href="mailto:info@prohealthpeptides.co.uk" style="color:${C.accent};text-decoration:none;">info@prohealthpeptides.co.uk</a><br>
+      Questions? Contact us at <a href="mailto:info@phlabs.co.uk" style="color:${C.accent};text-decoration:none;">info@phlabs.co.uk</a><br>
       All products are for laboratory research use only. Not for human or veterinary consumption.
     </p>
   `;

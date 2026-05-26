@@ -247,7 +247,7 @@ export default function Products() {
   // Structured data: CollectionPage + ItemList of visible products
   useEffect(() => {
     const info = CATEGORY_INTROS[activeCategory] ?? CATEGORY_INTROS.all;
-    const baseUrl = 'https://www.prohealthpeptides.co.uk';
+    const baseUrl = 'https://www.phlabs.co.uk';
     const pageUrl = activeCategory === 'all'
       ? `${baseUrl}/products`
       : `${baseUrl}/products?category=${activeCategory}`;

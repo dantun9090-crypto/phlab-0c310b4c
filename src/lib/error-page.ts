@@ -121,7 +121,7 @@ export function renderErrorPage(): string {
         <button class="btn btn-primary" type="button" onclick="location.reload()">Try again</button>
         <a class="btn btn-secondary" href="/">Go home</a>
       </div>
-      <p class="meta">Still stuck? Email <a href="mailto:support@prohealthpeptides.co.uk">support@prohealthpeptides.co.uk</a>.</p>
+      <p class="meta">Still stuck? Email <a href="mailto:support@phlabs.co.uk">support@phlabs.co.uk</a>.</p>
     </main>
   </body>
 </html>`;

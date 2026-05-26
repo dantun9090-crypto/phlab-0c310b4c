@@ -5,7 +5,7 @@ export default function Privacy() {
   useSEO('privacy', {
     title: 'Privacy Policy | PH Labs UK',
     metaDescription: 'Privacy and data protection policy for PH Labs Ltd. UK GDPR compliant. Learn how we collect, process and protect your personal data.',
-    canonical: 'https://www.prohealthpeptides.co.uk/privacy',
+    canonical: 'https://www.phlabs.co.uk/privacy',
   });
 
   return (
@@ -17,7 +17,7 @@ export default function Privacy() {
             <Shield className="w-8 h-8 text-purple-400" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-[#f0f6ff] mb-4">Privacy & Data Protection Policy</h1>
-          <p className="text-[#9cb8d9]">ProHealth Peptides | www.prohealthpeptides.co.uk</p>
+          <p className="text-[#9cb8d9]">ProHealth Peptides | www.phlabs.co.uk</p>
           <p className="text-sm text-[#3a5a82] mt-2">Effective Date: March 11, 2026</p>
         </div>
 
@@ -150,7 +150,7 @@ export default function Privacy() {
               <div>
                 <h2 className="text-xl font-semibold text-[#f0f6ff] mb-3">5. Research Use Attestation & Disclosure</h2>
                 <p className="text-[#9cb8d9] leading-relaxed mb-4">
-                  All products distributed via www.prohealthpeptides.co.uk are intended <strong className="text-white">strictly for in-vitro laboratory research and development</strong>. By providing your data, you acknowledge:
+                  All products distributed via www.phlabs.co.uk are intended <strong className="text-white">strictly for in-vitro laboratory research and development</strong>. By providing your data, you acknowledge:
                 </p>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">

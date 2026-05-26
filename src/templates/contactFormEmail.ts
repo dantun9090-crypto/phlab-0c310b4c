@@ -81,7 +81,7 @@ export function buildContactFormEmail(opts: ContactFormEmailOptions): string {
         <tr>
           <td style="background:${C.bgCardDark};border:1px solid ${C.border};border-top:none;border-radius:0 0 16px 16px;padding:16px 32px;text-align:center;">
             <div style="height:3px;background:linear-gradient(90deg,#1d4ed8,#3b82f6,#60a5fa);border-radius:2px;margin-bottom:12px;"></div>
-            <div style="font-size:11px;color:${C.textDimmed};">PH Labs Admin Panel · <a href="https://www.prohealthpeptides.co.uk" style="color:${C.accent};text-decoration:none;">prohealthpeptides.co.uk</a></div>
+            <div style="font-size:11px;color:${C.textDimmed};">PH Labs Admin Panel · <a href="https://www.phlabs.co.uk" style="color:${C.accent};text-decoration:none;">phlabs.co.uk</a></div>
           </td>
         </tr>
 

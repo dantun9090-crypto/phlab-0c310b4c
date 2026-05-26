@@ -289,7 +289,7 @@ export default function BannerTab() {
             <div>
               <label className="block text-[#9cb8d9] text-xs font-medium mb-1.5">Click-through URL (optional)</label>
               <input type="url" value={banner.linkUrl} onChange={e => set('linkUrl', e.target.value)}
-                placeholder="https://prohealthpeptides.co.uk/products"
+                placeholder="https://phlabs.co.uk/products"
                 className="w-full bg-white border border-gray-300 text-gray-900 text-sm placeholder-gray-500 py-2.5 px-4 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-colors" />
             </div>
             <div>

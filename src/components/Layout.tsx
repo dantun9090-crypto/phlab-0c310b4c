@@ -1083,10 +1083,10 @@ export function Layout({ children }: LayoutProps) {
               <div className="space-y-3 mb-6">
                 <p className="font-semibold text-sm" style={{ color: '#7a9ec2' }}>PH Labs Ltd</p>
                 <p className="text-xs" style={{ color: '#5a80a6' }}>Registered in England &amp; Wales</p>
-                <a href="mailto:info@prohealthpeptides.co.uk"
+                <a href="mailto:info@phlabs.co.uk"
                   className="group flex items-center gap-2 text-[#5a80a6] hover:text-[#8caad4] transition-colors text-sm break-all">
                   <Mail className="w-3.5 h-3.5 flex-shrink-0 text-blue-500/60 group-hover:text-blue-400 transition-colors" />
-                  info@prohealthpeptides.co.uk
+                  info@phlabs.co.uk
                 </a>
                 {siteSettings.contactPhone && (
                   <a href={`tel:${siteSettings.contactPhone}`}

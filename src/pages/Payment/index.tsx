@@ -181,7 +181,7 @@ export default function PaymentPage() {
           <>
             This payment page can only be opened from a checkout link that includes an order reference.
             Please return to <a href="/checkout" style={{ color: '#e94560' }}>checkout</a> or contact{' '}
-            <a href="mailto:info@prohealthpeptides.co.uk" style={{ color: '#e94560' }}>info@prohealthpeptides.co.uk</a>.
+            <a href="mailto:info@phlabs.co.uk" style={{ color: '#e94560' }}>info@phlabs.co.uk</a>.
           </>,
         );
       case 'unauthorised':
@@ -262,8 +262,8 @@ export default function PaymentPage() {
 
               <p className="text-xs text-center mb-4" style={{ color: '#3a5a82' }}>
                 Once payment is sent, email your receipt to{' '}
-                <a href="mailto:info@prohealthpeptides.co.uk" style={{ color: '#10b981' }}>
-                  info@prohealthpeptides.co.uk
+                <a href="mailto:info@phlabs.co.uk" style={{ color: '#10b981' }}>
+                  info@phlabs.co.uk
                 </a>{' '}
                 with your order reference.
               </p>

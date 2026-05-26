@@ -443,7 +443,7 @@ export default function AdminPage() {
             className="flex items-center gap-1.5 text-[11px] text-[#3a5a82] hover:text-[#9cb8d9] transition-colors"
           >
             <Shield className="w-3 h-3" />
-            <span>prohealthpeptides.co.uk</span>
+            <span>phlabs.co.uk</span>
           </a>
         </header>
 

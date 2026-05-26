@@ -99,7 +99,7 @@ export default function LandingPage() {
           // which can include query strings causing duplicate content issues
           const canonical = document.querySelector('link[rel="canonical"]') || document.createElement('link');
           canonical.setAttribute('rel', 'canonical');
-          canonical.setAttribute('href', 'https://www.prohealthpeptides.co.uk/');
+          canonical.setAttribute('href', 'https://www.phlabs.co.uk/');
           if (!document.querySelector('link[rel="canonical"]')) document.head.appendChild(canonical);
           
           // Inject JSON-LD structured data
@@ -113,7 +113,7 @@ export default function LandingPage() {
             "@context": "https://schema.org",
             "@type": "Organization",
             "name": "PH Labs",
-            "url": "https://www.prohealthpeptides.co.uk",
+            "url": "https://www.phlabs.co.uk",
             "logo": "https://cdn.wegic.ai/assets/onepage/uploads/2031481443271393281/image/2026/03/14/01KKPB20SGJ3T4RK47TQPSAV0N.png",
             "description": d.metaDescription || "Premium research-grade compounds with HPLC-verified purity. For laboratory research use only.",
             "image": d.heroImageUrl || "https://cdn.wegic.ai/assets/onepage/uploads/2031481443271393281/image/2026/03/14/01KKPB20SGJ3T4RK47TQPSAV0N.png"

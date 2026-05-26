@@ -7,7 +7,7 @@ const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 const HOME_TITLE = "Research Peptides UK — HPLC-Tested with Batch CoA | PHP";
 const HOME_DESCRIPTION =
   "Shop HPLC-tested research peptides in the UK with batch CoAs and tracked next-day dispatch. Strictly for in-vitro laboratory research use.";
-const HOME_URL = "https://www.prohealthpeptides.co.uk/";
+const HOME_URL = "https://www.phlabs.co.uk/";
 
 export const Route = createFileRoute("/")({
   ssr: false,
@@ -32,14 +32,14 @@ export const Route = createFileRoute("/")({
           name: "PH Labs",
           legalName: "PH Labs UK",
           url: HOME_URL,
-          logo: "https://www.prohealthpeptides.co.uk/logo.png",
+          logo: "https://www.phlabs.co.uk/logo.png",
           description:
             "UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals.",
           areaServed: "GB",
           contactPoint: {
             "@type": "ContactPoint",
             contactType: "customer support",
-            email: "info@prohealthpeptides.co.uk",
+            email: "info@phlabs.co.uk",
             areaServed: "GB",
             availableLanguage: ["English"],
           },

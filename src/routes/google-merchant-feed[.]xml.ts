@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { fetchAllProducts } from "@/lib/firestore-rest";
 
-const BASE_URL = "https://www.prohealthpeptides.co.uk";
+const BASE_URL = "https://www.phlabs.co.uk";
 const BRAND = "PH Labs";
 const CURRENCY = "GBP";
 const GOOGLE_CATEGORY = "Business & Industrial > Science & Laboratory";
@@ -27,7 +27,7 @@ function cdata(s: string): string {
  * dosing, or human-use language. Each entry is flagged as a laboratory
  * reagent for Research Use Only — Not For Human Consumption.
  *
- * Public URL: https://www.prohealthpeptides.co.uk/google-merchant-feed.xml
+ * Public URL: https://www.phlabs.co.uk/google-merchant-feed.xml
  */
 export const Route = createFileRoute("/google-merchant-feed.xml")({
   server: {

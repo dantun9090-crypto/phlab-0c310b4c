@@ -95,7 +95,7 @@ function generateShippingLabelPDF(order: Order) {
           <div class="section-title">FROM:</div>
           <p>PH Labs</p>
           <p>United Kingdom</p>
-          <p>info@prohealthpeptides.co.uk</p>
+          <p>info@phlabs.co.uk</p>
         </div>
         
         <div class="section">
@@ -368,7 +368,7 @@ export default function OrdersTab() {
          }));
          await addDoc(collection(db, 'mail'), {
            to: customerEmail,
-           bcc: 'www.prohealthpeptides.co.uk+88474c9b36@invite.trustpilot.com',
+           bcc: 'www.phlabs.co.uk+88474c9b36@invite.trustpilot.com',
            message: {
              subject: `Order #${selected.id?.slice(-8).toUpperCase()} — Your Order Has Shipped!`,
              html: buildDispatchEmail({

@@ -171,10 +171,10 @@ export function UnderConstruction({ targetDate }: Props) {
         <p className="text-[#3a5a82] text-sm">
           Questions?{' '}
           <a
-            href="mailto:info@prohealthpeptides.co.uk"
+            href="mailto:info@phlabs.co.uk"
             className="text-blue-400 hover:text-blue-300 transition-colors underline underline-offset-2"
           >
-            info@prohealthpeptides.co.uk
+            info@phlabs.co.uk
           </a>
         </p>
 

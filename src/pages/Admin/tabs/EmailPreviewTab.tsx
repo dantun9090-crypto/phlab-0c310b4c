@@ -65,7 +65,7 @@ function buildPreview(templateId: string): string {
     case 'admin_invoice':
       return buildAdminInvoiceEmail({ customerName: 'James Smith', email: 'james@example.com', invoiceRef: 'INV-' + DEMO_ORDER_ID.slice(-8).toUpperCase(), description: 'Research peptide order', amount: 99.97, currency: 'GBP' });
     case 'protocol_library':
-      return protocolLibraryEmail({ recipientEmail: 'james@example.com', discountCode: 'PROTOCOL10', pdfDownloadUrl: 'https://www.prohealthpeptides.co.uk/protocol-library.pdf' });
+      return protocolLibraryEmail({ recipientEmail: 'james@example.com', discountCode: 'PROTOCOL10', pdfDownloadUrl: 'https://www.phlabs.co.uk/protocol-library.pdf' });
     default:
       return '<p>Template not found</p>';
   }
@@ -209,7 +209,7 @@ async function cancelOrderAndEmail(order: PendingOrder): Promise<void> {
     .map(i => `${i.name}${i.variantName ? ` (${i.variantName})` : ''} ×${i.quantity}`)
     .join(', ') || 'N/A';
   await addDoc(collection(db, 'mail'), {
-    to: 'info@prohealthpeptides.co.uk',
+    to: 'info@phlabs.co.uk',
     message: {
       subject: `[Auto-Cancelled] Order #${order.id.slice(-8).toUpperCase()} — 72h no payment`,
       html: `

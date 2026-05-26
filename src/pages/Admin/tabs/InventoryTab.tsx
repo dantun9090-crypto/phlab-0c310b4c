@@ -80,7 +80,7 @@ export default function InventoryTab() {
     try {
       const token = localStorage.getItem('php_prerender_token');
       if (!token) return;
-      const url = `https://www.prohealthpeptides.co.uk/products/${slug}`;
+      const url = `https://www.phlabs.co.uk/products/${slug}`;
       await fetch('https://api.prerender.io/recache', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
