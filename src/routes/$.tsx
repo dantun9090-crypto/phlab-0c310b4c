@@ -31,6 +31,7 @@ export const Route = createFileRoute("/$")({
             "@type": "Article",
             headline: clamp(article.title, 110),
             description: clamp(article.excerpt, SEO_LIMITS.descriptionMax),
+            image: [OG_IMAGE],
             datePublished: article.publishDate,
             dateModified: article.publishDate,
             inLanguage: "en-GB",
@@ -48,6 +49,18 @@ export const Route = createFileRoute("/$")({
               logo: { "@type": "ImageObject", url: `${SITE_URL}/og-image.jpg` },
             },
             mainEntityOfPage: { "@type": "WebPage", "@id": url },
+          }),
+        });
+        scripts.push({
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+              { "@type": "ListItem", position: 2, name: "Resources", item: `${SITE_URL}/resources` },
+              { "@type": "ListItem", position: 3, name: article.title, item: url },
+            ],
           }),
         });
       }
