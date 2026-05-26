@@ -385,7 +385,7 @@ export default function MolecularIntro({ onDone }: { onDone: () => void }) {
             textTransform: 'uppercase',
             marginBottom: 8,
           }}>
-            PH Labs
+            PH
           </div>
           <div style={{
             fontSize: 24,
@@ -396,7 +396,7 @@ export default function MolecularIntro({ onDone }: { onDone: () => void }) {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
           }}>
-            Peptides
+            Labs
           </div>
         </div>
 
