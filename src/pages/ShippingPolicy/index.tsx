@@ -6,7 +6,7 @@ export default function ShippingPolicy() {
   useSEO('shipping-policy', {
     title: 'Shipping Policy | PH Labs UK',
     metaDescription: 'Shipping information for PH Labs Ltd. UK delivery, dispatch times, packaging standards and research-use compliance.',
-    canonical: 'https://www.prohealthpeptides.co.uk/shipping-policy',
+    canonical: 'https://www.phlabs.co.uk/shipping-policy',
   });
 
   const sections = [

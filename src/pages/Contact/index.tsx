@@ -72,7 +72,7 @@ export default function Contact() {
   useSEO('contact', {
     title: 'Contact Us | PH Labs UK',
     metaDescription: 'Contact PH Labs for HPLC-verified research peptides. UK-based support for laboratory research orders, bulk queries, and technical questions.',
-    canonical: 'https://www.prohealthpeptides.co.uk/contact',
+    canonical: 'https://www.phlabs.co.uk/contact',
   });
 
   useEffect(() => {
@@ -80,9 +80,9 @@ export default function Contact() {
       '@context': 'https://schema.org',
       '@type': 'LocalBusiness',
       name: 'PH Labs',
-      url: 'https://www.prohealthpeptides.co.uk',
+      url: 'https://www.phlabs.co.uk',
       telephone: '+447826549934',
-      email: 'info@prohealthpeptides.co.uk',
+      email: 'info@phlabs.co.uk',
       address: { '@type': 'PostalAddress', addressCountry: 'GB', addressRegion: 'England' },
       areaServed: { '@type': 'Country', name: 'United Kingdom' },
       openingHoursSpecification: {
@@ -103,7 +103,7 @@ export default function Contact() {
       const d2 = document.querySelector('meta[name="description"]');
       if (d2) d2.setAttribute('content', 'Premium research compounds with HPLC-verified purity. For laboratory research use only. Fast UK shipping.');
       const c2 = document.querySelector('link[rel="canonical"]');
-      if (c2) c2.setAttribute('href', 'https://www.prohealthpeptides.co.uk/');
+      if (c2) c2.setAttribute('href', 'https://www.phlabs.co.uk/');
     };
   }, []);
 
@@ -128,7 +128,7 @@ export default function Contact() {
         subject: form.subject || 'Contact Form Enquiry',
         message: form.message,
       });
-      const toAddress = settings.contactEmail || 'info@prohealthpeptides.co.uk';
+      const toAddress = settings.contactEmail || 'info@phlabs.co.uk';
       const subjectLine = `[PHP Contact] ${form.subject || 'New Enquiry'} — from ${form.name}`;
 
       // 1) Persist the enquiry to a contactMessages collection (durable record,
@@ -254,7 +254,7 @@ export default function Contact() {
 
   const displayCards = contactCards.length === 0 ? [{
     icon: <Mail className="w-5 h-5" />, label: 'Email Us',
-    value: 'info@prohealthpeptides.co.uk', href: 'mailto:info@prohealthpeptides.co.uk',
+    value: 'info@phlabs.co.uk', href: 'mailto:info@phlabs.co.uk',
     gradient: 'from-blue-600/20 to-blue-800/5', border: 'border-blue-500/25',
     iconBg: 'bg-blue-600/20', iconColor: 'text-blue-400',
     hoverGlow: 'hover:shadow-[0_8px_32px_rgba(37,99,235,0.2)]',

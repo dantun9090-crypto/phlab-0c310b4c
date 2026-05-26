@@ -272,7 +272,7 @@ export default function SearchPage() {
   useSEO('search', {
     title: 'Search Research Peptides | PH Labs UK',
     metaDescription: 'Search our full catalogue of HPLC-verified research peptides. Find BPC-157, Semaglutide, TB-500, Epithalon and more. UK delivery.',
-    canonical: 'https://www.prohealthpeptides.co.uk/search',
+    canonical: 'https://www.phlabs.co.uk/search',
   });
 
   const location = useLocation();

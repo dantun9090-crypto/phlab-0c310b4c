@@ -230,7 +230,7 @@ export default function HomePage() {
   useSEO('home', {
     title: 'HPLC-Verified Research Peptides UK | PH Labs',
     metaDescription: 'UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals.',
-    canonical: 'https://www.prohealthpeptides.co.uk/',
+    canonical: 'https://www.phlabs.co.uk/',
   });
 
 
@@ -247,14 +247,14 @@ export default function HomePage() {
       const orgSchema = {
         '@context': 'https://schema.org',
         '@type': 'Organization',
-        '@id': 'https://www.prohealthpeptides.co.uk/#organization',
+        '@id': 'https://www.phlabs.co.uk/#organization',
         name: 'PH Labs',
         legalName: 'PH Labs Ltd',
-        url: 'https://www.prohealthpeptides.co.uk/',
-        logo: { '@type': 'ImageObject', url: 'https://www.prohealthpeptides.co.uk/logo.png', width: 512, height: 512 },
+        url: 'https://www.phlabs.co.uk/',
+        logo: { '@type': 'ImageObject', url: 'https://www.phlabs.co.uk/logo.png', width: 512, height: 512 },
         description: 'UK supplier of HPLC-verified research peptides including BPC-157, Retatrutide, Tirzepatide, TB-500, NAD+ and more. For laboratory research use only.',
         address: { '@type': 'PostalAddress', addressCountry: 'GB', addressRegion: 'England' },
-        contactPoint: { '@type': 'ContactPoint', telephone: siteSettings.contactPhone || '+447826549934', email: siteSettings.contactEmail || 'info@prohealthpeptides.co.uk', contactType: 'customer service', areaServed: 'GB', availableLanguage: 'English' },
+        contactPoint: { '@type': 'ContactPoint', telephone: siteSettings.contactPhone || '+447826549934', email: siteSettings.contactEmail || 'info@phlabs.co.uk', contactType: 'customer service', areaServed: 'GB', availableLanguage: 'English' },
         ...(sameAs.length > 0 && { sameAs }),
       };
       const orgScript = document.createElement('script');
@@ -267,10 +267,10 @@ export default function HomePage() {
       const siteSchema = {
         '@context': 'https://schema.org',
         '@type': 'WebSite',
-        '@id': 'https://www.prohealthpeptides.co.uk/#website',
+        '@id': 'https://www.phlabs.co.uk/#website',
         name: 'PH Labs',
-        url: 'https://www.prohealthpeptides.co.uk/',
-        potentialAction: { '@type': 'SearchAction', target: { '@type': 'EntryPoint', urlTemplate: 'https://www.prohealthpeptides.co.uk/search?q={search_term_string}' }, 'query-input': 'required name=search_term_string' },
+        url: 'https://www.phlabs.co.uk/',
+        potentialAction: { '@type': 'SearchAction', target: { '@type': 'EntryPoint', urlTemplate: 'https://www.phlabs.co.uk/search?q={search_term_string}' }, 'query-input': 'required name=search_term_string' },
       };
       const siteScript = document.createElement('script');
       siteScript.type = 'application/ld+json';
@@ -374,7 +374,7 @@ export default function HomePage() {
         subscribedAt: now,
         timestamp: new Date().toISOString(),
       }));
-      const pdfUrl = 'https://www.prohealthpeptides.co.uk/downloads/protocol-library.pdf';
+      const pdfUrl = 'https://www.phlabs.co.uk/downloads/protocol-library.pdf';
       const html = protocolLibraryEmail({ recipientEmail: email, discountCode, pdfDownloadUrl: pdfUrl });
       try {
         await withRetry('mail-enqueue', () => addDoc(collection(db, 'mail'), {
@@ -1070,7 +1070,7 @@ export default function HomePage() {
                     )}
                     {emailStatus === 'error' && (
                       <p className="text-center text-xs font-semibold" style={{ color: '#f87171' }}>
-                        Something went wrong. Please try again or email info@prohealthpeptides.co.uk.
+                        Something went wrong. Please try again or email info@phlabs.co.uk.
                       </p>
                     )}
 

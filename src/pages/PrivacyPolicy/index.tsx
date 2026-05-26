@@ -6,7 +6,7 @@ export default function PrivacyPolicy() {
   useSEO('privacy', {
     title: 'Privacy Policy | PH Labs UK',
     metaDescription: 'Privacy Policy — PH Labs Ltd UK. UK GDPR & Data Protection Act 2018 compliant. How we collect and protect your data when you buy research peptides in the UK.',
-    canonical: 'https://www.prohealthpeptides.co.uk/privacy-policy',
+    canonical: 'https://www.phlabs.co.uk/privacy-policy',
     ogImage: 'https://cdn.wegic.ai/assets/onepage/agent/images/1779306071783_0.jpg',
   });
 
@@ -128,8 +128,8 @@ export default function PrivacyPolicy() {
           <div className="mt-4 p-3 rounded-lg border" style={{ background: 'rgba(6,182,212,0.05)', borderColor: 'rgba(6,182,212,0.15)' }}>
             <p className="text-xs leading-relaxed" style={{ color: '#06b6d4' }}>
               To exercise any of these rights, email{' '}
-              <a href="mailto:info@prohealthpeptides.co.uk" className="font-semibold underline underline-offset-2">
-                info@prohealthpeptides.co.uk
+              <a href="mailto:info@phlabs.co.uk" className="font-semibold underline underline-offset-2">
+                info@phlabs.co.uk
               </a>
               . We will respond within 30 days.
             </p>
@@ -281,11 +281,11 @@ export default function PrivacyPolicy() {
                 <p className="text-xs leading-relaxed" style={{ color: '#9cb8d9' }}>
                   Contact our data controller at{' '}
                   <a
-                    href="mailto:info@prohealthpeptides.co.uk"
+                    href="mailto:info@phlabs.co.uk"
                     className="font-semibold underline underline-offset-2 transition-colors hover:opacity-80"
                     style={{ color: '#8b5cf6' }}
                   >
-                    info@prohealthpeptides.co.uk
+                    info@phlabs.co.uk
                   </a>
                   . We will respond within 30 days as required under UK GDPR.
                 </p>

@@ -5,7 +5,7 @@ export default function TermsOfService() {
   useSEO('terms', {
     title: 'Terms of Service | PH Labs',
     metaDescription: 'Terms of Service for PH Labs Ltd. Research use only. Governed by the laws of England and Wales.',
-    canonical: 'https://www.prohealthpeptides.co.uk/terms-of-service',
+    canonical: 'https://www.phlabs.co.uk/terms-of-service',
   });
 
   const sections = [

@@ -162,9 +162,9 @@ export default function LabReports() {
     setMeta('keywords', 'HPLC tested peptides UK, peptide CoA, certificate of analysis research peptides, lab reports peptides UK, mass spectrometry peptide verification');
     setMeta('og:title', 'Lab Reports & CoA | HPLC-Tested Research Peptides | PH Labs UK', true);
     setMeta('og:description', metaDesc, true);
-    setMeta('og:url', 'https://www.prohealthpeptides.co.uk/lab-reports', true);
+    setMeta('og:url', 'https://www.phlabs.co.uk/lab-reports', true);
     const canonical = document.querySelector('link[rel="canonical"]');
-    if (canonical) canonical.setAttribute('href', 'https://www.prohealthpeptides.co.uk/lab-reports');
+    if (canonical) canonical.setAttribute('href', 'https://www.phlabs.co.uk/lab-reports');
     // Trigger hero animation after paint
     const raf = requestAnimationFrame(() => setTimeout(() => setHeroVisible(true), 80));
     return () => {
@@ -173,7 +173,7 @@ export default function LabReports() {
       const d2 = document.querySelector('meta[name="description"]');
       if (d2) d2.setAttribute('content', 'Premium research compounds with HPLC-verified purity. For laboratory research use only. Fast UK shipping.');
       const c2 = document.querySelector('link[rel="canonical"]');
-      if (c2) c2.setAttribute('href', 'https://www.prohealthpeptides.co.uk/');
+      if (c2) c2.setAttribute('href', 'https://www.phlabs.co.uk/');
     };
   }, []);
 
@@ -353,7 +353,7 @@ export default function LabReports() {
                   {/* Actions */}
                   <div className="flex gap-2">
                     <a
-                      href={`mailto:info@prohealthpeptides.co.uk?subject=CoA Request — ${report.batchRef}`}
+                      href={`mailto:info@phlabs.co.uk?subject=CoA Request — ${report.batchRef}`}
                       className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] hover:border-white/15 text-[#8caad4] hover:text-white rounded-xl text-xs font-semibold transition-all duration-200"
                     >
                       <Download className="w-3.5 h-3.5" />
@@ -393,7 +393,7 @@ export default function LabReports() {
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <a
-                      href="mailto:info@prohealthpeptides.co.uk?subject=Certificate of Analysis Request"
+                      href="mailto:info@phlabs.co.uk?subject=Certificate of Analysis Request"
                       className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-500 hover:from-blue-500 hover:to-indigo-400 text-white font-semibold rounded-xl transition-all shadow-[0_4px_20px_rgba(37,99,235,0.35)] hover:shadow-[0_4px_28px_rgba(37,99,235,0.55)] hover:-translate-y-px"
                     >
                       <FileText className="w-4 h-4" />

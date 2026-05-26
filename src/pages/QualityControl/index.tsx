@@ -164,7 +164,7 @@ export default function QualityControl() {
     // Set canonical
     const canonical = document.querySelector('link[rel="canonical"]');
     const prevCanonical = canonical?.getAttribute('href') || '';
-    if (canonical) canonical.setAttribute('href', 'https://www.prohealthpeptides.co.uk/quality-control');
+    if (canonical) canonical.setAttribute('href', 'https://www.phlabs.co.uk/quality-control');
 
     const script = document.createElement('script');
     script.type = 'application/ld+json';
@@ -173,12 +173,12 @@ export default function QualityControl() {
       '@context': 'https://schema.org',
       '@type': 'WebPage',
       name: 'Quality Control — PH Labs',
-      url: 'https://www.prohealthpeptides.co.uk/quality-control',
+      url: 'https://www.phlabs.co.uk/quality-control',
       description: 'Quality control procedures at PH Labs: HPLC testing on every batch, thermally sealed dispatch packaging. Research compounds supplied for laboratory use only.',
       mainEntity: {
         '@type': 'ResearchOrganization',
         name: 'PH Labs',
-        url: 'https://www.prohealthpeptides.co.uk',
+        url: 'https://www.phlabs.co.uk',
         knowsAbout: ['HPLC analytical testing', 'Research peptide supply', 'Laboratory compound quality control'],
       },
     });

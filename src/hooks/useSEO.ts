@@ -10,7 +10,7 @@ interface SEOData {
   ogType?: string;
 }
 
-const DEFAULT_OG_IMAGE = 'https://www.prohealthpeptides.co.uk/og-image.jpg';
+const DEFAULT_OG_IMAGE = 'https://www.phlabs.co.uk/og-image.jpg';
 
 function setMeta(selector: string, attr: string, value: string) {
   let el = document.querySelector(selector) as HTMLMetaElement | null;

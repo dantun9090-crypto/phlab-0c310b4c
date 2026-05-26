@@ -6,7 +6,7 @@ export default function Terms() {
   useSEO('terms-conditions', {
     title: 'Terms & Conditions | PH Labs UK',
     metaDescription: 'Terms & Conditions — PH Labs Ltd UK. Research-use only peptides, MHRA compliant. Ordering, payment, returns & shipping. Governed by English law.',
-    canonical: 'https://www.prohealthpeptides.co.uk/terms-and-conditions',
+    canonical: 'https://www.phlabs.co.uk/terms-and-conditions',
     ogImage: 'https://cdn.wegic.ai/assets/onepage/agent/images/1779306071785_0.jpg',
   });
 
@@ -465,11 +465,11 @@ export default function Terms() {
                 <p className="text-xs leading-relaxed" style={{ color: '#9cb8d9' }}>
                   For any questions relating to these Terms and Conditions, contact us at{' '}
                   <a
-                    href="mailto:info@prohealthpeptides.co.uk"
+                    href="mailto:info@phlabs.co.uk"
                     className="font-semibold underline underline-offset-2 transition-colors hover:opacity-80"
                     style={{ color: '#10B981' }}
                   >
-                    info@prohealthpeptides.co.uk
+                    info@phlabs.co.uk
                   </a>{' '}
                   or via our <Link to="/contact" className="font-semibold underline underline-offset-2" style={{ color: '#10B981' }}>Contact page</Link>.
                 </p>

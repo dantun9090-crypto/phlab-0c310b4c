@@ -76,7 +76,7 @@ export function protocolLibraryEmail({
             <li style="margin-bottom:6px;">Read the <strong style="color:${C.textBright};">Storage Guide</strong> (pages 18-21) first — proper storage is critical</li>
             <li style="margin-bottom:6px;">Review <strong style="color:${C.textBright};">Reconstitution Protocols</strong> before handling lyophilised peptides</li>
             <li style="margin-bottom:6px;">Keep the <strong style="color:${C.textBright};">CoA Interpretation Guide</strong> (pages 24-27) handy when ordering</li>
-            <li style="margin-bottom:0;"><a href="https://www.prohealthpeptides.co.uk/resources" style="color:${C.success};font-weight:600;text-decoration:none;">Research Hub</a> for ongoing updates</li>
+            <li style="margin-bottom:0;"><a href="https://www.phlabs.co.uk/resources" style="color:${C.success};font-weight:600;text-decoration:none;">Research Hub</a> for ongoing updates</li>
           </ol>
         </td>
       </tr>
@@ -90,7 +90,7 @@ export function protocolLibraryEmail({
           <table role="presentation" cellpadding="0" cellspacing="0" border="0">
             <tr>
               <td style="border:2px solid ${C.success};border-radius:8px;">
-                <a href="https://www.prohealthpeptides.co.uk/products" style="display:inline-block;padding:14px 32px;color:${C.success};font-size:15px;font-weight:600;text-decoration:none;font-family:${EMAIL_FONT};">Browse All Products →</a>
+                <a href="https://www.phlabs.co.uk/products" style="display:inline-block;padding:14px 32px;color:${C.success};font-size:15px;font-weight:600;text-decoration:none;font-family:${EMAIL_FONT};">Browse All Products →</a>
               </td>
             </tr>
           </table>
@@ -116,7 +116,7 @@ export function protocolLibraryEmail({
         <td align="center">
           <p style="color:${C.textDimmed};font-size:12px;margin:0 0 8px 0;font-family:${EMAIL_FONT};">Questions? We're here to help</p>
           <p style="margin:0;">
-            <a href="mailto:info@prohealthpeptides.co.uk" style="color:${C.success};text-decoration:none;font-weight:600;font-size:13px;font-family:${EMAIL_FONT};">info@prohealthpeptides.co.uk</a>
+            <a href="mailto:info@phlabs.co.uk" style="color:${C.success};text-decoration:none;font-weight:600;font-size:13px;font-family:${EMAIL_FONT};">info@phlabs.co.uk</a>
           </p>
         </td>
       </tr>

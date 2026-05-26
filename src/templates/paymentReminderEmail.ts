@@ -90,13 +90,13 @@ export function buildPaymentReminderEmail({
       </tr>
     </table>
 
-    ${ctaButton('View My Order', 'https://www.prohealthpeptides.co.uk/account')}
+    ${ctaButton('View My Order', 'https://www.phlabs.co.uk/account')}
 
     ${divider()}
 
     <p style="color:${C.textDimmed};font-size:12px;line-height:1.6;margin:0;text-align:center;font-family:${EMAIL_FONT};">
       Already paid? Please ignore this reminder — your order will be processed once the transfer clears.<br>
-      Questions? <a href="mailto:info@prohealthpeptides.co.uk" style="color:${C.accent};text-decoration:none;">info@prohealthpeptides.co.uk</a>
+      Questions? <a href="mailto:info@phlabs.co.uk" style="color:${C.accent};text-decoration:none;">info@phlabs.co.uk</a>
     </p>
   `;
 

@@ -76,14 +76,14 @@ export function buildWelcomeEmail(opts: WelcomeEmailOptions): string {
         </table>
       </div>
 
-      ${ctaButton('Browse Our Catalogue →', 'https://www.prohealthpeptides.co.uk/products')}
+      ${ctaButton('Browse Our Catalogue →', 'https://www.phlabs.co.uk/products')}
 
       ${divider()}
 
       <p style="color:${C.textDimmed};font-size:11px;line-height:1.6;margin:0;text-align:center;">
         All products are sold for <strong style="color:${C.textMuted};">research purposes only</strong>. 
         Not for human consumption. For laboratory use only.<br>
-        Questions? <a href="mailto:info@prohealthpeptides.co.uk" style="color:${C.accent};text-decoration:none;">info@prohealthpeptides.co.uk</a>
+        Questions? <a href="mailto:info@phlabs.co.uk" style="color:${C.accent};text-decoration:none;">info@phlabs.co.uk</a>
       </p>
     </div>
   `;

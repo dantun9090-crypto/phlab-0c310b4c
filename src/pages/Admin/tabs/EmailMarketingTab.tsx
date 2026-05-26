@@ -45,14 +45,14 @@ Your FREE 28-page Protocol Library is ready to download. Inside you'll find:
 ✅ UK Legal Compliance — Research-only use requirements
 
 📥 DOWNLOAD YOUR FREE GUIDE:
-https://www.prohealthpeptides.co.uk/downloads/protocol-library.pdf
+https://www.phlabs.co.uk/downloads/protocol-library.pdf
 
 🎁 BONUS: Use discount code PROTOCOL10 to save 10% on your first order (valid 30 days).
 
 Browse all HPLC-verified peptides:
-https://www.prohealthpeptides.co.uk/products
+https://www.phlabs.co.uk/products
 
-Questions? Email us at info@prohealthpeptides.co.uk
+Questions? Email us at info@phlabs.co.uk
 
 ⚠️ Research Use Only
 All peptides supplied by PH Labs UK are for in-vitro research purposes only. Not for human or veterinary use.
@@ -84,7 +84,7 @@ Best regards,
 PH Labs Research Team
 
 ---
-PH Labs Ltd | research@prohealthpeptides.co.uk
+PH Labs Ltd | research@phlabs.co.uk
 For laboratory research use only. Not approved by MHRA or FDA.
 To unsubscribe from research updates, reply with UNSUBSCRIBE.`,
   },
@@ -106,7 +106,7 @@ Use code [DISCOUNT_CODE] at checkout to save [X]% on:
 
 Offer valid until [Date]. Cannot be combined with other offers.
 
-Shop now: https://www.prohealthpeptides.co.uk/products
+Shop now: https://www.phlabs.co.uk/products
 
 All compounds are HPLC-tested and supplied for laboratory research use only.
 
@@ -114,7 +114,7 @@ Best regards,
 PH Labs Research Team
 
 ---
-PH Labs Ltd | research@prohealthpeptides.co.uk
+PH Labs Ltd | research@phlabs.co.uk
 For laboratory research use only. Not approved by MHRA or FDA.
 To unsubscribe, reply with UNSUBSCRIBE.`,
   },
@@ -141,7 +141,7 @@ POPULAR COMPOUNDS THIS MONTH
 • [Compound 1] — [brief note]
 • [Compound 2] — [brief note]
 
-Browse our full catalogue: https://www.prohealthpeptides.co.uk/products
+Browse our full catalogue: https://www.phlabs.co.uk/products
 
 All compounds are supplied strictly for in-vitro and laboratory research use only. For educational and research purposes only. Not for human administration or clinical use.
 
@@ -149,7 +149,7 @@ Best regards,
 PH Labs Research Team
 
 ---
-PH Labs Ltd | research@prohealthpeptides.co.uk
+PH Labs Ltd | research@phlabs.co.uk
 For laboratory research use only. Not approved by MHRA or FDA.
 To unsubscribe, reply with UNSUBSCRIBE.`,
   },
@@ -179,7 +179,7 @@ Best regards,
 PH Labs Research Team
 
 ---
-PH Labs Ltd | research@prohealthpeptides.co.uk
+PH Labs Ltd | research@phlabs.co.uk
 For laboratory research use only. Not approved by MHRA or FDA.
 To unsubscribe, reply with UNSUBSCRIBE.`,
   },
@@ -203,12 +203,12 @@ What this means for your research orders:
 • [Impact 2]
 
 You can review our updated Terms & Conditions here:
-https://www.prohealthpeptides.co.uk/terms
+https://www.phlabs.co.uk/terms
 
 All our products remain supplied strictly for laboratory research use only. Not approved by MHRA or FDA. Not for human administration or therapeutic use.
 
 If you have any questions, please contact us:
-research@prohealthpeptides.co.uk
+research@phlabs.co.uk
 
 Best regards,
 PH Labs Compliance Team

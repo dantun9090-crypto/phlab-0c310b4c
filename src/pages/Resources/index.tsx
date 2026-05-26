@@ -82,15 +82,15 @@ export default function Resources() {
     setMeta('keywords', 'peptide research articles, HPLC testing peptides, BPC-157 research, Retatrutide study, research peptides UK science');
     setMeta('og:title', 'Peptide Research Hub | Lab Guides & Science Articles | PH Labs', true);
     setMeta('og:description', metaDesc, true);
-    setMeta('og:url', 'https://www.prohealthpeptides.co.uk/resources', true);
+    setMeta('og:url', 'https://www.phlabs.co.uk/resources', true);
     const canonical = document.querySelector('link[rel="canonical"]');
-    if (canonical) canonical.setAttribute('href', 'https://www.prohealthpeptides.co.uk/resources');
+    if (canonical) canonical.setAttribute('href', 'https://www.phlabs.co.uk/resources');
     return () => {
       document.title = 'PH Labs UK | HPLC-Tested Research Peptides';
       const d2 = document.querySelector('meta[name="description"]');
       if (d2) d2.setAttribute('content', 'Premium research compounds with HPLC-verified purity. For laboratory research use only. Fast UK shipping.');
       const c2 = document.querySelector('link[rel="canonical"]');
-      if (c2) c2.setAttribute('href', 'https://www.prohealthpeptides.co.uk/');
+      if (c2) c2.setAttribute('href', 'https://www.phlabs.co.uk/');
     };
   }, []);
 

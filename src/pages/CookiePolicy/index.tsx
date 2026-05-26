@@ -6,7 +6,7 @@ export default function CookiePolicy() {
   useSEO('cookies', {
     title: 'Cookie Policy | PH Labs UK',
     metaDescription: 'Cookie Policy — PH Labs Ltd UK. Essential & analytics cookies on our UK research peptides store. GDPR compliant. Manage your cookie preferences easily.',
-    canonical: 'https://www.prohealthpeptides.co.uk/cookies',
+    canonical: 'https://www.phlabs.co.uk/cookies',
     ogImage: 'https://cdn.wegic.ai/assets/onepage/agent/images/1779306071784_0.jpg',
   });
 
@@ -239,11 +239,11 @@ export default function CookiePolicy() {
                 <p className="text-xs leading-relaxed" style={{ color: '#9cb8d9' }}>
                   If you have any questions about how we use cookies, please contact our data protection team at{' '}
                   <a
-                    href="mailto:info@prohealthpeptides.co.uk"
+                    href="mailto:info@phlabs.co.uk"
                     className="font-semibold underline underline-offset-2 transition-colors hover:opacity-80"
                     style={{ color: '#3b82f6' }}
                   >
-                    info@prohealthpeptides.co.uk
+                    info@phlabs.co.uk
                   </a>
                 </p>
               </div>

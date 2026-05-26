@@ -15,7 +15,7 @@ export const SEO_LIMITS = {
   descriptionMin: 50,
 } as const;
 
-export const SITE_URL = "https://www.prohealthpeptides.co.uk";
+export const SITE_URL = "https://www.phlabs.co.uk";
 export const SITE_NAME = "PH Labs UK";
 export const BRAND = "PH Labs UK";
 

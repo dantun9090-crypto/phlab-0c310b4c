@@ -25,7 +25,7 @@ export function buildAdminInvoiceEmail(opts: AdminInvoiceEmailOptions): string {
         <tr>
           <td>
             <div style="font-size:22px;font-weight:800;color:${C.textBright};letter-spacing:-0.5px;">PH Labs</div>
-            <div style="font-size:12px;color:${C.textMuted};margin-top:2px;">prohealthpeptides.co.uk</div>
+            <div style="font-size:12px;color:${C.textMuted};margin-top:2px;">phlabs.co.uk</div>
           </td>
           <td align="right">
             <div style="display:inline-block;padding:6px 16px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:8px;">
@@ -71,12 +71,12 @@ export function buildAdminInvoiceEmail(opts: AdminInvoiceEmailOptions): string {
         <div style="font-size:13px;color:${C.text};line-height:1.5;">${opts.notes}</div>
       </div>` : ''}
 
-      ${ctaButton('Pay Now', 'https://www.prohealthpeptides.co.uk')}
+      ${ctaButton('Pay Now', 'https://www.phlabs.co.uk')}
 
       ${divider()}
 
       <p style="color:${C.textDimmed};font-size:11px;line-height:1.6;margin:0;text-align:center;">
-        Questions about this invoice? <a href="mailto:info@prohealthpeptides.co.uk" style="color:${C.accent};text-decoration:none;">info@prohealthpeptides.co.uk</a>
+        Questions about this invoice? <a href="mailto:info@phlabs.co.uk" style="color:${C.accent};text-decoration:none;">info@phlabs.co.uk</a>
       </p>
     </div>
   `;

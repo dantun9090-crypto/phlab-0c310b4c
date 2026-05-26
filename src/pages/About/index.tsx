@@ -126,7 +126,7 @@ export default function AboutPage() {
   useSEO('about', {
     title: 'About PH Labs | UK Research Supplier',
     metaDescription: 'Learn about PH Labs — UK-based supplier of HPLC-verified research peptides. Batch-tested, third-party certified, shipped from the UK.',
-    canonical: 'https://www.prohealthpeptides.co.uk/about',
+    canonical: 'https://www.phlabs.co.uk/about',
   });
 
   useEffect(() => {

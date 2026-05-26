@@ -135,12 +135,12 @@ export function buildOrderStatusEmail(opts: OrderStatusEmailOptions): string {
       ${trackingSection}
       ${itemsSection}
 
-      ${ctaButton('View Your Order', `https://www.prohealthpeptides.co.uk/account`)}
+      ${ctaButton('View Your Order', `https://www.phlabs.co.uk/account`)}
 
       ${divider()}
 
       <p style="color:${C.textDimmed};font-size:11px;line-height:1.6;margin:0;text-align:center;">
-        Questions about your order? <a href="mailto:info@prohealthpeptides.co.uk" style="color:${C.accent};text-decoration:none;">info@prohealthpeptides.co.uk</a><br>
+        Questions about your order? <a href="mailto:info@phlabs.co.uk" style="color:${C.accent};text-decoration:none;">info@phlabs.co.uk</a><br>
         All products for research/laboratory use only. Not for human consumption.
       </p>
     </div>

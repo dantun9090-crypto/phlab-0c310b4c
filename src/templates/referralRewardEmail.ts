@@ -21,7 +21,7 @@ export const buildReferralRewardEmail = (opts: ReferralRewardEmailOpts): string 
     couponValue,
   } = opts;
 
-  const siteUrl = 'https://www.prohealthpeptides.co.uk';
+  const siteUrl = 'https://www.phlabs.co.uk';
 
   let headingText: string;
   let bodyText: string;

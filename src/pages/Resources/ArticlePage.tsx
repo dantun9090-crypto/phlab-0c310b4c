@@ -257,7 +257,7 @@ export default function ArticlePage() {
   // Per-article SEO: title, meta description, canonical, OG, Article schema
   useEffect(() => {
     if (!article) return;
-    const articleUrl = `https://www.prohealthpeptides.co.uk/resources/${article.slug}`;
+    const articleUrl = `https://www.phlabs.co.uk/resources/${article.slug}`;
     const shortTitle = article.title.length > 38 ? article.title.slice(0, 36).trimEnd() + '…' : article.title;
     document.title = `${shortTitle} | PH Labs`;
 
@@ -313,7 +313,7 @@ export default function ArticlePage() {
         image: [articleImage],
         datePublished: article.publishDate,
         dateModified: article.publishDate,
-        author: { '@type': 'Organization', name: 'PH Labs', url: 'https://www.prohealthpeptides.co.uk' },
+        author: { '@type': 'Organization', name: 'PH Labs', url: 'https://www.phlabs.co.uk' },
         publisher: {
           '@type': 'Organization',
           name: 'PH Labs',
@@ -332,8 +332,8 @@ export default function ArticlePage() {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
         itemListElement: [
-          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.prohealthpeptides.co.uk/' },
-          { '@type': 'ListItem', position: 2, name: 'Research Hub', item: 'https://www.prohealthpeptides.co.uk/resources' },
+          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.phlabs.co.uk/' },
+          { '@type': 'ListItem', position: 2, name: 'Research Hub', item: 'https://www.phlabs.co.uk/resources' },
           { '@type': 'ListItem', position: 3, name: article.title, item: articleUrl },
         ],
       },
@@ -351,7 +351,7 @@ export default function ArticlePage() {
       const d2 = document.querySelector('meta[name="description"]');
       if (d2) d2.setAttribute('content', 'Premium research compounds with HPLC-verified purity. For laboratory research use only. Fast UK shipping.');
       const c2 = document.querySelector('link[rel="canonical"]');
-      if (c2) c2.setAttribute('href', 'https://www.prohealthpeptides.co.uk/');
+      if (c2) c2.setAttribute('href', 'https://www.phlabs.co.uk/');
       ['og:title','og:description','og:url','og:type','article:published_time','article:section'].forEach(p =>
         document.querySelector(`meta[property="${p}"]`)?.remove()
       );
