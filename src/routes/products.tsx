@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { fetchAllProducts, type SeoProduct } from "@/lib/firestore-rest";
 import { SITE_URL } from "@/lib/seo-meta";
+import { LoadingFallback } from "@/components/LoadingFallback";
 
 const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
@@ -105,9 +106,9 @@ function SeoCatalogue({ products }: { products: SeoProduct[] }) {
 function LegacyMount() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
-  if (!mounted) return null;
+  if (!mounted) return <LoadingFallback />;
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LoadingFallback />}>
       <LegacyApp />
     </Suspense>
   );
