@@ -102,11 +102,51 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+const BOOT_WATCHDOG = `
+(function(){
+  try{
+    var KEY='__phl_boot_reload_at';
+    var MAX_RELOADS_KEY='__phl_boot_reload_count';
+    var now=Date.now();
+    var last=Number(sessionStorage.getItem(KEY)||'0');
+    var count=Number(sessionStorage.getItem(MAX_RELOADS_KEY)||'0');
+    // Reset counter if last reload was > 2 min ago
+    if(now-last>120000){count=0;sessionStorage.setItem(MAX_RELOADS_KEY,'0');}
+    function hasContent(){
+      var b=document.body; if(!b) return false;
+      // any element other than <script>/<style> with size?
+      var els=b.querySelectorAll('div,main,section,header,nav,article,h1,h2,img,a,button');
+      for(var i=0;i<els.length;i++){
+        var r=els[i].getBoundingClientRect();
+        if(r.width>50&&r.height>50) return true;
+      }
+      return false;
+    }
+    setTimeout(function(){
+      if(hasContent()) return;
+      if(count>=2) return; // stop after 2 attempts to avoid loops
+      if(now-last<15000) return;
+      sessionStorage.setItem(KEY,String(Date.now()));
+      sessionStorage.setItem(MAX_RELOADS_KEY,String(count+1));
+      try{
+        // force fresh fetch — bypass HTTP cache & service worker
+        if('caches' in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}
+        if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){
+          navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});
+        }
+      }catch(e){}
+      location.replace(location.pathname+location.search+(location.search?'&':'?')+'_r='+Date.now()+location.hash);
+    },10000);
+  }catch(e){}
+})();
+`;
+
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" style={{ backgroundColor: "#060f1e" }}>
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
       </head>
       <body style={{ backgroundColor: "#060f1e", color: "#f0f6ff", margin: 0 }}>
         {children}
