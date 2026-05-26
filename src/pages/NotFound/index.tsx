@@ -38,7 +38,7 @@ export default function NotFoundPage() {
           <p className="text-xl font-semibold text-[#c8daf0] mb-3">
             Research protocol not located
           </p>
-          <p className="text-[#6b8fba] text-sm leading-relaxed max-w-md mx-auto">
+          <p className="text-[#a8c0e0] text-sm leading-relaxed max-w-md mx-auto">
             The compound you are looking for does not exist at this location, or has been moved to a different sequence in the catalogue.
           </p>
         </div>
