@@ -128,7 +128,18 @@ export default {
     };
 
     try {
-      // 301 redirect legacy (Wegic) URLs before SSR runs.
+      // 1) Canonical host redirect (apex + legacy brand domains → www.phlabs.co.uk).
+      const reqHost = url.hostname.toLowerCase();
+      if (REDIRECT_HOSTS.has(reqHost)) {
+        const dest = new URL(url.toString());
+        dest.hostname = CANONICAL_HOST;
+        dest.protocol = "https:";
+        dest.port = "";
+        log.info({ event: "worker.redirect", status: 301, reason: "canonical-host", to: dest.toString(), ...baseFields });
+        return Response.redirect(dest.toString(), 301);
+      }
+
+      // 2) 301 redirect legacy (Wegic) URLs before SSR runs.
       const legacy = resolveLegacyRedirect(url.pathname);
       if (legacy && legacy !== url.pathname) {
         const dest = new URL(legacy, url);
@@ -138,7 +149,7 @@ export default {
       }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      const normalized = await normalizeCatastrophicSsrResponse(response);
+      const normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response));
       const ms = Date.now() - start;
       log.info({
         event: "worker.request",
