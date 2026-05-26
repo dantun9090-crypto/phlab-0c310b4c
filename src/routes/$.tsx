@@ -53,19 +53,34 @@ export const Route = createFileRoute("/$")({
       }
     }
 
+    // Pages that should never be indexed (search results, filtered catalogue,
+    // utility pages). Google was wasting crawl budget on /search and
+    // /products?category=… variants and flagging them as "Crawled - currently
+    // not indexed" / "Discovered - currently not indexed".
+    const firstSeg = splat.split("/")[0] ?? "";
+    const shouldNoindex =
+      firstSeg === "search" ||
+      splat.startsWith("products?") ||
+      splat.includes("?category=");
+
+    const meta: Array<Record<string, string>> = [
+      { key: "title", title },
+      { key: "description", name: "description", content: description },
+      { key: "og:title", property: "og:title", content: title },
+      { key: "og:description", property: "og:description", content: description },
+      { key: "og:type", property: "og:type", content: pageMeta.ogType },
+      { key: "og:url", property: "og:url", content: url },
+      { key: "og:image", property: "og:image", content: OG_IMAGE },
+      { key: "twitter:title", name: "twitter:title", content: title },
+      { key: "twitter:description", name: "twitter:description", content: description },
+      { key: "twitter:image", name: "twitter:image", content: OG_IMAGE },
+    ];
+    if (shouldNoindex) {
+      meta.push({ key: "robots", name: "robots", content: "noindex, follow" });
+    }
+
     return {
-      meta: [
-        { key: "title", title },
-        { key: "description", name: "description", content: description },
-        { key: "og:title", property: "og:title", content: title },
-        { key: "og:description", property: "og:description", content: description },
-        { key: "og:type", property: "og:type", content: pageMeta.ogType },
-        { key: "og:url", property: "og:url", content: url },
-        { key: "og:image", property: "og:image", content: OG_IMAGE },
-        { key: "twitter:title", name: "twitter:title", content: title },
-        { key: "twitter:description", name: "twitter:description", content: description },
-        { key: "twitter:image", name: "twitter:image", content: OG_IMAGE },
-      ],
+      meta,
       links: [{ rel: "canonical", href: url }],
       scripts,
     };

@@ -137,18 +137,25 @@ export default function CookiePolicy() {
               { service: 'Google Analytics', purpose: 'Site analytics', policy: 'https://policies.google.com/privacy' },
               { service: 'YouTube', purpose: 'Embedded videos (if applicable)', policy: 'https://policies.google.com/privacy' },
               { service: 'Social Media', purpose: 'Share buttons (if applicable)', policy: 'Varies by platform' },
-            ].map(({ service, purpose, policy }) => (
-              <li key={service} className="flex items-start gap-3 p-3 rounded-lg border" style={{ background: '#0b1a30', borderColor: 'rgba(6,182,212,0.15)' }}>
-                <span className="mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#06b6d4' }} />
-                <div className="flex-1">
-                  <p className="text-xs font-semibold mb-0.5" style={{ color: '#06b6d4' }}>{service}</p>
-                  <p className="text-[10px] mb-1" style={{ color: '#6b8fba' }}>{purpose}</p>
-                  <a href={policy} target="_blank" rel="noopener noreferrer" className="text-[10px] underline underline-offset-2 hover:opacity-80" style={{ color: '#06b6d4' }}>
-                    Privacy Policy →
-                  </a>
-                </div>
-              </li>
-            ))}
+            ].map(({ service, purpose, policy }) => {
+              const isUrl = /^https?:\/\//i.test(policy);
+              return (
+                <li key={service} className="flex items-start gap-3 p-3 rounded-lg border" style={{ background: '#0b1a30', borderColor: 'rgba(6,182,212,0.15)' }}>
+                  <span className="mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#06b6d4' }} />
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold mb-0.5" style={{ color: '#06b6d4' }}>{service}</p>
+                    <p className="text-[10px] mb-1" style={{ color: '#6b8fba' }}>{purpose}</p>
+                    {isUrl ? (
+                      <a href={policy} target="_blank" rel="noopener noreferrer nofollow" className="text-[10px] underline underline-offset-2 hover:opacity-80" style={{ color: '#06b6d4' }}>
+                        Privacy Policy →
+                      </a>
+                    ) : (
+                      <span className="text-[10px]" style={{ color: '#6b8fba' }}>{policy}</span>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </>
       ),
