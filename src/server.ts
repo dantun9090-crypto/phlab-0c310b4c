@@ -90,6 +90,14 @@ export default {
     };
 
     try {
+      // 301 redirect legacy (Wegic) URLs before SSR runs.
+      const legacy = resolveLegacyRedirect(url.pathname);
+      if (legacy && legacy !== url.pathname) {
+        const dest = new URL(legacy, url);
+        dest.search = url.search;
+        log.info({ event: "worker.redirect", status: 301, to: dest.pathname, ...baseFields });
+        return Response.redirect(dest.toString(), 301);
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       const normalized = await normalizeCatastrophicSsrResponse(response);
