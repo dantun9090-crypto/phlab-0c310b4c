@@ -257,7 +257,7 @@ export default function CheckoutPage() {
       if (!form.country.trim()) e.country = 'Required';
     }
     if (step === 3) {
-      if (!form.acceptedTerms) e.terms = 'You must accept the Terms & Conditions';
+      if (!form.acceptedTerms) e.terms = 'You must confirm Research Use Only and accept the Terms & Conditions';
     }
     return e;
   };
@@ -1083,7 +1083,10 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                       <span className="text-xs text-gray-300 leading-relaxed">
-                        I confirm these products are for laboratory research only and agree to the{' '}
+                        I confirm I am a qualified researcher and that these products will be used for{' '}
+                        <strong className="text-white">in-vitro laboratory research only</strong>.{' '}
+                        I understand they are <strong className="text-white">Not For Human Or Veterinary Consumption</strong>,
+                        are not drugs, food or supplements, and I agree to the{' '}
                         <Link to="/terms-of-service" target="_blank" className="text-emerald-400 hover:text-emerald-300 underline font-medium">Terms & Conditions</Link>{' '}
                         and{' '}
                         <Link to="/privacy-policy" target="_blank" className="text-emerald-400 hover:text-emerald-300 underline">Privacy Policy</Link>.
