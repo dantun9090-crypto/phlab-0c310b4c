@@ -66,7 +66,7 @@ export default function NotFoundPage() {
 
         {/* Category shortcuts */}
         <div>
-          <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-[#3a5a82] mb-4">Browse by research category</p>
+          <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-[#8aa8d0] mb-4">Browse by research category</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {categories.map(cat => {
               const Icon = cat.icon;
