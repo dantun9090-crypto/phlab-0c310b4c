@@ -38,7 +38,7 @@ export default function NotFoundPage() {
           <p className="text-xl font-semibold text-[#c8daf0] mb-3">
             Research protocol not located
           </p>
-          <p className="text-[#6b8fba] text-sm leading-relaxed max-w-md mx-auto">
+          <p className="text-[#a8c0e0] text-sm leading-relaxed max-w-md mx-auto">
             The compound you are looking for does not exist at this location, or has been moved to a different sequence in the catalogue.
           </p>
         </div>
@@ -66,7 +66,7 @@ export default function NotFoundPage() {
 
         {/* Category shortcuts */}
         <div>
-          <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-[#3a5a82] mb-4">Browse by research category</p>
+          <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-[#8aa8d0] mb-4">Browse by research category</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {categories.map(cat => {
               const Icon = cat.icon;
@@ -86,7 +86,7 @@ export default function NotFoundPage() {
         </div>
 
         {/* MHRA disclaimer */}
-        <p className="text-[10px] text-[#2a4a7a] leading-relaxed max-w-lg mx-auto">
+        <p className="text-[11px] text-[#7090b8] leading-relaxed max-w-lg mx-auto">
           All products supplied by Pro Health Peptides are for laboratory research use only. Not for human or veterinary consumption.
         </p>
       </div>
