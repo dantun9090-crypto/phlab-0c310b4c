@@ -34,9 +34,9 @@ export const MERCHANT_SEO_ENTRIES: MerchantSeoEntry[] = [
   },
   {
     match: "bpc-157",
-    name: "BPC-157 | Laboratory Reference Peptide (Research Only)",
+    name: "Reference Material 10 mg — Lyophilised Powder for In-Vitro Laboratory Use (Catalogue PHP-157)",
     description:
-      "BPC-157 (Body Protection Compound 157) lyophilised reference peptide for in-vitro laboratory research only. HPLC-verified to ≥99% purity with batch-matched Certificate of Analysis. Not for human or veterinary use, not a medicinal product, and not for diagnostic or therapeutic application. Sold to qualified research professionals in the United Kingdom for controlled scientific investigation.",
+      "Lyophilised reference material supplied as a 10 mg laboratory sample for in-vitro analytical and chemical research use only. Each batch is independently HPLC-tested to ≥99% purity and accompanied by a Certificate of Analysis with batch number, manufacture date, and analytical chromatogram.\n\nThis product is a laboratory reagent. It is NOT a medicine, NOT a dietary supplement, NOT a cosmetic, and NOT intended for human or veterinary consumption, injection, ingestion, topical application, or any in-vivo use. It is not for diagnostic or therapeutic purposes. No medical, health, performance, cosmetic, or wellness claims are made or implied.\n\nSold exclusively to qualified research professionals, analytical laboratories, and academic institutions in the United Kingdom. By placing an order the purchaser confirms they are over 18, professionally qualified to handle laboratory reference materials, and will use the product solely for controlled in-vitro scientific investigation in an appropriate laboratory setting.\n\nStorage: store sealed at -20°C, protect from light and moisture. Handle in accordance with standard laboratory safety procedures (lab coat, gloves, eye protection).\n\nProduct type: Laboratory Chemicals — Reference Material. Format: lyophilised powder, sealed glass vial. Country of supply: United Kingdom.",
   },
   {
     match: "kpv",
