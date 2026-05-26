@@ -470,7 +470,7 @@ export default function HomePage() {
                 }}>
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                   <span style={{ color: '#4ade80', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                    UK's Premier Research Peptide Supplier
+                    UK Laboratory Reagent Supplier · Research Use Only
                   </span>
                 </div>
               </div>
@@ -484,20 +484,20 @@ export default function HomePage() {
                   letterSpacing: '-0.03em',
                   color: '#f0f8ff',
                 }}>
-                  Laboratory-Grade<br />
-                  <span style={{ color: '#10b981' }}>Peptide Research</span><br />
-                  <span style={{ color: '#c9d8f0', fontWeight: 400, fontSize: '0.72em' }}>Verified to ≥99% Purity</span>
+                  Synthetic Peptides<br />
+                  <span style={{ color: '#10b981' }}>For In-Vitro Research</span><br />
+                  <span style={{ color: '#c9d8f0', fontWeight: 400, fontSize: '0.72em' }}>HPLC-Verified ≥99% Purity · CoA Per Batch</span>
                 </h1>
               </div>
 
               {/* Sub-copy */}
               <p style={{ fontSize: '1.05rem', lineHeight: 1.75, color: '#9cb8d9', maxWidth: '480px' }}>
-                HPLC-tested, mass-spectrometry confirmed research compounds. Full Certificate of Analysis with every order. UK-dispatched, cold-packed, sealed.
+                PH Labs supplies analytical-grade synthetic peptides and laboratory reagents to qualified UK researchers. HPLC and mass-spectrometry verified, Certificate of Analysis with every batch. <strong style={{ color: '#f0a0a0' }}>Research Use Only — Not For Human Consumption.</strong>
               </p>
 
               {/* Trust micro-badges */}
               <div className="flex flex-wrap gap-3">
-                {['≥99% HPLC Verified', 'CoA Every Order', 'Free UK Shipping £50+', '1–3 Day Dispatch'].map(b => (
+                {['≥99% HPLC Verified', 'CoA Every Batch', 'Free UK Shipping £50+', '1–3 Day Dispatch'].map(b => (
                   <span key={b} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
                     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#8db4d8' }}>
                     <CheckCircle2 style={{ width: 12, height: 12, color: '#10b981', flexShrink: 0 }} />
@@ -505,6 +505,7 @@ export default function HomePage() {
                   </span>
                 ))}
               </div>
+
 
               {/* CTAs */}
               <div className="flex flex-wrap gap-4">
