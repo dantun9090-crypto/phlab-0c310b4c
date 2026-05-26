@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { resolveLegacyRedirect } from "./lib/legacy-redirects";
 import { extractClientIp, log, truncate } from "./lib/worker-log";
 
 
