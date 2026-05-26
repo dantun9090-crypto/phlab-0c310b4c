@@ -576,7 +576,7 @@ export default function ProductDetail() {
       },
       {
         question: `How should ${product.name} be stored to maintain stability?`,
-        answer: `Lyophilised ${product.name} should be stored at −20°C in a dry, light-protected environment. Avoid repeated freeze-thaw cycles as these degrade peptide integrity. Once reconstituted in sterile or bacteriostatic water, use within 48–72 hours if kept at 4°C, or aliquot into single-use portions and store at −80°C for long-term research use.`
+        answer: `Lyophilised ${product.name} should be stored sealed at −20°C in a dry, light-protected environment. Avoid repeated freeze-thaw cycles. Handle in accordance with standard laboratory safety procedures. Supplied as an analytical reference standard for in vitro research use only.`
       },
       {
         question: `What purity and quality standards does Pro Health Peptides ${product.name} meet?`,
@@ -1211,23 +1211,11 @@ export default function ProductDetail() {
                 </div>
               )}
 
-              {/* Outcome headline */}
-              {(() => {
-                const lower = product.name.toLowerCase();
-                let outcomeLabel = 'Research Peptide';
-                if (lower.includes('bpc') || lower.includes('tb-500') || lower.includes('tb500') || lower.includes('glow') || lower.includes('klow')) outcomeLabel = 'Tissue Repair Research';
-                else if (lower.includes('semaglutide') || lower.includes('tirzepatide') || lower.includes('retatrutide')) outcomeLabel = 'Metabolic & GLP-1 Research';
-                else if (lower.includes('ipamorelin') || lower.includes('cjc') || lower.includes('mod grf') || lower.includes('ghrp') || lower.includes('sermorelin')) outcomeLabel = 'Growth Hormone Research';
-                else if (lower.includes('ghk') || lower.includes('copper') || lower.includes('melanotan') || lower.includes('epithalon')) outcomeLabel = 'Skin & Longevity Research';
-                else if (lower.includes('semax') || lower.includes('selank') || lower.includes('dihexa') || lower.includes('cortexin')) outcomeLabel = 'Cognitive & Neuroprotective Research';
-                else if (lower.includes('follistatin') || lower.includes('myostatin') || lower.includes('lgd')) outcomeLabel = 'Muscle & Performance Research';
-                return (
-                  <div className="inline-flex items-center gap-2 mt-3 mb-4 px-3.5 py-2 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/20">
-                    <Microscope className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-emerald-300 text-sm font-semibold">{outcomeLabel}</span>
-                  </div>
-                );
-              })()}
+              {/* Neutral compliance label (no health/fitness/medical claims) */}
+              <div className="inline-flex items-center gap-2 mt-3 mb-4 px-3.5 py-2 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/20">
+                <Microscope className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-emerald-300 text-sm font-semibold">Analytical Reference Material · For Research Use Only</span>
+              </div>
 
               {/* ── 3-Part Description ── */}
               {(() => {
@@ -1455,7 +1443,7 @@ export default function ProductDetail() {
                   { label: 'Purity', value: product.purity },
                   { label: 'Storage Conditions', value: specs.storage },
                   { label: 'Shelf Life', value: specs.shelfLife },
-                  { label: 'Reconstitution Solvent', value: specs.solvent },
+                  { label: 'Physical Form', value: 'Lyophilised powder, sealed vial' },
                   { label: 'SKU / Batch Ref.', value: product.sku || 'N/A' },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex justify-between items-start gap-4 py-3 border-b border-white/[0.04] last:border-0">
@@ -1589,7 +1577,7 @@ export default function ProductDetail() {
             },
             {
               q: `How should ${product.name} be stored to maintain stability?`,
-              a: `Lyophilised ${product.name} should be stored at −20°C in a dry, light-protected environment. Avoid repeated freeze-thaw cycles. Once reconstituted in sterile or bacteriostatic water, use within 48–72 hours at 4°C, or aliquot and store at −80°C for long-term research use.`
+              a: `Lyophilised ${product.name} should be stored sealed at −20°C in a dry, light-protected environment. Avoid repeated freeze-thaw cycles. Handle in accordance with standard laboratory safety procedures. This material is supplied as an analytical reference standard for in vitro research use only.`
             },
             {
               q: `What purity standards does Pro Health Peptides ${product.name} meet?`,
