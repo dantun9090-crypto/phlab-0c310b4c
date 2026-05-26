@@ -576,7 +576,7 @@ export default function ProductDetail() {
       },
       {
         question: `How should ${product.name} be stored to maintain stability?`,
-        answer: `Lyophilised ${product.name} should be stored at −20°C in a dry, light-protected environment. Avoid repeated freeze-thaw cycles as these degrade peptide integrity. Once reconstituted in sterile or bacteriostatic water, use within 48–72 hours if kept at 4°C, or aliquot into single-use portions and store at −80°C for long-term research use.`
+        answer: `Lyophilised ${product.name} should be stored sealed at −20°C in a dry, light-protected environment. Avoid repeated freeze-thaw cycles. Handle in accordance with standard laboratory safety procedures. Supplied as an analytical reference standard for in vitro research use only.`
       },
       {
         question: `What purity and quality standards does Pro Health Peptides ${product.name} meet?`,
