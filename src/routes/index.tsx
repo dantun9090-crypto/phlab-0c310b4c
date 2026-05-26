@@ -23,43 +23,6 @@ export const Route = createFileRoute("/")({
       { key: "twitter:description", name: "twitter:description", content: HOME_DESCRIPTION },
     ],
     links: [{ rel: "canonical", href: HOME_URL }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Organization",
-          name: "PH Labs",
-          legalName: "PH Labs UK",
-          url: HOME_URL,
-          logo: "https://www.phlabs.co.uk/logo.png",
-          description:
-            "UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals.",
-          areaServed: "GB",
-          contactPoint: {
-            "@type": "ContactPoint",
-            contactType: "customer support",
-            email: "info@phlabs.co.uk",
-            areaServed: "GB",
-            availableLanguage: ["English"],
-          },
-        }),
-      },
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "WebSite",
-          name: "PH Labs",
-          url: HOME_URL,
-          potentialAction: {
-            "@type": "SearchAction",
-            target: `${HOME_URL}products?search={search_term_string}`,
-            "query-input": "required name=search_term_string",
-          },
-        }),
-      },
-    ],
   }),
   component: LegacyMount,
 });
