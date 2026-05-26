@@ -21,11 +21,49 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-function brandedErrorResponse(): Response {
-  return new Response(renderErrorPage(), {
-    status: 500,
-    headers: { "content-type": "text/html; charset=utf-8" },
+const CANONICAL_HOST = "www.phlabs.co.uk";
+// Hosts that should 301 to the canonical host (apex + legacy brand domains).
+// Lovable preview/published hosts (*.lovable.app, *.lovableproject.com) are
+// intentionally excluded so previews keep working.
+const REDIRECT_HOSTS = new Set<string>([
+  "phlabs.co.uk",
+  "prohealthpeptides.co.uk",
+  "www.prohealthpeptides.co.uk",
+]);
+
+const SECURITY_HEADERS: Record<string, string> = {
+  "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+  "x-content-type-options": "nosniff",
+  "x-frame-options": "SAMEORIGIN",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+  "x-xss-protection": "0",
+};
+
+function applySecurityHeaders(response: Response): Response {
+  const contentType = response.headers.get("content-type") ?? "";
+  // Only decorate HTML — leaving JSON/XML/asset responses untouched avoids
+  // breaking sitemap, JSON-LD endpoints, and prerender.io content sniffing.
+  if (!contentType.includes("text/html")) return response;
+
+  const headers = new Headers(response.headers);
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
+    if (!headers.has(k)) headers.set(k, v);
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
   });
+}
+
+function brandedErrorResponse(): Response {
+  return applySecurityHeaders(
+    new Response(renderErrorPage(), {
+      status: 500,
+      headers: { "content-type": "text/html; charset=utf-8" },
+    }),
+  );
 }
 
 function isCatastrophicSsrErrorBody(body: string, responseStatus: number): boolean {
