@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ProductsRouteImport } from './routes/products'
+import { Route as GoogleMerchantFeedDotxmlRouteImport } from './routes/google-merchant-feed[.]xml'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
@@ -25,6 +26,12 @@ const ProductsRoute = ProductsRouteImport.update({
   path: '/products',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GoogleMerchantFeedDotxmlRoute =
+  GoogleMerchantFeedDotxmlRouteImport.update({
+    id: '/google-merchant-feed.xml',
+    path: '/google-merchant-feed.xml',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const SplatRoute = SplatRouteImport.update({
   id: '/$',
   path: '/$',
@@ -44,6 +51,7 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -51,6 +59,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -59,21 +68,42 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/products/$slug': typeof ProductsSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$' | '/products' | '/sitemap.xml' | '/products/$slug'
+  fullPaths:
+    | '/'
+    | '/$'
+    | '/google-merchant-feed.xml'
+    | '/products'
+    | '/sitemap.xml'
+    | '/products/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$' | '/products' | '/sitemap.xml' | '/products/$slug'
-  id: '__root__' | '/' | '/$' | '/products' | '/sitemap.xml' | '/products/$slug'
+  to:
+    | '/'
+    | '/$'
+    | '/google-merchant-feed.xml'
+    | '/products'
+    | '/sitemap.xml'
+    | '/products/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/$'
+    | '/google-merchant-feed.xml'
+    | '/products'
+    | '/sitemap.xml'
+    | '/products/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  GoogleMerchantFeedDotxmlRoute: typeof GoogleMerchantFeedDotxmlRoute
   ProductsRoute: typeof ProductsRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
@@ -92,6 +122,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/products'
       preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/google-merchant-feed.xml': {
+      id: '/google-merchant-feed.xml'
+      path: '/google-merchant-feed.xml'
+      fullPath: '/google-merchant-feed.xml'
+      preLoaderRoute: typeof GoogleMerchantFeedDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$': {
@@ -133,9 +170,20 @@ const ProductsRouteWithChildren = ProductsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  GoogleMerchantFeedDotxmlRoute: GoogleMerchantFeedDotxmlRoute,
   ProductsRoute: ProductsRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
