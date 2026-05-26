@@ -98,6 +98,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
                 url: "https://www.phlabs.co.uk/og-image.jpg",
               },
               areaServed: "GB",
+              description:
+                "UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals.",
+              contactPoint: {
+                "@type": "ContactPoint",
+                contactType: "customer support",
+                email: "info@phlabs.co.uk",
+                areaServed: "GB",
+                availableLanguage: ["English"],
+              },
               sameAs: [
                 "https://www.facebook.com/prohealthpeptides",
                 "https://www.instagram.com/prohealthpeptides",
