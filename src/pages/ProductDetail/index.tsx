@@ -743,7 +743,25 @@ export default function ProductDetail() {
           style={{ background: 'radial-gradient(ellipse, rgba(37,99,235,0.05) 0%, transparent 70%)', opacity: 0 }} />
       </div>
 
-      {/* ── Slim disclaimer / research bar ── */}
+      {/* ── RUO compliance banner (Google Merchant Center requirement) ── */}
+      <div
+        className="relative z-10 border-y-2"
+        style={{
+          background: 'linear-gradient(90deg, rgba(180,83,9,0.35) 0%, rgba(217,119,6,0.45) 50%, rgba(180,83,9,0.35) 100%)',
+          borderColor: 'rgba(251,191,36,0.55)',
+        }}
+        role="alert"
+        aria-label="Research use only notice"
+      >
+        <div className="container mx-auto px-4 md:px-6 py-3 flex items-center justify-center gap-3 text-center">
+          <ShieldCheck className="w-5 h-5 text-amber-200 shrink-0" />
+          <span className="text-amber-50 text-xs sm:text-sm font-extrabold uppercase tracking-[0.14em]">
+            For Research Use Only — Not For Human Consumption
+          </span>
+        </div>
+      </div>
+
+      {/* ── Slim research / stock bar ── */}
       <div
         className="relative z-10 border-b"
         style={{ background: 'rgba(6,15,30,0.9)', borderColor: 'rgba(255,255,255,0.04)' }}
@@ -752,7 +770,7 @@ export default function ProductDetail() {
           <div className="flex items-center gap-2 min-w-0">
             <ShieldCheck className="w-3 h-3 text-amber-400/70 shrink-0" />
             <span className="text-amber-200/90 text-[10px] font-semibold uppercase tracking-[0.12em] truncate">
-              For laboratory research use only · Not for human or veterinary consumption
+              Professional laboratory use only · Analytical reference material
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
