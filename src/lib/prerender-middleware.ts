@@ -2,7 +2,7 @@ import { createMiddleware } from "@tanstack/react-start";
 
 // User agents that should receive prerendered HTML
 const BOT_UA_RE =
-  /googlebot|bingbot|yandex|baiduspider|duckduckbot|slurp|sogou|exabot|facebot|ia_archiver|facebookexternalhit|twitterbot|rogerbot|linkedinbot|embedly|quora link preview|showyoubot|outbrain|pinterest\/0\.|developers\.google\.com\/\+\/web\/snippet|slackbot|vkShare|W3C_Validator|redditbot|applebot|whatsapp|flipboard|tumblr|bitlybot|skypeuripreview|nuzzel|discordbot|google page speed|qwantify|pinterestbot|bitrix link preview|xing-contenttabreceiver|chrome-lighthouse|telegrambot|integration-test|google-inspectiontool/i;
+  /googlebot|storebot-google|google-inspectiontool|google page speed|chrome-lighthouse|adsbot-google|mediapartners-google|bingbot|yandex|baiduspider|duckduckbot|slurp|sogou|exabot|facebot|ia_archiver|facebookexternalhit|twitterbot|rogerbot|linkedinbot|embedly|quora link preview|showyoubot|outbrain|pinterest\/0\.|developers\.google\.com\/\+\/web\/snippet|slackbot|vkShare|W3C_Validator|redditbot|applebot|whatsapp|flipboard|tumblr|bitlybot|skypeuripreview|nuzzel|discordbot|qwantify|pinterestbot|bitrix link preview|xing-contenttabreceiver|telegrambot|integration-test/i;
 
 // Paths/extensions that should never be prerendered
 const SKIP_EXT_RE =
