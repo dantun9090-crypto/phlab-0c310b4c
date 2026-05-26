@@ -63,7 +63,7 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
   {
     id: 'navy-professional',
     name: 'Navy Professional',
-    description: 'Deep navy with clinical precision — current Pro Health Peptides theme',
+    description: 'Deep navy with clinical precision — current PH Labs theme',
     category: 'medical',
     preview: '/templates/navy-professional.jpg',
     colors: {

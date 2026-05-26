@@ -17,7 +17,7 @@ export default function VipStore() {
 
   // Set page meta
   useEffect(() => {
-    document.title = 'VIP Members Store | Pro Health Peptides';
+    document.title = 'VIP Members Store | PH Labs';
   }, []);
 
   // Auth + VIP check

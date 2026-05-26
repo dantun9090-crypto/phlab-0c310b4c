@@ -523,55 +523,55 @@ export async function migrateAddSlugs(): Promise<{
  */
 const MERCHANT_SEO: Record<string, { seoTitle: string; seoDescription: string }> = {
   retatrutide: {
-    seoTitle: 'Retatrutide Research Reagent — Lyophilised Powder, Laboratory Research Use Only | Pro Health Peptides UK',
+    seoTitle: 'Retatrutide Research Reagent — Lyophilised Powder, Laboratory Research Use Only | PH Labs UK',
     seoDescription: 'Retatrutide supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-tested purity with a Certificate of Analysis provided. Sold strictly for scientific research purposes. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmaceutical or medical product.',
   },
   tirzepatide: {
-    seoTitle: 'Tirzepatide Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoTitle: 'Tirzepatide Research Reagent — Lyophilised Powder for Laboratory Research Use Only | PH Labs UK',
     seoDescription: 'Tirzepatide supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-verified purity with a Certificate of Analysis included. For scientific research purposes only. Not for human consumption, not for veterinary use, not a dietary supplement, and not intended as a pharmaceutical or medical product.',
   },
   bpc157: {
-    seoTitle: 'BPC-157 Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoTitle: 'BPC-157 Research Reagent — Lyophilised Powder for Laboratory Research Use Only | PH Labs UK',
     seoDescription: 'BPC-157 supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-tested with a Certificate of Analysis provided. Sold strictly for scientific research purposes. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmaceutical or medical product.',
   },
   kpvtripeptide: {
-    seoTitle: 'KPV Tripeptide Research Reagent — Lyophilised Powder, Laboratory Research Use Only | Pro Health Peptides UK',
+    seoTitle: 'KPV Tripeptide Research Reagent — Lyophilised Powder, Laboratory Research Use Only | PH Labs UK',
     seoDescription: 'KPV tripeptide supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-verified purity with a Certificate of Analysis included. For scientific research purposes only. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmaceutical or medical product.',
   },
   tb500thymosinbeta4: {
-    seoTitle: 'TB-500 (Thymosin Beta-4 Fragment) Research Reagent — Laboratory Research Use Only | Pro Health Peptides UK',
+    seoTitle: 'TB-500 (Thymosin Beta-4 Fragment) Research Reagent — Laboratory Research Use Only | PH Labs UK',
     seoDescription: 'TB-500 (Thymosin Beta-4 fragment) supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-tested with a Certificate of Analysis provided. For scientific research purposes only. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmaceutical or medical product.',
   },
   motsc: {
-    seoTitle: 'MOTS-c Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoTitle: 'MOTS-c Research Reagent — Lyophilised Powder for Laboratory Research Use Only | PH Labs UK',
     seoDescription: 'MOTS-c supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-verified purity with a Certificate of Analysis included. Sold strictly for scientific research purposes. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmaceutical or medical product.',
   },
   ghkcu: {
-    seoTitle: 'GHK-Cu Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoTitle: 'GHK-Cu Research Reagent — Lyophilised Powder for Laboratory Research Use Only | PH Labs UK',
     seoDescription: 'GHK-Cu (copper tripeptide) supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-tested with a Certificate of Analysis provided. For scientific research purposes only. Not for human consumption, not for veterinary use, not a cosmetic, not a dietary supplement, and not a pharmaceutical or medical product.',
   },
   nadnicotinamideadeninedinucleotide: {
-    seoTitle: 'NAD+ (Nicotinamide Adenine Dinucleotide) Research Reagent — Laboratory Research Use Only | Pro Health Peptides UK',
+    seoTitle: 'NAD+ (Nicotinamide Adenine Dinucleotide) Research Reagent — Laboratory Research Use Only | PH Labs UK',
     seoDescription: 'NAD+ (nicotinamide adenine dinucleotide) supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-verified purity with a Certificate of Analysis included. For scientific research purposes only. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmaceutical or medical product.',
   },
   pt141: {
-    seoTitle: 'PT-141 Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoTitle: 'PT-141 Research Reagent — Lyophilised Powder for Laboratory Research Use Only | PH Labs UK',
     seoDescription: 'PT-141 supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-tested with a Certificate of Analysis provided. Sold strictly for scientific research purposes. Not for human consumption, not for veterinary use, not a dietary supplement, and not a pharmaceutical or medical product.',
   },
   melanotan2: {
-    seoTitle: 'Melanotan-2 Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoTitle: 'Melanotan-2 Research Reagent — Lyophilised Powder for Laboratory Research Use Only | PH Labs UK',
     seoDescription: 'Melanotan-2 supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-verified purity with a Certificate of Analysis included. For scientific research purposes only. Not for human consumption, not for veterinary use, not a cosmetic, not a dietary supplement, and not a pharmaceutical or medical product.',
   },
   glowblend: {
-    seoTitle: 'GLOW Blend Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoTitle: 'GLOW Blend Research Reagent — Lyophilised Powder for Laboratory Research Use Only | PH Labs UK',
     seoDescription: 'GLOW research blend supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-tested with a Certificate of Analysis provided. Sold strictly for scientific research purposes. Not for human consumption, not for veterinary use, not a cosmetic, not a dietary supplement, and not a pharmaceutical or medical product.',
   },
   klowblend: {
-    seoTitle: 'KLOW Blend Research Reagent — Lyophilised Powder for Laboratory Research Use Only | Pro Health Peptides UK',
+    seoTitle: 'KLOW Blend Research Reagent — Lyophilised Powder for Laboratory Research Use Only | PH Labs UK',
     seoDescription: 'KLOW research blend supplied as a lyophilised reagent for in-vitro laboratory research only. HPLC-verified purity with a Certificate of Analysis included. For scientific research purposes only. Not for human consumption, not for veterinary use, not a cosmetic, not a dietary supplement, and not a pharmaceutical or medical product.',
   },
   bacteriostaticwater: {
-    seoTitle: 'Bacteriostatic Water — 0.9% Benzyl Alcohol, Laboratory Reagent for Research Use Only | Pro Health Peptides UK',
+    seoTitle: 'Bacteriostatic Water — 0.9% Benzyl Alcohol, Laboratory Reagent for Research Use Only | PH Labs UK',
     seoDescription: 'Bacteriostatic water (0.9% benzyl alcohol in sterile water) supplied as a laboratory reagent for in-vitro research use only. For reconstitution of research compounds in a laboratory setting. Not for human consumption, not for injection into humans or animals, not a dietary supplement, and not a pharmaceutical or medical product.',
   },
 };

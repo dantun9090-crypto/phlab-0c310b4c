@@ -270,7 +270,7 @@ function FilterChip({
 // ── Main Search Page ──────────────────────────────────────────────────────────
 export default function SearchPage() {
   useSEO('search', {
-    title: 'Search Research Peptides | Pro Health Peptides UK',
+    title: 'Search Research Peptides | PH Labs UK',
     metaDescription: 'Search our full catalogue of HPLC-verified research peptides. Find BPC-157, Semaglutide, TB-500, Epithalon and more. UK delivery.',
     canonical: 'https://www.prohealthpeptides.co.uk/search',
   });
@@ -337,8 +337,8 @@ export default function SearchPage() {
   // SEO
   useEffect(() => {
     document.title = query
-      ? `Search: "${query}" — Pro Health Peptides`
-      : 'Search — Pro Health Peptides';
+      ? `Search: "${query}" — PH Labs`
+      : 'Search — PH Labs';
     // Ensure page is indexed
     let metaRobots = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
     if (!metaRobots) {

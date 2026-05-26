@@ -1,5 +1,5 @@
 /**
- * Dual-database selector for Pro Health Peptides.
+ * Dual-database selector for PH Labs.
  *
  * This project runs Firebase AND Supabase (Lovable Cloud) side-by-side.
  * Use this file as the single import surface so feature code stays explicit.

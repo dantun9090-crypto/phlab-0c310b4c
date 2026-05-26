@@ -362,8 +362,8 @@ export default function ProductDetail() {
     const dosage = product.variants?.[selectedVariantIdx]?.name || '';
     const titleDosage = dosage ? ` ${dosage}` : '';
     
-    // Dynamic Title: {{Product Name}} | ≥99% HPLC | Pro Health Peptides UK
-    document.title = clamp(`${product.name}${titleDosage} | ≥99% HPLC | Pro Health Peptides UK`, SEO_LIMITS.titleMax);
+    // Dynamic Title: {{Product Name}} | ≥99% HPLC | PH Labs UK
+    document.title = clamp(`${product.name}${titleDosage} | ≥99% HPLC | PH Labs UK`, SEO_LIMITS.titleMax);
 
     // Dynamic Meta Description — 150–158 chars, keyword-rich
     const cat = product.category ? ` ${product.category} research` : ' laboratory research';
@@ -381,10 +381,10 @@ export default function ProductDetail() {
     };
 
     setMeta('description', metaDesc);
-    setMeta('keywords', `buy ${product.name} UK, ${product.name} research peptide, ${product.name} HPLC, research peptides UK, Pro Health Peptides`);
+    setMeta('keywords', `buy ${product.name} UK, ${product.name} research peptide, ${product.name} HPLC, research peptides UK, PH Labs`);
 
     // Open Graph
-    setMeta('og:title', `${product.name} — Research Grade Peptide UK | Pro Health Peptides`, true);
+    setMeta('og:title', `${product.name} — Research Grade Peptide UK | PH Labs`, true);
     setMeta('og:description', metaDesc, true);
     setMeta('og:url', productUrl, true);
     setMeta('og:type', 'product', true);
@@ -392,7 +392,7 @@ export default function ProductDetail() {
 
     // Twitter card
     setMeta('twitter:card', 'summary_large_image');
-    setMeta('twitter:title', `Buy ${product.name} UK | Pro Health Peptides`);
+    setMeta('twitter:title', `Buy ${product.name} UK | PH Labs`);
     setMeta('twitter:description', metaDesc);
     if (productImage) setMeta('twitter:image', productImage);
     // Dynamic canonical per product (slug-based)
@@ -415,7 +415,7 @@ export default function ProductDetail() {
         : [productImage]) : undefined,
       sku: productSku,
       mpn: productSku,
-      brand: { '@type': 'Brand', name: 'Pro Health Peptides' },
+      brand: { '@type': 'Brand', name: 'PH Labs' },
       category: product.category || 'Research Peptides',
       aggregateRating: {
         '@type': 'AggregateRating',
@@ -464,7 +464,7 @@ export default function ProductDetail() {
           sku: v.sku || `${product.id}-v${idx + 1}`,
           name: `${product.name} — ${v.name}`,
         })),
-        seller: { '@type': 'Organization', name: 'Pro Health Peptides', url: 'https://www.prohealthpeptides.co.uk' },
+        seller: { '@type': 'Organization', name: 'PH Labs', url: 'https://www.prohealthpeptides.co.uk' },
       } : {
         '@type': 'Offer',
         url: productUrl,
@@ -473,7 +473,7 @@ export default function ProductDetail() {
         priceValidUntil: `${new Date().getFullYear() + 1}-12-31`,
         itemCondition: 'https://schema.org/NewCondition',
         availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-        seller: { '@type': 'Organization', name: 'Pro Health Peptides', url: 'https://www.prohealthpeptides.co.uk' },
+        seller: { '@type': 'Organization', name: 'PH Labs', url: 'https://www.prohealthpeptides.co.uk' },
         shippingDetails: {
           '@type': 'OfferShippingDetails',
           shippingRate: { '@type': 'MonetaryAmount', currency: 'GBP', value: '0' },
@@ -504,7 +504,7 @@ export default function ProductDetail() {
     const orgSchema = {
       '@context': 'https://schema.org',
       '@type': 'Organization',
-      name: 'Pro Health Peptides UK',
+      name: 'PH Labs UK',
       url: 'https://www.prohealthpeptides.co.uk',
       logo: 'https://www.prohealthpeptides.co.uk/logo.png',
       contactPoint: {
@@ -572,23 +572,23 @@ export default function ProductDetail() {
     const faqItems = [
       {
         question: `What is ${product.name} and what is it used for in research?`,
-        answer: `${product.name} is a research-grade peptide compound used${categoryContext} for in-vitro and preclinical laboratory studies. It is supplied exclusively for scientific research purposes and is not approved for human or veterinary therapeutic use. Pro Health Peptides supplies ${product.name} with ${purityForFaq} purity, verified by HPLC and mass spectrometry, to support reproducible laboratory results.`
+        answer: `${product.name} is a research-grade peptide compound used${categoryContext} for in-vitro and preclinical laboratory studies. It is supplied exclusively for scientific research purposes and is not approved for human or veterinary therapeutic use. PH Labs supplies ${product.name} with ${purityForFaq} purity, verified by HPLC and mass spectrometry, to support reproducible laboratory results.`
       },
       {
         question: `How should ${product.name} be stored to maintain stability?`,
         answer: `Lyophilised ${product.name} should be stored sealed at −20°C in a dry, light-protected environment. Avoid repeated freeze-thaw cycles. Handle in accordance with standard laboratory safety procedures. Supplied as an analytical reference standard for in vitro research use only.`
       },
       {
-        question: `What purity and quality standards does Pro Health Peptides ${product.name} meet?`,
-        answer: `Pro Health Peptides ${product.name} is manufactured to ${purityForFaq} purity as verified by reverse-phase HPLC and confirmed by mass spectrometry. Each production batch includes a Certificate of Analysis (CoA) available on request. Our compounds are produced under controlled research-grade conditions to ensure lot-to-lot consistency.`
+        question: `What purity and quality standards does PH Labs ${product.name} meet?`,
+        answer: `PH Labs ${product.name} is manufactured to ${purityForFaq} purity as verified by reverse-phase HPLC and confirmed by mass spectrometry. Each production batch includes a Certificate of Analysis (CoA) available on request. Our compounds are produced under controlled research-grade conditions to ensure lot-to-lot consistency.`
       },
       {
         question: `Is ${product.name} legal to buy in the UK?`,
         answer: `Yes. ${product.name} is legally sold in the United Kingdom as a research chemical for laboratory use only. It is not classified as a controlled substance under the Misuse of Drugs Act in Great Britain. However, it must not be sold for, or used in, human consumption, dietary supplementation, or veterinary treatment. Purchase is intended solely for qualified researchers and institutions.`
       },
       {
-        question: `What concentrations of ${product.name} are available from Pro Health Peptides?`,
-        answer: `Pro Health Peptides offers ${product.name} in research-appropriate quantities to support laboratory dosing protocols.${variantSentence} All variants are supplied as lyophilised powder in sealed vials with full batch documentation. Contact us if you require custom quantities for institutional research.`
+        question: `What concentrations of ${product.name} are available from PH Labs?`,
+        answer: `PH Labs offers ${product.name} in research-appropriate quantities to support laboratory dosing protocols.${variantSentence} All variants are supplied as lyophilised powder in sealed vials with full batch documentation. Contact us if you require custom quantities for institutional research.`
       },
       {
         question: `How quickly is ${product.name} dispatched and delivered across the UK?`,
@@ -616,7 +616,7 @@ export default function ProductDetail() {
       '@context': 'https://schema.org',
       '@type': 'MerchantReturnPolicy',
       '@id': 'https://www.prohealthpeptides.co.uk/refund-policy#return-policy',
-      name: 'Pro Health Peptides Return Policy',
+      name: 'PH Labs Return Policy',
       url: 'https://www.prohealthpeptides.co.uk/refund-policy',
       applicableCountry: 'GB',
       returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
@@ -639,7 +639,7 @@ export default function ProductDetail() {
       document.getElementById('faq-schema')?.remove();
       document.getElementById('merchant-return-schema')?.remove();
       // Restore defaults on unmount
-      document.title = 'Buy Research Peptides UK | HPLC-Verified | Pro Health Peptides';
+      document.title = 'Buy Research Peptides UK | HPLC-Verified | PH Labs';
       const d = document.querySelector('meta[name="description"]');
       if (d) d.setAttribute('content', 'Premium research compounds with HPLC-verified purity. For laboratory research use only. Fast UK shipping.');
       const c = document.querySelector('link[rel="canonical"]');
@@ -895,7 +895,7 @@ export default function ProductDetail() {
           <div className="mb-8 rounded-3xl overflow-hidden border border-white/[0.08] shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
             <img
               src={product.bannerImageUrl}
-              alt={`${product.name} research peptide promotional banner — Pro Health Peptides UK`}
+              alt={`${product.name} research peptide promotional banner — PH Labs UK`}
               className="w-full object-cover max-h-[240px]"
               loading="eager"
               fetchPriority="high"
@@ -1252,7 +1252,7 @@ export default function ProductDetail() {
                     <div className="flex items-start gap-3 p-3.5 rounded-xl bg-blue-600/[0.06] border border-blue-500/15">
                       <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-[10px] font-bold text-[#3a5a82] uppercase tracking-[0.18em] mb-1">Why Pro Health Peptides</p>
+                        <p className="text-[10px] font-bold text-[#3a5a82] uppercase tracking-[0.18em] mb-1">Why PH Labs</p>
                         <p className="text-[#5a7ea8] text-xs leading-relaxed">UK-based supplier. Free shipping over £50. Full Certificate of Analysis included with every order. Same-day dispatch before 2pm. Discreet packaging. All products batch-tested and third-party certified.</p>
                       </div>
                     </div>
@@ -1573,14 +1573,14 @@ export default function ProductDetail() {
           const faqs = [
             {
               q: `What is ${product.name} and what is it used for in research?`,
-              a: `${product.name} is a research-grade peptide compound used${categoryContext} for in-vitro and preclinical laboratory studies. It is supplied exclusively for scientific research and is not approved for human or veterinary therapeutic use. Pro Health Peptides supplies ${product.name} with ${purityForFaq} purity, verified by HPLC and mass spectrometry.`
+              a: `${product.name} is a research-grade peptide compound used${categoryContext} for in-vitro and preclinical laboratory studies. It is supplied exclusively for scientific research and is not approved for human or veterinary therapeutic use. PH Labs supplies ${product.name} with ${purityForFaq} purity, verified by HPLC and mass spectrometry.`
             },
             {
               q: `How should ${product.name} be stored to maintain stability?`,
               a: `Lyophilised ${product.name} should be stored sealed at −20°C in a dry, light-protected environment. Avoid repeated freeze-thaw cycles. Handle in accordance with standard laboratory safety procedures. This material is supplied as an analytical reference standard for in vitro research use only.`
             },
             {
-              q: `What purity standards does Pro Health Peptides ${product.name} meet?`,
+              q: `What purity standards does PH Labs ${product.name} meet?`,
               a: `Our ${product.name} is manufactured to ${purityForFaq} purity, verified by reverse-phase HPLC and confirmed by mass spectrometry. Each production batch includes a Certificate of Analysis (CoA) available on request. Lot-to-lot consistency is maintained across all production runs.`
             },
             {
@@ -1589,10 +1589,10 @@ export default function ProductDetail() {
             },
             {
               q: `What concentrations of ${product.name} are available?`,
-              a: `Pro Health Peptides offers ${product.name} in research-appropriate quantities.${variantSentence} All variants are supplied as lyophilised powder in sealed vials with full batch documentation. Contact us for custom institutional quantities.`
+              a: `PH Labs offers ${product.name} in research-appropriate quantities.${variantSentence} All variants are supplied as lyophilised powder in sealed vials with full batch documentation. Contact us for custom institutional quantities.`
             },
             {
-              q: 'How quickly does Pro Health Peptides dispatch orders?',
+              q: 'How quickly does PH Labs dispatch orders?',
               a: 'Orders placed before 2pm (Monday–Friday) are dispatched same day. Standard UK delivery typically arrives within 1–3 business days. All orders are shipped discreetly. Free UK shipping is included on all orders over £50.'
             },
             {

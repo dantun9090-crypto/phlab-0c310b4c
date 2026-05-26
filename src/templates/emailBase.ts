@@ -1,5 +1,5 @@
 /**
- * Shared design tokens & layout helpers for all Pro Health Peptides emails.
+ * Shared design tokens & layout helpers for all PH Labs emails.
  * Gmail Android forced dark mode safe: bgcolor attrs + data-ogsc CSS selectors.
  */
 
@@ -36,7 +36,7 @@ export function emailWrapper(content: string, topBarGradient?: string): string {
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="color-scheme" content="dark">
   <meta name="supported-color-schemes" content="dark">
-  <title>Pro Health Peptides</title>
+  <title>PH Labs</title>
   <!--[if mso]>
   <noscript><xml><o:OfficeDocumentSettings><o:AllowPNG/><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
   <![endif]-->
@@ -120,11 +120,11 @@ export function emailWrapper(content: string, topBarGradient?: string): string {
                     <tr>
                       <td width="52" style="vertical-align:middle;">
                         <img src="https://cdn.wegic.ai/assets/onepage/uploads/2031481443271393281/image/2026/03/14/01KKPB20SGJ3T4RK47TQPSAV0N.png"
-                          alt="Pro Health Peptides" width="44" height="44"
+                          alt="PH Labs" width="44" height="44"
                           style="display:block;width:44px;height:44px;border-radius:10px;border:1px solid rgba(59,130,246,0.3);" />
                       </td>
                       <td style="padding-left:12px;vertical-align:middle;">
-                        <div style="color:${C.textBright};font-size:15px;font-weight:800;letter-spacing:-0.3px;font-family:${EMAIL_FONT};">Pro Health Peptides</div>
+                        <div style="color:${C.textBright};font-size:15px;font-weight:800;letter-spacing:-0.3px;font-family:${EMAIL_FONT};">PH Labs</div>
                         <div style="color:${C.accent};font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;font-family:${EMAIL_FONT};">Research Grade</div>
                       </td>
                     </tr>

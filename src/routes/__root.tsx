@@ -73,8 +73,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { name: "author", content: "Pro Health Peptides UK" },
-      { property: "og:site_name", content: "Pro Health Peptides UK" },
+      { name: "author", content: "PH Labs UK" },
+      { property: "og:site_name", content: "PH Labs UK" },
       { property: "og:locale", content: "en_GB" },
       { name: "geo.region", content: "GB" },
       { name: "geo.placename", content: "United Kingdom" },

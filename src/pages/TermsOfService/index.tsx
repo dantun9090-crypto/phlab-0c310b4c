@@ -3,8 +3,8 @@ import { useSEO } from '@/hooks/useSEO';
 
 export default function TermsOfService() {
   useSEO('terms', {
-    title: 'Terms of Service | Pro Health Peptides',
-    metaDescription: 'Terms of Service for Pro Health Peptides Ltd. Research use only. Governed by the laws of England and Wales.',
+    title: 'Terms of Service | PH Labs',
+    metaDescription: 'Terms of Service for PH Labs Ltd. Research use only. Governed by the laws of England and Wales.',
     canonical: 'https://www.prohealthpeptides.co.uk/terms-of-service',
   });
 
@@ -19,7 +19,7 @@ export default function TermsOfService() {
       content: (
         <>
           <p className="text-[#9cb8d9] leading-relaxed">
-            All products sold by Pro Health Peptides Ltd are strictly{' '}
+            All products sold by PH Labs Ltd are strictly{' '}
             <strong className="text-red-300 font-semibold">for laboratory research use only</strong>.
             They are not for human consumption, veterinary use, or any diagnostic, therapeutic, or
             recreational purpose. They are not intended to diagnose, treat, cure, or prevent any disease.
@@ -65,7 +65,7 @@ export default function TermsOfService() {
       title: '4. Limitation of Liability',
       content: (
         <p className="text-[#9cb8d9] leading-relaxed">
-          Pro Health Peptides Ltd shall not be liable for any direct, indirect, incidental, or
+          PH Labs Ltd shall not be liable for any direct, indirect, incidental, or
           consequential damages arising from the use or misuse of our products.
         </p>
       ),
@@ -83,7 +83,7 @@ export default function TermsOfService() {
             These terms are governed by the laws of <strong className="text-[#c8daf0]">England and Wales</strong>.
           </p>
           <p className="text-[#9cb8d9] leading-relaxed mt-3">
-            Full company details: <strong className="text-[#c8daf0]">Pro Health Peptides Ltd</strong>,
+            Full company details: <strong className="text-[#c8daf0]">PH Labs Ltd</strong>,
             Registered in England &amp; Wales.
           </p>
         </>
@@ -106,7 +106,7 @@ export default function TermsOfService() {
           <h1 className="text-3xl md:text-4xl font-bold text-[#f0f6ff] mb-3">Terms of Service</h1>
           <p className="text-[#9cb8d9] text-sm">Last updated: April 2026</p>
           <p className="text-[#8caad4] mt-4 max-w-xl mx-auto text-sm leading-relaxed">
-            Welcome to Pro Health Peptides Ltd. By accessing or using our website, you agree to these Terms of Service.
+            Welcome to PH Labs Ltd. By accessing or using our website, you agree to these Terms of Service.
           </p>
         </div>
 

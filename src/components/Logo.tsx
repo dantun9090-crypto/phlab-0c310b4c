@@ -21,7 +21,7 @@ export function Logo({ className = '', size = 'md' }: LogoProps) {
   return (
     <img
       src="https://cdn.wegic.ai/assets/onepage/agent/images/1775896855290_edited.png?imageMogr2/format/webp"
-      alt="Pro Health Peptides Logo"
+      alt="PH Labs Logo"
       width={width}
       height={height}
       className={`${sizeClasses[size]} ${className}`}

@@ -31,12 +31,12 @@ export const Route = createFileRoute("/products/$slug")({
     // still render compliant tags.
     const rawTitle =
       product?.seoTitle?.trim() ||
-      `${name} — Research Grade | Pro Health Peptides`;
+      `${name} — Research Grade | PH Labs`;
     const title = clamp(rawTitle, SEO_LIMITS.titleMax);
     const baseDesc =
       product?.seoDescription?.trim() ||
       product?.description ||
-      `${name}: HPLC-verified research peptide from Pro Health Peptides UK.`;
+      `${name}: HPLC-verified research peptide from PH Labs UK.`;
     const description = clamp(baseDesc.replace(/\s+/g, " ").trim(), SEO_LIMITS.descriptionMax);
     const url = `${SITE_URL}/products/${params.slug}`;
     const image = product?.imageUrl || OG_IMAGE_FALLBACK;
@@ -69,7 +69,7 @@ export const Route = createFileRoute("/products/$slug")({
       description: baseDesc.slice(0, 5000),
       image,
       url,
-      brand: { "@type": "Brand", name: "Pro Health Peptides" },
+      brand: { "@type": "Brand", name: "PH Labs" },
       category: product?.category,
     };
     if (measure) {
@@ -155,7 +155,7 @@ function SeoProductBlock({ product }: { product: SeoProduct }) {
       {product.purity ? <p>Purity: {product.purity}</p> : null}
       <p>{product.description}</p>
       <p>
-        Category: {product.category}. Supplied by Pro Health Peptides UK.{" "}
+        Category: {product.category}. Supplied by PH Labs UK.{" "}
         <a href={url}>{url}</a>
       </p>
     </div>

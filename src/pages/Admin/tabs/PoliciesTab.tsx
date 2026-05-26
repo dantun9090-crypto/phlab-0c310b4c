@@ -5,11 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { db, doc, getDoc, setDoc } from '@/lib/firebase';
 
 // ── Default content pulled from the static pages ──────────────────────────────
-const DEFAULT_TERMS = `TERMS & CONDITIONS — Pro Health Peptides UK
+const DEFAULT_TERMS = `TERMS & CONDITIONS — PH Labs UK
 Last updated: ${new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
 
 1. AGREEMENT TO TERMS
-By accessing and placing an order with Pro Health Peptides ("we", "us", "our"), you confirm that you are in agreement with and bound by the terms and conditions contained herein. These Terms apply to all visitors, users, and customers of the website located at www.prohealthpeptides.co.uk (the "Site"). If you do not agree to these Terms, you must immediately cease use of the Site.
+By accessing and placing an order with PH Labs ("we", "us", "our"), you confirm that you are in agreement with and bound by the terms and conditions contained herein. These Terms apply to all visitors, users, and customers of the website located at www.prohealthpeptides.co.uk (the "Site"). If you do not agree to these Terms, you must immediately cease use of the Site.
 
 2. PRODUCTS AND SERVICES — RESEARCH USE ONLY
 All products are supplied strictly for research purposes only. They are NOT intended for human consumption, self-administration, medical use, or any therapeutic application. Products must not be used in clinical trials involving human subjects without appropriate regulatory approval.
@@ -35,13 +35,13 @@ Our total liability is limited to the order value. We are not liable for any ind
 These Terms are governed by the laws of England and Wales. Any disputes shall be subject to the exclusive jurisdiction of the courts of England and Wales.
 
 9. CONTACT
-Pro Health Peptides UK — info@prohealthpeptides.co.uk — www.prohealthpeptides.co.uk`;
+PH Labs UK — info@prohealthpeptides.co.uk — www.prohealthpeptides.co.uk`;
 
-const DEFAULT_PRIVACY = `PRIVACY POLICY — Pro Health Peptides UK
+const DEFAULT_PRIVACY = `PRIVACY POLICY — PH Labs UK
 Last updated: ${new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
 
 1. INTRODUCTION
-Pro Health Peptides ("we", "us") is committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your information when you use our website www.prohealthpeptides.co.uk.
+PH Labs ("we", "us") is committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your information when you use our website www.prohealthpeptides.co.uk.
 
 2. DATA WE COLLECT
 - Account data: name, email address, password (hashed)
@@ -81,9 +81,9 @@ Under GDPR you have the right to: access your data, correct inaccurate data, req
 We use essential cookies for site functionality and analytics cookies (with your consent). You may withdraw cookie consent at any time via the cookie banner.
 
 9. CONTACT
-Data Controller: Pro Health Peptides UK — info@prohealthpeptides.co.uk`;
+Data Controller: PH Labs UK — info@prohealthpeptides.co.uk`;
 
-const DEFAULT_SHIPPING = `SHIPPING & DELIVERY POLICY — Pro Health Peptides UK
+const DEFAULT_SHIPPING = `SHIPPING & DELIVERY POLICY — PH Labs UK
 Last updated: ${new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
 
 1. ORDER PROCESSING

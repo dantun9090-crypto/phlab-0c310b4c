@@ -154,12 +154,12 @@ export default function QualityControl() {
   // Inject page title + meta description + schema without Helmet
   useEffect(() => {
     const prevTitle = document.title;
-    document.title = 'Quality Control | Pro Health Peptides UK';
+    document.title = 'Quality Control | PH Labs UK';
     
     // Set meta description
     const desc = document.querySelector('meta[name="description"]');
     const prevDesc = desc?.getAttribute('content') || '';
-    if (desc) desc.setAttribute('content', 'Quality control at Pro Health Peptides: HPLC testing on every batch, thermally sealed dispatch. Research compounds for laboratory use only.');
+    if (desc) desc.setAttribute('content', 'Quality control at PH Labs: HPLC testing on every batch, thermally sealed dispatch. Research compounds for laboratory use only.');
     
     // Set canonical
     const canonical = document.querySelector('link[rel="canonical"]');
@@ -172,12 +172,12 @@ export default function QualityControl() {
     script.text = JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'WebPage',
-      name: 'Quality Control — Pro Health Peptides',
+      name: 'Quality Control — PH Labs',
       url: 'https://www.prohealthpeptides.co.uk/quality-control',
-      description: 'Quality control procedures at Pro Health Peptides: HPLC testing on every batch, thermally sealed dispatch packaging. Research compounds supplied for laboratory use only.',
+      description: 'Quality control procedures at PH Labs: HPLC testing on every batch, thermally sealed dispatch packaging. Research compounds supplied for laboratory use only.',
       mainEntity: {
         '@type': 'ResearchOrganization',
-        name: 'Pro Health Peptides',
+        name: 'PH Labs',
         url: 'https://www.prohealthpeptides.co.uk',
         knowsAbout: ['HPLC analytical testing', 'Research peptide supply', 'Laboratory compound quality control'],
       },
@@ -217,7 +217,7 @@ export default function QualityControl() {
               </h1>
 
               <p className="text-[#4a7aaa] text-base md:text-lg leading-relaxed max-w-2xl mb-10 animate-slide-in-up" style={{ animationDelay: '0.25s' }}>
-                Every batch of research compound from Pro Health Peptides is tested by HPLC before dispatch. Analytical results are documented for every batch. We only tell you what we actually do.
+                Every batch of research compound from PH Labs is tested by HPLC before dispatch. Analytical results are documented for every batch. We only tell you what we actually do.
               </p>
 
               <div className="flex flex-wrap gap-3 animate-slide-in-up" style={{ animationDelay: '0.35s' }}>
@@ -382,7 +382,7 @@ export default function QualityControl() {
               <ShieldCheck className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
               <p className="text-amber-400/80 text-xs leading-relaxed font-medium">
                 <strong className="text-amber-400 font-bold uppercase">Regulatory Notice: </strong>
-                All products supplied by Pro Health Peptides are intended exclusively for <strong>in-vitro laboratory research</strong>. They are not intended for human or veterinary use and have not been approved by the MHRA, FDA, or any other regulatory authority for the diagnosis, treatment, cure, or prevention of any disease or medical condition.
+                All products supplied by PH Labs are intended exclusively for <strong>in-vitro laboratory research</strong>. They are not intended for human or veterinary use and have not been approved by the MHRA, FDA, or any other regulatory authority for the diagnosis, treatment, cure, or prevention of any disease or medical condition.
               </p>
             </div>
           </div>

@@ -207,7 +207,7 @@ export default function PaymentPage() {
   return (
     <>
       <Helmet>
-        <title>Payment — Pro Health Peptides</title>
+        <title>Payment — PH Labs</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
@@ -236,7 +236,7 @@ export default function PaymentPage() {
               >
                 <div className="flex justify-between text-sm">
                   <span style={{ color: '#9cb8d9' }}>Account Name</span>
-                  <span className="font-semibold" style={{ color: '#f0f6ff' }}>Pro Health Peptides Ltd</span>
+                  <span className="font-semibold" style={{ color: '#f0f6ff' }}>PH Labs Ltd</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span style={{ color: '#9cb8d9' }}>Sort Code</span>

@@ -61,7 +61,7 @@ export default function LandingPage() {
           // Set Open Graph tags
           const ogTitle = document.querySelector('meta[property="og:title"]') || document.createElement('meta');
           ogTitle.setAttribute('property', 'og:title');
-          ogTitle.setAttribute('content', d.pageTitle || 'Pro Health Peptides');
+          ogTitle.setAttribute('content', d.pageTitle || 'PH Labs');
           if (!document.querySelector('meta[property="og:title"]')) document.head.appendChild(ogTitle);
           
           const ogDesc = document.querySelector('meta[property="og:description"]') || document.createElement('meta');
@@ -87,7 +87,7 @@ export default function LandingPage() {
           
           const twitterTitle = document.querySelector('meta[name="twitter:title"]') || document.createElement('meta');
           twitterTitle.setAttribute('name', 'twitter:title');
-          twitterTitle.setAttribute('content', d.pageTitle || 'Pro Health Peptides');
+          twitterTitle.setAttribute('content', d.pageTitle || 'PH Labs');
           if (!document.querySelector('meta[name="twitter:title"]')) document.head.appendChild(twitterTitle);
           
           const twitterDesc = document.querySelector('meta[name="twitter:description"]') || document.createElement('meta');
@@ -112,7 +112,7 @@ export default function LandingPage() {
           jsonLd.textContent = JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Organization",
-            "name": "Pro Health Peptides",
+            "name": "PH Labs",
             "url": "https://www.prohealthpeptides.co.uk",
             "logo": "https://cdn.wegic.ai/assets/onepage/uploads/2031481443271393281/image/2026/03/14/01KKPB20SGJ3T4RK47TQPSAV0N.png",
             "description": d.metaDescription || "Premium research-grade compounds with HPLC-verified purity. For laboratory research use only.",
@@ -393,7 +393,7 @@ export default function LandingPage() {
       <section className="py-8 border-t border-white/[0.05]">
         <div className="container mx-auto px-6 text-center">
           <p className="text-[#2a4a7a] text-xs leading-relaxed max-w-2xl mx-auto">
-            All compounds supplied by Pro Health Peptides are intended strictly for <strong className="text-[#3a5a82]">in vitro research and laboratory use only</strong>. 
+            All compounds supplied by PH Labs are intended strictly for <strong className="text-[#3a5a82]">in vitro research and laboratory use only</strong>. 
             Not for human or veterinary administration. Every batch is HPLC-tested before dispatch.
             Analytical results documented and available on request.
             By accessing this page you confirm compliance with applicable local regulations.

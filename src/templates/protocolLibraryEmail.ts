@@ -104,7 +104,7 @@ export function protocolLibraryEmail({
         <td>
           <p style="color:${C.textMuted};font-size:13px;line-height:1.6;margin:0;font-family:${EMAIL_FONT};">
             <strong style="color:${C.textBright};">⚠️ Research Use Only</strong><br>
-            All peptides supplied by Pro Health Peptides UK are for in-vitro research purposes only. Not for human or veterinary use. By downloading this guide, you confirm you are purchasing for legitimate research applications in compliance with UK law.
+            All peptides supplied by PH Labs UK are for in-vitro research purposes only. Not for human or veterinary use. By downloading this guide, you confirm you are purchasing for legitimate research applications in compliance with UK law.
           </p>
         </td>
       </tr>

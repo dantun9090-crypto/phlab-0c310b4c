@@ -38,12 +38,12 @@ export const Route = createFileRoute("/$")({
             keywords: article.keywords?.join(", "),
             author: {
               "@type": "Organization",
-              name: "Pro Health Peptides UK",
+              name: "PH Labs UK",
               url: SITE_URL,
             },
             publisher: {
               "@type": "Organization",
-              name: "Pro Health Peptides UK",
+              name: "PH Labs UK",
               url: SITE_URL,
               logo: { "@type": "ImageObject", url: `${SITE_URL}/og-image.jpg` },
             },

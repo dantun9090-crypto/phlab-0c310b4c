@@ -423,7 +423,7 @@ export function Layout({ children }: LayoutProps) {
                 <Logo size="md" />
               </div>
               <div className="flex flex-col leading-none min-w-0">
-                <span className="font-bold text-white text-[13px] sm:text-[15px] tracking-tight group-hover:text-emerald-300 transition-colors duration-200 truncate">Pro Health Peptides</span>
+                <span className="font-bold text-white text-[13px] sm:text-[15px] tracking-tight group-hover:text-emerald-300 transition-colors duration-200 truncate">PH Labs</span>
                 <span className="text-[9px] sm:text-[10px] text-emerald-300/90 font-medium tracking-widest uppercase">Research Grade</span>
               </div>
             </Link>
@@ -919,7 +919,7 @@ export function Layout({ children }: LayoutProps) {
                   <Logo size="md" />
                 </div>
                 <div className="flex flex-col leading-none">
-                  <span className="font-bold text-white text-[15px] tracking-tight group-hover:text-blue-300 transition-colors">Pro Health Peptides</span>
+                  <span className="font-bold text-white text-[15px] tracking-tight group-hover:text-blue-300 transition-colors">PH Labs</span>
                   <span className="text-[10px] text-blue-300/90 font-medium tracking-widest uppercase">Research Grade</span>
                 </div>
               </a>
@@ -1081,7 +1081,7 @@ export function Layout({ children }: LayoutProps) {
                 <Mail className="w-3.5 h-3.5" /> Contact
               </h3>
               <div className="space-y-3 mb-6">
-                <p className="font-semibold text-sm" style={{ color: '#7a9ec2' }}>Pro Health Peptides Ltd</p>
+                <p className="font-semibold text-sm" style={{ color: '#7a9ec2' }}>PH Labs Ltd</p>
                 <p className="text-xs" style={{ color: '#5a80a6' }}>Registered in England &amp; Wales</p>
                 <a href="mailto:info@prohealthpeptides.co.uk"
                   className="group flex items-center gap-2 text-[#5a80a6] hover:text-[#8caad4] transition-colors text-sm break-all">
@@ -1182,7 +1182,7 @@ export function Layout({ children }: LayoutProps) {
           {siteSettings.mhraDisclaimerEnabled !== false && (
             <div className="border border-amber-500/25 bg-amber-500/[0.06] rounded-2xl px-6 py-5 mb-6">
               <p className="text-[11px] text-amber-300/85 font-semibold text-center leading-relaxed uppercase tracking-[0.06em]">
-                ⚠ All products sold by Pro Health Peptides are strictly for laboratory research use only. Not for human or veterinary consumption. Not intended to diagnose, treat, cure or prevent any disease. Products have not been evaluated or approved by the MHRA or FDA. Must be 18+ to purchase.
+                ⚠ All products sold by PH Labs are strictly for laboratory research use only. Not for human or veterinary consumption. Not intended to diagnose, treat, cure or prevent any disease. Products have not been evaluated or approved by the MHRA or FDA. Must be 18+ to purchase.
               </p>
             </div>
           )}
@@ -1204,7 +1204,7 @@ export function Layout({ children }: LayoutProps) {
           {/* ── Bottom bar ── */}
           <div className="flex flex-col md:flex-row justify-between items-center gap-3">
             <p className="text-[#1e3a60] text-xs">
-              © 2026 Pro Health Peptides Ltd. All rights reserved. Registered in England &amp; Wales.
+              © 2026 PH Labs Ltd. All rights reserved. Registered in England &amp; Wales.
               {siteSettings.companyRegNumber && <> Company No. {siteSettings.companyRegNumber}.</>}
               {siteSettings.companyAddress && <> {siteSettings.companyAddress}.</>}
             </p>

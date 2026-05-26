@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 
 export default function PrivacyPolicy() {
   useSEO('privacy', {
-    title: 'Privacy Policy | Pro Health Peptides UK',
-    metaDescription: 'Privacy Policy — Pro Health Peptides Ltd UK. UK GDPR & Data Protection Act 2018 compliant. How we collect and protect your data when you buy research peptides in the UK.',
+    title: 'Privacy Policy | PH Labs UK',
+    metaDescription: 'Privacy Policy — PH Labs Ltd UK. UK GDPR & Data Protection Act 2018 compliant. How we collect and protect your data when you buy research peptides in the UK.',
     canonical: 'https://www.prohealthpeptides.co.uk/privacy-policy',
     ogImage: 'https://cdn.wegic.ai/assets/onepage/agent/images/1779306071783_0.jpg',
   });
@@ -236,7 +236,7 @@ export default function PrivacyPolicy() {
             Privacy Policy
           </h1>
           <p className="text-base leading-relaxed max-w-2xl mx-auto" style={{ color: '#9cb8d9' }}>
-            Pro Health Peptides Ltd is committed to protecting your personal data. This policy explains how we collect, use, and safeguard your information in compliance with UK GDPR and the Data Protection Act 2018.
+            PH Labs Ltd is committed to protecting your personal data. This policy explains how we collect, use, and safeguard your information in compliance with UK GDPR and the Data Protection Act 2018.
           </p>
         </div>
       </section>
@@ -320,7 +320,7 @@ export default function PrivacyPolicy() {
           <div className="rounded-xl p-5 border" style={{ background: '#04101f', borderColor: 'rgba(255,255,255,0.07)' }}>
             <p className="text-xs font-semibold mb-3" style={{ color: '#9cb8d9' }}>Explore Our Research Peptides</p>
             <p className="text-xs mb-3 leading-relaxed" style={{ color: '#3a5a82' }}>
-              All orders are processed in accordance with this Privacy Policy. Your data is used solely to fulfil and manage your purchase of <Link to="/products" className="underline hover:opacity-80 transition-opacity" style={{ color: '#9cb8d9' }}>research peptides</Link> from Pro Health Peptides UK.
+              All orders are processed in accordance with this Privacy Policy. Your data is used solely to fulfil and manage your purchase of <Link to="/products" className="underline hover:opacity-80 transition-opacity" style={{ color: '#9cb8d9' }}>research peptides</Link> from PH Labs UK.
             </p>
             <div className="flex flex-wrap gap-3">
               {[

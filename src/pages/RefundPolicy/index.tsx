@@ -5,8 +5,8 @@ import { Link } from 'react-router-dom';
 
 export default function RefundPolicy() {
   useSEO('refund-policy', {
-    title: 'Return & Refund Policy | Pro Health Peptides UK',
-    metaDescription: 'Return and refund policy for Pro Health Peptides Ltd. We accept returns for defective items within 14 days of delivery. UK research peptide supplier.',
+    title: 'Return & Refund Policy | PH Labs UK',
+    metaDescription: 'Return and refund policy for PH Labs Ltd. We accept returns for defective items within 14 days of delivery. UK research peptide supplier.',
     canonical: 'https://www.prohealthpeptides.co.uk/refund-policy',
   });
 
@@ -16,7 +16,7 @@ export default function RefundPolicy() {
       '@context': 'https://schema.org',
       '@type': 'MerchantReturnPolicy',
       '@id': 'https://www.prohealthpeptides.co.uk/refund-policy#return-policy',
-      name: 'Pro Health Peptides Return Policy',
+      name: 'PH Labs Return Policy',
       url: 'https://www.prohealthpeptides.co.uk/refund-policy',
       applicableCountry: 'GB',
       returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
@@ -58,7 +58,7 @@ export default function RefundPolicy() {
             Google Merchant Center Compliant
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-[#f0f6ff] mb-3">Return &amp; Refund Policy</h1>
-          <p className="text-[#9cb8d9] text-sm">Last updated: May 2026 &mdash; Pro Health Peptides Ltd</p>
+          <p className="text-[#9cb8d9] text-sm">Last updated: May 2026 &mdash; PH Labs Ltd</p>
           <p className="text-[#8caad4] mt-4 max-w-xl mx-auto text-sm leading-relaxed">
             We stand behind every batch we dispatch. Returns are accepted for defective items within 14 days of delivery.
           </p>
@@ -69,7 +69,7 @@ export default function RefundPolicy() {
           <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 shrink-0" />
           <p className="text-red-300/80 text-sm leading-relaxed">
             <strong className="text-red-300">Research Use Only.</strong>{' '}
-            All products sold by Pro Health Peptides Ltd are strictly for in vitro laboratory research. Not intended for human or veterinary use. By purchasing you confirm you are a qualified researcher aged 18 or over.
+            All products sold by PH Labs Ltd are strictly for in vitro laboratory research. Not intended for human or veterinary use. By purchasing you confirm you are a qualified researcher aged 18 or over.
           </p>
         </div>
 
@@ -85,7 +85,7 @@ export default function RefundPolicy() {
               <div className="flex-1 min-w-0">
                 <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">Our Quality Commitment</h2>
                 <p className="text-[#9cb8d9] text-sm leading-relaxed">
-                  Pro Health Peptides Ltd supplies research compounds verified at ≥99% purity by HPLC. Every batch undergoes third-party laboratory testing before dispatch and certificates of analysis are available on request. If your order arrives defective, damaged, or incorrect, we will resolve it promptly and fairly under the terms of this policy.
+                  PH Labs Ltd supplies research compounds verified at ≥99% purity by HPLC. Every batch undergoes third-party laboratory testing before dispatch and certificates of analysis are available on request. If your order arrives defective, damaged, or incorrect, we will resolve it promptly and fairly under the terms of this policy.
                 </p>
               </div>
             </div>
@@ -156,7 +156,7 @@ export default function RefundPolicy() {
                     'Opened, used, or otherwise non-defective products.',
                     'Items returned due to a change of mind or ordering error.',
                     'Products where customer-supplied storage conditions cannot be verified.',
-                    'Items returned without prior written authorisation from Pro Health Peptides Ltd.',
+                    'Items returned without prior written authorisation from PH Labs Ltd.',
                   ].map((item, i) => (
                     <div key={i} className="flex items-start gap-3">
                       <span className="mt-0.5 w-5 h-5 rounded-full flex items-center justify-center shrink-0" style={{ background: 'rgba(245,158,11,0.1)' }}>
@@ -213,7 +213,7 @@ export default function RefundPolicy() {
               <div className="flex-1 min-w-0">
                 <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">Return Shipping</h2>
                 <p className="text-[#9cb8d9] text-sm leading-relaxed">
-                  For confirmed defective items, Pro Health Peptides Ltd will cover the cost of return shipping. We will provide a prepaid return label upon approval. Items must be returned in their original packaging where possible.
+                  For confirmed defective items, PH Labs Ltd will cover the cost of return shipping. We will provide a prepaid return label upon approval. Items must be returned in their original packaging where possible.
                 </p>
               </div>
             </div>
@@ -288,7 +288,7 @@ export default function RefundPolicy() {
         {/* Company footer */}
         <div className="mt-8 text-center">
           <p className="text-[#2a4a7a] text-xs">
-            Pro Health Peptides Ltd &mdash; Registered in England &amp; Wales &mdash;{' '}
+            PH Labs Ltd &mdash; Registered in England &amp; Wales &mdash;{' '}
             <a href="mailto:info@prohealthpeptides.co.uk" className="hover:text-[#9cb8d9] transition-colors">
               info@prohealthpeptides.co.uk
             </a>

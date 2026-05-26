@@ -68,7 +68,7 @@ const DEFAULT_DATA: LandingPageData = {
   ctaButton: 'View Full Catalogue',
   ctaButtonUrl: '/products',
   ctaBgColor: '#0b1a30',
-  pageTitle: 'Pro Health Peptides — Research-Grade Compounds UK',
+  pageTitle: 'PH Labs — Research-Grade Compounds UK',
   metaDescription: 'Premium research compounds with HPLC-verified purity. For in-vitro laboratory research use only. Fast UK shipping.',
   pageSlug: 'peptides',
   published: false,

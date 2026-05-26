@@ -66,7 +66,7 @@ export default function Resources() {
 
   // SEO: title + meta description + canonical + Article schema
   useEffect(() => {
-    document.title = 'Research Hub | Pro Health Peptides UK';
+    document.title = 'Research Hub | PH Labs UK';
     const setMeta = (name: string, content: string, prop = false) => {
       const sel = prop ? `meta[property="${name}"]` : `meta[name="${name}"]`;
       let el = document.querySelector(sel) as HTMLMetaElement | null;
@@ -77,16 +77,16 @@ export default function Resources() {
       }
       el.setAttribute('content', content);
     };
-    const metaDesc = 'Peptide research articles: HPLC testing, BPC-157, Tirzepatide, TB-500, NAD+. Laboratory guides for UK researchers. Pro Health Peptides UK.';
+    const metaDesc = 'Peptide research articles: HPLC testing, BPC-157, Tirzepatide, TB-500, NAD+. Laboratory guides for UK researchers. PH Labs UK.';
     setMeta('description', metaDesc);
     setMeta('keywords', 'peptide research articles, HPLC testing peptides, BPC-157 research, Retatrutide study, research peptides UK science');
-    setMeta('og:title', 'Peptide Research Hub | Lab Guides & Science Articles | Pro Health Peptides', true);
+    setMeta('og:title', 'Peptide Research Hub | Lab Guides & Science Articles | PH Labs', true);
     setMeta('og:description', metaDesc, true);
     setMeta('og:url', 'https://www.prohealthpeptides.co.uk/resources', true);
     const canonical = document.querySelector('link[rel="canonical"]');
     if (canonical) canonical.setAttribute('href', 'https://www.prohealthpeptides.co.uk/resources');
     return () => {
-      document.title = 'Pro Health Peptides UK | HPLC-Tested Research Peptides';
+      document.title = 'PH Labs UK | HPLC-Tested Research Peptides';
       const d2 = document.querySelector('meta[name="description"]');
       if (d2) d2.setAttribute('content', 'Premium research compounds with HPLC-verified purity. For laboratory research use only. Fast UK shipping.');
       const c2 = document.querySelector('link[rel="canonical"]');

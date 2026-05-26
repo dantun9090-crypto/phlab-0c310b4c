@@ -93,7 +93,7 @@ function generateShippingLabelPDF(order: Order) {
         
         <div class="section">
           <div class="section-title">FROM:</div>
-          <p>Pro Health Peptides</p>
+          <p>PH Labs</p>
           <p>United Kingdom</p>
           <p>info@prohealthpeptides.co.uk</p>
         </div>

@@ -29,8 +29,8 @@ export const Route = createFileRoute("/")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Organization",
-          name: "Pro Health Peptides",
-          legalName: "Pro Health Peptides UK",
+          name: "PH Labs",
+          legalName: "PH Labs UK",
           url: HOME_URL,
           logo: "https://www.prohealthpeptides.co.uk/logo.png",
           description:
@@ -50,7 +50,7 @@ export const Route = createFileRoute("/")({
         children: JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",
-          name: "Pro Health Peptides",
+          name: "PH Labs",
           url: HOME_URL,
           potentialAction: {
             "@type": "SearchAction",

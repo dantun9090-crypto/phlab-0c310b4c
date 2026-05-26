@@ -95,7 +95,7 @@ export default function Login() {
   };
 
   const shareUrl = encodeURIComponent(window.location.origin);
-  const shareText = encodeURIComponent('Pro Health Peptides — Premium research-grade peptides. Check it out!');
+  const shareText = encodeURIComponent('PH Labs — Premium research-grade peptides. Check it out!');
   const whatsappHref = settings.whatsappNumber
     ? `https://wa.me/${settings.whatsappNumber.replace(/\D/g, '')}`
     : null;
@@ -127,7 +127,7 @@ export default function Login() {
               <path d="M8 12h8M12 8v8" strokeLinecap="round"/>
             </svg>
           </div>
-          <p className="text-3xl font-bold text-white mb-3">Pro Health Peptides</p>
+          <p className="text-3xl font-bold text-white mb-3">PH Labs</p>
           <p className="text-[#9cb8d9] text-sm leading-relaxed max-w-xs mx-auto">
             Premium research-grade peptides, HPLC-tested before every dispatch.
           </p>

@@ -76,7 +76,7 @@ export function ProductCard({
 
   const getProductAlt = (n: string, cat?: string) => {
     const c = cat?.replace(/-/g, ' ') || 'research peptide';
-    return `${n} ${c} - HPLC-verified research compound - Pro Health Peptides UK`;
+    return `${n} ${c} - HPLC-verified research compound - PH Labs UK`;
   };
 
   return (

@@ -144,7 +144,7 @@ export default function Products() {
   // SEO
   useEffect(() => {
     const info = CATEGORY_INTROS[activeCategory] ?? CATEGORY_INTROS.all;
-    document.title = `${info.h1} | Pro Health Peptides`;
+    document.title = `${info.h1} | PH Labs`;
     // Ensure meta description exists and is set (create if missing)
     let desc = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
     if (!desc) {
@@ -271,7 +271,7 @@ export default function Products() {
         description: info.intro,
         url: pageUrl,
         inLanguage: 'en-GB',
-        isPartOf: { '@type': 'WebSite', name: 'Pro Health Peptides', url: baseUrl },
+        isPartOf: { '@type': 'WebSite', name: 'PH Labs', url: baseUrl },
       },
       {
         '@context': 'https://schema.org',

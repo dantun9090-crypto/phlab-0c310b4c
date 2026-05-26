@@ -146,7 +146,7 @@ export default function LabReports() {
   const [heroVisible, setHeroVisible] = useState(false);
 
   useEffect(() => {
-    document.title = 'Lab Reports & CoA | Pro Health Peptides UK';
+    document.title = 'Lab Reports & CoA | PH Labs UK';
     const setMeta = (name: string, content: string, prop = false) => {
       const sel = prop ? `meta[property="${name}"]` : `meta[name="${name}"]`;
       let el = document.querySelector(sel) as HTMLMetaElement | null;
@@ -160,7 +160,7 @@ export default function LabReports() {
     const metaDesc = 'HPLC & mass spec lab reports for every batch. Certificates of Analysis (CoA) for UK research peptides — BPC-157, Tirzepatide, TB-500.';
     setMeta('description', metaDesc);
     setMeta('keywords', 'HPLC tested peptides UK, peptide CoA, certificate of analysis research peptides, lab reports peptides UK, mass spectrometry peptide verification');
-    setMeta('og:title', 'Lab Reports & CoA | HPLC-Tested Research Peptides | Pro Health Peptides UK', true);
+    setMeta('og:title', 'Lab Reports & CoA | HPLC-Tested Research Peptides | PH Labs UK', true);
     setMeta('og:description', metaDesc, true);
     setMeta('og:url', 'https://www.prohealthpeptides.co.uk/lab-reports', true);
     const canonical = document.querySelector('link[rel="canonical"]');
@@ -169,7 +169,7 @@ export default function LabReports() {
     const raf = requestAnimationFrame(() => setTimeout(() => setHeroVisible(true), 80));
     return () => {
       cancelAnimationFrame(raf);
-      document.title = 'Pro Health Peptides UK | HPLC-Tested Research Peptides';
+      document.title = 'PH Labs UK | HPLC-Tested Research Peptides';
       const d2 = document.querySelector('meta[name="description"]');
       if (d2) d2.setAttribute('content', 'Premium research compounds with HPLC-verified purity. For laboratory research use only. Fast UK shipping.');
       const c2 = document.querySelector('link[rel="canonical"]');

@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 
 export default function CookiePolicy() {
   useSEO('cookies', {
-    title: 'Cookie Policy | Pro Health Peptides UK',
-    metaDescription: 'Cookie Policy — Pro Health Peptides Ltd UK. Essential & analytics cookies on our UK research peptides store. GDPR compliant. Manage your cookie preferences easily.',
+    title: 'Cookie Policy | PH Labs UK',
+    metaDescription: 'Cookie Policy — PH Labs Ltd UK. Essential & analytics cookies on our UK research peptides store. GDPR compliant. Manage your cookie preferences easily.',
     canonical: 'https://www.prohealthpeptides.co.uk/cookies',
     ogImage: 'https://cdn.wegic.ai/assets/onepage/agent/images/1779306071784_0.jpg',
   });
@@ -194,7 +194,7 @@ export default function CookiePolicy() {
             Cookie Policy
           </h1>
           <p className="text-base leading-relaxed max-w-2xl mx-auto" style={{ color: '#9cb8d9' }}>
-            This policy explains how Pro Health Peptides Ltd uses cookies and similar technologies on our website. We are committed to transparency and giving you control over your data.
+            This policy explains how PH Labs Ltd uses cookies and similar technologies on our website. We are committed to transparency and giving you control over your data.
           </p>
         </div>
       </section>

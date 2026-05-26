@@ -124,8 +124,8 @@ export default function AboutPage() {
   const heroY = useTransform(scrollY, [0, 600], [0, 90]);
 
   useSEO('about', {
-    title: 'About Pro Health Peptides | UK Research Supplier',
-    metaDescription: 'Learn about Pro Health Peptides — UK-based supplier of HPLC-verified research peptides. Batch-tested, third-party certified, shipped from the UK.',
+    title: 'About PH Labs | UK Research Supplier',
+    metaDescription: 'Learn about PH Labs — UK-based supplier of HPLC-verified research peptides. Batch-tested, third-party certified, shipped from the UK.',
     canonical: 'https://www.prohealthpeptides.co.uk/about',
   });
 
@@ -148,7 +148,7 @@ export default function AboutPage() {
         <motion.div className="absolute inset-0" style={{ y: heroY }}>
           <img
             src={heroImg}
-            alt="Pro Health Peptides laboratory"
+            alt="PH Labs laboratory"
             className="w-full h-full object-cover object-center scale-110"
             loading="eager"
           />
@@ -185,7 +185,7 @@ export default function AboutPage() {
             </h1>
 
             <p className="text-[#8aabcf] text-lg md:text-xl max-w-2xl leading-relaxed mb-10">
-              Pro Health Peptides is a UK-based research compound supplier committed to analytical excellence.
+              PH Labs is a UK-based research compound supplier committed to analytical excellence.
               Every batch HPLC-tested. Every result documented.
             </p>
 
@@ -246,7 +246,7 @@ export default function AboutPage() {
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Research Compounds</span>
               </h2>
               <p className="text-[#8aabcf] text-base md:text-lg leading-relaxed">
-                We founded Pro Health Peptides with a single conviction: researchers deserve suppliers
+                We founded PH Labs with a single conviction: researchers deserve suppliers
                 they can fully trust. That means HPLC analytical data for every batch, clear labelling,
                 and support from people who actually understand the science.
               </p>

@@ -80,7 +80,7 @@ export function useSEO(pageKey: string, fallback: SEOData) {
       // ── Open Graph ─────────────────────────────────────────────────────────
       if (title) {
         setMeta('meta[property="og:title"]',       'property=og:title',       title);
-        setMeta('meta[property="og:site_name"]',   'property=og:site_name',   'Pro Health Peptides');
+        setMeta('meta[property="og:site_name"]',   'property=og:site_name',   'PH Labs');
       }
       if (description) {
         setMeta('meta[property="og:description"]', 'property=og:description', description);

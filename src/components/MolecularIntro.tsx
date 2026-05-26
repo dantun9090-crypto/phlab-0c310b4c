@@ -346,7 +346,7 @@ export default function MolecularIntro({ onDone }: { onDone: () => void }) {
 
           <img
             src={LOGO_URL}
-            alt="Pro Health Peptides"
+            alt="PH Labs"
             style={{
               width: 104, height: 104,
               objectFit: 'contain',
