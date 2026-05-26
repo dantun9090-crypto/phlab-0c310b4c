@@ -85,7 +85,7 @@ function SeoCatalogue({ products }: { products: SeoProduct[] }) {
     <div aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
       <h1>Research Peptides UK — Full Catalogue</h1>
       <p>
-        HPLC-tested, research-grade lyophilised peptides from Pro Health
+        HPLC-tested, research-grade lyophilised peptides from PH Labs
         Peptides UK. {products.length} compounds available.
       </p>
       <ul>

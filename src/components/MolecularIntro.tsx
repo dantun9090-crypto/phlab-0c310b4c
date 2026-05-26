@@ -385,7 +385,7 @@ export default function MolecularIntro({ onDone }: { onDone: () => void }) {
             textTransform: 'uppercase',
             marginBottom: 8,
           }}>
-            Pro Health
+            PH Labs
           </div>
           <div style={{
             fontSize: 24,

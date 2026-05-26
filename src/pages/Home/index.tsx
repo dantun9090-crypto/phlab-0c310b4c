@@ -228,7 +228,7 @@ export default function HomePage() {
   );
 
   useSEO('home', {
-    title: 'HPLC-Verified Research Peptides UK | Pro Health',
+    title: 'HPLC-Verified Research Peptides UK | PH Labs',
     metaDescription: 'UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals.',
     canonical: 'https://www.prohealthpeptides.co.uk/',
   });

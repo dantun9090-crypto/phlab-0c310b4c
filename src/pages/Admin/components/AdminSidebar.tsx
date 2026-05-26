@@ -160,7 +160,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, collapsed, setCo
               transition={{ duration: 0.16 }}
               className="flex-1 min-w-0"
             >
-              <p className="text-white font-bold text-[13px] leading-tight tracking-tight">Pro Health</p>
+              <p className="text-white font-bold text-[13px] leading-tight tracking-tight">PH Labs</p>
               <p className="text-blue-400/60 text-[9px] font-semibold tracking-widest uppercase mt-0.5">Admin Console</p>
             </motion.div>
           )}
