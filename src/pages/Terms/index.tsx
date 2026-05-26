@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 
 export default function Terms() {
   useSEO('terms-conditions', {
-    title: 'Terms & Conditions | Pro Health Peptides UK',
-    metaDescription: 'Terms & Conditions — Pro Health Peptides Ltd UK. Research-use only peptides, MHRA compliant. Ordering, payment, returns & shipping. Governed by English law.',
+    title: 'Terms & Conditions | PH Labs UK',
+    metaDescription: 'Terms & Conditions — PH Labs Ltd UK. Research-use only peptides, MHRA compliant. Ordering, payment, returns & shipping. Governed by English law.',
     canonical: 'https://www.prohealthpeptides.co.uk/terms-and-conditions',
     ogImage: 'https://cdn.wegic.ai/assets/onepage/agent/images/1779306071785_0.jpg',
   });
@@ -19,7 +19,7 @@ export default function Terms() {
       content: (
         <>
           <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
-            By accessing or using Pro Health Peptides Ltd's website ("we," "us," "our"), you agree to be bound by these Terms and Conditions ("Terms"). If you do not agree to all of these Terms, do not access or use the Website.
+            By accessing or using PH Labs Ltd's website ("we," "us," "our"), you agree to be bound by these Terms and Conditions ("Terms"). If you do not agree to all of these Terms, do not access or use the Website.
           </p>
           <div className="p-4 rounded-lg border" style={{ background: 'rgba(59,130,246,0.05)', borderColor: 'rgba(59,130,246,0.15)' }}>
             <p className="text-xs leading-relaxed" style={{ color: '#3b82f6' }}>
@@ -42,7 +42,7 @@ export default function Terms() {
               <div>
                 <p className="text-xs font-bold mb-2" style={{ color: '#ef4444' }}>CRITICAL NOTICE</p>
                 <p className="text-xs leading-relaxed" style={{ color: '#ef4444' }}>
-                  All products sold by Pro Health Peptides are strictly for laboratory research use only. NOT for human consumption, veterinary use, or clinical trials. NOT intended to diagnose, treat, cure, or prevent any disease. Products have not been evaluated or approved by the MHRA or FDA.
+                  All products sold by PH Labs are strictly for laboratory research use only. NOT for human consumption, veterinary use, or clinical trials. NOT intended to diagnose, treat, cure, or prevent any disease. Products have not been evaluated or approved by the MHRA or FDA.
                 </p>
               </div>
             </div>
@@ -339,7 +339,7 @@ export default function Terms() {
       content: (
         <ul className="space-y-3">
           {[
-            'All content, trademarks, and logos are owned by Pro Health Peptides Ltd',
+            'All content, trademarks, and logos are owned by PH Labs Ltd',
             'You may not reproduce, distribute, or modify any content without written permission',
             'Product names, descriptions, and images are protected by copyright',
             'Unauthorised use may result in legal action',
@@ -364,7 +364,7 @@ export default function Terms() {
           </p>
           <div className="p-4 rounded-lg border" style={{ background: 'rgba(14,165,233,0.05)', borderColor: 'rgba(14,165,233,0.15)' }}>
             <p className="text-xs leading-relaxed" style={{ color: '#0ea5e9' }}>
-              <span className="font-semibold">Company Details:</span> Pro Health Peptides Ltd, registered in England & Wales. All products are dispatched from our UK facility in compliance with MHRA guidelines.
+              <span className="font-semibold">Company Details:</span> PH Labs Ltd, registered in England & Wales. All products are dispatched from our UK facility in compliance with MHRA guidelines.
             </p>
           </div>
         </>
@@ -417,7 +417,7 @@ export default function Terms() {
               <div>
                 <p className="text-sm font-bold mb-2" style={{ color: '#ef4444' }}>RESEARCH USE ONLY</p>
                 <p className="text-xs leading-relaxed" style={{ color: '#ef4444' }}>
-                  All products sold by Pro Health Peptides are strictly for laboratory research use only. Not for human or veterinary consumption. Not intended to diagnose, treat, cure or prevent any disease. Not evaluated by MHRA or FDA. Must be 18+ to purchase.
+                  All products sold by PH Labs are strictly for laboratory research use only. Not for human or veterinary consumption. Not intended to diagnose, treat, cure or prevent any disease. Not evaluated by MHRA or FDA. Must be 18+ to purchase.
                 </p>
               </div>
             </div>

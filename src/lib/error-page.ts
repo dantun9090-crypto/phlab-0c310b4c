@@ -16,7 +16,7 @@ export function renderErrorPage(): string {
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Something went wrong | Pro Health Peptides</title>
+    <title>Something went wrong | PH Labs</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <meta name="theme-color" content="#020617" />
@@ -114,7 +114,7 @@ export function renderErrorPage(): string {
   </head>
   <body>
     <main class="card" role="alert" aria-live="assertive">
-      <span class="badge">Pro Health Peptides</span>
+      <span class="badge">PH Labs</span>
       <h1>This page didn&rsquo;t load</h1>
       <p>Something went wrong on our end. Your cart and account are safe &mdash; please try again, or head back to the home page.</p>
       <div class="actions">

@@ -228,7 +228,7 @@ export default function HomePage() {
   );
 
   useSEO('home', {
-    title: 'HPLC-Verified Research Peptides UK | Pro Health',
+    title: 'HPLC-Verified Research Peptides UK | PH Labs',
     metaDescription: 'UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals.',
     canonical: 'https://www.prohealthpeptides.co.uk/',
   });
@@ -248,8 +248,8 @@ export default function HomePage() {
         '@context': 'https://schema.org',
         '@type': 'Organization',
         '@id': 'https://www.prohealthpeptides.co.uk/#organization',
-        name: 'Pro Health Peptides',
-        legalName: 'Pro Health Peptides Ltd',
+        name: 'PH Labs',
+        legalName: 'PH Labs Ltd',
         url: 'https://www.prohealthpeptides.co.uk/',
         logo: { '@type': 'ImageObject', url: 'https://www.prohealthpeptides.co.uk/logo.png', width: 512, height: 512 },
         description: 'UK supplier of HPLC-verified research peptides including BPC-157, Retatrutide, Tirzepatide, TB-500, NAD+ and more. For laboratory research use only.',
@@ -268,7 +268,7 @@ export default function HomePage() {
         '@context': 'https://schema.org',
         '@type': 'WebSite',
         '@id': 'https://www.prohealthpeptides.co.uk/#website',
-        name: 'Pro Health Peptides',
+        name: 'PH Labs',
         url: 'https://www.prohealthpeptides.co.uk/',
         potentialAction: { '@type': 'SearchAction', target: { '@type': 'EntryPoint', urlTemplate: 'https://www.prohealthpeptides.co.uk/search?q={search_term_string}' }, 'query-input': 'required name=search_term_string' },
       };
@@ -380,7 +380,7 @@ export default function HomePage() {
         await withRetry('mail-enqueue', () => addDoc(collection(db, 'mail'), {
           to: email,
           message: {
-            subject: 'Your Free Research Protocol Library — Pro Health Peptides',
+            subject: 'Your Free Research Protocol Library — PH Labs',
             html,
           },
           createdAt: now,

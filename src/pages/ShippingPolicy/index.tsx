@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom';
 
 export default function ShippingPolicy() {
   useSEO('shipping-policy', {
-    title: 'Shipping Policy | Pro Health Peptides UK',
-    metaDescription: 'Shipping information for Pro Health Peptides Ltd. UK delivery, dispatch times, packaging standards and research-use compliance.',
+    title: 'Shipping Policy | PH Labs UK',
+    metaDescription: 'Shipping information for PH Labs Ltd. UK delivery, dispatch times, packaging standards and research-use compliance.',
     canonical: 'https://www.prohealthpeptides.co.uk/shipping-policy',
   });
 

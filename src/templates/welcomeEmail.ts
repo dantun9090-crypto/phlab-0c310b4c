@@ -40,7 +40,7 @@ export function buildWelcomeEmail(opts: WelcomeEmailOptions): string {
       <div style="display:inline-block;width:56px;height:56px;background:linear-gradient(135deg,${C.accentDark},${C.accent});border-radius:16px;margin-bottom:20px;box-shadow:0 0 30px rgba(59,130,246,0.35);">
         <p style="margin:0;line-height:56px;font-size:28px;text-align:center;">🧬</p>
       </div>
-      <h1 style="margin:0 0 6px;color:${C.textBright};font-size:24px;font-weight:800;letter-spacing:-0.5px;">Welcome to Pro Health Peptides</h1>
+      <h1 style="margin:0 0 6px;color:${C.textBright};font-size:24px;font-weight:800;letter-spacing:-0.5px;">Welcome to PH Labs</h1>
       <p style="margin:0;color:${C.textMuted};font-size:14px;">Your account is ready. Research starts here.</p>
     </div>
 
@@ -49,7 +49,7 @@ export function buildWelcomeEmail(opts: WelcomeEmailOptions): string {
       ${greeting(opts.firstName)}
 
       <p style="color:${C.text};font-size:14px;line-height:1.7;margin:0 0 28px;">
-        Your Pro Health Peptides account has been created successfully. 
+        Your PH Labs account has been created successfully. 
         You now have access to our full catalogue of research-grade peptides — all independently tested 
         with Certificates of Analysis available on every product page.
       </p>

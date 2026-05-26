@@ -347,7 +347,7 @@ export default function SEOTab() {
 
   // Global SEO
   const [globalSEO, setGlobalSEO] = useState<GlobalSEO>({
-    defaultTitleSuffix: '| Pro Health Peptides',
+    defaultTitleSuffix: '| PH Labs',
     defaultMetaDescription: 'Buy HPLC-tested research peptides in the UK — BPC-157, TB-500, GLP-1 compounds. ≥99% purity, CoA included, free shipping over £50. Laboratory use only.',
     siteOGImage: '',
   });
@@ -355,43 +355,43 @@ export default function SEOTab() {
   // Pages SEO
   const [pagesSEO, setPagesSEO] = useState<PagesSEO>({
     home: {
-      title: 'Buy Research Peptides UK | HPLC-Verified | Pro Health Peptides',
+      title: 'Buy Research Peptides UK | HPLC-Verified | PH Labs',
       metaDescription: 'Buy HPLC-tested research peptides in the UK — BPC-157, TB-500, GLP-1 compounds. ≥99% purity, CoA included, free shipping over £50. Laboratory use only.',
       metaKeywords: '',
       canonical: 'https://www.prohealthpeptides.co.uk/',
       ogImage: '',
     },
     about: {
-      title: 'About Us | HPLC-Verified Peptide Supplier UK | Pro Health Peptides',
-      metaDescription: 'About Pro Health Peptides UK | HPLC-Verified Research Peptide Supplier — Quality standards, testing protocols, and UK delivery.',
+      title: 'About Us | HPLC-Verified Peptide Supplier UK | PH Labs',
+      metaDescription: 'About PH Labs UK | HPLC-Verified Research Peptide Supplier — Quality standards, testing protocols, and UK delivery.',
       metaKeywords: '',
       canonical: 'https://www.prohealthpeptides.co.uk/about',
       ogImage: '',
     },
     contact: {
-      title: 'Contact | Pro Health Peptides UK',
-      metaDescription: 'Contact Pro Health Peptides UK | Research Peptide Support — Customer service, wholesale inquiries, and lab partnerships.',
+      title: 'Contact | PH Labs UK',
+      metaDescription: 'Contact PH Labs UK | Research Peptide Support — Customer service, wholesale inquiries, and lab partnerships.',
       metaKeywords: '',
       canonical: 'https://www.prohealthpeptides.co.uk/contact',
       ogImage: '',
     },
     terms: {
-      title: 'Terms of Service | Pro Health Peptides UK',
-      metaDescription: 'Terms of Service for Pro Health Peptides UK — Research peptide purchase terms, laboratory use policy, and legal conditions.',
+      title: 'Terms of Service | PH Labs UK',
+      metaDescription: 'Terms of Service for PH Labs UK — Research peptide purchase terms, laboratory use policy, and legal conditions.',
       metaKeywords: '',
       canonical: 'https://www.prohealthpeptides.co.uk/terms-of-service',
       ogImage: '',
     },
     privacy: {
-      title: 'Privacy Policy | Pro Health Peptides UK',
-      metaDescription: 'Privacy Policy for Pro Health Peptides UK — How we collect, use, and protect your personal data.',
+      title: 'Privacy Policy | PH Labs UK',
+      metaDescription: 'Privacy Policy for PH Labs UK — How we collect, use, and protect your personal data.',
       metaKeywords: '',
       canonical: 'https://www.prohealthpeptides.co.uk/privacy-policy',
       ogImage: '',
     },
     cookies: {
-      title: 'Cookie Policy | Pro Health Peptides UK',
-      metaDescription: 'Cookie Policy for Pro Health Peptides UK — How we use cookies and tracking technologies on our website.',
+      title: 'Cookie Policy | PH Labs UK',
+      metaDescription: 'Cookie Policy for PH Labs UK — How we use cookies and tracking technologies on our website.',
       metaKeywords: '',
       canonical: 'https://www.prohealthpeptides.co.uk/cookies',
       ogImage: '',
@@ -567,10 +567,10 @@ export default function SEOTab() {
                 type="text"
                 value={globalSEO.defaultTitleSuffix}
                 onChange={e => setGlobalSEO({ ...globalSEO, defaultTitleSuffix: e.target.value })}
-                placeholder="| Pro Health Peptides"
+                placeholder="| PH Labs"
                 className="w-full px-4 py-3 bg-[#1e293b] border-2 border-[#475569] rounded-lg text-[#f8fafc] text-base placeholder-[#94a3b8] focus:outline-none focus:border-[#3b82f6] focus:shadow-[0_0_0_3px_rgba(59,130,246,0.3)] transition-all min-h-[48px]"
               />
-              <p className="text-xs text-[#5a80a6] mt-1">Appended to all page titles (e.g., "Contact | Pro Health Peptides")</p>
+              <p className="text-xs text-[#5a80a6] mt-1">Appended to all page titles (e.g., "Contact | PH Labs")</p>
             </div>
 
             <div>
@@ -638,7 +638,7 @@ export default function SEOTab() {
                     type="text"
                     value={page.title}
                     onChange={e => setPagesSEO({ ...pagesSEO, [pageKey]: { ...page, title: e.target.value } })}
-                    placeholder="Page Title | Pro Health Peptides"
+                    placeholder="Page Title | PH Labs"
                     className="w-full px-4 py-3 bg-[#1e293b] border-2 border-[#475569] rounded-lg text-[#f8fafc] text-base placeholder-[#94a3b8] focus:outline-none focus:border-[#3b82f6] focus:shadow-[0_0_0_3px_rgba(59,130,246,0.3)] transition-all min-h-[48px]"
                   />
                 </div>

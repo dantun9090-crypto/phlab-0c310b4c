@@ -508,7 +508,7 @@ export default function CheckoutPage() {
         await addDoc(collection(db, 'mail'), {
           to: form.email,
           message: {
-            subject: `Order Confirmed — ${orderId} | Pro Health Peptides`,
+            subject: `Order Confirmed — ${orderId} | PH Labs`,
             html: invoiceHtml,
           },
           createdAt: Timestamp.now(),

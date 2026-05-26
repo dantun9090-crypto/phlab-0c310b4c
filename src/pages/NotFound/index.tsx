@@ -12,7 +12,7 @@ const categories = [
 
 export default function NotFoundPage() {
   useEffect(() => {
-    document.title = 'Page Not Found | Pro Health Peptides UK';
+    document.title = 'Page Not Found | PH Labs UK';
     let desc = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
     if (!desc) { desc = document.createElement('meta'); desc.setAttribute('name', 'description'); document.head.appendChild(desc); }
     desc.setAttribute('content', 'This page could not be found. Browse HPLC-verified research peptides — BPC-157, Semaglutide, TB-500 and more. UK delivery, ≥99% purity.');
@@ -87,7 +87,7 @@ export default function NotFoundPage() {
 
         {/* MHRA disclaimer */}
         <p className="text-[11px] text-[#7090b8] leading-relaxed max-w-lg mx-auto">
-          All products supplied by Pro Health Peptides are for laboratory research use only. Not for human or veterinary consumption.
+          All products supplied by PH Labs are for laboratory research use only. Not for human or veterinary consumption.
         </p>
       </div>
     </section>

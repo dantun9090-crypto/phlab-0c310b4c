@@ -70,8 +70,8 @@ export default function Contact() {
   const [error, setError] = useState('');
 
   useSEO('contact', {
-    title: 'Contact Us | Pro Health Peptides UK',
-    metaDescription: 'Contact Pro Health Peptides for HPLC-verified research peptides. UK-based support for laboratory research orders, bulk queries, and technical questions.',
+    title: 'Contact Us | PH Labs UK',
+    metaDescription: 'Contact PH Labs for HPLC-verified research peptides. UK-based support for laboratory research orders, bulk queries, and technical questions.',
     canonical: 'https://www.prohealthpeptides.co.uk/contact',
   });
 
@@ -79,7 +79,7 @@ export default function Contact() {
     const schema = {
       '@context': 'https://schema.org',
       '@type': 'LocalBusiness',
-      name: 'Pro Health Peptides',
+      name: 'PH Labs',
       url: 'https://www.prohealthpeptides.co.uk',
       telephone: '+447826549934',
       email: 'info@prohealthpeptides.co.uk',
@@ -99,7 +99,7 @@ export default function Contact() {
     document.head.appendChild(el);
     return () => {
       document.getElementById('contact-schema')?.remove();
-      document.title = 'Pro Health Peptides UK | HPLC-Tested Research Peptides';
+      document.title = 'PH Labs UK | HPLC-Tested Research Peptides';
       const d2 = document.querySelector('meta[name="description"]');
       if (d2) d2.setAttribute('content', 'Premium research compounds with HPLC-verified purity. For laboratory research use only. Fast UK shipping.');
       const c2 = document.querySelector('link[rel="canonical"]');

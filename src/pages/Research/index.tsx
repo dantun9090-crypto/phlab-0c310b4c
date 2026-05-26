@@ -327,7 +327,7 @@ export default function Research() {
 
   // SEO: title + meta description + canonical + schema
   useEffect(() => {
-    document.title = 'Research Database | Pro Health Peptides UK';
+    document.title = 'Research Database | PH Labs UK';
     const setMeta = (name: string, content: string, prop = false) => {
       const sel = prop ? `meta[property="${name}"]` : `meta[name="${name}"]`;
       let el = document.querySelector(sel) as HTMLMetaElement | null;
@@ -341,13 +341,13 @@ export default function Research() {
     const metaDesc = 'Peptide research database: GLP-1 agonists, tissue repair, nootropics. Mechanisms, receptor targets, clinical data. Laboratory use only.';
     setMeta('description', metaDesc);
     setMeta('keywords', 'peptide research database, GLP-1 research peptides, BPC-157 mechanism, Retatrutide receptor, lab tested research peptides UK');
-    setMeta('og:title', 'Peptide Research Database | Mechanisms & Clinical Data | Pro Health Peptides', true);
+    setMeta('og:title', 'Peptide Research Database | Mechanisms & Clinical Data | PH Labs', true);
     setMeta('og:description', metaDesc, true);
     setMeta('og:url', 'https://www.prohealthpeptides.co.uk/research', true);
     const canonical = document.querySelector('link[rel="canonical"]');
     if (canonical) canonical.setAttribute('href', 'https://www.prohealthpeptides.co.uk/research');
     return () => {
-      document.title = 'Pro Health Peptides UK | HPLC-Tested Research Peptides';
+      document.title = 'PH Labs UK | HPLC-Tested Research Peptides';
       const d2 = document.querySelector('meta[name="description"]');
       if (d2) d2.setAttribute('content', 'Premium research compounds with HPLC-verified purity. For laboratory research use only. Fast UK shipping.');
       const c2 = document.querySelector('link[rel="canonical"]');

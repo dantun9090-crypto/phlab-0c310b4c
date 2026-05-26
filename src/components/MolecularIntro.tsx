@@ -346,7 +346,7 @@ export default function MolecularIntro({ onDone }: { onDone: () => void }) {
 
           <img
             src={LOGO_URL}
-            alt="Pro Health Peptides"
+            alt="PH Labs"
             style={{
               width: 104, height: 104,
               objectFit: 'contain',
@@ -385,7 +385,7 @@ export default function MolecularIntro({ onDone }: { onDone: () => void }) {
             textTransform: 'uppercase',
             marginBottom: 8,
           }}>
-            Pro Health
+            PH
           </div>
           <div style={{
             fontSize: 24,
@@ -396,7 +396,7 @@ export default function MolecularIntro({ onDone }: { onDone: () => void }) {
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
           }}>
-            Peptides
+            Labs
           </div>
         </div>
 

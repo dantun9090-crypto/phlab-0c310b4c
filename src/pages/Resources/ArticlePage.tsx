@@ -259,7 +259,7 @@ export default function ArticlePage() {
     if (!article) return;
     const articleUrl = `https://www.prohealthpeptides.co.uk/resources/${article.slug}`;
     const shortTitle = article.title.length > 38 ? article.title.slice(0, 36).trimEnd() + '…' : article.title;
-    document.title = `${shortTitle} | Pro Health Peptides`;
+    document.title = `${shortTitle} | PH Labs`;
 
     const setMeta = (name: string, content: string, prop = false) => {
       const sel = prop ? `meta[property="${name}"]` : `meta[name="${name}"]`;
@@ -272,9 +272,9 @@ export default function ArticlePage() {
       el.setAttribute('content', content);
     };
 
-    // FIX 6: Meta description 120-158 chars ending with "| Pro Health Peptides UK"
+    // FIX 6: Meta description 120-158 chars ending with "| PH Labs UK"
     let metaDesc = article.excerpt;
-    const suffix = ' | Pro Health Peptides UK';
+    const suffix = ' | PH Labs UK';
     
     // If excerpt is too long, truncate to fit within 158 chars with suffix
     if (metaDesc.length + suffix.length > 158) {
@@ -289,8 +289,8 @@ export default function ArticlePage() {
     }
     
     setMeta('description', metaDesc);
-    setMeta('keywords', [...article.keywords, 'research peptides UK', 'Pro Health Peptides'].join(', '));
-    setMeta('og:title', `${article.title} | Pro Health Peptides`, true);
+    setMeta('keywords', [...article.keywords, 'research peptides UK', 'PH Labs'].join(', '));
+    setMeta('og:title', `${article.title} | PH Labs`, true);
     setMeta('og:description', metaDesc, true);
     setMeta('og:url', articleUrl, true);
     setMeta('og:type', 'article', true);
@@ -313,10 +313,10 @@ export default function ArticlePage() {
         image: [articleImage],
         datePublished: article.publishDate,
         dateModified: article.publishDate,
-        author: { '@type': 'Organization', name: 'Pro Health Peptides', url: 'https://www.prohealthpeptides.co.uk' },
+        author: { '@type': 'Organization', name: 'PH Labs', url: 'https://www.prohealthpeptides.co.uk' },
         publisher: {
           '@type': 'Organization',
-          name: 'Pro Health Peptides',
+          name: 'PH Labs',
           logo: {
             '@type': 'ImageObject',
             url: 'https://cdn.wegic.ai/assets/onepage/uploads/2031481443271393281/image/2026/03/14/01KKPB20SGJ3T4RK47TQPSAV0N.png',
@@ -347,7 +347,7 @@ export default function ArticlePage() {
 
     return () => {
       document.getElementById('article-schema')?.remove();
-      document.title = 'Pro Health Peptides UK | HPLC-Tested Research Peptides';
+      document.title = 'PH Labs UK | HPLC-Tested Research Peptides';
       const d2 = document.querySelector('meta[name="description"]');
       if (d2) d2.setAttribute('content', 'Premium research compounds with HPLC-verified purity. For laboratory research use only. Fast UK shipping.');
       const c2 = document.querySelector('link[rel="canonical"]');

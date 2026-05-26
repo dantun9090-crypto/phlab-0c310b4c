@@ -33,7 +33,7 @@ const TEMPLATES = [
     subject: '🎉 Your Free Protocol Library is Ready — Plus 10% Off',
     body: `Hi [First Name],
 
-Thank you for your interest in Pro Health Peptides UK!
+Thank you for your interest in PH Labs UK!
 
 Your FREE 28-page Protocol Library is ready to download. Inside you'll find:
 
@@ -55,10 +55,10 @@ https://www.prohealthpeptides.co.uk/products
 Questions? Email us at info@prohealthpeptides.co.uk
 
 ⚠️ Research Use Only
-All peptides supplied by Pro Health Peptides UK are for in-vitro research purposes only. Not for human or veterinary use.
+All peptides supplied by PH Labs UK are for in-vitro research purposes only. Not for human or veterinary use.
 
 Best regards,
-Pro Health Peptides UK Team`
+PH Labs UK Team`
   },
   {
     id: 'new-product',
@@ -81,10 +81,10 @@ View the full product listing and technical specifications here:
 This compound is supplied strictly for laboratory research use only. Not for human administration.
 
 Best regards,
-Pro Health Peptides Research Team
+PH Labs Research Team
 
 ---
-Pro Health Peptides Ltd | research@prohealthpeptides.co.uk
+PH Labs Ltd | research@prohealthpeptides.co.uk
 For laboratory research use only. Not approved by MHRA or FDA.
 To unsubscribe from research updates, reply with UNSUBSCRIBE.`,
   },
@@ -111,10 +111,10 @@ Shop now: https://www.prohealthpeptides.co.uk/products
 All compounds are HPLC-tested and supplied for laboratory research use only.
 
 Best regards,
-Pro Health Peptides Research Team
+PH Labs Research Team
 
 ---
-Pro Health Peptides Ltd | research@prohealthpeptides.co.uk
+PH Labs Ltd | research@prohealthpeptides.co.uk
 For laboratory research use only. Not approved by MHRA or FDA.
 To unsubscribe, reply with UNSUBSCRIBE.`,
   },
@@ -124,10 +124,10 @@ To unsubscribe, reply with UNSUBSCRIBE.`,
     icon: Newspaper,
     color: 'text-purple-400',
     bg: 'bg-purple-500/10 border-purple-500/20',
-    subject: 'Pro Health Peptides — Research Update [Month Year]',
+    subject: 'PH Labs — Research Update [Month Year]',
     body: `Hi [First Name],
 
-Welcome to the [Month] research update from Pro Health Peptides.
+Welcome to the [Month] research update from PH Labs.
 
 WHAT'S NEW
 • [New product or update]
@@ -146,10 +146,10 @@ Browse our full catalogue: https://www.prohealthpeptides.co.uk/products
 All compounds are supplied strictly for in-vitro and laboratory research use only. For educational and research purposes only. Not for human administration or clinical use.
 
 Best regards,
-Pro Health Peptides Research Team
+PH Labs Research Team
 
 ---
-Pro Health Peptides Ltd | research@prohealthpeptides.co.uk
+PH Labs Ltd | research@prohealthpeptides.co.uk
 For laboratory research use only. Not approved by MHRA or FDA.
 To unsubscribe, reply with UNSUBSCRIBE.`,
   },
@@ -176,10 +176,10 @@ View product: [Product URL]
 Supplied strictly for laboratory research use only. Not for human administration.
 
 Best regards,
-Pro Health Peptides Research Team
+PH Labs Research Team
 
 ---
-Pro Health Peptides Ltd | research@prohealthpeptides.co.uk
+PH Labs Ltd | research@prohealthpeptides.co.uk
 For laboratory research use only. Not approved by MHRA or FDA.
 To unsubscribe, reply with UNSUBSCRIBE.`,
   },
@@ -189,7 +189,7 @@ To unsubscribe, reply with UNSUBSCRIBE.`,
     icon: Sparkles,
     color: 'text-red-400',
     bg: 'bg-red-500/10 border-red-500/20',
-    subject: 'Important: Compliance Update from Pro Health Peptides',
+    subject: 'Important: Compliance Update from PH Labs',
     body: `Hi [First Name],
 
 We want to keep you informed of an important update regarding our terms and product supply.
@@ -211,10 +211,10 @@ If you have any questions, please contact us:
 research@prohealthpeptides.co.uk
 
 Best regards,
-Pro Health Peptides Compliance Team
+PH Labs Compliance Team
 
 ---
-Pro Health Peptides Ltd
+PH Labs Ltd
 For laboratory research use only. Not approved by MHRA or FDA.
 To unsubscribe, reply with UNSUBSCRIBE.`,
   },

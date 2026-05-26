@@ -26,7 +26,7 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   'tissue-repair': {
     label: 'Tissue Repair',
     description: 'Compounds studied in preclinical models of musculoskeletal and connective tissue repair. BPC-157 and TB-500 are among the most investigated peptides for tendon, ligament, and gastric tissue pathways.',
-    seoTitle: 'Tissue Repair Peptides UK | Pro Health Peptides',
+    seoTitle: 'Tissue Repair Peptides UK | PH Labs',
     seoDescription: 'HPLC-verified tissue repair research peptides — BPC-157, TB-500 and more. ≥99% purity, CoA included, free UK shipping over £50. Laboratory research use only.',
     seoKeywords: 'tissue repair peptides UK, BPC-157 buy UK, TB-500 research peptide, musculoskeletal research compounds',
     color: '#10b981',
@@ -35,7 +35,7 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   'metabolic-signaling': {
     label: 'Metabolic / GLP-1',
     description: 'GLP-1, GIP, and glucagon receptor agonists for metabolic signalling research. Semaglutide, Tirzepatide, and Retatrutide supplied for laboratory research use only.',
-    seoTitle: 'GLP-1 Research Peptides UK | Pro Health Peptides',
+    seoTitle: 'GLP-1 Research Peptides UK | PH Labs',
     seoDescription: 'HPLC-verified GLP-1 and metabolic research peptides — Semaglutide, Tirzepatide, Retatrutide. ≥99% purity, CoA included. UK delivery. Lab use only.',
     seoKeywords: 'GLP-1 peptides UK, Semaglutide research UK, Tirzepatide buy UK, metabolic peptides research',
     color: '#3b82f6',
@@ -44,7 +44,7 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   'cellular-aging': {
     label: 'Longevity',
     description: 'Telomere and mitochondrial research compounds including Epithalon and MOTS-c. Investigated in senescence and epigenetic longevity models.',
-    seoTitle: 'Longevity Research Peptides UK | Pro Health Peptides',
+    seoTitle: 'Longevity Research Peptides UK | PH Labs',
     seoDescription: 'UK supplier of longevity and anti-ageing research peptides — Epithalon, MOTS-c and more. HPLC-tested, ≥99% purity, CoA included. Laboratory research use only.',
     seoKeywords: 'longevity peptides UK, Epithalon buy UK, MOTS-c research peptide, anti-ageing compounds UK',
     color: '#f59e0b',
@@ -53,7 +53,7 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   neurological: {
     label: 'Nootropic',
     description: 'Semax, Selank, and related compounds investigated for BDNF modulation and cognitive pathway research in preclinical neurological models.',
-    seoTitle: 'Nootropic Research Peptides UK | Pro Health Peptides',
+    seoTitle: 'Nootropic Research Peptides UK | PH Labs',
     seoDescription: 'Buy nootropic and neuropeptide research compounds in the UK — Semax, Selank and more. HPLC-verified, ≥99% purity, CoA included. Laboratory research use only.',
     seoKeywords: 'nootropic peptides UK, Semax buy UK, Selank research peptide, cognitive research compounds UK',
     color: '#a855f7',
@@ -62,7 +62,7 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   melanin: {
     label: 'Melanocortin',
     description: 'MC1R and MC4R agonists including Melanotan II and PT-141. Studied in photoprotection and melanin synthesis research models.',
-    seoTitle: 'Melanocortin Peptides UK | Pro Health Peptides',
+    seoTitle: 'Melanocortin Peptides UK | PH Labs',
     seoDescription: 'HPLC-tested melanocortin research peptides UK — Melanotan II, PT-141 and more. ≥99% purity, CoA included, UK dispatch. For laboratory research use only.',
     seoKeywords: 'melanocortin peptides UK, Melanotan II UK, PT-141 research, MC1R agonist research peptide',
     color: '#ec4899',
@@ -71,7 +71,7 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   blends: {
     label: 'Blends',
     description: 'Pre-formulated compound combinations for multi-pathway laboratory research protocols. Each blend is HPLC-verified and supplied with batch documentation.',
-    seoTitle: 'Research Peptide Blends UK | Pro Health Peptides',
+    seoTitle: 'Research Peptide Blends UK | PH Labs',
     seoDescription: 'Research peptide blends for multi-pathway laboratory protocols. HPLC-verified, batch documented, CoA included. UK delivery. For laboratory research use only.',
     seoKeywords: 'peptide blends UK, research compound combinations, multi-pathway peptide protocols UK',
     color: '#06b6d4',
@@ -80,7 +80,7 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   accessories: {
     label: 'Accessories',
     description: 'Bacteriostatic water, syringes, and reconstitution accessories for peptide research protocols. Supplied for laboratory use only.',
-    seoTitle: 'Peptide Research Accessories UK | Pro Health Peptides',
+    seoTitle: 'Peptide Research Accessories UK | PH Labs',
     seoDescription: 'Laboratory accessories for peptide research — bacteriostatic water, syringes, reconstitution kits. UK delivery. For laboratory research use only.',
     seoKeywords: 'bacteriostatic water UK, peptide accessories, research reconstitution kit UK',
     color: '#64748b',
@@ -94,7 +94,7 @@ function buildFallbackConfig(slug: string): CategoryConfig {
   return {
     label,
     description: `HPLC-verified ${label.toLowerCase()} research peptides supplied for laboratory use only.`,
-    seoTitle: `${label} Research Peptides UK | Pro Health Peptides`,
+    seoTitle: `${label} Research Peptides UK | PH Labs`,
     seoDescription: `Buy HPLC-verified ${label.toLowerCase()} research peptides in the UK. ≥99% purity, CoA included. For laboratory research use only.`,
     seoKeywords: `${label.toLowerCase()} peptides UK, research compounds UK`,
     color: '#3b82f6',
@@ -142,7 +142,7 @@ export default function CategoryPage() {
 
   // SEO
   useSEO(`category-${slug}`, {
-    title: config?.seoTitle ?? 'Research Peptides UK | Pro Health Peptides',
+    title: config?.seoTitle ?? 'Research Peptides UK | PH Labs',
     metaDescription: config?.seoDescription ?? '',
     metaKeywords: config?.seoKeywords ?? '',
     canonical: `https://www.prohealthpeptides.co.uk/products/category/${slug}`,

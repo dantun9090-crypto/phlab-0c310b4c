@@ -4,7 +4,7 @@ import { Thermometer, Snowflake, Sun, AlertTriangle, Lightbulb, Clock, Droplets,
 
 export default function StorageGuide() {
   useEffect(() => {
-    document.title = 'Peptide Storage Guide UK | Pro Health Peptides';
+    document.title = 'Peptide Storage Guide UK | PH Labs';
     const setMeta = (name: string, content: string, prop = false) => {
       const sel = prop ? `meta[property="${name}"]` : `meta[name="${name}"]`;
       let el = document.querySelector(sel) as HTMLMetaElement | null;
@@ -108,7 +108,7 @@ export default function StorageGuide() {
               ))}
             </ul>
             <p className="text-base leading-relaxed" style={{ color: '#7a9ec2' }}>
-              Research peptides purchased from Pro Health Peptides undergo HPLC verification (≥99% purity) and arrive lyophilised (freeze-dried) in sealed vials. Maintaining this purity throughout your research protocol requires strict adherence to storage guidelines.
+              Research peptides purchased from PH Labs undergo HPLC verification (≥99% purity) and arrive lyophilised (freeze-dried) in sealed vials. Maintaining this purity throughout your research protocol requires strict adherence to storage guidelines.
             </p>
           </section>
 
@@ -126,7 +126,7 @@ export default function StorageGuide() {
                 Lyophilised (Freeze-Dried) Peptides
               </h3>
               <p className="text-base leading-relaxed mb-3" style={{ color: '#7a9ec2' }}>
-                Unopened lyophilised peptide vials have extended stability when stored correctly. This is the form in which <Link to="/products" className="text-green-400 hover:text-green-300 underline">all Pro Health Peptides products</Link> are shipped to UK laboratories.
+                Unopened lyophilised peptide vials have extended stability when stored correctly. This is the form in which <Link to="/products" className="text-green-400 hover:text-green-300 underline">all PH Labs products</Link> are shipped to UK laboratories.
               </p>
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
@@ -226,7 +226,7 @@ export default function StorageGuide() {
                   <strong>Maximum duration:</strong> 2-4 weeks for unopened lyophilised vials only
                 </p>
                 <p className="text-sm leading-relaxed" style={{ color: '#9cb8d9' }}>
-                  Not recommended for routine storage. Acceptable only during shipping (Pro Health Peptides includes cold-pack insulation) or temporary lab bench use during experiments. Never store reconstituted peptides at room temperature.
+                  Not recommended for routine storage. Acceptable only during shipping (PH Labs includes cold-pack insulation) or temporary lab bench use during experiments. Never store reconstituted peptides at room temperature.
                 </p>
               </div>
             </div>
@@ -310,7 +310,7 @@ export default function StorageGuide() {
                 },
                 {
                   title: 'Ignoring Expiry Dates',
-                  desc: 'Even under optimal conditions, peptides degrade over time. Track receipt dates and prioritize older stock. Pro Health Peptides includes batch documentation for reference.',
+                  desc: 'Even under optimal conditions, peptides degrade over time. Track receipt dates and prioritize older stock. PH Labs includes batch documentation for reference.',
                 },
               ].map((mistake, idx) => (
                 <div key={idx} className="p-5 rounded-xl" style={{ background: 'rgba(11,26,48,0.6)', border: '1px solid rgba(239,68,68,0.2)' }}>
@@ -383,7 +383,7 @@ export default function StorageGuide() {
                 },
                 {
                   q: 'How long can peptides survive shipping at room temperature?',
-                  a: 'Lyophilised peptides remain stable for 2-4 weeks at room temperature. Pro Health Peptides includes cold-pack insulation for UK deliveries, ensuring peptides arrive in optimal condition even during summer months.',
+                  a: 'Lyophilised peptides remain stable for 2-4 weeks at room temperature. PH Labs includes cold-pack insulation for UK deliveries, ensuring peptides arrive in optimal condition even during summer months.',
                 },
                 {
                   q: 'What is the difference between bacteriostatic and sterile water?',
@@ -417,7 +417,7 @@ export default function StorageGuide() {
               <div>
                 <p className="text-sm font-semibold mb-2" style={{ color: '#fbbf24' }}>Research Use Only</p>
                 <p className="text-sm leading-relaxed" style={{ color: '#7a9ec2' }}>
-                  This guide is for informational purposes only and intended for professional researchers in UK laboratory settings. All peptides sold by Pro Health Peptides are strictly for in vitro research use only. Not for human or veterinary consumption. Not intended to diagnose, treat, cure, or prevent any disease. Handle all research peptides in accordance with institutional biosafety and chemical safety guidelines.
+                  This guide is for informational purposes only and intended for professional researchers in UK laboratory settings. All peptides sold by PH Labs are strictly for in vitro research use only. Not for human or veterinary consumption. Not intended to diagnose, treat, cure, or prevent any disease. Handle all research peptides in accordance with institutional biosafety and chemical safety guidelines.
                 </p>
               </div>
             </div>

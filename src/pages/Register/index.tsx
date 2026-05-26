@@ -145,7 +145,7 @@ export default function Register() {
               <User className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-            <p className="text-[#9cb8d9]">Join Pro Health Peptides for exclusive benefits</p>
+            <p className="text-[#9cb8d9]">Join PH Labs for exclusive benefits</p>
           </div>
 
           {/* Form Card */}

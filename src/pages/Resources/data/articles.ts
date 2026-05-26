@@ -1564,7 +1564,7 @@ KPV also activates anti-inflammatory transcription via STAT3 phosphorylation dow
       },
       {
         heading: 'GLOW Blend vs KLOW Blend: Complementary Repair Profiles',
-        body: `Pro Health Peptides offers two complementary blend formulations — GLOW and KLOW — each targeting a distinct set of biological repair processes. GLOW Blend is formulated for skin, cellular rejuvenation, and anti-ageing research (see the GLOW article for full mechanistic detail). KLOW Blend is formulated for connective tissue repair, anti-inflammatory signalling, and gut-mucosal healing research.
+        body: `PH Labs offers two complementary blend formulations — GLOW and KLOW — each targeting a distinct set of biological repair processes. GLOW Blend is formulated for skin, cellular rejuvenation, and anti-ageing research (see the GLOW article for full mechanistic detail). KLOW Blend is formulated for connective tissue repair, anti-inflammatory signalling, and gut-mucosal healing research.
 
 The four KLOW components are mechanistically non-overlapping: BPC-157 operates primarily through the VEGFR2/FAK/Src growth-factor receptor axis; TB-500 operates through actin cytoskeletal dynamics and TGF-β1 suppression; GHK-Cu operates through copper-enzyme activation and Nrf2 transcriptional regulation; and KPV operates through melanocortin receptor/cAMP/PKA/NF-κB signalling. This mechanistic diversity minimises redundancy — each component addresses a different bottleneck in the repair cascade — while collectively covering the key phases of inflammation resolution, cell migration, matrix synthesis, and anti-fibrotic remodelling.
 
@@ -1625,7 +1625,7 @@ For in vitro combination studies, the recommended substrate is primary human der
         body: `A mass spectrum report for a research peptide should include: (1) the observed m/z values and charge states for the molecular ion; (2) the calculated neutral mass derived from these values; (3) the theoretical monoisotopic mass for the stated sequence; and (4) the mass error in Da or ppm. A high-quality report from a reputable supplier will also include the isotope envelope — the cluster of peaks separated by 1 Da arising from natural 13C incorporation — which serves as an additional fingerprint. If only a single m/z value is reported without charge state assignment or mass error calculation, the report is incomplete for identity confirmation purposes.`,
         callout: {
           type: 'info',
-          text: 'Pro Health Peptides analytical certificates include both HPLC chromatograms and mass spectrometry identity data. Batch reports are available on request via our contact page.'
+          text: 'PH Labs analytical certificates include both HPLC chromatograms and mass spectrometry identity data. Batch reports are available on request via our contact page.'
         }
       }
     ],
@@ -1664,7 +1664,7 @@ For in vitro combination studies, the recommended substrate is primary human der
       },
       {
         heading: 'Retention Time and Consistency',
-        body: `Retention time (Rt) is the x-axis value at which the main peak appears, typically between 10–25 minutes for most peptides under standard gradient conditions. The retention time itself isn't a purity measure — it's a fingerprint. For the same peptide analysed on the same HPLC method, the retention time should be consistent across batches (±0.2 minutes). If Batch A shows Rt = 18.3 min and Batch B shows Rt = 12.7 min, either the column or gradient changed, or these are different compounds. When ordering repeat batches from Pro Health Peptides or any UK supplier, compare retention times across CoAs to ensure batch-to-batch consistency.`,
+        body: `Retention time (Rt) is the x-axis value at which the main peak appears, typically between 10–25 minutes for most peptides under standard gradient conditions. The retention time itself isn't a purity measure — it's a fingerprint. For the same peptide analysed on the same HPLC method, the retention time should be consistent across batches (±0.2 minutes). If Batch A shows Rt = 18.3 min and Batch B shows Rt = 12.7 min, either the column or gradient changed, or these are different compounds. When ordering repeat batches from PH Labs or any UK supplier, compare retention times across CoAs to ensure batch-to-batch consistency.`,
         table: {
           headers: ['Parameter', 'What It Tells You', 'Typical Value for ≥98% Purity'],
           rows: [
@@ -1685,7 +1685,7 @@ For in vitro combination studies, the recommended substrate is primary human der
         body: `Not all CoAs are legitimate. Watch for: (1) No visible chromatogram — only a purity number with no supporting graph. This is a fabricated document. (2) Chromatogram with massive baseline drift or noise — indicates poor instrument maintenance or contaminated sample. (3) Multiple large peaks with one arbitrarily labelled "target" — the supplier is choosing which peak to call the product. (4) Missing batch number, date, or analyst signature — no traceability. (5) Purity claims >99.5% for complex peptides — realistically, solid-phase peptide synthesis produces 97–99% purity. Claims above this range without further purification steps are suspicious. (6) Generic CoA used across multiple batches — batch numbers should be unique and match the vial label.`,
         callout: {
           type: 'info',
-          text: 'Pro Health Peptides provides batch-specific HPLC certificates with every order. Each CoA includes full chromatogram, retention time, purity calculation, and batch traceability. Mass spec data available on request for identity confirmation.'
+          text: 'PH Labs provides batch-specific HPLC certificates with every order. Each CoA includes full chromatogram, retention time, purity calculation, and batch traceability. Mass spec data available on request for identity confirmation.'
         }
       },
       {
@@ -1735,7 +1735,7 @@ For in vitro combination studies, the recommended substrate is primary human der
         body: `**Use BPC-157 for:**\n• Gastric ulcer or mucosal injury models (gastric cytoprotection)\n• Tendon-to-bone healing studies (patellar tendon, Achilles tendon models)\n• Ligament injury models (medial collateral ligament, anterior cruciate ligament)\n• Inflammatory bowel disease models (colitis, mucosal inflammation)\n• Blood-brain barrier permeability studies (some evidence of neuroprotective effects)\n\n**Use TB-500 for:**\n• Skeletal muscle injury and regeneration models (contusion, laceration)\n• Myocardial infarction and cardiac remodelling studies (post-MI angiogenesis)\n• Corneal wound healing models (epithelial migration)\n• Stroke models (neuronal migration, angiogenesis)\n• Dermal wound healing and scar formation studies\n\n**Combination use:** Some research protocols use BPC-157 and TB-500 together in complex tissue injury models to target multiple pathways simultaneously (VEGF + actin dynamics). This is seen in experimental models of severe ligament or tendon injury where both angiogenesis and cell migration are rate-limiting.`,
         callout: {
           type: 'info',
-          text: 'Pro Health Peptides supplies both BPC-157 and TB-500 in lyophilised form with HPLC verification ≥98% purity. Both peptides are shipped with cold-pack insulation for UK laboratory delivery.'
+          text: 'PH Labs supplies both BPC-157 and TB-500 in lyophilised form with HPLC verification ≥98% purity. Both peptides are shipped with cold-pack insulation for UK laboratory delivery.'
         }
       },
       {
@@ -1743,7 +1743,7 @@ For in vitro combination studies, the recommended substrate is primary human der
         body: `**BPC-157:**\n• Typical in vitro concentration: 0.1–10 μg/mL in cell culture media\n• Typical in vivo dose (rodent): 10 μg/kg body weight, administered daily via intraperitoneal (IP) or subcutaneous (SC) injection\n• Reconstitution: Add 1–2 mL bacteriostatic water to lyophilised vial. Gently swirl (do not shake). Store reconstituted solution at 2–8°C for up to 14 days.\n• Stability: BPC-157 is relatively stable in solution but should be protected from light and stored cold.\n\n**TB-500:**\n• Typical in vitro concentration: 1–100 μg/mL depending on cell type and endpoint\n• Typical in vivo dose (rodent): 5–10 mg/kg body weight, administered twice weekly via IP or SC injection\n• Reconstitution: Add 2 mL bacteriostatic water to 5 mg vial for a 2.5 mg/mL stock solution. Store at 2–8°C for up to 14 days.\n• Stability: TB-500 is stable in solution but degrades faster than BPC-157 at room temperature. Always refrigerate immediately after reconstitution.`,
         callout: {
           type: 'warning',
-          text: 'These are research dosing guidelines for laboratory animal models only. All peptides sold by Pro Health Peptides are strictly for in vitro research use and not for human or veterinary consumption.'
+          text: 'These are research dosing guidelines for laboratory animal models only. All peptides sold by PH Labs are strictly for in vitro research use and not for human or veterinary consumption.'
         }
       },
       {
@@ -1781,7 +1781,7 @@ For in vitro combination studies, the recommended substrate is primary human der
         body: `In the UK, peptides sold for "research use only" are not regulated as medicines by the MHRA (Medicines and Healthcare products Regulatory Agency). They fall into a grey zone: not prescription drugs, not food supplements, not cosmetics. This means:\n\n• Suppliers do not need MHRA licensing to sell research peptides\n• There are no mandatory purity or analytical testing standards\n• Buyers are responsible for verifying quality and suitability for their research\n• Peptides must not be marketed for human consumption or therapeutic use\n• Import/export may require documentation depending on quantity and peptide type\n\nUniversities and research institutions typically require internal approval (ethics, biosafety) before peptide use. Always check your institution's chemical procurement and hazardous substances policies. Some peptides (e.g. growth hormone secretagogues) may fall under additional scrutiny due to misuse potential, though this does not affect legitimate laboratory research.`,
         callout: {
           type: 'warning',
-          text: 'All peptides sold by Pro Health Peptides are strictly for laboratory research use only. Not for human or veterinary consumption. Not intended to diagnose, treat, cure, or prevent any disease. Must be handled in accordance with institutional biosafety guidelines.'
+          text: 'All peptides sold by PH Labs are strictly for laboratory research use only. Not for human or veterinary consumption. Not intended to diagnose, treat, cure, or prevent any disease. Must be handled in accordance with institutional biosafety guidelines.'
         }
       },
       {
@@ -1803,7 +1803,7 @@ For in vitro combination studies, the recommended substrate is primary human der
         body: `**Step 1: Request a Certificate of Analysis (CoA)**\nEvery research peptide should come with a batch-specific HPLC certificate. This document must include:\n• Batch number (matches your vial label)\n• HPLC chromatogram (the graph showing peaks)\n• Retention time (Rt, in minutes)\n• Purity percentage (≥98% for research-grade)\n• Analysis date (within 12 months)\n• Laboratory or analyst signature\n\nIf a supplier cannot provide a CoA or only offers a "generic" certificate used across batches, do not purchase.\n\n**Step 2: Check the Chromatogram**\nA legitimate HPLC chromatogram shows one dominant peak (the target peptide) with minimal smaller peaks (impurities). The x-axis is retention time, y-axis is absorbance (mAU). The purity percentage is calculated from peak areas. Red flags: multiple large peaks, massive baseline noise, or no chromatogram provided at all.\n\n**Step 3: Request Mass Spectrometry Data (Optional but Recommended)**\nHPLC tells you purity, but mass spectrometry confirms identity. A mass spec report should show the observed molecular weight within ±1 Da (or ±5 ppm for high-resolution instruments) of the calculated mass for the stated sequence. This rules out "wrong peptide at high purity" scenarios.\n\n**Step 4: Independent Testing (Gold Standard)**\nFor critical research, send a sample to an independent UK analytical lab (e.g. LGC, Intertek, or university analytical services) for third-party HPLC or LC-MS testing. This costs £150–£300 but provides absolute verification.`,
         callout: {
           type: 'info',
-          text: 'Pro Health Peptides provides batch-specific HPLC certificates with full chromatograms for every order. Mass spectrometry data available on request for identity confirmation. All peptides shipped with cold-pack insulation for UK delivery.'
+          text: 'PH Labs provides batch-specific HPLC certificates with full chromatograms for every order. Mass spectrometry data available on request for identity confirmation. All peptides shipped with cold-pack insulation for UK delivery.'
         }
       },
       {
@@ -1815,7 +1815,7 @@ For in vitro combination studies, the recommended substrate is primary human der
         body: `**Avoid suppliers who:**\n• Cannot provide batch-specific HPLC certificates\n• Claim purity >99.5% without independent verification\n• Use generic stock photos instead of actual product images\n• Market peptides with medical claims ("treats injury", "boosts muscle growth")\n• Offer suspiciously low prices (e.g. BPC-157 <£40 for 5 mg with "≥98% purity")\n• Ship without cold-pack insulation during warm months\n• Have no contact information beyond a web form\n• Use aggressive marketing language targeting bodybuilders/athletes\n• Cannot answer basic technical questions about synthesis or storage\n• Refuse to provide mass spectrometry data upon request\n\n**Green flags for reputable suppliers:**\n• Batch-specific CoAs with full HPLC chromatograms\n• UK-based or EU-based with clear contact details\n• Cold-pack shipping standard for all orders\n• Transparent about analytical methods and laboratory partners\n• Research-only disclaimers prominently displayed\n• Professional website with technical documentation\n• Responsive customer service with technical knowledge\n• Mass spec data available on request\n• No medical or therapeutic claims`,
         callout: {
           type: 'info',
-          text: 'Pro Health Peptides is a UK-based supplier of HPLC-verified research peptides. All products ship with cold-pack insulation, batch-specific CoAs, and full technical support. Based in the United Kingdom with fast 1–3 day delivery nationwide.'
+          text: 'PH Labs is a UK-based supplier of HPLC-verified research peptides. All products ship with cold-pack insulation, batch-specific CoAs, and full technical support. Based in the United Kingdom with fast 1–3 day delivery nationwide.'
         }
       },
       {
@@ -1844,7 +1844,7 @@ For in vitro combination studies, the recommended substrate is primary human der
     relatedSlugs: ['complete-uk-peptide-guide-2025', 'hplc-testing-explained', 'how-to-read-hplc-certificate-of-analysis'],
     content: [
       {
-        body: `If you are sourcing <strong>research peptides in the UK</strong> in 2026, the calculation has changed. Post-Brexit customs delays, rising shipping temperatures, and tighter expectations from university ethics committees mean a US or EU supplier that worked in 2020 often no longer makes sense. British labs increasingly insist on a <strong>UK-based supplier with HPLC ≥99% purity, batch-specific CoAs, and next-day domestic dispatch</strong>. This guide covers what to insist on, which compounds drive the most active UK research, and how to <a href="/products" style="color: #10b981; text-decoration: underline;">browse the full Pro Health Peptides catalogue</a>.`
+        body: `If you are sourcing <strong>research peptides in the UK</strong> in 2026, the calculation has changed. Post-Brexit customs delays, rising shipping temperatures, and tighter expectations from university ethics committees mean a US or EU supplier that worked in 2020 often no longer makes sense. British labs increasingly insist on a <strong>UK-based supplier with HPLC ≥99% purity, batch-specific CoAs, and next-day domestic dispatch</strong>. This guide covers what to insist on, which compounds drive the most active UK research, and how to <a href="/products" style="color: #10b981; text-decoration: underline;">browse the full PH Labs catalogue</a>.`
       },
       {
         heading: 'Why Source Research Peptides from a UK Supplier',
@@ -1881,7 +1881,7 @@ For in vitro combination studies, the recommended substrate is primary human der
         body: `A legitimate Certificate of Analysis from a UK supplier must include:\n\n• **Batch number** matching your vial label exactly\n• **HPLC chromatogram** (the graph showing peaks against retention time)\n• **Retention time** in minutes, with the target peak identified\n• **Purity percentage** (≥99% for research-grade, calculated from peak area integration)\n• **Mass spectrometry data** confirming identity (±1 Da of calculated mass)\n• **Analysis date** within the last 12 months\n• **Laboratory signature** or analyst initials\n\nIf any of these are missing — particularly the chromatogram itself or a batch-matched analysis date — the document is not a real CoA. For a full walkthrough of how to read these documents, see <a href="/resources/how-to-read-hplc-certificate-of-analysis" style="color: #10b981; text-decoration: underline;">How to Read an HPLC Certificate of Analysis</a>.`,
         callout: {
           type: 'info',
-          text: 'Every Pro Health Peptides order ships with a batch-specific HPLC certificate including the full chromatogram. Mass spectrometry data is available on request for identity confirmation. All UK orders dispatched next-day with cold-pack insulation.'
+          text: 'Every PH Labs order ships with a batch-specific HPLC certificate including the full chromatogram. Mass spectrometry data is available on request for identity confirmation. All UK orders dispatched next-day with cold-pack insulation.'
         }
       },
       {
@@ -1890,7 +1890,7 @@ For in vitro combination studies, the recommended substrate is primary human der
       },
       {
         heading: 'Where to Buy Research Peptides UK',
-        body: `Pro Health Peptides is a UK-based research peptide supplier dispatching from a domestic warehouse with next-day Royal Mail Tracked 24 and DPD options. Every order ships with a batch-specific HPLC ≥99% purity certificate, cold-pack insulation, and full technical documentation. <a href="/products" style="color: #10b981; text-decoration: underline; font-weight: 700;">Browse the full UK research peptide catalogue</a> or jump directly to the most-ordered compounds: <a href="/products/retatrutide" style="color: #10b981; text-decoration: underline;">Retatrutide</a>, <a href="/products/tirzepatide" style="color: #10b981; text-decoration: underline;">Tirzepatide</a>, <a href="/products/semaglutide" style="color: #10b981; text-decoration: underline;">Semaglutide</a>, <a href="/products/bpc-157" style="color: #10b981; text-decoration: underline;">BPC-157</a>, <a href="/products/tb-500" style="color: #10b981; text-decoration: underline;">TB-500</a>. For analytical background, see our <a href="/lab-reports" style="color: #10b981; text-decoration: underline;">Lab Reports</a> archive and the <a href="/quality-control" style="color: #10b981; text-decoration: underline;">Quality Control</a> overview.`
+        body: `PH Labs is a UK-based research peptide supplier dispatching from a domestic warehouse with next-day Royal Mail Tracked 24 and DPD options. Every order ships with a batch-specific HPLC ≥99% purity certificate, cold-pack insulation, and full technical documentation. <a href="/products" style="color: #10b981; text-decoration: underline; font-weight: 700;">Browse the full UK research peptide catalogue</a> or jump directly to the most-ordered compounds: <a href="/products/retatrutide" style="color: #10b981; text-decoration: underline;">Retatrutide</a>, <a href="/products/tirzepatide" style="color: #10b981; text-decoration: underline;">Tirzepatide</a>, <a href="/products/semaglutide" style="color: #10b981; text-decoration: underline;">Semaglutide</a>, <a href="/products/bpc-157" style="color: #10b981; text-decoration: underline;">BPC-157</a>, <a href="/products/tb-500" style="color: #10b981; text-decoration: underline;">TB-500</a>. For analytical background, see our <a href="/lab-reports" style="color: #10b981; text-decoration: underline;">Lab Reports</a> archive and the <a href="/quality-control" style="color: #10b981; text-decoration: underline;">Quality Control</a> overview.`
       }
     ],
     references: [

@@ -102,7 +102,7 @@ export function buildProfessionalInvoiceEmail(opts: InvoiceEmailOptions): string
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="color-scheme" content="dark">
   <meta name="supported-color-schemes" content="dark">
-  <title>Invoice — Pro Health Peptides</title>
+  <title>Invoice — PH Labs</title>
   <style>
     body, .email-bg { background-color: #060f1e !important; }
     .email-card { background-color: #0b1a30 !important; }
@@ -150,9 +150,9 @@ export function buildProfessionalInvoiceEmail(opts: InvoiceEmailOptions): string
               <tr>
                 <td>
                   <img src="https://cdn.wegic.ai/assets/onepage/uploads/2031481443271393281/image/2026/03/14/01KKPB20SGJ3T4RK47TQPSAV0N.png"
-                    alt="Pro Health Peptides" width="48" height="48"
+                    alt="PH Labs" width="48" height="48"
                     style="border-radius:12px;display:block;margin-bottom:12px;" />
-                  <p style="color:${BLUE};font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin:0 0 4px 0;">Pro Health Peptides</p>
+                  <p style="color:${BLUE};font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin:0 0 4px 0;">PH Labs</p>
                   <p style="color:${DIMMED};font-size:11px;margin:0;">www.prohealthpeptides.co.uk</p>
                 </td>
                 <td align="right" valign="top">
@@ -267,7 +267,7 @@ export function buildProfessionalInvoiceEmail(opts: InvoiceEmailOptions): string
               All products are sold strictly for <strong>research and laboratory use only</strong>. Not for human consumption.
             </p>
             <p style="color:#1a3a5c;font-size:10px;margin:0;text-align:center;">
-              Pro Health Peptides UK &bull; info@prohealthpeptides.co.uk &bull;
+              PH Labs UK &bull; info@prohealthpeptides.co.uk &bull;
               <a href="https://www.prohealthpeptides.co.uk" style="color:${BLUE};text-decoration:none;">www.prohealthpeptides.co.uk</a>
             </p>
           </td>

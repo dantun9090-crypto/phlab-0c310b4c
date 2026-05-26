@@ -49,11 +49,11 @@ function buildPreview(templateId: string): string {
     case 'dispatch':
       return buildDispatchEmail({ firstName: 'James', orderId: DEMO_ORDER_ID, items: DEMO_ITEMS, totalAmount: 99.97, trackingNumber: 'TK123456789GB', courier: 'Royal Mail', estimatedDelivery: 'Mon 3 Feb', trackingUrl: 'https://www.royalmail.com/track-your-item' });
     case 'invoice_bank':
-      return buildProfessionalInvoiceEmail({ firstName: 'James', orderId: DEMO_ORDER_ID, items: DEMO_ITEMS, subtotal: 99.97, discount: 0, shipping: 0, total: 99.97, paymentMethod: 'bank_transfer', bankTransferRef: DEMO_ORDER_ID.slice(-8).toUpperCase(), bankName: 'Pro Health Peptides Ltd', bankSortCode: '30-94-52', bankAccountNumber: '12345678' });
+      return buildProfessionalInvoiceEmail({ firstName: 'James', orderId: DEMO_ORDER_ID, items: DEMO_ITEMS, subtotal: 99.97, discount: 0, shipping: 0, total: 99.97, paymentMethod: 'bank_transfer', bankTransferRef: DEMO_ORDER_ID.slice(-8).toUpperCase(), bankName: 'PH Labs Ltd', bankSortCode: '30-94-52', bankAccountNumber: '12345678' });
     case 'invoice_card':
       return buildProfessionalInvoiceEmail({ firstName: 'James', orderId: DEMO_ORDER_ID, items: DEMO_ITEMS, subtotal: 99.97, discount: 0, shipping: 0, total: 99.97, paymentMethod: 'card' });
     case 'payment_reminder':
-      return buildPaymentReminderEmail({ firstName: 'James', orderId: DEMO_ORDER_ID, totalAmount: 99.97, bankName: 'Pro Health Peptides Ltd', sortCode: '30-94-52', accountNumber: '12345678', reference: DEMO_ORDER_ID.slice(-8).toUpperCase(), hoursElapsed: 27 });
+      return buildPaymentReminderEmail({ firstName: 'James', orderId: DEMO_ORDER_ID, totalAmount: 99.97, bankName: 'PH Labs Ltd', sortCode: '30-94-52', accountNumber: '12345678', reference: DEMO_ORDER_ID.slice(-8).toUpperCase(), hoursElapsed: 27 });
     case 'cancellation':
       return buildCancellationEmail({ firstName: 'James', orderId: DEMO_ORDER_ID, totalAmount: 99.97, items: DEMO_ITEMS, hoursElapsed: 72 });
     case 'contact':
@@ -162,7 +162,7 @@ async function sendReminderForOrder(order: PendingOrder, settings: SiteSettings)
     firstName: order.firstName,
     orderId: order.id,
     totalAmount: order.totalAmount,
-    bankName: order.bankName || settings.bankName || 'Pro Health Peptides Ltd',
+    bankName: order.bankName || settings.bankName || 'PH Labs Ltd',
     sortCode: order.sortCode || settings.sortCode,
     accountNumber: order.accountNumber || settings.accountNumber,
     reference: order.bankTransferRef || order.id.slice(-8).toUpperCase(),
@@ -223,7 +223,7 @@ async function cancelOrderAndEmail(order: PendingOrder): Promise<void> {
             <tr><td style="padding:6px 0;color:#64748b;">Items</td><td style="padding:6px 0;color:#cbd5e1;">${itemsSummary}</td></tr>
             <tr><td style="padding:6px 0;color:#64748b;">Cancelled At</td><td style="padding:6px 0;color:#fff;">${new Date().toLocaleString('en-GB')}</td></tr>
           </table>
-          <p style="margin-top:20px;font-size:12px;color:#475569;">This is an automated notification from the Pro Health Peptides order system.</p>
+          <p style="margin-top:20px;font-size:12px;color:#475569;">This is an automated notification from the PH Labs order system.</p>
         </div>
       `,
     },
@@ -409,7 +409,7 @@ export default function EmailPreviewTab() {
       await addDoc(collection(db, 'mail'), {
         to: sendTestEmail.trim(),
         message: {
-          subject: `[TEST] ${selectedTemplate.label} — Pro Health Peptides`,
+          subject: `[TEST] ${selectedTemplate.label} — PH Labs`,
           html: previewHtml,
         },
         createdAt: Timestamp.now(),

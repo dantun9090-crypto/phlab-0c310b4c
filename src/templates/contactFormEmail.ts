@@ -16,7 +16,7 @@ export function buildContactFormEmail(opts: ContactFormEmailOptions): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Contact Form — Pro Health Peptides</title>
+  <title>Contact Form — PH Labs</title>
 </head>
 <body style="margin:0;padding:0;background:${C.bg};font-family:${EMAIL_FONT};">
 
@@ -32,7 +32,7 @@ export function buildContactFormEmail(opts: ContactFormEmailOptions): string {
               <span style="font-size:22px;">📩</span>
             </div>
             <div style="font-size:18px;font-weight:800;color:${C.textBright};letter-spacing:-0.3px;">New Contact Message</div>
-            <div style="font-size:12px;color:${C.textMuted};margin-top:4px;">Pro Health Peptides — Admin Notification</div>
+            <div style="font-size:12px;color:${C.textMuted};margin-top:4px;">PH Labs — Admin Notification</div>
           </td>
         </tr>
 
@@ -81,7 +81,7 @@ export function buildContactFormEmail(opts: ContactFormEmailOptions): string {
         <tr>
           <td style="background:${C.bgCardDark};border:1px solid ${C.border};border-top:none;border-radius:0 0 16px 16px;padding:16px 32px;text-align:center;">
             <div style="height:3px;background:linear-gradient(90deg,#1d4ed8,#3b82f6,#60a5fa);border-radius:2px;margin-bottom:12px;"></div>
-            <div style="font-size:11px;color:${C.textDimmed};">Pro Health Peptides Admin Panel · <a href="https://www.prohealthpeptides.co.uk" style="color:${C.accent};text-decoration:none;">prohealthpeptides.co.uk</a></div>
+            <div style="font-size:11px;color:${C.textDimmed};">PH Labs Admin Panel · <a href="https://www.prohealthpeptides.co.uk" style="color:${C.accent};text-decoration:none;">prohealthpeptides.co.uk</a></div>
           </td>
         </tr>
 

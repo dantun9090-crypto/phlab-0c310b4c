@@ -1,12 +1,12 @@
-# Pro Health Peptides UK
+# PH Labs UK
 
 > UK supplier of HPLC-verified research peptides with lab-tested purity, transparent certificates of analysis, and fast UK dispatch for research professionals.
 
-Pro Health Peptides UK provides research-grade peptides for laboratory and research use. Every batch is independently HPLC-tested, and certificates of analysis are published for full transparency. Products are intended for qualified researchers only and are not for human consumption.
+PH Labs UK provides research-grade peptides for laboratory and research use. Every batch is independently HPLC-tested, and certificates of analysis are published for full transparency. Products are intended for qualified researchers only and are not for human consumption.
 
 ## Pages
 
-- [Home](/): Overview of Pro Health Peptides UK and featured research peptides.
+- [Home](/): Overview of PH Labs UK and featured research peptides.
 - [Products](/products): Full catalogue of research peptides with purity data.
 - [Research](/research): Research applications and study summaries.
 - [Quality Control](/quality-control): HPLC testing methodology and QC standards.

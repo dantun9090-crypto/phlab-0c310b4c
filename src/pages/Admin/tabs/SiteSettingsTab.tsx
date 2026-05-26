@@ -79,7 +79,7 @@ const DEFAULTS: SiteSettings = {
   linkedinUrl: '',
   footerTagline: 'Premium research-grade peptides. Laboratory use only.',
   footerLegal: 'For laboratory research use only. Not for human consumption.',
-  companyName: 'Pro Health Peptides',
+  companyName: 'PH Labs',
   // Payment methods — TrueLayer on by default, bank transfer off
   trueLayerEnabled: false,
   bankTransferEnabled: true,
@@ -146,7 +146,7 @@ const SECTIONS: { title: string; icon: any; color: string; fields: Field[] }[] =
     icon: Link2,
     color: 'text-blue-400',
     fields: [
-      { key: 'companyName', label: 'Company Name', placeholder: 'Pro Health Peptides' },
+      { key: 'companyName', label: 'Company Name', placeholder: 'PH Labs' },
       { key: 'footerTagline', label: 'Footer Tagline', placeholder: 'Premium research-grade peptides.' },
       { key: 'footerLegal', label: 'Legal Disclaimer Line', placeholder: 'For laboratory research use only.' },
       { key: 'companyRegNumber', label: 'Company Registration Number', placeholder: '12345678', hint: 'UK Companies House registration number — shown in footer and Contact page' },
@@ -476,7 +476,7 @@ export default function SiteSettingsTab() {
                   <Building2 className="w-3 h-3" /> Bank Account Details (shown to customers)
                 </p>
                 {([
-                  { key: 'bankTransferName', label: 'Account Name', placeholder: 'Pro Health Peptides Ltd' },
+                  { key: 'bankTransferName', label: 'Account Name', placeholder: 'PH Labs Ltd' },
                   { key: 'bankTransferSortCode', label: 'Sort Code', placeholder: '12-34-56' },
                   { key: 'bankTransferAccountNumber', label: 'Account Number', placeholder: '12345678' },
                   { key: 'bankTransferIBAN', label: 'IBAN (optional)', placeholder: 'GB12 ABCD 1234 5678 90' },

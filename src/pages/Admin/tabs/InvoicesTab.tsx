@@ -71,7 +71,7 @@ export default function InvoicesTab() {
     useManual: false,
     amount: '',
     currency: 'gbp',
-    description: 'Pro Health Peptides — Invoice',
+    description: 'PH Labs — Invoice',
     dueDate: '',
   });
 
@@ -172,7 +172,7 @@ export default function InvoicesTab() {
       await addDoc(collection(db, 'mail'), {
         to: email,
         message: {
-          subject: `Invoice from Pro Health Peptides — ${invoiceRef}`,
+          subject: `Invoice from PH Labs — ${invoiceRef}`,
           html,
         },
         createdAt: Timestamp.now(),
@@ -205,7 +205,7 @@ export default function InvoicesTab() {
       useManual: false,
       amount: '',
       currency: 'gbp',
-      description: 'Pro Health Peptides — Invoice',
+      description: 'PH Labs — Invoice',
       dueDate: '',
     });
     setCustomerSearch('');

@@ -24,7 +24,7 @@ export function buildAdminInvoiceEmail(opts: AdminInvoiceEmailOptions): string {
       <table cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:28px;">
         <tr>
           <td>
-            <div style="font-size:22px;font-weight:800;color:${C.textBright};letter-spacing:-0.5px;">Pro Health Peptides</div>
+            <div style="font-size:22px;font-weight:800;color:${C.textBright};letter-spacing:-0.5px;">PH Labs</div>
             <div style="font-size:12px;color:${C.textMuted};margin-top:2px;">prohealthpeptides.co.uk</div>
           </td>
           <td align="right">
@@ -38,7 +38,7 @@ export function buildAdminInvoiceEmail(opts: AdminInvoiceEmailOptions): string {
 
       <p style="color:${C.text};font-size:15px;line-height:1.6;margin:0 0 24px;">
         Dear <strong style="color:${C.textBright};">${opts.customerName}</strong>,<br><br>
-        Please find below your invoice from Pro Health Peptides. Kindly ensure payment is made by the due date.
+        Please find below your invoice from PH Labs. Kindly ensure payment is made by the due date.
       </p>
 
       <!-- Invoice card -->

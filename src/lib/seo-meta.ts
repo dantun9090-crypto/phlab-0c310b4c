@@ -16,8 +16,8 @@ export const SEO_LIMITS = {
 } as const;
 
 export const SITE_URL = "https://www.prohealthpeptides.co.uk";
-export const SITE_NAME = "Pro Health Peptides UK";
-export const BRAND = "Pro Health UK";
+export const SITE_NAME = "PH Labs UK";
+export const BRAND = "PH Labs UK";
 
 /**
  * Build the canonical URL for a splat-rendered path. Strips leading and
@@ -63,7 +63,7 @@ export function metaForPath(splat: string): PageMeta {
     return {
       title: clamp(`${name} — Peptide | ${BRAND}`, SEO_LIMITS.titleMax),
       description: clamp(
-        `${name}: HPLC-verified research peptide with COA. UK dispatch from Pro Health Peptides.`,
+        `${name}: HPLC-verified research peptide with COA. UK dispatch from PH Labs.`,
         SEO_LIMITS.descriptionMax,
       ),
       ogType: "product",
@@ -76,7 +76,7 @@ export function metaForPath(splat: string): PageMeta {
     return {
       title: clamp(`${name} — ${parent} | ${BRAND}`, SEO_LIMITS.titleMax),
       description: clamp(
-        `${name}: ${parent.toLowerCase()} notes and references from Pro Health Peptides UK.`,
+        `${name}: ${parent.toLowerCase()} notes and references from PH Labs UK.`,
         SEO_LIMITS.descriptionMax,
       ),
       ogType: "article",

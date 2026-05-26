@@ -3,8 +3,8 @@ import { useSEO } from '@/hooks/useSEO';
 
 export default function Privacy() {
   useSEO('privacy', {
-    title: 'Privacy Policy | Pro Health Peptides UK',
-    metaDescription: 'Privacy and data protection policy for Pro Health Peptides Ltd. UK GDPR compliant. Learn how we collect, process and protect your personal data.',
+    title: 'Privacy Policy | PH Labs UK',
+    metaDescription: 'Privacy and data protection policy for PH Labs Ltd. UK GDPR compliant. Learn how we collect, process and protect your personal data.',
     canonical: 'https://www.prohealthpeptides.co.uk/privacy',
   });
 

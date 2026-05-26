@@ -6,9 +6,9 @@ import { LoadingFallback } from "@/components/LoadingFallback";
 
 const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
-const TITLE = "Research Peptides UK | Full Catalogue | Pro Health Peptides";
+const TITLE = "Research Peptides UK | Full Catalogue | PH Labs";
 const DESCRIPTION =
-  "Browse HPLC-verified research peptides from Pro Health Peptides. Lab-tested purity, transparent COAs, fast UK dispatch.";
+  "Browse HPLC-verified research peptides from PH Labs. Lab-tested purity, transparent COAs, fast UK dispatch.";
 const URL = `${SITE_URL}/products`;
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
@@ -85,7 +85,7 @@ function SeoCatalogue({ products }: { products: SeoProduct[] }) {
     <div aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
       <h1>Research Peptides UK — Full Catalogue</h1>
       <p>
-        HPLC-tested, research-grade lyophilised peptides from Pro Health
+        HPLC-tested, research-grade lyophilised peptides from PH Labs
         Peptides UK. {products.length} compounds available.
       </p>
       <ul>
