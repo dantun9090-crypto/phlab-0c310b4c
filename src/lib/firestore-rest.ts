@@ -132,13 +132,18 @@ export async function fetchAllProducts(): Promise<SeoProduct[]> {
 export async function fetchProductBySlug(slug: string): Promise<SeoProduct | null> {
   if (HIDDEN_SLUGS.has(slug)) return null;
   const all = await fetchAllProducts();
-  // Exact match first, then fall back to the legacy auto-slug from name
-  // so older indexed URLs (e.g. the long Merchant-style title) still resolve.
-  return (
-    all.find((p) => p.slug === slug) ??
-    all.find((p) => slugify(p.name) === slug) ??
-    null
-  );
+  // 1) Exact slug match
+  // 2) Legacy auto-slug from product name
+  // 3) Prefix match — handles short Merchant Center URLs like
+  //    "klow-blend" that should resolve to the full SEO slug
+  //    "klow-blend-laboratory-reference-blend-research-use".
+  const exact = all.find((p) => p.slug === slug);
+  if (exact) return exact;
+  const legacy = all.find((p) => slugify(p.name) === slug);
+  if (legacy) return legacy;
+  const prefix = all.filter((p) => p.slug.startsWith(slug + "-"));
+  if (prefix.length === 1) return prefix[0];
+  return null;
 }
 
 export { slugify };

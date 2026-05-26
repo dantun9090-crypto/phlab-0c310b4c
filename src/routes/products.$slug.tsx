@@ -1,4 +1,4 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
 import { fetchProductBySlug, type SeoProduct } from "@/lib/firestore-rest";
 import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
@@ -11,6 +11,16 @@ export const Route = createFileRoute("/products/$slug")({
   loader: async ({ params }) => {
     const product = await fetchProductBySlug(params.slug);
     if (!product) throw notFound();
+    // If we resolved via prefix/legacy match, 301 to the canonical slug
+    // so Google Merchant Center short URLs (e.g. /products/klow-blend)
+    // redirect to the real product page instead of returning 404.
+    if (product.slug !== params.slug) {
+      throw redirect({
+        to: "/products/$slug",
+        params: { slug: product.slug },
+        statusCode: 301,
+      });
+    }
     return { product };
   },
   head: ({ params, loaderData }) => {
