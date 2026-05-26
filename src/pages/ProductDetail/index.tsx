@@ -1211,23 +1211,11 @@ export default function ProductDetail() {
                 </div>
               )}
 
-              {/* Outcome headline */}
-              {(() => {
-                const lower = product.name.toLowerCase();
-                let outcomeLabel = 'Research Peptide';
-                if (lower.includes('bpc') || lower.includes('tb-500') || lower.includes('tb500') || lower.includes('glow') || lower.includes('klow')) outcomeLabel = 'Tissue Repair Research';
-                else if (lower.includes('semaglutide') || lower.includes('tirzepatide') || lower.includes('retatrutide')) outcomeLabel = 'Metabolic & GLP-1 Research';
-                else if (lower.includes('ipamorelin') || lower.includes('cjc') || lower.includes('mod grf') || lower.includes('ghrp') || lower.includes('sermorelin')) outcomeLabel = 'Growth Hormone Research';
-                else if (lower.includes('ghk') || lower.includes('copper') || lower.includes('melanotan') || lower.includes('epithalon')) outcomeLabel = 'Skin & Longevity Research';
-                else if (lower.includes('semax') || lower.includes('selank') || lower.includes('dihexa') || lower.includes('cortexin')) outcomeLabel = 'Cognitive & Neuroprotective Research';
-                else if (lower.includes('follistatin') || lower.includes('myostatin') || lower.includes('lgd')) outcomeLabel = 'Muscle & Performance Research';
-                return (
-                  <div className="inline-flex items-center gap-2 mt-3 mb-4 px-3.5 py-2 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/20">
-                    <Microscope className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-emerald-300 text-sm font-semibold">{outcomeLabel}</span>
-                  </div>
-                );
-              })()}
+              {/* Neutral compliance label (no health/fitness/medical claims) */}
+              <div className="inline-flex items-center gap-2 mt-3 mb-4 px-3.5 py-2 rounded-xl bg-emerald-500/[0.08] border border-emerald-500/20">
+                <Microscope className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-emerald-300 text-sm font-semibold">Analytical Reference Material · For Research Use Only</span>
+              </div>
 
               {/* ── 3-Part Description ── */}
               {(() => {
