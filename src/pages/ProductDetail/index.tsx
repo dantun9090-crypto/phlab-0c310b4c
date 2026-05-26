@@ -1443,7 +1443,7 @@ export default function ProductDetail() {
                   { label: 'Purity', value: product.purity },
                   { label: 'Storage Conditions', value: specs.storage },
                   { label: 'Shelf Life', value: specs.shelfLife },
-                  { label: 'Reconstitution Solvent', value: specs.solvent },
+                  { label: 'Physical Form', value: 'Lyophilised powder, sealed vial' },
                   { label: 'SKU / Batch Ref.', value: product.sku || 'N/A' },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex justify-between items-start gap-4 py-3 border-b border-white/[0.04] last:border-0">
