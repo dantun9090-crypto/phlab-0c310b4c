@@ -76,7 +76,7 @@ export const Route = createFileRoute("/$")({
 
 function LegacyMount() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<LoadingFallback />}>
       <LegacyApp />
     </Suspense>
   );
