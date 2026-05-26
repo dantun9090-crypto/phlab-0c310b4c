@@ -69,7 +69,10 @@ export const Route = createFileRoute("/products/$slug")({
       description: baseDesc.slice(0, 5000),
       image,
       url,
-      brand: { "@type": "Brand", name: "PH Labs" },
+      sku: product?.id,
+      mpn: product?.id,
+      brand: { "@type": "Brand", name: "PH Labs", url: SITE_URL },
+      manufacturer: { "@type": "Organization", name: "PH Labs UK", url: SITE_URL },
       category: product?.category,
     };
     if (measure) {
@@ -127,6 +130,18 @@ export const Route = createFileRoute("/products/$slug")({
       links: [{ rel: "canonical", href: url }],
       scripts: [
         { type: "application/ld+json", children: JSON.stringify(jsonLd) },
+        {
+          type: "application/ld+json",
+          children: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+              { "@type": "ListItem", position: 2, name: "Products", item: `${SITE_URL}/products` },
+              { "@type": "ListItem", position: 3, name, item: url },
+            ],
+          }),
+        },
       ],
     };
   },
