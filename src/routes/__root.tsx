@@ -82,6 +82,44 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "google-site-verification", content: "tYtU-dRlfAq14D7lyPTYf8noiJH-b0LifcvvrGi8AZw" },
       { key: "og:type", property: "og:type", content: "website" },
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": "https://www.phlabs.co.uk/#organization",
+              name: "PH Labs UK",
+              url: "https://www.phlabs.co.uk",
+              logo: {
+                "@type": "ImageObject",
+                url: "https://www.phlabs.co.uk/og-image.jpg",
+              },
+              areaServed: "GB",
+              sameAs: [
+                "https://www.facebook.com/prohealthpeptides",
+                "https://www.instagram.com/prohealthpeptides",
+              ],
+            },
+            {
+              "@type": "WebSite",
+              "@id": "https://www.phlabs.co.uk/#website",
+              url: "https://www.phlabs.co.uk",
+              name: "PH Labs UK",
+              inLanguage: "en-GB",
+              publisher: { "@id": "https://www.phlabs.co.uk/#organization" },
+              potentialAction: {
+                "@type": "SearchAction",
+                target: "https://www.phlabs.co.uk/search?q={search_term_string}",
+                "query-input": "required name=search_term_string",
+              },
+            },
+          ],
+        }),
+      },
+    ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://firestore.googleapis.com", crossOrigin: "" },
