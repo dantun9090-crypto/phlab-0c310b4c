@@ -98,6 +98,20 @@ function toProduct(doc: any): SeoProduct | null {
   };
 }
 
+/**
+ * Slugs hidden from the public site (catalogue, sitemap, product pages).
+ * Used to deindex products from Google Merchant auto-feed without deleting
+ * the Firestore document. After ~3–7 days Google re-crawls and drops the
+ * product from Merchant Center automatically.
+ */
+const HIDDEN_SLUGS: Set<string> = new Set(["bpc-157"]);
+
+function isHidden(p: SeoProduct): boolean {
+  if (HIDDEN_SLUGS.has(p.slug)) return true;
+  if (HIDDEN_SLUGS.has(slugify(p.name))) return true;
+  return false;
+}
+
 /** Fetch all active, visible products from Firestore via REST. */
 export async function fetchAllProducts(): Promise<SeoProduct[]> {
   const url = `${BASE}/product_stock?key=${API_KEY}&pageSize=300`;
@@ -107,12 +121,16 @@ export async function fetchAllProducts(): Promise<SeoProduct[]> {
   const docs: any[] = json.documents ?? [];
   const products = docs
     .map(toProduct)
-    .filter((p): p is SeoProduct => p != null && p.isActive && p.visibility !== "hidden")
+    .filter(
+      (p): p is SeoProduct =>
+        p != null && p.isActive && p.visibility !== "hidden" && !isHidden(p),
+    )
     .sort((a, b) => a.displayOrder - b.displayOrder);
   return products;
 }
 
 export async function fetchProductBySlug(slug: string): Promise<SeoProduct | null> {
+  if (HIDDEN_SLUGS.has(slug)) return null;
   const all = await fetchAllProducts();
   // Exact match first, then fall back to the legacy auto-slug from name
   // so older indexed URLs (e.g. the long Merchant-style title) still resolve.
