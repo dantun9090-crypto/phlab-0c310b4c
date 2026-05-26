@@ -98,7 +98,7 @@ export default function VipStore() {
             <Lock className="w-9 h-9 text-amber-400" />
           </div>
           <h1 className="text-2xl font-bold text-white mb-3">Members Only</h1>
-          <p className="text-[#6b8fba] mb-8">Please log in to access the VIP store.</p>
+          <p className="text-[#9cb8d9] mb-8">Please log in to access the VIP store.</p>
           <a
             href="/login"
             className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-400 text-gray-900 font-bold px-8 py-3.5 rounded-xl hover:from-amber-400 hover:to-amber-300 transition-all"
@@ -123,7 +123,7 @@ export default function VipStore() {
             <Crown className="w-9 h-9 text-amber-400" />
           </div>
           <h1 className="text-2xl font-bold text-white mb-3">VIP Access Required</h1>
-          <p className="text-[#6b8fba] mb-2">This exclusive store is available to VIP members only.</p>
+          <p className="text-[#9cb8d9] mb-2">This exclusive store is available to VIP members only.</p>
           <p className="text-[#4a6a9a] text-sm mb-8">Contact us to request VIP membership or speak to your account manager.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <a
@@ -172,7 +172,7 @@ export default function VipStore() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="text-[#6b8fba] max-w-xl mx-auto"
+            className="text-[#9cb8d9] max-w-xl mx-auto"
           >
             Premium compounds and limited batches available exclusively to verified VIP researchers.
           </motion.p>
@@ -198,7 +198,7 @@ export default function VipStore() {
           >
             <Crown className="w-14 h-14 text-amber-500/30 mx-auto mb-4" />
             <h2 className="text-xl font-semibold text-white mb-2">Coming Soon</h2>
-            <p className="text-[#6b8fba] max-w-sm mx-auto">
+            <p className="text-[#9cb8d9] max-w-sm mx-auto">
               VIP exclusive products are being prepared. Check back soon for premium compounds available only to members.
             </p>
           </motion.div>

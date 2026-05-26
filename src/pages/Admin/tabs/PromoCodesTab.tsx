@@ -130,7 +130,7 @@ export default function PromoCodesTab() {
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Tag className="w-6 h-6 text-emerald-400" /> Promo Codes
           </h1>
-          <p className="text-sm text-[#6b8fba] mt-1">Manage discount codes from the /coupons collection.</p>
+          <p className="text-sm text-[#9cb8d9] mt-1">Manage discount codes from the /coupons collection.</p>
         </div>
         <button
           onClick={startNew}

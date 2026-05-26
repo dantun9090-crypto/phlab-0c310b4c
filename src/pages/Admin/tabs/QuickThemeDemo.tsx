@@ -25,7 +25,7 @@ export default function QuickThemeDemo() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-[#f0f6ff]">Quick Themes</h1>
-              <p className="text-[#6b8fba] text-sm">Apply a theme instantly — changes take effect site-wide</p>
+              <p className="text-[#9cb8d9] text-sm">Apply a theme instantly — changes take effect site-wide</p>
             </div>
           </div>
         </div>
@@ -81,7 +81,7 @@ export default function QuickThemeDemo() {
         </div>
 
         <p className="mt-6 text-center text-xs text-[#3a5a82]">
-          See all 30 templates in the <strong className="text-[#6b8fba]">Theme Templates</strong> tab above
+          See all 30 templates in the <strong className="text-[#9cb8d9]">Theme Templates</strong> tab above
         </p>
       </div>
     </div>

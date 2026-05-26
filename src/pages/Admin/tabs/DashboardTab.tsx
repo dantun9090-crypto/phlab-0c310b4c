@@ -300,7 +300,7 @@ export default function DashboardTab() {
               className={`flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-200 ${a.bg} group`}
             >
               <a.icon className={`w-5 h-5 ${a.color} group-hover:scale-110 transition-transform`} />
-              <span className="text-[#6b8fba] text-[10px] font-medium text-center leading-tight group-hover:text-white transition-colors">{a.label}</span>
+              <span className="text-[#9cb8d9] text-[10px] font-medium text-center leading-tight group-hover:text-white transition-colors">{a.label}</span>
             </button>
           ))}
         </div>
@@ -429,7 +429,7 @@ export default function DashboardTab() {
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/[0.03] transition-colors"
                 >
                   <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${item.color}`} />
-                  <span className="text-[#6b8fba] text-xs flex-1">{item.message}</span>
+                  <span className="text-[#9cb8d9] text-xs flex-1">{item.message}</span>
                   <span className="text-[#2a4a7a] text-[10px] shrink-0 font-mono">{item.time}</span>
                 </motion.div>
               ))}

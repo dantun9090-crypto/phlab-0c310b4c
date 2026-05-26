@@ -157,7 +157,7 @@ export default function IpWhitelistTab() {
             <p className="text-xs text-[#3a5a82]">Block Admin panel access from unrecognised IPs</p>
           </div>
         </div>
-        <button onClick={loadData} aria-label="Refresh IP whitelist" className="p-2 rounded-lg hover:bg-white/[0.04] text-[#3a5a82] hover:text-[#6b8fba] transition-colors" title="Refresh">
+        <button onClick={loadData} aria-label="Refresh IP whitelist" className="p-2 rounded-lg hover:bg-white/[0.04] text-[#3a5a82] hover:text-[#9cb8d9] transition-colors" title="Refresh">
           <RefreshCw className="w-4 h-4" />
         </button>
       </div>
@@ -187,7 +187,7 @@ export default function IpWhitelistTab() {
           className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all ${
             enabled
               ? 'bg-green-500/10 border-green-500/30 text-green-300 hover:bg-green-500/20'
-              : 'bg-white/[0.04] border-white/[0.08] text-[#6b8fba] hover:border-blue-500/30 hover:text-blue-300'
+              : 'bg-white/[0.04] border-white/[0.08] text-[#9cb8d9] hover:border-blue-500/30 hover:text-blue-300'
           }`}
         >
           {enabled ? <ToggleRight className="w-4 h-4" /> : <ToggleLeft className="w-4 h-4" />}
@@ -206,7 +206,7 @@ export default function IpWhitelistTab() {
           <div className="flex gap-2">
             <button
               onClick={() => { navigator.clipboard.writeText(myIp); showToast('Copied to clipboard'); }}
-              className="p-1.5 rounded-lg hover:bg-white/[0.06] text-[#3a5a82] hover:text-[#6b8fba] transition-colors"
+              className="p-1.5 rounded-lg hover:bg-white/[0.06] text-[#3a5a82] hover:text-[#9cb8d9] transition-colors"
               title="Copy IP"
             >
               <Copy className="w-3.5 h-3.5" />

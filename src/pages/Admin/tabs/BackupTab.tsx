@@ -142,7 +142,7 @@ export default function BackupTab() {
             </div>
             Database Backups
           </h1>
-          <p className="text-[#6b8fba] text-sm mt-1">Export all Firestore collections as a ZIP archive saved to Firebase Storage</p>
+          <p className="text-[#9cb8d9] text-sm mt-1">Export all Firestore collections as a ZIP archive saved to Firebase Storage</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -192,7 +192,7 @@ export default function BackupTab() {
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {COLLECTIONS.map(col => (
-            <div key={col} className="flex items-center gap-2 px-3 py-2 bg-[#04101f] border border-white/[0.05] rounded-lg text-[#6b8fba] text-sm">
+            <div key={col} className="flex items-center gap-2 px-3 py-2 bg-[#04101f] border border-white/[0.05] rounded-lg text-[#9cb8d9] text-sm">
               <Shield className="w-3 h-3 text-blue-400 shrink-0" />
               {col}
             </div>
@@ -215,7 +215,7 @@ export default function BackupTab() {
         </div>
 
         {listLoading ? (
-          <div className="flex items-center justify-center py-12 gap-2 text-[#6b8fba] text-sm">
+          <div className="flex items-center justify-center py-12 gap-2 text-[#9cb8d9] text-sm">
             <Loader2 className="w-4 h-4 animate-spin" /> Loading backups…
           </div>
         ) : backups.length === 0 ? (

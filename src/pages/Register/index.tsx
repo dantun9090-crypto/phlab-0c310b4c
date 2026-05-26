@@ -136,7 +136,7 @@ export default function Register() {
       <div className="container mx-auto px-6">
         <div className="max-w-md mx-auto">
           {/* Back to shop link */}
-          <Link to="/products" className="inline-flex items-center gap-1.5 text-[#6b8fba] hover:text-white text-sm mb-8 transition-colors group">
+          <Link to="/products" className="inline-flex items-center gap-1.5 text-[#9cb8d9] hover:text-white text-sm mb-8 transition-colors group">
             <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
             Back to shop
           </Link>
@@ -145,7 +145,7 @@ export default function Register() {
               <User className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-            <p className="text-[#6b8fba]">Join Pro Health Peptides for exclusive benefits</p>
+            <p className="text-[#9cb8d9]">Join Pro Health Peptides for exclusive benefits</p>
           </div>
 
           {/* Form Card */}
@@ -176,7 +176,7 @@ export default function Register() {
                   <CheckCircle2 className="w-8 h-8 text-green-400" />
                 </div>
                 <h2 className="text-xl font-bold text-white mb-2">Account Created!</h2>
-                <p className="text-[#6b8fba]">Redirecting to your account...</p>
+                <p className="text-[#9cb8d9]">Redirecting to your account...</p>
               </div>
             ) : (
               <>
@@ -210,7 +210,7 @@ export default function Register() {
                 {/* Name Fields */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="reg-firstName" className="block text-sm font-medium text-[#6b8fba] mb-2">First Name</label>
+                    <label htmlFor="reg-firstName" className="block text-sm font-medium text-[#9cb8d9] mb-2">First Name</label>
                     <input
                       id="reg-firstName"
                       type="text"
@@ -223,7 +223,7 @@ export default function Register() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="reg-lastName" className="block text-sm font-medium text-[#6b8fba] mb-2">Last Name</label>
+                    <label htmlFor="reg-lastName" className="block text-sm font-medium text-[#9cb8d9] mb-2">Last Name</label>
                     <input
                       id="reg-lastName"
                       type="text"
@@ -239,7 +239,7 @@ export default function Register() {
 
                 {/* Email */}
                 <div>
-                  <label htmlFor="reg-email" className="block text-sm font-medium text-[#6b8fba] mb-2">Email</label>
+                  <label htmlFor="reg-email" className="block text-sm font-medium text-[#9cb8d9] mb-2">Email</label>
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a5a82] pointer-events-none z-10" />
                     <input
@@ -257,7 +257,7 @@ export default function Register() {
 
                 {/* Password */}
                 <div>
-                  <label htmlFor="reg-password" className="block text-sm font-medium text-[#6b8fba] mb-2">Password</label>
+                  <label htmlFor="reg-password" className="block text-sm font-medium text-[#9cb8d9] mb-2">Password</label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a5a82] pointer-events-none z-10" />
                     <input
@@ -284,7 +284,7 @@ export default function Register() {
 
                 {/* Confirm Password */}
                 <div>
-                  <label htmlFor="reg-confirmPassword" className="block text-sm font-medium text-[#6b8fba] mb-2">Confirm Password</label>
+                  <label htmlFor="reg-confirmPassword" className="block text-sm font-medium text-[#9cb8d9] mb-2">Confirm Password</label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a5a82] pointer-events-none z-10" />
                     <input
@@ -310,7 +310,7 @@ export default function Register() {
 
                 {/* Phone (optional) */}
                 <div>
-                  <label htmlFor="reg-phone" className="block text-sm font-medium text-[#6b8fba] mb-2">Phone <span className="text-[#3a5a82] font-normal">(optional)</span></label>
+                  <label htmlFor="reg-phone" className="block text-sm font-medium text-[#9cb8d9] mb-2">Phone <span className="text-[#3a5a82] font-normal">(optional)</span></label>
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a5a82] pointer-events-none z-10" />
                     <input
@@ -346,7 +346,7 @@ export default function Register() {
                         )}
                       </div>
                     </div>
-                    <span className="text-sm text-[#6b8fba] leading-snug">
+                    <span className="text-sm text-[#9cb8d9] leading-snug">
                       I am 18+ and agree to the{' '}
                       <Link to="/terms-and-conditions" className="text-blue-400 hover:text-blue-300" target="_blank" rel="noopener">Terms & Conditions</Link>
                       {' '}and{' '}
@@ -378,7 +378,7 @@ export default function Register() {
             {/* Login Link */}
             {!success && (
               <div className="mt-6 text-center">
-                <p className="text-[#6b8fba]">
+                <p className="text-[#9cb8d9]">
                   Already have an account?{' '}
                   <Link to="/account" className="text-blue-400 hover:text-blue-300 font-medium">
                     Sign in

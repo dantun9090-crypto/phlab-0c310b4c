@@ -154,7 +154,7 @@ export default function AdvertsTab() {
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <Megaphone className="w-6 h-6 text-blue-400" /> Adverts &amp; Promotions
           </h1>
-          <p className="text-[#6b8fba] text-sm mt-0.5">Manage on-site banners, strips and promotional blocks</p>
+          <p className="text-[#9cb8d9] text-sm mt-0.5">Manage on-site banners, strips and promotional blocks</p>
         </div>
         <button
           onClick={() => { setEditing({ ...EMPTY }); setIsNew(true); }}
@@ -189,7 +189,7 @@ export default function AdvertsTab() {
       ) : adverts.length === 0 && !editing ? (
         <div className="bg-[#0b1a30]/80 border border-white/[0.07] rounded-2xl p-16 text-center">
           <Megaphone className="w-10 h-10 text-[#2a4a7a] mx-auto mb-4" />
-          <p className="text-[#6b8fba] font-medium mb-1">No adverts yet</p>
+          <p className="text-[#9cb8d9] font-medium mb-1">No adverts yet</p>
           <p className="text-[#2a4a7a] text-sm mb-5">Create your first promotional advert to start driving conversions.</p>
           <button
             onClick={() => { setEditing({ ...EMPTY }); setIsNew(true); }}
@@ -227,7 +227,7 @@ export default function AdvertsTab() {
                     {advert.isActive ? 'Live' : 'Paused'}
                   </span>
                 </div>
-                <p className="text-[#6b8fba] text-xs truncate">{advert.subtitle}</p>
+                <p className="text-[#9cb8d9] text-xs truncate">{advert.subtitle}</p>
                 <p className="text-[#2a4a7a] text-[10px] mt-0.5">{placementLabel(advert.placement)}</p>
               </div>
 
@@ -290,7 +290,7 @@ export default function AdvertsTab() {
                 <h2 className="text-white font-semibold text-lg">
                   {isNew ? 'New Advert' : 'Edit Advert'}
                 </h2>
-                <button onClick={() => setEditing(null)} aria-label="Close advert editor" className="p-2 rounded-lg hover:bg-white/5 text-[#6b8fba]">
+                <button onClick={() => setEditing(null)} aria-label="Close advert editor" className="p-2 rounded-lg hover:bg-white/5 text-[#9cb8d9]">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -300,7 +300,7 @@ export default function AdvertsTab() {
 
                 {/* Title */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#6b8fba] uppercase tracking-wider mb-1.5">Title *</label>
+                  <label className="block text-xs font-semibold text-[#9cb8d9] uppercase tracking-wider mb-1.5">Title *</label>
                   <input
                     value={editing.title}
                     onChange={e => setEditing(p => p ? { ...p, title: e.target.value } : p)}
@@ -311,7 +311,7 @@ export default function AdvertsTab() {
 
                 {/* Subtitle */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#6b8fba] uppercase tracking-wider mb-1.5">Subtitle</label>
+                  <label className="block text-xs font-semibold text-[#9cb8d9] uppercase tracking-wider mb-1.5">Subtitle</label>
                   <input
                     value={editing.subtitle}
                     onChange={e => setEditing(p => p ? { ...p, subtitle: e.target.value } : p)}
@@ -323,7 +323,7 @@ export default function AdvertsTab() {
                 {/* CTA */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-[#6b8fba] uppercase tracking-wider mb-1.5">Button Text</label>
+                    <label className="block text-xs font-semibold text-[#9cb8d9] uppercase tracking-wider mb-1.5">Button Text</label>
                     <input
                       value={editing.ctaText}
                       onChange={e => setEditing(p => p ? { ...p, ctaText: e.target.value } : p)}
@@ -332,7 +332,7 @@ export default function AdvertsTab() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-[#6b8fba] uppercase tracking-wider mb-1.5">Button URL</label>
+                    <label className="block text-xs font-semibold text-[#9cb8d9] uppercase tracking-wider mb-1.5">Button URL</label>
                     <div className="relative">
                       <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#2a4a7a]" />
                       <input
@@ -347,7 +347,7 @@ export default function AdvertsTab() {
 
                 {/* Placement */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#6b8fba] uppercase tracking-wider mb-1.5">Placement</label>
+                  <label className="block text-xs font-semibold text-[#9cb8d9] uppercase tracking-wider mb-1.5">Placement</label>
                   <select
                     value={editing.placement}
                     onChange={e => setEditing(p => p ? { ...p, placement: e.target.value as Advert['placement'] } : p)}
@@ -361,7 +361,7 @@ export default function AdvertsTab() {
 
                 {/* Image upload */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#6b8fba] uppercase tracking-wider mb-1.5">Background Image (optional)</label>
+                  <label className="block text-xs font-semibold text-[#9cb8d9] uppercase tracking-wider mb-1.5">Background Image (optional)</label>
                   {editing.imageUrl ? (
                     <div className="relative rounded-xl overflow-hidden border border-white/[0.08] aspect-[3/1]">
                       <img src={editing.imageUrl} alt="preview" className="w-full h-full object-cover" />
@@ -378,12 +378,12 @@ export default function AdvertsTab() {
                       {uploading ? (
                         <>
                           <Loader2 className="w-6 h-6 text-blue-400 animate-spin" />
-                          <span className="text-xs text-[#6b8fba]">Uploading {uploadProgress}%...</span>
+                          <span className="text-xs text-[#9cb8d9]">Uploading {uploadProgress}%...</span>
                         </>
                       ) : (
                         <>
                           <ImageIcon className="w-6 h-6 text-[#2a4a7a] group-hover:text-blue-400 transition-colors" />
-                          <span className="text-xs text-[#6b8fba]">Click to upload image</span>
+                          <span className="text-xs text-[#9cb8d9]">Click to upload image</span>
                           <span className="text-[10px] text-[#2a4a7a]">JPG, PNG, WebP up to 5MB</span>
                         </>
                       )}
@@ -398,7 +398,7 @@ export default function AdvertsTab() {
                 {/* Colours */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-[#6b8fba] uppercase tracking-wider mb-1.5">Background Colour</label>
+                    <label className="block text-xs font-semibold text-[#9cb8d9] uppercase tracking-wider mb-1.5">Background Colour</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color" value={editing.bgColor}
@@ -413,7 +413,7 @@ export default function AdvertsTab() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-[#6b8fba] uppercase tracking-wider mb-1.5">Text Colour</label>
+                    <label className="block text-xs font-semibold text-[#9cb8d9] uppercase tracking-wider mb-1.5">Text Colour</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="color" value={editing.textColor}
@@ -446,7 +446,7 @@ export default function AdvertsTab() {
                 {/* Live preview */}
                 {editing.title && (
                   <div>
-                    <label className="block text-xs font-semibold text-[#6b8fba] uppercase tracking-wider mb-2">Preview</label>
+                    <label className="block text-xs font-semibold text-[#9cb8d9] uppercase tracking-wider mb-2">Preview</label>
                     <div
                       className="rounded-xl p-5 relative overflow-hidden"
                       style={{ background: editing.imageUrl ? undefined : editing.bgColor, color: editing.textColor }}
@@ -475,7 +475,7 @@ export default function AdvertsTab() {
               <div className="px-6 py-4 border-t border-white/[0.07] flex gap-3">
                 <button
                   onClick={() => setEditing(null)}
-                  className="flex-1 px-4 py-2.5 border border-white/[0.08] text-[#6b8fba] hover:text-white hover:border-white/20 rounded-xl text-sm font-medium transition-colors"
+                  className="flex-1 px-4 py-2.5 border border-white/[0.08] text-[#9cb8d9] hover:text-white hover:border-white/20 rounded-xl text-sm font-medium transition-colors"
                 >
                   Cancel
                 </button>

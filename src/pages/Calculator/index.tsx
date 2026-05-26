@@ -318,7 +318,7 @@ export default function Calculator() {
                   <div className="w-4 h-4 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                   </div>
-                  <span className="text-[#6b8fba] text-xs" dangerouslySetInnerHTML={{ __html: feature }} />
+                  <span className="text-[#9cb8d9] text-xs" dangerouslySetInnerHTML={{ __html: feature }} />
                 </div>
               ))}
             </div>

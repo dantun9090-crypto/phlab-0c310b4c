@@ -25,7 +25,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   'neurological':         '#06b6d4',
   'melanin':              '#ec4899',
   'blends':               '#3b82f6',
-  'accessories':          '#6b8fba',
+  'accessories':          '#9cb8d9',
 };
 
 export function FeaturedProductsTab() {
@@ -114,7 +114,7 @@ export function FeaturedProductsTab() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24 gap-3 text-[#6b8fba]">
+      <div className="flex items-center justify-center py-24 gap-3 text-[#9cb8d9]">
         <Loader2 className="w-5 h-5 animate-spin" />
         <span>Loading products...</span>
       </div>
@@ -133,7 +133,7 @@ export function FeaturedProductsTab() {
             <Star className="w-5 h-5 text-amber-400" />
             Featured Products
           </h2>
-          <p className="text-[#6b8fba] text-sm mt-1">
+          <p className="text-[#9cb8d9] text-sm mt-1">
             Choose up to 6 products to show in the "Most Popular" section on the homepage.
           </p>
         </div>
@@ -160,7 +160,7 @@ export function FeaturedProductsTab() {
 
       {/* Selected Products */}
       <div className="p-5 rounded-2xl bg-[#0b1a30]/60 border border-white/[0.07]">
-        <h3 className="text-sm font-bold text-[#6b8fba] uppercase tracking-widest mb-4 flex items-center gap-2">
+        <h3 className="text-sm font-bold text-[#9cb8d9] uppercase tracking-widest mb-4 flex items-center gap-2">
           <Star className="w-4 h-4 text-amber-400" />
           Selected ({selectedIds.length}/6)
         </h3>
@@ -210,7 +210,7 @@ export function FeaturedProductsTab() {
 
       {/* All Products — pick from list */}
       <div className="p-5 rounded-2xl bg-[#0b1a30]/60 border border-white/[0.07]">
-        <h3 className="text-sm font-bold text-[#6b8fba] uppercase tracking-widest mb-4 flex items-center gap-2">
+        <h3 className="text-sm font-bold text-[#9cb8d9] uppercase tracking-widest mb-4 flex items-center gap-2">
           <FlaskConical className="w-4 h-4 text-blue-400" />
           All Products — click to add / remove
           {selectedIds.length >= 6 && (

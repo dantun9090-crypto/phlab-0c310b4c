@@ -35,8 +35,8 @@ const STATUS_COLOR: Record<string, string> = {
   paid:     'bg-green-500/15 text-green-400 border-green-500/30',
   open:     'bg-blue-500/15 text-blue-400 border-blue-500/30',
   pending:  'bg-yellow-500/15 text-yellow-400 border-yellow-500/30',
-  void:     'bg-gray-500/15 text-[#6b8fba] border-gray-500/30',
-  default:  'bg-gray-500/15 text-[#6b8fba] border-gray-500/30',
+  void:     'bg-gray-500/15 text-[#9cb8d9] border-gray-500/30',
+  default:  'bg-gray-500/15 text-[#9cb8d9] border-gray-500/30',
 };
 
 function formatDate(ts: any): string {
@@ -325,7 +325,7 @@ export default function InvoicesTab() {
       ) : filteredInvoices.length === 0 ? (
         <div className="text-center py-16">
           <FileText className="w-12 h-12 text-gray-700 mx-auto mb-3" />
-          <p className="text-[#6b8fba] font-medium mb-1">No invoices yet</p>
+          <p className="text-[#9cb8d9] font-medium mb-1">No invoices yet</p>
           <p className="text-gray-600 text-sm">Click "Send Invoice" to create the first one.</p>
         </div>
       ) : (
@@ -432,7 +432,7 @@ export default function InvoicesTab() {
                   <Send className="w-5 h-5 text-blue-400" />
                   Send Invoice
                 </h2>
-                <button onClick={() => setShowModal(false)} aria-label="Close invoice modal" className="p-1.5 hover:bg-white/10 rounded-lg text-[#6b8fba] hover:text-white transition-colors">
+                <button onClick={() => setShowModal(false)} aria-label="Close invoice modal" className="p-1.5 hover:bg-white/10 rounded-lg text-[#9cb8d9] hover:text-white transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -441,7 +441,7 @@ export default function InvoicesTab() {
                 {/* Customer selector */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="text-[#6b8fba] text-sm font-medium">Customer</label>
+                    <label className="text-[#9cb8d9] text-sm font-medium">Customer</label>
                     <button
                       onClick={() => setForm(f => ({ ...f, useManual: !f.useManual, selectedCustomer: null }))}
                       className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
@@ -542,7 +542,7 @@ export default function InvoicesTab() {
 
                 {/* Description */}
                 <div>
-                  <label className="text-[#6b8fba] text-sm font-medium block mb-2">Description</label>
+                  <label className="text-[#9cb8d9] text-sm font-medium block mb-2">Description</label>
                   <input
                     value={form.description}
                     onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
@@ -554,7 +554,7 @@ export default function InvoicesTab() {
                 {/* Amount + Currency */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[#6b8fba] text-sm font-medium block mb-2">Amount</label>
+                    <label className="text-[#9cb8d9] text-sm font-medium block mb-2">Amount</label>
                     <div className="relative">
                       <PoundSterling className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2a4a7a]" />
                       <input
@@ -569,7 +569,7 @@ export default function InvoicesTab() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-[#6b8fba] text-sm font-medium block mb-2">Currency</label>
+                    <label className="text-[#9cb8d9] text-sm font-medium block mb-2">Currency</label>
                     <select
                       value={form.currency}
                       onChange={e => setForm(f => ({ ...f, currency: e.target.value }))}
@@ -584,7 +584,7 @@ export default function InvoicesTab() {
 
                 {/* Due date */}
                 <div>
-                  <label className="text-[#6b8fba] text-sm font-medium block mb-2">Due Date (optional)</label>
+                  <label className="text-[#9cb8d9] text-sm font-medium block mb-2">Due Date (optional)</label>
                   <input
                     value={form.dueDate}
                     onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))}
@@ -657,7 +657,7 @@ export default function InvoicesTab() {
                   <FileText className="w-4 h-4 text-blue-400" />
                   {selectedInvoice.number ? `Invoice #${selectedInvoice.number}` : 'Invoice Details'}
                 </h3>
-                <button onClick={() => setSelectedInvoice(null)} aria-label="Close invoice details" className="p-1.5 hover:bg-white/10 rounded-lg text-[#6b8fba] hover:text-white transition-colors">
+                <button onClick={() => setSelectedInvoice(null)} aria-label="Close invoice details" className="p-1.5 hover:bg-white/10 rounded-lg text-[#9cb8d9] hover:text-white transition-colors">
                   <X className="w-4 h-4" />
                 </button>
               </div>

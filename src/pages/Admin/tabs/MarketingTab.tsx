@@ -117,9 +117,9 @@ export default function MarketingTab() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-white">Marketing & Growth</h2>
-          <p className="text-[#6b8fba] text-sm mt-1">Coupon codes and AI product descriptions</p>
+          <p className="text-[#9cb8d9] text-sm mt-1">Coupon codes and AI product descriptions</p>
         </div>
-        <button onClick={fetchData} aria-label="Refresh marketing data" className="p-2 bg-[#0d1f35] hover:bg-[#0f2640] text-[#6b8fba] rounded-lg transition-colors">
+        <button onClick={fetchData} aria-label="Refresh marketing data" className="p-2 bg-[#0d1f35] hover:bg-[#0f2640] text-[#9cb8d9] rounded-lg transition-colors">
           <RefreshCw className="w-4 h-4" />
         </button>
       </div>
@@ -151,7 +151,7 @@ export default function MarketingTab() {
               >
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[#6b8fba] text-xs mb-1 block">Coupon Code *</label>
+                    <label className="text-[#9cb8d9] text-xs mb-1 block">Coupon Code *</label>
                     <input
                       value={form.code}
                       onChange={e => setForm(f => ({ ...f, code: e.target.value }))}
@@ -160,7 +160,7 @@ export default function MarketingTab() {
                     />
                   </div>
                   <div>
-                    <label className="text-[#6b8fba] text-xs mb-1 block">Type</label>
+                    <label className="text-[#9cb8d9] text-xs mb-1 block">Type</label>
                     <select
                       value={form.type}
                       onChange={e => setForm(f => ({ ...f, type: e.target.value as any }))}
@@ -173,7 +173,7 @@ export default function MarketingTab() {
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="text-[#6b8fba] text-xs mb-1 block">Value *</label>
+                    <label className="text-[#9cb8d9] text-xs mb-1 block">Value *</label>
                     <input
                       type="number"
                       value={form.value}
@@ -183,7 +183,7 @@ export default function MarketingTab() {
                     />
                   </div>
                   <div>
-                    <label className="text-[#6b8fba] text-xs mb-1 block">Expiry Date</label>
+                    <label className="text-[#9cb8d9] text-xs mb-1 block">Expiry Date</label>
                     <input
                       type="date"
                       value={form.expiryDate}
@@ -192,7 +192,7 @@ export default function MarketingTab() {
                     />
                   </div>
                   <div>
-                    <label className="text-[#6b8fba] text-xs mb-1 block">Max Usage</label>
+                    <label className="text-[#9cb8d9] text-xs mb-1 block">Max Usage</label>
                     <input
                       type="number"
                       value={form.maxUsage}
@@ -236,17 +236,17 @@ export default function MarketingTab() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-white font-mono font-semibold text-sm">{c.code}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full border ${c.isActive ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-gray-500/10 text-[#6b8fba] border-gray-500/30'}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${c.isActive ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-gray-500/10 text-[#9cb8d9] border-gray-500/30'}`}>
                           {c.isActive ? 'Active' : 'Inactive'}
                         </span>
                       </div>
-                      <p className="text-[#6b8fba] text-xs mt-0.5">
+                      <p className="text-[#9cb8d9] text-xs mt-0.5">
                         {c.type === 'percentage' ? `${c.value}% off` : `£${c.value} off`}
                         {' · '}{c.usageCount} uses{c.maxUsage ? ` / ${c.maxUsage}` : ''}
                         {c.expiryDate ? ` · Exp ${c.expiryDate.toDate().toLocaleDateString('en-GB')}` : ''}
                       </p>
                     </div>
-                    <button onClick={() => handleCopy(c.code)} aria-label="Copy coupon code" className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-white/[0.06] hover:bg-[#1a3a5c]/50 text-[#6b8fba] hover:text-white rounded transition-colors">
+                    <button onClick={() => handleCopy(c.code)} aria-label="Copy coupon code" className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-white/[0.06] hover:bg-[#1a3a5c]/50 text-[#9cb8d9] hover:text-white rounded transition-colors">
                       {copied === c.code ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                     <button onClick={() => handleDelete(c.id)} aria-label="Delete coupon" className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded transition-colors">
@@ -268,7 +268,7 @@ export default function MarketingTab() {
 
           <div className="space-y-4">
             <div>
-              <label className="text-[#6b8fba] text-xs mb-2 block">Select Product</label>
+              <label className="text-[#9cb8d9] text-xs mb-2 block">Select Product</label>
               <select
                 value={selectedProduct?.id || ''}
                 onChange={e => setSelectedProduct(products.find(p => p.id === e.target.value) || null)}
@@ -283,7 +283,7 @@ export default function MarketingTab() {
 
             {selectedProduct && (
               <div className="p-3 bg-[#04101f]/40 rounded-xl border border-white/[0.07]">
-                <p className="text-[#6b8fba] text-xs mb-1">Current description</p>
+                <p className="text-[#9cb8d9] text-xs mb-1">Current description</p>
                 <p className="text-[#8caad4] text-sm leading-relaxed">
                   {selectedProduct.description || 'No description set.'}
                 </p>
@@ -334,7 +334,7 @@ export default function MarketingTab() {
 
           {/* Stats */}
           <div className="mt-6 pt-5 border-t border-white/[0.07]">
-            <p className="text-[#6b8fba] text-xs font-medium mb-3 uppercase tracking-wide">Quick Stats</p>
+            <p className="text-[#9cb8d9] text-xs font-medium mb-3 uppercase tracking-wide">Quick Stats</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 bg-[#04101f]/40 rounded-xl text-center">
                 <p className="text-2xl font-bold text-white">{coupons.filter(c => c.isActive).length}</p>

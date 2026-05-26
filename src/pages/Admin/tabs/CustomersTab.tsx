@@ -33,7 +33,7 @@ const ROLE_COLORS: Record<string, string> = {
   staff: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   warehouse: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
   marketer: 'bg-blue-500/20 text-blue-400 border-purple-500/30',
-  customer: 'bg-gray-500/20 text-[#6b8fba] border-gray-500/30',
+  customer: 'bg-gray-500/20 text-[#9cb8d9] border-gray-500/30',
 };
 
 export default function CustomersTab() {
@@ -145,7 +145,7 @@ export default function CustomersTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-white">Customer Database</h2>
-          <p className="text-[#6b8fba] text-xs sm:text-sm mt-1">{customers.length} registered users · £{totalRevenue.toFixed(2)} total revenue</p>
+          <p className="text-[#9cb8d9] text-xs sm:text-sm mt-1">{customers.length} registered users · £{totalRevenue.toFixed(2)} total revenue</p>
         </div>
         <button
           onClick={fetchData}
@@ -167,7 +167,7 @@ export default function CustomersTab() {
           <div key={s.label} className="bg-[#0b1a30]/80 rounded-xl p-3 sm:p-4 border border-white/[0.07]">
             <s.icon className={`w-4 sm:w-5 h-4 sm:h-5 ${s.color} mb-2`} />
             <p className="text-lg sm:text-2xl font-bold text-white">{s.value}</p>
-            <p className="text-[#6b8fba] text-xs mt-0.5">{s.label}</p>
+            <p className="text-[#9cb8d9] text-xs mt-0.5">{s.label}</p>
           </div>
         ))}
       </div>
@@ -207,7 +207,7 @@ export default function CustomersTab() {
             <>
               <Shield className="w-8 h-8 text-red-400 mx-auto mb-3" />
               <p className="text-red-300 font-semibold mb-1">Firebase Rules not deployed</p>
-              <p className="text-[#6b8fba] text-sm mb-4">The customers list is blocked by Firestore security rules.</p>
+              <p className="text-[#9cb8d9] text-sm mb-4">The customers list is blocked by Firestore security rules.</p>
               <div className="bg-[#04101f] rounded-lg p-4 text-left text-xs font-mono text-[#8caad4] mb-4">
                 <p className="text-amber-400 mb-2">Fix: Go to Firebase Console → Firestore → Rules</p>
                 <p>Paste the rules and click <strong className="text-white">Publish</strong></p>
@@ -225,7 +225,7 @@ export default function CustomersTab() {
           ) : (
             <>
               <p className="text-red-300 font-semibold mb-1">Failed to load customers</p>
-              <p className="text-[#6b8fba] text-sm">{fetchError}</p>
+              <p className="text-[#9cb8d9] text-sm">{fetchError}</p>
             </>
           )}
         </div>
@@ -241,15 +241,15 @@ export default function CustomersTab() {
             <table className="w-full text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-white/[0.07]">
-                  <th className="text-left text-[#6b8fba] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider">Customer</th>
-                  <th className="text-left text-[#6b8fba] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider hidden sm:table-cell">Role</th>
-                  <th className="text-center text-[#6b8fba] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider hidden md:table-cell">VIP</th>
-                  <th className="text-center text-[#6b8fba] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider hidden lg:table-cell">T&amp;C</th>
-                  <th className="text-right text-[#6b8fba] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider">Orders</th>
-                  <th className="text-right text-[#6b8fba] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider hidden md:table-cell">Lifetime Value</th>
-                  <th className="text-right text-[#6b8fba] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider hidden lg:table-cell">Avg Order</th>
-                  <th className="text-right text-[#6b8fba] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider hidden lg:table-cell">Last Purchase</th>
-                  <th className="text-right text-[#6b8fba] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider">Actions</th>
+                  <th className="text-left text-[#9cb8d9] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider">Customer</th>
+                  <th className="text-left text-[#9cb8d9] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider hidden sm:table-cell">Role</th>
+                  <th className="text-center text-[#9cb8d9] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider hidden md:table-cell">VIP</th>
+                  <th className="text-center text-[#9cb8d9] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider hidden lg:table-cell">T&amp;C</th>
+                  <th className="text-right text-[#9cb8d9] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider">Orders</th>
+                  <th className="text-right text-[#9cb8d9] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider hidden md:table-cell">Lifetime Value</th>
+                  <th className="text-right text-[#9cb8d9] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider hidden lg:table-cell">Avg Order</th>
+                  <th className="text-right text-[#9cb8d9] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider hidden lg:table-cell">Last Purchase</th>
+                  <th className="text-right text-[#9cb8d9] text-xs font-medium px-3 sm:px-4 py-3 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -274,7 +274,7 @@ export default function CustomersTab() {
                               {c.isAdmin && <span className="ml-1 text-xs bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded-full border border-purple-500/30">Admin</span>}
                               {c.isActive === false && <span className="ml-1 text-xs text-red-400">(deactivated)</span>}
                             </p>
-                            <p className="text-[#6b8fba] text-xs truncate">{c.email}</p>
+                            <p className="text-[#9cb8d9] text-xs truncate">{c.email}</p>
                             {c.stripeLink && (
                               <a href={c.stripeLink} target="_blank" rel="noopener noreferrer"
                                 className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
@@ -323,7 +323,7 @@ export default function CustomersTab() {
                       <td className="px-3 sm:px-4 py-3 text-right text-[#8caad4] text-xs sm:text-sm">{c.orderCount}</td>
                       <td className="px-3 sm:px-4 py-3 text-right text-green-400 text-xs sm:text-sm font-semibold hidden md:table-cell">£{c.totalSpend.toFixed(2)}</td>
                       <td className="px-3 sm:px-4 py-3 text-right text-[#8caad4] text-xs hidden lg:table-cell">£{c.avgOrderValue.toFixed(2)}</td>
-                      <td className="px-3 sm:px-4 py-3 text-right text-[#6b8fba] text-xs hidden lg:table-cell">{c.lastPurchase || '—'}</td>
+                      <td className="px-3 sm:px-4 py-3 text-right text-[#9cb8d9] text-xs hidden lg:table-cell">{c.lastPurchase || '—'}</td>
                       <td className="px-3 sm:px-4 py-3">
                         <div className="flex items-center justify-end gap-1 sm:gap-2">
                           <select

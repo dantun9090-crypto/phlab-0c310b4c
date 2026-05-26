@@ -687,7 +687,7 @@ export default function ProductDetail() {
         </head>
         <div className="text-center">
           <h1 className="text-2xl font-bold text-[#f0f6ff] mb-4">Page Not Available</h1>
-          <p className="text-[#6b8fba] mb-6">This product is no longer available or has been removed.</p>
+          <p className="text-[#9cb8d9] mb-6">This product is no longer available or has been removed.</p>
           <Link to="/products" className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-[0_2px_12px_rgba(37,99,235,0.3)]">
             <ArrowLeft className="w-4 h-4" /> Back to Products
           </Link>
@@ -1230,12 +1230,12 @@ export default function ProductDetail() {
                     {seoData?.uniqueContent ? (
                       <div>
                         <p className="text-[10px] font-bold text-[#5a80a6] uppercase tracking-[0.18em] mb-1.5">Research Context</p>
-                        <p className="text-[#6b8fba] leading-relaxed text-[14.5px]">{seoData.uniqueContent}</p>
+                        <p className="text-[#9cb8d9] leading-relaxed text-[14.5px]">{seoData.uniqueContent}</p>
                       </div>
                     ) : (
                       <div>
                         <p className="text-[10px] font-bold text-[#5a80a6] uppercase tracking-[0.18em] mb-1.5">Research Context</p>
-                        <p className="text-[#6b8fba] leading-relaxed text-[14.5px]">{product.description}</p>
+                        <p className="text-[#9cb8d9] leading-relaxed text-[14.5px]">{product.description}</p>
                       </div>
                     )}
                     {/* Part 2: Key details */}
@@ -1265,7 +1265,7 @@ export default function ProductDetail() {
             <div className="flex flex-wrap items-center gap-3 py-1">
               <div className="flex items-center gap-1.5">
                 {[1,2,3,4,5].map(s => <Star key={s} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
-                <span className="ml-1 text-[#6b8fba] text-sm">Lab-verified quality</span>
+                <span className="ml-1 text-[#9cb8d9] text-sm">Lab-verified quality</span>
               </div>
               <span className="w-px h-4 bg-white/10" />
               <span className="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-400">
@@ -1638,7 +1638,7 @@ export default function ProductDetail() {
                           transition={{ duration: 0.25, ease: 'easeInOut' }}
                           className="overflow-hidden"
                         >
-                          <p className="px-5 pb-5 text-[#6b8fba] text-sm leading-relaxed border-t border-white/[0.04] pt-3">{faq.a}</p>
+                          <p className="px-5 pb-5 text-[#9cb8d9] text-sm leading-relaxed border-t border-white/[0.04] pt-3">{faq.a}</p>
                         </motion.div>
                       )}
                     </AnimatePresence>

@@ -14,7 +14,7 @@ export const EMAIL_COLORS = {
   accentLight: '#60a5fa',
   text: '#c8daf0',
   textBright: '#e8f0fe',
-  textMuted: '#6b8fba',
+  textMuted: '#9cb8d9',
   textDimmed: '#3a5a82',
   success: '#34d399',
   warning: '#fbbf24',

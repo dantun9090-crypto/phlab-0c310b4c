@@ -196,7 +196,7 @@ export function ProductCard({
                   } : {
                     background: 'rgba(255,255,255,0.03)',
                     border: '1px solid rgba(255,255,255,0.08)',
-                    color: '#6b8fba',
+                    color: '#9cb8d9',
                   }}
                   onMouseEnter={e => {
                     if (!isSelected) {
@@ -207,7 +207,7 @@ export function ProductCard({
                   onMouseLeave={e => {
                     if (!isSelected) {
                       (e.target as HTMLElement).style.borderColor = 'rgba(255,255,255,0.08)';
-                      (e.target as HTMLElement).style.color = '#6b8fba';
+                      (e.target as HTMLElement).style.color = '#9cb8d9';
                     }
                   }}
                 >

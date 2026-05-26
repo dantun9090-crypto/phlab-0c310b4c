@@ -64,7 +64,7 @@ export default function StorageGuide() {
             <h1 className="text-4xl md:text-5xl font-bold mb-5" style={{ color: '#f0f6ff' }}>
               Peptide Storage Guide UK: How to Store Research Peptides
             </h1>
-            <p className="text-lg leading-relaxed" style={{ color: '#6b8fba' }}>
+            <p className="text-lg leading-relaxed" style={{ color: '#9cb8d9' }}>
               Professional storage, reconstitution, and handling protocols for laboratory research peptides including <Link to="/products" className="text-green-400 hover:text-green-300 underline">BPC-157</Link>, <Link to="/products" className="text-green-400 hover:text-green-300 underline">TB-500</Link>, and GLP-1 agonists.
             </p>
           </div>
@@ -103,7 +103,7 @@ export default function StorageGuide() {
               ].map((item, idx) => (
                 <li key={idx} className="flex items-start gap-3">
                   <div className="w-2 h-2 rounded-full bg-green-400 mt-2 flex-shrink-0" />
-                  <span className="text-base" style={{ color: '#6b8fba' }}>{item}</span>
+                  <span className="text-base" style={{ color: '#9cb8d9' }}>{item}</span>
                 </li>
               ))}
             </ul>
@@ -131,7 +131,7 @@ export default function StorageGuide() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-semibold mb-2" style={{ color: '#f0f6ff' }}>Storage Temperature:</p>
-                  <ul className="space-y-2 text-sm" style={{ color: '#6b8fba' }}>
+                  <ul className="space-y-2 text-sm" style={{ color: '#9cb8d9' }}>
                     <li>• <strong>-20°C (freezer):</strong> 12-24 months shelf life</li>
                     <li>• <strong>2-8°C (refrigerator):</strong> 3-6 months</li>
                     <li>• <strong>Room temperature (below 25°C):</strong> Up to 1 month (not recommended)</li>
@@ -139,7 +139,7 @@ export default function StorageGuide() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold mb-2" style={{ color: '#f0f6ff' }}>Key Requirements:</p>
-                  <ul className="space-y-2 text-sm" style={{ color: '#6b8fba' }}>
+                  <ul className="space-y-2 text-sm" style={{ color: '#9cb8d9' }}>
                     <li>• Store in original sealed vials</li>
                     <li>• Protect from light (use amber vials or foil wrap)</li>
                     <li>• Keep in desiccated environment</li>
@@ -161,7 +161,7 @@ export default function StorageGuide() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-semibold mb-2" style={{ color: '#f0f6ff' }}>Storage Temperature:</p>
-                  <ul className="space-y-2 text-sm" style={{ color: '#6b8fba' }}>
+                  <ul className="space-y-2 text-sm" style={{ color: '#9cb8d9' }}>
                     <li>• <strong>2-8°C (refrigerator):</strong> 7-14 days (bacteriostatic water)</li>
                     <li>• <strong>2-8°C (refrigerator):</strong> 3-5 days (sterile water)</li>
                     <li>• <strong>-20°C (freezer):</strong> Not recommended (ice crystal formation)</li>
@@ -169,7 +169,7 @@ export default function StorageGuide() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold mb-2" style={{ color: '#f0f6ff' }}>Key Requirements:</p>
-                  <ul className="space-y-2 text-sm" style={{ color: '#6b8fba' }}>
+                  <ul className="space-y-2 text-sm" style={{ color: '#9cb8d9' }}>
                     <li>• Use sterile technique during reconstitution</li>
                     <li>• Store in refrigerator immediately</li>
                     <li>• Protect from light (amber vials preferred)</li>
@@ -199,7 +199,7 @@ export default function StorageGuide() {
                 <p className="text-sm leading-relaxed mb-2" style={{ color: '#7a9ec2' }}>
                   <strong>Best for:</strong> Unopened lyophilised vials, long-term storage (12-24 months)
                 </p>
-                <p className="text-sm leading-relaxed" style={{ color: '#6b8fba' }}>
+                <p className="text-sm leading-relaxed" style={{ color: '#9cb8d9' }}>
                   Store in the main freezer compartment (not the door). Use a frost-free freezer or manually defrost to prevent temperature fluctuations. Do not repeatedly remove and return vials.
                 </p>
               </div>
@@ -212,7 +212,7 @@ export default function StorageGuide() {
                 <p className="text-sm leading-relaxed mb-2" style={{ color: '#7a9ec2' }}>
                   <strong>Best for:</strong> Reconstituted peptides, unopened vials in active use (3-6 months)
                 </p>
-                <p className="text-sm leading-relaxed" style={{ color: '#6b8fba' }}>
+                <p className="text-sm leading-relaxed" style={{ color: '#9cb8d9' }}>
                   Store in the main compartment (not the door, which experiences temperature swings). Keep away from the back wall where freezing may occur. Maintain consistent temperature with a fridge thermometer.
                 </p>
               </div>
@@ -225,7 +225,7 @@ export default function StorageGuide() {
                 <p className="text-sm leading-relaxed mb-2" style={{ color: '#7a9ec2' }}>
                   <strong>Maximum duration:</strong> 2-4 weeks for unopened lyophilised vials only
                 </p>
-                <p className="text-sm leading-relaxed" style={{ color: '#6b8fba' }}>
+                <p className="text-sm leading-relaxed" style={{ color: '#9cb8d9' }}>
                   Not recommended for routine storage. Acceptable only during shipping (Pro Health Peptides includes cold-pack insulation) or temporary lab bench use during experiments. Never store reconstituted peptides at room temperature.
                 </p>
               </div>
@@ -262,7 +262,7 @@ export default function StorageGuide() {
                     <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                       <td className="p-4" style={{ color: '#f0f6ff' }}>{form}</td>
                       <td className="p-4" style={{ color: '#7a9ec2' }}>{storage}</td>
-                      <td className="p-4" style={{ color: '#6b8fba' }}>{life}</td>
+                      <td className="p-4" style={{ color: '#9cb8d9' }}>{life}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -363,7 +363,7 @@ export default function StorageGuide() {
               ].map((item, idx) => (
                 <div key={idx} className="p-5 rounded-xl" style={{ background: 'rgba(22,163,74,0.06)', border: '1px solid rgba(22,163,74,0.12)' }}>
                   <h3 className="text-base font-semibold mb-2" style={{ color: '#4ade80' }}>{item.title}</h3>
-                  <p className="text-sm leading-relaxed" style={{ color: '#6b8fba' }}>{item.desc}</p>
+                  <p className="text-sm leading-relaxed" style={{ color: '#9cb8d9' }}>{item.desc}</p>
                 </div>
               ))}
             </div>
@@ -434,7 +434,7 @@ export default function StorageGuide() {
               <h2 className="text-2xl font-bold text-[#f0f6ff] mb-3">
                 Browse HPLC-Verified Research Peptides
               </h2>
-              <p className="text-[#6b8fba] mb-6 max-w-2xl mx-auto">
+              <p className="text-[#9cb8d9] mb-6 max-w-2xl mx-auto">
                 All peptides shipped with cold-pack insulation to maintain proper temperature during UK transit. HPLC purity certificates and batch documentation included with every order.
               </p>
               <Link 

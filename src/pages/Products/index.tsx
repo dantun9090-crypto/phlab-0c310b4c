@@ -353,7 +353,7 @@ export default function Products() {
           <nav className="flex items-center gap-2 mb-6 text-xs" style={{ color: '#3a5a82' }} aria-label="Breadcrumb">
             <Link to="/" className="hover:text-blue-400 transition-colors">Home</Link>
             <span>/</span>
-            <span style={{ color: '#6b8fba' }}>Catalogue</span>
+            <span style={{ color: '#9cb8d9' }}>Catalogue</span>
           </nav>
 
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
@@ -367,7 +367,7 @@ export default function Products() {
               <h1 className="font-black leading-tight mb-3" style={{ fontSize: 'clamp(2rem, 4.5vw, 3.25rem)', color: '#eef4ff', letterSpacing: '-0.025em' }}>
                 {heroInfo.h1}
               </h1>
-              <p className="leading-relaxed text-base" style={{ color: '#6b8fba', maxWidth: 560 }}>
+              <p className="leading-relaxed text-base" style={{ color: '#9cb8d9', maxWidth: 560 }}>
                 {heroInfo.intro}
               </p>
             </div>
@@ -433,7 +433,7 @@ export default function Products() {
                 {/* Mobile close */}
                 <div className="flex items-center justify-between lg:hidden px-4 pb-2">
                   <span className="text-xs font-bold uppercase tracking-widest" style={{ color: '#3a5a82' }}>Filters</span>
-                  <button onClick={() => setSidebarOpen(false)} aria-label="Close filters" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)', color: '#6b8fba' }}>
+                  <button onClick={() => setSidebarOpen(false)} aria-label="Close filters" className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.05)', color: '#9cb8d9' }}>
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -487,12 +487,12 @@ export default function Products() {
                               fontWeight: 700,
                               border: '1px solid rgba(16,185,129,0.25)',
                             } : {
-                              color: '#6b8fba',
+                              color: '#9cb8d9',
                               fontWeight: 500,
                               border: '1px solid transparent',
                             }}
                             onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = '#9ab8d8'; } }}
-                            onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#6b8fba'; } }}
+                            onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLElement).style.background = 'transparent'; (e.currentTarget as HTMLElement).style.color = '#9cb8d9'; } }}
                           >
                             <span>{cat.label}</span>
                             {count > 0 && (
@@ -535,7 +535,7 @@ export default function Products() {
                 <button
                   onClick={() => setSidebarOpen(true)}
                   className="lg:hidden flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                  style={{ background: '#0b1a30', border: '1px solid rgba(255,255,255,0.07)', color: '#6b8fba' }}
+                  style={{ background: '#0b1a30', border: '1px solid rgba(255,255,255,0.07)', color: '#9cb8d9' }}
                 >
                   <Filter className="w-4 h-4" />
                   Filters
@@ -546,7 +546,7 @@ export default function Products() {
                 <div className="text-sm" style={{ color: '#3a5a82' }}>
                   {loading
                     ? <span className="animate-pulse">Loading…</span>
-                    : <><span style={{ color: '#6b8fba', fontWeight: 600 }}>{filteredProducts.length}</span> compound{filteredProducts.length !== 1 ? 's' : ''}</>
+                    : <><span style={{ color: '#9cb8d9', fontWeight: 600 }}>{filteredProducts.length}</span> compound{filteredProducts.length !== 1 ? 's' : ''}</>
                   }
                 </div>
 
@@ -591,7 +591,7 @@ export default function Products() {
                   <button
                     onClick={() => setSortOpen(v => !v)}
                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                    style={{ background: '#0b1a30', border: '1px solid rgba(255,255,255,0.07)', color: '#6b8fba', minWidth: 160 }}
+                    style={{ background: '#0b1a30', border: '1px solid rgba(255,255,255,0.07)', color: '#9cb8d9', minWidth: 160 }}
                   >
                     <SlidersHorizontal className="w-3.5 h-3.5" />
                     {sortLabel}
@@ -604,7 +604,7 @@ export default function Products() {
                           key={opt.id}
                           onClick={() => { setSortBy(opt.id); setSortOpen(false); }}
                           className="w-full text-left px-4 py-2.5 text-sm transition-all"
-                          style={sortBy === opt.id ? { color: '#34d399', fontWeight: 700 } : { color: '#6b8fba' }}
+                          style={sortBy === opt.id ? { color: '#34d399', fontWeight: 700 } : { color: '#9cb8d9' }}
                           onMouseEnter={e => { if (sortBy !== opt.id) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; }}
                           onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
                         >
@@ -622,7 +622,7 @@ export default function Products() {
                 <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl" style={{ background: '#0b1a30', border: '1px solid rgba(239,68,68,0.15)' }}>
                   <WifiOff className="w-10 h-10 mb-4" style={{ color: '#ef4444' }} />
                   <p className="font-bold text-lg mb-1" style={{ color: '#eef4ff' }}>Connection Error</p>
-                  <p className="text-sm mb-6" style={{ color: '#6b8fba' }}>Unable to load products. Check your connection.</p>
+                  <p className="text-sm mb-6" style={{ color: '#9cb8d9' }}>Unable to load products. Check your connection.</p>
                   <button onClick={() => window.location.reload()} className="btn-primary flex items-center gap-2">
                     <RefreshCw className="w-4 h-4" /> Retry
                   </button>
@@ -649,7 +649,7 @@ export default function Products() {
                 <div className="flex flex-col items-center justify-center py-24 text-center rounded-2xl" style={{ background: '#0b1a30', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <Package className="w-10 h-10 mb-4" style={{ color: '#3a5a82' }} />
                   <p className="font-bold text-lg mb-1" style={{ color: '#eef4ff' }}>No compounds found</p>
-                  <p className="text-sm mb-6" style={{ color: '#6b8fba' }}>Try a different category or clear your search.</p>
+                  <p className="text-sm mb-6" style={{ color: '#9cb8d9' }}>Try a different category or clear your search.</p>
                   <button
                     onClick={() => { setActiveCategory('all'); setSearchQuery(''); }}
                     className="btn-primary"

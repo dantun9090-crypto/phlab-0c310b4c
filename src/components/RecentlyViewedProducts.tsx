@@ -18,8 +18,8 @@ export default function RecentlyViewedProducts({ items, currentProductId, varian
     return (
       <div className="mt-6 pt-5 border-t border-white/[0.07]">
         <div className="flex items-center gap-2 mb-3">
-          <Clock className="w-3.5 h-3.5 text-[#6b8fba]" />
-          <span className="text-[11px] font-bold text-[#6b8fba] uppercase tracking-widest">Recently Viewed</span>
+          <Clock className="w-3.5 h-3.5 text-[#9cb8d9]" />
+          <span className="text-[11px] font-bold text-[#9cb8d9] uppercase tracking-widest">Recently Viewed</span>
         </div>
         <div className="flex flex-col gap-2">
           {filtered.slice(0, 4).map((item, i) => (

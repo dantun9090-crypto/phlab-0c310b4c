@@ -110,7 +110,7 @@ const CollapsibleSection: React.FC<{
       className="w-full px-5 py-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors"
     >
       <h3 className="text-[#e8f0fc] font-semibold text-sm">{title}</h3>
-      {isOpen ? <ChevronUp size={18} className="text-[#6b8fba]" /> : <ChevronDown size={18} className="text-[#6b8fba]" />}
+      {isOpen ? <ChevronUp size={18} className="text-[#9cb8d9]" /> : <ChevronDown size={18} className="text-[#9cb8d9]" />}
     </button>
     <AnimatePresence>
       {isOpen && (
@@ -138,13 +138,13 @@ const LivePreview: React.FC<{ data: LandingPageData }> = ({ data }) => (
             {data.heroBadge}
           </div>
           <h1 className="text-4xl font-bold text-white leading-tight">{data.heroHeading}</h1>
-          <p className="text-[#6b8fba] text-lg max-w-md">{data.heroSubheading}</p>
+          <p className="text-[#9cb8d9] text-lg max-w-md">{data.heroSubheading}</p>
         </div>
         <div className="grid grid-cols-3 gap-6">
           {data.stats.map((stat, i) => (
             <div key={i} className="text-center">
               <div className="text-2xl font-bold text-blue-400">{stat.value}</div>
-              <div className="text-xs text-[#6b8fba] mt-1">{stat.label}</div>
+              <div className="text-xs text-[#9cb8d9] mt-1">{stat.label}</div>
             </div>
           ))}
         </div>
@@ -221,7 +221,7 @@ export default function LandingPageTab() {
   };
 
   if (loading) {
-    return <div className="text-[#6b8fba]">Loading...</div>;
+    return <div className="text-[#9cb8d9]">Loading...</div>;
   }
 
   return (
@@ -249,7 +249,7 @@ export default function LandingPageTab() {
             >
               <div className="space-y-3">
                 <div>
-                  <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Badge Text</label>
+                  <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Badge Text</label>
                   <input
                     type="text"
                     value={data.heroBadge}
@@ -258,7 +258,7 @@ export default function LandingPageTab() {
                   />
                 </div>
                 <div>
-                  <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Heading (H1)</label>
+                  <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Heading (H1)</label>
                   <input
                     type="text"
                     value={data.heroHeading}
@@ -267,7 +267,7 @@ export default function LandingPageTab() {
                   />
                 </div>
                 <div>
-                  <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Subheading</label>
+                  <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Subheading</label>
                   <textarea
                     value={data.heroSubheading}
                     onChange={(e) => setData({ ...data, heroSubheading: e.target.value })}
@@ -276,7 +276,7 @@ export default function LandingPageTab() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[#6b8fba] text-xs font-semibold block mb-1">CTA Button Text</label>
+                    <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">CTA Button Text</label>
                     <input
                       type="text"
                       value={data.heroCta}
@@ -285,7 +285,7 @@ export default function LandingPageTab() {
                     />
                   </div>
                   <div>
-                    <label className="text-[#6b8fba] text-xs font-semibold block mb-1">CTA URL</label>
+                    <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">CTA URL</label>
                     <input
                       type="text"
                       value={data.heroCtaUrl}
@@ -295,7 +295,7 @@ export default function LandingPageTab() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Hero Image URL</label>
+                  <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Hero Image URL</label>
                   <input
                     type="text"
                     value={data.heroImageUrl}
@@ -316,7 +316,7 @@ export default function LandingPageTab() {
                 {data.stats.map((stat, idx) => (
                   <div key={idx} className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Value</label>
+                      <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Value</label>
                       <input
                         type="text"
                         value={stat.value}
@@ -329,7 +329,7 @@ export default function LandingPageTab() {
                       />
                     </div>
                     <div>
-                      <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Label</label>
+                      <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Label</label>
                       <input
                         type="text"
                         value={stat.label}
@@ -359,7 +359,7 @@ export default function LandingPageTab() {
                       <div className="flex-1 space-y-2">
                         <div className="grid grid-cols-3 gap-2">
                           <div>
-                            <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Icon (Emoji)</label>
+                            <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Icon (Emoji)</label>
                             <input
                               type="text"
                               value={feature.icon}
@@ -373,7 +373,7 @@ export default function LandingPageTab() {
                             />
                           </div>
                           <div className="col-span-2">
-                            <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Title</label>
+                            <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Title</label>
                             <input
                               type="text"
                               value={feature.title}
@@ -387,7 +387,7 @@ export default function LandingPageTab() {
                           </div>
                         </div>
                         <div>
-                          <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Description</label>
+                          <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Description</label>
                           <textarea
                             value={feature.desc}
                             onChange={(e) => {
@@ -474,7 +474,7 @@ export default function LandingPageTab() {
             >
               <div className="space-y-3">
                 <div>
-                  <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Heading</label>
+                  <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Heading</label>
                   <input
                     type="text"
                     value={data.ctaHeading}
@@ -483,7 +483,7 @@ export default function LandingPageTab() {
                   />
                 </div>
                 <div>
-                  <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Subtext</label>
+                  <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Subtext</label>
                   <textarea
                     value={data.ctaSubtext}
                     onChange={(e) => setData({ ...data, ctaSubtext: e.target.value })}
@@ -492,7 +492,7 @@ export default function LandingPageTab() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Button Text</label>
+                    <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Button Text</label>
                     <input
                       type="text"
                       value={data.ctaButton}
@@ -501,7 +501,7 @@ export default function LandingPageTab() {
                     />
                   </div>
                   <div>
-                    <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Button URL</label>
+                    <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Button URL</label>
                     <input
                       type="text"
                       value={data.ctaButtonUrl}
@@ -511,7 +511,7 @@ export default function LandingPageTab() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Background Color (Hex)</label>
+                  <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Background Color (Hex)</label>
                   <input
                     type="text"
                     value={data.ctaBgColor}
@@ -530,7 +530,7 @@ export default function LandingPageTab() {
             >
               <div className="space-y-3">
                 <div>
-                  <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Page Title</label>
+                  <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Page Title</label>
                   <input
                     type="text"
                     value={data.pageTitle}
@@ -539,7 +539,7 @@ export default function LandingPageTab() {
                   />
                 </div>
                 <div>
-                  <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Meta Description</label>
+                  <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Meta Description</label>
                   <textarea
                     value={data.metaDescription}
                     onChange={(e) => setData({ ...data, metaDescription: e.target.value })}
@@ -547,7 +547,7 @@ export default function LandingPageTab() {
                   />
                 </div>
                 <div>
-                  <label className="text-[#6b8fba] text-xs font-semibold block mb-1">Page Slug (no spaces)</label>
+                  <label className="text-[#9cb8d9] text-xs font-semibold block mb-1">Page Slug (no spaces)</label>
                   <input
                     type="text"
                     value={data.pageSlug}
@@ -570,7 +570,7 @@ export default function LandingPageTab() {
                   className={`w-full py-3 rounded-lg font-semibold transition-colors ${
                     data.published
                       ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                      : 'bg-gray-700/30 text-[#6b8fba] border border-white/10'
+                      : 'bg-gray-700/30 text-[#9cb8d9] border border-white/10'
                   }`}
                 >
                   {data.published ? '🟢 LIVE' : '⚪ DRAFT'}

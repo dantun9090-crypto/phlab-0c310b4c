@@ -138,14 +138,14 @@ export default function ComplianceTab() {
             </div>
             <h1 className="text-xl font-bold text-white">Compliance</h1>
           </div>
-          <p className="text-[#6b8fba] text-sm">Terms &amp; Conditions acceptance records</p>
+          <p className="text-[#9cb8d9] text-sm">Terms &amp; Conditions acceptance records</p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={fetchData}
             disabled={loading}
             aria-label="Refresh compliance data"
-            className="p-2 text-[#6b8fba] hover:text-white bg-[#0b1a30] hover:bg-[#1a3a5c] border border-white/[0.07] rounded-xl transition-all disabled:opacity-50"
+            className="p-2 text-[#9cb8d9] hover:text-white bg-[#0b1a30] hover:bg-[#1a3a5c] border border-white/[0.07] rounded-xl transition-all disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -187,7 +187,7 @@ export default function ComplianceTab() {
           >
             <s.icon className={`w-5 h-5 ${s.color} mb-3`} />
             <p className="text-2xl font-bold text-white">{loading ? '—' : s.value}</p>
-            <p className="text-[#6b8fba] text-xs mt-1">{s.label}</p>
+            <p className="text-[#9cb8d9] text-xs mt-1">{s.label}</p>
           </motion.div>
         ))}
       </div>
@@ -196,7 +196,7 @@ export default function ComplianceTab() {
       {!loading && records.length > 0 && (
         <div className="bg-[#0b1a30] border border-white/[0.07] rounded-2xl p-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[#6b8fba] text-sm">Acceptance Rate</span>
+            <span className="text-[#9cb8d9] text-sm">Acceptance Rate</span>
             <span className="text-white font-bold text-sm">{rate}%</span>
           </div>
           <div className="h-2 bg-[#04101f] rounded-full overflow-hidden">
@@ -252,7 +252,7 @@ export default function ComplianceTab() {
                     : f === 'not_accepted'
                     ? 'bg-red-600 text-white'
                     : 'bg-blue-600 text-white'
-                  : 'text-[#6b8fba] hover:text-white'
+                  : 'text-[#9cb8d9] hover:text-white'
               }`}
             >
               {f === 'all' ? 'All' : f === 'accepted' ? 'Accepted' : 'Not Accepted'}
@@ -279,29 +279,29 @@ export default function ComplianceTab() {
                 <tr className="border-b border-white/[0.06]">
                   <th
                     onClick={() => handleSort('email')}
-                    className="text-left text-[#6b8fba] text-xs font-semibold px-4 py-3 uppercase tracking-wider cursor-pointer hover:text-white transition-colors select-none"
+                    className="text-left text-[#9cb8d9] text-xs font-semibold px-4 py-3 uppercase tracking-wider cursor-pointer hover:text-white transition-colors select-none"
                   >
                     Customer <SortIcon active={sortKey === 'email'} dir={sortDir} />
                   </th>
-                  <th className="text-center text-[#6b8fba] text-xs font-semibold px-4 py-3 uppercase tracking-wider">
+                  <th className="text-center text-[#9cb8d9] text-xs font-semibold px-4 py-3 uppercase tracking-wider">
                     T&amp;C Status
                   </th>
                   <th
                     onClick={() => handleSort('date')}
-                    className="text-left text-[#6b8fba] text-xs font-semibold px-4 py-3 uppercase tracking-wider cursor-pointer hover:text-white transition-colors hidden md:table-cell select-none"
+                    className="text-left text-[#9cb8d9] text-xs font-semibold px-4 py-3 uppercase tracking-wider cursor-pointer hover:text-white transition-colors hidden md:table-cell select-none"
                   >
                     Date Accepted <SortIcon active={sortKey === 'date'} dir={sortDir} />
                   </th>
                   <th
                     onClick={() => handleSort('spend')}
-                    className="text-right text-[#6b8fba] text-xs font-semibold px-4 py-3 uppercase tracking-wider cursor-pointer hover:text-white transition-colors hidden lg:table-cell select-none"
+                    className="text-right text-[#9cb8d9] text-xs font-semibold px-4 py-3 uppercase tracking-wider cursor-pointer hover:text-white transition-colors hidden lg:table-cell select-none"
                   >
                     Total Spend <SortIcon active={sortKey === 'spend'} dir={sortDir} />
                   </th>
-                  <th className="text-right text-[#6b8fba] text-xs font-semibold px-4 py-3 uppercase tracking-wider hidden lg:table-cell">
+                  <th className="text-right text-[#9cb8d9] text-xs font-semibold px-4 py-3 uppercase tracking-wider hidden lg:table-cell">
                     Orders
                   </th>
-                  <th className="text-right text-[#6b8fba] text-xs font-semibold px-4 py-3 uppercase tracking-wider hidden xl:table-cell">
+                  <th className="text-right text-[#9cb8d9] text-xs font-semibold px-4 py-3 uppercase tracking-wider hidden xl:table-cell">
                     Registered
                   </th>
                 </tr>
@@ -328,7 +328,7 @@ export default function ComplianceTab() {
                                 {r.firstName} {r.lastName}
                               </p>
                             )}
-                            <p className="text-[#6b8fba] text-xs">{r.email}</p>
+                            <p className="text-[#9cb8d9] text-xs">{r.email}</p>
                           </div>
                         </div>
                       </td>
@@ -360,7 +360,7 @@ export default function ComplianceTab() {
                         <span className="text-[#8caad4] text-sm">{r.orderCount}</span>
                       </td>
                       <td className="px-4 py-3 text-right hidden xl:table-cell">
-                        <span className="text-[#6b8fba] text-xs">{r.registeredAt || '—'}</span>
+                        <span className="text-[#9cb8d9] text-xs">{r.registeredAt || '—'}</span>
                       </td>
                     </motion.tr>
                   ))}

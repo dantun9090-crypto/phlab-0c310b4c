@@ -18,7 +18,7 @@ export default function Terms() {
       title: 'Agreement to Terms',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             By accessing or using Pro Health Peptides Ltd's website ("we," "us," "our"), you agree to be bound by these Terms and Conditions ("Terms"). If you do not agree to all of these Terms, do not access or use the Website.
           </p>
           <div className="p-4 rounded-lg border" style={{ background: 'rgba(59,130,246,0.05)', borderColor: 'rgba(59,130,246,0.15)' }}>
@@ -54,7 +54,7 @@ export default function Terms() {
               'Products are for in-vitro research only',
               'Misuse may result in legal consequences under UK law',
             ].map((item) => (
-              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#ef4444' }} />
                 {item}
               </li>
@@ -77,7 +77,7 @@ export default function Terms() {
             'You will use products solely for legitimate in-vitro laboratory research',
             'You will comply with all applicable UK, EU, and international laws',
           ].map((item) => (
-            <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+            <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
               <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#10B981' }} />
               {item}
             </li>
@@ -92,7 +92,7 @@ export default function Terms() {
       title: 'Ordering & Acceptance',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             When you place an order, you are making an offer to purchase. We reserve the right to accept or reject your order for any reason, including but not limited to:
           </p>
           <ul className="space-y-3 mb-4">
@@ -103,7 +103,7 @@ export default function Terms() {
               'Failure to meet eligibility requirements',
               'Non-compliance with research-use restrictions',
             ].map((item) => (
-              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#f59e0b' }} />
                 {item}
               </li>
@@ -124,7 +124,7 @@ export default function Terms() {
       title: 'Payment & Pricing',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             We accept Open Banking / Pay by Bank only. All prices are in GBP (£) and include VAT where applicable.
           </p>
           <ul className="space-y-3">
@@ -135,7 +135,7 @@ export default function Terms() {
               'Bank transfer references must match your order number',
               'Orders unpaid after 72 hours will be automatically cancelled',
             ].map((item) => (
-              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#8b5cf6' }} />
                 {item}
               </li>
@@ -151,7 +151,7 @@ export default function Terms() {
       title: 'Shipping & Delivery',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             We ship to UK addresses only. Delivery times are estimates and not guaranteed.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
@@ -161,7 +161,7 @@ export default function Terms() {
             ].map(({ label, value, price }) => (
               <div key={label} className="p-3 rounded-lg border" style={{ background: '#0b1a30', borderColor: 'rgba(6,182,212,0.15)' }}>
                 <p className="text-xs font-semibold mb-1" style={{ color: '#06b6d4' }}>{label}</p>
-                <p className="text-[10px] mb-0.5" style={{ color: '#6b8fba' }}>{value}</p>
+                <p className="text-[10px] mb-0.5" style={{ color: '#9cb8d9' }}>{value}</p>
                 <p className="text-xs font-bold" style={{ color: '#f0f6ff' }}>{price}</p>
               </div>
             ))}
@@ -181,7 +181,7 @@ export default function Terms() {
       title: 'Product Storage & Handling',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             Research peptides require proper storage to maintain stability and integrity:
           </p>
           <div className="space-y-3">
@@ -193,7 +193,7 @@ export default function Terms() {
               <div key={condition} className="p-3 rounded-lg border" style={{ background: '#0b1a30', borderColor: 'rgba(236,72,153,0.15)' }}>
                 <p className="text-xs font-semibold mb-1" style={{ color: '#ec4899' }}>{condition}</p>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[10px]" style={{ color: '#6b8fba' }}>{temp}</span>
+                  <span className="text-[10px]" style={{ color: '#9cb8d9' }}>{temp}</span>
                   <span className="text-[10px] font-bold" style={{ color: '#f0f6ff' }}>{duration}</span>
                 </div>
               </div>
@@ -212,7 +212,7 @@ export default function Terms() {
       title: 'Returns & Refunds',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             Due to the sensitive nature of research compounds, we operate a strict returns policy:
           </p>
           <ul className="space-y-3 mb-4">
@@ -223,7 +223,7 @@ export default function Terms() {
               'Refunds processed within 5–10 business days',
               'Shipping costs are non-refundable unless the item is faulty',
             ].map((item) => (
-              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#f97316' }} />
                 {item}
               </li>
@@ -242,7 +242,7 @@ export default function Terms() {
       title: 'Limitation of Liability',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             To the fullest extent permitted by UK law:
           </p>
           <ul className="space-y-3">
@@ -253,7 +253,7 @@ export default function Terms() {
               'Maximum liability is limited to the value of the product purchased',
               'We are not responsible for indirect, consequential, or punitive damages',
             ].map((item) => (
-              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#6366f1' }} />
                 {item}
               </li>
@@ -274,7 +274,7 @@ export default function Terms() {
       title: 'Prohibited Uses',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             You expressly agree NOT to use any products for:
           </p>
           <ul className="space-y-3">
@@ -286,7 +286,7 @@ export default function Terms() {
               'Any use that violates UK, EU, or international law',
               'Resale to unqualified individuals or entities',
             ].map((item) => (
-              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#dc2626' }} />
                 {item}
               </li>
@@ -308,7 +308,7 @@ export default function Terms() {
       title: 'Privacy & Data Protection',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             We are committed to protecting your personal data in accordance with UK GDPR and the Data Protection Act 2018.
           </p>
           <ul className="space-y-3">
@@ -319,7 +319,7 @@ export default function Terms() {
               'You have the right to access, rectify, or delete your data',
               'Cookie usage is governed by our Cookie Policy',
             ].map((item) => (
-              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#14b8a6' }} />
                 {item}
               </li>
@@ -344,7 +344,7 @@ export default function Terms() {
             'Product names, descriptions, and images are protected by copyright',
             'Unauthorised use may result in legal action',
           ].map((item) => (
-            <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+            <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
               <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#a855f7' }} />
               {item}
             </li>
@@ -359,7 +359,7 @@ export default function Terms() {
       title: 'Governing Law & Jurisdiction',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             These Terms are governed by the laws of England and Wales. Any disputes arising from these Terms or your use of the Website shall be subject to the exclusive jurisdiction of the courts of England and Wales.
           </p>
           <div className="p-4 rounded-lg border" style={{ background: 'rgba(14,165,233,0.05)', borderColor: 'rgba(14,165,233,0.15)' }}>
@@ -377,7 +377,7 @@ export default function Terms() {
       title: 'Changes to Terms',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             We reserve the right to modify these Terms at any time. Changes will be effective immediately upon posting to the Website. Your continued use of the Website after any changes constitutes acceptance of the new Terms.
           </p>
           <div className="p-4 rounded-lg border" style={{ background: 'rgba(244,63,94,0.05)', borderColor: 'rgba(244,63,94,0.15)' }}>
@@ -402,7 +402,7 @@ export default function Terms() {
           <h1 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: '#f0f6ff' }}>
             Terms & Conditions
           </h1>
-          <p className="text-base leading-relaxed max-w-2xl mx-auto" style={{ color: '#6b8fba' }}>
+          <p className="text-base leading-relaxed max-w-2xl mx-auto" style={{ color: '#9cb8d9' }}>
             Please read these Terms and Conditions carefully before using our Website or purchasing any products. By placing an order, you agree to be bound by these Terms.
           </p>
         </div>
@@ -462,7 +462,7 @@ export default function Terms() {
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-sm mb-1" style={{ color: '#f0f6ff' }}>Questions About These Terms?</p>
-                <p className="text-xs leading-relaxed" style={{ color: '#6b8fba' }}>
+                <p className="text-xs leading-relaxed" style={{ color: '#9cb8d9' }}>
                   For any questions relating to these Terms and Conditions, contact us at{' '}
                   <a
                     href="mailto:info@prohealthpeptides.co.uk"
@@ -481,7 +481,7 @@ export default function Terms() {
         {/* Related links */}
         <div className="max-w-4xl mx-auto mt-6 space-y-4">
           <div className="rounded-xl p-5 border" style={{ background: '#04101f', borderColor: 'rgba(255,255,255,0.07)' }}>
-            <p className="text-xs font-semibold mb-3" style={{ color: '#6b8fba' }}>Related Policies</p>
+            <p className="text-xs font-semibold mb-3" style={{ color: '#9cb8d9' }}>Related Policies</p>
             <div className="flex flex-wrap gap-3">
               {[
                 { label: 'Privacy Policy', to: '/privacy-policy' },
@@ -502,9 +502,9 @@ export default function Terms() {
             </div>
           </div>
           <div className="rounded-xl p-5 border" style={{ background: '#04101f', borderColor: 'rgba(255,255,255,0.07)' }}>
-            <p className="text-xs font-semibold mb-3" style={{ color: '#6b8fba' }}>Research Peptides — For Qualified Researchers Only</p>
+            <p className="text-xs font-semibold mb-3" style={{ color: '#9cb8d9' }}>Research Peptides — For Qualified Researchers Only</p>
             <p className="text-xs mb-3 leading-relaxed" style={{ color: '#3a5a82' }}>
-              By agreeing to these Terms, you confirm all products purchased from our <Link to="/products" className="underline hover:opacity-80 transition-opacity" style={{ color: '#6b8fba' }}>research peptide catalogue</Link> are for in-vitro laboratory use only. Not for human or veterinary consumption.
+              By agreeing to these Terms, you confirm all products purchased from our <Link to="/products" className="underline hover:opacity-80 transition-opacity" style={{ color: '#9cb8d9' }}>research peptide catalogue</Link> are for in-vitro laboratory use only. Not for human or veterinary consumption.
             </p>
             <div className="flex flex-wrap gap-3">
               {[

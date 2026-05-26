@@ -388,7 +388,7 @@ export default function EmailMarketingTab() {
             <Megaphone className="w-6 h-6 text-pink-400" />
             Email Marketing
           </h1>
-          <p className="text-[#6b8fba] text-sm mt-1">
+          <p className="text-[#9cb8d9] text-sm mt-1">
             Compose and send promotional emails to all registered customers.
           </p>
         </div>
@@ -399,7 +399,7 @@ export default function EmailMarketingTab() {
           ) : (
             <span className="text-white text-sm font-semibold">{customerCount ?? 0}</span>
           )}
-          <span className="text-[#6b8fba] text-sm">recipients</span>
+          <span className="text-[#9cb8d9] text-sm">recipients</span>
         </div>
       </div>
 
@@ -411,7 +411,7 @@ export default function EmailMarketingTab() {
               <Mail className="w-5 h-5 text-green-400" />
               Email Subscribers (Lead Magnet)
             </h2>
-            <p className="text-[#6b8fba] text-xs mt-1">
+            <p className="text-[#9cb8d9] text-xs mt-1">
               Users who signed up for the Free Protocol Library
             </p>
           </div>
@@ -421,7 +421,7 @@ export default function EmailMarketingTab() {
               className="p-2 hover:bg-white/5 rounded-lg transition-colors"
               aria-label="Refresh subscribers"
             >
-              <RefreshCw className="w-4 h-4 text-[#6b8fba]" />
+              <RefreshCw className="w-4 h-4 text-[#9cb8d9]" />
             </button>
             <button
               onClick={exportSubscribers}
@@ -522,7 +522,7 @@ export default function EmailMarketingTab() {
                     <span className="text-[#2a4a7a]">Choose a template...</span>
                   )}
                 </span>
-                <ChevronDown className={`w-4 h-4 text-[#6b8fba] transition-transform ${templateOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`w-4 h-4 text-[#9cb8d9] transition-transform ${templateOpen ? 'rotate-180' : ''}`} />
               </button>
               <AnimatePresence>
                 {templateOpen && (
@@ -561,7 +561,7 @@ export default function EmailMarketingTab() {
             </h3>
 
             <div>
-              <label className="block text-[#6b8fba] text-xs font-medium mb-1.5">Subject Line</label>
+              <label className="block text-[#9cb8d9] text-xs font-medium mb-1.5">Subject Line</label>
               <input
                 type="text"
                 value={subject}
@@ -572,7 +572,7 @@ export default function EmailMarketingTab() {
             </div>
 
             <div>
-              <label className="block text-[#6b8fba] text-xs font-medium mb-1.5">Email Body</label>
+              <label className="block text-[#9cb8d9] text-xs font-medium mb-1.5">Email Body</label>
               <textarea
                 value={body}
                 onChange={e => setBody(e.target.value)}
@@ -637,7 +637,7 @@ export default function EmailMarketingTab() {
             <h3 className="font-semibold text-white text-sm flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-amber-400" /> How it works
             </h3>
-            <ul className="space-y-2 text-[#6b8fba] text-xs leading-relaxed">
+            <ul className="space-y-2 text-[#9cb8d9] text-xs leading-relaxed">
               <li className="flex items-start gap-2">
                 <span className="w-4 h-4 rounded-full bg-blue-500/20 text-blue-400 text-[10px] flex items-center justify-center shrink-0 mt-0.5 font-bold">1</span>
                 Emails are written to an <span className="text-white font-medium mx-1">emailQueue</span> collection in Firebase.
@@ -665,7 +665,7 @@ export default function EmailMarketingTab() {
                 aria-label="Refresh campaign history"
                 className="p-1.5 hover:bg-white/5 rounded-lg transition-colors"
               >
-                <RefreshCw className="w-3.5 h-3.5 text-[#6b8fba]" />
+                <RefreshCw className="w-3.5 h-3.5 text-[#9cb8d9]" />
               </button>
             </div>
 
