@@ -257,7 +257,7 @@ export default function CheckoutPage() {
       if (!form.country.trim()) e.country = 'Required';
     }
     if (step === 3) {
-      if (!form.acceptedTerms) e.terms = 'You must accept the Terms & Conditions';
+      if (!form.acceptedTerms) e.terms = 'You must confirm Research Use Only and accept the Terms & Conditions';
     }
     return e;
   };
