@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
+import { LoadingFallback } from "@/components/LoadingFallback";
 
 const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
