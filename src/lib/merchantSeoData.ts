@@ -45,6 +45,12 @@ export const MERCHANT_SEO_ENTRIES: MerchantSeoEntry[] = [
       "KPV tripeptide (Lys-Pro-Val) lyophilised reference compound for in-vitro laboratory research only. HPLC-tested to ≥99% purity with batch Certificate of Analysis. Not for human or veterinary use, not a medicinal product, and not for diagnostic or therapeutic application. Supplied to qualified UK research professionals for controlled laboratory study.",
   },
   {
+    match: "ghk-cu",
+    name: "GHK-Cu | Copper Tripeptide Lab Reference Compound",
+    description:
+      "GHK-Cu copper tripeptide complex supplied as a lyophilised reference compound for in-vitro laboratory research only. HPLC-verified to ≥99% purity with batch Certificate of Analysis. Not for human or veterinary use, not a cosmetic, and not a medicinal product. Intended exclusively for controlled scientific investigation by qualified UK research professionals.",
+  },
+  {
     match: "tb-500",
     name: "TB-500 (Thymosin β-4 Fragment) | Lab Reference Compound",
     description:
@@ -55,12 +61,6 @@ export const MERCHANT_SEO_ENTRIES: MerchantSeoEntry[] = [
     name: "MOTS-c | Mitochondrial Peptide Lab Reference Compound",
     description:
       "MOTS-c, a mitochondrial-derived peptide reference compound supplied lyophilised for in-vitro laboratory research only. HPLC-tested to ≥99% purity with batch Certificate of Analysis. Not for human or veterinary use, not a medicinal product, and not for diagnostic or therapeutic application. Sold to qualified UK research professionals for controlled laboratory study.",
-  },
-  {
-    match: "ghk-cu",
-    name: "GHK-Cu | Copper Tripeptide Laboratory Reference Compound",
-    description:
-      "GHK-Cu copper tripeptide complex supplied as a lyophilised reference compound for in-vitro laboratory research only. HPLC-verified to ≥99% purity with batch Certificate of Analysis. Not for human or veterinary use, not a cosmetic, and not a medicinal product. Intended exclusively for controlled scientific investigation by qualified UK research professionals.",
   },
   {
     match: "nad",
