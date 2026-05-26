@@ -307,7 +307,7 @@ export default function Contact() {
             </h1>
 
             <p className="text-[#8aabcf] text-lg leading-relaxed">
-              {settings.contactSubheading || 'Have a question about our compounds, an order, or just want to connect? We\'re here and happy to help.'}
+              {settings.contactSubheading || 'Questions about our laboratory reagents, an order, or technical specs for in-vitro research? Our UK team is happy to help.'}
             </p>
           </motion.div>
         </div>

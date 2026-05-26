@@ -185,8 +185,8 @@ export default function AboutPage() {
             </h1>
 
             <p className="text-[#8aabcf] text-lg md:text-xl max-w-2xl leading-relaxed mb-10">
-              PH Labs is a UK-based research compound supplier committed to analytical excellence.
-              Every batch HPLC-tested. Every result documented.
+              PH Labs is a UK-based laboratory reagent supplier of synthetic peptides for in-vitro research use only.
+              Every batch HPLC-tested. Every result documented. <strong className="text-[#e8f0fe]">Not for human or veterinary consumption.</strong>
             </p>
 
             {/* CTA row */}
@@ -347,7 +347,7 @@ export default function AboutPage() {
             <div className="rounded-3xl overflow-hidden border border-white/[0.08] shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
               <img
                 src={qualityImg}
-                alt="Premium peptide vials"
+                alt="Synthetic peptide reference vials (Research Use Only)"
                 width="800"
                 height="520"
                 className="w-full h-[400px] lg:h-[520px] object-cover object-center"
@@ -455,10 +455,10 @@ export default function AboutPage() {
                   <span className="text-amber-400 text-xs font-bold uppercase tracking-[0.2em]">Ready to Research?</span>
                 </div>
                 <h2 className="text-2xl md:text-3xl font-bold text-[#f0f6ff] mb-3">
-                  Explore Our Full Compound Catalogue
+                  Explore Our Full Reagent Catalogue
                 </h2>
                 <p className="text-[#9cb8d9] max-w-md">
-                  GLP-1 agonists, peptides, NAD+ precursors and more — all HPLC-tested, UK-dispatched.
+                  Synthetic peptides, GLP-1 analogues and NAD+ precursors — HPLC-tested, UK-dispatched. Research Use Only.
                 </p>
               </div>
 
