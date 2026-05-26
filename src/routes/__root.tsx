@@ -77,7 +77,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:locale", content: "en_GB" },
       { name: "geo.region", content: "GB" },
       { name: "geo.placename", content: "United Kingdom" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "google-site-verification", content: "tYtU-dRlfAq14D7lyPTYf8noiJH-b0LifcvvrGi8AZw" },
+      { key: "title", title: "Pro Health Peptides UK — HPLC-Verified Research Peptides" },
+      { key: "description", name: "description", content: "UK supplier of HPLC-verified research peptides and reference compounds. For in-vitro laboratory research use only." },
+      { key: "og:type", property: "og:type", content: "website" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
