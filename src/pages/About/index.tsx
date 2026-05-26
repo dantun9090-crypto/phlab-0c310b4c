@@ -223,7 +223,7 @@ export default function AboutPage() {
                 <div className="py-10 px-6 lg:px-10 text-center group">
                   <s.icon className="w-5 h-5 text-blue-400/60 mx-auto mb-3 group-hover:text-blue-400 transition-colors" />
                   <div className="text-2xl md:text-3xl font-bold text-[#f0f6ff] mb-1">{s.value}</div>
-                  <div className="text-[#6b8fba] text-xs uppercase tracking-wider font-medium">{s.label}</div>
+                  <div className="text-[#9cb8d9] text-xs uppercase tracking-wider font-medium">{s.label}</div>
                 </div>
               </FadeIn>
             ))}
@@ -250,7 +250,7 @@ export default function AboutPage() {
                 they can fully trust. That means HPLC analytical data for every batch, clear labelling,
                 and support from people who actually understand the science.
               </p>
-              <p className="text-[#6b8fba] leading-relaxed">
+              <p className="text-[#9cb8d9] leading-relaxed">
                 All compounds are sourced from accredited manufacturers, tested for identity and purity
                 before dispatch, and shipped from the UK with no import complications.
               </p>
@@ -310,7 +310,7 @@ export default function AboutPage() {
             <h2 className="text-3xl md:text-4xl font-bold text-[#f0f6ff] mb-4">
               Built on Four Commitments
             </h2>
-            <p className="text-[#6b8fba] max-w-xl mx-auto">
+            <p className="text-[#9cb8d9] max-w-xl mx-auto">
               Every decision we make returns to the same foundation: quality, transparency, reliability, and care.
             </p>
           </FadeIn>
@@ -331,7 +331,7 @@ export default function AboutPage() {
                     <p.icon className={`w-5 h-5 ${p.iconColor}`} />
                   </div>
                   <h3 className="text-[#e8f0fe] font-bold text-base mb-3 leading-snug">{p.title}</h3>
-                  <p className="text-[#6b8fba] text-sm leading-relaxed">{p.desc}</p>
+                  <p className="text-[#9cb8d9] text-sm leading-relaxed">{p.desc}</p>
                 </div>
               </FadeIn>
             ))}
@@ -413,7 +413,7 @@ export default function AboutPage() {
             <h2 className="text-3xl md:text-4xl font-bold text-[#f0f6ff] mb-4">
               People Behind the Science
             </h2>
-            <p className="text-[#6b8fba] max-w-xl mx-auto">
+            <p className="text-[#9cb8d9] max-w-xl mx-auto">
               A dedicated team with backgrounds in biochemistry, pharmaceutical supply, and customer experience.
             </p>
           </FadeIn>
@@ -432,7 +432,7 @@ export default function AboutPage() {
                   </div>
 
                   <h3 className="text-[#e8f0fe] font-bold text-base mb-1">{m.name}</h3>
-                  <p className="text-[#6b8fba] text-sm">{m.role}</p>
+                  <p className="text-[#9cb8d9] text-sm">{m.role}</p>
                 </div>
               </FadeIn>
             ))}
@@ -457,7 +457,7 @@ export default function AboutPage() {
                 <h2 className="text-2xl md:text-3xl font-bold text-[#f0f6ff] mb-3">
                   Explore Our Full Compound Catalogue
                 </h2>
-                <p className="text-[#6b8fba] max-w-md">
+                <p className="text-[#9cb8d9] max-w-md">
                   GLP-1 agonists, peptides, NAD+ precursors and more — all HPLC-tested, UK-dispatched.
                 </p>
               </div>

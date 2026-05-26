@@ -95,13 +95,13 @@ export default function ThemesTab() {
             </div>
             <h2 className="text-xl font-bold text-[#f0f6ff]">Theme Templates</h2>
           </div>
-          <p className="text-[#6b8fba] text-sm ml-13">
+          <p className="text-[#9cb8d9] text-sm ml-13">
             Click <strong className="text-[#8caad4]">Apply</strong> on any template to instantly change the site's look.
             Changes save automatically and are visible to all visitors.
           </p>
         </div>
         <div className="text-right text-xs text-[#3a5a82]">
-          <span className="text-[#6b8fba] font-medium">{THEME_TEMPLATES.length}</span> templates
+          <span className="text-[#9cb8d9] font-medium">{THEME_TEMPLATES.length}</span> templates
         </div>
       </div>
 
@@ -127,7 +127,7 @@ export default function ThemesTab() {
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 selectedCategory === cat.id
                   ? 'bg-blue-600 text-white'
-                  : 'bg-[#0b1a30] text-[#6b8fba] hover:text-[#f0f6ff] border border-white/[0.08]'
+                  : 'bg-[#0b1a30] text-[#9cb8d9] hover:text-[#f0f6ff] border border-white/[0.08]'
               }`}
             >
               {cat.label}
@@ -205,7 +205,7 @@ export default function ThemesTab() {
                   <div className="flex gap-2 mt-4">
                     <button
                       onClick={() => setPreviewTemplate(template)}
-                      className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-[#0f2040] hover:bg-[#162d58] border border-white/[0.08] rounded-xl text-[#6b8fba] hover:text-[#f0f6ff] transition-all text-xs"
+                      className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-[#0f2040] hover:bg-[#162d58] border border-white/[0.08] rounded-xl text-[#9cb8d9] hover:text-[#f0f6ff] transition-all text-xs"
                     >
                       <Eye className="w-3.5 h-3.5" /> Preview
                     </button>
@@ -256,7 +256,7 @@ export default function ThemesTab() {
                 <button
                   onClick={() => setPreviewTemplate(null)}
                   aria-label="Close theme preview"
-                  className="w-8 h-8 rounded-lg bg-[#0f2040] hover:bg-[#162d58] flex items-center justify-center text-[#6b8fba] hover:text-white transition-all"
+                  className="w-8 h-8 rounded-lg bg-[#0f2040] hover:bg-[#162d58] flex items-center justify-center text-[#9cb8d9] hover:text-white transition-all"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -303,23 +303,23 @@ export default function ThemesTab() {
                     {Object.entries(previewTemplate.colors).filter(([k]) => typeof previewTemplate.colors[k as keyof typeof previewTemplate.colors] === 'string').map(([k, v]) => (
                       <div key={k} className="flex items-center gap-1">
                         <div className="w-3 h-3 rounded-full border border-white/10" style={{ backgroundColor: v as string }} />
-                        <span className="text-[#6b8fba]">{k}</span>
+                        <span className="text-[#9cb8d9]">{k}</span>
                       </div>
                     ))}
                   </div>
                 </div>
                 <div className="bg-[#060f1e] rounded-xl p-3 space-y-1.5">
                   <div className="text-[#3a5a82] mb-2">Settings</div>
-                  <div className="text-[#6b8fba]">Card: <span className="text-[#8caad4]">{previewTemplate.skeleton.cardStyle}</span></div>
-                  <div className="text-[#6b8fba]">Hover: <span className="text-[#8caad4]">{previewTemplate.animations.hoverEffect}</span></div>
-                  <div className="text-[#6b8fba]">Transition: <span className="text-[#8caad4]">{previewTemplate.animations.pageTransition}</span></div>
+                  <div className="text-[#9cb8d9]">Card: <span className="text-[#8caad4]">{previewTemplate.skeleton.cardStyle}</span></div>
+                  <div className="text-[#9cb8d9]">Hover: <span className="text-[#8caad4]">{previewTemplate.animations.hoverEffect}</span></div>
+                  <div className="text-[#9cb8d9]">Transition: <span className="text-[#8caad4]">{previewTemplate.animations.pageTransition}</span></div>
                 </div>
               </div>
 
               <div className="flex gap-3">
                 <button
                   onClick={() => setPreviewTemplate(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-white/[0.08] text-[#6b8fba] hover:text-white transition-all text-sm"
+                  className="flex-1 py-2.5 rounded-xl border border-white/[0.08] text-[#9cb8d9] hover:text-white transition-all text-sm"
                 >
                   Cancel
                 </button>

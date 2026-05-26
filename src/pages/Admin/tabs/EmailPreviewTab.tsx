@@ -436,7 +436,7 @@ export default function EmailPreviewTab() {
             </div>
             <div>
               <h1 className="text-white text-xl font-bold">Email Preview</h1>
-              <p className="text-[#6b8fba] text-sm">Preview every email template and manage automated order workflows</p>
+              <p className="text-[#9cb8d9] text-sm">Preview every email template and manage automated order workflows</p>
             </div>
             <div className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-green-500/20 bg-green-500/5">
               <Zap className="w-3 h-3 text-green-400" />
@@ -457,7 +457,7 @@ export default function EmailPreviewTab() {
                 </div>
                 <div>
                   <p className="text-white text-sm font-semibold">24h Payment Reminders</p>
-                  <p className="text-[#6b8fba] text-xs">Pending bank transfer orders · 24–72h window · auto-scanned daily</p>
+                  <p className="text-[#9cb8d9] text-xs">Pending bank transfer orders · 24–72h window · auto-scanned daily</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -497,7 +497,7 @@ export default function EmailPreviewTab() {
                     <div key={order.id} className="flex items-center justify-between px-5 py-3 border-b border-amber-500/[0.06] last:border-0">
                       <div>
                         <p className="text-white text-sm font-medium">{order.firstName} · #{order.id.slice(-8).toUpperCase()}</p>
-                        <p className="text-[#6b8fba] text-xs">{order.userEmail} · £{order.totalAmount.toFixed(2)} · {Math.round((Date.now() - order.createdAt.getTime()) / 3600000)}h ago</p>
+                        <p className="text-[#9cb8d9] text-xs">{order.userEmail} · £{order.totalAmount.toFixed(2)} · {Math.round((Date.now() - order.createdAt.getTime()) / 3600000)}h ago</p>
                       </div>
                       <button onClick={() => handleSendOneReminder(order)} disabled={reminderLoading} className="px-3 py-1 rounded-lg text-xs font-medium bg-amber-500/10 border border-amber-500/25 text-amber-400 hover:bg-amber-500/20 transition-all disabled:opacity-50">
                         Send
@@ -528,7 +528,7 @@ export default function EmailPreviewTab() {
                 </div>
                 <div>
                   <p className="text-white text-sm font-semibold">72h Auto-Cancellation</p>
-                  <p className="text-[#6b8fba] text-xs">Cancels order + emails customer · no charge · auto-scanned daily</p>
+                  <p className="text-[#9cb8d9] text-xs">Cancels order + emails customer · no charge · auto-scanned daily</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -568,7 +568,7 @@ export default function EmailPreviewTab() {
                     <div key={order.id} className="flex items-center justify-between px-5 py-3 border-b border-red-500/[0.06] last:border-0">
                       <div>
                         <p className="text-white text-sm font-medium">{order.firstName} · #{order.id.slice(-8).toUpperCase()}</p>
-                        <p className="text-[#6b8fba] text-xs">{order.userEmail} · £{order.totalAmount.toFixed(2)} · {Math.round((Date.now() - order.createdAt.getTime()) / 3600000)}h ago</p>
+                        <p className="text-[#9cb8d9] text-xs">{order.userEmail} · £{order.totalAmount.toFixed(2)} · {Math.round((Date.now() - order.createdAt.getTime()) / 3600000)}h ago</p>
                       </div>
                       <button onClick={() => handleCancelOne(order)} disabled={cancelLoading} className="px-3 py-1 rounded-lg text-xs font-medium bg-red-500/10 border border-red-500/25 text-red-400 hover:bg-red-500/20 transition-all disabled:opacity-50">
                         Cancel
@@ -597,7 +597,7 @@ export default function EmailPreviewTab() {
           {/* Sidebar */}
           <div className="rounded-2xl border border-white/[0.07] overflow-hidden" style={{ background: '#0b1a30' }}>
             <div className="px-4 py-3 border-b border-white/[0.07]">
-              <p className="text-[#6b8fba] text-xs font-semibold uppercase tracking-widest">Templates</p>
+              <p className="text-[#9cb8d9] text-xs font-semibold uppercase tracking-widest">Templates</p>
             </div>
             <div className="overflow-y-auto" style={{ maxHeight: 720 }}>
               {grouped.map(({ group, items }) => (
@@ -626,14 +626,14 @@ export default function EmailPreviewTab() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-white text-lg font-semibold">{selectedTemplate.label}</h2>
-                <p className="text-[#6b8fba] text-sm">{selectedTemplate.description}</p>
+                <p className="text-[#9cb8d9] text-sm">{selectedTemplate.description}</p>
               </div>
               <div className="flex items-center gap-2">
                 {(['desktop', 'mobile'] as const).map(m => (
                   <button
                     key={m}
                     onClick={() => setPreviewMode(m)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${previewMode === m ? 'bg-blue-500/15 border-blue-500/30 text-blue-300' : 'border-white/[0.07] text-[#6b8fba] hover:bg-white/[0.04]'}`}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${previewMode === m ? 'bg-blue-500/15 border-blue-500/30 text-blue-300' : 'border-white/[0.07] text-[#9cb8d9] hover:bg-white/[0.04]'}`}
                   >
                     {m.charAt(0).toUpperCase() + m.slice(1)}
                   </button>

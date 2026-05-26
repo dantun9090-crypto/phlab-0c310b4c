@@ -18,7 +18,7 @@ export default function TermsOfService() {
       title: '1. Research Use Only',
       content: (
         <>
-          <p className="text-[#6b8fba] leading-relaxed">
+          <p className="text-[#9cb8d9] leading-relaxed">
             All products sold by Pro Health Peptides Ltd are strictly{' '}
             <strong className="text-red-300 font-semibold">for laboratory research use only</strong>.
             They are not for human consumption, veterinary use, or any diagnostic, therapeutic, or
@@ -35,7 +35,7 @@ export default function TermsOfService() {
       borderColor: 'border-blue-500/20',
       title: '2. Age and Qualification Restriction',
       content: (
-        <p className="text-[#6b8fba] leading-relaxed">
+        <p className="text-[#9cb8d9] leading-relaxed">
           You must be at least <strong className="text-[#c8daf0]">18 years old</strong> and a{' '}
           <strong className="text-[#c8daf0]">qualified researcher or institution</strong> to purchase.
           By placing an order you confirm you meet these requirements.
@@ -50,7 +50,7 @@ export default function TermsOfService() {
       borderColor: 'border-amber-500/20',
       title: '3. No Warranties',
       content: (
-        <p className="text-[#6b8fba] leading-relaxed">
+        <p className="text-[#9cb8d9] leading-relaxed">
           Products are sold <strong className="text-[#c8daf0]">"as is"</strong>. We provide no
           warranties regarding fitness for any particular purpose beyond laboratory research.
         </p>
@@ -64,7 +64,7 @@ export default function TermsOfService() {
       borderColor: 'border-purple-500/20',
       title: '4. Limitation of Liability',
       content: (
-        <p className="text-[#6b8fba] leading-relaxed">
+        <p className="text-[#9cb8d9] leading-relaxed">
           Pro Health Peptides Ltd shall not be liable for any direct, indirect, incidental, or
           consequential damages arising from the use or misuse of our products.
         </p>
@@ -79,10 +79,10 @@ export default function TermsOfService() {
       title: '5. Governing Law',
       content: (
         <>
-          <p className="text-[#6b8fba] leading-relaxed">
+          <p className="text-[#9cb8d9] leading-relaxed">
             These terms are governed by the laws of <strong className="text-[#c8daf0]">England and Wales</strong>.
           </p>
-          <p className="text-[#6b8fba] leading-relaxed mt-3">
+          <p className="text-[#9cb8d9] leading-relaxed mt-3">
             Full company details: <strong className="text-[#c8daf0]">Pro Health Peptides Ltd</strong>,
             Registered in England &amp; Wales.
           </p>
@@ -104,7 +104,7 @@ export default function TermsOfService() {
             <FileText className="w-8 h-8 text-blue-400" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-[#f0f6ff] mb-3">Terms of Service</h1>
-          <p className="text-[#6b8fba] text-sm">Last updated: April 2026</p>
+          <p className="text-[#9cb8d9] text-sm">Last updated: April 2026</p>
           <p className="text-[#8caad4] mt-4 max-w-xl mx-auto text-sm leading-relaxed">
             Welcome to Pro Health Peptides Ltd. By accessing or using our website, you agree to these Terms of Service.
           </p>

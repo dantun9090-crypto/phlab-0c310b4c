@@ -204,7 +204,7 @@ export default function PoliciesTab() {
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <FileText className="w-6 h-6 text-blue-400" /> Legal Policies
           </h1>
-          <p className="text-[#6b8fba] text-sm mt-0.5">
+          <p className="text-[#9cb8d9] text-sm mt-0.5">
             Edit Terms, Privacy, and Shipping policies (plain text or HTML supported)
           </p>
         </div>
@@ -259,7 +259,7 @@ export default function PoliciesTab() {
                 className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === tab.key
                     ? 'border-blue-500 text-blue-400'
-                    : 'border-transparent text-[#6b8fba] hover:text-white'
+                    : 'border-transparent text-[#9cb8d9] hover:text-white'
                 }`}
               >
                 {tab.label}
@@ -275,7 +275,7 @@ export default function PoliciesTab() {
               </label>
               <button
                 onClick={() => setPolicies(prev => ({ ...prev, [activeField]: DEFAULTS[activeField] }))}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0b1a30] border border-white/[0.1] hover:border-blue-500/50 text-[#6b8fba] hover:text-blue-400 rounded-lg text-xs font-medium transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#0b1a30] border border-white/[0.1] hover:border-blue-500/50 text-[#9cb8d9] hover:text-blue-400 rounded-lg text-xs font-medium transition-colors"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 Load Default Content

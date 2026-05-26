@@ -17,7 +17,7 @@ export default function CookiePolicy() {
       iconColor: '#f59e0b',
       title: 'What Are Cookies?',
       content: (
-        <p className="leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+        <p className="leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
           Cookies are small text files placed on your device when you visit a website. They allow the site to recognise your device on subsequent visits and remember preferences or login status. Cookies cannot run programs or deliver viruses — they are simply data files unique to you and your device.
         </p>
       ),
@@ -29,7 +29,7 @@ export default function CookiePolicy() {
       title: 'Essential Cookies',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             These cookies are necessary for the website to function properly. They enable core features such as security, authentication, and shopping cart functionality. Essential cookies cannot be disabled.
           </p>
           <div className="space-y-3">
@@ -44,7 +44,7 @@ export default function CookiePolicy() {
                   <span className="text-xs font-semibold font-mono" style={{ color: '#10B981' }}>{name}</span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(16,185,129,0.15)', color: '#10B981' }}>{duration}</span>
                 </div>
-                <p className="text-[10px]" style={{ color: '#6b8fba' }}>{purpose}</p>
+                <p className="text-[10px]" style={{ color: '#9cb8d9' }}>{purpose}</p>
               </div>
             ))}
           </div>
@@ -58,7 +58,7 @@ export default function CookiePolicy() {
       title: 'Analytics Cookies (Optional)',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             We use Google Analytics to understand how visitors use our site. These cookies collect anonymous data such as page views, time on site, and navigation patterns. You can opt out at any time via our cookie banner.
           </p>
           <div className="space-y-3">
@@ -72,7 +72,7 @@ export default function CookiePolicy() {
                   <span className="text-xs font-semibold font-mono" style={{ color: '#3b82f6' }}>{name}</span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={{ background: 'rgba(59,130,246,0.15)', color: '#3b82f6' }}>{duration}</span>
                 </div>
-                <p className="text-[10px] mb-1" style={{ color: '#6b8fba' }}>{purpose}</p>
+                <p className="text-[10px] mb-1" style={{ color: '#9cb8d9' }}>{purpose}</p>
                 <p className="text-[10px]" style={{ color: '#3a5a82' }}>
                   <span className="font-semibold">Provider:</span> {provider}
                 </p>
@@ -94,7 +94,7 @@ export default function CookiePolicy() {
       title: 'Managing Your Cookie Preferences',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             You have full control over which cookies we use. You can change your preferences at any time using the methods below:
           </p>
           <div className="space-y-3">
@@ -109,7 +109,7 @@ export default function CookiePolicy() {
                 </div>
                 <div>
                   <p className="text-xs font-semibold mb-1" style={{ color: '#8b5cf6' }}>{method}</p>
-                  <p className="text-[10px] leading-relaxed" style={{ color: '#6b8fba' }}>{description}</p>
+                  <p className="text-[10px] leading-relaxed" style={{ color: '#9cb8d9' }}>{description}</p>
                 </div>
               </div>
             ))}
@@ -129,7 +129,7 @@ export default function CookiePolicy() {
       title: 'Third-Party Cookies',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             Some pages may include embedded content from third-party services (e.g., YouTube videos, social media widgets). These services may set their own cookies, which we do not control.
           </p>
           <ul className="space-y-3">
@@ -144,13 +144,13 @@ export default function CookiePolicy() {
                   <span className="mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#06b6d4' }} />
                   <div className="flex-1">
                     <p className="text-xs font-semibold mb-0.5" style={{ color: '#06b6d4' }}>{service}</p>
-                    <p className="text-[10px] mb-1" style={{ color: '#6b8fba' }}>{purpose}</p>
+                    <p className="text-[10px] mb-1" style={{ color: '#9cb8d9' }}>{purpose}</p>
                     {isUrl ? (
                       <a href={policy} target="_blank" rel="noopener noreferrer nofollow" className="text-[10px] underline underline-offset-2 hover:opacity-80" style={{ color: '#06b6d4' }}>
                         Privacy Policy →
                       </a>
                     ) : (
-                      <span className="text-[10px]" style={{ color: '#6b8fba' }}>{policy}</span>
+                      <span className="text-[10px]" style={{ color: '#9cb8d9' }}>{policy}</span>
                     )}
                   </div>
                 </li>
@@ -167,12 +167,12 @@ export default function CookiePolicy() {
       title: 'Policy Updates',
       content: (
         <div className="space-y-4">
-          <p className="leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
             We may update this Cookie Policy to reflect changes in our use of cookies or legal requirements. Any material changes will be communicated via our website and, where appropriate, by email.
           </p>
           <div className="p-4 rounded-lg border" style={{ background: 'rgba(236,72,153,0.05)', borderColor: 'rgba(236,72,153,0.15)' }}>
             <p className="text-xs font-semibold mb-1" style={{ color: '#ec4899' }}>Last updated: January 2026</p>
-            <p className="text-xs leading-relaxed" style={{ color: '#6b8fba' }}>
+            <p className="text-xs leading-relaxed" style={{ color: '#9cb8d9' }}>
               This policy is effective from 1st January 2026. If you continue to use our site after any changes, you accept the updated policy.
             </p>
           </div>
@@ -193,7 +193,7 @@ export default function CookiePolicy() {
           <h1 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: '#f0f6ff' }}>
             Cookie Policy
           </h1>
-          <p className="text-base leading-relaxed max-w-2xl mx-auto" style={{ color: '#6b8fba' }}>
+          <p className="text-base leading-relaxed max-w-2xl mx-auto" style={{ color: '#9cb8d9' }}>
             This policy explains how Pro Health Peptides Ltd uses cookies and similar technologies on our website. We are committed to transparency and giving you control over your data.
           </p>
         </div>
@@ -236,7 +236,7 @@ export default function CookiePolicy() {
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-sm mb-1" style={{ color: '#f0f6ff' }}>Questions About Our Use of Cookies?</p>
-                <p className="text-xs leading-relaxed" style={{ color: '#6b8fba' }}>
+                <p className="text-xs leading-relaxed" style={{ color: '#9cb8d9' }}>
                   If you have any questions about how we use cookies, please contact our data protection team at{' '}
                   <a
                     href="mailto:info@prohealthpeptides.co.uk"
@@ -254,7 +254,7 @@ export default function CookiePolicy() {
         {/* Related links */}
         <div className="max-w-4xl mx-auto mt-6 space-y-4">
           <div className="rounded-xl p-5 border" style={{ background: '#04101f', borderColor: 'rgba(255,255,255,0.07)' }}>
-            <p className="text-xs font-semibold mb-3" style={{ color: '#6b8fba' }}>Related Policies</p>
+            <p className="text-xs font-semibold mb-3" style={{ color: '#9cb8d9' }}>Related Policies</p>
             <div className="flex flex-wrap gap-3">
               {[
                 { label: 'Privacy Policy', to: '/privacy-policy' },
@@ -275,9 +275,9 @@ export default function CookiePolicy() {
             </div>
           </div>
           <div className="rounded-xl p-5 border" style={{ background: '#04101f', borderColor: 'rgba(255,255,255,0.07)' }}>
-            <p className="text-xs font-semibold mb-3" style={{ color: '#6b8fba' }}>Explore Our Research Peptides</p>
+            <p className="text-xs font-semibold mb-3" style={{ color: '#9cb8d9' }}>Explore Our Research Peptides</p>
             <p className="text-xs mb-3 leading-relaxed" style={{ color: '#3a5a82' }}>
-              Cookies on this site help us provide a seamless experience when you browse our <Link to="/products" className="underline hover:opacity-80 transition-opacity" style={{ color: '#6b8fba' }}>research peptide catalogue</Link>. Analytics cookies are never linked to personally identifiable information.
+              Cookies on this site help us provide a seamless experience when you browse our <Link to="/products" className="underline hover:opacity-80 transition-opacity" style={{ color: '#9cb8d9' }}>research peptide catalogue</Link>. Analytics cookies are never linked to personally identifiable information.
             </p>
             <div className="flex flex-wrap gap-3">
               {[

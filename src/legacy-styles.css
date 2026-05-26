@@ -854,7 +854,7 @@ body {
 /* ── SECONDARY TEXT ── */
 [class*="text-\\[\\#8caad4\\]"],
 [class*="text-\\[\\#8cabd8\\]"],
-[class*="text-\\[\\#6b8fba\\]"],
+[class*="text-\\[\\#9cb8d9\\]"],
 [class*="text-\\[\\#7a9ec8\\]"] {
   color: var(--theme-text-sub) !important;
 }

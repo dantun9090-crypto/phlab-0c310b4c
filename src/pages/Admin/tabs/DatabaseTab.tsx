@@ -113,7 +113,7 @@ export default function DatabaseTab() {
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-white mb-2">Database Management</h2>
-        <p className="text-[#6b8fba]">Seed Firestore with initial product catalog or manage existing data</p>
+        <p className="text-[#9cb8d9]">Seed Firestore with initial product catalog or manage existing data</p>
       </div>
 
       {/* Status Card */}
@@ -125,7 +125,7 @@ export default function DatabaseTab() {
             </div>
             <div>
               <h3 className="font-semibold text-white">Database Status</h3>
-              <p className="text-sm text-[#6b8fba]">Current Firestore product count</p>
+              <p className="text-sm text-[#9cb8d9]">Current Firestore product count</p>
             </div>
           </div>
           <button
@@ -141,7 +141,7 @@ export default function DatabaseTab() {
         {status && (
           <div className="space-y-2">
             <div className="flex items-center justify-between p-3 bg-[#04101f]/50 rounded-lg">
-              <span className="text-[#6b8fba] text-sm">Products in database:</span>
+              <span className="text-[#9cb8d9] text-sm">Products in database:</span>
               <span className="text-white font-bold text-lg">{status.count}</span>
             </div>
             {status.count > 0 && (
@@ -170,7 +170,7 @@ export default function DatabaseTab() {
             </div>
             <div>
               <h3 className="font-semibold text-white mb-1">Seed Products</h3>
-              <p className="text-sm text-[#6b8fba]">Add 15 initial peptide products to Firestore</p>
+              <p className="text-sm text-[#9cb8d9]">Add 15 initial peptide products to Firestore</p>
             </div>
           </div>
           <ul className="text-xs text-[#2a4a7a] space-y-1 mb-4 ml-13">
@@ -207,7 +207,7 @@ export default function DatabaseTab() {
             </div>
             <div>
               <h3 className="font-semibold text-white mb-1">Clear All Products</h3>
-              <p className="text-sm text-[#6b8fba]">Delete all products from Firestore</p>
+              <p className="text-sm text-[#9cb8d9]">Delete all products from Firestore</p>
             </div>
           </div>
           <div className="p-3 bg-red-900/20 border border-red-500/30 rounded-lg mb-4">
@@ -241,7 +241,7 @@ export default function DatabaseTab() {
           </div>
           <div>
             <h3 className="font-semibold text-white mb-1">Migrate Product Slugs</h3>
-            <p className="text-sm text-[#6b8fba]">
+            <p className="text-sm text-[#9cb8d9]">
               Adds SEO-friendly URL slugs to existing Firestore products. Safe to run multiple times — only updates products missing a slug.
             </p>
           </div>
@@ -286,7 +286,7 @@ export default function DatabaseTab() {
                   {migrateResult.message}
                 </p>
                 {migrateResult.updated !== undefined && (
-                  <p className="text-xs text-[#6b8fba] mt-1">
+                  <p className="text-xs text-[#9cb8d9] mt-1">
                     {migrateResult.updated} updated · {migrateResult.skipped} already had slugs
                   </p>
                 )}
@@ -304,7 +304,7 @@ export default function DatabaseTab() {
           </div>
           <div>
             <h3 className="font-semibold text-white mb-1">Apply Merchant Center SEO Copy</h3>
-            <p className="text-sm text-[#6b8fba]">
+            <p className="text-sm text-[#9cb8d9]">
               Writes Google Merchant Center–safe <span className="font-mono">seoTitle</span> and <span className="font-mono">seoDescription</span> onto every matching product. Compliant wording: "for laboratory research use only", "not for human consumption".
             </p>
           </div>
@@ -349,7 +349,7 @@ export default function DatabaseTab() {
                   {seoMigrateResult.message}
                 </p>
                 {seoMigrateResult.updated !== undefined && (
-                  <p className="text-xs text-[#6b8fba] mt-1">
+                  <p className="text-xs text-[#9cb8d9] mt-1">
                     {seoMigrateResult.updated} updated · {seoMigrateResult.skipped} skipped
                   </p>
                 )}
@@ -367,7 +367,7 @@ export default function DatabaseTab() {
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-white mb-1">Validate Merchant SEO Lengths</h3>
-            <p className="text-sm text-[#6b8fba]">
+            <p className="text-sm text-[#9cb8d9]">
               Checks every product's <span className="font-mono">seoTitle</span> ({MERCHANT_SEO_LIMITS.titleMin}–{MERCHANT_SEO_LIMITS.titleMax} chars) and <span className="font-mono">seoDescription</span> ({MERCHANT_SEO_LIMITS.descriptionMin}–{MERCHANT_SEO_LIMITS.descriptionMax} chars) against Google Merchant Center limits. Read-only — does not modify Firestore.
             </p>
           </div>
@@ -407,7 +407,7 @@ export default function DatabaseTab() {
                   <p className={`text-sm font-medium ${validationReport.success ? 'text-green-300' : 'text-amber-300'}`}>
                     {validationReport.message}
                   </p>
-                  <p className="text-xs text-[#6b8fba] mt-1">
+                  <p className="text-xs text-[#9cb8d9] mt-1">
                     {validationReport.valid} valid · {validationReport.issues.length} issue(s) · {validationReport.total} total
                   </p>
                 </div>
@@ -417,7 +417,7 @@ export default function DatabaseTab() {
             {validationReport.issues.length > 0 && (
               <div className="overflow-hidden rounded-lg border border-white/10">
                 <table className="w-full text-xs">
-                  <thead className="bg-[#04101f]/80 text-[#6b8fba]">
+                  <thead className="bg-[#04101f]/80 text-[#9cb8d9]">
                     <tr>
                       <th className="px-3 py-2 text-left font-medium">Product</th>
                       <th className="px-3 py-2 text-left font-medium">Field</th>
@@ -433,10 +433,10 @@ export default function DatabaseTab() {
                       return (
                         <tr key={i} className="bg-[#0b1a30]/40">
                           <td className="px-3 py-2 text-white">{iss.name}</td>
-                          <td className="px-3 py-2 font-mono text-[#6b8fba]">{iss.field}</td>
+                          <td className="px-3 py-2 font-mono text-[#9cb8d9]">{iss.field}</td>
                           <td className={`px-3 py-2 font-medium ${colour}`}>{label}</td>
                           <td className="px-3 py-2 text-right text-white">{iss.length}</td>
-                          <td className="px-3 py-2 text-right text-[#6b8fba]">{iss.limit}</td>
+                          <td className="px-3 py-2 text-right text-[#9cb8d9]">{iss.limit}</td>
                         </tr>
                       );
                     })}
@@ -469,7 +469,7 @@ export default function DatabaseTab() {
                 {result.message}
               </p>
               {result.count !== undefined && (
-                <p className="text-sm text-[#6b8fba] mt-1">
+                <p className="text-sm text-[#9cb8d9] mt-1">
                   {result.count} of {result.total} products added successfully
                 </p>
               )}

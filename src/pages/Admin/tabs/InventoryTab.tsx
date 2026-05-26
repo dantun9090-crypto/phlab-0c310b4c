@@ -110,7 +110,7 @@ export default function InventoryTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-white">Inventory</h2>
-          <p className="text-[#6b8fba] text-xs sm:text-sm">
+          <p className="text-[#9cb8d9] text-xs sm:text-sm">
             {products.length} products — {products.filter(p => (p.stock || 0) <= LOW_STOCK_THRESHOLD).length} low stock
           </p>
         </div>
@@ -147,7 +147,7 @@ export default function InventoryTab() {
       )}
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6b8fba]" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9cb8d9]" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -161,7 +161,7 @@ export default function InventoryTab() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/[0.07]">
-                <th className="px-3 sm:px-4 py-3 text-left text-[#6b8fba] font-medium w-8">
+                <th className="px-3 sm:px-4 py-3 text-left text-[#9cb8d9] font-medium w-8">
                   <input
                     type="checkbox"
                     onChange={(e) =>
@@ -171,12 +171,12 @@ export default function InventoryTab() {
                     className="rounded"
                   />
                 </th>
-                <th className="px-3 sm:px-4 py-3 text-left text-[#6b8fba] font-medium text-xs sm:text-sm">Product</th>
-                <th className="px-3 sm:px-4 py-3 text-left text-[#6b8fba] font-medium hidden md:table-cell text-xs sm:text-sm">SKU</th>
-                <th className="px-3 sm:px-4 py-3 text-left text-[#6b8fba] font-medium hidden md:table-cell text-xs sm:text-sm">Category</th>
-                <th className="px-3 sm:px-4 py-3 text-right text-[#6b8fba] font-medium text-xs sm:text-sm">Price</th>
-                <th className="px-3 sm:px-4 py-3 text-right text-[#6b8fba] font-medium text-xs sm:text-sm">Stock</th>
-                <th className="px-3 sm:px-4 py-3 text-right text-[#6b8fba] font-medium text-xs sm:text-sm">Actions</th>
+                <th className="px-3 sm:px-4 py-3 text-left text-[#9cb8d9] font-medium text-xs sm:text-sm">Product</th>
+                <th className="px-3 sm:px-4 py-3 text-left text-[#9cb8d9] font-medium hidden md:table-cell text-xs sm:text-sm">SKU</th>
+                <th className="px-3 sm:px-4 py-3 text-left text-[#9cb8d9] font-medium hidden md:table-cell text-xs sm:text-sm">Category</th>
+                <th className="px-3 sm:px-4 py-3 text-right text-[#9cb8d9] font-medium text-xs sm:text-sm">Price</th>
+                <th className="px-3 sm:px-4 py-3 text-right text-[#9cb8d9] font-medium text-xs sm:text-sm">Stock</th>
+                <th className="px-3 sm:px-4 py-3 text-right text-[#9cb8d9] font-medium text-xs sm:text-sm">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -215,7 +215,7 @@ export default function InventoryTab() {
                         </div>
                       )}
                     </td>
-                    <td className="px-3 sm:px-4 py-3 text-[#6b8fba] font-mono text-xs hidden md:table-cell">{product.sku || '—'}</td>
+                    <td className="px-3 sm:px-4 py-3 text-[#9cb8d9] font-mono text-xs hidden md:table-cell">{product.sku || '—'}</td>
                     <td className="px-3 sm:px-4 py-3 hidden md:table-cell">
                       <span className="px-2 py-0.5 bg-blue-900/40 text-blue-300 rounded-full text-xs">
                         {product.category || 'Uncategorised'}
@@ -299,7 +299,7 @@ export default function InventoryTab() {
               <h3 className="text-lg font-bold text-white mb-4">Bulk Edit ({bulkSelected.length} items)</h3>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-[#6b8fba] text-xs mb-1">Set Price (£) — leave blank to skip</label>
+                  <label className="block text-[#9cb8d9] text-xs mb-1">Set Price (£) — leave blank to skip</label>
                   <input
                     type="number"
                     value={bulkPrice}
@@ -308,7 +308,7 @@ export default function InventoryTab() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[#6b8fba] text-xs mb-1">Set Stock — leave blank to skip</label>
+                  <label className="block text-[#9cb8d9] text-xs mb-1">Set Stock — leave blank to skip</label>
                   <input
                     type="number"
                     value={bulkStock}

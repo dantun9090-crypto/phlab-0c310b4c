@@ -372,7 +372,7 @@ export function Layout({ children }: LayoutProps) {
           borderBottom: '1px solid rgba(16,185,129,0.12)',
         }}
       >
-        <div className="flex items-center gap-3 text-[11px] font-medium" style={{ color: '#6b8fba' }}>
+        <div className="flex items-center gap-3 text-[11px] font-medium" style={{ color: '#9cb8d9' }}>
           <span className="flex items-center gap-1.5">
             <Truck className="w-3 h-3" style={{ color: '#10b981', flexShrink: 0 }} />
             <span style={{ color: '#4ade80', fontWeight: 600 }}>Free UK Shipping</span>
@@ -536,7 +536,7 @@ export function Layout({ children }: LayoutProps) {
               }}
               className="flex items-center gap-3"
             >
-              <Search className="w-4 h-4 text-[#6b8fba] shrink-0" />
+              <Search className="w-4 h-4 text-[#9cb8d9] shrink-0" />
               <input
                 ref={searchInputRef}
                 type="search"
@@ -865,7 +865,7 @@ export function Layout({ children }: LayoutProps) {
                     <Link
                       to="/products"
                       onClick={closeCart}
-                      className="w-full py-2.5 rounded-xl border border-white/[0.08] hover:border-white/20 bg-white/[0.03] hover:bg-white/[0.06] text-[#6b8fba] hover:text-white text-sm font-medium transition-all flex items-center justify-center gap-2"
+                      className="w-full py-2.5 rounded-xl border border-white/[0.08] hover:border-white/20 bg-white/[0.03] hover:bg-white/[0.06] text-[#9cb8d9] hover:text-white text-sm font-medium transition-all flex items-center justify-center gap-2"
                     >
                       <ChevronLeft className="w-4 h-4" />
                       Return to Catalogue

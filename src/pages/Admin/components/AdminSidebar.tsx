@@ -363,7 +363,7 @@ export default function AdminSidebar({ activeTab, setActiveTab, collapsed, setCo
             onClick={() => setCollapsed(!collapsed)}
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className={`hidden lg:flex w-full items-center gap-2.5 px-2.5 py-2 rounded-xl text-[#2a3a5a] hover:text-[#6b8fba] hover:bg-white/[0.03] transition-all group border border-transparent
+            className={`hidden lg:flex w-full items-center gap-2.5 px-2.5 py-2 rounded-xl text-[#2a3a5a] hover:text-[#9cb8d9] hover:bg-white/[0.03] transition-all group border border-transparent
               ${collapsed ? 'justify-center' : ''}
             `}
           >

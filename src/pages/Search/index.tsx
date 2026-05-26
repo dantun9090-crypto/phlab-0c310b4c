@@ -519,7 +519,7 @@ export default function SearchPage() {
                 >
                   <Search className="w-7 h-7" style={{ color: '#1e3a5a' }} />
                 </div>
-                <h2 className="text-xl font-bold mb-2" style={{ color: '#6b8fba' }}>
+                <h2 className="text-xl font-bold mb-2" style={{ color: '#9cb8d9' }}>
                   No results for "{query}"
                 </h2>
                 <p className="text-sm mb-6" style={{ color: '#1e3a5a' }}>
@@ -541,7 +541,7 @@ export default function SearchPage() {
         {/* Empty state — no query yet */}
         {!query && (
           <div className="text-center py-16">
-            <Search className="w-10 h-10 mx-auto mb-4 opacity-20" style={{ color: '#6b8fba' }} />
+            <Search className="w-10 h-10 mx-auto mb-4 opacity-20" style={{ color: '#9cb8d9' }} />
             <p className="text-base" style={{ color: '#1e3a5a' }}>
               Enter a search term above to find peptides and research articles.
             </p>

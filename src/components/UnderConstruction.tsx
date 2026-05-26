@@ -117,7 +117,7 @@ export function UnderConstruction({ targetDate }: Props) {
           </span>
         </h1>
 
-        <p className="text-[#6b8fba] text-base sm:text-lg max-w-md leading-relaxed mb-10">
+        <p className="text-[#9cb8d9] text-base sm:text-lg max-w-md leading-relaxed mb-10">
           We're making some exciting improvements to our website.
           <br className="hidden sm:block" />
           Thank you for your patience.

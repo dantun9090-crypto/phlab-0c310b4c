@@ -168,7 +168,7 @@ export default function AdminPage() {
       <div className="min-h-screen bg-[#060f1e] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-          <p className="text-[#6b8fba] text-sm">Verifying access...</p>
+          <p className="text-[#9cb8d9] text-sm">Verifying access...</p>
         </div>
       </div>
     );
@@ -186,7 +186,7 @@ export default function AdminPage() {
             <WifiOff className="w-8 h-8 text-red-400" />
           </div>
           <h2 className="text-white text-xl font-bold mb-2">Database Unavailable</h2>
-          <p className="text-[#6b8fba] text-sm mb-2">
+          <p className="text-[#9cb8d9] text-sm mb-2">
             Cannot connect to the database right now. This may be due to Firestore rules not being deployed or a temporary network issue.
           </p>
           <p className="text-[#3a5a82] text-xs mb-6">
@@ -222,7 +222,7 @@ export default function AdminPage() {
             <Shield className="w-8 h-8 text-red-400" />
           </div>
           <h2 className="text-white text-xl font-bold mb-2">Access Denied</h2>
-          <p className="text-[#6b8fba] text-sm mb-6">
+          <p className="text-[#9cb8d9] text-sm mb-6">
             This area is restricted to admin accounts only.
             Your account role does not have the required permissions.
           </p>
@@ -243,7 +243,7 @@ export default function AdminPage() {
       <div className="min-h-screen bg-[#060f1e] flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-          <p className="text-[#6b8fba] text-sm">Verifying connection...</p>
+          <p className="text-[#9cb8d9] text-sm">Verifying connection...</p>
         </div>
       </div>
     );
@@ -261,7 +261,7 @@ export default function AdminPage() {
             <Shield className="w-8 h-8 text-orange-400" />
           </div>
           <h2 className="text-white text-xl font-bold mb-2">IP Not Authorised</h2>
-          <p className="text-[#6b8fba] text-sm mb-2">
+          <p className="text-[#9cb8d9] text-sm mb-2">
             Your current IP address is not on the admin access whitelist.
           </p>
           <p className="text-[#3a5a82] text-xs mb-6">
@@ -440,7 +440,7 @@ export default function AdminPage() {
             href="/"
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 text-[11px] text-[#3a5a82] hover:text-[#6b8fba] transition-colors"
+            className="flex items-center gap-1.5 text-[11px] text-[#3a5a82] hover:text-[#9cb8d9] transition-colors"
           >
             <Shield className="w-3 h-3" />
             <span>prohealthpeptides.co.uk</span>

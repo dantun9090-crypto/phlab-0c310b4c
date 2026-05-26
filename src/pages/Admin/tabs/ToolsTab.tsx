@@ -293,7 +293,7 @@ export default function ToolsTab() {
         </div>
         <div>
           <h2 className="text-xl font-bold text-[#f0f6ff]">Admin Tools</h2>
-          <p className="text-[#6b8fba] text-sm">Powerful utilities for catalog management</p>
+          <p className="text-[#9cb8d9] text-sm">Powerful utilities for catalog management</p>
         </div>
       </div>
 
@@ -309,7 +309,7 @@ export default function ToolsTab() {
           </div>
           <div>
             <h3 className="text-[#f0f6ff] font-semibold">Prerender.io — Recache All Pages</h3>
-            <p className="text-[#6b8fba] text-xs mt-0.5">
+            <p className="text-[#9cb8d9] text-xs mt-0.5">
               Force Google to see fresh HTML for all product pages and static pages after any content change.
             </p>
           </div>
@@ -318,7 +318,7 @@ export default function ToolsTab() {
         {lastRecache && (
           <div className="flex items-center gap-2 text-xs text-[#3a5a82]">
             <Clock className="w-3.5 h-3.5" />
-            Last recache: <span className="text-[#6b8fba]">{lastRecache}</span>
+            Last recache: <span className="text-[#9cb8d9]">{lastRecache}</span>
           </div>
         )}
 
@@ -336,7 +336,7 @@ export default function ToolsTab() {
             href="https://dashboard.prerender.io"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs text-[#3a5a82] hover:text-[#6b8fba] transition-colors"
+            className="flex items-center gap-1.5 text-xs text-[#3a5a82] hover:text-[#9cb8d9] transition-colors"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             Prerender Dashboard
@@ -365,7 +365,7 @@ export default function ToolsTab() {
               {/* Show URLs list */}
               {prerenderResult.urls && prerenderResult.urls.length > 0 && (
                 <details className="mt-3">
-                  <summary className="cursor-pointer text-xs text-[#6b8fba] hover:text-white transition-colors">
+                  <summary className="cursor-pointer text-xs text-[#9cb8d9] hover:text-white transition-colors">
                     {prerenderResult.urls.length} URLs included ▸
                   </summary>
                   <div className="mt-2 max-h-48 overflow-y-auto rounded-lg bg-[#04101f] p-3 space-y-1">
@@ -376,7 +376,7 @@ export default function ToolsTab() {
                   {curlLines && (
                     <div className="mt-3">
                       <p className="text-xs text-[#3a5a82] mb-1">Manual curl command (replace YOUR_TOKEN):</p>
-                      <pre className="text-[10px] text-[#6b8fba] bg-[#04101f] rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">{curlLines}</pre>
+                      <pre className="text-[10px] text-[#9cb8d9] bg-[#04101f] rounded-lg p-3 overflow-x-auto whitespace-pre-wrap">{curlLines}</pre>
                     </div>
                   )}
                 </details>
@@ -398,7 +398,7 @@ export default function ToolsTab() {
           </div>
           <div>
             <h3 className="text-[#f0f6ff] font-semibold">Dedupe Products by Slug</h3>
-            <p className="text-[#6b8fba] text-xs mt-0.5">
+            <p className="text-[#9cb8d9] text-xs mt-0.5">
               Scan <code className="bg-[#04101f] px-1.5 py-0.5 rounded text-[#8caad4]">product_stock</code> for duplicate slugs. Keeps the newest entry per slug (by <code className="bg-[#04101f] px-1.5 py-0.5 rounded text-[#8caad4]">updatedAt</code>).
             </p>
           </div>
@@ -447,7 +447,7 @@ export default function ToolsTab() {
               </div>
               {dedupeGroups && dedupeGroups.length > 0 && (
                 <details className="mt-3" open>
-                  <summary className="cursor-pointer text-xs text-[#6b8fba] hover:text-white transition-colors">
+                  <summary className="cursor-pointer text-xs text-[#9cb8d9] hover:text-white transition-colors">
                     {dedupeGroups.length} duplicated slug(s) ▸
                   </summary>
                   <div className="mt-2 max-h-72 overflow-y-auto rounded-lg bg-[#04101f] p-3 space-y-2">
@@ -482,14 +482,14 @@ export default function ToolsTab() {
             </div>
             <div>
               <h3 className="text-[#f0f6ff] font-semibold">Firebase Storage Rules</h3>
-              <p className="text-[#6b8fba] text-xs">Deploy to fix image upload permissions</p>
+              <p className="text-[#9cb8d9] text-xs">Deploy to fix image upload permissions</p>
             </div>
           </div>
-          <p className="text-[#6b8fba] text-sm mb-3">
+          <p className="text-[#9cb8d9] text-sm mb-3">
             If image uploads are failing with permission errors, deploy these rules via{' '}
             <strong className="text-[#8caad4]">Firebase Console → Storage → Rules</strong>.
           </p>
-          <pre className="text-[11px] text-[#6b8fba] bg-[#04101f] rounded-xl p-4 overflow-x-auto border border-white/[0.06]">
+          <pre className="text-[11px] text-[#9cb8d9] bg-[#04101f] rounded-xl p-4 overflow-x-auto border border-white/[0.06]">
             {STORAGE_RULES}
           </pre>
         </div>
@@ -514,7 +514,7 @@ export default function ToolsTab() {
                   </div>
                   <div>
                     <h3 className="text-[#f0f6ff] font-semibold">{tool.name}</h3>
-                    <p className="text-[#6b8fba] text-sm mt-1">{tool.description}</p>
+                    <p className="text-[#9cb8d9] text-sm mt-1">{tool.description}</p>
                     {tool.critical && (
                       <div className="flex items-center gap-1.5 mt-2">
                         <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
@@ -581,10 +581,10 @@ export default function ToolsTab() {
           <Package className="w-5 h-5 text-blue-400" />
           Catalog Information
         </h3>
-        <p className="text-[#6b8fba] text-sm">
+        <p className="text-[#9cb8d9] text-sm">
           This tool uses the <code className="bg-[#04101f] px-2 py-1 rounded text-[#8caad4]">seedProducts()</code> function from <code className="bg-[#04101f] px-2 py-1 rounded text-[#8caad4]">@/lib/seedProducts</code> to manage the product catalog.
         </p>
-        <p className="text-[#6b8fba] text-sm mt-3">
+        <p className="text-[#9cb8d9] text-sm mt-3">
           Click "Replace Catalog" to delete all existing products and load the complete research peptide catalog with laboratory descriptions, CAS numbers, and specifications.
         </p>
       </div>
@@ -640,7 +640,7 @@ function MerchantSeoMigration() {
         </div>
         <div>
           <h3 className="text-[#f0f6ff] font-semibold">Apply Merchant Center SEO to Products</h3>
-          <p className="text-[#6b8fba] text-xs mt-0.5">
+          <p className="text-[#9cb8d9] text-xs mt-0.5">
             Rewrites each product's name and description in Firestore with British-English,
             Merchant-Center–compliant copy (no medical claims; explicit "laboratory research use only").
           </p>
@@ -676,7 +676,7 @@ function MerchantSeoMigration() {
                 </div>
                 {report.updated.length > 0 && (
                   <details className="mt-2">
-                    <summary className="cursor-pointer text-xs text-[#6b8fba]">Show updated</summary>
+                    <summary className="cursor-pointer text-xs text-[#9cb8d9]">Show updated</summary>
                     <ul className="mt-2 space-y-1 text-xs text-[#8caad4]">
                       {report.updated.map((line) => <li key={line}>• {line}</li>)}
                     </ul>
@@ -684,7 +684,7 @@ function MerchantSeoMigration() {
                 )}
                 {report.skipped.length > 0 && (
                   <details className="mt-2">
-                    <summary className="cursor-pointer text-xs text-[#6b8fba]">
+                    <summary className="cursor-pointer text-xs text-[#9cb8d9]">
                       {report.skipped.length} product(s) had no SEO mapping (skipped)
                     </summary>
                     <ul className="mt-2 space-y-1 text-xs text-[#8caad4]">
@@ -778,7 +778,7 @@ function ProtocolLibraryCouponTool() {
         </div>
         <div>
           <h3 className="text-[#f0f6ff] font-semibold">Protocol Library — PROTOCOL10 coupon</h3>
-          <p className="text-[#6b8fba] text-xs mt-0.5">
+          <p className="text-[#9cb8d9] text-xs mt-0.5">
             Ensures the <code className="bg-[#04101f] px-1.5 py-0.5 rounded text-[#8caad4]">PROTOCOL10</code> 10% coupon
             exists and is active in the <code className="bg-[#04101f] px-1.5 py-0.5 rounded text-[#8caad4]">coupons</code> collection,
             and shows how many users have claimed the free Research Protocol Library.
@@ -828,7 +828,7 @@ function ProtocolLibraryCouponTool() {
       </AnimatePresence>
 
       {subscriberCount !== null && !result && (
-        <p className="text-xs text-[#6b8fba]">{subscriberCount} claims so far.</p>
+        <p className="text-xs text-[#9cb8d9]">{subscriberCount} claims so far.</p>
       )}
     </motion.div>
   );

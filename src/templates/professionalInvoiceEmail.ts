@@ -31,7 +31,7 @@ export function buildProfessionalInvoiceEmail(opts: InvoiceEmailOptions): string
   const BLUE = '#3b82f6';
   const BLUE_D = '#1d4ed8';
   const TEXT = '#c8daf0';
-  const MUTED = '#6b8fba';
+  const MUTED = '#9cb8d9';
   const DIMMED = '#3a5a82';
   const BORDER = 'rgba(59,130,246,0.15)';
   const ROW_EVEN = '#071525';

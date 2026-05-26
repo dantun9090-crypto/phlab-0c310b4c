@@ -1023,7 +1023,7 @@ export default function SEOTab() {
                 href="https://dashboard.prerender.io"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 py-2 bg-white/[0.04] hover:bg-white/[0.07] text-[#6b8fba] hover:text-white text-xs font-semibold rounded-xl transition-colors border border-white/[0.06]"
+                className="w-full flex items-center justify-center gap-2 py-2 bg-white/[0.04] hover:bg-white/[0.07] text-[#9cb8d9] hover:text-white text-xs font-semibold rounded-xl transition-colors border border-white/[0.06]"
               >
                 <Globe className="w-3.5 h-3.5" />
                 Open Prerender Dashboard

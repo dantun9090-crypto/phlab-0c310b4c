@@ -172,7 +172,7 @@ export default function Resources() {
                 {featured.title}
               </h2>
               <p className="text-[#4a6a8a] text-sm mb-2 italic">{featured.subtitle}</p>
-              <p className="text-[#6b8fba] leading-relaxed mb-6 max-w-3xl">{featured.excerpt}</p>
+              <p className="text-[#9cb8d9] leading-relaxed mb-6 max-w-3xl">{featured.excerpt}</p>
               <div className="flex items-center gap-2 text-blue-400 text-sm font-medium group-hover:gap-3 transition-all">
                 <BookOpen className="w-4 h-4" />
                 Read full article

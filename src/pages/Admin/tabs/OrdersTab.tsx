@@ -475,7 +475,7 @@ export default function OrdersTab() {
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <ShoppingCart className="w-5 h-5 text-blue-400" /> Order Management
           </h2>
-          <p className="text-[#6b8fba] text-sm mt-0.5">{orders.length} total orders</p>
+          <p className="text-[#9cb8d9] text-sm mt-0.5">{orders.length} total orders</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -514,7 +514,7 @@ export default function OrdersTab() {
               </button>
               <button
                 onClick={() => setStatusFilter('pending')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[#6b8fba] hover:text-white rounded-lg text-xs font-medium transition-all"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-[#9cb8d9] hover:text-white rounded-lg text-xs font-medium transition-all"
               >
                 View Pending Orders <ChevronRight className="w-3 h-3" />
               </button>
@@ -533,7 +533,7 @@ export default function OrdersTab() {
               </div>
               <div>
                 <p className="text-white font-semibold text-sm">Expired Pending Orders</p>
-                <p className="text-[#6b8fba] text-xs">{expiredPending.length} order{expiredPending.length > 1 ? 's' : ''} pending for more than 24 hours</p>
+                <p className="text-[#9cb8d9] text-xs">{expiredPending.length} order{expiredPending.length > 1 ? 's' : ''} pending for more than 24 hours</p>
               </div>
             </div>
             <button
@@ -554,7 +554,7 @@ export default function OrdersTab() {
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="flex-1 min-w-0">
                       <p className="text-white text-xs font-mono">{(o as any).bankTransferRef || `#${o.id?.slice(-8).toUpperCase()}`}</p>
-                      <p className="text-[#6b8fba] text-xs truncate">{name} · {method} · <span className="text-red-400">{hoursAgo}h ago</span></p>
+                      <p className="text-[#9cb8d9] text-xs truncate">{name} · {method} · <span className="text-red-400">{hoursAgo}h ago</span></p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -584,7 +584,7 @@ export default function OrdersTab() {
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
               statusFilter === s
                 ? 'bg-blue-600 border-blue-500 text-white'
-                : 'bg-[#0d1f35] border-white/[0.08] text-[#6b8fba] hover:text-white'
+                : 'bg-[#0d1f35] border-white/[0.08] text-[#9cb8d9] hover:text-white'
             }`}
           >
             {s.charAt(0).toUpperCase() + s.slice(1)} ({counts[s]})
@@ -605,7 +605,7 @@ export default function OrdersTab() {
 
       {/* Orders list */}
       {loading ? (
-        <div className="text-center py-16 text-[#6b8fba]">Loading orders...</div>
+        <div className="text-center py-16 text-[#9cb8d9]">Loading orders...</div>
       ) : loadError ? (
         <div className="text-center py-16">
           <p className="text-red-400 mb-3">{loadError}</p>
@@ -617,7 +617,7 @@ export default function OrdersTab() {
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-[#6b8fba]">No orders found</div>
+        <div className="text-center py-16 text-[#9cb8d9]">No orders found</div>
       ) : (
         <div className="space-y-3">
           {filtered.map(order => {
@@ -645,8 +645,8 @@ export default function OrdersTab() {
                       </span>
                     )}
                   </div>
-                  <p className="text-white text-xs mt-1 font-medium">{customerName}{customerEmail ? <span className="text-[#6b8fba] font-normal"> · {customerEmail}</span> : ''}</p>
-                  <p className="text-[#6b8fba] text-xs mt-0.5 truncate">{addressLine || 'No address'}</p>
+                  <p className="text-white text-xs mt-1 font-medium">{customerName}{customerEmail ? <span className="text-[#9cb8d9] font-normal"> · {customerEmail}</span> : ''}</p>
+                  <p className="text-[#9cb8d9] text-xs mt-0.5 truncate">{addressLine || 'No address'}</p>
                   <p className="text-[#2a4a7a] text-xs mt-0.5">
                     {order.items?.length || 0} item(s) ·{' '}
                     {orderTs?.toDate?.()?.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) || 'Unknown date'}
@@ -668,7 +668,7 @@ export default function OrdersTab() {
                       ))}
                       <option value="cancelled">Cancelled</option>
                     </select>
-                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#6b8fba] pointer-events-none" />
+                    <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-[#9cb8d9] pointer-events-none" />
                   </div>
 
                   {/* Quick-advance to next workflow status */}
@@ -759,7 +759,7 @@ export default function OrdersTab() {
                           <Banknote className="w-3 h-3" /> Bank Transfer
                         </span>
                       )}
-                      <span className="text-[#6b8fba] text-xs">
+                      <span className="text-[#9cb8d9] text-xs">
                         {selected.orderDate?.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </span>
                     </div>
@@ -776,7 +776,7 @@ export default function OrdersTab() {
                         : <Trash2 className="w-3.5 h-3.5" />}
                       Delete Order
                     </button>
-                    <button onClick={() => setSelected(null)} aria-label="Close order details" className="text-[#6b8fba] hover:text-white transition-colors">
+                    <button onClick={() => setSelected(null)} aria-label="Close order details" className="text-[#9cb8d9] hover:text-white transition-colors">
                       <X className="w-5 h-5" />
                     </button>
                   </div>
@@ -792,11 +792,11 @@ export default function OrdersTab() {
                   const shipping = (selected as any).shippingLabel || '';
                   return (
                     <div className="bg-[#0b1a30]/60 rounded-xl p-4 mb-4 space-y-1">
-                      <p className="text-[#6b8fba] text-xs font-medium uppercase tracking-wide mb-2">Customer</p>
+                      <p className="text-[#9cb8d9] text-xs font-medium uppercase tracking-wide mb-2">Customer</p>
                       <p className="text-white text-sm font-medium">{name}</p>
-                      {email && <p className="text-[#6b8fba] text-sm">{email}</p>}
-                      {phone && <p className="text-[#6b8fba] text-sm">{phone}</p>}
-                      {address && <p className="text-[#6b8fba] text-sm">{address}</p>}
+                      {email && <p className="text-[#9cb8d9] text-sm">{email}</p>}
+                      {phone && <p className="text-[#9cb8d9] text-sm">{phone}</p>}
+                      {address && <p className="text-[#9cb8d9] text-sm">{address}</p>}
                       {shipping && <p className="text-[#8caad4] text-xs mt-1">Shipping: {shipping}</p>}
                     </div>
                   );
@@ -813,15 +813,15 @@ export default function OrdersTab() {
                     {/* Read-only fields */}
                     <div className="space-y-2 mb-4">
                       <div className="flex justify-between text-sm">
-                        <span className="text-[#6b8fba]">Order Number</span>
+                        <span className="text-[#9cb8d9]">Order Number</span>
                         <span className="text-white font-mono font-semibold">{(selected as any).bankTransferRef || selected.id?.slice(-10).toUpperCase()}</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-[#6b8fba]">Payment Method</span>
+                        <span className="text-[#9cb8d9]">Payment Method</span>
                         <span className="text-white">Manual Bank Transfer</span>
                       </div>
                       <div className="flex justify-between text-sm">
-                        <span className="text-[#6b8fba]">Amount Due</span>
+                        <span className="text-[#9cb8d9]">Amount Due</span>
                         <span className="text-amber-400 font-bold">£{((selected as any).total || selected.totalAmount || 0).toFixed(2)}</span>
                       </div>
                     </div>
@@ -829,7 +829,7 @@ export default function OrdersTab() {
                     {/* Editable payment status */}
                     <div className="space-y-3">
                       <div>
-                        <label className="text-[#6b8fba] text-xs font-medium block mb-1.5">Payment Status</label>
+                        <label className="text-[#9cb8d9] text-xs font-medium block mb-1.5">Payment Status</label>
                         <div className="flex gap-2">
                           {(['pending_bank_transfer', 'paid', 'cancelled'] as const).map(ps => (
                             <button
@@ -852,7 +852,7 @@ export default function OrdersTab() {
                       </div>
 
                       <div>
-                        <label className="text-[#6b8fba] text-xs font-medium block mb-1.5">
+                        <label className="text-[#9cb8d9] text-xs font-medium block mb-1.5">
                           Transfer Reference <span className="text-gray-600">(from your bank statement)</span>
                         </label>
                         <input
@@ -892,13 +892,13 @@ export default function OrdersTab() {
 
                 {/* Items */}
                 <div className="bg-[#0b1a30]/60 rounded-xl p-4 mb-4">
-                  <p className="text-[#6b8fba] text-xs font-medium uppercase tracking-wide mb-3">Items</p>
+                  <p className="text-[#9cb8d9] text-xs font-medium uppercase tracking-wide mb-3">Items</p>
                   <div className="space-y-2">
                     {selected.items?.map((item: any, i) => (
                       <div key={i} className="flex justify-between text-sm">
                         <span className="text-[#8caad4]">
                           {item.productName}
-                          {item.variantName ? <span className="text-[#6b8fba]"> — {item.variantName}</span> : ''}
+                          {item.variantName ? <span className="text-[#9cb8d9]"> — {item.variantName}</span> : ''}
                           <span className="text-[#2a4a7a]"> ×{item.quantity}</span>
                         </span>
                         <span className="text-white font-medium">£{((item.total || item.price * item.quantity) || 0).toFixed(2)}</span>
@@ -906,7 +906,7 @@ export default function OrdersTab() {
                     ))}
                     {(selected as any).subtotal !== undefined && (
                       <div className="border-t border-white/[0.08] pt-2 space-y-1 text-xs">
-                        <div className="flex justify-between text-[#6b8fba]">
+                        <div className="flex justify-between text-[#9cb8d9]">
                           <span>Subtotal</span><span>£{((selected as any).subtotal || 0).toFixed(2)}</span>
                         </div>
                         {(selected as any).discount > 0 && (
@@ -914,7 +914,7 @@ export default function OrdersTab() {
                             <span>Discount</span><span>-£{((selected as any).discount || 0).toFixed(2)}</span>
                           </div>
                         )}
-                        <div className="flex justify-between text-[#6b8fba]">
+                        <div className="flex justify-between text-[#9cb8d9]">
                           <span>Shipping</span><span>{(selected as any).shippingCost === 0 ? 'FREE' : `£${((selected as any).shippingCost || 0).toFixed(2)}`}</span>
                         </div>
                       </div>
@@ -934,7 +934,7 @@ export default function OrdersTab() {
 
                   {selected.trackingNumber && (
                     <div className="mb-3 p-2.5 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                      <p className="text-xs text-[#6b8fba] mb-0.5">Current tracking number</p>
+                      <p className="text-xs text-[#9cb8d9] mb-0.5">Current tracking number</p>
                       <div className="flex items-center justify-between">
                         <p className="font-mono text-blue-300 text-sm font-bold">{selected.trackingNumber}</p>
                         <button
@@ -946,7 +946,7 @@ export default function OrdersTab() {
                         </button>
                       </div>
                       {selected.courier && (
-                        <p className="text-xs text-[#6b8fba] mt-1">Courier: <span className="text-blue-300">{selected.courier}</span></p>
+                        <p className="text-xs text-[#9cb8d9] mt-1">Courier: <span className="text-blue-300">{selected.courier}</span></p>
                       )}
                     </div>
                   )}
@@ -1009,7 +1009,7 @@ export default function OrdersTab() {
                       <RotateCcw className="w-4 h-4 text-amber-400" />
                       <p className="text-amber-400 text-xs font-semibold uppercase tracking-wide">Auto-Cancelled (72h no payment)</p>
                     </div>
-                    <p className="text-[#6b8fba] text-xs mb-3">This order was automatically cancelled after 72 hours without payment. You can reinstate it to allow the customer to complete payment.</p>
+                    <p className="text-[#9cb8d9] text-xs mb-3">This order was automatically cancelled after 72 hours without payment. You can reinstate it to allow the customer to complete payment.</p>
                     <button
                       onClick={() => handleReinstateOrder(selected.id)}
                       disabled={reinstating === selected.id}

@@ -491,7 +491,7 @@ export default function HomePage() {
               </div>
 
               {/* Sub-copy */}
-              <p style={{ fontSize: '1.05rem', lineHeight: 1.75, color: '#6b8fba', maxWidth: '480px' }}>
+              <p style={{ fontSize: '1.05rem', lineHeight: 1.75, color: '#9cb8d9', maxWidth: '480px' }}>
                 HPLC-tested, mass-spectrometry confirmed research compounds. Full Certificate of Analysis with every order. UK-dispatched, cold-packed, sealed.
               </p>
 
@@ -941,7 +941,7 @@ export default function HomePage() {
                     <Star key={s} style={{ width: 13, height: 13, color: '#f59e0b', fill: '#f59e0b' }} />
                   ))}
                 </div>
-                <p className="text-sm leading-relaxed flex-1" style={{ color: '#6b8fba' }}>"{t.content}"</p>
+                <p className="text-sm leading-relaxed flex-1" style={{ color: '#9cb8d9' }}>"{t.content}"</p>
                 <div className="flex items-center justify-between pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                   <div>
                     <div className="font-bold text-sm" style={{ color: '#c8dff5' }}>{t.name}</div>
@@ -986,7 +986,7 @@ export default function HomePage() {
                   {['BPC-157 & TB-500 reconstitution guide', 'GLP-1 agonist protocol comparisons', 'Peptide storage & stability reference', '10% discount code included'].map(item => (
                     <div key={item} className="flex items-center gap-2">
                       <CheckCircle2 style={{ width: 14, height: 14, color: '#10b981', flexShrink: 0 }} />
-                      <span style={{ color: '#6b8fba', fontSize: '0.83rem' }}>{item}</span>
+                      <span style={{ color: '#9cb8d9', fontSize: '0.83rem' }}>{item}</span>
                     </div>
                   ))}
                 </div>
@@ -1018,7 +1018,7 @@ export default function HomePage() {
                           {codeCopied ? 'Copied!' : 'Copy'}
                         </button>
                       </div>
-                      <p className="text-[11px] mt-3" style={{ color: '#6b8fba' }}>Apply at checkout for 10% off your first order.</p>
+                      <p className="text-[11px] mt-3" style={{ color: '#9cb8d9' }}>Apply at checkout for 10% off your first order.</p>
                     </div>
                   </div>
                 ) : (

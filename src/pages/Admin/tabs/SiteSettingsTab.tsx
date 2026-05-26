@@ -297,7 +297,7 @@ export default function SiteSettingsTab() {
             <Settings className="w-6 h-6 text-blue-400" />
             Site Settings
           </h1>
-          <p className="text-[#6b8fba] text-sm mt-1">
+          <p className="text-[#9cb8d9] text-sm mt-1">
             Manage contact info, social media links, WhatsApp button, and footer text.
           </p>
         </div>
@@ -372,7 +372,7 @@ export default function SiteSettingsTab() {
           </h3>
           {fields.map(({ key, label, placeholder, hint, prefix }) => (
             <div key={key}>
-              <label className="block text-[#6b8fba] text-xs font-medium mb-1.5">{label}</label>
+              <label className="block text-[#9cb8d9] text-xs font-medium mb-1.5">{label}</label>
               <div className="flex items-center gap-0">
                 {prefix && (
                   <span className="bg-[#0f2640] border border-r-0 border-white/10 rounded-l-xl px-3 py-2.5 text-[#2a4a7a] text-xs font-mono whitespace-nowrap">
@@ -397,7 +397,7 @@ export default function SiteSettingsTab() {
 
       {/* Live footer preview */}
       <div className="bg-[#04101f] border border-white/10 rounded-2xl p-5 space-y-3">
-        <h3 className="text-[#6b8fba] text-xs font-semibold uppercase tracking-wider">Footer Preview</h3>
+        <h3 className="text-[#9cb8d9] text-xs font-semibold uppercase tracking-wider">Footer Preview</h3>
         <div className="bg-[#060f1e] rounded-xl p-4">
           <p className="text-white font-bold text-sm">{settings.companyName || 'Company Name'}</p>
           <p className="text-[#2a4a7a] text-xs mt-1">{settings.footerTagline || 'Tagline goes here'}</p>
@@ -425,7 +425,7 @@ export default function SiteSettingsTab() {
             </div>
             <div>
               <p className="text-white text-sm font-medium">TrueLayer (Open Banking)</p>
-              <p className="text-[#6b8fba] text-xs mt-0.5">Accept instant bank payments via TrueLayer. FCA-regulated, bank-grade security. Customers pay directly from their bank account.</p>
+              <p className="text-[#9cb8d9] text-xs mt-0.5">Accept instant bank payments via TrueLayer. FCA-regulated, bank-grade security. Customers pay directly from their bank account.</p>
             </div>
           </div>
           <button
@@ -447,7 +447,7 @@ export default function SiteSettingsTab() {
             </div>
             <div>
               <p className="text-white text-sm font-medium">Bank Transfer</p>
-              <p className="text-[#6b8fba] text-xs mt-0.5">Customers pay by bank transfer and receive a unique reference number with their order.</p>
+              <p className="text-[#9cb8d9] text-xs mt-0.5">Customers pay by bank transfer and receive a unique reference number with their order.</p>
             </div>
           </div>
           <button
@@ -472,7 +472,7 @@ export default function SiteSettingsTab() {
               className="overflow-hidden"
             >
               <div className="space-y-3 pt-1 pl-1">
-                <p className="text-[#6b8fba] text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                <p className="text-[#9cb8d9] text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5">
                   <Building2 className="w-3 h-3" /> Bank Account Details (shown to customers)
                 </p>
                 {([
@@ -483,7 +483,7 @@ export default function SiteSettingsTab() {
                   { key: 'bankTransferInstructions', label: 'Instructions for Customer', placeholder: 'Use your order reference as payment reference' },
                 ] as { key: keyof SiteSettings; label: string; placeholder: string }[]).map(({ key, label, placeholder }) => (
                   <div key={key}>
-                    <label className="block text-[#6b8fba] text-xs font-medium mb-1.5">{label}</label>
+                    <label className="block text-[#9cb8d9] text-xs font-medium mb-1.5">{label}</label>
                     <input
                       type="text"
                       value={(settings[key] as string) || ''}
@@ -512,7 +512,7 @@ export default function SiteSettingsTab() {
         <h3 className="font-semibold flex items-center gap-2 text-blue-400">
           <Shield className="w-4 h-4" /> Site Features
         </h3>
-        <p className="text-[#6b8fba] text-xs leading-relaxed">
+        <p className="text-[#9cb8d9] text-xs leading-relaxed">
           Control which compliance and interaction features are displayed to visitors.
         </p>
         
@@ -526,7 +526,7 @@ export default function SiteSettingsTab() {
             </div>
             <div>
               <p className="text-white text-sm font-medium">Cookie Consent Banner</p>
-              <p className="text-[#6b8fba] text-xs mt-0.5">
+              <p className="text-[#9cb8d9] text-xs mt-0.5">
                 Shows GDPR-compliant cookie consent banner to visitors. Required for UK/EU compliance.
               </p>
             </div>
@@ -546,7 +546,7 @@ export default function SiteSettingsTab() {
         <h3 className="font-semibold flex items-center gap-2 text-amber-400">
           <AlertCircle className="w-4 h-4" /> Maintenance Mode
         </h3>
-        <p className="text-[#6b8fba] text-xs leading-relaxed">
+        <p className="text-[#9cb8d9] text-xs leading-relaxed">
           When enabled, visitors will see a "We'll Be Back Soon" page instead of the website. Admins are not affected and can still browse the site normally.
         </p>
         <div className="flex items-start justify-between gap-4 p-4 bg-[#04101f]/60 rounded-xl border border-white/5">
@@ -556,7 +556,7 @@ export default function SiteSettingsTab() {
             </div>
             <div>
               <p className="text-white text-sm font-medium">Under Construction / Maintenance</p>
-              <p className="text-[#6b8fba] text-xs mt-0.5">
+              <p className="text-[#9cb8d9] text-xs mt-0.5">
                 Shows a beautiful animated "We'll Be Back Soon" screen to all visitors. You (admin) can still access everything normally.
               </p>
             </div>
@@ -583,7 +583,7 @@ export default function SiteSettingsTab() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white text-sm font-medium">Countdown End Date &amp; Time</p>
-              <p className="text-[#6b8fba] text-xs mt-0.5">Set the exact date &amp; time shown on the "We'll Be Back Soon" countdown timer. Leave blank to default to 7 days from now.</p>
+              <p className="text-[#9cb8d9] text-xs mt-0.5">Set the exact date &amp; time shown on the "We'll Be Back Soon" countdown timer. Leave blank to default to 7 days from now.</p>
             </div>
           </div>
           <div className="flex items-center gap-3 mt-2">
@@ -617,7 +617,7 @@ export default function SiteSettingsTab() {
         <h3 className="font-semibold flex items-center gap-2 text-red-400">
           <Shield className="w-4 h-4" /> MHRA Compliance Banner
         </h3>
-        <p className="text-[#6b8fba] text-xs leading-relaxed">
+        <p className="text-[#9cb8d9] text-xs leading-relaxed">
           The MHRA disclaimer banner appears at the bottom of every page. It is legally required for UK peptide research compound suppliers. Only disable if you have received specific legal advice permitting its removal.
         </p>
         <div className="flex items-start justify-between gap-4 p-4 bg-[#04101f]/60 rounded-xl border border-white/5">
@@ -627,7 +627,7 @@ export default function SiteSettingsTab() {
             </div>
             <div>
               <p className="text-white text-sm font-medium">Site-Wide MHRA Disclaimer</p>
-              <p className="text-[#6b8fba] text-xs mt-0.5">
+              <p className="text-[#9cb8d9] text-xs mt-0.5">
                 Displays "Not approved by MHRA or FDA. For research use only." banner in the footer of every page.
               </p>
             </div>
@@ -653,13 +653,13 @@ export default function SiteSettingsTab() {
         <h3 className="font-semibold flex items-center gap-2 text-purple-400">
           <Globe className="w-4 h-4" /> Analytics & Tracking
         </h3>
-        <p className="text-[#6b8fba] text-xs">Configure Google Analytics GA4 and Plausible analytics for tracking visitor behavior.</p>
+        <p className="text-[#9cb8d9] text-xs">Configure Google Analytics GA4 and Plausible analytics for tracking visitor behavior.</p>
         {[
           { key: 'googleAnalyticsId' as const, label: 'Google Analytics GA4 ID', placeholder: 'G-XXXXXXXXXX', hint: 'Your Google Analytics 4 property ID' },
           { key: 'plausibleDomain' as const, label: 'Plausible Domain', placeholder: 'prohealthpeptides.co.uk', hint: 'Your domain for Plausible analytics' },
         ].map(({ key, label, placeholder, hint }) => (
           <div key={key}>
-            <label className="block text-[#6b8fba] text-xs font-medium mb-1.5">{label}</label>
+            <label className="block text-[#9cb8d9] text-xs font-medium mb-1.5">{label}</label>
             <input
               type="text"
               value={(settings[key] as string) || ''}

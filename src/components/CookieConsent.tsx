@@ -70,7 +70,7 @@ export function CookieConsent() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[#f0f6ff] text-sm font-semibold leading-snug">We use cookies</p>
-            <p className="text-[#6b8fba] text-xs mt-0.5 leading-relaxed">
+            <p className="text-[#9cb8d9] text-xs mt-0.5 leading-relaxed">
               Essential cookies only by default. We never sell your data.{" "}
               <Link to="/privacy" onClick={() => setVisible(false)} className="text-blue-400 hover:underline">
                 Privacy Policy
@@ -93,7 +93,7 @@ export function CookieConsent() {
                   <p className="text-[#f0f6ff] text-xs font-semibold">Essential Cookies</p>
                   <span className="text-green-400 text-[10px] font-medium bg-green-400/10 px-2 py-0.5 rounded-full whitespace-nowrap">Always Active</span>
                 </div>
-                <p className="text-[#6b8fba] text-[11px] mt-1 leading-relaxed">
+                <p className="text-[#9cb8d9] text-[11px] mt-1 leading-relaxed">
                   Required for the site to function: cart, checkout, session. Cannot be disabled.
                 </p>
               </div>
@@ -113,7 +113,7 @@ export function CookieConsent() {
                     <span className={"absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform " + (analytics ? "translate-x-4" : "translate-x-0")} />
                   </button>
                 </div>
-                <p className="text-[#6b8fba] text-[11px] mt-1 leading-relaxed">
+                <p className="text-[#9cb8d9] text-[11px] mt-1 leading-relaxed">
                   Helps us understand site usage. No personal data stored.
                 </p>
               </div>
@@ -133,7 +133,7 @@ export function CookieConsent() {
                     <span className={"absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform " + (marketing ? "translate-x-4" : "translate-x-0")} />
                   </button>
                 </div>
-                <p className="text-[#6b8fba] text-[11px] mt-1 leading-relaxed">
+                <p className="text-[#9cb8d9] text-[11px] mt-1 leading-relaxed">
                   Used for personalised ads. We do not share data without consent.
                 </p>
               </div>
@@ -151,21 +151,21 @@ export function CookieConsent() {
           </button>
           <button
             onClick={essentialOnly}
-            className="w-full sm:flex-1 min-h-[44px] text-[#6b8fba] hover:text-[#f0f6ff] text-sm font-medium border border-white/[0.1] hover:border-white/[0.2] rounded-xl transition-colors"
+            className="w-full sm:flex-1 min-h-[44px] text-[#9cb8d9] hover:text-[#f0f6ff] text-sm font-medium border border-white/[0.1] hover:border-white/[0.2] rounded-xl transition-colors"
           >
             Essential Only
           </button>
           {showDetails ? (
             <button
               onClick={acceptSelected}
-              className="w-full sm:flex-1 min-h-[44px] text-[#6b8fba] hover:text-[#f0f6ff] text-sm font-medium border border-white/[0.1] hover:border-white/[0.2] rounded-xl transition-colors"
+              className="w-full sm:flex-1 min-h-[44px] text-[#9cb8d9] hover:text-[#f0f6ff] text-sm font-medium border border-white/[0.1] hover:border-white/[0.2] rounded-xl transition-colors"
             >
               Save My Choices
             </button>
           ) : (
             <button
               onClick={() => setShowDetails(true)}
-              className="w-full sm:flex-1 min-h-[44px] text-[#6b8fba] hover:text-[#f0f6ff] text-sm font-medium border border-white/[0.1] hover:border-white/[0.2] rounded-xl transition-colors"
+              className="w-full sm:flex-1 min-h-[44px] text-[#9cb8d9] hover:text-[#f0f6ff] text-sm font-medium border border-white/[0.1] hover:border-white/[0.2] rounded-xl transition-colors"
             >
               Manage Cookies
             </button>

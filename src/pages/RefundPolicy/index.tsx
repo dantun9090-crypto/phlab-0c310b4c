@@ -43,9 +43,9 @@ export default function RefundPolicy() {
 
         {/* Breadcrumb */}
         <nav className="mb-8 flex items-center gap-2 text-xs text-[#3a5a82]" aria-label="Breadcrumb">
-          <Link to="/" className="hover:text-[#6b8fba] transition-colors">Home</Link>
+          <Link to="/" className="hover:text-[#9cb8d9] transition-colors">Home</Link>
           <span>/</span>
-          <span className="text-[#6b8fba]">Return &amp; Refund Policy</span>
+          <span className="text-[#9cb8d9]">Return &amp; Refund Policy</span>
         </nav>
 
         {/* Header */}
@@ -58,7 +58,7 @@ export default function RefundPolicy() {
             Google Merchant Center Compliant
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-[#f0f6ff] mb-3">Return &amp; Refund Policy</h1>
-          <p className="text-[#6b8fba] text-sm">Last updated: May 2026 &mdash; Pro Health Peptides Ltd</p>
+          <p className="text-[#9cb8d9] text-sm">Last updated: May 2026 &mdash; Pro Health Peptides Ltd</p>
           <p className="text-[#8caad4] mt-4 max-w-xl mx-auto text-sm leading-relaxed">
             We stand behind every batch we dispatch. Returns are accepted for defective items within 14 days of delivery.
           </p>
@@ -84,7 +84,7 @@ export default function RefundPolicy() {
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">Our Quality Commitment</h2>
-                <p className="text-[#6b8fba] text-sm leading-relaxed">
+                <p className="text-[#9cb8d9] text-sm leading-relaxed">
                   Pro Health Peptides Ltd supplies research compounds verified at ≥99% purity by HPLC. Every batch undergoes third-party laboratory testing before dispatch and certificates of analysis are available on request. If your order arrives defective, damaged, or incorrect, we will resolve it promptly and fairly under the terms of this policy.
                 </p>
               </div>
@@ -103,7 +103,7 @@ export default function RefundPolicy() {
                   <Clock className="w-5 h-5 text-blue-400 shrink-0" />
                   <p className="text-[#c8daf0] font-semibold text-sm">14 days from the date of delivery</p>
                 </div>
-                <p className="text-[#6b8fba] text-sm leading-relaxed">
+                <p className="text-[#9cb8d9] text-sm leading-relaxed">
                   Return requests must be submitted within 14 calendar days of receiving your order. Requests made after this window cannot be accepted.
                 </p>
               </div>
@@ -118,7 +118,7 @@ export default function RefundPolicy() {
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">Accepted Returns — Defective Items Only</h2>
-                <p className="text-[#6b8fba] text-sm leading-relaxed mb-3">
+                <p className="text-[#9cb8d9] text-sm leading-relaxed mb-3">
                   Due to the nature of research-grade compounds, we <strong className="text-[#c8daf0]">only accept returns for items that are defective or damaged</strong>. Accepted reasons include:
                 </p>
                 <div className="space-y-2">
@@ -148,7 +148,7 @@ export default function RefundPolicy() {
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">Non-Returnable Items</h2>
-                <p className="text-[#6b8fba] text-sm leading-relaxed mb-3">
+                <p className="text-[#9cb8d9] text-sm leading-relaxed mb-3">
                   The following are <strong className="text-[#c8daf0]">not eligible for return</strong> under any circumstances:
                 </p>
                 <div className="space-y-2">
@@ -178,7 +178,7 @@ export default function RefundPolicy() {
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">How to Request a Return</h2>
-                <p className="text-[#6b8fba] text-sm leading-relaxed mb-3">
+                <p className="text-[#9cb8d9] text-sm leading-relaxed mb-3">
                   Contact us at{' '}
                   <a href="mailto:info@prohealthpeptides.co.uk" className="text-blue-400 hover:text-blue-300 transition-colors">
                     info@prohealthpeptides.co.uk
@@ -197,7 +197,7 @@ export default function RefundPolicy() {
                     </div>
                   ))}
                 </div>
-                <p className="text-[#6b8fba] text-sm leading-relaxed mt-3">
+                <p className="text-[#9cb8d9] text-sm leading-relaxed mt-3">
                   We will respond within <strong className="text-[#c8daf0]">2 business days</strong>. Do not return any item without written authorisation — unauthorised returns will not be processed.
                 </p>
               </div>
@@ -212,7 +212,7 @@ export default function RefundPolicy() {
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">Return Shipping</h2>
-                <p className="text-[#6b8fba] text-sm leading-relaxed">
+                <p className="text-[#9cb8d9] text-sm leading-relaxed">
                   For confirmed defective items, Pro Health Peptides Ltd will cover the cost of return shipping. We will provide a prepaid return label upon approval. Items must be returned in their original packaging where possible.
                 </p>
               </div>
@@ -227,10 +227,10 @@ export default function RefundPolicy() {
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">Refunds</h2>
-                <p className="text-[#6b8fba] text-sm leading-relaxed mb-2">
+                <p className="text-[#9cb8d9] text-sm leading-relaxed mb-2">
                   Once a returned item is received and inspected, approved refunds will be processed within <strong className="text-[#c8daf0]">5–10 business days</strong> to the original payment method. You will receive a confirmation email when the refund is issued.
                 </p>
-                <p className="text-[#6b8fba] text-sm leading-relaxed">
+                <p className="text-[#9cb8d9] text-sm leading-relaxed">
                   Where a replacement is preferred and stock is available, we will dispatch a replacement at no additional cost following return authorisation.
                 </p>
               </div>
@@ -241,11 +241,11 @@ export default function RefundPolicy() {
           <section className="rounded-2xl p-6" style={{ background: '#0b1a30', border: '1px solid rgba(107,143,186,0.15)' }}>
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(107,143,186,0.1)' }}>
-                <Scale className="w-5 h-5 text-[#6b8fba]" />
+                <Scale className="w-5 h-5 text-[#9cb8d9]" />
               </div>
               <div className="flex-1 min-w-0">
                 <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">Governing Law</h2>
-                <p className="text-[#6b8fba] text-sm leading-relaxed">
+                <p className="text-[#9cb8d9] text-sm leading-relaxed">
                   This policy is governed by the laws of England and Wales. Nothing in this policy affects your statutory rights under the{' '}
                   <strong className="text-[#8caad4]">UK Consumer Rights Act 2015</strong> or the Consumer Contracts (Information, Cancellation and Additional Charges) Regulations 2013.
                 </p>
@@ -289,7 +289,7 @@ export default function RefundPolicy() {
         <div className="mt-8 text-center">
           <p className="text-[#2a4a7a] text-xs">
             Pro Health Peptides Ltd &mdash; Registered in England &amp; Wales &mdash;{' '}
-            <a href="mailto:info@prohealthpeptides.co.uk" className="hover:text-[#6b8fba] transition-colors">
+            <a href="mailto:info@prohealthpeptides.co.uk" className="hover:text-[#9cb8d9] transition-colors">
               info@prohealthpeptides.co.uk
             </a>
           </p>

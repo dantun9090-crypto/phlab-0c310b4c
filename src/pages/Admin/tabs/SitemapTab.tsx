@@ -185,7 +185,7 @@ export default function SitemapTab() {
             <Map className="w-5 h-5 text-blue-400" />
             Sitemap Manager
           </h2>
-          <p className="text-sm text-[#6b8fba] mt-1">
+          <p className="text-sm text-[#9cb8d9] mt-1">
             {loading ? 'Loading…' : `${includedCount} products + ${STATIC_PAGES.length} pages indexed`}
           </p>
         </div>
@@ -210,7 +210,7 @@ export default function SitemapTab() {
             href={SITEMAP_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2 bg-[#0b1a30] hover:bg-[#1a3a5c] text-[#6b8fba] hover:text-white border border-white/10 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-[#0b1a30] hover:bg-[#1a3a5c] text-[#9cb8d9] hover:text-white border border-white/10 rounded-lg text-sm font-medium transition-colors"
           >
             <ExternalLink className="w-4 h-4" />
             View Live
@@ -246,7 +246,7 @@ export default function SitemapTab() {
             <span className="text-white font-medium text-sm">Static Pages ({STATIC_PAGES.length})</span>
             <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">All included</span>
           </div>
-          {showStaticPages ? <ChevronUp className="w-4 h-4 text-[#6b8fba]" /> : <ChevronDown className="w-4 h-4 text-[#6b8fba]" />}
+          {showStaticPages ? <ChevronUp className="w-4 h-4 text-[#9cb8d9]" /> : <ChevronDown className="w-4 h-4 text-[#9cb8d9]" />}
         </button>
         <AnimatePresence>
           {showStaticPages && (
@@ -261,7 +261,7 @@ export default function SitemapTab() {
                       <p className="text-sm text-white font-medium">{page.label}</p>
                       <p className="text-xs text-[#3a5a82]">{BASE}{page.path}</p>
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-[#6b8fba]">
+                    <div className="flex items-center gap-3 text-xs text-[#9cb8d9]">
                       <span>Priority: {page.priority}</span>
                       <span className="text-emerald-400 flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5" /> Included
@@ -280,9 +280,9 @@ export default function SitemapTab() {
         <div className="px-5 py-4 border-b border-white/[0.07] flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-white font-medium text-sm">Products ({products.length})</span>
-            <span className="text-xs text-[#6b8fba]">{includedCount} in sitemap · {products.length - includedCount} excluded</span>
+            <span className="text-xs text-[#9cb8d9]">{includedCount} in sitemap · {products.length - includedCount} excluded</span>
           </div>
-          <button onClick={copyXml} className="flex items-center gap-1.5 text-xs text-[#6b8fba] hover:text-white transition-colors px-3 py-1.5 rounded-lg border border-white/[0.07] hover:border-white/20">
+          <button onClick={copyXml} className="flex items-center gap-1.5 text-xs text-[#9cb8d9] hover:text-white transition-colors px-3 py-1.5 rounded-lg border border-white/[0.07] hover:border-white/20">
             <Copy className="w-3.5 h-3.5" />
             {copiedXml ? 'Copied!' : 'Copy XML'}
           </button>
@@ -330,7 +330,7 @@ export default function SitemapTab() {
                 {entry.type === 'success' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />}
                 {entry.type === 'error' && <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />}
                 {entry.type === 'info' && <AlertCircle className="w-3.5 h-3.5 text-blue-400 shrink-0 mt-0.5" />}
-                <span className={entry.type === 'success' ? 'text-emerald-300' : entry.type === 'error' ? 'text-red-300' : 'text-[#6b8fba]'}>
+                <span className={entry.type === 'success' ? 'text-emerald-300' : entry.type === 'error' ? 'text-red-300' : 'text-[#9cb8d9]'}>
                   {entry.text}
                 </span>
               </div>
@@ -400,7 +400,7 @@ function ProductSitemapRow({ product, slug, url, excluded, isActive, isSaving, o
               >Save</button>
               <button
                 onClick={() => { setEditingSlug(false); setDraftSlug(slug); }}
-                className="px-2 py-1 text-[#6b8fba] hover:text-white text-xs transition-colors"
+                className="px-2 py-1 text-[#9cb8d9] hover:text-white text-xs transition-colors"
               >Cancel</button>
             </div>
           ) : (

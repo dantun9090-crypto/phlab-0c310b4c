@@ -323,7 +323,7 @@ export default function Contact() {
             <FadeIn direction="left">
               <div>
                 <h2 className="text-xl font-bold text-[#f0f6ff] mb-1">Contact Information</h2>
-                <p className="text-[#6b8fba] text-sm">Find the best way to reach us below.</p>
+                <p className="text-[#9cb8d9] text-sm">Find the best way to reach us below.</p>
               </div>
             </FadeIn>
 
@@ -342,7 +342,7 @@ export default function Contact() {
                         {card.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[#6b8fba] text-xs font-semibold uppercase tracking-wider mb-0.5">{card.label}</p>
+                        <p className="text-[#9cb8d9] text-xs font-semibold uppercase tracking-wider mb-0.5">{card.label}</p>
                         <p className="text-[#f0f6ff] text-sm font-medium truncate group-hover:text-white transition-colors">{card.value}</p>
                       </div>
                       <ArrowRight className={`w-4 h-4 ${card.iconColor} opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-200 shrink-0`} />
@@ -353,7 +353,7 @@ export default function Contact() {
                         {card.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[#6b8fba] text-xs font-semibold uppercase tracking-wider mb-0.5">{card.label}</p>
+                        <p className="text-[#9cb8d9] text-xs font-semibold uppercase tracking-wider mb-0.5">{card.label}</p>
                         <p className="text-[#f0f6ff] text-sm font-medium">{card.value}</p>
                       </div>
                     </div>
@@ -406,7 +406,7 @@ export default function Contact() {
                       <CheckCircle2 className="w-10 h-10 text-green-400" />
                     </div>
                     <h3 className="text-2xl font-bold text-[#f0f6ff] mb-2">Message Sent</h3>
-                    <p className="text-[#6b8fba] max-w-sm">
+                    <p className="text-[#9cb8d9] max-w-sm">
                       Thanks for reaching out. We'll get back to you as soon as possible — usually within one business day.
                     </p>
                     <button
@@ -424,7 +424,7 @@ export default function Contact() {
                       </div>
                       <div>
                         <h2 className="text-xl font-bold text-[#f0f6ff]">Send a Message</h2>
-                        <p className="text-[#6b8fba] text-sm">We typically reply within one business day.</p>
+                        <p className="text-[#9cb8d9] text-sm">We typically reply within one business day.</p>
                       </div>
                     </div>
 
@@ -437,7 +437,7 @@ export default function Contact() {
                     <form onSubmit={handleSubmit} className="space-y-5">
                       <div className="grid sm:grid-cols-2 gap-5">
                         <div>
-                          <label htmlFor="contact-name" className="block text-[#6b8fba] text-xs font-semibold uppercase tracking-wider mb-2">
+                          <label htmlFor="contact-name" className="block text-[#9cb8d9] text-xs font-semibold uppercase tracking-wider mb-2">
                             Full Name *
                           </label>
                           <input
@@ -452,7 +452,7 @@ export default function Contact() {
                           />
                         </div>
                         <div>
-                          <label htmlFor="contact-email" className="block text-[#6b8fba] text-xs font-semibold uppercase tracking-wider mb-2">
+                          <label htmlFor="contact-email" className="block text-[#9cb8d9] text-xs font-semibold uppercase tracking-wider mb-2">
                             Email Address *
                           </label>
                           <input
@@ -469,7 +469,7 @@ export default function Contact() {
                       </div>
 
                       <div>
-                        <label htmlFor="contact-subject" className="block text-[#6b8fba] text-xs font-semibold uppercase tracking-wider mb-2">
+                        <label htmlFor="contact-subject" className="block text-[#9cb8d9] text-xs font-semibold uppercase tracking-wider mb-2">
                           Subject
                         </label>
                         <input
@@ -484,7 +484,7 @@ export default function Contact() {
                       </div>
 
                       <div>
-                        <label htmlFor="contact-message" className="block text-[#6b8fba] text-xs font-semibold uppercase tracking-wider mb-2">
+                        <label htmlFor="contact-message" className="block text-[#9cb8d9] text-xs font-semibold uppercase tracking-wider mb-2">
                           Message *
                         </label>
                         <textarea

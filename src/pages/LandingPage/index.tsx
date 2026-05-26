@@ -180,7 +180,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.15 }}
-                className="text-lg text-[#6b8fba] leading-relaxed mb-8 max-w-2xl mx-auto"
+                className="text-lg text-[#9cb8d9] leading-relaxed mb-8 max-w-2xl mx-auto"
               >
                 {data.heroSubheading}
               </motion.p>
@@ -304,7 +304,7 @@ export default function LandingPage() {
                   className="text-center"
                 >
                   <p className="text-3xl font-bold text-white mb-1">{s.value}</p>
-                  <p className="text-[#6b8fba] text-sm">{s.label}</p>
+                  <p className="text-[#9cb8d9] text-sm">{s.label}</p>
                 </motion.div>
               ))}
             </div>
@@ -318,7 +318,7 @@ export default function LandingPage() {
           <div className="container mx-auto px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold text-white mb-3">Analytical Standards & Research Integrity</h2>
-              <p className="text-[#6b8fba]">Every compound supplied is HPLC-tested before dispatch. Analytical results documented and available on request.</p>
+              <p className="text-[#9cb8d9]">Every compound supplied is HPLC-tested before dispatch. Analytical results documented and available on request.</p>
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {features.map((f, i) => (
@@ -335,7 +335,7 @@ export default function LandingPage() {
                     {f.icon || (ICON_MAP['🔬'])}
                   </div>
                   <h3 className="text-white font-bold mb-2">{f.title}</h3>
-                  <p className="text-[#6b8fba] text-sm leading-relaxed">{f.desc}</p>
+                  <p className="text-[#9cb8d9] text-sm leading-relaxed">{f.desc}</p>
                 </motion.div>
               ))}
             </div>
@@ -378,7 +378,7 @@ export default function LandingPage() {
               {data.ctaHeading}
             </motion.h2>
             {data.ctaSubtext && (
-              <p className="text-[#6b8fba] mb-8 max-w-xl mx-auto">{data.ctaSubtext}</p>
+              <p className="text-[#9cb8d9] mb-8 max-w-xl mx-auto">{data.ctaSubtext}</p>
             )}
             <a
               href={data.ctaButtonUrl || '/products'}

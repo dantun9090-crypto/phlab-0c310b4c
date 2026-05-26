@@ -225,7 +225,7 @@ export default function PaymentPage() {
               <div className="text-center mb-5">
                 <div className="text-3xl mb-2">🏦</div>
                 <h2 className="text-xl font-bold" style={{ color: '#10b981' }}>Complete via Bank Transfer</h2>
-                <p className="text-sm mt-1" style={{ color: '#6b8fba' }}>
+                <p className="text-sm mt-1" style={{ color: '#9cb8d9' }}>
                   Online payment is temporarily unavailable. Please send your payment directly to our bank account below.
                 </p>
               </div>
@@ -235,26 +235,26 @@ export default function PaymentPage() {
                 style={{ background: 'rgba(16, 185, 129, 0.07)', border: '1px solid rgba(16, 185, 129, 0.2)' }}
               >
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: '#6b8fba' }}>Account Name</span>
+                  <span style={{ color: '#9cb8d9' }}>Account Name</span>
                   <span className="font-semibold" style={{ color: '#f0f6ff' }}>Pro Health Peptides Ltd</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: '#6b8fba' }}>Sort Code</span>
+                  <span style={{ color: '#9cb8d9' }}>Sort Code</span>
                   <span className="font-semibold font-mono" style={{ color: '#f0f6ff' }}>XX-XX-XX</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: '#6b8fba' }}>Account Number</span>
+                  <span style={{ color: '#9cb8d9' }}>Account Number</span>
                   <span className="font-semibold font-mono" style={{ color: '#f0f6ff' }}>XXXXXXXX</span>
                 </div>
                 {reference && (
                   <div className="flex justify-between text-sm pt-1 border-t" style={{ borderColor: 'rgba(16,185,129,0.15)' }}>
-                    <span style={{ color: '#6b8fba' }}>Reference</span>
+                    <span style={{ color: '#9cb8d9' }}>Reference</span>
                     <span className="font-semibold font-mono" style={{ color: '#10b981' }}>{reference}</span>
                   </div>
                 )}
                 {displayAmount > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span style={{ color: '#6b8fba' }}>Amount</span>
+                    <span style={{ color: '#9cb8d9' }}>Amount</span>
                     <span className="font-bold" style={{ color: '#f0f6ff' }}>£{displayAmount.toFixed(2)}</span>
                   </div>
                 )}
@@ -306,7 +306,7 @@ export default function PaymentPage() {
               <div className="font-bold" style={{ color: '#e94560', fontSize: '36px' }}>
                 £{displayAmount.toFixed(2)}
               </div>
-              <div className="text-[11px] mt-2" style={{ color: '#6b8fba' }}>
+              <div className="text-[11px] mt-2" style={{ color: '#9cb8d9' }}>
                 Amount locked to order — cannot be edited
               </div>
             </div>

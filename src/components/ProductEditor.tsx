@@ -615,7 +615,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                     </div>
                     <div>
                       <p className="text-white text-sm font-medium">VIP Exclusive</p>
-                      <p className="text-[#6b8fba] text-xs">Only visible to VIP members in /vip store</p>
+                      <p className="text-[#9cb8d9] text-xs">Only visible to VIP members in /vip store</p>
                     </div>
                   </div>
                   <button
@@ -635,7 +635,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                     </div>
                     <div>
                       <p className="text-white text-sm font-medium">Popular Badge</p>
-                      <p className="text-[#6b8fba] text-xs">Shows a "Popular" badge on the product card</p>
+                      <p className="text-[#9cb8d9] text-xs">Shows a "Popular" badge on the product card</p>
                     </div>
                   </div>
                   <button
@@ -655,7 +655,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                     </div>
                     <div>
                       <p className="text-white text-sm font-medium">Requires Research Confirmation</p>
-                      <p className="text-[#6b8fba] text-xs">Shows research-use confirmation gate before adding to cart</p>
+                      <p className="text-[#9cb8d9] text-xs">Shows research-use confirmation gate before adding to cart</p>
                     </div>
                   </div>
                   <button

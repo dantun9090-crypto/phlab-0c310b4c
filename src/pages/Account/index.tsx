@@ -341,7 +341,7 @@ export default function AccountPage() {
               <User className="w-4 h-4 text-blue-400" />
             </div>
           </div>
-          <p className="text-[#6b8fba] text-sm tracking-wide">Loading your account…</p>
+          <p className="text-[#9cb8d9] text-sm tracking-wide">Loading your account…</p>
         </div>
       </div>
     );
@@ -361,7 +361,7 @@ export default function AccountPage() {
               <User className="w-9 h-9 text-blue-400" />
             </div>
             <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">Member Access Required</h1>
-            <p className="text-[#6b8fba] text-sm mb-8 leading-relaxed">Sign in to your account to access your dashboard, orders, and exclusive member benefits.</p>
+            <p className="text-[#9cb8d9] text-sm mb-8 leading-relaxed">Sign in to your account to access your dashboard, orders, and exclusive member benefits.</p>
             <div className="flex flex-col gap-3">
               <Link to="/login" className={luxuryBtn + ' w-full'}>
                 Sign In
@@ -398,7 +398,7 @@ export default function AccountPage() {
         {/* ── Back to Shop ── */}
         <Link
           to="/products"
-          className="inline-flex items-center gap-1.5 text-[#6b8fba] hover:text-white text-sm mb-8 transition-colors group"
+          className="inline-flex items-center gap-1.5 text-[#9cb8d9] hover:text-white text-sm mb-8 transition-colors group"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:-translate-x-0.5">
             <path d="M15 18l-6-6 6-6" />
@@ -479,7 +479,7 @@ export default function AccountPage() {
                 <p className="text-[#3a5a82] text-xs mt-1 truncate max-w-full">{user.email}</p>
 
                 {/* Member since */}
-                <div className="mt-3 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-[#6b8fba] text-xs">
+                <div className="mt-3 px-3 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-[#9cb8d9] text-xs">
                   Member since {formatDate(profile?.createdAt)}
                 </div>
               </div>
@@ -511,13 +511,13 @@ export default function AccountPage() {
                       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${
                         isActive
                           ? 'bg-gradient-to-r from-blue-600/20 to-violet-600/10 text-white border border-blue-500/20'
-                          : 'text-[#6b8fba] hover:text-white hover:bg-white/[0.04]'
+                          : 'text-[#9cb8d9] hover:text-white hover:bg-white/[0.04]'
                       }`}
                     >
-                      <Icon className={`w-4 h-4 flex-shrink-0 transition-colors ${isActive ? 'text-blue-400' : 'text-[#3a5a82] group-hover:text-[#6b8fba]'}`} />
+                      <Icon className={`w-4 h-4 flex-shrink-0 transition-colors ${isActive ? 'text-blue-400' : 'text-[#3a5a82] group-hover:text-[#9cb8d9]'}`} />
                       <span className="flex-1 text-left">{tab.label}</span>
                       {'count' in tab && typeof tab.count === 'number' && tab.count > 0 && (
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isActive ? 'bg-blue-500/20 text-blue-300' : 'bg-white/[0.06] text-[#6b8fba]'}`}>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${isActive ? 'bg-blue-500/20 text-blue-300' : 'bg-white/[0.06] text-[#9cb8d9]'}`}>
                           {tab.count}
                         </span>
                       )}
@@ -603,7 +603,7 @@ export default function AccountPage() {
                       {orders.length === 0 ? (
                         <div className="text-center py-10">
                           <ShoppingBag className="w-10 h-10 text-[#3a5a82] mx-auto mb-3 opacity-50" />
-                          <p className="text-[#6b8fba] text-sm mb-4">No orders yet</p>
+                          <p className="text-[#9cb8d9] text-sm mb-4">No orders yet</p>
                           <Link to="/products" className={luxuryBtn}>
                             Browse Products
                           </Link>
@@ -645,7 +645,7 @@ export default function AccountPage() {
                         <span className="text-2xl font-bold text-white">£{(profile?.referralBalance || 0).toFixed(2)}</span>
                         <span className="text-[#3a5a82] text-xs">balance</span>
                       </div>
-                      <p className="text-[#6b8fba] text-xs mb-4">{profile?.referralCount || 0} successful referral{profile?.referralCount !== 1 ? 's' : ''}</p>
+                      <p className="text-[#9cb8d9] text-xs mb-4">{profile?.referralCount || 0} successful referral{profile?.referralCount !== 1 ? 's' : ''}</p>
                       <button onClick={() => setActiveTab('referral')} className="text-xs text-violet-400 hover:text-violet-300 transition-colors">
                         Manage referrals →
                       </button>
@@ -661,7 +661,7 @@ export default function AccountPage() {
                       {profile?.address ? (
                         <div className="space-y-1">
                           <p className="text-gray-300 text-sm">{profile.address}</p>
-                          <p className="text-[#6b8fba] text-sm">{[profile.city, profile.postcode].filter(Boolean).join(', ')}</p>
+                          <p className="text-[#9cb8d9] text-sm">{[profile.city, profile.postcode].filter(Boolean).join(', ')}</p>
                         </div>
                       ) : (
                         <p className="text-[#3a5a82] text-sm">No address saved yet.</p>
@@ -688,7 +688,7 @@ export default function AccountPage() {
                       {orders.length === 0 ? (
                         <div className="text-center py-12">
                           <Package className="w-12 h-12 text-[#3a5a82] mx-auto mb-4 opacity-40" />
-                          <p className="text-[#6b8fba] mb-5">No orders found</p>
+                          <p className="text-[#9cb8d9] mb-5">No orders found</p>
                           <Link to="/products" className={luxuryBtn}>
                             <ShoppingBag className="w-4 h-4" /> Shop Now
                           </Link>
@@ -744,7 +744,7 @@ export default function AccountPage() {
                                           <p className={sectionHeading}>Tracking</p>
                                           <OrderTrackingBar status={order.status} />
                                           {order.trackingNumber && (
-                                            <p className="text-[#6b8fba] text-xs mt-2.5">Tracking #: <span className="text-white font-mono">{order.trackingNumber}</span></p>
+                                            <p className="text-[#9cb8d9] text-xs mt-2.5">Tracking #: <span className="text-white font-mono">{order.trackingNumber}</span></p>
                                           )}
                                         </div>
 
@@ -765,13 +765,13 @@ export default function AccountPage() {
                                         <div className="rounded-xl bg-white/[0.02] border border-white/[0.04] p-4 space-y-2">
                                           {(order as any).discount > 0 && (
                                             <div className="flex justify-between text-sm">
-                                              <span className="text-[#6b8fba]">Discount</span>
+                                              <span className="text-[#9cb8d9]">Discount</span>
                                               <span className="text-emerald-400">-£{((order as any).discount).toFixed(2)}</span>
                                             </div>
                                           )}
                                           {(order as any).shippingCost > 0 && (
                                             <div className="flex justify-between text-sm">
-                                              <span className="text-[#6b8fba]">Shipping</span>
+                                              <span className="text-[#9cb8d9]">Shipping</span>
                                               <span className="text-gray-300">£{((order as any).shippingCost).toFixed(2)}</span>
                                             </div>
                                           )}
@@ -818,7 +818,7 @@ export default function AccountPage() {
                       {orders.length === 0 ? (
                         <div className="text-center py-12">
                           <FileText className="w-12 h-12 text-[#3a5a82] mx-auto mb-4 opacity-40" />
-                          <p className="text-[#6b8fba] text-sm">No receipts available yet</p>
+                          <p className="text-[#9cb8d9] text-sm">No receipts available yet</p>
                         </div>
                       ) : (
                         <div className="space-y-2">
@@ -904,12 +904,12 @@ export default function AccountPage() {
                       <Share2 className="w-4 h-4 text-violet-400" />
                       <h2 className="text-white font-bold text-base">Your Referral Link</h2>
                     </div>
-                    <p className="text-[#6b8fba] text-sm mb-5">Share your unique link — earn £5 for every friend who registers and spends £50.</p>
+                    <p className="text-[#9cb8d9] text-sm mb-5">Share your unique link — earn £5 for every friend who registers and spends £50.</p>
 
                     {profile?.referralCode ? (
                       <div className="space-y-3">
                         <div className="flex gap-2">
-                          <div className="flex-1 bg-[#060f1e]/80 border border-white/[0.08] rounded-xl px-4 py-3 font-mono text-[#6b8fba] text-sm truncate">
+                          <div className="flex-1 bg-[#060f1e]/80 border border-white/[0.08] rounded-xl px-4 py-3 font-mono text-[#9cb8d9] text-sm truncate">
                             {`${window.location.origin}/register?ref=${profile.referralCode}`}
                           </div>
                           <button
@@ -929,7 +929,7 @@ export default function AccountPage() {
                         </p>
                       </div>
                     ) : (
-                      <p className="text-[#6b8fba] text-sm">Your referral link is being generated…</p>
+                      <p className="text-[#9cb8d9] text-sm">Your referral link is being generated…</p>
                     )}
                   </div>
 
@@ -940,7 +940,7 @@ export default function AccountPage() {
                       <Tag className="w-4 h-4 text-emerald-400" />
                       <h2 className="text-white font-bold text-base">Redeem Earnings</h2>
                     </div>
-                    <p className="text-[#6b8fba] text-sm mb-5">Convert your balance into a discount code. Minimum balance of £30 required.</p>
+                    <p className="text-[#9cb8d9] text-sm mb-5">Convert your balance into a discount code. Minimum balance of £30 required.</p>
 
                     {redeemResult ? (
                       <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 text-center">
@@ -968,7 +968,7 @@ export default function AccountPage() {
                       <div className="space-y-4">
                         {/* Progress bar */}
                         <div>
-                          <div className="flex justify-between text-xs text-[#6b8fba] mb-2">
+                          <div className="flex justify-between text-xs text-[#9cb8d9] mb-2">
                             <span>Balance</span>
                             <span>£{(profile?.referralBalance || 0).toFixed(2)} / £30.00</span>
                           </div>
@@ -1035,7 +1035,7 @@ export default function AccountPage() {
                           </div>
                           <div className="pt-1">
                             <p className="text-white text-sm font-semibold">{item.title}</p>
-                            <p className="text-[#6b8fba] text-xs mt-1 leading-relaxed">{item.desc}</p>
+                            <p className="text-[#9cb8d9] text-xs mt-1 leading-relaxed">{item.desc}</p>
                           </div>
                         </div>
                       ))}
@@ -1061,7 +1061,7 @@ export default function AccountPage() {
                         <p className={sectionHeading}>Personal Information</p>
                         <div className="grid sm:grid-cols-2 gap-4">
                           <div>
-                            <label htmlFor="profileFirstName" className="block text-xs text-[#6b8fba] mb-1.5">First Name</label>
+                            <label htmlFor="profileFirstName" className="block text-xs text-[#9cb8d9] mb-1.5">First Name</label>
                             <input
                               id="profileFirstName"
                               value={editFirstName}
@@ -1072,7 +1072,7 @@ export default function AccountPage() {
                             />
                           </div>
                           <div>
-                            <label htmlFor="profileLastName" className="block text-xs text-[#6b8fba] mb-1.5">Last Name</label>
+                            <label htmlFor="profileLastName" className="block text-xs text-[#9cb8d9] mb-1.5">Last Name</label>
                             <input
                               id="profileLastName"
                               value={editLastName}
@@ -1083,8 +1083,8 @@ export default function AccountPage() {
                             />
                           </div>
                           <div className="sm:col-span-2">
-                            <label className="block text-xs text-[#6b8fba] mb-1.5">Email</label>
-                            <p className="text-[#6b8fba] text-sm py-3 px-4 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between">
+                            <label className="block text-xs text-[#9cb8d9] mb-1.5">Email</label>
+                            <p className="text-[#9cb8d9] text-sm py-3 px-4 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-between">
                               <span>{user.email}</span>
                               {user.emailVerified
                                 ? <span className="flex items-center gap-1.5 text-emerald-400 text-xs"><Check className="w-3 h-3" />Verified</span>
@@ -1092,7 +1092,7 @@ export default function AccountPage() {
                             </p>
                           </div>
                           <div className="sm:col-span-2">
-                            <label htmlFor="profilePhone" className="block text-xs text-[#6b8fba] mb-1.5">Phone</label>
+                            <label htmlFor="profilePhone" className="block text-xs text-[#9cb8d9] mb-1.5">Phone</label>
                             <input
                               id="profilePhone"
                               value={editPhone}
@@ -1111,7 +1111,7 @@ export default function AccountPage() {
                         <p className={sectionHeading}>Delivery Address</p>
                         <div className="grid sm:grid-cols-2 gap-4">
                           <div className="sm:col-span-2">
-                            <label htmlFor="profileAddress" className="block text-xs text-[#6b8fba] mb-1.5">Street Address</label>
+                            <label htmlFor="profileAddress" className="block text-xs text-[#9cb8d9] mb-1.5">Street Address</label>
                             <input
                               id="profileAddress"
                               value={editAddress}
@@ -1122,7 +1122,7 @@ export default function AccountPage() {
                             />
                           </div>
                           <div>
-                            <label htmlFor="profileCity" className="block text-xs text-[#6b8fba] mb-1.5">City</label>
+                            <label htmlFor="profileCity" className="block text-xs text-[#9cb8d9] mb-1.5">City</label>
                             <input
                               id="profileCity"
                               value={editCity}
@@ -1133,7 +1133,7 @@ export default function AccountPage() {
                             />
                           </div>
                           <div>
-                            <label htmlFor="profilePostcode" className="block text-xs text-[#6b8fba] mb-1.5">Postcode</label>
+                            <label htmlFor="profilePostcode" className="block text-xs text-[#9cb8d9] mb-1.5">Postcode</label>
                             <input
                               id="profilePostcode"
                               value={editPostcode}
@@ -1173,16 +1173,16 @@ export default function AccountPage() {
                         ) : (
                           <div className="space-y-4">
                             <div>
-                              <label htmlFor="currentPwd" className="block text-xs text-[#6b8fba] mb-1.5">Current Password</label>
+                              <label htmlFor="currentPwd" className="block text-xs text-[#9cb8d9] mb-1.5">Current Password</label>
                               <input id="currentPwd" type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className={luxuryInput} style={inputBaseStyle} placeholder="Enter current password" />
                             </div>
                             <div className="grid sm:grid-cols-2 gap-4">
                               <div>
-                                <label htmlFor="newPwd" className="block text-xs text-[#6b8fba] mb-1.5">New Password</label>
+                                <label htmlFor="newPwd" className="block text-xs text-[#9cb8d9] mb-1.5">New Password</label>
                                 <input id="newPwd" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className={luxuryInput} style={inputBaseStyle} placeholder="Min. 8 characters" />
                               </div>
                               <div>
-                                <label htmlFor="confirmPwd" className="block text-xs text-[#6b8fba] mb-1.5">Confirm New Password</label>
+                                <label htmlFor="confirmPwd" className="block text-xs text-[#9cb8d9] mb-1.5">Confirm New Password</label>
                                 <input id="confirmPwd" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={luxuryInput} style={inputBaseStyle} placeholder="Repeat new password" />
                               </div>
                             </div>
@@ -1218,16 +1218,16 @@ export default function AccountPage() {
                     </div>
                     <div className="p-6 space-y-4">
                       <div>
-                        <label htmlFor="secCurrentPwd" className="block text-xs text-[#6b8fba] mb-1.5">Current Password</label>
+                        <label htmlFor="secCurrentPwd" className="block text-xs text-[#9cb8d9] mb-1.5">Current Password</label>
                         <input id="secCurrentPwd" type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className={luxuryInput} style={inputBaseStyle} placeholder="Enter current password" />
                       </div>
                       <div className="grid sm:grid-cols-2 gap-4">
                         <div>
-                          <label htmlFor="secNewPwd" className="block text-xs text-[#6b8fba] mb-1.5">New Password</label>
+                          <label htmlFor="secNewPwd" className="block text-xs text-[#9cb8d9] mb-1.5">New Password</label>
                           <input id="secNewPwd" type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className={luxuryInput} style={inputBaseStyle} placeholder="Min. 8 characters" />
                         </div>
                         <div>
-                          <label htmlFor="secConfirmPwd" className="block text-xs text-[#6b8fba] mb-1.5">Confirm New Password</label>
+                          <label htmlFor="secConfirmPwd" className="block text-xs text-[#9cb8d9] mb-1.5">Confirm New Password</label>
                           <input id="secConfirmPwd" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className={luxuryInput} style={inputBaseStyle} placeholder="Repeat new password" />
                         </div>
                       </div>
@@ -1250,7 +1250,7 @@ export default function AccountPage() {
                         <p className="text-white font-semibold text-sm">
                           Email {user.emailVerified ? 'Verified' : 'Not Verified'}
                         </p>
-                        <p className="text-[#6b8fba] text-xs mt-1">{user.email}</p>
+                        <p className="text-[#9cb8d9] text-xs mt-1">{user.email}</p>
                         {!user.emailVerified && (
                           <div className="mt-3">
                             {verifSent && <p className="text-emerald-400 text-xs mb-2">Verification email sent! Check your inbox.</p>}
@@ -1278,7 +1278,7 @@ export default function AccountPage() {
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <p className="text-white font-semibold text-sm">Delete Account</p>
-                          <p className="text-[#6b8fba] text-xs mt-1">Permanently remove your account and all associated data. This action cannot be undone.</p>
+                          <p className="text-[#9cb8d9] text-xs mt-1">Permanently remove your account and all associated data. This action cannot be undone.</p>
                         </div>
                         {!showDeleteConfirm && (
                           <button

@@ -24,7 +24,7 @@ export default function PrivacyPolicy() {
             'Cookie preferences and site interaction data (see our Cookie Policy)',
             'Communication history when you contact our support team',
           ].map((item) => (
-            <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+            <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
               <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#3b82f6' }} />
               {item}
             </li>
@@ -39,7 +39,7 @@ export default function PrivacyPolicy() {
       title: 'How We Use Your Data',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             We use your information only to process orders, deliver products, and provide customer support. We will never sell or share your personal data with third parties for marketing purposes.
           </p>
           <ul className="space-y-3">
@@ -50,7 +50,7 @@ export default function PrivacyPolicy() {
               'Fraud prevention and security',
               'Legal compliance (MHRA, GDPR, UK law)',
             ].map((item) => (
-              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#10B981' }} />
                 {item}
               </li>
@@ -65,7 +65,7 @@ export default function PrivacyPolicy() {
       iconColor: '#f59e0b',
       title: 'Cookies & Tracking',
       content: (
-        <p className="leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+        <p className="leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
           We use essential cookies to keep you signed in and remember your cart. Optional cookies track site performance through Google Analytics. You can manage your cookie preferences at any time. See our{' '}
           <Link to="/cookies" className="font-semibold underline underline-offset-2 transition-colors hover:text-[#f59e0b]" style={{ color: '#f59e0b' }}>
             Cookie Policy
@@ -81,7 +81,7 @@ export default function PrivacyPolicy() {
       title: 'Data Security',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             Your data is stored securely using industry-standard encryption. Payment details are processed directly by our Open Banking provider and never stored on our servers.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -93,7 +93,7 @@ export default function PrivacyPolicy() {
             ].map(({ label, value }) => (
               <div key={label} className="flex items-center justify-between p-3 rounded-lg border" style={{ background: 'rgba(139,92,246,0.05)', borderColor: 'rgba(139,92,246,0.15)' }}>
                 <span className="text-xs font-semibold" style={{ color: '#8b5cf6' }}>{label}</span>
-                <span className="text-xs" style={{ color: '#6b8fba' }}>{value}</span>
+                <span className="text-xs" style={{ color: '#9cb8d9' }}>{value}</span>
               </div>
             ))}
           </div>
@@ -107,7 +107,7 @@ export default function PrivacyPolicy() {
       title: 'Your Rights (UK GDPR)',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             Under UK GDPR and the Data Protection Act 2018, you have the following rights:
           </p>
           <ul className="space-y-3">
@@ -119,7 +119,7 @@ export default function PrivacyPolicy() {
               'Right to data portability',
               'Right to object to processing',
             ].map((item) => (
-              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+              <li key={item} className="flex items-start gap-3 leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
                 <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#06b6d4' }} />
                 {item}
               </li>
@@ -144,7 +144,7 @@ export default function PrivacyPolicy() {
       title: 'Data Retention',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             We retain your data only as long as necessary for the purposes outlined in this policy:
           </p>
           <div className="space-y-3">
@@ -159,7 +159,7 @@ export default function PrivacyPolicy() {
                   <span className="text-xs font-semibold" style={{ color: '#ec4899' }}>{type}</span>
                   <span className="text-xs font-bold" style={{ color: '#f0f6ff' }}>{period}</span>
                 </div>
-                <p className="text-[10px]" style={{ color: '#6b8fba' }}>{reason}</p>
+                <p className="text-[10px]" style={{ color: '#9cb8d9' }}>{reason}</p>
               </div>
             ))}
           </div>
@@ -173,7 +173,7 @@ export default function PrivacyPolicy() {
       title: 'Third-Party Services',
       content: (
         <>
-          <p className="leading-relaxed text-sm mb-4" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
             We use the following trusted third-party services to operate our website:
           </p>
           <ul className="space-y-3">
@@ -187,7 +187,7 @@ export default function PrivacyPolicy() {
                 <div className="flex items-start justify-between gap-3 mb-1">
                   <span className="text-xs font-semibold" style={{ color: '#f97316' }}>{service}</span>
                 </div>
-                <p className="text-[10px] mb-1" style={{ color: '#6b8fba' }}>{purpose}</p>
+                <p className="text-[10px] mb-1" style={{ color: '#9cb8d9' }}>{purpose}</p>
                 <p className="text-[10px]" style={{ color: '#3a5a82' }}>
                   <span className="font-semibold">Data shared:</span> {data}
                 </p>
@@ -204,7 +204,7 @@ export default function PrivacyPolicy() {
       title: 'Policy Updates',
       content: (
         <div className="space-y-4">
-          <p className="leading-relaxed text-sm" style={{ color: '#6b8fba' }}>
+          <p className="leading-relaxed text-sm" style={{ color: '#9cb8d9' }}>
             We may update this Privacy Policy to reflect changes in our practices or legal requirements. Any material changes will be notified via email to registered users.
           </p>
           <div className="p-4 rounded-lg border" style={{ background: 'rgba(239,68,68,0.05)', borderColor: 'rgba(239,68,68,0.15)' }}>
@@ -212,7 +212,7 @@ export default function PrivacyPolicy() {
               <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#ef4444' }} />
               <div>
                 <p className="text-xs font-semibold mb-1" style={{ color: '#ef4444' }}>Last updated: January 2026</p>
-                <p className="text-xs leading-relaxed" style={{ color: '#6b8fba' }}>
+                <p className="text-xs leading-relaxed" style={{ color: '#9cb8d9' }}>
                   This policy is effective from 1st January 2026. Previous versions are available upon request.
                 </p>
               </div>
@@ -235,7 +235,7 @@ export default function PrivacyPolicy() {
           <h1 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: '#f0f6ff' }}>
             Privacy Policy
           </h1>
-          <p className="text-base leading-relaxed max-w-2xl mx-auto" style={{ color: '#6b8fba' }}>
+          <p className="text-base leading-relaxed max-w-2xl mx-auto" style={{ color: '#9cb8d9' }}>
             Pro Health Peptides Ltd is committed to protecting your personal data. This policy explains how we collect, use, and safeguard your information in compliance with UK GDPR and the Data Protection Act 2018.
           </p>
         </div>
@@ -278,7 +278,7 @@ export default function PrivacyPolicy() {
               </div>
               <div className="flex-1">
                 <p className="font-semibold text-sm mb-1" style={{ color: '#f0f6ff' }}>Questions About Your Data?</p>
-                <p className="text-xs leading-relaxed" style={{ color: '#6b8fba' }}>
+                <p className="text-xs leading-relaxed" style={{ color: '#9cb8d9' }}>
                   Contact our data controller at{' '}
                   <a
                     href="mailto:info@prohealthpeptides.co.uk"
@@ -297,7 +297,7 @@ export default function PrivacyPolicy() {
         {/* Related links */}
         <div className="max-w-4xl mx-auto mt-6 space-y-4">
           <div className="rounded-xl p-5 border" style={{ background: '#04101f', borderColor: 'rgba(255,255,255,0.07)' }}>
-            <p className="text-xs font-semibold mb-3" style={{ color: '#6b8fba' }}>Related Policies</p>
+            <p className="text-xs font-semibold mb-3" style={{ color: '#9cb8d9' }}>Related Policies</p>
             <div className="flex flex-wrap gap-3">
               {[
                 { label: 'Cookie Policy', to: '/cookies' },
@@ -318,9 +318,9 @@ export default function PrivacyPolicy() {
             </div>
           </div>
           <div className="rounded-xl p-5 border" style={{ background: '#04101f', borderColor: 'rgba(255,255,255,0.07)' }}>
-            <p className="text-xs font-semibold mb-3" style={{ color: '#6b8fba' }}>Explore Our Research Peptides</p>
+            <p className="text-xs font-semibold mb-3" style={{ color: '#9cb8d9' }}>Explore Our Research Peptides</p>
             <p className="text-xs mb-3 leading-relaxed" style={{ color: '#3a5a82' }}>
-              All orders are processed in accordance with this Privacy Policy. Your data is used solely to fulfil and manage your purchase of <Link to="/products" className="underline hover:opacity-80 transition-opacity" style={{ color: '#6b8fba' }}>research peptides</Link> from Pro Health Peptides UK.
+              All orders are processed in accordance with this Privacy Policy. Your data is used solely to fulfil and manage your purchase of <Link to="/products" className="underline hover:opacity-80 transition-opacity" style={{ color: '#9cb8d9' }}>research peptides</Link> from Pro Health Peptides UK.
             </p>
             <div className="flex flex-wrap gap-3">
               {[

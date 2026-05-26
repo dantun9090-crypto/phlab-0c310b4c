@@ -235,7 +235,7 @@ export default function LabReports() {
             </h1>
 
             <p
-              className="text-[#6b8fba] text-lg leading-relaxed max-w-2xl mb-8"
+              className="text-[#9cb8d9] text-lg leading-relaxed max-w-2xl mb-8"
               style={{ opacity: heroVisible ? 1 : 0, transform: heroVisible ? 'translateY(0)' : 'translateY(20px)', transition: 'all 0.7s ease 350ms' }}
             >
               Every compound we supply undergoes independent analytical testing by HPLC and mass spectrometry before dispatch. Our commitment to full transparency means batch-specific data is available for every product we stock.
@@ -270,7 +270,7 @@ export default function LabReports() {
               Our Process
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-[#f0f6ff]">Testing Methodology</h2>
-            <p className="text-[#6b8fba] mt-2 max-w-xl mx-auto text-sm">
+            <p className="text-[#9cb8d9] mt-2 max-w-xl mx-auto text-sm">
               A rigorous four-step analytical workflow applied to every batch before release.
             </p>
           </FadeIn>
@@ -284,7 +284,7 @@ export default function LabReports() {
                   </div>
                   <div className="text-[10px] font-bold uppercase tracking-widest text-[#3a5a82] mb-1">Step {i + 1}</div>
                   <h3 className="text-white font-semibold mb-2">{step.title}</h3>
-                  <p className="text-[#6b8fba] text-sm leading-relaxed">{step.desc}</p>
+                  <p className="text-[#9cb8d9] text-sm leading-relaxed">{step.desc}</p>
                 </div>
               </FadeIn>
             ))}
@@ -347,7 +347,7 @@ export default function LabReports() {
 
                   {/* Notes */}
                   <div className="bg-blue-500/5 border border-blue-500/10 rounded-lg p-3 mb-5">
-                    <p className="text-[#6b8fba] text-xs leading-relaxed italic">{report.notes}</p>
+                    <p className="text-[#9cb8d9] text-xs leading-relaxed italic">{report.notes}</p>
                   </div>
 
                   {/* Actions */}
@@ -388,7 +388,7 @@ export default function LabReports() {
                     <Microscope className="w-7 h-7 text-blue-400" />
                   </div>
                   <h2 className="text-2xl font-bold text-white mb-3">Need a Full Certificate of Analysis?</h2>
-                  <p className="text-[#6b8fba] mb-7 max-w-xl mx-auto">
+                  <p className="text-[#9cb8d9] mb-7 max-w-xl mx-auto">
                     Full batch CoA documentation — including chromatogram images, integration data, and MS spectra — is available for any product on request. Contact us with your order reference number.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -417,7 +417,7 @@ export default function LabReports() {
                   <ShieldCheck className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-amber-300 font-semibold text-sm mb-1">Research Use Only</p>
-                    <p className="text-[#6b8fba] text-xs leading-relaxed">
+                    <p className="text-[#9cb8d9] text-xs leading-relaxed">
                       All compounds and associated analytical data are provided exclusively for in-vitro laboratory research purposes. These materials are not intended for diagnostic, therapeutic, or human consumption use. Analytical results relate to specific batch samples and do not constitute a guarantee of performance in research applications. ProHealth Peptides operates in full compliance with applicable UK regulatory frameworks governing the supply of research compounds.
                     </p>
                   </div>
