@@ -58,10 +58,20 @@ function unwrapFields(fields: Record<string, any>): Record<string, any> {
   return out;
 }
 
+/**
+ * Slug overrides by Firestore doc ID. Use when a product name was changed
+ * for Google Merchant / SEO reasons but the URL must stay short and stable
+ * (preserves Google's existing index + backlinks).
+ */
+const SLUG_OVERRIDES: Record<string, string> = {
+  kONztvd1Xj5FQwAYMaT4: "bpc-157",
+};
+
 function toProduct(doc: any): SeoProduct | null {
   const f = unwrapFields(doc.fields ?? {});
   const name: string = f.name ?? "";
   if (!name) return null;
+  const docId = f.id ?? String(doc.name).split("/").pop() ?? "";
   const variants: Array<{ price?: number }> = Array.isArray(f.variants) ? f.variants : [];
   const variantPrices = variants
     .map((v) => (v && typeof v.price === "number" ? v.price : null))
@@ -72,9 +82,9 @@ function toProduct(doc: any): SeoProduct | null {
       ? f.price
       : 0;
   return {
-    id: f.id ?? String(doc.name).split("/").pop() ?? "",
+    id: docId,
     name,
-    slug: f.slug || slugify(name),
+    slug: SLUG_OVERRIDES[docId] || f.slug || slugify(name),
     description: (f.description ?? "").toString(),
     category: f.category ?? "",
     price,
@@ -104,7 +114,13 @@ export async function fetchAllProducts(): Promise<SeoProduct[]> {
 
 export async function fetchProductBySlug(slug: string): Promise<SeoProduct | null> {
   const all = await fetchAllProducts();
-  return all.find((p) => p.slug === slug) ?? null;
+  // Exact match first, then fall back to the legacy auto-slug from name
+  // so older indexed URLs (e.g. the long Merchant-style title) still resolve.
+  return (
+    all.find((p) => p.slug === slug) ??
+    all.find((p) => slugify(p.name) === slug) ??
+    null
+  );
 }
 
 export { slugify };
