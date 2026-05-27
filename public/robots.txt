@@ -1,5 +1,18 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /payment
+Disallow: /account
+Disallow: /login
+Disallow: /register
+Disallow: /search
+Disallow: /vip-store
+Disallow: /*?*
+Disallow: /blog-single-page-layout
+Disallow: /real-estate-single-page-layout
 
 # Block AI training / scraping crawlers
 User-agent: GPTBot
