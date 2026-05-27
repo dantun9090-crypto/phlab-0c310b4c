@@ -1,0 +1,85 @@
+rules_version = '2';
+
+// PH Labs — Firestore security rules
+// Source of truth — deploy with: firebase deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/customers/$(request.auth.uid))
+        && get(/databases/$(database)/documents/customers/$(request.auth.uid)).data.isAdmin == true;
+    }
+    // Prevent users from elevating their own privileges.
+    function notTouchingPrivilegedFields() {
+      return !('isAdmin' in request.resource.data.diff(resource.data).affectedKeys())
+          && !('role'    in request.resource.data.diff(resource.data).affectedKeys())
+          && !('isVip'   in request.resource.data.diff(resource.data).affectedKeys());
+    }
+
+    // ---------- customers ----------
+    // Users can read & update their OWN profile (without changing isAdmin/role/isVip).
+    // Admins can read & write any.
+    match /customers/{uid} {
+      allow read:   if isSelf(uid) || isAdmin();
+      allow create: if isSelf(uid)
+                    && !('isAdmin' in request.resource.data)
+                    && !('role'    in request.resource.data)
+                    && !('isVip'   in request.resource.data);
+      allow update: if (isSelf(uid) && notTouchingPrivilegedFields()) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ---------- orders ----------
+    // Anyone (incl. guests) can CREATE an order at checkout.
+    // Owners can read their own; admins full access.
+    match /orders/{orderId} {
+      allow create: if request.resource.data.totalAmount is number
+                    && request.resource.data.totalAmount >= 0;
+      allow read:   if isAdmin()
+                    || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // ---------- email subscribers (newsletter) ----------
+    match /emailSubscribers/{docId} {
+      allow create: if request.resource.data.email is string
+                    && request.resource.data.email.size() < 320;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ---------- public-read, admin-write collections ----------
+    match /products/{id}        { allow read: if true; allow write: if isAdmin(); }
+    match /product_stock/{id}   { allow read: if true; allow write: if isAdmin(); }
+    match /inventory/{id}       { allow read: if true; allow write: if isAdmin(); }
+    match /adverts/{id}         { allow read: if true; allow write: if isAdmin(); }
+    match /settings/{id}        { allow read: if true; allow write: if isAdmin(); }
+    match /banners/{id}         { allow read: if true; allow write: if isAdmin(); }
+    match /landingPage/{id}     { allow read: if true; allow write: if isAdmin(); }
+    match /themes/{id}          { allow read: if true; allow write: if isAdmin(); }
+    match /policies/{id}        { allow read: if true; allow write: if isAdmin(); }
+    match /articles/{id}        { allow read: if true; allow write: if isAdmin(); }
+    match /featuredProducts/{id}{ allow read: if true; allow write: if isAdmin(); }
+
+    // ---------- admin-only collections ----------
+    match /coupons/{id}         { allow read: if isAdmin(); allow write: if isAdmin(); }
+    match /promoCodes/{id}      { allow read: if isAdmin(); allow write: if isAdmin(); }
+    match /ipWhitelist/{id}     { allow read: if isAdmin(); allow write: if isAdmin(); }
+    match /mail/{id}            { allow read: if isAdmin(); allow write: if isAdmin(); }
+    match /invoices/{id}        { allow read: if isAdmin(); allow write: if isAdmin(); }
+    match /backups/{id}         { allow read: if isAdmin(); allow write: if isAdmin(); }
+    match /emailMarketing/{id}  { allow read: if isAdmin(); allow write: if isAdmin(); }
+
+    // ---------- default deny ----------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

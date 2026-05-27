@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start';
+import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 
 /**
  * Probe a single URL as Googlebot to see what Prerender.io / our edge serves.
@@ -8,6 +9,26 @@ import { createServerFn } from '@tanstack/react-start';
  */
 const GOOGLEBOT_UA =
   'Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)';
+
+// Only allow probing our own production hosts — prevents SSRF against
+// cloud metadata endpoints, internal services, or arbitrary third parties.
+const ALLOWED_HOST_SUFFIXES = [
+  'phlabs.co.uk',
+  'www.phlabs.co.uk',
+];
+
+function isAllowedUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
+    const host = u.hostname.toLowerCase();
+    return ALLOWED_HOST_SUFFIXES.some(
+      (suffix) => host === suffix || host.endsWith('.' + suffix),
+    );
+  } catch {
+    return false;
+  }
+}
 
 export interface ProbeResult {
   url: string;
@@ -104,10 +125,17 @@ const DEFAULT_TARGETS = [
 ];
 
 export const probePrerenderStatus = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data: { urls?: string[] } | undefined) => data ?? {})
   .handler(async ({ data }) => {
-    const urls =
+    const requested =
       data.urls && data.urls.length > 0 ? data.urls.slice(0, 12) : DEFAULT_TARGETS;
+    // Reject any URL that isn't on the phlabs.co.uk domain to prevent SSRF
+    // against cloud metadata endpoints or arbitrary internal services.
+    const urls = requested.filter(isAllowedUrl);
+    if (urls.length === 0) {
+      throw new Error('No allowed URLs to probe. Only phlabs.co.uk hosts are permitted.');
+    }
     const results = await Promise.all(urls.map(probeOne));
     return { checkedAt: new Date().toISOString(), results };
   });
