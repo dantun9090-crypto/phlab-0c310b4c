@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
+    "prebuild": "bun scripts/check-domains.ts",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
@@ -14,6 +15,7 @@
     "worker:smoke": "bun scripts/worker-smoke.ts",
     "worker:check-imports": "bun scripts/check-worker-imports.ts",
     "check:domains": "bun scripts/check-domains.ts",
+    "prepublish": "bun scripts/check-domains.ts && bun scripts/seo-check.ts",
     "ci": "bun run check:domains && bun run build && bun run worker:check-imports"
   },
   "dependencies": {

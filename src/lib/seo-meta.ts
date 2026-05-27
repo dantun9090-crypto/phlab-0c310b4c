@@ -19,6 +19,46 @@ export const SITE_URL = "https://www.phlabs.co.uk";
 export const SITE_NAME = "PH Labs UK";
 export const BRAND = "PH Labs UK";
 
+// ── Domain guard ──────────────────────────────────────────────────────────
+// Wymusza, by SITE_URL pozostawał kanoniczną domeną produkcyjną.
+// Zapobiega regresji, w której meta/canonical/sitemap zostałyby wygenerowane
+// z błędną domeną (literówka phplabs, stary preview phlab.lovable.app albo
+// stara prohealthpeptides.co.uk).
+const FORBIDDEN_DOMAINS = [
+  { needle: "phplabs", reason: "literówka — poprawnie 'phlabs' (jedno 'p')" },
+  { needle: "phlab.lovable.app", reason: "stary preview URL — używaj www.phlabs.co.uk" },
+  { needle: "prohealthpeptides.co.uk", reason: "stara domena — używaj www.phlabs.co.uk" },
+];
+const CANONICAL_HOST = "www.phlabs.co.uk";
+{
+  const url = SITE_URL.toLowerCase();
+  for (const { needle, reason } of FORBIDDEN_DOMAINS) {
+    if (url.includes(needle)) {
+      throw new Error(
+        `[seo-meta] SITE_URL zawiera zabronioną domenę "${needle}" (${reason}). ` +
+          `Oczekiwano https://${CANONICAL_HOST}.`,
+      );
+    }
+  }
+  if (!url.startsWith(`https://${CANONICAL_HOST}`)) {
+    console.warn(
+      `[seo-meta] OSTRZEŻENIE: SITE_URL="${SITE_URL}" nie wskazuje na https://${CANONICAL_HOST}.`,
+    );
+  }
+}
+
+/** Asercja używana przez generatory sitemap/robots/meta przed wypisaniem URL. */
+export function assertCanonicalUrl(url: string, context = "url"): void {
+  const lower = url.toLowerCase();
+  for (const { needle, reason } of FORBIDDEN_DOMAINS) {
+    if (lower.includes(needle)) {
+      throw new Error(
+        `[seo-meta] ${context} zawiera zabronioną domenę "${needle}" (${reason}): ${url}`,
+      );
+    }
+  }
+}
+
 /**
  * Build the canonical URL for a splat-rendered path. Strips leading and
  * trailing slashes from the splat so /products and /products/ produce the
