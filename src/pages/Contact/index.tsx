@@ -462,9 +462,11 @@ export default function Contact() {
                             onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                             placeholder="Your name"
                             required
+                            maxLength={100}
                             className="w-full rounded-xl px-4 py-3 text-sm placeholder-[#5a7a9a] outline-none transition-all duration-200 focus:ring-2 focus:ring-emerald-500/50"
                             style={{ background: '#0d1f38', border: '1.5px solid rgba(255,255,255,0.25)', color: '#f0f6ff' }}
                           />
+
                         </div>
                         <div>
                           <label htmlFor="contact-email" className="block text-[#9cb8d9] text-xs font-semibold uppercase tracking-wider mb-2">
@@ -477,9 +479,11 @@ export default function Contact() {
                             onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
                             placeholder="your@email.com"
                             required
+                            maxLength={254}
                             className="w-full rounded-xl px-4 py-3 text-sm placeholder-[#5a7a9a] outline-none transition-all duration-200 focus:ring-2 focus:ring-emerald-500/50"
                             style={{ background: '#0d1f38', border: '1.5px solid rgba(255,255,255,0.25)', color: '#f0f6ff' }}
                           />
+
                         </div>
                       </div>
 
@@ -493,9 +497,11 @@ export default function Contact() {
                           value={form.subject}
                           onChange={e => setForm(p => ({ ...p, subject: e.target.value }))}
                           placeholder="What can we help you with?"
+                          maxLength={200}
                           className="w-full rounded-xl px-4 py-3 text-sm placeholder-[#5a7a9a] outline-none transition-all duration-200 focus:ring-2 focus:ring-emerald-500/50"
                           style={{ background: '#0d1f38', border: '1.5px solid rgba(255,255,255,0.25)', color: '#f0f6ff' }}
                         />
+
                       </div>
 
                       <div>
@@ -509,9 +515,11 @@ export default function Contact() {
                           onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
                           placeholder="Tell us how we can help..."
                           required
+                          maxLength={4000}
                           className="w-full rounded-xl px-4 py-3 text-sm placeholder-[#5a7a9a] outline-none transition-all duration-200 resize-none focus:ring-2 focus:ring-emerald-500/50"
                           style={{ background: '#0d1f38', border: '1.5px solid rgba(255,255,255,0.25)', color: '#f0f6ff' }}
                         />
+
                       </div>
 
                       <button
