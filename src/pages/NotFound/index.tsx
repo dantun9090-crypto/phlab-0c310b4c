@@ -16,6 +16,23 @@ export default function NotFoundPage() {
     let desc = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
     if (!desc) { desc = document.createElement('meta'); desc.setAttribute('name', 'description'); document.head.appendChild(desc); }
     desc.setAttribute('content', 'This page could not be found. Browse HPLC-verified research peptides — BPC-157, Semaglutide, TB-500 and more. UK delivery, ≥99% purity.');
+
+    // Tell Prerender.io to return HTTP 404 for this snapshot (fixes the
+    // dashboard.prerender.io "404 status returned" warning).
+    let status = document.querySelector('meta[name="prerender-status-code"]') as HTMLMetaElement | null;
+    if (!status) { status = document.createElement('meta'); status.setAttribute('name', 'prerender-status-code'); document.head.appendChild(status); }
+    status.setAttribute('content', '404');
+
+    // Also tell crawlers not to index 404 pages.
+    let robots = document.querySelector('meta[name="robots"]') as HTMLMetaElement | null;
+    if (!robots) { robots = document.createElement('meta'); robots.setAttribute('name', 'robots'); document.head.appendChild(robots); }
+    robots.setAttribute('content', 'noindex, follow');
+
+    return () => {
+      // Clean up so the tag doesn't leak into other routes when SPA-navigating away.
+      status?.remove();
+      if (robots?.getAttribute('content') === 'noindex, follow') robots.remove();
+    };
   }, []);
 
   return (
