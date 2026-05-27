@@ -838,7 +838,7 @@ export default function AccountPage() {
                                   <button
                                     onClick={() => {
                                       const lines = [
-                                        'PRO HEALTH PEPTIDES - ORDER RECEIPT',
+                                        'PH LABS - ORDER RECEIPT',
                                         '====================================',
                                         `Order: ${receiptRef}`,
                                         `Date: ${formatDate(order.orderDate)}`,

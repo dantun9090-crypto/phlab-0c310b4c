@@ -121,7 +121,7 @@ export function useSEO(pageKey: string, fallback: SEOData) {
 
       // ── Twitter Card ───────────────────────────────────────────────────────
       setMeta('meta[name="twitter:card"]',        'name=twitter:card',        'summary_large_image');
-      setMeta('meta[name="twitter:site"]',        'name=twitter:site',        '@ProHealthPeps');
+      setMeta('meta[name="twitter:site"]',        'name=twitter:site',        '@PHLabsUK');
       setMeta('meta[name="twitter:url"]',         'name=twitter:url',         canonicalUrl);
       if (title)       setMeta('meta[name="twitter:title"]',       'name=twitter:title',       title);
       if (description) setMeta('meta[name="twitter:description"]', 'name=twitter:description', description);

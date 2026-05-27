@@ -97,7 +97,7 @@ export function UnderConstruction({ targetDate }: Props) {
         <Logo size="lg" />
 
         <p className="text-white font-bold text-lg tracking-tight mt-4 mb-8">
-          PRO HEALTH PEPTIDES
+          PH LABS
         </p>
 
         <h1

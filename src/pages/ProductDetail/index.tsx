@@ -517,7 +517,7 @@ export default function ProductDetail() {
       sameAs: [
         'https://facebook.com/prohealthpeptides',
         'https://instagram.com/prohealthpeptides',
-        'https://twitter.com/prohealthpeps',
+        'https://twitter.com/PHLabsUK',
       ],
     };
 

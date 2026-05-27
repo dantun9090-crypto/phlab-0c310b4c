@@ -17,7 +17,7 @@ export default function Privacy() {
             <Shield className="w-8 h-8 text-purple-400" />
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-[#f0f6ff] mb-4">Privacy & Data Protection Policy</h1>
-          <p className="text-[#9cb8d9]">ProHealth Peptides | www.phlabs.co.uk</p>
+          <p className="text-[#9cb8d9]">PH Labs | www.phlabs.co.uk</p>
           <p className="text-sm text-[#3a5a82] mt-2">Effective Date: March 11, 2026</p>
         </div>
 
@@ -33,7 +33,7 @@ export default function Privacy() {
               <div>
                 <h2 className="text-xl font-semibold text-[#f0f6ff] mb-3">1. Introduction</h2>
                 <p className="text-[#9cb8d9] leading-relaxed">
-                  ProHealth Peptides ("we," "us," or "our") is committed to protecting the privacy and security of your personal data. This Privacy Policy describes how we collect, process, and store personal information in accordance with the <strong className="text-white">UK Data Protection Act 2018</strong> and the <strong className="text-white">UK GDPR</strong>.
+                  PH Labs ("we," "us," or "our") is committed to protecting the privacy and security of your personal data. This Privacy Policy describes how we collect, process, and store personal information in accordance with the <strong className="text-white">UK Data Protection Act 2018</strong> and the <strong className="text-white">UK GDPR</strong>.
                 </p>
               </div>
             </div>
@@ -48,7 +48,7 @@ export default function Privacy() {
               <div>
                 <h2 className="text-xl font-semibold text-[#f0f6ff] mb-3">2. Data Controller</h2>
                 <p className="text-[#9cb8d9] leading-relaxed mb-3">
-                  ProHealth Peptides acts as the <strong className="text-white">Data Controller</strong> for the personal information collected through this website. For any inquiries regarding data protection, please contact our Data Protection Officer at:
+                  PH Labs acts as the <strong className="text-white">Data Controller</strong> for the personal information collected through this website. For any inquiries regarding data protection, please contact our Data Protection Officer at:
                 </p>
                 <a href="/#contact" className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors">
                   <Mail className="w-4 h-4" />
