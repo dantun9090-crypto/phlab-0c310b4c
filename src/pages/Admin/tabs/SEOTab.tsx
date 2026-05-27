@@ -398,15 +398,47 @@ export default function SEOTab() {
     },
   });
 
+  // Migrate stale brand strings saved before the PH Labs rename
+  const migrateBrand = <T,>(val: T): T => {
+    if (typeof val === 'string') {
+      return val
+        .replace(/https?:\/\/(www\.)?prohealthpeptides\.co\.uk/gi, 'https://www.phlabs.co.uk')
+        .replace(/prohealthpeptides\.co\.uk/gi, 'www.phlabs.co.uk')
+        .replace(/Pro Health Peptides/g, 'PH Labs')
+        .replace(/ProHealth Peptides/g, 'PH Labs')
+        .replace(/ProHealthPeptides/g, 'PH Labs') as unknown as T;
+    }
+    if (val && typeof val === 'object') {
+      const out: any = Array.isArray(val) ? [] : {};
+      for (const k of Object.keys(val as any)) out[k] = migrateBrand((val as any)[k]);
+      return out;
+    }
+    return val;
+  };
+
   // Load from Firestore
   useEffect(() => {
     (async () => {
       try {
         const globalSnap = await getDoc(doc(db, 'settings', 'seoGlobal'));
-        if (globalSnap.exists()) setGlobalSEO(globalSnap.data() as GlobalSEO);
+        if (globalSnap.exists()) {
+          const raw = globalSnap.data() as GlobalSEO;
+          const migrated = migrateBrand(raw);
+          setGlobalSEO(migrated);
+          if (JSON.stringify(raw) !== JSON.stringify(migrated)) {
+            await setDoc(doc(db, 'settings', 'seoGlobal'), migrated);
+          }
+        }
 
         const pagesSnap = await getDoc(doc(db, 'settings', 'seoPages'));
-        if (pagesSnap.exists()) setPagesSEO(pagesSnap.data() as PagesSEO);
+        if (pagesSnap.exists()) {
+          const raw = pagesSnap.data() as PagesSEO;
+          const migrated = migrateBrand(raw);
+          setPagesSEO(migrated);
+          if (JSON.stringify(raw) !== JSON.stringify(migrated)) {
+            await setDoc(doc(db, 'settings', 'seoPages'), migrated);
+          }
+        }
 
         // Prerender.io token is stored ONLY in localStorage (never Firestore — the
         // settings collection is publicly readable). Load from local device only.
