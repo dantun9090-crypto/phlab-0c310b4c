@@ -8,8 +8,25 @@ export interface ContactFormEmailOptions {
   submittedAt?: string;
 }
 
+// Escape user-controlled values before embedding into the HTML email so a
+// crafted name/subject/message cannot inject markup or scripts into the
+// admin notification.
+function esc(s: string): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function buildContactFormEmail(opts: ContactFormEmailOptions): string {
   const ts = opts.submittedAt || new Date().toLocaleString('en-GB', { dateStyle: 'full', timeStyle: 'short' });
+  const senderName = esc(opts.senderName);
+  const senderEmail = esc(opts.senderEmail);
+  const subject = esc(opts.subject);
+  const message = esc(opts.message);
+
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -42,17 +59,17 @@ export function buildContactFormEmail(opts: ContactFormEmailOptions): string {
             <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;">
               <tr>
                 <td style="color:${C.textMuted};padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.07);width:120px;">From</td>
-                <td style="color:${C.textBright};font-weight:600;padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.07);">${opts.senderName}</td>
+                <td style="color:${C.textBright};font-weight:600;padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.07);">${senderName}</td>
               </tr>
               <tr>
                 <td style="color:${C.textMuted};padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.07);">Email</td>
                 <td style="padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.07);">
-                  <a href="mailto:${opts.senderEmail}" style="color:${C.accent};text-decoration:none;font-family:monospace;">${opts.senderEmail}</a>
+                  <a href="mailto:${senderEmail}" style="color:${C.accent};text-decoration:none;font-family:monospace;">${senderEmail}</a>
                 </td>
               </tr>
               <tr>
                 <td style="color:${C.textMuted};padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.07);">Subject</td>
-                <td style="color:${C.textBright};font-weight:600;padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.07);">${opts.subject}</td>
+                <td style="color:${C.textBright};font-weight:600;padding:6px 0;border-bottom:1px solid rgba(59,130,246,0.07);">${subject}</td>
               </tr>
               <tr>
                 <td style="color:${C.textMuted};padding:6px 0;">Received</td>
@@ -66,16 +83,17 @@ export function buildContactFormEmail(opts: ContactFormEmailOptions): string {
         <tr>
           <td style="background:${C.bgCardDark};border-left:1px solid ${C.border};border-right:1px solid ${C.border};padding:24px 32px;">
             <div style="font-size:11px;color:${C.textMuted};text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:12px;">Message</div>
-            <div style="font-size:14px;color:${C.text};line-height:1.7;white-space:pre-wrap;background:rgba(59,130,246,0.04);border:1px solid rgba(59,130,246,0.1);border-radius:10px;padding:16px 20px;">${opts.message}</div>
+            <div style="font-size:14px;color:${C.text};line-height:1.7;white-space:pre-wrap;background:rgba(59,130,246,0.04);border:1px solid rgba(59,130,246,0.1);border-radius:10px;padding:16px 20px;">${message}</div>
           </td>
         </tr>
 
         <!-- Reply CTA -->
         <tr>
           <td style="background:${C.bgCard};border-left:1px solid ${C.border};border-right:1px solid ${C.border};padding:20px 32px;">
-            <a href="mailto:${opts.senderEmail}?subject=Re: ${encodeURIComponent(opts.subject)}" style="display:inline-block;padding:11px 28px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);border-radius:9px;color:#fff;font-size:13px;font-weight:700;text-decoration:none;box-shadow:0 4px 16px rgba(59,130,246,0.3);">Reply to ${opts.senderName} →</a>
+            <a href="mailto:${senderEmail}?subject=Re: ${encodeURIComponent(opts.subject)}" style="display:inline-block;padding:11px 28px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);border-radius:9px;color:#fff;font-size:13px;font-weight:700;text-decoration:none;box-shadow:0 4px 16px rgba(59,130,246,0.3);">Reply to ${senderName} →</a>
           </td>
         </tr>
+
 
         <!-- Footer -->
         <tr>
