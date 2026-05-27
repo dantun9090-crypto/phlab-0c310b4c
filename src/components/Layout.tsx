@@ -557,7 +557,7 @@ export function Layout({ children }: LayoutProps) {
                   type="button"
                   onClick={() => { setSearchQuery(''); setSuggestions([]); searchInputRef.current?.focus(); }}
                   aria-label="Clear search"
-                  className="text-[#3a5a82] hover:text-white transition-colors"
+                  className="text-[#8aa8c8] hover:text-white transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1097,7 +1097,7 @@ export function Layout({ children }: LayoutProps) {
                 )}
                 {siteSettings.whatsappNumber && (
                   <a href={`https://wa.me/${siteSettings.whatsappNumber}`} target="_blank" rel="noopener noreferrer"
-                    className="group flex items-center gap-2 text-[#3a5a82] hover:text-green-400 transition-colors text-sm">
+                    className="group flex items-center gap-2 text-[#8aa8c8] hover:text-green-400 transition-colors text-sm">
                     <WhatsAppIcon className="w-3.5 h-3.5 flex-shrink-0 text-green-600/50 group-hover:text-green-400 transition-colors" />
                     WhatsApp
                   </a>
@@ -1105,8 +1105,8 @@ export function Layout({ children }: LayoutProps) {
               </div>
               {/* Payment info */}
               <div className="rounded-xl p-3 space-y-2" style={{ background: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.1)' }}>
-                <div className="text-[10px] font-bold tracking-wider uppercase" style={{ color: '#3a5a82' }}>Secure Payment</div>
-                <p className="text-[11px] leading-relaxed" style={{ color: '#2a4a6a' }}>
+                <div className="text-[10px] font-bold tracking-wider uppercase" style={{ color: '#9cb8d9' }}>Secure Payment</div>
+                <p className="text-[11px] leading-relaxed" style={{ color: '#8aa8c8' }}>
                   Secure Open Banking / Pay by Bank — FCA-regulated, bank-grade security. No card details stored.
                 </p>
                 <div className="flex items-center gap-1.5 flex-wrap">
@@ -1117,7 +1117,7 @@ export function Layout({ children }: LayoutProps) {
                   ].map(({ icon: BIcon, label }) => (
                     <div key={label} className="flex items-center gap-1 px-2 py-1 rounded-lg" style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.12)' }}>
                       <BIcon className="w-2.5 h-2.5 text-blue-500/60" />
-                      <span className="text-[10px] font-semibold" style={{ color: '#2a4a6a' }}>{label}</span>
+                      <span className="text-[10px] font-semibold" style={{ color: '#9cb8d9' }}>{label}</span>
                     </div>
                   ))}
                 </div>
@@ -1141,7 +1141,7 @@ export function Layout({ children }: LayoutProps) {
                   </div>
                   <div>
                     <p className="text-[#c8daf0] text-xs font-semibold mb-0.5">Secure Open Banking / Pay by Bank</p>
-                    <p className="text-[#3a5a82] text-[11px] leading-relaxed">
+                    <p className="text-[#8aa8c8] text-[11px] leading-relaxed">
                       Payments processed directly via your bank — no card details stored. FCA-regulated, bank-grade security.
                     </p>
                   </div>
@@ -1153,7 +1153,7 @@ export function Layout({ children }: LayoutProps) {
                   </div>
                   <div>
                     <p className="text-[#c8daf0] text-xs font-semibold mb-0.5">256-bit SSL Encryption</p>
-                    <p className="text-[#3a5a82] text-[11px] leading-relaxed">
+                    <p className="text-[#8aa8c8] text-[11px] leading-relaxed">
                       All data transmitted over this site is protected by industry-standard TLS/SSL encryption.
                     </p>
                   </div>
