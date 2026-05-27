@@ -203,7 +203,7 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 }
 
 export default {
-  async fetch(request: Request, env: WorkerEnv, ctx: WorkerCtx) {
+  async fetch(request: Request, env: WorkerEnv, ctx: WorkerCtx): Promise<Response> {
     const start = Date.now();
     const url = new URL(request.url);
     const ip = extractClientIp(request);
