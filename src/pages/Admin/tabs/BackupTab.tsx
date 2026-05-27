@@ -93,7 +93,7 @@ export default function BackupTab() {
         version: '1.0',
         createdAt: new Date().toISOString(),
         collections: COLLECTIONS,
-        source: 'ProHealth Peptides Admin Backup',
+        source: 'PH Labs Admin Backup',
       }, null, 2));
 
       setProgress('Compressing…');

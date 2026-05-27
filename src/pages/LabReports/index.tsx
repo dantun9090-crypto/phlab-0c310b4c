@@ -418,7 +418,7 @@ export default function LabReports() {
                   <div>
                     <p className="text-amber-300 font-semibold text-sm mb-1">Research Use Only</p>
                     <p className="text-[#9cb8d9] text-xs leading-relaxed">
-                      All compounds and associated analytical data are provided exclusively for in-vitro laboratory research purposes. These materials are not intended for diagnostic, therapeutic, or human consumption use. Analytical results relate to specific batch samples and do not constitute a guarantee of performance in research applications. ProHealth Peptides operates in full compliance with applicable UK regulatory frameworks governing the supply of research compounds.
+                      All compounds and associated analytical data are provided exclusively for in-vitro laboratory research purposes. These materials are not intended for diagnostic, therapeutic, or human consumption use. Analytical results relate to specific batch samples and do not constitute a guarantee of performance in research applications. PH Labs operates in full compliance with applicable UK regulatory frameworks governing the supply of research compounds.
                     </p>
                   </div>
                 </div>

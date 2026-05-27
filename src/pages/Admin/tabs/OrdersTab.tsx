@@ -89,7 +89,7 @@ function generateShippingLabelPDF(order: Order) {
     </head>
     <body onload="window.print()">
       <div class="label">
-        <h2>PRO HEALTH PEPTIDES</h2>
+        <h2>PH LABS</h2>
         
         <div class="section">
           <div class="section-title">FROM:</div>
