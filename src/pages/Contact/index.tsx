@@ -115,12 +115,24 @@ export default function Contact() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.message) {
+    // Trim + length/format validation to prevent oversized payloads and
+    // abuse of the Firebase Trigger Email extension.
+    const name = form.name.trim();
+    const email = form.email.trim();
+    const subject = form.subject.trim();
+    const message = form.message.trim();
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!name || !email || !message) {
       setError('Please fill in all required fields.');
       return;
     }
+    if (name.length > 100) { setError('Name must be 100 characters or fewer.'); return; }
+    if (email.length > 254 || !emailRe.test(email)) { setError('Please enter a valid email address.'); return; }
+    if (subject.length > 200) { setError('Subject must be 200 characters or fewer.'); return; }
+    if (message.length > 4000) { setError('Message must be 4000 characters or fewer.'); return; }
     setSending(true);
     setError('');
+
     try {
       const emailHtml = buildContactFormEmail({
         senderName: form.name,
