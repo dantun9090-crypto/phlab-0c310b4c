@@ -79,10 +79,13 @@ const PRERENDER_BOTS = [
   "archive.org_bot", "internetarchive",
 ];
 
+// NOTE: do NOT block generic HTTP clients (curl/wget/httpclient/python-requests)
+// — Prerender.io's verifier and uptime checks use such UAs and getting 403
+// breaks integration verification. Keep this list to actual scraper bots.
 const BLOCKED_BOTS = [
   "baiduspider", "360spider", "sogou", "sogouspider",
   "yandexbot", "yandeximages", "petalbot", "aspiegelbot",
-  "python-requests", "scrapy", "curl/", "wget", "httpclient",
+  "scrapy",
   "headlesschrome", "phantomjs", "selenium", "puppeteer",
   "mj12bot",
 ];
