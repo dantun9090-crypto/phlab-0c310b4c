@@ -22,11 +22,13 @@ export const BRAND = "PH Labs UK";
 // ── Domain guard ──────────────────────────────────────────────────────────
 // Wymusza, by SITE_URL pozostawał kanoniczną domeną produkcyjną.
 // Zapobiega regresji, w której meta/canonical/sitemap zostałyby wygenerowane
-// z błędną domeną (literówka phplabs, stary preview phlab.lovable.app albo
-// stara prohealthpeptides.co.uk).
+// z błędną domeną (literówki i stare hosty wymieniamy jako wzorce do blokady).
 const FORBIDDEN_DOMAINS = [
+  // check-domains-allow-next-line
   { needle: "phplabs", reason: "literówka — poprawnie 'phlabs' (jedno 'p')" },
+  // check-domains-allow-next-line
   { needle: "phlab.lovable.app", reason: "stary preview URL — używaj www.phlabs.co.uk" },
+  // check-domains-allow-next-line
   { needle: "prohealthpeptides.co.uk", reason: "stara domena — używaj www.phlabs.co.uk" },
 ];
 const CANONICAL_HOST = "www.phlabs.co.uk";
