@@ -89,9 +89,16 @@ function scan(full: string, rel: string) {
   }
   const lines = content.split(/\r?\n/);
   for (const rule of FORBIDDEN) {
-    rule.pattern.lastIndex = 0;
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+      const prev = i > 0 ? lines[i - 1] : "";
+      // Allow-list pragmy dla świadomych wystąpień (np. logika 301 redirect, smoke testy).
+      if (
+        prev.includes("check-domains-allow-next-line") ||
+        line.includes("check-domains-allow-line")
+      ) {
+        continue;
+      }
       const re = new RegExp(rule.pattern.source, rule.pattern.flags);
       let m: RegExpExecArray | null;
       while ((m = re.exec(line)) !== null) {
