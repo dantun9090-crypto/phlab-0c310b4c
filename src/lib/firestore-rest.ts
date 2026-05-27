@@ -133,16 +133,24 @@ export async function fetchProductBySlug(slug: string): Promise<SeoProduct | nul
   if (HIDDEN_SLUGS.has(slug)) return null;
   const all = await fetchAllProducts();
   // 1) Exact slug match
-  // 2) Legacy auto-slug from product name
-  // 3) Prefix match — handles short Merchant Center URLs like
-  //    "klow-blend" that should resolve to the full SEO slug
-  //    "klow-blend-laboratory-reference-blend-research-use".
   const exact = all.find((p) => p.slug === slug);
   if (exact) return exact;
+  // 2) Legacy auto-slug from product name
   const legacy = all.find((p) => slugify(p.name) === slug);
   if (legacy) return legacy;
-  const prefix = all.filter((p) => p.slug.startsWith(slug + "-"));
-  if (prefix.length === 1) return prefix[0];
+  // 3) Short Merchant Center URLs that should resolve to a longer SEO slug
+  //    (e.g. "klow-blend" → "klow-blend-laboratory-reference-blend-research-use").
+  const forwardPrefix = all.filter((p) => p.slug.startsWith(slug + "-"));
+  if (forwardPrefix.length === 1) return forwardPrefix[0];
+  // 4) Long legacy URLs from the old prohealthpeptides.co.uk catalogue that
+  //    should resolve to the current shorter slug (e.g.
+  //    "tirzepatide-research-reference-compound-for-lab-use" → "tirzepatide").
+  //    Pick the LONGEST product slug that the input starts with, so e.g.
+  //    "tb-500-thymosin-beta-4-foo" prefers "tb-500-thymosin-beta-4" over "tb-500".
+  const reversePrefix = all
+    .filter((p) => slug.startsWith(p.slug + "-"))
+    .sort((a, b) => b.slug.length - a.slug.length);
+  if (reversePrefix.length > 0) return reversePrefix[0];
   return null;
 }
 
