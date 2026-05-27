@@ -126,6 +126,7 @@ export const Route = createFileRoute("/products/$slug")({
         { key: "twitter:title", name: "twitter:title", content: title },
         { key: "twitter:description", name: "twitter:description", content: description },
         { key: "twitter:image", name: "twitter:image", content: image },
+        { key: "twitter:url", name: "twitter:url", content: url },
       ],
       links: [{ rel: "canonical", href: url }],
       scripts: [

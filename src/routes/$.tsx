@@ -87,6 +87,7 @@ export const Route = createFileRoute("/$")({
       { key: "twitter:title", name: "twitter:title", content: title },
       { key: "twitter:description", name: "twitter:description", content: description },
       { key: "twitter:image", name: "twitter:image", content: OG_IMAGE },
+      { key: "twitter:url", name: "twitter:url", content: url },
     ];
     if (shouldNoindex) {
       meta.push({ key: "robots", name: "robots", content: "noindex, follow" });

@@ -21,6 +21,7 @@ export const Route = createFileRoute("/")({
       { key: "og:url", property: "og:url", content: HOME_URL },
       { key: "twitter:title", name: "twitter:title", content: HOME_TITLE },
       { key: "twitter:description", name: "twitter:description", content: HOME_DESCRIPTION },
+      { key: "twitter:url", name: "twitter:url", content: HOME_URL },
     ],
     links: [{ rel: "canonical", href: HOME_URL }],
   }),

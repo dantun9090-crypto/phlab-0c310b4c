@@ -10,7 +10,32 @@ interface SEOData {
   ogType?: string;
 }
 
-const DEFAULT_OG_IMAGE = 'https://www.phlabs.co.uk/og-image.jpg';
+const CANONICAL_ORIGIN = 'https://www.phlabs.co.uk';
+const DEFAULT_OG_IMAGE = `${CANONICAL_ORIGIN}/og-image.jpg`;
+
+/**
+ * Force every canonical / og:url / twitter:url onto the canonical origin,
+ * regardless of what the page or Firestore override supplied. This eliminates
+ * mismatched-domain errors from preview, prerender.io, and stale data.
+ */
+function toCanonicalUrl(input: string | undefined): string {
+  // Derive path from input (absolute or relative) or current location.
+  let path = '/';
+  if (input && input.trim()) {
+    try {
+      const u = new URL(input, CANONICAL_ORIGIN);
+      path = u.pathname + u.search;
+    } catch {
+      path = input.startsWith('/') ? input : `/${input}`;
+    }
+  } else if (typeof window !== 'undefined') {
+    path = window.location.pathname + window.location.search;
+  }
+  // Normalize: collapse double slashes, strip trailing slash (except root).
+  path = path.replace(/\/{2,}/g, '/');
+  if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
+  return `${CANONICAL_ORIGIN}${path}`;
+}
 
 function setMeta(selector: string, attr: string, value: string) {
   let el = document.querySelector(selector) as HTMLMetaElement | null;
@@ -69,8 +94,10 @@ export function useSEO(pageKey: string, fallback: SEOData) {
         if (descEl) descEl.content = description;
       }
 
-      // ── Canonical ──────────────────────────────────────────────────────────
-      if (canonical) setLink('canonical', canonical);
+      // ── Canonical / og:url / twitter:url ───────────────────────────────────
+      // ALWAYS force onto https://www.phlabs.co.uk, regardless of input.
+      const canonicalUrl = toCanonicalUrl(canonical);
+      setLink('canonical', canonicalUrl);
 
       // ── Keywords ───────────────────────────────────────────────────────────
       if (seoData.metaKeywords) {
@@ -85,9 +112,7 @@ export function useSEO(pageKey: string, fallback: SEOData) {
       if (description) {
         setMeta('meta[property="og:description"]', 'property=og:description', description);
       }
-      if (canonical) {
-        setMeta('meta[property="og:url"]',         'property=og:url',         canonical);
-      }
+      setMeta('meta[property="og:url"]',           'property=og:url',         canonicalUrl);
       setMeta('meta[property="og:type"]',          'property=og:type',        ogType);
       setMeta('meta[property="og:image"]',         'property=og:image',       ogImage);
       setMeta('meta[property="og:image:width"]',   'property=og:image:width', '1200');
@@ -97,6 +122,7 @@ export function useSEO(pageKey: string, fallback: SEOData) {
       // ── Twitter Card ───────────────────────────────────────────────────────
       setMeta('meta[name="twitter:card"]',        'name=twitter:card',        'summary_large_image');
       setMeta('meta[name="twitter:site"]',        'name=twitter:site',        '@ProHealthPeps');
+      setMeta('meta[name="twitter:url"]',         'name=twitter:url',         canonicalUrl);
       if (title)       setMeta('meta[name="twitter:title"]',       'name=twitter:title',       title);
       if (description) setMeta('meta[name="twitter:description"]', 'name=twitter:description', description);
       setMeta('meta[name="twitter:image"]',       'name=twitter:image',       ogImage);

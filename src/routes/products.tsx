@@ -51,6 +51,7 @@ export const Route = createFileRoute("/products")({
         { key: "twitter:title", name: "twitter:title", content: TITLE },
         { key: "twitter:description", name: "twitter:description", content: DESCRIPTION },
         { key: "twitter:image", name: "twitter:image", content: OG_IMAGE },
+        { key: "twitter:url", name: "twitter:url", content: URL },
       ],
       links: [{ rel: "canonical", href: URL }],
       scripts: [
