@@ -13,7 +13,8 @@
     "seo:check": "bun scripts/seo-check.ts",
     "worker:smoke": "bun scripts/worker-smoke.ts",
     "worker:check-imports": "bun scripts/check-worker-imports.ts",
-    "ci": "bun run build && bun run worker:check-imports"
+    "check:domains": "bun scripts/check-domains.ts",
+    "ci": "bun run check:domains && bun run build && bun run worker:check-imports"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
