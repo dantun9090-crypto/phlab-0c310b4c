@@ -60,6 +60,7 @@ const navGroups = [
     items: [
       { id: 'seo', label: 'SEO Settings', icon: Search },
       { id: 'sitemap', label: 'Sitemap Manager', icon: Map },
+      { id: 'prerenderstatus', label: 'Prerender Status', icon: Activity },
     ],
   },
   {
