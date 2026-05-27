@@ -253,7 +253,10 @@ export default {
       const method = request.method.toUpperCase();
 
       // 3a. Block scrapers / malicious UAs
-      if (RX_BLOCKED.test(rawUa) && !request.headers.get(LOOP_HEADER)) {
+      // CRITICAL: whitelist Prerender.io's own renderer — it uses HeadlessChrome
+      // to fetch our origin, and would otherwise hit BLOCKED list and 403.
+      const isPrerenderRenderer = /Prerender \(\+https:\/\/github\.com\/prerender\/prerender\)/i.test(rawUa);
+      if (!isPrerenderRenderer && RX_BLOCKED.test(rawUa) && !request.headers.get(LOOP_HEADER)) {
         log.info({ event: "worker.bot.blocked", status: 403, ...baseFields });
         return new Response("Access Denied", {
           status: 403,
