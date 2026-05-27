@@ -115,29 +115,42 @@ export default function Contact() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name || !form.email || !form.message) {
+    // Trim + length/format validation to prevent oversized payloads and
+    // abuse of the Firebase Trigger Email extension.
+    const name = form.name.trim();
+    const email = form.email.trim();
+    const subject = form.subject.trim();
+    const message = form.message.trim();
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!name || !email || !message) {
       setError('Please fill in all required fields.');
       return;
     }
+    if (name.length > 100) { setError('Name must be 100 characters or fewer.'); return; }
+    if (email.length > 254 || !emailRe.test(email)) { setError('Please enter a valid email address.'); return; }
+    if (subject.length > 200) { setError('Subject must be 200 characters or fewer.'); return; }
+    if (message.length > 4000) { setError('Message must be 4000 characters or fewer.'); return; }
     setSending(true);
     setError('');
+
     try {
       const emailHtml = buildContactFormEmail({
-        senderName: form.name,
-        senderEmail: form.email,
-        subject: form.subject || 'Contact Form Enquiry',
-        message: form.message,
+        senderName: name,
+        senderEmail: email,
+        subject: subject || 'Contact Form Enquiry',
+        message,
       });
       const toAddress = settings.contactEmail || 'info@phlabs.co.uk';
-      const subjectLine = `[PHP Contact] ${form.subject || 'New Enquiry'} — from ${form.name}`;
+      const subjectLine = `[PHP Contact] ${subject || 'New Enquiry'} — from ${name}`;
+
 
       // 1) Persist the enquiry to a contactMessages collection (durable record,
       //    independent of the Trigger Email extension).
       const enquiryPayload = {
-        name: form.name,
-        email: form.email,
-        subject: form.subject || 'Contact Form Enquiry',
-        message: form.message,
+        name,
+        email,
+        subject: subject || 'Contact Form Enquiry',
+        message,
         createdAt: Timestamp.now(),
         status: 'new' as const,
       };
@@ -149,12 +162,14 @@ export default function Contact() {
         console.error('[Contact] contactMessages write failed:', persistErr);
       }
 
+
       // 2) Try to enqueue an email via the Firebase Trigger Email extension.
       let mailedOk = false;
       try {
         await addDoc(collection(db, 'mail'), {
           to: toAddress,
-          replyTo: form.email,
+          replyTo: email,
+
           message: { subject: subjectLine, html: emailHtml },
           createdAt: Timestamp.now(),
         });
@@ -447,9 +462,11 @@ export default function Contact() {
                             onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                             placeholder="Your name"
                             required
+                            maxLength={100}
                             className="w-full rounded-xl px-4 py-3 text-sm placeholder-[#5a7a9a] outline-none transition-all duration-200 focus:ring-2 focus:ring-emerald-500/50"
                             style={{ background: '#0d1f38', border: '1.5px solid rgba(255,255,255,0.25)', color: '#f0f6ff' }}
                           />
+
                         </div>
                         <div>
                           <label htmlFor="contact-email" className="block text-[#9cb8d9] text-xs font-semibold uppercase tracking-wider mb-2">
@@ -462,9 +479,11 @@ export default function Contact() {
                             onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
                             placeholder="your@email.com"
                             required
+                            maxLength={254}
                             className="w-full rounded-xl px-4 py-3 text-sm placeholder-[#5a7a9a] outline-none transition-all duration-200 focus:ring-2 focus:ring-emerald-500/50"
                             style={{ background: '#0d1f38', border: '1.5px solid rgba(255,255,255,0.25)', color: '#f0f6ff' }}
                           />
+
                         </div>
                       </div>
 
@@ -478,9 +497,11 @@ export default function Contact() {
                           value={form.subject}
                           onChange={e => setForm(p => ({ ...p, subject: e.target.value }))}
                           placeholder="What can we help you with?"
+                          maxLength={200}
                           className="w-full rounded-xl px-4 py-3 text-sm placeholder-[#5a7a9a] outline-none transition-all duration-200 focus:ring-2 focus:ring-emerald-500/50"
                           style={{ background: '#0d1f38', border: '1.5px solid rgba(255,255,255,0.25)', color: '#f0f6ff' }}
                         />
+
                       </div>
 
                       <div>
@@ -494,9 +515,11 @@ export default function Contact() {
                           onChange={e => setForm(p => ({ ...p, message: e.target.value }))}
                           placeholder="Tell us how we can help..."
                           required
+                          maxLength={4000}
                           className="w-full rounded-xl px-4 py-3 text-sm placeholder-[#5a7a9a] outline-none transition-all duration-200 resize-none focus:ring-2 focus:ring-emerald-500/50"
                           style={{ background: '#0d1f38', border: '1.5px solid rgba(255,255,255,0.25)', color: '#f0f6ff' }}
                         />
+
                       </div>
 
                       <button
