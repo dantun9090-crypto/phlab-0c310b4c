@@ -52,6 +52,7 @@ const RULES: RedirectRule[] = [
   { type: "prefix", from: "/pages/", to: "/" },
   { type: "prefix", from: "/page/", to: "/" },
 
+  // check-domains-allow-next-line: nazwa starej domeny tylko w komentarzu
   // Legacy long product slugs from prohealthpeptides.co.uk → current slugs.
   // Googlebot still has these indexed; 301 here so we don't waste crawl budget
   // on a 404 page rendered through Prerender.io.
