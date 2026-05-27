@@ -188,12 +188,48 @@ const BOOT_WATCHDOG = `
 })();
 `;
 
+const CANONICAL_ENFORCER = `
+(function(){
+  var ORIGIN='https://www.phlabs.co.uk';
+  function upsertLink(rel,href){
+    var el=document.querySelector('link[rel="'+rel+'"]');
+    if(!el){el=document.createElement('link');el.setAttribute('rel',rel);document.head.appendChild(el);}
+    if(el.getAttribute('href')!==href) el.setAttribute('href',href);
+  }
+  function upsertMeta(attr,name,content){
+    var el=document.querySelector('meta['+attr+'="'+name+'"]');
+    if(!el){el=document.createElement('meta');el.setAttribute(attr,name);document.head.appendChild(el);}
+    if(el.getAttribute('content')!==content) el.setAttribute('content',content);
+  }
+  function enforce(){
+    try{
+      var path=location.pathname.replace(/\\/{2,}/g,'/');
+      if(path.length>1&&path.endsWith('/')) path=path.slice(0,-1);
+      var url=ORIGIN+path+location.search;
+      upsertLink('canonical',url);
+      upsertMeta('property','og:url',url);
+      upsertMeta('name','twitter:url',url);
+    }catch(e){}
+  }
+  enforce();
+  var _ps=history.pushState, _rs=history.replaceState;
+  history.pushState=function(){var r=_ps.apply(this,arguments);setTimeout(enforce,0);return r;};
+  history.replaceState=function(){var r=_rs.apply(this,arguments);setTimeout(enforce,0);return r;};
+  window.addEventListener('popstate',function(){setTimeout(enforce,0);});
+  try{
+    var mo=new MutationObserver(function(){enforce();});
+    mo.observe(document.head,{childList:true,subtree:true,attributes:true,attributeFilter:['href','content']});
+  }catch(e){}
+})();
+`;
+
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" style={{ backgroundColor: "#060f1e" }}>
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
+        <script dangerouslySetInnerHTML={{ __html: CANONICAL_ENFORCER }} />
       </head>
       <body style={{ backgroundColor: "#060f1e", color: "#f0f6ff", margin: 0 }}>
         {children}
