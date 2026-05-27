@@ -21,14 +21,16 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-// Canonical host: phlabs.co.uk is primary; legacy prohealthpeptides.co.uk redirects here.
+// Canonical host: phlabs.co.uk is primary; legacy brand domain 301-redirects here.  check-domains-allow-line
 const CANONICAL_HOST = "www.phlabs.co.uk";
 // Hosts that should 301 to the canonical host (apex + legacy brand domains).
 // Lovable preview/published hosts (*.lovable.app, *.lovableproject.com) are
 // intentionally excluded so previews keep working.
 const REDIRECT_HOSTS = new Set<string>([
   "phlabs.co.uk",
+  // check-domains-allow-next-line: legacy host, musi tu zostać żeby zadziałał 301 do www.phlabs.co.uk
   "prohealthpeptides.co.uk",
+  // check-domains-allow-next-line: legacy host, musi tu zostać żeby zadziałał 301 do www.phlabs.co.uk
   "www.prohealthpeptides.co.uk",
 ]);
 
