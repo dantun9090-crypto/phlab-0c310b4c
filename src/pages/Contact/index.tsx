@@ -135,21 +135,22 @@ export default function Contact() {
 
     try {
       const emailHtml = buildContactFormEmail({
-        senderName: form.name,
-        senderEmail: form.email,
-        subject: form.subject || 'Contact Form Enquiry',
-        message: form.message,
+        senderName: name,
+        senderEmail: email,
+        subject: subject || 'Contact Form Enquiry',
+        message,
       });
       const toAddress = settings.contactEmail || 'info@phlabs.co.uk';
-      const subjectLine = `[PHP Contact] ${form.subject || 'New Enquiry'} — from ${form.name}`;
+      const subjectLine = `[PHP Contact] ${subject || 'New Enquiry'} — from ${name}`;
+
 
       // 1) Persist the enquiry to a contactMessages collection (durable record,
       //    independent of the Trigger Email extension).
       const enquiryPayload = {
-        name: form.name,
-        email: form.email,
-        subject: form.subject || 'Contact Form Enquiry',
-        message: form.message,
+        name,
+        email,
+        subject: subject || 'Contact Form Enquiry',
+        message,
         createdAt: Timestamp.now(),
         status: 'new' as const,
       };
@@ -161,12 +162,14 @@ export default function Contact() {
         console.error('[Contact] contactMessages write failed:', persistErr);
       }
 
+
       // 2) Try to enqueue an email via the Firebase Trigger Email extension.
       let mailedOk = false;
       try {
         await addDoc(collection(db, 'mail'), {
           to: toAddress,
-          replyTo: form.email,
+          replyTo: email,
+
           message: { subject: subjectLine, html: emailHtml },
           createdAt: Timestamp.now(),
         });
