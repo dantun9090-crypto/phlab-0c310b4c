@@ -32,8 +32,9 @@ import SitemapTab from './tabs/SitemapTab';
 import PromoCodesTab from './tabs/PromoCodesTab';
 import DiagnosticsTab from './tabs/DiagnosticsTab';
 import PrerenderStatusTab from './tabs/PrerenderStatusTab';
+import MerchantFeedTab from './tabs/MerchantFeedTab';
 
-type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics' | 'prerenderstatus';
+type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'merchantfeed';
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
 // (a TanStack server function running in the Cloudflare Worker). The Worker
