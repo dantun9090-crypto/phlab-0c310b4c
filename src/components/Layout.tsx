@@ -1040,7 +1040,7 @@ export function Layout({ children }: LayoutProps) {
                   { label: 'FAQ', href: '/#faq' },
                   { label: 'Contact Us', href: '/contact' },
                   { label: 'Storage Guide', href: '/storage-guide' },
-                  ...(firebaseUser && !firebaseUser.isAnonymous ? [{ label: 'Peptide Calculator', href: '/calculator' }] : []),
+                  
                 ].map(l => (
                   <li key={l.label}>
                     <a href={l.href} className="group flex items-center gap-2 text-[#5a80a6] hover:text-[#8caad4] transition-colors text-sm">
