@@ -310,6 +310,7 @@ export default function AdminPage() {
         case 'promocodes': return <PromoCodesTab />;
         case 'diagnostics': return <DiagnosticsTab />;
         case 'prerenderstatus': return <PrerenderStatusTab />;
+        case 'merchantfeed': return <MerchantFeedTab />;
         default: return <DashboardTab />;
       }
     })();
