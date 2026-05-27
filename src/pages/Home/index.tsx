@@ -305,7 +305,9 @@ export default function HomePage() {
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const email = emailInput.trim().toLowerCase();
-    if (!email || !email.includes('@')) return;
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || email.length > 254 || !emailRe.test(email)) return;
+
     setEmailStatus('sending');
     setRetryAttempt(0);
     const discountCode = 'PROTOCOL10';
@@ -1032,7 +1034,9 @@ export default function HomePage() {
                         onChange={e => setEmailInput(e.target.value)}
                         placeholder="your@email.com"
                         required
+                        maxLength={254}
                         className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
+
                         style={{
                           background: 'rgba(255,255,255,0.04)',
                           border: '1px solid rgba(255,255,255,0.1)',
