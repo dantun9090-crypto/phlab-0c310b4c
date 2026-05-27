@@ -17,7 +17,7 @@
  *      Worker makes.
  *
  * Run via: bun scripts/worker-smoke.ts
- * Override target: SMOKE_BASE_URL=https://phlab.lovable.app bun scripts/worker-smoke.ts
+ * Override target: SMOKE_BASE_URL=https://phlab.lovable.app bun scripts/worker-smoke.ts  check-domains-allow-line
  */
 import {
   extractIp,
