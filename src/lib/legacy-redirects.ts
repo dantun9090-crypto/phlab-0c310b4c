@@ -51,6 +51,22 @@ const RULES: RedirectRule[] = [
   // Wegic generic page prefix
   { type: "prefix", from: "/pages/", to: "/" },
   { type: "prefix", from: "/page/", to: "/" },
+
+  // Legacy long product slugs from prohealthpeptides.co.uk → current slugs.
+  // Googlebot still has these indexed; 301 here so we don't waste crawl budget
+  // on a 404 page rendered through Prerender.io.
+  { type: "exact", from: "/products/tirzepatide-research-reference-compound-for-lab-use", to: "/products/tirzepatide" },
+  { type: "exact", from: "/products/retatrutide-laboratory-research-reference-compound", to: "/products/retatrutide" },
+  { type: "exact", from: "/products/ghk-cu-copper-tripeptide-lab-reference-compound", to: "/products/ghk-cu-copper-peptide" },
+  { type: "exact", from: "/products/mots-c-mitochondrial-peptide-lab-reference-compound", to: "/products/mots-c" },
+  { type: "exact", from: "/products/melanotan-ii-laboratory-research-compound-research", to: "/products/mt-2-melanotan-ii" },
+  { type: "exact", from: "/products/nad-nicotinamide-adenine-dinucleotide", to: "/products/nad-plus" },
+  { type: "exact", from: "/products/klow-blend-laboratory-reference-blend-research-use", to: "/products/klow-blend" },
+
+  // Discontinued products → redirect to catalogue (better than 404 for SEO).
+  { type: "exact", from: "/products/hexarelin", to: "/products" },
+  { type: "exact", from: "/products/mod-grf-1-29", to: "/products" },
+  { type: "exact", from: "/products/follistatin-344", to: "/products" },
 ];
 
 /**
