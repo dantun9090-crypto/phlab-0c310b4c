@@ -142,6 +142,7 @@ export async function fetchProductBySlug(slug: string): Promise<SeoProduct | nul
   //    (e.g. "klow-blend" → "klow-blend-laboratory-reference-blend-research-use").
   const forwardPrefix = all.filter((p) => p.slug.startsWith(slug + "-"));
   if (forwardPrefix.length === 1) return forwardPrefix[0];
+  // check-domains-allow-next-line: nazwa starej domeny tylko w komentarzu
   // 4) Long legacy URLs from the old prohealthpeptides.co.uk catalogue that
   //    should resolve to the current shorter slug (e.g.
   //    "tirzepatide-research-reference-compound-for-lab-use" → "tirzepatide").
