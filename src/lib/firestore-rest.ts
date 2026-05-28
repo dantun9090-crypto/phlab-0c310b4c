@@ -25,6 +25,12 @@ export interface SeoProduct {
   displayOrder: number;
   seoTitle?: string;
   seoDescription?: string;
+  sku?: string;
+  mpn?: string;
+  gtin?: string;
+  stock?: number;
+  coaUrl?: string;
+  updatedAt?: string;
 }
 
 function slugify(name: string): string {
@@ -81,6 +87,14 @@ function toProduct(doc: any): SeoProduct | null {
     : typeof f.price === "number"
       ? f.price
       : 0;
+  const variantStocks: number[] = variants
+    .map((v: any) => (v && typeof v.stock === "number" ? v.stock : null))
+    .filter((s): s is number => s != null);
+  const totalStock = variantStocks.length
+    ? variantStocks.reduce((a, b) => a + b, 0)
+    : typeof f.stock === "number"
+      ? f.stock
+      : undefined;
   return {
     id: docId,
     name,
@@ -95,6 +109,12 @@ function toProduct(doc: any): SeoProduct | null {
     displayOrder: typeof f.displayOrder === "number" ? f.displayOrder : 999,
     seoTitle: typeof f.seoTitle === "string" && f.seoTitle.trim() ? f.seoTitle : undefined,
     seoDescription: typeof f.seoDescription === "string" && f.seoDescription.trim() ? f.seoDescription : undefined,
+    sku: typeof f.sku === "string" && f.sku.trim() ? f.sku : undefined,
+    mpn: typeof f.mpn === "string" && f.mpn.trim() ? f.mpn : undefined,
+    gtin: typeof f.gtin === "string" && f.gtin.trim() ? f.gtin : undefined,
+    stock: totalStock,
+    coaUrl: typeof f.coaUrl === "string" && f.coaUrl.trim() ? f.coaUrl : undefined,
+    updatedAt: typeof f.updatedAt === "string" ? f.updatedAt : undefined,
   };
 }
 
