@@ -17,6 +17,7 @@ type ArticleLite = { title: string; subtitle?: string; slug: string };
 import { CookieConsent } from '@/components/CookieConsent';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import { getRecentlyViewed } from '@/hooks/useRecentlyViewed';
+import { migrateStoredCart } from '@/lib/cart-migration';
 
 import { Logo } from './Logo';
 import { UnderConstruction } from './UnderConstruction';
