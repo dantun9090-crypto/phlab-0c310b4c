@@ -162,35 +162,61 @@ export const validateCartPrices = createServerFn({ method: 'POST' })
     // page reads it unauthenticated), so no auth token is required.
     await Promise.all(
       data.items.map(async (line) => {
-        const url = `${FIRESTORE_BASE}/product_stock/${encodeURIComponent(line.productId)}`;
-        let res: Response;
-        try {
-          res = await fetch(url, { headers: { Accept: 'application/json' } });
-        } catch {
-          errors.push(`Could not verify price for "${line.productId}"`);
-          return;
+        // Resolve productId + variantId, tolerating legacy carts where the
+        // cart item id was stored as `<productId>-<variantId>` concatenated.
+        let productId = line.productId;
+        let variantId: string | null = line.variantId ?? null;
+
+        const fetchDoc = async (id: string) => {
+          try {
+            return await fetch(
+              `${FIRESTORE_BASE}/product_stock/${encodeURIComponent(id)}`,
+              { headers: { Accept: 'application/json' } },
+            );
+          } catch {
+            return null;
+          }
+        };
+
+        let res = await fetchDoc(productId);
+        if (res && res.status === 404 && productId.includes('-')) {
+          // Legacy fallback: split on the LAST hyphen to recover variantId.
+          const dash = productId.lastIndexOf('-');
+          const fallbackProductId = productId.slice(0, dash);
+          const fallbackVariantId = productId.slice(dash + 1);
+          const retry = await fetchDoc(fallbackProductId);
+          if (retry && retry.ok) {
+            productId = fallbackProductId;
+            variantId = variantId || fallbackVariantId;
+            res = retry;
+          }
         }
 
+        if (!res) {
+          errors.push(`Could not verify price for "${productId}"`);
+          return;
+        }
         if (res.status === 404) {
-          errors.push(`Product "${line.productId}" no longer exists`);
+          errors.push(`Product "${productId}" no longer exists`);
           return;
         }
         if (!res.ok) {
-          errors.push(`Could not verify price for "${line.productId}" (status ${res.status})`);
+          errors.push(`Could not verify price for "${productId}" (status ${res.status})`);
           return;
         }
 
+
         const doc = (await res.json()) as { fields?: Record<string, FsValue> };
         const fields = doc.fields ?? {};
-        const productName = (decode(fields.name) as string) || line.productId;
+        const productName = (decode(fields.name) as string) || productId;
 
         // Resolve canonical unit price: prefer matching variant, else top-level price.
         let unitPrice = NaN;
         let variantName: string | null = null;
         const variants = decode(fields.variants) as Array<Record<string, unknown>> | undefined;
 
-        if (line.variantId && Array.isArray(variants)) {
-          const match = variants.find((v) => v && v.id === line.variantId);
+        if (variantId && Array.isArray(variants)) {
+          const match = variants.find((v) => v && v.id === variantId);
           if (match) {
             unitPrice = parsePrice(match.price);
             variantName = typeof match.name === 'string' ? match.name : null;
@@ -220,8 +246,8 @@ export const validateCartPrices = createServerFn({ method: 'POST' })
 
         const lineTotal = +(unitPrice * line.quantity).toFixed(2);
         validated.push({
-          productId: line.productId,
-          variantId: line.variantId ?? null,
+          productId,
+          variantId,
           productName,
           variantName,
           quantity: line.quantity,
@@ -231,6 +257,7 @@ export const validateCartPrices = createServerFn({ method: 'POST' })
         });
       }),
     );
+
 
     const subtotal = +validated.reduce((s, l) => s + l.lineTotal, 0).toFixed(2);
 
