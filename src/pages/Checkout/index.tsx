@@ -1337,7 +1337,7 @@ export default function CheckoutPage() {
                     {/* Place order button */}
                     <button
                       onClick={handleSubmit}
-                      disabled={isPlacing}
+                      disabled={isPlacing || preflightIssues.length > 0}
                       className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
                     >
                       {isPlacing ? (
@@ -1347,6 +1347,10 @@ export default function CheckoutPage() {
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                           </svg>
                           Placing Order...
+                        </>
+                      ) : preflightIssues.length > 0 ? (
+                        <>
+                          <AlertTriangle className="w-4 h-4" /> Resolve cart issues to continue
                         </>
                       ) : (
                         <>
