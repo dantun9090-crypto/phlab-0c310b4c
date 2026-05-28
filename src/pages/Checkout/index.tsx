@@ -28,6 +28,7 @@ interface CheckoutForm {
   country: string;
   paymentMethod: 'bank_transfer';
   acceptedTerms: boolean;
+  ageVerified: boolean;
   createAccount: boolean;
   password: string;
   shippingMethod: 'standard' | 'express';
@@ -90,6 +91,7 @@ export default function CheckoutPage() {
     country: 'United Kingdom',
     paymentMethod: 'bank_transfer',
     acceptedTerms: false,
+    ageVerified: false,
     createAccount: false,
     password: '',
     shippingMethod: 'standard',
@@ -257,6 +259,7 @@ export default function CheckoutPage() {
       if (!form.country.trim()) e.country = 'Required';
     }
     if (step === 3) {
+      if (!form.ageVerified) e.age = 'You must confirm you are 18 or older to place this order';
       if (!form.acceptedTerms) e.terms = 'You must confirm Research Use Only and accept the Terms & Conditions';
     }
     return e;
