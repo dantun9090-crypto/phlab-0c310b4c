@@ -370,6 +370,12 @@ export default function CheckoutPage() {
           },
         });
         if (!validation.ok) {
+          // Treat "no longer exists" / "could not verify" errors as a stale-cart
+          // signal so the user sees the reload banner instead of just a stock msg.
+          const looksStale = validation.errors.some(e =>
+            /no longer exists|could not verify price/i.test(e),
+          );
+          if (looksStale) setCartStale(true);
           setErrors(prev => ({
             ...prev,
             stock: validation.errors[0] ?? 'We could not verify your cart prices. Please refresh and try again.',
