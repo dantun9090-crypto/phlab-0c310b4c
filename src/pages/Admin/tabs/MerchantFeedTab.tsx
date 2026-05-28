@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, ExternalLink, Copy, CheckCircle2, AlertTriangle, XCircle, Download } from 'lucide-react';
+import { RefreshCw, ExternalLink, Copy, CheckCircle2, AlertTriangle, XCircle, Download, Eye } from 'lucide-react';
 
 const FEED_URL = '/google-merchant-feed.xml';
 const PUBLIC_FEED_URL = 'https://www.phlabs.co.uk/google-merchant-feed.xml';
@@ -162,6 +162,9 @@ export default function MerchantFeedTab() {
           </button>
           <a href={PUBLIC_FEED_URL} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 text-white text-sm">
             <ExternalLink className="w-4 h-4" /> Open
+          </a>
+          <a href="/admin/merchant-feed-preview" target="_blank" rel="noreferrer" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 text-white text-sm">
+            <Eye className="w-4 h-4" /> Admin preview
           </a>
           <button onClick={download} disabled={!xml} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 border-2 border-emerald-500 text-white text-sm disabled:opacity-50">
             <Download className="w-4 h-4" /> Download XML
