@@ -57,6 +57,9 @@ function parseFeed(xml: string): { items: ParsedItem[]; channelTitle: string; er
       google_product_category: textOf(it, 'google_product_category', G_NS),
       product_type: textOf(it, 'product_type', G_NS),
       identifier_exists: textOf(it, 'identifier_exists', G_NS),
+      sku: textOf(it, 'sku', G_NS),
+      mpn: textOf(it, 'mpn', G_NS),
+      gtin: textOf(it, 'gtin', G_NS),
     }));
     return { items, channelTitle };
   } catch (e: any) {
