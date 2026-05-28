@@ -163,6 +163,9 @@ export default function MerchantFeedTab() {
           <a href={PUBLIC_FEED_URL} target="_blank" rel="noreferrer" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 text-white text-sm">
             <ExternalLink className="w-4 h-4" /> Open
           </a>
+          <a href="/admin/merchant-feed-preview" target="_blank" rel="noreferrer" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 text-white text-sm">
+            <Eye className="w-4 h-4" /> Admin preview
+          </a>
           <button onClick={download} disabled={!xml} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 border-2 border-emerald-500 text-white text-sm disabled:opacity-50">
             <Download className="w-4 h-4" /> Download XML
           </button>
