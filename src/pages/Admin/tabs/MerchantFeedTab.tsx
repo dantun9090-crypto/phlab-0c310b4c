@@ -17,6 +17,9 @@ interface ParsedItem {
   google_product_category: string;
   product_type: string;
   identifier_exists: string;
+  sku: string;
+  mpn: string;
+  gtin: string;
 }
 
 const REQUIRED_FIELDS: Array<keyof ParsedItem> = [
