@@ -7,6 +7,7 @@ const BASE_URL = "https://www.phlabs.co.uk";
 
 interface SitemapEntry {
   path: string;
+  lastmod?: string;
   changefreq?: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never";
   priority?: string;
 }
@@ -39,12 +40,13 @@ export const Route = createFileRoute("/sitemap.xml")({
           priority: "0.6",
         }));
 
-        // Dynamic product entries — one URL per active product
+        // Dynamic product entries — one URL per active product, with lastmod from Firestore updatedAt
         let productEntries: SitemapEntry[] = [];
         try {
           const products = await fetchAllProducts();
           productEntries = products.map((p) => ({
             path: `/products/${p.slug}`,
+            lastmod: p.updatedAt ? p.updatedAt.slice(0, 10) : undefined,
             changefreq: "weekly",
             priority: "0.8",
           }));
@@ -64,12 +66,11 @@ export const Route = createFileRoute("/sitemap.xml")({
           [
             `  <url>`,
             `    <loc>${BASE_URL}${e.path}</loc>`,
+            e.lastmod ? `    <lastmod>${e.lastmod}</lastmod>` : null,
             e.changefreq ? `    <changefreq>${e.changefreq}</changefreq>` : null,
             e.priority ? `    <priority>${e.priority}</priority>` : null,
             `  </url>`,
-          ]
-            .filter(Boolean)
-            .join("\n"),
+          ].filter(Boolean).join("\n"),
         );
 
         const xml = [
