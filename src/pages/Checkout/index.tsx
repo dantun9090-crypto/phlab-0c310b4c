@@ -117,6 +117,128 @@ export default function CheckoutPage() {
   // had to be rewritten (or when the server reports stale/missing products).
   const [cartStale, setCartStale] = useState(false);
 
+  // Pre-flight server validation: surfaces price / availability / variantId
+  // problems BEFORE the user clicks "Place order". Runs debounced whenever
+  // the cart changes. Findings show up in `preflightIssues` and are rendered
+  // inline next to the stale-cart banner.
+  interface PreflightIssue {
+    productId: string;
+    variantId: string | null;
+    cartPrice: number;
+    serverPrice: number | null;
+    message: string;
+    kind: 'price_mismatch' | 'not_found' | 'out_of_stock' | 'variant_missing';
+  }
+  const [preflightIssues, setPreflightIssues] = useState<PreflightIssue[]>([]);
+  const [preflightChecking, setPreflightChecking] = useState(false);
+  const [preflightOk, setPreflightOk] = useState(false);
+  const preflightRunId = useRef(0);
+
+  useEffect(() => {
+    if (cart.length === 0) {
+      setPreflightIssues([]);
+      setPreflightOk(false);
+      return;
+    }
+    const runId = ++preflightRunId.current;
+    const handle = setTimeout(async () => {
+      setPreflightChecking(true);
+      try {
+        const result = await validateCartPrices({
+          data: {
+            items: cart.map(item => ({
+              productId: String(item.id),
+              variantId: item.variantId ? String(item.variantId) : null,
+              quantity: item.quantity,
+            })),
+          },
+        });
+        // Ignore late responses if cart changed again mid-flight.
+        if (runId !== preflightRunId.current) return;
+
+        const issues: PreflightIssue[] = [];
+
+        // Map server lines back by (productId, variantId) to compare prices.
+        const keyOf = (p: string, v: string | null) => `${p}::${v ?? ''}`;
+        const serverByKey = new Map<string, typeof result.items[number]>();
+        for (const line of result.items) {
+          serverByKey.set(keyOf(line.productId, line.variantId), line);
+        }
+
+        for (const item of cart) {
+          const sId = String(item.id);
+          const sVid = item.variantId ? String(item.variantId) : null;
+          const server = serverByKey.get(keyOf(sId, sVid));
+
+          // Server might have resolved the line under a different productId
+          // via the legacy fallback — try matching by variantId alone.
+          const serverFallback = server
+            ?? (sVid
+              ? result.items.find(l => l.variantId === sVid)
+              : undefined);
+
+          if (!serverFallback) {
+            issues.push({
+              productId: sId,
+              variantId: sVid,
+              cartPrice: item.priceNum,
+              serverPrice: null,
+              kind: sVid ? 'variant_missing' : 'not_found',
+              message: sVid
+                ? `Variant "${sVid}" of "${item.name}" could not be found. Please re-select the size.`
+                : `"${item.name}" is no longer available.`,
+            });
+            continue;
+          }
+
+          if (!serverFallback.inStock) {
+            issues.push({
+              productId: sId,
+              variantId: sVid,
+              cartPrice: item.priceNum,
+              serverPrice: serverFallback.unitPrice,
+              kind: 'out_of_stock',
+              message: `"${item.name}"${sVid ? ` (${sVid})` : ''} is out of stock.`,
+            });
+          }
+
+          // Price drift > 1p is treated as a mismatch the user must see.
+          const cartPrice = Number(item.priceNum) || 0;
+          const serverPrice = Number(serverFallback.unitPrice) || 0;
+          if (Math.abs(cartPrice - serverPrice) > 0.01) {
+            issues.push({
+              productId: sId,
+              variantId: sVid,
+              cartPrice,
+              serverPrice,
+              kind: 'price_mismatch',
+              message: `Price for "${item.name}"${sVid ? ` (${sVid})` : ''} changed from £${cartPrice.toFixed(2)} to £${serverPrice.toFixed(2)}.`,
+            });
+          }
+        }
+
+        setPreflightIssues(issues);
+        setPreflightOk(issues.length === 0 && result.ok);
+      } catch {
+        // Network / server fault — surface a single soft issue, don't block.
+        if (runId === preflightRunId.current) {
+          setPreflightIssues([{
+            productId: '',
+            variantId: null,
+            cartPrice: 0,
+            serverPrice: null,
+            kind: 'not_found',
+            message: 'Could not verify cart prices right now. We will retry when you place the order.',
+          }]);
+          setPreflightOk(false);
+        }
+      } finally {
+        if (runId === preflightRunId.current) setPreflightChecking(false);
+      }
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [cart]);
+
   // Load cart from localStorage. Runs `migrateStoredCart` first so legacy
   // carts (concatenated `<productId>-<variantId>` ids) are rewritten in
   // place. If anything actually changed, raise the "outdated cart" banner.
