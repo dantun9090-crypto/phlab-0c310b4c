@@ -84,9 +84,7 @@ describe('validateCartPrices — legacy id fallback', () => {
       return new Response('unexpected', { status: 500 });
     });
 
-    const result = await validateCartPrices({
-      data: { items: [{ productId: LEGACY_ID, quantity: 1 }] },
-    });
+    const result = await runValidateCart({ items: [{ productId: LEGACY_ID, quantity: 1 }] });
 
     // Both fetches happened in the right order
     expect(calls.length).toBe(2);
@@ -114,9 +112,7 @@ describe('validateCartPrices — legacy id fallback', () => {
       return new Response('Not Found', { status: 404 });
     });
 
-    const result = await validateCartPrices({
-      data: { items: [{ productId: PRODUCT_ID, variantId: 'v2', quantity: 2 }] },
-    });
+    const result = await runValidateCart({ items: [{ productId: PRODUCT_ID, variantId: 'v2', quantity: 2 }] });
 
     expect(calls.length).toBe(1);                     // no fallback retry
     expect(result.ok).toBe(true);
@@ -140,9 +136,7 @@ describe('validateCartPrices — legacy id fallback', () => {
       return new Response('unexpected', { status: 500 });
     });
 
-    const result = await validateCartPrices({
-      data: { items: [{ productId: LEGACY_ID, variantId: 'v2', quantity: 1 }] },
-    });
+    const result = await runValidateCart({ items: [{ productId: LEGACY_ID, variantId: 'v2', quantity: 1 }] });
 
     expect(result.ok).toBe(true);
     const line = result.items[0];
@@ -154,9 +148,7 @@ describe('validateCartPrices — legacy id fallback', () => {
   it('returns a clear error when neither the legacy nor the split id resolves', async () => {
     installFetchMock(() => new Response('Not Found', { status: 404 }));
 
-    const result = await validateCartPrices({
-      data: { items: [{ productId: 'unknown-xyz', quantity: 1 }] },
-    });
+    const result = await runValidateCart({ items: [{ productId: 'unknown-xyz', quantity: 1 }] });
 
     expect(result.ok).toBe(false);
     expect(result.items.length).toBe(0);
@@ -167,9 +159,7 @@ describe('validateCartPrices — legacy id fallback', () => {
   it('does not attempt fallback when the id has no hyphen', async () => {
     installFetchMock(() => new Response('Not Found', { status: 404 }));
 
-    await validateCartPrices({
-      data: { items: [{ productId: 'noHyphenHere', quantity: 1 }] },
-    });
+    await runValidateCart({ items: [{ productId: 'noHyphenHere', quantity: 1 }] });
 
     expect(calls.length).toBe(1);                     // single fetch, no retry
   });
