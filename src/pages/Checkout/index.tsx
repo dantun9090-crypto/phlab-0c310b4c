@@ -13,6 +13,7 @@ import {
 } from '@/lib/firebase';
 import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
+import { migrateStoredCart } from '@/lib/cart-migration';
 import { buildProfessionalInvoiceEmail } from '@/templates/professionalInvoiceEmail';
 import type { CartItem } from '@/components/Layout';
 
