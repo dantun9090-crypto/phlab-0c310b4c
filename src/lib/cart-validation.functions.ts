@@ -151,145 +151,151 @@ async function lookupCoupon(code: string, subtotal: number): Promise<{ coupon: V
   }
 }
 
-export const validateCartPrices = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => inputSchema.parse(input))
-  .handler(async ({ data }): Promise<ValidateCartResult> => {
-    const errors: string[] = [];
-    const validated: ValidatedLine[] = [];
+type ValidateInput = z.infer<typeof inputSchema>;
 
-    // Fetch each product document from the Firestore REST API. The
-    // `product_stock` collection has public read rules already (the shop
-    // page reads it unauthenticated), so no auth token is required.
-    await Promise.all(
-      data.items.map(async (line) => {
-        // Resolve productId + variantId, tolerating legacy carts where the
-        // cart item id was stored as `<productId>-<variantId>` concatenated.
-        let productId = line.productId;
-        let variantId: string | null = line.variantId ?? null;
+/**
+ * Pure handler used both by the server function and by unit tests.
+ * Exported so tests can call it without the TanStack server-fn wrapper.
+ */
+export async function runValidateCart(data: ValidateInput): Promise<ValidateCartResult> {
+  const errors: string[] = [];
+  const validated: ValidatedLine[] = [];
 
-        const fetchDoc = async (id: string) => {
-          try {
-            return await fetch(
-              `${FIRESTORE_BASE}/product_stock/${encodeURIComponent(id)}`,
-              { headers: { Accept: 'application/json' } },
-            );
-          } catch {
-            return null;
-          }
-        };
+  // Fetch each product document from the Firestore REST API. The
+  // `product_stock` collection has public read rules already (the shop
+  // page reads it unauthenticated), so no auth token is required.
+  await Promise.all(
+    data.items.map(async (line) => {
+      // Resolve productId + variantId, tolerating legacy carts where the
+      // cart item id was stored as `<productId>-<variantId>` concatenated.
+      let productId = line.productId;
+      let variantId: string | null = line.variantId ?? null;
 
-        let res = await fetchDoc(productId);
-        if (res && res.status === 404 && productId.includes('-')) {
-          // Legacy fallback: split on the LAST hyphen to recover variantId.
-          const dash = productId.lastIndexOf('-');
-          const fallbackProductId = productId.slice(0, dash);
-          const fallbackVariantId = productId.slice(dash + 1);
-          const retry = await fetchDoc(fallbackProductId);
-          if (retry && retry.ok) {
-            productId = fallbackProductId;
-            variantId = variantId || fallbackVariantId;
-            res = retry;
-          }
+      const fetchDoc = async (id: string) => {
+        try {
+          return await fetch(
+            `${FIRESTORE_BASE}/product_stock/${encodeURIComponent(id)}`,
+            { headers: { Accept: 'application/json' } },
+          );
+        } catch {
+          return null;
         }
+      };
 
-        if (!res) {
-          errors.push(`Could not verify price for "${productId}"`);
-          return;
-        }
-        if (res.status === 404) {
-          errors.push(`Product "${productId}" no longer exists`);
-          return;
-        }
-        if (!res.ok) {
-          errors.push(`Could not verify price for "${productId}" (status ${res.status})`);
-          return;
-        }
-
-
-        const doc = (await res.json()) as { fields?: Record<string, FsValue> };
-        const fields = doc.fields ?? {};
-        const productName = (decode(fields.name) as string) || productId;
-
-        // Resolve canonical unit price: prefer matching variant, else top-level price.
-        let unitPrice = NaN;
-        let variantName: string | null = null;
-        const variants = decode(fields.variants) as Array<Record<string, unknown>> | undefined;
-
-        if (variantId && Array.isArray(variants)) {
-          const match = variants.find((v) => v && v.id === variantId);
-          if (match) {
-            unitPrice = parsePrice(match.price);
-            variantName = typeof match.name === 'string' ? match.name : null;
-          }
-        }
-        if (!Number.isFinite(unitPrice)) {
-          unitPrice = parsePrice(decode(fields.price));
-        }
-
-        if (!Number.isFinite(unitPrice) || unitPrice < 0) {
-          errors.push(`No valid price on file for "${productName}"`);
-          return;
-        }
-
-        // Stock check (best-effort — admin can also enforce server-side later).
-        let inStock = true;
-        const stockNum = decode(fields.stock);
-        const inStockFlag = decode(fields.inStock);
-        if (typeof stockNum === 'number') {
-          inStock = stockNum >= line.quantity;
-        } else if (typeof inStockFlag === 'boolean') {
-          inStock = inStockFlag;
-        }
-        if (!inStock) {
-          errors.push(`"${productName}" is out of stock or has insufficient quantity`);
-        }
-
-        const lineTotal = +(unitPrice * line.quantity).toFixed(2);
-        validated.push({
-          productId,
-          variantId,
-          productName,
-          variantName,
-          quantity: line.quantity,
-          unitPrice: +unitPrice.toFixed(2),
-          lineTotal,
-          inStock,
-        });
-      }),
-    );
-
-
-    const subtotal = +validated.reduce((s, l) => s + l.lineTotal, 0).toFixed(2);
-
-    // SECURITY: Re-validate coupon server-side and compute the authoritative
-    // discount. Never trust discount/coupon values sent from the client.
-    let coupon: ValidatedCoupon | null = null;
-    let couponError: string | null = null;
-    let discount = 0;
-    let shippingDiscount = 0;
-    if (data.couponCode) {
-      const result = await lookupCoupon(data.couponCode, subtotal);
-      coupon = result.coupon;
-      couponError = result.error;
-      if (coupon) {
-        if (coupon.type === 'percentage') {
-          discount = +(subtotal * coupon.value / 100).toFixed(2);
-        } else if (coupon.type === 'fixed') {
-          discount = +Math.min(coupon.value, subtotal).toFixed(2);
-        } else if (coupon.type === 'free_shipping' && typeof data.shippingCost === 'number') {
-          shippingDiscount = +data.shippingCost.toFixed(2);
+      let res = await fetchDoc(productId);
+      if (res && res.status === 404 && productId.includes('-')) {
+        // Legacy fallback: split on the LAST hyphen to recover variantId.
+        const dash = productId.lastIndexOf('-');
+        const fallbackProductId = productId.slice(0, dash);
+        const fallbackVariantId = productId.slice(dash + 1);
+        const retry = await fetchDoc(fallbackProductId);
+        if (retry && retry.ok) {
+          productId = fallbackProductId;
+          variantId = variantId || fallbackVariantId;
+          res = retry;
         }
       }
-    }
 
-    return {
-      ok: errors.length === 0 && validated.length === data.items.length && !couponError,
-      items: validated,
-      subtotal,
-      discount,
-      shippingDiscount,
-      coupon,
-      couponError,
-      errors: couponError ? [...errors, couponError] : errors,
-    };
-  });
+      if (!res) {
+        errors.push(`Could not verify price for "${productId}"`);
+        return;
+      }
+      if (res.status === 404) {
+        errors.push(`Product "${productId}" no longer exists`);
+        return;
+      }
+      if (!res.ok) {
+        errors.push(`Could not verify price for "${productId}" (status ${res.status})`);
+        return;
+      }
+
+      const doc = (await res.json()) as { fields?: Record<string, FsValue> };
+      const fields = doc.fields ?? {};
+      const productName = (decode(fields.name) as string) || productId;
+
+      // Resolve canonical unit price: prefer matching variant, else top-level price.
+      let unitPrice = NaN;
+      let variantName: string | null = null;
+      const variants = decode(fields.variants) as Array<Record<string, unknown>> | undefined;
+
+      if (variantId && Array.isArray(variants)) {
+        const match = variants.find((v) => v && v.id === variantId);
+        if (match) {
+          unitPrice = parsePrice(match.price);
+          variantName = typeof match.name === 'string' ? match.name : null;
+        }
+      }
+      if (!Number.isFinite(unitPrice)) {
+        unitPrice = parsePrice(decode(fields.price));
+      }
+
+      if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+        errors.push(`No valid price on file for "${productName}"`);
+        return;
+      }
+
+      // Stock check (best-effort — admin can also enforce server-side later).
+      let inStock = true;
+      const stockNum = decode(fields.stock);
+      const inStockFlag = decode(fields.inStock);
+      if (typeof stockNum === 'number') {
+        inStock = stockNum >= line.quantity;
+      } else if (typeof inStockFlag === 'boolean') {
+        inStock = inStockFlag;
+      }
+      if (!inStock) {
+        errors.push(`"${productName}" is out of stock or has insufficient quantity`);
+      }
+
+      const lineTotal = +(unitPrice * line.quantity).toFixed(2);
+      validated.push({
+        productId,
+        variantId,
+        productName,
+        variantName,
+        quantity: line.quantity,
+        unitPrice: +unitPrice.toFixed(2),
+        lineTotal,
+        inStock,
+      });
+    }),
+  );
+
+  const subtotal = +validated.reduce((s, l) => s + l.lineTotal, 0).toFixed(2);
+
+  // SECURITY: Re-validate coupon server-side and compute the authoritative
+  // discount. Never trust discount/coupon values sent from the client.
+  let coupon: ValidatedCoupon | null = null;
+  let couponError: string | null = null;
+  let discount = 0;
+  let shippingDiscount = 0;
+  if (data.couponCode) {
+    const result = await lookupCoupon(data.couponCode, subtotal);
+    coupon = result.coupon;
+    couponError = result.error;
+    if (coupon) {
+      if (coupon.type === 'percentage') {
+        discount = +(subtotal * coupon.value / 100).toFixed(2);
+      } else if (coupon.type === 'fixed') {
+        discount = +Math.min(coupon.value, subtotal).toFixed(2);
+      } else if (coupon.type === 'free_shipping' && typeof data.shippingCost === 'number') {
+        shippingDiscount = +data.shippingCost.toFixed(2);
+      }
+    }
+  }
+
+  return {
+    ok: errors.length === 0 && validated.length === data.items.length && !couponError,
+    items: validated,
+    subtotal,
+    discount,
+    shippingDiscount,
+    coupon,
+    couponError,
+    errors: couponError ? [...errors, couponError] : errors,
+  };
+}
+
+export const validateCartPrices = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => inputSchema.parse(input))
+  .handler(async ({ data }): Promise<ValidateCartResult> => runValidateCart(data));
