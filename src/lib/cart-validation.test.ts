@@ -9,7 +9,7 @@
  *
  * Run with: `bun test src/lib/cart-validation.test.ts`
  */
-import { describe, it, expect, beforeEach, afterEach, mock } from 'bun:test';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { validateCartPrices } from './cart-validation.functions';
 
 type FetchInit = { method?: string; headers?: Record<string, string>; body?: string };
