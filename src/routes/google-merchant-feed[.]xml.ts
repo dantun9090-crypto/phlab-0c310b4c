@@ -55,6 +55,11 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                 : `${BASE_URL}${p.imageUrl.startsWith("/") ? "" : "/"}${p.imageUrl}`
               : `${BASE_URL}/og-image.jpg`;
             const price = `${p.price.toFixed(2)} ${CURRENCY}`;
+            const availability =
+              typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
+            const sku = p.sku || p.id || p.slug;
+            const mpn = p.mpn || sku;
+            const hasGtin = !!p.gtin;
 
             return [
               `  <item>`,
@@ -63,11 +68,14 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `    <link>${xmlEscape(link)}</link>`,
               `    <description>${cdata(description)}</description>`,
               `    <g:image_link>${xmlEscape(image)}</g:image_link>`,
-              `    <g:availability>in stock</g:availability>`,
+              `    <g:availability>${availability}</g:availability>`,
               `    <g:price>${xmlEscape(price)}</g:price>`,
               `    <g:brand>${xmlEscape(BRAND)}</g:brand>`,
               `    <g:condition>new</g:condition>`,
-              `    <g:identifier_exists>no</g:identifier_exists>`,
+              `    <g:mpn>${xmlEscape(mpn)}</g:mpn>`,
+              `    <g:sku>${xmlEscape(sku)}</g:sku>`,
+              hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
+              `    <g:identifier_exists>${hasGtin ? "yes" : "no"}</g:identifier_exists>`,
               `    <g:google_product_category>${xmlEscape(GOOGLE_CATEGORY)}</g:google_product_category>`,
               `    <g:product_type>${xmlEscape(`Laboratory Reagents > Research Peptides${p.category ? ` > ${p.category}` : ""}`)}</g:product_type>`,
               `    <g:adult>no</g:adult>`,
@@ -76,7 +84,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `    <g:custom_label_0>Research Use Only</g:custom_label_0>`,
               `    <g:custom_label_1>Not For Human Consumption</g:custom_label_1>`,
               `  </item>`,
-            ].join("\n");
+            ].filter(Boolean).join("\n");
           })
           .join("\n");
 
