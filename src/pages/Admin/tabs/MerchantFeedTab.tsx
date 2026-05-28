@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, ExternalLink, Copy, CheckCircle2, AlertTriangle, XCircle, Download } from 'lucide-react';
+import { RefreshCw, ExternalLink, Copy, CheckCircle2, AlertTriangle, XCircle, Download, Eye } from 'lucide-react';
 
 const FEED_URL = '/google-merchant-feed.xml';
 const PUBLIC_FEED_URL = 'https://www.phlabs.co.uk/google-merchant-feed.xml';
