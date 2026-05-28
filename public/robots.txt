@@ -10,7 +10,13 @@ Disallow: /login
 Disallow: /register
 Disallow: /search
 Disallow: /vip-store
-Disallow: /*?*
+# Block only specific tracking / session query params, not all query strings
+# (was: Disallow: /*?*  — blocked legitimate ?category=, ?page= filter URLs)
+Disallow: /*?utm_*
+Disallow: /*?fbclid=
+Disallow: /*?gclid=
+Disallow: /*?session=
+Disallow: /*?sid=
 Disallow: /blog-single-page-layout
 Disallow: /real-estate-single-page-layout
 

@@ -73,11 +73,13 @@ export function useSEO(pageKey: string, fallback: SEOData) {
     }
 
     const apply = (seoData: SEOData) => {
-      const title       = seoData.title       ?? fallback.title       ?? '';
-      const description = seoData.metaDescription ?? fallback.metaDescription ?? '';
-      const canonical   = seoData.canonical   ?? fallback.canonical   ?? '';
-      const ogImage     = seoData.ogImage     ?? fallback.ogImage     ?? DEFAULT_OG_IMAGE;
-      const ogType      = seoData.ogType      ?? fallback.ogType      ?? 'website';
+      // Use || so empty strings stored in Firestore fall back to defaults,
+      // and trim() to strip stray leading/trailing whitespace from admin edits.
+      const title       = (seoData.title       || fallback.title       || '').trim();
+      const description = (seoData.metaDescription || fallback.metaDescription || '').trim();
+      const canonical   = (seoData.canonical   || fallback.canonical   || '').trim();
+      const ogImage     = (seoData.ogImage     || fallback.ogImage     || DEFAULT_OG_IMAGE).trim() || DEFAULT_OG_IMAGE;
+      const ogType      = (seoData.ogType      || fallback.ogType      || 'website').trim();
 
       // ── Title ──────────────────────────────────────────────────────────────
       if (title) {

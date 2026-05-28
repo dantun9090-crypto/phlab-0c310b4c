@@ -236,48 +236,13 @@ export default function HomePage() {
 
   useEffect(() => {
     const injectSchemas = () => {
-      const sameAs = [
-        siteSettings.facebookUrl,
-        siteSettings.instagramUrl,
-        siteSettings.twitterUrl,
-        siteSettings.youtubeUrl,
-        siteSettings.linkedinUrl,
-      ].filter(Boolean) as string[];
-
-      const orgSchema = {
-        '@context': 'https://schema.org',
-        '@type': 'Organization',
-        '@id': 'https://www.phlabs.co.uk/#organization',
-        name: 'PH Labs',
-        legalName: 'PH Labs Ltd',
-        url: 'https://www.phlabs.co.uk/',
-        logo: { '@type': 'ImageObject', url: 'https://www.phlabs.co.uk/logo.png', width: 512, height: 512 },
-        description: 'UK supplier of HPLC-verified research peptides including BPC-157, Retatrutide, Tirzepatide, TB-500, NAD+ and more. For laboratory research use only.',
-        address: { '@type': 'PostalAddress', addressCountry: 'GB', addressRegion: 'England' },
-        contactPoint: { '@type': 'ContactPoint', telephone: siteSettings.contactPhone || '+447826549934', email: siteSettings.contactEmail || 'info@phlabs.co.uk', contactType: 'customer service', areaServed: 'GB', availableLanguage: 'English' },
-        ...(sameAs.length > 0 && { sameAs }),
-      };
-      const orgScript = document.createElement('script');
-      orgScript.type = 'application/ld+json';
-      orgScript.id = 'org-schema';
-      orgScript.textContent = JSON.stringify(orgSchema);
+      // NOTE: Organization & WebSite schemas are already emitted SSR-side by
+      // src/routes/__root.tsx (@graph). Re-injecting them here created
+      // duplicate @id entries which Schema validators flag as warnings. We
+      // only inject the FAQPage schema (page-specific, not in root).
+      // Remove any legacy duplicates left in the DOM from previous renders.
       document.getElementById('org-schema')?.remove();
-      document.head.appendChild(orgScript);
-
-      const siteSchema = {
-        '@context': 'https://schema.org',
-        '@type': 'WebSite',
-        '@id': 'https://www.phlabs.co.uk/#website',
-        name: 'PH Labs',
-        url: 'https://www.phlabs.co.uk/',
-        potentialAction: { '@type': 'SearchAction', target: { '@type': 'EntryPoint', urlTemplate: 'https://www.phlabs.co.uk/search?q={search_term_string}' }, 'query-input': 'required name=search_term_string' },
-      };
-      const siteScript = document.createElement('script');
-      siteScript.type = 'application/ld+json';
-      siteScript.id = 'site-schema';
-      siteScript.textContent = JSON.stringify(siteSchema);
       document.getElementById('site-schema')?.remove();
-      document.head.appendChild(siteScript);
 
       const faqSchema = {
         '@context': 'https://schema.org',
