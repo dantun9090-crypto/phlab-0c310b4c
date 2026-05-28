@@ -4,7 +4,7 @@ import { LoadingFallback } from "@/components/LoadingFallback";
 
 const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
-const HOME_TITLE = "Research Peptides UK — HPLC-Tested with Batch CoA | PH Labs";
+const HOME_TITLE = "Research Peptides UK — HPLC-Tested & Batch CoA | PH Labs";
 const HOME_DESCRIPTION =
   "Shop HPLC-tested research peptides in the UK with batch CoAs and tracked next-day dispatch. Strictly for in-vitro laboratory research use.";
 const HOME_URL = "https://www.phlabs.co.uk/";
