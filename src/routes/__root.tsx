@@ -80,7 +80,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "geo.placename", content: "United Kingdom" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "google-site-verification", content: "tYtU-dRlfAq14D7lyPTYf8noiJH-b0LifcvvrGi8AZw" },
-      { key: "og:type", property: "og:type", content: "website" },
+      { property: "og:type", content: "website" },
     ],
     scripts: [
       {
