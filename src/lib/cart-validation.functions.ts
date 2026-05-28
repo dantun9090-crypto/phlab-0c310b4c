@@ -208,15 +208,15 @@ export const validateCartPrices = createServerFn({ method: 'POST' })
 
         const doc = (await res.json()) as { fields?: Record<string, FsValue> };
         const fields = doc.fields ?? {};
-        const productName = (decode(fields.name) as string) || line.productId;
+        const productName = (decode(fields.name) as string) || productId;
 
         // Resolve canonical unit price: prefer matching variant, else top-level price.
         let unitPrice = NaN;
         let variantName: string | null = null;
         const variants = decode(fields.variants) as Array<Record<string, unknown>> | undefined;
 
-        if (line.variantId && Array.isArray(variants)) {
-          const match = variants.find((v) => v && v.id === line.variantId);
+        if (variantId && Array.isArray(variants)) {
+          const match = variants.find((v) => v && v.id === variantId);
           if (match) {
             unitPrice = parsePrice(match.price);
             variantName = typeof match.name === 'string' ? match.name : null;
@@ -246,8 +246,8 @@ export const validateCartPrices = createServerFn({ method: 'POST' })
 
         const lineTotal = +(unitPrice * line.quantity).toFixed(2);
         validated.push({
-          productId: line.productId,
-          variantId: line.variantId ?? null,
+          productId,
+          variantId,
           productName,
           variantName,
           quantity: line.quantity,
@@ -257,6 +257,7 @@ export const validateCartPrices = createServerFn({ method: 'POST' })
         });
       }),
     );
+
 
     const subtotal = +validated.reduce((s, l) => s + l.lineTotal, 0).toFixed(2);
 
