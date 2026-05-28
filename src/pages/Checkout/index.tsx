@@ -842,6 +842,40 @@ export default function CheckoutPage() {
                 </div>
               )}
 
+              {/* Pre-flight validation findings (price drift / missing variants
+                  / out of stock) — shown before the user reaches the pay step. */}
+              {preflightIssues.length > 0 && (
+                <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/40 rounded-xl p-3">
+                  <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-red-300 text-sm font-medium">
+                      We found {preflightIssues.length === 1 ? 'an issue' : `${preflightIssues.length} issues`} with your cart
+                    </p>
+                    <ul className="mt-1.5 space-y-1 text-red-300/85 text-xs list-disc pl-4">
+                      {preflightIssues.map((issue, idx) => (
+                        <li key={`${issue.productId}-${issue.variantId ?? ''}-${idx}`}>
+                          {issue.message}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-red-300/70 text-[11px] mt-2">
+                      Please update your cart on the product page before placing the order.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Subtle live indicator while pre-flight check runs */}
+              {preflightChecking && preflightIssues.length === 0 && (
+                <p className="text-slate-500 text-[11px]">Verifying live prices and stock…</p>
+              )}
+              {preflightOk && !preflightChecking && cart.length > 0 && (
+                <p className="text-emerald-400/80 text-[11px] flex items-center gap-1.5">
+                  <Check className="w-3 h-3" /> Prices and stock verified
+                </p>
+              )}
+
+
               {/* Stock errors */}
               {errors.stock && (
                 <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-3">
