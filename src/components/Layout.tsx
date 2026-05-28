@@ -137,10 +137,18 @@ export function Layout({ children }: LayoutProps) {
     try { return JSON.parse(localStorage.getItem('php_recent_searches') || '[]'); } catch { return []; }
   });
 
-  // Load cart from localStorage — deferred to avoid blocking paint
+  // Load cart from localStorage — deferred to avoid blocking paint.
+  // Runs `migrateStoredCart` first so legacy carts that stored the variantId
+  // concatenated into `id` (e.g. `"retatrutide-5mg"`) get rewritten into the
+  // canonical `{ id, variantId }` shape before anything reads them.
   useEffect(() => {
     const loadCart = () => {
       try {
+        const migrated = migrateStoredCart<CartItem>();
+        if (migrated && migrated.length > 0) {
+          setCart(migrated);
+          return;
+        }
         const saved = localStorage.getItem('php_cart');
         if (saved) setCart(JSON.parse(saved));
       } catch { /* ignore */ }
