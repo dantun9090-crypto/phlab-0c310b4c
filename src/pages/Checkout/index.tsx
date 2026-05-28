@@ -438,6 +438,8 @@ export default function CheckoutPage() {
         tcAcceptedAt: form.acceptedTerms ? now : null,
         termsAccepted: form.acceptedTerms,
         termsAcceptedAt: form.acceptedTerms ? now : null,
+        ageVerified: form.ageVerified,
+        ageVerifiedAt: form.ageVerified ? now : null,
         termsVersion: '1.0',
         termsAcceptedIp: typeof window !== 'undefined' ? window.location.hostname : null,
         createdAt: now,
@@ -1070,6 +1072,26 @@ export default function CheckoutPage() {
                         <span className="text-emerald-400">£{total}</span>
                       </button>
                     </div>
+
+                    {/* Age verification 18+ — UK compliance */}
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <div className="relative flex items-center justify-center w-6 h-6 mt-0.5 shrink-0">
+                        <input
+                          type="checkbox"
+                          id="ageVerified"
+                          checked={form.ageVerified}
+                          onChange={e => setField('ageVerified', e.target.checked)}
+                          className="peer absolute w-full h-full opacity-0 cursor-pointer z-10"
+                        />
+                        <div className="w-full h-full rounded-md bg-white/10 border-2 border-white/30 group-hover:border-emerald-400 peer-checked:bg-emerald-500 peer-checked:border-emerald-500 transition-all duration-200 flex items-center justify-center shadow-sm">
+                          <Check className={`w-4 h-4 text-white font-bold stroke-[3px] transition-all duration-200 ${form.ageVerified ? 'scale-100 opacity-100' : 'scale-0 opacity-0'}`} />
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-300 leading-relaxed">
+                        I confirm I am <strong className="text-white">18 years of age or older</strong> and legally permitted to purchase laboratory research reagents in my jurisdiction.
+                      </span>
+                    </label>
+                    {errors.age && <p className="text-red-400 text-xs">{errors.age}</p>}
 
                     {/* Terms */}
                     <label className="flex items-start gap-3 cursor-pointer group">
