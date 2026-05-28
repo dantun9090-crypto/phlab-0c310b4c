@@ -170,6 +170,8 @@ export async function runValidateCart(data: ValidateInput): Promise<ValidateCart
       // cart item id was stored as `<productId>-<variantId>` concatenated.
       let productId = line.productId;
       let variantId: string | null = line.variantId ?? null;
+      const originalProductId = line.productId;
+      const originalVariantId = line.variantId ?? null;
 
       const fetchDoc = async (id: string) => {
         try {
@@ -183,31 +185,64 @@ export async function runValidateCart(data: ValidateInput): Promise<ValidateCart
       };
 
       let res = await fetchDoc(productId);
+      let fallbackAttempted = false;
+      let fallbackSucceeded = false;
+      let fallbackProductId: string | null = null;
+      let fallbackVariantId: string | null = null;
+
       if (res && res.status === 404 && productId.includes('-')) {
         // Legacy fallback: split on the LAST hyphen to recover variantId.
         const dash = productId.lastIndexOf('-');
-        const fallbackProductId = productId.slice(0, dash);
-        const fallbackVariantId = productId.slice(dash + 1);
+        fallbackProductId = productId.slice(0, dash);
+        fallbackVariantId = productId.slice(dash + 1);
+        fallbackAttempted = true;
         const retry = await fetchDoc(fallbackProductId);
         if (retry && retry.ok) {
           productId = fallbackProductId;
           variantId = variantId || fallbackVariantId;
           res = retry;
+          fallbackSucceeded = true;
         }
       }
 
+      // Extended diagnostic logging. Only logs IDs (already non-sensitive —
+      // product slugs and variant ids are public) and resolution status.
+      // No prices, no auth, no user data are ever logged.
+      const logLookup = (outcome: 'ok' | 'not_found' | 'error', extra?: Record<string, unknown>) => {
+        // eslint-disable-next-line no-console
+        console.info('[cart-validation] product_stock lookup', {
+          outcome,
+          originalProductId,
+          originalVariantIdProvided: originalVariantId !== null,
+          resolvedProductId: productId,
+          resolvedVariantId: variantId,
+          fallbackAttempted,
+          fallbackSucceeded,
+          fallbackProductId,
+          fallbackVariantId,
+          httpStatus: res?.status ?? null,
+          ...extra,
+        });
+      };
+
       if (!res) {
+        logLookup('error', { reason: 'fetch_threw' });
         errors.push(`Could not verify price for "${productId}"`);
         return;
       }
       if (res.status === 404) {
+        logLookup('not_found');
         errors.push(`Product "${productId}" no longer exists`);
         return;
       }
       if (!res.ok) {
+        logLookup('error', { reason: 'http_error' });
         errors.push(`Could not verify price for "${productId}" (status ${res.status})`);
         return;
       }
+
+      if (fallbackSucceeded) logLookup('ok', { note: 'resolved_via_fallback' });
+
 
       const doc = (await res.json()) as { fields?: Record<string, FsValue> };
       const fields = doc.fields ?? {};
