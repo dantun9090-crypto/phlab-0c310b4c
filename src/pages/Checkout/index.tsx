@@ -117,6 +117,128 @@ export default function CheckoutPage() {
   // had to be rewritten (or when the server reports stale/missing products).
   const [cartStale, setCartStale] = useState(false);
 
+  // Pre-flight server validation: surfaces price / availability / variantId
+  // problems BEFORE the user clicks "Place order". Runs debounced whenever
+  // the cart changes. Findings show up in `preflightIssues` and are rendered
+  // inline next to the stale-cart banner.
+  interface PreflightIssue {
+    productId: string;
+    variantId: string | null;
+    cartPrice: number;
+    serverPrice: number | null;
+    message: string;
+    kind: 'price_mismatch' | 'not_found' | 'out_of_stock' | 'variant_missing';
+  }
+  const [preflightIssues, setPreflightIssues] = useState<PreflightIssue[]>([]);
+  const [preflightChecking, setPreflightChecking] = useState(false);
+  const [preflightOk, setPreflightOk] = useState(false);
+  const preflightRunId = useRef(0);
+
+  useEffect(() => {
+    if (cart.length === 0) {
+      setPreflightIssues([]);
+      setPreflightOk(false);
+      return;
+    }
+    const runId = ++preflightRunId.current;
+    const handle = setTimeout(async () => {
+      setPreflightChecking(true);
+      try {
+        const result = await validateCartPrices({
+          data: {
+            items: cart.map(item => ({
+              productId: String(item.id),
+              variantId: item.variantId ? String(item.variantId) : null,
+              quantity: item.quantity,
+            })),
+          },
+        });
+        // Ignore late responses if cart changed again mid-flight.
+        if (runId !== preflightRunId.current) return;
+
+        const issues: PreflightIssue[] = [];
+
+        // Map server lines back by (productId, variantId) to compare prices.
+        const keyOf = (p: string, v: string | null) => `${p}::${v ?? ''}`;
+        const serverByKey = new Map<string, typeof result.items[number]>();
+        for (const line of result.items) {
+          serverByKey.set(keyOf(line.productId, line.variantId), line);
+        }
+
+        for (const item of cart) {
+          const sId = String(item.id);
+          const sVid = item.variantId ? String(item.variantId) : null;
+          const server = serverByKey.get(keyOf(sId, sVid));
+
+          // Server might have resolved the line under a different productId
+          // via the legacy fallback — try matching by variantId alone.
+          const serverFallback = server
+            ?? (sVid
+              ? result.items.find(l => l.variantId === sVid)
+              : undefined);
+
+          if (!serverFallback) {
+            issues.push({
+              productId: sId,
+              variantId: sVid,
+              cartPrice: item.priceNum,
+              serverPrice: null,
+              kind: sVid ? 'variant_missing' : 'not_found',
+              message: sVid
+                ? `Variant "${sVid}" of "${item.name}" could not be found. Please re-select the size.`
+                : `"${item.name}" is no longer available.`,
+            });
+            continue;
+          }
+
+          if (!serverFallback.inStock) {
+            issues.push({
+              productId: sId,
+              variantId: sVid,
+              cartPrice: item.priceNum,
+              serverPrice: serverFallback.unitPrice,
+              kind: 'out_of_stock',
+              message: `"${item.name}"${sVid ? ` (${sVid})` : ''} is out of stock.`,
+            });
+          }
+
+          // Price drift > 1p is treated as a mismatch the user must see.
+          const cartPrice = Number(item.priceNum) || 0;
+          const serverPrice = Number(serverFallback.unitPrice) || 0;
+          if (Math.abs(cartPrice - serverPrice) > 0.01) {
+            issues.push({
+              productId: sId,
+              variantId: sVid,
+              cartPrice,
+              serverPrice,
+              kind: 'price_mismatch',
+              message: `Price for "${item.name}"${sVid ? ` (${sVid})` : ''} changed from £${cartPrice.toFixed(2)} to £${serverPrice.toFixed(2)}.`,
+            });
+          }
+        }
+
+        setPreflightIssues(issues);
+        setPreflightOk(issues.length === 0 && result.ok);
+      } catch {
+        // Network / server fault — surface a single soft issue, don't block.
+        if (runId === preflightRunId.current) {
+          setPreflightIssues([{
+            productId: '',
+            variantId: null,
+            cartPrice: 0,
+            serverPrice: null,
+            kind: 'not_found',
+            message: 'Could not verify cart prices right now. We will retry when you place the order.',
+          }]);
+          setPreflightOk(false);
+        }
+      } finally {
+        if (runId === preflightRunId.current) setPreflightChecking(false);
+      }
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [cart]);
+
   // Load cart from localStorage. Runs `migrateStoredCart` first so legacy
   // carts (concatenated `<productId>-<variantId>` ids) are rewritten in
   // place. If anything actually changed, raise the "outdated cart" banner.
@@ -720,6 +842,40 @@ export default function CheckoutPage() {
                 </div>
               )}
 
+              {/* Pre-flight validation findings (price drift / missing variants
+                  / out of stock) — shown before the user reaches the pay step. */}
+              {preflightIssues.length > 0 && (
+                <div className="flex items-start gap-3 bg-red-500/10 border border-red-500/40 rounded-xl p-3">
+                  <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-red-300 text-sm font-medium">
+                      We found {preflightIssues.length === 1 ? 'an issue' : `${preflightIssues.length} issues`} with your cart
+                    </p>
+                    <ul className="mt-1.5 space-y-1 text-red-300/85 text-xs list-disc pl-4">
+                      {preflightIssues.map((issue, idx) => (
+                        <li key={`${issue.productId}-${issue.variantId ?? ''}-${idx}`}>
+                          {issue.message}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-red-300/70 text-[11px] mt-2">
+                      Please update your cart on the product page before placing the order.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Subtle live indicator while pre-flight check runs */}
+              {preflightChecking && preflightIssues.length === 0 && (
+                <p className="text-slate-500 text-[11px]">Verifying live prices and stock…</p>
+              )}
+              {preflightOk && !preflightChecking && cart.length > 0 && (
+                <p className="text-emerald-400/80 text-[11px] flex items-center gap-1.5">
+                  <Check className="w-3 h-3" /> Prices and stock verified
+                </p>
+              )}
+
+
               {/* Stock errors */}
               {errors.stock && (
                 <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-3">
@@ -1181,7 +1337,7 @@ export default function CheckoutPage() {
                     {/* Place order button */}
                     <button
                       onClick={handleSubmit}
-                      disabled={isPlacing}
+                      disabled={isPlacing || preflightIssues.length > 0}
                       className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2"
                     >
                       {isPlacing ? (
@@ -1191,6 +1347,10 @@ export default function CheckoutPage() {
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                           </svg>
                           Placing Order...
+                        </>
+                      ) : preflightIssues.length > 0 ? (
+                        <>
+                          <AlertTriangle className="w-4 h-4" /> Resolve cart issues to continue
                         </>
                       ) : (
                         <>
