@@ -95,7 +95,17 @@ describe('migrateCartItems', () => {
 
 describe('migrateStoredCart', () => {
   beforeEach(() => {
-    localStorage.clear();
+    const store = new Map<string, string>();
+    const localStorageMock = {
+      getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+      setItem: (k: string, v: string) => { store.set(k, v); },
+      removeItem: (k: string) => { store.delete(k); },
+      clear: () => store.clear(),
+    };
+    // @ts-expect-error — assign global for node test env
+    globalThis.window = { localStorage: localStorageMock };
+    // @ts-expect-error — convenience direct access in assertions
+    globalThis.localStorage = localStorageMock;
   });
 
   it('returns null when there is no stored cart', () => {
