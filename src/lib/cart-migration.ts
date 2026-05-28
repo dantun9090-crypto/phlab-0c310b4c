@@ -20,7 +20,6 @@ export interface MigratableCartItem {
   id: string;
   variantId?: string;
   quantity?: number;
-  [k: string]: unknown;
 }
 
 // Variant suffix: <number>[.<number>] <unit> at the end of the id.
