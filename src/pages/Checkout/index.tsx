@@ -682,6 +682,44 @@ export default function CheckoutPage() {
                 </p>
               </div>
 
+              {/* Outdated cart banner — shown when legacy ids were migrated
+                  or when the server reports unknown/stale products. */}
+              {cartStale && (
+                <div className="flex items-start gap-3 bg-amber-500/10 border border-amber-500/40 rounded-xl p-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-amber-200 text-sm font-medium">
+                      Your cart was saved with outdated product data
+                    </p>
+                    <p className="text-amber-300/80 text-xs mt-1">
+                      We've refreshed it with the latest prices and variants. Please review your items before placing the order, or reload your cart to pull the newest data.
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => { window.location.reload(); }}
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition-colors"
+                      >
+                        Reload cart
+                      </button>
+                      <Link
+                        to="/products"
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-500/40 text-amber-200 hover:bg-amber-500/10 transition-colors"
+                      >
+                        Back to shop
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setCartStale(false)}
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg text-amber-300/70 hover:text-amber-200 transition-colors"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Stock errors */}
               {errors.stock && (
                 <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-3">
