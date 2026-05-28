@@ -13,6 +13,7 @@ import {
 } from '@/lib/firebase';
 import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
+import { migrateStoredCart } from '@/lib/cart-migration';
 import { buildProfessionalInvoiceEmail } from '@/templates/professionalInvoiceEmail';
 import type { CartItem } from '@/components/Layout';
 
@@ -112,11 +113,25 @@ export default function CheckoutPage() {
   const [, setSummaryExpanded] = useState(false);
   const stepRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
-  // Load cart from localStorage
+  // Banner state: set when the cart we loaded was in the legacy shape and
+  // had to be rewritten (or when the server reports stale/missing products).
+  const [cartStale, setCartStale] = useState(false);
+
+  // Load cart from localStorage. Runs `migrateStoredCart` first so legacy
+  // carts (concatenated `<productId>-<variantId>` ids) are rewritten in
+  // place. If anything actually changed, raise the "outdated cart" banner.
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('php_cart');
-      if (stored) setCart(JSON.parse(stored));
+      const before = localStorage.getItem('php_cart');
+      const migrated = migrateStoredCart<CartItem>();
+      const after = localStorage.getItem('php_cart');
+      if (migrated && migrated.length > 0) {
+        setCart(migrated);
+        if (before && after && before !== after) setCartStale(true);
+      } else {
+        const stored = localStorage.getItem('php_cart');
+        if (stored) setCart(JSON.parse(stored));
+      }
     } catch { /* ignore */ }
   }, []);
 
@@ -355,6 +370,12 @@ export default function CheckoutPage() {
           },
         });
         if (!validation.ok) {
+          // Treat "no longer exists" / "could not verify" errors as a stale-cart
+          // signal so the user sees the reload banner instead of just a stock msg.
+          const looksStale = validation.errors.some(e =>
+            /no longer exists|could not verify price/i.test(e),
+          );
+          if (looksStale) setCartStale(true);
           setErrors(prev => ({
             ...prev,
             stock: validation.errors[0] ?? 'We could not verify your cart prices. Please refresh and try again.',
@@ -660,6 +681,44 @@ export default function CheckoutPage() {
                   All compounds are sold strictly for research purposes only. Not for human consumption.
                 </p>
               </div>
+
+              {/* Outdated cart banner — shown when legacy ids were migrated
+                  or when the server reports unknown/stale products. */}
+              {cartStale && (
+                <div className="flex items-start gap-3 bg-amber-500/10 border border-amber-500/40 rounded-xl p-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-amber-200 text-sm font-medium">
+                      Your cart was saved with outdated product data
+                    </p>
+                    <p className="text-amber-300/80 text-xs mt-1">
+                      We've refreshed it with the latest prices and variants. Please review your items before placing the order, or reload your cart to pull the newest data.
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => { window.location.reload(); }}
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 transition-colors"
+                      >
+                        Reload cart
+                      </button>
+                      <Link
+                        to="/products"
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg border border-amber-500/40 text-amber-200 hover:bg-amber-500/10 transition-colors"
+                      >
+                        Back to shop
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setCartStale(false)}
+                        className="px-3 py-1.5 text-xs font-medium rounded-lg text-amber-300/70 hover:text-amber-200 transition-colors"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Stock errors */}
               {errors.stock && (
