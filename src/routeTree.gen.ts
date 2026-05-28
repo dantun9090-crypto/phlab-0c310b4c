@@ -15,6 +15,7 @@ import { Route as GoogleMerchantFeedDotxmlRouteImport } from './routes/google-me
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
+import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -47,6 +48,12 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => ProductsRoute,
 } as any)
+const AdminMerchantFeedPreviewRoute =
+  AdminMerchantFeedPreviewRouteImport.update({
+    id: '/admin/merchant-feed-preview',
+    path: '/admin/merchant-feed-preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByFullPath {
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/products/$slug': typeof ProductsSlugRoute
 }
 export interface FileRoutesByTo {
@@ -62,6 +70,7 @@ export interface FileRoutesByTo {
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/products/$slug': typeof ProductsSlugRoute
 }
 export interface FileRoutesById {
@@ -71,6 +80,7 @@ export interface FileRoutesById {
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/products/$slug': typeof ProductsSlugRoute
 }
 export interface FileRouteTypes {
@@ -81,6 +91,7 @@ export interface FileRouteTypes {
     | '/google-merchant-feed.xml'
     | '/products'
     | '/sitemap.xml'
+    | '/admin/merchant-feed-preview'
     | '/products/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -89,6 +100,7 @@ export interface FileRouteTypes {
     | '/google-merchant-feed.xml'
     | '/products'
     | '/sitemap.xml'
+    | '/admin/merchant-feed-preview'
     | '/products/$slug'
   id:
     | '__root__'
@@ -97,6 +109,7 @@ export interface FileRouteTypes {
     | '/google-merchant-feed.xml'
     | '/products'
     | '/sitemap.xml'
+    | '/admin/merchant-feed-preview'
     | '/products/$slug'
   fileRoutesById: FileRoutesById
 }
@@ -106,6 +119,7 @@ export interface RootRouteChildren {
   GoogleMerchantFeedDotxmlRoute: typeof GoogleMerchantFeedDotxmlRoute
   ProductsRoute: typeof ProductsRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -152,6 +166,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsSlugRouteImport
       parentRoute: typeof ProductsRoute
     }
+    '/admin/merchant-feed-preview': {
+      id: '/admin/merchant-feed-preview'
+      path: '/admin/merchant-feed-preview'
+      fullPath: '/admin/merchant-feed-preview'
+      preLoaderRoute: typeof AdminMerchantFeedPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -173,6 +194,7 @@ const rootRouteChildren: RootRouteChildren = {
   GoogleMerchantFeedDotxmlRoute: GoogleMerchantFeedDotxmlRoute,
   ProductsRoute: ProductsRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
