@@ -57,7 +57,7 @@ const originalFetch = globalThis.fetch;
 
 function installFetchMock(handler: (url: string) => Response | Promise<Response>) {
   calls = [];
-  globalThis.fetch = mock(async (input: RequestInfo | URL, init?: FetchInit) => {
+  globalThis.fetch = vi.fn(async (input: RequestInfo | URL, init?: FetchInit) => {
     const url = typeof input === 'string' ? input : input.toString();
     calls.push({ url, init });
     return handler(url);
