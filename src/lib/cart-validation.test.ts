@@ -18,6 +18,9 @@ type FetchCall = { url: string; init?: FetchInit };
 const PRODUCT_ID = 'maibTaw5CXVkw1aDgvHd';
 const VARIANT_ID = 'v1';
 const LEGACY_ID = `${PRODUCT_ID}-${VARIANT_ID}`;
+const HYPHENATED_PRODUCT_ID = 'bpc-157';
+const DOSAGE_VARIANT_ID = '10mg';
+const HYPHENATED_LEGACY_ID = `${HYPHENATED_PRODUCT_ID}-${DOSAGE_VARIANT_ID}`;
 
 function fsDoc(fields: Record<string, unknown>) {
   const encode = (v: unknown): unknown => {
@@ -49,6 +52,16 @@ const PRODUCT_FIXTURE = fsDoc({
   variants: [
     { id: 'v1', name: '5mg vial', price: 79.99 },
     { id: 'v2', name: '10mg vial', price: 139.99 },
+  ],
+});
+
+const HYPHENATED_PRODUCT_FIXTURE = fsDoc({
+  name: 'BPC-157 Research Peptide',
+  price: 44.99,
+  stock: 50,
+  variants: [
+    { id: '5mg', name: '5mg vial', price: 39.99 },
+    { id: '10mg', name: '10mg vial', price: 69.99 },
   ],
 });
 
@@ -102,6 +115,58 @@ describe('validateCartPrices — legacy id fallback', () => {
     expect(line.unitPrice).toBe(79.99);               // variant price, NOT 49.99
     expect(line.lineTotal).toBe(79.99);
     expect(result.subtotal).toBe(79.99);
+  });
+
+  it('falls back correctly for old dash-formatted ids when the canonical product id also contains hyphens', async () => {
+    installFetchMock((url) => {
+      if (url.endsWith(`/product_stock/${HYPHENATED_LEGACY_ID}`)) {
+        return new Response('Not Found', { status: 404 });
+      }
+      if (url.endsWith(`/product_stock/${HYPHENATED_PRODUCT_ID}`)) {
+        return new Response(JSON.stringify(HYPHENATED_PRODUCT_FIXTURE), { status: 200 });
+      }
+      return new Response('unexpected', { status: 500 });
+    });
+
+    const result = await runValidateCart({ items: [{ productId: HYPHENATED_LEGACY_ID, quantity: 1 }] });
+
+    expect(calls.length).toBe(2);
+    expect(calls[0].url).toContain(`/product_stock/${HYPHENATED_LEGACY_ID}`);
+    expect(calls[1].url).toContain(`/product_stock/${HYPHENATED_PRODUCT_ID}`);
+
+    expect(result.ok).toBe(true);
+    expect(result.errors).toEqual([]);
+    const line = result.items[0];
+    expect(line.productId).toBe(HYPHENATED_PRODUCT_ID);
+    expect(line.variantId).toBe(DOSAGE_VARIANT_ID);
+    expect(line.variantName).toBe('10mg vial');
+    expect(line.unitPrice).toBe(69.99);
+    expect(line.lineTotal).toBe(69.99);
+  });
+
+  it('recognises the recovered variantId during validation instead of falling back to product base price', async () => {
+    installFetchMock((url) => {
+      if (url.endsWith(`/product_stock/retatrutide-10mg`)) {
+        return new Response('Not Found', { status: 404 });
+      }
+      if (url.endsWith(`/product_stock/retatrutide`)) {
+        return new Response(JSON.stringify(HYPHENATED_PRODUCT_FIXTURE), { status: 200 });
+      }
+      return new Response('unexpected', { status: 500 });
+    });
+
+    const result = await runValidateCart({ items: [{ productId: 'retatrutide-10mg', quantity: 2 }] });
+
+    expect(result.ok).toBe(true);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
+      productId: 'retatrutide',
+      variantId: '10mg',
+      variantName: '10mg vial',
+      unitPrice: 69.99,
+      lineTotal: 139.98,
+    });
+    expect(result.items[0].unitPrice).not.toBe(44.99);
   });
 
   it('does not strip the suffix when the canonical id resolves on the first try', async () => {
