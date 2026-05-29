@@ -229,3 +229,116 @@ describe('validateCartPrices — legacy id fallback', () => {
     expect(calls.length).toBe(1);                     // single fetch, no retry
   });
 });
+
+describe('validateCartPrices — minimal fetch calls', () => {
+  function productStockCalls() {
+    return calls.filter((c) => c.url.includes('/product_stock/'));
+  }
+
+  it('uses exactly ONE fetch when the canonical id resolves on first try (no fallback retry)', async () => {
+    installFetchMock((url) => {
+      if (url.endsWith(`/product_stock/${PRODUCT_ID}`)) {
+        return new Response(JSON.stringify(PRODUCT_FIXTURE), { status: 200 });
+      }
+      return new Response('unexpected', { status: 500 });
+    });
+
+    const result = await runValidateCart({
+      items: [{ productId: PRODUCT_ID, variantId: 'v1', quantity: 1 }],
+    });
+
+    expect(result.ok).toBe(true);
+    expect(productStockCalls()).toHaveLength(1);
+    expect(productStockCalls()[0].url).toContain(`/product_stock/${PRODUCT_ID}`);
+  });
+
+  it('uses exactly TWO fetches for legacy fallback (original 404 + split retry), never more', async () => {
+    installFetchMock((url) => {
+      if (url.endsWith(`/product_stock/${LEGACY_ID}`)) {
+        return new Response('Not Found', { status: 404 });
+      }
+      if (url.endsWith(`/product_stock/${PRODUCT_ID}`)) {
+        return new Response(JSON.stringify(PRODUCT_FIXTURE), { status: 200 });
+      }
+      return new Response('unexpected', { status: 500 });
+    });
+
+    const result = await runValidateCart({ items: [{ productId: LEGACY_ID, quantity: 1 }] });
+
+    expect(result.ok).toBe(true);
+    const stockCalls = productStockCalls();
+    expect(stockCalls).toHaveLength(2);
+    expect(stockCalls[0].url).toContain(`/product_stock/${LEGACY_ID}`);
+    expect(stockCalls[1].url).toContain(`/product_stock/${PRODUCT_ID}`);
+    // No further retries with intermediate or alternative splits.
+    const allUrls = stockCalls.map((c) => c.url);
+    expect(allUrls.some((u) => u.includes(`/product_stock/${PRODUCT_ID.slice(0, -1)}`))).toBe(false);
+  });
+
+  it('never queries alternative hyphen splits when fallback succeeds', async () => {
+    // bpc-157-10mg should retry ONLY against bpc-157, never bpc or bpc-157-10mg-other.
+    installFetchMock((url) => {
+      if (url.endsWith(`/product_stock/${HYPHENATED_LEGACY_ID}`)) {
+        return new Response('Not Found', { status: 404 });
+      }
+      if (url.endsWith(`/product_stock/${HYPHENATED_PRODUCT_ID}`)) {
+        return new Response(JSON.stringify(HYPHENATED_PRODUCT_FIXTURE), { status: 200 });
+      }
+      return new Response('unexpected', { status: 500 });
+    });
+
+    await runValidateCart({ items: [{ productId: HYPHENATED_LEGACY_ID, quantity: 1 }] });
+
+    const stockCalls = productStockCalls();
+    expect(stockCalls).toHaveLength(2);
+    const urls = stockCalls.map((c) => c.url);
+    // Must NOT have tried other splits like `/product_stock/bpc` or `/product_stock/bpc-157-10`.
+    expect(urls.some((u) => u.endsWith('/product_stock/bpc'))).toBe(false);
+    expect(urls.some((u) => u.endsWith('/product_stock/bpc-157-10'))).toBe(false);
+  });
+
+  it('uses exactly TWO fetches when legacy fallback also 404s — no third desperate attempt', async () => {
+    installFetchMock(() => new Response('Not Found', { status: 404 }));
+
+    const result = await runValidateCart({ items: [{ productId: 'foo-bar', quantity: 1 }] });
+
+    expect(result.ok).toBe(false);
+    const stockCalls = productStockCalls();
+    expect(stockCalls).toHaveLength(2);
+    expect(stockCalls[0].url).toContain('/product_stock/foo-bar');
+    expect(stockCalls[1].url).toContain('/product_stock/foo');
+  });
+
+  it('does not query the coupons endpoint when no couponCode is supplied', async () => {
+    installFetchMock((url) => {
+      if (url.endsWith(`/product_stock/${PRODUCT_ID}`)) {
+        return new Response(JSON.stringify(PRODUCT_FIXTURE), { status: 200 });
+      }
+      return new Response('unexpected', { status: 500 });
+    });
+
+    await runValidateCart({ items: [{ productId: PRODUCT_ID, variantId: 'v1', quantity: 1 }] });
+
+    expect(calls.some((c) => c.url.includes(':runQuery'))).toBe(false);
+    expect(calls.some((c) => c.url.includes('/coupons'))).toBe(false);
+  });
+
+  it('issues exactly one product_stock fetch per cart line when none need fallback', async () => {
+    installFetchMock((url) => {
+      if (url.includes('/product_stock/')) {
+        return new Response(JSON.stringify(PRODUCT_FIXTURE), { status: 200 });
+      }
+      return new Response('unexpected', { status: 500 });
+    });
+
+    await runValidateCart({
+      items: [
+        { productId: 'p1', variantId: 'v1', quantity: 1 },
+        { productId: 'p2', variantId: 'v1', quantity: 2 },
+        { productId: 'p3', variantId: 'v2', quantity: 1 },
+      ],
+    });
+
+    expect(productStockCalls()).toHaveLength(3);
+  });
+});
