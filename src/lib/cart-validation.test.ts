@@ -272,7 +272,7 @@ describe('validateCartPrices — minimal fetch calls', () => {
     expect(stockCalls[1].url).toContain(`/product_stock/${PRODUCT_ID}`);
     // No further retries with intermediate or alternative splits.
     const allUrls = stockCalls.map((c) => c.url);
-    expect(allUrls.some((u) => u.includes(`/product_stock/${PRODUCT_ID.slice(0, -1)}`))).toBe(false);
+    expect(allUrls.some((u) => u.endsWith(`/product_stock/${PRODUCT_ID.slice(0, -1)}`))).toBe(false);
   });
 
   it('never queries alternative hyphen splits when fallback succeeds', async () => {
