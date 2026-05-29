@@ -624,10 +624,8 @@ export default function CheckoutPage() {
         } catch { /* ignore */ }
       }
 
-      const btRef = `PHP-${orderId.slice(4)}-BT`;
       setBankTransferRef(btRef);
       setConfirmedTotal(total);
-      await updateDoc(ref, { bankTransferReference: btRef });
 
       try {
         const invoiceHtml = buildProfessionalInvoiceEmail({
