@@ -575,6 +575,7 @@ export default function CheckoutPage() {
         total: totalAmount,
         totalAmount,
         paymentMethod: 'bank_transfer',
+        bankTransferReference: btRef,
         status: 'pending_payment',
         userId: userId || null,
         // T&C compliance — required for legal audit trail (both field names for admin panel compatibility)
