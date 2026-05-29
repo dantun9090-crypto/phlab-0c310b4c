@@ -38,15 +38,47 @@ service cloud.firestore {
     }
 
     // ---------- orders ----------
-    // Anyone (incl. guests) can CREATE an order at checkout.
-    // Owners can read their own; admins full access.
-    match /orders/{orderId} {
-      allow create: if request.resource.data.totalAmount is number
-                    && request.resource.data.totalAmount >= 0;
-      allow read:   if isAdmin()
-                    || (isSignedIn() && resource.data.userId == request.auth.uid);
-      allow update, delete: if isAdmin();
+    // Anyone (incl. guests) can CREATE an order at checkout, but the payload
+    // must look like a real checkout submission — block attempts to seed
+    // arbitrary admin-controlled fields (paid status, refunds, fulfilment).
+    // Owners can read their own; only admins can mutate after creation,
+    // except a signed-in owner may attach a short customer note.
+    function isOrderOwner() {
+      return isSignedIn() && resource.data.userId == request.auth.uid;
     }
+    function validOrderCreate() {
+      let d = request.resource.data;
+      return d.totalAmount is number && d.totalAmount >= 0
+          && d.subtotal is number && d.subtotal >= 0
+          && d.orderId is string && d.orderId.size() > 0 && d.orderId.size() < 64
+          && d.items is list && d.items.size() > 0 && d.items.size() <= 50
+          && d.customer is map
+          && d.customer.email is string && d.customer.email.size() < 320
+          && d.status == 'pending_payment'
+          && d.paymentMethod is string
+          && (!('userId' in d) || d.userId == null || (isSignedIn() && d.userId == request.auth.uid))
+          // Never trust client-set admin/fulfilment fields at creation time.
+          && !('paid' in d) && !('paidAt' in d)
+          && !('refunded' in d) && !('refundedAt' in d) && !('refundAmount' in d)
+          && !('dispatched' in d) && !('dispatchedAt' in d)
+          && !('trackingNumber' in d) && !('trackingUrl' in d)
+          && !('adminNotes' in d) && !('internalNotes' in d);
+    }
+    function ownerNoteOnlyUpdate() {
+      // Owner may only touch `customerNote` (and a timestamp) — nothing else.
+      let changed = request.resource.data.diff(resource.data).affectedKeys();
+      return changed.hasOnly(['customerNote', 'customerNoteUpdatedAt'])
+          && (!('customerNote' in request.resource.data)
+              || (request.resource.data.customerNote is string
+                  && request.resource.data.customerNote.size() <= 1000));
+    }
+    match /orders/{orderId} {
+      allow create: if validOrderCreate();
+      allow read:   if isAdmin() || isOrderOwner();
+      allow update: if isAdmin() || (isOrderOwner() && ownerNoteOnlyUpdate());
+      allow delete: if isAdmin();
+    }
+
 
     // ---------- email subscribers (newsletter) ----------
     match /emailSubscribers/{docId} {
