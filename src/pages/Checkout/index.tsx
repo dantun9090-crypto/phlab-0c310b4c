@@ -530,6 +530,7 @@ export default function CheckoutPage() {
       const totalAmount = verifiedTotal;
       const shippingOption = SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod);
       const shippingLabel = verifiedIsFreeShipping ? 'Free Delivery (order over £50)' : (shippingOption?.label ?? 'Standard Delivery');
+      const btRef = `PHP-${orderId.slice(4)}-BT`;
       const now = Timestamp.now();
 
       // Build items from cart but OVERWRITE price + total with server-validated values.
