@@ -102,3 +102,60 @@ export function resolveLegacyRedirect(pathname: string): string | null {
   }
   return null;
 }
+
+/**
+ * Legacy Wegic template URLs that no longer exist and have no equivalent.
+ * These should return HTTP 410 Gone so Google removes them from its crawl
+ * queue (vs the current SPA render that confuses crawlers into "Discovered –
+ * currently not indexed").
+ */
+const GONE_PREFIXES = [
+  "/blog-single-page-layout/",
+  "/jobs-1-item/",
+  "/jobs-1/",
+  "/jobs-list/",
+  "/job-detail/",
+  "/team-1-item/",
+  "/team-1/",
+  "/project-1-item/",
+  "/project-1/",
+  "/portfolio-1-item/",
+  "/portfolio-1/",
+  "/service-1-item/",
+  "/service-1/",
+  "/feature-1-item/",
+  "/feature-1/",
+  "/news-1-item/",
+  "/news-1/",
+  "/event-1-item/",
+  "/event-1/",
+  "/testimonial-1-item/",
+  "/case-study-1-item/",
+];
+
+const GONE_EXACT = new Set<string>([
+  "/blog-single-page-layout",
+  "/jobs-1-item",
+  "/jobs-1",
+  "/team-1",
+  "/project-1",
+  "/portfolio-1",
+  "/service-1",
+  "/feature-1",
+  "/news-1",
+  "/event-1",
+]);
+
+/**
+ * Returns true when the path is a known dead Wegic template URL that should
+ * be answered with HTTP 410 Gone.
+ */
+export function isGoneLegacyPath(pathname: string): boolean {
+  const clean =
+    pathname.length > 1 && pathname.endsWith("/")
+      ? pathname.slice(0, -1)
+      : pathname;
+  if (GONE_EXACT.has(clean)) return true;
+  return GONE_PREFIXES.some((p) => clean.startsWith(p));
+}
+

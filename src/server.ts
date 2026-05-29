@@ -2,7 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
-import { resolveLegacyRedirect } from "./lib/legacy-redirects";
+import { isGoneLegacyPath, resolveLegacyRedirect } from "./lib/legacy-redirects";
 import { extractClientIp, log, truncate } from "./lib/worker-log";
 
 
@@ -250,6 +250,25 @@ export default {
         log.info({ event: "worker.redirect", status: 301, to: dest.pathname, ...baseFields });
         return Response.redirect(dest.toString(), 301);
       }
+
+      // 2b. 410 Gone for dead Wegic template URLs so Google removes them
+      // from the crawl queue instead of reporting "Discovered – currently
+      // not indexed" forever.
+      if (isGoneLegacyPath(url.pathname)) {
+        log.info({ event: "worker.gone", status: 410, ...baseFields });
+        return new Response(
+          "<!doctype html><html><head><meta name=\"robots\" content=\"noindex\"><meta name=\"prerender-status-code\" content=\"410\"><title>410 Gone</title></head><body><h1>410 Gone</h1><p>This page no longer exists.</p></body></html>",
+          {
+            status: 410,
+            headers: {
+              "content-type": "text/html; charset=utf-8",
+              "x-robots-tag": "noindex, nofollow",
+              "cache-control": "public, max-age=86400",
+            },
+          },
+        );
+      }
+
 
       // 3. Bot management
       const rawUa = request.headers.get("user-agent") || "";
