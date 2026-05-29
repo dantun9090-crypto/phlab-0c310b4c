@@ -530,6 +530,7 @@ export default function CheckoutPage() {
       const totalAmount = verifiedTotal;
       const shippingOption = SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod);
       const shippingLabel = verifiedIsFreeShipping ? 'Free Delivery (order over £50)' : (shippingOption?.label ?? 'Standard Delivery');
+      const btRef = `PHP-${orderId.slice(4)}-BT`;
       const now = Timestamp.now();
 
       // Build items from cart but OVERWRITE price + total with server-validated values.
@@ -574,6 +575,7 @@ export default function CheckoutPage() {
         total: totalAmount,
         totalAmount,
         paymentMethod: 'bank_transfer',
+        bankTransferReference: btRef,
         status: 'pending_payment',
         userId: userId || null,
         // T&C compliance — required for legal audit trail (both field names for admin panel compatibility)
@@ -599,7 +601,7 @@ export default function CheckoutPage() {
         }
       }
 
-      const ref = await addDoc(collection(db, 'orders'), orderData);
+      await addDoc(collection(db, 'orders'), orderData);
 
       if (serverCoupon) {
         try { await redeemCoupon(serverCoupon.id); } catch { /* ignore */ }
@@ -622,10 +624,8 @@ export default function CheckoutPage() {
         } catch { /* ignore */ }
       }
 
-      const btRef = `PHP-${orderId.slice(4)}-BT`;
       setBankTransferRef(btRef);
       setConfirmedTotal(total);
-      await updateDoc(ref, { bankTransferReference: btRef });
 
       try {
         const invoiceHtml = buildProfessionalInvoiceEmail({
