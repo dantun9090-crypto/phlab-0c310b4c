@@ -75,12 +75,26 @@ const RULES: RedirectRule[] = [
   { type: "exact", from: "/products/kpv-tripeptide", to: "/products/kpv-synthetic-tripeptide-lys-pro-val-analytical-standard-99-hplc-cas-67727-97-3-for-research-use-only-ruo" },
   { type: "exact", from: "/products/pt-141-bremelanotide", to: "/products/pt-141-synthetic-cyclic-heptapeptide-analytical-standard-99-hplc-cas-189691-06-3-for-research-use-only-ruo" },
   { type: "exact", from: "/products/bacteriostatic-water", to: "/products/bacteriostatic-water-0-9-benzyl-alcohol-laboratory-diluent-reagent-for-research-use-only-ruo" },
+  { type: "exact", from: "/products/bacteriostatic-water-0-9-benzyl-alcohol-lab-diluent", to: "/products/bacteriostatic-water-0-9-benzyl-alcohol-laboratory-diluent-reagent-for-research-use-only-ruo" },
+  { type: "exact", from: "/products/mt-2", to: "/products/melanotan-ii-synthetic-cyclic-heptapeptide-analytical-standard-99-hplc-cas-121062-08-6-for-research-use-only-ruo" },
+  { type: "exact", from: "/products/nad-nicotinamide-adenine-dinucleotide-lab-use-only", to: "/products/nicotinamide-adenine-dinucleotide-nad-analytical-standard-99-hplc-cas-53-84-9-laboratory-reagent-for-research-use-only-ruo" },
 
   // Discontinued products → redirect to catalogue (better than 404 for SEO).
   { type: "exact", from: "/products/hexarelin", to: "/products" },
   { type: "exact", from: "/products/mod-grf-1-29", to: "/products" },
   { type: "exact", from: "/products/follistatin-344", to: "/products" },
+  { type: "exact", from: "/products/cerebrolysin", to: "/products" },
+  { type: "exact", from: "/products/cjc-1295", to: "/products" },
+  { type: "exact", from: "/products/igf-1-lr3", to: "/products" },
+  { type: "exact", from: "/products/ipamorelin", to: "/products" },
+  { type: "exact", from: "/products/kisspeptin-10", to: "/products" },
+  { type: "exact", from: "/products/oxytocin", to: "/products" },
+  { type: "exact", from: "/products/selank", to: "/products" },
+  { type: "exact", from: "/products/semax", to: "/products" },
+  { type: "exact", from: "/products/semaglutide", to: "/products" },
+  { type: "exact", from: "/products/tb-500", to: "/products" },
 ];
+
 
 /**
  * Returns a destination path (with leading slash) for a legacy URL,
