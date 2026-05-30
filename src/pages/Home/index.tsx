@@ -6,7 +6,7 @@ import { getProductImage } from '@/lib/productImages';
 import { subscribeToProducts, db, doc, getDoc, getDocs, collection, query, where, addDoc, Timestamp } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
 import { nameToSlug } from '@/lib/seedProducts';
-import { protocolLibraryEmail } from '@/templates/protocolLibraryEmail';
+import { sendPublicMail } from '@/lib/sendPublicMail';
 
 import { useSEO } from '@/hooks/useSEO';
 
@@ -342,16 +342,13 @@ export default function HomePage() {
         timestamp: new Date().toISOString(),
       }));
       const pdfUrl = 'https://www.phlabs.co.uk/downloads/protocol-library.pdf';
-      const html = protocolLibraryEmail({ recipientEmail: email, discountCode, pdfDownloadUrl: pdfUrl });
       try {
-        await withRetry('mail-enqueue', () => addDoc(collection(db, 'mail'), {
-          to: email,
-          message: {
-            subject: 'Your Free Research Protocol Library — PH Labs',
-            html,
-          },
-          createdAt: now,
-        }));
+        await sendPublicMail({
+          template: 'protocol-library',
+          email,
+          discountCode,
+          pdfUrl,
+        });
       } catch (mailErr) {
         console.warn('Mail enqueue failed (non-fatal, code still shown):', mailErr);
       }
