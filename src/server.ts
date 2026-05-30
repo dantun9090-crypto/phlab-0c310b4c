@@ -231,6 +231,26 @@ export default {
         return new Response("ok", { status: 200, headers: { "content-type": "text/plain" } });
       }
 
+      // 0b. Firebase Auth proxy — custom auth domain www.phlabs.co.uk
+      // musi obsługiwać /__/auth/* i /__/firebase/* przez origin
+      // Firebase (prohealthpeptides-a0808.firebaseapp.com).
+      if (url.pathname.startsWith("/__/auth/") || url.pathname.startsWith("/__/firebase/")) {
+        const fbUrl = new URL(url.pathname + url.search, "https://prohealthpeptides-a0808.firebaseapp.com");
+        const fbReq = new Request(fbUrl.toString(), {
+          method: request.method,
+          headers: request.headers,
+          body: request.body,
+          redirect: "manual",
+        });
+        const fbResp = await fetch(fbReq);
+        // Preserve all Firebase headers; just pass the response through.
+        return new Response(fbResp.body, {
+          status: fbResp.status,
+          statusText: fbResp.statusText,
+          headers: fbResp.headers,
+        });
+      }
+
       // 1. Canonical host redirect (apex + legacy brand domains → www.phlabs.co.uk).
       const reqHost = url.hostname.toLowerCase();
       if (REDIRECT_HOSTS.has(reqHost)) {
