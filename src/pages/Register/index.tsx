@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, CheckCircle2, Loader2, Gift, Phone } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { registerUser, signInWithGoogle } from '@/lib/firebase';
+import { registerUser, signInWithGoogle, ensureAppCheck } from '@/lib/firebase';
 
 
 export default function Register() {
