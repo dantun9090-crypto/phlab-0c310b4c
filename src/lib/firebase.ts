@@ -518,15 +518,29 @@ export const resetPassword = async (email: string) => {
 
 export const loginUser = async (email: string, password: string) => {
   await ensureAppCheckReady();
-  const userCredential = await signInWithEmailAndPassword(auth, email, password);
+  let userCredential;
+  try {
+    userCredential = await signInWithEmailAndPassword(auth, email, password);
+  } catch (err) {
+    const { logAuthFailure } = await import('@/lib/auth-events');
+    logAuthFailure('login_failure', err, { email });
+    throw err;
+  }
 
   try {
     await updateDoc(doc(db, 'customers', userCredential.user.uid), { lastLoginAt: Timestamp.now() });
   } catch { /* doc may not exist yet */ }
+  const { logAuthEvent } = await import('@/lib/auth-events');
+  logAuthEvent({ type: 'login_success', email, uid: userCredential.user.uid });
   return userCredential;
 };
 
-export const logoutUser = () => signOut(auth);
+export const logoutUser = async () => {
+  const current = auth.currentUser;
+  const { logAuthEvent } = await import('@/lib/auth-events');
+  logAuthEvent({ type: 'logout', email: current?.email ?? null, uid: current?.uid ?? null });
+  return signOut(auth);
+};
 export const onAuthChange = (callback: (user: FirebaseUser | null) => void) =>
   onAuthStateChanged(auth, callback);
 
@@ -536,7 +550,14 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export const signInWithGoogle = async () => {
   await ensureAppCheckReady();
-  const result = await signInWithPopup(auth, googleProvider);
+  let result;
+  try {
+    result = await signInWithPopup(auth, googleProvider);
+  } catch (err) {
+    const { logAuthFailure } = await import('@/lib/auth-events');
+    logAuthFailure('google_failure', err);
+    throw err;
+  }
 
   const user = result.user;
 
@@ -576,8 +597,11 @@ export const signInWithGoogle = async () => {
   } else {
     await updateDoc(customerRef, { lastLoginAt: Timestamp.now() });
   }
+  const { logAuthEvent } = await import('@/lib/auth-events');
+  logAuthEvent({ type: 'google_success', email: user.email ?? null, uid: user.uid });
   return result;
 };
+
 
 export const getUserProfile = async (uid: string): Promise<User | null> => {
   const docSnap = await getDoc(doc(db, 'customers', uid));
