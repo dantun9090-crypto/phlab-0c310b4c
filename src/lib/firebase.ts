@@ -709,8 +709,17 @@ export const addProduct = async (product: Omit<Product, 'id'>) => {
   };
   const ref = await addDoc(collection(db, PRODUCTS_COL), data);
   invalidateProductsCache();
+  // Fire-and-forget CDN/prerender invalidation (defined below)
+  if (typeof window !== 'undefined') {
+    void import('./cache-invalidate.functions')
+      .then(({ invalidateProductCache }) =>
+        invalidateProductCache({ data: { category: data.category } }).catch(() => {}),
+      )
+      .catch(() => {});
+  }
   return ref.id;
 };
+
 
 function invalidateProductsCache() {
   try {
