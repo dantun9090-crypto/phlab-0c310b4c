@@ -22,7 +22,7 @@ export function Logo({ className = '', size = 'md' }: LogoProps) {
   
   return (
     <img
-      src="https://cdn.wegic.ai/assets/onepage/agent/images/1775896855290_edited.png?imageMogr2/format/webp"
+      src={logoSrc}
       alt="PH Labs Logo"
       width={width}
       height={height}
