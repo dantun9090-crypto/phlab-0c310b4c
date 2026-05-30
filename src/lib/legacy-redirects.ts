@@ -53,31 +53,81 @@ const RULES: RedirectRule[] = [
   { type: "prefix", from: "/page/", to: "/" },
 
   // check-domains-allow-next-line: nazwa starej domeny tylko w komentarzu
-  // Legacy long product slugs from prohealthpeptides.co.uk → current slugs.
-  // Googlebot still has these indexed; 301 here so we don't waste crawl budget
-  // on a 404 page rendered through Prerender.io.
-  { type: "exact", from: "/products/tirzepatide-research-reference-compound-for-lab-use", to: "/products/tirzepatide-synthetic-peptide-analytical-standard-99-hplc-cas-2023788-19-2-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/tirzepatide", to: "/products/tirzepatide-synthetic-peptide-analytical-standard-99-hplc-cas-2023788-19-2-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/retatrutide-laboratory-research-reference-compound", to: "/products/retatrutide-synthetic-peptide-analytical-standard-99-hplc-cas-2381089-83-2-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/retatrutide", to: "/products/retatrutide-synthetic-peptide-analytical-standard-99-hplc-cas-2381089-83-2-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/ghk-cu-copper-tripeptide-lab-reference-compound", to: "/products/ghk-cu-synthetic-tripeptide-copper-complex-analytical-standard-99-hplc-cas-89030-95-5-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/ghk-cu-copper-peptide", to: "/products/ghk-cu-synthetic-tripeptide-copper-complex-analytical-standard-99-hplc-cas-89030-95-5-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/mots-c-mitochondrial-peptide-lab-reference-compound", to: "/products/mots-c-synthetic-16-residue-peptide-analytical-standard-99-hplc-cas-1627580-64-6-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/mots-c", to: "/products/mots-c-synthetic-16-residue-peptide-analytical-standard-99-hplc-cas-1627580-64-6-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/melanotan-ii-laboratory-research-compound-research", to: "/products/melanotan-ii-synthetic-cyclic-heptapeptide-analytical-standard-99-hplc-cas-121062-08-6-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/mt-2-melanotan-ii", to: "/products/melanotan-ii-synthetic-cyclic-heptapeptide-analytical-standard-99-hplc-cas-121062-08-6-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/nad-nicotinamide-adenine-dinucleotide", to: "/products/nicotinamide-adenine-dinucleotide-nad-analytical-standard-99-hplc-cas-53-84-9-laboratory-reagent-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/nad-plus", to: "/products/nicotinamide-adenine-dinucleotide-nad-analytical-standard-99-hplc-cas-53-84-9-laboratory-reagent-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/klow-blend-laboratory-reference-blend-research-use", to: "/products" },
-  { type: "exact", from: "/products/klow-blend", to: "/products" },
-  { type: "exact", from: "/products/glow-blend", to: "/products" },
-  { type: "exact", from: "/products/bpc-157", to: "/products/synthetic-pentadecapeptide-reference-material-10-mg-analytical-standard-99-hplc-cas-137525-51-0-for-in-vitro-research-use-only-ruo" },
-  { type: "exact", from: "/products/kpv-tripeptide", to: "/products/kpv-synthetic-tripeptide-lys-pro-val-analytical-standard-99-hplc-cas-67727-97-3-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/pt-141-bremelanotide", to: "/products/pt-141-synthetic-cyclic-heptapeptide-analytical-standard-99-hplc-cas-189691-06-3-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/bacteriostatic-water", to: "/products/bacteriostatic-water-0-9-benzyl-alcohol-laboratory-diluent-reagent-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/bacteriostatic-water-0-9-benzyl-alcohol-lab-diluent", to: "/products/bacteriostatic-water-0-9-benzyl-alcohol-laboratory-diluent-reagent-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/mt-2", to: "/products/melanotan-ii-synthetic-cyclic-heptapeptide-analytical-standard-99-hplc-cas-121062-08-6-for-research-use-only-ruo" },
-  { type: "exact", from: "/products/nad-nicotinamide-adenine-dinucleotide-lab-use-only", to: "/products/nicotinamide-adenine-dinucleotide-nad-analytical-standard-99-hplc-cas-53-84-9-laboratory-reagent-for-research-use-only-ruo" },
+  // Legacy long product slugs from prohealthpeptides.co.uk → CURRENT Firestore
+  // slugs. Targets MUST match real slugs in product_stock collection
+  // (otherwise redirect lands on a 404 and Prerender keeps serving 404).
+  // Current canonical slugs (as of 2026-05-30):
+  //   bpc-157, glow-blend, klow-blend, pt-141-research-peptide,
+  //   retatrutide-research-peptide, tb-500-thymosin-beta-4,
+  //   mots-c-research-peptide, kpv-research-peptide,
+  //   tirzepatide-research-peptide, melanotan-ii-research-peptide,
+  //   bacteriostatic-water-research-compound, ghk-cu-research-peptide,
+  //   nad-research-compound.
+
+  // Tirzepatide
+  { type: "exact", from: "/products/tirzepatide", to: "/products/tirzepatide-research-peptide" },
+  { type: "exact", from: "/products/tirzepatide-research-reference-compound-for-lab-use", to: "/products/tirzepatide-research-peptide" },
+  { type: "exact", from: "/products/tirzepatide-synthetic-peptide-analytical-standard-99-hplc-cas-2023788-19-2-for-research-use-only-ruo", to: "/products/tirzepatide-research-peptide" },
+
+  // Retatrutide
+  { type: "exact", from: "/products/retatrutide", to: "/products/retatrutide-research-peptide" },
+  { type: "exact", from: "/products/retatrutide-laboratory-research-reference-compound", to: "/products/retatrutide-research-peptide" },
+  { type: "exact", from: "/products/retatrutide-synthetic-peptide-analytical-standard-99-hplc-cas-2381089-83-2-for-research-use-only-ruo", to: "/products/retatrutide-research-peptide" },
+
+  // GHK-Cu
+  { type: "exact", from: "/products/ghk-cu", to: "/products/ghk-cu-research-peptide" },
+  { type: "exact", from: "/products/ghk-cu-copper-peptide", to: "/products/ghk-cu-research-peptide" },
+  { type: "exact", from: "/products/ghk-cu-copper-tripeptide-lab-reference-compound", to: "/products/ghk-cu-research-peptide" },
+  { type: "exact", from: "/products/ghk-cu-synthetic-tripeptide-copper-complex-analytical-standard-99-hplc-cas-89030-95-5-for-research-use-only-ruo", to: "/products/ghk-cu-research-peptide" },
+
+  // MOTS-c
+  { type: "exact", from: "/products/mots-c", to: "/products/mots-c-research-peptide" },
+  { type: "exact", from: "/products/mots-c-mitochondrial-peptide-lab-reference-compound", to: "/products/mots-c-research-peptide" },
+  { type: "exact", from: "/products/mots-c-synthetic-16-residue-peptide-analytical-standard-99-hplc-cas-1627580-64-6-for-research-use-only-ruo", to: "/products/mots-c-research-peptide" },
+
+  // Melanotan-II / MT-2
+  { type: "exact", from: "/products/mt-2", to: "/products/melanotan-ii-research-peptide" },
+  { type: "exact", from: "/products/mt-2-melanotan-ii", to: "/products/melanotan-ii-research-peptide" },
+  { type: "exact", from: "/products/melanotan-ii", to: "/products/melanotan-ii-research-peptide" },
+  { type: "exact", from: "/products/melanotan-ii-laboratory-research-compound-research", to: "/products/melanotan-ii-research-peptide" },
+  { type: "exact", from: "/products/melanotan-ii-laboratory-reference-compound-research", to: "/products/melanotan-ii-research-peptide" },
+  { type: "exact", from: "/products/melanotan-ii-synthetic-cyclic-heptapeptide-analytical-standard-99-hplc-cas-121062-08-6-for-research-use-only-ruo", to: "/products/melanotan-ii-research-peptide" },
+
+  // NAD+
+  { type: "exact", from: "/products/nad", to: "/products/nad-research-compound" },
+  { type: "exact", from: "/products/nad-plus", to: "/products/nad-research-compound" },
+  { type: "exact", from: "/products/nad-nicotinamide-adenine-dinucleotide", to: "/products/nad-research-compound" },
+  { type: "exact", from: "/products/nad-nicotinamide-adenine-dinucleotide-lab-use-only", to: "/products/nad-research-compound" },
+  { type: "exact", from: "/products/nicotinamide-adenine-dinucleotide-nad-analytical-standard-99-hplc-cas-53-84-9-laboratory-reagent-for-research-use-only-ruo", to: "/products/nad-research-compound" },
+
+  // BPC-157
+  { type: "exact", from: "/products/synthetic-pentadecapeptide-reference-material-10-mg-analytical-standard-99-hplc-cas-137525-51-0-for-in-vitro-research-use-only-ruo", to: "/products/bpc-157" },
+
+  // KPV
+  { type: "exact", from: "/products/kpv", to: "/products/kpv-research-peptide" },
+  { type: "exact", from: "/products/kpv-tripeptide", to: "/products/kpv-research-peptide" },
+  { type: "exact", from: "/products/kpv-tripeptide-reference-compound-for-lab-research", to: "/products/kpv-research-peptide" },
+  { type: "exact", from: "/products/kpv-synthetic-tripeptide-lys-pro-val-analytical-standard-99-hplc-cas-67727-97-3-for-research-use-only-ruo", to: "/products/kpv-research-peptide" },
+
+  // PT-141
+  { type: "exact", from: "/products/pt-141", to: "/products/pt-141-research-peptide" },
+  { type: "exact", from: "/products/pt-141-bremelanotide", to: "/products/pt-141-research-peptide" },
+  { type: "exact", from: "/products/pt-141-synthetic-cyclic-heptapeptide-analytical-standard-99-hplc-cas-189691-06-3-for-research-use-only-ruo", to: "/products/pt-141-research-peptide" },
+
+  // TB-500
+  { type: "exact", from: "/products/tb-500", to: "/products/tb-500-thymosin-beta-4" },
+  { type: "exact", from: "/products/thymosin-beta-4", to: "/products/tb-500-thymosin-beta-4" },
+  { type: "exact", from: "/products/synthetic-heptapeptide-fragment-tb-500-analytical-standard-99-hplc-cas-77591-33-4-for-research-use-only-ruo", to: "/products/tb-500-thymosin-beta-4" },
+
+  // Bacteriostatic water
+  { type: "exact", from: "/products/bacteriostatic-water", to: "/products/bacteriostatic-water-research-compound" },
+  { type: "exact", from: "/products/bacteriostatic-water-0-9-benzyl-alcohol-lab-diluent", to: "/products/bacteriostatic-water-research-compound" },
+  { type: "exact", from: "/products/bacteriostatic-water-0-9-benzyl-alcohol-laboratory-diluent-reagent-for-research-use-only-ruo", to: "/products/bacteriostatic-water-research-compound" },
+
+  // Blends
+  { type: "exact", from: "/products/glow-blend-laboratory-reference-blend-research-use", to: "/products/glow-blend" },
+  { type: "exact", from: "/products/klow-blend", to: "/products/klow-blend" },
+  { type: "exact", from: "/products/klow-blend-laboratory-reference-blend-research-use", to: "/products/klow-blend" },
 
   // Discontinued products → redirect to catalogue (better than 404 for SEO).
   { type: "exact", from: "/products/hexarelin", to: "/products" },
@@ -92,7 +142,13 @@ const RULES: RedirectRule[] = [
   { type: "exact", from: "/products/selank", to: "/products" },
   { type: "exact", from: "/products/semax", to: "/products" },
   { type: "exact", from: "/products/semaglutide", to: "/products" },
-  { type: "exact", from: "/products/tb-500", to: "/products" },
+  { type: "exact", from: "/products/epithalon", to: "/products" },
+  { type: "exact", from: "/products/ss-31-elamipretide", to: "/products" },
+  { type: "exact", from: "/products/ss-31", to: "/products" },
+  { type: "exact", from: "/products/elamipretide", to: "/products" },
+
+  // Firestore doc-ID style URLs (legacy) → catalogue
+  { type: "prefix", from: "/products/2s5IGEx2RgUDLfbfjBbF", to: "/products" },
 ];
 
 
