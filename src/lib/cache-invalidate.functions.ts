@@ -42,7 +42,12 @@ const InputSchema = z.object({
     .max(60)
     .regex(/^[a-z0-9-]+$/)
     .optional(),
+  // Firebase ID token of an admin user. Required — without it any anonymous
+  // visitor could spam Cloudflare cache-purge and Prerender.io recache APIs
+  // and exhaust quota.
+  idToken: z.string().min(20).max(4096),
 });
+
 
 function productUrls(slug?: string, category?: string): string[] {
   const urls = new Set<string>([
