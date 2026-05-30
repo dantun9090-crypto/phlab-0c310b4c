@@ -14,7 +14,7 @@ import {
 import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
 import { migrateStoredCart } from '@/lib/cart-migration';
-import { buildProfessionalInvoiceEmail } from '@/templates/professionalInvoiceEmail';
+import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
 
 
@@ -628,7 +628,9 @@ export default function CheckoutPage() {
       setConfirmedTotal(total);
 
       try {
-        const invoiceHtml = buildProfessionalInvoiceEmail({
+        await sendPublicMail({
+          template: 'order-confirmation',
+          email: form.email,
           orderId,
           firstName: form.firstName,
           items: cart.map(item => ({
@@ -651,15 +653,6 @@ export default function CheckoutPage() {
           bankAccountNumber: siteSettings.bankTransferAccountNumber,
           bankIBAN: siteSettings.bankTransferIBAN,
           bankInstructions: siteSettings.bankTransferInstructions,
-        });
-
-        await addDoc(collection(db, 'mail'), {
-          to: form.email,
-          message: {
-            subject: `Order Confirmed — ${orderId} | PH Labs`,
-            html: invoiceHtml,
-          },
-          createdAt: Timestamp.now(),
         });
       } catch { /* non-blocking */ }
 

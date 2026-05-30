@@ -44,13 +44,36 @@ const REDIRECT_HOSTS = new Set<string>([
   "www.prohealthpeptides.co.uk",
 ]);
 
+// Content-Security-Policy — locked down to the origins this app actually
+// loads from. `'unsafe-inline'` on scripts is required for the canonical /
+// boot-watchdog inline scripts in __root.tsx and for Firebase/Google Tag
+// injected snippets. Tighten further (nonces) once those are removed.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://js.stripe.com https://cdn.wegic.ai",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' https: data:",
+  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://firebasestorage.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.google-analytics.com https://api.stripe.com https://service.prerender.io wss://*.firebaseio.com",
+  "frame-src 'self' https://*.firebaseapp.com https://js.stripe.com https://hooks.stripe.com https://www.google.com",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'self'",
+  "upgrade-insecure-requests",
+].join("; ");
+
 const SECURITY_HEADERS: Record<string, string> = {
   "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
   "x-content-type-options": "nosniff",
   "x-frame-options": "SAMEORIGIN",
   "referrer-policy": "strict-origin-when-cross-origin",
-  "permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+  "permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(self)",
   "x-xss-protection": "0",
+  "cross-origin-opener-policy": "same-origin-allow-popups",
+  "content-security-policy": CSP,
 };
 
 // ==================== Bot management + Prerender.io ====================
