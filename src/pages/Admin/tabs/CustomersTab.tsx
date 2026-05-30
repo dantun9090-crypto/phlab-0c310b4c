@@ -95,7 +95,14 @@ export default function CustomersTab() {
   const handleRoleChange = async (uid: string, role: string) => {
     setSaving(uid);
     try {
+      const prevRole = customers.find(c => c.uid === uid)?.role ?? null;
       await updateDoc(doc(db, 'customers', uid), { role });
+      await logAdminAction({
+        action: 'customer.role.update',
+        target: `customers/${uid}`,
+        before: { role: prevRole },
+        after: { role },
+      });
       setCustomers(prev => prev.map(c => c.uid === uid ? { ...c, role } : c));
     } catch (err) {
       console.error(err);
@@ -109,6 +116,11 @@ export default function CustomersTab() {
     setSaving(uid);
     try {
       await updateDoc(doc(db, 'customers', uid), { isActive: false });
+      await logAdminAction({
+        action: 'customer.deactivate',
+        target: `customers/${uid}`,
+        after: { isActive: false },
+      });
       setCustomers(prev => prev.map(c => c.uid === uid ? { ...c, isActive: false } : c));
     } catch (err) {
       console.error(err);
@@ -121,6 +133,12 @@ export default function CustomersTab() {
     setSaving(uid);
     try {
       await updateDoc(doc(db, 'customers', uid), { isVip: !currentVip });
+      await logAdminAction({
+        action: 'customer.vip.toggle',
+        target: `customers/${uid}`,
+        before: { isVip: currentVip },
+        after: { isVip: !currentVip },
+      });
       setCustomers(prev => prev.map(c => c.uid === uid ? { ...c, isVip: !currentVip } : c));
     } catch (err) {
       console.error(err);
