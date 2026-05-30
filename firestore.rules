@@ -105,9 +105,13 @@ service cloud.firestore {
     match /promoCodes/{id}      { allow read: if isAdmin(); allow write: if isAdmin(); }
     match /ipWhitelist/{id}     { allow read: if isAdmin(); allow write: if isAdmin(); }
     match /mail/{id} {
-      // Trigger Email extension target. Guests must be able to create the
-      // order-confirmation email at checkout, but only with a strict shape.
-      allow create: if request.resource.data.to is string
+      // Trigger Email extension target.
+      // Guest emails (contact form, newsletter, guest checkout) are written
+      // by the /api/public/send-mail server route using a service-account
+      // credential (which bypasses rules). Client writes are restricted to
+      // admins so an attacker cannot use this collection as an open relay.
+      allow create: if isAdmin()
+                    && request.resource.data.to is string
                     && request.resource.data.to.size() > 3
                     && request.resource.data.to.size() < 320
                     && request.resource.data.to.matches('.+@.+\\..+')
@@ -115,11 +119,7 @@ service cloud.firestore {
                     && request.resource.data.message.subject is string
                     && request.resource.data.message.subject.size() < 200
                     && request.resource.data.message.html is string
-                    && request.resource.data.message.html.size() < 200000
-                    && !('bcc' in request.resource.data)
-                    && !('cc' in request.resource.data)
-                    && !('from' in request.resource.data)
-                    && !('replyTo' in request.resource.data);
+                    && request.resource.data.message.html.size() < 200000;
       allow read, update, delete: if isAdmin();
     }
     match /invoices/{id}        { allow read: if isAdmin(); allow write: if isAdmin(); }
