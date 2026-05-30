@@ -460,7 +460,14 @@ export const registerUser = async (
   tcAccepted?: boolean,
 ) => {
   await ensureAppCheckReady();
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  let userCredential;
+  try {
+    userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  } catch (err) {
+    const { logAuthFailure } = await import('@/lib/auth-events');
+    logAuthFailure('register_failure', err, { email });
+    throw err;
+  }
 
   const user = userCredential.user;
   const referralCode = generateReferralCode();
@@ -491,12 +498,23 @@ export const registerUser = async (
   // Send email verification
   await sendEmailVerification(user);
   await logActivity({ type: 'signup', message: `New user registered: ${email}`, userId: user.uid });
+  const { logAuthEvent } = await import('@/lib/auth-events');
+  logAuthEvent({ type: 'register_success', email, uid: user.uid });
   return userCredential;
 };
 
 export const resetPassword = async (email: string) => {
-  await sendPasswordResetEmail(auth, email);
+  try {
+    await sendPasswordResetEmail(auth, email);
+    const { logAuthEvent } = await import('@/lib/auth-events');
+    logAuthEvent({ type: 'password_reset_request', email });
+  } catch (err) {
+    const { logAuthFailure } = await import('@/lib/auth-events');
+    logAuthFailure('password_reset_failure', err, { email });
+    throw err;
+  }
 };
+
 
 export const loginUser = async (email: string, password: string) => {
   await ensureAppCheckReady();
