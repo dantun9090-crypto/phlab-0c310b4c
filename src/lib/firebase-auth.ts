@@ -11,10 +11,12 @@ import type { User as FirebaseUser } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyB5sWYCTkzeFFup0mqyg3PzCIzjP2oGJdM',
-  // Custom auth domain — musi być dodana w Firebase Console →
-  // Authentication → Settings → Authorized domains (oraz w OAuth client
-  // w Google Cloud jako Authorized JavaScript origin + redirect URI:
-  // https://www.phlabs.co.uk/__/auth/handler).
+  // Custom auth domain — www.phlabs.co.uk jest proxy'owane przez Cloudflare
+  // Worker do prohealthpeptides-a0808.firebaseapp.com (zob. src/server.ts).
+  // Mimo proxy, domena MUSI być dodana w Firebase Console → Authentication →
+  // Settings → Authorized domains. W Google Cloud OAuth 2.0 Client dodaj
+  // https://www.phlabs.co.uk jako Authorized JavaScript origin oraz
+  // https://www.phlabs.co.uk/__/auth/handler jako redirect URI.
   authDomain: 'www.phlabs.co.uk',
   projectId: 'prohealthpeptides-a0808',
   storageBucket: 'prohealthpeptides-a0808.firebasestorage.app',
