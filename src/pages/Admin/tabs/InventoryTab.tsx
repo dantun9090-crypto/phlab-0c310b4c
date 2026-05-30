@@ -113,6 +113,10 @@ export default function InventoryTab() {
           <p className="text-[#9cb8d9] text-xs sm:text-sm">
             {products.length} products — {products.filter(p => (p.stock || 0) <= LOW_STOCK_THRESHOLD).length} low stock
           </p>
+          <p className="text-emerald-400/80 text-[11px] mt-1">
+            ⚡ Auto cache: every add / update / delete triggers a Cloudflare purge + Prerender.io recache for /products and the affected product URL.
+          </p>
+
         </div>
         <div className="flex gap-2 flex-wrap">
           {bulkSelected.length > 0 && (
