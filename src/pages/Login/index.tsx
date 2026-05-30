@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { loginUser, resetPassword, signInWithGoogle, db, doc, getDoc } from '@/lib/firebase';
+import { loginUser, resetPassword, signInWithGoogle, db, doc, getDoc, ensureAppCheck } from '@/lib/firebase';
 
 import { motion, AnimatePresence } from 'framer-motion';
 
