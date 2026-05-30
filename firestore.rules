@@ -126,6 +126,23 @@ service cloud.firestore {
     match /backups/{id}         { allow read: if isAdmin(); allow write: if isAdmin(); }
     match /emailMarketing/{id}  { allow read: if isAdmin(); allow write: if isAdmin(); }
 
+    // ---------- audit logs (append-only) ----------
+    // Any signed-in admin may APPEND a log entry from the admin panel so
+    // privileged actions are auditable. Nobody — not even admins from the
+    // client — may update or delete past entries. Server-side service
+    // accounts (firebase-admin) bypass rules entirely for back-fills.
+    match /auditLogs/{id} {
+      allow read:   if isAdmin();
+      allow create: if isAdmin()
+                    && request.resource.data.adminUid == request.auth.uid
+                    && request.resource.data.action is string
+                    && request.resource.data.action.size() > 0
+                    && request.resource.data.action.size() < 64
+                    && request.resource.data.target is string
+                    && request.resource.data.target.size() < 256;
+      allow update, delete: if false;
+    }
+
     // ---------- default deny ----------
     match /{document=**} {
       allow read, write: if false;
