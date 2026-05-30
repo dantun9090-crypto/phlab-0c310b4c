@@ -144,6 +144,9 @@ export default function CheckoutPage() {
     const handle = setTimeout(async () => {
       setPreflightChecking(true);
       try {
+        const idToken = auth.currentUser && !auth.currentUser.isAnonymous
+          ? await auth.currentUser.getIdToken().catch(() => null)
+          : null;
         const result = await validateCartPrices({
           data: {
             items: cart.map(item => ({
@@ -151,6 +154,7 @@ export default function CheckoutPage() {
               variantId: item.variantId ? String(item.variantId) : null,
               quantity: item.quantity,
             })),
+            idToken,
           },
         });
         // Ignore late responses if cart changed again mid-flight.
