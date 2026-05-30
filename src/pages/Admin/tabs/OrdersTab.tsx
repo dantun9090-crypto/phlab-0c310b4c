@@ -291,6 +291,12 @@ export default function OrdersTab() {
         update.status = 'cancelled';
       }
       await updateDoc(doc(db, 'orders', selected.id), update);
+      await logAdminAction({
+        action: 'order.status.update',
+        target: `orders/${selected.id}`,
+        before: { status: selected.status, paymentStatus: (selected as any).paymentStatus ?? null },
+        after: update,
+      });
       setOrders(prev => prev.map(o => o.id === selected.id ? { ...o, ...update } : o));
       setSelected(prev => prev ? { ...prev, ...update } : prev);
       setTransferMsg(
