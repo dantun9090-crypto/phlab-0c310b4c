@@ -167,6 +167,29 @@ function getArticleForProduct(productName: string): { slug: string; title: strin
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  // Variant URL guard — strip malicious / unknown ?variant= values BEFORE
+  // anything else runs. Blocks open-redirect, XSS, and path-traversal
+  // attempts (e.g. ?variant=../../../admin or ?variant=<script>).
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('variant');
+    if (raw == null) return;
+    // Lazy import to keep this side-effect tiny.
+    import('@/lib/variant-guard').then(({ sanitizeVariant }) => {
+      const clean = sanitizeVariant(raw);
+      if (clean === raw) return; // already canonical
+      params.delete('variant');
+      if (clean) params.set('variant', clean);
+      const next =
+        window.location.pathname +
+        (params.toString() ? `?${params.toString()}` : '') +
+        window.location.hash;
+      window.history.replaceState(null, '', next);
+    });
+  }, []);
+
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
