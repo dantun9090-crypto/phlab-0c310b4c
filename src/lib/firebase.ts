@@ -485,6 +485,7 @@ const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export const signInWithGoogle = async () => {
+  ensureAppCheck();
   const result = await signInWithPopup(auth, googleProvider);
   const user = result.user;
 
