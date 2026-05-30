@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { isGoneLegacyPath, resolveLegacyRedirect } from "./lib/legacy-redirects";
+import { isKnownFirstSegment } from "./lib/known-roots";
 import { extractClientIp, log, truncate } from "./lib/worker-log";
 
 
@@ -375,7 +376,29 @@ export default {
       // 4. Normal SSR path
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      const normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response));
+      let normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response));
+
+      // 4b. Unknown top-level path → real HTTP 404 + noindex header so Google
+      // doesn't index junk URLs (meta name=robots is overridden by the HTTP
+      // header otherwise).
+      const ct = normalized.headers.get("content-type") ?? "";
+      if (
+        normalized.status === 200 &&
+        ct.includes("text/html") &&
+        !BYPASS_PATH_PREFIXES.some((p) => url.pathname.startsWith(p)) &&
+        !STATIC_EXT.test(url.pathname) &&
+        !isKnownFirstSegment(url.pathname)
+      ) {
+        const h = new Headers(normalized.headers);
+        h.set("x-robots-tag", "noindex, follow");
+        h.set("cache-control", "public, max-age=300");
+        normalized = new Response(normalized.body, {
+          status: 404,
+          statusText: "Not Found",
+          headers: h,
+        });
+      }
+
       const ms = Date.now() - start;
       log.info({
         event: "worker.request",
