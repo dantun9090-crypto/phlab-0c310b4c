@@ -1,6 +1,7 @@
 // Firebase Configuration
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken as getAppCheckToken, type AppCheck } from 'firebase/app-check';
+
 import {
   getAuth,
   createUserWithEmailAndPassword,
