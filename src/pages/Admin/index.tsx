@@ -22,6 +22,7 @@ import AdvertsTab from './tabs/AdvertsTab';
 import PoliciesTab from './tabs/PoliciesTab';
 import LandingPageTab from './tabs/LandingPageTab';
 import ComplianceTab from './tabs/ComplianceTab';
+import AuditLogTab from './tabs/AuditLogTab';
 import EmailMarketingTab from './tabs/EmailMarketingTab';
 import EmailPreviewTab from './tabs/EmailPreviewTab';
 import IpWhitelistTab from './tabs/IpWhitelistTab';
@@ -34,7 +35,7 @@ import DiagnosticsTab from './tabs/DiagnosticsTab';
 import PrerenderStatusTab from './tabs/PrerenderStatusTab';
 import MerchantFeedTab from './tabs/MerchantFeedTab';
 
-type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'merchantfeed';
+type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'merchantfeed';
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
 // (a TanStack server function running in the Cloudflare Worker). The Worker
@@ -300,6 +301,7 @@ export default function AdminPage() {
         case 'policies': return <PoliciesTab />;
         case 'landing': return <LandingPageTab />;
         case 'compliance': return <ComplianceTab />;
+        case 'auditlog': return <AuditLogTab />;
         case 'emailmarketing': return <EmailMarketingTab />;
         case 'emailpreview': return <EmailPreviewTab />;
         case 'ipwhitelist': return <IpWhitelistTab />;
@@ -323,7 +325,7 @@ export default function AdminPage() {
   const TAB_LABELS: Record<string, string> = {
     dashboard: 'Dashboard', inventory: 'Inventory', featured: 'Featured',
     qc: 'QC Dashboard', orders: 'Orders', customers: 'Customers',
-    compliance: 'Compliance', invoices: 'Invoices', banner: 'Promo Banner',
+    compliance: 'Compliance', auditlog: 'Audit Log', invoices: 'Invoices', banner: 'Promo Banner',
     adverts: 'Adverts', landing: 'Landing Pages', policies: 'Policies',
     marketing: 'Marketing', emailmarketing: 'Email Campaigns', emailpreview: 'Email Preview',
     seo: 'SEO Settings', sitemap: 'Sitemap Manager', settings: 'Site Settings',
