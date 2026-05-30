@@ -3,8 +3,7 @@ import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle2, Loader2, Building2, ArrowRight, MessageSquare } from 'lucide-react';
 import { db, doc, getDoc, addDoc, collection, Timestamp } from '@/lib/firebase';
 import { useSEO } from '@/hooks/useSEO';
-
-import { buildContactFormEmail } from '@/templates/contactFormEmail';
+import { sendPublicMail } from '@/lib/sendPublicMail';
 import {
   WhatsAppIcon, FacebookIcon, InstagramIcon, TwitterXIcon, YoutubeIcon, LinkedInIcon
 } from '@/components/SocialIcons';
@@ -134,18 +133,9 @@ export default function Contact() {
     setError('');
 
     try {
-      const emailHtml = buildContactFormEmail({
-        senderName: name,
-        senderEmail: email,
-        subject: subject || 'Contact Form Enquiry',
-        message,
-      });
       const toAddress = settings.contactEmail || 'info@phlabs.co.uk';
-      const subjectLine = `[PHP Contact] ${subject || 'New Enquiry'} — from ${name}`;
 
-
-      // 1) Persist the enquiry to a contactMessages collection (durable record,
-      //    independent of the Trigger Email extension).
+      // 1) Persist the enquiry to a contactMessages collection (durable record).
       const enquiryPayload = {
         name,
         email,
@@ -162,21 +152,15 @@ export default function Contact() {
         console.error('[Contact] contactMessages write failed:', persistErr);
       }
 
-
-      // 2) Try to enqueue an email via the Firebase Trigger Email extension.
-      let mailedOk = false;
-      try {
-        await addDoc(collection(db, 'mail'), {
-          to: toAddress,
-          replyTo: email,
-
-          message: { subject: subjectLine, html: emailHtml },
-          createdAt: Timestamp.now(),
-        });
-        mailedOk = true;
-      } catch (mailErr) {
-        console.error('[Contact] mail collection write failed:', mailErr);
-      }
+      // 2) Send the admin notification via the secured server endpoint
+      //    (replaces the previous direct Firestore `mail` write).
+      const mailedOk = await sendPublicMail({
+        template: 'contact',
+        name,
+        email,
+        subject: subject || undefined,
+        message,
+      });
 
       if (mailedOk || savedEnquiry) {
         setSent(true);
