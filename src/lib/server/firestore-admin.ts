@@ -142,3 +142,52 @@ export async function addDocAdmin(
   }
   return (await res.json()) as { name: string };
 }
+
+// ---- Firestore REST value decoding ----
+function fromFirestoreValue(v: any): unknown {
+  if (!v || typeof v !== "object") return v;
+  if ("nullValue" in v) return null;
+  if ("stringValue" in v) return v.stringValue;
+  if ("booleanValue" in v) return v.booleanValue;
+  if ("integerValue" in v) return Number(v.integerValue);
+  if ("doubleValue" in v) return v.doubleValue;
+  if ("timestampValue" in v) return v.timestampValue;
+  if ("arrayValue" in v) {
+    return (v.arrayValue.values || []).map(fromFirestoreValue);
+  }
+  if ("mapValue" in v) {
+    const out: Record<string, unknown> = {};
+    for (const [k, val] of Object.entries(v.mapValue.fields || {})) {
+      out[k] = fromFirestoreValue(val);
+    }
+    return out;
+  }
+  return undefined;
+}
+
+/**
+ * Fetch a single document from Firestore by collection + id using the
+ * service account. Returns `null` if the document does not exist.
+ */
+export async function getDocAdmin(
+  collection: string,
+  id: string,
+): Promise<Record<string, unknown> | null> {
+  const acct = getServiceAccount();
+  const token = await getAccessToken();
+  const url = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`;
+  const res = await fetch(url, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    throw new Error(`Firestore read failed: ${res.status} ${await res.text()}`);
+  }
+  const data = (await res.json()) as { fields?: Record<string, any> };
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(data.fields || {})) {
+    out[k] = fromFirestoreValue(v);
+  }
+  return out;
+}
+

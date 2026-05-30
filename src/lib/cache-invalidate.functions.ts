@@ -1,5 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { requireFirebaseAdmin } from './server/firebase-auth-admin';
+
 
 /**
  * Fire Cloudflare cache purge + Prerender.io recache for product-related URLs.
@@ -40,7 +42,12 @@ const InputSchema = z.object({
     .max(60)
     .regex(/^[a-z0-9-]+$/)
     .optional(),
+  // Firebase ID token of an admin user. Required — without it any anonymous
+  // visitor could spam Cloudflare cache-purge and Prerender.io recache APIs
+  // and exhaust quota.
+  idToken: z.string().min(20).max(4096),
 });
+
 
 function productUrls(slug?: string, category?: string): string[] {
   const urls = new Set<string>([
@@ -112,15 +119,29 @@ async function recachePrerender(urls: string[]): Promise<{ ok: boolean; status: 
 export const invalidateProductCache = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data }) => {
+    // Verify caller is an authenticated admin before touching any
+    // rate-limited upstream APIs.
+    try {
+      await requireFirebaseAdmin(data.idToken);
+    } catch (e) {
+      return {
+        ok: false,
+        error: 'unauthorized',
+        reason: e instanceof Error ? e.message : 'auth_failed',
+      } as const;
+    }
+
     const urls = productUrls(data.slug, data.category);
     const [cf, pr] = await Promise.all([
       purgeCloudflare(urls),
       recachePrerender(urls),
     ]);
     return {
+      ok: true,
       urls: urls.length,
       cloudflare: cf,
       prerender: pr,
       timestamp: new Date().toISOString(),
-    };
+    } as const;
   });
+

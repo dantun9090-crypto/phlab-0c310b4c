@@ -25,7 +25,44 @@ export interface InvoiceEmailOptions {
   bankInstructions?: string;
 }
 
-export function buildProfessionalInvoiceEmail(opts: InvoiceEmailOptions): string {
+// Escape user-controlled values before embedding in HTML. Items, addresses,
+// names, bank details, etc. all flow through this template from the public
+// /api/public/send-mail endpoint, so unescaped values would allow HTML/script
+// injection into the branded invoice email.
+function esc(s: unknown): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+export function buildProfessionalInvoiceEmail(rawOpts: InvoiceEmailOptions): string {
+  // Sanitize all caller-supplied string fields up front so downstream
+  // template literals embed safe HTML.
+  const opts: InvoiceEmailOptions = {
+    ...rawOpts,
+    firstName: esc(rawOpts.firstName),
+    orderId: esc(rawOpts.orderId),
+    items: rawOpts.items.map((it) => ({
+      ...it,
+      name: esc(it.name),
+      variantName: it.variantName ? esc(it.variantName) : it.variantName,
+    })),
+    shippingLabel: rawOpts.shippingLabel ? esc(rawOpts.shippingLabel) : rawOpts.shippingLabel,
+    address: rawOpts.address ? esc(rawOpts.address) : rawOpts.address,
+    city: rawOpts.city ? esc(rawOpts.city) : rawOpts.city,
+    postcode: rawOpts.postcode ? esc(rawOpts.postcode) : rawOpts.postcode,
+    couponCode: rawOpts.couponCode ? esc(rawOpts.couponCode) : rawOpts.couponCode,
+    bankTransferRef: rawOpts.bankTransferRef ? esc(rawOpts.bankTransferRef) : rawOpts.bankTransferRef,
+    bankName: rawOpts.bankName ? esc(rawOpts.bankName) : rawOpts.bankName,
+    bankSortCode: rawOpts.bankSortCode ? esc(rawOpts.bankSortCode) : rawOpts.bankSortCode,
+    bankAccountNumber: rawOpts.bankAccountNumber ? esc(rawOpts.bankAccountNumber) : rawOpts.bankAccountNumber,
+    bankIBAN: rawOpts.bankIBAN ? esc(rawOpts.bankIBAN) : rawOpts.bankIBAN,
+    bankInstructions: rawOpts.bankInstructions ? esc(rawOpts.bankInstructions) : rawOpts.bankInstructions,
+  };
+
   const BG = '#060f1e';
   const CARD = '#0b1a30';
   const BLUE = '#3b82f6';
@@ -35,6 +72,7 @@ export function buildProfessionalInvoiceEmail(opts: InvoiceEmailOptions): string
   const DIMMED = '#3a5a82';
   const BORDER = 'rgba(59,130,246,0.15)';
   const ROW_EVEN = '#071525';
+
 
   const shortId = opts.orderId.slice(-8).toUpperCase();
   const isBankTransfer = opts.paymentMethod === 'bank_transfer';
