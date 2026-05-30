@@ -460,7 +460,14 @@ export const registerUser = async (
   tcAccepted?: boolean,
 ) => {
   await ensureAppCheckReady();
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  let userCredential;
+  try {
+    userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  } catch (err) {
+    const { logAuthFailure } = await import('@/lib/auth-events');
+    logAuthFailure('register_failure', err, { email });
+    throw err;
+  }
 
   const user = userCredential.user;
   const referralCode = generateReferralCode();
@@ -491,24 +498,49 @@ export const registerUser = async (
   // Send email verification
   await sendEmailVerification(user);
   await logActivity({ type: 'signup', message: `New user registered: ${email}`, userId: user.uid });
+  const { logAuthEvent } = await import('@/lib/auth-events');
+  logAuthEvent({ type: 'register_success', email, uid: user.uid });
   return userCredential;
 };
 
 export const resetPassword = async (email: string) => {
-  await sendPasswordResetEmail(auth, email);
+  try {
+    await sendPasswordResetEmail(auth, email);
+    const { logAuthEvent } = await import('@/lib/auth-events');
+    logAuthEvent({ type: 'password_reset_request', email });
+  } catch (err) {
+    const { logAuthFailure } = await import('@/lib/auth-events');
+    logAuthFailure('password_reset_failure', err, { email });
+    throw err;
+  }
 };
+
 
 export const loginUser = async (email: string, password: string) => {
   await ensureAppCheckReady();
-  const userCredential = await signInWithEmailAndPassword(auth, email, password);
+  let userCredential;
+  try {
+    userCredential = await signInWithEmailAndPassword(auth, email, password);
+  } catch (err) {
+    const { logAuthFailure } = await import('@/lib/auth-events');
+    logAuthFailure('login_failure', err, { email });
+    throw err;
+  }
 
   try {
     await updateDoc(doc(db, 'customers', userCredential.user.uid), { lastLoginAt: Timestamp.now() });
   } catch { /* doc may not exist yet */ }
+  const { logAuthEvent } = await import('@/lib/auth-events');
+  logAuthEvent({ type: 'login_success', email, uid: userCredential.user.uid });
   return userCredential;
 };
 
-export const logoutUser = () => signOut(auth);
+export const logoutUser = async () => {
+  const current = auth.currentUser;
+  const { logAuthEvent } = await import('@/lib/auth-events');
+  logAuthEvent({ type: 'logout', email: current?.email ?? null, uid: current?.uid ?? null });
+  return signOut(auth);
+};
 export const onAuthChange = (callback: (user: FirebaseUser | null) => void) =>
   onAuthStateChanged(auth, callback);
 
@@ -518,7 +550,14 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export const signInWithGoogle = async () => {
   await ensureAppCheckReady();
-  const result = await signInWithPopup(auth, googleProvider);
+  let result;
+  try {
+    result = await signInWithPopup(auth, googleProvider);
+  } catch (err) {
+    const { logAuthFailure } = await import('@/lib/auth-events');
+    logAuthFailure('google_failure', err);
+    throw err;
+  }
 
   const user = result.user;
 
@@ -558,8 +597,11 @@ export const signInWithGoogle = async () => {
   } else {
     await updateDoc(customerRef, { lastLoginAt: Timestamp.now() });
   }
+  const { logAuthEvent } = await import('@/lib/auth-events');
+  logAuthEvent({ type: 'google_success', email: user.email ?? null, uid: user.uid });
   return result;
 };
+
 
 export const getUserProfile = async (uid: string): Promise<User | null> => {
   const docSnap = await getDoc(doc(db, 'customers', uid));

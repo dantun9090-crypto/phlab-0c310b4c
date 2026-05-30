@@ -35,7 +35,9 @@ const navGroups = [
       { id: 'customers', label: 'Customers', icon: Users },
       { id: 'compliance', label: 'Compliance', icon: Shield },
       { id: 'auditlog', label: 'Audit Log', icon: Shield },
+      { id: 'authevents', label: 'Auth Events', icon: Activity },
       { id: 'invoices', label: 'Invoices', icon: FileText },
+
     ],
   },
   {
