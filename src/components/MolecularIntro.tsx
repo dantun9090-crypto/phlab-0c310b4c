@@ -10,8 +10,8 @@ const T_OUT      = 150;
 const FPS_INTRO    = 15;
 const FRAME_MS_INTRO = 1000 / FPS_INTRO;
 
-const LOGO_URL =
-  'https://cdn.wegic.ai/assets/onepage/agent/images/1775896855290_edited.png?imageMogr2/format/webp';
+import logoUrl from '@/assets/logo.webp';
+const LOGO_URL = logoUrl;
 
 // ─── Particle ─────────────────────────────────────────────────────────────────
 interface Particle {
