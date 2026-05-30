@@ -5,6 +5,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { db, collection, getDocs, updateDoc, doc } from '@/lib/firebase';
 import { getAllOrders } from '@/lib/firebase';
+import { logAdminAction } from '@/lib/admin-audit';
 
 interface CustomerProfile {
   uid: string;
