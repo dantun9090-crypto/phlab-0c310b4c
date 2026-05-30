@@ -119,15 +119,29 @@ async function recachePrerender(urls: string[]): Promise<{ ok: boolean; status: 
 export const invalidateProductCache = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data }) => {
+    // Verify caller is an authenticated admin before touching any
+    // rate-limited upstream APIs.
+    try {
+      await requireFirebaseAdmin(data.idToken);
+    } catch (e) {
+      return {
+        ok: false,
+        error: 'unauthorized',
+        reason: e instanceof Error ? e.message : 'auth_failed',
+      } as const;
+    }
+
     const urls = productUrls(data.slug, data.category);
     const [cf, pr] = await Promise.all([
       purgeCloudflare(urls),
       recachePrerender(urls),
     ]);
     return {
+      ok: true,
       urls: urls.length,
       cloudflare: cf,
       prerender: pr,
       timestamp: new Date().toISOString(),
-    };
+    } as const;
   });
+
