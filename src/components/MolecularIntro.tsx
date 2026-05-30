@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import logoUrl from '@/assets/logo.webp';
 
 // ─── Timing (ms) ──────────────────────────────────────────────────────────────
 const T_FADE_IN  = 80;
@@ -10,8 +11,7 @@ const T_OUT      = 150;
 const FPS_INTRO    = 15;
 const FRAME_MS_INTRO = 1000 / FPS_INTRO;
 
-const LOGO_URL =
-  'https://cdn.wegic.ai/assets/onepage/agent/images/1775896855290_edited.png?imageMogr2/format/webp';
+const LOGO_URL = logoUrl;
 
 // ─── Particle ─────────────────────────────────────────────────────────────────
 interface Particle {

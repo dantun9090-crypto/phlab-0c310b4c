@@ -82,22 +82,22 @@ const initAppCheck = () => {
   } catch { /* already initialised on HMR reload */ }
 };
 
-// Defer App Check init until the browser is idle so the reCAPTCHA Enterprise
-// script (~365KB + iframe) doesn't block first paint. Firestore reads that
-// need App Check tokens wait via `onAppCheckReady` below.
-if (typeof window !== 'undefined') {
-  const schedule: (cb: () => void) => void =
-    typeof (window as any).requestIdleCallback === 'function'
-      ? (cb) => (window as any).requestIdleCallback(cb, { timeout: 2000 })
-      : (cb) => setTimeout(cb, 1200);
-  schedule(initAppCheck);
-} else {
-  initAppCheck();
+// Lazy init — App Check is ONLY required for sensitive writes (auth, orders,
+// mail) where Firestore rules check App Check tokens. Catalogue / product /
+// policy pages read with `allow read: if true` and do not need App Check.
+// Loading reCAPTCHA Enterprise (~375KB script + iframe) was the single biggest
+// blocker of FCP across the site, so we now defer it until ensureAppCheck()
+// is explicitly called from Register/Login/Checkout/Contact flows.
+export function ensureAppCheck() {
+  if (typeof window === 'undefined') return;
+  if (!appCheckInitialised) initAppCheck();
 }
 
 export function onAppCheckReady(cb: () => void) {
   if (appCheckInitialised) { cb(); return; }
   appCheckReadyCallbacks.push(cb);
+  // Auto-init when someone subscribes so existing callers still get a token.
+  ensureAppCheck();
 }
 
 export const auth = getAuth(app);
@@ -429,6 +429,7 @@ export const registerUser = async (
   phone?: string,
   tcAccepted?: boolean,
 ) => {
+  ensureAppCheck();
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
   const user = userCredential.user;
   const referralCode = generateReferralCode();
@@ -467,6 +468,7 @@ export const resetPassword = async (email: string) => {
 };
 
 export const loginUser = async (email: string, password: string) => {
+  ensureAppCheck();
   const userCredential = await signInWithEmailAndPassword(auth, email, password);
   try {
     await updateDoc(doc(db, 'customers', userCredential.user.uid), { lastLoginAt: Timestamp.now() });
@@ -483,6 +485,7 @@ const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export const signInWithGoogle = async () => {
+  ensureAppCheck();
   const result = await signInWithPopup(auth, googleProvider);
   const user = result.user;
 
