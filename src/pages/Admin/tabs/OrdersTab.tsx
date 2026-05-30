@@ -256,6 +256,11 @@ export default function OrdersTab() {
     setDeleting(orderId);
     try {
       await deleteDoc(doc(db, 'orders', orderId));
+      await logAdminAction({
+        action: 'order.delete',
+        target: `orders/${orderId}`,
+        before: orderRef,
+      });
       setOrders(prev => prev.filter(o => o.id !== orderId));
       if (selected?.id === orderId) setSelected(null);
     } catch (e: any) {
