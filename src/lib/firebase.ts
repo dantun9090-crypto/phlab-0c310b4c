@@ -816,14 +816,18 @@ function invalidateProductsCache() {
  */
 function triggerCdnInvalidation(opts: { slug?: string; category?: string } = {}) {
   if (typeof window === 'undefined') return;
-  void import('./cache-invalidate.functions')
-    .then(({ invalidateProductCache }) =>
-      invalidateProductCache({ data: opts }).catch((e) => {
+  void (async () => {
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) return;
+      const { invalidateProductCache } = await import('./cache-invalidate.functions');
+      await invalidateProductCache({ data: { ...opts, idToken } }).catch((e) => {
         console.warn('[cache-invalidate] failed:', e);
-      }),
-    )
-    .catch(() => { /* ignore import errors */ });
+      });
+    } catch { /* ignore */ }
+  })();
 }
+
 
 export const updateProduct = async (id: string, updates: Partial<Product>) => {
   // Ensure images array is preserved and properly formatted
