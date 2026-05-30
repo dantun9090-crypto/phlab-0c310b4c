@@ -46,6 +46,33 @@ const ContactInput = z.object({
   message: z.string().trim().min(1).max(5000),
 });
 
+// Only allow PDF URLs hosted on PH Labs or trusted Firebase/Google CDNs.
+// Prevents attackers using this endpoint to send PH Labs-branded phishing
+// emails with arbitrary attacker-controlled download links.
+const ALLOWED_PDF_HOSTS = new Set<string>([
+  "phlabs.co.uk",
+  "www.phlabs.co.uk",
+  "firebasestorage.googleapis.com",
+  "storage.googleapis.com",
+]);
+
+const trustedPdfUrl = z
+  .string()
+  .url()
+  .max(500)
+  .refine(
+    (u) => {
+      try {
+        const parsed = new URL(u);
+        if (parsed.protocol !== "https:") return false;
+        return ALLOWED_PDF_HOSTS.has(parsed.hostname.toLowerCase());
+      } catch {
+        return false;
+      }
+    },
+    { message: "pdfUrl host is not on the trusted allowlist" },
+  );
+
 const ProtocolInput = z.object({
   template: z.literal("protocol-library"),
   email: emailSchema,
@@ -55,7 +82,7 @@ const ProtocolInput = z.object({
     .min(1)
     .max(40)
     .regex(/^[A-Z0-9_-]+$/i),
-  pdfUrl: z.string().url().max(500),
+  pdfUrl: trustedPdfUrl,
 });
 
 const OrderInput = z.object({
