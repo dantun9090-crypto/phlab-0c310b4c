@@ -145,6 +145,44 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ---------- auth events (append-only diagnostic log) ----------
+    // Anyone (including unauthenticated visitors) may CREATE an auth event so
+    // failed logins are still captured. The shape is locked down to prevent
+    // abuse as a free-form data dump. Only admins read; nobody edits or deletes.
+    match /auth_events/{id} {
+      allow read: if isAdmin();
+      allow create: if request.resource.data.type is string
+                    && request.resource.data.type.size() > 0
+                    && request.resource.data.type.size() < 64
+                    && request.resource.data.createdAt == request.time
+                    && (!('email' in request.resource.data)
+                        || request.resource.data.email == null
+                        || (request.resource.data.email is string
+                            && request.resource.data.email.size() < 320))
+                    && (!('uid' in request.resource.data)
+                        || request.resource.data.uid == null
+                        || (request.resource.data.uid is string
+                            && request.resource.data.uid.size() < 64))
+                    && (!('code' in request.resource.data)
+                        || request.resource.data.code == null
+                        || (request.resource.data.code is string
+                            && request.resource.data.code.size() < 100))
+                    && (!('message' in request.resource.data)
+                        || request.resource.data.message == null
+                        || (request.resource.data.message is string
+                            && request.resource.data.message.size() < 300))
+                    && (!('source' in request.resource.data)
+                        || request.resource.data.source == null
+                        || (request.resource.data.source is string
+                            && request.resource.data.source.size() < 200))
+                    && (!('userAgent' in request.resource.data)
+                        || request.resource.data.userAgent == null
+                        || (request.resource.data.userAgent is string
+                            && request.resource.data.userAgent.size() < 300));
+      allow update, delete: if false;
+    }
+
+
     // ---------- default deny ----------
     match /{document=**} {
       allow read, write: if false;
