@@ -273,6 +273,17 @@ export async function runValidateCart(data: ValidateInput): Promise<ValidateCart
       const fields = doc.fields ?? {};
       const productName = (decode(fields.name) as string) || productId;
 
+      // SECURITY: VIP-only product gate. The Firestore `products` /
+      // `product_stock` collections are publicly readable so any user
+      // could try to add a VIP product to their cart by knowing its id.
+      // Reject these lines unless the caller proved VIP/admin status via
+      // a verified Firebase ID token.
+      const isVipProduct = decode(fields.isVip) === true;
+      if (isVipProduct && !isVipCaller) {
+        errors.push(`"${productName}" is available to VIP members only`);
+        return;
+      }
+
       // Resolve canonical unit price: prefer matching variant, else top-level price.
       let unitPrice = NaN;
       let variantName: string | null = null;
