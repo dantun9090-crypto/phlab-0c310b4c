@@ -468,6 +468,7 @@ export const resetPassword = async (email: string) => {
 };
 
 export const loginUser = async (email: string, password: string) => {
+  ensureAppCheck();
   const userCredential = await signInWithEmailAndPassword(auth, email, password);
   try {
     await updateDoc(doc(db, 'customers', userCredential.user.uid), { lastLoginAt: Timestamp.now() });
