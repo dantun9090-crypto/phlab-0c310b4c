@@ -718,42 +718,66 @@ function invalidateProductsCache() {
   } catch { /* ignore */ }
 }
 
+/**
+ * Fire-and-forget: ping the server fn that purges Cloudflare cache and
+ * recaches Prerender.io snapshots for product URLs. Never throws — cache
+ * invalidation must never break a successful Firestore write.
+ *
+ * Dynamically imported so the server-fn RPC stub doesn't load on cold
+ * customer-facing reads.
+ */
+function triggerCdnInvalidation(opts: { slug?: string; category?: string } = {}) {
+  if (typeof window === 'undefined') return;
+  void import('./cache-invalidate.functions')
+    .then(({ invalidateProductCache }) =>
+      invalidateProductCache({ data: opts }).catch((e) => {
+        console.warn('[cache-invalidate] failed:', e);
+      }),
+    )
+    .catch(() => { /* ignore import errors */ });
+}
+
 export const updateProduct = async (id: string, updates: Partial<Product>) => {
   // Ensure images array is preserved and properly formatted
   const data: any = { ...updates, updatedAt: Timestamp.now() };
-  
+
   // Validate and clean images array
   if (updates.images !== undefined) {
     data.images = (updates.images || []).filter((img: any) => typeof img === 'string' && img.trim());
   }
-  
+
   // Keep imageUrl in sync with images array
   if (data.images && data.images.length > 0 && !updates.imageUrl) {
     data.imageUrl = data.images[0];
   }
-  
+
   // Ensure variants are properly saved
   if (updates.variants !== undefined) {
     data.variants = updates.variants || [];
   }
-  
+
   // Ensure bannerImageUrl is preserved
   if (updates.bannerImageUrl !== undefined) {
     data.bannerImageUrl = updates.bannerImageUrl || '';
   }
-  
+
   // Ensure stripePrice is preserved
   if (updates.stripePrice !== undefined) {
     data.stripePrice = updates.stripePrice || '';
   }
-  
+
   await updateDoc(doc(db, PRODUCTS_COL, id), data);
   invalidateProductsCache();
+  triggerCdnInvalidation({
+    slug: (updates as any).slug,
+    category: (updates as any).category,
+  });
 };
 
 export const deleteProduct = async (id: string) => {
   await deleteDoc(doc(db, PRODUCTS_COL, id));
   invalidateProductsCache();
+  triggerCdnInvalidation();
 };
 
 export const bulkUpdateProducts = async (updates: { id: string; stock?: number; price?: number }[]) => {
@@ -766,7 +790,11 @@ export const bulkUpdateProducts = async (updates: { id: string; stock?: number; 
     batch.update(ref, data);
   });
   await batch.commit();
+  invalidateProductsCache();
+  triggerCdnInvalidation();
 };
+
+
 
 export const getLowStockProducts = async (threshold?: number): Promise<Product[]> => {
   const products = await getAllProducts();
