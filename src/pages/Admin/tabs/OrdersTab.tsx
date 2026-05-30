@@ -366,6 +366,11 @@ export default function OrdersTab() {
         status: 'shipped',
         ...(courier ? { courier } : {}),
       });
+      await logAdminAction({
+        action: 'order.dispatch',
+        target: `orders/${selected.id}`,
+        after: { trackingNumber: tracking, courier: courier || null, status: 'shipped' },
+      });
 
        // 2. Write dispatch email to 'mail' collection
        // Firebase Trigger Email extension sends it automatically
