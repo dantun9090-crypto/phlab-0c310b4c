@@ -517,8 +517,9 @@ const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export const signInWithGoogle = async () => {
-  ensureAppCheck();
+  await ensureAppCheckReady();
   const result = await signInWithPopup(auth, googleProvider);
+
   const user = result.user;
 
   // Upsert customer profile — create if first time, update lastLoginAt if returning
