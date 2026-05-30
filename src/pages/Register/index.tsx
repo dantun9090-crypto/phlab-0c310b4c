@@ -36,6 +36,8 @@ export default function Register() {
 
   // Capture ?ref= from URL and store in localStorage
   useEffect(() => {
+    // Warm up App Check token before the user submits.
+    ensureAppCheck();
     const refFromUrl = searchParams.get('ref');
     if (refFromUrl) {
       localStorage.setItem('referrer_code', refFromUrl);
@@ -45,6 +47,7 @@ export default function Register() {
       if (stored) setReferralCode(stored);
     }
   }, [searchParams]);
+
 
   const handleGoogle = async () => {
     setError('');
