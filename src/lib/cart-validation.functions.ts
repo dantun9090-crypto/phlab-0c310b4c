@@ -14,6 +14,8 @@
  */
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { verifyFirebaseIdToken } from './server/firebase-auth-admin';
+import { getDocAdmin } from './server/firestore-admin';
 
 const FIREBASE_PROJECT_ID = 'prohealthpeptides-a0808';
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents`;
@@ -28,7 +30,25 @@ const inputSchema = z.object({
   items: z.array(cartItemSchema).min(1).max(50),
   couponCode: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/).optional().nullable(),
   shippingCost: z.number().min(0).max(1000).optional(),
+  idToken: z.string().min(1).max(4096).optional().nullable(),
 });
+
+/**
+ * SECURITY: Resolve whether the caller is allowed to purchase VIP-only
+ * products. Verifies the supplied Firebase ID token and checks the
+ * matching `customers/{uid}` doc for `isVip === true` (admins also pass).
+ * Returns false on any failure — never throws into the cart flow.
+ */
+async function callerIsVip(idToken: string | null | undefined): Promise<boolean> {
+  if (!idToken) return false;
+  try {
+    const { uid } = await verifyFirebaseIdToken(idToken);
+    const doc = await getDocAdmin('customers', uid);
+    return doc?.isVip === true || doc?.isAdmin === true;
+  } catch {
+    return false;
+  }
+}
 
 type CouponType = 'percentage' | 'fixed' | 'free_shipping';
 interface ValidatedCoupon {
@@ -161,6 +181,11 @@ export async function runValidateCart(data: ValidateInput): Promise<ValidateCart
   const errors: string[] = [];
   const validated: ValidatedLine[] = [];
 
+  // SECURITY: Resolve VIP status of the caller ONCE so we can reject any
+  // cart line whose product is `isVip: true` when the caller is not VIP.
+  const isVipCaller = await callerIsVip(data.idToken ?? null);
+
+
   // Fetch each product document from the Firestore REST API. The
   // `product_stock` collection has public read rules already (the shop
   // page reads it unauthenticated), so no auth token is required.
@@ -247,6 +272,17 @@ export async function runValidateCart(data: ValidateInput): Promise<ValidateCart
       const doc = (await res.json()) as { fields?: Record<string, FsValue> };
       const fields = doc.fields ?? {};
       const productName = (decode(fields.name) as string) || productId;
+
+      // SECURITY: VIP-only product gate. The Firestore `products` /
+      // `product_stock` collections are publicly readable so any user
+      // could try to add a VIP product to their cart by knowing its id.
+      // Reject these lines unless the caller proved VIP/admin status via
+      // a verified Firebase ID token.
+      const isVipProduct = decode(fields.isVip) === true;
+      if (isVipProduct && !isVipCaller) {
+        errors.push(`"${productName}" is available to VIP members only`);
+        return;
+      }
 
       // Resolve canonical unit price: prefer matching variant, else top-level price.
       let unitPrice = NaN;
