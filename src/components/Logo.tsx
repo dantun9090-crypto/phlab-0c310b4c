@@ -1,3 +1,5 @@
+import logoSrc from '@/assets/logo.webp';
+
 interface LogoProps {
   className?: string;
   size?: 'sm' | 'md' | 'lg';
