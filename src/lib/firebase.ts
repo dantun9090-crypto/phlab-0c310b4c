@@ -134,6 +134,8 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
+const normaliseAuthEmail = (email: string) => email.trim().toLowerCase();
+
 
 // ==================== TYPES ====================
 
@@ -460,12 +462,13 @@ export const registerUser = async (
   tcAccepted?: boolean,
 ) => {
   await ensureAppCheckReady();
+  const cleanEmail = normaliseAuthEmail(email);
   let userCredential;
   try {
-    userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
   } catch (err) {
     const { logAuthFailure } = await import('@/lib/auth-events');
-    logAuthFailure('register_failure', err, { email });
+    logAuthFailure('register_failure', err, { email: cleanEmail });
     throw err;
   }
 
@@ -474,7 +477,7 @@ export const registerUser = async (
   const now = Timestamp.now();
   await setDoc(doc(db, 'customers', user.uid), {
     uid: user.uid,
-    email,
+    email: cleanEmail,
     firstName,
     lastName,
     displayName: `${firstName} ${lastName}`,
@@ -482,7 +485,6 @@ export const registerUser = async (
     termsAccepted: tcAccepted ?? false,
     termsAcceptedAt: tcAccepted ? now : null,
     createdAt: now,
-    isAdmin: false,
     isActive: true,
     loyaltyCredits: 0,
     totalSpend: 0,
@@ -494,12 +496,12 @@ export const registerUser = async (
     ...(referredByCode ? { referredBy: referredByCode } : {}),
   });
   // Send welcome email
-  await sendWelcomeEmail(email, firstName).catch(console.error);
+  await sendWelcomeEmail(cleanEmail, firstName).catch(console.error);
   // Send email verification
   await sendEmailVerification(user);
-  await logActivity({ type: 'signup', message: `New user registered: ${email}`, userId: user.uid });
+  await logActivity({ type: 'signup', message: `New user registered: ${cleanEmail}`, userId: user.uid });
   const { logAuthEvent } = await import('@/lib/auth-events');
-  logAuthEvent({ type: 'register_success', email, uid: user.uid });
+  logAuthEvent({ type: 'register_success', email: cleanEmail, uid: user.uid });
   return userCredential;
 };
 
@@ -518,20 +520,43 @@ export const resetPassword = async (email: string) => {
 
 export const loginUser = async (email: string, password: string) => {
   await ensureAppCheckReady();
+  const cleanEmail = normaliseAuthEmail(email);
   let userCredential;
   try {
-    userCredential = await signInWithEmailAndPassword(auth, email, password);
+    userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
   } catch (err) {
     const { logAuthFailure } = await import('@/lib/auth-events');
-    logAuthFailure('login_failure', err, { email });
+    logAuthFailure('login_failure', err, { email: cleanEmail });
     throw err;
   }
 
   try {
-    await updateDoc(doc(db, 'customers', userCredential.user.uid), { lastLoginAt: Timestamp.now() });
+    const customerRef = doc(db, 'customers', userCredential.user.uid);
+    const snap = await getDoc(customerRef);
+    if (snap.exists()) {
+      await updateDoc(customerRef, { lastLoginAt: Timestamp.now() });
+    } else {
+      await setDoc(customerRef, {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email || cleanEmail,
+        firstName: '',
+        lastName: '',
+        displayName: userCredential.user.email || cleanEmail,
+        createdAt: Timestamp.now(),
+        lastLoginAt: Timestamp.now(),
+        isActive: true,
+        loyaltyCredits: 0,
+        totalSpend: 0,
+        totalOrders: 0,
+        referralCode: generateReferralCode(),
+        referralBalance: 0,
+        referralRewardClaimed: false,
+        referralCount: 0,
+      });
+    }
   } catch { /* doc may not exist yet */ }
   const { logAuthEvent } = await import('@/lib/auth-events');
-  logAuthEvent({ type: 'login_success', email, uid: userCredential.user.uid });
+  logAuthEvent({ type: 'login_success', email: cleanEmail, uid: userCredential.user.uid });
   return userCredential;
 };
 
@@ -578,7 +603,6 @@ export const signInWithGoogle = async () => {
       displayName: user.displayName || '',
       photoURL: user.photoURL || '',
       createdAt: Timestamp.now(),
-      isAdmin: false,
       isActive: true,
       loyaltyCredits: 0,
       totalSpend: 0,
