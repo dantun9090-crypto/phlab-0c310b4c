@@ -109,12 +109,21 @@ export const Route = createFileRoute("/$")({
       meta.push({ name: "robots", content: "noindex, follow" });
     }
 
+    // Signal 404 for unknown top-level paths so Prerender.io serves a real
+    // 404 to crawlers (fixes Prerender 404 Checker red-flagging the domain).
+    const isUnknown = !KNOWN_ROOTS.has(firstSeg);
+    if (isUnknown) {
+      meta.push({ name: "prerender-status-code", content: "404" });
+      meta.push({ name: "robots", content: "noindex, follow" });
+    }
+
     return {
       meta,
       links: [{ rel: "canonical", href: url }],
       scripts,
     };
   },
+
 
   component: LegacyMount,
 });
