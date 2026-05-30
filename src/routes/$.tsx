@@ -8,8 +8,24 @@ const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
+// Whitelist of first-segment paths the SPA actually owns. Anything outside
+// this list is treated as a 404 so Prerender.io (and search engines) see a
+// proper not-found signal instead of HTTP 200 on /no-such-page-xyz.
+const KNOWN_ROOTS = new Set<string>([
+  "", "products", "product", "resources", "research", "search",
+  "about", "contact",
+  "shipping-policy", "refund-policy", "terms-and-conditions",
+  "privacy-policy", "cookies", "cookie-policy",
+  "lab-reports", "quality-control", "storage-guide",
+  "cart", "checkout", "order", "orders", "account", "login", "signup",
+  "register", "auth", "reset-password", "forgot-password", "verify",
+  "admin", "thank-you", "success", "cancel",
+  "faq", "faqs", "blog",
+]);
+
 
 export const Route = createFileRoute("/$")({
+
   ssr: false,
   head: ({ params }) => {
     const splat = (params as { _splat?: string })._splat ?? "";
@@ -93,12 +109,21 @@ export const Route = createFileRoute("/$")({
       meta.push({ name: "robots", content: "noindex, follow" });
     }
 
+    // Signal 404 for unknown top-level paths so Prerender.io serves a real
+    // 404 to crawlers (fixes Prerender 404 Checker red-flagging the domain).
+    const isUnknown = !KNOWN_ROOTS.has(firstSeg);
+    if (isUnknown) {
+      meta.push({ name: "prerender-status-code", content: "404" });
+      meta.push({ name: "robots", content: "noindex, follow" });
+    }
+
     return {
       meta,
       links: [{ rel: "canonical", href: url }],
       scripts,
     };
   },
+
 
   component: LegacyMount,
 });
