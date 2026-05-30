@@ -44,7 +44,9 @@ import {
 
 const firebaseConfig = {
   apiKey: "AIzaSyB5sWYCTkzeFFup0mqyg3PzCIzjP2oGJdM",
-  authDomain: "prohealthpeptides-a0808.firebaseapp.com",
+  // Custom auth domain — wymaga dodania www.phlabs.co.uk w Firebase
+  // Console → Authentication → Settings → Authorized domains.
+  authDomain: "www.phlabs.co.uk",
   projectId: "prohealthpeptides-a0808",
   storageBucket: "prohealthpeptides-a0808.firebasestorage.app",
   messagingSenderId: "1070409753291",
