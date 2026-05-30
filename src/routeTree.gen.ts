@@ -16,6 +16,7 @@ import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
+import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -54,6 +55,11 @@ const AdminMerchantFeedPreviewRoute =
     path: '/admin/merchant-feed-preview',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSendMailRoute = ApiPublicSendMailRouteImport.update({
+  id: '/api/public/send-mail',
+  path: '/api/public/send-mail',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/api/public/send-mail': typeof ApiPublicSendMailRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/api/public/send-mail': typeof ApiPublicSendMailRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -82,6 +90,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/api/public/send-mail': typeof ApiPublicSendMailRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -93,6 +102,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
     | '/products/$slug'
+    | '/api/public/send-mail'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -102,6 +112,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
     | '/products/$slug'
+    | '/api/public/send-mail'
   id:
     | '__root__'
     | '/'
@@ -111,6 +122,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
     | '/products/$slug'
+    | '/api/public/send-mail'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -120,6 +132,7 @@ export interface RootRouteChildren {
   ProductsRoute: typeof ProductsRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
+  ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -173,6 +186,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMerchantFeedPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/send-mail': {
+      id: '/api/public/send-mail'
+      path: '/api/public/send-mail'
+      fullPath: '/api/public/send-mail'
+      preLoaderRoute: typeof ApiPublicSendMailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -195,6 +215,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsRoute: ProductsRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
+  ApiPublicSendMailRoute: ApiPublicSendMailRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
