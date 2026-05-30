@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAllOrders, updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
+import { logAdminAction } from '@/lib/admin-audit';
 
 import { buildDispatchEmail } from '@/templates/dispatchEmail';
 
@@ -255,6 +256,11 @@ export default function OrdersTab() {
     setDeleting(orderId);
     try {
       await deleteDoc(doc(db, 'orders', orderId));
+      await logAdminAction({
+        action: 'order.delete',
+        target: `orders/${orderId}`,
+        before: orderRef,
+      });
       setOrders(prev => prev.filter(o => o.id !== orderId));
       if (selected?.id === orderId) setSelected(null);
     } catch (e: any) {
@@ -285,6 +291,12 @@ export default function OrdersTab() {
         update.status = 'cancelled';
       }
       await updateDoc(doc(db, 'orders', selected.id), update);
+      await logAdminAction({
+        action: 'order.status.update',
+        target: `orders/${selected.id}`,
+        before: { status: selected.status, paymentStatus: (selected as any).paymentStatus ?? null },
+        after: update,
+      });
       setOrders(prev => prev.map(o => o.id === selected.id ? { ...o, ...update } : o));
       setSelected(prev => prev ? { ...prev, ...update } : prev);
       setTransferMsg(
@@ -353,6 +365,11 @@ export default function OrdersTab() {
         trackingNumber: tracking,
         status: 'shipped',
         ...(courier ? { courier } : {}),
+      });
+      await logAdminAction({
+        action: 'order.dispatch',
+        target: `orders/${selected.id}`,
+        after: { trackingNumber: tracking, courier: courier || null, status: 'shipped' },
       });
 
        // 2. Write dispatch email to 'mail' collection

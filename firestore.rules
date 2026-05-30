@@ -56,6 +56,8 @@ service cloud.firestore {
           && d.customer.email is string && d.customer.email.size() < 320
           && d.status == 'pending_payment'
           && d.paymentMethod is string
+          // UK research-peptide compliance: 18+ confirmation must be present.
+          && d.ageVerified == true
           && (!('userId' in d) || d.userId == null || (isSignedIn() && d.userId == request.auth.uid))
           // Never trust client-set admin/fulfilment fields at creation time.
           && !('paid' in d) && !('paidAt' in d)
@@ -125,6 +127,23 @@ service cloud.firestore {
     match /invoices/{id}        { allow read: if isAdmin(); allow write: if isAdmin(); }
     match /backups/{id}         { allow read: if isAdmin(); allow write: if isAdmin(); }
     match /emailMarketing/{id}  { allow read: if isAdmin(); allow write: if isAdmin(); }
+
+    // ---------- audit logs (append-only) ----------
+    // Any signed-in admin may APPEND a log entry from the admin panel so
+    // privileged actions are auditable. Nobody — not even admins from the
+    // client — may update or delete past entries. Server-side service
+    // accounts (firebase-admin) bypass rules entirely for back-fills.
+    match /auditLogs/{id} {
+      allow read:   if isAdmin();
+      allow create: if isAdmin()
+                    && request.resource.data.adminUid == request.auth.uid
+                    && request.resource.data.action is string
+                    && request.resource.data.action.size() > 0
+                    && request.resource.data.action.size() < 64
+                    && request.resource.data.target is string
+                    && request.resource.data.target.size() < 256;
+      allow update, delete: if false;
+    }
 
     // ---------- default deny ----------
     match /{document=**} {
