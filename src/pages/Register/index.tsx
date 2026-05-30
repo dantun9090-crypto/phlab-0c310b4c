@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, CheckCircle2, Loader2, Gift, Phone } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { registerUser, signInWithGoogle } from '@/lib/firebase';
-import { mockRegisterUser } from '@/lib/mockAuth';
+
 
 export default function Register() {
   const navigate = useNavigate();
@@ -84,29 +84,15 @@ export default function Register() {
     setLoading(true);
 
     try {
-      try {
-        await registerUser(
-          formData.email,
-          formData.password,
-          formData.firstName,
-          formData.lastName,
-          referralCode || undefined,
-          formData.phone || undefined,
-          formData.acceptedTerms,
-        );
-      } catch (firebaseErr: any) {
-        if (firebaseErr.code === 'auth/configuration-not-found') {
-          // Use mock auth for testing
-          await mockRegisterUser(
-            formData.email,
-            formData.password,
-            formData.firstName,
-            formData.lastName
-          );
-        } else {
-          throw firebaseErr;
-        }
-      }
+      await registerUser(
+        formData.email,
+        formData.password,
+        formData.firstName,
+        formData.lastName,
+        referralCode || undefined,
+        formData.phone || undefined,
+        formData.acceptedTerms,
+      );
       setSuccess(true);
       setTimeout(() => {
         navigate('/account');
