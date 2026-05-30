@@ -10,6 +10,11 @@ Disallow: /login
 Disallow: /register
 Disallow: /search
 Disallow: /vip-store
+# Internal API / server endpoints — never indexable
+Disallow: /api/
+Disallow: /webhook/
+Disallow: /server-functions/
+Disallow: /lovable/
 # Block only specific tracking / session query params, not all query strings
 # (was: Disallow: /*?*  — blocked legitimate ?category=, ?page= filter URLs)
 Disallow: /*?utm_*
