@@ -56,6 +56,8 @@ service cloud.firestore {
           && d.customer.email is string && d.customer.email.size() < 320
           && d.status == 'pending_payment'
           && d.paymentMethod is string
+          // UK research-peptide compliance: 18+ confirmation must be present.
+          && d.ageVerified == true
           && (!('userId' in d) || d.userId == null || (isSignedIn() && d.userId == request.auth.uid))
           // Never trust client-set admin/fulfilment fields at creation time.
           && !('paid' in d) && !('paidAt' in d)
