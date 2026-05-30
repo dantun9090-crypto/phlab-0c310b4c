@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import logoUrl from '@/assets/logo.webp';
 
 // ─── Timing (ms) ──────────────────────────────────────────────────────────────
 const T_FADE_IN  = 80;
@@ -10,7 +11,6 @@ const T_OUT      = 150;
 const FPS_INTRO    = 15;
 const FRAME_MS_INTRO = 1000 / FPS_INTRO;
 
-import logoUrl from '@/assets/logo.webp';
 const LOGO_URL = logoUrl;
 
 // ─── Particle ─────────────────────────────────────────────────────────────────
