@@ -786,12 +786,16 @@ export const addProduct = async (product: Omit<Product, 'id'>) => {
   invalidateProductsCache();
   // Fire-and-forget CDN/prerender invalidation (defined below)
   if (typeof window !== 'undefined') {
-    void import('./cache-invalidate.functions')
-      .then(({ invalidateProductCache }) =>
-        invalidateProductCache({ data: { category: data.category } }).catch(() => {}),
-      )
-      .catch(() => {});
+    void (async () => {
+      try {
+        const idToken = await auth.currentUser?.getIdToken();
+        if (!idToken) return;
+        const { invalidateProductCache } = await import('./cache-invalidate.functions');
+        await invalidateProductCache({ data: { category: data.category, idToken } }).catch(() => {});
+      } catch { /* ignore */ }
+    })();
   }
+
   return ref.id;
 };
 
