@@ -484,6 +484,9 @@ export default function CheckoutPage() {
       let serverCoupon: Awaited<ReturnType<typeof validateCartPrices>>['coupon'] = null;
       try {
         const baseShippingForCall = SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod)?.price ?? 4.99;
+        const idToken = auth.currentUser && !auth.currentUser.isAnonymous
+          ? await auth.currentUser.getIdToken().catch(() => null)
+          : null;
         const validation = await validateCartPrices({
           data: {
             items: cart.map(item => ({
@@ -493,6 +496,7 @@ export default function CheckoutPage() {
             })),
             couponCode: appliedCoupon?.code ?? null,
             shippingCost: baseShippingForCall,
+            idToken,
           },
         });
         if (!validation.ok) {
