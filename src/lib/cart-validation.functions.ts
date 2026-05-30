@@ -14,6 +14,8 @@
  */
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { verifyFirebaseIdToken } from './server/firebase-auth-admin';
+import { getDocAdmin } from './server/firestore-admin';
 
 const FIREBASE_PROJECT_ID = 'prohealthpeptides-a0808';
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents`;
@@ -28,7 +30,25 @@ const inputSchema = z.object({
   items: z.array(cartItemSchema).min(1).max(50),
   couponCode: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/).optional().nullable(),
   shippingCost: z.number().min(0).max(1000).optional(),
+  idToken: z.string().min(1).max(4096).optional().nullable(),
 });
+
+/**
+ * SECURITY: Resolve whether the caller is allowed to purchase VIP-only
+ * products. Verifies the supplied Firebase ID token and checks the
+ * matching `customers/{uid}` doc for `isVip === true` (admins also pass).
+ * Returns false on any failure — never throws into the cart flow.
+ */
+async function callerIsVip(idToken: string | null | undefined): Promise<boolean> {
+  if (!idToken) return false;
+  try {
+    const { uid } = await verifyFirebaseIdToken(idToken);
+    const doc = await getDocAdmin('customers', uid);
+    return doc?.isVip === true || doc?.isAdmin === true;
+  } catch {
+    return false;
+  }
+}
 
 type CouponType = 'percentage' | 'fixed' | 'free_shipping';
 interface ValidatedCoupon {
