@@ -197,6 +197,28 @@ export const Route = createFileRoute("/api/public/send-mail")({
               break;
             }
             case "order-confirmation": {
+              // Verify the order actually exists in Firestore and that the
+              // recipient email matches the order's customer email. Without
+              // this anyone could POST arbitrary data and have a PH Labs
+              // branded invoice delivered to any inbox.
+              const order = await getDocAdmin("orders", input.orderId);
+              if (!order) {
+                return json({ error: "order_not_found" }, 404);
+              }
+              const orderEmail =
+                typeof order.email === "string"
+                  ? order.email
+                  : typeof (order.customer as { email?: string } | undefined)
+                        ?.email === "string"
+                    ? (order.customer as { email: string }).email
+                    : null;
+              if (
+                !orderEmail ||
+                orderEmail.toLowerCase() !== input.email.toLowerCase()
+              ) {
+                return json({ error: "email_mismatch" }, 403);
+              }
+
               to = input.email;
               subject = `Order Confirmed — ${input.orderId} | PH Labs`;
               html = buildProfessionalInvoiceEmail({
@@ -220,6 +242,7 @@ export const Route = createFileRoute("/api/public/send-mail")({
               });
               break;
             }
+
           }
 
           await addDocAdmin("mail", {
