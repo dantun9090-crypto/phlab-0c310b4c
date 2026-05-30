@@ -499,8 +499,9 @@ export const resetPassword = async (email: string) => {
 };
 
 export const loginUser = async (email: string, password: string) => {
-  ensureAppCheck();
+  await ensureAppCheckReady();
   const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
   try {
     await updateDoc(doc(db, 'customers', userCredential.user.uid), { lastLoginAt: Timestamp.now() });
   } catch { /* doc may not exist yet */ }
