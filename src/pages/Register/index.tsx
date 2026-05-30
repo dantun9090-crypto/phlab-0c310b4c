@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, CheckCircle2, Loader2, Gift, Phone } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { registerUser, signInWithGoogle } from '@/lib/firebase';
+import { registerUser, signInWithGoogle, ensureAppCheck } from '@/lib/firebase';
 
 
 export default function Register() {
@@ -36,6 +36,8 @@ export default function Register() {
 
   // Capture ?ref= from URL and store in localStorage
   useEffect(() => {
+    // Warm up App Check token before the user submits.
+    ensureAppCheck();
     const refFromUrl = searchParams.get('ref');
     if (refFromUrl) {
       localStorage.setItem('referrer_code', refFromUrl);
@@ -45,6 +47,7 @@ export default function Register() {
       if (stored) setReferralCode(stored);
     }
   }, [searchParams]);
+
 
   const handleGoogle = async () => {
     setError('');

@@ -1,6 +1,7 @@
 // Firebase Configuration
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider, getToken as getAppCheckToken, type AppCheck } from 'firebase/app-check';
+
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -67,12 +68,14 @@ if (import.meta.env.DEV && typeof self !== 'undefined') {
 }
 
 let appCheckInitialised = false;
+let appCheckInstance: AppCheck | null = null;
+let appCheckTokenPromise: Promise<void> | null = null;
 const appCheckReadyCallbacks: Array<() => void> = [];
 
 const initAppCheck = () => {
   if (appCheckInitialised) return;
   try {
-    initializeAppCheck(app, {
+    appCheckInstance = initializeAppCheck(app, {
       provider: new ReCaptchaEnterpriseProvider('6LfOsvksAAAAAHfxMJ_DFedEq55DjUafI2w-Urq0'),
       isTokenAutoRefreshEnabled: true,
     });
@@ -93,12 +96,39 @@ export function ensureAppCheck() {
   if (!appCheckInitialised) initAppCheck();
 }
 
+/**
+ * Await App Check until it has actually fetched a token from reCAPTCHA
+ * Enterprise. MUST be awaited before any Firebase Auth / Firestore write
+ * that goes through App Check enforcement — otherwise the very first call
+ * after init races the reCAPTCHA script load and is sent without a token,
+ * which Firebase rejects with `auth/firebase-app-check-token-is-invalid`
+ * (or `permission-denied` for Firestore).
+ *
+ * Safe to call repeatedly — the underlying token fetch is memoised.
+ */
+export async function ensureAppCheckReady(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  ensureAppCheck();
+  if (!appCheckInstance) return;
+  if (!appCheckTokenPromise) {
+    appCheckTokenPromise = getAppCheckToken(appCheckInstance, /* forceRefresh */ false)
+      .then(() => undefined)
+      .catch((e) => {
+        // Reset so a retry can attempt again; don't crash the caller.
+        appCheckTokenPromise = null;
+        console.warn('[AppCheck] initial token fetch failed:', e);
+      });
+  }
+  await appCheckTokenPromise;
+}
+
 export function onAppCheckReady(cb: () => void) {
   if (appCheckInitialised) { cb(); return; }
   appCheckReadyCallbacks.push(cb);
   // Auto-init when someone subscribes so existing callers still get a token.
   ensureAppCheck();
 }
+
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
@@ -429,8 +459,9 @@ export const registerUser = async (
   phone?: string,
   tcAccepted?: boolean,
 ) => {
-  ensureAppCheck();
+  await ensureAppCheckReady();
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
   const user = userCredential.user;
   const referralCode = generateReferralCode();
   const now = Timestamp.now();
@@ -468,8 +499,9 @@ export const resetPassword = async (email: string) => {
 };
 
 export const loginUser = async (email: string, password: string) => {
-  ensureAppCheck();
+  await ensureAppCheckReady();
   const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
   try {
     await updateDoc(doc(db, 'customers', userCredential.user.uid), { lastLoginAt: Timestamp.now() });
   } catch { /* doc may not exist yet */ }
@@ -485,8 +517,9 @@ const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export const signInWithGoogle = async () => {
-  ensureAppCheck();
+  await ensureAppCheckReady();
   const result = await signInWithPopup(auth, googleProvider);
+
   const user = result.user;
 
   // Upsert customer profile — create if first time, update lastLoginAt if returning
