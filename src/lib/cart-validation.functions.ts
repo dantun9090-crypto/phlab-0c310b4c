@@ -181,6 +181,11 @@ export async function runValidateCart(data: ValidateInput): Promise<ValidateCart
   const errors: string[] = [];
   const validated: ValidatedLine[] = [];
 
+  // SECURITY: Resolve VIP status of the caller ONCE so we can reject any
+  // cart line whose product is `isVip: true` when the caller is not VIP.
+  const isVipCaller = await callerIsVip(data.idToken ?? null);
+
+
   // Fetch each product document from the Firestore REST API. The
   // `product_stock` collection has public read rules already (the shop
   // page reads it unauthenticated), so no auth token is required.
