@@ -12,7 +12,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 
-import { addDocAdmin } from "@/lib/server/firestore-admin";
+import { addDocAdmin, getDocAdmin } from "@/lib/server/firestore-admin";
 import { buildContactFormEmail } from "@/templates/contactFormEmail";
 import { protocolLibraryEmail } from "@/templates/protocolLibraryEmail";
 import { buildProfessionalInvoiceEmail } from "@/templates/professionalInvoiceEmail";
