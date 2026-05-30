@@ -37,10 +37,15 @@ export default function Login() {
   const [settings, setSettings] = useState<SiteSettings>({});
 
   useEffect(() => {
+    // Warm up App Check so reCAPTCHA Enterprise has a token ready by the
+    // time the user finishes typing their password — avoids a race where
+    // the first signIn call goes out without an App Check token.
+    ensureAppCheck();
     getDoc(doc(db, 'settings', 'siteSettings')).then(snap => {
       if (snap.exists()) setSettings(snap.data() as SiteSettings);
     }).catch(() => {});
   }, []);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
