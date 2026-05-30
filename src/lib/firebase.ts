@@ -459,8 +459,9 @@ export const registerUser = async (
   phone?: string,
   tcAccepted?: boolean,
 ) => {
-  ensureAppCheck();
+  await ensureAppCheckReady();
   const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
   const user = userCredential.user;
   const referralCode = generateReferralCode();
   const now = Timestamp.now();
