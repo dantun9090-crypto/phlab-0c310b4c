@@ -1,5 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { requireFirebaseAdmin } from './server/firebase-auth-admin';
+
 
 /**
  * Fire Cloudflare cache purge + Prerender.io recache for product-related URLs.
