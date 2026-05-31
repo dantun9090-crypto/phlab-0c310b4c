@@ -35,8 +35,9 @@ import DiagnosticsTab from './tabs/DiagnosticsTab';
 import PrerenderStatusTab from './tabs/PrerenderStatusTab';
 import MerchantFeedTab from './tabs/MerchantFeedTab';
 import AuthEventsTab from './tabs/AuthEventsTab';
+import MailHealthTab from './tabs/MailHealthTab';
 
-type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'merchantfeed';
+type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'merchantfeed';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
