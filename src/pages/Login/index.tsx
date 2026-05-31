@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { loginUser, resetPassword, signInWithGoogle, db, doc, getDoc, ensureAppCheck } from '@/lib/firebase';
 
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,6 +14,7 @@ interface SiteSettings {
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -35,6 +36,10 @@ export default function Login() {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState('');
   const [settings, setSettings] = useState<SiteSettings>({});
+  const redirectTarget = (() => {
+    const value = new URLSearchParams(location.search).get('redirect') || '/account';
+    return value.startsWith('/') && !value.startsWith('//') ? value : '/account';
+  })();
 
   useEffect(() => {
     // Warm up App Check so reCAPTCHA Enterprise has a token ready by the
@@ -53,7 +58,7 @@ export default function Login() {
     setLoading(true);
     try {
       await loginUser(formData.email, formData.password);
-      navigate('/account');
+      navigate(redirectTarget);
     } catch (err: any) {
       if (err.code === 'auth/user-not-found') setError('No account found with this email.');
       else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') setError('Incorrect email or password.');
@@ -68,7 +73,7 @@ export default function Login() {
     setGoogleLoading(true);
     try {
       await signInWithGoogle();
-      navigate('/account');
+      navigate(redirectTarget);
     } catch (err: any) {
       console.error('Google sign-in error:', err?.code, err?.message);
       if (err?.code === 'auth/popup-blocked') {

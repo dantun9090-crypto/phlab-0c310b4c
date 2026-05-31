@@ -1,4 +1,4 @@
-import { createBrowserRouter, Outlet, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Outlet, Navigate, useLocation } from 'react-router-dom';
 import React, { useEffect, useState, useCallback, Suspense, lazy } from 'react';
 import { Layout } from '@/components/Layout';
 import ScrollToTop from '@/components/ScrollToTop';
@@ -51,6 +51,7 @@ function PageLoader() {
 // Auth guard — redirects anonymous users to /login
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<'loading' | 'authed' | 'anon'>('loading');
+  const location = useLocation();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -60,7 +61,10 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (status === 'loading') return <PageLoader />;
-  if (status === 'anon') return <Navigate to="/login" replace />;
+  if (status === 'anon') {
+    const redirect = `${location.pathname}${location.search}`;
+    return <Navigate to={`/login?redirect=${encodeURIComponent(redirect)}`} replace />;
+  }
   return <>{children}</>;
 }
 

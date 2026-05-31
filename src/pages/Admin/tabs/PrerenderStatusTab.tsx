@@ -54,7 +54,7 @@ export default function PrerenderStatusTab() {
             Prerender Status
           </h2>
           <p className="text-sm text-[#9cb8d9] mt-1">
-            Live probe of both domains as Googlebot — HTTP code, Prerender headers, and soft-404 detection.
+            Live probe of canonical and legacy domains as Googlebot — HTTP code, redirect target, Prerender headers, and soft-404 detection.
             {checkedAt && <span className="ml-2 text-[#3a5a82]">Last check: {new Date(checkedAt).toLocaleTimeString('en-GB')}</span>}
           </p>
         </div>
@@ -161,7 +161,7 @@ export default function PrerenderStatusTab() {
         <p>• Fetches each URL with a real Googlebot User-Agent, so you see what bots see (Cloudflare → Prerender.io → origin).</p>
         <p>• <span className="text-white">Meta 404</span> = the page rendered <code className="text-emerald-400">{'<meta name="prerender-status-code" content="404">'}</code> — Prerender.io will mark it as 404 for crawlers even if HTTP was 200.</p>
         <p>• <span className="text-white">x-prerendered: yes</span> means our edge served the Prerender.io snapshot instead of raw SSR.</p>
-        <p>• <span className="text-white">Redirect 301</span> on legacy product slugs is correct — that's the Cloudflare ruleset firing before Prerender.</p>
+        <p>• <span className="text-white">Redirect 301</span> on legacy product slugs and prohealthpeptides.co.uk URLs is correct — Cloudflare should send them to <code className="text-emerald-400">https://www.phlabs.co.uk</code>.</p>
       </div>
     </div>
   );
