@@ -7,12 +7,13 @@ import {
   CheckCircle2, ChevronRight, Tag, X
 } from 'lucide-react';
 import {
-  auth, signInAnonymously, doc, getDoc, collection, addDoc,
-  updateDoc, Timestamp, db, validateCoupon, redeemCoupon,
+  auth, signInAnonymously, doc, getDoc,
+  updateDoc, db, validateCoupon, redeemCoupon,
   onAuthStateChanged, FirebaseUser, registerUser
 } from '@/lib/firebase';
 import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
+import { createOrder } from '@/lib/create-order.functions';
 import { migrateStoredCart } from '@/lib/cart-migration';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
@@ -473,146 +474,60 @@ export default function CheckoutPage() {
         }
       }
 
-      // SECURITY: Re-validate prices server-side from the Firestore product_stock
-      // collection. Never trust priceNum from localStorage — a user can edit it
-      // in DevTools and create a £0 order. The server returns the canonical unit
-      // price for each line; we use those values when writing the order document.
-      let serverItems: Awaited<ReturnType<typeof validateCartPrices>>['items'];
-      let serverSubtotal: number;
-      let verifiedDiscount = 0;
-      let serverShippingDiscount = 0;
-      let serverCoupon: Awaited<ReturnType<typeof validateCartPrices>>['coupon'] = null;
+      // SECURITY: Order creation runs entirely server-side. The server
+      // re-validates the cart against Firestore `product_stock`, recomputes
+      // subtotal/discount/shipping/total from those authoritative prices,
+      // and writes the order document via the service account (bypassing
+      // client-writable rules). The client never supplies totalAmount.
+      let serverResult: Awaited<ReturnType<typeof createOrder>>;
       try {
-        const baseShippingForCall = SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod)?.price ?? 4.99;
         const idToken = auth.currentUser && !auth.currentUser.isAnonymous
           ? await auth.currentUser.getIdToken().catch(() => null)
           : null;
-        const validation = await validateCartPrices({
+        serverResult = await createOrder({
           data: {
             items: cart.map(item => ({
               productId: String(item.id),
+              productName: item.name,
               variantId: item.variantId ? String(item.variantId) : null,
+              variantName: item.variantName || item.dosage || null,
               quantity: item.quantity,
             })),
+            customer: {
+              firstName: form.firstName,
+              lastName: form.lastName,
+              email: form.email,
+              phone: form.phone,
+              address: form.address,
+              city: form.city,
+              postcode: form.postcode,
+              country: form.country,
+            },
+            shippingMethod: form.shippingMethod,
+            paymentMethod: 'bank_transfer',
+            ageVerified: true,
+            termsAccepted: true,
             couponCode: appliedCoupon?.code ?? null,
-            shippingCost: baseShippingForCall,
             idToken,
           },
         });
-        if (!validation.ok) {
-          // Treat "no longer exists" / "could not verify" errors as a stale-cart
-          // signal so the user sees the reload banner instead of just a stock msg.
-          const looksStale = validation.errors.some(e =>
-            /no longer exists|could not verify price/i.test(e),
-          );
-          if (looksStale) setCartStale(true);
-          setErrors(prev => ({
-            ...prev,
-            stock: validation.errors[0] ?? 'We could not verify your cart prices. Please refresh and try again.',
-          }));
-          setIsPlacing(false);
-          return;
-        }
-        serverItems = validation.items;
-        serverSubtotal = validation.subtotal;
-        verifiedDiscount = validation.discount;
-        serverShippingDiscount = validation.shippingDiscount;
-        serverCoupon = validation.coupon;
-      } catch {
+      } catch (err: any) {
+        const msg = String(err?.message || '');
+        if (/no longer exists|could not verify price/i.test(msg)) setCartStale(true);
         setErrors(prev => ({
           ...prev,
-          stock: 'We could not verify your cart prices. Please refresh and try again.',
+          stock: msg || 'We could not place your order. Please refresh and try again.',
         }));
         setIsPlacing(false);
         return;
       }
 
-      // Server-validated shipping + total. Discount and free-shipping come from
-      // the server — never from client React state (`appliedCoupon.value`).
-      const verifiedIsFreeShipping = serverSubtotal >= FREE_SHIPPING_THRESHOLD;
-      const baseShippingCost = verifiedIsFreeShipping ? 0 : (SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod)?.price ?? 4.99);
-      const verifiedShippingCost = +Math.max(0, baseShippingCost - serverShippingDiscount).toFixed(2);
-      const verifiedTotal = +Math.max(0, serverSubtotal - verifiedDiscount + verifiedShippingCost).toFixed(2);
+      const orderId = serverResult.orderId;
+      const btRef = serverResult.bankTransferReference;
+      const totalAmount = serverResult.totalAmount;
 
-      const orderId = 'PHP-' + Date.now().toString(36).toUpperCase();
-      const totalAmount = verifiedTotal;
-      const shippingOption = SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod);
-      const shippingLabel = verifiedIsFreeShipping ? 'Free Delivery (order over £50)' : (shippingOption?.label ?? 'Standard Delivery');
-      const btRef = `PHP-${orderId.slice(4)}-BT`;
-      const now = Timestamp.now();
-
-      // Build items from cart but OVERWRITE price + total with server-validated values.
-      const serverPriceById = new Map<string, typeof serverItems[number]>();
-      for (const s of serverItems) {
-        serverPriceById.set(`${s.productId}::${s.variantId ?? ''}`, s);
-      }
-
-
-      const orderData = {
-        orderId,
-        customer: {
-          firstName: form.firstName,
-          lastName: form.lastName,
-          email: form.email,
-          phone: form.phone,
-          address: form.address,
-          city: form.city,
-          postcode: form.postcode,
-          country: form.country,
-        },
-        items: cart.map(item => {
-          const key = `${String(item.id)}::${item.variantId ? String(item.variantId) : ''}`;
-          const verified = serverPriceById.get(key);
-          const unit = verified?.unitPrice ?? item.priceNum;
-          return {
-            productId: String(item.id),
-            productName: item.name,
-            variantId: item.variantId,
-            variantName: item.variantName || item.dosage,
-            quantity: item.quantity,
-            price: unit,
-            total: +(unit * item.quantity).toFixed(2),
-          };
-        }),
-        subtotal: serverSubtotal,
-        discount: verifiedDiscount,
-        couponCode: serverCoupon?.code || null,
-        shippingCost: verifiedShippingCost,
-        shippingMethod: form.shippingMethod,
-        shippingLabel,
-        total: totalAmount,
-        totalAmount,
-        paymentMethod: 'bank_transfer',
-        bankTransferReference: btRef,
-        status: 'pending_payment',
-        userId: userId || null,
-        // T&C compliance — required for legal audit trail (both field names for admin panel compatibility)
-        tcAccepted: form.acceptedTerms,
-        tcAcceptedAt: form.acceptedTerms ? now : null,
-        termsAccepted: form.acceptedTerms,
-        termsAcceptedAt: form.acceptedTerms ? now : null,
-        ageVerified: form.ageVerified,
-        ageVerifiedAt: form.ageVerified ? now : null,
-        termsVersion: '1.0',
-        termsAcceptedIp: typeof window !== 'undefined' ? window.location.hostname : null,
-        createdAt: now,
-        orderDate: now,
-      };
-
-
-      // Check stock first
-      for (const item of cart) {
-        if (item.stock !== undefined && item.stock < item.quantity) {
-          setErrors(prev => ({ ...prev, stock: `"${item.name}" only has ${item.stock} in stock` }));
-          setIsPlacing(false);
-          return;
-        }
-      }
-
-      await addDoc(collection(db, 'orders'), orderData);
-
-      if (serverCoupon) {
-        try { await redeemCoupon(serverCoupon.id); } catch { /* ignore */ }
+      if (serverResult.couponCode && appliedCoupon) {
+        try { await redeemCoupon(appliedCoupon.id); } catch { /* ignore */ }
       }
 
       for (const item of cart) {
@@ -633,7 +548,7 @@ export default function CheckoutPage() {
       }
 
       setBankTransferRef(btRef);
-      setConfirmedTotal(total);
+      setConfirmedTotal(totalAmount.toFixed(2));
 
       try {
         await sendPublicMail({
@@ -647,9 +562,9 @@ export default function CheckoutPage() {
             quantity: item.quantity,
             priceNum: item.priceNum,
           })),
-          subtotal,
-          shipping: shippingCost,
-          discount,
+          subtotal: serverResult.subtotal,
+          shipping: serverResult.shippingCost,
+          discount: serverResult.discount,
           total: totalAmount,
           address: form.address,
           city: form.city,
