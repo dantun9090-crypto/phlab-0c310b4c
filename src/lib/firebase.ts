@@ -20,6 +20,7 @@ import {
   User as FirebaseUser,
 } from 'firebase/auth';
 import { getStorage, ref as storageRef, uploadBytesResumable, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from 'firebase/storage';
+import { logAuthEvent, logAuthFailure } from '@/lib/auth-events';
 // Email template builders are dynamically imported inside their send-helpers
 // (sendWelcomeEmail / sendOrderStatusEmail / processReferralReward) so the
 // large HTML template strings don't ship in the home/PDP bundles.
@@ -475,7 +476,7 @@ export const registerUser = async (
   try {
     userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
   } catch (err) {
-    const { logAuthFailure } = await import('@/lib/auth-events');
+    
     logAuthFailure('register_failure', err, { email: cleanEmail });
     throw err;
   }
@@ -508,7 +509,7 @@ export const registerUser = async (
   // Send email verification
   await sendEmailVerification(user);
   await logActivity({ type: 'signup', message: `New user registered: ${cleanEmail}`, userId: user.uid });
-  const { logAuthEvent } = await import('@/lib/auth-events');
+  
   logAuthEvent({ type: 'register_success', email: cleanEmail, uid: user.uid });
   return userCredential;
 };
@@ -516,10 +517,10 @@ export const registerUser = async (
 export const resetPassword = async (email: string) => {
   try {
     await sendPasswordResetEmail(auth, email);
-    const { logAuthEvent } = await import('@/lib/auth-events');
+    
     logAuthEvent({ type: 'password_reset_request', email });
   } catch (err) {
-    const { logAuthFailure } = await import('@/lib/auth-events');
+    
     logAuthFailure('password_reset_failure', err, { email });
     throw err;
   }
@@ -534,7 +535,7 @@ export const loginUser = async (email: string, password: string) => {
     await ensureAppCheckReady().catch((e) => console.warn('[AppCheck] skipped:', e));
     userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
   } catch (err) {
-    const { logAuthFailure } = await import('@/lib/auth-events');
+    
     logAuthFailure('login_failure', err, { email: cleanEmail });
     throw err;
   }
@@ -564,14 +565,14 @@ export const loginUser = async (email: string, password: string) => {
       });
     }
   } catch { /* doc may not exist yet */ }
-  const { logAuthEvent } = await import('@/lib/auth-events');
+  
   logAuthEvent({ type: 'login_success', email: cleanEmail, uid: userCredential.user.uid });
   return userCredential;
 };
 
 export const logoutUser = async () => {
   const current = auth.currentUser;
-  const { logAuthEvent } = await import('@/lib/auth-events');
+  
   logAuthEvent({ type: 'logout', email: current?.email ?? null, uid: current?.uid ?? null });
   return signOut(auth);
 };
@@ -588,7 +589,7 @@ export const signInWithGoogle = async () => {
   try {
     result = await signInWithPopup(auth, googleProvider);
   } catch (err) {
-    const { logAuthFailure } = await import('@/lib/auth-events');
+    
     logAuthFailure('google_failure', err);
     throw err;
   }
@@ -630,7 +631,7 @@ export const signInWithGoogle = async () => {
   } else {
     await updateDoc(customerRef, { lastLoginAt: Timestamp.now() });
   }
-  const { logAuthEvent } = await import('@/lib/auth-events');
+  
   logAuthEvent({ type: 'google_success', email: user.email ?? null, uid: user.uid });
   return result;
 };
