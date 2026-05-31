@@ -95,6 +95,7 @@ service cloud.firestore {
     match /inventory/{id}       { allow read: if true; allow write: if isAdmin(); }
     match /adverts/{id}         { allow read: if true; allow write: if isAdmin(); }
     match /settings/{id}        { allow read: if true; allow write: if isAdmin(); }
+    match /siteSettings/{id}    { allow read: if true; allow write: if isAdmin(); }
     match /banners/{id}         { allow read: if true; allow write: if isAdmin(); }
     match /landingPage/{id}     { allow read: if true; allow write: if isAdmin(); }
     match /themes/{id}          { allow read: if true; allow write: if isAdmin(); }
