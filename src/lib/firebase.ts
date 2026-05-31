@@ -20,6 +20,7 @@ import {
   User as FirebaseUser,
 } from 'firebase/auth';
 import { getStorage, ref as storageRef, uploadBytesResumable, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from 'firebase/storage';
+import { logAuthEvent, logAuthFailure } from '@/lib/auth-events';
 // Email template builders are dynamically imported inside their send-helpers
 // (sendWelcomeEmail / sendOrderStatusEmail / processReferralReward) so the
 // large HTML template strings don't ship in the home/PDP bundles.
