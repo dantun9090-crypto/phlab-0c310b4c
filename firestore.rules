@@ -38,33 +38,18 @@ service cloud.firestore {
     }
 
     // ---------- orders ----------
-    // Anyone (incl. guests) can CREATE an order at checkout, but the payload
-    // must look like a real checkout submission — block attempts to seed
-    // arbitrary admin-controlled fields (paid status, refunds, fulfilment).
+    // SECURITY: Client-side order creation is DISABLED. Orders are written
+    // exclusively by the `createOrder` server function (TanStack server fn)
+    // which re-validates cart prices/stock/coupon against `product_stock`
+    // and computes the authoritative subtotal/discount/shipping/total
+    // before writing via the Firebase service account (bypasses these
+    // rules). This prevents price-tampering attacks where a client could
+    // POST an order with totalAmount=0.01 directly via the Firebase SDK.
+    //
     // Owners can read their own; only admins can mutate after creation,
     // except a signed-in owner may attach a short customer note.
     function isOrderOwner() {
       return isSignedIn() && resource.data.userId == request.auth.uid;
-    }
-    function validOrderCreate() {
-      let d = request.resource.data;
-      return d.totalAmount is number && d.totalAmount >= 0
-          && d.subtotal is number && d.subtotal >= 0
-          && d.orderId is string && d.orderId.size() > 0 && d.orderId.size() < 64
-          && d.items is list && d.items.size() > 0 && d.items.size() <= 50
-          && d.customer is map
-          && d.customer.email is string && d.customer.email.size() < 320
-          && d.status == 'pending_payment'
-          && d.paymentMethod is string
-          // UK research-peptide compliance: 18+ confirmation must be present.
-          && d.ageVerified == true
-          && (!('userId' in d) || d.userId == null || (isSignedIn() && d.userId == request.auth.uid))
-          // Never trust client-set admin/fulfilment fields at creation time.
-          && !('paid' in d) && !('paidAt' in d)
-          && !('refunded' in d) && !('refundedAt' in d) && !('refundAmount' in d)
-          && !('dispatched' in d) && !('dispatchedAt' in d)
-          && !('trackingNumber' in d) && !('trackingUrl' in d)
-          && !('adminNotes' in d) && !('internalNotes' in d);
     }
     function ownerNoteOnlyUpdate() {
       // Owner may only touch `customerNote` (and a timestamp) — nothing else.
@@ -75,7 +60,7 @@ service cloud.firestore {
                   && request.resource.data.customerNote.size() <= 1000));
     }
     match /orders/{orderId} {
-      allow create: if validOrderCreate();
+      allow create: if false; // server-only — see createOrder server fn
       allow read:   if isAdmin() || isOrderOwner();
       allow update: if isAdmin() || (isOrderOwner() && ownerNoteOnlyUpdate());
       allow delete: if isAdmin();
