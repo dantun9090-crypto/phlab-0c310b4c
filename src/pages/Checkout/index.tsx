@@ -7,8 +7,8 @@ import {
   CheckCircle2, ChevronRight, Tag, X
 } from 'lucide-react';
 import {
-  auth, signInAnonymously, doc, getDoc, collection, addDoc,
-  updateDoc, Timestamp, db, validateCoupon, redeemCoupon,
+  auth, signInAnonymously, doc, getDoc,
+  updateDoc, db, validateCoupon, redeemCoupon,
   onAuthStateChanged, FirebaseUser, registerUser
 } from '@/lib/firebase';
 import type { Coupon } from '@/lib/firebase';
