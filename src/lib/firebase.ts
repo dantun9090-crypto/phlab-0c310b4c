@@ -108,18 +108,26 @@ export function ensureAppCheck() {
  */
 export async function ensureAppCheckReady(): Promise<void> {
   if (typeof window === 'undefined') return;
-  ensureAppCheck();
+  try { ensureAppCheck(); } catch (e) { console.warn('[AppCheck] init failed:', e); return; }
   if (!appCheckInstance) return;
   if (!appCheckTokenPromise) {
     appCheckTokenPromise = getAppCheckToken(appCheckInstance, /* forceRefresh */ false)
       .then(() => undefined)
       .catch((e) => {
-        // Reset so a retry can attempt again; don't crash the caller.
         appCheckTokenPromise = null;
         console.warn('[AppCheck] initial token fetch failed:', e);
       });
   }
-  await appCheckTokenPromise;
+  // Never block auth/login longer than 4s — if reCAPTCHA Enterprise is blocked
+  // by CSP / network / ad-blocker, the user must still be able to sign in.
+  // Firebase Auth + Firestore rules still validate the request.
+  await Promise.race([
+    appCheckTokenPromise,
+    new Promise<void>((resolve) => setTimeout(() => {
+      console.warn('[AppCheck] token fetch timed out after 4s — proceeding without token');
+      resolve();
+    }, 4000)),
+  ]);
 }
 
 export function onAppCheckReady(cb: () => void) {
