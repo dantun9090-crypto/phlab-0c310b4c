@@ -77,6 +77,7 @@ const navGroups = [
       { id: 'backup', label: 'Backup', icon: HardDrive },
       { id: 'ipwhitelist', label: 'IP Whitelist', icon: Lock },
       { id: 'diagnostics', label: 'Diagnostics', icon: Activity },
+      { id: 'mailhealth', label: 'Mail Health', icon: Mail },
     ],
   },
 ];
