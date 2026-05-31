@@ -527,10 +527,11 @@ export const resetPassword = async (email: string) => {
 
 
 export const loginUser = async (email: string, password: string) => {
-  await ensureAppCheckReady();
   const cleanEmail = normaliseAuthEmail(email);
   let userCredential;
   try {
+    // App Check is best-effort — never block login if reCAPTCHA can't load.
+    await ensureAppCheckReady().catch((e) => console.warn('[AppCheck] skipped:', e));
     userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
   } catch (err) {
     const { logAuthFailure } = await import('@/lib/auth-events');
