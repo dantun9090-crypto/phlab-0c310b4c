@@ -35,8 +35,9 @@ import DiagnosticsTab from './tabs/DiagnosticsTab';
 import PrerenderStatusTab from './tabs/PrerenderStatusTab';
 import MerchantFeedTab from './tabs/MerchantFeedTab';
 import AuthEventsTab from './tabs/AuthEventsTab';
+import MailHealthTab from './tabs/MailHealthTab';
 
-type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'merchantfeed';
+type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'merchantfeed';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -305,6 +306,7 @@ export default function AdminPage() {
         case 'compliance': return <ComplianceTab />;
         case 'auditlog': return <AuditLogTab />;
         case 'authevents': return <AuthEventsTab />;
+        case 'mailhealth': return <MailHealthTab />;
         case 'emailmarketing': return <EmailMarketingTab />;
 
         case 'emailpreview': return <EmailPreviewTab />;
@@ -329,7 +331,7 @@ export default function AdminPage() {
   const TAB_LABELS: Record<string, string> = {
     dashboard: 'Dashboard', inventory: 'Inventory', featured: 'Featured',
     qc: 'QC Dashboard', orders: 'Orders', customers: 'Customers',
-    compliance: 'Compliance', auditlog: 'Audit Log', authevents: 'Auth Events', invoices: 'Invoices', banner: 'Promo Banner',
+    compliance: 'Compliance', auditlog: 'Audit Log', authevents: 'Auth Events', mailhealth: 'Mail Health', invoices: 'Invoices', banner: 'Promo Banner',
     adverts: 'Adverts', landing: 'Landing Pages', policies: 'Policies',
     marketing: 'Marketing', emailmarketing: 'Email Campaigns', emailpreview: 'Email Preview',
     seo: 'SEO Settings', sitemap: 'Sitemap Manager', settings: 'Site Settings',
