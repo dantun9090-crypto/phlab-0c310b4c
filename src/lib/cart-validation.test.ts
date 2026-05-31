@@ -10,7 +10,7 @@
  * Run with: `bun test src/lib/cart-validation.test.ts`
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { runValidateCart } from "./cart-validation.functions";
+import { runValidateCart } from "./cart-validation.server";
 
 type FetchInit = { method?: string; headers?: Record<string, string>; body?: string };
 type FetchCall = { url: string; init?: FetchInit };
