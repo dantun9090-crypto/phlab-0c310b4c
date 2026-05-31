@@ -306,6 +306,7 @@ export default function AdminPage() {
         case 'compliance': return <ComplianceTab />;
         case 'auditlog': return <AuditLogTab />;
         case 'authevents': return <AuthEventsTab />;
+        case 'mailhealth': return <MailHealthTab />;
         case 'emailmarketing': return <EmailMarketingTab />;
 
         case 'emailpreview': return <EmailPreviewTab />;
