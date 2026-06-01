@@ -19,7 +19,7 @@
  * application/reports+json payloads and answers 204.
  *
  * Run via:    bun scripts/csp-e2e.ts
- * Override:   CSP_BASE_URL=https://phlab.lovable.app bun scripts/csp-e2e.ts
+ * Override:   CSP_BASE_URL=https://www.phlabs.co.uk bun scripts/csp-e2e.ts
  *
  * Wired into bun run ci so CSP regressions break the build.
  */
