@@ -24,6 +24,7 @@ export interface SeoProduct {
   category: string;
   price: number;
   imageUrl: string;
+  additionalImages?: string[];
   purity?: string;
   isActive: boolean;
   visibility: string;
@@ -38,7 +39,10 @@ export interface SeoProduct {
   updatedAt?: string;
   /** Parsed from variant name/dosage, e.g. "10 mg" → { value: 10, unit: "mg" }. */
   unitPricingMeasure?: UnitPricingMeasure;
+  /** Net weight in grams (for shipping_weight). */
+  weightGrams?: number;
 }
+
 
 /**
  * Parse a dosage / variant name (e.g. "10 mg", "1000mcg", "5 ml") into a
