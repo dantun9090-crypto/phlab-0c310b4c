@@ -152,14 +152,17 @@ export const probePrerenderStatus = createServerFn({ method: 'POST' })
  * POST https://api.prerender.io/recache  { prerenderToken, url }
  */
 export const recachePrerenderUrl = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: { url: string }) => {
+  .inputValidator((data: { url: string; idToken: string }) => {
     if (!data?.url || !isAllowedUrl(data.url)) {
       throw new Error('Only phlabs.co.uk URLs are allowed.');
+    }
+    if (!data?.idToken || typeof data.idToken !== 'string') {
+      throw new Error('idToken required');
     }
     return data;
   })
   .handler(async ({ data }) => {
+    await requireFirebaseAdmin(data.idToken);
     const token = process.env.PRERENDER_TOKEN;
     if (!token) throw new Error('PRERENDER_TOKEN not configured');
     const started = Date.now();
