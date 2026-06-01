@@ -162,25 +162,30 @@ export default function SEOTab() {
     ...productSlugs.map(slug => `${BASE}/products/${slug}`),
   ];
 
+  const pushRecacheResult = (entry: typeof recacheResults[number]) =>
+    setRecacheResults(prev => [entry, ...prev].slice(0, 20));
+
   const handleRecacheAll = async () => {
     const urls = getAllUrls();
     setRecaching(true);
     addLog('info', `Recaching ${urls.length} pages (${KEY_URLS.length} core + ${productSlugs.length} products)…`);
     try {
       const res = await recacheBulk({ data: { urls } });
+      pushRecacheResult({ kind: 'Desktop (all)', urls, ...res });
       if (res.ok) {
-        addLog('success', `✓ Recache queued for ${res.count} pages — Prerender.io will refresh them now`);
+        addLog('success', `✓ Recache queued for ${res.count} pages (HTTP ${res.status}, ${res.durationMs}ms)`);
         const ts = new Date().toISOString();
         localStorage.setItem('php_last_recache', ts);
         setLastRecacheTs(ts);
         localStorage.removeItem('php_recache_pending');
         window.dispatchEvent(new CustomEvent('admin:recache-done'));
       } else {
-        addLog('error', `Recache failed (${res.status}): ${res.response.slice(0, 120)}`);
+        addLog('error', `Recache failed (HTTP ${res.status}): ${res.response.slice(0, 120)}`);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
       addLog('error', `Recache error: ${msg}`);
+      pushRecacheResult({ kind: 'Desktop (all)', urls, count: urls.length, adaptiveType: 'desktop', status: 0, ok: false, response: '', durationMs: 0, recachedAt: new Date().toISOString(), error: msg });
     } finally {
       setRecaching(false);
     }
@@ -193,14 +198,16 @@ export default function SEOTab() {
     addLog('info', `Recaching ${urls.length} product pages only…`);
     try {
       const res = await recacheBulk({ data: { urls } });
+      pushRecacheResult({ kind: 'Products only', urls, ...res });
       if (res.ok) {
-        addLog('success', `✓ Recache queued for ${res.count} product pages`);
+        addLog('success', `✓ Recache queued for ${res.count} product pages (HTTP ${res.status}, ${res.durationMs}ms)`);
       } else {
-        addLog('error', `Recache failed (${res.status}): ${res.response.slice(0, 120)}`);
+        addLog('error', `Recache failed (HTTP ${res.status}): ${res.response.slice(0, 120)}`);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
       addLog('error', `Recache error: ${msg}`);
+      pushRecacheResult({ kind: 'Products only', urls, count: urls.length, adaptiveType: 'desktop', status: 0, ok: false, response: '', durationMs: 0, recachedAt: new Date().toISOString(), error: msg });
     } finally {
       setRecaching(false);
     }
@@ -212,23 +219,26 @@ export default function SEOTab() {
     addLog('info', `Recaching ${urls.length} mobile pages…`);
     try {
       const res = await recacheBulk({ data: { urls, adaptiveType: 'mobile' } });
+      pushRecacheResult({ kind: 'Mobile (all)', urls, ...res });
       if (res.ok) {
-        addLog('success', `✓ Mobile recache queued for ${res.count} pages`);
+        addLog('success', `✓ Mobile recache queued for ${res.count} pages (HTTP ${res.status}, ${res.durationMs}ms)`);
         const ts = new Date().toISOString();
         localStorage.setItem('php_last_recache', ts);
         setLastRecacheTs(ts);
         localStorage.removeItem('php_recache_pending');
         window.dispatchEvent(new CustomEvent('admin:recache-done'));
       } else {
-        addLog('error', `Mobile recache failed (${res.status}): ${res.response.slice(0, 120)}`);
+        addLog('error', `Mobile recache failed (HTTP ${res.status}): ${res.response.slice(0, 120)}`);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
       addLog('error', `Recache error: ${msg}`);
+      pushRecacheResult({ kind: 'Mobile (all)', urls, count: urls.length, adaptiveType: 'mobile', status: 0, ok: false, response: '', durationMs: 0, recachedAt: new Date().toISOString(), error: msg });
     } finally {
       setRecaching(false);
     }
   };
+
 
 
 
