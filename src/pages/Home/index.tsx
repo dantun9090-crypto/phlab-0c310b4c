@@ -693,7 +693,7 @@ export default function HomePage() {
                   {/* Image area */}
                   <div className="relative overflow-hidden" style={{ aspectRatio: '4/3', background: '#040d1a' }}>
                     {p.image ? (
-                      <img src={p.image} alt={p.name} loading="lazy" width="400" height="300" decoding="async" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
+                      <img src={p.image} alt={`${p.name} research peptide vial`} loading="lazy" width="400" height="300" decoding="async" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <FlaskConical style={{ width: 48, height: 48, color: 'rgba(16,185,129,0.3)' }} />
@@ -989,8 +989,10 @@ export default function HomePage() {
                 ) : (
                   <form onSubmit={handleEmailSubmit} className="flex flex-col gap-4">
                     <div>
-                      <label className="block text-xs font-semibold mb-2" style={{ color: '#8db4d8' }}>Email address</label>
+                      <label htmlFor="protocol-library-email" className="block text-xs font-semibold mb-2" style={{ color: '#8db4d8' }}>Email address</label>
                       <input
+                        id="protocol-library-email"
+                        name="email"
                         type="email"
                         value={emailInput}
                         onChange={e => setEmailInput(e.target.value)}
