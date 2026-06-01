@@ -170,7 +170,8 @@ export default function SEOTab() {
     setRecaching(true);
     addLog('info', `Recaching ${urls.length} pages (${KEY_URLS.length} core + ${productSlugs.length} products)…`);
     try {
-      const res = await recacheBulk({ data: { urls } });
+      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const res = await recacheBulk({ data: { urls, idToken } });
       pushRecacheResult({ kind: 'Desktop (all)', urls, ...res });
       if (res.ok) {
         addLog('success', `✓ Recache queued for ${res.count} pages (HTTP ${res.status}, ${res.durationMs}ms)`);
