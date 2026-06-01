@@ -183,31 +183,54 @@ function decoratePrerender(resp: Response, fromCache: boolean, method: string): 
   return new Response(body, { status: resp.status, statusText: resp.statusText, headers });
 }
 
-function applySecurityHeaders(response: Response): Response {
+function applySecurityHeaders(response: Response, nonce: string): Response {
   const contentType = response.headers.get("content-type") ?? "";
   // Only decorate HTML — leaving JSON/XML/asset responses untouched avoids
   // breaking sitemap, JSON-LD endpoints, and prerender.io content sniffing.
   if (!contentType.includes("text/html")) return response;
 
-  const headers = new Headers(response.headers);
+  // Inject the per-request nonce into every <script> element via workerd's
+  // built-in HTMLRewriter. This covers TanStack's <Scripts /> output, the
+  // BOOT_WATCHDOG + CANONICAL_ENFORCER inline blocks in __root.tsx, and the
+  // ld+json schema script (harmless — browsers ignore `nonce` on non-JS types).
+  const RewriterCtor = (globalThis as { HTMLRewriter?: new () => {
+    on: (selector: string, handlers: { element: (el: { setAttribute: (k: string, v: string) => void }) => void }) => unknown;
+    transform: (r: Response) => Response;
+  } }).HTMLRewriter;
+
+  let rewritten = response;
+  if (RewriterCtor) {
+    rewritten = new RewriterCtor()
+      .on("script", {
+        element(el) {
+          el.setAttribute("nonce", nonce);
+        },
+      })
+      .transform(response) as Response;
+  }
+
+  const headers = new Headers(rewritten.headers);
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
     if (!headers.has(k)) headers.set(k, v);
   }
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
+  headers.set("content-security-policy", buildCsp(nonce));
+  return new Response(rewritten.body, {
+    status: rewritten.status,
+    statusText: rewritten.statusText,
     headers,
   });
 }
 
-function brandedErrorResponse(): Response {
+function brandedErrorResponse(nonce: string): Response {
   return applySecurityHeaders(
     new Response(renderErrorPage(), {
       status: 500,
       headers: { "content-type": "text/html; charset=utf-8" },
     }),
+    nonce,
   );
 }
+
 
 function isCatastrophicSsrErrorBody(body: string, responseStatus: number): boolean {
   let payload: unknown;
