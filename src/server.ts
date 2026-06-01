@@ -280,7 +280,9 @@ async function normalizeCatastrophicSsrResponse(response: Response, nonce: strin
 export default {
   async fetch(request: Request, env: WorkerEnv, ctx: WorkerCtx): Promise<Response> {
     const start = Date.now();
+    const nonce = generateNonce();
     const url = new URL(request.url);
+
     const ip = extractClientIp(request);
     const ray = request.headers.get("cf-ray");
     const country = request.headers.get("cf-ipcountry");
