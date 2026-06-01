@@ -2,16 +2,31 @@ import { useState, useEffect } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import {
   Activity, RefreshCw, Loader2, CheckCircle2, XCircle, AlertTriangle,
-  Globe, ExternalLink,
+  Globe, ExternalLink, Zap,
 } from 'lucide-react';
-import { probePrerenderStatus, type ProbeResult } from '@/lib/prerender-status.functions';
+import {
+  probePrerenderStatus,
+  recachePrerenderUrl,
+  type ProbeResult,
+} from '@/lib/prerender-status.functions';
+
+interface RecacheLog {
+  url: string;
+  ok: boolean;
+  status: number;
+  message: string;
+  at: string;
+}
 
 export default function PrerenderStatusTab() {
   const probe = useServerFn(probePrerenderStatus);
+  const recache = useServerFn(recachePrerenderUrl);
   const [results, setResults] = useState<ProbeResult[]>([]);
   const [checkedAt, setCheckedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [customUrl, setCustomUrl] = useState('');
+  const [recachingUrl, setRecachingUrl] = useState<string | null>(null);
+  const [recacheLog, setRecacheLog] = useState<RecacheLog[]>([]);
 
   const runProbe = async (urls?: string[]) => {
     setLoading(true);
@@ -23,6 +38,36 @@ export default function PrerenderStatusTab() {
       console.error('probe failed', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const runRecache = async (url: string) => {
+    setRecachingUrl(url);
+    try {
+      const res = await recache({ data: { url } });
+      setRecacheLog((prev) => [
+        {
+          url,
+          ok: res.ok,
+          status: res.status,
+          message: res.ok ? 'Queued for recache' : res.response || `HTTP ${res.status}`,
+          at: res.recachedAt,
+        },
+        ...prev,
+      ].slice(0, 10));
+    } catch (err) {
+      setRecacheLog((prev) => [
+        {
+          url,
+          ok: false,
+          status: 0,
+          message: err instanceof Error ? err.message : String(err),
+          at: new Date().toISOString(),
+        },
+        ...prev,
+      ].slice(0, 10));
+    } finally {
+      setRecachingUrl(null);
     }
   };
 
