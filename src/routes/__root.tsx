@@ -157,6 +157,34 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
+// Runs FIRST. Reads its own `nonce` attribute (stamped by HTMLRewriter in the
+// Worker) and monkey-patches `document.createElement` so every <script>
+// element created at runtime — Firebase SDK loader, GTM, recaptcha, any
+// third-party injector — gets the same nonce automatically. Combined with
+// `'strict-dynamic'`, this means runtime-injected scripts never appear
+// without nonce coverage.
+const NONCE_PROPAGATOR = `
+(function(){
+  try{
+    var cs = document.currentScript;
+    var n = (cs && cs.nonce) || (cs && cs.getAttribute && cs.getAttribute('nonce')) || '';
+    if(!n) return;
+    try{ window.__cspNonce = n; }catch(e){}
+    var origCreate = document.createElement.bind(document);
+    document.createElement = function(tag){
+      var el = origCreate.apply(document, arguments);
+      try{
+        var t = (''+tag).toLowerCase();
+        if(t === 'script' || t === 'style'){
+          el.setAttribute('nonce', n);
+        }
+      }catch(e){}
+      return el;
+    };
+  }catch(e){}
+})();
+`;
+
 
 const BOOT_WATCHDOG = `
 (function(){
