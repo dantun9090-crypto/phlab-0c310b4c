@@ -531,8 +531,6 @@ export const loginUser = async (email: string, password: string) => {
   const cleanEmail = normaliseAuthEmail(email);
   let userCredential;
   try {
-    // App Check is best-effort — never block login if reCAPTCHA can't load.
-    await ensureAppCheckReady().catch((e) => console.warn('[AppCheck] skipped:', e));
     userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
   } catch (err) {
     
@@ -584,7 +582,6 @@ const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export const signInWithGoogle = async () => {
-  await ensureAppCheckReady();
   let result;
   try {
     result = await signInWithPopup(auth, googleProvider);

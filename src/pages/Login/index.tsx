@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { loginUser, resetPassword, signInWithGoogle, db, doc, getDoc, ensureAppCheck } from '@/lib/firebase';
+import { loginUser, resetPassword, signInWithGoogle, db, doc, getDoc } from '@/lib/firebase';
 
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -42,10 +42,6 @@ export default function Login() {
   })();
 
   useEffect(() => {
-    // Warm up App Check so reCAPTCHA Enterprise has a token ready by the
-    // time the user finishes typing their password — avoids a race where
-    // the first signIn call goes out without an App Check token.
-    ensureAppCheck();
     getDoc(doc(db, 'settings', 'siteSettings')).then(snap => {
       if (snap.exists()) setSettings(snap.data() as SiteSettings);
     }).catch(() => {});
