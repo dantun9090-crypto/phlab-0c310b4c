@@ -198,7 +198,8 @@ export default function SEOTab() {
     setRecaching(true);
     addLog('info', `Recaching ${urls.length} product pages only…`);
     try {
-      const res = await recacheBulk({ data: { urls } });
+      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const res = await recacheBulk({ data: { urls, idToken } });
       pushRecacheResult({ kind: 'Products only', urls, ...res });
       if (res.ok) {
         addLog('success', `✓ Recache queued for ${res.count} product pages (HTTP ${res.status}, ${res.durationMs}ms)`);
