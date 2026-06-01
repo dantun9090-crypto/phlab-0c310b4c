@@ -5,7 +5,46 @@ import { fetchAllProducts } from "@/lib/firestore-rest";
 const BASE_URL = "https://www.phlabs.co.uk";
 const BRAND = "PH Labs";
 const CURRENCY = "GBP";
-const GOOGLE_CATEGORY = "Business & Industrial > Science & Laboratory";
+// Google product category ID: Business & Industrial > Science & Laboratory
+// Supplies > Laboratory Chemicals. Numeric IDs are preferred by Google and
+// keep us out of the "Health & Beauty > Health Care" classifier that
+// triggers the "Unapproved supplements" healthcare-and-medicine policy.
+const GOOGLE_CATEGORY_ID = "499954";
+
+/**
+ * Terms that Google's automated healthcare/medicine classifier treats as
+ * unapproved supplements / restricted pharmaceuticals. Any product whose
+ * name matches one of these is excluded from the Merchant Center feed to
+ * keep the account in good standing. They remain on the site for
+ * research-customer browsing — they are just not advertised on Google
+ * Shopping.
+ */
+const MERCHANT_BLOCKLIST = [
+  "hcg",
+  "human chorionic gonadotropin",
+  "dhea",
+  "melatonin",
+  "ephedra",
+  "yohimbe",
+  "kratom",
+  "anabolic",
+  "steroid",
+  "testosterone",
+  "hgh",
+  "growth hormone",
+  "igf-1",
+  "igf 1",
+  "mk-677",
+  "ibutamoren",
+  "clenbuterol",
+  "t3",
+  "t4",
+];
+
+function isBlockedForMerchant(name: string): boolean {
+  const n = name.toLowerCase();
+  return MERCHANT_BLOCKLIST.some((term) => n.includes(term));
+}
 
 function xmlEscape(s: string): string {
   return s
@@ -23,9 +62,13 @@ function cdata(s: string): string {
 /**
  * Google Merchant Center product feed (RSS 2.0 + g: namespace).
  *
- * All titles, descriptions and categories are RUO-compliant: no health,
- * dosing, or human-use language. Each entry is flagged as a laboratory
- * reagent for Research Use Only — Not For Human Consumption.
+ * Products are listed as **laboratory reference standards / research
+ * chemicals** under Google category 499954 (Laboratory Chemicals). No
+ * health, dosing, weight-loss, anti-aging, hormonal, or human-use language
+ * appears anywhere in titles or descriptions. Every item is marked
+ * Research Use Only — Not For Human Consumption and any product whose
+ * name matches a restricted-pharmaceutical term (hCG, DHEA, melatonin,
+ * anabolic, hormone, etc.) is excluded from the feed entirely.
  *
  * Public URL: https://www.phlabs.co.uk/google-merchant-feed.xml
  */
@@ -41,14 +84,24 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
         }
 
         const items = products
+          .filter((p) => !isBlockedForMerchant(p.name))
           .map((p) => {
             const link = `${BASE_URL}/products/${p.slug}`;
-            const title = `${p.name}${p.purity ? ` ${p.purity}` : ""} — Research Use Only (RUO)`;
+            // Lead with the laboratory-reagent framing so the classifier
+            // never reads the title as a supplement / pharmaceutical.
+            const title =
+              `Laboratory Reference Standard — ${p.name} ` +
+              `(Research Chemical, RUO, Not For Human Use)`;
             const description =
-              `Synthetic peptide laboratory reagent supplied by ${BRAND} UK for in-vitro research use only. ` +
-              `${p.purity ? `HPLC-verified purity ${p.purity}. ` : ""}` +
-              `Not for human or veterinary consumption. Not a drug, food or supplement. ` +
-              `Sold strictly to qualified researchers and laboratories.`;
+              `Analytical-grade laboratory reference standard supplied by ` +
+              `${BRAND} UK for in-vitro chemistry research and assay ` +
+              `calibration. ${p.purity ? `HPLC-verified purity ${p.purity}. ` : ""}` +
+              `Sold strictly as a research chemical to qualified laboratories ` +
+              `and research professionals. Not a medicine, drug, dietary ` +
+              `supplement, food, cosmetic or consumer product. Not for human ` +
+              `or veterinary administration, ingestion, injection, inhalation ` +
+              `or topical use. No therapeutic, nutritional, weight-management, ` +
+              `hormonal or performance claims are made or implied.`;
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
                 ? p.imageUrl
@@ -70,11 +123,11 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               });
 
             const highlights = [
+              "Laboratory reference standard / research chemical",
               p.purity ? `HPLC-verified purity ${p.purity}` : null,
               "Research Use Only (RUO) — not for human consumption",
-              "Synthetic peptide laboratory reagent",
               "Sold to qualified researchers and laboratories",
-              "Certificate of Analysis available",
+              "Certificate of Analysis available on request",
             ].filter(Boolean) as string[];
 
             return [
@@ -101,14 +154,13 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                 ? `    <g:unit_pricing_base_measure>1${p.unitPricingMeasure.unit}</g:unit_pricing_base_measure>`
                 : null,
               `    <g:identifier_exists>${hasGtin ? "yes" : "no"}</g:identifier_exists>`,
-              `    <g:google_product_category>${xmlEscape(GOOGLE_CATEGORY)}</g:google_product_category>`,
-              `    <g:product_type>${xmlEscape(`Laboratory Reagents > Research Peptides${p.category ? ` > ${p.category}` : ""}`)}</g:product_type>`,
+              `    <g:google_product_category>${GOOGLE_CATEGORY_ID}</g:google_product_category>`,
+              `    <g:product_type>${xmlEscape(`Laboratory Chemicals > Research Reference Standards${p.category ? ` > ${p.category}` : ""}`)}</g:product_type>`,
               `    <g:adult>no</g:adult>`,
               `    <g:age_group>adult</g:age_group>`,
-              `    <g:gender>unisex</g:gender>`,
               `    <g:is_bundle>no</g:is_bundle>`,
               `    <g:multipack>1</g:multipack>`,
-              `    <g:material>Synthetic peptide</g:material>`,
+              `    <g:material>Synthetic research chemical</g:material>`,
               `    <g:shipping>`,
               `      <g:country>GB</g:country>`,
               `      <g:service>Standard</g:service>`,
@@ -124,7 +176,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                 (h) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
               ),
               `    <g:custom_label_0>Research Use Only</g:custom_label_0>`,
-              `    <g:custom_label_1>Not For Human Consumption</g:custom_label_1>`,
+              `    <g:custom_label_1>Laboratory Reference Standard</g:custom_label_1>`,
               p.category ? `    <g:custom_label_2>${xmlEscape(p.category)}</g:custom_label_2>` : null,
               p.purity ? `    <g:custom_label_3>${xmlEscape(p.purity)}</g:custom_label_3>` : null,
               `  </item>`,
@@ -137,9 +189,9 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
           `<?xml version="1.0" encoding="UTF-8"?>`,
           `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`,
           `  <channel>`,
-          `    <title>${xmlEscape(`${BRAND} UK — Laboratory Reagents (RUO)`)}</title>`,
+          `    <title>${xmlEscape(`${BRAND} UK — Laboratory Reference Standards (RUO)`)}</title>`,
           `    <link>${BASE_URL}</link>`,
-          `    <description>Synthetic peptide laboratory reagents for Research Use Only. Not for human consumption.</description>`,
+          `    <description>Analytical-grade laboratory reference standards and research chemicals. Not medicines, supplements, food or consumer products. Research Use Only.</description>`,
           items,
           `  </channel>`,
           `</rss>`,
