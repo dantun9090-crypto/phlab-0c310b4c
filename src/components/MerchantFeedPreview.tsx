@@ -90,6 +90,10 @@ export function MerchantFeedPreview({
     { label: 'g:sku / g:mpn', key: 'skuMpn', mono: true },
   ];
 
+  const fieldLabels: Record<string, string> = {
+    included: 'Feed inclusion',
+    ...Object.fromEntries(fields.map((f) => [f.key as string, f.label])),
+  };
   const changedKeys = prev
     ? (['included', ...fields.map((f) => f.key)] as Array<keyof FeedEntry>).filter(
         (k) => String(prev[k]) !== String(next[k]),
