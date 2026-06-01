@@ -12,29 +12,14 @@ const CURRENCY = "GBP";
 const GOOGLE_CATEGORY_ID = "499954";
 
 /**
- * Terms that Google's automated healthcare/medicine classifier treats as
- * unapproved supplements / restricted pharmaceuticals. Any product whose
- * name matches one of these is excluded from the Merchant Center feed to
- * keep the account in good standing. They remain on the site for
- * research-customer browsing — they are just not advertised on Google
- * Shopping.
+ * All products are included in the Merchant feed. Per-product exclusion
+ * can be managed from the admin panel via the product's `excludeFromMerchantFeed`
+ * flag in Firestore (optional — defaults to included).
  */
-const MERCHANT_BLOCKLIST = [
-  "mots-c",
-  "mots c",
-  "motsc",
-  "bpc-157",
-  "bpc 157",
-  "bpc157",
-  "tb-500",
-  "tb 500",
-  "tb500",
-];
-
-function isBlockedForMerchant(name: string): boolean {
-  const n = name.toLowerCase();
-  return MERCHANT_BLOCKLIST.some((term) => n.includes(term));
+function isBlockedForMerchant(p: { name: string; excludeFromMerchantFeed?: boolean }): boolean {
+  return p.excludeFromMerchantFeed === true;
 }
+
 
 function xmlEscape(s: string): string {
   return s
