@@ -45,7 +45,8 @@ export default function PrerenderStatusTab() {
   const runRecache = async (url: string) => {
     setRecachingUrl(url);
     try {
-      const res = await recache({ data: { url } });
+      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const res = await recache({ data: { url, idToken } });
       setRecacheLog((prev) => [
         {
           url,
