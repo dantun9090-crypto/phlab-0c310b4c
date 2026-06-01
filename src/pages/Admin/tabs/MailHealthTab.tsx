@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { auth } from '@/lib/firebase';
 import { getMailHealth, type MailHealth, type DeliveryEvent } from '@/lib/mail-health.functions';
+import { sendTestMail } from '@/lib/test-mail.functions';
 import {
   Mail, RefreshCw, AlertCircle, CheckCircle2, Clock, XCircle,
-  Server, Shield, Inbox, Forward, Search,
+  Server, Shield, Inbox, Forward, Search, Send,
 } from 'lucide-react';
 
 const STATUS_META: Record<string, { label: string; cls: string; Icon: any }> = {
@@ -28,6 +29,37 @@ export default function MailHealthTab() {
   const [err, setErr] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'failure' | 'defer' | 'success'>('all');
   const [search, setSearch] = useState('');
+  const [testTo, setTestTo] = useState('dantun90@hotmail.com');
+  const [testSending, setTestSending] = useState(false);
+  const [testResult, setTestResult] = useState<
+    { kind: 'ok'; to: string; subject: string; id: string }
+    | { kind: 'err'; message: string }
+    | null
+  >(null);
+
+  const sendTest = async () => {
+    setTestSending(true);
+    setTestResult(null);
+    try {
+      const user = auth.currentUser;
+      if (!user) throw new Error('Not signed in');
+      const idToken = await user.getIdToken();
+      const res = await sendTestMail({ data: { idToken, to: testTo || undefined } });
+      if (res.ok) {
+        setTestResult({ kind: 'ok', to: res.to, subject: res.subject, id: res.id });
+        console.info('[test-mail] enqueued', res);
+      } else {
+        setTestResult({ kind: 'err', message: res.error });
+        console.error('[test-mail] enqueue failed', res);
+      }
+    } catch (e: any) {
+      const msg = e?.message ?? 'Failed to send test email';
+      setTestResult({ kind: 'err', message: msg });
+      console.error('[test-mail] error', e);
+    } finally {
+      setTestSending(false);
+    }
+  };
 
   const load = async () => {
     setLoading(true);
