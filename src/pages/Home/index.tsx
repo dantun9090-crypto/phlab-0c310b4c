@@ -989,8 +989,10 @@ export default function HomePage() {
                 ) : (
                   <form onSubmit={handleEmailSubmit} className="flex flex-col gap-4">
                     <div>
-                      <label className="block text-xs font-semibold mb-2" style={{ color: '#8db4d8' }}>Email address</label>
+                      <label htmlFor="protocol-library-email" className="block text-xs font-semibold mb-2" style={{ color: '#8db4d8' }}>Email address</label>
                       <input
+                        id="protocol-library-email"
+                        name="email"
                         type="email"
                         value={emailInput}
                         onChange={e => setEmailInput(e.target.value)}
