@@ -1,0 +1,52 @@
+rules_version = '2';
+
+// PH Labs — hardened Firebase Storage rules
+// Default deny. Public read only for product/marketing assets. Writes admin-only.
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthed() { return request.auth != null; }
+
+    function isAdmin() {
+      return isAuthed()
+        && firestore.exists(/databases/(default)/documents/customers/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/customers/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    function isImage()    { return request.resource.contentType.matches('image/.*'); }
+    function isUnder10MB(){ return request.resource.size < 10 * 1024 * 1024; }
+
+    // Public, read-only product / marketing imagery
+    match /products/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage() && isUnder10MB();
+    }
+    match /banners/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage() && isUnder10MB();
+    }
+    match /articles/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage() && isUnder10MB();
+    }
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && isUnder10MB();
+    }
+
+    // Per-user private uploads (avatars / order docs). Only owner reads/writes.
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if isAuthed() && request.auth.uid == userId && isUnder10MB();
+    }
+
+    // Admin-only ops storage
+    match /admin/{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // Default deny everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
