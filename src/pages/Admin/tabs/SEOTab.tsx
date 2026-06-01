@@ -220,7 +220,8 @@ export default function SEOTab() {
     setRecaching(true);
     addLog('info', `Recaching ${urls.length} mobile pages…`);
     try {
-      const res = await recacheBulk({ data: { urls, adaptiveType: 'mobile' } });
+      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const res = await recacheBulk({ data: { urls, adaptiveType: 'mobile', idToken } });
       pushRecacheResult({ kind: 'Mobile (all)', urls, ...res });
       if (res.ok) {
         addLog('success', `✓ Mobile recache queued for ${res.count} pages (HTTP ${res.status}, ${res.durationMs}ms)`);
