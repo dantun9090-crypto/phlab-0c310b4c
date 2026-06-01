@@ -234,7 +234,7 @@ const CANONICAL_ENFORCER = `
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" style={{ backgroundColor: "#060f1e" }}>
+    <html lang="en-GB" style={{ backgroundColor: "#060f1e" }}>
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
