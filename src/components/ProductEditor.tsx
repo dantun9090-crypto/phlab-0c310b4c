@@ -732,7 +732,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                 </div>
               </div>
 
-              <MerchantFeedPreview product={formData as any} />
+              <MerchantFeedPreview product={formData as any} baseline={(product as any) || null} />
 
               {/* Product Images — 4 slots */}
               <div className="bg-gray-800/40 border border-white/[0.07] rounded-xl p-5">
