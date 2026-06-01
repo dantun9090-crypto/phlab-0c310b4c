@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
+import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -60,6 +61,11 @@ const ApiPublicSendMailRoute = ApiPublicSendMailRouteImport.update({
   path: '/api/public/send-mail',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
+  id: '/api/public/csp-report',
+  path: '/api/public/csp-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
 }
 export interface FileRoutesByTo {
@@ -79,6 +86,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
 }
 export interface FileRoutesById {
@@ -90,6 +98,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
 }
 export interface FileRouteTypes {
@@ -102,6 +111,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
     | '/products/$slug'
+    | '/api/public/csp-report'
     | '/api/public/send-mail'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -112,6 +122,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
     | '/products/$slug'
+    | '/api/public/csp-report'
     | '/api/public/send-mail'
   id:
     | '__root__'
@@ -122,6 +133,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
     | '/products/$slug'
+    | '/api/public/csp-report'
     | '/api/public/send-mail'
   fileRoutesById: FileRoutesById
 }
@@ -132,6 +144,7 @@ export interface RootRouteChildren {
   ProductsRoute: typeof ProductsRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
+  ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
 }
 
@@ -193,6 +206,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSendMailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/csp-report': {
+      id: '/api/public/csp-report'
+      path: '/api/public/csp-report'
+      fullPath: '/api/public/csp-report'
+      preLoaderRoute: typeof ApiPublicCspReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -215,8 +235,19 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsRoute: ProductsRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
+  ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
