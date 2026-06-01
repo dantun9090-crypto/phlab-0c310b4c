@@ -193,21 +193,24 @@ function applySecurityHeaders(response: Response, nonce: string): Response {
   // built-in HTMLRewriter. This covers TanStack's <Scripts /> output, the
   // BOOT_WATCHDOG + CANONICAL_ENFORCER inline blocks in __root.tsx, and the
   // ld+json schema script (harmless — browsers ignore `nonce` on non-JS types).
-  const RewriterCtor = (globalThis as { HTMLRewriter?: new () => {
-    on: (selector: string, handlers: { element: (el: { setAttribute: (k: string, v: string) => void }) => void }) => unknown;
+  type Rewriter = {
+    on: (selector: string, handlers: { element: (el: { setAttribute: (k: string, v: string) => void }) => void }) => Rewriter;
     transform: (r: Response) => Response;
-  } }).HTMLRewriter;
+  };
+  const RewriterCtor = (globalThis as { HTMLRewriter?: new () => Rewriter }).HTMLRewriter;
 
   let rewritten = response;
   if (RewriterCtor) {
-    rewritten = new RewriterCtor()
+    const rewriter: Rewriter = new RewriterCtor();
+    rewritten = rewriter
       .on("script", {
         element(el) {
           el.setAttribute("nonce", nonce);
         },
       })
-      .transform(response) as Response;
+      .transform(response);
   }
+
 
   const headers = new Headers(rewritten.headers);
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
