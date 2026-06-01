@@ -131,7 +131,51 @@ export default function MailHealthTab() {
             <Stat label="Failed / Rejected" value={data.counts.failure + data.counts.rejected} tone="red" />
           </div>
 
-          {/* DNS */}
+          {/* Send test email */}
+          <Card title="Send test email" Icon={Send}>
+            <p className="text-[#9cb8d9] text-xs mb-3">
+              Enqueues a message into the Firestore <code className="text-emerald-300">mail</code> collection.
+              The Firebase Trigger Email extension picks it up and sends via the cPanel SMTP
+              configured on the extension (<code className="text-blue-300">mail.phlabs.co.uk:465</code>).
+              If this never arrives, the issue is the extension's SMTP credentials or the mail server —
+              not the website code (Cloudflare Workers can't open raw SMTP sockets).
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="email"
+                value={testTo}
+                onChange={(e) => setTestTo(e.target.value)}
+                placeholder="recipient@example.com"
+                className="flex-1 min-h-[44px] px-3 bg-slate-800 border-2 border-slate-600 rounded-lg text-white text-sm placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+              />
+              <button
+                onClick={sendTest}
+                disabled={testSending || !testTo}
+                className="min-h-[44px] flex items-center justify-center gap-2 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-colors"
+              >
+                <Send className={`w-4 h-4 ${testSending ? 'animate-pulse' : ''}`} />
+                {testSending ? 'Sending…' : 'Send test email'}
+              </button>
+            </div>
+            {testResult?.kind === 'ok' && (
+              <div className="mt-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 rounded-lg p-3 text-xs">
+                <div className="font-semibold text-emerald-300 mb-1">Enqueued ✓</div>
+                <div>To: <span className="font-mono">{testResult.to}</span></div>
+                <div>Subject: <span className="font-mono">{testResult.subject}</span></div>
+                <div>Doc ID: <span className="font-mono">{testResult.id}</span></div>
+                <div className="mt-1 text-emerald-300/80">
+                  Watch the "Recent delivery events" panel below — it should appear within a minute.
+                </div>
+              </div>
+            )}
+            {testResult?.kind === 'err' && (
+              <div className="mt-3 bg-red-500/10 border border-red-500/30 text-red-200 rounded-lg p-3 text-xs">
+                <div className="font-semibold text-red-300 mb-1">Failed to enqueue</div>
+                <div className="font-mono break-all">{testResult.message}</div>
+              </div>
+            )}
+          </Card>
+
           <Card title="DNS records" Icon={Shield}>
             <Row label="MX">
               {data.dns.mx.length ? data.dns.mx.map((m, i) => (
