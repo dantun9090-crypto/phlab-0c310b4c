@@ -22,7 +22,9 @@ export const Route = createFileRoute("/$")({
     const url = canonicalUrl(splat);
 
     const scripts: Array<{ type: string; children: string }> = [];
-    const resourcesMatch = splat.match(/^resources\/([^/?#]+)/);
+    const resourcesMatch = splat.match(/^(?:resources|research)\/([^/?#]+)/);
+    const sectionLabel = splat.startsWith("research/") ? "Research" : "Resources";
+    const sectionPath = splat.startsWith("research/") ? "/research" : "/resources";
     if (resourcesMatch) {
       const article = articles.find((a) => a.slug === resourcesMatch[1]);
       if (article) {
