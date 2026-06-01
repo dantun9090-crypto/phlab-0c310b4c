@@ -265,9 +265,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="en-GB" style={{ backgroundColor: "#060f1e" }}>
       <head>
         <HeadContent />
+        {/* MUST be first inline script — installs nonce propagator before
+            anything else runs, so subsequent injected scripts inherit nonce. */}
+        <script dangerouslySetInnerHTML={{ __html: NONCE_PROPAGATOR }} />
         <script dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
         <script dangerouslySetInnerHTML={{ __html: CANONICAL_ENFORCER }} />
       </head>
+
       <body style={{ backgroundColor: "#060f1e", color: "#f0f6ff", margin: 0 }}>
         {children}
         <Scripts />
