@@ -123,6 +123,16 @@ function toProduct(doc: any): SeoProduct | null {
     : typeof f.stock === "number"
       ? f.stock
       : undefined;
+  // Pick the variant whose price matches the displayed (min) price, so the
+  // unit_pricing_measure aligns with the price Google sees.
+  const priceVariant = variants.find((v: any) => typeof v?.price === "number" && v.price === price) as any;
+  const measureSource =
+    (priceVariant && (priceVariant.name || priceVariant.dosage)) ||
+    (variants[0] as any)?.name ||
+    (variants[0] as any)?.dosage ||
+    f.dosage ||
+    name;
+  const unitPricingMeasure = parseUnitPricingMeasure(measureSource) ?? undefined;
   return {
     id: docId,
     name,
@@ -143,6 +153,7 @@ function toProduct(doc: any): SeoProduct | null {
     stock: totalStock,
     coaUrl: typeof f.coaUrl === "string" && f.coaUrl.trim() ? f.coaUrl : undefined,
     updatedAt: typeof f.updatedAt === "string" ? f.updatedAt : undefined,
+    unitPricingMeasure,
   };
 }
 
