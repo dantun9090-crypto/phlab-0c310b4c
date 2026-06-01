@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
+import { requireFirebaseAdmin } from '@/lib/server/firebase-auth-admin';
 
 /**
  * Probe a single URL as Googlebot to see what Prerender.io / our edge serves.
