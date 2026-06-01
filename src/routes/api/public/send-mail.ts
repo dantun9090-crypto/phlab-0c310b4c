@@ -46,14 +46,13 @@ const ContactInput = z.object({
   message: z.string().trim().min(1).max(5000),
 });
 
-// Only allow PDF URLs hosted on PH Labs or trusted Firebase/Google CDNs.
-// Prevents attackers using this endpoint to send PH Labs-branded phishing
-// emails with arbitrary attacker-controlled download links.
+// Only allow PDF URLs hosted on first-party PH Labs domains. Shared
+// multi-tenant CDNs (firebasestorage.googleapis.com, storage.googleapis.com)
+// were previously allowed, but any attacker can host files on those buckets
+// and abuse this endpoint to send PH Labs-branded phishing mail.
 const ALLOWED_PDF_HOSTS = new Set<string>([
   "phlabs.co.uk",
   "www.phlabs.co.uk",
-  "firebasestorage.googleapis.com",
-  "storage.googleapis.com",
 ]);
 
 const trustedPdfUrl = z
