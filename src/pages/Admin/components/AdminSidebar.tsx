@@ -64,6 +64,7 @@ const navGroups = [
       { id: 'seo', label: 'SEO Settings', icon: Search },
       { id: 'sitemap', label: 'Sitemap Manager', icon: Map },
       { id: 'prerenderstatus', label: 'Prerender Status', icon: Activity },
+      { id: 'gscmonitor', label: 'GSC Monitor', icon: Search },
       { id: 'merchantfeed', label: 'Merchant Feed', icon: ShoppingBag },
     ],
   },

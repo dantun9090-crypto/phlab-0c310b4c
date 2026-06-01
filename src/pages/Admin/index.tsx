@@ -33,11 +33,12 @@ import SitemapTab from './tabs/SitemapTab';
 import PromoCodesTab from './tabs/PromoCodesTab';
 import DiagnosticsTab from './tabs/DiagnosticsTab';
 import PrerenderStatusTab from './tabs/PrerenderStatusTab';
+import GSCMonitorTab from './tabs/GSCMonitorTab';
 import MerchantFeedTab from './tabs/MerchantFeedTab';
 import AuthEventsTab from './tabs/AuthEventsTab';
 import MailHealthTab from './tabs/MailHealthTab';
 
-type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'merchantfeed';
+type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'gscmonitor' | 'merchantfeed';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -318,6 +319,7 @@ export default function AdminPage() {
         case 'promocodes': return <PromoCodesTab />;
         case 'diagnostics': return <DiagnosticsTab />;
         case 'prerenderstatus': return <PrerenderStatusTab />;
+        case 'gscmonitor': return <GSCMonitorTab />;
         case 'merchantfeed': return <MerchantFeedTab />;
         default: return <DashboardTab />;
       }
@@ -337,7 +339,7 @@ export default function AdminPage() {
     seo: 'SEO Settings', sitemap: 'Sitemap Manager', settings: 'Site Settings',
     tools: 'Tools', themes: 'Themes', database: 'Database', backup: 'Backup',
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', diagnostics: 'Diagnostics',
-    prerenderstatus: 'Prerender Status', merchantfeed: 'Merchant Feed',
+    prerenderstatus: 'Prerender Status', gscmonitor: 'GSC Monitor', merchantfeed: 'Merchant Feed',
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
 
