@@ -75,6 +75,12 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `    <g:mpn>${xmlEscape(mpn)}</g:mpn>`,
               `    <g:sku>${xmlEscape(sku)}</g:sku>`,
               hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
+              p.unitPricingMeasure
+                ? `    <g:unit_pricing_measure>${p.unitPricingMeasure.value}${p.unitPricingMeasure.unit}</g:unit_pricing_measure>`
+                : null,
+              p.unitPricingMeasure
+                ? `    <g:unit_pricing_base_measure>1${p.unitPricingMeasure.unit}</g:unit_pricing_base_measure>`
+                : null,
               `    <g:identifier_exists>${hasGtin ? "yes" : "no"}</g:identifier_exists>`,
               `    <g:google_product_category>${xmlEscape(GOOGLE_CATEGORY)}</g:google_product_category>`,
               `    <g:product_type>${xmlEscape(`Laboratory Reagents > Research Peptides${p.category ? ` > ${p.category}` : ""}`)}</g:product_type>`,
