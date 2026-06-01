@@ -334,7 +334,9 @@ export default {
         });
       }
 
-      // 1. Canonical host redirect (apex + legacy brand domains → www.phlabs.co.uk).
+      // 1. Canonical host redirect (legacy brand domains → www.phlabs.co.uk).
+      // phlabs.co.uk is intentionally served directly until the hosting-level
+      // www → apex redirect is removed; otherwise production loops.
       const reqHost = url.hostname.toLowerCase();
       if (REDIRECT_HOSTS.has(reqHost)) {
         const dest = new URL(url.toString());
