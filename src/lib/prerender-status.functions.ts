@@ -178,3 +178,47 @@ export const recachePrerenderUrl = createServerFn({ method: 'POST' })
       recachedAt: new Date().toISOString(),
     };
   });
+
+/**
+ * Bulk recache: proxy to Prerender.io /recache with a list of URLs and
+ * optional adaptiveType. Done server-side because api.prerender.io blocks CORS,
+ * so calling it from the browser yields "NetworkError when attempting to fetch resource".
+ */
+export const recachePrerenderUrlsBulk = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { urls: string[]; adaptiveType?: 'mobile' | 'desktop' }) => {
+    if (!Array.isArray(data?.urls) || data.urls.length === 0) {
+      throw new Error('urls[] is required');
+    }
+    if (data.urls.length > 1000) {
+      throw new Error('Max 1000 URLs per request');
+    }
+    const filtered = data.urls.filter(isAllowedUrl);
+    if (filtered.length === 0) {
+      throw new Error('No allowed URLs (only phlabs.co.uk hosts permitted).');
+    }
+    return { urls: filtered, adaptiveType: data.adaptiveType };
+  })
+  .handler(async ({ data }) => {
+    const token = process.env.PRERENDER_TOKEN;
+    if (!token) throw new Error('PRERENDER_TOKEN not configured');
+    const started = Date.now();
+    const body: Record<string, unknown> = { prerenderToken: token, urls: data.urls };
+    if (data.adaptiveType) body.adaptiveType = data.adaptiveType;
+    const res = await fetch('https://api.prerender.io/recache', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(30_000),
+    });
+    const text = await res.text();
+    return {
+      count: data.urls.length,
+      adaptiveType: data.adaptiveType ?? 'desktop',
+      status: res.status,
+      ok: res.ok,
+      response: text.slice(0, 500),
+      durationMs: Date.now() - started,
+      recachedAt: new Date().toISOString(),
+    };
+  });
