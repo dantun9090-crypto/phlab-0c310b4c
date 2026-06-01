@@ -94,27 +94,8 @@ const OrderInput = z.object({
     .min(1)
     .max(64)
     .regex(/^[A-Z0-9_-]+$/i),
-  firstName: z.string().trim().min(1).max(120),
-  subtotal: z.number().min(0).max(1_000_000),
-  shipping: z.number().min(0).max(1_000_000),
-  discount: z.number().min(0).max(1_000_000),
-  total: z.number().min(0).max(1_000_000),
-  items: z
-    .array(
-      z.object({
-        name: z.string().trim().min(1).max(200),
-        variantName: z.string().trim().max(120).optional(),
-        quantity: z.number().int().min(1).max(1000),
-        priceNum: z.number().min(0).max(1_000_000),
-      }),
-    )
-    .min(1)
-    .max(50),
-  address: z.string().trim().max(300).optional(),
-  city: z.string().trim().max(120).optional(),
-  postcode: z.string().trim().max(20).optional(),
-  paymentMethod: z.enum(["card", "bank_transfer"]).optional(),
-  bankTransferRef: z.string().trim().max(64).optional(),
+  // Optional non-financial extras for bank-transfer instructions only.
+  // Financial data (items, totals, address) is ALWAYS fetched from Firestore.
   bankName: z.string().trim().max(120).optional(),
   bankSortCode: z.string().trim().max(20).optional(),
   bankAccountNumber: z.string().trim().max(40).optional(),
