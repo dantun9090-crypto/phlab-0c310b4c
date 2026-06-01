@@ -60,20 +60,39 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             const sku = p.sku || p.id || p.slug;
             const mpn = p.mpn || sku;
             const hasGtin = !!p.gtin;
+            const additionalImageTags = (p.additionalImages ?? [])
+              .slice(0, 10)
+              .map((u) => {
+                const abs = u.startsWith("http")
+                  ? u
+                  : `${BASE_URL}${u.startsWith("/") ? "" : "/"}${u}`;
+                return `    <g:additional_image_link>${xmlEscape(abs)}</g:additional_image_link>`;
+              });
+
+            const highlights = [
+              p.purity ? `HPLC-verified purity ${p.purity}` : null,
+              "Research Use Only (RUO) — not for human consumption",
+              "Synthetic peptide laboratory reagent",
+              "Sold to qualified researchers and laboratories",
+              "Certificate of Analysis available",
+            ].filter(Boolean) as string[];
 
             return [
               `  <item>`,
               `    <g:id>${xmlEscape(p.id || p.slug)}</g:id>`,
               `    <title>${cdata(title)}</title>`,
               `    <link>${xmlEscape(link)}</link>`,
+              `    <g:mobile_link>${xmlEscape(link)}</g:mobile_link>`,
               `    <description>${cdata(description)}</description>`,
               `    <g:image_link>${xmlEscape(image)}</g:image_link>`,
+              ...additionalImageTags,
               `    <g:availability>${availability}</g:availability>`,
               `    <g:price>${xmlEscape(price)}</g:price>`,
               `    <g:brand>${xmlEscape(BRAND)}</g:brand>`,
               `    <g:condition>new</g:condition>`,
               `    <g:mpn>${xmlEscape(mpn)}</g:mpn>`,
               `    <g:sku>${xmlEscape(sku)}</g:sku>`,
+              `    <g:item_group_id>${xmlEscape(p.id || p.slug)}</g:item_group_id>`,
               hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
               p.unitPricingMeasure
                 ? `    <g:unit_pricing_measure>${p.unitPricingMeasure.value}${p.unitPricingMeasure.unit}</g:unit_pricing_measure>`
@@ -86,11 +105,31 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `    <g:product_type>${xmlEscape(`Laboratory Reagents > Research Peptides${p.category ? ` > ${p.category}` : ""}`)}</g:product_type>`,
               `    <g:adult>no</g:adult>`,
               `    <g:age_group>adult</g:age_group>`,
+              `    <g:gender>unisex</g:gender>`,
               `    <g:is_bundle>no</g:is_bundle>`,
+              `    <g:multipack>1</g:multipack>`,
+              `    <g:material>Synthetic peptide</g:material>`,
+              `    <g:shipping>`,
+              `      <g:country>GB</g:country>`,
+              `      <g:service>Standard</g:service>`,
+              `      <g:price>4.99 ${CURRENCY}</g:price>`,
+              `    </g:shipping>`,
+              `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
+              `    <g:tax>`,
+              `      <g:country>GB</g:country>`,
+              `      <g:rate>0.00</g:rate>`,
+              `      <g:tax_ship>no</g:tax_ship>`,
+              `    </g:tax>`,
+              ...highlights.map(
+                (h) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
+              ),
               `    <g:custom_label_0>Research Use Only</g:custom_label_0>`,
               `    <g:custom_label_1>Not For Human Consumption</g:custom_label_1>`,
+              p.category ? `    <g:custom_label_2>${xmlEscape(p.category)}</g:custom_label_2>` : null,
+              p.purity ? `    <g:custom_label_3>${xmlEscape(p.purity)}</g:custom_label_3>` : null,
               `  </item>`,
             ].filter(Boolean).join("\n");
+
           })
           .join("\n");
 
