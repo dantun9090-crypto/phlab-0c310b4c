@@ -191,3 +191,57 @@ export async function getDocAdmin(
   return out;
 }
 
+/**
+ * Run a single-field equality query against a collection and return the
+ * first matching document (or null). Useful for "look up by code" style
+ * checks (promo codes, coupons, etc.) from server routes.
+ */
+export async function findDocByFieldAdmin(
+  collection: string,
+  field: string,
+  value: string | number | boolean,
+): Promise<Record<string, unknown> | null> {
+  const acct = getServiceAccount();
+  const token = await getAccessToken();
+  const url = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents:runQuery`;
+  const fsValue =
+    typeof value === "string"
+      ? { stringValue: value }
+      : typeof value === "number"
+        ? { doubleValue: value }
+        : { booleanValue: value };
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      structuredQuery: {
+        from: [{ collectionId: collection }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: field },
+            op: "EQUAL",
+            value: fsValue,
+          },
+        },
+        limit: 1,
+      },
+    }),
+  });
+  if (!res.ok) {
+    throw new Error(`Firestore query failed: ${res.status} ${await res.text()}`);
+  }
+  const rows = (await res.json()) as Array<{
+    document?: { name: string; fields?: Record<string, any> };
+  }>;
+  const docRow = rows.find((r) => r.document)?.document;
+  if (!docRow) return null;
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(docRow.fields || {})) {
+    out[k] = fromFirestoreValue(v);
+  }
+  return out;
+}
+
