@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useServerFn } from '@tanstack/react-start';
-import { db, doc, getDoc, setDoc, collection, getDocs } from '@/lib/firebase';
+import { db, doc, getDoc, setDoc, collection, getDocs, auth } from '@/lib/firebase';
 import { Search, Globe, FileText, Package, BookOpen, Save, AlertCircle, CheckCircle2, Eye, Image as ImageIcon, RefreshCw, Map, Zap, ExternalLink, Key, Loader2, Trash2, Clock, Gauge, SearchCode } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { recachePrerenderUrlsBulk } from '@/lib/prerender-status.functions';
@@ -170,7 +170,8 @@ export default function SEOTab() {
     setRecaching(true);
     addLog('info', `Recaching ${urls.length} pages (${KEY_URLS.length} core + ${productSlugs.length} products)…`);
     try {
-      const res = await recacheBulk({ data: { urls } });
+      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const res = await recacheBulk({ data: { urls, idToken } });
       pushRecacheResult({ kind: 'Desktop (all)', urls, ...res });
       if (res.ok) {
         addLog('success', `✓ Recache queued for ${res.count} pages (HTTP ${res.status}, ${res.durationMs}ms)`);
@@ -197,7 +198,8 @@ export default function SEOTab() {
     setRecaching(true);
     addLog('info', `Recaching ${urls.length} product pages only…`);
     try {
-      const res = await recacheBulk({ data: { urls } });
+      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const res = await recacheBulk({ data: { urls, idToken } });
       pushRecacheResult({ kind: 'Products only', urls, ...res });
       if (res.ok) {
         addLog('success', `✓ Recache queued for ${res.count} product pages (HTTP ${res.status}, ${res.durationMs}ms)`);
@@ -218,7 +220,8 @@ export default function SEOTab() {
     setRecaching(true);
     addLog('info', `Recaching ${urls.length} mobile pages…`);
     try {
-      const res = await recacheBulk({ data: { urls, adaptiveType: 'mobile' } });
+      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const res = await recacheBulk({ data: { urls, adaptiveType: 'mobile', idToken } });
       pushRecacheResult({ kind: 'Mobile (all)', urls, ...res });
       if (res.ok) {
         addLog('success', `✓ Mobile recache queued for ${res.count} pages (HTTP ${res.status}, ${res.durationMs}ms)`);

@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
+import { requireFirebaseAdmin } from '@/lib/server/firebase-auth-admin';
 
 /**
  * Probe a single URL as Googlebot to see what Prerender.io / our edge serves.
@@ -151,14 +152,17 @@ export const probePrerenderStatus = createServerFn({ method: 'POST' })
  * POST https://api.prerender.io/recache  { prerenderToken, url }
  */
 export const recachePrerenderUrl = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: { url: string }) => {
+  .inputValidator((data: { url: string; idToken: string }) => {
     if (!data?.url || !isAllowedUrl(data.url)) {
       throw new Error('Only phlabs.co.uk URLs are allowed.');
+    }
+    if (!data?.idToken || typeof data.idToken !== 'string') {
+      throw new Error('idToken required');
     }
     return data;
   })
   .handler(async ({ data }) => {
+    await requireFirebaseAdmin(data.idToken);
     const token = process.env.PRERENDER_TOKEN;
     if (!token) throw new Error('PRERENDER_TOKEN not configured');
     const started = Date.now();
@@ -186,20 +190,24 @@ export const recachePrerenderUrl = createServerFn({ method: 'POST' })
  */
 export const recachePrerenderUrlsBulk = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { urls: string[]; adaptiveType?: 'mobile' | 'desktop' }) => {
+  .inputValidator((data: { urls: string[]; adaptiveType?: 'mobile' | 'desktop'; idToken: string }) => {
     if (!Array.isArray(data?.urls) || data.urls.length === 0) {
       throw new Error('urls[] is required');
     }
     if (data.urls.length > 1000) {
       throw new Error('Max 1000 URLs per request');
     }
+    if (!data?.idToken || typeof data.idToken !== 'string') {
+      throw new Error('idToken required');
+    }
     const filtered = data.urls.filter(isAllowedUrl);
     if (filtered.length === 0) {
       throw new Error('No allowed URLs (only phlabs.co.uk hosts permitted).');
     }
-    return { urls: filtered, adaptiveType: data.adaptiveType };
+    return { urls: filtered, adaptiveType: data.adaptiveType, idToken: data.idToken };
   })
   .handler(async ({ data }) => {
+    await requireFirebaseAdmin(data.idToken);
     const token = process.env.PRERENDER_TOKEN;
     if (!token) throw new Error('PRERENDER_TOKEN not configured');
     const started = Date.now();
