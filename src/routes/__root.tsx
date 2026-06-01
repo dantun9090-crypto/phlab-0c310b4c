@@ -76,8 +76,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "author", content: "PH Labs UK" },
       { property: "og:site_name", content: "PH Labs UK" },
       { property: "og:locale", content: "en_GB" },
+      { httpEquiv: "content-language", content: "en-GB" },
+      { name: "language", content: "English" },
       { name: "geo.region", content: "GB" },
       { name: "geo.placename", content: "United Kingdom" },
+      { name: "geo.position", content: "55.3781;-3.4360" },
+      { name: "ICBM", content: "55.3781, -3.4360" },
+      { name: "distribution", content: "UK" },
+      { name: "target_country", content: "GB" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "google-site-verification", content: "tYtU-dRlfAq14D7lyPTYf8noiJH-b0LifcvvrGi8AZw" },
       { property: "og:type", content: "website" },
@@ -131,6 +137,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "alternate", hrefLang: "en-GB", href: "https://www.phlabs.co.uk/" },
+      { rel: "alternate", hrefLang: "en", href: "https://www.phlabs.co.uk/" },
+      { rel: "alternate", hrefLang: "x-default", href: "https://www.phlabs.co.uk/" },
       { rel: "preconnect", href: "https://firestore.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://firebaseinstallations.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://firebasestorage.googleapis.com", crossOrigin: "" },
@@ -225,7 +234,7 @@ const CANONICAL_ENFORCER = `
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" style={{ backgroundColor: "#060f1e" }}>
+    <html lang="en-GB" style={{ backgroundColor: "#060f1e" }}>
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
