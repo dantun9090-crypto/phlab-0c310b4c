@@ -33,6 +33,9 @@ interface PagesSEO {
 
 export default function SEOTab() {
   const [subTab, setSubTab] = useState<SubTab>('global');
+export default function SEOTab() {
+  const recacheBulk = useServerFn(recachePrerenderUrlsBulk);
+  const [subTab, setSubTab] = useState<SubTab>('global');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
