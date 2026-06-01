@@ -184,11 +184,26 @@ export default function QualityControl() {
     });
     document.head.appendChild(script);
 
+    const faqScript = document.createElement('script');
+    faqScript.type = 'application/ld+json';
+    faqScript.id = 'qc-faq-schema';
+    faqScript.text = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqs.map(f => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+      })),
+    });
+    document.head.appendChild(faqScript);
+
     return () => {
       document.title = prevTitle;
       if (desc && prevDesc) desc.setAttribute('content', prevDesc);
       if (canonical && prevCanonical) canonical.setAttribute('href', prevCanonical);
       document.getElementById('qc-schema')?.remove();
+      document.getElementById('qc-faq-schema')?.remove();
     };
   }, []);
 
