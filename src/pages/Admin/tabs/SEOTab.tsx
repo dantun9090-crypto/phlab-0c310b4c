@@ -47,6 +47,18 @@ export default function SEOTab() {
   const [submittingSitemap, setSubmittingSitemap] = useState(false);
   const [clearingCache, setClearingCache] = useState(false);
   const [prerenderLog, setPrerenderLog] = useState<{ type: 'success' | 'error' | 'info'; text: string; ts: string }[]>([]);
+  const [recacheResults, setRecacheResults] = useState<{
+    kind: string;
+    count: number;
+    adaptiveType: string;
+    status: number;
+    ok: boolean;
+    response: string;
+    durationMs: number;
+    recachedAt: string;
+    urls: string[];
+    error?: string;
+  }[]>([]);
   const [productSlugs, setProductSlugs] = useState<string[]>([]);
   const [slugsLoading, setSlugsLoading] = useState(false);
   const [lastRecacheTs, setLastRecacheTs] = useState<string | null>(
