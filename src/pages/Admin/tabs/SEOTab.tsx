@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useServerFn } from '@tanstack/react-start';
 import { db, doc, getDoc, setDoc, collection, getDocs } from '@/lib/firebase';
 import { Search, Globe, FileText, Package, BookOpen, Save, AlertCircle, CheckCircle2, Eye, Image as ImageIcon, RefreshCw, Map, Zap, ExternalLink, Key, Loader2, Trash2, Clock, Gauge, SearchCode } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { recachePrerenderUrlsBulk } from '@/lib/prerender-status.functions';
+
 
 type SubTab = 'global' | 'pages' | 'products' | 'resources' | 'prerender';
 
@@ -29,6 +32,7 @@ interface PagesSEO {
 }
 
 export default function SEOTab() {
+  const recacheBulk = useServerFn(recachePrerenderUrlsBulk);
   const [subTab, setSubTab] = useState<SubTab>('global');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -147,79 +151,74 @@ export default function SEOTab() {
   ];
 
   const handleRecacheAll = async () => {
-    if (!prerenderToken.trim()) { addLog('error', 'No API token set — save your Prerender.io token first'); return; }
     const urls = getAllUrls();
     setRecaching(true);
     addLog('info', `Recaching ${urls.length} pages (${KEY_URLS.length} core + ${productSlugs.length} products)…`);
     try {
-      const res = await prerenderFetch('/recache', { urls });
+      const res = await recacheBulk({ data: { urls } });
       if (res.ok) {
-        addLog('success', `✓ Recache queued for ${urls.length} pages — Prerender.io will refresh them now`);
+        addLog('success', `✓ Recache queued for ${res.count} pages — Prerender.io will refresh them now`);
         const ts = new Date().toISOString();
         localStorage.setItem('php_last_recache', ts);
         setLastRecacheTs(ts);
         localStorage.removeItem('php_recache_pending');
         window.dispatchEvent(new CustomEvent('admin:recache-done'));
       } else {
-        const text = await res.text();
-        addLog('error', `Recache failed (${res.status}): ${text.slice(0, 120)}`);
+        addLog('error', `Recache failed (${res.status}): ${res.response.slice(0, 120)}`);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
-      addLog('error', `Network error: ${msg}`);
-      addLog('info', `Run manually in terminal:\ncurl -X POST https://api.prerender.io/recache \\\n  -H "Content-Type: application/json" \\\n  -d '{"prerenderToken":"${prerenderToken.trim()}","urls":[...]}'`);
+      addLog('error', `Recache error: ${msg}`);
     } finally {
       setRecaching(false);
     }
   };
 
   const handleRecacheProductsOnly = async () => {
-    if (!prerenderToken.trim()) { addLog('error', 'No API token set — save your Prerender.io token first'); return; }
     if (productSlugs.length === 0) { addLog('error', 'No product slugs loaded — click Refresh Products first'); return; }
     const urls = productSlugs.map(slug => `${BASE}/products/${slug}`);
     setRecaching(true);
     addLog('info', `Recaching ${urls.length} product pages only…`);
     try {
-      const res = await prerenderFetch('/recache', { urls });
+      const res = await recacheBulk({ data: { urls } });
       if (res.ok) {
-        addLog('success', `✓ Recache queued for ${urls.length} product pages`);
+        addLog('success', `✓ Recache queued for ${res.count} product pages`);
       } else {
-        const text = await res.text();
-        addLog('error', `Recache failed (${res.status}): ${text.slice(0, 120)}`);
+        addLog('error', `Recache failed (${res.status}): ${res.response.slice(0, 120)}`);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
-      addLog('error', `Network error: ${msg}`);
+      addLog('error', `Recache error: ${msg}`);
     } finally {
       setRecaching(false);
     }
   };
 
   const handleRecacheMobile = async () => {
-    if (!prerenderToken.trim()) { addLog('error', 'No API token set'); return; }
     const urls = getAllUrls();
     setRecaching(true);
     addLog('info', `Recaching ${urls.length} mobile pages…`);
     try {
-      const res = await prerenderFetch('/recache', { urls, adaptiveType: 'mobile' });
+      const res = await recacheBulk({ data: { urls, adaptiveType: 'mobile' } });
       if (res.ok) {
-        addLog('success', `✓ Mobile recache queued for ${urls.length} pages`);
+        addLog('success', `✓ Mobile recache queued for ${res.count} pages`);
         const ts = new Date().toISOString();
         localStorage.setItem('php_last_recache', ts);
         setLastRecacheTs(ts);
         localStorage.removeItem('php_recache_pending');
         window.dispatchEvent(new CustomEvent('admin:recache-done'));
       } else {
-        addLog('error', `Mobile recache failed (${res.status})`);
+        addLog('error', `Mobile recache failed (${res.status}): ${res.response.slice(0, 120)}`);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
-      addLog('error', `Network error: ${msg}`);
-      addLog('info', `Run manually:\ncurl -X POST https://api.prerender.io/recache \\\n  -H "Content-Type: application/json" \\\n  -d '{"prerenderToken":"${prerenderToken.trim()}","adaptiveType":"mobile","urls":[...]}'`);
+      addLog('error', `Recache error: ${msg}`);
     } finally {
       setRecaching(false);
     }
   };
+
+
 
   const handleSubmitSitemap = async () => {
     if (!prerenderToken.trim()) { addLog('error', 'No API token set — save your Prerender.io token first'); return; }
