@@ -137,6 +137,17 @@ function toProduct(doc: any): SeoProduct | null {
     f.dosage ||
     name;
   const unitPricingMeasure = parseUnitPricingMeasure(measureSource) ?? undefined;
+  const additionalImages: string[] = Array.isArray(f.additionalImages)
+    ? f.additionalImages.filter((u: any) => typeof u === "string" && u.trim())
+    : Array.isArray(f.images)
+      ? f.images.filter((u: any) => typeof u === "string" && u.trim())
+      : [];
+  const weightGrams =
+    typeof f.weightGrams === "number"
+      ? f.weightGrams
+      : typeof f.weight === "number"
+        ? f.weight
+        : undefined;
   return {
     id: docId,
     name,
@@ -145,6 +156,7 @@ function toProduct(doc: any): SeoProduct | null {
     category: f.category ?? "",
     price,
     imageUrl: f.imageUrl ?? "",
+    additionalImages: additionalImages.length ? additionalImages : undefined,
     purity: f.purity,
     isActive: f.isActive !== false,
     visibility: f.visibility ?? "active",
@@ -158,8 +170,10 @@ function toProduct(doc: any): SeoProduct | null {
     coaUrl: typeof f.coaUrl === "string" && f.coaUrl.trim() ? f.coaUrl : undefined,
     updatedAt: typeof f.updatedAt === "string" ? f.updatedAt : undefined,
     unitPricingMeasure,
+    weightGrams,
   };
 }
+
 
 /**
  * Slugs hidden from the public site (catalogue, sitemap, product pages).
