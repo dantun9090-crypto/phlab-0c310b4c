@@ -44,17 +44,18 @@ const REDIRECT_HOSTS = new Set<string>([
   "www.prohealthpeptides.co.uk",
 ]);
 
-// Content-Security-Policy — locked down to the origins this app actually
-// loads from. `'unsafe-inline'` on scripts is required for the canonical /
-// boot-watchdog inline scripts in __root.tsx and for Firebase/Google Tag
-// injected snippets. Tighten further (nonces) once those are removed.
-const CSP = [
+// Content-Security-Policy — script-src uses per-request nonce + 'strict-dynamic'.
+// `__NONCE__` is replaced at request time with a fresh base64 nonce. The host
+// allowlist (https://www.googletagmanager.com, *.firebaseapp.com, etc.) is
+// retained as a fallback for browsers that do NOT implement CSP3 'strict-dynamic'
+// — modern browsers ignore the allowlist when 'strict-dynamic' is present.
+// `https:` is also kept as a last-resort fallback for older clients.
+const CSP_TEMPLATE = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://js.stripe.com https://cdn.wegic.ai https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net",
-  "script-src-elem 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://js.stripe.com https://cdn.wegic.ai https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net",
-  // 'unsafe-inline' removed from style-src — script-src still requires it
-  // for boot watchdog + Firebase/GTM (tracked in security memory).
-  // style-src-attr keeps inline style="" attributes working (React sets them).
+  "script-src 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://js.stripe.com https://cdn.wegic.ai https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https: 'unsafe-eval'",
+  "script-src-elem 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://js.stripe.com https://cdn.wegic.ai https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https:",
+  // 'unsafe-inline' removed from style-src (attr-only). 'unsafe-inline' removed
+  // from script-src — replaced with per-request nonce + 'strict-dynamic'.
   "style-src 'self' https://fonts.googleapis.com",
   "style-src-elem 'self' https://fonts.googleapis.com",
   "style-src-attr 'unsafe-inline'",
@@ -79,8 +80,22 @@ const SECURITY_HEADERS: Record<string, string> = {
   "permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(self)",
   "x-xss-protection": "0",
   "cross-origin-opener-policy": "same-origin-allow-popups",
-  "content-security-policy": CSP,
 };
+
+function generateNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  // btoa is available in workerd / Web standard runtime.
+  return btoa(s);
+}
+
+function buildCsp(nonce: string): string {
+  // Replace ALL occurrences of __NONCE__ (script-src + script-src-elem).
+  return CSP_TEMPLATE.split("__NONCE__").join(nonce);
+}
+
 
 // ==================== Bot management + Prerender.io ====================
 const PRERENDER_ORIGIN = "https://service.prerender.io";
@@ -168,31 +183,57 @@ function decoratePrerender(resp: Response, fromCache: boolean, method: string): 
   return new Response(body, { status: resp.status, statusText: resp.statusText, headers });
 }
 
-function applySecurityHeaders(response: Response): Response {
+function applySecurityHeaders(response: Response, nonce: string): Response {
   const contentType = response.headers.get("content-type") ?? "";
   // Only decorate HTML — leaving JSON/XML/asset responses untouched avoids
   // breaking sitemap, JSON-LD endpoints, and prerender.io content sniffing.
   if (!contentType.includes("text/html")) return response;
 
-  const headers = new Headers(response.headers);
+  // Inject the per-request nonce into every <script> element via workerd's
+  // built-in HTMLRewriter. This covers TanStack's <Scripts /> output, the
+  // BOOT_WATCHDOG + CANONICAL_ENFORCER inline blocks in __root.tsx, and the
+  // ld+json schema script (harmless — browsers ignore `nonce` on non-JS types).
+  type Rewriter = {
+    on: (selector: string, handlers: { element: (el: { setAttribute: (k: string, v: string) => void }) => void }) => Rewriter;
+    transform: (r: Response) => Response;
+  };
+  const RewriterCtor = (globalThis as { HTMLRewriter?: new () => Rewriter }).HTMLRewriter;
+
+  let rewritten = response;
+  if (RewriterCtor) {
+    const rewriter: Rewriter = new RewriterCtor();
+    rewritten = rewriter
+      .on("script", {
+        element(el) {
+          el.setAttribute("nonce", nonce);
+        },
+      })
+      .transform(response);
+  }
+
+
+  const headers = new Headers(rewritten.headers);
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
     if (!headers.has(k)) headers.set(k, v);
   }
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
+  headers.set("content-security-policy", buildCsp(nonce));
+  return new Response(rewritten.body, {
+    status: rewritten.status,
+    statusText: rewritten.statusText,
     headers,
   });
 }
 
-function brandedErrorResponse(): Response {
+function brandedErrorResponse(nonce: string): Response {
   return applySecurityHeaders(
     new Response(renderErrorPage(), {
       status: 500,
       headers: { "content-type": "text/html; charset=utf-8" },
     }),
+    nonce,
   );
 }
+
 
 function isCatastrophicSsrErrorBody(body: string, responseStatus: number): boolean {
   let payload: unknown;
@@ -221,7 +262,7 @@ function isCatastrophicSsrErrorBody(body: string, responseStatus: number): boole
 
 // h3 swallows in-handler throws into a normal 500 Response with body
 // {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
-async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
+async function normalizeCatastrophicSsrResponse(response: Response, nonce: string): Promise<Response> {
   if (response.status < 500) return response;
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) return response;
@@ -232,13 +273,16 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   }
 
   console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
-  return brandedErrorResponse();
+  return brandedErrorResponse(nonce);
 }
+
 
 export default {
   async fetch(request: Request, env: WorkerEnv, ctx: WorkerCtx): Promise<Response> {
     const start = Date.now();
+    const nonce = generateNonce();
     const url = new URL(request.url);
+
     const ip = extractClientIp(request);
     const ray = request.headers.get("cf-ray");
     const country = request.headers.get("cf-ipcountry");
@@ -405,7 +449,7 @@ export default {
       // 4. Normal SSR path
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      let normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response));
+      let normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response, nonce), nonce);
 
       // 4b. Unknown top-level path → real HTTP 404 + noindex header so Google
       // doesn't index junk URLs (meta name=robots is overridden by the HTTP
@@ -447,7 +491,7 @@ export default {
         ...baseFields,
       });
       console.error(error);
-      return brandedErrorResponse();
+      return brandedErrorResponse(nonce);
     }
   },
 };
