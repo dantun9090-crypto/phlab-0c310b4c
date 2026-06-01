@@ -90,6 +90,10 @@ export function MerchantFeedPreview({
     { label: 'g:sku / g:mpn', key: 'skuMpn', mono: true },
   ];
 
+  const fieldLabels: Record<string, string> = {
+    included: 'Feed inclusion',
+    ...Object.fromEntries(fields.map((f) => [f.key as string, f.label])),
+  };
   const changedKeys = prev
     ? (['included', ...fields.map((f) => f.key)] as Array<keyof FeedEntry>).filter(
         (k) => String(prev[k]) !== String(next[k]),
@@ -122,6 +126,24 @@ export function MerchantFeedPreview({
           </span>
         )}
       </div>
+
+      {hasDiff && (
+        <div className="px-3 py-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-200/80 mb-1.5">
+            Fields changing on save ({changedKeys.length})
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {changedKeys.map((k) => (
+              <span
+                key={k as string}
+                className="inline-flex items-center gap-1 text-[11px] font-medium bg-amber-500/20 text-amber-100 px-2 py-0.5 rounded border border-amber-500/40"
+              >
+                {fieldLabels[k as string] ?? (k as string)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {prev && prev.included !== next.included && (
         <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-200">
