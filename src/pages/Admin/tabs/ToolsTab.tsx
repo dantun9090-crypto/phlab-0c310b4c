@@ -216,29 +216,25 @@ export default function ToolsTab() {
         ...productUrls,
       ];
 
-      // 3. Read Prerender token from env
-      const token = import.meta.env.VITE_PRERENDER_TOKEN as string | undefined;
-      if (!token) {
-        // Token not available client-side (correct for security).
-        // Show URLs so admin can paste into curl command.
+      // 3. Recache via server function (token stays server-side).
+      //    Do NOT read import.meta.env.VITE_PRERENDER_TOKEN here — any
+      //    VITE_* var is inlined into the public JS bundle.
+      const { recachePrerenderUrlsBulk } = await import('@/lib/prerender-status.functions');
+      const { auth } = await import('@/lib/firebase');
+      const idToken = (await auth.currentUser?.getIdToken()) ?? '';
+      if (!idToken) {
         setPrerenderResult({
-          type: 'success',
-          message: `${allUrls.length} URLs ready for recache. Copy the curl command below and run it from your terminal (the API token must stay server-side).`,
-          urls: allUrls,
+          type: 'error',
+          message: 'You must be signed in as an admin to trigger a recache.',
         });
         return;
       }
 
-      // 4. Send recache request (batches of 100)
       const BATCH = 100;
       let sent = 0;
       for (let i = 0; i < allUrls.length; i += BATCH) {
         const batch = allUrls.slice(i, i + BATCH);
-        await fetch('https://api.prerender.io/recache', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prerenderToken: token, urls: batch }),
-        });
+        await recachePrerenderUrlsBulk({ data: { urls: batch, idToken } });
         sent += batch.length;
       }
 
