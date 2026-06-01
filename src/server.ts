@@ -449,7 +449,7 @@ export default {
       // 4. Normal SSR path
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      let normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response));
+      let normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response, nonce), nonce);
 
       // 4b. Unknown top-level path → real HTTP 404 + noindex header so Google
       // doesn't index junk URLs (meta name=robots is overridden by the HTTP
