@@ -73,13 +73,14 @@ const BASELINE: Check[] = [
     status: 'pass',
   },
   {
-    id: 'csp-script-unsafe-inline',
+    id: 'csp-script-nonce',
     category: 'Headers',
-    title: "CSP script-src 'unsafe-inline'",
-    description: 'Required by boot watchdog + Firebase/GTM. Acceptable risk until nonce-based CSP is wired.',
+    title: "CSP script-src nonce + 'strict-dynamic'",
+    description: "'unsafe-inline' removed. Per-request nonce generated in Worker and injected into every <script> via HTMLRewriter; 'strict-dynamic' covers Firebase/GTM dynamic loads.",
     severity: 'medium',
-    status: 'warn',
+    status: 'pass',
   },
+
   {
     id: 'cf-ssl-strict',
     category: 'Cloudflare',
