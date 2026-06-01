@@ -138,12 +138,43 @@ export const probePrerenderStatus = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const requested =
       data.urls && data.urls.length > 0 ? data.urls.slice(0, 12) : DEFAULT_TARGETS;
-    // Reject any URL that isn't on the phlabs.co.uk domain to prevent SSRF
-    // against cloud metadata endpoints or arbitrary internal services.
     const urls = requested.filter(isAllowedUrl);
     if (urls.length === 0) {
       throw new Error('No allowed URLs to probe. Only phlabs.co.uk hosts are permitted.');
     }
     const results = await Promise.all(urls.map(probeOne));
     return { checkedAt: new Date().toISOString(), results };
+  });
+
+/**
+ * Recache a URL via Prerender.io API.
+ * POST https://api.prerender.io/recache  { prerenderToken, url }
+ */
+export const recachePrerenderUrl = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { url: string }) => {
+    if (!data?.url || !isAllowedUrl(data.url)) {
+      throw new Error('Only phlabs.co.uk URLs are allowed.');
+    }
+    return data;
+  })
+  .handler(async ({ data }) => {
+    const token = process.env.PRERENDER_TOKEN;
+    if (!token) throw new Error('PRERENDER_TOKEN not configured');
+    const started = Date.now();
+    const res = await fetch('https://api.prerender.io/recache', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prerenderToken: token, url: data.url }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const text = await res.text();
+    return {
+      url: data.url,
+      status: res.status,
+      ok: res.ok,
+      response: text.slice(0, 500),
+      durationMs: Date.now() - started,
+      recachedAt: new Date().toISOString(),
+    };
   });
