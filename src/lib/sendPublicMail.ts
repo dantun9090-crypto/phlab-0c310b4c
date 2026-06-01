@@ -51,9 +51,22 @@ export async function sendPublicMail(input: SendMailInput): Promise<boolean> {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(input),
     });
-    return res.ok;
+    if (!res.ok) {
+      let detail = "";
+      try {
+        detail = await res.text();
+      } catch {
+        /* ignore */
+      }
+      console.error(
+        `[sendPublicMail] server responded ${res.status} ${res.statusText}`,
+        detail,
+      );
+      return false;
+    }
+    return true;
   } catch (err) {
-    console.warn("[sendPublicMail] failed", err);
+    console.error("[sendPublicMail] network/transport error", err);
     return false;
   }
 }
