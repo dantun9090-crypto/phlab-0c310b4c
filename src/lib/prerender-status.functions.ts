@@ -15,7 +15,9 @@ const GOOGLEBOT_UA =
 const ALLOWED_HOST_SUFFIXES = [
   'phlabs.co.uk',
   'www.phlabs.co.uk',
+  // check-domains-allow-next-line
   'prohealthpeptides.co.uk',
+  // check-domains-allow-next-line
   'www.prohealthpeptides.co.uk',
 ];
 
@@ -121,8 +123,10 @@ async function probeOne(url: string): Promise<ProbeResult> {
 
 const DEFAULT_TARGETS = [
   'https://www.phlabs.co.uk/',
-  'https://prohealthpeptides.co.uk/admin', // legacy host should 301 to canonical admin URL
-  'https://www.prohealthpeptides.co.uk/admin', // legacy www host should 301 to canonical admin URL
+  // check-domains-allow-next-line
+  'https://prohealthpeptides.co.uk/admin',
+  // check-domains-allow-next-line
+  'https://www.prohealthpeptides.co.uk/admin',
   'https://www.phlabs.co.uk/products',
   'https://www.phlabs.co.uk/products/bpc-157', // should 301 via CF rule
   'https://phlabs.co.uk/',
