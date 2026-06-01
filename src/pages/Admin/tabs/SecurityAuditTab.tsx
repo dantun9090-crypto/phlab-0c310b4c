@@ -80,6 +80,31 @@ const BASELINE: Check[] = [
     severity: 'medium',
     status: 'pass',
   },
+  {
+    id: 'csp-nonce-propagator',
+    category: 'Headers',
+    title: 'Runtime nonce propagator installed',
+    description: 'First inline script in __root.tsx reads its own nonce and patches document.createElement so every runtime-injected <script>/<style> inherits the nonce automatically.',
+    severity: 'medium',
+    status: 'pass',
+  },
+  {
+    id: 'csp-violation-reporting',
+    category: 'Headers',
+    title: 'CSP violation reporting enabled',
+    description: 'report-uri + report-to + Reporting-Endpoints all point at /api/public/csp-report. Reports are logged via worker-log (visible in wrangler tail).',
+    severity: 'low',
+    status: 'pass',
+  },
+  {
+    id: 'csp-e2e-test',
+    category: 'Headers',
+    title: 'CSP E2E test available',
+    description: 'scripts/csp-e2e.ts verifies headers + per-script nonce + per-request uniqueness + report sink. Run: bun run csp:e2e.',
+    severity: 'low',
+    status: 'pass',
+  },
+
 
   {
     id: 'cf-ssl-strict',
