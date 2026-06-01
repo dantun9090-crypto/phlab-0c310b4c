@@ -200,21 +200,44 @@ export const Route = createFileRoute("/api/public/send-mail")({
                 return json({ error: "email_mismatch" }, 403);
               }
 
+              // Pull ALL financial / item / address data from the trusted
+              // Firestore order document — never from the client body.
+              const customer = (order.customer as Record<string, unknown> | undefined) ?? {};
+              const items = Array.isArray(order.items)
+                ? (order.items as Array<Record<string, unknown>>).map((it) => ({
+                    name: String(it.productName ?? it.name ?? ""),
+                    variantName:
+                      typeof it.variantName === "string" ? it.variantName : undefined,
+                    quantity: Number(it.quantity ?? 0),
+                    priceNum: Number(it.price ?? 0),
+                  }))
+                : [];
+              const subtotal = Number(order.subtotal ?? 0);
+              const shipping = Number(order.shippingCost ?? 0);
+              const discount = Number(order.discount ?? 0);
+              const total = Number(order.totalAmount ?? order.total ?? 0);
+
               to = input.email;
               subject = `Order Confirmed — ${input.orderId} | PH Labs`;
               html = buildProfessionalInvoiceEmail({
                 orderId: input.orderId,
-                firstName: input.firstName,
-                items: input.items,
-                subtotal: input.subtotal,
-                shipping: input.shipping,
-                discount: input.discount,
-                total: input.total,
-                address: input.address,
-                city: input.city,
-                postcode: input.postcode,
-                paymentMethod: input.paymentMethod,
-                bankTransferRef: input.bankTransferRef,
+                firstName: String(customer.firstName ?? ""),
+                items,
+                subtotal,
+                shipping,
+                discount,
+                total,
+                address: typeof customer.address === "string" ? customer.address : undefined,
+                city: typeof customer.city === "string" ? customer.city : undefined,
+                postcode: typeof customer.postcode === "string" ? customer.postcode : undefined,
+                paymentMethod:
+                  order.paymentMethod === "card" || order.paymentMethod === "bank_transfer"
+                    ? (order.paymentMethod as "card" | "bank_transfer")
+                    : undefined,
+                bankTransferRef:
+                  typeof order.bankTransferReference === "string"
+                    ? order.bankTransferReference
+                    : undefined,
                 bankName: input.bankName,
                 bankSortCode: input.bankSortCode,
                 bankAccountNumber: input.bankAccountNumber,
