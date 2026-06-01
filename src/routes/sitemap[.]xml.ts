@@ -12,13 +12,12 @@ interface SitemapEntry {
   priority?: string;
 }
 
-// Static-page lastmod. Bumped manually when site-wide content/layout changes;
-// per-page lastmod can override this when we wire CMS edits in.
-const STATIC_LASTMOD = new Date().toISOString().slice(0, 10);
+// Static-page lastmod. Bumped manually when site-wide content/layout changes.
+const STATIC_LASTMOD = "2026-06-01";
 
 const staticEntries: SitemapEntry[] = [
   { path: "/", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "1.0" },
-  { path: "/products", lastmod: STATIC_LASTMOD, changefreq: "daily", priority: "0.9" },
+  { path: "/products", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.9" },
   { path: "/research", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
   { path: "/quality-control", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.8" },
   { path: "/lab-reports", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
@@ -31,6 +30,17 @@ const staticEntries: SitemapEntry[] = [
   { path: "/terms-and-conditions", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.3" },
   { path: "/privacy-policy", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.3" },
   { path: "/cookies", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.3" },
+];
+
+// Fallback product entries: ensure these always appear in sitemap even if
+// the Firestore fetch fails or the product is temporarily hidden in the catalog.
+const fallbackProductEntries: Array<SitemapEntry & { imageLoc?: string }> = [
+  {
+    path: "/products/bpc-157-research-peptide",
+    lastmod: "2026-05-27",
+    changefreq: "weekly",
+    priority: "0.8",
+  },
 ];
 
 export const Route = createFileRoute("/sitemap.xml")({
