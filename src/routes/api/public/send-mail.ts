@@ -94,27 +94,8 @@ const OrderInput = z.object({
     .min(1)
     .max(64)
     .regex(/^[A-Z0-9_-]+$/i),
-  firstName: z.string().trim().min(1).max(120),
-  subtotal: z.number().min(0).max(1_000_000),
-  shipping: z.number().min(0).max(1_000_000),
-  discount: z.number().min(0).max(1_000_000),
-  total: z.number().min(0).max(1_000_000),
-  items: z
-    .array(
-      z.object({
-        name: z.string().trim().min(1).max(200),
-        variantName: z.string().trim().max(120).optional(),
-        quantity: z.number().int().min(1).max(1000),
-        priceNum: z.number().min(0).max(1_000_000),
-      }),
-    )
-    .min(1)
-    .max(50),
-  address: z.string().trim().max(300).optional(),
-  city: z.string().trim().max(120).optional(),
-  postcode: z.string().trim().max(20).optional(),
-  paymentMethod: z.enum(["card", "bank_transfer"]).optional(),
-  bankTransferRef: z.string().trim().max(64).optional(),
+  // Optional non-financial extras for bank-transfer instructions only.
+  // Financial data (items, totals, address) is ALWAYS fetched from Firestore.
   bankName: z.string().trim().max(120).optional(),
   bankSortCode: z.string().trim().max(20).optional(),
   bankAccountNumber: z.string().trim().max(40).optional(),
@@ -219,21 +200,44 @@ export const Route = createFileRoute("/api/public/send-mail")({
                 return json({ error: "email_mismatch" }, 403);
               }
 
+              // Pull ALL financial / item / address data from the trusted
+              // Firestore order document — never from the client body.
+              const customer = (order.customer as Record<string, unknown> | undefined) ?? {};
+              const items = Array.isArray(order.items)
+                ? (order.items as Array<Record<string, unknown>>).map((it) => ({
+                    name: String(it.productName ?? it.name ?? ""),
+                    variantName:
+                      typeof it.variantName === "string" ? it.variantName : undefined,
+                    quantity: Number(it.quantity ?? 0),
+                    priceNum: Number(it.price ?? 0),
+                  }))
+                : [];
+              const subtotal = Number(order.subtotal ?? 0);
+              const shipping = Number(order.shippingCost ?? 0);
+              const discount = Number(order.discount ?? 0);
+              const total = Number(order.totalAmount ?? order.total ?? 0);
+
               to = input.email;
               subject = `Order Confirmed — ${input.orderId} | PH Labs`;
               html = buildProfessionalInvoiceEmail({
                 orderId: input.orderId,
-                firstName: input.firstName,
-                items: input.items,
-                subtotal: input.subtotal,
-                shipping: input.shipping,
-                discount: input.discount,
-                total: input.total,
-                address: input.address,
-                city: input.city,
-                postcode: input.postcode,
-                paymentMethod: input.paymentMethod,
-                bankTransferRef: input.bankTransferRef,
+                firstName: String(customer.firstName ?? ""),
+                items,
+                subtotal,
+                shipping,
+                discount,
+                total,
+                address: typeof customer.address === "string" ? customer.address : undefined,
+                city: typeof customer.city === "string" ? customer.city : undefined,
+                postcode: typeof customer.postcode === "string" ? customer.postcode : undefined,
+                paymentMethod:
+                  order.paymentMethod === "card" || order.paymentMethod === "bank_transfer"
+                    ? (order.paymentMethod as "card" | "bank_transfer")
+                    : undefined,
+                bankTransferRef:
+                  typeof order.bankTransferReference === "string"
+                    ? order.bankTransferReference
+                    : undefined,
                 bankName: input.bankName,
                 bankSortCode: input.bankSortCode,
                 bankAccountNumber: input.bankAccountNumber,
