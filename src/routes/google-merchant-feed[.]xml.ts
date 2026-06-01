@@ -20,25 +20,15 @@ const GOOGLE_CATEGORY_ID = "499954";
  * Shopping.
  */
 const MERCHANT_BLOCKLIST = [
-  "hcg",
-  "human chorionic gonadotropin",
-  "dhea",
-  "melatonin",
-  "ephedra",
-  "yohimbe",
-  "kratom",
-  "anabolic",
-  "steroid",
-  "testosterone",
-  "hgh",
-  "growth hormone",
-  "igf-1",
-  "igf 1",
-  "mk-677",
-  "ibutamoren",
-  "clenbuterol",
-  "t3",
-  "t4",
+  "mots-c",
+  "mots c",
+  "motsc",
+  "bpc-157",
+  "bpc 157",
+  "bpc157",
+  "tb-500",
+  "tb 500",
+  "tb500",
 ];
 
 function isBlockedForMerchant(name: string): boolean {
