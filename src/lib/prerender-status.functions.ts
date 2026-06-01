@@ -189,7 +189,6 @@ export const recachePrerenderUrl = createServerFn({ method: 'POST' })
  * so calling it from the browser yields "NetworkError when attempting to fetch resource".
  */
 export const recachePrerenderUrlsBulk = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
   .inputValidator((data: { urls: string[]; adaptiveType?: 'mobile' | 'desktop'; idToken: string }) => {
     if (!Array.isArray(data?.urls) || data.urls.length === 0) {
       throw new Error('urls[] is required');
