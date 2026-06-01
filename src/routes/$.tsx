@@ -62,7 +62,7 @@ export const Route = createFileRoute("/$")({
             "@type": "BreadcrumbList",
             itemListElement: [
               { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
-              { "@type": "ListItem", position: 2, name: "Resources", item: `${SITE_URL}/resources` },
+              { "@type": "ListItem", position: 2, name: sectionLabel, item: `${SITE_URL}${sectionPath}` },
               { "@type": "ListItem", position: 3, name: article.title, item: url },
             ],
           }),
