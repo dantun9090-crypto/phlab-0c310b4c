@@ -7,6 +7,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { updateProduct, addProduct, storage, storageRef, uploadBytesResumable, getDownloadURL } from '@/lib/firebase';
 import type { Product, ProductVariant } from '@/lib/firebase';
+import { MerchantFeedPreview } from './MerchantFeedPreview';
 
 interface ProductEditorProps {
   product?: Product | null;
