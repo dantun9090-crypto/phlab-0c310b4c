@@ -7,6 +7,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { updateProduct, addProduct, storage, storageRef, uploadBytesResumable, getDownloadURL } from '@/lib/firebase';
 import type { Product, ProductVariant } from '@/lib/firebase';
+import { MerchantFeedPreview } from './MerchantFeedPreview';
 
 interface ProductEditorProps {
   product?: Product | null;
@@ -716,7 +717,22 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                     rows={3} placeholder="Describe the product..."
                     className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all resize-none" />
                 </div>
+                <div className="flex items-start gap-3 p-3 bg-gray-900/40 border border-white/[0.05] rounded-lg">
+                  <input
+                    id="excludeFromMerchantFeed"
+                    type="checkbox"
+                    checked={(formData as any).excludeFromMerchantFeed === true}
+                    onChange={e => setFormData(p => ({ ...p, excludeFromMerchantFeed: e.target.checked } as any))}
+                    className="mt-0.5 w-4 h-4 accent-emerald-500"
+                  />
+                  <label htmlFor="excludeFromMerchantFeed" className="text-xs text-white/80 leading-relaxed cursor-pointer">
+                    <span className="font-medium">Exclude from Google Merchant feed</span>
+                    <span className="block text-white/50 mt-0.5">Product stays live on the site but is removed from google-merchant-feed.xml.</span>
+                  </label>
+                </div>
               </div>
+
+              <MerchantFeedPreview product={formData as any} />
 
               {/* Product Images — 4 slots */}
               <div className="bg-gray-800/40 border border-white/[0.07] rounded-xl p-5">
