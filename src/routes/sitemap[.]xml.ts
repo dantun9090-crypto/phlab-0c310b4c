@@ -12,13 +12,12 @@ interface SitemapEntry {
   priority?: string;
 }
 
-// Static-page lastmod. Bumped manually when site-wide content/layout changes;
-// per-page lastmod can override this when we wire CMS edits in.
-const STATIC_LASTMOD = new Date().toISOString().slice(0, 10);
+// Static-page lastmod. Bumped manually when site-wide content/layout changes.
+const STATIC_LASTMOD = "2026-06-01";
 
 const staticEntries: SitemapEntry[] = [
   { path: "/", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "1.0" },
-  { path: "/products", lastmod: STATIC_LASTMOD, changefreq: "daily", priority: "0.9" },
+  { path: "/products", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.9" },
   { path: "/research", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
   { path: "/quality-control", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.8" },
   { path: "/lab-reports", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
@@ -33,6 +32,17 @@ const staticEntries: SitemapEntry[] = [
   { path: "/cookies", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.3" },
 ];
 
+// Fallback product entries: ensure these always appear in sitemap even if
+// the Firestore fetch fails or the product is temporarily hidden in the catalog.
+const fallbackProductEntries: Array<SitemapEntry & { imageLoc?: string }> = [
+  {
+    path: "/products/bpc-157-research-peptide",
+    lastmod: "2026-05-27",
+    changefreq: "weekly",
+    priority: "0.8",
+  },
+];
+
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
@@ -44,27 +54,37 @@ export const Route = createFileRoute("/sitemap.xml")({
           priority: "0.6",
         }));
 
-        // Dynamic product entries — one URL per active product, with lastmod from Firestore updatedAt
-        let productEntries: SitemapEntry[] = [];
+        // Dynamic product entries — one URL per active product, with lastmod
+        // from Firestore updatedAt and an image:image entry from imageUrl.
+        let productEntries: Array<SitemapEntry & { imageLoc?: string }> = [];
         try {
           const products = await fetchAllProducts();
           productEntries = products.map((p) => ({
             path: `/products/${p.slug}`,
             lastmod: p.updatedAt ? p.updatedAt.slice(0, 10) : undefined,
-            changefreq: "weekly",
+            changefreq: "weekly" as const,
             priority: "0.8",
+            imageLoc: p.imageUrl && /^https?:\/\//.test(p.imageUrl) ? p.imageUrl : undefined,
           }));
         } catch {
           productEntries = [];
         }
 
-        // Dedupe by path to guarantee each URL appears exactly once
+        // Dedupe by path — Firestore wins over fallback; static wins over both.
         const seen = new Set<string>();
-        const entries = [...staticEntries, ...productEntries, ...articleEntries].filter((e) => {
+        const entries: Array<SitemapEntry & { imageLoc?: string }> = [
+          ...staticEntries,
+          ...productEntries,
+          ...fallbackProductEntries,
+          ...articleEntries,
+        ].filter((e) => {
           if (seen.has(e.path)) return false;
           seen.add(e.path);
           return true;
         });
+
+        const escapeXml = (s: string) =>
+          s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
         const urls = entries.map((e) => {
           const loc = `${BASE_URL}${e.path}`;
@@ -76,13 +96,16 @@ export const Route = createFileRoute("/sitemap.xml")({
             e.priority ? `    <priority>${e.priority}</priority>` : null,
             `    <xhtml:link rel="alternate" hreflang="en-GB" href="${loc}" />`,
             `    <xhtml:link rel="alternate" hreflang="x-default" href="${loc}" />`,
+            e.imageLoc
+              ? `    <image:image>\n      <image:loc>${escapeXml(e.imageLoc)}</image:loc>\n    </image:image>`
+              : null,
             `  </url>`,
           ].filter(Boolean).join("\n");
         });
 
         const xml = [
           `<?xml version="1.0" encoding="UTF-8"?>`,
-          `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">`,
+          `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">`,
           ...urls,
           `</urlset>`,
         ].join("\n");
