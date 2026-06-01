@@ -54,27 +54,37 @@ export const Route = createFileRoute("/sitemap.xml")({
           priority: "0.6",
         }));
 
-        // Dynamic product entries — one URL per active product, with lastmod from Firestore updatedAt
-        let productEntries: SitemapEntry[] = [];
+        // Dynamic product entries — one URL per active product, with lastmod
+        // from Firestore updatedAt and an image:image entry from imageUrl.
+        let productEntries: Array<SitemapEntry & { imageLoc?: string }> = [];
         try {
           const products = await fetchAllProducts();
           productEntries = products.map((p) => ({
             path: `/products/${p.slug}`,
             lastmod: p.updatedAt ? p.updatedAt.slice(0, 10) : undefined,
-            changefreq: "weekly",
+            changefreq: "weekly" as const,
             priority: "0.8",
+            imageLoc: p.imageUrl && /^https?:\/\//.test(p.imageUrl) ? p.imageUrl : undefined,
           }));
         } catch {
           productEntries = [];
         }
 
-        // Dedupe by path to guarantee each URL appears exactly once
+        // Dedupe by path — Firestore wins over fallback; static wins over both.
         const seen = new Set<string>();
-        const entries = [...staticEntries, ...productEntries, ...articleEntries].filter((e) => {
+        const entries: Array<SitemapEntry & { imageLoc?: string }> = [
+          ...staticEntries,
+          ...productEntries,
+          ...fallbackProductEntries,
+          ...articleEntries,
+        ].filter((e) => {
           if (seen.has(e.path)) return false;
           seen.add(e.path);
           return true;
         });
+
+        const escapeXml = (s: string) =>
+          s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
         const urls = entries.map((e) => {
           const loc = `${BASE_URL}${e.path}`;
@@ -86,13 +96,16 @@ export const Route = createFileRoute("/sitemap.xml")({
             e.priority ? `    <priority>${e.priority}</priority>` : null,
             `    <xhtml:link rel="alternate" hreflang="en-GB" href="${loc}" />`,
             `    <xhtml:link rel="alternate" hreflang="x-default" href="${loc}" />`,
+            e.imageLoc
+              ? `    <image:image>\n      <image:loc>${escapeXml(e.imageLoc)}</image:loc>\n    </image:image>`
+              : null,
             `  </url>`,
           ].filter(Boolean).join("\n");
         });
 
         const xml = [
           `<?xml version="1.0" encoding="UTF-8"?>`,
-          `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">`,
+          `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">`,
           ...urls,
           `</urlset>`,
         ].join("\n");
