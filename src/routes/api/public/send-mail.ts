@@ -167,11 +167,24 @@ export const Route = createFileRoute("/api/public/send-mail")({
               break;
             }
             case "protocol-library": {
+              // Verify the discount code exists and is active in Firestore
+              // before sending PH Labs-branded mail. Without this, anyone
+              // could deliver an apparently-legitimate offer with an
+              // arbitrary fake code to any address.
+              const upper = input.discountCode.toUpperCase();
+              const coupon = await findDocByFieldAdmin("coupons", "code", upper);
+              if (!coupon || coupon.isActive !== true) {
+                return json({ error: "invalid_discount_code" }, 400);
+              }
+              const expiry = coupon.expiryDate;
+              if (typeof expiry === "string" && new Date(expiry) < new Date()) {
+                return json({ error: "discount_code_expired" }, 400);
+              }
               to = input.email;
               subject = "Your Free Research Protocol Library — PH Labs";
               html = protocolLibraryEmail({
                 recipientEmail: input.email,
-                discountCode: input.discountCode,
+                discountCode: upper,
                 pdfDownloadUrl: input.pdfUrl,
               });
               break;
