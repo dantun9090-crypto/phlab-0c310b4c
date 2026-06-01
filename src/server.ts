@@ -31,7 +31,7 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-// Canonical host: phlabs.co.uk is primary; legacy brand domain 301-redirects here.  check-domains-allow-line
+// Canonical host: www.phlabs.co.uk is primary; apex + legacy brand domains 301-redirect here.  check-domains-allow-line
 const CANONICAL_HOST = "www.phlabs.co.uk";
 // Hosts that should 301 to the canonical host (apex + legacy brand domains).
 // Lovable preview/published hosts (*.lovable.app, *.lovableproject.com) are

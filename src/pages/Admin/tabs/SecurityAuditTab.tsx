@@ -139,6 +139,15 @@ const BASELINE: Check[] = [
     status: 'pass',
   },
   {
+    id: 'cf-canonical-domain',
+    category: 'Cloudflare',
+    title: 'Canonical domain redirect',
+    description: 'Source-of-truth Worker config: phlabs.co.uk and legacy domains redirect to https://www.phlabs.co.uk. If live shows a loop, publish must redeploy this current Worker.',
+    severity: 'high',
+    status: 'pass',
+    detail: 'src/server.ts',
+  },
+  {
     id: 'robots-bots',
     category: 'SEO/Bots',
     title: 'Robots.txt blocks AI scrapers',
