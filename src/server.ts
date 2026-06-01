@@ -52,7 +52,12 @@ const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://js.stripe.com https://cdn.wegic.ai https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net",
   "script-src-elem 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://js.stripe.com https://cdn.wegic.ai https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  // 'unsafe-inline' removed from style-src — script-src still requires it
+  // for boot watchdog + Firebase/GTM (tracked in security memory).
+  // style-src-attr keeps inline style="" attributes working (React sets them).
+  "style-src 'self' https://fonts.googleapis.com",
+  "style-src-elem 'self' https://fonts.googleapis.com",
+  "style-src-attr 'unsafe-inline'",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com https://www.gstatic.com",
   "media-src 'self' https: data:",
