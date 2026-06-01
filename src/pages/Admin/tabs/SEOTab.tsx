@@ -47,6 +47,18 @@ export default function SEOTab() {
   const [submittingSitemap, setSubmittingSitemap] = useState(false);
   const [clearingCache, setClearingCache] = useState(false);
   const [prerenderLog, setPrerenderLog] = useState<{ type: 'success' | 'error' | 'info'; text: string; ts: string }[]>([]);
+  const [recacheResults, setRecacheResults] = useState<{
+    kind: string;
+    count: number;
+    adaptiveType: string;
+    status: number;
+    ok: boolean;
+    response: string;
+    durationMs: number;
+    recachedAt: string;
+    urls: string[];
+    error?: string;
+  }[]>([]);
   const [productSlugs, setProductSlugs] = useState<string[]>([]);
   const [slugsLoading, setSlugsLoading] = useState(false);
   const [lastRecacheTs, setLastRecacheTs] = useState<string | null>(
@@ -150,25 +162,30 @@ export default function SEOTab() {
     ...productSlugs.map(slug => `${BASE}/products/${slug}`),
   ];
 
+  const pushRecacheResult = (entry: typeof recacheResults[number]) =>
+    setRecacheResults(prev => [entry, ...prev].slice(0, 20));
+
   const handleRecacheAll = async () => {
     const urls = getAllUrls();
     setRecaching(true);
     addLog('info', `Recaching ${urls.length} pages (${KEY_URLS.length} core + ${productSlugs.length} products)…`);
     try {
       const res = await recacheBulk({ data: { urls } });
+      pushRecacheResult({ kind: 'Desktop (all)', urls, ...res });
       if (res.ok) {
-        addLog('success', `✓ Recache queued for ${res.count} pages — Prerender.io will refresh them now`);
+        addLog('success', `✓ Recache queued for ${res.count} pages (HTTP ${res.status}, ${res.durationMs}ms)`);
         const ts = new Date().toISOString();
         localStorage.setItem('php_last_recache', ts);
         setLastRecacheTs(ts);
         localStorage.removeItem('php_recache_pending');
         window.dispatchEvent(new CustomEvent('admin:recache-done'));
       } else {
-        addLog('error', `Recache failed (${res.status}): ${res.response.slice(0, 120)}`);
+        addLog('error', `Recache failed (HTTP ${res.status}): ${res.response.slice(0, 120)}`);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
       addLog('error', `Recache error: ${msg}`);
+      pushRecacheResult({ kind: 'Desktop (all)', urls, count: urls.length, adaptiveType: 'desktop', status: 0, ok: false, response: '', durationMs: 0, recachedAt: new Date().toISOString(), error: msg });
     } finally {
       setRecaching(false);
     }
@@ -181,14 +198,16 @@ export default function SEOTab() {
     addLog('info', `Recaching ${urls.length} product pages only…`);
     try {
       const res = await recacheBulk({ data: { urls } });
+      pushRecacheResult({ kind: 'Products only', urls, ...res });
       if (res.ok) {
-        addLog('success', `✓ Recache queued for ${res.count} product pages`);
+        addLog('success', `✓ Recache queued for ${res.count} product pages (HTTP ${res.status}, ${res.durationMs}ms)`);
       } else {
-        addLog('error', `Recache failed (${res.status}): ${res.response.slice(0, 120)}`);
+        addLog('error', `Recache failed (HTTP ${res.status}): ${res.response.slice(0, 120)}`);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
       addLog('error', `Recache error: ${msg}`);
+      pushRecacheResult({ kind: 'Products only', urls, count: urls.length, adaptiveType: 'desktop', status: 0, ok: false, response: '', durationMs: 0, recachedAt: new Date().toISOString(), error: msg });
     } finally {
       setRecaching(false);
     }
@@ -200,23 +219,26 @@ export default function SEOTab() {
     addLog('info', `Recaching ${urls.length} mobile pages…`);
     try {
       const res = await recacheBulk({ data: { urls, adaptiveType: 'mobile' } });
+      pushRecacheResult({ kind: 'Mobile (all)', urls, ...res });
       if (res.ok) {
-        addLog('success', `✓ Mobile recache queued for ${res.count} pages`);
+        addLog('success', `✓ Mobile recache queued for ${res.count} pages (HTTP ${res.status}, ${res.durationMs}ms)`);
         const ts = new Date().toISOString();
         localStorage.setItem('php_last_recache', ts);
         setLastRecacheTs(ts);
         localStorage.removeItem('php_recache_pending');
         window.dispatchEvent(new CustomEvent('admin:recache-done'));
       } else {
-        addLog('error', `Mobile recache failed (${res.status}): ${res.response.slice(0, 120)}`);
+        addLog('error', `Mobile recache failed (HTTP ${res.status}): ${res.response.slice(0, 120)}`);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
       addLog('error', `Recache error: ${msg}`);
+      pushRecacheResult({ kind: 'Mobile (all)', urls, count: urls.length, adaptiveType: 'mobile', status: 0, ok: false, response: '', durationMs: 0, recachedAt: new Date().toISOString(), error: msg });
     } finally {
       setRecaching(false);
     }
   };
+
 
 
 
@@ -1124,6 +1146,95 @@ export default function SEOTab() {
             </div>
             <p className="text-xs text-[#3a5a82] pt-1 border-t border-white/[0.04]">Product slugs are fetched live from Firebase each time you open this tab. Click Refresh to reload after adding new products.</p>
           </div>
+
+          {/* Server Response Log — full details per recache request */}
+          {recacheResults.length > 0 && (
+            <div className="p-5 bg-white/[0.02] border border-white/[0.06] rounded-xl space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-amber-400" />
+                  <h3 className="text-sm font-bold text-[#f0f6ff]">Server Response Log</h3>
+                  <span className="text-[10px] text-[#5a80a6] bg-white/[0.04] px-2 py-0.5 rounded-full">
+                    {recacheResults.length}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setRecacheResults([])}
+                  className="text-xs text-[#3a5a82] hover:text-[#5a80a6] transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+              <p className="text-[11px] text-[#5a80a6]">
+                Raw HTTP status and response body returned by the server proxy → Prerender.io <code className="text-amber-400">/recache</code>.
+              </p>
+              <div className="space-y-2 max-h-[28rem] overflow-y-auto">
+                {recacheResults.map((r, i) => (
+                  <details
+                    key={i}
+                    open={i === 0}
+                    className={`rounded-lg border ${
+                      r.ok
+                        ? 'bg-green-500/[0.04] border-green-500/20'
+                        : 'bg-red-500/[0.04] border-red-500/20'
+                    }`}
+                  >
+                    <summary className="cursor-pointer px-3 py-2 text-xs flex flex-wrap items-center gap-2">
+                      <span
+                        className={`font-mono font-bold px-1.5 py-0.5 rounded ${
+                          r.ok ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
+                        }`}
+                      >
+                        {r.ok ? '✓' : '✗'} HTTP {r.status || 'ERR'}
+                      </span>
+                      <span className="text-[#f0f6ff] font-semibold">{r.kind}</span>
+                      <span className="text-[#5a80a6]">·</span>
+                      <span className="text-[#9cb8d9]">{r.count} URLs</span>
+                      <span className="text-[#5a80a6]">·</span>
+                      <span className="text-[#9cb8d9]">{r.adaptiveType}</span>
+                      <span className="text-[#5a80a6]">·</span>
+                      <span className="text-[#9cb8d9]">{r.durationMs}ms</span>
+                      <span className="ml-auto text-[10px] text-[#3a5a82] font-mono">
+                        {new Date(r.recachedAt).toLocaleTimeString('en-GB')}
+                      </span>
+                    </summary>
+                    <div className="px-3 pb-3 space-y-2 border-t border-white/[0.04]">
+                      {r.error && (
+                        <div className="mt-2">
+                          <p className="text-[10px] font-semibold text-red-300 uppercase tracking-wider mb-1">
+                            Error
+                          </p>
+                          <pre className="bg-black/40 rounded p-2 text-[11px] text-red-300 font-mono whitespace-pre-wrap break-all border border-red-500/20">
+                            {r.error}
+                          </pre>
+                        </div>
+                      )}
+                      <div className="mt-2">
+                        <p className="text-[10px] font-semibold text-[#3a5a82] uppercase tracking-wider mb-1">
+                          Response body
+                        </p>
+                        <pre className="bg-black/40 rounded p-2 text-[11px] text-green-300 font-mono whitespace-pre-wrap break-all border border-white/[0.06] max-h-40 overflow-y-auto">
+                          {r.response || '(empty)'}
+                        </pre>
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-semibold text-[#3a5a82] uppercase tracking-wider mb-1">
+                          URLs sent ({r.urls.length})
+                        </p>
+                        <div className="bg-black/40 rounded p-2 text-[11px] font-mono text-[#9cb8d9] max-h-40 overflow-y-auto border border-white/[0.06] space-y-0.5">
+                          {r.urls.map((u, j) => (
+                            <div key={j} className="break-all">
+                              {u.replace('https://www.phlabs.co.uk', '')}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Activity log */}
           {prerenderLog.length > 0 && (
