@@ -37,8 +37,9 @@ import GSCMonitorTab from './tabs/GSCMonitorTab';
 import MerchantFeedTab from './tabs/MerchantFeedTab';
 import AuthEventsTab from './tabs/AuthEventsTab';
 import MailHealthTab from './tabs/MailHealthTab';
+import SecurityAuditTab from './tabs/SecurityAuditTab';
 
-type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'gscmonitor' | 'merchantfeed';
+type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'gscmonitor' | 'merchantfeed' | 'securityaudit';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -321,6 +322,7 @@ export default function AdminPage() {
         case 'prerenderstatus': return <PrerenderStatusTab />;
         case 'gscmonitor': return <GSCMonitorTab />;
         case 'merchantfeed': return <MerchantFeedTab />;
+        case 'securityaudit': return <SecurityAuditTab />;
         default: return <DashboardTab />;
       }
     })();
@@ -340,6 +342,7 @@ export default function AdminPage() {
     tools: 'Tools', themes: 'Themes', database: 'Database', backup: 'Backup',
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', diagnostics: 'Diagnostics',
     prerenderstatus: 'Prerender Status', gscmonitor: 'GSC Monitor', merchantfeed: 'Merchant Feed',
+    securityaudit: 'Security Audit',
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
 
