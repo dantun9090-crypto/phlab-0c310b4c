@@ -136,8 +136,27 @@ export default function PaymentPage() {
       const data = await response.json();
 
       if (data.success && data.hpp_url) {
+        // SECURITY: validate the redirect URL before navigating. The
+        // hpp_url comes from a third-party Vercel API; if that service
+        // is ever compromised or spoofed, an unvalidated redirect would
+        // silently send users to a phishing page.
+        let parsed: URL;
+        try {
+          parsed = new URL(data.hpp_url);
+        } catch {
+          throw new Error('Invalid payment redirect URL.');
+        }
+        const host = parsed.hostname.toLowerCase();
+        const isTrueLayer =
+          host === 'truelayer.com' ||
+          host === 'truelayer-sandbox.com' ||
+          host.endsWith('.truelayer.com') ||
+          host.endsWith('.truelayer-sandbox.com');
+        if (parsed.protocol !== 'https:' || !isTrueLayer) {
+          throw new Error('Unexpected payment redirect host.');
+        }
         setStatus({ message: 'Redirecting to bank...', type: 'success' });
-        window.location.href = data.hpp_url;
+        window.location.href = parsed.toString();
       } else {
         throw new Error(data.error || 'Payment failed');
       }
