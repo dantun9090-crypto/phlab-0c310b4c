@@ -128,20 +128,34 @@ export function MerchantFeedPreview({
       </div>
 
       {hasDiff && (
-        <div className="px-3 py-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-200/80 mb-1.5">
-            Fields changing on save ({changedKeys.length})
+        <div className="sticky top-2 z-10 px-4 py-3 rounded-lg bg-amber-500/15 border border-amber-500/40 shadow-lg backdrop-blur">
+          <p className="text-xs font-semibold uppercase tracking-wider text-amber-200 mb-2">
+            Zmienione pola ({changedKeys.length})
           </p>
-          <div className="flex flex-wrap gap-1.5">
-            {changedKeys.map((k) => (
-              <span
-                key={k as string}
-                className="inline-flex items-center gap-1 text-[11px] font-medium bg-amber-500/20 text-amber-100 px-2 py-0.5 rounded border border-amber-500/40"
-              >
-                {fieldLabels[k as string] ?? (k as string)}
-              </span>
-            ))}
-          </div>
+          <ol className="space-y-2 text-xs">
+            {changedKeys.map((k, i) => {
+              const prevRaw = k === 'included' ? (prev![k] ? 'submitted' : 'excluded') : String(prev![k] ?? '');
+              const nextRaw = k === 'included' ? (next[k] ? 'submitted' : 'excluded') : String(next[k] ?? '');
+              const shortPrev = prevRaw.length > 80 ? prevRaw.slice(0, 77) + '…' : prevRaw;
+              const shortNext = nextRaw.length > 80 ? nextRaw.slice(0, 77) + '…' : nextRaw;
+              return (
+                <li key={k as string} className="flex items-start gap-2">
+                  <span className="text-amber-400/70 font-mono text-[10px] mt-0.5 shrink-0 w-4">{i + 1}.</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold text-amber-100">
+                      {fieldLabels[k as string] ?? (k as string)}
+                      <span className="ml-1.5 font-mono text-[10px] font-normal text-amber-300/60">({k as string})</span>
+                    </div>
+                    <div className="mt-0.5 flex items-start gap-1.5 flex-wrap text-[11px]">
+                      <span className="font-mono text-red-300/80 line-through decoration-red-400/50 break-all">{shortPrev || '(empty)'}</span>
+                      <ArrowRight className="w-3 h-3 text-amber-300/70 shrink-0 mt-0.5" />
+                      <span className="font-mono text-emerald-200 break-all">{shortNext || '(empty)'}</span>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       )}
 
