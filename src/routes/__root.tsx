@@ -139,9 +139,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "alternate", hrefLang: "en-GB", href: "https://www.phlabs.co.uk/" },
-      { rel: "alternate", hrefLang: "en", href: "https://www.phlabs.co.uk/" },
-      { rel: "alternate", hrefLang: "x-default", href: "https://www.phlabs.co.uk/" },
+      // hreflang removed from root — hardcoding href="/" on every route was
+      // wrong (pointed every page at the homepage). Single-language UK site
+      // doesn't need hreflang; leaf routes set their own canonical instead.
       { rel: "preconnect", href: "https://firestore.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://firebaseinstallations.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://firebasestorage.googleapis.com", crossOrigin: "" },
