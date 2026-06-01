@@ -126,8 +126,10 @@ const RULES: RedirectRule[] = [
 
   // Blends
   { type: "exact", from: "/products/glow-blend-laboratory-reference-blend-research-use", to: "/products/glow-blend" },
-  { type: "exact", from: "/products/klow-blend", to: "/products/klow-blend" },
   { type: "exact", from: "/products/klow-blend-laboratory-reference-blend-research-use", to: "/products/klow-blend" },
+
+  // Extra TB-500 legacy slug seen in Prerender 404 log
+  { type: "exact", from: "/products/tb-500-thymosin-4-fragment-lab-reference-compound", to: "/products/tb-500-thymosin-beta-4" },
 
   // Discontinued products → redirect to catalogue (better than 404 for SEO).
   { type: "exact", from: "/products/hexarelin", to: "/products" },
