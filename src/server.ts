@@ -70,6 +70,10 @@ const CSP_TEMPLATE = [
   "form-action 'self'",
   "frame-ancestors 'self'",
   "upgrade-insecure-requests",
+  // Violation reporting — both legacy (report-uri) and modern (report-to).
+  // Endpoint lives at src/routes/api/public/csp-report.ts.
+  "report-uri /api/public/csp-report",
+  "report-to csp-endpoint",
 ].join("; ");
 
 const SECURITY_HEADERS: Record<string, string> = {
@@ -80,7 +84,10 @@ const SECURITY_HEADERS: Record<string, string> = {
   "permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(self)",
   "x-xss-protection": "0",
   "cross-origin-opener-policy": "same-origin-allow-popups",
+  // Reporting API v1 — modern browsers POST violations here as application/reports+json.
+  "reporting-endpoints": 'csp-endpoint="/api/public/csp-report"',
 };
+
 
 function generateNonce(): string {
   const bytes = new Uint8Array(16);
