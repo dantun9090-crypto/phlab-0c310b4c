@@ -59,7 +59,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
         }
 
         const items = products
-          .filter((p) => !isBlockedForMerchant(p.name))
+          .filter((p) => !isBlockedForMerchant(p as any))
           .map((p) => {
             const link = `${BASE_URL}/products/${p.slug}`;
             // Lead with the laboratory-reagent framing so the classifier
