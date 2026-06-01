@@ -44,17 +44,18 @@ const REDIRECT_HOSTS = new Set<string>([
   "www.prohealthpeptides.co.uk",
 ]);
 
-// Content-Security-Policy — locked down to the origins this app actually
-// loads from. `'unsafe-inline'` on scripts is required for the canonical /
-// boot-watchdog inline scripts in __root.tsx and for Firebase/Google Tag
-// injected snippets. Tighten further (nonces) once those are removed.
-const CSP = [
+// Content-Security-Policy — script-src uses per-request nonce + 'strict-dynamic'.
+// `__NONCE__` is replaced at request time with a fresh base64 nonce. The host
+// allowlist (https://www.googletagmanager.com, *.firebaseapp.com, etc.) is
+// retained as a fallback for browsers that do NOT implement CSP3 'strict-dynamic'
+// — modern browsers ignore the allowlist when 'strict-dynamic' is present.
+// `https:` is also kept as a last-resort fallback for older clients.
+const CSP_TEMPLATE = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://js.stripe.com https://cdn.wegic.ai https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net",
-  "script-src-elem 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://js.stripe.com https://cdn.wegic.ai https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net",
-  // 'unsafe-inline' removed from style-src — script-src still requires it
-  // for boot watchdog + Firebase/GTM (tracked in security memory).
-  // style-src-attr keeps inline style="" attributes working (React sets them).
+  "script-src 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://js.stripe.com https://cdn.wegic.ai https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https: 'unsafe-eval'",
+  "script-src-elem 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://js.stripe.com https://cdn.wegic.ai https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https:",
+  // 'unsafe-inline' removed from style-src (attr-only). 'unsafe-inline' removed
+  // from script-src — replaced with per-request nonce + 'strict-dynamic'.
   "style-src 'self' https://fonts.googleapis.com",
   "style-src-elem 'self' https://fonts.googleapis.com",
   "style-src-attr 'unsafe-inline'",
@@ -79,8 +80,22 @@ const SECURITY_HEADERS: Record<string, string> = {
   "permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(self)",
   "x-xss-protection": "0",
   "cross-origin-opener-policy": "same-origin-allow-popups",
-  "content-security-policy": CSP,
 };
+
+function generateNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  // btoa is available in workerd / Web standard runtime.
+  return btoa(s);
+}
+
+function buildCsp(nonce: string): string {
+  // Replace ALL occurrences of __NONCE__ (script-src + script-src-elem).
+  return CSP_TEMPLATE.split("__NONCE__").join(nonce);
+}
+
 
 // ==================== Bot management + Prerender.io ====================
 const PRERENDER_ORIGIN = "https://service.prerender.io";
