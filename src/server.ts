@@ -491,7 +491,7 @@ export default {
         ...baseFields,
       });
       console.error(error);
-      return brandedErrorResponse();
+      return brandedErrorResponse(nonce);
     }
   },
 };
