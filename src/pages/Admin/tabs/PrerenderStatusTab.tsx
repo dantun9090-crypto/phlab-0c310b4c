@@ -2,16 +2,31 @@ import { useState, useEffect } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import {
   Activity, RefreshCw, Loader2, CheckCircle2, XCircle, AlertTriangle,
-  Globe, ExternalLink,
+  Globe, ExternalLink, Zap,
 } from 'lucide-react';
-import { probePrerenderStatus, type ProbeResult } from '@/lib/prerender-status.functions';
+import {
+  probePrerenderStatus,
+  recachePrerenderUrl,
+  type ProbeResult,
+} from '@/lib/prerender-status.functions';
+
+interface RecacheLog {
+  url: string;
+  ok: boolean;
+  status: number;
+  message: string;
+  at: string;
+}
 
 export default function PrerenderStatusTab() {
   const probe = useServerFn(probePrerenderStatus);
+  const recache = useServerFn(recachePrerenderUrl);
   const [results, setResults] = useState<ProbeResult[]>([]);
   const [checkedAt, setCheckedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [customUrl, setCustomUrl] = useState('');
+  const [recachingUrl, setRecachingUrl] = useState<string | null>(null);
+  const [recacheLog, setRecacheLog] = useState<RecacheLog[]>([]);
 
   const runProbe = async (urls?: string[]) => {
     setLoading(true);
@@ -23,6 +38,36 @@ export default function PrerenderStatusTab() {
       console.error('probe failed', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const runRecache = async (url: string) => {
+    setRecachingUrl(url);
+    try {
+      const res = await recache({ data: { url } });
+      setRecacheLog((prev) => [
+        {
+          url,
+          ok: res.ok,
+          status: res.status,
+          message: res.ok ? 'Queued for recache' : res.response || `HTTP ${res.status}`,
+          at: res.recachedAt,
+        },
+        ...prev,
+      ].slice(0, 10));
+    } catch (err) {
+      setRecacheLog((prev) => [
+        {
+          url,
+          ok: false,
+          status: 0,
+          message: err instanceof Error ? err.message : String(err),
+          at: new Date().toISOString(),
+        },
+        ...prev,
+      ].slice(0, 10));
+    } finally {
+      setRecachingUrl(null);
     }
   };
 
@@ -150,10 +195,45 @@ export default function PrerenderStatusTab() {
                   value={r.detectedNotFound ? 'yes' : 'no'}
                   tone={r.detectedNotFound ? 'bad' : 'ok'} />
               </div>
+
+              <div className="mt-3 flex justify-end">
+                <button
+                  onClick={() => runRecache(r.url)}
+                  disabled={recachingUrl === r.url}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600/90 hover:bg-amber-500 disabled:opacity-40 text-white rounded-md text-xs font-medium transition-colors"
+                  title="Force Prerender.io to re-crawl and refresh the cached snapshot"
+                >
+                  {recachingUrl === r.url
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    : <Zap className="w-3.5 h-3.5" />}
+                  Recache in Prerender.io
+                </button>
+              </div>
             </div>
           );
         })}
       </div>
+
+      {/* Recache log */}
+      {recacheLog.length > 0 && (
+        <div className="bg-[#0b1a30]/70 border border-white/[0.07] rounded-xl p-4">
+          <h3 className="text-sm font-semibold text-white mb-2 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-amber-400" /> Recent recache requests
+          </h3>
+          <div className="space-y-1.5">
+            {recacheLog.map((l, i) => (
+              <div key={i} className="flex items-center gap-2 text-xs font-mono">
+                <span className={l.ok ? 'text-emerald-400' : 'text-red-400'}>
+                  {l.ok ? '✓' : '✗'} {l.status || 'ERR'}
+                </span>
+                <span className="text-white truncate flex-1">{l.url}</span>
+                <span className="text-[#9cb8d9] truncate max-w-[40%]">{l.message}</span>
+                <span className="text-[#3a5a82]">{new Date(l.at).toLocaleTimeString('en-GB')}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Legend */}
       <div className="bg-[#0b1a30]/70 border border-white/[0.07] rounded-xl p-4 text-xs text-[#9cb8d9] space-y-1.5">
