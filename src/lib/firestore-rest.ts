@@ -11,6 +11,11 @@ const PROJECT_ID = "prohealthpeptides-a0808";
 const API_KEY = "AIzaSyB5sWYCTkzeFFup0mqyg3PzCIzjP2oGJdM";
 const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 
+export interface UnitPricingMeasure {
+  value: number;
+  unit: "mg" | "g" | "kg" | "ml" | "cl" | "l" | "ct";
+}
+
 export interface SeoProduct {
   id: string;
   name: string;
@@ -31,6 +36,29 @@ export interface SeoProduct {
   stock?: number;
   coaUrl?: string;
   updatedAt?: string;
+  /** Parsed from variant name/dosage, e.g. "10 mg" → { value: 10, unit: "mg" }. */
+  unitPricingMeasure?: UnitPricingMeasure;
+}
+
+/**
+ * Parse a dosage / variant name (e.g. "10 mg", "1000mcg", "5 ml") into a
+ * Google Merchant–compatible unit_pricing_measure. Supported units only:
+ * mg, g, kg, ml, cl, l, ct. Returns null when nothing parseable found.
+ */
+export function parseUnitPricingMeasure(input: string | undefined | null): UnitPricingMeasure | null {
+  if (!input) return null;
+  const s = String(input).toLowerCase().trim();
+  const m = s.match(/(\d+(?:[.,]\d+)?)\s*(mcg|µg|ug|mg|g|kg|ml|cl|l|ct|iu)\b/);
+  if (!m) return null;
+  let value = parseFloat(m[1].replace(",", "."));
+  let unit = m[2];
+  if (!isFinite(value) || value <= 0) return null;
+  if (unit === "mcg" || unit === "µg" || unit === "ug") {
+    value = value / 1000;
+    unit = "mg";
+  }
+  if (unit === "iu") unit = "ct";
+  return { value, unit: unit as UnitPricingMeasure["unit"] };
 }
 
 function slugify(name: string): string {
@@ -95,6 +123,16 @@ function toProduct(doc: any): SeoProduct | null {
     : typeof f.stock === "number"
       ? f.stock
       : undefined;
+  // Pick the variant whose price matches the displayed (min) price, so the
+  // unit_pricing_measure aligns with the price Google sees.
+  const priceVariant = variants.find((v: any) => typeof v?.price === "number" && v.price === price) as any;
+  const measureSource =
+    (priceVariant && (priceVariant.name || priceVariant.dosage)) ||
+    (variants[0] as any)?.name ||
+    (variants[0] as any)?.dosage ||
+    f.dosage ||
+    name;
+  const unitPricingMeasure = parseUnitPricingMeasure(measureSource) ?? undefined;
   return {
     id: docId,
     name,
@@ -115,6 +153,7 @@ function toProduct(doc: any): SeoProduct | null {
     stock: totalStock,
     coaUrl: typeof f.coaUrl === "string" && f.coaUrl.trim() ? f.coaUrl : undefined,
     updatedAt: typeof f.updatedAt === "string" ? f.updatedAt : undefined,
+    unitPricingMeasure,
   };
 }
 
