@@ -30,7 +30,7 @@ export const sendTestMail = createServerFn({ method: "POST" })
     const subject = `PH Labs Test - ${ts}`;
 
     try {
-      const id = await addDocAdmin("mail", {
+      const res = await addDocAdmin("mail", {
         to,
         message: {
           subject,
@@ -47,7 +47,8 @@ export const sendTestMail = createServerFn({ method: "POST" })
         createdAt: new Date(),
         source: "admin:test-mail",
       });
-      return { ok: true as const, id, to, subject };
+      const docId = res.name.split("/").pop() ?? res.name;
+      return { ok: true as const, id: docId, to, subject };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return { ok: false as const, error: msg, to, subject };
