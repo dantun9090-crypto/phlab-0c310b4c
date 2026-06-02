@@ -193,7 +193,9 @@ function decoratePrerender(resp: Response, fromCache: boolean, method: string): 
   const headers = new Headers(resp.headers);
   headers.set("x-prerendered", "true");
   headers.set("x-prerender-cache", fromCache ? "HIT" : "MISS");
-  headers.set("x-robots-tag", "noarchive");
+  // Strip any upstream X-Robots-Tag (prerender.io can inject `noarchive`),
+  // then leave the header unset so Google can fully index + cache.
+  headers.delete("x-robots-tag");
   headers.set("vary", "user-agent");
   const body = method === "HEAD" ? null : resp.body;
   return new Response(body, { status: resp.status, statusText: resp.statusText, headers });
