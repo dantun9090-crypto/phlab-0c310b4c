@@ -143,7 +143,9 @@ const PRERENDER_BOTS = [
 // breaks integration verification. Keep this list to actual scraper bots.
 const BLOCKED_BOTS = [
   "baiduspider", "360spider", "sogou", "sogouspider",
-  "yandexbot", "yandeximages", "petalbot", "aspiegelbot",
+  // YandexBot/YandexImages removed 2026-06-02 — legitimate search engine,
+  // allow it through to Prerender.io for indexing.
+  "petalbot", "aspiegelbot",
   "scrapy",
   "headlesschrome", "phantomjs", "selenium", "puppeteer",
   "mj12bot",
