@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+/* Fonts injected via <link> in src/routes/__root.tsx head() — keep this file Tailwind-clean */
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
