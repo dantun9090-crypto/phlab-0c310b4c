@@ -25,6 +25,41 @@ Disallow: /*?sid=
 Disallow: /blog-single-page-layout
 Disallow: /real-estate-single-page-layout
 
+# Google Merchant / Shopping ads crawler — needs full product access
+User-agent: AdsBot-Google
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /account
+Disallow: /login
+Disallow: /register
+Disallow: /api/
+Disallow: /webhook/
+Disallow: /server-functions/
+Disallow: /lovable/
+
+# Mobile Shopping ads crawler
+User-agent: AdsBot-Google-Mobile
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /account
+Disallow: /login
+Disallow: /register
+Disallow: /api/
+Disallow: /webhook/
+Disallow: /server-functions/
+Disallow: /lovable/
+
+# Google Images — allow indexing of product photos
+User-agent: Googlebot-Image
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /lovable/
+
+
 # Block AI training / scraping crawlers
 User-agent: GPTBot
 Disallow: /
