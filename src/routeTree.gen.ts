@@ -18,6 +18,7 @@ import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
+import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -66,6 +67,12 @@ const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
   path: '/api/public/csp-report',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksPrerenderRecacheRoute =
+  ApiPublicHooksPrerenderRecacheRouteImport.update({
+    id: '/api/public/hooks/prerender-recache',
+    path: '/api/public/hooks/prerender-recache',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -77,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/products/$slug': typeof ProductsSlugRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -88,6 +96,7 @@ export interface FileRoutesByTo {
   '/products/$slug': typeof ProductsSlugRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -100,6 +109,7 @@ export interface FileRoutesById {
   '/products/$slug': typeof ProductsSlugRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
     | '/products/$slug'
     | '/api/public/csp-report'
     | '/api/public/send-mail'
+    | '/api/public/hooks/prerender-recache'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -124,6 +135,7 @@ export interface FileRouteTypes {
     | '/products/$slug'
     | '/api/public/csp-report'
     | '/api/public/send-mail'
+    | '/api/public/hooks/prerender-recache'
   id:
     | '__root__'
     | '/'
@@ -135,6 +147,7 @@ export interface FileRouteTypes {
     | '/products/$slug'
     | '/api/public/csp-report'
     | '/api/public/send-mail'
+    | '/api/public/hooks/prerender-recache'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -146,6 +159,7 @@ export interface RootRouteChildren {
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
+  ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -213,6 +227,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCspReportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/prerender-recache': {
+      id: '/api/public/hooks/prerender-recache'
+      path: '/api/public/hooks/prerender-recache'
+      fullPath: '/api/public/hooks/prerender-recache'
+      preLoaderRoute: typeof ApiPublicHooksPrerenderRecacheRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -237,6 +258,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
+  ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
