@@ -226,6 +226,32 @@ export const Route = createFileRoute("/api/public/send-mail")({
               const discount = Number(order.discount ?? 0);
               const total = Number(order.totalAmount ?? order.total ?? 0);
 
+              // Bank-transfer details: fetch from the trusted
+              // settings/bankTransfer Firestore doc. NEVER trust client input.
+              const paymentMethod =
+                order.paymentMethod === "card" || order.paymentMethod === "bank_transfer"
+                  ? (order.paymentMethod as "card" | "bank_transfer")
+                  : undefined;
+
+              let bankName: string | undefined;
+              let bankSortCode: string | undefined;
+              let bankAccountNumber: string | undefined;
+              let bankIBAN: string | undefined;
+              let bankInstructions: string | undefined;
+
+              if (paymentMethod === "bank_transfer") {
+                const bank = await getDocAdmin("settings", "bankTransfer");
+                if (bank) {
+                  bankName = typeof bank.bankName === "string" ? bank.bankName : undefined;
+                  bankSortCode = typeof bank.sortCode === "string" ? bank.sortCode : undefined;
+                  bankAccountNumber =
+                    typeof bank.accountNumber === "string" ? bank.accountNumber : undefined;
+                  bankIBAN = typeof bank.iban === "string" ? bank.iban : undefined;
+                  bankInstructions =
+                    typeof bank.instructions === "string" ? bank.instructions : undefined;
+                }
+              }
+
               to = input.email;
               subject = `Order Confirmed — ${input.orderId} | PH Labs`;
               html = buildProfessionalInvoiceEmail({
@@ -239,19 +265,16 @@ export const Route = createFileRoute("/api/public/send-mail")({
                 address: typeof customer.address === "string" ? customer.address : undefined,
                 city: typeof customer.city === "string" ? customer.city : undefined,
                 postcode: typeof customer.postcode === "string" ? customer.postcode : undefined,
-                paymentMethod:
-                  order.paymentMethod === "card" || order.paymentMethod === "bank_transfer"
-                    ? (order.paymentMethod as "card" | "bank_transfer")
-                    : undefined,
+                paymentMethod,
                 bankTransferRef:
                   typeof order.bankTransferReference === "string"
                     ? order.bankTransferReference
                     : undefined,
-                bankName: input.bankName,
-                bankSortCode: input.bankSortCode,
-                bankAccountNumber: input.bankAccountNumber,
-                bankIBAN: input.bankIBAN,
-                bankInstructions: input.bankInstructions,
+                bankName,
+                bankSortCode,
+                bankAccountNumber,
+                bankIBAN,
+                bankInstructions,
               });
               break;
             }
