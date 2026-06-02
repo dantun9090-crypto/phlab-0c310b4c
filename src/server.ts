@@ -58,15 +58,16 @@ const CSP_TEMPLATE = [
   "default-src 'self'",
   "script-src 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://js.stripe.com https://cdn.wegic.ai https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https: 'unsafe-eval'",
   "script-src-elem 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://js.stripe.com https://cdn.wegic.ai https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https:",
-  // 'unsafe-inline' removed from style-src (attr-only). 'unsafe-inline' removed
-  // from script-src — replaced with per-request nonce + 'strict-dynamic'.
-  "style-src 'self' https://fonts.googleapis.com",
-  "style-src-elem 'self' https://fonts.googleapis.com",
+  // script-src uses per-request nonce + 'strict-dynamic' (no 'unsafe-inline').
+  // style-src allows 'unsafe-inline' — required for runtime-injected <style> tags
+  // (component libs, Tailwind JIT in dev, GTM/Stripe injected styles).
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "style-src-attr 'unsafe-inline'",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com https://www.gstatic.com",
   "media-src 'self' https: data:",
-  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://firebasestorage.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://content-firebaseappcheck.googleapis.com https://www.google-analytics.com https://api.stripe.com https://service.prerender.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net wss://*.firebaseio.com",
+  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://firebasestorage.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://content-firebaseappcheck.googleapis.com https://www.google-analytics.com https://api.stripe.com https://service.prerender.io https://api.prerender.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net wss://*.firebaseio.com",
   "frame-src 'self' https://*.firebaseapp.com https://js.stripe.com https://hooks.stripe.com https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com https://www.recaptcha.net",
   "worker-src 'self' blob:",
   "object-src 'none'",
