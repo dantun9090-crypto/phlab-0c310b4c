@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -142,3 +143,175 @@
     color: var(--color-foreground);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LUXURY LAYER — Editorial Lab aesthetic
+   Quiet, precise, expensive. Palette unchanged (slate-950 / emerald).
+   Adds: serif display, mono labels, hairline borders, refined spacing,
+   restrained motion. Reversible: delete this block to undo.
+   ═══════════════════════════════════════════════════════════════════ */
+
+
+
+
+:root {
+  --font-display: 'Cormorant Garamond', 'Times New Roman', serif;
+  --font-sans: 'Inter Tight', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --hairline: 1px solid rgba(255, 255, 255, 0.08);
+  --hairline-emerald: 1px solid rgba(16, 185, 129, 0.22);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: 'ss01', 'cv11', 'tnum';
+  letter-spacing: -0.005em;
+}
+
+/* Display headlines → serif, lighter weight, tighter tracking */
+h1, h2, h3,
+.font-display,
+[class*="text-4xl"],
+[class*="text-5xl"],
+[class*="text-6xl"],
+[class*="text-7xl"] {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+h4, h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* Eyebrow / category / badge labels → mono, tracked, uppercase */
+.text-xs.uppercase,
+.text-\[0\.625rem\],
+[class*="tracking-wide"],
+[class*="tracking-wider"],
+[class*="tracking-widest"] {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase;
+  font-size: 0.6875rem;
+}
+
+/* Hairline borders — softer, museum-caption feel */
+.border,
+.border-t,
+.border-b,
+.border-l,
+.border-r,
+[class*="border-slate-7"],
+[class*="border-slate-8"] {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Emerald accent gets a thin LED pulse on hover-capable surfaces */
+.bg-emerald-500,
+.bg-emerald-600,
+[class*="from-emerald"],
+[class*="to-emerald"] {
+  position: relative;
+}
+
+/* Primary CTA → flatter, sharper, hairline emerald */
+button[class*="bg-emerald"],
+a[class*="bg-emerald"] {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  border-radius: 2px !important;
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.4), 0 12px 32px -16px rgba(16, 185, 129, 0.5);
+  transition: transform 200ms cubic-bezier(.2,.7,.2,1), box-shadow 200ms ease;
+}
+button[class*="bg-emerald"]:hover,
+a[class*="bg-emerald"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.6), 0 18px 40px -14px rgba(16, 185, 129, 0.55);
+}
+
+/* Secondary / outline buttons → hairline, mono caps */
+button[class*="border"]:not([class*="bg-emerald"]),
+a[class*="border"]:not([class*="bg-emerald"]) {
+  border-radius: 2px !important;
+}
+
+/* Cards → tighter radii, hairline borders, deeper recessed shadow */
+[class*="rounded-2xl"],
+[class*="rounded-xl"],
+[class*="rounded-lg"] {
+  border-radius: 4px !important;
+}
+
+[class*="bg-slate-9"],
+[class*="bg-slate-8"] {
+  border: var(--hairline);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.02),
+    0 1px 0 rgba(0,0,0,0.4);
+}
+
+/* Inputs → hairline bottom only, no chunky borders */
+input:not([type="checkbox"]):not([type="radio"]),
+textarea {
+  font-family: var(--font-sans);
+  letter-spacing: -0.005em;
+}
+
+/* Trust strip + announcement → finer type, more breath */
+.text-\[0\.625rem\] {
+  font-size: 0.625rem;
+  letter-spacing: 0.18em !important;
+}
+
+/* Number anchors — oversized serif for section openers (opt-in via .lux-numeral) */
+.lux-numeral {
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: clamp(4rem, 12vw, 9rem);
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  color: rgba(255, 255, 255, 0.06);
+  user-select: none;
+}
+
+/* Subtle grain on slate surfaces for tactile depth */
+.bg-slate-950,
+[style*="background: #030a14"],
+[style*="background:#030a14"] {
+  position: relative;
+}
+
+/* Restrained motion — single LED pulse for emerald dot indicators */
+@keyframes lux-led {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+.bg-emerald-500.rounded-full,
+.bg-emerald-400.rounded-full {
+  animation: lux-led 2.4s ease-in-out infinite;
+}
+
+/* Strip hard drop-shadows everywhere — luxury = no glow */
+[class*="shadow-lg"],
+[class*="shadow-xl"],
+[class*="shadow-2xl"] {
+  box-shadow: 0 1px 0 rgba(255,255,255,0.04), 0 24px 48px -28px rgba(0,0,0,0.7) !important;
+}
+
+/* Slightly more generous default tracking on body copy */
+p { letter-spacing: -0.003em; }
+
+/* Header logo wordmark — refined serif lockup */
+header h1, header .logo-text {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
