@@ -139,7 +139,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Inter+Tight:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" },
       // hreflang removed from root — hardcoding href="/" on every route was
       // wrong (pointed every page at the homepage). Single-language UK site
       // doesn't need hreflang; leaf routes set their own canonical instead.
