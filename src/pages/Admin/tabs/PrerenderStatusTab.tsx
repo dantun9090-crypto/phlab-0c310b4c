@@ -254,6 +254,74 @@ export default function PrerenderStatusTab() {
   );
 }
 
+function AutoRecacheCard() {
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; status: number; message: string; at: string } | null>(null);
+
+  const run = async () => {
+    setRunning(true);
+    try {
+      const res = await fetch('/api/public/hooks/prerender-recache?force=1', { method: 'POST' });
+      const body = await res.text();
+      setResult({
+        ok: res.ok,
+        status: res.status,
+        message: body.slice(0, 400),
+        at: new Date().toISOString(),
+      });
+    } catch (err) {
+      setResult({
+        ok: false,
+        status: 0,
+        message: err instanceof Error ? err.message : String(err),
+        at: new Date().toISOString(),
+      });
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  return (
+    <div className="bg-[#0b1a30]/70 border border-white/[0.07] rounded-xl p-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="flex-1">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <Zap className="w-4 h-4 text-amber-400" />
+            Automatic recache after Publish
+          </h3>
+          <p className="text-xs text-[#9cb8d9] mt-1">
+            A scheduled job runs every <span className="text-white">15 minutes</span> and POSTs every sitemap URL
+            to Prerender.io (desktop + mobile). After clicking <span className="text-white">Publish → Update</span>,
+            the new build is reflected in the bot cache within ~15 min — no manual action needed.
+          </p>
+          <p className="text-xs text-[#3a5a82] mt-1 font-mono">
+            POST /api/public/hooks/prerender-recache (cron <code className="text-emerald-400">*/15 * * * *</code>)
+          </p>
+        </div>
+        <button
+          onClick={run}
+          disabled={running}
+          className="px-3 py-2 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-white rounded-lg text-xs font-medium transition-colors min-h-[40px] flex items-center gap-2 shrink-0"
+        >
+          {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+          Run now
+        </button>
+      </div>
+      {result && (
+        <div className={`mt-3 text-xs font-mono p-2 rounded border ${result.ok ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-300' : 'bg-red-500/5 border-red-500/20 text-red-300'}`}>
+          <div className="flex justify-between mb-1">
+            <span>{result.ok ? '✓ Triggered' : '✗ Failed'} — HTTP {result.status}</span>
+            <span className="text-[#9cb8d9]">{new Date(result.at).toLocaleTimeString('en-GB')}</span>
+          </div>
+          <div className="text-[#9cb8d9] break-all whitespace-pre-wrap max-h-32 overflow-auto">{result.message}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
 function Stat({ label, value, tone = 'neutral' }: { label: string; value: string; tone?: 'ok' | 'warn' | 'bad' | 'neutral' }) {
   const cls =
     tone === 'ok'   ? 'text-emerald-400' :
