@@ -76,7 +76,7 @@ export function buildWelcomeEmail(opts: WelcomeEmailOptions): string {
         </table>
       </div>
 
-      ${ctaButton('Browse Our Catalogue →', 'https://www.phlabs.co.uk/products')}
+      ${ctaButton('Browse Our Catalogue →', 'https://phlabs.co.uk/products')}
 
       ${divider()}
 

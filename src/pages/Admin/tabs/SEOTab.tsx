@@ -104,30 +104,30 @@ export default function SEOTab() {
   };
 
 
-  const SITEMAP_URL = 'https://www.phlabs.co.uk/sitemap.xml';
+  const SITEMAP_URL = 'https://phlabs.co.uk/sitemap.xml';
 
   const KEY_URLS = [
-    'https://www.phlabs.co.uk/',
-    'https://www.phlabs.co.uk/products',
-    'https://www.phlabs.co.uk/products?category=tissue-repair',
-    'https://www.phlabs.co.uk/products?category=metabolic-signaling',
-    'https://www.phlabs.co.uk/products?category=cellular-aging',
-    'https://www.phlabs.co.uk/products?category=neurological',
-    'https://www.phlabs.co.uk/products?category=melanin',
-    'https://www.phlabs.co.uk/products?category=blends',
-    'https://www.phlabs.co.uk/products?category=accessories',
-    'https://www.phlabs.co.uk/lab-reports',
-    'https://www.phlabs.co.uk/research',
-    'https://www.phlabs.co.uk/resources',
-    'https://www.phlabs.co.uk/about',
-    'https://www.phlabs.co.uk/contact',
-    'https://www.phlabs.co.uk/search',
-    'https://www.phlabs.co.uk/storage-guide',
-    'https://www.phlabs.co.uk/refund-policy',
-    'https://www.phlabs.co.uk/shipping-policy',
-    'https://www.phlabs.co.uk/privacy-policy',
-    'https://www.phlabs.co.uk/terms-and-conditions',
-    'https://www.phlabs.co.uk/cookies',
+    'https://phlabs.co.uk/',
+    'https://phlabs.co.uk/products',
+    'https://phlabs.co.uk/products?category=tissue-repair',
+    'https://phlabs.co.uk/products?category=metabolic-signaling',
+    'https://phlabs.co.uk/products?category=cellular-aging',
+    'https://phlabs.co.uk/products?category=neurological',
+    'https://phlabs.co.uk/products?category=melanin',
+    'https://phlabs.co.uk/products?category=blends',
+    'https://phlabs.co.uk/products?category=accessories',
+    'https://phlabs.co.uk/lab-reports',
+    'https://phlabs.co.uk/research',
+    'https://phlabs.co.uk/resources',
+    'https://phlabs.co.uk/about',
+    'https://phlabs.co.uk/contact',
+    'https://phlabs.co.uk/search',
+    'https://phlabs.co.uk/storage-guide',
+    'https://phlabs.co.uk/refund-policy',
+    'https://phlabs.co.uk/shipping-policy',
+    'https://phlabs.co.uk/privacy-policy',
+    'https://phlabs.co.uk/terms-and-conditions',
+    'https://phlabs.co.uk/cookies',
   ];
 
   const addLog = (type: 'success' | 'error' | 'info', text: string) => {
@@ -155,7 +155,7 @@ export default function SEOTab() {
   };
 
 
-  const BASE = 'https://www.phlabs.co.uk';
+  const BASE = 'https://phlabs.co.uk';
 
   const getAllUrls = () => [
     ...KEY_URLS,
@@ -272,7 +272,7 @@ export default function SEOTab() {
     setClearingCache(true);
     addLog('info', 'Scheduling full cache clear for phlabs.co.uk…');
     try {
-      const res = await prerenderFetch('/cache-clear', { query: 'https://www.phlabs.co.uk%' });
+      const res = await prerenderFetch('/cache-clear', { query: 'https://phlabs.co.uk%' });
       if (res.ok) {
         addLog('success', '✓ Cache clear scheduled — all pages will be re-rendered on next request');
       } else if (res.status === 403) {
@@ -284,7 +284,7 @@ export default function SEOTab() {
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Unknown error';
       addLog('error', `Network error: ${msg}`);
-      addLog('info', `Run manually:\ncurl -X POST https://api.prerender.io/cache-clear \\\n  -H "Content-Type: application/json" \\\n  -d '{"prerenderToken":"${prerenderToken.trim()}","query":"https://www.phlabs.co.uk%"}'`);
+      addLog('info', `Run manually:\ncurl -X POST https://api.prerender.io/cache-clear \\\n  -H "Content-Type: application/json" \\\n  -d '{"prerenderToken":"${prerenderToken.trim()}","query":"https://phlabs.co.uk%"}'`);
     } finally {
       setClearingCache(false);
     }
@@ -382,42 +382,42 @@ export default function SEOTab() {
       title: 'Buy Research Peptides UK | HPLC-Verified | PH Labs',
       metaDescription: 'Buy HPLC-tested research peptides in the UK — BPC-157, TB-500, GLP-1 compounds. ≥99% purity, CoA included, free shipping over £50. Laboratory use only.',
       metaKeywords: '',
-      canonical: 'https://www.phlabs.co.uk/',
+      canonical: 'https://phlabs.co.uk/',
       ogImage: '',
     },
     about: {
       title: 'About Us | HPLC-Verified Peptide Supplier UK | PH Labs',
       metaDescription: 'About PH Labs UK | HPLC-Verified Research Peptide Supplier — Quality standards, testing protocols, and UK delivery.',
       metaKeywords: '',
-      canonical: 'https://www.phlabs.co.uk/about',
+      canonical: 'https://phlabs.co.uk/about',
       ogImage: '',
     },
     contact: {
       title: 'Contact | PH Labs UK',
       metaDescription: 'Contact PH Labs UK | Research Peptide Support — Customer service, wholesale inquiries, and lab partnerships.',
       metaKeywords: '',
-      canonical: 'https://www.phlabs.co.uk/contact',
+      canonical: 'https://phlabs.co.uk/contact',
       ogImage: '',
     },
     terms: {
       title: 'Terms of Service | PH Labs UK',
       metaDescription: 'Terms of Service for PH Labs UK — Research peptide purchase terms, laboratory use policy, and legal conditions.',
       metaKeywords: '',
-      canonical: 'https://www.phlabs.co.uk/terms-of-service',
+      canonical: 'https://phlabs.co.uk/terms-of-service',
       ogImage: '',
     },
     privacy: {
       title: 'Privacy Policy | PH Labs UK',
       metaDescription: 'Privacy Policy for PH Labs UK — How we collect, use, and protect your personal data.',
       metaKeywords: '',
-      canonical: 'https://www.phlabs.co.uk/privacy-policy',
+      canonical: 'https://phlabs.co.uk/privacy-policy',
       ogImage: '',
     },
     cookies: {
       title: 'Cookie Policy | PH Labs UK',
       metaDescription: 'Cookie Policy for PH Labs UK — How we use cookies and tracking technologies on our website.',
       metaKeywords: '',
-      canonical: 'https://www.phlabs.co.uk/cookies',
+      canonical: 'https://phlabs.co.uk/cookies',
       ogImage: '',
     },
   });
@@ -426,8 +426,8 @@ export default function SEOTab() {
   const migrateBrand = <T,>(val: T): T => {
     if (typeof val === 'string') {
       return val
-        .replace(/https?:\/\/(www\.)?prohealthpeptides\.co\.uk/gi, 'https://www.phlabs.co.uk')
-        .replace(/prohealthpeptides\.co\.uk/gi, 'www.phlabs.co.uk')
+        .replace(/https?:\/\/(www\.)?prohealthpeptides\.co\.uk/gi, 'https://phlabs.co.uk')
+        .replace(/prohealthpeptides\.co\.uk/gi, 'phlabs.co.uk')
         .replace(/Pro Health Peptides/g, 'PH Labs')
         .replace(/ProHealth Peptides/g, 'PH Labs')
         .replace(/ProHealthPeptides/g, 'PH Labs') as unknown as T;
@@ -730,7 +730,7 @@ export default function SEOTab() {
                     type="url"
                     value={page.canonical || ''}
                     onChange={e => setPagesSEO({ ...pagesSEO, [pageKey]: { ...page, canonical: e.target.value } })}
-                    placeholder="https://www.phlabs.co.uk/..."
+                    placeholder="https://phlabs.co.uk/..."
                     className="w-full bg-white border border-gray-300 text-gray-900 text-[16px] placeholder-gray-500 py-2.5 px-4 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100 transition-colors"
                   />
                 </div>
@@ -752,7 +752,7 @@ export default function SEOTab() {
                   </div>
                 </div>
 
-                {renderGooglePreview(page.title, page.canonical || 'https://www.phlabs.co.uk/', page.metaDescription)}
+                {renderGooglePreview(page.title, page.canonical || 'https://phlabs.co.uk/', page.metaDescription)}
               </div>
             );
           })}
@@ -1118,7 +1118,7 @@ export default function SEOTab() {
                   <a key={url} href={url} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-1.5 text-xs text-[#5a80a6] hover:text-blue-400 transition-colors group py-0.5">
                     <ExternalLink className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    {url.replace('https://www.phlabs.co.uk', '') || '/'}
+                    {url.replace('https://phlabs.co.uk', '') || '/'}
                   </a>
                 ))}
               </div>
@@ -1227,7 +1227,7 @@ export default function SEOTab() {
                         <div className="bg-black/40 rounded p-2 text-[11px] font-mono text-[#9cb8d9] max-h-40 overflow-y-auto border border-white/[0.06] space-y-0.5">
                           {r.urls.map((u, j) => (
                             <div key={j} className="break-all">
-                              {u.replace('https://www.phlabs.co.uk', '')}
+                              {u.replace('https://phlabs.co.uk', '')}
                             </div>
                           ))}
                         </div>
@@ -1290,11 +1290,11 @@ export default function SEOTab() {
                 },
                 {
                   label: 'Recache All Pages',
-                  cmd: `curl -s -X POST https://api.prerender.io/recache \\\n  -H "Content-Type: application/json" \\\n  -d '{"prerenderToken":"${prerenderToken.trim()}","urls":["https://www.phlabs.co.uk/","https://www.phlabs.co.uk/products","https://www.phlabs.co.uk/research"]}'`,
+                  cmd: `curl -s -X POST https://api.prerender.io/recache \\\n  -H "Content-Type: application/json" \\\n  -d '{"prerenderToken":"${prerenderToken.trim()}","urls":["https://phlabs.co.uk/","https://phlabs.co.uk/products","https://phlabs.co.uk/research"]}'`,
                 },
                 {
                   label: 'Clear Full Cache',
-                  cmd: `curl -s -X POST https://api.prerender.io/cache-clear \\\n  -H "Content-Type: application/json" \\\n  -d '{"prerenderToken":"${prerenderToken.trim()}","query":"https://www.phlabs.co.uk%"}'`,
+                  cmd: `curl -s -X POST https://api.prerender.io/cache-clear \\\n  -H "Content-Type: application/json" \\\n  -d '{"prerenderToken":"${prerenderToken.trim()}","query":"https://phlabs.co.uk%"}'`,
                 },
               ].map(({ label, cmd }) => (
                 <div key={label} className="space-y-1">

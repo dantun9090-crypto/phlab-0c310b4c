@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { fetchAllProducts } from "@/lib/firestore-rest";
 
-const BASE_URL = "https://www.phlabs.co.uk";
+const BASE_URL = "https://phlabs.co.uk";
 const BRAND = "PH Labs";
 const CURRENCY = "GBP";
 // Google product category ID: Business & Industrial > Science & Laboratory
@@ -45,7 +45,7 @@ function cdata(s: string): string {
  * name matches a restricted-pharmaceutical term (hCG, DHEA, melatonin,
  * anabolic, hormone, etc.) is excluded from the feed entirely.
  *
- * Public URL: https://www.phlabs.co.uk/google-merchant-feed.xml
+ * Public URL: https://phlabs.co.uk/google-merchant-feed.xml
  */
 export const Route = createFileRoute("/google-merchant-feed.xml")({
   server: {

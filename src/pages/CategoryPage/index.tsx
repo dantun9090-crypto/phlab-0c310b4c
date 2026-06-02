@@ -145,7 +145,7 @@ export default function CategoryPage() {
     title: config?.seoTitle ?? 'Research Peptides UK | PH Labs',
     metaDescription: config?.seoDescription ?? '',
     metaKeywords: config?.seoKeywords ?? '',
-    canonical: `https://www.phlabs.co.uk/products/category/${slug}`,
+    canonical: `https://phlabs.co.uk/products/category/${slug}`,
     ogImage: 'https://cdn.wegic.ai/assets/onepage/agent/images/1779306071783_0.jpg',
   });
 
@@ -375,9 +375,9 @@ export default function CategoryPage() {
                 '@context': 'https://schema.org',
                 '@type': 'BreadcrumbList',
                 itemListElement: [
-                  { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.phlabs.co.uk/' },
-                  { '@type': 'ListItem', position: 2, name: 'Products', item: 'https://www.phlabs.co.uk/products' },
-                  { '@type': 'ListItem', position: 3, name: config?.label, item: `https://www.phlabs.co.uk/products/category/${slug}` },
+                  { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://phlabs.co.uk/' },
+                  { '@type': 'ListItem', position: 2, name: 'Products', item: 'https://phlabs.co.uk/products' },
+                  { '@type': 'ListItem', position: 3, name: config?.label, item: `https://phlabs.co.uk/products/category/${slug}` },
                 ],
               }),
             }}
@@ -397,7 +397,7 @@ export default function CategoryPage() {
                     '@type': 'ListItem',
                     position: i + 1,
                     name: p.name,
-                    url: `https://www.phlabs.co.uk/products/${p.slug ?? p.name.toLowerCase().replace(/\s+/g, '-')}`,
+                    url: `https://phlabs.co.uk/products/${p.slug ?? p.name.toLowerCase().replace(/\s+/g, '-')}`,
                   })),
                 }),
               }}

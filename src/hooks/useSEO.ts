@@ -10,7 +10,7 @@ interface SEOData {
   ogType?: string;
 }
 
-const CANONICAL_ORIGIN = 'https://www.phlabs.co.uk';
+const CANONICAL_ORIGIN = 'https://phlabs.co.uk';
 const DEFAULT_OG_IMAGE = `${CANONICAL_ORIGIN}/og-image.jpg`;
 
 /**
@@ -97,7 +97,7 @@ export function useSEO(pageKey: string, fallback: SEOData) {
       }
 
       // ── Canonical / og:url / twitter:url ───────────────────────────────────
-      // ALWAYS force onto https://www.phlabs.co.uk, regardless of input.
+      // ALWAYS force onto https://phlabs.co.uk, regardless of input.
       const canonicalUrl = toCanonicalUrl(canonical);
       setLink('canonical', canonicalUrl);
 

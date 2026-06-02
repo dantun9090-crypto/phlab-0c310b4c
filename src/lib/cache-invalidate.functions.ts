@@ -14,7 +14,7 @@ import { requireFirebaseAdmin } from './server/firebase-auth-admin';
  */
 
 const CF_ZONE_ID = 'ed093ef4578e8e3568e26c3e979558c6';
-const ORIGIN = 'https://www.phlabs.co.uk';
+const ORIGIN = 'https://phlabs.co.uk';
 
 const CATEGORIES = [
   'metabolic-signaling',

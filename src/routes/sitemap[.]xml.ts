@@ -3,7 +3,7 @@ import type {} from "@tanstack/react-start";
 import { articles } from "@/pages/Resources/data/articles";
 import { fetchAllProducts } from "@/lib/firestore-rest";
 
-const BASE_URL = "https://www.phlabs.co.uk";
+const BASE_URL = "https://phlabs.co.uk";
 
 interface SitemapEntry {
   path: string;

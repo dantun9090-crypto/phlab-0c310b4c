@@ -7,7 +7,7 @@ const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 const HOME_TITLE = "HPLC-Tested Research Peptides UK — Batch CoA | PH Labs";
 const HOME_DESCRIPTION =
   "Shop HPLC-tested research peptides in the UK with batch CoAs and tracked next-day dispatch. Strictly for in-vitro laboratory research use.";
-const HOME_URL = "https://www.phlabs.co.uk/";
+const HOME_URL = "https://phlabs.co.uk/";
 
 export const Route = createFileRoute("/")({
   ssr: false,

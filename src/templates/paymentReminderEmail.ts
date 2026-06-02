@@ -90,7 +90,7 @@ export function buildPaymentReminderEmail({
       </tr>
     </table>
 
-    ${ctaButton('View My Order', 'https://www.phlabs.co.uk/account')}
+    ${ctaButton('View My Order', 'https://phlabs.co.uk/account')}
 
     ${divider()}
 

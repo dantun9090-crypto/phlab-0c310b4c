@@ -9,7 +9,7 @@ import { db, collection, getDocs, doc, deleteDoc, getAllProducts, updateProduct,
 import { seedProducts, nameToSlug } from '@/lib/seedProducts';
 import { findMerchantEntry, MERCHANT_SEO_ENTRIES } from '@/lib/merchantSeoData';
 
-const SITE_BASE = 'https://www.phlabs.co.uk';
+const SITE_BASE = 'https://phlabs.co.uk';
 
 // Static pages to always include in recache
 const STATIC_PAGES = [

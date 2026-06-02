@@ -2,7 +2,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { requireFirebaseAdmin } from '@/lib/server/firebase-auth-admin';
 
 const GATEWAY = 'https://connector-gateway.lovable.dev/google_search_console';
-const SITE_URL = 'https://www.phlabs.co.uk/';
+const SITE_URL = 'https://phlabs.co.uk/';
 
 function authHeaders() {
   const lovable = process.env.LOVABLE_API_KEY;

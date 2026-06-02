@@ -230,7 +230,7 @@ export default function HomePage() {
   useSEO('home', {
     title: 'HPLC-Verified Research Peptides UK | PH Labs',
     metaDescription: 'UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals.',
-    canonical: 'https://www.phlabs.co.uk/',
+    canonical: 'https://phlabs.co.uk/',
   });
 
 
@@ -341,7 +341,7 @@ export default function HomePage() {
         subscribedAt: now,
         timestamp: new Date().toISOString(),
       }));
-      const pdfUrl = 'https://www.phlabs.co.uk/downloads/protocol-library.pdf';
+      const pdfUrl = 'https://phlabs.co.uk/downloads/protocol-library.pdf';
       try {
         await sendPublicMail({
           template: 'protocol-library',

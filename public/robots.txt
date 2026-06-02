@@ -86,4 +86,4 @@ Disallow: /
 User-agent: Timpibot
 Disallow: /
 
-Sitemap: https://www.phlabs.co.uk/sitemap.xml
+Sitemap: https://phlabs.co.uk/sitemap.xml

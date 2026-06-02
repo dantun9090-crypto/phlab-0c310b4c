@@ -142,7 +142,7 @@ const BASELINE: Check[] = [
     id: 'cf-canonical-domain',
     category: 'Cloudflare',
     title: 'Canonical domain redirect',
-    description: 'Legacy prohealthpeptides domains redirect to https://www.phlabs.co.uk. phlabs.co.uk is temporarily served directly to avoid the host-level www → apex loop.',
+    description: 'Legacy prohealthpeptides domains redirect to https://phlabs.co.uk. phlabs.co.uk is temporarily served directly to avoid the host-level www → apex loop.',
     severity: 'high',
     status: 'pass',
     detail: 'src/server.ts',

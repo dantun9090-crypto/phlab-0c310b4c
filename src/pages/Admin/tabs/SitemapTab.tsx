@@ -4,7 +4,7 @@ import type { Product } from '@/lib/firebase';
 import { Map, RefreshCw, Globe, CheckCircle2, XCircle, AlertCircle, ExternalLink, Copy, Loader2, ToggleLeft, ToggleRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const BASE = 'https://www.phlabs.co.uk';
+const BASE = 'https://phlabs.co.uk';
 const SITEMAP_URL = `${BASE}/sitemap.xml`;
 
 const STATIC_PAGES = [

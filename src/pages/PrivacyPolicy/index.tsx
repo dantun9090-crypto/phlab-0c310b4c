@@ -6,7 +6,7 @@ export default function PrivacyPolicy() {
   useSEO('privacy', {
     title: 'Privacy Policy | PH Labs UK',
     metaDescription: 'Privacy Policy — PH Labs Ltd UK. UK GDPR & Data Protection Act 2018 compliant. How we collect and protect your data when you buy research peptides in the UK.',
-    canonical: 'https://www.phlabs.co.uk/privacy-policy',
+    canonical: 'https://phlabs.co.uk/privacy-policy',
     ogImage: 'https://cdn.wegic.ai/assets/onepage/agent/images/1779306071783_0.jpg',
   });
 

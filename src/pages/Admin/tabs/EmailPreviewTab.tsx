@@ -65,7 +65,7 @@ function buildPreview(templateId: string): string {
     case 'admin_invoice':
       return buildAdminInvoiceEmail({ customerName: 'James Smith', email: 'james@example.com', invoiceRef: 'INV-' + DEMO_ORDER_ID.slice(-8).toUpperCase(), description: 'Research peptide order', amount: 99.97, currency: 'GBP' });
     case 'protocol_library':
-      return protocolLibraryEmail({ recipientEmail: 'james@example.com', discountCode: 'PROTOCOL10', pdfDownloadUrl: 'https://www.phlabs.co.uk/protocol-library.pdf' });
+      return protocolLibraryEmail({ recipientEmail: 'james@example.com', discountCode: 'PROTOCOL10', pdfDownloadUrl: 'https://phlabs.co.uk/protocol-library.pdf' });
     default:
       return '<p>Template not found</p>';
   }

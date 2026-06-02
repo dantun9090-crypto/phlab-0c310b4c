@@ -121,7 +121,7 @@ export default function PrerenderStatusTab() {
           type="url"
           value={customUrl}
           onChange={(e) => setCustomUrl(e.target.value)}
-          placeholder="https://www.phlabs.co.uk/some-path"
+          placeholder="https://phlabs.co.uk/some-path"
           className="flex-1 min-h-[44px] px-3 py-2 bg-slate-800 border-2 border-slate-600 rounded-lg text-white text-sm placeholder:text-slate-500 focus:border-blue-500 outline-none"
         />
         <button
@@ -244,7 +244,7 @@ export default function PrerenderStatusTab() {
         <p>• <span className="text-white">Meta 404</span> = the page rendered <code className="text-emerald-400">{'<meta name="prerender-status-code" content="404">'}</code> — Prerender.io will mark it as 404 for crawlers even if HTTP was 200.</p>
         <p>• <span className="text-white">x-prerendered: yes</span> means our edge served the Prerender.io snapshot instead of raw SSR.</p>
         {/* check-domains-allow-next-line */}
-        <p>• <span className="text-white">Redirect 301</span> on legacy product slugs and prohealthpeptides.co.uk URLs is correct — Cloudflare should send them to <code className="text-emerald-400">https://www.phlabs.co.uk</code>.</p>
+        <p>• <span className="text-white">Redirect 301</span> on legacy product slugs and prohealthpeptides.co.uk URLs is correct — Cloudflare should send them to <code className="text-emerald-400">https://phlabs.co.uk</code>.</p>
       </div>
     </div>
   );

@@ -385,7 +385,7 @@ export default function OrdersTab() {
          }));
          await addDoc(collection(db, 'mail'), {
            to: customerEmail,
-           bcc: 'www.phlabs.co.uk+88474c9b36@invite.trustpilot.com',
+           bcc: 'phlabs.co.uk+88474c9b36@invite.trustpilot.com',
            message: {
              subject: `Order #${selected.id?.slice(-8).toUpperCase()} — Your Order Has Shipped!`,
              html: buildDispatchEmail({
