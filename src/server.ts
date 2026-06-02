@@ -32,7 +32,7 @@ async function getServerEntry(): Promise<ServerEntry> {
 }
 
 // Canonical host: www.phlabs.co.uk is primary; legacy brand domains 301-redirect here.  check-domains-allow-line
-// Build marker: phl_loop_fix_20260602_0810 — forces fresh Worker deploy to drop
+// Build marker: phl_loop_fix_20260602_1115 — forces fresh Worker deploy to drop
 // stale `phl_p0_recovery_20260601_2300` build that 302'd www → apex and caused
 // an infinite redirect loop with the app-level long→short canonical.
 const CANONICAL_HOST = "www.phlabs.co.uk";
