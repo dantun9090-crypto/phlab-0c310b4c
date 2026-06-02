@@ -140,6 +140,10 @@ export default function PrerenderStatusTab() {
         </button>
       </div>
 
+      {/* Auto-recache hook status */}
+      <AutoRecacheCard />
+
+
       {/* Results */}
       <div className="space-y-3">
         {loading && results.length === 0 && (
