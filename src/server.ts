@@ -41,6 +41,8 @@ const CANONICAL_HOST = "phlabs.co.uk";
 // intentionally excluded so previews keep working. phlabs.co.uk apex is NOT
 // in this list — it is served directly to avoid hosting-layer loops.
 const REDIRECT_HOSTS = new Set<string>([
+  // www.phlabs.co.uk → phlabs.co.uk (apex is canonical)
+  "www.phlabs.co.uk",
   // check-domains-allow-next-line: legacy host, musi tu zostać żeby zadziałał 301 do phlabs.co.uk
   "prohealthpeptides.co.uk",
   // check-domains-allow-next-line: legacy host, musi tu zostać żeby zadziałał 301 do phlabs.co.uk
