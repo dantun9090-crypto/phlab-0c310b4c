@@ -93,13 +93,10 @@ const OrderInput = z.object({
     .min(1)
     .max(64)
     .regex(/^[A-Z0-9_-]+$/i),
-  // Optional non-financial extras for bank-transfer instructions only.
-  // Financial data (items, totals, address) is ALWAYS fetched from Firestore.
-  bankName: z.string().trim().max(120).optional(),
-  bankSortCode: z.string().trim().max(20).optional(),
-  bankAccountNumber: z.string().trim().max(40).optional(),
-  bankIBAN: z.string().trim().max(64).optional(),
-  bankInstructions: z.string().trim().max(2000).optional(),
+  // Bank details are NEVER accepted from the client — they are fetched
+  // server-side from settings/bankTransfer (admin-only Firestore doc) to
+  // prevent attackers from delivering PH Labs-branded invoices with
+  // fraudulent payment instructions.
 });
 
 const Body = z.discriminatedUnion("template", [
