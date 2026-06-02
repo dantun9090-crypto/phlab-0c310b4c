@@ -18,7 +18,6 @@
     "check:domains": "bun scripts/check-domains.ts",
     "prepublish": "bun scripts/check-domains.ts && bun scripts/seo-check.ts",
     "ci": "bun run check:domains && bun run build && bun run worker:check-imports"
-
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
@@ -69,6 +68,7 @@
     "input-otp": "^1.4.2",
     "jszip": "^3.10.1",
     "lucide-react": "^0.575.0",
+    "nitro": "3.0.260429-beta",
     "react": "^19.2.0",
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.0",
@@ -89,7 +89,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@lovable.dev/vite-tanstack-config": "^1.7.0",
+    "@lovable.dev/vite-tanstack-config": "2.3.1",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
