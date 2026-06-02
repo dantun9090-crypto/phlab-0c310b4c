@@ -32,16 +32,10 @@ const staticEntries: SitemapEntry[] = [
   { path: "/cookies", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.3" },
 ];
 
-// Fallback product entries: ensure these always appear in sitemap even if
-// the Firestore fetch fails or the product is temporarily hidden in the catalog.
-const fallbackProductEntries: Array<SitemapEntry & { imageLoc?: string }> = [
-  {
-    path: "/products/bpc-157-research-peptide",
-    lastmod: "2026-05-27",
-    changefreq: "weekly",
-    priority: "0.8",
-  },
-];
+// Fallback product entries: only used if Firestore fetch fails. BPC-157 was
+// removed here on 2026-06-02 — it's now unhidden and served dynamically with
+// the correct slug (/products/bpc-157).
+const fallbackProductEntries: Array<SitemapEntry & { imageLoc?: string }> = [];
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {

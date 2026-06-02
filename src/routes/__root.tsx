@@ -240,6 +240,12 @@ const CANONICAL_ENFORCER = `
     if(!el){el=document.createElement('meta');el.setAttribute(attr,name);document.head.appendChild(el);}
     if(el.getAttribute('content')!==content) el.setAttribute('content',content);
   }
+  function upsertHreflang(hreflang,href){
+    var sel='link[rel="alternate"][hreflang="'+hreflang+'"]';
+    var el=document.querySelector(sel);
+    if(!el){el=document.createElement('link');el.setAttribute('rel','alternate');el.setAttribute('hreflang',hreflang);document.head.appendChild(el);}
+    if(el.getAttribute('href')!==href) el.setAttribute('href',href);
+  }
   function enforce(){
     try{
       var path=location.pathname.replace(/\\/{2,}/g,'/');
@@ -248,6 +254,8 @@ const CANONICAL_ENFORCER = `
       upsertLink('canonical',url);
       upsertMeta('property','og:url',url);
       upsertMeta('name','twitter:url',url);
+      upsertHreflang('en-GB',url);
+      upsertHreflang('x-default',url);
     }catch(e){}
   }
   enforce();
