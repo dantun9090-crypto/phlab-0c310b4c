@@ -31,11 +31,43 @@ export function CookieConsent() {
   const [marketing, setMarketing] = useState(false);
 
   useEffect(() => {
-    const existing = getCookiePreferences();
-    if (!existing) {
-      const t = setTimeout(() => setVisible(true), 1200);
-      return () => clearTimeout(t);
+    if (getCookiePreferences()) return;
+
+    // Wait until the Research Gate is confirmed/dismissed before showing
+    // the cookie banner — otherwise on small viewports the banner overlaps
+    // the gate's primary CTA and the user can't enter the store.
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const show = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => setVisible(true), 600);
+    };
+
+    const isGateBlocking = () => {
+      try {
+        const raw = localStorage.getItem('php_research_confirmed');
+        if (!raw) return true;
+        const { ts } = JSON.parse(raw);
+        return !(Date.now() - ts < 30 * 864e5);
+      } catch { return false; }
+    };
+
+    if (!isGateBlocking()) {
+      show();
+      return () => { if (timer) clearTimeout(timer); };
     }
+
+    // Poll briefly for the gate to clear (covers both confirm and dismiss).
+    const poll = setInterval(() => {
+      if (!isGateBlocking() || !document.querySelector('[aria-label="Research use confirmation"]')) {
+        clearInterval(poll);
+        show();
+      }
+    }, 400);
+
+    return () => {
+      clearInterval(poll);
+      if (timer) clearTimeout(timer);
+    };
   }, []);
 
   const acceptAll = () => {
