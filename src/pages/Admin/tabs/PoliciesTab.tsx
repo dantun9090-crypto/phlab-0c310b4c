@@ -9,7 +9,7 @@ const DEFAULT_TERMS = `TERMS & CONDITIONS — PH Labs UK
 Last updated: ${new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
 
 1. AGREEMENT TO TERMS
-By accessing and placing an order with PH Labs ("we", "us", "our"), you confirm that you are in agreement with and bound by the terms and conditions contained herein. These Terms apply to all visitors, users, and customers of the website located at www.phlabs.co.uk (the "Site"). If you do not agree to these Terms, you must immediately cease use of the Site.
+By accessing and placing an order with PH Labs ("we", "us", "our"), you confirm that you are in agreement with and bound by the terms and conditions contained herein. These Terms apply to all visitors, users, and customers of the website located at phlabs.co.uk (the "Site"). If you do not agree to these Terms, you must immediately cease use of the Site.
 
 2. PRODUCTS AND SERVICES — RESEARCH USE ONLY
 All products are supplied strictly for research purposes only. They are NOT intended for human consumption, self-administration, medical use, or any therapeutic application. Products must not be used in clinical trials involving human subjects without appropriate regulatory approval.
@@ -35,13 +35,13 @@ Our total liability is limited to the order value. We are not liable for any ind
 These Terms are governed by the laws of England and Wales. Any disputes shall be subject to the exclusive jurisdiction of the courts of England and Wales.
 
 9. CONTACT
-PH Labs UK — info@phlabs.co.uk — www.phlabs.co.uk`;
+PH Labs UK — info@phlabs.co.uk — phlabs.co.uk`;
 
 const DEFAULT_PRIVACY = `PRIVACY POLICY — PH Labs UK
 Last updated: ${new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })}
 
 1. INTRODUCTION
-PH Labs ("we", "us") is committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your information when you use our website www.phlabs.co.uk.
+PH Labs ("we", "us") is committed to protecting your personal data. This Privacy Policy explains how we collect, use, and safeguard your information when you use our website phlabs.co.uk.
 
 2. DATA WE COLLECT
 - Account data: name, email address, password (hashed)
@@ -112,7 +112,7 @@ Please ensure your shipping address is correct at checkout. We are not liable fo
 8. RETURNS
 Returns accepted within 48 hours for damaged or incorrectly supplied items only. Due to the nature of research chemicals, we cannot accept returns for change of mind.
 
-CONTACT: info@phlabs.co.uk — www.phlabs.co.uk`;
+CONTACT: info@phlabs.co.uk — phlabs.co.uk`;
 
 interface Policies {
   termsContent?: string;

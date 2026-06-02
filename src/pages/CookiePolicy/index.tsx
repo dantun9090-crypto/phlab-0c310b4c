@@ -6,7 +6,7 @@ export default function CookiePolicy() {
   useSEO('cookies', {
     title: 'Cookie Policy | PH Labs UK',
     metaDescription: 'Cookie Policy — PH Labs Ltd UK. Essential & analytics cookies on our UK research peptides store. GDPR compliant. Manage your cookie preferences easily.',
-    canonical: 'https://www.phlabs.co.uk/cookies',
+    canonical: 'https://phlabs.co.uk/cookies',
     ogImage: 'https://cdn.wegic.ai/assets/onepage/agent/images/1779306071784_0.jpg',
   });
 

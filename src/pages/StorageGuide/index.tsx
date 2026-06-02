@@ -20,9 +20,9 @@ export default function StorageGuide() {
     setMeta('keywords', 'peptide storage guide UK, how to store research peptides, peptide reconstitution, BPC-157 storage, TB-500 storage, GLP-1 peptide storage, peptide shelf life, lyophilised peptide handling');
     setMeta('og:title', 'Peptide Storage Guide UK: How to Store Research Peptides (Temperature & Shelf Life)', true);
     setMeta('og:description', metaDesc, true);
-    setMeta('og:url', 'https://www.phlabs.co.uk/storage-guide', true);
+    setMeta('og:url', 'https://phlabs.co.uk/storage-guide', true);
     const canonical = document.querySelector('link[rel="canonical"]');
-    if (canonical) canonical.setAttribute('href', 'https://www.phlabs.co.uk/storage-guide');
+    if (canonical) canonical.setAttribute('href', 'https://phlabs.co.uk/storage-guide');
   }, []);
 
   return (

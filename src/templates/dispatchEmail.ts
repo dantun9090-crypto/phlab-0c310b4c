@@ -78,7 +78,7 @@ export function buildDispatchEmail(opts: DispatchEmailOptions): string {
         </table>
       </div>
 
-      ${ctaButton('Track Your Order', opts.trackingUrl || 'https://www.phlabs.co.uk/account')}
+      ${ctaButton('Track Your Order', opts.trackingUrl || 'https://phlabs.co.uk/account')}
 
       ${divider()}
 

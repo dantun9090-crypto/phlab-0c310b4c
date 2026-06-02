@@ -2,11 +2,11 @@
 /**
  * CI guard: skanuje repozytorium pod kątem zabronionych domen.
  * Fails build, jeśli znajdzie:
- *   - prohealthpeptides.co.uk  (stara domena, 301 -> www.phlabs.co.uk)
+ *   - prohealthpeptides.co.uk  (stara domena, 301 -> phlabs.co.uk)
  *   - phlab.lovable.app        (stary preview URL)
  *   - phplabs.co.uk / phplab   (literówka — poprawnie: phlabs)
  *
- * Jedyna poprawna domena produkcyjna: https://www.phlabs.co.uk
+ * Jedyna poprawna domena produkcyjna: https://phlabs.co.uk
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -35,18 +35,18 @@ const FORBIDDEN: { pattern: RegExp; label: string; hint: string }[] = [
   {
     pattern: /prohealthpeptides\.co\.uk/gi,
     label: "prohealthpeptides.co.uk",
-    hint: "Stara domena. Użyj https://www.phlabs.co.uk",
+    hint: "Stara domena. Użyj https://phlabs.co.uk",
   },
   {
     pattern: /phlab\.lovable\.app/gi,
     label: "phlab.lovable.app",
-    hint: "Stary preview URL. Użyj https://www.phlabs.co.uk",
+    hint: "Stary preview URL. Użyj https://phlabs.co.uk",
   },
   {
     // Literówka: phplabs / phplab (z dodatkowym 'p'). Poprawnie: phlabs.
     pattern: /\bphp+labs?\b/gi,
     label: "phplabs / phplab (literówka)",
-    hint: "Poprawna pisownia to 'phlabs' (jedno 'p'). Użyj https://www.phlabs.co.uk",
+    hint: "Poprawna pisownia to 'phlabs' (jedno 'p'). Użyj https://phlabs.co.uk",
   },
 ];
 
@@ -112,7 +112,7 @@ function scan(full: string, rel: string) {
 walk(ROOT);
 
 if (hits.length === 0) {
-  console.log("✅ check-domains: brak zabronionych domen. Canonical: https://www.phlabs.co.uk");
+  console.log("✅ check-domains: brak zabronionych domen. Canonical: https://phlabs.co.uk");
   process.exit(0);
 }
 

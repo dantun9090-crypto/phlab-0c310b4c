@@ -19,12 +19,12 @@
  * application/reports+json payloads and answers 204.
  *
  * Run via:    bun scripts/csp-e2e.ts
- * Override:   CSP_BASE_URL=https://www.phlabs.co.uk bun scripts/csp-e2e.ts
+ * Override:   CSP_BASE_URL=https://phlabs.co.uk bun scripts/csp-e2e.ts
  *
  * Wired into bun run ci so CSP regressions break the build.
  */
 
-const BASE = process.env.CSP_BASE_URL ?? "https://www.phlabs.co.uk";
+const BASE = process.env.CSP_BASE_URL ?? "https://phlabs.co.uk";
 
 // Browser-shaped UA so the Worker does NOT route us through Prerender.io
 // (that path serves cached HTML and is irrelevant to CSP enforcement).

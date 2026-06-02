@@ -31,19 +31,21 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-// Canonical host: www.phlabs.co.uk is primary; legacy brand domains 301-redirect here.  check-domains-allow-line
+// Canonical host: phlabs.co.uk is primary; legacy brand domains 301-redirect here.  check-domains-allow-line
 // Build marker: phl_loop_fix_20260602_1115 — forces fresh Worker deploy to drop
 // stale `phl_p0_recovery_20260601_2300` build that 302'd www → apex and caused
 // an infinite redirect loop with the app-level long→short canonical.
-const CANONICAL_HOST = "www.phlabs.co.uk";
+const CANONICAL_HOST = "phlabs.co.uk";
 // Hosts that should 301 to the canonical host (legacy brand domains).
 // Lovable preview/published hosts (*.lovable.app, *.lovableproject.com) are
 // intentionally excluded so previews keep working. phlabs.co.uk apex is NOT
 // in this list — it is served directly to avoid hosting-layer loops.
 const REDIRECT_HOSTS = new Set<string>([
-  // check-domains-allow-next-line: legacy host, musi tu zostać żeby zadziałał 301 do www.phlabs.co.uk
+  // www.phlabs.co.uk → phlabs.co.uk (apex is canonical)
+  "www.phlabs.co.uk",
+  // check-domains-allow-next-line: legacy host, musi tu zostać żeby zadziałał 301 do phlabs.co.uk
   "prohealthpeptides.co.uk",
-  // check-domains-allow-next-line: legacy host, musi tu zostać żeby zadziałał 301 do www.phlabs.co.uk
+  // check-domains-allow-next-line: legacy host, musi tu zostać żeby zadziałał 301 do phlabs.co.uk
   "www.prohealthpeptides.co.uk",
 ]);
 
@@ -317,7 +319,7 @@ export default {
         return new Response("ok", { status: 200, headers: { "content-type": "text/plain" } });
       }
 
-      // 0b. Firebase Auth proxy — custom auth domain www.phlabs.co.uk
+      // 0b. Firebase Auth proxy — custom auth domain phlabs.co.uk
       // musi obsługiwać /__/auth/* i /__/firebase/* przez origin
       // Firebase (prohealthpeptides-a0808.firebaseapp.com).
       if (url.pathname.startsWith("/__/auth/") || url.pathname.startsWith("/__/firebase/")) {
@@ -337,7 +339,7 @@ export default {
         });
       }
 
-      // 1. Canonical host redirect (legacy brand domains → www.phlabs.co.uk).
+      // 1. Canonical host redirect (legacy brand domains → phlabs.co.uk).
       // phlabs.co.uk is intentionally served directly until the hosting-level
       // www → apex redirect is removed; otherwise production loops.
       const reqHost = url.hostname.toLowerCase();

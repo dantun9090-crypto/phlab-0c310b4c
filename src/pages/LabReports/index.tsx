@@ -162,9 +162,9 @@ export default function LabReports() {
     setMeta('keywords', 'HPLC tested peptides UK, peptide CoA, certificate of analysis research peptides, lab reports peptides UK, mass spectrometry peptide verification');
     setMeta('og:title', 'Lab Reports & CoA | HPLC-Tested Research Peptides | PH Labs UK', true);
     setMeta('og:description', metaDesc, true);
-    setMeta('og:url', 'https://www.phlabs.co.uk/lab-reports', true);
+    setMeta('og:url', 'https://phlabs.co.uk/lab-reports', true);
     const canonical = document.querySelector('link[rel="canonical"]');
-    if (canonical) canonical.setAttribute('href', 'https://www.phlabs.co.uk/lab-reports');
+    if (canonical) canonical.setAttribute('href', 'https://phlabs.co.uk/lab-reports');
     // Trigger hero animation after paint
     const raf = requestAnimationFrame(() => setTimeout(() => setHeroVisible(true), 80));
     return () => {
@@ -173,7 +173,7 @@ export default function LabReports() {
       const d2 = document.querySelector('meta[name="description"]');
       if (d2) d2.setAttribute('content', 'Premium research compounds with HPLC-verified purity. For laboratory research use only. Fast UK shipping.');
       const c2 = document.querySelector('link[rel="canonical"]');
-      if (c2) c2.setAttribute('href', 'https://www.phlabs.co.uk/');
+      if (c2) c2.setAttribute('href', 'https://phlabs.co.uk/');
     };
   }, []);
 

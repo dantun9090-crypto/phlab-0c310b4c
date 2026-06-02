@@ -15,7 +15,7 @@ const GOOGLEBOT_UA =
 // cloud metadata endpoints, internal services, or arbitrary third parties.
 const ALLOWED_HOST_SUFFIXES = [
   'phlabs.co.uk',
-  'www.phlabs.co.uk',
+  'phlabs.co.uk',
   // check-domains-allow-next-line
   'prohealthpeptides.co.uk',
   // check-domains-allow-next-line
@@ -123,13 +123,13 @@ async function probeOne(url: string): Promise<ProbeResult> {
 }
 
 const DEFAULT_TARGETS = [
-  'https://www.phlabs.co.uk/',
+  'https://phlabs.co.uk/',
   // check-domains-allow-next-line
   'https://prohealthpeptides.co.uk/admin',
   // check-domains-allow-next-line
   'https://www.prohealthpeptides.co.uk/admin',
-  'https://www.phlabs.co.uk/products',
-  'https://www.phlabs.co.uk/products/bpc-157', // should 301 via CF rule
+  'https://phlabs.co.uk/products',
+  'https://phlabs.co.uk/products/bpc-157', // should 301 via CF rule
   'https://phlabs.co.uk/',
 ];
 

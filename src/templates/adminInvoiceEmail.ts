@@ -71,7 +71,7 @@ export function buildAdminInvoiceEmail(opts: AdminInvoiceEmailOptions): string {
         <div style="font-size:13px;color:${C.text};line-height:1.5;">${opts.notes}</div>
       </div>` : ''}
 
-      ${ctaButton('Pay Now', 'https://www.phlabs.co.uk')}
+      ${ctaButton('Pay Now', 'https://phlabs.co.uk')}
 
       ${divider()}
 

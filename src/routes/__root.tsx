@@ -98,12 +98,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@graph": [
             {
               "@type": "Organization",
-              "@id": "https://www.phlabs.co.uk/#organization",
+              "@id": "https://phlabs.co.uk/#organization",
               name: "PH Labs UK",
-              url: "https://www.phlabs.co.uk",
+              url: "https://phlabs.co.uk",
               logo: {
                 "@type": "ImageObject",
-                url: "https://www.phlabs.co.uk/og-image.jpg",
+                url: "https://phlabs.co.uk/og-image.jpg",
               },
               areaServed: "GB",
               description:
@@ -122,14 +122,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             },
             {
               "@type": "WebSite",
-              "@id": "https://www.phlabs.co.uk/#website",
-              url: "https://www.phlabs.co.uk",
+              "@id": "https://phlabs.co.uk/#website",
+              url: "https://phlabs.co.uk",
               name: "PH Labs UK",
               inLanguage: "en-GB",
-              publisher: { "@id": "https://www.phlabs.co.uk/#organization" },
+              publisher: { "@id": "https://phlabs.co.uk/#organization" },
               potentialAction: {
                 "@type": "SearchAction",
-                target: "https://www.phlabs.co.uk/search?q={search_term_string}",
+                target: "https://phlabs.co.uk/search?q={search_term_string}",
                 "query-input": "required name=search_term_string",
               },
             },
@@ -229,7 +229,7 @@ const BOOT_WATCHDOG = `
 
 const CANONICAL_ENFORCER = `
 (function(){
-  var ORIGIN='https://www.phlabs.co.uk';
+  var ORIGIN='https://phlabs.co.uk';
   function upsertLink(rel,href){
     var el=document.querySelector('link[rel="'+rel+'"]');
     if(!el){el=document.createElement('link');el.setAttribute('rel',rel);document.head.appendChild(el);}

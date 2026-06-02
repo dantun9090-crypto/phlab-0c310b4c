@@ -7,7 +7,7 @@ export default function RefundPolicy() {
   useSEO('refund-policy', {
     title: 'Return & Refund Policy | PH Labs UK',
     metaDescription: 'Return and refund policy for PH Labs Ltd. We accept returns for defective items within 14 days of delivery. UK research peptide supplier.',
-    canonical: 'https://www.phlabs.co.uk/refund-policy',
+    canonical: 'https://phlabs.co.uk/refund-policy',
   });
 
   // Inject MerchantReturnPolicy schema for Google Merchant Center
@@ -15,9 +15,9 @@ export default function RefundPolicy() {
     const schema = {
       '@context': 'https://schema.org',
       '@type': 'MerchantReturnPolicy',
-      '@id': 'https://www.phlabs.co.uk/refund-policy#return-policy',
+      '@id': 'https://phlabs.co.uk/refund-policy#return-policy',
       name: 'PH Labs Return Policy',
-      url: 'https://www.phlabs.co.uk/refund-policy',
+      url: 'https://phlabs.co.uk/refund-policy',
       applicableCountry: 'GB',
       returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
       merchantReturnDays: 14,

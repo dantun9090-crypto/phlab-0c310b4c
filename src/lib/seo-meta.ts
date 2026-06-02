@@ -15,7 +15,7 @@ export const SEO_LIMITS = {
   descriptionMin: 50,
 } as const;
 
-export const SITE_URL = "https://www.phlabs.co.uk";
+export const SITE_URL = "https://phlabs.co.uk";
 export const SITE_NAME = "PH Labs UK";
 export const BRAND = "PH Labs UK";
 
@@ -27,11 +27,11 @@ const FORBIDDEN_DOMAINS = [
   // check-domains-allow-next-line
   { needle: "phplabs", reason: "literówka — poprawnie 'phlabs' (jedno 'p')" },
   // check-domains-allow-next-line
-  { needle: "phlab.lovable.app", reason: "stary preview URL — używaj www.phlabs.co.uk" },
+  { needle: "phlab.lovable.app", reason: "stary preview URL — używaj phlabs.co.uk" },
   // check-domains-allow-next-line
-  { needle: "prohealthpeptides.co.uk", reason: "stara domena — używaj www.phlabs.co.uk" },
+  { needle: "prohealthpeptides.co.uk", reason: "stara domena — używaj phlabs.co.uk" },
 ];
-const CANONICAL_HOST = "www.phlabs.co.uk";
+const CANONICAL_HOST = "phlabs.co.uk";
 {
   const url = SITE_URL.toLowerCase();
   for (const { needle, reason } of FORBIDDEN_DOMAINS) {

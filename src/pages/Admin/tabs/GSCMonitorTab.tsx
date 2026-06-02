@@ -33,11 +33,11 @@ interface InspectionRow {
 
 // Core URLs to monitor for indexing status
 const MONITOR_URLS = [
-  'https://www.phlabs.co.uk/',
-  'https://www.phlabs.co.uk/shop',
-  'https://www.phlabs.co.uk/resources',
-  'https://www.phlabs.co.uk/about',
-  'https://www.phlabs.co.uk/contact',
+  'https://phlabs.co.uk/',
+  'https://phlabs.co.uk/shop',
+  'https://phlabs.co.uk/resources',
+  'https://phlabs.co.uk/about',
+  'https://phlabs.co.uk/contact',
 ];
 
 const verdictBadge = (v: string) => {
@@ -143,7 +143,7 @@ export default function GSCMonitorTab() {
           </h2>
           <p className="text-sm text-slate-400 mt-1">
             Performance + URL indexing status for{' '}
-            <span className="text-emerald-300">www.phlabs.co.uk</span>
+            <span className="text-emerald-300">phlabs.co.uk</span>
           </p>
         </div>
         <button
@@ -227,7 +227,7 @@ export default function GSCMonitorTab() {
                     <tr key={r.page} className="border-b border-slate-800 hover:bg-slate-800/40">
                       <td className="py-2 pr-2 text-slate-200">
                         <a href={r.page} target="_blank" rel="noreferrer" className="hover:text-emerald-300 inline-flex items-center gap-1 break-all">
-                          {r.page.replace('https://www.phlabs.co.uk', '') || '/'}
+                          {r.page.replace('https://phlabs.co.uk', '') || '/'}
                           <ExternalLink className="w-3 h-3 flex-shrink-0" />
                         </a>
                       </td>
@@ -269,7 +269,7 @@ export default function GSCMonitorTab() {
         <div className="flex gap-2 mb-4">
           <input
             type="url"
-            placeholder="https://www.phlabs.co.uk/..."
+            placeholder="https://phlabs.co.uk/..."
             value={customUrl}
             onChange={(e) => setCustomUrl(e.target.value)}
             className="flex-1 bg-slate-800 border-2 border-slate-600 text-white rounded-lg px-3 min-h-[44px] text-sm"
@@ -305,7 +305,7 @@ export default function GSCMonitorTab() {
                     rel="noreferrer"
                     className="text-sm text-slate-200 hover:text-emerald-300 inline-flex items-center gap-1 break-all"
                   >
-                    {row.url.replace('https://www.phlabs.co.uk', '') || '/'}
+                    {row.url.replace('https://phlabs.co.uk', '') || '/'}
                     <ExternalLink className="w-3 h-3 flex-shrink-0" />
                   </a>
                   <span className={`text-xs px-2 py-1 rounded-full border ${verdictBadge(row.verdict)}`}>

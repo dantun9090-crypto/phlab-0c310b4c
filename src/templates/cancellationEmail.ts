@@ -105,7 +105,7 @@ export function buildCancellationEmail({
       and your details are saved in your account.
     </p>
 
-    ${ctaButton('Browse Products', 'https://www.phlabs.co.uk/products')}
+    ${ctaButton('Browse Products', 'https://phlabs.co.uk/products')}
 
     ${divider()}
 

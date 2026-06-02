@@ -131,7 +131,7 @@ export function emailWrapper(content: string, topBarGradient?: string): string {
                   </table>
                 </td>
                 <td align="right" valign="middle" style="vertical-align:middle;">
-                  <a href="https://www.phlabs.co.uk" style="color:${C.textMuted};font-size:11px;text-decoration:none;font-family:${EMAIL_FONT};">phlabs.co.uk</a>
+                  <a href="https://phlabs.co.uk" style="color:${C.textMuted};font-size:11px;text-decoration:none;font-family:${EMAIL_FONT};">phlabs.co.uk</a>
                 </td>
               </tr>
             </table>
@@ -157,9 +157,9 @@ export function emailWrapper(content: string, topBarGradient?: string): string {
               <tr>
                 <td style="text-align:center;">
                   <div style="color:${C.textMuted};font-size:12px;margin-bottom:8px;font-family:${EMAIL_FONT};">
-                    <a href="https://www.phlabs.co.uk" style="color:${C.textMuted};text-decoration:none;">phlabs.co.uk</a>
+                    <a href="https://phlabs.co.uk" style="color:${C.textMuted};text-decoration:none;">phlabs.co.uk</a>
                     &nbsp;&bull;&nbsp;
-                    <a href="https://www.phlabs.co.uk/contact" style="color:${C.textMuted};text-decoration:none;">Contact</a>
+                    <a href="https://phlabs.co.uk/contact" style="color:${C.textMuted};text-decoration:none;">Contact</a>
                     &nbsp;&bull;&nbsp;
                     <a href="mailto:info@phlabs.co.uk" style="color:${C.textMuted};text-decoration:none;">info@phlabs.co.uk</a>
                   </div>

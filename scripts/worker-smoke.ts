@@ -25,7 +25,7 @@ import {
   matchesEntry,
 } from "../src/lib/admin-ip-gate.functions";
 
-const BASE = process.env.SMOKE_BASE_URL ?? "https://www.phlabs.co.uk";
+const BASE = process.env.SMOKE_BASE_URL ?? "https://phlabs.co.uk";
 const FIRESTORE =
   "https://firestore.googleapis.com/v1/projects/prohealthpeptides-a0808/databases/(default)/documents";
 

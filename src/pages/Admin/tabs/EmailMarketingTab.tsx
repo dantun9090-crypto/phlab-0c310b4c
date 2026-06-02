@@ -45,12 +45,12 @@ Your FREE 28-page Protocol Library is ready to download. Inside you'll find:
 ✅ UK Legal Compliance — Research-only use requirements
 
 📥 DOWNLOAD YOUR FREE GUIDE:
-https://www.phlabs.co.uk/downloads/protocol-library.pdf
+https://phlabs.co.uk/downloads/protocol-library.pdf
 
 🎁 BONUS: Use discount code PROTOCOL10 to save 10% on your first order (valid 30 days).
 
 Browse all HPLC-verified peptides:
-https://www.phlabs.co.uk/products
+https://phlabs.co.uk/products
 
 Questions? Email us at info@phlabs.co.uk
 
@@ -106,7 +106,7 @@ Use code [DISCOUNT_CODE] at checkout to save [X]% on:
 
 Offer valid until [Date]. Cannot be combined with other offers.
 
-Shop now: https://www.phlabs.co.uk/products
+Shop now: https://phlabs.co.uk/products
 
 All compounds are HPLC-tested and supplied for laboratory research use only.
 
@@ -141,7 +141,7 @@ POPULAR COMPOUNDS THIS MONTH
 • [Compound 1] — [brief note]
 • [Compound 2] — [brief note]
 
-Browse our full catalogue: https://www.phlabs.co.uk/products
+Browse our full catalogue: https://phlabs.co.uk/products
 
 All compounds are supplied strictly for in-vitro and laboratory research use only. For educational and research purposes only. Not for human administration or clinical use.
 
@@ -203,7 +203,7 @@ What this means for your research orders:
 • [Impact 2]
 
 You can review our updated Terms & Conditions here:
-https://www.phlabs.co.uk/terms
+https://phlabs.co.uk/terms
 
 All our products remain supplied strictly for laboratory research use only. Not approved by MHRA or FDA. Not for human administration or therapeutic use.
 

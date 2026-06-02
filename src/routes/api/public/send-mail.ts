@@ -52,7 +52,7 @@ const ContactInput = z.object({
 // and abuse this endpoint to send PH Labs-branded phishing mail.
 const ALLOWED_PDF_HOSTS = new Set<string>([
   "phlabs.co.uk",
-  "www.phlabs.co.uk",
+  "phlabs.co.uk",
 ]);
 
 const trustedPdfUrl = z

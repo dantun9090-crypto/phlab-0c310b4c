@@ -39,7 +39,7 @@ function buildFeedEntry(product: PreviewProduct): FeedEntry {
       `Analytical-grade laboratory reference standard supplied by ${BRAND} UK for in-vitro chemistry research and assay calibration. ` +
       `${purity ? `HPLC-verified purity ${purity}. ` : ''}` +
       `Sold strictly as a research chemical to qualified laboratories and research professionals. Not a medicine, drug, dietary supplement, food, cosmetic or consumer product. Not for human or veterinary administration, ingestion, injection, inhalation or topical use. No therapeutic, nutritional, weight-management, hormonal or performance claims are made or implied.`,
-    link: `https://www.phlabs.co.uk/products/${slug}`,
+    link: `https://phlabs.co.uk/products/${slug}`,
     price: `${price.toFixed(2)} ${CURRENCY}`,
     brand: BRAND,
     category: `${GOOGLE_CATEGORY_ID} (${GOOGLE_CATEGORY_NAME})`,

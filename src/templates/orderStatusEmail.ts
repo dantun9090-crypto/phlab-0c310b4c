@@ -135,7 +135,7 @@ export function buildOrderStatusEmail(opts: OrderStatusEmailOptions): string {
       ${trackingSection}
       ${itemsSection}
 
-      ${ctaButton('View Your Order', `https://www.phlabs.co.uk/account`)}
+      ${ctaButton('View Your Order', `https://phlabs.co.uk/account`)}
 
       ${divider()}
 
