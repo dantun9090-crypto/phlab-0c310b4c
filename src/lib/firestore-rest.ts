@@ -181,7 +181,8 @@ function toProduct(doc: any): SeoProduct | null {
  * the Firestore document. After ~3–7 days Google re-crawls and drops the
  * product from Merchant Center automatically.
  */
-const HIDDEN_SLUGS: Set<string> = new Set(["bpc-157"]);
+// BPC-157 unhidden 2026-06-02: now indexed + included in GMC feed (13 items total).
+const HIDDEN_SLUGS: Set<string> = new Set([]);
 
 function isHidden(p: SeoProduct): boolean {
   if (HIDDEN_SLUGS.has(p.slug)) return true;
