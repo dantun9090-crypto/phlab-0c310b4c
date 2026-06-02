@@ -1,4 +1,4 @@
-/* Fonts injected via <link> in src/routes/__root.tsx head() — keep this file Tailwind-clean */
+@import "tailwindcss" source(none);
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
