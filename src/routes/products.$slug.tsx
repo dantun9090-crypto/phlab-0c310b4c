@@ -92,12 +92,15 @@ export const Route = createFileRoute("/products/$slug")({
       ];
     }
     if (product?.price) {
+      const inStock = typeof product?.stock === "number" ? product.stock > 0 : true;
       jsonLd.offers = {
         "@type": "Offer",
         url,
         priceCurrency: "GBP",
         price: product.price.toFixed(2),
-        availability: "https://schema.org/InStock",
+        availability: inStock
+          ? "https://schema.org/InStock"
+          : "https://schema.org/OutOfStock",
         ...(measure
           ? {
               eligibleQuantity: {
