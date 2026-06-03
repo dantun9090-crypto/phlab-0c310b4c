@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth, db, getUserOrders, logoutUser, Order, redeemReferralBalance, doc, getDoc, updateDoc, deleteDoc, onAuthStateChanged, FirebaseUser, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendEmailVerification } from '@/lib/firebase';
-import { ORDER_TRACKING_STEPS, getOrderTrackingIndex } from '@/lib/order-tracking';
 import { OrderTrackingBar } from '@/components/OrderTrackingBar';
 
 import { motion, AnimatePresence } from 'framer-motion';
