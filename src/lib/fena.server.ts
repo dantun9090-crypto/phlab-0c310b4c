@@ -53,10 +53,12 @@ export function invalidateFenaEnvCache(): void {
 }
 
 async function getFenaBase(): Promise<string> {
-  const env = await getFenaEnvLabel();
-  return env === "sandbox"
-    ? "https://epos.api.sandbox-gcp.fena.co/open"
-    : "https://epos.api.prod-gcp.fena.co/open";
+  // Fena does not expose a separate sandbox API host — the "sandbox" mode is
+  // selected at the HPP step by choosing a Sandbox bank (Natwest/RBS sandbox).
+  // Both env labels therefore use the production GCP host; the toggle is kept
+  // purely informational + for future-proofing if Fena ever splits hosts.
+  await getFenaEnvLabel();
+  return "https://epos.api.prod-gcp.fena.co/open";
 }
 
 function authHeaders(): Record<string, string> {
