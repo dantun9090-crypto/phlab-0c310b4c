@@ -4,18 +4,60 @@
  * Docs: https://toolkit-docs.fena.co/toolkit-api/payments-module/single-payments/api-requests
  * Auth: `terminal-id` + `terminal-secret` headers (read from server env).
  *
+ * Environment (sandbox / production) is resolved at call time from:
+ *   1. Firestore `settings/fena.env` (admin-controlled toggle), then
+ *   2. `process.env.FENA_ENV` (secret fallback), then
+ *   3. `"production"` default.
+ *
+ * Result is cached for 30 s so a single checkout flow doesn't pay for a
+ * Firestore read per call, while admin toggles still propagate quickly.
+ *
  * NEVER import from client code.
  */
-const FENA_BASE = (() => {
-  const env = (process.env.FENA_ENV || "production").toLowerCase();
+import { getDocAdmin } from "@/lib/server/firestore-admin";
+
+type FenaEnv = "sandbox" | "production";
+
+let cached: { value: FenaEnv; expiresAt: number } | null = null;
+const CACHE_MS = 30_000;
+
+function envFromString(raw: unknown): FenaEnv {
+  return String(raw ?? "").toLowerCase() === "sandbox" ? "sandbox" : "production";
+}
+
+/**
+ * Resolve the active Fena environment. Reads `settings/fena.env` first so
+ * the admin toggle wins over the process-level secret. Failures fall back
+ * silently to the secret/default so a missing settings doc never breaks
+ * checkout.
+ */
+export async function getFenaEnvLabel(): Promise<FenaEnv> {
+  const now = Date.now();
+  if (cached && cached.expiresAt > now) return cached.value;
+  let value: FenaEnv = envFromString(process.env.FENA_ENV);
+  try {
+    const doc = await getDocAdmin("settings", "fena");
+    if (doc && typeof doc.env === "string" && doc.env.trim()) {
+      value = envFromString(doc.env);
+    }
+  } catch {
+    // ignore — fall back to env / default
+  }
+  cached = { value, expiresAt: now + CACHE_MS };
+  return value;
+}
+
+/** Force the next `getFenaEnvLabel()` call to re-read Firestore. */
+export function invalidateFenaEnvCache(): void {
+  cached = null;
+}
+
+async function getFenaBase(): Promise<string> {
+  const env = await getFenaEnvLabel();
   return env === "sandbox"
     ? "https://epos.api.sandbox-gcp.fena.co/open"
     : "https://epos.api.prod-gcp.fena.co/open";
-})();
-export const FENA_ENV_LABEL: "sandbox" | "production" =
-  (process.env.FENA_ENV || "production").toLowerCase() === "sandbox"
-    ? "sandbox"
-    : "production";
+}
 
 function authHeaders(): Record<string, string> {
   const id = process.env.FENA_TERMINAL_ID;
@@ -38,19 +80,15 @@ export interface FenaCreatedPayment {
 
 export interface FenaPaymentStatus {
   id: string;
-  status: string; // draft | sent | paid | cancelled | expired | refunded ...
+  status: string;
   reference: string;
   amount: string;
   completedAt?: string;
 }
 
-/**
- * Create a payment and immediately mark it as sent. Returns the HPP link
- * the customer must be redirected to.
- */
 export async function fenaCreateAndProcess(input: {
   reference: string;
-  amount: number; // GBP, e.g. 49.99
+  amount: number;
   customerName?: string;
   customerEmail?: string;
   description?: string;
@@ -66,7 +104,8 @@ export async function fenaCreateAndProcess(input: {
     customRedirectUrl: input.customRedirectUrl,
     remitterAccountSelectionType: "any",
   };
-  const res = await fetch(`${FENA_BASE}/payments/single/create-and-process`, {
+  const base = await getFenaBase();
+  const res = await fetch(`${base}/payments/single/create-and-process`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(body),
@@ -83,13 +122,10 @@ export async function fenaCreateAndProcess(input: {
   return parsed.result;
 }
 
-/**
- * Fetch authoritative payment state from Fena. Used by the webhook handler
- * to verify a status update before mutating the order.
- */
 export async function fenaGetPayment(paymentId: string): Promise<FenaPaymentStatus> {
   const safe = encodeURIComponent(paymentId);
-  const res = await fetch(`${FENA_BASE}/payments/single/${safe}`, {
+  const base = await getFenaBase();
+  const res = await fetch(`${base}/payments/single/${safe}`, {
     method: "GET",
     headers: authHeaders(),
     signal: AbortSignal.timeout(15_000),
@@ -120,7 +156,8 @@ export interface FenaBankAccount {
 }
 
 async function fenaJson<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${FENA_BASE}${path}`, {
+  const base = await getFenaBase();
+  const res = await fetch(`${base}${path}`, {
     ...init,
     headers: { ...authHeaders(), ...(init.headers || {}) },
     signal: init.signal ?? AbortSignal.timeout(15_000),
