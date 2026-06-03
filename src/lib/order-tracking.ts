@@ -26,7 +26,7 @@ export const ORDER_TRACKING_STEPS = [
 export type OrderTrackingStep = (typeof ORDER_TRACKING_STEPS)[number];
 
 export function getOrderTrackingIndex(status: string): number {
-  if (status === "cancelled") return -1;
+  if (status === "cancelled" || status === "refunded") return -1;
   const normalized =
     status === "pending_payment"
       ? "pending"
