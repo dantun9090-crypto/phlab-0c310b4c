@@ -23,7 +23,8 @@ import {
   fenaCreateAndProcess,
   fenaGetPayment,
   fenaListBankAccounts,
-  FENA_ENV_LABEL,
+  getFenaEnvLabel,
+  invalidateFenaEnvCache,
   type FenaBankAccount,
 } from "@/lib/fena.server";
 
