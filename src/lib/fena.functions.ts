@@ -123,3 +123,37 @@ export const listFenaWebhookEvents = createServerFn({ method: "POST" })
       createdAt: typeof row.createdAt === "string" ? row.createdAt : undefined,
     }));
   });
+
+export interface FenaOrphanPaymentRow {
+  id: string;
+  fenaPaymentId?: string;
+  reference?: string;
+  amount?: string;
+  fenaStatus?: string;
+  completedAt?: string | null;
+  receivedAt?: string;
+  reason?: string;
+  lastSeenAt?: string;
+}
+
+export const listFenaOrphanPayments = createServerFn({ method: "POST" })
+  .inputValidator((d) => AdminEventsInput.parse(d))
+  .handler(async ({ data }): Promise<FenaOrphanPaymentRow[]> => {
+    await requireFirebaseAdmin(data.idToken);
+    const rows = await listDocsAdmin("fena_orphan_payments", {
+      orderBy: "lastSeenAt",
+      direction: "DESCENDING",
+      limit: 50,
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      fenaPaymentId: typeof row.fenaPaymentId === "string" ? row.fenaPaymentId : undefined,
+      reference: typeof row.reference === "string" ? row.reference : undefined,
+      amount: typeof row.amount === "string" ? row.amount : undefined,
+      fenaStatus: typeof row.fenaStatus === "string" ? row.fenaStatus : undefined,
+      completedAt: typeof row.completedAt === "string" ? row.completedAt : null,
+      receivedAt: typeof row.receivedAt === "string" ? row.receivedAt : undefined,
+      reason: typeof row.reason === "string" ? row.reason : undefined,
+      lastSeenAt: typeof row.lastSeenAt === "string" ? row.lastSeenAt : undefined,
+    }));
+  });
