@@ -24,8 +24,12 @@ export default function FenaTab() {
   const [orphans, setOrphans] = useState<FenaOrphanPaymentRow[]>([]);
   const [accounts, setAccounts] = useState<FenaBankAccountRow[]>([]);
   const [transactions, setTransactions] = useState<FenaTransactionRow[]>([]);
+  const [txEnv, setTxEnv] = useState<EnvLabel | ''>('');
+  const [txFilteredOut, setTxFilteredOut] = useState<number>(0);
+  const [txTotalFetched, setTxTotalFetched] = useState<number>(0);
   const [txErr, setTxErr] = useState<string>('');
   const [txLoading, setTxLoading] = useState(false);
+
   const [env, setEnv] = useState<EnvLabel | ''>('');
   const [envSource, setEnvSource] = useState<'settings' | 'secret' | 'default' | ''>('');
   const [hasCreds, setHasCreds] = useState<boolean>(false);
