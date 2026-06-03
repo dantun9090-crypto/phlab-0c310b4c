@@ -26,7 +26,16 @@ function PaymentSuccessPage() {
     setReference(orderId);
     if (!orderId) {
       setPhase("error");
-      setError("Missing order reference.");
+      setError("No order reference in URL. Please complete checkout from your cart.");
+      return;
+    }
+    // Reject obviously invalid references early (stale tabs, direct URL access,
+    // bookmarked old sessions). Real orders are always `PHP-…` and 10+ chars.
+    if (!/^PHP-[A-Z0-9-]{6,}$/i.test(orderId)) {
+      setPhase("error");
+      setError(
+        `Invalid order reference "${orderId}". This usually means an old browser tab or a direct link. Please return to checkout and place the order again.`,
+      );
       return;
     }
 
