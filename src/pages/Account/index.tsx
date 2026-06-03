@@ -105,7 +105,8 @@ function OrderTrackingBar({ status }: { status: string }) {
       </div>
     );
   }
-  const currentIdx = steps.indexOf(status === 'pending_payment' ? 'pending' : status);
+  const normalized = status === 'pending_payment' ? 'pending' : status === 'paid' ? 'processing' : status;
+  const currentIdx = steps.indexOf(normalized);
   return (
     <div className="flex items-center gap-1 mt-2">
       {steps.map((step, i) => (
