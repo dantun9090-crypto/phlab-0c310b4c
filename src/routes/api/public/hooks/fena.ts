@@ -27,6 +27,7 @@ interface FenaWebhookBody {
   eventScope?: string;
   eventName?: string;
   id?: string;
+  orderId?: string;
   status?: string;
   reference?: string;
   amount?: string;
@@ -171,6 +172,14 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
           (typeof pAny.paymentId === "string" && pAny.paymentId) ||
           (typeof dataObj.paymentId === "string" && dataObj.paymentId) ||
           "";
+        const webhookReferenceRaw = typeof pAny.reference === "string" ? pAny.reference : "";
+        const webhookOrderIdRaw = typeof pAny.orderId === "string" ? pAny.orderId : "";
+        const normalizedWebhookOrderId = (webhookReferenceRaw || webhookOrderIdRaw || "").toUpperCase();
+
+        console.log("Webhook reference (raw):", webhookReferenceRaw);
+        console.log("Webhook orderId (raw):", webhookOrderIdRaw);
+        console.log("Normalized orderId:", normalizedWebhookOrderId);
+
         if (!fenaPaymentId) {
           await logEvent("warn", "missing payment id", { payload });
           return new Response("Missing id", { status: 400 });
@@ -191,19 +200,29 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
         }
 
         // Find the matching order.
-        //   1. by `fenaPaymentId` (stored at create-time)
-        //   2. by `fenaReference` (sanitized lowercase ref we sent to Fena)
-        //   3. by direct doc lookup on `reference.toUpperCase()` — Fena echoes
+        //   1. by direct doc lookup on the webhook `reference/orderId.toUpperCase()`
+        //   2. by `fenaPaymentId` (stored at create-time)
+        //   3. by `fenaReference` (sanitized lowercase ref we sent to Fena)
+        //   4. by direct doc lookup on authoritative `reference.toUpperCase()` — Fena echoes
         //      the reference back in lowercase but Firestore doc ids are
         //      uppercase (`PHP-...`), so casing alone caused a miss.
-        let orderRow = await findDocByFieldAdmin(
-          "orders",
-          "fenaPaymentId",
-          fenaPaymentId,
-        );
-        let matchedBy: "fenaPaymentId" | "fenaReference" | "docId" | "none" = orderRow
-          ? "fenaPaymentId"
-          : "none";
+        let orderRow: Record<string, unknown> | null = null;
+        let matchedBy: "webhookDocId" | "fenaPaymentId" | "fenaReference" | "docId" | "none" = "none";
+        if (normalizedWebhookOrderId) {
+          const direct = await getDocAdmin("orders", normalizedWebhookOrderId);
+          if (direct) {
+            orderRow = { ...(direct as Record<string, unknown>), __id: normalizedWebhookOrderId };
+            matchedBy = "webhookDocId";
+          }
+        }
+        if (!orderRow) {
+          orderRow = await findDocByFieldAdmin(
+            "orders",
+            "fenaPaymentId",
+            fenaPaymentId,
+          );
+          if (orderRow) matchedBy = "fenaPaymentId";
+        }
         const refRaw = String(authoritative.reference ?? "");
         const refLower = refRaw.toLowerCase();
         const refUpper = refRaw.toUpperCase();
@@ -220,6 +239,9 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
         }
         await logEvent("info", "lookup", {
           fenaPaymentId,
+          webhookReferenceRaw,
+          webhookOrderIdRaw,
+          normalizedWebhookOrderId,
           referenceRaw: refRaw,
           referenceUpper: refUpper,
           fenaStatus: String(authoritative.status ?? ""),
