@@ -16,6 +16,7 @@ import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
+import { Route as PaymentCancelRouteImport } from './routes/payment.cancel'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
@@ -58,6 +59,11 @@ const PaymentSuccessRoute = PaymentSuccessRouteImport.update({
   path: '/payment/success',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PaymentCancelRoute = PaymentCancelRouteImport.update({
+  id: '/payment/cancel',
+  path: '/payment/cancel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminMerchantFeedPreviewRoute =
   AdminMerchantFeedPreviewRouteImport.update({
     id: '/admin/merchant-feed-preview',
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -122,6 +130,7 @@ export interface FileRoutesById {
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -138,6 +147,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
+    | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
     | '/api/public/csp-report'
@@ -152,6 +162,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
+    | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
     | '/api/public/csp-report'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
+    | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
     | '/api/public/csp-report'
@@ -181,6 +193,7 @@ export interface RootRouteChildren {
   ProductsRoute: typeof ProductsRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
+  PaymentCancelRoute: typeof PaymentCancelRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
@@ -237,6 +250,13 @@ declare module '@tanstack/react-router' {
       path: '/payment/success'
       fullPath: '/payment/success'
       preLoaderRoute: typeof PaymentSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payment/cancel': {
+      id: '/payment/cancel'
+      path: '/payment/cancel'
+      fullPath: '/payment/cancel'
+      preLoaderRoute: typeof PaymentCancelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/merchant-feed-preview': {
@@ -296,6 +316,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsRoute: ProductsRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
+  PaymentCancelRoute: PaymentCancelRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,

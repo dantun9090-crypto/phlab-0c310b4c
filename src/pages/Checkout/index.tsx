@@ -14,10 +14,13 @@ import {
 import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
 import { createOrder } from '@/lib/create-order.functions';
-import { createFenaPaymentLink } from '@/lib/fena.functions';
+// Pay by Bank now goes through our Cloudflare Worker (worker.phlabs.co.uk),
+// which talks to Fena server-side and returns a hosted payment URL.
+const PAY_BY_BANK_WORKER_URL = 'https://worker.phlabs.co.uk/api/fena/create-payment';
 import { migrateStoredCart } from '@/lib/cart-migration';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
+import UkBankBadges from '@/components/UkBankBadges';
 
 
 interface CheckoutForm {
@@ -565,30 +568,35 @@ export default function CheckoutPage() {
       setBankTransferRef(btRef);
       setConfirmedTotal(totalAmount.toFixed(2));
 
-      // Pay by Bank (Fena Open Banking): redirect to hosted payment page.
+      // Pay by Bank (Open Banking via our Cloudflare Worker → Fena):
+      // POST order to the worker, then redirect customer to the returned URL.
       if (form.paymentMethod === 'pay_by_bank') {
         setFenaOrderId(orderId);
         setFenaStep('creating-link');
         try {
-          // Fena requires a Firebase ID token; anonymous auth is fine.
-          let current = auth.currentUser;
-          if (!current) {
-            const anon = await signInAnonymously(auth);
-            current = anon.user;
-          }
-          const idTokenForFena = await current.getIdToken();
-          const { hppUrl } = await createFenaPaymentLink({
-            data: { orderId, idToken: idTokenForFena },
+          const amountPence = Math.round(totalAmount * 100);
+          const resp = await fetch(PAY_BY_BANK_WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              order_id: orderId,
+              amount: amountPence,
+              currency: 'GBP',
+              customer_email: form.email,
+              customer_name: `${form.firstName} ${form.lastName}`.trim(),
+              reference: btRef,
+            }),
           });
+          if (!resp.ok) {
+            const txt = await resp.text().catch(() => '');
+            throw new Error(`Worker ${resp.status}: ${txt.slice(0, 200) || 'create-payment failed'}`);
+          }
+          const data = (await resp.json()) as { payment_url?: string };
+          if (!data.payment_url) throw new Error('Worker did not return a payment_url.');
           setFenaStep('redirecting');
           localStorage.removeItem('php_cart');
           setCart([]);
-          // Small delay so the "Redirecting…" banner is visible before the
-          // browser leaves the page; the user sees we created the order and
-          // are handing off to their bank, not just a silent jump.
-          setTimeout(() => {
-            window.location.href = hppUrl;
-          }, 250);
+          setTimeout(() => { window.location.href = data.payment_url!; }, 250);
           return;
         } catch (err: any) {
           setFenaStep('failed');
@@ -1182,12 +1190,15 @@ export default function CheckoutPage() {
                         }`}
                       >
                         <Landmark className={`w-5 h-5 mt-0.5 shrink-0 ${form.paymentMethod === 'pay_by_bank' ? 'text-emerald-400' : 'text-gray-400'}`} />
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-sm font-semibold text-white flex items-center gap-2">
                             Pay by Bank
                             <span className="text-[10px] uppercase tracking-wider bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">Instant</span>
                           </p>
-                          <p className="text-[11px] text-gray-400 leading-snug mt-0.5">Open Banking via Fena — pay from your banking app, no card needed.</p>
+                          <p className="text-[11px] text-gray-400 leading-snug mt-0.5">
+                            Pay instantly from your UK bank account — no card needed, no chargebacks.
+                          </p>
+                          <UkBankBadges className="mt-2" />
                         </div>
                       </button>
                       <button
@@ -1210,12 +1221,15 @@ export default function CheckoutPage() {
                     {/* Selected method info */}
                     {form.paymentMethod === 'pay_by_bank' ? (
                       <div className="bg-emerald-500/8 border border-emerald-500/20 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Landmark className="w-4 h-4 text-emerald-400" />
-                          <p className="text-sm font-semibold text-white">Pay by Bank (Fena)</p>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2">
+                            <Landmark className="w-4 h-4 text-emerald-400" />
+                            <p className="text-sm font-semibold text-white">Pay by Bank (Instant Bank Transfer)</p>
+                          </div>
+                          <UkBankBadges />
                         </div>
                         <p className="text-xs text-gray-400 leading-relaxed">
-                          After placing your order you'll be redirected to your bank to approve the payment. Your order is marked paid automatically as soon as Fena confirms it.
+                          Pay instantly from your UK bank account — no card needed, no chargebacks. You'll be redirected to your bank to approve the payment, then back here to confirm your order.
                         </p>
                       </div>
                     ) : (
