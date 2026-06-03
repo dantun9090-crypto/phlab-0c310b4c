@@ -14,9 +14,7 @@ import {
 import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
 import { createOrder } from '@/lib/create-order.functions';
-// Pay by Bank now goes through our Cloudflare Worker (worker.phlabs.co.uk),
-// which talks to Fena server-side and returns a hosted payment URL.
-const PAY_BY_BANK_WORKER_URL = 'https://worker.phlabs.co.uk/api/fena/create-payment';
+import { createFenaPaymentLink } from '@/lib/fena.functions';
 import { migrateStoredCart } from '@/lib/cart-migration';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
