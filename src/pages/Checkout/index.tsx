@@ -856,6 +856,29 @@ export default function CheckoutPage() {
                 </div>
               )}
 
+              {/* Pay by Bank (Fena) live status */}
+              {form.paymentMethod === 'pay_by_bank' && fenaStep !== 'idle' && fenaStep !== 'failed' && (
+                <div className="flex items-start gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3">
+                  <div className="w-4 h-4 mt-0.5 shrink-0 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin" />
+                  <div className="flex-1 min-w-0 text-sm">
+                    <p className="text-emerald-300 font-medium">
+                      {fenaStep === 'creating-order' && 'Creating your order…'}
+                      {fenaStep === 'creating-link' && 'Order created. Generating secure Pay by Bank link…'}
+                      {fenaStep === 'redirecting' && 'Redirecting you to your bank…'}
+                    </p>
+                    <p className="text-emerald-300/70 text-xs mt-0.5">
+                      {fenaStep === 'creating-order' && 'Reserving stock and locking the total in £.'}
+                      {fenaStep === 'creating-link' && (
+                        <>Order ref <span className="font-mono">{fenaOrderId || '…'}</span>. Talking to Fena Open Banking.</>
+                      )}
+                      {fenaStep === 'redirecting' && (
+                        <>After you approve in your banking app, you'll come back to <span className="font-mono">/payment/success</span> and we'll wait for the bank webhook to mark the order as paid.</>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* ── Always-visible Discount Code ── */}
               <div className="rounded-2xl border border-emerald-500/20 bg-[#0b1a30] p-4">
                 <label htmlFor="promoCodeTop" className="block text-xs font-medium text-gray-300 mb-1.5 flex items-center gap-1.5">
