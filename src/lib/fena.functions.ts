@@ -19,7 +19,13 @@ import {
   updateDocAdmin,
 } from "@/lib/server/firestore-admin";
 import { requireFirebaseAdmin, verifyFirebaseIdToken } from "@/lib/server/firebase-auth-admin";
-import { fenaCreateAndProcess, fenaGetPayment } from "@/lib/fena.server";
+import {
+  fenaCreateAndProcess,
+  fenaGetPayment,
+  fenaListBankAccounts,
+  FENA_ENV_LABEL,
+  type FenaBankAccount,
+} from "@/lib/fena.server";
 
 const SITE_ORIGIN = "https://phlabs.co.uk";
 
@@ -329,3 +335,38 @@ export const reconcileFenaOrphans = createServerFn({ method: "POST" })
     return result;
   });
 
+
+
+
+export interface FenaBankAccountRow {
+  id: string;
+  name?: string;
+  status?: string;
+  isDefault?: boolean;
+  bank?: string;
+  iban?: string;
+  accountNumber?: string;
+  sortCode?: string;
+  currency?: string;
+}
+
+export const listFenaBankAccountsAdmin = createServerFn({ method: "POST" })
+  .inputValidator((d) => AdminEventsInput.parse(d))
+  .handler(async ({ data }): Promise<{ env: string; accounts: FenaBankAccountRow[] }> => {
+    await requireFirebaseAdmin(data.idToken);
+    const accs: FenaBankAccount[] = await fenaListBankAccounts();
+    return {
+      env: FENA_ENV_LABEL,
+      accounts: accs.map((a) => ({
+        id: a.id,
+        name: a.name,
+        status: a.status,
+        isDefault: a.isDefault,
+        bank: a.bank,
+        iban: a.iban,
+        accountNumber: a.accountNumber,
+        sortCode: a.sortCode,
+        currency: a.currency,
+      })),
+    };
+  });

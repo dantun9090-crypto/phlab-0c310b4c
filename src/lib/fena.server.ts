@@ -6,7 +6,16 @@
  *
  * NEVER import from client code.
  */
-const FENA_BASE = "https://epos.api.prod-gcp.fena.co/open";
+const FENA_BASE = (() => {
+  const env = (process.env.FENA_ENV || "production").toLowerCase();
+  return env === "sandbox"
+    ? "https://epos.api.sandbox-gcp.fena.co/open"
+    : "https://epos.api.prod-gcp.fena.co/open";
+})();
+export const FENA_ENV_LABEL: "sandbox" | "production" =
+  (process.env.FENA_ENV || "production").toLowerCase() === "sandbox"
+    ? "sandbox"
+    : "production";
 
 function authHeaders(): Record<string, string> {
   const id = process.env.FENA_TERMINAL_ID;
@@ -92,4 +101,49 @@ export async function fenaGetPayment(paymentId: string): Promise<FenaPaymentStat
   const parsed = JSON.parse(text) as { data?: FenaPaymentStatus };
   if (!parsed.data?.id) throw new Error("Fena response missing data.id");
   return parsed.data;
+}
+
+// ---------- Bank accounts module ----------
+
+export interface FenaBankAccount {
+  id: string;
+  name?: string;
+  status?: string;
+  isDefault?: boolean;
+  iban?: string;
+  accountNumber?: string;
+  sortCode?: string;
+  bank?: string;
+  currency?: string;
+  createdAt?: string;
+  [key: string]: unknown;
+}
+
+async function fenaJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${FENA_BASE}${path}`, {
+    ...init,
+    headers: { ...authHeaders(), ...(init.headers || {}) },
+    signal: init.signal ?? AbortSignal.timeout(15_000),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`Fena ${init.method || "GET"} ${path} ${res.status}: ${text.slice(0, 400)}`);
+  }
+  return (text ? JSON.parse(text) : {}) as T;
+}
+
+export async function fenaListBankAccounts(): Promise<FenaBankAccount[]> {
+  const parsed = await fenaJson<{ data?: FenaBankAccount[]; result?: FenaBankAccount[] }>(
+    "/company/bank-accounts/list",
+  );
+  return parsed.data ?? parsed.result ?? [];
+}
+
+export async function fenaGetBankAccount(id: string): Promise<FenaBankAccount> {
+  const parsed = await fenaJson<{ data?: FenaBankAccount; result?: FenaBankAccount }>(
+    `/company/bank-accounts/${encodeURIComponent(id)}`,
+  );
+  const acc = parsed.data ?? parsed.result;
+  if (!acc?.id) throw new Error("Fena bank-account response missing id");
+  return acc;
 }
