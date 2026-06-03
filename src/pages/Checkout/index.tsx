@@ -112,6 +112,14 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  type FenaStep =
+    | 'idle'
+    | 'creating-order'
+    | 'creating-link'
+    | 'redirecting'
+    | 'failed';
+  const [fenaStep, setFenaStep] = useState<FenaStep>('idle');
+  const [fenaOrderId, setFenaOrderId] = useState<string>('');
   const [, setSummaryExpanded] = useState(false);
   const stepRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
@@ -446,6 +454,12 @@ export default function CheckoutPage() {
 
     setIsPlacing(true);
     setLoginError('');
+    if (form.paymentMethod === 'pay_by_bank') {
+      setFenaStep('creating-order');
+      setFenaOrderId('');
+    } else {
+      setFenaStep('idle');
+    }
 
     try {
       let userId = firebaseUser?.uid;
@@ -553,6 +567,8 @@ export default function CheckoutPage() {
 
       // Pay by Bank (Fena Open Banking): redirect to hosted payment page.
       if (form.paymentMethod === 'pay_by_bank') {
+        setFenaOrderId(orderId);
+        setFenaStep('creating-link');
         try {
           // Fena requires a Firebase ID token; anonymous auth is fine.
           let current = auth.currentUser;
@@ -564,11 +580,18 @@ export default function CheckoutPage() {
           const { hppUrl } = await createFenaPaymentLink({
             data: { orderId, idToken: idTokenForFena },
           });
+          setFenaStep('redirecting');
           localStorage.removeItem('php_cart');
           setCart([]);
-          window.location.href = hppUrl;
+          // Small delay so the "Redirecting…" banner is visible before the
+          // browser leaves the page; the user sees we created the order and
+          // are handing off to their bank, not just a silent jump.
+          setTimeout(() => {
+            window.location.href = hppUrl;
+          }, 250);
           return;
         } catch (err: any) {
+          setFenaStep('failed');
           setLoginError(err?.message || 'Could not start Pay by Bank. Please try again or use Manual Bank Transfer.');
           setIsPlacing(false);
           return;
@@ -830,6 +853,29 @@ export default function CheckoutPage() {
                 <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-xl p-3">
                   <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
                   <p className="text-red-400 text-sm">{loginError}</p>
+                </div>
+              )}
+
+              {/* Pay by Bank (Fena) live status */}
+              {form.paymentMethod === 'pay_by_bank' && fenaStep !== 'idle' && fenaStep !== 'failed' && (
+                <div className="flex items-start gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3">
+                  <div className="w-4 h-4 mt-0.5 shrink-0 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin" />
+                  <div className="flex-1 min-w-0 text-sm">
+                    <p className="text-emerald-300 font-medium">
+                      {fenaStep === 'creating-order' && 'Creating your order…'}
+                      {fenaStep === 'creating-link' && 'Order created. Generating secure Pay by Bank link…'}
+                      {fenaStep === 'redirecting' && 'Redirecting you to your bank…'}
+                    </p>
+                    <p className="text-emerald-300/70 text-xs mt-0.5">
+                      {fenaStep === 'creating-order' && 'Reserving stock and locking the total in £.'}
+                      {fenaStep === 'creating-link' && (
+                        <>Order ref <span className="font-mono">{fenaOrderId || '…'}</span>. Talking to Fena Open Banking.</>
+                      )}
+                      {fenaStep === 'redirecting' && (
+                        <>After you approve in your banking app, you'll come back to <span className="font-mono">/payment/success</span> and we'll wait for the bank webhook to mark the order as paid.</>
+                      )}
+                    </p>
+                  </div>
                 </div>
               )}
 
