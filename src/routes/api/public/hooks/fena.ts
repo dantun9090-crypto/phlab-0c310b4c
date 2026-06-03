@@ -72,6 +72,20 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
           return new Response("Bad JSON", { status: 400 });
         }
 
+        // --- Health-check / ping from Fena dashboard ---
+        // Fena's "Send test event" button posts `{ping: 1}` (or similar with no
+        // id/scope). Acknowledge 200 and log as info — not a real warning.
+        const pAny = payload as Record<string, unknown>;
+        if (
+          ("ping" in pAny || Object.keys(pAny).length === 0) &&
+          !pAny.id &&
+          !pAny.eventScope &&
+          !(pAny.data && typeof pAny.data === "object" && (pAny.data as { id?: unknown }).id)
+        ) {
+          await logEvent("info", "ping", { payload });
+          return Response.json({ ok: true, pong: true });
+        }
+
         // --- Route by eventScope ---
         const eventScope = String(payload.eventScope ?? "").toLowerCase();
         const eventName = String(payload.eventName ?? "").toLowerCase();
@@ -107,8 +121,16 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
           }
         }
 
-        const fenaPaymentId = payload.id || payload.data?.id;
-        if (!fenaPaymentId || typeof fenaPaymentId !== "string") {
+        // Defensive: Fena's payment webhook may use `id`, `data.id`,
+        // `paymentId`, or `data.paymentId` depending on event type.
+        const dataObj = (pAny.data && typeof pAny.data === "object" ? pAny.data : {}) as Record<string, unknown>;
+        const fenaPaymentId =
+          (typeof pAny.id === "string" && pAny.id) ||
+          (typeof dataObj.id === "string" && dataObj.id) ||
+          (typeof pAny.paymentId === "string" && pAny.paymentId) ||
+          (typeof dataObj.paymentId === "string" && dataObj.paymentId) ||
+          "";
+        if (!fenaPaymentId) {
           await logEvent("warn", "missing payment id", { payload });
           return new Response("Missing id", { status: 400 });
         }
