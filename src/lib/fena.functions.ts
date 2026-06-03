@@ -25,7 +25,6 @@ import {
   fenaListBankAccounts,
   getFenaEnvLabel,
   invalidateFenaEnvCache,
-  type FenaBankAccount,
   fenaListPayments,
   type FenaBankAccount,
   type FenaListedPayment,
