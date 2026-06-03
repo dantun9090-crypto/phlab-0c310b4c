@@ -125,10 +125,12 @@ function objectToFields(obj: Record<string, unknown>): Record<string, any> {
 export async function addDocAdmin(
   collection: string,
   data: Record<string, unknown>,
+  id?: string,
 ): Promise<{ name: string }> {
   const acct = getServiceAccount();
   const token = await getAccessToken();
-  const url = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents/${encodeURIComponent(collection)}`;
+  const qs = id ? `?documentId=${encodeURIComponent(id)}` : "";
+  const url = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents/${encodeURIComponent(collection)}${qs}`;
   const res = await fetch(url, {
     method: "POST",
     headers: {
