@@ -316,13 +316,16 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
           fenaStatus,
           fenaEventIds: [...seenEvents.slice(-19), eventKey],
           fenaLastEventAt: new Date(),
-          paymentProvider: "fena",
         };
-        if (fenaPaymentId) updates.fenaPaymentId = fenaPaymentId;
 
+        // Only stamp paymentProvider + fenaPaymentId on the actual
+        // pending → paid transition. Non-paid events (sent, pending,
+        // cancelled) must NOT mutate these "source of truth" fields.
         if (isPaid && currentStatus !== "paid") {
           updates.status = "paid";
           updates.paidAt = new Date();
+          updates.paymentProvider = "fena";
+          if (fenaPaymentId) updates.fenaPaymentId = fenaPaymentId;
         } else if (isCancelled && currentStatus === "pending") {
           updates.status = "cancelled";
         }
