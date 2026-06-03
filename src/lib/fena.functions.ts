@@ -23,6 +23,9 @@ import {
   fenaCreateAndProcess,
   fenaGetPayment,
   fenaListBankAccounts,
+  fenaRenameBankAccount,
+  fenaSetDefaultBankAccount,
+  fenaConnectBankAccount,
   getFenaEnvLabel,
   invalidateFenaEnvCache,
   fenaListPayments,
@@ -622,3 +625,56 @@ export const listFenaTransactionsAdmin = createServerFn({ method: "POST" })
     };
   });
 
+
+// ---------- Bank account actions (rename / set-default / connect) ----------
+
+const RenameInput = z.object({
+  idToken: z.string().min(10).max(4096),
+  id: z.string().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/),
+  name: z.string().min(1).max(100),
+});
+
+export const renameFenaBankAccount = createServerFn({ method: "POST" })
+  .inputValidator((d) => RenameInput.parse(d))
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    await requireFirebaseAdmin(data.idToken);
+    await fenaRenameBankAccount(data.id, data.name);
+    return { ok: true };
+  });
+
+const IdOnlyInput = z.object({
+  idToken: z.string().min(10).max(4096),
+  id: z.string().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/),
+});
+
+export const setDefaultFenaBankAccount = createServerFn({ method: "POST" })
+  .inputValidator((d) => IdOnlyInput.parse(d))
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    await requireFirebaseAdmin(data.idToken);
+    await fenaSetDefaultBankAccount(data.id);
+    return { ok: true };
+  });
+
+const PROVIDERS = [
+  "ob-natwest","ob-lloyds-personal","ob-rbs","ob-tsb","ob-halifax-personal","ob-mettle",
+  "ob-bos-personal","ob-hsbc-personal","ob-barclays-business","ob-barclays-corporate",
+  "ob-danske-private","ob-danske-business","ob-revolut","ob-starling","ob-bos-business",
+  "ob-first-direct","ob-nationwide","ob-monzo","ob-lloyds-business","ob-santander",
+  "ob-virgin-money","ob-hsbc-business","ob-barclays-personal","ob-tide","ob-ulster",
+  "ob-chase","ob-aibni-retail","ob-aibni-corporate","ob-aibgb-retail","ob-aibgb-corporate",
+  "ob-boi-uk-b365","ob-boi-uk-bol","ob-zempler","ob-coutts","ob-wise",
+] as const;
+export const FENA_BANK_PROVIDERS: readonly string[] = PROVIDERS;
+
+const ConnectInput = z.object({
+  idToken: z.string().min(10).max(4096),
+  provider: z.enum(PROVIDERS),
+});
+
+export const connectFenaBankAccount = createServerFn({ method: "POST" })
+  .inputValidator((d) => ConnectInput.parse(d))
+  .handler(async ({ data }): Promise<{ authUri: string }> => {
+    await requireFirebaseAdmin(data.idToken);
+    const authUri = await fenaConnectBankAccount(data.provider);
+    return { authUri };
+  });

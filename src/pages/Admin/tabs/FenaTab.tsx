@@ -9,6 +9,10 @@ import {
   getFenaIntegrationSettings,
   setFenaIntegrationEnv,
   dryRunFenaConnection,
+  renameFenaBankAccount,
+  setDefaultFenaBankAccount,
+  connectFenaBankAccount,
+  FENA_BANK_PROVIDERS,
   type FenaWebhookEventRow,
   type FenaOrphanPaymentRow,
   type FenaReconcileResult,
@@ -252,38 +256,13 @@ export default function FenaTab() {
       </div>
 
       {/* Bank accounts (live from Fena) */}
-      <div className="rounded-lg border-2 border-slate-700 bg-slate-900 p-4">
-        <h2 className="text-lg font-semibold text-white mb-2">Bank accounts</h2>
-        {accountsErr && <p className="text-rose-400 text-sm">{accountsErr}</p>}
-        {!accountsErr && accounts.length === 0 && (
-          <p className="text-slate-400 text-sm">No bank accounts connected in Fena yet.</p>
-        )}
-        {accounts.length > 0 && (
-          <div className="space-y-2">
-            {accounts.map((a) => (
-              <div
-                key={a.id}
-                className="rounded border border-slate-800 bg-slate-950 p-3 text-xs font-mono text-slate-200"
-              >
-                <div className="flex flex-wrap gap-3 mb-1">
-                  <span className="text-white font-bold">{a.name || a.bank || a.id}</span>
-                  {a.isDefault && <span className="text-emerald-400">default</span>}
-                  <span className="text-slate-400">{a.status || '—'}</span>
-                  <span className="text-slate-400">{a.currency || ''}</span>
-                </div>
-                <div className="text-slate-500">
-                  {a.iban ? (
-                    <>IBAN: <span className="text-slate-300">{a.iban}</span></>
-                  ) : a.sortCode || a.accountNumber ? (
-                    <>UK: <span className="text-slate-300">{a.sortCode || ''} {a.accountNumber || ''}</span></>
-                  ) : null}
-                </div>
-                <div className="text-slate-600">id: {a.id}</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <BankAccountsSection
+        accounts={accounts}
+        accountsErr={accountsErr}
+        getToken={getToken}
+        reload={loadAll}
+      />
+
 
       {/* Transactions (live from Fena) */}
       <div className="rounded-lg border-2 border-slate-700 bg-slate-900 p-4">
@@ -586,6 +565,183 @@ export default function FenaTab() {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function BankAccountsSection({
+  accounts,
+  accountsErr,
+  getToken,
+  reload,
+}: {
+  accounts: FenaBankAccountRow[];
+  accountsErr: string;
+  getToken: () => Promise<string>;
+  reload: () => Promise<void>;
+}) {
+  const [busyId, setBusyId] = useState<string>('');
+  const [editingId, setEditingId] = useState<string>('');
+  const [editName, setEditName] = useState<string>('');
+  const [provider, setProvider] = useState<string>('ob-natwest');
+  const [connectBusy, setConnectBusy] = useState(false);
+  const [actionErr, setActionErr] = useState<string>('');
+
+  async function doSetDefault(id: string) {
+    setBusyId(id);
+    setActionErr('');
+    try {
+      const idToken = await getToken();
+      await setDefaultFenaBankAccount({ data: { idToken, id } });
+      await reload();
+    } catch (e: any) {
+      setActionErr(e?.message || 'Failed to set default');
+    } finally {
+      setBusyId('');
+    }
+  }
+
+  async function doRename(id: string) {
+    const name = editName.trim();
+    if (!name) return;
+    setBusyId(id);
+    setActionErr('');
+    try {
+      const idToken = await getToken();
+      await renameFenaBankAccount({ data: { idToken, id, name } });
+      setEditingId('');
+      setEditName('');
+      await reload();
+    } catch (e: any) {
+      setActionErr(e?.message || 'Failed to rename');
+    } finally {
+      setBusyId('');
+    }
+  }
+
+  async function doConnect() {
+    setConnectBusy(true);
+    setActionErr('');
+    try {
+      const idToken = await getToken();
+      const res = await connectFenaBankAccount({ data: { idToken, provider } });
+      if (res.authUri) window.open(res.authUri, '_blank', 'noopener,noreferrer');
+    } catch (e: any) {
+      setActionErr(e?.message || 'Failed to start connect flow');
+    } finally {
+      setConnectBusy(false);
+    }
+  }
+
+  return (
+    <div className="rounded-lg border-2 border-slate-700 bg-slate-900 p-4">
+      <h2 className="text-lg font-semibold text-white mb-2">Bank accounts</h2>
+      {accountsErr && <p className="text-rose-400 text-sm mb-2">{accountsErr}</p>}
+      {actionErr && <p className="text-rose-400 text-sm mb-2">{actionErr}</p>}
+
+      {/* Connect a new bank via App */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <span className="text-slate-300 text-sm">Connect via App:</span>
+        <select
+          value={provider}
+          onChange={(e) => setProvider(e.target.value)}
+          className="min-h-[40px] rounded-lg border-2 border-slate-600 bg-slate-800 px-3 py-1 text-sm text-white"
+        >
+          {FENA_BANK_PROVIDERS.map((p) => (
+            <option key={p} value={p}>{p}</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={doConnect}
+          disabled={connectBusy}
+          className="min-h-[40px] rounded-lg bg-emerald-600 px-4 py-1 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+        >
+          {connectBusy ? 'Opening…' : 'Connect bank'}
+        </button>
+      </div>
+
+      {!accountsErr && accounts.length === 0 && (
+        <p className="text-slate-400 text-sm">No bank accounts connected in Fena yet.</p>
+      )}
+      {accounts.length > 0 && (
+        <div className="space-y-2">
+          {accounts.map((a) => {
+            const isBusy = busyId === a.id;
+            const isEditing = editingId === a.id;
+            return (
+              <div
+                key={a.id}
+                className="rounded border border-slate-800 bg-slate-950 p-3 text-xs font-mono text-slate-200"
+              >
+                <div className="flex flex-wrap items-center gap-3 mb-1">
+                  {isEditing ? (
+                    <>
+                      <input
+                        type="text"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        className="min-h-[40px] flex-1 min-w-[180px] rounded-lg border-2 border-slate-600 bg-slate-800 px-3 py-1 text-sm text-white"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={() => doRename(a.id)}
+                        disabled={isBusy || !editName.trim()}
+                        className="min-h-[40px] rounded-lg bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setEditingId(''); setEditName(''); }}
+                        className="min-h-[40px] rounded-lg border border-slate-600 px-3 py-1 text-xs text-slate-300 hover:bg-slate-800"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-white font-bold">{a.name || a.bank || a.id}</span>
+                      {a.isDefault && <span className="text-emerald-400">default</span>}
+                      <span className="text-slate-400">{a.status || '—'}</span>
+                      <span className="text-slate-400">{a.currency || ''}</span>
+                      <span className="ml-auto flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => { setEditingId(a.id); setEditName(a.name || ''); }}
+                          disabled={isBusy}
+                          className="min-h-[32px] rounded-lg border border-slate-600 px-3 py-1 text-xs text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+                        >
+                          Rename
+                        </button>
+                        {!a.isDefault && (
+                          <button
+                            type="button"
+                            onClick={() => doSetDefault(a.id)}
+                            disabled={isBusy}
+                            className="min-h-[32px] rounded-lg bg-slate-700 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-600 disabled:opacity-50"
+                          >
+                            {isBusy ? '…' : 'Set default'}
+                          </button>
+                        )}
+                      </span>
+                    </>
+                  )}
+                </div>
+                <div className="text-slate-500">
+                  {a.iban ? (
+                    <>IBAN: <span className="text-slate-300">{a.iban}</span></>
+                  ) : a.sortCode || a.accountNumber ? (
+                    <>UK: <span className="text-slate-300">{a.sortCode || ''} {a.accountNumber || ''}</span></>
+                  ) : null}
+                </div>
+                <div className="text-slate-600">id: {a.id}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
