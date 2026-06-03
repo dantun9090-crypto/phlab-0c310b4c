@@ -4,6 +4,7 @@ import {
   listFenaWebhookEvents,
   listFenaOrphanPayments,
   listFenaBankAccountsAdmin,
+  listFenaTransactionsAdmin,
   reconcileFenaOrphans,
   getFenaIntegrationSettings,
   setFenaIntegrationEnv,
@@ -13,6 +14,7 @@ import {
   type FenaReconcileResult,
   type FenaBankAccountRow,
   type FenaDryRunResult,
+  type FenaTransactionRow,
 } from '@/lib/fena.functions';
 
 type EnvLabel = 'sandbox' | 'production';
