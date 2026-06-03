@@ -808,6 +808,7 @@ export default function OrdersTab() {
                           <Banknote className="w-3 h-3" /> Bank Transfer
                         </span>
                       )}
+                      {isFenaOrder(selected) && <FenaStatusBadge order={selected} />}
                       <span className="text-[#9cb8d9] text-xs">
                         {selected.orderDate?.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </span>
