@@ -83,6 +83,9 @@ export default function FenaTab() {
       const idToken = await getToken();
       const res = await listFenaTransactionsAdmin({ data: { idToken } });
       setTransactions(res.transactions);
+      setTxEnv(res.env);
+      setTxFilteredOut(res.filteredOut);
+      setTxTotalFetched(res.totalFetched);
       setTxErr('');
     } catch (e: any) {
       setTxErr(e?.message || 'Failed to load transactions');
@@ -90,6 +93,7 @@ export default function FenaTab() {
       setTxLoading(false);
     }
   }
+
 
   useEffect(() => {
     loadAll();
