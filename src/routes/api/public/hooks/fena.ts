@@ -18,6 +18,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   addDocAdmin,
   findDocByFieldAdmin,
+  getDocAdmin,
   updateDocAdmin,
 } from "@/lib/server/firestore-admin";
 import { fenaGetPayment, fenaGetBankAccount } from "@/lib/fena.server";
