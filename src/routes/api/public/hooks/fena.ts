@@ -20,7 +20,7 @@ import {
   findDocByFieldAdmin,
   updateDocAdmin,
 } from "@/lib/server/firestore-admin";
-import { fenaGetPayment } from "@/lib/fena.server";
+import { fenaGetPayment, fenaGetBankAccount } from "@/lib/fena.server";
 
 interface FenaWebhookBody {
   eventScope?: string;
