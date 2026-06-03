@@ -176,6 +176,14 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ---------- fena orphan payments (admin-read reconciliation queue) ----------
+    // Webhook writes here when a Fena payment arrives with no matching order.
+    // Admin reads from the Fena tab to manually reconcile (refund / re-link).
+    match /fena_orphan_payments/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
 
 
 
