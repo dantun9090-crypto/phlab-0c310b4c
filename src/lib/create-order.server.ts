@@ -158,7 +158,7 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     orderDate: nowIso,
   };
 
-  await addDocAdmin('orders', orderData);
+  await addDocAdmin('orders', orderData, orderId);
 
   return {
     ok: true,
