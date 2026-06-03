@@ -505,7 +505,7 @@ export default function CheckoutPage() {
               country: form.country,
             },
             shippingMethod: form.shippingMethod,
-            paymentMethod: 'bank_transfer',
+            paymentMethod: form.paymentMethod,
             ageVerified: true,
             termsAccepted: true,
             couponCode: appliedCoupon?.code ?? null,
@@ -550,6 +550,30 @@ export default function CheckoutPage() {
 
       setBankTransferRef(btRef);
       setConfirmedTotal(totalAmount.toFixed(2));
+
+      // Pay by Bank (Fena Open Banking): redirect to hosted payment page.
+      if (form.paymentMethod === 'pay_by_bank') {
+        try {
+          // Fena requires a Firebase ID token; anonymous auth is fine.
+          let current = auth.currentUser;
+          if (!current) {
+            const anon = await signInAnonymously(auth);
+            current = anon.user;
+          }
+          const idTokenForFena = await current.getIdToken();
+          const { hppUrl } = await createFenaPaymentLink({
+            data: { orderId, idToken: idTokenForFena },
+          });
+          localStorage.removeItem('php_cart');
+          setCart([]);
+          window.location.href = hppUrl;
+          return;
+        } catch (err: any) {
+          setLoginError(err?.message || 'Could not start Pay by Bank. Please try again or use Manual Bank Transfer.');
+          setIsPlacing(false);
+          return;
+        }
+      }
 
       try {
         await sendPublicMail({
