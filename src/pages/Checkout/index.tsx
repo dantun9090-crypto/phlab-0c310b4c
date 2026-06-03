@@ -567,30 +567,35 @@ export default function CheckoutPage() {
       setBankTransferRef(btRef);
       setConfirmedTotal(totalAmount.toFixed(2));
 
-      // Pay by Bank (Fena Open Banking): redirect to hosted payment page.
+      // Pay by Bank (Open Banking via our Cloudflare Worker → Fena):
+      // POST order to the worker, then redirect customer to the returned URL.
       if (form.paymentMethod === 'pay_by_bank') {
         setFenaOrderId(orderId);
         setFenaStep('creating-link');
         try {
-          // Fena requires a Firebase ID token; anonymous auth is fine.
-          let current = auth.currentUser;
-          if (!current) {
-            const anon = await signInAnonymously(auth);
-            current = anon.user;
-          }
-          const idTokenForFena = await current.getIdToken();
-          const { hppUrl } = await createFenaPaymentLink({
-            data: { orderId, idToken: idTokenForFena },
+          const amountPence = Math.round(totalAmount * 100);
+          const resp = await fetch(PAY_BY_BANK_WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              order_id: orderId,
+              amount: amountPence,
+              currency: 'GBP',
+              customer_email: form.email,
+              customer_name: `${form.firstName} ${form.lastName}`.trim(),
+              reference: btRef,
+            }),
           });
+          if (!resp.ok) {
+            const txt = await resp.text().catch(() => '');
+            throw new Error(`Worker ${resp.status}: ${txt.slice(0, 200) || 'create-payment failed'}`);
+          }
+          const data = (await resp.json()) as { payment_url?: string };
+          if (!data.payment_url) throw new Error('Worker did not return a payment_url.');
           setFenaStep('redirecting');
           localStorage.removeItem('php_cart');
           setCart([]);
-          // Small delay so the "Redirecting…" banner is visible before the
-          // browser leaves the page; the user sees we created the order and
-          // are handing off to their bank, not just a silent jump.
-          setTimeout(() => {
-            window.location.href = hppUrl;
-          }, 250);
+          setTimeout(() => { window.location.href = data.payment_url!; }, 250);
           return;
         } catch (err: any) {
           setFenaStep('failed');
