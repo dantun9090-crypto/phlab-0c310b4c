@@ -14,6 +14,7 @@ import {
 import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
 import { createOrder } from '@/lib/create-order.functions';
+import { createFenaPaymentLink } from '@/lib/fena.functions';
 import { migrateStoredCart } from '@/lib/cart-migration';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
@@ -28,7 +29,7 @@ interface CheckoutForm {
   city: string;
   postcode: string;
   country: string;
-  paymentMethod: 'bank_transfer';
+  paymentMethod: 'bank_transfer' | 'pay_by_bank';
   acceptedTerms: boolean;
   ageVerified: boolean;
   createAccount: boolean;
