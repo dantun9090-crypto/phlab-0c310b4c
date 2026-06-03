@@ -75,10 +75,12 @@ function PaymentCountdown({ createdAt }: { createdAt: any }) {
 const STATUS_CONFIG: Record<string, { label: string; color: string; glow: string; icon: any }> = {
   pending: { label: 'Pending', color: 'bg-amber-500/15 text-amber-300 border-amber-500/25', glow: 'shadow-amber-500/10', icon: Clock },
   pending_payment: { label: 'Awaiting Payment', color: 'bg-orange-500/15 text-orange-300 border-orange-500/25', glow: 'shadow-orange-500/10', icon: Clock },
+  paid: { label: 'Paid', color: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25', glow: 'shadow-emerald-500/10', icon: CheckCircle2 },
   processing: { label: 'Processing', color: 'bg-blue-500/15 text-blue-300 border-blue-500/25', glow: 'shadow-blue-500/10', icon: RotateCcw },
   shipped: { label: 'Shipped', color: 'bg-violet-500/15 text-violet-300 border-violet-500/25', glow: 'shadow-violet-500/10', icon: Truck },
   delivered: { label: 'Delivered', color: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25', glow: 'shadow-emerald-500/10', icon: CheckCircle2 },
   cancelled: { label: 'Cancelled', color: 'bg-red-500/15 text-red-300 border-red-500/25', glow: 'shadow-red-500/10', icon: X },
+  refunded: { label: 'Refunded', color: 'bg-orange-500/15 text-orange-300 border-orange-500/25', glow: 'shadow-orange-500/10', icon: X },
 };
 
 function StatusBadge({ status }: { status: string }) {
