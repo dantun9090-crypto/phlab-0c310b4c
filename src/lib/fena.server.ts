@@ -172,10 +172,34 @@ async function fenaJson<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export async function fenaListBankAccounts(): Promise<FenaBankAccount[]> {
-  const parsed = await fenaJson<{ data?: FenaBankAccount[]; result?: FenaBankAccount[] }>(
-    "/company/bank-accounts/list",
-  );
-  return parsed.data ?? parsed.result ?? [];
+  const parsed = await fenaJson<unknown>("/company/bank-accounts/list");
+  return extractBankAccounts(parsed);
+}
+
+function extractBankAccounts(payload: unknown): FenaBankAccount[] {
+  if (Array.isArray(payload)) return payload as FenaBankAccount[];
+  if (!payload || typeof payload !== "object") return [];
+  const obj = payload as Record<string, unknown>;
+  // Try common envelope keys in order.
+  const candidates: unknown[] = [
+    obj.data,
+    obj.result,
+    obj.results,
+    obj.accounts,
+    obj.bankAccounts,
+    obj.items,
+    obj.list,
+  ];
+  for (const c of candidates) {
+    if (Array.isArray(c)) return c as FenaBankAccount[];
+    if (c && typeof c === "object") {
+      const inner = c as Record<string, unknown>;
+      for (const k of ["accounts", "bankAccounts", "items", "list", "data", "result"]) {
+        if (Array.isArray(inner[k])) return inner[k] as FenaBankAccount[];
+      }
+    }
+  }
+  return [];
 }
 
 export async function fenaGetBankAccount(id: string): Promise<FenaBankAccount> {
