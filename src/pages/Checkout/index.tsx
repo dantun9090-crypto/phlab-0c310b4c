@@ -20,6 +20,7 @@ const PAY_BY_BANK_WORKER_URL = 'https://worker.phlabs.co.uk/api/fena/create-paym
 import { migrateStoredCart } from '@/lib/cart-migration';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
+import UkBankBadges from '@/components/UkBankBadges';
 
 
 interface CheckoutForm {
