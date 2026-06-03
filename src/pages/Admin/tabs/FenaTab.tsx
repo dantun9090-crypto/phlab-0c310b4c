@@ -3,8 +3,10 @@ import { auth } from '@/lib/firebase';
 import {
   listFenaWebhookEvents,
   listFenaOrphanPayments,
+  reconcileFenaOrphans,
   type FenaWebhookEventRow,
   type FenaOrphanPaymentRow,
+  type FenaReconcileResult,
 } from '@/lib/fena.functions';
 
 export default function FenaTab() {
@@ -12,25 +14,47 @@ export default function FenaTab() {
   const [orphans, setOrphans] = useState<FenaOrphanPaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string>('');
+  const [reconciling, setReconciling] = useState(false);
+  const [reconcileResult, setReconcileResult] = useState<FenaReconcileResult | null>(null);
+
+  async function loadAll() {
+    setLoading(true);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Not signed in');
+      const [events, orphanRows] = await Promise.all([
+        listFenaWebhookEvents({ data: { idToken } }),
+        listFenaOrphanPayments({ data: { idToken } }),
+      ]);
+      setRows(events);
+      setOrphans(orphanRows);
+    } catch (e: any) {
+      setErr(e?.message || 'Failed to load events');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    (async () => {
-      try {
-        const idToken = await auth.currentUser?.getIdToken();
-        if (!idToken) throw new Error('Not signed in');
-        const [events, orphanRows] = await Promise.all([
-          listFenaWebhookEvents({ data: { idToken } }),
-          listFenaOrphanPayments({ data: { idToken } }),
-        ]);
-        setRows(events);
-        setOrphans(orphanRows);
-      } catch (e: any) {
-        setErr(e?.message || 'Failed to load events');
-      } finally {
-        setLoading(false);
-      }
-    })();
+    loadAll();
   }, []);
+
+  async function runReconcile() {
+    setReconciling(true);
+    setReconcileResult(null);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Not signed in');
+      const res = await reconcileFenaOrphans({ data: { idToken } });
+      setReconcileResult(res);
+      await loadAll();
+    } catch (e: any) {
+      setErr(e?.message || 'Reconcile failed');
+    } finally {
+      setReconciling(false);
+    }
+  }
+
 
   return (
     <div className="p-6 space-y-4">
