@@ -14,6 +14,7 @@ import {
 import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
 import { createOrder } from '@/lib/create-order.functions';
+import { createFenaPaymentLink } from '@/lib/fena.functions';
 import { migrateStoredCart } from '@/lib/cart-migration';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
@@ -28,7 +29,7 @@ interface CheckoutForm {
   city: string;
   postcode: string;
   country: string;
-  paymentMethod: 'bank_transfer';
+  paymentMethod: 'bank_transfer' | 'pay_by_bank';
   acceptedTerms: boolean;
   ageVerified: boolean;
   createAccount: boolean;
@@ -504,7 +505,7 @@ export default function CheckoutPage() {
               country: form.country,
             },
             shippingMethod: form.shippingMethod,
-            paymentMethod: 'bank_transfer',
+            paymentMethod: form.paymentMethod,
             ageVerified: true,
             termsAccepted: true,
             couponCode: appliedCoupon?.code ?? null,
@@ -549,6 +550,30 @@ export default function CheckoutPage() {
 
       setBankTransferRef(btRef);
       setConfirmedTotal(totalAmount.toFixed(2));
+
+      // Pay by Bank (Fena Open Banking): redirect to hosted payment page.
+      if (form.paymentMethod === 'pay_by_bank') {
+        try {
+          // Fena requires a Firebase ID token; anonymous auth is fine.
+          let current = auth.currentUser;
+          if (!current) {
+            const anon = await signInAnonymously(auth);
+            current = anon.user;
+          }
+          const idTokenForFena = await current.getIdToken();
+          const { hppUrl } = await createFenaPaymentLink({
+            data: { orderId, idToken: idTokenForFena },
+          });
+          localStorage.removeItem('php_cart');
+          setCart([]);
+          window.location.href = hppUrl;
+          return;
+        } catch (err: any) {
+          setLoginError(err?.message || 'Could not start Pay by Bank. Please try again or use Manual Bank Transfer.');
+          setIsPlacing(false);
+          return;
+        }
+      }
 
       try {
         await sendPublicMail({
@@ -1099,16 +1124,65 @@ export default function CheckoutPage() {
 
                 {currentStep === 3 && (
                   <div className="px-5 pb-5 space-y-4">
-                    {/* Bank transfer info */}
-                    <div className="bg-blue-500/8 border border-blue-500/20 rounded-xl p-4">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Landmark className="w-4 h-4 text-blue-400" />
-                        <p className="text-sm font-semibold text-white">Bank Transfer</p>
-                      </div>
-                      <p className="text-xs text-gray-400 leading-relaxed">
-                        Your order will be reserved for <strong className="text-white">48 hours</strong>. After placing your order, transfer the exact amount using the reference provided. Confirmation email sent immediately.
-                      </p>
+                    {/* Payment method selector */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setField('paymentMethod', 'pay_by_bank')}
+                        className={`flex items-start gap-3 text-left p-3 rounded-xl border transition-all ${
+                          form.paymentMethod === 'pay_by_bank'
+                            ? 'border-emerald-500/60 bg-emerald-500/10'
+                            : 'border-white/10 bg-[#060f1e] hover:border-white/20'
+                        }`}
+                      >
+                        <Landmark className={`w-5 h-5 mt-0.5 shrink-0 ${form.paymentMethod === 'pay_by_bank' ? 'text-emerald-400' : 'text-gray-400'}`} />
+                        <div>
+                          <p className="text-sm font-semibold text-white flex items-center gap-2">
+                            Pay by Bank
+                            <span className="text-[10px] uppercase tracking-wider bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">Instant</span>
+                          </p>
+                          <p className="text-[11px] text-gray-400 leading-snug mt-0.5">Open Banking via Fena — pay from your banking app, no card needed.</p>
+                        </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setField('paymentMethod', 'bank_transfer')}
+                        className={`flex items-start gap-3 text-left p-3 rounded-xl border transition-all ${
+                          form.paymentMethod === 'bank_transfer'
+                            ? 'border-emerald-500/60 bg-emerald-500/10'
+                            : 'border-white/10 bg-[#060f1e] hover:border-white/20'
+                        }`}
+                      >
+                        <Landmark className={`w-5 h-5 mt-0.5 shrink-0 ${form.paymentMethod === 'bank_transfer' ? 'text-emerald-400' : 'text-gray-400'}`} />
+                        <div>
+                          <p className="text-sm font-semibold text-white">Manual Bank Transfer</p>
+                          <p className="text-[11px] text-gray-400 leading-snug mt-0.5">Receive bank details by email and transfer manually within 48h.</p>
+                        </div>
+                      </button>
                     </div>
+
+                    {/* Selected method info */}
+                    {form.paymentMethod === 'pay_by_bank' ? (
+                      <div className="bg-emerald-500/8 border border-emerald-500/20 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Landmark className="w-4 h-4 text-emerald-400" />
+                          <p className="text-sm font-semibold text-white">Pay by Bank (Fena)</p>
+                        </div>
+                        <p className="text-xs text-gray-400 leading-relaxed">
+                          After placing your order you'll be redirected to your bank to approve the payment. Your order is marked paid automatically as soon as Fena confirms it.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-blue-500/8 border border-blue-500/20 rounded-xl p-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Landmark className="w-4 h-4 text-blue-400" />
+                          <p className="text-sm font-semibold text-white">Manual Bank Transfer</p>
+                        </div>
+                        <p className="text-xs text-gray-400 leading-relaxed">
+                          Your order will be reserved for <strong className="text-white">48 hours</strong>. After placing your order, transfer the exact amount using the reference provided. Confirmation email sent immediately.
+                        </p>
+                      </div>
+                    )}
 
                     {/* Discount code */}
                     <div>
@@ -1270,7 +1344,7 @@ export default function CheckoutPage() {
                         </>
                       ) : (
                         <>
-                          <Lock className="w-4 h-4" /> Place Order — £{total}
+                          <Lock className="w-4 h-4" /> {form.paymentMethod === 'pay_by_bank' ? `Pay by Bank — £${total}` : `Place Order — £${total}`}
                         </>
                       )}
                     </button>
