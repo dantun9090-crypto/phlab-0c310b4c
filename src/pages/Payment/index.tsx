@@ -29,6 +29,7 @@ type LoadState =
     };
 
 export default function PaymentPage() {
+  const createLink = useServerFn(createFenaPaymentLink);
   const [loadState, setLoadState] = useState<LoadState>({ kind: 'loading' });
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState<{ message: string; type: 'loading' | 'success' | 'error' } | null>(null);
