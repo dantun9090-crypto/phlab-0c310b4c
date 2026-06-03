@@ -99,9 +99,38 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
           fenaPaymentId,
         );
         if (!orderRow) {
-          await logEvent("warn", "no order for fena payment", { fenaPaymentId });
-          // Ack so Fena stops retrying; not actionable on our end.
-          return new Response("No matching order", { status: 200 });
+          // Persist a durable orphan record so admins can reconcile (e.g. refund
+          // the customer, or re-link to an order created out-of-band). Using
+          // the Fena payment id as the doc id makes repeated webhook deliveries
+          // idempotent — each orphan shows up once with the latest known state.
+          const orphanCtx = {
+            fenaPaymentId,
+            reference: String(authoritative.reference ?? ""),
+            amount: String(authoritative.amount ?? ""),
+            fenaStatus: String(authoritative.status ?? ""),
+            completedAt: authoritative.completedAt ?? null,
+            receivedAt: new Date().toISOString(),
+            reason: "no_order_with_matching_fenaPaymentId",
+          };
+          try {
+            await updateDocAdmin("fena_orphan_payments", fenaPaymentId, {
+              ...orphanCtx,
+              lastSeenAt: new Date(),
+            });
+          } catch {
+            // Fallback to addDoc if the doc doesn't exist yet — updateDoc on
+            // missing doc throws in some SDKs. Use addDoc with explicit id-less
+            // path so we still have a trail.
+            try {
+              await addDocAdmin("fena_orphan_payments", {
+                ...orphanCtx,
+                lastSeenAt: new Date(),
+              });
+            } catch {/* swallow — webhook must not 5xx for logging */}
+          }
+          await logEvent("error", "ORPHAN: Fena payment has no matching order", orphanCtx);
+          // Ack so Fena stops retrying; flagged as error level in the admin tab.
+          return new Response("No matching order (logged as orphan)", { status: 200 });
         }
         // Find the document id by looking it up — findDocByFieldAdmin
         // returns fields only, so refetch by orderNumber/reference.
