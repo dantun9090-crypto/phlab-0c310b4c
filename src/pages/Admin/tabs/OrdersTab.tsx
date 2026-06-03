@@ -175,6 +175,27 @@ function FenaStatusBadge({ order }: { order: any }) {
     </span>
   );
 }
+
+// ── Payment provider badge (source of payment) ──
+function ProviderBadge({ order }: { order: any }) {
+  const provider = String(order?.paymentProvider || '').toLowerCase();
+  if (provider === 'fena') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border bg-blue-500/15 text-blue-300 border-blue-500/30">
+        <CreditCard className="w-3 h-3" />Fena
+      </span>
+    );
+  }
+  if (provider === 'manual' || order?.paymentMethod === 'bank_transfer') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border bg-slate-500/15 text-slate-300 border-slate-500/30">
+        <Banknote className="w-3 h-3" />Manual
+      </span>
+    );
+  }
+  return null;
+}
+
 export default function OrdersTab() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
