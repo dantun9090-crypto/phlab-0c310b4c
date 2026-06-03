@@ -14,9 +14,7 @@ import {
 import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
 import { createOrder } from '@/lib/create-order.functions';
-// Pay by Bank now goes through our Cloudflare Worker (worker.phlabs.co.uk),
-// which talks to Fena server-side and returns a hosted payment URL.
-const PAY_BY_BANK_WORKER_URL = 'https://worker.phlabs.co.uk/api/fena/create-payment';
+import { createFenaPaymentLink } from '@/lib/fena.functions';
 import { migrateStoredCart } from '@/lib/cart-migration';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
@@ -568,35 +566,25 @@ export default function CheckoutPage() {
       setBankTransferRef(btRef);
       setConfirmedTotal(totalAmount.toFixed(2));
 
-      // Pay by Bank (Open Banking via our Cloudflare Worker → Fena):
-      // POST order to the worker, then redirect customer to the returned URL.
+      // Pay by Bank (Open Banking via Fena, handled by our in-app server
+      // function — same origin, no external Worker, no CORS).
       if (form.paymentMethod === 'pay_by_bank') {
         setFenaOrderId(orderId);
         setFenaStep('creating-link');
         try {
-          const amountPence = Math.round(totalAmount * 100);
-          const resp = await fetch(PAY_BY_BANK_WORKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              order_id: orderId,
-              amount: amountPence,
-              currency: 'GBP',
-              customer_email: form.email,
-              customer_name: `${form.firstName} ${form.lastName}`.trim(),
-              reference: btRef,
-            }),
-          });
-          if (!resp.ok) {
-            const txt = await resp.text().catch(() => '');
-            throw new Error(`Worker ${resp.status}: ${txt.slice(0, 200) || 'create-payment failed'}`);
+          let current = auth.currentUser;
+          if (!current) {
+            const anon = await signInAnonymously(auth);
+            current = anon.user;
           }
-          const data = (await resp.json()) as { payment_url?: string };
-          if (!data.payment_url) throw new Error('Worker did not return a payment_url.');
+          const idTokenForFena = await current.getIdToken();
+          const { hppUrl } = await createFenaPaymentLink({
+            data: { orderId, idToken: idTokenForFena },
+          });
           setFenaStep('redirecting');
           localStorage.removeItem('php_cart');
           setCart([]);
-          setTimeout(() => { window.location.href = data.payment_url!; }, 250);
+          setTimeout(() => { window.location.href = hppUrl; }, 250);
           return;
         } catch (err: any) {
           setFenaStep('failed');
