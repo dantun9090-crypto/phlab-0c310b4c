@@ -273,6 +273,10 @@ export async function findDocByFieldAdmin(
   for (const [k, v] of Object.entries(docRow.fields || {})) {
     out[k] = fromFirestoreValue(v);
   }
+  // `docRow.name` is `projects/.../documents/<collection>/<docId>` —
+  // expose the trailing doc id so callers can patch the same row.
+  const parts = docRow.name.split("/");
+  out.__id = parts[parts.length - 1];
   return out;
 }
 
