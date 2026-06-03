@@ -95,8 +95,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function OrderTrackingBar({ status }: { status: string }) {
-  const steps = ['pending', 'processing', 'shipped', 'delivered'];
-  const _stepLabels = ['Placed', 'Processing', 'Shipped', 'Delivered']; void _stepLabels;
+  const steps = ORDER_TRACKING_STEPS;
   if (status === 'cancelled') {
     return (
       <div className="flex items-center gap-2 text-red-400 text-xs">
@@ -105,8 +104,7 @@ function OrderTrackingBar({ status }: { status: string }) {
       </div>
     );
   }
-  const normalized = status === 'pending_payment' ? 'pending' : status === 'paid' ? 'processing' : status;
-  const currentIdx = steps.indexOf(normalized);
+  const currentIdx = getOrderTrackingIndex(status);
   return (
     <div className="flex items-center gap-1 mt-2">
       {steps.map((step, i) => (
