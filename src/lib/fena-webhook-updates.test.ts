@@ -117,3 +117,78 @@ describe("computeFenaOrderUpdates — already-paid idempotency", () => {
     }
   });
 });
+
+describe("computeFenaOrderUpdates — partial pre-set fields", () => {
+  it("paid order with paymentProvider set but fenaPaymentId missing: never backfills fenaPaymentId", () => {
+    const { updates, transitionedToPaid } = computeFenaOrderUpdates({
+      orderRow: {
+        status: "paid",
+        paymentProvider: "fena",
+        // fenaPaymentId intentionally absent
+        fenaEventIds: [],
+      },
+      authoritative: { status: "paid", completedAt: "2026-06-03T11:59:00Z" },
+      fenaPaymentId: "fena_new_999",
+      now: NOW,
+    });
+    expect(transitionedToPaid).toBe(false);
+    expect(updates).not.toHaveProperty("paymentProvider");
+    expect(updates).not.toHaveProperty("fenaPaymentId");
+    expect(updates).not.toHaveProperty("status");
+    expect(updates).not.toHaveProperty("paidAt");
+  });
+
+  it("paid order with fenaPaymentId set but paymentProvider missing: never backfills paymentProvider", () => {
+    const { updates, transitionedToPaid } = computeFenaOrderUpdates({
+      orderRow: {
+        status: "paid",
+        // paymentProvider intentionally absent
+        fenaPaymentId: "fena_original_123",
+        fenaEventIds: [],
+      },
+      authoritative: { status: "paid", completedAt: "2026-06-03T11:59:00Z" },
+      fenaPaymentId: "fena_new_999",
+      now: NOW,
+    });
+    expect(transitionedToPaid).toBe(false);
+    expect(updates).not.toHaveProperty("paymentProvider");
+    expect(updates).not.toHaveProperty("fenaPaymentId");
+  });
+
+  it("pending order with paymentProvider pre-set: backfills fenaPaymentId but does not overwrite provider", () => {
+    const { updates, transitionedToPaid } = computeFenaOrderUpdates({
+      orderRow: {
+        status: "pending",
+        paymentProvider: "manual",
+        // fenaPaymentId absent
+        fenaEventIds: [],
+      },
+      authoritative: { status: "paid", completedAt: "2026-06-03T11:59:00Z" },
+      fenaPaymentId: "fena_abc",
+      now: NOW,
+    });
+    expect(transitionedToPaid).toBe(true);
+    expect(updates.status).toBe("paid");
+    expect(updates).not.toHaveProperty("paymentProvider");
+    expect(updates.fenaPaymentId).toBe("fena_abc");
+  });
+
+  it("pending order with fenaPaymentId pre-set: stamps provider but does not overwrite payment id", () => {
+    const { updates, transitionedToPaid } = computeFenaOrderUpdates({
+      orderRow: {
+        status: "pending",
+        // paymentProvider absent
+        fenaPaymentId: "fena_pre_set_111",
+        fenaEventIds: [],
+      },
+      authoritative: { status: "paid", completedAt: "2026-06-03T11:59:00Z" },
+      fenaPaymentId: "fena_different_222",
+      now: NOW,
+    });
+    expect(transitionedToPaid).toBe(true);
+    expect(updates.status).toBe("paid");
+    expect(updates.paymentProvider).toBe("fena");
+    expect(updates).not.toHaveProperty("fenaPaymentId");
+  });
+});
+
