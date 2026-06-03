@@ -156,6 +156,12 @@ export default function FenaTab() {
         <p className="text-xs text-slate-400 mb-3">
           Stored in <code className="text-slate-300">settings/fena.env</code>. Overrides the
           <code className="text-slate-300"> FENA_ENV</code> secret. Cached for 30 s on the server.
+          <br />
+          <span className="text-amber-300">
+            Note: Fena uses a single API host for both environments. "Sandbox" mode is selected
+            on the hosted payment page by picking a Sandbox bank (e.g. Natwest / RBS sandbox) —
+            no real funds move. There is no separate sandbox API endpoint.
+          </span>
         </p>
         <div className="flex flex-wrap items-center gap-2 mb-3">
           {(['sandbox', 'production'] as const).map((opt) => (
