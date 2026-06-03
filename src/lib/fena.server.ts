@@ -141,6 +141,42 @@ export async function fenaGetPayment(paymentId: string): Promise<FenaPaymentStat
   return parsed.data;
 }
 
+export interface FenaListedPayment {
+  id: string;
+  status: string;
+  amount: string;
+  currency?: string;
+  reference?: string;
+  customerEmail?: string;
+  customerName?: string;
+  description?: string;
+  paymentMethod?: string;
+  isSandbox?: boolean;
+  transaction?: string;
+  createdAt?: string;
+  completedAt?: string;
+  [key: string]: unknown;
+}
+
+export async function fenaListPayments(limit = 50): Promise<FenaListedPayment[]> {
+  const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
+  const base = await getFenaBase();
+  const res = await fetch(
+    `${base}/payments/single/list?limit=${safeLimit}`,
+    {
+      method: "GET",
+      headers: authHeaders(),
+      signal: AbortSignal.timeout(15_000),
+    },
+  );
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`Fena list-payments ${res.status}: ${text.slice(0, 400)}`);
+  }
+  const parsed = JSON.parse(text) as { data?: { docs?: FenaListedPayment[] } };
+  return Array.isArray(parsed.data?.docs) ? parsed.data!.docs! : [];
+}
+
 // ---------- Bank accounts module ----------
 
 export interface FenaBankAccount {
