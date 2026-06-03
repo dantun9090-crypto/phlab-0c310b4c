@@ -15,6 +15,7 @@ import { Route as GoogleMerchantFeedDotxmlRouteImport } from './routes/google-me
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
+import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
@@ -52,6 +53,11 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => ProductsRoute,
 } as any)
+const PaymentSuccessRoute = PaymentSuccessRouteImport.update({
+  id: '/payment/success',
+  path: '/payment/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminMerchantFeedPreviewRoute =
   AdminMerchantFeedPreviewRouteImport.update({
     id: '/admin/merchant-feed-preview',
@@ -87,6 +93,7 @@ export interface FileRoutesByFullPath {
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -114,6 +122,7 @@ export interface FileRoutesById {
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -129,6 +138,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
+    | '/payment/success'
     | '/products/$slug'
     | '/api/public/csp-report'
     | '/api/public/send-mail'
@@ -142,6 +152,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
+    | '/payment/success'
     | '/products/$slug'
     | '/api/public/csp-report'
     | '/api/public/send-mail'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
+    | '/payment/success'
     | '/products/$slug'
     | '/api/public/csp-report'
     | '/api/public/send-mail'
@@ -169,6 +181,7 @@ export interface RootRouteChildren {
   ProductsRoute: typeof ProductsRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
+  PaymentSuccessRoute: typeof PaymentSuccessRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
   ApiPublicHooksFenaRoute: typeof ApiPublicHooksFenaRoute
@@ -218,6 +231,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/products/$slug'
       preLoaderRoute: typeof ProductsSlugRouteImport
       parentRoute: typeof ProductsRoute
+    }
+    '/payment/success': {
+      id: '/payment/success'
+      path: '/payment/success'
+      fullPath: '/payment/success'
+      preLoaderRoute: typeof PaymentSuccessRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/admin/merchant-feed-preview': {
       id: '/admin/merchant-feed-preview'
@@ -276,6 +296,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsRoute: ProductsRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
+  PaymentSuccessRoute: PaymentSuccessRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
   ApiPublicHooksFenaRoute: ApiPublicHooksFenaRoute,
@@ -284,3 +305,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
