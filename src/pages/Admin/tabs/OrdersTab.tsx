@@ -482,7 +482,7 @@ export default function OrdersTab() {
     shipped: orders.filter(o => o.status === 'shipped').length,
     delivered: orders.filter(o => o.status === 'delivered').length,
     cancelled: orders.filter(o => o.status === 'cancelled').length,
-    fena_paid: orders.filter(o => isFenaOrder(o) && String((o as any).fenaStatus || '').toLowerCase() === 'paid').length,
+    fena_paid: orders.filter(o => (o as any).paymentProvider === 'fena' && String((o as any).fenaStatus || '').toLowerCase() === 'paid').length,
   };
 
   // TrueLayer Open Banking orders still in 'pending' (no bank_transfer)
