@@ -430,10 +430,15 @@ export interface FenaBankAccountRow {
   name?: string;
   status?: string;
   isDefault?: boolean;
-  bank?: string;
-  iban?: string;
+  provider?: string;
+  creationType?: string;
   accountNumber?: string;
   sortCode?: string;
+  bankConsentExpired?: string;
+  createdAt?: string;
+  // legacy/optional fields (kept for forward compat with other Fena responses)
+  bank?: string;
+  iban?: string;
   currency?: string;
 }
 
@@ -442,21 +447,28 @@ export const listFenaBankAccountsAdmin = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ env: string; accounts: FenaBankAccountRow[] }> => {
     await requireFirebaseAdmin(data.idToken);
     const accs: FenaBankAccount[] = await fenaListBankAccounts();
+    const s = (v: unknown) => (typeof v === "string" ? v : undefined);
+    const b = (v: unknown) => (typeof v === "boolean" ? v : undefined);
     return {
       env: await getFenaEnvLabel(),
       accounts: accs.map((a) => ({
         id: a.id,
-        name: a.name,
-        status: a.status,
-        isDefault: a.isDefault,
-        bank: a.bank,
-        iban: a.iban,
-        accountNumber: a.accountNumber,
-        sortCode: a.sortCode,
-        currency: a.currency,
+        name: s(a.name),
+        status: s(a.status),
+        isDefault: b(a.isDefault),
+        provider: s((a as Record<string, unknown>).provider),
+        creationType: s((a as Record<string, unknown>).creationType),
+        accountNumber: s(a.accountNumber),
+        sortCode: s(a.sortCode),
+        bankConsentExpired: s((a as Record<string, unknown>).bankConsentExpired),
+        createdAt: s(a.createdAt),
+        bank: s(a.bank),
+        iban: s(a.iban),
+        currency: s(a.currency),
       })),
     };
   });
+
 
 // ---------- Environment toggle (sandbox / production) ----------
 
