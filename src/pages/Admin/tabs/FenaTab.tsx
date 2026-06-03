@@ -702,9 +702,22 @@ function BankAccountsSection({
                     </>
                   ) : (
                     <>
-                      <span className="text-white font-bold">{a.name || a.bank || a.id}</span>
+                      <span className="text-white font-bold">{a.name || a.provider || a.bank || a.id}</span>
                       {a.isDefault && <span className="text-emerald-400">default</span>}
                       <span className="text-slate-400">{a.status || '—'}</span>
+                      {a.provider && <span className="text-slate-500">{a.provider}</span>}
+                      {a.bankConsentExpired && a.bankConsentExpired !== 'up-to-date' && (
+                        <span
+                          className={
+                            'rounded px-1.5 py-0.5 text-[10px] font-semibold ' +
+                            (a.bankConsentExpired === 'expired'
+                              ? 'bg-rose-700 text-rose-50'
+                              : 'bg-amber-700 text-amber-50')
+                          }
+                        >
+                          consent: {a.bankConsentExpired}
+                        </span>
+                      )}
                       <span className="text-slate-400">{a.currency || ''}</span>
                       <span className="ml-auto flex gap-2">
                         <button
