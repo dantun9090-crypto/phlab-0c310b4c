@@ -212,7 +212,7 @@ export interface Order {
   total: number;
   totalAmount: number;
   paymentMethod?: string;
-  status: 'pending' | 'pending_payment' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'pending_payment' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
   orderDate: Timestamp;
   createdAt?: Timestamp;
   shippingAddress?: string;
