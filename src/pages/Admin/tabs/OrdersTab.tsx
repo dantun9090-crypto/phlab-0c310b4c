@@ -718,6 +718,7 @@ export default function OrdersTab() {
                       <PaymentStatusBadge paymentStatus={(order as any).paymentStatus || 'pending_bank_transfer'} />
                     )}
                     {isFenaOrder(order) && <FenaStatusBadge order={order} />}
+                    <ProviderBadge order={order} />
                     {order.trackingNumber && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400 font-mono">
                         <Hash className="w-3 h-3" />{order.trackingNumber}
