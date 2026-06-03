@@ -182,6 +182,7 @@ function extractBankAccounts(payload: unknown): FenaBankAccount[] {
   const obj = payload as Record<string, unknown>;
   // Try common envelope keys in order.
   const candidates: unknown[] = [
+    obj.docs,
     obj.data,
     obj.result,
     obj.results,
