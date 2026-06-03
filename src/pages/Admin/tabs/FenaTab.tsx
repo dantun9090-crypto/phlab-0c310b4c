@@ -291,12 +291,35 @@ export default function FenaTab() {
           <h2 className="text-lg font-semibold text-white">
             Transactions
             <span className="ml-2 text-xs font-normal text-slate-400">
-              (live from Fena · last 50)
+              (live from Fena · last 50
+              {txEnv && (
+                <>
+                  {' · '}
+                  <span
+                    className={
+                      'rounded px-1.5 py-0.5 text-[10px] font-semibold ' +
+                      (txEnv === 'production'
+                        ? 'bg-emerald-700 text-emerald-50'
+                        : 'bg-amber-700 text-amber-50')
+                    }
+                  >
+                    {txEnv}
+                  </span>
+                  {' only'}
+                </>
+              )}
+              {txFilteredOut > 0 && (
+                <span className="ml-1 text-slate-500">
+                  · hiding {txFilteredOut} from other env ({txTotalFetched} fetched)
+                </span>
+              )}
+              )
             </span>
           </h2>
           <button
             type="button"
             onClick={() => void loadTransactions()}
+
             disabled={txLoading}
             className="rounded-lg border-2 border-slate-600 bg-slate-800 px-3 min-h-[36px] text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
           >
