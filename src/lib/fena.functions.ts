@@ -357,7 +357,7 @@ export const listFenaBankAccountsAdmin = createServerFn({ method: "POST" })
     await requireFirebaseAdmin(data.idToken);
     const accs: FenaBankAccount[] = await fenaListBankAccounts();
     return {
-      env: FENA_ENV_LABEL,
+      env: await getFenaEnvLabel(),
       accounts: accs.map((a) => ({
         id: a.id,
         name: a.name,
@@ -371,3 +371,88 @@ export const listFenaBankAccountsAdmin = createServerFn({ method: "POST" })
       })),
     };
   });
+
+// ---------- Environment toggle (sandbox / production) ----------
+
+const SetEnvInput = z.object({
+  idToken: z.string().min(10).max(4096),
+  env: z.enum(["sandbox", "production"]),
+});
+
+export const getFenaIntegrationSettings = createServerFn({ method: "POST" })
+  .inputValidator((d) => AdminEventsInput.parse(d))
+  .handler(async ({ data }): Promise<{
+    env: "sandbox" | "production";
+    source: "settings" | "secret" | "default";
+    hasCredentials: boolean;
+  }> => {
+    await requireFirebaseAdmin(data.idToken);
+    const doc = await getDocAdmin("settings", "fena");
+    const fromDoc = doc && typeof doc.env === "string" ? doc.env.toLowerCase() : "";
+    const fromSecret = String(process.env.FENA_ENV ?? "").toLowerCase();
+    const source: "settings" | "secret" | "default" =
+      fromDoc === "sandbox" || fromDoc === "production"
+        ? "settings"
+        : fromSecret === "sandbox" || fromSecret === "production"
+          ? "secret"
+          : "default";
+    return {
+      env: await getFenaEnvLabel(),
+      source,
+      hasCredentials: Boolean(process.env.FENA_TERMINAL_ID && process.env.FENA_TERMINAL_SECRET),
+    };
+  });
+
+export const setFenaIntegrationEnv = createServerFn({ method: "POST" })
+  .inputValidator((d) => SetEnvInput.parse(d))
+  .handler(async ({ data }): Promise<{ env: "sandbox" | "production" }> => {
+    await requireFirebaseAdmin(data.idToken);
+    await updateDocAdmin("settings", "fena", {
+      env: data.env,
+      updatedAt: new Date(),
+    });
+    invalidateFenaEnvCache();
+    return { env: data.env };
+  });
+
+// ---------- Dry-run connectivity check ----------
+
+export interface FenaDryRunResult {
+  ok: boolean;
+  env: "sandbox" | "production";
+  accountCount: number;
+  defaultAccount?: { id: string; name?: string; status?: string; currency?: string } | null;
+  error?: string;
+  durationMs: number;
+}
+
+export const dryRunFenaConnection = createServerFn({ method: "POST" })
+  .inputValidator((d) => AdminEventsInput.parse(d))
+  .handler(async ({ data }): Promise<FenaDryRunResult> => {
+    await requireFirebaseAdmin(data.idToken);
+    const env = await getFenaEnvLabel();
+    const started = Date.now();
+    try {
+      const accs = await fenaListBankAccounts();
+      const def =
+        accs.find((a) => a.isDefault) ?? accs[0] ?? null;
+      return {
+        ok: true,
+        env,
+        accountCount: accs.length,
+        defaultAccount: def
+          ? { id: def.id, name: def.name, status: def.status, currency: def.currency }
+          : null,
+        durationMs: Date.now() - started,
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        env,
+        accountCount: 0,
+        error: err instanceof Error ? err.message : String(err),
+        durationMs: Date.now() - started,
+      };
+    }
+  });
+
