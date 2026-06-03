@@ -653,7 +653,7 @@ export default function OrdersTab() {
 
       {/* Status filter tabs */}
       <div className="flex gap-2 flex-wrap">
-        {(['all', 'pending', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid'] as const).map(s => {
+        {(['all', 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid'] as const).map(s => {
           const label = s === 'fena_paid' ? '✅ Fena Auto-Paid' : s.charAt(0).toUpperCase() + s.slice(1);
           const isFena = s === 'fena_paid';
           return (
