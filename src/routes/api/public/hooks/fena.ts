@@ -189,12 +189,12 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
           return new Response("Upstream verify failed", { status: 502 });
         }
 
-        // Find the matching order. Primary: `fenaPaymentId` stored at create.
-        // Fallback 1: `fenaReference` (the sanitized lowercase ref we sent to
-        // Fena — useful if the order doc write raced behind the webhook, or
-        // if a prior payment attempt overwrote `fenaPaymentId`).
-        // Fallback 2: order doc id == authoritative.reference uppercased
-        // (defensive — short refs are derived from the orderId).
+        // Find the matching order.
+        //   1. by `fenaPaymentId` (stored at create-time)
+        //   2. by `fenaReference` (sanitized lowercase ref we sent to Fena)
+        //   3. by direct doc lookup on `reference.toUpperCase()` — Fena echoes
+        //      the reference back in lowercase but Firestore doc ids are
+        //      uppercase (`PHP-...`), so casing alone caused a miss.
         let orderRow = await findDocByFieldAdmin(
           "orders",
           "fenaPaymentId",
@@ -203,14 +203,27 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
         let matchedBy: "fenaPaymentId" | "fenaReference" | "docId" | "none" = orderRow
           ? "fenaPaymentId"
           : "none";
-        const refLower = String(authoritative.reference ?? "").toLowerCase();
+        const refRaw = String(authoritative.reference ?? "");
+        const refLower = refRaw.toLowerCase();
+        const refUpper = refRaw.toUpperCase();
         if (!orderRow && refLower) {
           orderRow = await findDocByFieldAdmin("orders", "fenaReference", refLower);
           if (orderRow) matchedBy = "fenaReference";
         }
+        if (!orderRow && refUpper) {
+          const direct = await (await import("@/lib/server/firestore-admin")).getDocAdmin(
+            "orders",
+            refUpper,
+          );
+          if (direct) {
+            orderRow = { ...(direct as Record<string, unknown>), __id: refUpper };
+            matchedBy = "docId";
+          }
+        }
         await logEvent("info", "lookup", {
           fenaPaymentId,
-          reference: refLower,
+          referenceRaw: refRaw,
+          referenceUpper: refUpper,
           fenaStatus: String(authoritative.status ?? ""),
           matchedBy,
           matchedOrderId: orderRow && typeof orderRow.__id === "string" ? orderRow.__id : null,
