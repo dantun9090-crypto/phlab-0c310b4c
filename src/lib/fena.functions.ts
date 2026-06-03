@@ -107,11 +107,45 @@ export const getOrderPaymentStatus = createServerFn({ method: "POST" })
     if (order.userId && order.userId !== user.uid) {
       throw new Error("Forbidden");
     }
-    const status = String(order.status ?? "pending").toLowerCase();
+    let status = String(order.status ?? "pending").toLowerCase();
+    let fenaStatus = (order.fenaStatus as string | null) ?? null;
+
+    // Self-heal: if the webhook hasn't landed yet, ask Fena directly using
+    // the stored payment id and apply the same transition the webhook would.
+    const settled = ["paid", "completed", "shipped", "fulfilled", "cancelled", "refunded"];
+    const fenaPaymentId = typeof order.fenaPaymentId === "string" ? order.fenaPaymentId : "";
+    if (fenaPaymentId && !settled.includes(status)) {
+      try {
+        const live = await fenaGetPayment(fenaPaymentId);
+        const liveStatus = String(live.status ?? "").toLowerCase();
+        if (liveStatus) fenaStatus = liveStatus;
+        if (liveStatus === "paid" && status !== "paid") {
+          await updateDocAdmin("orders", data.orderId, {
+            status: "paid",
+            paidAt: new Date(),
+            fenaStatus: liveStatus,
+            paymentProvider: "fena",
+            fenaSelfHealedAt: new Date(),
+          });
+          status = "paid";
+        } else if ((liveStatus === "cancelled" || liveStatus === "expired") && status === "pending") {
+          await updateDocAdmin("orders", data.orderId, {
+            status: "cancelled",
+            fenaStatus: liveStatus,
+          });
+          status = "cancelled";
+        } else if (liveStatus && liveStatus !== order.fenaStatus) {
+          await updateDocAdmin("orders", data.orderId, { fenaStatus: liveStatus });
+        }
+      } catch {
+        // Don't fail the poll if Fena is briefly unreachable.
+      }
+    }
+
     return {
       status,
       paid: ["paid", "completed", "shipped", "fulfilled"].includes(status),
-      fenaStatus: order.fenaStatus ?? null,
+      fenaStatus,
     };
   });
 
