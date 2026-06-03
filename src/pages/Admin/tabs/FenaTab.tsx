@@ -65,10 +65,25 @@ export default function FenaTab() {
       } catch (e: any) {
         setAccountsErr(e?.message || 'Failed to load bank accounts');
       }
+      void loadTransactions();
     } catch (e: any) {
       setErr(e?.message || 'Failed to load events');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadTransactions() {
+    setTxLoading(true);
+    try {
+      const idToken = await getToken();
+      const res = await listFenaTransactionsAdmin({ data: { idToken } });
+      setTransactions(res.transactions);
+      setTxErr('');
+    } catch (e: any) {
+      setTxErr(e?.message || 'Failed to load transactions');
+    } finally {
+      setTxLoading(false);
     }
   }
 
