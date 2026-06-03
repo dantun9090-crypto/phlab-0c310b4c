@@ -112,6 +112,14 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
+  type FenaStep =
+    | 'idle'
+    | 'creating-order'
+    | 'creating-link'
+    | 'redirecting'
+    | 'failed';
+  const [fenaStep, setFenaStep] = useState<FenaStep>('idle');
+  const [fenaOrderId, setFenaOrderId] = useState<string>('');
   const [, setSummaryExpanded] = useState(false);
   const stepRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
