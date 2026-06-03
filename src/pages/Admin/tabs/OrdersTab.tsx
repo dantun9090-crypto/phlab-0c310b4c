@@ -627,19 +627,25 @@ export default function OrdersTab() {
 
       {/* Status filter tabs */}
       <div className="flex gap-2 flex-wrap">
-        {(['all', 'pending', 'processing', 'shipped', 'delivered', 'cancelled'] as const).map(s => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-              statusFilter === s
-                ? 'bg-blue-600 border-blue-500 text-white'
-                : 'bg-[#0d1f35] border-white/[0.08] text-[#9cb8d9] hover:text-white'
-            }`}
-          >
-            {s.charAt(0).toUpperCase() + s.slice(1)} ({counts[s]})
-          </button>
-        ))}
+        {(['all', 'pending', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid'] as const).map(s => {
+          const label = s === 'fena_paid' ? '✅ Fena Auto-Paid' : s.charAt(0).toUpperCase() + s.slice(1);
+          const isFena = s === 'fena_paid';
+          return (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                statusFilter === s
+                  ? (isFena ? 'bg-green-600 border-green-500 text-white' : 'bg-blue-600 border-blue-500 text-white')
+                  : (isFena
+                    ? 'bg-green-500/10 border-green-500/30 text-green-300 hover:text-green-200'
+                    : 'bg-[#0d1f35] border-white/[0.08] text-[#9cb8d9] hover:text-white')
+              }`}
+            >
+              {label} ({counts[s]})
+            </button>
+          );
+        })}
       </div>
 
       {/* Search */}
