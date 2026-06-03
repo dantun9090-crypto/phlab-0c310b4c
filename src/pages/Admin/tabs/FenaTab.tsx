@@ -1,14 +1,8 @@
 import { useEffect, useState } from 'react';
-import { collection, getDocs, limit, orderBy, query } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
+import { listFenaWebhookEvents, type FenaWebhookEventRow } from '@/lib/fena.functions';
 
-interface EventRow {
-  id: string;
-  level?: string;
-  message?: string;
-  ctx?: Record<string, unknown>;
-  createdAt?: any;
-}
+type EventRow = FenaWebhookEventRow;
 
 export default function FenaTab() {
   const [rows, setRows] = useState<EventRow[]>([]);
@@ -18,13 +12,10 @@ export default function FenaTab() {
   useEffect(() => {
     (async () => {
       try {
-        const q = query(
-          collection(db, 'fena_webhook_events'),
-          orderBy('createdAt', 'desc'),
-          limit(50),
-        );
-        const snap = await getDocs(q);
-        setRows(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+        const idToken = await auth.currentUser?.getIdToken();
+        if (!idToken) throw new Error('Not signed in');
+        const events = await listFenaWebhookEvents({ data: { idToken } });
+        setRows(events);
       } catch (e: any) {
         setErr(e?.message || 'Failed to load events');
       } finally {
@@ -76,13 +67,13 @@ export default function FenaTab() {
                     {r.level || 'info'}
                   </span>
                   <span className="text-slate-500">
-                    {r.createdAt?.toDate?.()?.toISOString?.() || ''}
+                    {r.createdAt || ''}
                   </span>
                   <span className="text-white">{r.message}</span>
                 </div>
                 {r.ctx && (
                   <pre className="text-slate-400 whitespace-pre-wrap break-all">
-                    {JSON.stringify(r.ctx, null, 2)}
+                    {r.ctx}
                   </pre>
                 )}
               </div>
