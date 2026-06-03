@@ -110,20 +110,7 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
         // the order doc we got back (it includes `orderNumber`/etc but not
         // its own id). Use the reference field which equals orderNumber.
         const reference = String(authoritative.reference ?? "");
-        let orderId: string | null = null;
-        // Try common fields where we might know the doc id.
-        if (typeof orderRow.id === "string") orderId = orderRow.id;
-        else if (typeof orderRow.orderId === "string") orderId = orderRow.orderId;
-        else if (reference) {
-          // Look up by reference (== orderNumber) to find docId.
-          const byRef = await findDocByFieldAdmin("orders", "orderNumber", reference);
-          if (byRef && typeof byRef.__id === "string") orderId = byRef.__id;
-        }
-        // Fallback: many checkouts use orderNumber == doc id. Probe directly.
-        if (!orderId && reference) {
-          const probe = await getDocAdmin("orders", reference);
-          if (probe) orderId = reference;
-        }
+        const orderId = typeof orderRow.__id === "string" ? orderRow.__id : null;
         if (!orderId) {
           await logEvent("warn", "could not resolve order doc id", {
             fenaPaymentId,
