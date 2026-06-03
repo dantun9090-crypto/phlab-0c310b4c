@@ -21,7 +21,6 @@ import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.mer
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
-import { Route as ApiPublicHooksFenaPaymentRouteImport } from './routes/api/public/hooks/fena-payment'
 import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hooks/fena'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -87,12 +86,6 @@ const ApiPublicHooksPrerenderRecacheRoute =
     path: '/api/public/hooks/prerender-recache',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksFenaPaymentRoute =
-  ApiPublicHooksFenaPaymentRouteImport.update({
-    id: '/api/public/hooks/fena-payment',
-    path: '/api/public/hooks/fena-payment',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicHooksFenaRoute = ApiPublicHooksFenaRouteImport.update({
   id: '/api/public/hooks/fena',
   path: '/api/public/hooks/fena',
@@ -112,7 +105,6 @@ export interface FileRoutesByFullPath {
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
-  '/api/public/hooks/fena-payment': typeof ApiPublicHooksFenaPaymentRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
 }
 export interface FileRoutesByTo {
@@ -128,7 +120,6 @@ export interface FileRoutesByTo {
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
-  '/api/public/hooks/fena-payment': typeof ApiPublicHooksFenaPaymentRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
 }
 export interface FileRoutesById {
@@ -145,7 +136,6 @@ export interface FileRoutesById {
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
-  '/api/public/hooks/fena-payment': typeof ApiPublicHooksFenaPaymentRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
 }
 export interface FileRouteTypes {
@@ -163,7 +153,6 @@ export interface FileRouteTypes {
     | '/api/public/csp-report'
     | '/api/public/send-mail'
     | '/api/public/hooks/fena'
-    | '/api/public/hooks/fena-payment'
     | '/api/public/hooks/prerender-recache'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -179,7 +168,6 @@ export interface FileRouteTypes {
     | '/api/public/csp-report'
     | '/api/public/send-mail'
     | '/api/public/hooks/fena'
-    | '/api/public/hooks/fena-payment'
     | '/api/public/hooks/prerender-recache'
   id:
     | '__root__'
@@ -195,7 +183,6 @@ export interface FileRouteTypes {
     | '/api/public/csp-report'
     | '/api/public/send-mail'
     | '/api/public/hooks/fena'
-    | '/api/public/hooks/fena-payment'
     | '/api/public/hooks/prerender-recache'
   fileRoutesById: FileRoutesById
 }
@@ -211,7 +198,6 @@ export interface RootRouteChildren {
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
   ApiPublicHooksFenaRoute: typeof ApiPublicHooksFenaRoute
-  ApiPublicHooksFenaPaymentRoute: typeof ApiPublicHooksFenaPaymentRoute
   ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
 }
 
@@ -301,13 +287,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPrerenderRecacheRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/fena-payment': {
-      id: '/api/public/hooks/fena-payment'
-      path: '/api/public/hooks/fena-payment'
-      fullPath: '/api/public/hooks/fena-payment'
-      preLoaderRoute: typeof ApiPublicHooksFenaPaymentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/fena': {
       id: '/api/public/hooks/fena'
       path: '/api/public/hooks/fena'
@@ -342,9 +321,18 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
   ApiPublicHooksFenaRoute: ApiPublicHooksFenaRoute,
-  ApiPublicHooksFenaPaymentRoute: ApiPublicHooksFenaPaymentRoute,
   ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
