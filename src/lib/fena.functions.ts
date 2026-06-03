@@ -57,7 +57,15 @@ export const createFenaPaymentLink = createServerFn({ method: "POST" })
       throw new Error("Only GBP orders are supported by Fena");
     }
     const amount = Math.round(rawAmount * 100) / 100;
-    const reference = String(order.orderNumber ?? data.orderId).slice(0, 35);
+    // Fena reference spec: 1..12 chars, /^[a-z0-9-]+$/i — sanitize aggressively
+    // or the create-and-process call is rejected with a 400.
+    const rawRef = String(order.orderNumber ?? data.orderId);
+    const reference =
+      rawRef
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 12) || data.orderId.slice(0, 12);
     const customerName = String(
       order.customerName ??
         `${order.firstName ?? ""} ${order.lastName ?? ""}`.trim() ??
