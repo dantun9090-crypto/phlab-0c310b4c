@@ -189,12 +189,32 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
           return new Response("Upstream verify failed", { status: 502 });
         }
 
-        // Find the matching order. We stored `fenaPaymentId` on creation.
-        const orderRow = await findDocByFieldAdmin(
+        // Find the matching order. Primary: `fenaPaymentId` stored at create.
+        // Fallback 1: `fenaReference` (the sanitized lowercase ref we sent to
+        // Fena — useful if the order doc write raced behind the webhook, or
+        // if a prior payment attempt overwrote `fenaPaymentId`).
+        // Fallback 2: order doc id == authoritative.reference uppercased
+        // (defensive — short refs are derived from the orderId).
+        let orderRow = await findDocByFieldAdmin(
           "orders",
           "fenaPaymentId",
           fenaPaymentId,
         );
+        let matchedBy: "fenaPaymentId" | "fenaReference" | "docId" | "none" = orderRow
+          ? "fenaPaymentId"
+          : "none";
+        const refLower = String(authoritative.reference ?? "").toLowerCase();
+        if (!orderRow && refLower) {
+          orderRow = await findDocByFieldAdmin("orders", "fenaReference", refLower);
+          if (orderRow) matchedBy = "fenaReference";
+        }
+        await logEvent("info", "lookup", {
+          fenaPaymentId,
+          reference: refLower,
+          fenaStatus: String(authoritative.status ?? ""),
+          matchedBy,
+          matchedOrderId: orderRow && typeof orderRow.__id === "string" ? orderRow.__id : null,
+        });
         if (!orderRow) {
           // Persist a durable orphan record so admins can reconcile (e.g. refund
           // the customer, or re-link to an order created out-of-band). Using
