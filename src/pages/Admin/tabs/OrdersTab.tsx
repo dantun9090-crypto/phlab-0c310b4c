@@ -143,6 +143,37 @@ function PaymentStatusBadge({ paymentStatus }: { paymentStatus: string }) {
     </span>
   );
 }
+
+// ── Fena (Open Banking) status badge ──
+// Webhook is the authoritative source for Fena payments — no manual confirmation.
+function isFenaOrder(order: any): boolean {
+  return order?.paymentProvider === 'fena'
+    || order?.paymentMethod === 'fena_ob'
+    || order?.paymentMethod === 'pay_by_bank'
+    || typeof order?.fenaStatus === 'string';
+}
+function FenaStatusBadge({ order }: { order: any }) {
+  const fenaStatus = String(order?.fenaStatus || '').toLowerCase();
+  if (fenaStatus === 'paid') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-green-500/20 text-green-400 border-green-500/30">
+        <CheckCheck className="w-3 h-3" />Auto-paid by Fena
+      </span>
+    );
+  }
+  if (fenaStatus === 'cancelled' || fenaStatus === 'expired') {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-red-500/20 text-red-400 border-red-500/30">
+        <XCircle className="w-3 h-3" />Fena {fenaStatus}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border bg-blue-500/20 text-blue-400 border-blue-500/30">
+      <CreditCard className="w-3 h-3" />Fena {fenaStatus || 'pending'}
+    </span>
+  );
+}
 export default function OrdersTab() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -656,6 +687,7 @@ export default function OrdersTab() {
                     {(order as any).paymentMethod === 'bank_transfer' && (
                       <PaymentStatusBadge paymentStatus={(order as any).paymentStatus || 'pending_bank_transfer'} />
                     )}
+                    {isFenaOrder(order) && <FenaStatusBadge order={order} />}
                     {order.trackingNumber && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400 font-mono">
                         <Hash className="w-3 h-3" />{order.trackingNumber}
@@ -776,6 +808,7 @@ export default function OrdersTab() {
                           <Banknote className="w-3 h-3" /> Bank Transfer
                         </span>
                       )}
+                      {isFenaOrder(selected) && <FenaStatusBadge order={selected} />}
                       <span className="text-[#9cb8d9] text-xs">
                         {selected.orderDate?.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </span>
