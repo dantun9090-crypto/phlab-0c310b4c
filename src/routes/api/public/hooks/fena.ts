@@ -298,51 +298,21 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
           return new Response("No order id", { status: 200 });
         }
 
-        const seenEvents = Array.isArray(orderRow.fenaEventIds)
-          ? (orderRow.fenaEventIds as string[])
-          : [];
-        const eventKey = `${authoritative.status}:${authoritative.completedAt ?? ""}`;
-        if (seenEvents.includes(eventKey)) {
+        const { updates, eventKey, isDuplicate, transitionedToPaid } =
+          computeFenaOrderUpdates({
+            orderRow,
+            authoritative: authoritative as { status?: unknown; completedAt?: unknown },
+            fenaPaymentId,
+          });
+
+        if (isDuplicate) {
           await logEvent("info", "duplicate event ignored", { fenaPaymentId, eventKey });
           return new Response("Already processed", { status: 200 });
         }
 
+        const fenaStatus = String(updates.fenaStatus ?? "");
         const currentStatus = String(orderRow.status ?? "pending").toLowerCase();
-        const fenaStatus = String(authoritative.status ?? "").toLowerCase();
-
-        const isPaid = fenaStatus === "paid";
-        const isCancelled = fenaStatus === "cancelled" || fenaStatus === "expired";
-
-        const updates: Record<string, unknown> = {
-          fenaStatus,
-          fenaEventIds: [...seenEvents.slice(-19), eventKey],
-          fenaLastEventAt: new Date(),
-        };
-
-        // Only stamp paymentProvider + fenaPaymentId on the actual
-        // pending → paid transition. Non-paid events (sent, pending,
-        // cancelled) must NOT mutate these "source of truth" fields.
-        // Additionally, never overwrite these fields if they are already
-        // set on the order — the first webhook that flipped the order to
-        // paid is authoritative; any later event (replay, status echo,
-        // refund attempt) must leave the original link intact.
-        const alreadyPaid = currentStatus === "paid";
-        const existingProvider =
-          typeof orderRow.paymentProvider === "string" ? orderRow.paymentProvider : "";
-        const existingFenaPaymentId =
-          typeof orderRow.fenaPaymentId === "string" ? orderRow.fenaPaymentId : "";
-
-        if (isPaid && !alreadyPaid) {
-          updates.status = "paid";
-          updates.paidAt = new Date();
-          // Only write provider / payment id if not already pinned.
-          if (!existingProvider) updates.paymentProvider = "fena";
-          if (fenaPaymentId && !existingFenaPaymentId) {
-            updates.fenaPaymentId = fenaPaymentId;
-          }
-        } else if (isCancelled && currentStatus === "pending") {
-          updates.status = "cancelled";
-        }
+        const isPaid = transitionedToPaid;
 
         await updateDocAdmin("orders", orderId, updates);
 
