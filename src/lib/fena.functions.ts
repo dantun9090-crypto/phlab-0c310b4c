@@ -11,8 +11,8 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getDocAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
-import { verifyFirebaseIdToken } from "@/lib/server/firebase-auth-admin";
+import { getDocAdmin, listDocsAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
+import { requireFirebaseAdmin, verifyFirebaseIdToken } from "@/lib/server/firebase-auth-admin";
 import { fenaCreateAndProcess } from "@/lib/fena.server";
 
 const SITE_ORIGIN = "https://phlabs.co.uk";
@@ -92,4 +92,34 @@ export const getOrderPaymentStatus = createServerFn({ method: "POST" })
       paid: ["paid", "completed", "shipped", "fulfilled"].includes(status),
       fenaStatus: order.fenaStatus ?? null,
     };
+  });
+
+const AdminEventsInput = z.object({
+  idToken: z.string().min(10).max(4096),
+});
+
+export interface FenaWebhookEventRow {
+  id: string;
+  level?: string;
+  message?: string;
+  ctx?: string;
+  createdAt?: string;
+}
+
+export const listFenaWebhookEvents = createServerFn({ method: "POST" })
+  .inputValidator((d) => AdminEventsInput.parse(d))
+  .handler(async ({ data }): Promise<FenaWebhookEventRow[]> => {
+    await requireFirebaseAdmin(data.idToken);
+    const rows = await listDocsAdmin("fena_webhook_events", {
+      orderBy: "createdAt",
+      direction: "DESCENDING",
+      limit: 50,
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      level: typeof row.level === "string" ? row.level : undefined,
+      message: typeof row.message === "string" ? row.message : undefined,
+      ctx: row.ctx && typeof row.ctx === "object" ? JSON.stringify(row.ctx, null, 2) : undefined,
+      createdAt: typeof row.createdAt === "string" ? row.createdAt : undefined,
+    }));
   });
