@@ -8,6 +8,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAllOrders, updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
 import { logAdminAction } from '@/lib/admin-audit';
+import { isFenaAutoPaid } from '@/lib/fena-filter';
 
 import { buildDispatchEmail } from '@/templates/dispatchEmail';
 
