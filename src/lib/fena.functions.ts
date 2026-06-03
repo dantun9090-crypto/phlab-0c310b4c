@@ -102,7 +102,7 @@ export interface FenaWebhookEventRow {
   id: string;
   level?: string;
   message?: string;
-  ctx?: Record<string, unknown>;
+  ctx?: string;
   createdAt?: string;
 }
 
@@ -119,7 +119,7 @@ export const listFenaWebhookEvents = createServerFn({ method: "POST" })
       id: row.id,
       level: typeof row.level === "string" ? row.level : undefined,
       message: typeof row.message === "string" ? row.message : undefined,
-      ctx: row.ctx && typeof row.ctx === "object" ? (row.ctx as Record<string, unknown>) : undefined,
+      ctx: row.ctx && typeof row.ctx === "object" ? JSON.stringify(row.ctx, null, 2) : undefined,
       createdAt: typeof row.createdAt === "string" ? row.createdAt : undefined,
     }));
   });
