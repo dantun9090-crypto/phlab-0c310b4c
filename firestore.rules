@@ -168,6 +168,16 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ---------- fena webhook events (admin-read diagnostic log) ----------
+    // Written exclusively by the /api/public/hooks/fena server route via
+    // firebase-admin (bypasses rules). Admins read from the Fena tab.
+    match /fena_webhook_events/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+
+
 
     // ---------- default deny ----------
     match /{document=**} {
