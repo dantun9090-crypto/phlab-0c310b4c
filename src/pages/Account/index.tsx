@@ -715,6 +715,23 @@ export default function AccountPage() {
                                           <PaymentCountdown createdAt={(order as any).createdAt || order.orderDate} />
                                         )}
 
+                                        {/* Pay Again — for unpaid Pay-by-Bank / Fena orders (e.g. user cancelled at bank) */}
+                                        {(['pending', 'pending_payment'].includes(String(order.status).toLowerCase())) &&
+                                          ((order as any).paymentMethod === 'pay_by_bank' || (order as any).paymentProvider === 'fena') && (
+                                          <div className="rounded-xl bg-orange-500/[0.06] border border-orange-500/20 p-4 flex items-center justify-between gap-3">
+                                            <div className="text-sm">
+                                              <p className="text-orange-200 font-semibold">Payment not completed</p>
+                                              <p className="text-[#9cb8d9] text-xs mt-0.5">Your bank payment was cancelled or didn't go through. You can try again.</p>
+                                            </div>
+                                            <a
+                                              href={`/payment?orderId=${encodeURIComponent(order.id)}`}
+                                              className="shrink-0 px-4 py-2.5 rounded-lg bg-orange-500 hover:bg-orange-400 text-white text-sm font-semibold transition-colors whitespace-nowrap"
+                                            >
+                                              Pay Again
+                                            </a>
+                                          </div>
+                                        )}
+
                                         {/* Tracking */}
                                         <div>
                                           <p className={sectionHeading}>Tracking</p>
