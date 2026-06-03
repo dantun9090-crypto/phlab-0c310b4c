@@ -117,6 +117,18 @@ export interface FenaWebhookEventRow {
   message?: string;
   ctx?: string;
   createdAt?: string;
+  /** Convenience fields extracted from `ctx` for the admin UI. */
+  orderId?: string;
+  fenaPaymentId?: string;
+  fenaStatus?: string;
+  newStatus?: string;
+  reason?: string;
+  matchOutcome: "matched" | "orphan" | "duplicate" | "bank_account" | "error" | "info";
+}
+
+function pickStr(obj: Record<string, unknown>, key: string): string | undefined {
+  const v = obj[key];
+  return typeof v === "string" && v.trim() ? v : undefined;
 }
 
 export const listFenaWebhookEvents = createServerFn({ method: "POST" })
@@ -128,13 +140,40 @@ export const listFenaWebhookEvents = createServerFn({ method: "POST" })
       direction: "DESCENDING",
       limit: 50,
     });
-    return rows.map((row) => ({
-      id: row.id,
-      level: typeof row.level === "string" ? row.level : undefined,
-      message: typeof row.message === "string" ? row.message : undefined,
-      ctx: row.ctx && typeof row.ctx === "object" ? JSON.stringify(row.ctx, null, 2) : undefined,
-      createdAt: typeof row.createdAt === "string" ? row.createdAt : undefined,
-    }));
+    return rows.map((row) => {
+      const ctxObj =
+        row.ctx && typeof row.ctx === "object" && !Array.isArray(row.ctx)
+          ? (row.ctx as Record<string, unknown>)
+          : {};
+      const message = typeof row.message === "string" ? row.message : "";
+      const level = typeof row.level === "string" ? row.level : "";
+      const orderId = pickStr(ctxObj, "orderId");
+      const reason = pickStr(ctxObj, "reason");
+      const matchOutcome: FenaWebhookEventRow["matchOutcome"] = /^ORPHAN/i.test(message)
+        ? "orphan"
+        : /^bank-accounts:/i.test(message)
+          ? "bank_account"
+          : /^duplicate event/i.test(message)
+            ? "duplicate"
+            : /^processed$/i.test(message) && orderId
+              ? "matched"
+              : level === "error"
+                ? "error"
+                : "info";
+      return {
+        id: row.id,
+        level: level || undefined,
+        message: message || undefined,
+        ctx: Object.keys(ctxObj).length ? JSON.stringify(ctxObj, null, 2) : undefined,
+        createdAt: typeof row.createdAt === "string" ? row.createdAt : undefined,
+        orderId,
+        fenaPaymentId: pickStr(ctxObj, "fenaPaymentId"),
+        fenaStatus: pickStr(ctxObj, "fenaStatus"),
+        newStatus: pickStr(ctxObj, "newStatus"),
+        reason,
+        matchOutcome,
+      };
+    });
   });
 
 export interface FenaOrphanPaymentRow {
