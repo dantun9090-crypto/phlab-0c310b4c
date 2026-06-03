@@ -316,12 +316,13 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
           fenaStatus,
           fenaEventIds: [...seenEvents.slice(-19), eventKey],
           fenaLastEventAt: new Date(),
+          paymentProvider: "fena",
         };
+        if (fenaPaymentId) updates.fenaPaymentId = fenaPaymentId;
 
         if (isPaid && currentStatus !== "paid") {
           updates.status = "paid";
           updates.paidAt = new Date();
-          updates.paymentProvider = "fena";
         } else if (isCancelled && currentStatus === "pending") {
           updates.status = "cancelled";
         }
