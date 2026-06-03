@@ -183,8 +183,13 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if false;
     }
-
-
+    // ---------- fena bank accounts (mirrored from Fena via webhook) ----------
+    // Webhook writes here on bank-accounts/* events after re-fetch.
+    // Admin reads from the Fena tab.
+    match /fena_bank_accounts/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
 
 
     // ---------- default deny ----------
