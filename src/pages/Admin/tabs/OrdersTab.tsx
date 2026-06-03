@@ -840,6 +840,20 @@ export default function OrdersTab() {
                         </span>
                       )}
                       {isFenaOrder(selected) && <FenaStatusBadge order={selected} />}
+                      <ProviderBadge order={selected} />
+                      {(selected as any).fenaPaymentId && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(String((selected as any).fenaPaymentId));
+                          }}
+                          title="Copy Fena payment ID"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-mono border bg-blue-500/10 text-blue-300 border-blue-500/30 hover:bg-blue-500/20"
+                        >
+                          <Copy className="w-3 h-3" />
+                          {String((selected as any).fenaPaymentId).slice(0, 12)}…
+                        </button>
+                      )}
                       <span className="text-[#9cb8d9] text-xs">
                         {selected.orderDate?.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </span>
