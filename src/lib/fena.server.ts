@@ -247,3 +247,27 @@ export async function fenaGetBankAccount(id: string): Promise<FenaBankAccount> {
   if (!acc?.id) throw new Error("Fena bank-account response missing id");
   return acc;
 }
+
+export async function fenaRenameBankAccount(id: string, name: string): Promise<void> {
+  await fenaJson(`/company/bank-accounts/${encodeURIComponent(id)}/edit-name`, {
+    method: "PUT",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function fenaSetDefaultBankAccount(id: string): Promise<void> {
+  await fenaJson(`/company/bank-accounts/${encodeURIComponent(id)}/set-default`, {
+    method: "PUT",
+  });
+}
+
+export async function fenaConnectBankAccount(provider: string): Promise<string> {
+  const parsed = await fenaJson<{ data?: { authUri?: string } }>(
+    `/company/bank-accounts/connect`,
+    { method: "POST", body: JSON.stringify({ provider }) },
+  );
+  const uri = parsed.data?.authUri;
+  if (!uri || typeof uri !== "string") throw new Error("Fena connect response missing authUri");
+  return uri;
+}
+
