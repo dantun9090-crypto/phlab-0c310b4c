@@ -310,6 +310,7 @@ export default function AdminPage() {
         case 'auditlog': return <AuditLogTab />;
         case 'authevents': return <AuthEventsTab />;
         case 'mailhealth': return <MailHealthTab />;
+        case 'fena': return <FenaTab />;
         case 'emailmarketing': return <EmailMarketingTab />;
 
         case 'emailpreview': return <EmailPreviewTab />;
