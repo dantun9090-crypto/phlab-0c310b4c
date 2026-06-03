@@ -1,19 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Helmet } from "react-helmet-async";
-import { auth, onAuthStateChanged } from "@/lib/firebase";
-import { getOrderPaymentStatus } from "@/lib/fena.functions";
 import { Loader, CheckCircle2, AlertCircle } from "lucide-react";
 
 export const Route = createFileRoute("/payment/success")({
   component: PaymentSuccessPage,
 });
 
+const VERIFY_URL = "https://worker.phlabs.co.uk/api/fena/verify-payment";
+
 type Phase = "checking" | "paid" | "pending" | "error";
 
 function PaymentSuccessPage() {
-  const fetchStatus = useServerFn(getOrderPaymentStatus);
   const [phase, setPhase] = useState<Phase>("checking");
   const [reference, setReference] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -21,7 +19,8 @@ function PaymentSuccessPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const orderId = params.get("orderId") || "";
+    // Accept both ?order_id=... (Worker / Fena convention) and ?orderId=...
+    const orderId = params.get("order_id") || params.get("orderId") || "";
     setReference(orderId);
     if (!orderId) {
       setPhase("error");
@@ -29,40 +28,39 @@ function PaymentSuccessPage() {
       return;
     }
 
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        setPhase("error");
-        setError("Please sign in to view this order.");
-        return;
-      }
-      const deadline = Date.now() + 240_000;
-      const tick = async () => {
-        if (stopRef.current) return;
-        try {
-          const idToken = await user.getIdToken();
-          const res = await fetchStatus({ data: { idToken, orderId } });
-          if (res.paid) {
-            setPhase("paid");
-            return;
-          }
-          if (Date.now() > deadline) {
-            setPhase("pending");
-            return;
-          }
-          setTimeout(tick, 2500);
-        } catch (err: any) {
-          setPhase("error");
-          setError(err?.message || "Failed to check status.");
+    const deadline = Date.now() + 240_000; // 4 min
+    const tick = async () => {
+      if (stopRef.current) return;
+      try {
+        const resp = await fetch(
+          `${VERIFY_URL}?order_id=${encodeURIComponent(orderId)}`,
+          { method: "GET", headers: { Accept: "application/json" } },
+        );
+        if (!resp.ok) throw new Error(`Verify failed (${resp.status})`);
+        const data = (await resp.json()) as {
+          paid?: boolean;
+          status?: string;
+        };
+        if (data.paid || data.status === "paid" || data.status === "verified") {
+          setPhase("paid");
+          return;
         }
-      };
-      tick();
-    });
+        if (Date.now() > deadline) {
+          setPhase("pending");
+          return;
+        }
+        setTimeout(tick, 2500);
+      } catch (err: any) {
+        setPhase("error");
+        setError(err?.message || "Failed to check payment status.");
+      }
+    };
+    tick();
 
     return () => {
       stopRef.current = true;
-      unsub();
     };
-  }, [fetchStatus]);
+  }, []);
 
   return (
     <>
@@ -84,10 +82,11 @@ function PaymentSuccessPage() {
           {phase === "paid" && (
             <>
               <CheckCircle2 className="w-12 h-12 mx-auto text-emerald-500" />
-              <h1 className="mt-4 text-2xl font-bold text-white">Payment received</h1>
+              <h1 className="mt-4 text-2xl font-bold text-white">Payment Confirmed</h1>
               <p className="mt-2 text-sm text-slate-300">
-                Thank you. Order <span className="font-mono text-emerald-400">{reference}</span> is
-                now confirmed and a receipt is on its way to your email.
+                Thank you. Order{" "}
+                <span className="font-mono text-emerald-400">{reference}</span> is now confirmed
+                and a receipt is on its way to your email.
               </p>
               <a
                 href="/account"
@@ -102,9 +101,9 @@ function PaymentSuccessPage() {
               <Loader className="w-10 h-10 mx-auto text-amber-400" />
               <h1 className="mt-4 text-xl font-bold text-white">Still processing</h1>
               <p className="mt-2 text-sm text-slate-300">
-                Your bank hasn't confirmed yet. You can safely close this page —
-                we'll email you as soon as the payment lands. Order
-                <span className="ml-1 font-mono text-emerald-400">{reference}</span>.
+                Your bank hasn't confirmed yet. You can safely close this page — we'll email you
+                as soon as the payment lands. Order{" "}
+                <span className="font-mono text-emerald-400">{reference}</span>.
               </p>
             </>
           )}
