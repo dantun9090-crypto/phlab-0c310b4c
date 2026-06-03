@@ -1221,12 +1221,15 @@ export default function CheckoutPage() {
                     {/* Selected method info */}
                     {form.paymentMethod === 'pay_by_bank' ? (
                       <div className="bg-emerald-500/8 border border-emerald-500/20 rounded-xl p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Landmark className="w-4 h-4 text-emerald-400" />
-                          <p className="text-sm font-semibold text-white">Pay by Bank (Fena)</p>
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center gap-2">
+                            <Landmark className="w-4 h-4 text-emerald-400" />
+                            <p className="text-sm font-semibold text-white">Pay by Bank (Instant Bank Transfer)</p>
+                          </div>
+                          <UkBankBadges />
                         </div>
                         <p className="text-xs text-gray-400 leading-relaxed">
-                          After placing your order you'll be redirected to your bank to approve the payment. Your order is marked paid automatically as soon as Fena confirms it.
+                          Pay instantly from your UK bank account — no card needed, no chargebacks. You'll be redirected to your bank to approve the payment, then back here to confirm your order.
                         </p>
                       </div>
                     ) : (
