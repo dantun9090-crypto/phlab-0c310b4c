@@ -223,6 +223,53 @@ export async function getDocAdmin(
 }
 
 /**
+ * List recent documents from a collection using service-account credentials.
+ * Intended for admin-only diagnostic panels where client SDK reads can be
+ * blocked by production Firestore rules or delayed rule deployment.
+ */
+export async function listDocsAdmin(
+  collection: string,
+  options: { orderBy?: string; direction?: "ASCENDING" | "DESCENDING"; limit?: number } = {},
+): Promise<Array<Record<string, unknown> & { id: string }>> {
+  const acct = getServiceAccount();
+  const token = await getAccessToken();
+  const url = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents:runQuery`;
+  const body: Record<string, unknown> = {
+    structuredQuery: {
+      from: [{ collectionId: collection }],
+      orderBy: options.orderBy
+        ? [{ field: { fieldPath: options.orderBy }, direction: options.direction ?? "DESCENDING" }]
+        : undefined,
+      limit: Math.min(Math.max(options.limit ?? 50, 1), 100),
+    },
+  };
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(`Firestore list failed: ${res.status} ${await res.text()}`);
+  }
+  const rows = (await res.json()) as Array<{
+    document?: { name: string; fields?: Record<string, any> };
+  }>;
+  return rows.flatMap((r) => {
+    if (!r.document) return [];
+    const out: Record<string, unknown> & { id: string } = {
+      id: r.document.name.split("/").pop() ?? "",
+    };
+    for (const [k, v] of Object.entries(r.document.fields || {})) {
+      out[k] = fromFirestoreValue(v);
+    }
+    return [out];
+  });
+}
+
+/**
  * Run a single-field equality query against a collection and return the
  * first matching document (or null). Useful for "look up by code" style
  * checks (promo codes, coupons, etc.) from server routes.
