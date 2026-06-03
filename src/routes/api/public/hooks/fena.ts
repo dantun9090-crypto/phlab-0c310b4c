@@ -321,11 +321,24 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
         // Only stamp paymentProvider + fenaPaymentId on the actual
         // pending → paid transition. Non-paid events (sent, pending,
         // cancelled) must NOT mutate these "source of truth" fields.
-        if (isPaid && currentStatus !== "paid") {
+        // Additionally, never overwrite these fields if they are already
+        // set on the order — the first webhook that flipped the order to
+        // paid is authoritative; any later event (replay, status echo,
+        // refund attempt) must leave the original link intact.
+        const alreadyPaid = currentStatus === "paid";
+        const existingProvider =
+          typeof orderRow.paymentProvider === "string" ? orderRow.paymentProvider : "";
+        const existingFenaPaymentId =
+          typeof orderRow.fenaPaymentId === "string" ? orderRow.fenaPaymentId : "";
+
+        if (isPaid && !alreadyPaid) {
           updates.status = "paid";
           updates.paidAt = new Date();
-          updates.paymentProvider = "fena";
-          if (fenaPaymentId) updates.fenaPaymentId = fenaPaymentId;
+          // Only write provider / payment id if not already pinned.
+          if (!existingProvider) updates.paymentProvider = "fena";
+          if (fenaPaymentId && !existingFenaPaymentId) {
+            updates.fenaPaymentId = fenaPaymentId;
+          }
         } else if (isCancelled && currentStatus === "pending") {
           updates.status = "cancelled";
         }
