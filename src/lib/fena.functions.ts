@@ -25,7 +25,9 @@ import {
   fenaListBankAccounts,
   getFenaEnvLabel,
   invalidateFenaEnvCache,
+  fenaListPayments,
   type FenaBankAccount,
+  type FenaListedPayment,
 } from "@/lib/fena.server";
 
 const SITE_ORIGIN = "https://phlabs.co.uk";
@@ -537,3 +539,68 @@ export const dryRunFenaConnection = createServerFn({ method: "POST" })
     }
   });
 
+
+// ---------- Transactions list (live from Fena) ----------
+
+export interface FenaTransactionRow {
+  id: string;
+  status: string;
+  amount: string;
+  currency?: string;
+  reference?: string;
+  customerEmail?: string;
+  customerName?: string;
+  description?: string;
+  paymentMethod?: string;
+  isSandbox?: boolean;
+  transaction?: string;
+  createdAt?: string;
+  completedAt?: string;
+  orderId?: string | null;
+  orderStatus?: string | null;
+  orderNumber?: string | null;
+}
+
+export const listFenaTransactionsAdmin = createServerFn({ method: "POST" })
+  .inputValidator((d) => AdminEventsInput.parse(d))
+  .handler(async ({ data }): Promise<{ env: string; transactions: FenaTransactionRow[] }> => {
+    await requireFirebaseAdmin(data.idToken);
+    const payments: FenaListedPayment[] = await fenaListPayments(50);
+
+    // Best-effort link each payment to the matching order in Firestore.
+    const rows = await Promise.all(
+      payments.map(async (p): Promise<FenaTransactionRow> => {
+        let orderId: string | null = null;
+        let orderStatus: string | null = null;
+        let orderNumber: string | null = null;
+        try {
+          const match = await findDocByFieldAdmin("orders", "fenaPaymentId", p.id);
+          if (match) {
+            orderId = typeof match.__id === "string" ? match.__id : null;
+            orderStatus = typeof match.status === "string" ? match.status : null;
+            orderNumber = typeof match.orderNumber === "string" ? match.orderNumber : null;
+          }
+        } catch {/* ignore link failures */}
+        return {
+          id: p.id,
+          status: String(p.status ?? ""),
+          amount: String(p.amount ?? ""),
+          currency: typeof p.currency === "string" ? p.currency : undefined,
+          reference: typeof p.reference === "string" ? p.reference : undefined,
+          customerEmail: typeof p.customerEmail === "string" ? p.customerEmail : undefined,
+          customerName: typeof p.customerName === "string" ? p.customerName : undefined,
+          description: typeof p.description === "string" ? p.description : undefined,
+          paymentMethod: typeof p.paymentMethod === "string" ? p.paymentMethod : undefined,
+          isSandbox: typeof p.isSandbox === "boolean" ? p.isSandbox : undefined,
+          transaction: typeof p.transaction === "string" ? p.transaction : undefined,
+          createdAt: typeof p.createdAt === "string" ? p.createdAt : undefined,
+          completedAt: typeof p.completedAt === "string" ? p.completedAt : undefined,
+          orderId,
+          orderStatus,
+          orderNumber,
+        };
+      }),
+    );
+
+    return { env: await getFenaEnvLabel(), transactions: rows };
+  });

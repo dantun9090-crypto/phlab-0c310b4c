@@ -4,6 +4,7 @@ import {
   listFenaWebhookEvents,
   listFenaOrphanPayments,
   listFenaBankAccountsAdmin,
+  listFenaTransactionsAdmin,
   reconcileFenaOrphans,
   getFenaIntegrationSettings,
   setFenaIntegrationEnv,
@@ -13,6 +14,7 @@ import {
   type FenaReconcileResult,
   type FenaBankAccountRow,
   type FenaDryRunResult,
+  type FenaTransactionRow,
 } from '@/lib/fena.functions';
 
 type EnvLabel = 'sandbox' | 'production';
@@ -21,6 +23,9 @@ export default function FenaTab() {
   const [rows, setRows] = useState<FenaWebhookEventRow[]>([]);
   const [orphans, setOrphans] = useState<FenaOrphanPaymentRow[]>([]);
   const [accounts, setAccounts] = useState<FenaBankAccountRow[]>([]);
+  const [transactions, setTransactions] = useState<FenaTransactionRow[]>([]);
+  const [txErr, setTxErr] = useState<string>('');
+  const [txLoading, setTxLoading] = useState(false);
   const [env, setEnv] = useState<EnvLabel | ''>('');
   const [envSource, setEnvSource] = useState<'settings' | 'secret' | 'default' | ''>('');
   const [hasCreds, setHasCreds] = useState<boolean>(false);
@@ -60,10 +65,25 @@ export default function FenaTab() {
       } catch (e: any) {
         setAccountsErr(e?.message || 'Failed to load bank accounts');
       }
+      void loadTransactions();
     } catch (e: any) {
       setErr(e?.message || 'Failed to load events');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadTransactions() {
+    setTxLoading(true);
+    try {
+      const idToken = await getToken();
+      const res = await listFenaTransactionsAdmin({ data: { idToken } });
+      setTransactions(res.transactions);
+      setTxErr('');
+    } catch (e: any) {
+      setTxErr(e?.message || 'Failed to load transactions');
+    } finally {
+      setTxLoading(false);
     }
   }
 
@@ -256,6 +276,106 @@ export default function FenaTab() {
           </div>
         )}
       </div>
+
+      {/* Transactions (live from Fena) */}
+      <div className="rounded-lg border-2 border-slate-700 bg-slate-900 p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold text-white">
+            Transactions
+            <span className="ml-2 text-xs font-normal text-slate-400">
+              (live from Fena · last 50)
+            </span>
+          </h2>
+          <button
+            type="button"
+            onClick={() => void loadTransactions()}
+            disabled={txLoading}
+            className="rounded-lg border-2 border-slate-600 bg-slate-800 px-3 min-h-[36px] text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+          >
+            {txLoading ? 'Refreshing…' : 'Refresh'}
+          </button>
+        </div>
+        {txErr && <p className="text-rose-400 text-sm">{txErr}</p>}
+        {!txErr && !txLoading && transactions.length === 0 && (
+          <p className="text-slate-400 text-sm">No transactions yet.</p>
+        )}
+        {transactions.length > 0 && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs font-mono text-slate-200">
+              <thead className="text-slate-400 text-[11px] uppercase">
+                <tr className="border-b border-slate-800">
+                  <th className="text-left py-2 pr-3">Status</th>
+                  <th className="text-left py-2 pr-3">Amount</th>
+                  <th className="text-left py-2 pr-3">Reference</th>
+                  <th className="text-left py-2 pr-3">Order</th>
+                  <th className="text-left py-2 pr-3">Customer</th>
+                  <th className="text-left py-2 pr-3">Created</th>
+                  <th className="text-left py-2 pr-3">Payment ID</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.map((t) => {
+                  const s = t.status.toLowerCase();
+                  const statusColor =
+                    s === 'paid'
+                      ? 'bg-emerald-700 text-emerald-50'
+                      : s === 'cancelled' || s === 'expired' || s === 'failed'
+                        ? 'bg-rose-700 text-rose-50'
+                        : 'bg-amber-700 text-amber-50';
+                  return (
+                    <tr
+                      key={t.id}
+                      className="border-b border-slate-800/60 hover:bg-slate-950/40"
+                    >
+                      <td className="py-2 pr-3">
+                        <span
+                          className={
+                            'rounded px-2 py-0.5 text-[10px] font-semibold ' + statusColor
+                          }
+                        >
+                          {t.status || '?'}
+                        </span>
+                        {t.isSandbox && (
+                          <span className="ml-1 text-[10px] text-amber-300">sandbox</span>
+                        )}
+                      </td>
+                      <td className="py-2 pr-3 text-white">
+                        {t.currency || 'GBP'} {t.amount || '?'}
+                      </td>
+                      <td className="py-2 pr-3 text-slate-300">{t.reference || '—'}</td>
+                      <td className="py-2 pr-3">
+                        {t.orderId ? (
+                          <a
+                            href={`/payment?orderId=${encodeURIComponent(t.orderId)}`}
+                            className="text-emerald-400 hover:underline"
+                          >
+                            {t.orderNumber || t.orderId}
+                          </a>
+                        ) : (
+                          <span className="text-rose-400">unlinked</span>
+                        )}
+                        {t.orderStatus && (
+                          <span className="ml-1 text-slate-500">({t.orderStatus})</span>
+                        )}
+                      </td>
+                      <td className="py-2 pr-3 text-slate-400">
+                        {t.customerName || t.customerEmail || '—'}
+                      </td>
+                      <td className="py-2 pr-3 text-slate-500">
+                        {t.createdAt ? new Date(t.createdAt).toLocaleString() : '—'}
+                      </td>
+                      <td className="py-2 pr-3 text-amber-300 truncate max-w-[160px]">
+                        {t.id}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
 
       {/* Orphan payments + reconcile */}
       <div className="rounded-lg border-2 border-rose-700 bg-slate-900 p-4">
