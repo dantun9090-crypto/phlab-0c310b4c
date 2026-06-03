@@ -91,6 +91,9 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
         const eventName = String(payload.eventName ?? "").toLowerCase();
 
         // Bank-accounts events: re-fetch authoritative account and mirror it.
+        // The inbound payload is also mirrored (provider, creationType,
+        // bankConsentExpired, consentID, bankStatementAttachmentURL, …) so the
+        // admin tab reflects the latest state even when the re-fetch fails.
         if (eventScope === "bank-accounts") {
           const accountId =
             payload.id ||
@@ -100,25 +103,62 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
             await logEvent("warn", "bank-accounts: missing account id", { payload });
             return new Response("Missing account id", { status: 400 });
           }
+
+          // Extract whitelisted fields from the inbound webhook payload.
+          const p = payload as Record<string, unknown>;
+          const str = (v: unknown) => (typeof v === "string" ? v : undefined);
+          const bool = (v: unknown) => (typeof v === "boolean" ? v : undefined);
+          const inboundMirror: Record<string, unknown> = {
+            id: accountId,
+            sortCode: str(p.sortCode),
+            accountNumber: str(p.accountNumber),
+            name: str(p.name),
+            provider: str(p.provider),
+            isDefault: bool(p.isDefault),
+            status: str(p.status),
+            creationType: str(p.creationType),
+            createdAt: str(p.createdAt),
+            bankStatementAttachmentURL: str(p.bankStatementAttachmentURL),
+            consentID: str(p.consentID),
+            bankConsentExpired: str(p.bankConsentExpired),
+          };
+          // Strip undefined so we don't overwrite existing fields with null.
+          for (const k of Object.keys(inboundMirror)) {
+            if (inboundMirror[k] === undefined) delete inboundMirror[k];
+          }
+
+          let authoritative: Record<string, unknown> | null = null;
           try {
-            const account = await fenaGetBankAccount(accountId);
-            await updateDocAdmin("fena_bank_accounts", accountId, {
-              ...account,
-              lastEventName: eventName || null,
-              lastSeenAt: new Date(),
-            });
-            await logEvent("info", `bank-accounts:${eventName || "update"}`, {
-              accountId,
-              status: account.status,
-            });
-            return Response.json({ ok: true });
+            authoritative = (await fenaGetBankAccount(accountId)) as Record<string, unknown>;
           } catch (err) {
-            await logEvent("error", "bank-accounts re-fetch failed", {
+            await logEvent("warn", "bank-accounts re-fetch failed, mirroring payload only", {
               accountId,
               error: err instanceof Error ? err.message : String(err),
             });
-            return new Response("Upstream verify failed", { status: 502 });
           }
+
+          try {
+            await updateDocAdmin("fena_bank_accounts", accountId, {
+              ...inboundMirror,
+              ...(authoritative ?? {}),
+              lastEventName: eventName || null,
+              lastSeenAt: new Date(),
+            });
+          } catch (err) {
+            await logEvent("error", "bank-accounts write failed", {
+              accountId,
+              error: err instanceof Error ? err.message : String(err),
+            });
+            return new Response("Write failed", { status: 500 });
+          }
+
+          await logEvent("info", `bank-accounts:${eventName || "update"}`, {
+            accountId,
+            status: (authoritative?.status as string) ?? inboundMirror.status,
+            bankConsentExpired: inboundMirror.bankConsentExpired,
+            reFetched: Boolean(authoritative),
+          });
+          return Response.json({ ok: true });
         }
 
         // Defensive: Fena's payment webhook may use `id`, `data.id`,
