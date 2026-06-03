@@ -1189,12 +1189,15 @@ export default function CheckoutPage() {
                         }`}
                       >
                         <Landmark className={`w-5 h-5 mt-0.5 shrink-0 ${form.paymentMethod === 'pay_by_bank' ? 'text-emerald-400' : 'text-gray-400'}`} />
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-sm font-semibold text-white flex items-center gap-2">
                             Pay by Bank
                             <span className="text-[10px] uppercase tracking-wider bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">Instant</span>
                           </p>
-                          <p className="text-[11px] text-gray-400 leading-snug mt-0.5">Open Banking via Fena — pay from your banking app, no card needed.</p>
+                          <p className="text-[11px] text-gray-400 leading-snug mt-0.5">
+                            Pay instantly from your UK bank account — no card needed, no chargebacks.
+                          </p>
+                          <UkBankBadges className="mt-2" />
                         </div>
                       </button>
                       <button
