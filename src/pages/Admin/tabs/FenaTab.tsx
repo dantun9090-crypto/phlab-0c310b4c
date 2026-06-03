@@ -3,8 +3,10 @@ import { auth } from '@/lib/firebase';
 import {
   listFenaWebhookEvents,
   listFenaOrphanPayments,
+  reconcileFenaOrphans,
   type FenaWebhookEventRow,
   type FenaOrphanPaymentRow,
+  type FenaReconcileResult,
 } from '@/lib/fena.functions';
 
 export default function FenaTab() {
@@ -12,25 +14,47 @@ export default function FenaTab() {
   const [orphans, setOrphans] = useState<FenaOrphanPaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string>('');
+  const [reconciling, setReconciling] = useState(false);
+  const [reconcileResult, setReconcileResult] = useState<FenaReconcileResult | null>(null);
+
+  async function loadAll() {
+    setLoading(true);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Not signed in');
+      const [events, orphanRows] = await Promise.all([
+        listFenaWebhookEvents({ data: { idToken } }),
+        listFenaOrphanPayments({ data: { idToken } }),
+      ]);
+      setRows(events);
+      setOrphans(orphanRows);
+    } catch (e: any) {
+      setErr(e?.message || 'Failed to load events');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    (async () => {
-      try {
-        const idToken = await auth.currentUser?.getIdToken();
-        if (!idToken) throw new Error('Not signed in');
-        const [events, orphanRows] = await Promise.all([
-          listFenaWebhookEvents({ data: { idToken } }),
-          listFenaOrphanPayments({ data: { idToken } }),
-        ]);
-        setRows(events);
-        setOrphans(orphanRows);
-      } catch (e: any) {
-        setErr(e?.message || 'Failed to load events');
-      } finally {
-        setLoading(false);
-      }
-    })();
+    loadAll();
   }, []);
+
+  async function runReconcile() {
+    setReconciling(true);
+    setReconcileResult(null);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Not signed in');
+      const res = await reconcileFenaOrphans({ data: { idToken } });
+      setReconcileResult(res);
+      await loadAll();
+    } catch (e: any) {
+      setErr(e?.message || 'Reconcile failed');
+    } finally {
+      setReconciling(false);
+    }
+  }
+
 
   return (
     <div className="p-6 space-y-4">
@@ -54,10 +78,52 @@ export default function FenaTab() {
           </span>
         </h2>
         <p className="text-xs text-slate-400 mb-3">
-          These need manual reconciliation: refund the customer in Fena, or
-          re-link to an existing order by setting <code>fenaPaymentId</code> on
-          the correct order doc.
+          These need reconciliation. Use <strong>Reconcile now</strong> to try
+          to auto-match each orphan by <code>fenaPaymentId</code> or
+          <code>orderNumber</code>; remaining ones must be handled manually
+          (refund in Fena, or set <code>fenaPaymentId</code> on the correct
+          order doc).
         </p>
+        <div className="flex items-center gap-3 mb-3">
+          <button
+            type="button"
+            onClick={runReconcile}
+            disabled={reconciling}
+            className="rounded-lg border-2 border-emerald-600 bg-emerald-700 px-4 min-h-[40px] text-sm font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
+          >
+            {reconciling ? 'Reconciling…' : 'Reconcile now'}
+          </button>
+          {reconcileResult && (
+            <span className="text-xs text-slate-300">
+              scanned {reconcileResult.scanned} · resolved{' '}
+              <span className="text-emerald-400">{reconcileResult.resolved}</span> ·
+              unresolved{' '}
+              <span className="text-amber-400">{reconcileResult.unresolved}</span>
+            </span>
+          )}
+        </div>
+        {reconcileResult && reconcileResult.details.length > 0 && (
+          <div className="mb-3 rounded border border-slate-700 bg-slate-950 p-2 text-xs font-mono space-y-1 max-h-[200px] overflow-y-auto">
+            {reconcileResult.details.map((d, i) => (
+              <div key={`${d.fenaPaymentId}-${i}`} className="text-slate-300">
+                <span
+                  className={
+                    d.outcome === 'resolved'
+                      ? 'text-emerald-400'
+                      : d.outcome === 'no_match'
+                        ? 'text-amber-400'
+                        : 'text-rose-400'
+                  }
+                >
+                  {d.outcome}
+                </span>{' '}
+                <span className="text-amber-300">{d.fenaPaymentId}</span>
+                {d.orderId && <> → order {d.orderId} ({d.newStatus})</>}
+                {d.message && <span className="text-slate-500"> — {d.message}</span>}
+              </div>
+            ))}
+          </div>
+        )}
         {loading && <p className="text-slate-400 text-sm">Loading…</p>}
         {!loading && orphans.length === 0 && (
           <p className="text-emerald-400 text-sm">No orphan payments — all clear.</p>
