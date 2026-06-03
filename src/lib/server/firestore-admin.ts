@@ -143,6 +143,37 @@ export async function addDocAdmin(
   return (await res.json()) as { name: string };
 }
 
+/**
+ * Patch fields on an existing document. Only the provided fields are
+ * updated (Firestore REST `updateMask.fieldPaths`); other fields are left
+ * untouched. Bypasses security rules — server-only.
+ */
+export async function updateDocAdmin(
+  collection: string,
+  id: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  const acct = getServiceAccount();
+  const token = await getAccessToken();
+  const fieldPaths = Object.keys(data);
+  if (fieldPaths.length === 0) return;
+  const mask = fieldPaths
+    .map((p) => `updateMask.fieldPaths=${encodeURIComponent(p)}`)
+    .join("&");
+  const url = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents/${encodeURIComponent(collection)}/${encodeURIComponent(id)}?${mask}`;
+  const res = await fetch(url, {
+    method: "PATCH",
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ fields: objectToFields(data) }),
+  });
+  if (!res.ok) {
+    throw new Error(`Firestore update failed: ${res.status} ${await res.text()}`);
+  }
+}
+
 // ---- Firestore REST value decoding ----
 function fromFirestoreValue(v: any): unknown {
   if (!v || typeof v !== "object") return v;
@@ -242,6 +273,10 @@ export async function findDocByFieldAdmin(
   for (const [k, v] of Object.entries(docRow.fields || {})) {
     out[k] = fromFirestoreValue(v);
   }
+  // `docRow.name` is `projects/.../documents/<collection>/<docId>` —
+  // expose the trailing doc id so callers can patch the same row.
+  const parts = docRow.name.split("/");
+  out.__id = parts[parts.length - 1];
   return out;
 }
 

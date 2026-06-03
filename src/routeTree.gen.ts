@@ -15,10 +15,12 @@ import { Route as GoogleMerchantFeedDotxmlRouteImport } from './routes/google-me
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
+import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
+import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hooks/fena'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -51,6 +53,11 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => ProductsRoute,
 } as any)
+const PaymentSuccessRoute = PaymentSuccessRouteImport.update({
+  id: '/payment/success',
+  path: '/payment/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminMerchantFeedPreviewRoute =
   AdminMerchantFeedPreviewRouteImport.update({
     id: '/admin/merchant-feed-preview',
@@ -73,6 +80,11 @@ const ApiPublicHooksPrerenderRecacheRoute =
     path: '/api/public/hooks/prerender-recache',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksFenaRoute = ApiPublicHooksFenaRouteImport.update({
+  id: '/api/public/hooks/fena',
+  path: '/api/public/hooks/fena',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -81,9 +93,11 @@ export interface FileRoutesByFullPath {
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
 }
 export interface FileRoutesByTo {
@@ -93,9 +107,11 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
 }
 export interface FileRoutesById {
@@ -106,9 +122,11 @@ export interface FileRoutesById {
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
 }
 export interface FileRouteTypes {
@@ -120,9 +138,11 @@ export interface FileRouteTypes {
     | '/products'
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
+    | '/payment/success'
     | '/products/$slug'
     | '/api/public/csp-report'
     | '/api/public/send-mail'
+    | '/api/public/hooks/fena'
     | '/api/public/hooks/prerender-recache'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,9 +152,11 @@ export interface FileRouteTypes {
     | '/products'
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
+    | '/payment/success'
     | '/products/$slug'
     | '/api/public/csp-report'
     | '/api/public/send-mail'
+    | '/api/public/hooks/fena'
     | '/api/public/hooks/prerender-recache'
   id:
     | '__root__'
@@ -144,9 +166,11 @@ export interface FileRouteTypes {
     | '/products'
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
+    | '/payment/success'
     | '/products/$slug'
     | '/api/public/csp-report'
     | '/api/public/send-mail'
+    | '/api/public/hooks/fena'
     | '/api/public/hooks/prerender-recache'
   fileRoutesById: FileRoutesById
 }
@@ -157,8 +181,10 @@ export interface RootRouteChildren {
   ProductsRoute: typeof ProductsRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
+  PaymentSuccessRoute: typeof PaymentSuccessRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
+  ApiPublicHooksFenaRoute: typeof ApiPublicHooksFenaRoute
   ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
 }
 
@@ -206,6 +232,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsSlugRouteImport
       parentRoute: typeof ProductsRoute
     }
+    '/payment/success': {
+      id: '/payment/success'
+      path: '/payment/success'
+      fullPath: '/payment/success'
+      preLoaderRoute: typeof PaymentSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/merchant-feed-preview': {
       id: '/admin/merchant-feed-preview'
       path: '/admin/merchant-feed-preview'
@@ -234,6 +267,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPrerenderRecacheRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/fena': {
+      id: '/api/public/hooks/fena'
+      path: '/api/public/hooks/fena'
+      fullPath: '/api/public/hooks/fena'
+      preLoaderRoute: typeof ApiPublicHooksFenaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -256,20 +296,12 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsRoute: ProductsRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
+  PaymentSuccessRoute: PaymentSuccessRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
+  ApiPublicHooksFenaRoute: ApiPublicHooksFenaRoute,
   ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
