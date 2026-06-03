@@ -454,6 +454,12 @@ export default function CheckoutPage() {
 
     setIsPlacing(true);
     setLoginError('');
+    if (form.paymentMethod === 'pay_by_bank') {
+      setFenaStep('creating-order');
+      setFenaOrderId('');
+    } else {
+      setFenaStep('idle');
+    }
 
     try {
       let userId = firebaseUser?.uid;
