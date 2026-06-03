@@ -72,6 +72,41 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
           return new Response("Bad JSON", { status: 400 });
         }
 
+        // --- Route by eventScope ---
+        const eventScope = String(payload.eventScope ?? "").toLowerCase();
+        const eventName = String(payload.eventName ?? "").toLowerCase();
+
+        // Bank-accounts events: re-fetch authoritative account and mirror it.
+        if (eventScope === "bank-accounts") {
+          const accountId =
+            payload.id ||
+            payload.data?.id ||
+            (payload as { accountId?: string }).accountId;
+          if (!accountId || typeof accountId !== "string") {
+            await logEvent("warn", "bank-accounts: missing account id", { payload });
+            return new Response("Missing account id", { status: 400 });
+          }
+          try {
+            const account = await fenaGetBankAccount(accountId);
+            await updateDocAdmin("fena_bank_accounts", accountId, {
+              ...account,
+              lastEventName: eventName || null,
+              lastSeenAt: new Date(),
+            });
+            await logEvent("info", `bank-accounts:${eventName || "update"}`, {
+              accountId,
+              status: account.status,
+            });
+            return Response.json({ ok: true });
+          } catch (err) {
+            await logEvent("error", "bank-accounts re-fetch failed", {
+              accountId,
+              error: err instanceof Error ? err.message : String(err),
+            });
+            return new Response("Upstream verify failed", { status: 502 });
+          }
+        }
+
         const fenaPaymentId = payload.id || payload.data?.id;
         if (!fenaPaymentId || typeof fenaPaymentId !== "string") {
           await logEvent("warn", "missing payment id", { payload });
