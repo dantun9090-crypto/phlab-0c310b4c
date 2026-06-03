@@ -188,8 +188,13 @@ export interface FenaBankAccount {
   accountNumber?: string;
   sortCode?: string;
   bank?: string;
+  provider?: string;
+  creationType?: string;
   currency?: string;
   createdAt?: string;
+  bankStatementAttachmentURL?: string;
+  consentID?: string;
+  bankConsentExpired?: "day-30" | "day-14" | "day-1" | "expired" | "up-to-date" | string;
   [key: string]: unknown;
 }
 
