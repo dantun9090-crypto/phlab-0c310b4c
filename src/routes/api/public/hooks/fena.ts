@@ -212,10 +212,7 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
           if (orderRow) matchedBy = "fenaReference";
         }
         if (!orderRow && refUpper) {
-          const direct = await (await import("@/lib/server/firestore-admin")).getDocAdmin(
-            "orders",
-            refUpper,
-          );
+          const direct = await getDocAdmin("orders", refUpper);
           if (direct) {
             orderRow = { ...(direct as Record<string, unknown>), __id: refUpper };
             matchedBy = "docId";
