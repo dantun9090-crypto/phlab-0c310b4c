@@ -9,6 +9,10 @@ import {
   getFenaIntegrationSettings,
   setFenaIntegrationEnv,
   dryRunFenaConnection,
+  renameFenaBankAccount,
+  setDefaultFenaBankAccount,
+  connectFenaBankAccount,
+  FENA_BANK_PROVIDERS,
   type FenaWebhookEventRow,
   type FenaOrphanPaymentRow,
   type FenaReconcileResult,
@@ -252,38 +256,13 @@ export default function FenaTab() {
       </div>
 
       {/* Bank accounts (live from Fena) */}
-      <div className="rounded-lg border-2 border-slate-700 bg-slate-900 p-4">
-        <h2 className="text-lg font-semibold text-white mb-2">Bank accounts</h2>
-        {accountsErr && <p className="text-rose-400 text-sm">{accountsErr}</p>}
-        {!accountsErr && accounts.length === 0 && (
-          <p className="text-slate-400 text-sm">No bank accounts connected in Fena yet.</p>
-        )}
-        {accounts.length > 0 && (
-          <div className="space-y-2">
-            {accounts.map((a) => (
-              <div
-                key={a.id}
-                className="rounded border border-slate-800 bg-slate-950 p-3 text-xs font-mono text-slate-200"
-              >
-                <div className="flex flex-wrap gap-3 mb-1">
-                  <span className="text-white font-bold">{a.name || a.bank || a.id}</span>
-                  {a.isDefault && <span className="text-emerald-400">default</span>}
-                  <span className="text-slate-400">{a.status || '—'}</span>
-                  <span className="text-slate-400">{a.currency || ''}</span>
-                </div>
-                <div className="text-slate-500">
-                  {a.iban ? (
-                    <>IBAN: <span className="text-slate-300">{a.iban}</span></>
-                  ) : a.sortCode || a.accountNumber ? (
-                    <>UK: <span className="text-slate-300">{a.sortCode || ''} {a.accountNumber || ''}</span></>
-                  ) : null}
-                </div>
-                <div className="text-slate-600">id: {a.id}</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <BankAccountsSection
+        accounts={accounts}
+        accountsErr={accountsErr}
+        getToken={getToken}
+        reload={loadAll}
+      />
+
 
       {/* Transactions (live from Fena) */}
       <div className="rounded-lg border-2 border-slate-700 bg-slate-900 p-4">
