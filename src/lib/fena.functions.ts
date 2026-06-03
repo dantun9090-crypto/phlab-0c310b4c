@@ -140,6 +140,26 @@ export interface FenaOrphanPaymentRow {
   receivedAt?: string;
   reason?: string;
   lastSeenAt?: string;
+  resolved?: boolean;
+  resolvedAt?: string;
+  resolvedOrderId?: string;
+}
+
+function coerceOrphan(row: Record<string, unknown> & { id: string }): FenaOrphanPaymentRow {
+  return {
+    id: row.id,
+    fenaPaymentId: typeof row.fenaPaymentId === "string" ? row.fenaPaymentId : undefined,
+    reference: typeof row.reference === "string" ? row.reference : undefined,
+    amount: typeof row.amount === "string" ? row.amount : undefined,
+    fenaStatus: typeof row.fenaStatus === "string" ? row.fenaStatus : undefined,
+    completedAt: typeof row.completedAt === "string" ? row.completedAt : null,
+    receivedAt: typeof row.receivedAt === "string" ? row.receivedAt : undefined,
+    reason: typeof row.reason === "string" ? row.reason : undefined,
+    lastSeenAt: typeof row.lastSeenAt === "string" ? row.lastSeenAt : undefined,
+    resolved: row.resolved === true,
+    resolvedAt: typeof row.resolvedAt === "string" ? row.resolvedAt : undefined,
+    resolvedOrderId: typeof row.resolvedOrderId === "string" ? row.resolvedOrderId : undefined,
+  };
 }
 
 export const listFenaOrphanPayments = createServerFn({ method: "POST" })
@@ -151,15 +171,161 @@ export const listFenaOrphanPayments = createServerFn({ method: "POST" })
       direction: "DESCENDING",
       limit: 50,
     });
-    return rows.map((row) => ({
-      id: row.id,
-      fenaPaymentId: typeof row.fenaPaymentId === "string" ? row.fenaPaymentId : undefined,
-      reference: typeof row.reference === "string" ? row.reference : undefined,
-      amount: typeof row.amount === "string" ? row.amount : undefined,
-      fenaStatus: typeof row.fenaStatus === "string" ? row.fenaStatus : undefined,
-      completedAt: typeof row.completedAt === "string" ? row.completedAt : null,
-      receivedAt: typeof row.receivedAt === "string" ? row.receivedAt : undefined,
-      reason: typeof row.reason === "string" ? row.reason : undefined,
-      lastSeenAt: typeof row.lastSeenAt === "string" ? row.lastSeenAt : undefined,
-    }));
+    return rows.map(coerceOrphan).filter((r) => !r.resolved);
   });
+
+export interface FenaReconcileResult {
+  scanned: number;
+  resolved: number;
+  unresolved: number;
+  details: Array<{
+    fenaPaymentId: string;
+    outcome: "resolved" | "no_match" | "error";
+    orderId?: string;
+    newStatus?: string;
+    message?: string;
+  }>;
+}
+
+/**
+ * Walk every unresolved orphan and try to attach it to an existing order
+ * by `fenaPaymentId`, then by `orderNumber == reference`. When matched,
+ * apply the same status transition the webhook would have, and stamp the
+ * orphan record as resolved so it stops appearing in the admin list.
+ */
+export const reconcileFenaOrphans = createServerFn({ method: "POST" })
+  .inputValidator((d) => AdminEventsInput.parse(d))
+  .handler(async ({ data }): Promise<FenaReconcileResult> => {
+    await requireFirebaseAdmin(data.idToken);
+    const orphans = await listDocsAdmin("fena_orphan_payments", {
+      orderBy: "lastSeenAt",
+      direction: "DESCENDING",
+      limit: 100,
+    });
+    const result: FenaReconcileResult = {
+      scanned: 0,
+      resolved: 0,
+      unresolved: 0,
+      details: [],
+    };
+
+    for (const raw of orphans) {
+      if (raw.resolved === true) continue;
+      const fenaPaymentId =
+        typeof raw.fenaPaymentId === "string" ? raw.fenaPaymentId : raw.id;
+      if (!fenaPaymentId) continue;
+      result.scanned += 1;
+
+      try {
+        // 1) match by fenaPaymentId on the order doc
+        let orderRow = await findDocByFieldAdmin(
+          "orders",
+          "fenaPaymentId",
+          fenaPaymentId,
+        );
+        // 2) fall back to matching by orderNumber == reference
+        const reference = typeof raw.reference === "string" ? raw.reference : "";
+        if (!orderRow && reference) {
+          orderRow = await findDocByFieldAdmin("orders", "orderNumber", reference);
+        }
+        if (!orderRow) {
+          result.unresolved += 1;
+          result.details.push({
+            fenaPaymentId,
+            outcome: "no_match",
+            message: reference
+              ? `no order with fenaPaymentId or orderNumber=${reference}`
+              : "no order match and no reference",
+          });
+          continue;
+        }
+
+        const orderId = typeof orderRow.__id === "string" ? orderRow.__id : "";
+        if (!orderId) {
+          result.unresolved += 1;
+          result.details.push({
+            fenaPaymentId,
+            outcome: "error",
+            message: "matched order has no id",
+          });
+          continue;
+        }
+
+        // Re-fetch the authoritative payment from Fena so we don't trust
+        // anything the orphan record cached.
+        const authoritative = await fenaGetPayment(fenaPaymentId);
+        const fenaStatus = String(authoritative.status ?? "").toLowerCase();
+        const currentStatus = String(orderRow.status ?? "pending").toLowerCase();
+        const isPaid = fenaStatus === "paid";
+        const isCancelled = fenaStatus === "cancelled" || fenaStatus === "expired";
+
+        const updates: Record<string, unknown> = {
+          fenaStatus,
+          fenaPaymentId,
+          fenaReconciledAt: new Date(),
+          paymentProvider: "fena",
+        };
+        if (isPaid && currentStatus !== "paid") {
+          updates.status = "paid";
+          updates.paidAt = new Date();
+        } else if (isCancelled && currentStatus === "pending") {
+          updates.status = "cancelled";
+        }
+
+        await updateDocAdmin("orders", orderId, updates);
+
+        // Confirmation mail on first paid transition during reconciliation.
+        if (isPaid && currentStatus !== "paid") {
+          const to = String(orderRow.customerEmail ?? orderRow.email ?? "");
+          if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+            try {
+              await addDocAdmin("mail", {
+                to,
+                message: {
+                  subject: `PH Labs — payment received for ${reference || orderId}`,
+                  html: `<!doctype html><html><body style="font-family:Arial,sans-serif;padding:24px;color:#0f172a">
+                    <h2 style="color:#10b981">Payment received</h2>
+                    <p>Thank you — we've received your payment for order
+                    <strong>${reference || orderId}</strong>.</p>
+                  </body></html>`,
+                  text: `Payment received for order ${reference || orderId}. Thank you.`,
+                },
+                createdAt: new Date(),
+                source: "fena:reconcile",
+              });
+            } catch {
+              // mail failure shouldn't abort reconcile
+            }
+          }
+        }
+
+        await updateDocAdmin("fena_orphan_payments", String(raw.id), {
+          resolved: true,
+          resolvedAt: new Date(),
+          resolvedOrderId: orderId,
+          resolvedStatus: updates.status ?? currentStatus,
+        });
+
+        // Sanity: make sure the order doc actually exists post-update.
+        await getDocAdmin("orders", orderId);
+
+        result.resolved += 1;
+        result.details.push({
+          fenaPaymentId,
+          outcome: "resolved",
+          orderId,
+          newStatus: String(updates.status ?? currentStatus),
+        });
+      } catch (err) {
+        result.unresolved += 1;
+        result.details.push({
+          fenaPaymentId,
+          outcome: "error",
+          message: err instanceof Error ? err.message : String(err),
+        });
+      }
+    }
+
+    return result;
+  });
+
