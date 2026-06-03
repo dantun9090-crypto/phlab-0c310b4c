@@ -471,7 +471,7 @@ export default function OrdersTab() {
       address.toLowerCase().includes(s);
     const matchStatus = statusFilter === 'all' || o.status === statusFilter ||
       (statusFilter === 'pending' && o.status === 'pending_payment') ||
-      (statusFilter === 'fena_paid' && isFenaOrder(o) && String((o as any).fenaStatus || '').toLowerCase() === 'paid');
+      (statusFilter === 'fena_paid' && (o as any).paymentProvider === 'fena' && String((o as any).fenaStatus || '').toLowerCase() === 'paid');
     return matchSearch && matchStatus;
   });
 
