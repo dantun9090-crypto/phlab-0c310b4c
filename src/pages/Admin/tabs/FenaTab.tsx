@@ -3,15 +3,20 @@ import { auth } from '@/lib/firebase';
 import {
   listFenaWebhookEvents,
   listFenaOrphanPayments,
+  listFenaBankAccountsAdmin,
   reconcileFenaOrphans,
   type FenaWebhookEventRow,
   type FenaOrphanPaymentRow,
   type FenaReconcileResult,
+  type FenaBankAccountRow,
 } from '@/lib/fena.functions';
 
 export default function FenaTab() {
   const [rows, setRows] = useState<FenaWebhookEventRow[]>([]);
   const [orphans, setOrphans] = useState<FenaOrphanPaymentRow[]>([]);
+  const [accounts, setAccounts] = useState<FenaBankAccountRow[]>([]);
+  const [env, setEnv] = useState<string>('');
+  const [accountsErr, setAccountsErr] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string>('');
   const [reconciling, setReconciling] = useState(false);
@@ -28,6 +33,16 @@ export default function FenaTab() {
       ]);
       setRows(events);
       setOrphans(orphanRows);
+      // Bank accounts call hits Fena's API live — keep its error isolated
+      // so a Fena outage doesn't blank the whole tab.
+      try {
+        const banks = await listFenaBankAccountsAdmin({ data: { idToken } });
+        setAccounts(banks.accounts);
+        setEnv(banks.env);
+        setAccountsErr('');
+      } catch (e: any) {
+        setAccountsErr(e?.message || 'Failed to load bank accounts');
+      }
     } catch (e: any) {
       setErr(e?.message || 'Failed to load events');
     } finally {
@@ -59,7 +74,21 @@ export default function FenaTab() {
   return (
     <div className="p-6 space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-white">Fena Payments</h1>
+        <h1 className="text-2xl font-bold text-white">
+          Fena Payments
+          {env && (
+            <span
+              className={
+                'ml-3 align-middle rounded px-2 py-0.5 text-xs font-semibold ' +
+                (env === 'production'
+                  ? 'bg-emerald-700 text-emerald-50'
+                  : 'bg-amber-700 text-amber-50')
+              }
+            >
+              {env}
+            </span>
+          )}
+        </h1>
         <p className="text-sm text-slate-400 mt-1">
           Open Banking integration. Webhook URL:{' '}
           <code className="text-emerald-400">https://phlabs.co.uk/api/public/hooks/fena</code>
@@ -68,7 +97,47 @@ export default function FenaTab() {
           Customer redirect URL:{' '}
           <code className="text-emerald-400">https://phlabs.co.uk/payment/success</code>
         </p>
+        <p className="text-xs text-slate-500 mt-1">
+          Switch sandbox/production by setting the <code>FENA_ENV</code> secret
+          (<code>sandbox</code> or <code>production</code>, defaults to production).
+        </p>
       </div>
+
+      <div className="rounded-lg border-2 border-slate-700 bg-slate-900 p-4">
+        <h2 className="text-lg font-semibold text-white mb-2">Bank accounts</h2>
+        {accountsErr && <p className="text-rose-400 text-sm">{accountsErr}</p>}
+        {!accountsErr && accounts.length === 0 && (
+          <p className="text-slate-400 text-sm">No bank accounts connected in Fena yet.</p>
+        )}
+        {accounts.length > 0 && (
+          <div className="space-y-2">
+            {accounts.map((a) => (
+              <div
+                key={a.id}
+                className="rounded border border-slate-800 bg-slate-950 p-3 text-xs font-mono text-slate-200"
+              >
+                <div className="flex flex-wrap gap-3 mb-1">
+                  <span className="text-white font-bold">{a.name || a.bank || a.id}</span>
+                  {a.isDefault && (
+                    <span className="text-emerald-400">default</span>
+                  )}
+                  <span className="text-slate-400">{a.status || '—'}</span>
+                  <span className="text-slate-400">{a.currency || ''}</span>
+                </div>
+                <div className="text-slate-500">
+                  {a.iban
+                    ? <>IBAN: <span className="text-slate-300">{a.iban}</span></>
+                    : (a.sortCode || a.accountNumber)
+                      ? <>UK: <span className="text-slate-300">{a.sortCode || ''} {a.accountNumber || ''}</span></>
+                      : null}
+                </div>
+                <div className="text-slate-600">id: {a.id}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
 
       <div className="rounded-lg border-2 border-rose-700 bg-slate-900 p-4">
         <h2 className="text-lg font-semibold text-white mb-1">
