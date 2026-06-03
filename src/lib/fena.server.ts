@@ -6,7 +6,16 @@
  *
  * NEVER import from client code.
  */
-const FENA_BASE = "https://epos.api.prod-gcp.fena.co/open";
+const FENA_BASE = (() => {
+  const env = (process.env.FENA_ENV || "production").toLowerCase();
+  return env === "sandbox"
+    ? "https://epos.api.sandbox-gcp.fena.co/open"
+    : "https://epos.api.prod-gcp.fena.co/open";
+})();
+export const FENA_ENV_LABEL: "sandbox" | "production" =
+  (process.env.FENA_ENV || "production").toLowerCase() === "sandbox"
+    ? "sandbox"
+    : "production";
 
 function authHeaders(): Record<string, string> {
   const id = process.env.FENA_TERMINAL_ID;
