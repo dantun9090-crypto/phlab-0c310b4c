@@ -22,19 +22,19 @@ function PaymentSuccessPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     // Accept both ?order_id=... (Fena convention) and ?orderId=...
-    const orderId = params.get("order_id") || params.get("orderId") || "";
+    // Firestore order doc IDs are uppercase (PHP-…); Fena echoes back lowercase.
+    const rawOrderId = params.get("order_id") || params.get("orderId") || "";
+    const orderId = rawOrderId.toUpperCase();
     setReference(orderId);
     if (!orderId) {
       setPhase("error");
       setError("No order reference in URL. Please complete checkout from your cart.");
       return;
     }
-    // Reject obviously invalid references early (stale tabs, direct URL access,
-    // bookmarked old sessions). Real orders are always `PHP-…` and 10+ chars.
-    if (!/^PHP-[A-Z0-9-]{6,}$/i.test(orderId)) {
+    if (!/^PHP-[A-Z0-9-]{6,}$/.test(orderId)) {
       setPhase("error");
       setError(
-        `Invalid order reference "${orderId}". This usually means an old browser tab or a direct link. Please return to checkout and place the order again.`,
+        `Invalid order reference "${rawOrderId}". This usually means an old browser tab or a direct link. Please return to checkout and place the order again.`,
       );
       return;
     }
@@ -46,11 +46,16 @@ function PaymentSuccessPage() {
         return;
       }
       const deadline = Date.now() + 240_000;
+      // Webhook may still be propagating when the user lands here.
+      // Give "Order not found" up to 10s of retries before surfacing it.
+      const notFoundDeadline = Date.now() + 10_000;
       const tick = async () => {
         if (stopRef.current) return;
         try {
           const idToken = await user.getIdToken();
+          console.log("Success page checking order:", orderId);
           const res = await fetchStatus({ data: { idToken, orderId } });
+          console.log("Order found:", true, "status:", res.status, "paid:", res.paid);
           if (res.paid) {
             setPhase("paid");
             return;
@@ -61,8 +66,15 @@ function PaymentSuccessPage() {
           }
           setTimeout(tick, 2500);
         } catch (err: any) {
+          const msg = String(err?.message || "");
+          console.log("Order found:", false, "error:", msg);
+          // Retry transient "Order not found" while webhook catches up.
+          if (/order not found/i.test(msg) && Date.now() < notFoundDeadline) {
+            setTimeout(tick, 1000);
+            return;
+          }
           setPhase("error");
-          setError(err?.message || "Failed to check status.");
+          setError(msg || "Failed to check status.");
         }
       };
       tick();
