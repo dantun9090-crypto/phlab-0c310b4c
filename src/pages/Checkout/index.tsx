@@ -567,6 +567,8 @@ export default function CheckoutPage() {
 
       // Pay by Bank (Fena Open Banking): redirect to hosted payment page.
       if (form.paymentMethod === 'pay_by_bank') {
+        setFenaOrderId(orderId);
+        setFenaStep('creating-link');
         try {
           // Fena requires a Firebase ID token; anonymous auth is fine.
           let current = auth.currentUser;
@@ -578,11 +580,18 @@ export default function CheckoutPage() {
           const { hppUrl } = await createFenaPaymentLink({
             data: { orderId, idToken: idTokenForFena },
           });
+          setFenaStep('redirecting');
           localStorage.removeItem('php_cart');
           setCart([]);
-          window.location.href = hppUrl;
+          // Small delay so the "Redirecting…" banner is visible before the
+          // browser leaves the page; the user sees we created the order and
+          // are handing off to their bank, not just a silent jump.
+          setTimeout(() => {
+            window.location.href = hppUrl;
+          }, 250);
           return;
         } catch (err: any) {
+          setFenaStep('failed');
           setLoginError(err?.message || 'Could not start Pay by Bank. Please try again or use Manual Bank Transfer.');
           setIsPlacing(false);
           return;
