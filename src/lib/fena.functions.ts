@@ -563,13 +563,25 @@ export interface FenaTransactionRow {
 
 export const listFenaTransactionsAdmin = createServerFn({ method: "POST" })
   .inputValidator((d) => AdminEventsInput.parse(d))
-  .handler(async ({ data }): Promise<{ env: string; transactions: FenaTransactionRow[] }> => {
+  .handler(async ({ data }): Promise<{
+    env: "sandbox" | "production";
+    transactions: FenaTransactionRow[];
+    totalFetched: number;
+    filteredOut: number;
+  }> => {
     await requireFirebaseAdmin(data.idToken);
+    const env = await getFenaEnvLabel();
     const payments: FenaListedPayment[] = await fenaListPayments(50);
+
+    // Filter to match the currently selected Fena environment.
+    const matching = payments.filter((p) => {
+      const isSandbox = p.isSandbox === true;
+      return env === "sandbox" ? isSandbox : !isSandbox;
+    });
 
     // Best-effort link each payment to the matching order in Firestore.
     const rows = await Promise.all(
-      payments.map(async (p): Promise<FenaTransactionRow> => {
+      matching.map(async (p): Promise<FenaTransactionRow> => {
         let orderId: string | null = null;
         let orderStatus: string | null = null;
         let orderNumber: string | null = null;
@@ -602,5 +614,11 @@ export const listFenaTransactionsAdmin = createServerFn({ method: "POST" })
       }),
     );
 
-    return { env: await getFenaEnvLabel(), transactions: rows };
+    return {
+      env,
+      transactions: rows,
+      totalFetched: payments.length,
+      filteredOut: payments.length - rows.length,
+    };
   });
+
