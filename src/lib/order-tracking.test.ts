@@ -24,8 +24,11 @@ describe("getOrderTrackingIndex", () => {
     expect(getOrderTrackingIndex("cancelled")).toBe(-1);
   });
 
-  it("returns -1 for unknown statuses so the bar stays unhighlighted", () => {
+  it("returns -1 for refunded — timeline must NOT advance (option A)", () => {
     expect(getOrderTrackingIndex("refunded")).toBe(-1);
+  });
+
+  it("returns -1 for unknown / empty statuses so the bar stays unhighlighted", () => {
     expect(getOrderTrackingIndex("")).toBe(-1);
     expect(getOrderTrackingIndex("bogus")).toBe(-1);
   });

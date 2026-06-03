@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth, db, getUserOrders, logoutUser, Order, redeemReferralBalance, doc, getDoc, updateDoc, deleteDoc, onAuthStateChanged, FirebaseUser, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendEmailVerification } from '@/lib/firebase';
-import { ORDER_TRACKING_STEPS, getOrderTrackingIndex } from '@/lib/order-tracking';
+import { OrderTrackingBar } from '@/components/OrderTrackingBar';
 
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -95,36 +95,10 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function OrderTrackingBar({ status }: { status: string }) {
-  const steps = ORDER_TRACKING_STEPS;
-  if (status === 'cancelled') {
-    return (
-      <div className="flex items-center gap-2 text-red-400 text-xs">
-        <X className="w-4 h-4" />
-        <span>Order Cancelled</span>
-      </div>
-    );
-  }
-  const currentIdx = getOrderTrackingIndex(status);
-  return (
-    <div className="flex items-center gap-1 mt-2">
-      {steps.map((step, i) => (
-        <div key={step} className="flex items-center gap-1 flex-1 last:flex-none">
-          <div className={`relative w-7 h-7 rounded-full flex items-center justify-center text-xs border-2 transition-all duration-300
-            ${i <= currentIdx
-              ? 'bg-gradient-to-br from-blue-500 to-violet-600 border-blue-500/50 text-white shadow-[0_0_12px_rgba(99,102,241,0.4)]'
-              : 'bg-[#060f1e] border-white/[0.08] text-[#3a5a82]'}`}
-          >
-            {i < currentIdx ? <Check className="w-3 h-3" /> : <span className="text-[10px] font-bold">{i + 1}</span>}
-          </div>
-          {i < steps.length - 1 && (
-            <div className={`flex-1 h-px transition-all duration-500 ${i < currentIdx ? 'bg-gradient-to-r from-blue-500/60 to-violet-500/40' : 'bg-white/[0.06]'}`} />
-          )}
-        </div>
-      ))}
-    </div>
-  );
-}
+// OrderTrackingBar lives in its own file so it can be DOM-tested without
+// pulling in Firebase / framer-motion / react-router. See
+// src/components/OrderTrackingBar.tsx and src/components/OrderTrackingBar.test.tsx.
+
 
 // ── Luxury card styles ──
 const cardBase = "relative bg-[#0b1829] border border-white/[0.07] rounded-2xl";

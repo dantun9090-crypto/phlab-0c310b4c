@@ -11,6 +11,9 @@
  *    warehouse has not yet picked the order.
  *  - `cancelled` returns -1; the UI renders a dedicated "Order Cancelled"
  *    state instead of the bar.
+ *  - `refunded` returns -1; the UI renders a dedicated "Order Refunded"
+ *    state. Refunded means the customer was paid back, so the timeline
+ *    does NOT advance (option A — chosen over "advance to Delivered").
  *  - Unknown statuses return -1 so nothing in the bar is highlighted.
  */
 export const ORDER_TRACKING_STEPS = [
@@ -23,7 +26,7 @@ export const ORDER_TRACKING_STEPS = [
 export type OrderTrackingStep = (typeof ORDER_TRACKING_STEPS)[number];
 
 export function getOrderTrackingIndex(status: string): number {
-  if (status === "cancelled") return -1;
+  if (status === "cancelled" || status === "refunded") return -1;
   const normalized =
     status === "pending_payment"
       ? "pending"
