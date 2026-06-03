@@ -195,7 +195,7 @@ function extractBankAccounts(payload: unknown): FenaBankAccount[] {
     if (Array.isArray(c)) return c as FenaBankAccount[];
     if (c && typeof c === "object") {
       const inner = c as Record<string, unknown>;
-      for (const k of ["accounts", "bankAccounts", "items", "list", "data", "result"]) {
+      for (const k of ["docs", "accounts", "bankAccounts", "items", "list", "data", "result"]) {
         if (Array.isArray(inner[k])) return inner[k] as FenaBankAccount[];
       }
     }
