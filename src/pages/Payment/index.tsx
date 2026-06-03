@@ -107,64 +107,45 @@ export default function PaymentPage() {
 
   const initiatePayment = async () => {
     if (loadState.kind !== 'ready') return;
+    const user = auth.currentUser;
+    if (!user) {
+      setStatus({ message: 'Please sign in to continue.', type: 'error' });
+      return;
+    }
 
     setIsLoading(true);
-    setStatus({ message: 'Connecting to TrueLayer...', type: 'loading' });
-
-    const API_URL = 'https://v0-truelayerpaymentgatewayfinal-caz5-mudhax92t.vercel.app/api/payment';
+    setStatus({ message: 'Connecting to Fena Open Banking…', type: 'loading' });
 
     try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          // Backend MUST look up the order by orderId in Firestore and use the
-          // server-side totalAmount. The amount sent here is for display only
-          // and must NOT be trusted by the payment gateway.
-          orderId: loadState.orderId,
-          amount: loadState.amount,
-          currency: 'GBP',
-          reference: loadState.reference,
-          user_name: loadState.customerName,
-          user_email: loadState.customerEmail,
-          user_id: auth.currentUser?.uid || '',
-        }),
+      const idToken = await user.getIdToken();
+      const result = await createLink({
+        data: { idToken, orderId: loadState.orderId },
       });
 
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({ message: 'Payment failed' }));
-        throw new Error(err.message || 'Payment failed');
+      // SECURITY: validate the redirect URL before navigating. Fena's HPP
+      // is served on the *.fena.co domain family. Reject anything else
+      // (an attacker who somehow tampered with the response cannot push
+      // users to a phishing page).
+      let parsed: URL;
+      try {
+        parsed = new URL(result.hppUrl);
+      } catch {
+        throw new Error('Invalid payment redirect URL.');
+      }
+      const host = parsed.hostname.toLowerCase();
+      const isFena =
+        host === 'fena.co' ||
+        host === 'fena.io' ||
+        host.endsWith('.fena.co') ||
+        host.endsWith('.fena.io');
+      if (parsed.protocol !== 'https:' || !isFena) {
+        throw new Error('Unexpected payment redirect host.');
       }
 
-      const data = await response.json();
-
-      if (data.success && data.hpp_url) {
-        // SECURITY: validate the redirect URL before navigating. The
-        // hpp_url comes from a third-party Vercel API; if that service
-        // is ever compromised or spoofed, an unvalidated redirect would
-        // silently send users to a phishing page.
-        let parsed: URL;
-        try {
-          parsed = new URL(data.hpp_url);
-        } catch {
-          throw new Error('Invalid payment redirect URL.');
-        }
-        const host = parsed.hostname.toLowerCase();
-        const isTrueLayer =
-          host === 'truelayer.com' ||
-          host === 'truelayer-sandbox.com' ||
-          host.endsWith('.truelayer.com') ||
-          host.endsWith('.truelayer-sandbox.com');
-        if (parsed.protocol !== 'https:' || !isTrueLayer) {
-          throw new Error('Unexpected payment redirect host.');
-        }
-        setStatus({ message: 'Redirecting to bank...', type: 'success' });
-        window.location.href = parsed.toString();
-      } else {
-        throw new Error(data.error || 'Payment failed');
-      }
+      setStatus({ message: 'Redirecting to your bank…', type: 'success' });
+      window.location.href = parsed.toString();
     } catch (error: any) {
-      console.error('Payment error:', error);
+      console.error('Fena payment error:', error);
       markFallbackToday();
       setShowBankFallback(true);
       setStatus(null);
