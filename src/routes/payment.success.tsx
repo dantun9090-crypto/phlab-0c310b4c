@@ -35,7 +35,7 @@ function PaymentSuccessPage() {
         setError("Please sign in to view this order.");
         return;
       }
-      const deadline = Date.now() + 60_000;
+      const deadline = Date.now() + 240_000;
       const tick = async () => {
         if (stopRef.current) return;
         try {
