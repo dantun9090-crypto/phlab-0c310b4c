@@ -322,6 +322,31 @@ export default function CheckoutPage() {
     }).catch(() => {});
   }, []);
 
+  // Load active payment gateways (dynamic Pay-by-Bank availability)
+  useEffect(() => {
+    let cancelled = false;
+    getCheckoutPaymentOptions()
+      .then((opts) => {
+        if (cancelled) return;
+        setPaymentOptions(opts);
+        // If no online gateway is active, force manual bank transfer.
+        if (!opts.primary && opts.backups.length === 0) {
+          setForm((prev) => prev.paymentMethod === 'pay_by_bank'
+            ? { ...prev, paymentMethod: 'bank_transfer' }
+            : prev);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // Fail safe: hide Pay-by-Bank, only manual fallback.
+        setPaymentOptions({ primary: null, backups: [], manualFallback: true });
+        setForm((prev) => prev.paymentMethod === 'pay_by_bank'
+          ? { ...prev, paymentMethod: 'bank_transfer' }
+          : prev);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
   // Calculations
   const subtotal = cart.reduce((s, i) => s + i.priceNum * i.quantity, 0);
   const discount = appliedCoupon ? (
