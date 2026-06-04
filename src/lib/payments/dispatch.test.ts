@@ -23,20 +23,20 @@ vi.mock("@/lib/server/firestore-admin", () => ({
   listDocsAdmin: vi.fn(async () => []),
 }));
 
-const fenaCreateAndProcess = vi.fn();
+const fenaCreateAndProcess = vi.fn<(...a: any[]) => any>();
 vi.mock("@/lib/fena.server", () => ({
-  fenaCreateAndProcess: (...args: unknown[]) => fenaCreateAndProcess(...args),
+  fenaCreateAndProcess: (...args: any[]) => fenaCreateAndProcess(...args),
 }));
 
-const truelayerCreatePayment = vi.fn();
+const truelayerCreatePayment = vi.fn<(...a: any[]) => any>();
 vi.mock("@/lib/payments/truelayer.server", () => ({
-  truelayerCreatePayment: (...args: unknown[]) =>
+  truelayerCreatePayment: (...args: any[]) =>
     truelayerCreatePayment(...args),
 }));
 
-const yapilyCreatePayment = vi.fn();
+const yapilyCreatePayment = vi.fn<(...a: any[]) => any>();
 vi.mock("@/lib/payments/yapily.server", () => ({
-  yapilyCreatePayment: (...args: unknown[]) => yapilyCreatePayment(...args),
+  yapilyCreatePayment: (...args: any[]) => yapilyCreatePayment(...args),
 }));
 
 const resolveActiveGateways = vi.fn<(...a: any[]) => any>();
