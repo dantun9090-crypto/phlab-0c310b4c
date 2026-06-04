@@ -14,7 +14,8 @@ import {
 import type { Coupon } from '@/lib/firebase';
 import { validateCartPrices } from '@/lib/cart-validation.functions';
 import { createOrder } from '@/lib/create-order.functions';
-import { createFenaPaymentLink } from '@/lib/fena.functions';
+import { createGatewayPaymentLink, getCheckoutPaymentOptions } from '@/lib/payment-gateways.functions';
+import type { CheckoutPaymentOptions } from '@/lib/payments/types';
 import { migrateStoredCart } from '@/lib/cart-migration';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
