@@ -119,10 +119,9 @@ describe("createPaymentLinkForOrder — failover", () => {
     expect(truelayerCreatePayment).toHaveBeenCalledTimes(1);
 
     // Health tracker should record the primary failure and the backup success.
-    const calls = recordGatewayTest.mock.calls.map(([gateway, payload]) => ({
-      gateway,
-      ok: (payload as { ok: boolean }).ok,
-    }));
+    const calls = (recordGatewayTest.mock.calls as Array<[string, { ok: boolean }]>).map(
+      ([gateway, payload]) => ({ gateway, ok: payload.ok }),
+    );
     expect(calls).toContainEqual({ gateway: "fena", ok: false });
     expect(calls).toContainEqual({ gateway: "truelayer", ok: true });
   });
