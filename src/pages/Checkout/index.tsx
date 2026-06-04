@@ -20,6 +20,7 @@ import { migrateStoredCart } from '@/lib/cart-migration';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
 import UkBankBadges from '@/components/UkBankBadges';
+import PaymentMethodOptions from '@/components/PaymentMethodOptions';
 
 
 interface CheckoutForm {
