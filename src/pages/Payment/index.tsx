@@ -223,6 +223,9 @@ export default function PaymentPage() {
 
           {showBankFallback ? (
             <div
+              role="alert"
+              aria-live="assertive"
+              data-testid="bank-fallback"
               className="p-6 rounded-[20px]"
               style={{
                 background: 'linear-gradient(135deg, #0b1a30 0%, #0d1f38 100%)',
