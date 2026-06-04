@@ -20,6 +20,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { useEffect, useState } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import PaymentMethodOptions from "@/components/PaymentMethodOptions";
+import { getCheckoutPaymentOptions as loadCheckoutOptions } from "@/lib/payment-gateways.functions";
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
 
 // Mock the server function module — the dispatcher itself pulls in
