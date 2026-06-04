@@ -49,7 +49,7 @@ function CheckoutPaymentStepHarness() {
 
   useEffect(() => {
     let cancelled = false;
-    load()
+    loadCheckoutOptions()
       .then((opts) => {
         if (cancelled) return;
         setOptions(opts);
