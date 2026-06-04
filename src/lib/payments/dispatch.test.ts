@@ -39,13 +39,13 @@ vi.mock("@/lib/payments/yapily.server", () => ({
   yapilyCreatePayment: (...args: unknown[]) => yapilyCreatePayment(...args),
 }));
 
-const resolveActiveGateways = vi.fn();
-const recordGatewayTest = vi.fn(async () => undefined);
-const getGatewayConfig = vi.fn();
+const resolveActiveGateways = vi.fn<(...a: any[]) => any>();
+const recordGatewayTest = vi.fn<(...a: any[]) => any>(async () => undefined);
+const getGatewayConfig = vi.fn<(...a: any[]) => any>();
 vi.mock("@/lib/payments/gateway-config.server", () => ({
-  resolveActiveGateways: (...args: unknown[]) => resolveActiveGateways(...args),
-  recordGatewayTest: (...args: unknown[]) => recordGatewayTest(...args),
-  getGatewayConfig: (...args: unknown[]) => getGatewayConfig(...args),
+  resolveActiveGateways: (...args: any[]) => resolveActiveGateways(...args),
+  recordGatewayTest: (...args: any[]) => recordGatewayTest(...args),
+  getGatewayConfig: (...args: any[]) => getGatewayConfig(...args),
 }));
 
 // --- Helpers --------------------------------------------------------------
