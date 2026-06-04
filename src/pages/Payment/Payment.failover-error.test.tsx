@@ -63,6 +63,8 @@ import PaymentPage from './index';
 describe('<PaymentPage /> — primary + backup both fail', () => {
   const originalHref = window.location.href;
   let hrefAssignments: string[] = [];
+  const createLinkMock = vi.fn();
+  (globalThis as any).__createLinkMock = createLinkMock;
 
   beforeEach(() => {
     hrefAssignments = [];
