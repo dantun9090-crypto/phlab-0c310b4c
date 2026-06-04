@@ -42,9 +42,6 @@ vi.mock("@/lib/payment-gateways.functions", () => ({
  * effect and renders the same selector component the real page renders.
  */
 function CheckoutPaymentStepHarness() {
-  const { getCheckoutPaymentOptions: load } = require("@/lib/payment-gateways.functions") as {
-    getCheckoutPaymentOptions: () => Promise<CheckoutPaymentOptions>;
-  };
   const [options, setOptions] = useState<CheckoutPaymentOptions | null>(null);
   const [method, setMethod] = useState<"pay_by_bank" | "bank_transfer">(
     "pay_by_bank",
