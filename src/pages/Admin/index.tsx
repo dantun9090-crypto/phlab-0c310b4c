@@ -346,7 +346,7 @@ export default function AdminPage() {
     tools: 'Tools', themes: 'Themes', database: 'Database', backup: 'Backup',
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', diagnostics: 'Diagnostics',
     prerenderstatus: 'Prerender Status', gscmonitor: 'GSC Monitor', merchantfeed: 'Merchant Feed',
-    securityaudit: 'Security Audit',
+    securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways',
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
 
