@@ -94,13 +94,9 @@ describe('<PaymentPage /> — primary + backup both fail', () => {
     });
   });
 
-  afterEach(() => {
-    Object.defineProperty(window, 'location', {
-      configurable: true,
-      value: new URL(originalHref),
-      writable: true,
-    });
-  });
+  // Note: no afterEach window.location restoration — the beforeEach Proxy is
+  // sufficient and replacing with a bare URL breaks subsequent tests that
+  // read `window.location.search`.
 
   it('shows the bank-transfer fallback and does NOT redirect when both gateways fail', async () => {
     render(
