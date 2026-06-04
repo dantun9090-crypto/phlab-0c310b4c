@@ -123,16 +123,33 @@ describe('<PaymentPage /> — primary + backup both fail', () => {
       data: { orderId: 'ord_ABC123', idToken: 'id-token-xyz' },
     });
 
-    // User-facing error: manual bank-transfer fallback rendered.
+    // --- Accessibility: error region is announced via role=alert + aria-live ---
+    const alertRegion = await screen.findByTestId('bank-fallback');
+    expect(alertRegion).toHaveAttribute('role', 'alert');
+    expect(alertRegion).toHaveAttribute('aria-live', 'assertive');
+
+    // --- Exact user-facing error text ---
+    const heading = screen.getByRole('heading', { level: 2 });
+    expect(heading).toHaveTextContent(/^Complete via Bank Transfer$/);
+    expect(heading).toHaveStyle({ color: '#10b981' });
+
     expect(
-      await screen.findByText(/Complete via Bank Transfer/i),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Online payment is temporarily unavailable/i),
+      screen.getByText(
+        'Online payment is temporarily unavailable. Please send your payment directly to our bank account below.',
+      ),
     ).toBeInTheDocument();
 
-    // No external redirect happened.
+    // Order reference & amount surfaced inside the fallback.
+    expect(screen.getByText('PH-12345')).toBeInTheDocument();
+    expect(screen.getByText('£49.99')).toBeInTheDocument();
+
+    // --- No redirect link / navigation occurred ---
     expect(hrefAssignments).toEqual([]);
+    // No anchor pointing at a payment HPP host exists in the document.
+    const externalAnchors = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>('a[href]'),
+    ).filter((a) => /fena|truelayer|yapily/i.test(a.getAttribute('href') || ''));
+    expect(externalAnchors).toEqual([]);
 
     // The original Pay button is no longer rendered (fallback took over).
     expect(
@@ -143,5 +160,44 @@ describe('<PaymentPage /> — primary + backup both fail', () => {
     expect(
       screen.getByRole('button', { name: /Try Online Payment Again/i }),
     ).toBeInTheDocument();
+  });
+
+  it('lets the user retry after both gateways fail and shows the fallback again on a second failure', async () => {
+    render(
+      <HelmetProvider>
+        <PaymentPage />
+      </HelmetProvider>,
+    );
+
+    // First attempt — fails.
+    const payBtn = await screen.findByRole('button', {
+      name: /Pay with Bank Transfer/i,
+    });
+    fireEvent.click(payBtn);
+
+    const retryBtn = await screen.findByRole('button', {
+      name: /Try Online Payment Again/i,
+    });
+    expect(createLinkMock).toHaveBeenCalledTimes(1);
+    expect(hrefAssignments).toEqual([]);
+
+    // Clicking "Try Online Payment Again" dismisses the fallback and
+    // restores the primary Pay button without redirecting.
+    fireEvent.click(retryBtn);
+    expect(screen.queryByTestId('bank-fallback')).toBeNull();
+    const payBtn2 = await screen.findByRole('button', {
+      name: /Pay with Bank Transfer/i,
+    });
+    expect(payBtn2).toBeEnabled();
+    expect(hrefAssignments).toEqual([]);
+
+    // Second attempt — also fails (both gateways still down).
+    fireEvent.click(payBtn2);
+    await waitFor(() => expect(createLinkMock).toHaveBeenCalledTimes(2));
+
+    // Fallback re-appears with role=alert and no redirect occurred.
+    const alertRegion2 = await screen.findByTestId('bank-fallback');
+    expect(alertRegion2).toHaveAttribute('role', 'alert');
+    expect(hrefAssignments).toEqual([]);
   });
 });
