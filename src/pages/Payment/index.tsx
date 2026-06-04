@@ -114,7 +114,7 @@ export default function PaymentPage() {
     }
 
     setIsLoading(true);
-    setStatus({ message: 'Connecting to Fena Open Banking…', type: 'loading' });
+    setStatus({ message: 'Connecting to your bank…', type: 'loading' });
 
     try {
       const idToken = await user.getIdToken();
@@ -122,10 +122,7 @@ export default function PaymentPage() {
         data: { idToken, orderId: loadState.orderId },
       });
 
-      // SECURITY: validate the redirect URL before navigating. Fena's HPP
-      // is served on the *.fena.co domain family. Reject anything else
-      // (an attacker who somehow tampered with the response cannot push
-      // users to a phishing page).
+      // SECURITY: validate the redirect URL per gateway before navigating.
       let parsed: URL;
       try {
         parsed = new URL(result.hppUrl);
@@ -133,19 +130,26 @@ export default function PaymentPage() {
         throw new Error('Invalid payment redirect URL.');
       }
       const host = parsed.hostname.toLowerCase();
-      const isFena =
-        host === 'fena.co' ||
-        host === 'fena.io' ||
-        host.endsWith('.fena.co') ||
-        host.endsWith('.fena.io');
-      if (parsed.protocol !== 'https:' || !isFena) {
+      const fenaOk =
+        host === 'fena.co' || host === 'fena.io' ||
+        host.endsWith('.fena.co') || host.endsWith('.fena.io');
+      const tlOk =
+        host === 'truelayer.com' ||
+        host.endsWith('.truelayer.com') ||
+        host.endsWith('.truelayer-sandbox.com');
+      const yapilyOk = host === 'yapily.com' || host.endsWith('.yapily.com');
+      const okHost =
+        (result.gateway === 'fena' && fenaOk) ||
+        (result.gateway === 'truelayer' && tlOk) ||
+        (result.gateway === 'yapily' && yapilyOk);
+      if (parsed.protocol !== 'https:' || !okHost) {
         throw new Error('Unexpected payment redirect host.');
       }
 
       setStatus({ message: 'Redirecting to your bank…', type: 'success' });
       window.location.href = parsed.toString();
     } catch (error: any) {
-      console.error('Fena payment error:', error);
+      console.error('Payment error:', error);
       markFallbackToday();
       setShowBankFallback(true);
       setStatus(null);
