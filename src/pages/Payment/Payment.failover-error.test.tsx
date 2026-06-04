@@ -27,17 +27,17 @@ vi.mock('@tanstack/react-start', () => ({
 }));
 
 // Firebase: simulate a signed-in user owning a ready-to-pay order.
-const authUser = {
-  uid: 'uid-buyer-1',
-  email: 'buyer@example.com',
-  getIdToken: vi.fn(async () => 'id-token-xyz'),
-};
 vi.mock('@/lib/firebase', () => {
+  const user = {
+    uid: 'uid-buyer-1',
+    email: 'buyer@example.com',
+    getIdToken: async () => 'id-token-xyz',
+  };
   return {
     db: {},
-    auth: { currentUser: authUser },
-    doc: vi.fn(() => ({})),
-    getDoc: vi.fn(async () => ({
+    auth: { currentUser: user },
+    doc: () => ({}),
+    getDoc: async () => ({
       exists: () => true,
       data: () => ({
         userId: 'uid-buyer-1',
@@ -48,9 +48,9 @@ vi.mock('@/lib/firebase', () => {
         customerName: 'Research Buyer',
         customerEmail: 'buyer@example.com',
       }),
-    })),
-    onAuthStateChanged: (_auth: unknown, cb: (u: typeof authUser) => void) => {
-      cb(authUser);
+    }),
+    onAuthStateChanged: (_auth: unknown, cb: (u: typeof user) => void) => {
+      cb(user);
       return () => undefined;
     },
   };
