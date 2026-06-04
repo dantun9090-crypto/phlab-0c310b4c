@@ -191,6 +191,26 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ---------- payment_gateways (admin-managed config, server-written) ----------
+    // Stores toggle / priority / sandbox / health for Fena, TrueLayer, Yapily.
+    // NEVER stores API keys (those live in server-side secrets). Read is
+    // public so the checkout page can render the active gateway label without
+    // a server round-trip; write is admin-only via server functions.
+    match /payment_gateways/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ---------- payment webhook events (admin-read diagnostic log) ----------
+    match /payment_webhook_events/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+    match /payment_orphans/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
 
     // ---------- default deny ----------
     match /{document=**} {

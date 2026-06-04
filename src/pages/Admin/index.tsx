@@ -39,8 +39,9 @@ import AuthEventsTab from './tabs/AuthEventsTab';
 import MailHealthTab from './tabs/MailHealthTab';
 import SecurityAuditTab from './tabs/SecurityAuditTab';
 import FenaTab from './tabs/FenaTab';
+import PaymentsTab from './tabs/PaymentsTab';
 
-type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'gscmonitor' | 'merchantfeed' | 'securityaudit' | 'fena';
+type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'gscmonitor' | 'merchantfeed' | 'securityaudit' | 'fena' | 'payments';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -311,6 +312,7 @@ export default function AdminPage() {
         case 'authevents': return <AuthEventsTab />;
         case 'mailhealth': return <MailHealthTab />;
         case 'fena': return <FenaTab />;
+        case 'payments': return <PaymentsTab />;
         case 'emailmarketing': return <EmailMarketingTab />;
 
         case 'emailpreview': return <EmailPreviewTab />;
