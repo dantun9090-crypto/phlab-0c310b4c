@@ -580,13 +580,27 @@ export default function CheckoutPage() {
             current = anon.user;
           }
           const idTokenForFena = await current.getIdToken();
-          const { hppUrl } = await createFenaPaymentLink({
+          const { hppUrl, gateway } = await createGatewayPaymentLink({
             data: { orderId, idToken: idTokenForFena },
           });
+          // Allowlist redirect hosts per gateway — defence-in-depth.
+          let parsed: URL;
+          try { parsed = new URL(hppUrl); } catch { throw new Error('Invalid payment redirect URL.'); }
+          const host = parsed.hostname.toLowerCase();
+          const fenaOk = host === 'fena.co' || host === 'fena.io' || host.endsWith('.fena.co') || host.endsWith('.fena.io');
+          const tlOk = host === 'truelayer.com' || host.endsWith('.truelayer.com') || host.endsWith('.truelayer-sandbox.com');
+          const yapilyOk = host === 'yapily.com' || host.endsWith('.yapily.com');
+          const okHost =
+            (gateway === 'fena' && fenaOk) ||
+            (gateway === 'truelayer' && tlOk) ||
+            (gateway === 'yapily' && yapilyOk);
+          if (parsed.protocol !== 'https:' || !okHost) {
+            throw new Error('Unexpected payment redirect host.');
+          }
           setFenaStep('redirecting');
           localStorage.removeItem('php_cart');
           setCart([]);
-          setTimeout(() => { window.location.href = hppUrl; }, 250);
+          setTimeout(() => { window.location.href = parsed.toString(); }, 250);
           return;
         } catch (err: any) {
           setFenaStep('failed');
