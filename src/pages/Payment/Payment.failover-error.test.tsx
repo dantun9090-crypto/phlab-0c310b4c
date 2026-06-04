@@ -16,9 +16,9 @@ import { HelmetProvider } from 'react-helmet-async';
 // --- Mocks ----------------------------------------------------------------
 
 // Mock the server function — both gateways failing surfaces as a rejected promise.
-const createLinkMock = vi.fn();
 vi.mock('@/lib/payment-gateways.functions', () => ({
-  createGatewayPaymentLink: createLinkMock,
+  createGatewayPaymentLink: (...args: unknown[]) =>
+    (globalThis as any).__createLinkMock(...args),
 }));
 
 // useServerFn just unwraps the function — return our mock directly.
