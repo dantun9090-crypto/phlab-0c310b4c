@@ -9,7 +9,7 @@
  *      (window.location.href is never assigned).
  *   3. The dispatcher is invoked exactly once with the order id from the URL.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { HelmetProvider } from 'react-helmet-async';
 
