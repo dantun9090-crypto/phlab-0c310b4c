@@ -1,4 +1,4 @@
-import { emailWrapper, greeting, ctaButton, divider, EMAIL_COLORS as C } from './emailBase';
+import { emailWrapper, greeting, ctaButton, divider, escapeHtml as esc, EMAIL_COLORS as C } from './emailBase';
 
 export interface WelcomeEmailOptions {
   firstName: string;
