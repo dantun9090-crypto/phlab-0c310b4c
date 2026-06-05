@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { articles } from "@/pages/Resources/data/articles";
 import { fetchAllProducts } from "@/lib/firestore-rest";
+import { isIndexable } from "@/lib/sitemap-policy";
 
 const BASE_URL = "https://phlabs.co.uk";
 
