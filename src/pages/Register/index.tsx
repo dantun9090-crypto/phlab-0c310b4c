@@ -257,7 +257,7 @@ export default function Register() {
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       style={{ background: '#0d1f38', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', width: '100%', borderRadius: '10px', padding: '12px 48px', fontSize: '14px', outline: 'none', display: 'block', boxSizing: 'border-box' }}
-                      placeholder="Min. 8 characters"
+                      placeholder="Min. 12 characters, 1 upper, 1 number, 1 symbol"
                       autoComplete="new-password"
                       minLength={8}
                       required
