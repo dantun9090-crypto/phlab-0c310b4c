@@ -30,6 +30,7 @@ import SEOTab from './tabs/SEOTab';
 import { FeaturedProductsTab } from './tabs/FeaturedProductsTab';
 import QCDashboardTab from './tabs/QCDashboardTab';
 import SitemapTab from './tabs/SitemapTab';
+import SitemapAuditTab from './tabs/SitemapAuditTab';
 import PromoCodesTab from './tabs/PromoCodesTab';
 import DiagnosticsTab from './tabs/DiagnosticsTab';
 import PrerenderStatusTab from './tabs/PrerenderStatusTab';
