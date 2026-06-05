@@ -12,7 +12,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 
 // Mock the firebase-admin helper so we can simulate non-admin / admin
 // without hitting the network.
-vi.mock("@/lib/server/firebase-auth-admin", () => ({
+vi.mock("../src/lib/server/firebase-auth-admin", () => ({
   requireFirebaseAdmin: vi.fn(async (token: string) => {
     if (token === "ADMIN") return { uid: "admin-uid", email: "admin@phlabs.co.uk" };
     if (token === "USER") throw new Error("not_admin");
@@ -22,7 +22,7 @@ vi.mock("@/lib/server/firebase-auth-admin", () => ({
 }));
 
 // Avoid Firestore writes during tests.
-vi.mock("@/lib/server/firestore-admin", () => ({
+vi.mock("../src/lib/server/firestore-admin", () => ({
   addDocAdmin: vi.fn(async () => ({ name: "noop" })),
 }));
 
