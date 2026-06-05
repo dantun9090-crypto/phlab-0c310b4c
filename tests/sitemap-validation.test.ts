@@ -14,8 +14,8 @@ import {
   matchesRobotsPattern,
   TRANSACTIONAL_PREFIXES,
   NEVER_INDEX_EXACT,
-} from "@/lib/sitemap-policy";
-import { KNOWN_PUBLIC_ROUTES } from "@/lib/sitemap-audit.functions";
+} from "../src/lib/sitemap-policy";
+import { KNOWN_PUBLIC_ROUTES } from "../src/lib/sitemap-audit.functions";
 
 const ROBOTS = readFileSync(
   resolve(process.cwd(), "public/robots.txt"),
