@@ -182,7 +182,7 @@ async function fetchPrerender(target: string, request: Request, token: string): 
   }
 }
 
-function decoratePrerender(resp: Response, fromCache: boolean, method: string): Response {
+function decoratePrerender(resp: Response, fromCache: boolean, method: string, nonce: string): Response {
   const headers = new Headers(resp.headers);
   headers.set("x-prerendered", "true");
   headers.set("x-prerender-cache", fromCache ? "HIT" : "MISS");
@@ -192,6 +192,13 @@ function decoratePrerender(resp: Response, fromCache: boolean, method: string): 
   headers.delete("x-deployment-id");
   headers.delete("x-powered-by");
   headers.set("vary", "user-agent");
+
+  // Apply full security headers to prerendered HTML — bots/crawlers must
+  // receive the same CSP/HSTS/X-Frame-Options as real users.
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
+    headers.set(k, v);
+  }
+  headers.set("content-security-policy", buildCsp(nonce));
 
   const body = method === "HEAD" ? null : resp.body;
   return new Response(body, { status: resp.status, statusText: resp.statusText, headers });
