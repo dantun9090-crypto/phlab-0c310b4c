@@ -8,7 +8,9 @@ import {
   probePrerenderStatus,
   recachePrerenderUrl,
   checkPrerenderTokenLength,
+  checkGooglebotResponse,
   type ProbeResult,
+
 } from '@/lib/prerender-status.functions';
 import { auth } from '@/lib/firebase';
 
