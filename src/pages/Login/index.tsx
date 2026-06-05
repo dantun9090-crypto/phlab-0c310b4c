@@ -301,10 +301,22 @@ export default function Login() {
                     </div>
                   </div>
 
-                  <button type="submit" disabled={loading || googleLoading}
-                    className="w-full py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mt-1">
+                  <label className="flex items-center gap-2 text-[#9cb8d9] text-xs mt-1 select-none cursor-pointer">
+                    <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded border-white/20 bg-[#0d1f38] accent-emerald-500" />
+                    Remember me on this device
+                  </label>
+
+                  {lockoutMs > 0 && (
+                    <div className="text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                      Account temporarily locked. Try again in {formatRemaining(lockoutMs)}.
+                    </div>
+                  )}
+
+                  <button type="submit" disabled={loading || googleLoading || lockoutMs > 0}
+                    className="w-full py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mt-1">
                     {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {loading ? 'Signing in...' : 'Sign In'}
+                    {lockoutMs > 0 ? `Locked (${formatRemaining(lockoutMs)})` : (loading ? 'Signing in...' : 'Sign In')}
                   </button>
                 </form>
 
