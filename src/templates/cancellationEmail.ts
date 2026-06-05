@@ -31,9 +31,10 @@ export function buildCancellationEmail({
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
             <tr>
               <td>
-                <span style="color:${C.textBright};font-size:13px;font-weight:600;font-family:${EMAIL_FONT};">${item.name}</span>
-                ${item.variantName ? `<span style="color:${C.textMuted};font-size:12px;margin-left:6px;font-family:${EMAIL_FONT};">${item.variantName}</span>` : ''}
+                <span style="color:${C.textBright};font-size:13px;font-weight:600;font-family:${EMAIL_FONT};">${esc(item.name)}</span>
+                ${item.variantName ? `<span style="color:${C.textMuted};font-size:12px;margin-left:6px;font-family:${EMAIL_FONT};">${esc(item.variantName)}</span>` : ''}
                 <span style="color:${C.textDimmed};font-size:12px;margin-left:6px;font-family:${EMAIL_FONT};">× ${item.quantity}</span>
+
               </td>
               <td style="text-align:right;">
                 <span style="color:${C.textBright};font-size:13px;font-weight:600;font-family:${EMAIL_FONT};">£${(item.priceNum * item.quantity).toFixed(2)}</span>
