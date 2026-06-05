@@ -365,6 +365,18 @@ export default function Register() {
                   </label>
                 </div>
 
+                {/* Remember me */}
+                <label className="flex items-center gap-2 text-[#9cb8d9] text-sm select-none cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={e => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-white/20 bg-[#0d1f38] accent-emerald-500"
+                  />
+                  Keep me signed in on this device
+                </label>
+
+
                 {/* Submit Button */}
                 <button
                   type="submit"
