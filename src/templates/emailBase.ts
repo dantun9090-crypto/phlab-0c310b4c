@@ -187,15 +187,25 @@ export function emailWrapper(content: string, topBarGradient?: string): string {
 }
 
 /** Section heading */
+/** HTML-entity escape for user-controlled values embedded in template literals. */
+export function escapeHtml(s: unknown): string {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function sectionHeading(text: string): string {
   const C = EMAIL_COLORS;
-  return `<p style="margin:0 0 20px;color:${C.textBright};font-size:22px;font-weight:800;letter-spacing:-0.5px;font-family:${EMAIL_FONT};">${text}</p>`;
+  return `<p style="margin:0 0 20px;color:${C.textBright};font-size:22px;font-weight:800;letter-spacing:-0.5px;font-family:${EMAIL_FONT};">${escapeHtml(text)}</p>`;
 }
 
 /** Greeting line */
 export function greeting(firstName: string): string {
   const C = EMAIL_COLORS;
-  return `<p style="margin:0 0 20px;color:${C.text};font-size:15px;line-height:1.6;font-family:${EMAIL_FONT};">Hi <strong style="color:${C.textBright};">${firstName}</strong>,</p>`;
+  return `<p style="margin:0 0 20px;color:${C.text};font-size:15px;line-height:1.6;font-family:${EMAIL_FONT};">Hi <strong style="color:${C.textBright};">${escapeHtml(firstName)}</strong>,</p>`;
 }
 
 /** Info card — key/value rows on dark background */
@@ -203,14 +213,16 @@ export function infoCard(rows: Array<{ label: string; value: string; mono?: bool
   const C = EMAIL_COLORS;
   const rowsHtml = rows.map(r => `
     <tr>
-      <td style="padding:10px 16px;color:${C.textDimmed};font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;width:40%;font-family:${EMAIL_FONT};">${r.label}</td>
-      <td style="padding:10px 16px;color:${r.highlight ? C.textBright : C.text};font-size:${r.highlight ? '15px' : '14px'};font-weight:${r.highlight ? '700' : '400'};text-align:right;${r.mono ? 'font-family:monospace;' : `font-family:${EMAIL_FONT};`}">${r.value}</td>
+      <td style="padding:10px 16px;color:${C.textDimmed};font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;width:40%;font-family:${EMAIL_FONT};">${escapeHtml(r.label)}</td>
+      <td style="padding:10px 16px;color:${r.highlight ? C.textBright : C.text};font-size:${r.highlight ? '15px' : '14px'};font-weight:${r.highlight ? '700' : '400'};text-align:right;${r.mono ? 'font-family:monospace;' : `font-family:${EMAIL_FONT};`}">${escapeHtml(r.value)}</td>
     </tr>`).join('');
   return `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:${C.bgCardDark};border:1px solid rgba(59,130,246,0.15);border-radius:10px;overflow:hidden;margin-bottom:20px;" bgcolor="${C.bgCardDark}">
       ${rowsHtml}
     </table>`;
 }
+
+/** Status badge */
 
 /** Status badge */
 export function statusBadge(label: string, color: string, bg: string): string {
