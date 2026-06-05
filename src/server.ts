@@ -451,7 +451,7 @@ export default {
           if (env.PRERENDER_LOG === "1") log.info({ event: "worker.prerender.hit", ...baseFields });
           const ms = Date.now() - start;
           log.info({ event: "worker.request", status: cached.status, ms, prerender: "HIT", ...baseFields });
-          return decoratePrerender(cached, true, method);
+          return decoratePrerender(cached, true, method, nonce);
         }
 
         try {
@@ -472,11 +472,11 @@ export default {
               ctx?.waitUntil?.(cache.put(cacheKey, cacheable.clone()));
               const ms = Date.now() - start;
               log.info({ event: "worker.request", status: cacheable.status, ms, prerender: "MISS", ...baseFields });
-              return decoratePrerender(cacheable, false, method);
+              return decoratePrerender(cacheable, false, method, nonce);
             }
             const ms = Date.now() - start;
             log.info({ event: "worker.request", status: fresh.status, ms, prerender: "PASS", ...baseFields });
-            return decoratePrerender(fresh, false, method);
+            return decoratePrerender(fresh, false, method, nonce);
           }
           log.warn({ event: "worker.prerender.fallback", status: fresh?.status, ...baseFields });
         } catch (err) {
