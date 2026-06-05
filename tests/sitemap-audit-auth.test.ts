@@ -30,7 +30,7 @@ import {
   checkAuditRateLimit,
   MAX_AUDIT_RUNS_PER_HOUR,
 } from "../src/lib/sitemap-audit.functions";
-import { requireFirebaseAdmin } from "@/lib/server/firebase-auth-admin";
+import { requireFirebaseAdmin } from "../src/lib/server/firebase-auth-admin";
 
 describe("sitemap audit — auth gate", () => {
   it("rejects missing id token (unauthenticated)", async () => {
