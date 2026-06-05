@@ -147,8 +147,13 @@ export default function PrerenderStatusTab() {
       {/* Token length validation */}
       <TokenLengthCard />
 
+      {/* Live Googlebot check */}
+      <GooglebotCheckCard />
+
       {/* Auto-recache hook status */}
       <AutoRecacheCard />
+
+
 
 
 
