@@ -65,7 +65,9 @@ export const Route = createFileRoute("/sitemap.xml")({
           productEntries = [];
         }
 
-        // Dedupe by path — Firestore wins over fallback; static wins over both.
+        // Dedupe by path AND enforce the central sitemap policy
+        // (transactional/admin/api/feeds/splat + robots.txt Disallow).
+        // Firestore wins over fallback; static wins over both.
         const seen = new Set<string>();
         const entries: Array<SitemapEntry & { imageLoc?: string }> = [
           ...staticEntries,
@@ -74,6 +76,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           ...articleEntries,
         ].filter((e) => {
           if (seen.has(e.path)) return false;
+          if (!isIndexable(e.path)) return false;
           seen.add(e.path);
           return true;
         });
