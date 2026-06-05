@@ -219,18 +219,39 @@ export default function SitemapAuditTab() {
             exclusions explicitly.
           </p>
         </div>
-        <button
-          onClick={trigger}
-          disabled={loading}
-          className="px-4 py-2.5 min-h-[48px] bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
-        >
-          {loading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <RefreshCw className="w-4 h-4" />
+        <div className="flex flex-wrap gap-2">
+          {report && (
+            <>
+              <button
+                onClick={() => downloadReport("json")}
+                className="px-3 py-2.5 min-h-[48px] bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-white rounded-lg font-medium flex items-center gap-2 transition-colors text-sm"
+                title="Download latest report as JSON"
+              >
+                <Download className="w-4 h-4" /> JSON
+              </button>
+              <button
+                onClick={() => downloadReport("csv")}
+                className="px-3 py-2.5 min-h-[48px] bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-white rounded-lg font-medium flex items-center gap-2 transition-colors text-sm"
+                title="Download latest report as CSV"
+              >
+                <Download className="w-4 h-4" /> CSV
+              </button>
+            </>
           )}
-          {loading ? "Auditing…" : "Run audit"}
-        </button>
+          <button
+            onClick={trigger}
+            disabled={loading}
+            className="px-4 py-2.5 min-h-[48px] bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-400 text-white rounded-lg font-medium flex items-center gap-2 transition-colors"
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            {loading ? "Auditing…" : "Run audit"}
+          </button>
+        </div>
+
       </div>
 
       {error && (
