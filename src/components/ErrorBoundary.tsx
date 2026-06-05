@@ -1,6 +1,7 @@
 import { Component, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { logSecurityEvent } from '@/lib/security-events';
 
 interface Props {
   children: ReactNode;
@@ -19,7 +20,17 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error) {
-    console.error('Error caught by boundary:', error);
+    // Detailed logging to Firestore securityEvents (fire-and-forget).
+    try {
+      logSecurityEvent({
+        type: 'error_boundary',
+        errorType: error.name,
+        message: error.message,
+        meta: { stack: (error.stack || '').slice(0, 1000) },
+      });
+    } catch { /* never break */ }
+    // Dev-only console echo
+    if (import.meta.env.DEV) console.error('Error caught by boundary:', error);
   }
 
   handleRetry = () => {
@@ -34,13 +45,13 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-500/20 mb-6">
               <AlertTriangle className="w-10 h-10 text-red-400" />
             </div>
-            
+
             <h1 className="text-2xl font-bold text-white mb-4">
-              Something Went Wrong
+              Something went wrong
             </h1>
-            
+
             <p className="text-gray-400 mb-8">
-              We apologize for the inconvenience. There was an error loading this page.
+              Something went wrong. Please try again.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -51,7 +62,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 <RefreshCw className="w-4 h-4" />
                 Try Again
               </button>
-              
+
               <Link
                 to="/"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-medium rounded-lg transition-colors"
