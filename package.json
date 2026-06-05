@@ -16,8 +16,9 @@
     "worker:check-imports": "bun scripts/check-worker-imports.ts",
     "csp:e2e": "bun scripts/csp-e2e.ts",
     "check:domains": "bun scripts/check-domains.ts",
+    "typecheck": "tsc --noEmit",
     "prepublish": "bun scripts/check-domains.ts && bun scripts/seo-check.ts",
-    "ci": "bun run check:domains && bun run build && bun run worker:check-imports"
+    "ci": "bun run check:domains && bun run typecheck && bun run build && bun run worker:check-imports"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",
