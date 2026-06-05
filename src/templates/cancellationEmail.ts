@@ -1,4 +1,4 @@
-import { emailWrapper, ctaButton, infoCard, divider, EMAIL_COLORS as C, EMAIL_FONT } from './emailBase';
+import { emailWrapper, ctaButton, infoCard, divider, escapeHtml as esc, EMAIL_COLORS as C, EMAIL_FONT } from './emailBase';
 
 export interface CancellationEmailParams {
   firstName: string;
