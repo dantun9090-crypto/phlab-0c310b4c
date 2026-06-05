@@ -271,6 +271,21 @@ export default function Register() {
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
+                  {formData.password && (() => {
+                    const p = evaluatePassword(formData.password);
+                    return (
+                      <div className="mt-2">
+                        <div className="flex gap-1 mb-1">
+                          {[0,1,2,3,4].map(i => (
+                            <div key={i} className={`h-1 flex-1 rounded-full ${i < p.score ? p.color : 'bg-white/10'}`} />
+                          ))}
+                        </div>
+                        <p className={`text-xs ${p.ok ? 'text-emerald-400' : 'text-[#9cb8d9]'}`}>
+                          {p.label}{!p.ok && p.errors.length > 0 ? ` — needs: ${p.errors.join(', ')}` : ''}
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Confirm Password */}
