@@ -18,8 +18,10 @@
  */
 
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireFirebaseAdmin } from "@/lib/server/firebase-auth-admin";
+import { addDocAdmin } from "@/lib/server/firestore-admin";
 import {
   exclusionReason,
   isIndexable,
@@ -28,6 +30,96 @@ import {
 } from "@/lib/sitemap-policy";
 
 const BASE_URL = "https://phlabs.co.uk";
+
+/**
+ * Per-admin in-memory rate limiter. Caveat: Cloudflare Worker isolates do
+ * not share memory, so this is best-effort — combined with the persistent
+ * `sitemap_audit_log` Firestore collection it gives an auditable cap.
+ * (See knowledge/no-backend-rate-limiting — no standard primitive yet.)
+ */
+export const MAX_AUDIT_RUNS_PER_HOUR = 10;
+const HOUR_MS = 60 * 60 * 1000;
+const runWindow = new Map<string, number[]>();
+
+export function checkAuditRateLimit(uid: string): {
+  allowed: boolean;
+  remaining: number;
+  resetMs: number;
+} {
+  const now = Date.now();
+  const arr = (runWindow.get(uid) ?? []).filter((t) => now - t < HOUR_MS);
+  if (arr.length >= MAX_AUDIT_RUNS_PER_HOUR) {
+    runWindow.set(uid, arr);
+    return { allowed: false, remaining: 0, resetMs: HOUR_MS - (now - arr[0]) };
+  }
+  arr.push(now);
+  runWindow.set(uid, arr);
+  return {
+    allowed: true,
+    remaining: MAX_AUDIT_RUNS_PER_HOUR - arr.length,
+    resetMs: HOUR_MS,
+  };
+}
+
+interface UnauthorizedContext {
+  reason: string;
+  uid?: string;
+  email?: string | null;
+  idTokenPresent: boolean;
+}
+
+async function logUnauthorized(ctx: UnauthorizedContext): Promise<void> {
+  let ip = "unknown";
+  let ua = "unknown";
+  try {
+    const req = getRequest();
+    ip =
+      req?.headers.get("cf-connecting-ip") ??
+      req?.headers.get("x-forwarded-for") ??
+      "unknown";
+    ua = req?.headers.get("user-agent")?.slice(0, 256) ?? "unknown";
+  } catch {
+    /* best-effort */
+  }
+  console.warn(
+    "[sitemap-audit] UNAUTHORIZED",
+    JSON.stringify({ ...ctx, ip, ua, ts: new Date().toISOString() }),
+  );
+  try {
+    await addDocAdmin("sitemap_audit_log", {
+      kind: "unauthorized",
+      reason: ctx.reason,
+      uid: ctx.uid ?? null,
+      email: ctx.email ?? null,
+      idTokenPresent: ctx.idTokenPresent,
+      ip,
+      ua,
+      timestamp: new Date(),
+    });
+  } catch (err) {
+    console.warn("[sitemap-audit] alert persistence failed", (err as Error).message);
+  }
+}
+
+async function logAuthorizedRun(
+  uid: string,
+  email: string | null,
+  remaining: number,
+): Promise<void> {
+  try {
+    await addDocAdmin("sitemap_audit_log", {
+      kind: "run",
+      uid,
+      email,
+      remaining,
+      timestamp: new Date(),
+    });
+  } catch {
+    /* non-blocking */
+  }
+}
+
+
 
 /**
  * Hand-curated list of every page route that SHOULD be in the sitemap.
@@ -95,13 +187,50 @@ export const runSitemapAudit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { idToken: string }) => {
     if (!data?.idToken || typeof data.idToken !== "string") {
+      // Log + alert before throwing so unauthorized attempts are recorded.
+      void logUnauthorized({
+        reason: "missing_or_invalid_id_token",
+        idTokenPresent: !!data?.idToken,
+      });
       throw new Error("forbidden: admin id token required");
     }
     return data;
   })
   .handler(async ({ data }): Promise<SitemapAuditReport> => {
     // Admin-only: verify Firebase ID token + isAdmin flag on customers doc.
-    await requireFirebaseAdmin(data.idToken);
+    let user: { uid: string; email: string | null };
+    try {
+      user = await requireFirebaseAdmin(data.idToken);
+    } catch (err) {
+      const msg = (err as Error).message;
+      await logUnauthorized({
+        reason: msg === "not_admin" ? "not_admin" : `auth_failed:${msg}`,
+        idTokenPresent: true,
+      });
+      throw new Error(
+        msg === "not_admin"
+          ? "forbidden: account is not an admin"
+          : "forbidden: invalid id token",
+      );
+    }
+
+    // Per-admin rate limit — 10 runs / hour (see MAX_AUDIT_RUNS_PER_HOUR).
+    const rl = checkAuditRateLimit(user.uid);
+    if (!rl.allowed) {
+      await logUnauthorized({
+        reason: "rate_limited",
+        uid: user.uid,
+        email: user.email,
+        idTokenPresent: true,
+      });
+      const mins = Math.ceil(rl.resetMs / 60_000);
+      throw new Error(
+        `rate_limited: max ${MAX_AUDIT_RUNS_PER_HOUR} runs/hour. Try again in ~${mins} min.`,
+      );
+    }
+    void logAuthorizedRun(user.uid, user.email, rl.remaining);
+
+
     const errors: string[] = [];
     const sitemapUrl = `${BASE_URL}/sitemap.xml`;
 
