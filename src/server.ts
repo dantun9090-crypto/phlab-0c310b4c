@@ -201,11 +201,40 @@ function decoratePrerender(resp: Response, fromCache: boolean, method: string): 
   return new Response(body, { status: resp.status, statusText: resp.statusText, headers });
 }
 
+// Strip infrastructure / deployment metadata headers that leak internal
+// build info to clients. Removed from every response (HTML, XML, JSON,
+// assets, redirects) before it reaches the edge.
+const INTERNAL_HEADER_DENYLIST = [
+  "x-deployment-id",
+  "x-powered-by",
+  "x-vercel-id",
+  "x-render-origin-server",
+];
+function stripInternalHeaders(response: Response): Response {
+  let touched = false;
+  const headers = new Headers(response.headers);
+  for (const name of INTERNAL_HEADER_DENYLIST) {
+    if (headers.has(name)) {
+      headers.delete(name);
+      touched = true;
+    }
+  }
+  if (!touched) return response;
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 function applySecurityHeaders(response: Response, nonce: string): Response {
-  const contentType = response.headers.get("content-type") ?? "";
+  const stripped = stripInternalHeaders(response);
+  const contentType = stripped.headers.get("content-type") ?? "";
   // Only decorate HTML — leaving JSON/XML/asset responses untouched avoids
   // breaking sitemap, JSON-LD endpoints, and prerender.io content sniffing.
-  if (!contentType.includes("text/html")) return response;
+  if (!contentType.includes("text/html")) return stripped;
+  const response2 = stripped;
+
 
   // Inject the per-request nonce into every <script> element via workerd's
   // built-in HTMLRewriter. This covers TanStack's <Scripts /> output, the
