@@ -8,12 +8,13 @@
  *   - URLs in the sitemap that return 4xx/5xx
  *   - Intentional exclusions (false positives) labelled with the reason
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   runSitemapAudit,
   type SitemapAuditReport,
 } from "@/lib/sitemap-audit.functions";
+import { auth, db, doc, getDoc, onAuthStateChanged } from "@/lib/firebase";
 import {
   Map as MapIcon,
   RefreshCw,
@@ -22,6 +23,7 @@ import {
   XCircle,
   Info,
   Loader2,
+  Lock,
 } from "lucide-react";
 
 function Pill({
@@ -82,12 +84,34 @@ export default function SitemapAuditTab() {
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<SitemapAuditReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [authState, setAuthState] = useState<"checking" | "admin" | "denied">(
+    "checking",
+  );
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setAuthState("denied");
+        return;
+      }
+      try {
+        const snap = await getDoc(doc(db, "customers", user.uid));
+        setAuthState(snap.exists() && snap.data()?.isAdmin === true ? "admin" : "denied");
+      } catch {
+        setAuthState("denied");
+      }
+    });
+    return () => unsub();
+  }, []);
 
   const trigger = async () => {
+    if (authState !== "admin") return;
     setLoading(true);
     setError(null);
     try {
-      const r = await run();
+      const idToken = (await auth.currentUser?.getIdToken()) ?? "";
+      if (!idToken) throw new Error("Not signed in");
+      const r = await run({ data: { idToken } });
       setReport(r);
     } catch (e) {
       setError((e as Error).message);
@@ -95,6 +119,27 @@ export default function SitemapAuditTab() {
       setLoading(false);
     }
   };
+
+  if (authState === "checking") {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh] text-slate-400">
+        <Loader2 className="w-6 h-6 animate-spin mr-2" /> Verifying admin access…
+      </div>
+    );
+  }
+
+  if (authState === "denied") {
+    return (
+      <div className="bg-red-500/10 border-2 border-red-500/30 rounded-lg p-8 text-center max-w-xl mx-auto">
+        <Lock className="w-12 h-12 text-red-400 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-white mb-2">Access denied</h2>
+        <p className="text-slate-300 text-sm">
+          The Sitemap Audit is restricted to authorised admin accounts. Sign in
+          with an admin account to run this tool.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 p-1">

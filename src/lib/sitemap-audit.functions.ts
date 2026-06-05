@@ -19,6 +19,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireFirebaseAdmin } from "@/lib/server/firebase-auth-admin";
 import {
   exclusionReason,
   isIndexable,
@@ -92,7 +93,15 @@ async function headStatus(url: string): Promise<number> {
 
 export const runSitemapAudit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<SitemapAuditReport> => {
+  .inputValidator((data: { idToken: string }) => {
+    if (!data?.idToken || typeof data.idToken !== "string") {
+      throw new Error("forbidden: admin id token required");
+    }
+    return data;
+  })
+  .handler(async ({ data }): Promise<SitemapAuditReport> => {
+    // Admin-only: verify Firebase ID token + isAdmin flag on customers doc.
+    await requireFirebaseAdmin(data.idToken);
     const errors: string[] = [];
     const sitemapUrl = `${BASE_URL}/sitemap.xml`;
 
