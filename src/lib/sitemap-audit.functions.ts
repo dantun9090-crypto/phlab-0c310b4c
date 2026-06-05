@@ -187,13 +187,50 @@ export const runSitemapAudit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { idToken: string }) => {
     if (!data?.idToken || typeof data.idToken !== "string") {
+      // Log + alert before throwing so unauthorized attempts are recorded.
+      void logUnauthorized({
+        reason: "missing_or_invalid_id_token",
+        idTokenPresent: !!data?.idToken,
+      });
       throw new Error("forbidden: admin id token required");
     }
     return data;
   })
   .handler(async ({ data }): Promise<SitemapAuditReport> => {
     // Admin-only: verify Firebase ID token + isAdmin flag on customers doc.
-    await requireFirebaseAdmin(data.idToken);
+    let user: { uid: string; email: string | null };
+    try {
+      user = await requireFirebaseAdmin(data.idToken);
+    } catch (err) {
+      const msg = (err as Error).message;
+      await logUnauthorized({
+        reason: msg === "not_admin" ? "not_admin" : `auth_failed:${msg}`,
+        idTokenPresent: true,
+      });
+      throw new Error(
+        msg === "not_admin"
+          ? "forbidden: account is not an admin"
+          : "forbidden: invalid id token",
+      );
+    }
+
+    // Per-admin rate limit — 10 runs / hour (see MAX_AUDIT_RUNS_PER_HOUR).
+    const rl = checkAuditRateLimit(user.uid);
+    if (!rl.allowed) {
+      await logUnauthorized({
+        reason: "rate_limited",
+        uid: user.uid,
+        email: user.email,
+        idTokenPresent: true,
+      });
+      const mins = Math.ceil(rl.resetMs / 60_000);
+      throw new Error(
+        `rate_limited: max ${MAX_AUDIT_RUNS_PER_HOUR} runs/hour. Try again in ~${mins} min.`,
+      );
+    }
+    void logAuthorizedRun(user.uid, user.email, rl.remaining);
+
+
     const errors: string[] = [];
     const sitemapUrl = `${BASE_URL}/sitemap.xml`;
 
