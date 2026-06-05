@@ -142,8 +142,13 @@ export default function PrerenderStatusTab() {
         </button>
       </div>
 
+      {/* Token length validation */}
+      <TokenLengthCard />
+
       {/* Auto-recache hook status */}
       <AutoRecacheCard />
+
+
 
 
       {/* Results */}
