@@ -20,6 +20,10 @@ jobs:
       - name: Install deps
         run: bun install --frozen-lockfile
 
+      # Strict TypeScript check — fails the build on any type error.
+      - name: Typecheck (tsc --noEmit)
+        run: bun run typecheck
+
       # Runs the EXACT production build that ships to Cloudflare Workers.
       # No --mode development, no dev-only shortcuts.
       - name: Production build
