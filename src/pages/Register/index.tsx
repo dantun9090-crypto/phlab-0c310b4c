@@ -17,6 +17,7 @@ export default function Register() {
     confirmPassword: '',
     acceptedTerms: false,
   });
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
