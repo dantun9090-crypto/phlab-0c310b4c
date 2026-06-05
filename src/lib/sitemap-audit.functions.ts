@@ -119,7 +119,7 @@ async function logAuthorizedRun(
   }
 }
 
-const BASE_URL = "https://phlabs.co.uk";
+
 
 /**
  * Hand-curated list of every page route that SHOULD be in the sitemap.
