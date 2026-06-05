@@ -233,8 +233,6 @@ function applySecurityHeaders(response: Response, nonce: string): Response {
   // Only decorate HTML — leaving JSON/XML/asset responses untouched avoids
   // breaking sitemap, JSON-LD endpoints, and prerender.io content sniffing.
   if (!contentType.includes("text/html")) return stripped;
-  const response2 = stripped;
-
 
   // Inject the per-request nonce into every <script> element via workerd's
   // built-in HTMLRewriter. This covers TanStack's <Scripts /> output, the
@@ -246,7 +244,7 @@ function applySecurityHeaders(response: Response, nonce: string): Response {
   };
   const RewriterCtor = (globalThis as { HTMLRewriter?: new () => Rewriter }).HTMLRewriter;
 
-  let rewritten = response;
+  let rewritten = stripped;
   if (RewriterCtor) {
     const rewriter: Rewriter = new RewriterCtor();
     rewritten = rewriter
@@ -255,8 +253,9 @@ function applySecurityHeaders(response: Response, nonce: string): Response {
           el.setAttribute("nonce", nonce);
         },
       })
-      .transform(response);
+      .transform(stripped);
   }
+
 
 
   const headers = new Headers(rewritten.headers);
