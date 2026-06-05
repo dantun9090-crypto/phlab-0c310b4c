@@ -120,7 +120,7 @@ export const Route = createFileRoute('/api/public/hooks/security-cleanup')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.PRERENDER_TOKEN;
+        const expected = process.env.CLEANUP_SECRET;
         const provided = request.headers.get('x-cleanup-secret');
         if (!expected || !provided || provided !== expected) {
           return new Response('Unauthorized', { status: 401 });
