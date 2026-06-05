@@ -1,4 +1,4 @@
-import { emailWrapper, greeting, ctaButton, divider, sectionHeading, EMAIL_COLORS as C } from './emailBase';
+import { emailWrapper, greeting, ctaButton, divider, sectionHeading, escapeHtml as esc, EMAIL_COLORS as C } from './emailBase';
 
 export interface DispatchEmailOptions {
   firstName: string;
@@ -21,7 +21,7 @@ export function buildDispatchEmail(opts: DispatchEmailOptions): string {
     return `
     <tr>
       <td bgcolor="${rowBg}" style="padding:11px 16px;color:${C.text};font-size:13px;border-bottom:1px solid ${C.border};background-color:${rowBg};">
-        ${item.name}${item.variantName ? ` <span style="color:${C.accent};font-size:11px;">(${item.variantName})</span>` : ''}
+        ${esc(item.name)}${item.variantName ? ` <span style="color:${C.accent};font-size:11px;">(${esc(item.variantName)})</span>` : ''}
       </td>
       <td bgcolor="${rowBg}" style="padding:11px 16px;color:${C.textMuted};font-size:13px;text-align:center;border-bottom:1px solid ${C.border};background-color:${rowBg};">×${item.quantity}</td>
       <td bgcolor="${rowBg}" style="padding:11px 16px;color:${C.textBright};font-size:13px;text-align:right;border-bottom:1px solid ${C.border};font-family:monospace;font-weight:700;background-color:${rowBg};">£${(item.priceNum * item.quantity).toFixed(2)}</td>
@@ -33,20 +33,21 @@ export function buildDispatchEmail(opts: DispatchEmailOptions): string {
     <div style="margin:24px 0;padding:20px 24px;background:linear-gradient(135deg,rgba(59,130,246,0.08),rgba(29,78,216,0.12));border:1px solid rgba(59,130,246,0.3);border-radius:14px;text-align:center;">
       <div style="font-size:28px;margin-bottom:8px;">📦</div>
       <p style="color:${C.textBright};font-size:16px;font-weight:700;margin:0 0 6px;">Your package is on its way!</p>
-      ${opts.courier ? `<p style="color:${C.textMuted};font-size:12px;margin:0 0 14px;">Courier: <strong style="color:${C.text};">${opts.courier}</strong></p>` : ''}
+      ${opts.courier ? `<p style="color:${C.textMuted};font-size:12px;margin:0 0 14px;">Courier: <strong style="color:${C.text};">${esc(opts.courier)}</strong></p>` : ''}
       ${opts.trackingNumber ? `<p style="color:${C.textMuted};font-size:12px;margin:0 0 6px;">Tracking Reference:</p>
-        <p style="color:${C.accentLight};font-size:18px;font-family:monospace;font-weight:800;letter-spacing:2px;margin:0 0 14px;">${opts.trackingNumber}</p>` : ''}
-      ${opts.trackingUrl ? `<a href="${opts.trackingUrl}" style="display:inline-block;padding:10px 24px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);border-radius:8px;color:${C.accentLight};font-size:13px;font-weight:700;text-decoration:none;">Track My Order →</a>` : ''}
-      ${opts.estimatedDelivery ? `<p style="color:${C.textMuted};font-size:12px;margin:14px 0 0;">Estimated delivery: <strong style="color:${C.success};">${opts.estimatedDelivery}</strong></p>` : ''}
+        <p style="color:${C.accentLight};font-size:18px;font-family:monospace;font-weight:800;letter-spacing:2px;margin:0 0 14px;">${esc(opts.trackingNumber)}</p>` : ''}
+      ${opts.trackingUrl ? `<a href="${esc(opts.trackingUrl)}" style="display:inline-block;padding:10px 24px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.4);border-radius:8px;color:${C.accentLight};font-size:13px;font-weight:700;text-decoration:none;">Track My Order →</a>` : ''}
+      ${opts.estimatedDelivery ? `<p style="color:${C.textMuted};font-size:12px;margin:14px 0 0;">Estimated delivery: <strong style="color:${C.success};">${esc(opts.estimatedDelivery)}</strong></p>` : ''}
     </div>
   ` : '';
 
   const addressBlock = opts.shippingAddress ? `
     ${sectionHeading('Delivering To')}
     <div style="padding:14px 18px;background:${C.bgCardDark};border:1px solid ${C.border};border-radius:10px;">
-      <p style="color:${C.text};font-size:13px;margin:0;white-space:pre-line;">${opts.shippingAddress}</p>
+      <p style="color:${C.text};font-size:13px;margin:0;white-space:pre-line;">${esc(opts.shippingAddress)}</p>
     </div>
   ` : '';
+
 
   const content = `
     <div>

@@ -1,4 +1,4 @@
-import { emailWrapper, greeting, ctaButton, divider, infoCard, statusBadge, sectionHeading, EMAIL_COLORS as C } from './emailBase';
+import { emailWrapper, greeting, ctaButton, divider, infoCard, statusBadge, sectionHeading, escapeHtml as esc, EMAIL_COLORS as C } from './emailBase';
 
 export interface OrderStatusEmailOptions {
   firstName: string;
@@ -82,8 +82,8 @@ export function buildOrderStatusEmail(opts: OrderStatusEmailOptions): string {
           return `
           <tr>
             <td bgcolor="${rowBg}" style="padding:11px 14px;color:${C.text};font-size:13px;border-bottom:1px solid ${C.border};background-color:${rowBg};">
-              ${item.name}
-              ${item.variantName ? `<span style="margin-left:6px;padding:1px 7px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.2);border-radius:4px;color:${C.accent};font-size:11px;">${item.variantName}</span>` : ''}
+              ${esc(item.name)}
+              ${item.variantName ? `<span style="margin-left:6px;padding:1px 7px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.2);border-radius:4px;color:${C.accent};font-size:11px;">${esc(item.variantName)}</span>` : ''}
             </td>
             <td bgcolor="${rowBg}" style="padding:11px 14px;color:${C.textMuted};font-size:13px;text-align:center;border-bottom:1px solid ${C.border};background-color:${rowBg};">${item.quantity}</td>
             <td bgcolor="${rowBg}" style="padding:11px 14px;color:${C.textBright};font-size:13px;text-align:right;font-family:monospace;font-weight:600;border-bottom:1px solid ${C.border};background-color:${rowBg};">£${(item.priceNum * item.quantity).toFixed(2)}</td>
@@ -110,13 +110,14 @@ export function buildOrderStatusEmail(opts: OrderStatusEmailOptions): string {
           ])}
           ${opts.trackingUrl ? `
             <div style="margin-top:14px;">
-              <a href="${opts.trackingUrl}" style="display:inline-block;padding:9px 20px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);border-radius:8px;color:#a78bfa;font-size:13px;font-weight:600;text-decoration:none;">
+              <a href="${esc(opts.trackingUrl)}" style="display:inline-block;padding:9px 20px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);border-radius:8px;color:#a78bfa;font-size:13px;font-weight:600;text-decoration:none;">
                 Track Your Package →
               </a>
             </div>` : ''}
         </td>
       </tr>
     </table>` : '';
+
 
   const content = `
     <div style="padding:32px 36px 28px;">

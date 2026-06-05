@@ -48,13 +48,12 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
           );
         }
 
-        const headerSecret = request.headers.get("x-recache-secret");
+        const provided = request.headers.get("x-recache-secret");
         const url = new URL(request.url);
-        const querySecret = url.searchParams.get("secret");
-        const provided = headerSecret || querySecret;
         if (!provided || provided !== token) {
           return new Response("Unauthorized", { status: 401 });
         }
+
 
         const force = url.searchParams.get("force") === "1";
         const now = Date.now();

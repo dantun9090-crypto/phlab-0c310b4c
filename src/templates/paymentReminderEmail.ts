@@ -1,4 +1,4 @@
-import { emailWrapper, ctaButton, infoCard, divider, EMAIL_COLORS as C, EMAIL_FONT } from './emailBase';
+import { emailWrapper, ctaButton, infoCard, divider, escapeHtml as esc, EMAIL_COLORS as C, EMAIL_FONT } from './emailBase';
 
 interface PaymentReminderEmailParams {
   firstName: string;
@@ -48,7 +48,7 @@ export function buildPaymentReminderEmail({
       </tr>
     </table>
 
-    <p style="margin:0 0 20px;color:${C.text};font-size:15px;line-height:1.6;font-family:${EMAIL_FONT};">Hi <strong style="color:${C.textBright};">${firstName}</strong>,</p>
+    <p style="margin:0 0 20px;color:${C.text};font-size:15px;line-height:1.6;font-family:${EMAIL_FONT};">Hi <strong style="color:${C.textBright};">${esc(firstName)}</strong>,</p>
 
     <p style="color:${C.text};font-size:14px;line-height:1.7;margin:0 0 24px;font-family:${EMAIL_FONT};">
       We noticed your order <strong style="color:${C.textBright};">#${shortId}</strong> is still awaiting payment — 

@@ -1,4 +1,4 @@
-import { emailWrapper, ctaButton, infoCard, divider, EMAIL_COLORS as C, EMAIL_FONT } from './emailBase';
+import { emailWrapper, ctaButton, infoCard, divider, escapeHtml as esc, EMAIL_COLORS as C, EMAIL_FONT } from './emailBase';
 
 export interface CancellationEmailParams {
   firstName: string;
@@ -31,9 +31,10 @@ export function buildCancellationEmail({
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
             <tr>
               <td>
-                <span style="color:${C.textBright};font-size:13px;font-weight:600;font-family:${EMAIL_FONT};">${item.name}</span>
-                ${item.variantName ? `<span style="color:${C.textMuted};font-size:12px;margin-left:6px;font-family:${EMAIL_FONT};">${item.variantName}</span>` : ''}
+                <span style="color:${C.textBright};font-size:13px;font-weight:600;font-family:${EMAIL_FONT};">${esc(item.name)}</span>
+                ${item.variantName ? `<span style="color:${C.textMuted};font-size:12px;margin-left:6px;font-family:${EMAIL_FONT};">${esc(item.variantName)}</span>` : ''}
                 <span style="color:${C.textDimmed};font-size:12px;margin-left:6px;font-family:${EMAIL_FONT};">× ${item.quantity}</span>
+
               </td>
               <td style="text-align:right;">
                 <span style="color:${C.textBright};font-size:13px;font-weight:600;font-family:${EMAIL_FONT};">£${(item.priceNum * item.quantity).toFixed(2)}</span>
@@ -70,7 +71,7 @@ export function buildCancellationEmail({
       </tr>
     </table>
 
-    <p style="margin:0 0 20px;color:${C.text};font-size:15px;line-height:1.6;font-family:${EMAIL_FONT};">Hi <strong style="color:${C.textBright};">${firstName}</strong>,</p>
+    <p style="margin:0 0 20px;color:${C.text};font-size:15px;line-height:1.6;font-family:${EMAIL_FONT};">Hi <strong style="color:${C.textBright};">${esc(firstName)}</strong>,</p>
 
     <p style="color:${C.textBright};font-size:18px;font-weight:700;margin:0 0 12px;line-height:1.3;font-family:${EMAIL_FONT};">
       Your order #${shortId} has been cancelled
