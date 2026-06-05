@@ -30,6 +30,7 @@ import SEOTab from './tabs/SEOTab';
 import { FeaturedProductsTab } from './tabs/FeaturedProductsTab';
 import QCDashboardTab from './tabs/QCDashboardTab';
 import SitemapTab from './tabs/SitemapTab';
+import SitemapAuditTab from './tabs/SitemapAuditTab';
 import PromoCodesTab from './tabs/PromoCodesTab';
 import DiagnosticsTab from './tabs/DiagnosticsTab';
 import PrerenderStatusTab from './tabs/PrerenderStatusTab';
@@ -41,7 +42,7 @@ import SecurityAuditTab from './tabs/SecurityAuditTab';
 import FenaTab from './tabs/FenaTab';
 import PaymentsTab from './tabs/PaymentsTab';
 
-type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'gscmonitor' | 'merchantfeed' | 'securityaudit' | 'fena' | 'payments';
+type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'gscmonitor' | 'merchantfeed' | 'securityaudit' | 'fena' | 'payments';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -320,6 +321,7 @@ export default function AdminPage() {
         case 'featured': return <FeaturedProductsTab />;
         case 'seo': return <SEOTab />;
         case 'sitemap': return <SitemapTab />;
+        case 'sitemapaudit': return <SitemapAuditTab />;
         case 'qc': return <QCDashboardTab />;
         case 'promocodes': return <PromoCodesTab />;
         case 'diagnostics': return <DiagnosticsTab />;
