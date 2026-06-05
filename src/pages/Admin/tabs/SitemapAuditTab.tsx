@@ -133,17 +133,74 @@ export default function SitemapAuditTab() {
   }
 
   if (authState === "denied") {
+    const signedIn = !!auth.currentUser;
+    const reason = signedIn
+      ? "Your account does not have the admin role required to view the Sitemap Audit. This page mutates SEO-critical data and is restricted to authorised administrators."
+      : "You are not signed in. The Sitemap Audit is restricted to authorised admin accounts.";
+    const subject = encodeURIComponent("Request: Sitemap Audit access");
+    const body = encodeURIComponent(
+      `Hi,\n\nPlease grant my account access to the Admin → Sitemap Audit tool.\n\nAccount email: ${auth.currentUser?.email ?? "(not signed in)"}\nReason for access: \n\nThanks.`,
+    );
     return (
       <div className="bg-red-500/10 border-2 border-red-500/30 rounded-lg p-8 text-center max-w-xl mx-auto">
         <Lock className="w-12 h-12 text-red-400 mx-auto mb-4" />
         <h2 className="text-2xl font-bold text-white mb-2">Access denied</h2>
-        <p className="text-slate-300 text-sm">
-          The Sitemap Audit is restricted to authorised admin accounts. Sign in
-          with an admin account to run this tool.
+        <p className="text-slate-300 text-sm mb-2">
+          <strong className="text-red-300">Reason:</strong> {reason}
         </p>
+        <p className="text-slate-400 text-xs mb-6">
+          Signed in as:{" "}
+          <code className="text-slate-300">
+            {auth.currentUser?.email ?? "—"}
+          </code>
+        </p>
+        <a
+          href={`mailto:${REQUEST_ACCESS_EMAIL}?subject=${subject}&body=${body}`}
+          className="inline-flex items-center gap-2 px-4 py-2.5 min-h-[48px] bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition-colors"
+        >
+          <Mail className="w-4 h-4" />
+          Request access
+        </a>
       </div>
     );
   }
+
+  const downloadReport = (format: "json" | "csv") => {
+    if (!report) return;
+    let blob: Blob;
+    let filename: string;
+    const stamp = new Date(report.ranAt).toISOString().replace(/[:.]/g, "-");
+    if (format === "json") {
+      blob = new Blob([JSON.stringify(report, null, 2)], {
+        type: "application/json",
+      });
+      filename = `sitemap-audit-${stamp}.json`;
+    } else {
+      const rows: string[] = ["category,path,detail,status"];
+      const esc = (s: string) => `"${String(s).replace(/"/g, '""')}"`;
+      for (const m of report.missing)
+        rows.push(`missing,${esc(m.path)},${esc(m.note ?? "")},`);
+      for (const m of report.extraBlocked)
+        rows.push(
+          `extra_blocked,${esc(m.path)},${esc(`${m.reason.kind}: ${m.reason.detail}`)},`,
+        );
+      for (const m of report.extra404)
+        rows.push(`extra_404,${esc(m.path)},,${m.status}`);
+      for (const m of report.expectedExclusions)
+        rows.push(
+          `expected_exclusion,${esc(m.path)},${esc(`${m.reason.kind}: ${m.reason.detail}`)},`,
+        );
+      blob = new Blob([rows.join("\n")], { type: "text/csv" });
+      filename = `sitemap-audit-${stamp}.csv`;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
 
   return (
     <div className="space-y-6 p-1">
