@@ -87,7 +87,7 @@ export default function SitemapAuditTab() {
     setLoading(true);
     setError(null);
     try {
-      const r = await run({ data: undefined as unknown as void });
+      const r = await run();
       setReport(r);
     } catch (e) {
       setError((e as Error).message);
