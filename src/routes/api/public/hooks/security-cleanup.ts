@@ -5,8 +5,8 @@
  * `securityEvents`, `loginAttempts`, and `auth_events` using service-account
  * credentials (bypasses Firestore rules).
  *
- * Auth: `x-cleanup-secret` header must equal `PRERENDER_TOKEN` (reused as a
- * pre-shared secret; rotating the token also locks this endpoint). The route
+ * Auth: `x-cleanup-secret` header must equal the `CLEANUP_SECRET` env var
+ * (a dedicated pre-shared secret, NOT reusing PRERENDER_TOKEN). The route
  * lives under /api/public/* so it bypasses edge auth — verification happens here.
  */
 import { createFileRoute } from '@tanstack/react-router';
@@ -120,7 +120,7 @@ export const Route = createFileRoute('/api/public/hooks/security-cleanup')({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.PRERENDER_TOKEN;
+        const expected = process.env.CLEANUP_SECRET;
         const provided = request.headers.get('x-cleanup-secret');
         if (!expected || !provided || provided !== expected) {
           return new Response('Unauthorized', { status: 401 });

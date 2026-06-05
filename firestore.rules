@@ -168,6 +168,60 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ---------- loginAttempts (brute-force lockout tracker) ----------
+    // Written by the client BEFORE auth completes — must allow unauthenticated
+    // create/update with a tightly locked schema. Doc id is a hashed email
+    // (see src/lib/login-lockout.ts). Read is admin-only.
+    match /loginAttempts/{id} {
+      allow read:   if isAdmin();
+      allow create, update: if request.resource.data.failures is int
+                            && request.resource.data.failures >= 0
+                            && request.resource.data.failures < 1000
+                            && request.resource.data.emailHash is string
+                            && request.resource.data.emailHash.size() < 220
+                            && (!('lockedUntil' in request.resource.data)
+                                || request.resource.data.lockedUntil == null
+                                || request.resource.data.lockedUntil is timestamp)
+                            && (!('ip' in request.resource.data)
+                                || request.resource.data.ip == null
+                                || (request.resource.data.ip is string
+                                    && request.resource.data.ip.size() < 64));
+      allow delete: if isAdmin();
+    }
+
+    // ---------- securityEvents (append-only diagnostic log) ----------
+    // Generic security event log — ErrorBoundary, lockout, idle logout,
+    // admin login failures, password changes. Append-only; admin-read.
+    // Allowed from both authenticated AND unauthenticated contexts (so a
+    // failed /admin login from an unauth session still records).
+    match /securityEvents/{id} {
+      allow read:   if isAdmin();
+      allow create: if request.resource.data.type is string
+                    && request.resource.data.type.size() > 0
+                    && request.resource.data.type.size() < 64
+                    && request.resource.data.createdAt == request.time
+                    && (!('uid' in request.resource.data)
+                        || request.resource.data.uid == null
+                        || (request.resource.data.uid is string
+                            && request.resource.data.uid.size() < 64
+                            && (request.auth == null || request.resource.data.uid == request.auth.uid)))
+                    && (!('route' in request.resource.data)
+                        || request.resource.data.route == null
+                        || (request.resource.data.route is string
+                            && request.resource.data.route.size() < 300))
+                    && (!('message' in request.resource.data)
+                        || request.resource.data.message == null
+                        || (request.resource.data.message is string
+                            && request.resource.data.message.size() < 600))
+                    && (!('userAgent' in request.resource.data)
+                        || request.resource.data.userAgent == null
+                        || (request.resource.data.userAgent is string
+                            && request.resource.data.userAgent.size() < 300));
+      allow update, delete: if false;
+    }
+
+
+
     // ---------- fena webhook events (admin-read diagnostic log) ----------
     // Written exclusively by the /api/public/hooks/fena server route via
     // firebase-admin (bypasses rules). Admins read from the Fena tab.

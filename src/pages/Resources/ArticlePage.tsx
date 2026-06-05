@@ -1,6 +1,7 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { Clock, ArrowLeft, BookOpen, ExternalLink, AlertTriangle, FlaskConical, ArrowRight } from 'lucide-react';
+import DOMPurify from 'isomorphic-dompurify';
 import { getArticle, getRelatedArticles, type Section, type TableData } from './data/articles';
 import { MolecularBackground } from '@/components/MolecularBackground';
 
@@ -205,7 +206,7 @@ function SectionBlock({ section }: { section: Section }) {
           <p 
             key={i} 
             className="text-[#7a9cc0] leading-relaxed mb-4 text-[15px]"
-            dangerouslySetInnerHTML={{ __html: para.trim() }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(para.trim(), { ALLOWED_TAGS: ['a','strong','em','b','i','u','br','span','sup','sub','code'], ALLOWED_ATTR: ['href','title','target','rel','class'] }) }}
           />
         ) : null
       )}

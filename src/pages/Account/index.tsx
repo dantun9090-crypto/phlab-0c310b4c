@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { auth, db, getUserOrders, logoutUser, Order, redeemReferralBalance, doc, getDoc, updateDoc, deleteDoc, onAuthStateChanged, FirebaseUser, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendEmailVerification } from '@/lib/firebase';
+import { revokeMyRefreshTokens } from '@/lib/revoke-refresh-tokens.functions';
+import { logSecurityEvent } from '@/lib/security-events';
 import { OrderTrackingBar } from '@/components/OrderTrackingBar';
 import { PayAgainCTA } from '@/components/PayAgainCTA';
 import { getDisplayStatus } from '@/lib/order-payment-retry';
@@ -248,7 +250,16 @@ export default function AccountPage() {
       const cred = EmailAuthProvider.credential(user.email, currentPassword);
       await reauthenticateWithCredential(user, cred);
       await updatePassword(user, newPassword);
-      setPasswordSuccess('Password updated successfully');
+      // G: Revoke refresh tokens on every other device.
+      try {
+        const idToken = await user.getIdToken(/* forceRefresh */ true);
+        await revokeMyRefreshTokens({ data: { idToken } });
+        logSecurityEvent({ type: 'password_changed', meta: { uid: user.uid } });
+        setPasswordSuccess('Password changed. All other sessions logged out.');
+      } catch (revokeErr) {
+        console.warn('[account] token revocation failed:', revokeErr);
+        setPasswordSuccess('Password updated successfully');
+      }
       setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
       setChangingPassword(false);
     } catch (e: any) {

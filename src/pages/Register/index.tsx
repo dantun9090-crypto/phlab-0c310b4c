@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, CheckCircle2, Loader2, Gift, Phone } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { registerUser, signInWithGoogle, ensureAppCheck } from '@/lib/firebase';
+import { registerUser, signInWithGoogle, ensureAppCheck, setAuthPersistence } from '@/lib/firebase';
 import { evaluatePassword, summarisePolicyErrors } from '@/lib/password-policy';
 
 
@@ -17,6 +17,7 @@ export default function Register() {
     confirmPassword: '',
     acceptedTerms: false,
   });
+  const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -54,6 +55,7 @@ export default function Register() {
     setError('');
     setGoogleLoading(true);
     try {
+      await setAuthPersistence(rememberMe);
       await signInWithGoogle();
       navigate('/account');
     } catch (err: any) {
@@ -89,6 +91,7 @@ export default function Register() {
     setLoading(true);
 
     try {
+      await setAuthPersistence(rememberMe);
       await registerUser(
         formData.email,
         formData.password,
@@ -361,6 +364,18 @@ export default function Register() {
                     </span>
                   </label>
                 </div>
+
+                {/* Remember me */}
+                <label className="flex items-center gap-2 text-[#9cb8d9] text-sm select-none cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={e => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded border-white/20 bg-[#0d1f38] accent-emerald-500"
+                  />
+                  Keep me signed in on this device
+                </label>
+
 
                 {/* Submit Button */}
                 <button

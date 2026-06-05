@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { loginUser, resetPassword, signInWithGoogle, db, doc, getDoc } from '@/lib/firebase';
+import { loginUser, resetPassword, signInWithGoogle, setAuthPersistence, db, doc, getDoc } from '@/lib/firebase';
+import { formatRemaining } from '@/lib/login-lockout';
+import { logSecurityEvent } from '@/lib/security-events';
 
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -19,6 +21,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+  const [lockoutMs, setLockoutMs] = useState(0);
+  const lockoutTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Noindex for SEO
   useEffect(() => {
@@ -48,17 +53,53 @@ export default function Login() {
   }, []);
 
 
+  // Tick lockout countdown
+  useEffect(() => {
+    if (lockoutMs <= 0) {
+      if (lockoutTimerRef.current) { clearInterval(lockoutTimerRef.current); lockoutTimerRef.current = null; }
+      return;
+    }
+    lockoutTimerRef.current = setInterval(() => {
+      setLockoutMs(ms => Math.max(0, ms - 1000));
+    }, 1000);
+    return () => { if (lockoutTimerRef.current) clearInterval(lockoutTimerRef.current); };
+  }, [lockoutMs]);
+
+  const isAdminTarget = redirectTarget.startsWith('/admin');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (lockoutMs > 0) return;
     setLoading(true);
+    const startedAt = Date.now();
     try {
+      // E: session persistence based on "Remember me"
+      await setAuthPersistence(rememberMe);
       await loginUser(formData.email, formData.password);
       navigate(redirectTarget);
     } catch (err: any) {
-      if (err.code === 'auth/user-not-found') setError('No account found with this email.');
-      else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') setError('Incorrect email or password.');
-      else setError(err.message || 'Login failed. Please try again.');
+      // C: 3-second artificial delay for /admin login failures
+      if (isAdminTarget) {
+        const elapsed = Date.now() - startedAt;
+        const wait = Math.max(0, 3000 - elapsed);
+        if (wait > 0) await new Promise(r => setTimeout(r, wait));
+        // Admin audit log (item 10)
+        logSecurityEvent({
+          type: 'admin_login_failure',
+          route: '/admin/login',
+          message: err?.code || err?.message || 'unknown',
+          meta: { email: formData.email },
+        });
+      }
+      if (err?.code === 'auth/account-locked') {
+        const remaining = (err as any).remainingMs ?? 0;
+        setLockoutMs(remaining);
+        setError(`Account locked. Try again in ${formatRemaining(remaining)}.`);
+        logSecurityEvent({ type: 'login_lockout', message: 'lockout', meta: { email: formData.email } });
+      } else if (err?.code === 'auth/user-not-found') setError('No account found with this email.');
+      else if (err?.code === 'auth/wrong-password' || err?.code === 'auth/invalid-credential') setError('Incorrect email or password.');
+      else setError(err?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -68,6 +109,7 @@ export default function Login() {
     setError('');
     setGoogleLoading(true);
     try {
+      await setAuthPersistence(rememberMe);
       await signInWithGoogle();
       navigate(redirectTarget);
     } catch (err: any) {
@@ -259,10 +301,22 @@ export default function Login() {
                     </div>
                   </div>
 
-                  <button type="submit" disabled={loading || googleLoading}
-                    className="w-full py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:opacity-50 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mt-1">
+                  <label className="flex items-center gap-2 text-[#9cb8d9] text-xs mt-1 select-none cursor-pointer">
+                    <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)}
+                      className="w-4 h-4 rounded border-white/20 bg-[#0d1f38] accent-emerald-500" />
+                    Remember me on this device
+                  </label>
+
+                  {lockoutMs > 0 && (
+                    <div className="text-amber-300 text-xs bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2">
+                      Account temporarily locked. Try again in {formatRemaining(lockoutMs)}.
+                    </div>
+                  )}
+
+                  <button type="submit" disabled={loading || googleLoading || lockoutMs > 0}
+                    className="w-full py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mt-1">
                     {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {loading ? 'Signing in...' : 'Sign In'}
+                    {lockoutMs > 0 ? `Locked (${formatRemaining(lockoutMs)})` : (loading ? 'Signing in...' : 'Sign In')}
                   </button>
                 </form>
 

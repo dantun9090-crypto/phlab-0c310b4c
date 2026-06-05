@@ -1,10 +1,11 @@
-import { useState, useEffect, Component, ReactNode } from 'react';
+import { useState, useEffect, useRef, Component, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { auth, db, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
+import { auth, db, doc, getDoc, onAuthStateChanged, logoutUser } from '@/lib/firebase';
 import { checkAdminIpAllowed } from '@/lib/admin-ip-gate.functions';
+import { logSecurityEvent } from '@/lib/security-events';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Loader2, Menu, WifiOff, RefreshCw } from 'lucide-react';
+import { Shield, Loader2, Menu, WifiOff, RefreshCw, Clock } from 'lucide-react';
 import AdminSidebar from './components/AdminSidebar';
 import DashboardTab from './tabs/DashboardTab';
 import InventoryTab from './tabs/InventoryTab';
@@ -85,6 +86,10 @@ export default function AdminPage() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
+  const [idleWarningSec, setIdleWarningSec] = useState(0);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     const update = () => setIsLargeScreen(window.innerWidth >= 1024);
@@ -173,6 +178,54 @@ export default function AdminPage() {
         setIpChecked(true);
       });
   }, [authChecked, isAdmin]);
+  // D: Admin idle auto-logout — 15 min idle, with 60s warning modal.
+  useEffect(() => {
+    if (!authChecked || !isAdmin) return;
+    const IDLE_MS = 15 * 60 * 1000;
+    const WARN_MS = 60 * 1000;
+
+    const clearAll = () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+
+    const doLogout = async () => {
+      clearAll();
+      logSecurityEvent({ type: 'admin_idle_logout', route: '/admin', message: 'idle-15m' });
+      try { await logoutUser(); } catch { /* ignore */ }
+      navigate('/login');
+    };
+
+    const startCountdown = () => {
+      setIdleWarningSec(WARN_MS / 1000);
+      countdownRef.current = setInterval(() => {
+        setIdleWarningSec(s => {
+          if (s <= 1) { return 0; }
+          return s - 1;
+        });
+      }, 1000);
+    };
+
+    const reset = () => {
+      clearAll();
+      setIdleWarningSec(0);
+      warningTimerRef.current = setTimeout(() => {
+        startCountdown();
+        idleTimerRef.current = setTimeout(doLogout, WARN_MS);
+      }, IDLE_MS - WARN_MS);
+    };
+
+    const events: Array<keyof WindowEventMap> = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    events.forEach(e => window.addEventListener(e, reset, { passive: true }));
+    reset();
+
+    return () => {
+      clearAll();
+      events.forEach(e => window.removeEventListener(e, reset));
+    };
+  }, [authChecked, isAdmin, navigate]);
+
 
   if (!authChecked) {
     return (
@@ -484,6 +537,30 @@ export default function AdminPage() {
           </motion.div>
         </main>
       </div>
+      {/* D: Idle warning modal */}
+      {idleWarningSec > 0 && (
+        <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center px-4">
+          <div className="max-w-sm w-full bg-[#04101f] border border-amber-500/40 rounded-2xl p-6 text-center">
+            <div className="w-14 h-14 rounded-full bg-amber-500/15 flex items-center justify-center mx-auto mb-4">
+              <Clock className="w-7 h-7 text-amber-400" />
+            </div>
+            <h3 className="text-white font-bold text-lg mb-2">Still there?</h3>
+            <p className="text-[#9cb8d9] text-sm mb-1">
+              You'll be signed out for inactivity in
+            </p>
+            <p className="text-amber-300 text-3xl font-bold tabular-nums mb-5">{idleWarningSec}s</p>
+            <button
+              onClick={() => {
+                // Any click resets the timer (event listener handles it)
+                setIdleWarningSec(0);
+              }}
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-semibold transition-colors"
+            >
+              Stay signed in
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
