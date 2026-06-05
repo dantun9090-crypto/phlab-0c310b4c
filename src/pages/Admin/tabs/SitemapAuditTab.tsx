@@ -24,7 +24,11 @@ import {
   Info,
   Loader2,
   Lock,
+  Download,
+  Mail,
 } from "lucide-react";
+
+const REQUEST_ACCESS_EMAIL = "admin@phlabs.co.uk";
 
 function Pill({
   tone,
