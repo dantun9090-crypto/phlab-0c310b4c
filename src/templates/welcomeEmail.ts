@@ -71,7 +71,7 @@ export function buildWelcomeEmail(opts: WelcomeEmailOptions): string {
             <td style="color:${C.textMuted};font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;padding-bottom:4px;">Registered Email</td>
           </tr>
           <tr>
-            <td style="color:${C.textBright};font-size:14px;font-family:monospace;">${opts.email}</td>
+            <td style="color:${C.textBright};font-size:14px;font-family:monospace;">${esc(opts.email)}</td>
           </tr>
         </table>
       </div>
