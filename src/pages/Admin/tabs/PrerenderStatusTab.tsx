@@ -7,9 +7,11 @@ import {
 import {
   probePrerenderStatus,
   recachePrerenderUrl,
+  checkPrerenderTokenLength,
   type ProbeResult,
 } from '@/lib/prerender-status.functions';
 import { auth } from '@/lib/firebase';
+
 
 interface RecacheLog {
   url: string;
@@ -140,8 +142,13 @@ export default function PrerenderStatusTab() {
         </button>
       </div>
 
+      {/* Token length validation */}
+      <TokenLengthCard />
+
       {/* Auto-recache hook status */}
       <AutoRecacheCard />
+
+
 
 
       {/* Results */}
@@ -322,7 +329,137 @@ function AutoRecacheCard() {
 
 
 
+function TokenLengthCard() {
+  const check = useServerFn(checkPrerenderTokenLength);
+  const [state, setState] = useState<{ configured: boolean; length: number; expected: number; ok: boolean; checkedAt: string } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const run = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await check({ data: undefined });
+      setState(res);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { run(); /* eslint-disable-next-line */ }, []);
+
+  const tone =
+    !state ? 'neutral' :
+    !state.configured ? 'bad' :
+    state.ok ? 'ok' : 'bad';
+
+  const toneStyles =
+    tone === 'ok'   ? 'border-emerald-500/30 bg-emerald-500/5' :
+    tone === 'bad'  ? 'border-red-500/40 bg-red-500/5' :
+                      'border-white/[0.07] bg-[#0b1a30]/70';
+
+  return (
+    <div className={`rounded-xl p-4 border ${toneStyles}`}>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="flex-1">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <ShieldCheckIcon tone={tone} />
+            Cloudflare Prerender token validation
+          </h3>
+          <p className="text-xs text-[#9cb8d9] mt-1">
+            Checks that <code className="text-emerald-400">PRERENDER_TOKEN</code> is exactly{' '}
+            <span className="text-white font-semibold">22 characters</span> — the standard
+            Prerender.io token length. Shorter usually means the value was truncated when pasted.
+          </p>
+
+          {loading && (
+            <p className="text-xs text-[#9cb8d9] mt-3 flex items-center gap-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Checking…
+            </p>
+          )}
+
+          {error && (
+            <p className="mt-3 text-xs text-red-400 font-mono">Check failed: {error}</p>
+          )}
+
+          {state && !loading && (
+            <div className="mt-3 space-y-2">
+              <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+                <span className="px-2 py-1 rounded bg-slate-900/60 border border-white/[0.06] text-white">
+                  length: <span className={state.ok ? 'text-emerald-400' : 'text-red-400'}>{state.length}</span>
+                </span>
+                <span className="px-2 py-1 rounded bg-slate-900/60 border border-white/[0.06] text-[#9cb8d9]">
+                  expected: <span className="text-white">{state.expected}</span>
+                </span>
+                <span className="px-2 py-1 rounded bg-slate-900/60 border border-white/[0.06] text-[#9cb8d9]">
+                  configured: <span className={state.configured ? 'text-emerald-400' : 'text-red-400'}>{state.configured ? 'yes' : 'no'}</span>
+                </span>
+              </div>
+
+              {!state.configured && (
+                <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-md p-2.5">
+                  <strong className="text-red-200">PRERENDER_TOKEN is not set.</strong> Add it in
+                  Project Settings → Secrets, then refresh this check.
+                </div>
+              )}
+
+              {state.configured && !state.ok && (
+                <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-md p-2.5 space-y-1">
+                  <p>
+                    <strong className="text-red-200">
+                      Token length is {state.length}, expected {state.expected}.
+                    </strong>{' '}
+                    This will cause Prerender.io to reject every bot request with
+                    {' '}<code className="text-red-200">invalid-x-prerender-token-provided</code> (HTTP 503).
+                  </p>
+                  <p>
+                    Open the Prerender.io dashboard, click the <strong>copy</strong> button next
+                    to the token (don't manually select), and paste it into the secret. Also update
+                    the matching token inside the Cloudflare Prerender.io app integration.
+                  </p>
+                </div>
+              )}
+
+              {state.ok && (
+                <div className="text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-md p-2.5">
+                  Token length looks correct. If bot requests still return 503, the token may be
+                  valid but rotated — copy the current value from the Prerender.io dashboard.
+                </div>
+              )}
+
+              <p className="text-[10px] text-[#3a5a82] font-mono">
+                Checked {new Date(state.checkedAt).toLocaleTimeString('en-GB')}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={run}
+          disabled={loading}
+          className="px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-lg text-xs font-medium transition-colors min-h-[40px] flex items-center gap-2 shrink-0"
+        >
+          {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+          Re-check
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ShieldCheckIcon({ tone }: { tone: 'ok' | 'bad' | 'neutral' }) {
+  const color =
+    tone === 'ok'  ? 'text-emerald-400' :
+    tone === 'bad' ? 'text-red-400'     : 'text-blue-400';
+  if (tone === 'ok')  return <CheckCircle2 className={`w-4 h-4 ${color}`} />;
+  if (tone === 'bad') return <XCircle      className={`w-4 h-4 ${color}`} />;
+  return <AlertTriangle className={`w-4 h-4 ${color}`} />;
+}
+
 function Stat({ label, value, tone = 'neutral' }: { label: string; value: string; tone?: 'ok' | 'warn' | 'bad' | 'neutral' }) {
+
   const cls =
     tone === 'ok'   ? 'text-emerald-400' :
     tone === 'warn' ? 'text-amber-400'   :
