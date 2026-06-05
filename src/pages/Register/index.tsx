@@ -91,6 +91,7 @@ export default function Register() {
     setLoading(true);
 
     try {
+      await setAuthPersistence(rememberMe);
       await registerUser(
         formData.email,
         formData.password,
