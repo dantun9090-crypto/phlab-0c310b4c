@@ -1,6 +1,7 @@
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { Clock, ArrowLeft, BookOpen, ExternalLink, AlertTriangle, FlaskConical, ArrowRight } from 'lucide-react';
+import DOMPurify from 'isomorphic-dompurify';
 import { getArticle, getRelatedArticles, type Section, type TableData } from './data/articles';
 import { MolecularBackground } from '@/components/MolecularBackground';
 
