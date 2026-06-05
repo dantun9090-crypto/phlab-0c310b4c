@@ -2,6 +2,30 @@ import { createServerFn } from '@tanstack/react-start';
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { requireFirebaseAdmin } from '@/lib/server/firebase-auth-admin';
 
+const EXPECTED_PRERENDER_TOKEN_LENGTH = 22;
+
+/**
+ * Return only the length of PRERENDER_TOKEN and whether it matches the
+ * expected Prerender.io token length (22 chars). Never returns the token
+ * value itself — admin UI uses this to surface a clear error when the
+ * configured token is the wrong size (commonly truncated to 20 on paste).
+ */
+export const checkPrerenderTokenLength = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const token = process.env.PRERENDER_TOKEN ?? '';
+    const length = token.length;
+    return {
+      configured: length > 0,
+      length,
+      expected: EXPECTED_PRERENDER_TOKEN_LENGTH,
+      ok: length === EXPECTED_PRERENDER_TOKEN_LENGTH,
+      checkedAt: new Date().toISOString(),
+    } as const;
+  });
+
+
+
 /**
  * Probe a single URL as Googlebot to see what Prerender.io / our edge serves.
  * Returns the HTTP status, whether the HTML response carries a
