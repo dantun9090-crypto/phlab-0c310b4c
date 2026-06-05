@@ -72,8 +72,9 @@ export default function Register() {
       setError('Please fill in all fields');
       return;
     }
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters');
+    const policy = evaluatePassword(formData.password);
+    if (!policy.ok) {
+      setError(summarisePolicyErrors(policy.errors));
       return;
     }
     if (formData.password !== formData.confirmPassword) {
