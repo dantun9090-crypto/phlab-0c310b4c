@@ -96,7 +96,7 @@ export default function AdminPage() {
   useEffect(() => {
     const meta = document.createElement('meta');
     meta.name = 'robots';
-    meta.content = 'noindex, follow';
+    meta.content = 'noindex, nofollow';
     meta.id = 'noindex-admin';
     document.head.appendChild(meta);
     return () => document.getElementById('noindex-admin')?.remove();
