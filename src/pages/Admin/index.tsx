@@ -537,6 +537,30 @@ export default function AdminPage() {
           </motion.div>
         </main>
       </div>
+      {/* D: Idle warning modal */}
+      {idleWarningSec > 0 && (
+        <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center px-4">
+          <div className="max-w-sm w-full bg-[#04101f] border border-amber-500/40 rounded-2xl p-6 text-center">
+            <div className="w-14 h-14 rounded-full bg-amber-500/15 flex items-center justify-center mx-auto mb-4">
+              <Clock className="w-7 h-7 text-amber-400" />
+            </div>
+            <h3 className="text-white font-bold text-lg mb-2">Still there?</h3>
+            <p className="text-[#9cb8d9] text-sm mb-1">
+              You'll be signed out for inactivity in
+            </p>
+            <p className="text-amber-300 text-3xl font-bold tabular-nums mb-5">{idleWarningSec}s</p>
+            <button
+              onClick={() => {
+                // Any click resets the timer (event listener handles it)
+                setIdleWarningSec(0);
+              }}
+              className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-sm font-semibold transition-colors"
+            >
+              Stay signed in
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
