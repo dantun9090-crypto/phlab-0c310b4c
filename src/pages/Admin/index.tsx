@@ -178,6 +178,54 @@ export default function AdminPage() {
         setIpChecked(true);
       });
   }, [authChecked, isAdmin]);
+  // D: Admin idle auto-logout — 15 min idle, with 60s warning modal.
+  useEffect(() => {
+    if (!authChecked || !isAdmin) return;
+    const IDLE_MS = 15 * 60 * 1000;
+    const WARN_MS = 60 * 1000;
+
+    const clearAll = () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      if (warningTimerRef.current) clearTimeout(warningTimerRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+
+    const doLogout = async () => {
+      clearAll();
+      logSecurityEvent({ type: 'admin_idle_logout', route: '/admin', message: 'idle-15m' });
+      try { await logoutUser(); } catch { /* ignore */ }
+      navigate('/login');
+    };
+
+    const startCountdown = () => {
+      setIdleWarningSec(WARN_MS / 1000);
+      countdownRef.current = setInterval(() => {
+        setIdleWarningSec(s => {
+          if (s <= 1) { return 0; }
+          return s - 1;
+        });
+      }, 1000);
+    };
+
+    const reset = () => {
+      clearAll();
+      setIdleWarningSec(0);
+      warningTimerRef.current = setTimeout(() => {
+        startCountdown();
+        idleTimerRef.current = setTimeout(doLogout, WARN_MS);
+      }, IDLE_MS - WARN_MS);
+    };
+
+    const events: Array<keyof WindowEventMap> = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
+    events.forEach(e => window.addEventListener(e, reset, { passive: true }));
+    reset();
+
+    return () => {
+      clearAll();
+      events.forEach(e => window.removeEventListener(e, reset));
+    };
+  }, [authChecked, isAdmin, navigate]);
+
 
   if (!authChecked) {
     return (
