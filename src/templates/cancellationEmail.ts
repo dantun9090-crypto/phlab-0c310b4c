@@ -71,7 +71,7 @@ export function buildCancellationEmail({
       </tr>
     </table>
 
-    <p style="margin:0 0 20px;color:${C.text};font-size:15px;line-height:1.6;font-family:${EMAIL_FONT};">Hi <strong style="color:${C.textBright};">${firstName}</strong>,</p>
+    <p style="margin:0 0 20px;color:${C.text};font-size:15px;line-height:1.6;font-family:${EMAIL_FONT};">Hi <strong style="color:${C.textBright};">${esc(firstName)}</strong>,</p>
 
     <p style="color:${C.textBright};font-size:18px;font-weight:700;margin:0 0 12px;line-height:1.3;font-family:${EMAIL_FONT};">
       Your order #${shortId} has been cancelled
