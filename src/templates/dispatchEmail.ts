@@ -1,4 +1,4 @@
-import { emailWrapper, greeting, ctaButton, divider, sectionHeading, EMAIL_COLORS as C } from './emailBase';
+import { emailWrapper, greeting, ctaButton, divider, sectionHeading, escapeHtml as esc, EMAIL_COLORS as C } from './emailBase';
 
 export interface DispatchEmailOptions {
   firstName: string;
