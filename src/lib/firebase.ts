@@ -535,16 +535,48 @@ export const resetPassword = async (email: string) => {
 };
 
 
+export class LockoutError extends Error {
+  remainingMs: number;
+  constructor(remainingMs: number) {
+    super(`Account locked. Try again in ${formatRemaining(remainingMs)}`);
+    this.name = 'LockoutError';
+    this.remainingMs = remainingMs;
+    (this as any).code = 'auth/account-locked';
+  }
+}
+
 export const loginUser = async (email: string, password: string) => {
   const cleanEmail = normaliseAuthEmail(email);
+
+  // Pre-check lockout (item B)
+  const lock = await checkLockout(cleanEmail);
+  if (lock.locked) {
+    logAuthFailure('login_failure', { code: 'auth/account-locked', message: 'locked' }, { email: cleanEmail });
+    throw new LockoutError(lock.remainingMs);
+  }
+
   let userCredential;
   try {
     userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
-  } catch (err) {
-    
+  } catch (err: any) {
+    if (
+      err?.code === 'auth/wrong-password' ||
+      err?.code === 'auth/user-not-found' ||
+      err?.code === 'auth/invalid-credential' ||
+      err?.code === 'auth/invalid-login-credentials'
+    ) {
+      const state = await recordFailure(cleanEmail);
+      if (state.locked) {
+        logAuthFailure('login_failure', { code: 'auth/account-locked', message: 'locked-after-failure' }, { email: cleanEmail });
+        throw new LockoutError(state.remainingMs);
+      }
+    }
     logAuthFailure('login_failure', err, { email: cleanEmail });
     throw err;
   }
+
+  // Successful login — clear failure counter
+  await clearFailures(cleanEmail);
 
   try {
     const customerRef = doc(db, 'customers', userCredential.user.uid);
@@ -575,6 +607,26 @@ export const loginUser = async (email: string, password: string) => {
   logAuthEvent({ type: 'login_success', email: cleanEmail, uid: userCredential.user.uid });
   return userCredential;
 };
+
+/**
+ * Session persistence helper (item E).
+ * `remember=true` → browserLocalPersistence (survives tab close).
+ * `remember=false` → browserSessionPersistence (cleared on tab close — default).
+ * Call BEFORE signInWithEmailAndPassword / signInWithPopup / createUserWithEmailAndPassword.
+ */
+export const setAuthPersistence = async (remember: boolean) => {
+  try {
+    await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+  } catch (e) {
+    console.warn('[auth] setPersistence failed:', e);
+  }
+};
+
+// Default to session-only persistence on app init (item E).
+// "Remember me" toggles to browserLocalPersistence at submit time.
+if (typeof window !== 'undefined') {
+  setPersistence(auth, browserSessionPersistence).catch(() => {});
+}
 
 export const logoutUser = async () => {
   const current = auth.currentUser;
