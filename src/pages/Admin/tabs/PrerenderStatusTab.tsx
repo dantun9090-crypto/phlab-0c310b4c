@@ -8,7 +8,9 @@ import {
   probePrerenderStatus,
   recachePrerenderUrl,
   checkPrerenderTokenLength,
+  checkGooglebotResponse,
   type ProbeResult,
+
 } from '@/lib/prerender-status.functions';
 import { auth } from '@/lib/firebase';
 
@@ -145,8 +147,13 @@ export default function PrerenderStatusTab() {
       {/* Token length validation */}
       <TokenLengthCard />
 
+      {/* Live Googlebot check */}
+      <GooglebotCheckCard />
+
       {/* Auto-recache hook status */}
       <AutoRecacheCard />
+
+
 
 
 
@@ -458,7 +465,125 @@ function ShieldCheckIcon({ tone }: { tone: 'ok' | 'bad' | 'neutral' }) {
   return <AlertTriangle className={`w-4 h-4 ${color}`} />;
 }
 
+function GooglebotCheckCard() {
+  const check = useServerFn(checkGooglebotResponse);
+  const [url, setUrl] = useState('https://phlabs.co.uk/');
+  const [loading, setLoading] = useState(false);
+  const [res, setRes] = useState<Awaited<ReturnType<typeof check>> | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const run = async () => {
+    setLoading(true);
+    setErr(null);
+    try {
+      const out = await check({ data: { url } });
+      setRes(out);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const tone =
+    !res ? 'neutral' :
+    res.verdict === 'ok' ? 'ok' :
+    res.verdict === 'soft_fail' ? 'warn' : 'bad';
+
+  const toneStyles =
+    tone === 'ok'   ? 'border-emerald-500/30 bg-emerald-500/5' :
+    tone === 'warn' ? 'border-amber-500/30 bg-amber-500/5' :
+    tone === 'bad'  ? 'border-red-500/40 bg-red-500/5' :
+                      'border-white/[0.07] bg-[#0b1a30]/70';
+
+  return (
+    <div className={`rounded-xl p-4 border ${toneStyles}`}>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <Globe className="w-4 h-4 text-blue-400" />
+            Live Googlebot simulation
+          </h3>
+          <p className="text-xs text-[#9cb8d9] mt-1">
+            Server-side fetch with the real Googlebot User-Agent. Reports
+            <span className="text-emerald-400 font-semibold"> 200 (OK)</span> when bots get
+            prerendered HTML, or
+            <span className="text-red-400 font-semibold"> 503 (FAIL)</span> when Prerender.io
+            rejects the request (usually an invalid token).
+          </p>
+
+          <div className="mt-3 flex flex-col sm:flex-row gap-2">
+            <input
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://phlabs.co.uk/"
+              className="flex-1 min-h-[40px] px-3 py-2 bg-slate-800 border-2 border-slate-600 rounded-lg text-white text-xs font-mono placeholder:text-slate-500 focus:border-blue-500 outline-none"
+            />
+            <button
+              onClick={run}
+              disabled={loading || !url.trim()}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white rounded-lg text-xs font-medium transition-colors min-h-[40px] flex items-center gap-2 shrink-0"
+            >
+              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Zap className="w-3.5 h-3.5" />}
+              Run live check
+            </button>
+          </div>
+
+          {err && (
+            <p className="mt-3 text-xs text-red-400 font-mono">Check failed: {err}</p>
+          )}
+
+          {res && !loading && (
+            <div className="mt-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-bold ${
+                  tone === 'ok'   ? 'text-emerald-300 bg-emerald-500/15 border-emerald-500/40' :
+                  tone === 'warn' ? 'text-amber-300 bg-amber-500/15 border-amber-500/40' :
+                                    'text-red-300 bg-red-500/15 border-red-500/40'
+                }`}>
+                  {tone === 'ok'   && <CheckCircle2 className="w-4 h-4" />}
+                  {tone === 'warn' && <AlertTriangle className="w-4 h-4" />}
+                  {tone === 'bad'  && <XCircle className="w-4 h-4" />}
+                  HTTP {res.status || 'ERR'} — {tone === 'ok' ? 'OK' : tone === 'warn' ? 'WARN' : 'FAIL'}
+                </span>
+                <span className="text-[10px] text-[#9cb8d9] font-mono">
+                  {res.durationMs} ms
+                </span>
+              </div>
+
+              {res.rejectReason && (
+                <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-md p-2.5 font-mono break-all">
+                  <strong className="text-red-200">x-prerender-reject-reason:</strong> {res.rejectReason}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] font-mono">
+                <Stat label="x-prerendered" value={res.prerendered ? 'yes' : 'no'} tone={res.prerendered ? 'ok' : 'neutral'} />
+                <Stat label="Prerender cache" value={res.prerenderCache ?? '—'} />
+                <Stat label="CF cache" value={res.cfCache ?? '—'} />
+                <Stat label="Server" value={res.server ?? '—'} />
+                <Stat label="CF-Ray" value={res.cfRay ?? '—'} />
+                <Stat label="Checked" value={new Date(res.checkedAt).toLocaleTimeString('en-GB')} />
+              </div>
+
+              {tone === 'bad' && res.rejectReason?.includes('invalid-x-prerender-token') && (
+                <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-md p-2.5">
+                  Prerender.io is rejecting the token configured in the Cloudflare Prerender.io
+                  app. Open Cloudflare → Apps → Prerender.io and paste the current token from your
+                  Prerender.io dashboard.
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Stat({ label, value, tone = 'neutral' }: { label: string; value: string; tone?: 'ok' | 'warn' | 'bad' | 'neutral' }) {
+
 
   const cls =
     tone === 'ok'   ? 'text-emerald-400' :

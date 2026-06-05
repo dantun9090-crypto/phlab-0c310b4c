@@ -25,6 +25,66 @@ export const checkPrerenderTokenLength = createServerFn({ method: 'POST' })
   });
 
 
+/**
+ * Live Googlebot-UA curl-style check of the homepage. Returns the HTTP
+ * status and key Prerender / Cloudflare headers so admins can see at a
+ * glance whether bots are getting 200 (prerendered HTML) or 503
+ * (`invalid-x-prerender-token-provided` is the usual culprit).
+ */
+export const checkGooglebotResponse = createServerFn({ method: 'POST' })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { url?: string } | undefined) => data ?? {})
+  .handler(async ({ data }) => {
+    const target = data.url && isAllowedUrl(data.url) ? data.url : 'https://phlabs.co.uk/';
+    const started = Date.now();
+    try {
+      const res = await fetch(target, {
+        method: 'GET',
+        redirect: 'manual',
+        headers: {
+          'User-Agent': GOOGLEBOT_UA,
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+        signal: AbortSignal.timeout(15_000),
+      });
+      const status = res.status;
+      const verdict: 'ok' | 'soft_fail' | 'fail' =
+        status === 200 ? 'ok' : status >= 500 ? 'fail' : 'soft_fail';
+      return {
+        url: target,
+        status,
+        ok: status === 200,
+        verdict,
+        rejectReason: res.headers.get('x-prerender-reject-reason'),
+        prerendered: res.headers.get('x-prerendered') === 'true',
+        prerenderCache: res.headers.get('x-prerender-cache'),
+        cfCache: res.headers.get('cf-cache-status'),
+        cfRay: res.headers.get('cf-ray'),
+        server: res.headers.get('server'),
+        durationMs: Date.now() - started,
+        checkedAt: new Date().toISOString(),
+      } as const;
+    } catch (err) {
+      return {
+        url: target,
+        status: 0,
+        ok: false,
+        verdict: 'fail' as const,
+        rejectReason: null,
+        prerendered: false,
+        prerenderCache: null,
+        cfCache: null,
+        cfRay: null,
+        server: null,
+        durationMs: Date.now() - started,
+        checkedAt: new Date().toISOString(),
+        error: err instanceof Error ? err.message : String(err),
+      } as const;
+    }
+  });
+
+
+
 
 /**
  * Probe a single URL as Googlebot to see what Prerender.io / our edge serves.
