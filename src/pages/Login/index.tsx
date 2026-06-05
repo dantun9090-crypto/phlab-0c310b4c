@@ -53,17 +53,53 @@ export default function Login() {
   }, []);
 
 
+  // Tick lockout countdown
+  useEffect(() => {
+    if (lockoutMs <= 0) {
+      if (lockoutTimerRef.current) { clearInterval(lockoutTimerRef.current); lockoutTimerRef.current = null; }
+      return;
+    }
+    lockoutTimerRef.current = setInterval(() => {
+      setLockoutMs(ms => Math.max(0, ms - 1000));
+    }, 1000);
+    return () => { if (lockoutTimerRef.current) clearInterval(lockoutTimerRef.current); };
+  }, [lockoutMs]);
+
+  const isAdminTarget = redirectTarget.startsWith('/admin');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (lockoutMs > 0) return;
     setLoading(true);
+    const startedAt = Date.now();
     try {
+      // E: session persistence based on "Remember me"
+      await setAuthPersistence(rememberMe);
       await loginUser(formData.email, formData.password);
       navigate(redirectTarget);
     } catch (err: any) {
-      if (err.code === 'auth/user-not-found') setError('No account found with this email.');
-      else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') setError('Incorrect email or password.');
-      else setError(err.message || 'Login failed. Please try again.');
+      // C: 3-second artificial delay for /admin login failures
+      if (isAdminTarget) {
+        const elapsed = Date.now() - startedAt;
+        const wait = Math.max(0, 3000 - elapsed);
+        if (wait > 0) await new Promise(r => setTimeout(r, wait));
+        // Admin audit log (item 10)
+        logSecurityEvent({
+          type: 'admin_login_failure',
+          route: '/admin/login',
+          message: err?.code || err?.message || 'unknown',
+          meta: { email: formData.email },
+        });
+      }
+      if (err?.code === 'auth/account-locked') {
+        const remaining = (err as any).remainingMs ?? 0;
+        setLockoutMs(remaining);
+        setError(`Account locked. Try again in ${formatRemaining(remaining)}.`);
+        logSecurityEvent({ type: 'login_lockout', message: 'lockout', meta: { email: formData.email } });
+      } else if (err?.code === 'auth/user-not-found') setError('No account found with this email.');
+      else if (err?.code === 'auth/wrong-password' || err?.code === 'auth/invalid-credential') setError('Incorrect email or password.');
+      else setError(err?.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -73,6 +109,7 @@ export default function Login() {
     setError('');
     setGoogleLoading(true);
     try {
+      await setAuthPersistence(rememberMe);
       await signInWithGoogle();
       navigate(redirectTarget);
     } catch (err: any) {
