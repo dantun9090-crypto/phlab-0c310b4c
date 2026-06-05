@@ -1,10 +1,11 @@
-import { useState, useEffect, Component, ReactNode } from 'react';
+import { useState, useEffect, useRef, Component, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { auth, db, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
+import { auth, db, doc, getDoc, onAuthStateChanged, logoutUser } from '@/lib/firebase';
 import { checkAdminIpAllowed } from '@/lib/admin-ip-gate.functions';
+import { logSecurityEvent } from '@/lib/security-events';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Loader2, Menu, WifiOff, RefreshCw } from 'lucide-react';
+import { Shield, Loader2, Menu, WifiOff, RefreshCw, Clock } from 'lucide-react';
 import AdminSidebar from './components/AdminSidebar';
 import DashboardTab from './tabs/DashboardTab';
 import InventoryTab from './tabs/InventoryTab';
