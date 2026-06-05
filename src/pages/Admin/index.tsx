@@ -321,6 +321,7 @@ export default function AdminPage() {
         case 'featured': return <FeaturedProductsTab />;
         case 'seo': return <SEOTab />;
         case 'sitemap': return <SitemapTab />;
+        case 'sitemapaudit': return <SitemapAuditTab />;
         case 'qc': return <QCDashboardTab />;
         case 'promocodes': return <PromoCodesTab />;
         case 'diagnostics': return <DiagnosticsTab />;
