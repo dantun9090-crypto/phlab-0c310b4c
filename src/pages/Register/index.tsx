@@ -55,6 +55,7 @@ export default function Register() {
     setError('');
     setGoogleLoading(true);
     try {
+      await setAuthPersistence(rememberMe);
       await signInWithGoogle();
       navigate('/account');
     } catch (err: any) {
