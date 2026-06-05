@@ -14,7 +14,8 @@ export type SecurityEventType =
   | 'admin_idle_logout'
   | 'admin_login_blocked'
   | 'password_changed'
-  | 'session_revoke_request';
+  | 'session_revoke_request'
+  | 'compliance_violation';
 
 export interface SecurityEventInput {
   type: SecurityEventType;
