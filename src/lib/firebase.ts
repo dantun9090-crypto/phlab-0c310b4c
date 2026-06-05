@@ -17,8 +17,12 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   updatePassword,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
   User as FirebaseUser,
 } from 'firebase/auth';
+import { checkLockout, recordFailure, clearFailures, formatRemaining } from '@/lib/login-lockout';
 import { getStorage, ref as storageRef, uploadBytesResumable, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from 'firebase/storage';
 import { logAuthEvent, logAuthFailure } from '@/lib/auth-events';
 // Email template builders are dynamically imported inside their send-helpers
