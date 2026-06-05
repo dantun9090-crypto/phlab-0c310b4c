@@ -1,4 +1,4 @@
-import { emailWrapper, greeting, ctaButton, divider, infoCard, statusBadge, sectionHeading, EMAIL_COLORS as C } from './emailBase';
+import { emailWrapper, greeting, ctaButton, divider, infoCard, statusBadge, sectionHeading, escapeHtml as esc, EMAIL_COLORS as C } from './emailBase';
 
 export interface OrderStatusEmailOptions {
   firstName: string;
