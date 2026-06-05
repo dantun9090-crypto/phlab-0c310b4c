@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, CheckCircle2, Loader2, Gift, Phone } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { registerUser, signInWithGoogle, ensureAppCheck } from '@/lib/firebase';
+import { evaluatePassword, summarisePolicyErrors } from '@/lib/password-policy';
 
 
 export default function Register() {
@@ -71,8 +72,9 @@ export default function Register() {
       setError('Please fill in all fields');
       return;
     }
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters');
+    const policy = evaluatePassword(formData.password);
+    if (!policy.ok) {
+      setError(summarisePolicyErrors(policy.errors));
       return;
     }
     if (formData.password !== formData.confirmPassword) {
@@ -255,7 +257,7 @@ export default function Register() {
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       style={{ background: '#0d1f38', border: '1px solid rgba(255,255,255,0.25)', color: '#fff', width: '100%', borderRadius: '10px', padding: '12px 48px', fontSize: '14px', outline: 'none', display: 'block', boxSizing: 'border-box' }}
-                      placeholder="Min. 8 characters"
+                      placeholder="Min. 12 characters, 1 upper, 1 number, 1 symbol"
                       autoComplete="new-password"
                       minLength={8}
                       required
@@ -269,6 +271,21 @@ export default function Register() {
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
                   </div>
+                  {formData.password && (() => {
+                    const p = evaluatePassword(formData.password);
+                    return (
+                      <div className="mt-2">
+                        <div className="flex gap-1 mb-1">
+                          {[0,1,2,3,4].map(i => (
+                            <div key={i} className={`h-1 flex-1 rounded-full ${i < p.score ? p.color : 'bg-white/10'}`} />
+                          ))}
+                        </div>
+                        <p className={`text-xs ${p.ok ? 'text-emerald-400' : 'text-[#9cb8d9]'}`}>
+                          {p.label}{!p.ok && p.errors.length > 0 ? ` — needs: ${p.errors.join(', ')}` : ''}
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Confirm Password */}

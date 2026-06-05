@@ -75,7 +75,7 @@ const CSP_TEMPLATE = [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
-  "frame-ancestors 'self'",
+  "frame-ancestors 'none'",
   "upgrade-insecure-requests",
   // Violation reporting — both legacy (report-uri) and modern (report-to).
   // Endpoint lives at src/routes/api/public/csp-report.ts.
