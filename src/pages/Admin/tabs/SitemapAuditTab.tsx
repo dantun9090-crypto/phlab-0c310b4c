@@ -8,12 +8,13 @@
  *   - URLs in the sitemap that return 4xx/5xx
  *   - Intentional exclusions (false positives) labelled with the reason
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   runSitemapAudit,
   type SitemapAuditReport,
 } from "@/lib/sitemap-audit.functions";
+import { auth, db, doc, getDoc, onAuthStateChanged } from "@/lib/firebase";
 import {
   Map as MapIcon,
   RefreshCw,
@@ -22,6 +23,7 @@ import {
   XCircle,
   Info,
   Loader2,
+  Lock,
 } from "lucide-react";
 
 function Pill({
