@@ -250,7 +250,16 @@ export default function AccountPage() {
       const cred = EmailAuthProvider.credential(user.email, currentPassword);
       await reauthenticateWithCredential(user, cred);
       await updatePassword(user, newPassword);
-      setPasswordSuccess('Password updated successfully');
+      // G: Revoke refresh tokens on every other device.
+      try {
+        const idToken = await user.getIdToken(/* forceRefresh */ true);
+        await revokeMyRefreshTokens({ data: { idToken } });
+        logSecurityEvent({ type: 'password_changed', meta: { uid: user.uid } });
+        setPasswordSuccess('Password changed. All other sessions logged out.');
+      } catch (revokeErr) {
+        console.warn('[account] token revocation failed:', revokeErr);
+        setPasswordSuccess('Password updated successfully');
+      }
       setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
       setChangingPassword(false);
     } catch (e: any) {
