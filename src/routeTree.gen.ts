@@ -22,6 +22,7 @@ import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as ApiPublicHooksYapilyRouteImport } from './routes/api/public/hooks/yapily'
 import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public/hooks/truelayer'
+import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/public/hooks/security-cleanup'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
 import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hooks/fena'
 
@@ -92,6 +93,12 @@ const ApiPublicHooksTruelayerRoute = ApiPublicHooksTruelayerRouteImport.update({
   path: '/api/public/hooks/truelayer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksSecurityCleanupRoute =
+  ApiPublicHooksSecurityCleanupRouteImport.update({
+    id: '/api/public/hooks/security-cleanup',
+    path: '/api/public/hooks/security-cleanup',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksPrerenderRecacheRoute =
   ApiPublicHooksPrerenderRecacheRouteImport.update({
     id: '/api/public/hooks/prerender-recache',
@@ -118,6 +125,7 @@ export interface FileRoutesByFullPath {
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
+  '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
   '/api/public/hooks/yapily': typeof ApiPublicHooksYapilyRoute
 }
@@ -135,6 +143,7 @@ export interface FileRoutesByTo {
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
+  '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
   '/api/public/hooks/yapily': typeof ApiPublicHooksYapilyRoute
 }
@@ -153,6 +162,7 @@ export interface FileRoutesById {
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
+  '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
   '/api/public/hooks/yapily': typeof ApiPublicHooksYapilyRoute
 }
@@ -172,6 +182,7 @@ export interface FileRouteTypes {
     | '/api/public/send-mail'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/prerender-recache'
+    | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
     | '/api/public/hooks/yapily'
   fileRoutesByTo: FileRoutesByTo
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/api/public/send-mail'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/prerender-recache'
+    | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
     | '/api/public/hooks/yapily'
   id:
@@ -206,6 +218,7 @@ export interface FileRouteTypes {
     | '/api/public/send-mail'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/prerender-recache'
+    | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
     | '/api/public/hooks/yapily'
   fileRoutesById: FileRoutesById
@@ -223,6 +236,7 @@ export interface RootRouteChildren {
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
   ApiPublicHooksFenaRoute: typeof ApiPublicHooksFenaRoute
   ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
+  ApiPublicHooksSecurityCleanupRoute: typeof ApiPublicHooksSecurityCleanupRoute
   ApiPublicHooksTruelayerRoute: typeof ApiPublicHooksTruelayerRoute
   ApiPublicHooksYapilyRoute: typeof ApiPublicHooksYapilyRoute
 }
@@ -320,6 +334,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksTruelayerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/security-cleanup': {
+      id: '/api/public/hooks/security-cleanup'
+      path: '/api/public/hooks/security-cleanup'
+      fullPath: '/api/public/hooks/security-cleanup'
+      preLoaderRoute: typeof ApiPublicHooksSecurityCleanupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/prerender-recache': {
       id: '/api/public/hooks/prerender-recache'
       path: '/api/public/hooks/prerender-recache'
@@ -362,9 +383,20 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
   ApiPublicHooksFenaRoute: ApiPublicHooksFenaRoute,
   ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
+  ApiPublicHooksSecurityCleanupRoute: ApiPublicHooksSecurityCleanupRoute,
   ApiPublicHooksTruelayerRoute: ApiPublicHooksTruelayerRoute,
   ApiPublicHooksYapilyRoute: ApiPublicHooksYapilyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
