@@ -51,25 +51,20 @@ const REDIRECT_HOSTS = new Set<string>([
 
 
 // Content-Security-Policy — script-src uses per-request nonce + 'strict-dynamic'.
-// `__NONCE__` is replaced at request time with a fresh base64 nonce. The host
-// allowlist (https://www.googletagmanager.com, *.firebaseapp.com, etc.) is
-// retained as a fallback for browsers that do NOT implement CSP3 'strict-dynamic'
-// — modern browsers ignore the allowlist when 'strict-dynamic' is present.
-// `https:` is also kept as a last-resort fallback for older clients.
+// Exact-host allowlist only — no `https:` wildcard, no `*.googleapis.com`
+// wildcard, no Wegic CDN. 'strict-dynamic' lets nonce'd scripts load further
+// scripts transitively, so the host list is a fallback for non-CSP3 browsers.
 const CSP_TEMPLATE = [
   "default-src 'self'",
-  "script-src 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://js.stripe.com https://cdn.wegic.ai https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https: 'unsafe-eval'",
-  "script-src-elem 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://*.firebaseapp.com https://*.googleapis.com https://js.stripe.com https://cdn.wegic.ai https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https:",
-  // script-src uses per-request nonce + 'strict-dynamic' (no 'unsafe-inline').
-  // style-src allows 'unsafe-inline' — required for runtime-injected <style> tags
-  // (component libs, Tailwind JIT in dev, GTM/Stripe injected styles).
+  "script-src 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://js.stripe.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net 'unsafe-eval'",
+  "script-src-elem 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://js.stripe.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "style-src-attr 'unsafe-inline'",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com https://www.gstatic.com",
   "media-src 'self' https: data:",
-  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://firebasestorage.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://content-firebaseappcheck.googleapis.com https://www.google-analytics.com https://api.stripe.com https://service.prerender.io https://api.prerender.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net wss://*.firebaseio.com",
+  "connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseinstallations.googleapis.com https://fcmregistrations.googleapis.com https://firebaseremoteconfig.googleapis.com https://firebasestorage.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://www.googleapis.com https://www.google-analytics.com https://region1.google-analytics.com https://api.stripe.com https://service.prerender.io https://api.prerender.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net wss://*.firebaseio.com",
   "frame-src 'self' https://*.firebaseapp.com https://js.stripe.com https://hooks.stripe.com https://*.stripe.com https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com https://www.recaptcha.net",
   "worker-src 'self' blob:",
   "object-src 'none'",
@@ -77,8 +72,6 @@ const CSP_TEMPLATE = [
   "form-action 'self'",
   "frame-ancestors 'none'",
   "upgrade-insecure-requests",
-  // Violation reporting — both legacy (report-uri) and modern (report-to).
-  // Endpoint lives at src/routes/api/public/csp-report.ts.
   "report-uri /api/public/csp-report",
   "report-to csp-endpoint",
 ].join("; ");
@@ -189,7 +182,7 @@ async function fetchPrerender(target: string, request: Request, token: string): 
   }
 }
 
-function decoratePrerender(resp: Response, fromCache: boolean, method: string): Response {
+function decoratePrerender(resp: Response, fromCache: boolean, method: string, nonce: string): Response {
   const headers = new Headers(resp.headers);
   headers.set("x-prerendered", "true");
   headers.set("x-prerender-cache", fromCache ? "HIT" : "MISS");
@@ -199,6 +192,13 @@ function decoratePrerender(resp: Response, fromCache: boolean, method: string): 
   headers.delete("x-deployment-id");
   headers.delete("x-powered-by");
   headers.set("vary", "user-agent");
+
+  // Apply full security headers to prerendered HTML — bots/crawlers must
+  // receive the same CSP/HSTS/X-Frame-Options as real users.
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
+    headers.set(k, v);
+  }
+  headers.set("content-security-policy", buildCsp(nonce));
 
   const body = method === "HEAD" ? null : resp.body;
   return new Response(body, { status: resp.status, statusText: resp.statusText, headers });
@@ -451,7 +451,7 @@ export default {
           if (env.PRERENDER_LOG === "1") log.info({ event: "worker.prerender.hit", ...baseFields });
           const ms = Date.now() - start;
           log.info({ event: "worker.request", status: cached.status, ms, prerender: "HIT", ...baseFields });
-          return decoratePrerender(cached, true, method);
+          return decoratePrerender(cached, true, method, nonce);
         }
 
         try {
@@ -472,11 +472,11 @@ export default {
               ctx?.waitUntil?.(cache.put(cacheKey, cacheable.clone()));
               const ms = Date.now() - start;
               log.info({ event: "worker.request", status: cacheable.status, ms, prerender: "MISS", ...baseFields });
-              return decoratePrerender(cacheable, false, method);
+              return decoratePrerender(cacheable, false, method, nonce);
             }
             const ms = Date.now() - start;
             log.info({ event: "worker.request", status: fresh.status, ms, prerender: "PASS", ...baseFields });
-            return decoratePrerender(fresh, false, method);
+            return decoratePrerender(fresh, false, method, nonce);
           }
           log.warn({ event: "worker.prerender.fallback", status: fresh?.status, ...baseFields });
         } catch (err) {
