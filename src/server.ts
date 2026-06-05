@@ -196,7 +196,10 @@ function decoratePrerender(resp: Response, fromCache: boolean, method: string): 
   // Strip any upstream X-Robots-Tag (prerender.io can inject `noarchive`),
   // then leave the header unset so Google can fully index + cache.
   headers.delete("x-robots-tag");
+  headers.delete("x-deployment-id");
+  headers.delete("x-powered-by");
   headers.set("vary", "user-agent");
+
   const body = method === "HEAD" ? null : resp.body;
   return new Response(body, { status: resp.status, statusText: resp.statusText, headers });
 }
