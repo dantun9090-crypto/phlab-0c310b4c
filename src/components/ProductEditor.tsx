@@ -445,6 +445,19 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
   // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     if (!formData.name?.trim()) { setSaveMsg({ type: 'error', text: 'Product name is required' }); return; }
+    // Compliance guard — block forbidden medical claims and log to securityEvents.
+    const { checkComplianceAndLog } = await import('@/lib/compliance-guard');
+    for (const [field, value] of [
+      ['name', formData.name],
+      ['description', (formData as any).description],
+      ['shortDescription', (formData as any).shortDescription],
+    ] as const) {
+      const c = checkComplianceAndLog(field, value as string | null | undefined, {
+        collection: 'products',
+        docId: product?.id ?? null,
+      });
+      if (!c.ok) { setSaveMsg({ type: 'error', text: c.message }); return; }
+    }
     setSaving(true); setSaveMsg(null);
     try {
       const cleanImages = (formData.images || []).filter(Boolean);

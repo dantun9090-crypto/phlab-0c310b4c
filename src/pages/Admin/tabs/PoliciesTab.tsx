@@ -174,6 +174,14 @@ export default function PoliciesTab() {
   };
 
   const handleSave = async () => {
+    // Compliance guard — block forbidden medical/health claims in policy copy.
+    const { checkComplianceAndLog } = await import('@/lib/compliance-guard');
+    for (const field of ['termsContent', 'privacyContent', 'shippingContent'] as const) {
+      const c = checkComplianceAndLog(field, (policies as any)[field], {
+        collection: 'siteSettings/policies',
+      });
+      if (!c.ok) { showToast(c.message, false); return; }
+    }
     setSaving(true);
     try {
       await setDoc(doc(db, 'siteSettings', 'policies'), {

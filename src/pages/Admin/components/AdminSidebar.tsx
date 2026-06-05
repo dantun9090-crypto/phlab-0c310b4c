@@ -85,6 +85,7 @@ const navGroups = [
       { id: 'diagnostics', label: 'Diagnostics', icon: Activity },
       { id: 'mailhealth', label: 'Mail Health', icon: Mail },
       { id: 'securityaudit', label: 'Security Audit', icon: ShieldCheck },
+      { id: 'securityevents', label: 'Security Events', icon: Activity },
     ],
   },
 ];
