@@ -16,6 +16,7 @@ import { markPrerenderPending, flipPrerenderReadyWhen } from '@/lib/prerender-re
 
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
+import { ResearchContentBlock } from '@/components/ResearchContentBlock';
 
 // Maps product name keywords → Resources article slug
 const ARTICLE_MAP: Record<string, { slug: string; title: string; excerpt: string }> = {
@@ -1590,6 +1591,9 @@ export default function ProductDetail() {
             </div>
           );
         })()}
+
+        {/* ── Research-only Content Block (6 sections) ── */}
+        <ResearchContentBlock slug={(product.slug || nameToSlug(product.name) || product.id).toLowerCase()} />
 
         {/* ── FAQ Accordion ── */}
         {(() => {
