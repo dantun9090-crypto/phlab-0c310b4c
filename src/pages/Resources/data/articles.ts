@@ -44,7 +44,7 @@ export const articles: Article[] = [
     category: 'Metabolic Research',
     readTime: 14,
     publishDate: '2026-03-18',
-    excerpt: 'Retatrutide is a novel triple-agonist peptide targeting GIP, GLP-1, and glucagon receptors simultaneously. In early-phase studies it produced greater reductions in body weight than dual-agonist comparators, making it one of the most studied compounds in metabolic research.',
+    excerpt: 'Retatrutide is a novel triple-agonist peptide targeting GIP, GLP-1, and glucagon receptors simultaneously. In early-phase studies, trial cohorts reported greater mean body weight changes than dual-agonist comparators, making it one of the most studied compounds in metabolic research.',
     keywords: ['retatrutide', 'GIP receptor', 'GLP-1 receptor', 'glucagon receptor', 'triple agonist', 'metabolic research', 'LY3437943'],
     relatedSlugs: ['retatrutide-vs-tirzepatide-vs-semaglutide', 'hplc-testing-explained', 'bpc-157-tissue-repair'],
     content: [
