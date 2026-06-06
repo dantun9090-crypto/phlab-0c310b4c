@@ -37,7 +37,7 @@ interface CheckoutForm {
   ageVerified: boolean;
   createAccount: boolean;
   password: string;
-  shippingMethod: 'standard' | 'next_day_12';
+  shippingMethod: 'standard' | 'next_day_12' | '';
 }
 
 import { checkNextDayEligibility, SHIPPING_CONFIG, formatLondonDate } from '@/lib/shipping/next-day';
@@ -105,7 +105,7 @@ export default function CheckoutPage() {
     ageVerified: false,
     createAccount: false,
     password: '',
-    shippingMethod: 'standard',
+    shippingMethod: '',
   });
 
   const [currentStep, setCurrentStep] = useState<Step>(1);
@@ -364,15 +364,33 @@ export default function CheckoutPage() {
   ) : 0;
   const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
   const nextDayEligibility = checkNextDayEligibility();
+  // Hide Next Day entirely when ineligible — never show a disabled placeholder.
   const visibleShippingOptions = nextDayEligibility.qualifies
     ? SHIPPING_OPTIONS_ALL
     : SHIPPING_OPTIONS_ALL.filter(o => o.id !== 'next_day_12');
-  const selectedShippingOpt = visibleShippingOptions.find(o => o.id === form.shippingMethod) ?? visibleShippingOptions[0];
-  // Standard ships free over threshold; next_day_12 is always paid.
-  const baseShipping = selectedShippingOpt.id === 'standard'
-    ? (isFreeShipping ? 0 : selectedShippingOpt.price)
-    : selectedShippingOpt.price;
-  const couponFreeShipping = appliedCoupon?.type === 'free_shipping' && selectedShippingOpt.id === 'standard';
+  // Default to Standard ONLY when the order qualifies for free standard
+  // shipping (>= £50). Otherwise the user must explicitly choose.
+  useEffect(() => {
+    if (!form.shippingMethod && isFreeShipping) {
+      setForm(prev => prev.shippingMethod ? prev : { ...prev, shippingMethod: 'standard' });
+    }
+    // If Next Day was previously selected but is no longer eligible (cut-off
+    // passed mid-session), clear the selection so the user re-picks.
+    if (form.shippingMethod === 'next_day_12' && !nextDayEligibility.qualifies) {
+      setForm(prev => ({ ...prev, shippingMethod: isFreeShipping ? 'standard' : '' }));
+    }
+  }, [isFreeShipping, nextDayEligibility.qualifies, form.shippingMethod]);
+
+  const selectedShippingOpt = form.shippingMethod
+    ? visibleShippingOptions.find(o => o.id === form.shippingMethod)
+    : undefined;
+  // No shipping cost charged until the user picks a method.
+  const baseShipping = !selectedShippingOpt
+    ? 0
+    : selectedShippingOpt.id === 'standard'
+      ? (isFreeShipping ? 0 : selectedShippingOpt.price)
+      : selectedShippingOpt.price;
+  const couponFreeShipping = appliedCoupon?.type === 'free_shipping' && selectedShippingOpt?.id === 'standard';
   const shippingCost = couponFreeShipping ? 0 : baseShipping;
   const originalTotal = subtotal + baseShipping;
   const total = Math.max(0, subtotal - discount + shippingCost).toFixed(2);
@@ -450,6 +468,7 @@ export default function CheckoutPage() {
       if (!form.postcode.trim()) e.postcode = 'Required';
       else if (!/^[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}$/i.test(form.postcode.trim())) e.postcode = 'Enter a valid UK postcode';
       if (!form.country.trim()) e.country = 'Required';
+      if (!form.shippingMethod) e.shippingMethod = 'Please choose a shipping method';
     }
     if (step === 3) {
       if (!form.ageVerified) e.age = 'You must confirm you are 18 or older to place this order';
@@ -1197,6 +1216,9 @@ export default function CheckoutPage() {
                         <p className="text-xs text-emerald-400 mt-2 flex items-center gap-1">
                           <Check className="w-3 h-3" /> Free standard shipping on orders over £50
                         </p>
+                      )}
+                      {errors.shippingMethod && (
+                        <p className="text-red-400 text-xs mt-2">{errors.shippingMethod}</p>
                       )}
                     </div>
 
