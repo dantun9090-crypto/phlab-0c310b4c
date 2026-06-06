@@ -11,6 +11,7 @@ import { sendPublicMail } from '@/lib/sendPublicMail';
 import { useSEO } from '@/hooks/useSEO';
 
 const AnimatedBackground = lazy(() => import('@/components/AnimatedBackground').then(m => ({ default: m.AnimatedBackground })));
+import HomeSeoIndex from '@/components/HomeSeoIndex';
 
 // ── Static data ───────────────────────────────────────────────────────────────
 
@@ -1192,6 +1193,9 @@ export default function HomePage() {
           </Link>
         </div>
       </div>
+
+      {/* SEO link-index — SSR-rendered hub linking to every product + article */}
+      <HomeSeoIndex />
 
     </div>
   );
