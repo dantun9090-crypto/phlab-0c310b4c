@@ -1127,7 +1127,7 @@ Crucially, a 2023 study published in Nature Aging demonstrated that exogenous MO
 
 In the liver, MOTS-c treatment reduced hepatic gluconeogenic enzyme expression (PEPCK, G6Pase) and lowered fasting hepatic glucose output, as quantified by hyperinsulinaemic-euglycaemic clamp. These hepatic effects are AMPK-independent in part — MOTS-c was shown to activate hepatic SIRT1-PGC-1α signalling, reducing gluconeogenic gene transcription through deacetylation of FOXO1.
 
-Human observational data corroborate the preclinical findings: plasma MOTS-c levels in elderly individuals correlate positively with skeletal muscle mass (appendicular lean mass index), insulin sensitivity (HOMA-IR), and aerobic capacity (VO2 max), and are significantly lower in individuals with type 2 diabetes or metabolic syndrome compared to age-matched metabolically healthy controls.`
+Human observational data corroborate the preclinical findings: plasma MOTS-c levels in elderly individuals correlate positively with skeletal muscle mass (appendicular lean mass index), insulin sensitivity indices (HOMA-IR), and aerobic capacity (VO2 max), and are significantly lower in individuals with type 2 diabetes or metabolic syndrome compared to age-matched metabolically healthy controls. These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds.`
       },
       {
         heading: 'Ageing Biology and Longevity Research',
