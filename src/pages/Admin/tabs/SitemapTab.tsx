@@ -24,6 +24,8 @@ const STATIC_PAGES = [
   { path: '/cookies', label: 'Cookie Policy', priority: '0.3', changefreq: 'yearly' },
 ];
 
+const PRODUCT_INDEX_NOTE = 'All active product URLs are listed as canonical 200 pages, including Glow Blend and Klow Blend. Retired legacy product slugs still redirect to /products.';
+
 export default function SitemapTab() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -234,6 +236,11 @@ export default function SitemapTab() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-5 py-4">
+        <p className="text-sm text-emerald-300 font-medium">Canonical product index</p>
+        <p className="text-xs text-[#9cb8d9] mt-1">{PRODUCT_INDEX_NOTE}</p>
+      </div>
 
       {/* Static pages toggle */}
       <div className="bg-[#0b1a30]/70 border border-white/[0.07] rounded-xl overflow-hidden">
