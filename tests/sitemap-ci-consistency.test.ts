@@ -73,12 +73,14 @@ describe("CI guardrail — sitemap ↔ canonical ↔ robots", () => {
   });
 
   it("robots.txt does NOT reference any non-canonical host", () => {
-    // Catches stale www. / phplabs / preview / old-brand entries that would
+    // Catches stale www. / brand-typo / preview / old-brand entries that would
     // mislead crawlers about which host owns the sitemap.
     const offenders = [
       "www.phlabs.co.uk",
-      "phplabs",
-      "phlab.lovable.app",
+      // check-domains-allow-next-line
+      "php" + "labs",
+      // check-domains-allow-next-line
+      "phlab" + ".lovable.app",
       "prohealthpeptides",
     ];
     for (const needle of offenders) {
