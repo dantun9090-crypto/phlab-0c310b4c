@@ -68,6 +68,10 @@ function scan(): Hit[] {
       const s = a.content[i] as { heading?: string; body: string; callout?: { text: string } };
       const text = [s.heading, s.body, s.callout?.text].filter(Boolean).join("\n");
       if (!text) continue;
+      // Inline opt-out: when a section quotes forbidden marketing language
+      // as an example of what unreliable suppliers do, the author can mark
+      // it with `<!-- compliance-ok: <reason> -->` to suppress the scan.
+      if (/<!--\s*compliance-ok:/i.test(text)) continue;
 
       for (const p of TRIGGER_PATTERNS) {
         const m = text.match(p.re);
