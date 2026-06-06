@@ -1,90 +1,44 @@
-## Goal
+## Status of each item
 
-Run Firebase and Supabase side-by-side. Nothing currently on Firebase moves. Supabase becomes the home for new content + analytics features.
+Already in the codebase — no work needed:
+- `/contact` (+ /about, /privacy-policy, /shipping-policy, /refund-policy, /terms-and-conditions, /cookies, /lab-reports, /quality-control, /research, /resources) bypass prerender.io and serve direct SSR. Prerender timeout bumped 15s → 30s. (Done last turn in `src/server.ts`.)
+- Sitemap already lists every static page + every Firestore product + every article (`src/routes/sitemap[.]xml.ts`).
+- Product page already has BreadcrumbList JSON-LD + visual breadcrumb, Product JSON-LD, FAQ JSON-LD, Return-policy JSON-LD, "Related Products" grid.
+- Article pages already emit Article JSON-LD (`src/pages/Resources/ArticlePage.tsx`).
+- Footer already has Products (by category), Company (About / Quality / Resources / Lab Reports / FAQ / Contact / Storage), Legal (Terms / Privacy / Refund / Shipping / Cookies), Contact columns.
+- Homepage already has a Featured Products grid + FAQPage JSON-LD; Organization & WebSite JSON-LD live in `__root.tsx`.
 
-## Responsibility split (the rule of thumb)
+## What this change adds
 
-| Domain | Database |
-|---|---|
-| Auth (login, register, sessions, anon) | **Firebase** |
-| Orders, payments, cart, invoices | **Firebase** |
-| Products, coupons, inventory | **Firebase** (already there) |
-| Customers / user profiles | **Firebase** |
-| Blog / Resources / Articles content | **Supabase** |
-| SEO metadata, sitemap data, redirects | **Supabase** |
-| Analytics events, page views, funnels | **Supabase** |
-| Email logs, contact form submissions, audit trail | **Supabase** |
-| Banners / landing page CMS content | **Supabase** |
+### 1. Homepage — SEO Index block (additive, before footer)
+New section component rendered after existing homepage content, so the existing hero/featured/FAQ layout is untouched. Contains three static lists in plain `<a>` tags (no JS gating — appears in raw HTML for Googlebot):
+- **All Research Compounds** — direct links to all 12 product slugs.
+- **Research Library** — direct links to all 28 resource article slugs.
+- **About PH Labs** — `/about`, `/quality-control`, `/lab-reports`.
 
-Rule: if it touches money, auth, or an existing Firestore collection → Firebase. If it's new content or telemetry → Supabase.
+Implementation: new component `src/components/HomeSeoIndex.tsx`, imported once at the bottom of `src/pages/Home/index.tsx` inside the existing `<div>`. Styled with project tokens (slate-950 surface, emerald accents, slate-300 text). No restyle of any existing section.
 
-## Step 1 — Enable Lovable Cloud
+### 2. Product page — Related Resources block (additive)
+The `ARTICLE_MAP` keyword→article lookup already exists; today it's only used for a single matched article. Add a rendered "Related Research Articles" block below the existing Related Products grid that lists 1–3 matched articles with `/resources/<slug>` links and Article schema-style microcopy. Falls back to the top-3 generic articles when no keyword matches. Pure UI addition, no business logic change.
 
-Provision a new Supabase project via Lovable Cloud. This auto-injects:
-- `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` (browser)
-- `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (server)
-- Generates `src/integrations/supabase/client.ts`, `client.server.ts`, `auth-middleware.ts`
+### 3. Sitemap link tag in `<head>`
+Add `{ rel: "sitemap", type: "application/xml", href: "/sitemap.xml" }` to the root route's `links` in `src/routes/__root.tsx`. Adds it once for every page.
 
-No Firebase config changes. `src/lib/firebase.ts` and `src/lib/firebase-auth.ts` stay untouched.
+### 4. Resubmit sitemap to Google Search Console
+After the deploy, call the GSC API via the connector gateway:
+`PUT /webmasters/v3/sites/https%3A%2F%2Fphlabs.co.uk%2F/sitemaps/https%3A%2F%2Fphlabs.co.uk%2Fsitemap.xml`
+Report status back to the user.
 
-## Step 2 — Add a thin DB-selection helper
+## What this change does NOT do (with reasons)
 
-New file `src/lib/db.ts` — a single import surface so feature code is explicit:
+- **Footer overhaul to list every product + every article**: footer already covers categories, company, legal, contact. Dumping 12 product names + 28 article titles into the footer of every page would add ~3 KB to every render and clutter the design system. The homepage SEO-index block solves the "Discovered – not indexed" crawl problem more cleanly: one in-content hub page Google already crawls daily, linking out to every URL.
+- **Per-URL "Request indexing" in GSC**: that action isn't exposed in the Search Console API (only `urlInspection.index.inspect` is read-only). Sitemap resubmission + new on-page internal links is the supported path; the user can click "Request Indexing" manually for any URL that still lags after the next crawl.
+- **Title / description uniqueness audit**: every route file already sets its own `head().meta` via `useSEO` / `createFileRoute`. No evidence of duplicates in the current code. Out of scope for this change.
 
-```ts
-// Firebase — auth + transactional
-export { db as firebaseDb, auth } from '@/lib/firebase';
-// Supabase — content + analytics (browser)
-export { supabase } from '@/integrations/supabase/client';
-```
+## Files touched
 
-Convention doc at the top of the file listing the responsibility table above, so future edits stay consistent.
-
-## Step 3 — Server access
-
-- Browser: import `supabase` from `@/integrations/supabase/client` for RLS-scoped reads/writes (anonymous content reads, analytics inserts).
-- Server: use `createServerFn` + `requireSupabaseAuth` for user-scoped writes; use `supabaseAdmin` from `client.server.ts` only for admin/maintenance.
-- Register `attachSupabaseAuth` in `src/start.ts` `functionMiddleware` so bearer tokens flow to protected server fns.
-
-No changes to existing Firebase data flow in `Home`, `Checkout`, `Payment`, `Admin`.
-
-## Step 4 — Worked examples (delivered as `docs/dual-database.md`)
-
-Four short, copy-pasteable snippets:
-
-1. **Firebase read/write** (existing pattern — orders): `addDoc(collection(firebaseDb, 'orders'), …)`.
-2. **Supabase read (browser)** — fetching blog posts: `supabase.from('articles').select('*').eq('published', true)`.
-3. **Supabase write (browser)** — analytics event: `supabase.from('analytics_events').insert({ type, path, ts })`.
-4. **Supabase server fn** — admin-only content publish via `createServerFn` + `supabaseAdmin`.
-
-Plus a "which DB?" decision flowchart in the same doc.
-
-## Step 5 — Seed Supabase with two starter tables (so it's "ready to use")
-
-Schema migration creating:
-- `articles` (id, slug, title, body, published, created_at) — RLS: public read where `published=true`, admin write.
-- `analytics_events` (id, type, path, user_agent, created_at) — RLS: public insert, admin read.
-
-These are minimum demos showing the pattern. No existing pages are rewired to Supabase — they only get used when you ask for the blog/analytics features.
-
-## What does NOT change
-
-- Header, footer, layout, design tokens — untouched.
-- Firebase Auth guard (`RequireAuth`) — untouched.
-- All existing pages, admin tabs, Firestore collections — untouched.
-- No Firebase → Supabase migration of any kind.
-
-## Files to be created/edited
-
-**Created**
-- `src/lib/db.ts` (selector + rule-of-thumb doc)
-- `docs/dual-database.md` (examples + decision guide)
-- Supabase migration: `articles`, `analytics_events` + RLS
-- `src/lib/content.functions.ts` (one example server fn)
-
-**Edited (minimal)**
-- `src/start.ts` — append `attachSupabaseAuth` to `functionMiddleware` (if not already)
-- `.env-like injection` — handled automatically by Lovable Cloud
-
-**Untouched**
-- All Firebase files, all existing pages, all admin tabs.
+- `src/components/HomeSeoIndex.tsx` (new)
+- `src/pages/Home/index.tsx` (import + render `<HomeSeoIndex />` once)
+- `src/pages/ProductDetail/index.tsx` (add Related Resources block under existing Related Products)
+- `src/routes/__root.tsx` (add `rel="sitemap"` link)
+- Post-deploy: GSC sitemap resubmit via `curl` to the connector gateway.
