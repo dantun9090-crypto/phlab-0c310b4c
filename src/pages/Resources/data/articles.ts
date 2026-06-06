@@ -69,9 +69,9 @@ Hepatic fat content was observed to change by greater than −70% in ob/ob mice 
       },
       {
         heading: 'Phase 2 Human Research Data (SURMOUNT programme)',
-        body: `Phase 2 data published in the New England Journal of Medicine (Jastreboff et al., 2023) demonstrated that participants receiving retatrutide 12 mg once weekly achieved a mean body weight reduction of 17.5% at 24 weeks and 24.2% at 48 weeks — the highest figures reported for any pharmacological agent at the time of publication. The trial enrolled adults with body mass index ≥27 kg/m2 and at least one weight-related comorbidity. Reductions in waist circumference, HbA1c, fasting insulin, and liver enzyme levels were also recorded across all active-dose cohorts.
+        body: `These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds. Phase 2 data published in the New England Journal of Medicine (Jastreboff et al., 2023) reported that trial cohorts receiving retatrutide 12 mg once weekly recorded a mean body weight change of −17.5% at 24 weeks and −24.2% at 48 weeks — the highest figures reported for any pharmacological agent at the time of publication. The trial enrolled adults with body mass index ≥27 kg/m2 and at least one weight-related comorbidity. Waist circumference, HbA1c, fasting insulin, and liver enzyme indices were observed to change toward baseline across all active-dose cohorts.
 
-The compound is currently progressing through Phase 3 evaluation (TRIUMPH programme), with primary endpoints including total body weight reduction, cardiovascular event rates, and hepatic steatosis resolution as assessed by MRI-PDFF.`
+The compound is currently progressing through Phase 3 evaluation (TRIUMPH programme), with primary endpoints including total body weight change, cardiovascular event rates, and hepatic steatosis resolution as assessed by MRI-PDFF. These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds.`
       },
       {
         heading: 'Comparative Receptor Activity Profile',
