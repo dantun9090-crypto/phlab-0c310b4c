@@ -12,6 +12,7 @@ import {
   renameFenaBankAccount,
   setDefaultFenaBankAccount,
   connectFenaBankAccount,
+  getFenaIntegrationStatus,
   FENA_BANK_PROVIDERS,
   type FenaWebhookEventRow,
   type FenaOrphanPaymentRow,
@@ -19,6 +20,7 @@ import {
   type FenaBankAccountRow,
   type FenaDryRunResult,
   type FenaTransactionRow,
+  type FenaIntegrationStatus,
 } from '@/lib/fena.functions';
 
 type EnvLabel = 'sandbox' | 'production';
