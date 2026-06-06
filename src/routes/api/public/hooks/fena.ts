@@ -161,6 +161,10 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
               accountId,
               error: err instanceof Error ? err.message : String(err),
             });
+            await raiseFenaAlert("fena_bank_account_write_failed", "error", {
+              accountId,
+              error: err instanceof Error ? err.message : String(err),
+            });
             return new Response("Write failed", { status: 500 });
           }
 
