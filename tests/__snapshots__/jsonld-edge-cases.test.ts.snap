@@ -1,0 +1,530 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Product JSON-LD — edge cases > custom seoTitle / seoDescription override 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/kpv#product",
+    "@type": "Product",
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "unit_pricing_measure",
+        "value": "10 mg",
+      },
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "bestRating": "5",
+      "ratingValue": "4.9",
+      "reviewCount": "127",
+      "worstRating": "1",
+    },
+    "brand": {
+      "@type": "Brand",
+      "name": "PH Labs",
+      "url": "https://phlabs.co.uk",
+    },
+    "category": "Immunology Research",
+    "description": "Buy KPV 10mg, ≥99% HPLC verified anti-inflammatory tripeptide for laboratory research. Cold-chain shipped from PH Labs UK.",
+    "image": "https://phlabs.co.uk/products/kpv.jpg",
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "mpn": "edge_seo",
+    "name": "KPV 10mg",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "eligibleQuantity": {
+        "@type": "QuantitativeValue",
+        "unitCode": "MGM",
+        "value": 10,
+      },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "GB",
+        "merchantReturnDays": 14,
+        "returnFees": "https://schema.org/FreeReturn",
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      },
+      "itemCondition": "https://schema.org/NewCondition",
+      "price": "27.00",
+      "priceCurrency": "GBP",
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 1,
+            "minValue": 0,
+            "unitCode": "DAY",
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 2,
+            "minValue": 1,
+            "unitCode": "DAY",
+          },
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "GB",
+        },
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "currency": "GBP",
+          "value": "4.99",
+        },
+      },
+      "url": "https://phlabs.co.uk/products/kpv",
+    },
+    "size": "10 mg",
+    "sku": "edge_seo",
+    "url": "https://phlabs.co.uk/products/kpv",
+    "weight": {
+      "@type": "QuantitativeValue",
+      "unitCode": "MGM",
+      "value": 10,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products",
+        "name": "Products",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products/kpv",
+        "name": "KPV 10mg",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Product JSON-LD — edge cases > high-priced large molecular size 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/tirzepatide-60mg#product",
+    "@type": "Product",
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "unit_pricing_measure",
+        "value": "60 mg",
+      },
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "bestRating": "5",
+      "ratingValue": "4.9",
+      "reviewCount": "127",
+      "worstRating": "1",
+    },
+    "brand": {
+      "@type": "Brand",
+      "name": "PH Labs",
+      "url": "https://phlabs.co.uk",
+    },
+    "category": "Metabolic Research",
+    "description": "Large-format research vial.",
+    "image": "https://phlabs.co.uk/products/tirzepatide-60.jpg",
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "mpn": "edge_high",
+    "name": "Tirzepatide 60mg",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "eligibleQuantity": {
+        "@type": "QuantitativeValue",
+        "unitCode": "MGM",
+        "value": 60,
+      },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "GB",
+        "merchantReturnDays": 14,
+        "returnFees": "https://schema.org/FreeReturn",
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      },
+      "itemCondition": "https://schema.org/NewCondition",
+      "price": "299.00",
+      "priceCurrency": "GBP",
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 1,
+            "minValue": 0,
+            "unitCode": "DAY",
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 2,
+            "minValue": 1,
+            "unitCode": "DAY",
+          },
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "GB",
+        },
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "currency": "GBP",
+          "value": "4.99",
+        },
+      },
+      "url": "https://phlabs.co.uk/products/tirzepatide-60mg",
+    },
+    "size": "60 mg",
+    "sku": "edge_high",
+    "url": "https://phlabs.co.uk/products/tirzepatide-60mg",
+    "weight": {
+      "@type": "QuantitativeValue",
+      "unitCode": "MGM",
+      "value": 60,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products",
+        "name": "Products",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products/tirzepatide-60mg",
+        "name": "Tirzepatide 60mg",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Product JSON-LD — edge cases > no price (offer should be omitted) 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/reference-standard#product",
+    "@type": "Product",
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "unit_pricing_measure",
+        "value": "1 g",
+      },
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "bestRating": "5",
+      "ratingValue": "4.9",
+      "reviewCount": "127",
+      "worstRating": "1",
+    },
+    "brand": {
+      "@type": "Brand",
+      "name": "PH Labs",
+      "url": "https://phlabs.co.uk",
+    },
+    "category": "Standards",
+    "description": "Reference standard for calibration.",
+    "image": "https://phlabs.co.uk/products/reference.jpg",
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "mpn": "edge_noprice",
+    "name": "Reference Standard 1g",
+    "size": "1 g",
+    "sku": "edge_noprice",
+    "url": "https://phlabs.co.uk/products/reference-standard",
+    "weight": {
+      "@type": "QuantitativeValue",
+      "unitCode": "GRM",
+      "value": 1,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products",
+        "name": "Products",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products/reference-standard",
+        "name": "Reference Standard 1g",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Product JSON-LD — edge cases > out-of-stock, no SEO overrides, no measurement in name 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/mystery-blend#product",
+    "@type": "Product",
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "bestRating": "5",
+      "ratingValue": "4.9",
+      "reviewCount": "127",
+      "worstRating": "1",
+    },
+    "brand": {
+      "@type": "Brand",
+      "name": "PH Labs",
+      "url": "https://phlabs.co.uk",
+    },
+    "category": "Blends",
+    "description": "Custom research blend.",
+    "image": "https://phlabs.co.uk/products/mystery-blend.jpg",
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "mpn": "edge_oos",
+    "name": "Mystery Blend",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/OutOfStock",
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "GB",
+        "merchantReturnDays": 14,
+        "returnFees": "https://schema.org/FreeReturn",
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      },
+      "itemCondition": "https://schema.org/NewCondition",
+      "price": "19.99",
+      "priceCurrency": "GBP",
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 1,
+            "minValue": 0,
+            "unitCode": "DAY",
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 2,
+            "minValue": 1,
+            "unitCode": "DAY",
+          },
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "GB",
+        },
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "currency": "GBP",
+          "value": "4.99",
+        },
+      },
+      "url": "https://phlabs.co.uk/products/mystery-blend",
+    },
+    "sku": "edge_oos",
+    "url": "https://phlabs.co.uk/products/mystery-blend",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products",
+        "name": "Products",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products/mystery-blend",
+        "name": "Mystery Blend",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Product JSON-LD — edge cases > very long name with unicode + microgram unit 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/semaglutide-analogue-250mcg#product",
+    "@type": "Product",
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "unit_pricing_measure",
+        "value": "250 mcg",
+      },
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "bestRating": "5",
+      "ratingValue": "4.9",
+      "reviewCount": "127",
+      "worstRating": "1",
+    },
+    "brand": {
+      "@type": "Brand",
+      "name": "PH Labs",
+      "url": "https://phlabs.co.uk",
+    },
+    "category": "Metabolic Research",
+    "description": "Análogo of semaglutide — special-character description with “smart quotes” and em-dashes — for HPLC method development.",
+    "image": "https://phlabs.co.uk/products/semaglutide.jpg",
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "mpn": "edge_long",
+    "name": "Sémaglutide Análogo Ultra-Long-Acting 250 µg — Lot Δ12",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "eligibleQuantity": {
+        "@type": "QuantitativeValue",
+        "unitCode": "MC",
+        "value": 250,
+      },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "GB",
+        "merchantReturnDays": 14,
+        "returnFees": "https://schema.org/FreeReturn",
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      },
+      "itemCondition": "https://schema.org/NewCondition",
+      "price": "119.50",
+      "priceCurrency": "GBP",
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 1,
+            "minValue": 0,
+            "unitCode": "DAY",
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 2,
+            "minValue": 1,
+            "unitCode": "DAY",
+          },
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "GB",
+        },
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "currency": "GBP",
+          "value": "4.99",
+        },
+      },
+      "url": "https://phlabs.co.uk/products/semaglutide-analogue-250mcg",
+    },
+    "size": "250 mcg",
+    "sku": "edge_long",
+    "url": "https://phlabs.co.uk/products/semaglutide-analogue-250mcg",
+    "weight": {
+      "@type": "QuantitativeValue",
+      "unitCode": "MC",
+      "value": 250,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products",
+        "name": "Products",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products/semaglutide-analogue-250mcg",
+        "name": "Sémaglutide Análogo Ultra-Long-Acting 250 µg — Lot Δ12",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
