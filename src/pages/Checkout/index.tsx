@@ -363,8 +363,16 @@ export default function CheckoutPage() {
         : 0
   ) : 0;
   const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
-  const baseShipping = isFreeShipping ? 0 : (SHIPPING_OPTIONS.find(o => o.id === form.shippingMethod)?.price ?? 4.99);
-  const couponFreeShipping = appliedCoupon?.type === 'free_shipping';
+  const nextDayEligibility = checkNextDayEligibility();
+  const visibleShippingOptions = nextDayEligibility.qualifies
+    ? SHIPPING_OPTIONS_ALL
+    : SHIPPING_OPTIONS_ALL.filter(o => o.id !== 'next_day_12');
+  const selectedShippingOpt = visibleShippingOptions.find(o => o.id === form.shippingMethod) ?? visibleShippingOptions[0];
+  // Standard ships free over threshold; next_day_12 is always paid.
+  const baseShipping = selectedShippingOpt.id === 'standard'
+    ? (isFreeShipping ? 0 : selectedShippingOpt.price)
+    : selectedShippingOpt.price;
+  const couponFreeShipping = appliedCoupon?.type === 'free_shipping' && selectedShippingOpt.id === 'standard';
   const shippingCost = couponFreeShipping ? 0 : baseShipping;
   const originalTotal = subtotal + baseShipping;
   const total = Math.max(0, subtotal - discount + shippingCost).toFixed(2);
@@ -1143,8 +1151,9 @@ export default function CheckoutPage() {
                     <div>
                       <p className="text-xs font-medium text-gray-300 mb-2">Shipping Method</p>
                       <div className="space-y-2">
-                        {SHIPPING_OPTIONS.map(opt => {
+                        {visibleShippingOptions.map(opt => {
                           const isSelected = form.shippingMethod === opt.id;
+                          const isFreeStd = opt.id === 'standard' && isFreeShipping;
                           return (
                             <label
                               key={opt.id}
@@ -1159,22 +1168,31 @@ export default function CheckoutPage() {
                                   onChange={() => setField('shippingMethod', opt.id)}
                                   className="sr-only"
                                 />
-                                {/* Custom radio */}
                                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200 ${isSelected ? 'border-emerald-500 bg-emerald-500' : 'border-white/30 bg-white/5'}`}>
                                   {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
                                 </div>
                                 <div>
                                   <p className="text-sm text-white font-medium">{opt.label}</p>
-                                  <p className="text-xs text-gray-400">{opt.desc}</p>
+                                  <p className="text-xs text-gray-400">
+                                    {opt.desc}
+                                    {opt.id === 'next_day_12' && nextDayEligibility.expectedDeliveryDate && (
+                                      <span className="text-emerald-300/80"> · Arrives {formatLondonDate(nextDayEligibility.expectedDeliveryDate)} by 12 PM</span>
+                                    )}
+                                  </p>
                                 </div>
                               </div>
-                              <span className={`text-sm font-semibold shrink-0 ${isFreeShipping && opt.id === 'standard' ? 'text-emerald-400' : 'text-white'}`}>
-                                {isFreeShipping && opt.id === 'standard' ? 'FREE' : `£${opt.price.toFixed(2)}`}
+                              <span className={`text-sm font-semibold shrink-0 ${isFreeStd ? 'text-emerald-400' : 'text-white'}`}>
+                                {isFreeStd ? 'FREE' : `£${opt.price.toFixed(2)}`}
                               </span>
                             </label>
                           );
                         })}
                       </div>
+                      {!nextDayEligibility.qualifies && (
+                        <p className="text-xs text-amber-300/80 mt-2">
+                          Next Day by 12 PM not available for this order. Order before 11:30 AM Mon–Fri (UK time, excl. bank holidays).
+                        </p>
+                      )}
                       {isFreeShipping && (
                         <p className="text-xs text-emerald-400 mt-2 flex items-center gap-1">
                           <Check className="w-3 h-3" /> Free standard shipping on orders over £50
