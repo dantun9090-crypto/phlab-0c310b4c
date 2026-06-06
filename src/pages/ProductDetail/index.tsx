@@ -1592,6 +1592,9 @@ export default function ProductDetail() {
           );
         })()}
 
+        {/* ── Research-only Content Block (6 sections) ── */}
+        <ResearchContentBlock slug={(product.slug || nameToSlug(product.name) || product.id).toLowerCase()} />
+
         {/* ── FAQ Accordion ── */}
         {(() => {
           const variantList = (product.variants ?? []).map(v => v.name).filter(Boolean).join(', ');
