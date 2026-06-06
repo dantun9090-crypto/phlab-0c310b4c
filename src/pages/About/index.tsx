@@ -9,9 +9,28 @@ import {
 import { db, doc, getDoc } from '@/lib/firebase';
 import { useSEO } from '@/hooks/useSEO';
 
-const HERO_DEFAULT    = 'https://cdn.wegic.ai/assets/onepage/agent/images/1773693478805.jpg?imageMogr2/format/webp';
-const MISSION_DEFAULT = 'https://cdn.wegic.ai/assets/onepage/agent/images/1773693499312.jpg?imageMogr2/format/webp';
-const QUALITY_DEFAULT = 'https://cdn.wegic.ai/assets/onepage/agent/images/1773693499413.jpg?imageMogr2/format/webp';
+// No external CDN defaults — those URLs are blocked by our CSP (img-src 'self' firebasestorage).
+// When no admin-provided image exists, we render a styled gradient fallback instead of a broken <img>.
+const HERO_DEFAULT    = '';
+const MISSION_DEFAULT = '';
+const QUALITY_DEFAULT = '';
+
+/** Subtle lab-themed gradient block used when no real image is configured. */
+function ImageFallback({ className = '', variant = 'blue' }: { className?: string; variant?: 'blue' | 'emerald' }) {
+  const grad = variant === 'emerald'
+    ? 'from-emerald-900/40 via-[#0b1a30] to-[#060f1e]'
+    : 'from-blue-900/40 via-[#0b1a30] to-[#060f1e]';
+  return (
+    <div className={`relative w-full h-full bg-gradient-to-br ${grad} ${className}`}>
+      <div className="absolute inset-0 opacity-[0.06]" style={{
+        backgroundImage: 'linear-gradient(rgba(96,165,250,1) 1px, transparent 1px), linear-gradient(90deg, rgba(96,165,250,1) 1px, transparent 1px)',
+        backgroundSize: '40px 40px',
+      }} />
+      <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-blue-600/15 blur-2xl" />
+      <div className="absolute -bottom-10 -left-10 w-40 h-40 rounded-full bg-emerald-600/10 blur-2xl" />
+    </div>
+  );
+}
 
 /* ── Scroll-triggered fade ── */
 function useScrollFade() {
@@ -144,15 +163,21 @@ export default function AboutPage() {
 
       {/* ── HERO ── */}
       <section ref={heroRef} className="page-hero relative min-h-[680px] md:min-h-[780px] overflow-hidden flex items-end hero-scanline">
-        {/* Parallax image */}
+        {/* Parallax image (or gradient fallback) */}
         <motion.div className="absolute inset-0" style={{ y: heroY }}>
-          <img
-            src={heroImg}
-            alt="PH Labs laboratory"
-            className="w-full h-full object-cover object-center scale-110"
-            loading="eager"
-          />
+          {heroImg ? (
+            <img
+              src={heroImg}
+              alt="PH Labs laboratory"
+              className="w-full h-full object-cover object-center scale-110"
+              loading="eager"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; setHeroImg(''); }}
+            />
+          ) : (
+            <ImageFallback />
+          )}
         </motion.div>
+
 
         {/* Multi-layer overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#060f1e] via-[#060f1e]/60 to-transparent" />
@@ -270,15 +295,20 @@ export default function AboutPage() {
           {/* Image */}
           <FadeIn direction="right" delay={120}>
             <div className="relative">
-              <div className="rounded-3xl overflow-hidden border border-white/[0.08] shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
-                <img
-                  src={missionImg}
-                  alt="Research laboratory"
-                  width="800"
-                  height="520"
-                  className="w-full h-[400px] lg:h-[520px] object-cover object-center"
-                  loading="lazy"
-                />
+              <div className="rounded-3xl overflow-hidden border border-white/[0.08] shadow-[0_32px_80px_rgba(0,0,0,0.7)] h-[400px] lg:h-[520px]">
+                {missionImg ? (
+                  <img
+                    src={missionImg}
+                    alt="Research laboratory"
+                    width="800"
+                    height="520"
+                    className="w-full h-full object-cover object-center"
+                    loading="lazy"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; setMissionImg(''); }}
+                  />
+                ) : (
+                  <ImageFallback />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#060f1e]/40 to-transparent" />
               </div>
               {/* Floating badge */}
@@ -344,15 +374,20 @@ export default function AboutPage() {
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Image */}
           <FadeIn direction="left" className="relative order-2 lg:order-1">
-            <div className="rounded-3xl overflow-hidden border border-white/[0.08] shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
-              <img
-                src={qualityImg}
-                alt="Synthetic peptide reference vials (Research Use Only)"
-                width="800"
-                height="520"
-                className="w-full h-[400px] lg:h-[520px] object-cover object-center"
-                loading="lazy"
-              />
+            <div className="rounded-3xl overflow-hidden border border-white/[0.08] shadow-[0_32px_80px_rgba(0,0,0,0.7)] h-[400px] lg:h-[520px]">
+              {qualityImg ? (
+                <img
+                  src={qualityImg}
+                  alt="Synthetic peptide reference vials (Research Use Only)"
+                  width="800"
+                  height="520"
+                  className="w-full h-full object-cover object-center"
+                  loading="lazy"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; setQualityImg(''); }}
+                />
+              ) : (
+                <ImageFallback variant="emerald" />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-[#060f1e]/30 to-transparent" />
             </div>
             <div className="absolute -top-4 -right-4 w-28 h-28 rounded-full bg-blue-600/20 pointer-events-none" />
