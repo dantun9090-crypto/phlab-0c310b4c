@@ -24,6 +24,7 @@ import {
   truelayerGetPayment,
 } from "@/lib/payments/truelayer.server";
 import { getGatewayConfig } from "@/lib/payments/gateway-config.server";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 interface TLWebhookBody {
   event_id?: string;
@@ -52,6 +53,13 @@ export const Route = createFileRoute("/api/public/hooks/truelayer")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const limited = await enforceRateLimit(request, "/api/public/hooks/truelayer", {
+          limit: 60,
+          windowMs: 60_000,
+          retryAfterSec: 60,
+        });
+        if (limited) return limited;
+
         let bodyText = "";
         try {
           bodyText = await request.text();

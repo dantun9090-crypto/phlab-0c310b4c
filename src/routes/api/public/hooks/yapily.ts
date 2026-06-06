@@ -10,11 +10,19 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { addDocAdmin } from "@/lib/server/firestore-admin";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 export const Route = createFileRoute("/api/public/hooks/yapily")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const limited = await enforceRateLimit(request, "/api/public/hooks/yapily", {
+          limit: 60,
+          windowMs: 60_000,
+          retryAfterSec: 60,
+        });
+        if (limited) return limited;
+
         let bodyText = "";
         try {
           bodyText = await request.text();
