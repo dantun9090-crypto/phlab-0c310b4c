@@ -595,6 +595,328 @@ export default function FenaTab() {
           </div>
         )}
       </div>
+
+      <FenaQuotaPanel getToken={getToken} />
+      <FenaRetryQueuePanel getToken={getToken} />
+      <FenaWebhookHistoryPanel getToken={getToken} />
+    </div>
+  );
+}
+
+function FenaQuotaPanel({ getToken }: { getToken: () => Promise<string> }) {
+  const [q, setQ] = useState<FenaQuotaStatus | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const [limitDraft, setLimitDraft] = useState('');
+  const [saving, setSaving] = useState(false);
+  async function load() {
+    setLoading(true);
+    try {
+      const idToken = await getToken();
+      const res = await getFenaQuotaStatus({ data: { idToken } });
+      setQ(res);
+      setLimitDraft(String(res.dailyLimit));
+      setErr('');
+    } catch (e: any) {
+      setErr(e?.message || 'Failed to load quota');
+    } finally {
+      setLoading(false);
+    }
+  }
+  useEffect(() => { void load(); }, []);
+  async function saveLimit() {
+    const n = Number(limitDraft);
+    if (!Number.isFinite(n) || n < 10) return;
+    setSaving(true);
+    try {
+      const idToken = await getToken();
+      await setFenaQuotaDailyLimit({ data: { idToken, dailyLimit: Math.floor(n) } });
+      await load();
+    } catch (e: any) {
+      setErr(e?.message || 'Save failed');
+    } finally { setSaving(false); }
+  }
+  const tone = q?.critical ? 'border-rose-700' : q?.warning ? 'border-amber-700' : 'border-slate-700';
+  return (
+    <div className={`rounded-lg border-2 ${tone} bg-slate-900 p-4`}>
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-lg font-semibold text-white">
+          Quota usage (today)
+          {q && (
+            <span className={'ml-3 text-xs font-normal ' + (q.critical ? 'text-rose-400' : q.warning ? 'text-amber-300' : 'text-slate-400')}>
+              {q.percent}% of {q.dailyLimit}
+            </span>
+          )}
+        </h2>
+        <button type="button" onClick={() => void load()} disabled={loading}
+          className="min-h-[36px] rounded-lg border-2 border-slate-600 bg-slate-800 px-3 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50">
+          {loading ? 'Refreshing…' : 'Refresh'}
+        </button>
+      </div>
+      <p className="text-xs text-slate-400 mb-3">
+        Fena doesn't publish quota headers, so we approximate by counting every outbound API call ourselves.
+        Warn at 80%, critical at 100% or any HTTP 429.
+      </p>
+      {err && <p className="text-rose-400 text-sm">{err}</p>}
+      {q && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+            <div className="rounded border border-slate-800 bg-slate-950 p-3">
+              <div className="text-[11px] uppercase text-slate-500">Requests</div>
+              <div className="text-lg font-bold text-white">{q.requests}</div>
+              <div className="text-[11px] text-slate-500">date: {q.date}</div>
+            </div>
+            <div className="rounded border border-slate-800 bg-slate-950 p-3">
+              <div className="text-[11px] uppercase text-slate-500">Errors</div>
+              <div className={'text-lg font-bold ' + (q.errors > 0 ? 'text-rose-400' : 'text-emerald-400')}>{q.errors}</div>
+            </div>
+            <div className="rounded border border-slate-800 bg-slate-950 p-3">
+              <div className="text-[11px] uppercase text-slate-500">HTTP 429</div>
+              <div className={'text-lg font-bold ' + (q.count429 > 0 ? 'text-rose-400' : 'text-emerald-400')}>{q.count429}</div>
+              {q.last429At && <div className="text-[11px] text-slate-500">last: {q.last429At.slice(11, 19)}</div>}
+            </div>
+            <div className="rounded border border-slate-800 bg-slate-950 p-3">
+              <div className="text-[11px] uppercase text-slate-500">Warn threshold</div>
+              <div className="text-lg font-bold text-amber-300">{q.warnThreshold}</div>
+            </div>
+          </div>
+          <div className="h-2 w-full rounded bg-slate-800 overflow-hidden mb-3">
+            <div className={'h-full ' + (q.critical ? 'bg-rose-600' : q.warning ? 'bg-amber-500' : 'bg-emerald-500')}
+              style={{ width: Math.min(100, q.percent) + '%' }} />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-slate-400">Daily limit:</span>
+            <input type="number" min={10} value={limitDraft} onChange={(e) => setLimitDraft(e.target.value)}
+              className="min-h-[40px] w-32 rounded-lg border-2 border-slate-600 bg-slate-800 px-3 text-sm text-white" />
+            <button type="button" onClick={saveLimit} disabled={saving}
+              className="min-h-[40px] rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50">
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function FenaRetryQueuePanel({ getToken }: { getToken: () => Promise<string> }) {
+  const [rows, setRows] = useState<FenaRetryRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [err, setErr] = useState('');
+  const [lastResult, setLastResult] = useState<string>('');
+  async function load() {
+    setLoading(true);
+    try {
+      const idToken = await getToken();
+      const res = await listFenaRetryQueue({ data: { idToken } });
+      setRows(res);
+      setErr('');
+    } catch (e: any) {
+      setErr(e?.message || 'Failed to load retry queue');
+    } finally { setLoading(false); }
+  }
+  useEffect(() => { void load(); }, []);
+  async function processNow() {
+    setProcessing(true);
+    try {
+      const idToken = await getToken();
+      const res = await processFenaRetriesAdmin({ data: { idToken } });
+      setLastResult(`scanned ${res.scanned} · succeeded ${res.succeeded} · failed ${res.failed} · exhausted ${res.exhausted}`);
+      await load();
+    } catch (e: any) {
+      setErr(e?.message || 'Process failed');
+    } finally { setProcessing(false); }
+  }
+  async function removeRow(id: string) {
+    if (!confirm('Delete this retry row? The intended order update will NOT be applied.')) return;
+    try {
+      const idToken = await getToken();
+      await deleteFenaRetryRow({ data: { idToken, id } });
+      await load();
+    } catch (e: any) {
+      setErr(e?.message || 'Delete failed');
+    }
+  }
+  const exhausted = rows.filter((r) => r.exhausted);
+  const tone = exhausted.length > 0 ? 'border-rose-700' : rows.length > 0 ? 'border-amber-700' : 'border-slate-700';
+  return (
+    <div className={`rounded-lg border-2 ${tone} bg-slate-900 p-4`}>
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-lg font-semibold text-white">
+          Retry queue
+          <span className="ml-2 text-xs font-normal text-slate-400">
+            ({rows.length} queued{exhausted.length > 0 ? `, ${exhausted.length} exhausted` : ''})
+          </span>
+        </h2>
+        <div className="flex gap-2">
+          <button type="button" onClick={processNow} disabled={processing || rows.length === 0}
+            className="min-h-[36px] rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white hover:bg-emerald-500 disabled:opacity-50">
+            {processing ? 'Processing…' : 'Process due now'}
+          </button>
+          <button type="button" onClick={() => void load()} disabled={loading}
+            className="min-h-[36px] rounded-lg border-2 border-slate-600 bg-slate-800 px-3 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50">
+            {loading ? '…' : 'Refresh'}
+          </button>
+        </div>
+      </div>
+      <p className="text-xs text-slate-400 mb-2">
+        Failed order updates from the webhook land here and are replayed with exponential backoff
+        (1, 2, 4, 8, 16 min, capped 60). After 5 attempts a critical alert is raised.
+      </p>
+      {err && <p className="text-rose-400 text-sm mb-2">{err}</p>}
+      {lastResult && <p className="text-emerald-300 text-xs font-mono mb-2">{lastResult}</p>}
+      {!loading && rows.length === 0 && <p className="text-emerald-400 text-sm">Empty — no pending retries.</p>}
+      {rows.length > 0 && (
+        <div className="space-y-2 max-h-[300px] overflow-y-auto">
+          {rows.map((r) => (
+            <div key={r.id}
+              className={'rounded border p-3 text-xs font-mono ' +
+                (r.exhausted ? 'border-rose-800 bg-rose-950/40' : 'border-slate-800 bg-slate-950')}>
+              <div className="flex flex-wrap items-center gap-3">
+                <span className={r.exhausted ? 'text-rose-400 font-bold' : 'text-amber-300'}>
+                  {r.exhausted ? 'EXHAUSTED' : `attempt ${r.attempts}/${r.maxAttempts}`}
+                </span>
+                <span className="text-white">order: {r.orderId}</span>
+                <span className="text-slate-400">paymentId: <span className="text-amber-300">{r.fenaPaymentId}</span></span>
+                {!r.exhausted && r.nextAttemptAt && (
+                  <span className="text-slate-500">next: {r.nextAttemptAt.slice(11, 19)} UTC</span>
+                )}
+                <button type="button" onClick={() => removeRow(r.id)}
+                  className="ml-auto rounded border border-slate-700 px-2 py-0.5 text-[11px] text-slate-300 hover:bg-slate-800">
+                  Delete
+                </button>
+              </div>
+              {r.lastError && <div className="text-rose-300 mt-1 break-all">err: {r.lastError}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FenaWebhookHistoryPanel({ getToken }: { getToken: () => Promise<string> }) {
+  const [rows, setRows] = useState<FenaWebhookEventRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const [level, setLevel] = useState<'' | 'info' | 'warn' | 'error'>('');
+  const [outcome, setOutcome] = useState<'' | 'matched' | 'orphan' | 'duplicate' | 'bank_account' | 'error' | 'info'>('');
+  const [search, setSearch] = useState('');
+  const [cursors, setCursors] = useState<(string | null)[]>([null]); // page-stack
+  const [hasMore, setHasMore] = useState(false);
+
+  async function load(page = 0) {
+    setLoading(true);
+    try {
+      const idToken = await getToken();
+      const cursorCreatedAt = cursors[page] || undefined;
+      const res = await listFenaWebhookEventsPaged({
+        data: {
+          idToken,
+          pageSize: 25,
+          cursorCreatedAt,
+          level: level || undefined,
+          outcome: outcome || undefined,
+          search: search.trim() || undefined,
+        },
+      });
+      setRows(res.rows);
+      setHasMore(res.hasMore);
+      setCursors((prev) => {
+        const next = prev.slice(0, page + 1);
+        if (res.nextCursor) next.push(res.nextCursor);
+        return next;
+      });
+      setErr('');
+    } catch (e: any) {
+      setErr(e?.message || 'Failed to load');
+    } finally { setLoading(false); }
+  }
+  useEffect(() => {
+    setCursors([null]);
+    void load(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [level, outcome]);
+
+  const pageIndex = cursors.length - (hasMore ? 2 : 1);
+  return (
+    <div className="rounded-lg border-2 border-slate-700 bg-slate-900 p-4">
+      <h2 className="text-lg font-semibold text-white mb-2">Webhook history</h2>
+      <p className="text-xs text-slate-400 mb-3">
+        Full history of every Fena webhook POST. Filter by level / outcome, search by order or paymentId,
+        and page through results.
+      </p>
+      <div className="flex flex-wrap gap-2 mb-3">
+        <select value={level} onChange={(e) => setLevel(e.target.value as any)}
+          className="min-h-[40px] rounded-lg border-2 border-slate-600 bg-slate-800 px-3 text-sm text-white">
+          <option value="">all levels</option>
+          <option value="info">info</option>
+          <option value="warn">warn</option>
+          <option value="error">error</option>
+        </select>
+        <select value={outcome} onChange={(e) => setOutcome(e.target.value as any)}
+          className="min-h-[40px] rounded-lg border-2 border-slate-600 bg-slate-800 px-3 text-sm text-white">
+          <option value="">all outcomes</option>
+          <option value="matched">matched</option>
+          <option value="orphan">orphan</option>
+          <option value="duplicate">duplicate</option>
+          <option value="bank_account">bank_account</option>
+          <option value="error">error</option>
+          <option value="info">info</option>
+        </select>
+        <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+          placeholder="search order / paymentId / message"
+          className="min-h-[40px] flex-1 min-w-[200px] rounded-lg border-2 border-slate-600 bg-slate-800 px-3 text-sm text-white" />
+        <button type="button" onClick={() => { setCursors([null]); void load(0); }} disabled={loading}
+          className="min-h-[40px] rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50">
+          {loading ? '…' : 'Search'}
+        </button>
+      </div>
+      {err && <p className="text-rose-400 text-sm">{err}</p>}
+      {!loading && rows.length === 0 && <p className="text-slate-400 text-sm">No events match.</p>}
+      {rows.length > 0 && (
+        <div className="space-y-1 max-h-[500px] overflow-y-auto">
+          {rows.map((r) => (
+            <details key={r.id} className="rounded border border-slate-800 bg-slate-950 p-2 text-xs font-mono text-slate-300">
+              <summary className="cursor-pointer list-none">
+                <div className="flex flex-wrap gap-2 items-center">
+                  <span className={'rounded px-1.5 py-0.5 text-[10px] font-semibold ' +
+                    (r.matchOutcome === 'matched' ? 'bg-emerald-700 text-emerald-50' :
+                     r.matchOutcome === 'orphan' || r.matchOutcome === 'error' ? 'bg-rose-700 text-rose-50' :
+                     r.matchOutcome === 'duplicate' ? 'bg-slate-600 text-slate-50' :
+                     r.matchOutcome === 'bank_account' ? 'bg-indigo-700 text-indigo-50' : 'bg-slate-700 text-slate-200')}>
+                    {r.matchOutcome.toUpperCase()}
+                  </span>
+                  <span className={r.level === 'error' ? 'text-rose-400' : r.level === 'warn' ? 'text-amber-400' : 'text-emerald-400'}>
+                    {r.level || 'info'}
+                  </span>
+                  <span className="text-slate-500">{r.createdAt?.slice(0, 19) || ''}</span>
+                  <span className="text-white">{r.message}</span>
+                  {r.orderId && <span className="text-emerald-300">{r.orderId}</span>}
+                  {r.fenaPaymentId && <span className="text-amber-300 truncate max-w-[160px]">{r.fenaPaymentId}</span>}
+                </div>
+              </summary>
+              {r.ctx && <pre className="mt-1 text-slate-400 whitespace-pre-wrap break-all">{r.ctx}</pre>}
+            </details>
+          ))}
+        </div>
+      )}
+      <div className="flex items-center gap-2 mt-3">
+        <button type="button"
+          onClick={() => { setCursors((p) => p.slice(0, -1)); void load(Math.max(0, pageIndex - 1)); }}
+          disabled={pageIndex <= 0 || loading}
+          className="min-h-[36px] rounded-lg border-2 border-slate-600 bg-slate-800 px-3 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50">
+          ← Prev
+        </button>
+        <span className="text-xs text-slate-400">page {pageIndex + 1}</span>
+        <button type="button"
+          onClick={() => void load(pageIndex + 1)}
+          disabled={!hasMore || loading}
+          className="min-h-[36px] rounded-lg border-2 border-slate-600 bg-slate-800 px-3 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50">
+          Next →
+        </button>
+      </div>
     </div>
   );
 }
