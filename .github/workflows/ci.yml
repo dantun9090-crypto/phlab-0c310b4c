@@ -62,3 +62,9 @@ jobs:
       # in child_process / sharp / puppeteer before they reach prod.
       - name: Verify no Node-only imports in Worker bundle
         run: bun run worker:check-imports
+
+      # Live HTTP probe: verifies www -> apex 301 across key routes.
+      # Skips automatically offline (SKIP_WWW_REDIRECT_CHECK=1).
+      - name: WWW -> apex redirect check
+        run: bun run check:www-redirect
+

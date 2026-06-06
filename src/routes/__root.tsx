@@ -149,10 +149,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://identitytoolkit.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
-      { rel: "preconnect", href: "https://cdn.wegic.ai" },
       { rel: "dns-prefetch", href: "https://firestore.googleapis.com" },
       { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
-      { rel: "dns-prefetch", href: "https://cdn.wegic.ai" },
+
     ],
   }),
   shellComponent: RootShell,
