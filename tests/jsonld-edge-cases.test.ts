@@ -240,14 +240,10 @@ const ARTICLE_EDGE_CASES: Array<{ label: string; article: Article }> = [
 describe("Article JSON-LD — edge cases", () => {
   for (const { label, article } of ARTICLE_EDGE_CASES) {
     it(label, () => {
-      // Inject the fixture into the live articles array via mutation so the
-      // splat route's article lookup finds it. The mutation is reverted at
-      // the end of the test to keep the catalogue clean.
-      const mod = require("../src/pages/Resources/data/articles") as {
-        articles: Article[];
-      };
-      const original = mod.articles.length;
-      mod.articles.push(article);
+      // Inject the fixture into the live articles array so the splat
+      // route's article lookup finds it. Reverted in the finally block.
+      const original = liveArticles.length;
+      liveArticles.push(article);
       try {
         const head = callHead(SplatRoute, {
           params: { _splat: `resources/${article.slug}` },
