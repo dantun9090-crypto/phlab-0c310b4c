@@ -75,3 +75,15 @@ jobs:
       - name: WWW -> apex redirect check
         run: bun run check:www-redirect
 
+      # Live Fena API contract tests — only run when the workflow has the
+      # FENA_TERMINAL_ID / FENA_TERMINAL_SECRET secrets injected. Tests
+      # self-skip otherwise (FENA_INTEGRATION must equal "1").
+      - name: Fena live integration tests (opt-in)
+        if: ${{ env.FENA_TERMINAL_ID != '' && env.FENA_TERMINAL_SECRET != '' }}
+        env:
+          FENA_INTEGRATION: '1'
+          FENA_TERMINAL_ID: ${{ secrets.FENA_TERMINAL_ID }}
+          FENA_TERMINAL_SECRET: ${{ secrets.FENA_TERMINAL_SECRET }}
+        run: bun run test:fena
+
+

@@ -690,3 +690,192 @@ export const connectFenaBankAccount = createServerFn({ method: "POST" })
     const authUri = await fenaConnectBankAccount(data.provider);
     return { authUri };
   });
+
+
+// ---------- Integration status (used by the admin panel header) ----------
+
+export interface FenaIntegrationStatus {
+  env: "sandbox" | "production";
+  hasCredentials: boolean;
+  connection: { ok: boolean; checkedAt: string; durationMs: number; error?: string };
+  /** Last Fena-attributed paid order (status=paid AND paymentProvider=fena). */
+  lastSuccessfulPayment: {
+    orderId: string;
+    orderNumber?: string;
+    amount?: number;
+    currency?: string;
+    paidAt?: string;
+    customerEmail?: string;
+  } | null;
+  /** Most recent webhook event. */
+  lastWebhook: {
+    id: string;
+    level?: string;
+    message?: string;
+    createdAt?: string;
+  } | null;
+  /** Counters over the last ~50 events / alerts (the doc cap we read). */
+  counters: {
+    events24h: number;
+    errors24h: number;
+    duplicates24h: number;
+    orphans24h: number;
+    alertsOpen: number;
+  };
+  /** Most recent unacknowledged alerts. */
+  recentAlerts: Array<{
+    id: string;
+    code: string;
+    severity: string;
+    createdAt?: string;
+    ctxSummary?: string;
+  }>;
+  /**
+   * Fena does not expose API quota / rate-limit headers, so this is a
+   * derived signal — our own count of outbound calls + webhook events in
+   * the last 24h, useful for spotting unusual spikes.
+   */
+  approxRequestVolume24h: number;
+}
+
+export const getFenaIntegrationStatus = createServerFn({ method: "POST" })
+  .inputValidator((d) => AdminEventsInput.parse(d))
+  .handler(async ({ data }): Promise<FenaIntegrationStatus> => {
+    await requireFirebaseAdmin(data.idToken);
+    const env = await getFenaEnvLabel();
+    const hasCredentials = Boolean(
+      process.env.FENA_TERMINAL_ID && process.env.FENA_TERMINAL_SECRET,
+    );
+
+    // Connection check — light call to bank-accounts/list.
+    const started = Date.now();
+    let connection: FenaIntegrationStatus["connection"];
+    try {
+      await fenaListBankAccounts();
+      connection = {
+        ok: true,
+        checkedAt: new Date().toISOString(),
+        durationMs: Date.now() - started,
+      };
+    } catch (err) {
+      connection = {
+        ok: false,
+        checkedAt: new Date().toISOString(),
+        durationMs: Date.now() - started,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+
+    // Recent webhook events for counters + last webhook timestamp.
+    const events = await listDocsAdmin("fena_webhook_events", {
+      orderBy: "createdAt",
+      direction: "DESCENDING",
+      limit: 100,
+    }).catch(() => [] as Array<Record<string, unknown> & { id: string }>);
+
+    const cutoff = Date.now() - 24 * 3600 * 1000;
+    const within24h = (row: Record<string, unknown>) => {
+      const ts = typeof row.createdAt === "string" ? Date.parse(row.createdAt) : 0;
+      return ts && ts >= cutoff;
+    };
+
+    const events24 = events.filter(within24h);
+    const errors24 = events24.filter((r) => r.level === "error").length;
+    const duplicates24 = events24.filter(
+      (r) => typeof r.message === "string" && /^duplicate event/i.test(r.message),
+    ).length;
+    const orphans24 = events24.filter(
+      (r) => typeof r.message === "string" && /^ORPHAN/i.test(r.message),
+    ).length;
+
+    const lastEvt = events[0];
+    const lastWebhook = lastEvt
+      ? {
+          id: lastEvt.id,
+          level: typeof lastEvt.level === "string" ? lastEvt.level : undefined,
+          message: typeof lastEvt.message === "string" ? lastEvt.message : undefined,
+          createdAt:
+            typeof lastEvt.createdAt === "string" ? lastEvt.createdAt : undefined,
+        }
+      : null;
+
+    // Recent alerts (cap 10, only show unacknowledged).
+    const alerts = await listDocsAdmin("fena_alerts", {
+      orderBy: "createdAt",
+      direction: "DESCENDING",
+      limit: 25,
+    }).catch(() => [] as Array<Record<string, unknown> & { id: string }>);
+    const openAlerts = alerts.filter((a) => a.acknowledged !== true);
+    const recentAlerts = openAlerts.slice(0, 10).map((a) => {
+      const ctxObj =
+        a.ctx && typeof a.ctx === "object" && !Array.isArray(a.ctx)
+          ? (a.ctx as Record<string, unknown>)
+          : {};
+      const parts: string[] = [];
+      for (const k of ["orderId", "fenaPaymentId", "error", "accountId"]) {
+        const v = ctxObj[k];
+        if (typeof v === "string" && v) parts.push(`${k}=${v.slice(0, 64)}`);
+      }
+      return {
+        id: a.id,
+        code: typeof a.code === "string" ? a.code : "unknown",
+        severity: typeof a.severity === "string" ? a.severity : "warn",
+        createdAt:
+          typeof a.createdAtIso === "string"
+            ? a.createdAtIso
+            : typeof a.createdAt === "string"
+              ? a.createdAt
+              : undefined,
+        ctxSummary: parts.join(" · ") || undefined,
+      };
+    });
+
+    // Last successful Fena payment (paid order via fena).
+    let lastSuccessfulPayment: FenaIntegrationStatus["lastSuccessfulPayment"] = null;
+    try {
+      const paidOrders = await listDocsAdmin("orders", {
+        orderBy: "paidAt",
+        direction: "DESCENDING",
+        limit: 25,
+      });
+      const fenaPaid = paidOrders.find(
+        (o) =>
+          (o.paymentProvider === "fena" ||
+            (typeof o.fenaPaymentId === "string" && o.fenaPaymentId.length > 0)) &&
+          String(o.status ?? "").toLowerCase() === "paid",
+      );
+      if (fenaPaid) {
+        const amt = Number(fenaPaid.totalAmount ?? fenaPaid.total ?? 0);
+        lastSuccessfulPayment = {
+          orderId: fenaPaid.id,
+          orderNumber:
+            typeof fenaPaid.orderNumber === "string" ? fenaPaid.orderNumber : undefined,
+          amount: Number.isFinite(amt) ? amt : undefined,
+          currency:
+            typeof fenaPaid.currency === "string" ? fenaPaid.currency : undefined,
+          paidAt: typeof fenaPaid.paidAt === "string" ? fenaPaid.paidAt : undefined,
+          customerEmail:
+            typeof fenaPaid.customerEmail === "string"
+              ? fenaPaid.customerEmail
+              : undefined,
+        };
+      }
+    } catch {/* ignore — status fn must not 5xx for one missing source */}
+
+    return {
+      env,
+      hasCredentials,
+      connection,
+      lastSuccessfulPayment,
+      lastWebhook,
+      counters: {
+        events24h: events24.length,
+        errors24h: errors24,
+        duplicates24h: duplicates24,
+        orphans24h: orphans24,
+        alertsOpen: openAlerts.length,
+      },
+      recentAlerts,
+      approxRequestVolume24h: events24.length,
+    };
+  });

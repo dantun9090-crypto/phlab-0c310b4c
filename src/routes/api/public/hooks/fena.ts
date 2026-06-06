@@ -24,6 +24,7 @@ import {
 import { fenaGetPayment, fenaGetBankAccount } from "@/lib/fena.server";
 import { computeFenaOrderUpdates } from "@/lib/fena-webhook-updates";
 import { enforceRateLimit } from "@/lib/rate-limit";
+import { raiseFenaAlert } from "@/lib/fena-alerts.server";
 
 interface FenaWebhookBody {
   eventScope?: string;
@@ -160,6 +161,10 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
               accountId,
               error: err instanceof Error ? err.message : String(err),
             });
+            await raiseFenaAlert("fena_bank_account_write_failed", "error", {
+              accountId,
+              error: err instanceof Error ? err.message : String(err),
+            });
             return new Response("Write failed", { status: 500 });
           }
 
@@ -200,9 +205,15 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
         try {
           authoritative = await fenaGetPayment(fenaPaymentId);
         } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
           await logEvent("error", "fena api re-fetch failed", {
             fenaPaymentId,
-            error: err instanceof Error ? err.message : String(err),
+            error: errMsg,
+          });
+          await raiseFenaAlert("fena_refetch_failed", "error", {
+            fenaPaymentId,
+            error: errMsg,
+            hint: "Verify FENA_TERMINAL_ID / FENA_TERMINAL_SECRET and Fena API reachability.",
           });
           // Tell Fena to retry later (5xx).
           return new Response("Upstream verify failed", { status: 502 });
@@ -288,6 +299,10 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
             } catch {/* swallow — webhook must not 5xx for logging */}
           }
           await logEvent("error", "ORPHAN: Fena payment has no matching order", orphanCtx);
+          // Only alert for confirmed-paid orphans (real money in, no order).
+          if (String(authoritative.status ?? "").toLowerCase() === "paid") {
+            await raiseFenaAlert("fena_orphan_payment", "critical", orphanCtx);
+          }
           // Ack so Fena stops retrying; flagged as error level in the admin tab.
           return new Response("No matching order (logged as orphan)", { status: 200 });
         }
@@ -322,7 +337,26 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
         const currentStatus = String(orderRow.status ?? "pending").toLowerCase();
         const isPaid = transitionedToPaid;
 
-        await updateDocAdmin("orders", orderId, updates);
+        try {
+          await updateDocAdmin("orders", orderId, updates);
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          await logEvent("error", "order update failed", {
+            orderId,
+            fenaPaymentId,
+            error: errMsg,
+          });
+          await raiseFenaAlert("fena_order_update_failed", "critical", {
+            orderId,
+            fenaPaymentId,
+            fenaStatus,
+            attemptedUpdates: updates,
+            error: errMsg,
+            hint: "Order will stay in its current status; Fena will retry the webhook.",
+          });
+          // 5xx → Fena will retry.
+          return new Response("Order update failed", { status: 500 });
+        }
 
         // Enqueue confirmation mail on first paid transition.
         if (isPaid && currentStatus !== "paid") {

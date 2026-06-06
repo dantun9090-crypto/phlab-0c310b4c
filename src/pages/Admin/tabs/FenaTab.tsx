@@ -12,6 +12,7 @@ import {
   renameFenaBankAccount,
   setDefaultFenaBankAccount,
   connectFenaBankAccount,
+  getFenaIntegrationStatus,
   FENA_BANK_PROVIDERS,
   type FenaWebhookEventRow,
   type FenaOrphanPaymentRow,
@@ -19,6 +20,7 @@ import {
   type FenaBankAccountRow,
   type FenaDryRunResult,
   type FenaTransactionRow,
+  type FenaIntegrationStatus,
 } from '@/lib/fena.functions';
 
 type EnvLabel = 'sandbox' | 'production';
@@ -45,6 +47,8 @@ export default function FenaTab() {
   const [err, setErr] = useState<string>('');
   const [reconciling, setReconciling] = useState(false);
   const [reconcileResult, setReconcileResult] = useState<FenaReconcileResult | null>(null);
+  const [status, setStatus] = useState<FenaIntegrationStatus | null>(null);
+  const [statusLoading, setStatusLoading] = useState(false);
 
   async function getToken() {
     const idToken = await auth.currentUser?.getIdToken();
@@ -74,10 +78,24 @@ export default function FenaTab() {
         setAccountsErr(e?.message || 'Failed to load bank accounts');
       }
       void loadTransactions();
+      void loadStatus();
     } catch (e: any) {
       setErr(e?.message || 'Failed to load events');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadStatus() {
+    setStatusLoading(true);
+    try {
+      const idToken = await getToken();
+      const res = await getFenaIntegrationStatus({ data: { idToken } });
+      setStatus(res);
+    } catch {
+      // status panel failure shouldn't block the rest of the tab
+    } finally {
+      setStatusLoading(false);
     }
   }
 
@@ -181,6 +199,10 @@ export default function FenaTab() {
           <code className="text-emerald-400">https://phlabs.co.uk/payment/success</code>
         </p>
       </div>
+
+      <FenaStatusPanel status={status} loading={statusLoading} onRefresh={loadStatus} />
+
+
 
       {/* Environment toggle + dry-run */}
       <div className="rounded-lg border-2 border-slate-700 bg-slate-900 p-4">
@@ -755,6 +777,190 @@ function BankAccountsSection({
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function FenaStatusPanel({
+  status,
+  loading,
+  onRefresh,
+}: {
+  status: FenaIntegrationStatus | null;
+  loading: boolean;
+  onRefresh: () => void | Promise<void>;
+}) {
+  const connOk = status?.connection.ok;
+  const conn = status?.connection;
+  return (
+    <div className="rounded-lg border-2 border-slate-700 bg-slate-900 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-semibold text-white">Integration status</h2>
+        <button
+          type="button"
+          onClick={() => void onRefresh()}
+          disabled={loading}
+          className="min-h-[36px] rounded-lg border-2 border-slate-600 bg-slate-800 px-3 text-xs font-semibold text-white hover:bg-slate-700 disabled:opacity-50"
+        >
+          {loading ? 'Refreshing…' : 'Refresh'}
+        </button>
+      </div>
+
+      {!status && !loading && (
+        <p className="text-slate-400 text-sm">No status data yet.</p>
+      )}
+
+      {status && (
+        <>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <StatusCell
+              label="Connection"
+              value={connOk ? 'OK' : 'FAIL'}
+              tone={connOk ? 'ok' : 'err'}
+              hint={
+                conn
+                  ? `${conn.durationMs}ms · ${conn.checkedAt.slice(11, 19)}`
+                  : undefined
+              }
+            />
+            <StatusCell
+              label="Credentials"
+              value={status.hasCredentials ? 'present' : 'missing'}
+              tone={status.hasCredentials ? 'ok' : 'err'}
+              hint={`env: ${status.env}`}
+            />
+            <StatusCell
+              label="Open alerts"
+              value={String(status.counters.alertsOpen)}
+              tone={status.counters.alertsOpen > 0 ? 'err' : 'ok'}
+              hint={`errors 24h: ${status.counters.errors24h}`}
+            />
+            <StatusCell
+              label="Webhook traffic 24h"
+              value={String(status.counters.events24h)}
+              tone="neutral"
+              hint={`orphans: ${status.counters.orphans24h} · dup: ${status.counters.duplicates24h}`}
+            />
+          </div>
+
+          {conn && !conn.ok && conn.error && (
+            <p className="text-rose-400 text-xs font-mono mb-3">
+              Connection error: {conn.error}
+            </p>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+            <div className="rounded border border-slate-800 bg-slate-950 p-3 text-xs">
+              <div className="text-slate-400 mb-1">Last webhook</div>
+              {status.lastWebhook ? (
+                <div className="font-mono text-slate-200">
+                  <span
+                    className={
+                      status.lastWebhook.level === 'error'
+                        ? 'text-rose-400'
+                        : status.lastWebhook.level === 'warn'
+                          ? 'text-amber-400'
+                          : 'text-emerald-400'
+                    }
+                  >
+                    {status.lastWebhook.level || 'info'}
+                  </span>{' '}
+                  <span className="text-white">{status.lastWebhook.message || '—'}</span>
+                  <div className="text-slate-500">{status.lastWebhook.createdAt || '—'}</div>
+                </div>
+              ) : (
+                <p className="text-slate-500">No webhook received yet.</p>
+              )}
+            </div>
+
+            <div className="rounded border border-slate-800 bg-slate-950 p-3 text-xs">
+              <div className="text-slate-400 mb-1">Last successful payment</div>
+              {status.lastSuccessfulPayment ? (
+                <div className="font-mono text-slate-200">
+                  <div className="text-white">
+                    {status.lastSuccessfulPayment.currency || 'GBP'}{' '}
+                    {status.lastSuccessfulPayment.amount?.toFixed(2) ?? '?'}
+                  </div>
+                  <div className="text-emerald-400">
+                    {status.lastSuccessfulPayment.orderNumber ||
+                      status.lastSuccessfulPayment.orderId}
+                  </div>
+                  <div className="text-slate-500">
+                    {status.lastSuccessfulPayment.paidAt || '—'}
+                  </div>
+                  {status.lastSuccessfulPayment.customerEmail && (
+                    <div className="text-slate-500">
+                      {status.lastSuccessfulPayment.customerEmail}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-slate-500">No Fena-paid orders yet.</p>
+              )}
+            </div>
+          </div>
+
+          {status.recentAlerts.length > 0 && (
+            <div className="rounded border-2 border-rose-700 bg-rose-950/30 p-3 text-xs">
+              <div className="text-rose-300 font-semibold mb-2">
+                Open alerts ({status.recentAlerts.length})
+              </div>
+              <ul className="space-y-1 font-mono">
+                {status.recentAlerts.map((a) => (
+                  <li key={a.id} className="text-slate-200">
+                    <span
+                      className={
+                        a.severity === 'critical'
+                          ? 'text-rose-400'
+                          : a.severity === 'error'
+                            ? 'text-rose-300'
+                            : 'text-amber-300'
+                      }
+                    >
+                      [{a.severity}]
+                    </span>{' '}
+                    <span className="text-white">{a.code}</span>
+                    {a.ctxSummary && (
+                      <span className="text-slate-400"> — {a.ctxSummary}</span>
+                    )}
+                    <span className="text-slate-500"> · {a.createdAt || ''}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-slate-500 mt-2 text-[11px]">
+                Admin email throttled to 1× per code per 30 min. See <code>fena_alerts</code> in
+                Firestore for the full history.
+              </p>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function StatusCell({
+  label,
+  value,
+  tone,
+  hint,
+}: {
+  label: string;
+  value: string;
+  tone: 'ok' | 'err' | 'neutral';
+  hint?: string;
+}) {
+  const toneClass =
+    tone === 'ok'
+      ? 'text-emerald-400'
+      : tone === 'err'
+        ? 'text-rose-400'
+        : 'text-slate-200';
+  return (
+    <div className="rounded border border-slate-800 bg-slate-950 p-3">
+      <div className="text-[11px] uppercase text-slate-500 tracking-wide">{label}</div>
+      <div className={`text-lg font-bold ${toneClass}`}>{value}</div>
+      {hint && <div className="text-[11px] text-slate-500 mt-0.5">{hint}</div>}
     </div>
   );
 }
