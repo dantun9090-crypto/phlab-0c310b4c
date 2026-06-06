@@ -980,6 +980,7 @@ export default function HomePage() {
                         <button
                           type="button"
                           onClick={copyDiscountCode}
+                          aria-label={codeCopied ? 'Discount code copied to clipboard' : `Copy discount code ${revealedCode} to clipboard`}
                           className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                           style={{ background: 'rgba(16,185,129,0.18)', color: '#4ade80', border: '1px solid rgba(16,185,129,0.35)' }}
                         >
