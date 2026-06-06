@@ -312,8 +312,8 @@ Semaglutide is a 31-amino-acid analogue of native GLP-1 with two amino acid subs
         }
       },
       {
-        heading: 'Weight Reduction Comparison Across Clinical Trials',
-        body: `Direct head-to-head comparison is complicated by differences in trial design, patient populations, and dose titration schedules. The data below represents maximum dose arms from Phase 2/3 trials in adults with obesity (BMI ≥30 or ≥27 with comorbidity) at 52–72 weeks, selected as the most comparable available data:`,
+        heading: 'Weight Change Observations Across Clinical Trials',
+        body: `Direct head-to-head comparison is complicated by differences in trial design, participant populations, and dose titration schedules. The data below represents maximum-dose arms from Phase 2/3 trials in adults with obesity (BMI ≥30 or ≥27 with comorbidity) at 52–72 weeks, selected as the most comparable available data. These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds:`,
         table: {
           headers: ['Compound', 'Max Dose', 'Trial Duration', 'Mean Weight Loss', 'Trial'],
           rows: [
