@@ -12,6 +12,7 @@ export interface InvoiceEmailOptions {
   shipping: number;
   total: number;
   shippingLabel?: string;
+  deliveryMessage?: string;
   address?: string;
   city?: string;
   postcode?: string;
@@ -51,6 +52,7 @@ export function buildProfessionalInvoiceEmail(rawOpts: InvoiceEmailOptions): str
       variantName: it.variantName ? esc(it.variantName) : it.variantName,
     })),
     shippingLabel: rawOpts.shippingLabel ? esc(rawOpts.shippingLabel) : rawOpts.shippingLabel,
+    deliveryMessage: rawOpts.deliveryMessage ? esc(rawOpts.deliveryMessage) : rawOpts.deliveryMessage,
     address: rawOpts.address ? esc(rawOpts.address) : rawOpts.address,
     city: rawOpts.city ? esc(rawOpts.city) : rawOpts.city,
     postcode: rawOpts.postcode ? esc(rawOpts.postcode) : rawOpts.postcode,
@@ -274,6 +276,10 @@ export function buildProfessionalInvoiceEmail(rawOpts: InvoiceEmailOptions): str
                 <td style="padding:10px 0;color:${BLUE};font-size:20px;font-weight:800;text-align:right;font-family:monospace;">£${opts.total.toFixed(2)}</td>
               </tr>
             </table>
+            ${opts.deliveryMessage ? `
+            <div style="margin-top:14px;padding:12px 14px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:10px;color:#a7f3d0;font-size:13px;line-height:1.5;">
+              ${opts.deliveryMessage}
+            </div>` : ''}
           </td>
         </tr>
 
