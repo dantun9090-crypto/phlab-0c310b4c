@@ -511,6 +511,8 @@ export default function OrdersTab() {
     delivered: orders.filter(o => o.status === 'delivered').length,
     cancelled: orders.filter(o => o.status === 'cancelled').length,
     fena_paid: orders.filter(isFenaAutoPaid).length,
+    next_day_12: orders.filter(o => (o as any).shippingMethod === 'next_day_12').length,
+    next_day_missed: orders.filter(o => (o as any).nextDayMissedCutoff === true).length,
   };
 
   // TrueLayer Open Banking orders still in 'pending' (no bank_transfer)
@@ -655,18 +657,29 @@ export default function OrdersTab() {
 
       {/* Status filter tabs */}
       <div className="flex gap-2 flex-wrap">
-        {(['all', 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid'] as const).map(s => {
-          const label = s === 'fena_paid' ? '✅ Fena Auto-Paid' : s.charAt(0).toUpperCase() + s.slice(1);
+        {(['all', 'pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'fena_paid', 'next_day_12', 'next_day_missed'] as const).map(s => {
+          const labelMap: Record<string, string> = {
+            fena_paid: '✅ Fena Auto-Paid',
+            next_day_12: '🚀 Next Day by 12',
+            next_day_missed: '⚠️ Next Day Missed',
+          };
+          const label = labelMap[s] ?? (s.charAt(0).toUpperCase() + s.slice(1));
           const isFena = s === 'fena_paid';
+          const isNextDay = s === 'next_day_12';
+          const isMissed = s === 'next_day_missed';
           return (
             <button
               key={s}
               onClick={() => setStatusFilter(s)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
                 statusFilter === s
-                  ? (isFena ? 'bg-green-600 border-green-500 text-white' : 'bg-blue-600 border-blue-500 text-white')
-                  : (isFena
-                    ? 'bg-green-500/10 border-green-500/30 text-green-300 hover:text-green-200'
+                  ? (isFena ? 'bg-green-600 border-green-500 text-white'
+                    : isNextDay ? 'bg-emerald-600 border-emerald-500 text-white'
+                    : isMissed ? 'bg-amber-600 border-amber-500 text-white'
+                    : 'bg-blue-600 border-blue-500 text-white')
+                  : (isFena ? 'bg-green-500/10 border-green-500/30 text-green-300 hover:text-green-200'
+                    : isNextDay ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:text-emerald-200'
+                    : isMissed ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:text-amber-200'
                     : 'bg-[#0d1f35] border-white/[0.08] text-[#9cb8d9] hover:text-white')
               }`}
             >
