@@ -14,13 +14,19 @@ import { z } from 'zod';
 import { runValidateCart, type ValidateCartResult } from './cart-validation.server';
 import { addDocAdmin } from './server/firestore-admin';
 import { verifyFirebaseIdToken } from './server/firebase-auth-admin';
+import {
+  SHIPPING_CONFIG,
+  checkNextDayEligibility,
+  getStandardDeliveryWindow,
+  getCutoffInstant,
+} from './shipping/next-day';
 
 const SHIPPING_OPTIONS = {
-  standard: { id: 'standard', label: 'Standard Delivery', price: 4.99 },
-  express:  { id: 'express',  label: 'Express Delivery',  price: 9.99 },
+  standard:    { id: 'standard',    label: 'Standard 1–3 Day Delivery', price: SHIPPING_CONFIG.standardPrice },
+  next_day_12: { id: 'next_day_12', label: 'Next Day by 12 PM',         price: SHIPPING_CONFIG.nextDayPrice },
 } as const;
 
-const FREE_SHIPPING_THRESHOLD = 50;
+const FREE_SHIPPING_THRESHOLD = SHIPPING_CONFIG.freeThreshold;
 
 const itemSchema = z.object({
   productId: z.string().min(1).max(128),
@@ -42,7 +48,7 @@ export const createOrderInputSchema = z.object({
     postcode:  z.string().min(1).max(20),
     country:   z.string().min(1).max(80),
   }),
-  shippingMethod: z.enum(['standard', 'express']),
+  shippingMethod: z.enum(['standard', 'next_day_12']),
   paymentMethod: z.enum(['bank_transfer', 'pay_by_bank']),
   ageVerified: z.literal(true),
   termsAccepted: z.literal(true),
@@ -85,10 +91,19 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   }
 
   // Derive authoritative shipping + total. Never trust any client total.
-  const isFreeShipping = validation.subtotal >= FREE_SHIPPING_THRESHOLD;
+  // Next-day shipping is ALWAYS paid (not eligible for free-over-£50 or free-shipping coupons).
+  const isNextDay = input.shippingMethod === 'next_day_12';
+  const isFreeShipping = !isNextDay && validation.subtotal >= FREE_SHIPPING_THRESHOLD;
   const baseCost = isFreeShipping ? 0 : baseShipping;
-  const shippingCost = +Math.max(0, baseCost - validation.shippingDiscount).toFixed(2);
+  const shippingDisc = isNextDay ? 0 : validation.shippingDiscount;
+  const shippingCost = +Math.max(0, baseCost - shippingDisc).toFixed(2);
   const totalAmount  = +Math.max(0, validation.subtotal - validation.discount + shippingCost).toFixed(2);
+
+  // Server-side guard: re-verify Next Day eligibility at order time (defence
+  // in depth — client UI hides the option but never trust the client).
+  const nowAtOrder = new Date();
+  const eligibility = checkNextDayEligibility(nowAtOrder);
+  const nextDayMissedCutoff = isNextDay && !eligibility.qualifies;
 
   // Resolve userId from id token (optional — guest checkout allowed).
   let userId: string | null = null;
@@ -126,9 +141,22 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     };
   });
 
-  const shippingLabel = isFreeShipping
-    ? 'Free Delivery (order over £50)'
-    : SHIPPING_OPTIONS[input.shippingMethod].label;
+  const shippingLabel = isNextDay
+    ? SHIPPING_OPTIONS.next_day_12.label
+    : (isFreeShipping ? 'Free Delivery (order over £50)' : SHIPPING_OPTIONS.standard.label);
+
+  // Compute expected delivery + cut-off stamps for fulfilment.
+  const cutoffInstant = getCutoffInstant(nowAtOrder);
+  let expectedDeliveryDate: string | null = null;
+  let expectedDeliveryFrom: string | null = null;
+  let expectedDeliveryTo: string | null = null;
+  if (isNextDay && eligibility.qualifies && eligibility.expectedDeliveryDate) {
+    expectedDeliveryDate = eligibility.expectedDeliveryDate;
+  } else {
+    const window = getStandardDeliveryWindow(nowAtOrder);
+    expectedDeliveryFrom = window.from;
+    expectedDeliveryTo = window.to;
+  }
 
   const orderData = {
     orderId,
@@ -140,6 +168,12 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     shippingCost,
     shippingMethod: input.shippingMethod,
     shippingLabel,
+    cutoffTime: cutoffInstant,
+    orderedBeforeCutoff: eligibility.qualifies,
+    expectedDeliveryDate,
+    expectedDeliveryFrom,
+    expectedDeliveryTo,
+    nextDayMissedCutoff,
     total: totalAmount,
     totalAmount,
     currency: 'GBP',
