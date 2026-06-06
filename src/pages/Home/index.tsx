@@ -578,7 +578,8 @@ export default function HomePage() {
       {/* ════════════════════════════════
           TRUST BAR
       ════════════════════════════════ */}
-      <section id="trust-bar" style={{ background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <section id="trust-bar" aria-labelledby="trust-bar-heading" style={{ background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <h2 id="trust-bar-heading" className="sr-only">Quality and delivery guarantees</h2>
         <div className="container mx-auto px-6 py-4">
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
             {trustBadges.map(({ icon: Icon, title, desc }) => (
