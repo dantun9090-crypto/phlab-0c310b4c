@@ -1216,6 +1216,7 @@ export default function CheckoutPage() {
                         <p className="text-xs text-emerald-400 mt-2 flex items-center gap-1">
                           <Check className="w-3 h-3" /> Free standard shipping on orders over £50
                         </p>
+                      )}
                       {errors.shippingMethod && (
                         <p className="text-red-400 text-xs mt-2">{errors.shippingMethod}</p>
                       )}
