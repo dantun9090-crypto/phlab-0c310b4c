@@ -32,11 +32,17 @@ const ROBOTS_TXT = readFileSync(
   "utf8",
 );
 
-/** Extract the `BASE_URL = "…"` literal from the sitemap source. */
+/**
+ * Extract the effective sitemap BASE_URL. We now centralize the domain
+ * in `src/lib/seo-meta.ts` (SITE_URL) and the sitemap route does
+ * `const BASE_URL = SITE_URL`, so accept either form.
+ */
 function extractSitemapBaseUrl(): string {
-  const m = SITEMAP_SRC.match(/const\s+BASE_URL\s*=\s*"([^"]+)"/);
-  if (!m) throw new Error("Could not find BASE_URL in sitemap source");
-  return m[1];
+  const literal = SITEMAP_SRC.match(/const\s+BASE_URL\s*=\s*"([^"]+)"/);
+  if (literal) return literal[1];
+  const aliased = SITEMAP_SRC.match(/const\s+BASE_URL\s*=\s*SITE_URL\b/);
+  if (aliased) return SITE_URL;
+  throw new Error("Could not resolve BASE_URL in sitemap source");
 }
 
 /** Extract every static entry path from the `staticEntries` array literal. */
