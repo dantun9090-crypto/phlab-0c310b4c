@@ -912,6 +912,36 @@ export default function OrdersTab() {
                       {phone && <p className="text-[#9cb8d9] text-sm">{phone}</p>}
                       {address && <p className="text-[#9cb8d9] text-sm">{address}</p>}
                       {shipping && <p className="text-[#8caad4] text-xs mt-1">Shipping: {shipping}</p>}
+                      {(() => {
+                        const sel: any = selected;
+                        const isND = sel.shippingMethod === 'next_day_12';
+                        const created = sel.createdAt?.toDate?.() || sel.createdAt;
+                        const createdStr = created ? new Date(created).toLocaleString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' }) : '';
+                        if (isND) {
+                          return (
+                            <div className="mt-2 space-y-0.5">
+                              <p className="text-emerald-300 text-xs font-semibold">🚀 Next Day by 12 PM</p>
+                              {createdStr && (
+                                <p className="text-[#8caad4] text-xs">Ordered {createdStr} GMT — {sel.orderedBeforeCutoff ? 'qualifies for Next Day by 12' : 'AFTER cut-off'}</p>
+                              )}
+                              {sel.expectedDeliveryDate && (
+                                <p className="text-[#8caad4] text-xs">Expected delivery: {sel.expectedDeliveryDate} by 12:00 PM</p>
+                              )}
+                              {sel.nextDayMissedCutoff && (
+                                <p className="text-amber-300 text-xs font-semibold">⚠️ Selected Next Day but missed cut-off — fulfil as standard</p>
+                              )}
+                            </div>
+                          );
+                        }
+                        if (sel.expectedDeliveryFrom && sel.expectedDeliveryTo) {
+                          return (
+                            <p className="text-[#8caad4] text-xs mt-1">
+                              Expected delivery: {sel.expectedDeliveryFrom} – {sel.expectedDeliveryTo}
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   );
                 })()}
