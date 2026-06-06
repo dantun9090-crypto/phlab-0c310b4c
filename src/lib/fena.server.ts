@@ -195,7 +195,8 @@ export interface FenaListedPayment {
 export async function fenaListPayments(limit = 50): Promise<FenaListedPayment[]> {
   const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
   const base = await getFenaBase();
-  const res = await fetch(
+  const res = await meteredFenaFetch(
+    `GET /payments/single/list`,
     `${base}/payments/single/list?limit=${safeLimit}`,
     {
       method: "GET",
