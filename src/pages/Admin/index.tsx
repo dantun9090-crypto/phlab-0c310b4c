@@ -349,6 +349,7 @@ export default function AdminPage() {
       switch (activeTab) {
 
         case 'dashboard': return <DashboardTab />;
+        case 'ai': return <AIAssistantTab />;
         case 'inventory': return <InventoryTab />;
         case 'orders': return <OrdersTab />;
         case 'customers': return <CustomersTab />;
