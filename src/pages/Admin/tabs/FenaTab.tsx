@@ -78,10 +78,24 @@ export default function FenaTab() {
         setAccountsErr(e?.message || 'Failed to load bank accounts');
       }
       void loadTransactions();
+      void loadStatus();
     } catch (e: any) {
       setErr(e?.message || 'Failed to load events');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadStatus() {
+    setStatusLoading(true);
+    try {
+      const idToken = await getToken();
+      const res = await getFenaIntegrationStatus({ data: { idToken } });
+      setStatus(res);
+    } catch {
+      // status panel failure shouldn't block the rest of the tab
+    } finally {
+      setStatusLoading(false);
     }
   }
 
