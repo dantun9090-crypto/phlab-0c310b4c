@@ -25,6 +25,7 @@ import { fenaGetPayment, fenaGetBankAccount } from "@/lib/fena.server";
 import { computeFenaOrderUpdates } from "@/lib/fena-webhook-updates";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { raiseFenaAlert } from "@/lib/fena-alerts.server";
+import { enqueueFenaUpdateRetry } from "@/lib/fena-retry-queue.server";
 
 interface FenaWebhookBody {
   eventScope?: string;
@@ -337,10 +338,21 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
         const currentStatus = String(orderRow.status ?? "pending").toLowerCase();
         const isPaid = transitionedToPaid;
 
-        try {
-          await updateDocAdmin("orders", orderId, updates);
-        } catch (err) {
-          const errMsg = err instanceof Error ? err.message : String(err);
+        // One in-process retry with a short delay handles most transient
+        // Firestore blips without involving the durable queue.
+        let updateOk = false;
+        let lastErr: unknown;
+        for (let attempt = 0; attempt < 2 && !updateOk; attempt++) {
+          if (attempt > 0) await new Promise((r) => setTimeout(r, 750));
+          try {
+            await updateDocAdmin("orders", orderId, updates);
+            updateOk = true;
+          } catch (err) {
+            lastErr = err;
+          }
+        }
+        if (!updateOk) {
+          const errMsg = lastErr instanceof Error ? lastErr.message : String(lastErr);
           await logEvent("error", "order update failed", {
             orderId,
             fenaPaymentId,
@@ -352,9 +364,20 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
             fenaStatus,
             attemptedUpdates: updates,
             error: errMsg,
-            hint: "Order will stay in its current status; Fena will retry the webhook.",
+            hint: "Order will stay in its current status; queued for retry with backoff.",
           });
-          // 5xx → Fena will retry.
+          // Persist the intended mutation to the retry queue so the cron
+          // worker can replay it even if Fena stops retrying.
+          try {
+            await enqueueFenaUpdateRetry({
+              orderId,
+              fenaPaymentId,
+              updates,
+              error: errMsg,
+              source: "webhook",
+            });
+          } catch { /* alert already raised */ }
+          // 5xx → Fena will also retry (belt and braces).
           return new Response("Order update failed", { status: 500 });
         }
 

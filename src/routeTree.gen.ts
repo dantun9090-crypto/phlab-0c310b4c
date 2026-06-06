@@ -24,6 +24,7 @@ import { Route as ApiPublicHooksYapilyRouteImport } from './routes/api/public/ho
 import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public/hooks/truelayer'
 import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/public/hooks/security-cleanup'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
+import { Route as ApiPublicHooksFenaProcessRetriesRouteImport } from './routes/api/public/hooks/fena-process-retries'
 import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hooks/fena'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -105,6 +106,12 @@ const ApiPublicHooksPrerenderRecacheRoute =
     path: '/api/public/hooks/prerender-recache',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksFenaProcessRetriesRoute =
+  ApiPublicHooksFenaProcessRetriesRouteImport.update({
+    id: '/api/public/hooks/fena-process-retries',
+    path: '/api/public/hooks/fena-process-retries',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksFenaRoute = ApiPublicHooksFenaRouteImport.update({
   id: '/api/public/hooks/fena',
   path: '/api/public/hooks/fena',
@@ -124,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
+  '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
@@ -142,6 +150,7 @@ export interface FileRoutesByTo {
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
+  '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
@@ -161,6 +170,7 @@ export interface FileRoutesById {
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
+  '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/api/public/csp-report'
     | '/api/public/send-mail'
     | '/api/public/hooks/fena'
+    | '/api/public/hooks/fena-process-retries'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
@@ -199,6 +210,7 @@ export interface FileRouteTypes {
     | '/api/public/csp-report'
     | '/api/public/send-mail'
     | '/api/public/hooks/fena'
+    | '/api/public/hooks/fena-process-retries'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
@@ -217,6 +229,7 @@ export interface FileRouteTypes {
     | '/api/public/csp-report'
     | '/api/public/send-mail'
     | '/api/public/hooks/fena'
+    | '/api/public/hooks/fena-process-retries'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
@@ -235,6 +248,7 @@ export interface RootRouteChildren {
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
   ApiPublicHooksFenaRoute: typeof ApiPublicHooksFenaRoute
+  ApiPublicHooksFenaProcessRetriesRoute: typeof ApiPublicHooksFenaProcessRetriesRoute
   ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
   ApiPublicHooksSecurityCleanupRoute: typeof ApiPublicHooksSecurityCleanupRoute
   ApiPublicHooksTruelayerRoute: typeof ApiPublicHooksTruelayerRoute
@@ -348,6 +362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPrerenderRecacheRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/fena-process-retries': {
+      id: '/api/public/hooks/fena-process-retries'
+      path: '/api/public/hooks/fena-process-retries'
+      fullPath: '/api/public/hooks/fena-process-retries'
+      preLoaderRoute: typeof ApiPublicHooksFenaProcessRetriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/fena': {
       id: '/api/public/hooks/fena'
       path: '/api/public/hooks/fena'
@@ -382,6 +403,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
   ApiPublicHooksFenaRoute: ApiPublicHooksFenaRoute,
+  ApiPublicHooksFenaProcessRetriesRoute: ApiPublicHooksFenaProcessRetriesRoute,
   ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
   ApiPublicHooksSecurityCleanupRoute: ApiPublicHooksSecurityCleanupRoute,
   ApiPublicHooksTruelayerRoute: ApiPublicHooksTruelayerRoute,

@@ -15,6 +15,32 @@
  * NEVER import from client code.
  */
 import { getDocAdmin } from "@/lib/server/firestore-admin";
+import { recordFenaApiCall } from "@/lib/fena-metrics.server";
+
+/**
+ * Single fetch helper that meters every Fena outbound call. Always
+ * records (ok/error/status) — never re-throws metric failures.
+ */
+async function meteredFenaFetch(
+  endpoint: string,
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  let res: Response | undefined;
+  let status: number | undefined;
+  try {
+    res = await fetch(url, init);
+    status = res.status;
+    return res;
+  } finally {
+    // record after the call (or on throw with status undefined → error)
+    void recordFenaApiCall({
+      ok: res ? res.ok : false,
+      status,
+      endpoint,
+    });
+  }
+}
 
 type FenaEnv = "sandbox" | "production";
 
@@ -107,12 +133,16 @@ export async function fenaCreateAndProcess(input: {
     remitterAccountSelectionType: "any",
   };
   const base = await getFenaBase();
-  const res = await fetch(`${base}/payments/single/create-and-process`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(20_000),
-  });
+  const res = await meteredFenaFetch(
+    "POST /payments/single/create-and-process",
+    `${base}/payments/single/create-and-process`,
+    {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(20_000),
+    },
+  );
   const text = await res.text();
   if (!res.ok) {
     throw new Error(`Fena create-and-process ${res.status}: ${text.slice(0, 400)}`);
@@ -127,11 +157,15 @@ export async function fenaCreateAndProcess(input: {
 export async function fenaGetPayment(paymentId: string): Promise<FenaPaymentStatus> {
   const safe = encodeURIComponent(paymentId);
   const base = await getFenaBase();
-  const res = await fetch(`${base}/payments/single/${safe}`, {
-    method: "GET",
-    headers: authHeaders(),
-    signal: AbortSignal.timeout(15_000),
-  });
+  const res = await meteredFenaFetch(
+    `GET /payments/single/{id}`,
+    `${base}/payments/single/${safe}`,
+    {
+      method: "GET",
+      headers: authHeaders(),
+      signal: AbortSignal.timeout(15_000),
+    },
+  );
   const text = await res.text();
   if (!res.ok) {
     throw new Error(`Fena get-payment ${res.status}: ${text.slice(0, 400)}`);
@@ -161,7 +195,8 @@ export interface FenaListedPayment {
 export async function fenaListPayments(limit = 50): Promise<FenaListedPayment[]> {
   const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
   const base = await getFenaBase();
-  const res = await fetch(
+  const res = await meteredFenaFetch(
+    `GET /payments/single/list`,
     `${base}/payments/single/list?limit=${safeLimit}`,
     {
       method: "GET",
@@ -200,11 +235,15 @@ export interface FenaBankAccount {
 
 async function fenaJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const base = await getFenaBase();
-  const res = await fetch(`${base}${path}`, {
-    ...init,
-    headers: { ...authHeaders(), ...(init.headers || {}) },
-    signal: init.signal ?? AbortSignal.timeout(15_000),
-  });
+  const res = await meteredFenaFetch(
+    `${init.method || "GET"} ${path}`,
+    `${base}${path}`,
+    {
+      ...init,
+      headers: { ...authHeaders(), ...(init.headers || {}) },
+      signal: init.signal ?? AbortSignal.timeout(15_000),
+    },
+  );
   const text = await res.text();
   if (!res.ok) {
     throw new Error(`Fena ${init.method || "GET"} ${path} ${res.status}: ${text.slice(0, 400)}`);
