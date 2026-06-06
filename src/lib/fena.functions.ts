@@ -967,7 +967,7 @@ export const listFenaWebhookEventsPaged = createServerFn({ method: "POST" })
     const filtered = mapped.filter((r) => {
       if (data.outcome && r.matchOutcome !== data.outcome) return false;
       if (search) {
-        const hay = `${r.message ?? ""} ${r.orderId ?? ""} ${r.fenaPaymentId ?? ""} ${r.reference ?? ""}`.toLowerCase();
+        const hay = `${r.message ?? ""} ${r.orderId ?? ""} ${r.fenaPaymentId ?? ""}`.toLowerCase();
         if (!hay.includes(search)) return false;
       }
       return true;
