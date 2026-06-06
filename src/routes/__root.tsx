@@ -139,6 +139,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "sitemap", type: "application/xml", href: "/sitemap.xml" },
       // hreflang removed from root — hardcoding href="/" on every route was
       // wrong (pointed every page at the homepage). Single-language UK site
       // doesn't need hreflang; leaf routes set their own canonical instead.
