@@ -964,7 +964,7 @@ Third, GIP appears to potentiate GLP-1R signalling in beta cells through converg
 
 Pair-feeding experiments indicated that approximately 50–60% of the additional weight loss from dual agonism was attributable to non-intake mechanisms — primarily increased energy expenditure. Indirect calorimetry showed elevated oxygen consumption and respiratory quotient shifts suggesting enhanced fat oxidation. Brown adipose tissue (BAT) thermogenesis, assessed by uncoupling protein-1 (UCP1) expression and 18F-FDG PET uptake, was greater in dual-agonist treated animals than in GLP-1R mono-agonist controls at matched doses.
 
-In non-human primate studies, tirzepatide-analogous dual GIP/GLP-1 compounds produced dose-dependent reductions in body weight of up to 11.3% over 12 weeks with concurrent improvements in insulin sensitivity (euglycaemic clamp), postprandial lipid clearance, and hepatic fat content assessed by MRI.`
+In non-human primate studies, tirzepatide-analogous dual GIP/GLP-1 compounds reported a dose-dependent mean body weight change of up to −11.3% over 12 weeks; insulin sensitivity indices (euglycaemic clamp), postprandial lipid clearance markers, and hepatic fat content (MRI) were observed to change concurrently.`
       },
       {
         heading: 'Phase 3 Clinical Data: SURPASS and SURMOUNT Programmes',
