@@ -157,11 +157,15 @@ export async function fenaCreateAndProcess(input: {
 export async function fenaGetPayment(paymentId: string): Promise<FenaPaymentStatus> {
   const safe = encodeURIComponent(paymentId);
   const base = await getFenaBase();
-  const res = await fetch(`${base}/payments/single/${safe}`, {
-    method: "GET",
-    headers: authHeaders(),
-    signal: AbortSignal.timeout(15_000),
-  });
+  const res = await meteredFenaFetch(
+    `GET /payments/single/{id}`,
+    `${base}/payments/single/${safe}`,
+    {
+      method: "GET",
+      headers: authHeaders(),
+      signal: AbortSignal.timeout(15_000),
+    },
+  );
   const text = await res.text();
   if (!res.ok) {
     throw new Error(`Fena get-payment ${res.status}: ${text.slice(0, 400)}`);
