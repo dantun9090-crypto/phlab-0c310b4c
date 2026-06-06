@@ -396,7 +396,7 @@ export default function AdminPage() {
 
   // Tab label lookup for header breadcrumb
   const TAB_LABELS: Record<string, string> = {
-    dashboard: 'Dashboard', inventory: 'Inventory', featured: 'Featured',
+    dashboard: 'Dashboard', ai: 'AI Assistant', inventory: 'Inventory', featured: 'Featured',
     qc: 'QC Dashboard', orders: 'Orders', customers: 'Customers',
     compliance: 'Compliance', auditlog: 'Audit Log', authevents: 'Auth Events', mailhealth: 'Mail Health', invoices: 'Invoices', banner: 'Promo Banner',
     adverts: 'Adverts', landing: 'Landing Pages', policies: 'Policies',
