@@ -10,6 +10,7 @@
  * lives under /api/public/* so it bypasses edge auth — verification happens here.
  */
 import { createFileRoute } from '@tanstack/react-router';
+import { timingSafeEqualStr } from '@/lib/timing-safe-equal';
 
 interface ServiceAccount {
   client_email: string;
@@ -122,7 +123,7 @@ export const Route = createFileRoute('/api/public/hooks/security-cleanup')({
       POST: async ({ request }) => {
         const expected = process.env.CLEANUP_SECRET;
         const provided = request.headers.get('x-cleanup-secret');
-        if (!expected || !provided || provided !== expected) {
+        if (!expected || !provided || !timingSafeEqualStr(provided, expected)) {
           return new Response('Unauthorized', { status: 401 });
         }
         const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;

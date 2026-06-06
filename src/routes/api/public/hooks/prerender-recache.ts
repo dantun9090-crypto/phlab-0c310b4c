@@ -12,6 +12,7 @@
  * Idempotent — Prerender.io de-duplicates pending recache jobs internally.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { timingSafeEqualStr } from "@/lib/timing-safe-equal";
 
 const SITEMAP_URL = "https://phlabs.co.uk/sitemap.xml";
 const RECACHE_URL = "https://api.prerender.io/recache";
@@ -50,7 +51,7 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
 
         const provided = request.headers.get("x-recache-secret");
         const url = new URL(request.url);
-        if (!provided || provided !== token) {
+        if (!provided || !timingSafeEqualStr(provided, token)) {
           return new Response("Unauthorized", { status: 401 });
         }
 
