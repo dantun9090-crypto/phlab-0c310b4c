@@ -38,6 +38,17 @@ const staticEntries: SitemapEntry[] = [
 // the correct slug (/products/bpc-157).
 const fallbackProductEntries: Array<SitemapEntry & { imageLoc?: string }> = [];
 
+/**
+ * Product slugs that resolve to a 301 in production (currently glow-blend
+ * and klow-blend redirect to /products). Keep them out of the sitemap so
+ * Googlebot and Prerender.io only ever fetch canonical 200 URLs from us.
+ * If/when these slugs render a real 200 product page, remove them here.
+ */
+const NON_CANONICAL_PRODUCT_SLUGS: Set<string> = new Set([
+  "glow-blend",
+  "klow-blend",
+]);
+
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
@@ -51,16 +62,19 @@ export const Route = createFileRoute("/sitemap.xml")({
 
         // Dynamic product entries — one URL per active product, with lastmod
         // from Firestore updatedAt and an image:image entry from imageUrl.
+        // Filters out slugs that 301 in production (see NON_CANONICAL_PRODUCT_SLUGS).
         let productEntries: Array<SitemapEntry & { imageLoc?: string }> = [];
         try {
           const products = await fetchAllProducts();
-          productEntries = products.map((p) => ({
-            path: `/products/${p.slug}`,
-            lastmod: p.updatedAt ? p.updatedAt.slice(0, 10) : undefined,
-            changefreq: "weekly" as const,
-            priority: "0.8",
-            imageLoc: p.imageUrl && /^https?:\/\//.test(p.imageUrl) ? p.imageUrl : undefined,
-          }));
+          productEntries = products
+            .filter((p) => !NON_CANONICAL_PRODUCT_SLUGS.has(p.slug))
+            .map((p) => ({
+              path: `/products/${p.slug}`,
+              lastmod: p.updatedAt ? p.updatedAt.slice(0, 10) : undefined,
+              changefreq: "weekly" as const,
+              priority: "0.8",
+              imageLoc: p.imageUrl && /^https?:\/\//.test(p.imageUrl) ? p.imageUrl : undefined,
+            }));
         } catch {
           productEntries = [];
         }
