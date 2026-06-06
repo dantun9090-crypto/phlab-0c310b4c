@@ -93,6 +93,8 @@ export const Route = createFileRoute("/sitemap.xml")({
 
         const urls = entries.map((e) => {
           const loc = `${BASE_URL}${e.path}`;
+          // Guard runtime — wyłapie regresję, gdyby ktoś wstrzyknął obcy host przez SITE_URL.
+          assertCanonicalUrl(loc, `sitemap loc for ${e.path}`);
           return [
             `  <url>`,
             `    <loc>${loc}</loc>`,
