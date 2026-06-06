@@ -200,6 +200,10 @@ export default function FenaTab() {
         </p>
       </div>
 
+      <FenaStatusPanel status={status} loading={statusLoading} onRefresh={loadStatus} />
+
+
+
       {/* Environment toggle + dry-run */}
       <div className="rounded-lg border-2 border-slate-700 bg-slate-900 p-4">
         <h2 className="text-lg font-semibold text-white mb-2">Integration environment</h2>
