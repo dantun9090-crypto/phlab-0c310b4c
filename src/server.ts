@@ -465,11 +465,12 @@ export default {
       const isHtmlMethod = method === "GET" || method === "HEAD";
       const bypassPath = BYPASS_PATH_PREFIXES.some((p) => path.startsWith(p));
       const isStatic = STATIC_EXT.test(path);
+      const isStaticContentPage = isPrerenderBypassPath(path);
       const isPrerenderBot = RX_PRERENDER.test(rawUa);
       const isLoop = request.headers.has(LOOP_HEADER);
       const token = env?.PRERENDER_TOKEN;
 
-      if (token && isHtmlMethod && isPrerenderBot && !bypassPath && !isStatic && !isLoop) {
+      if (token && isHtmlMethod && isPrerenderBot && !bypassPath && !isStatic && !isStaticContentPage && !isLoop) {
         const normalized = normalizePrerenderUrl(url);
         const target = `${PRERENDER_ORIGIN}/${normalized}`;
         const cache = (caches as unknown as { default: Cache }).default;
