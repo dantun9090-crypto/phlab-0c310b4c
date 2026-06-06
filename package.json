@@ -18,9 +18,10 @@
     "csp:e2e": "bun scripts/csp-e2e.ts",
     "check:domains": "bun scripts/check-domains.ts",
     "test:jsonld": "vitest run tests/jsonld-validation.test.ts tests/jsonld-snapshots.test.ts tests/jsonld-edge-cases.test.ts",
+    "test:sitemap": "vitest run tests/sitemap-validation.test.ts tests/sitemap-policy-consistency.test.ts tests/sitemap-ci-consistency.test.ts",
     "typecheck": "tsc --noEmit",
-    "prepublish": "bun scripts/check-domains.ts && bun scripts/seo-check.ts && bun scripts/compliance-scan.ts && bun run test:jsonld",
-    "ci": "bun run check:domains && bun run typecheck && bun run compliance:scan && bun run test:jsonld && bun run build && bun run worker:check-imports"
+    "prepublish": "bun scripts/check-domains.ts && bun scripts/seo-check.ts && bun scripts/compliance-scan.ts && bun run test:jsonld && bun run test:sitemap",
+    "ci": "bun run check:domains && bun run typecheck && bun run compliance:scan && bun run seo:check && bun run test:jsonld && bun run test:sitemap && bun run build && bun run worker:check-imports"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.48",

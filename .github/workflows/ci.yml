@@ -29,6 +29,29 @@ jobs:
       - name: Resources content compliance scan
         run: bun run compliance:scan
 
+      # Guards canonical host: fails if any source references the wrong
+      # domain (www., phplabs typo, prohealthpeptides legacy, preview hosts).
+      - name: Domain consistency guard
+        run: bun run check:domains
+
+      # SEO regression: title/description length limits, sitemap <loc> ↔
+      # canonical URL alignment for every static + sampled dynamic path.
+      - name: SEO meta + canonical alignment
+        run: bun run seo:check
+
+      # JSON-LD schema validation (Product, Article, Organization).
+      - name: JSON-LD schema tests
+        run: bun run test:jsonld
+
+      # Sitemap CI guardrail:
+      #   - sitemap policy ↔ route-tree consistency
+      #   - sitemap BASE_URL ↔ seo-meta SITE_URL
+      #   - robots.txt Sitemap: directive ↔ canonical host
+      #   - static sitemap URL count does not silently shrink
+      #   - canonicalUrl(path) == sitemap <loc> for every static path
+      - name: Sitemap / canonical / robots consistency
+        run: bun run test:sitemap
+
       # Runs the EXACT production build that ships to Cloudflare Workers.
       # No --mode development, no dev-only shortcuts.
       - name: Production build
