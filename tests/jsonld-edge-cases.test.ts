@@ -276,7 +276,7 @@ describe("Article JSON-LD — edge cases", () => {
         expect(() => JSON.stringify(blocks)).not.toThrow();
         expect(blocks).toMatchSnapshot();
       } finally {
-        mod.articles.length = original;
+        liveArticles.length = original;
       }
     });
   }

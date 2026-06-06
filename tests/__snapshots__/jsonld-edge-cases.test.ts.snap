@@ -1,5 +1,345 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`Article JSON-LD — edge cases > no keywords, single content section 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/edge-no-keywords#article",
+    "@type": "Article",
+    "alternativeHeadline": "Edge-case subtitle",
+    "articleBody": "Body of the cold-chain article.",
+    "articleSection": "Test Category",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-01-01",
+    "datePublished": "2026-01-01",
+    "description": "Practical cold-chain shipping considerations for peptide research compounds.",
+    "headline": "Cold-Chain Shipping Guide",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/edge-no-keywords",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT5M",
+    "url": "https://phlabs.co.uk/resources/edge-no-keywords",
+    "wordCount": 5,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/edge-no-keywords",
+        "name": "Cold-Chain Shipping Guide",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD — edge cases > no readTime (timeRequired should still be a valid ISO duration) 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/edge-no-readtime#article",
+    "@type": "Article",
+    "alternativeHeadline": "Edge-case subtitle",
+    "articleBody": "Storage notes body.",
+    "articleSection": "Test Category",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-01-01",
+    "datePublished": "2026-01-01",
+    "description": "Storage at -20°C preserves peptide integrity for extended periods.",
+    "headline": "Quick Note On Storage",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "storage",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/edge-no-readtime",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT0M",
+    "url": "https://phlabs.co.uk/resources/edge-no-readtime",
+    "wordCount": 3,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/edge-no-readtime",
+        "name": "Quick Note On Storage",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD — edge cases > unicode title + smart quotes + long subtitle 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/edge-unicode#article",
+    "@type": "Article",
+    "alternativeHeadline": "A deep dive into receptor pharmacology, half-life, and clinical trial outcomes across the GIP / GLP-1 / glucagon axis.",
+    "articleBody": "Intro HTML tags should be stripped from articleBody. Mechanism Multiple paragraphs of content with links and other markup.",
+    "articleSection": "Test Category",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-01-01",
+    "datePublished": "2026-01-01",
+    "description": "Análisis técnico — comparing triple-agonist Reτatrutide against dual-agonist Tirzepatide in metabolic research.",
+    "headline": "“Reτatrutide” vs Tirzepatide — Δ in Efficacy?",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "retatrutide, tirzepatide, GIP, GLP-1, glucagon",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/edge-unicode",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT5M",
+    "url": "https://phlabs.co.uk/resources/edge-unicode",
+    "wordCount": 18,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/edge-unicode",
+        "name": "“Reτatrutide” vs Tirzepatide — Δ in Efficacy?",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD — edge cases > very long title (gets clamped) + many keywords 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/edge-long-title#article",
+    "@type": "Article",
+    "alternativeHeadline": "Edge-case subtitle",
+    "articleBody": "Long article body.",
+    "articleSection": "Test Category",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-01-01",
+    "datePublished": "2026-01-01",
+    "description": "A long-form review article on receptor pharmacology and acylation strategies.",
+    "headline": "An Exhaustively Long Title About Every Possible Receptor Interaction, Half-Life Modulation, Acylation…",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "receptor, half-life, acylation, pharmacology, review, peptide, modulation, downstream",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/edge-long-title",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT5M",
+    "url": "https://phlabs.co.uk/resources/edge-long-title",
+    "wordCount": 3,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/edge-long-title",
+        "name": "An Exhaustively Long Title About Every Possible Receptor Interaction, Half-Life Modulation, Acylation Strategy, And Downstream Pharmacological Consequence Imaginable In Modern Peptide Research Today",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD — edge cases > very short excerpt + single-word title 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/edge-short#article",
+    "@type": "Article",
+    "alternativeHeadline": "Edge-case subtitle",
+    "articleBody": "One-line article body for snapshot.",
+    "articleSection": "Test Category",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-01-01",
+    "datePublished": "2026-01-01",
+    "description": "Short.",
+    "headline": "HPLC",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "hplc",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/edge-short",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT5M",
+    "url": "https://phlabs.co.uk/resources/edge-short",
+    "wordCount": 5,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/edge-short",
+        "name": "HPLC",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
 exports[`Product JSON-LD — edge cases > custom seoTitle / seoDescription override 1`] = `
 [
   {
