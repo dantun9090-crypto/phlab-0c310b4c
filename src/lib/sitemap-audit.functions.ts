@@ -29,7 +29,10 @@ import {
   type ExclusionReason,
 } from "@/lib/sitemap-policy";
 
-const BASE_URL = "https://phlabs.co.uk";
+// DOMAIN GUARD: SITE_URL ze seo-meta to jedyne źródło prawdy dla kanonicznego hosta.
+// Patrz scripts/check-url-consistency.ts.
+import { SITE_URL } from "@/lib/seo-meta";
+const BASE_URL = SITE_URL;
 
 /**
  * Per-admin in-memory rate limiter. Caveat: Cloudflare Worker isolates do

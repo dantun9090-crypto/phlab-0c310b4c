@@ -34,6 +34,13 @@ jobs:
       - name: Domain consistency guard
         run: bun run check:domains
 
+      # Sprawdza, że sitemap / sitemap-audit / robots.txt / server CANONICAL_HOST /
+      # JSON-LD wszystkie używają jednego SITE_URL ze src/lib/seo-meta.ts.
+      # Komplementarne do check:domains (które blokuje zabronione hosty w repo).
+      - name: URL consistency guard (sitemap ↔ robots ↔ JSON-LD ↔ server)
+        run: bun run check:url-consistency
+
+
       # SEO regression: title/description length limits, sitemap <loc> ↔
       # canonical URL alignment for every static + sampled dynamic path.
       - name: SEO meta + canonical alignment
