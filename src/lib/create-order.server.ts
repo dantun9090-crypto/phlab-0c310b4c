@@ -91,10 +91,19 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   }
 
   // Derive authoritative shipping + total. Never trust any client total.
-  const isFreeShipping = validation.subtotal >= FREE_SHIPPING_THRESHOLD;
+  // Next-day shipping is ALWAYS paid (not eligible for free-over-£50 or free-shipping coupons).
+  const isNextDay = input.shippingMethod === 'next_day_12';
+  const isFreeShipping = !isNextDay && validation.subtotal >= FREE_SHIPPING_THRESHOLD;
   const baseCost = isFreeShipping ? 0 : baseShipping;
-  const shippingCost = +Math.max(0, baseCost - validation.shippingDiscount).toFixed(2);
+  const shippingDisc = isNextDay ? 0 : validation.shippingDiscount;
+  const shippingCost = +Math.max(0, baseCost - shippingDisc).toFixed(2);
   const totalAmount  = +Math.max(0, validation.subtotal - validation.discount + shippingCost).toFixed(2);
+
+  // Server-side guard: re-verify Next Day eligibility at order time (defence
+  // in depth — client UI hides the option but never trust the client).
+  const nowAtOrder = new Date();
+  const eligibility = checkNextDayEligibility(nowAtOrder);
+  const nextDayMissedCutoff = isNextDay && !eligibility.qualifies;
 
   // Resolve userId from id token (optional — guest checkout allowed).
   let userId: string | null = null;
