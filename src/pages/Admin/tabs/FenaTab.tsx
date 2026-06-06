@@ -47,6 +47,8 @@ export default function FenaTab() {
   const [err, setErr] = useState<string>('');
   const [reconciling, setReconciling] = useState(false);
   const [reconcileResult, setReconcileResult] = useState<FenaReconcileResult | null>(null);
+  const [status, setStatus] = useState<FenaIntegrationStatus | null>(null);
+  const [statusLoading, setStatusLoading] = useState(false);
 
   async function getToken() {
     const idToken = await auth.currentUser?.getIdToken();
