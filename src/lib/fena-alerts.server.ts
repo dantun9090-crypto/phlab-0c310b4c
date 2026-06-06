@@ -117,18 +117,12 @@ export async function raiseFenaAlert(
       source: "fena:alert",
     });
 
+    // PATCH on a missing doc creates it (Firestore REST upsert via updateMask).
     await updateDocAdmin("fena_alert_throttles", code, {
+      code,
       lastSentAt: nowIso,
-      lastCode: code,
       lastSeverity: severity,
-    }).catch(async () => {
-      // doc may not exist yet — create it.
-      await addDocAdmin("fena_alert_throttles", {
-        code,
-        lastSentAt: nowIso,
-        lastSeverity: severity,
-      }).catch(() => undefined);
-    });
+    }).catch(() => undefined);
   } catch {
     // mail failure already logged via Firestore alert row.
   }
