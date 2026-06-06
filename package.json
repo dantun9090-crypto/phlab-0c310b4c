@@ -17,7 +17,7 @@
     "worker:check-imports": "bun scripts/check-worker-imports.ts",
     "csp:e2e": "bun scripts/csp-e2e.ts",
     "check:domains": "bun scripts/check-domains.ts",
-    "test:jsonld": "vitest run tests/jsonld-validation.test.ts tests/jsonld-snapshots.test.ts",
+    "test:jsonld": "vitest run tests/jsonld-validation.test.ts tests/jsonld-snapshots.test.ts tests/jsonld-edge-cases.test.ts",
     "typecheck": "tsc --noEmit",
     "prepublish": "bun scripts/check-domains.ts && bun scripts/seo-check.ts && bun scripts/compliance-scan.ts && bun run test:jsonld",
     "ci": "bun run check:domains && bun run typecheck && bun run compliance:scan && bun run test:jsonld && bun run build && bun run worker:check-imports"
