@@ -1730,7 +1730,53 @@ export default function ProductDetail() {
           </div>
         )}
 
-        {/* ── Recently Viewed ── */}
+        {/* ── Related Research Articles ── */}
+        {product && (() => {
+          const matched = getArticleForProduct(product.name);
+          const fallback: Array<{ slug: string; title: string; excerpt: string }> = [
+            { slug: 'hplc-testing-explained', title: 'HPLC Testing Explained', excerpt: 'How we verify ≥99% purity on every batch — HPLC method, retention times, integration thresholds.' },
+            { slug: 'peptide-storage-reconstitution', title: 'Peptide Storage & Reconstitution', excerpt: 'Best-practice handling for lyophilised peptides — temperature, BAC water, sterile technique.' },
+            { slug: 'how-to-read-hplc-certificate-of-analysis', title: 'How to Read an HPLC Certificate of Analysis', excerpt: 'Reading a CoA correctly — purity %, impurity profile, mass spectrometry confirmation.' },
+          ];
+          const articles = matched ? [matched, ...fallback].slice(0, 3) : fallback;
+          return (
+            <div className="mt-12 max-w-4xl">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-px flex-1 bg-white/[0.06]" />
+                <h2 className="text-xs font-bold text-[#4a6a8a] uppercase tracking-[0.2em]">Related Research Articles</h2>
+                <div className="h-px flex-1 bg-white/[0.06]" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {articles.map((a) => (
+                  <Link
+                    key={a.slug}
+                    to={`/resources/${a.slug}`}
+                    className="group rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1"
+                    style={{ background: '#0b1a30', border: '1px solid rgba(255,255,255,0.07)' }}
+                    onMouseEnter={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(16,185,129,0.35)';
+                      (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 32px rgba(16,185,129,0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      (e.currentTarget as HTMLElement).style.borderColor = 'rgba(255,255,255,0.07)';
+                      (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                    }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400/80">Research</span>
+                    </div>
+                    <p className="text-[#c8dcf0] text-sm font-semibold leading-snug line-clamp-2 group-hover:text-white transition-colors">{a.title}</p>
+                    <p className="text-[#7a9ec2] text-xs mt-1.5 line-clamp-3 leading-relaxed">{a.excerpt}</p>
+                    <span className="inline-flex items-center gap-1 mt-3 text-xs font-semibold text-emerald-400 group-hover:text-emerald-300 transition-colors">
+                      Read article <ArrowRight className="w-3 h-3" />
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
         <RecentlyViewedProducts
           items={recentlyViewed}
           currentProductId={product?.id}
