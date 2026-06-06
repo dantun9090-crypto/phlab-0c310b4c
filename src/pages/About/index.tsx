@@ -374,15 +374,20 @@ export default function AboutPage() {
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Image */}
           <FadeIn direction="left" className="relative order-2 lg:order-1">
-            <div className="rounded-3xl overflow-hidden border border-white/[0.08] shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
-              <img
-                src={qualityImg}
-                alt="Synthetic peptide reference vials (Research Use Only)"
-                width="800"
-                height="520"
-                className="w-full h-[400px] lg:h-[520px] object-cover object-center"
-                loading="lazy"
-              />
+            <div className="rounded-3xl overflow-hidden border border-white/[0.08] shadow-[0_32px_80px_rgba(0,0,0,0.7)] h-[400px] lg:h-[520px]">
+              {qualityImg ? (
+                <img
+                  src={qualityImg}
+                  alt="Synthetic peptide reference vials (Research Use Only)"
+                  width="800"
+                  height="520"
+                  className="w-full h-full object-cover object-center"
+                  loading="lazy"
+                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; setQualityImg(''); }}
+                />
+              ) : (
+                <ImageFallback variant="emerald" />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-[#060f1e]/30 to-transparent" />
             </div>
             <div className="absolute -top-4 -right-4 w-28 h-28 rounded-full bg-blue-600/20 pointer-events-none" />
