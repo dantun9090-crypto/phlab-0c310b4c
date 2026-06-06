@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "prebuild": "bun scripts/check-domains.ts",
+    "prebuild": "bun scripts/check-domains.ts && bun scripts/check-url-consistency.ts",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
@@ -17,12 +17,13 @@
     "worker:check-imports": "bun scripts/check-worker-imports.ts",
     "csp:e2e": "bun scripts/csp-e2e.ts",
     "check:domains": "bun scripts/check-domains.ts",
+    "check:url-consistency": "bun scripts/check-url-consistency.ts",
     "check:www-redirect": "bun scripts/check-www-redirect.ts",
     "test:jsonld": "vitest run tests/jsonld-validation.test.ts tests/jsonld-snapshots.test.ts tests/jsonld-edge-cases.test.ts",
     "test:sitemap": "vitest run tests/sitemap-validation.test.ts tests/sitemap-policy-consistency.test.ts tests/sitemap-ci-consistency.test.ts",
     "typecheck": "tsc --noEmit",
-    "prepublish": "bun scripts/check-domains.ts && bun scripts/seo-check.ts && bun scripts/compliance-scan.ts && bun run test:jsonld && bun run test:sitemap && bun run check:www-redirect",
-    "ci": "bun run check:domains && bun run typecheck && bun run compliance:scan && bun run seo:check && bun run test:jsonld && bun run test:sitemap && bun run build && bun run worker:check-imports && bun run check:www-redirect"
+    "prepublish": "bun scripts/check-domains.ts && bun scripts/check-url-consistency.ts && bun scripts/seo-check.ts && bun scripts/compliance-scan.ts && bun run test:jsonld && bun run test:sitemap && bun run check:www-redirect",
+    "ci": "bun run check:domains && bun run check:url-consistency && bun run typecheck && bun run compliance:scan && bun run seo:check && bun run test:jsonld && bun run test:sitemap && bun run build && bun run worker:check-imports && bun run check:www-redirect"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.48",
