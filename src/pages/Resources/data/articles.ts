@@ -331,9 +331,9 @@ The additional GCGR activation in retatrutide contributes the most novel mechani
       },
       {
         heading: 'Hepatic and Cardiometabolic Effects',
-        body: `Beyond weight reduction, all three compounds show effects on ectopic fat deposition and cardiometabolic risk markers. Semaglutide reduced liver fat by approximately 30–35% in NASH-spectrum disease trials (NASH is now termed MASH). Tirzepatide demonstrated MASH resolution in the SURMOUNT-NASH trial at rates exceeding 50% in the highest dose group. Retatrutide Phase 2 data showed MRI-PDFF-measured liver fat reductions of approximately 80% at the highest dose, attributed to combined GCGR-driven hepatic lipolysis and GIPR/GLP-1R-mediated reduction in de novo lipogenesis.
+        body: `Beyond body weight change, all three compounds show observed effects on ectopic fat deposition and cardiometabolic markers. Semaglutide trial cohorts reported liver fat changes of approximately −30 to −35% in NASH-spectrum disease trials (NASH is now termed MASH). Tirzepatide trial cohorts in SURMOUNT-NASH reported MASH resolution rates exceeding 50% in the highest-dose group. Retatrutide Phase 2 cohorts reported MRI-PDFF-measured liver fat changes of approximately −80% at the highest dose, attributed to combined GCGR-driven hepatic lipolysis and GIPR/GLP-1R-mediated reduction in de novo lipogenesis. These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds.
 
-Cardiovascular outcome data are available only for semaglutide (SUSTAIN-6, SELECT trials), which demonstrated significant reduction in major adverse cardiovascular events (MACE). Tirzepatide cardiovascular outcomes data from SURMOUNT-MMO is anticipated in 2025–2026. No cardiovascular outcomes data exist for retatrutide at the time of writing.`
+Cardiovascular outcome data are available only for semaglutide (SUSTAIN-6, SELECT trials), where trial cohorts reported significant changes in major adverse cardiovascular events (MACE). Tirzepatide cardiovascular outcomes data from SURMOUNT-MMO is anticipated in 2025–2026. No cardiovascular outcomes data exist for retatrutide at the time of writing.`
       }
     ],
     references: [
