@@ -231,27 +231,50 @@ export async function getDocAdmin(
  */
 export async function listDocsAdmin(
   collection: string,
-  options: { orderBy?: string; direction?: "ASCENDING" | "DESCENDING"; limit?: number } = {},
+  options: {
+    orderBy?: string;
+    direction?: "ASCENDING" | "DESCENDING";
+    limit?: number;
+    /** Cursor value (matches the orderBy field). Returns rows AFTER this value (exclusive). */
+    startAfter?: string | number | boolean | Date;
+    /** Optional single-field equality filter. */
+    where?: { field: string; op?: "EQUAL"; value: string | number | boolean };
+  } = {},
 ): Promise<Array<Record<string, unknown> & { id: string }>> {
   const acct = getServiceAccount();
   const token = await getAccessToken();
   const url = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents:runQuery`;
-  const body: Record<string, unknown> = {
-    structuredQuery: {
-      from: [{ collectionId: collection }],
-      orderBy: options.orderBy
-        ? [{ field: { fieldPath: options.orderBy }, direction: options.direction ?? "DESCENDING" }]
-        : undefined,
-      limit: Math.min(Math.max(options.limit ?? 50, 1), 100),
-    },
+  const structured: Record<string, unknown> = {
+    from: [{ collectionId: collection }],
+    limit: Math.min(Math.max(options.limit ?? 50, 1), 200),
   };
+  if (options.orderBy) {
+    structured.orderBy = [
+      { field: { fieldPath: options.orderBy }, direction: options.direction ?? "DESCENDING" },
+    ];
+  }
+  if (options.where) {
+    structured.where = {
+      fieldFilter: {
+        field: { fieldPath: options.where.field },
+        op: options.where.op ?? "EQUAL",
+        value: toFirestoreValue(options.where.value),
+      },
+    };
+  }
+  if (options.startAfter !== undefined && options.orderBy) {
+    structured.startAt = {
+      values: [toFirestoreValue(options.startAfter)],
+      before: false,
+    };
+  }
   const res = await fetch(url, {
     method: "POST",
     headers: {
       "content-type": "application/json",
       authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ structuredQuery: structured }),
   });
   if (!res.ok) {
     throw new Error(`Firestore list failed: ${res.status} ${await res.text()}`);
@@ -269,6 +292,22 @@ export async function listDocsAdmin(
     }
     return [out];
   });
+}
+
+/**
+ * Delete a document by collection + id. Bypasses security rules.
+ */
+export async function deleteDocAdmin(collection: string, id: string): Promise<void> {
+  const acct = getServiceAccount();
+  const token = await getAccessToken();
+  const url = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`;
+  const res = await fetch(url, {
+    method: "DELETE",
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (!res.ok && res.status !== 404) {
+    throw new Error(`Firestore delete failed: ${res.status} ${await res.text()}`);
+  }
 }
 
 /**
