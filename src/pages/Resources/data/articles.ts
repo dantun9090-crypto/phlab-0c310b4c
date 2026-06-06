@@ -59,9 +59,9 @@ GLP-1R activation increases insulin secretion in a glucose-dependent manner, slo
       },
       {
         heading: 'Preclinical Findings in Rodent Models',
-        body: `In diet-induced obese (DIO) mouse models, retatrutide produced dose-dependent reductions in body weight of up to 25% over 28 days — substantially exceeding the 12–15% reductions typically observed with GLP-1R mono-agonists at comparable doses. Pair-feeding studies confirmed that the effect is not explained entirely by reduced caloric intake; a significant component derives from increased energy expenditure, evidenced by elevated oxygen consumption and brown adipose tissue (BAT) activation on PET imaging.
+        body: `In diet-induced obese (DIO) mouse models, treated cohorts reported a dose-dependent mean body weight change of up to −25% over 28 days — substantially exceeding the −12 to −15% changes typically observed with GLP-1R mono-agonists at comparable doses. Pair-feeding studies confirmed that the effect is not explained entirely by reduced caloric intake; a significant component derives from increased energy expenditure, evidenced by elevated oxygen consumption and brown adipose tissue (BAT) activation on PET imaging.
 
-Hepatic fat content was reduced by greater than 70% in ob/ob mice over a 12-week treatment window. Triglyceride synthesis pathways (SREBP-1c, FAS) were downregulated at the transcriptional level, while fatty acid oxidation genes (CPT1a, ACOX1) were upregulated. Fasting glucose and insulin resistance indices (HOMA-IR) normalised within four weeks in all DIO cohorts studied.`,
+Hepatic fat content was observed to change by greater than −70% in ob/ob mice over a 12-week treatment window. Triglyceride synthesis pathways (SREBP-1c, FAS) were downregulated at the transcriptional level, while fatty acid oxidation genes (CPT1a, ACOX1) were upregulated. Glucose markers returned toward baseline in the study group and insulin sensitivity indices (HOMA-IR) were observed to change within four weeks across all DIO cohorts studied.`,
         callout: {
           type: 'info',
           text: 'All referenced findings are from preclinical in-vivo studies. Retatrutide is an investigational compound; these observations do not establish therapeutic claims for human use.'
