@@ -1,0 +1,2568 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Article JSON-LD snapshots > /resources/bpc-157-tissue-repair 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/bpc-157-tissue-repair#article",
+    "@type": "Article",
+    "alternativeHeadline": "An evidence-based review of the pentadecapeptide body-protective compound and its reported roles in angiogenesis, tendon repair, and gastrointestinal cytoprotection",
+    "articleBody": "Body-protective compound 157 (BPC-157) is a synthetic pentadecapeptide comprising the sequence Gly-Glu-Pro-Pro-Pro-Gly-Lys-Pro-Ala-Asp-Asp-Ala-Gly-Leu-Val (GEPPPGKPADDAGLV). It is derived from a region of the human gastric juice protein BPC and was first described by Sikirić and colleagues at the University of Zagreb in the early 1990s. Despite its gastric origin, BPC-157 has since been investigated in preclinical models across a remarkably wide range of tissue types, including tendon, ligament, muscle, bone, vascular endothelium, and the central nervous system. Buy research-grade BPC-157 (≥99% HPLC) . Molecular Targets and Signalling Pathways The precise receptor through which BPC-157 exerts its effects has not been definitively characterised. Current evidence points to modulation of the nitric oxide (NO) system as a central mechanism: BPC-157 stabilises eNOS (endothelial nitric oxide synthase) activity and prevents the shear-stress-induced downregulation of NO production that accompanies ischaemic injury. This preserves microvascular tone and supports the delivery of oxygen and nutrients to damaged tissue. In addition, multiple studies report that BPC-157 upregulates vascular endothelial growth factor (VEGF) and its receptor VEGFR-2 in both in-vitro cell culture systems and in-vivo rodent models. VEGF-mediated angiogenesis is a rate-limiting step in connective tissue healing, where the formation of new capillary beds is required to supply migrating fibroblasts and tenocytes with metabolic substrate. BPC-157-treated tendon injury models consistently show denser vascularisation at the injury site compared to vehicle controls. Tendon and Ligament Repair Models The Achilles tendon transection model in rats is the most extensively used system for studying BPC-157 effects on connective tissue. In these studies, complete transection of the tendon is followed by systemic (i.p. or s.c.) or local administration of BPC-157 at doses typically ranging from 10 ng/kg to 10 µg/kg. Histological endpoints at 1, 2, and 4 weeks post-injury assess collagen fibre alignment, fibroblast density, and neovascularisation. Findings consistently reported in peer-reviewed publications include: improved collagen Type I to Type III ratio (indicating mature rather than fibrotic repair tissue), reduced macrophage infiltration at 48–72 hours (suggesting modulation of the acute inflammatory phase), and significantly higher ultimate tensile strength at 28 days compared to saline controls. Similar observations have been made in anterior cruciate ligament and medial collateral ligament repair models. Gastrointestinal Cytoprotective Effects Given its gastric origin, BPC-157 has been extensively studied in models of gastrointestinal injury. In NSAID-induced gastric ulcer models (aspirin, indomethacin, ethanol), both prophylactic and therapeutic administration of BPC-157 significantly reduced ulcer index scores compared to controls. The proposed mechanism involves preservation of the gastric mucus layer through enhanced mucin expression and suppression of hydrogen peroxide-mediated oxidative damage to mucosal epithelial cells. In colitis models induced by trinitrobenzenesulphonic acid (TNBS) or dextran sodium sulphate (DSS), BPC-157 reduced macroscopic disease activity scores, histological inflammation grade, and colonic myeloperoxidase activity — a marker of neutrophil infiltration. Systemic administration was effective even when administered after the onset of colitis, suggesting both prophylactic and therapeutic utility in the preclinical context. Summary of Key Preclinical Findings by Tissue Type Stability and In-Vitro Research Use BPC-157 is a relatively stable peptide due to its lack of cysteine residues (which are prone to oxidation) and its resistance to gastric proteases — a property studied in the context of oral administration. For in-vitro research, the lyophilised peptide should be reconstituted in sterile bacteriostatic water and stored at 4°C for short-term use (up to 7 days) or -20°C for longer periods. Working concentrations in cell culture assays typically range from 1–100 µM depending on the endpoint; tenocyte migration assays, for example, commonly use 1–10 µM concentrations.",
+    "articleSection": "Tissue Repair Research",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-02-20",
+    "datePublished": "2026-02-20",
+    "description": "BPC-157 is a synthetic 15-amino-acid peptide derived from a partial sequence of human gastric juice protein BPC. Preclinical studies across multiple tissue…",
+    "headline": "BPC-157 in Tissue Repair Studies: Mechanisms and Research Findings",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "BPC-157, tissue repair, angiogenesis, tendon healing, gastrointestinal, VEGF, body protective compound",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/bpc-157-tissue-repair",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT13M",
+    "url": "https://phlabs.co.uk/resources/bpc-157-tissue-repair",
+    "wordCount": 576,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/bpc-157-tissue-repair",
+        "name": "BPC-157 in Tissue Repair Studies: Mechanisms and Research Findings",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/bpc-157-vs-tb-500-comparison 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500-comparison#article",
+    "@type": "Article",
+    "alternativeHeadline": "Head-to-head comparison of BPC-157 (Body Protection Compound) and TB-500 (Thymosin Beta-4) for in vitro and preclinical tissue repair models — mechanisms, research applications, and laboratory protocols",
+    "articleBody": "BPC-157 (Body Protection Compound-157, a 15-amino acid sequence derived from gastric BPC) and TB-500 (Thymosin Beta-4, a 43-amino acid actin-sequestering protein) are the two most widely studied peptides for tissue repair, angiogenesis, and wound healing in preclinical research. Both are used in in vitro cell culture models and rodent injury models to investigate mechanisms of tendon, ligament, muscle, and gastric tissue repair. While they share some overlapping effects (pro-angiogenic, anti-inflammatory), their molecular mechanisms and tissue-specific activity profiles differ. This guide provides a head-to-head comparison to help UK researchers select the appropriate peptide for their experimental models. Mechanism of Action: How They Work **BPC-157** is a synthetic pentadecapeptide (15 amino acids) that appears to act through multiple pathways: upregulation of vascular endothelial growth factor (VEGF) and its receptor VEGFR2, modulation of the nitric oxide (NO) pathway, stabilisation of gut mucosal integrity via cytoprotective mechanisms, and interaction with the FAK-paxillin pathway in fibroblast migration. BPC-157 has shown effects in gastric ulcer models, tendon-to-bone healing models, and ligament injury models in rodents. It is thought to promote angiogenesis (new blood vessel formation) and accelerate collagen deposition. **TB-500 (Thymosin Beta-4)** is a 43-amino acid peptide that sequesters G-actin monomers, preventing their polymerisation into F-actin filaments. This actin-sequestering function is critical for cell migration, as it allows the cytoskeleton to dynamically reorganise during wound healing. TB-500 also upregulates matrix metalloproteinases (MMPs), promotes endothelial cell migration (angiogenesis), and modulates inflammatory cytokine expression (reduction of IL-1β, TNF-α). TB-500 has been studied in myocardial infarction models, corneal injury models, and skeletal muscle damage models. Research Applications: When to Use Each **Use BPC-157 for:** • Gastric ulcer or mucosal injury models (gastric cytoprotection) • Tendon-to-bone healing studies (patellar tendon, Achilles tendon models) • Ligament injury models (medial collateral ligament, anterior cruciate ligament) • Inflammatory bowel disease models (colitis, mucosal inflammation) • Blood-brain barrier permeability studies (some evidence of neuroprotective effects) **Use TB-500 for:** • Skeletal muscle injury and regeneration models (contusion, laceration) • Myocardial infarction and cardiac remodelling studies (post-MI angiogenesis) • Corneal wound healing models (epithelial migration) • Stroke models (neuronal migration, angiogenesis) • Dermal wound healing and scar formation studies **Combination use:** Some research protocols use BPC-157 and TB-500 together in complex tissue injury models to target multiple pathways simultaneously (VEGF + actin dynamics). This is seen in experimental models of severe ligament or tendon injury where both angiogenesis and cell migration are rate-limiting. Dosing and Reconstitution for Laboratory Use **BPC-157:** • Typical in vitro concentration: 0.1–10 μg/mL in cell culture media • Typical in vivo dose (rodent): 10 μg/kg body weight, administered daily via intraperitoneal (IP) or subcutaneous (SC) injection • Reconstitution: Add 1–2 mL bacteriostatic water to lyophilised vial. Gently swirl (do not shake). Store reconstituted solution at 2–8°C for up to 14 days. • Stability: BPC-157 is relatively stable in solution but should be protected from light and stored cold. **TB-500:** • Typical in vitro concentration: 1–100 μg/mL depending on cell type and endpoint • Typical in vivo dose (rodent): 5–10 mg/kg body weight, administered twice weekly via IP or SC injection • Reconstitution: Add 2 mL bacteriostatic water to 5 mg vial for a 2.5 mg/mL stock solution. Store at 2–8°C for up to 14 days. • Stability: TB-500 is stable in solution but degrades faster than BPC-157 at room temperature. Always refrigerate immediately after reconstitution. Side-by-Side Comparison: Key Differences **Molecular weight:** BPC-157: ~1,419 Da (smaller, faster diffusion) TB-500: ~4,963 Da (larger, slower tissue penetration) **Tissue specificity:** BPC-157: Broad but strongest in gastric and tendinous tissues TB-500: Strongest in muscle, cardiac, and epithelial tissues **Mechanism overlap:** Both are pro-angiogenic, but via different pathways (BPC-157 = VEGF, TB-500 = endothelial migration) Both reduce inflammation, but via different cytokine profiles **Cost:** BPC-157 is typically more affordable per dose due to shorter synthesis TB-500 is more expensive due to longer sequence and higher dose requirements **Evidence base:** BPC-157: ~150 PubMed-indexed studies, mostly Eastern European research groups TB-500: ~300 PubMed-indexed studies, broader international research base **UK regulatory status:** Both are for research use only, not licensed for human therapeutic use in the UK. Which Should You Choose? **Choose BPC-157 if:** • You",
+    "articleSection": "Research Guides",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-05-03",
+    "datePublished": "2026-05-03",
+    "description": "BPC-157 and TB-500 are the two most researched peptides for tissue repair and angiogenesis studies. This guide compares their mechanisms, experimental…",
+    "headline": "BPC-157 vs TB-500: Which Peptide for Tissue Repair Research? Complete UK Comparison 2025",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "BPC-157 vs TB-500, tissue repair peptides, BPC-157 research, TB-500 thymosin beta 4, peptide comparison UK, angiogenesis research",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500-comparison",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT9M",
+    "url": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500-comparison",
+    "wordCount": 817,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500-comparison",
+        "name": "BPC-157 vs TB-500: Which Peptide for Tissue Repair Research? Complete UK Comparison 2025",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/cjc-1295-mod-grf-ghrh-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/cjc-1295-mod-grf-ghrh-research#article",
+    "@type": "Article",
+    "alternativeHeadline": "A mechanistic and comparative review of GHRH analogues including CJC-1295 DAC, MOD GRF(1-29), and their interactions with the somatotropic axis in preclinical pharmacokinetic and efficacy studies",
+    "articleBody": "Growth hormone-releasing hormone (GHRH) is a hypothalamic neuropeptide that stimulates somatotroph cells in the anterior pituitary to release growth hormone (GH) in a pulsatile pattern. Native GHRH(1-44) has a short plasma half-life of approximately 7 minutes due to rapid cleavage by dipeptidyl peptidase IV (DPP-IV) at the Ala(2)-Asp(3) bond. Two families of synthetic GHRH analogues have been developed to overcome this limitation: MOD GRF(1-29) (also called CJC-1295 without DAC) and CJC-1295 DAC. MOD GRF(1-29): Structural Stabilisation MOD GRF(1-29) corresponds to the biologically active GHRH(1-29) fragment, modified at 4 positions to resist enzymatic degradation: Ala(2) is substituted with D-Ala, Gln(8) with Ala, Ala(15) with Gln, and Leu(27) with norvaline (Nle). These substitutions collectively extend the plasma half-life to approximately 30 minutes, allowing for a more robust GH pulse when combined with a GHRP-class peptide. MOD GRF(1-29) mimics the physiological GHRH signal in terms of pulse kinetics — it produces a sharp, self-limiting GH release episode that returns to baseline within 2–3 hours, analogous to natural GH pulse dynamics. CJC-1295 DAC: Extended Release via Albumin Binding CJC-1295 DAC (Drug Affinity Complex) incorporates a maleimidopropionic acid (MPA) linker attached to lysine at position 44, which allows covalent binding to the reactive cysteine-34 residue of circulating serum albumin following injection. By hitching to albumin (plasma half-life ~19 days), CJC-1295 DAC extends its effective half-life to 6–8 days. This fundamentally alters the GH secretory pattern from pulsatile to continuous — producing a tonic elevation in baseline GH and IGF-1 rather than discrete pulse amplification. Synergy with GHRP Compounds GHRH analogues act at the GHRH receptor (GHRHR) while GHRP compounds (ipamorelin, GHRP-2, etc.) act at the GHS-R1a (ghrelin receptor). Co-administration of a GHRH analogue with a GHRP creates synergistic GH release exceeding the sum of individual responses — a well-characterised supra-additive interaction in both in-vitro pituitary cell cultures and in-vivo models. The mechanistic basis involves complementary intracellular signalling cascades: GHRHR activates adenylyl cyclase (cAMP/PKA pathway), while GHS-R1a activates phospholipase C (IP3/DAG/PKC pathway), and co-activation produces greater somatotroph depolarisation and GH exocytosis than either pathway alone.",
+    "articleSection": "Endocrine Research",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-04-09",
+    "datePublished": "2026-04-09",
+    "description": "CJC-1295 and MOD GRF(1-29) are synthetic analogues of growth hormone-releasing hormone (GHRH) designed to amplify pulsatile GH secretion by extending the…",
+    "headline": "CJC-1295 and MOD GRF(1-29): GHRH Analogue Research for GH Pulse Amplification",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "CJC-1295, MOD GRF 1-29, GHRH analogue, growth hormone, somatotropic axis, DAC technology, GH pulse",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/cjc-1295-mod-grf-ghrh-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT9M",
+    "url": "https://phlabs.co.uk/resources/cjc-1295-mod-grf-ghrh-research",
+    "wordCount": 339,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/cjc-1295-mod-grf-ghrh-research",
+        "name": "CJC-1295 and MOD GRF(1-29): GHRH Analogue Research for GH Pulse Amplification",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/complete-uk-peptide-guide-2025 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/complete-uk-peptide-guide-2025#article",
+    "@type": "Article",
+    "alternativeHeadline": "Comprehensive guide to sourcing, storing, and using research peptides in UK laboratories — regulatory compliance, analytical verification, experimental protocols, and supplier selection criteria",
+    "articleBody": "The UK research peptide market has grown significantly since 2020, driven by increased academic and pharmaceutical interest in peptide therapeutics, metabolic signalling pathways, and tissue repair mechanisms. However, the market is unregulated for research-use compounds, leading to variability in product quality, analytical documentation, and supplier reliability. This guide provides UK researchers with a comprehensive framework for sourcing, verifying, storing, and using research peptides in compliance with institutional and regulatory guidelines. It covers the most commonly used peptides (BPC-157, TB-500, GLP-1 agonists), analytical standards (HPLC, mass spectrometry), storage requirements, and red flags to avoid when selecting suppliers. UK Regulatory Landscape for Research Peptides In the UK, peptides sold for "research use only" are not regulated as medicines by the MHRA (Medicines and Healthcare products Regulatory Agency). They fall into a grey zone: not prescription drugs, not food supplements, not cosmetics. This means: • Suppliers do not need MHRA licensing to sell research peptides • There are no mandatory purity or analytical testing standards • Buyers are responsible for verifying quality and suitability for their research • Peptides must not be marketed for human consumption or therapeutic use • Import/export may require documentation depending on quantity and peptide type Universities and research institutions typically require internal approval (ethics, biosafety) before peptide use. Always check your institution's chemical procurement and hazardous substances policies. Some peptides (e.g. growth hormone secretagogues) may fall under additional scrutiny due to misuse potential, though this does not affect legitimate laboratory research. Most Commonly Used Research Peptides in UK Labs **1. BPC-157 (Body Protection Compound-157)** • Application: Gastric cytoprotection, tendon/ligament repair models, angiogenesis studies • Typical dose (rodent): 10 μg/kg daily • Purity standard: ≥98% by HPLC • UK research volume: High (tissue repair, sports science) **2. TB-500 (Thymosin Beta-4)** • Application: Muscle regeneration, cardiac remodelling post-MI, corneal wound healing • Typical dose (rodent): 5–10 mg/kg twice weekly • Purity standard: ≥98% by HPLC • UK research volume: High (cardiovascular, regenerative medicine) **3. Semaglutide (GLP-1 agonist)** • Application: GLP-1 receptor pharmacology, metabolic signalling, insulin secretion models • Typical dose (rodent): 10–50 μg/kg weekly • Purity standard: ≥98% by HPLC • UK research volume: Very high (diabetes, obesity, metabolic research) **4. Tirzepatide (dual GLP-1/GIP agonist)** • Application: Dual incretin receptor studies, comparison with single-agonist GLP-1 compounds • Typical dose (rodent): 10–30 μg/kg weekly • Purity standard: ≥98% by HPLC • UK research volume: Growing (novel mechanism vs. GLP-1-only agonists) **5. Retatrutide (triple GLP-1/GIP/Glucagon agonist)** • Application: Triple incretin receptor pharmacology, next-generation metabolic studies • Typical dose (rodent): 1–5 mg/kg weekly • Purity standard: ≥98% by HPLC • UK research volume: Emerging (cutting-edge metabolic research) How to Verify Peptide Quality: HPLC and Mass Spec **Step 1: Request a Certificate of Analysis (CoA)** Every research peptide should come with a batch-specific HPLC certificate. This document must include: • Batch number (matches your vial label) • HPLC chromatogram (the graph showing peaks) • Retention time (Rt, in minutes) • Purity percentage (≥98% for research-grade) • Analysis date (within 12 months) • Laboratory or analyst signature If a supplier cannot provide a CoA or only offers a "generic" certificate used across batches, do not purchase. **Step 2: Check the Chromatogram** A legitimate HPLC chromatogram shows one dominant peak (the target peptide) with minimal smaller peaks (impurities). The x-axis is retention time, y-axis is absorbance (mAU). The purity percentage is calculated from peak areas. Red flags: multiple large peaks, massive baseline noise, or no chromatogram provided at all. **Step 3: Request Mass Spectrometry Data (Optional but Recommended)** HPLC tells you purity, but mass spectrometry confirms identity. A mass spec report should show the observed molecular weight within ±1 Da (or ±5 ppm for high-resolution instruments) of the calculated mass for the stated sequence. This rules out "wrong peptide at high purity" scenarios. **Step 4: Independent Testing (Gold Standard)** For critical research, send a sample to an independent UK analytical lab (e.g. LGC, Intertek, or university analytical services) for third-party HPLC or LC-MS testing. This costs £150–£300 but provides absolute verification. Storage and Handling: Best Practices for UK Labs **Lyophilised (Freeze-Dried) Peptides:** • Store at -20°C (freezer) for long-term storage (12–24 months) • Store at 2–8°C (refrigerator) for medium-term use (3–6 months) • Keep in original sealed vials w",
+    "articleSection": "Research Guides",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-05-03",
+    "datePublished": "2026-05-03",
+    "description": "The definitive 2025 guide for UK researchers working with peptides. Covers BPC-157, TB-500, GLP-1 agonists (Semaglutide, Tirzepatide, Retatrutide), HPLC…",
+    "headline": "Complete UK Research Peptide Guide 2025: BPC-157, TB-500, Semaglutide & GLP-1 Agonists for Laboratory Use",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "UK peptide guide 2025, research peptides UK, buy peptides UK, BPC-157 UK, TB-500 UK, Semaglutide research, peptide suppliers UK, laboratory peptides",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/complete-uk-peptide-guide-2025",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT12M",
+    "url": "https://phlabs.co.uk/resources/complete-uk-peptide-guide-2025",
+    "wordCount": 1170,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/complete-uk-peptide-guide-2025",
+        "name": "Complete UK Research Peptide Guide 2025: BPC-157, TB-500, Semaglutide & GLP-1 Agonists for Laboratory Use",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/epithalon-telomere-epigenetic-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/epithalon-telomere-epigenetic-research#article",
+    "@type": "Article",
+    "alternativeHeadline": "A scientific review of the synthetic tetrapeptide Epithalon (Ala-Glu-Asp-Gly), its interactions with telomerase, histone acetylation, and findings from long-term ageing models",
+    "articleBody": "Epithalon (also spelled Epitalon) is the synthetic tetrapeptide Ala-Glu-Asp-Gly, derived from the active fraction of Epithalamin — a polypeptide extract isolated from bovine pineal gland tissue and studied extensively by Vladimir Khavinson and colleagues at the Saint Petersburg Institute of Bioregulation. While Epithalamin showed broad biological activity in early Soviet-era research, Epithalon was synthesised to provide a chemically defined, reproducible analogue for research purposes. Telomerase Activation and Telomere Biology The most widely cited effect of Epithalon in the preclinical literature is its ability to activate telomerase (hTERT) and elongate telomeres in human somatic cells that normally lack telomerase activity. In a 2003 study by Khavinson et al., human fetal fibroblasts treated with Epithalon showed measurable elongation of telomere restriction fragments (TRFs) by Southern blotting, alongside elevated hTERT mRNA expression as assessed by RT-PCR. Importantly, the treated cells did not show signs of malignant transformation over extended culture — a concern when inducing telomerase in somatic cells — though researchers note that long-term safety must be evaluated in any specific research context. This telomere-extending activity has led to significant interest in Epithalon as a tool compound for cellular ageing and replicative senescence research. Epigenetic Mechanisms Beyond telomerase, Epithalon has been studied for epigenetic effects. In heterochromatin-rich regions of human lymphocytes, Epithalon treatment is associated with reduced methylation of histone H1 and H3 at specific lysine residues, and increased acetylation of H4 — epigenetic changes associated with more transcriptionally permissive chromatin states and gene expression patterns resembling younger cells. This chromatin remodelling activity provides a potential molecular basis for observed gene expression changes in aged animal models treated with Epithalon, where genes involved in antioxidant defence, DNA repair, and mitochondrial function showed upregulation. In-Vivo Lifespan Data Long-term Epithalon administration studies in inbred mice and Drosophila melanogaster showed statistically significant lifespan extensions of 12–28% compared to vehicle controls, depending on the study design and starting age at treatment initiation. In aged female rats, Epithalon treatment was associated with partial restoration of oestrous cycle regularity, suppression of spontaneous tumour development, and normalisation of corticosteroid secretion patterns. These findings, while generated primarily by the Khavinson group, have been partially replicated in independent studies and remain an active area of investigation in biogerontology research.",
+    "articleSection": "Longevity Research",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-04-07",
+    "datePublished": "2026-04-07",
+    "description": "Epithalon (Ala-Glu-Asp-Gly) is a synthetic tetrapeptide developed from the pineal peptide preparation Epithalamin. Preclinical research documents its ability…",
+    "headline": "Epithalon: Telomerase Activation, Epigenetic Remodelling, and Longevity Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "Epithalon, epithalamin, telomerase, telomere, epigenetics, longevity, ageing research, pineal peptide",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/epithalon-telomere-epigenetic-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT10M",
+    "url": "https://phlabs.co.uk/resources/epithalon-telomere-epigenetic-research",
+    "wordCount": 368,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/epithalon-telomere-epigenetic-research",
+        "name": "Epithalon: Telomerase Activation, Epigenetic Remodelling, and Longevity Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/epithalon-telomere-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/epithalon-telomere-research#article",
+    "@type": "Article",
+    "alternativeHeadline": "A review of the tetrapeptide Ala-Glu-Asp-Gly, its reported effects on telomerase activity, pineal gland function, and longevity markers in cellular and animal models",
+    "articleBody": "Epithalon (Ala-Glu-Asp-Gly; AEDG) is a synthetic tetrapeptide derived from epithalamin, a polypeptide extract of the bovine pineal gland first isolated and characterised by Vladimir Khavinson and colleagues at the St. Petersburg Institute of Bioregulation and Gerontology during the 1980s–1990s. Its four amino acid residues correspond to a biologically active fragment of epithalamin believed to mediate the peptide's interaction with nuclear chromatin and gene expression regulatory elements. Telomerase Activation in Cell Culture The most widely cited mechanism attributed to epithalon in research literature is activation of telomerase reverse transcriptase (hTERT). Telomerase is the enzyme responsible for adding TTAGGG hexanucleotide repeats to telomere ends, counteracting the progressive telomere shortening that occurs with each cell division. In normal somatic cells, hTERT expression is silenced post-developmentally, which contributes to the finite replicative capacity (Hayflick limit) of most cell types. Khavinson et al. reported that epithalon (at 0.1–10 nM concentrations in culture) increased hTERT mRNA expression in foetal human fibroblasts, extended their Hayflick limit by 3–7 additional passages, and maintained normal karyotypic stability — a critical distinction from telomerase activation by oncogenic transformation, which is associated with aneuploidy. Pineal and Melatonin-Related Effects As a pineal-derived peptide, epithalon has been studied in the context of age-related pineal function decline. With age, both pineal mass and nocturnal melatonin secretion decrease, contributing to circadian rhythm disruption and immunosenescence. In aged rat cohorts, intraperitoneal epithalon administration restored nocturnal melatonin peak values toward those of young-adult controls. The proposed mechanism is transcriptional upregulation of hydroxyindole-O-methyltransferase (HIOMT) and arylalkylamine N-acetyltransferase (AANAT) — the two rate-limiting enzymes in melatonin biosynthesis — in pinealocytes. Animal Longevity Studies In longitudinal studies using Drosophila melanogaster, C57BL/6 mice, and SHR rats, chronic epithalon administration (typically by i.p. injection or nasal spray) was associated with statistically significant increases in median lifespan of 12–30% compared to saline controls. Tumour incidence was reduced in several studies, and age-related decline in motor performance and spatial memory was attenuated. Importantly, these findings were obtained in disease-prone or aged animals rather than young healthy specimens, which limits the interpretive scope but suggests potential utility as a research tool in geroscience model systems.",
+    "articleSection": "Longevity Research",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-01-15",
+    "datePublished": "2026-01-15",
+    "description": "Epithalon (also Epitalon) is a synthetic tetrapeptide based on a natural substance secreted by the pineal gland. Research in cell culture and rodent models…",
+    "headline": "Epithalon (Epitalon): Telomerase Activation and Cellular Ageing Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "epithalon, epitalon, telomerase, telomere, pineal gland, ageing research, AEDG peptide",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/epithalon-telomere-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT10M",
+    "url": "https://phlabs.co.uk/resources/epithalon-telomere-research",
+    "wordCount": 350,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/epithalon-telomere-research",
+        "name": "Epithalon (Epitalon): Telomerase Activation and Cellular Ageing Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/follistatin-344-myostatin-inhibition-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/follistatin-344-myostatin-inhibition-research#article",
+    "@type": "Article",
+    "alternativeHeadline": "A mechanistic review of follistatin-344 as an endogenous activin/myostatin binding protein, its structural biology, and findings from in-vitro and in-vivo skeletal muscle hypertrophy research models",
+    "articleBody": "Follistatin is an endogenous glycoprotein originally identified as an activin-binding protein in ovarian follicular fluid. Three major isoforms arise from alternative mRNA splicing and post-translational processing of a single gene (FST): FS-288, FS-300, and FS-344. Follistatin-344 (so named for its 344-amino acid length) is the predominant circulating isoform and shows the broadest ligand binding range within the TGF-beta superfamily, with high affinity for both activin A (Kd ~50 pM) and myostatin/GDF-8 (Kd ~200 pM). Myostatin Biology and the Follistatin Antagonism Myostatin (GDF-8) is a transforming growth factor-beta (TGF-beta) superfamily member that functions as a master negative regulator of skeletal muscle mass. It signals through ActRIIB receptors on myoblasts and satellite cells, activating SMAD2/3 transcription factors that suppress protein synthesis (via mTOR pathway inhibition) and promote protein degradation (atrogin-1/MuRF-1 ubiquitin ligase upregulation). Follistatin-344 neutralises myostatin by binding it in a 2:1 ratio (two follistatin molecules per myostatin dimer), sequestering the ligand and preventing ActRIIB engagement. This effectively removes the myostatin brake on muscle growth, allowing anabolic signalling pathways to operate without attenuation. Preclinical Hypertrophy Data The potency of follistatin-mediated myostatin inhibition is dramatically illustrated by myostatin-null cattle (Belgian Blue, Piedmontese breeds) and mice, which develop extreme skeletal muscle hypertrophy (doubling of muscle mass in homozygous knockout mice). Pharmacological myostatin inhibition using follistatin overexpression via AAV vector delivery in mice produced 60–100% increases in muscle cross-sectional area and fibre number in multiple independent studies. In aged mice (a model of sarcopenia), follistatin-344 treatment partially reversed age-related muscle mass loss and improved grip strength and treadmill performance metrics. Activin A Antagonism and Broader Effects Beyond myostatin, follistatin-344's high-affinity activin A binding has relevance for research in reproductive biology (activin A regulates FSH secretion), cancer biology (activin signalling promotes epithelial-mesenchymal transition in some cancers), and bone metabolism (myostatin and activin both inhibit osteoblast differentiation). This multi-target biology makes follistatin-344 a useful tool compound for studying TGF-beta superfamily crosstalk, though it also means that observed effects in complex in-vivo systems represent the combined outcome of multiple pathway modulations.",
+    "articleSection": "Endocrine Research",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-04-10",
+    "datePublished": "2026-04-10",
+    "description": "Follistatin-344 is the predominant circulating isoform of follistatin, a glycoprotein that binds and neutralises members of the TGF-beta superfamily including…",
+    "headline": "Follistatin-344: Myostatin Inhibition, Muscle Hypertrophy Research, and TGF-beta Superfamily Antagonism",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "follistatin-344, myostatin inhibitor, GDF-8, activin, muscle hypertrophy, TGF-beta, sarcopenia research",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/follistatin-344-myostatin-inhibition-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT9M",
+    "url": "https://phlabs.co.uk/resources/follistatin-344-myostatin-inhibition-research",
+    "wordCount": 333,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/follistatin-344-myostatin-inhibition-research",
+        "name": "Follistatin-344: Myostatin Inhibition, Muscle Hypertrophy Research, and TGF-beta Superfamily Antagonism",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/ghk-cu-copper-peptide-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/ghk-cu-copper-peptide-research#article",
+    "@type": "Article",
+    "alternativeHeadline": "An evidence-based review of glycyl-L-histidyl-L-lysine copper complex, its pleiotropic biological activities, and key research applications in dermal and systemic tissue models",
+    "articleBody": "GHK-Cu (glycyl-L-histidyl-L-lysine complexed with copper(II)) was first isolated from human plasma in 1973 by Loren Pickart. The endogenous tripeptide is found at highest concentrations in plasma, saliva, and urine, with plasma levels declining from approximately 200 ng/mL at age 20 to below 80 ng/mL by age 60 — a decline associated with reduced wound repair efficiency and increased systemic oxidative stress. The peptide's copper-chelating capacity is central to its function: the His residue at position 2 coordinates Cu(II) with high affinity (Kd ~10^-14 M), creating a stable complex that modulates copper bioavailability and superoxide dismutase (SOD)-like antioxidant activity in tissue microenvironments. Collagen Synthesis and Dermal Remodelling The most extensively validated activity of GHK-Cu in research models is the stimulation of collagen and glycosaminoglycan synthesis in fibroblast cultures. Studies demonstrate dose-dependent increases in type I and III collagen mRNA expression, with maximal effects observed at 1–10 ng/mL concentrations. GHK-Cu also stimulates decorin production — a small leucine-rich proteoglycan that organises collagen fibril geometry — suggesting that its effects extend beyond simple collagen quantity to influence the structural organisation of the extracellular matrix. In wound healing models, topical GHK-Cu accelerates re-epithelialisation and increases tensile strength of healed skin compared to vehicle controls. Broad Gene Regulation: The Pickart Dataset Microarray and RNA-seq analyses have revealed that GHK-Cu modulates the expression of over 4,000 human genes — approximately 31% of the human genome. Upregulated pathways include collagen synthesis, neurotrophin signalling (BDNF, NGF), anti-oxidant response (NRF2 targets), and DNA repair mechanisms. Downregulated pathways include inflammatory cytokines (TNF-alpha, IL-6 signalling), cancer-promoting genes, and tissue-destructive matrix metalloproteinases (MMP-1, -2, -9). This broad transcriptional remodelling towards a regenerative phenotype is unusually comprehensive for a small tripeptide molecule and has attracted interest in oncology research, where GHK-Cu signature overlaps with anti-metastatic gene expression programmes. Reconstitution and Handling Notes GHK-Cu is typically supplied as a blue-coloured lyophilised powder owing to the copper complex chromophore. For cell culture studies, reconstitution in sterile water or phosphate-buffered saline (PBS) at pH 7.4 is standard. The complex is stable for up to 7 days at 4°C post-reconstitution and should be protected from strong reducing agents that can dissociate the copper coordination bond. For dermal delivery experiments, GHK-Cu is compatible with aqueous gel matrices but shows reduced penetration in formulations with high alcohol content, which can destabilise the Cu(II) coordination.",
+    "articleSection": "Peptide Science",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-03-28",
+    "datePublished": "2026-03-28",
+    "description": "GHK-Cu (glycyl-L-histidyl-L-lysine copper(II)) is an endogenous tripeptide–copper complex with documented roles in wound healing, collagen synthesis,…",
+    "headline": "GHK-Cu: The Copper Tripeptide at the Intersection of Wound Healing, Gene Regulation, and Anti-Ageing Biology",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "GHK-Cu, copper peptide, wound healing, collagen synthesis, anti-ageing, gene expression, antioxidant",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/ghk-cu-copper-peptide-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT9M",
+    "url": "https://phlabs.co.uk/resources/ghk-cu-copper-peptide-research",
+    "wordCount": 385,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/ghk-cu-copper-peptide-research",
+        "name": "GHK-Cu: The Copper Tripeptide at the Intersection of Wound Healing, Gene Regulation, and Anti-Ageing Biology",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/glow-blend-skin-peptide-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/glow-blend-skin-peptide-research#article",
+    "@type": "Article",
+    "alternativeHeadline": "An in-depth scientific review of the GLOW Blend stack — GHK-Cu, Epithalon, BPC-157, Thymosin Beta-4, and Melanotan II — covering receptor pharmacology, collagen dynamics, melanogenesis regulation, and evidence from preclinical skin research models",
+    "articleBody": "Skin is a complex multi-layered organ whose structural integrity and functional resilience depend on a tightly orchestrated interplay of extracellular matrix (ECM) proteins, immune cells, melanocytes, fibroblasts, and keratinocytes. Ageing, ultraviolet (UV) radiation, and chronic inflammation converge on shared molecular targets — collagen degradation, oxidative DNA damage, telomere attrition, and dysregulated melanogenesis — producing the characteristic phenotypes of photoaged and chronologically aged skin. Peptide-based research tools that target these pathways with mechanistic precision have become invaluable for understanding and potentially modulating skin biology at the molecular level. GLOW Blend is a five-component peptide research formulation comprising: GHK-Cu (copper tripeptide), Epithalon (tetrapeptide), BPC-157 (body protection compound), Thymosin Beta-4 (TB-4), and Melanotan II (MT-II). Each component brings a distinct and partially complementary mechanism: GHK-Cu drives fibroblast-mediated collagen synthesis; Epithalon activates telomerase and reduces oxidative load; BPC-157 accelerates angiogenesis and tissue repair; TB-4 promotes keratinocyte migration and actin remodelling; and MT-II stimulates melanocortin receptors to modulate pigmentation and UV tolerance. The combination is designed to probe multiple nodes of the skin biology network simultaneously. GHK-Cu: Copper Tripeptide and Extracellular Matrix Remodelling GHK-Cu (glycyl-L-histidyl-L-lysine copper(II)) is a naturally occurring copper-binding tripeptide first isolated from human plasma albumin by Pickart and Thaler in 1973. In physiological conditions, the plasma concentration of GHK-Cu declines with age — from approximately 200 ng/mL in young adults to under 80 ng/mL in older individuals — a pattern that correlates with reduced dermal collagen density and impaired wound healing kinetics. This age-related decline prompted investigation of exogenous GHK-Cu as a probe for ECM biology. Mechanistically, GHK-Cu is a potent activator of fibroblast collagen synthesis. In human dermal fibroblast cultures, GHK-Cu at concentrations of 1–100 nM upregulates COL1A1 and COL3A1 mRNA expression, increases procollagen secretion measurable by ELISA, and stimulates lysyl oxidase activity — the enzyme responsible for collagen and elastin cross-linking. Parallel reductions in MMP-1 (collagenase), MMP-2, and MMP-9 secretion have been demonstrated by gelatin zymography, indicating that GHK-Cu promotes a pro-synthetic and anti-degradative ECM state. Beyond collagen, GHK-Cu modulates a remarkably broad transcriptomic programme. Microarray and RNA-seq analyses in fibroblasts treated with 1 μM GHK-Cu have identified over 4,000 differentially expressed genes, including upregulation of decorin (a collagen-organising proteoglycan), fibronectin, and laminin. The peptide also suppresses TGF-β-driven fibrotic responses — downregulating CTGF, fibronectin splice variant EDA, and α-smooth muscle actin — a profile that distinguishes GHK-Cu from simple pro-fibrotic stimuli and positions it as a homeostatic ECM modulator rather than a scar-promoting agent. Antioxidant activity is another well-documented GHK-Cu property. The Cu²⁺ chelation complex has superoxide dismutase-like activity, quenching reactive oxygen species (ROS) produced by UV irradiation and cellular metabolism. In keratinocyte UV-irradiation models, GHK-Cu pre-treatment at 10 μM reduced 8-OHdG (8-hydroxy-2'-deoxyguanosine, a marker of oxidative DNA damage) formation by 35–50% and reduced UV-induced apoptosis as measured by TUNEL assay and caspase-3 activation. These antioxidant and anti-apoptotic properties complement the pro-synthesis ECM effects in the context of photoprotection research. Epithalon: Telomerase Activation and Epigenetic Regulation in Skin Cells Epithalon (Ala-Glu-Asp-Gly, AEDG tetrapeptide) was developed by the St. Petersburg Institute of Bioregulation and Gerontology in the 1980s as a synthetic analogue of Epitalamin — an extract of the pineal gland with anti-ageing properties in animal models. Its primary molecular mechanism involves activation of telomerase (hTERT), the reverse transcriptase enzyme responsible for maintaining telomere length. Critically, skin fibroblasts and keratinocytes express relatively low telomerase activity compared to haematopoietic stem cells, making telomere shortening a significant driver of cellular senescence in dermal tissue. In human fibroblast cultures approaching replicative senescence (late passage, >50 population doublings), Epithalon at 0.1–10 ng/mL has been shown to increase hTERT mRNA expression, extend the replicative lifespan by 3–6 additional passages, and reduce the proportion of SA-beta-galactosidase-positive (senescent) cells compared to vehicle controls. These effects were accompanied by restored collagen synthesis rates — a functional readout that links telomere biology to ECM production capacity. Mechanistic studies using dominant-negati",
+    "articleSection": "Peptide Science",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-04-05",
+    "datePublished": "2026-04-05",
+    "description": "GLOW Blend is a research formulation combining five synergistic peptides — GHK-Cu, Epithalon, BPC-157, Thymosin Beta-4, and Melanotan II — each targeting…",
+    "headline": "GLOW Blend: A Multi-Peptide Complex for Skin Biology and Photoprotection Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "GLOW Blend, GHK-Cu, Epithalon, BPC-157, Thymosin Beta-4, Melanotan II, skin peptides, collagen research, melanogenesis, photoprotection, skin biology",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/glow-blend-skin-peptide-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT16M",
+    "url": "https://phlabs.co.uk/resources/glow-blend-skin-peptide-research",
+    "wordCount": 1926,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/glow-blend-skin-peptide-research",
+        "name": "GLOW Blend: A Multi-Peptide Complex for Skin Biology and Photoprotection Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/how-to-read-hplc-certificate-of-analysis 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/how-to-read-hplc-certificate-of-analysis#article",
+    "@type": "Article",
+    "alternativeHeadline": "Understanding HPLC chromatograms, purity percentages, retention times, and analytical validation data on Certificate of Analysis documents for research-grade peptides",
+    "articleBody": "A Certificate of Analysis (CoA) is the analytical documentation proving a research peptide's identity and purity. For peptides, HPLC (high-performance liquid chromatography) is the gold standard purity test, typically performed at 220 nm wavelength. A legitimate CoA includes: batch number, peptide name and sequence, HPLC chromatogram, retention time, purity percentage (area under curve), analysis date, and analyst signature or laboratory stamp. Without a CoA, you have no independent verification of what you received — only the supplier's claim. Understanding the HPLC Chromatogram The chromatogram is the graph at the centre of a CoA. The x-axis shows retention time (minutes) — the time it takes for the peptide to pass through the HPLC column. The y-axis shows absorbance (mAU, milliabsorbance units) — the intensity of UV light absorption at 220 nm. A high-purity peptide produces one dominant peak (the target compound) with minimal smaller peaks (impurities). The area under the main peak, expressed as a percentage of total peak area, is the reported purity. For research-grade peptides, ≥98% purity is standard. Peaks before the main peak (earlier retention times) are typically hydrophilic impurities or synthesis reagents. Peaks after (later retention times) may be deletion sequences, aggregates, or more hydrophobic impurities. Retention Time and Consistency Retention time (Rt) is the x-axis value at which the main peak appears, typically between 10–25 minutes for most peptides under standard gradient conditions. The retention time itself isn't a purity measure — it's a fingerprint. For the same peptide analysed on the same HPLC method, the retention time should be consistent across batches (±0.2 minutes). If Batch A shows Rt = 18.3 min and Batch B shows Rt = 12.7 min, either the column or gradient changed, or these are different compounds. When ordering repeat batches from PH Labs or any UK supplier, compare retention times across CoAs to ensure batch-to-batch consistency. Purity Percentage: How It\\'s Calculated Purity percentage is calculated by integrating (measuring the area under) all peaks in the chromatogram, then dividing the target peak area by the total area. Formula: Purity (%) = (Target Peak Area / Total Peak Area) × 100. A peptide with a target peak area of 9,850 and total area of 10,000 has 98.5% purity. Important: this is purity by peak area at 220 nm, which correlates with peptide bond absorbance but does not directly measure mass. That's why mass spectrometry (MS) is used alongside HPLC — HPLC tells you purity, MS confirms identity. Red Flags in a Certificate of Analysis Not all CoAs are legitimate. Watch for: (1) No visible chromatogram — only a purity number with no supporting graph. This is a fabricated document. (2) Chromatogram with massive baseline drift or noise — indicates poor instrument maintenance or contaminated sample. (3) Multiple large peaks with one arbitrarily labelled "target" — the supplier is choosing which peak to call the product. (4) Missing batch number, date, or analyst signature — no traceability. (5) Purity claims >99.5% for complex peptides — realistically, solid-phase peptide synthesis produces 97–99% purity. Claims above this range without further purification steps are suspicious. (6) Generic CoA used across multiple batches — batch numbers should be unique and match the vial label. Frequently Asked Questions **Q: What purity should I expect for research peptides?** A: ≥98% is the standard for high-quality research-grade peptides. Some suppliers offer "crude" grade (80–95%) at lower cost, but this is unsuitable for most laboratory work. **Q: Can I trust a CoA from the supplier's website?** A: Only if it's batch-specific (matches your vial's batch number) and includes a full chromatogram with analysis date. Generic "representative" CoAs or purity claims without supporting data should not be trusted. **Q: What if my CoA shows 97.2% purity but the product claims ≥98%?** A: 97.2% is within acceptable analytical variation (±0.5%) and may be due to rounding or integration method. If consistently <98%, contact the supplier for clarification. **Q: Why do some peptides have multiple peaks even at high purity?** A: Solid-phase synthesis produces deletion sequences (missing amino acids), truncated products, and racemisation byproducts. High purity means the target sequence is ≥98%, but trace impurities are normal and do not affect research validity at these levels.",
+    "articleSection": "Analytical Chemistry",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-05-03",
+    "datePublished": "2026-05-03",
+    "description": "Every research peptide should come with an HPLC Certificate of Analysis (CoA). This guide explains how to read chromatograms, interpret purity percentages,…",
+    "headline": "How to Read an HPLC Certificate of Analysis (CoA): UK Guide for Research Peptides",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "HPLC certificate of analysis, CoA peptide, HPLC chromatogram, peptide purity, how to read CoA, research peptide verification UK",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/how-to-read-hplc-certificate-of-analysis",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT7M",
+    "url": "https://phlabs.co.uk/resources/how-to-read-hplc-certificate-of-analysis",
+    "wordCount": 692,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/how-to-read-hplc-certificate-of-analysis",
+        "name": "How to Read an HPLC Certificate of Analysis (CoA): UK Guide for Research Peptides",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/hplc-testing-explained 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/hplc-testing-explained#article",
+    "@type": "Article",
+    "alternativeHeadline": "Understanding reversed-phase HPLC, analytical method development, and how chromatographic data validates research-grade peptide quality",
+    "articleBody": "High-performance liquid chromatography (HPLC) is the definitive analytical technique used to assess the identity, purity, and concentration of synthetic peptides. When a research supplier provides an HPLC certificate, they are communicating quantitative information about the composition of the compound at the molecular level. Understanding what that data means — and what it doesn't — is essential for anyone working with research-grade peptides. The Principle Behind Reversed-Phase HPLC Most peptide purity testing uses reversed-phase HPLC (RP-HPLC). In this configuration, the stationary phase is non-polar (typically C18 — octadecylsilyl-bonded silica) and the mobile phase is polar (water/acetonitrile gradient with a modifier such as 0.1% trifluoroacetic acid). Peptides are injected onto the column and separated based on their hydrophobicity: more hydrophobic sequences are retained longer on the C18 phase and elute later in the gradient. Detection is typically performed by UV absorbance at 214–220 nm, which captures the absorbance of peptide bonds rather than specific side-chain chromophores — making it applicable to virtually all peptides regardless of sequence. The detector produces a signal over time (a chromatogram), with each separated component appearing as a peak. Reading a Peptide Chromatogram The primary metric derived from an RP-HPLC chromatogram is peak area percentage: the area under the target peak divided by the total area of all detected peaks, expressed as a percentage. A result of ≥98% peak area means that 98% or more of the UV-absorbing material in the sample co-elutes with the expected compound. Impurities — truncated sequences, deletion peptides, oxidised methionine, incomplete deprotection products — appear as additional peaks, typically eluting before or after the main compound. Retention time is used for identity confirmation: the elution time of the compound should match a reference standard within an acceptable tolerance (typically ±0.3 min under identical gradient conditions). This alone is not sufficient for definitive identification, which is why HPLC data is often paired with mass spectrometric analysis (LC-MS/MS or MALDI-TOF). Method Parameters That Affect Results Several analytical parameters influence the chromatographic outcome and must be specified in a complete method description: LC-MS Confirmation of Molecular Weight Mass spectrometry paired with liquid chromatography provides orthogonal confirmation of molecular identity. Electrospray ionisation (ESI) generates multiply charged ions of the peptide; deconvoluting the m/z spectrum yields the neutral monoisotopic or average mass, which can be compared against the theoretical mass calculated from the amino acid sequence. For a peptide such as BPC-157 (sequence: GEPPPGKPADDAGLV, MW 1419.5 Da), the correct molecular ion and isotope pattern confirm that the compound has been synthesised correctly and not merely contaminated with a co-eluting impurity of similar polarity. Any mass deviation exceeding ±0.5 Da for small peptides, or exceeding 50 ppm for larger sequences measured by high-resolution MS, warrants investigation. What "Research Grade" Means in Practice In the context of research peptide suppliers, "research grade" typically implies that each batch has been tested by RP-HPLC and the result meets a defined purity specification — most commonly ≥98% peak area by UV at 214 nm. Reputable suppliers provide the actual chromatogram (not merely a stated percentage), along with the lot number, method parameters, and date of analysis. Batch analytical data should be available on request and traceable to a unique batch/lot identifier printed on the product vial.",
+    "articleSection": "Analytical Chemistry",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-03-05",
+    "datePublished": "2026-03-05",
+    "description": "High-performance liquid chromatography (HPLC) is the gold-standard technique for verifying peptide identity and purity. This guide explains how reversed-phase…",
+    "headline": "HPLC Testing Explained: How Peptide Purity Is Verified",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "HPLC, peptide purity, reversed-phase HPLC, chromatography, analytical testing, research peptides, mass spectrometry",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/hplc-testing-explained",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT11M",
+    "url": "https://phlabs.co.uk/resources/hplc-testing-explained",
+    "wordCount": 534,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/hplc-testing-explained",
+        "name": "HPLC Testing Explained: How Peptide Purity Is Verified",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/ipamorelin-ghrp-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/ipamorelin-ghrp-research#article",
+    "@type": "Article",
+    "alternativeHeadline": "A mechanistic review of ghrelin receptor agonists, comparing ipamorelin, GHRP-2, GHRP-6, and hexarelin across selectivity, pulsatility, and in-vivo GH release data",
+    "articleBody": "Growth hormone-releasing peptides (GHRPs) are a class of synthetic peptides that bind and activate the growth hormone secretagogue receptor 1a (GHS-R1a) — the same receptor targeted by the endogenous hormone ghrelin. By stimulating GHS-R1a on somatotroph cells of the anterior pituitary, GHRPs promote pulsatile GH release in a dose-dependent manner. The class encompasses several compounds with notably different selectivity profiles: GHRP-6, GHRP-2, hexarelin, and ipamorelin represent the most extensively characterised members. Selectivity Profile of Ipamorelin Ipamorelin (Ala-His-D-2-Nal-D-Phe-Lys-NH₂) is a pentapeptide amide designed for high selectivity at GHS-R1a with minimal activity at other GHRP-class receptor subtypes. Unlike GHRP-6 and GHRP-2, which stimulate significant cortisol and prolactin co-release alongside GH (through off-target receptor activity), ipamorelin produces a clean GH pulse with cortisol and prolactin responses that are statistically indistinguishable from baseline in multiple in-vivo studies in rats and humans. This selectivity makes ipamorelin the preferred tool compound when researchers wish to study isolated GHS-R1a-mediated effects without the confound of concurrent hypothalamic–pituitary–adrenal axis activation. In-Vivo GH Pulsatility Studies Ipamorelin was first characterised by Raun et al. (1998) using sequential venous sampling in conscious rats. A single i.v. bolus of ipamorelin (20 µg/kg) produced a GH peak of approximately 400 ng/mL above baseline, with a peak at 5–10 minutes and return to baseline by 30–45 minutes — mirroring the pulsatile GH profile of endogenous somatotropic secretion. Repeated dosing (3× daily) maintained GH responsiveness without the tachyphylaxis observed with continuous GHRH infusion, an important feature for chronic administration study designs. Combined administration of ipamorelin with CJC-1295 (a long-acting GHRH analogue) is used in research protocols designed to maximise GH pulse amplitude by simultaneously priming the GHRH receptor and activating GHS-R1a — a synergistic interaction explained by the complementary post-receptor signalling cascades (cAMP for GHRH; phospholipase C/protein kinase C for GHS-R1a). Downstream Effects on IGF-1 and Tissue Endpoints Sustained ipamorelin administration elevates hepatic IGF-1 synthesis through increased GH-stimulated JAK2/STAT5b signalling. In hypophysectomised or GH-deficient rodent models, ipamorelin normalises IGF-1 levels, lean body mass, and femoral bone mineral density within 3–4 weeks. Tibial epiphyseal width, used as a sensitive histomorphometric marker of somatotropic axis activity, is significantly increased versus vehicle controls at all doses above 25 µg/kg/day.",
+    "articleSection": "Endocrine Research",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-01-30",
+    "datePublished": "2026-01-30",
+    "description": "Growth hormone-releasing peptides (GHRPs) are synthetic ghrelin receptor agonists that stimulate pulsatile GH secretion. Ipamorelin is distinguished by its…",
+    "headline": "Ipamorelin and the GHRP Class: Growth Hormone Secretagogue Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "ipamorelin, GHRP, ghrelin receptor, growth hormone secretagogue, GHS-R1a, GHRP-2, GHRP-6, somatotropic axis",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/ipamorelin-ghrp-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT11M",
+    "url": "https://phlabs.co.uk/resources/ipamorelin-ghrp-research",
+    "wordCount": 360,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/ipamorelin-ghrp-research",
+        "name": "Ipamorelin and the GHRP Class: Growth Hormone Secretagogue Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/klow-blend-cognitive-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/klow-blend-cognitive-research#article",
+    "@type": "Article",
+    "alternativeHeadline": "A comprehensive scientific review of the KLOW Blend — BPC-157, TB-500 (Thymosin Beta-4 Fragment), GHK-Cu, and KPV — examining their individual mechanisms in tissue repair, anti-inflammatory signalling, angiogenesis, copper-dependent remodelling, and gut-mucosal healing, and the rationale for multi-target peptide combination research",
+    "articleBody": "Tissue repair, inflammation resolution, and structural remodelling are interconnected biological processes governed by a network of peptide mediators, growth factors, and transcription regulators. Injury triggers an acute inflammatory cascade (NFκB, IL-1β, TNF-α), followed by a proliferative phase dependent on angiogenesis (VEGF/VEGFR2), cell migration (actin dynamics), and matrix synthesis (collagen, fibronectin). Failure to resolve any phase results in chronic inflammation, fibrosis, or impaired healing — pathologies that underlie tendinopathy, inflammatory bowel disease, delayed wound closure, and degenerative joint conditions. KLOW Blend is a four-component peptide research formulation designed to address these phases in parallel. BPC-157 (Body Protection Compound-157) activates the growth hormone receptor and VEGFR2 pathway to drive angiogenesis and cell survival. TB-500 (the active fragment Ac-SDKP of Thymosin Beta-4) regulates G-actin sequestration to facilitate cell migration and attenuate myofibroblast-driven fibrosis. GHK-Cu (Glycine-Histidine-Lysine copper complex) stimulates copper-dependent enzymes including lysyl oxidase for collagen crosslinking and activates Nrf2-mediated antioxidant gene transcription. KPV (Lys-Pro-Val, the C-terminal tripeptide of alpha-MSH) binds MC1R and MC3R to suppress NF-κB-driven cytokine production, with demonstrated efficacy in gut epithelial models. Together, these four peptides represent a mechanistically non-overlapping, multi-target approach to repair biology research. BPC-157: VEGFR2/FAK/Src Axis, Angiogenesis, and Tendon–Bone Healing BPC-157 (sequence: GEPPPGKPADDAGLV, MW 1419.5 Da) is a synthetic pentadecapeptide derived from a partial sequence of human gastric juice protein BPC. Its most consistently replicated preclinical activity is the acceleration of tendon, ligament, muscle, and bone healing in rodent models of surgically induced injury. In rodent models of Achilles tendon transection, BPC-157 administered at 10 ug/kg (i.p. or per-oral) significantly accelerated tendon fibre organisation, collagen deposition, and biomechanical strength recovery compared to vehicle controls at 4- and 8-week endpoints. Histomorphometric analysis showed reduced neutrophil infiltration at day 3 post-injury and earlier transition to the proliferative phase characterised by fibroblast influx and type I collagen expression. Mechanistically, BPC-157 activates the FAK/paxillin/Src signalling hub downstream of growth hormone receptor, promoting fibroblast and tenoblast migration and proliferation. In angiogenesis assays, BPC-157 dose-dependently increased tube formation in human umbilical vein endothelial cells (HUVECs) on Matrigel, an effect blocked by the VEGFR2 kinase inhibitor SU1498 — confirming VEGFR2 as a key mediator. In vivo Matrigel plug assays in mice showed significantly elevated haemoglobin content and CD31+ vessel density in BPC-157-treated plugs versus controls. This pro-angiogenic activity is mechanistically important for tissue repair in hypoxic or avascular zones such as tendon midsubstance and cartilage. BPC-157 also demonstrates gastroprotective activity by upregulating eNOS (endothelial nitric oxide synthase) expression in gastric mucosa, maintaining mucosal blood flow under NSAID or alcohol challenge. This gut-protective mechanism is relevant to its original discovery context and supports its inclusion in combination repair protocols targeting both systemic tissues and gut epithelium. TB-500 (Thymosin Beta-4 Fragment): G-Actin Sequestration, Cell Migration, and Anti-Fibrotic Activity TB-500 refers to the bioactive tetrapeptide fragment Ac-SDKP (N-acetyl-seryl-aspartyl-lysyl-proline), derived from the C-terminus of Thymosin Beta-4 (TB4). Full-length TB4 is a 43-amino acid ubiquitous G-actin sequestering protein that maintains the pool of unpolymerised actin available for rapid cytoskeletal remodelling. TB-500/Ac-SDKP retains several of TB4's key activities — particularly its anti-fibrotic and pro-migratory properties — in a shorter, more metabolically tractable sequence. The primary molecular mechanism of TB-500 is competitive binding to G-actin at the β-thymosin domain (LKKTET motif), sequestering monomeric actin and modulating the G-actin/F-actin equilibrium. By maintaining a larger G-actin pool, TB-500 enables rapid cytoskeletal remodelling required for lamellipodia formation and directional cell migration — critical early steps in wound closure and tissue repopulation by progenitor cells. In scratch assay models, TB4/TB-500 treatment consistently accelerates wound closure in keratinocytes, fibroblasts, and cardiac progenitor cells. The anti-fibrotic activity of TB-500/Ac-SDKP is mediated through inhibition of TGF-β1-driven myofibroblast differentiation. Myofibroblasts — characterised by α-SMA (alpha smooth muscle actin) expression and excessive extracellular matrix deposition — are the primary cellular drivers of pathological fibrosis in lung, heart, kid",
+    "articleSection": "Peptide Research",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-04-06",
+    "datePublished": "2026-04-06",
+    "description": "KLOW Blend is a research formulation combining four peptides — BPC-157, TB-500, GHK-Cu, and KPV — each acting on distinct molecular targets in tissue repair…",
+    "headline": "KLOW Blend: BPC-157, TB-500, GHK-Cu & KPV — A Multi-Peptide Recovery and Repair Research Complex",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "KLOW Blend, BPC-157, TB-500, Thymosin Beta-4, GHK-Cu, KPV, tissue repair, anti-inflammatory, angiogenesis, collagen remodelling, gut healing, NF-κB",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/klow-blend-cognitive-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT16M",
+    "url": "https://phlabs.co.uk/resources/klow-blend-cognitive-research",
+    "wordCount": 1485,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/klow-blend-cognitive-research",
+        "name": "KLOW Blend: BPC-157, TB-500, GHK-Cu & KPV — A Multi-Peptide Recovery and Repair Research Complex",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/kpv-tripeptide-anti-inflammatory-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/kpv-tripeptide-anti-inflammatory-research#article",
+    "@type": "Article",
+    "alternativeHeadline": "A comprehensive review of KPV (Lys-Pro-Val) as the C-terminal active fragment of alpha-melanocyte-stimulating hormone, with focus on MC1R/MC3R receptor binding, intestinal mucosal research, and cellular anti-inflammatory mechanisms",
+    "articleBody": "KPV — the tripeptide Lys-Pro-Val corresponding to residues 193–195 of the alpha-melanocyte-stimulating hormone (α-MSH) C-terminus — is among the smallest bioactive peptides with documented anti-inflammatory activity in preclinical research models. α-MSH is a 13-amino acid peptide processed from pro-opiomelanocortin (POMC) and signals through five melanocortin receptors (MC1R–MC5R). The identification of KPV as an active fragment emerged from systematic truncation studies in the 1990s, which revealed that the COOH-terminal tripeptide alone retained a significant portion of the parent peptide's anti-inflammatory potency. This finding has considerable implications for research utility: a tripeptide is more chemically stable, easier to synthesise at high purity, and more amenable to in-vitro mechanistic studies than the full 13-mer parent. KPV serves as a pharmacological tool for dissecting which melanocortin receptor subtypes and downstream signalling pathways mediate the anti-inflammatory response in specific cell types. Receptor Biology: MC1R and MC3R Engagement α-MSH and its active fragments exert anti-inflammatory effects primarily through MC1R and MC3R. MC1R is expressed predominantly on melanocytes, dendritic cells, macrophages, and keratinocytes. MC3R is broadly distributed across the brain, gut, immune cells, and cardiovascular tissue. KPV retains capacity to bind and activate both receptor subtypes, though with lower affinity than full-length α-MSH due to the loss of the His-Phe-Arg-Trp (HFRW) core sequence that also contributes to receptor binding in the parent peptide. MC1R and MC3R are Gαs-coupled GPCRs that increase intracellular cAMP upon activation. Elevated cAMP activates protein kinase A (PKA), which phosphorylates and inhibits IκB kinase (IKK) — the enzyme responsible for IκB degradation and subsequent NF-κB nuclear translocation. This mechanism positions melanocortin signalling as a direct upstream regulator of NF-κB, one of the master transcription factors controlling pro-inflammatory gene expression including IL-1β, TNF-α, IL-6, COX-2, and iNOS. Beyond the cAMP/PKA axis, MC1R activation also recruits β-arrestin-mediated signalling that suppresses MAPK-dependent inflammatory cascades and promotes anti-inflammatory cytokine production including IL-10. The relative contribution of these pathways to KPV's observed effects varies by cell type and experimental context. NF-κB Pathway Modulation NF-κB suppression is the most consistently documented molecular effect of KPV across published in-vitro studies. In LPS-stimulated RAW264.7 macrophages, KPV at concentrations of 100 nM–10 μM dose-dependently reduced p65 nuclear translocation by 40–65%, suppressed IκBα phosphorylation, and decreased TNF-α and IL-1β mRNA expression and secretion. These effects were partially but not fully blocked by MC3R antagonist SHU9119, suggesting that additional non-receptor-mediated mechanisms (possibly intracellular cAMP-independent pathways) contribute to the overall anti-inflammatory profile. In primary human intestinal epithelial cells (IECs), KPV treatment prior to IL-1β stimulation significantly attenuated the subsequent NF-κB response, reducing ICAM-1 expression, IL-8 secretion, and epithelial permeability increase (as measured by TEER assay). These epithelial barrier-protective effects position KPV as particularly relevant for gut mucosal research applications. Intestinal Inflammation Research: Colitis Models The most extensive preclinical body of work for KPV concerns intestinal inflammation. Dextran sodium sulphate (DSS)-induced colitis is the most commonly used rodent model for studying inflammatory bowel disease (IBD) mechanisms. In DSS colitis, KPV administration (intraperitoneal or oral) produced statistically significant reductions in colonic myeloperoxidase (MPO) activity, histological damage score, and mucosal inflammatory cytokine levels (TNF-α, IL-1β, IL-6, IFN-γ) compared to vehicle controls. Notably, a nanoparticle delivery strategy was developed to enhance KPV colonic bioavailability. Encapsulation in hyaluronic acid-decorated chitosan nanoparticles allowed oral KPV to survive gastrointestinal transit and achieve mucosal uptake at the inflamed epithelium. In DSS colitis mice receiving nanoparticle-encapsulated KPV, colonic weight-to-length ratio (a surrogate for inflammatory oedema), histological damage, and MPO activity were all significantly reduced compared to free KPV oral administration and vehicle controls. This finding is directly relevant to researchers working on colonic drug delivery systems. TNBS-induced colitis (trinitrobenzenesulphonic acid — a model that more closely mimics the Th1-predominant immunological pattern of Crohn's disease) also showed responsiveness to KPV treatment, with reduced granuloma formation, decreased colonic wall thickness, and improved tight junction protein expression (claudin-1, occludin, ZO-1) in KPV-treated animals. Central Nervous System Anti-Inflammatory ",
+    "articleSection": "Peptide Science",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-03-28",
+    "datePublished": "2026-03-28",
+    "description": "KPV is a three-amino acid peptide derived from the C-terminus of alpha-MSH. Despite its small size, it recapitulates the anti-inflammatory activity of the…",
+    "headline": "KPV Tripeptide: Alpha-MSH-Derived Anti-Inflammatory Signalling in Preclinical Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "KPV, alpha-MSH, melanocortin receptor, MC1R, MC3R, NF-kB, anti-inflammatory, colitis, gut health",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/kpv-tripeptide-anti-inflammatory-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT13M",
+    "url": "https://phlabs.co.uk/resources/kpv-tripeptide-anti-inflammatory-research",
+    "wordCount": 1053,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/kpv-tripeptide-anti-inflammatory-research",
+        "name": "KPV Tripeptide: Alpha-MSH-Derived Anti-Inflammatory Signalling in Preclinical Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/mass-spectrometry-peptide-identity-verification 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/mass-spectrometry-peptide-identity-verification#article",
+    "@type": "Article",
+    "alternativeHeadline": "A practical guide to electrospray ionisation (ESI) and MALDI-TOF mass spectrometry as applied to research peptide identity confirmation, mass accuracy interpretation, and isotope pattern analysis",
+    "articleBody": "High-performance liquid chromatography (HPLC) tells you how pure a peptide is — but not what it is. Mass spectrometry (MS) complements HPLC by providing direct molecular identity confirmation. Together, HPLC and MS form the dual-verification standard for research-grade peptide characterisation. A compound with high HPLC purity but wrong molecular weight could be a related impurity or degradation product at high concentration — MS is the only technique that resolves this ambiguity. ESI-MS: Electrospray Ionisation Electrospray ionisation (ESI) is the most common MS ionisation mode for peptides. The peptide solution is passed through a charged capillary, producing a fine spray of charged droplets. As solvent evaporates, multiple proton attachments create multiply charged ions (e.g. [M+2H](2+), [M+3H](3)+, [M+4H](4)+). Larger peptides typically produce higher charge states. The m/z (mass-to-charge ratio) values detected by the mass analyser are converted back to the neutral molecular mass (M) using the formula: M = (m/z × z) - (z × 1.0073), where z is the charge state and 1.0073 is the proton mass. A valid identity confirmation typically requires measured mass within 0.5 Da (unit resolution instruments) or within 5 ppm (high-resolution instruments) of the calculated monoisotopic mass. MALDI-TOF: Matrix-Assisted Laser Desorption/Ionisation MALDI-TOF is preferred for larger peptides and proteins. The analyte is co-crystallised with a UV-absorbing matrix compound (e.g. sinapinic acid, alpha-cyano-4-hydroxycinnamic acid). A laser pulse desorbs and ionises the analyte, predominantly as singly-charged species [M+H]+. The time-of-flight (TOF) analyser measures the time for ions to traverse a vacuum tube — lighter ions arrive first — and this flight time is converted to m/z. MALDI-TOF is fast and tolerant of salts and buffers, but typically provides lower mass accuracy than ESI-Orbitrap or Q-TOF instruments. Interpreting a Mass Spec Report A mass spectrum report for a research peptide should include: (1) the observed m/z values and charge states for the molecular ion; (2) the calculated neutral mass derived from these values; (3) the theoretical monoisotopic mass for the stated sequence; and (4) the mass error in Da or ppm. A high-quality report from a reputable supplier will also include the isotope envelope — the cluster of peaks separated by 1 Da arising from natural 13C incorporation — which serves as an additional fingerprint. If only a single m/z value is reported without charge state assignment or mass error calculation, the report is incomplete for identity confirmation purposes.",
+    "articleSection": "Analytical Chemistry",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-04-10",
+    "datePublished": "2026-04-10",
+    "description": "Mass spectrometry is the definitive technique for confirming the molecular identity of a synthetic peptide. This guide explains how ESI-MS and MALDI-TOF work,…",
+    "headline": "Mass Spectrometry for Peptide Identity Verification: ESI-MS, MALDI-TOF, and How to Read a Mass Spec Report",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "mass spectrometry, ESI-MS, MALDI-TOF, peptide identity, molecular weight verification, analytical chemistry, research peptides",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/mass-spectrometry-peptide-identity-verification",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT8M",
+    "url": "https://phlabs.co.uk/resources/mass-spectrometry-peptide-identity-verification",
+    "wordCount": 390,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/mass-spectrometry-peptide-identity-verification",
+        "name": "Mass Spectrometry for Peptide Identity Verification: ESI-MS, MALDI-TOF, and How to Read a Mass Spec Report",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/melanotan-2-melanocortin-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/melanotan-2-melanocortin-research#article",
+    "@type": "Article",
+    "alternativeHeadline": "An examination of the synthetic alpha-MSH analogue Melanotan II, its selectivity across melanocortin receptor subtypes, and preclinical data on pigmentation and photoprotection models",
+    "articleBody": "Melanotan II (Ac-Nle4-c[Asp5, D-Phe7, Lys10]-alpha-MSH(4-10)-NH₂; MT-II) is a synthetic cyclic heptapeptide designed by Victor Hruby and colleagues at the University of Arizona. It is a conformationally constrained lactam bridge analogue of the C-terminal active core sequence of alpha-melanocyte-stimulating hormone (alpha-MSH), engineered for increased receptor binding affinity and metabolic stability compared to the native linear peptide. Melanocortin Receptor Family Overview The melanocortin receptor family comprises five G protein-coupled receptor subtypes (MC1R–MC5R), each with distinct tissue distribution and physiological roles: MC1R and Pigmentation Research MC1R activation by alpha-MSH or MT-II triggers intracellular cAMP accumulation via Gs coupling, which activates CREB-mediated transcription of MITF (microphthalmia-associated transcription factor). MITF drives expression of melanogenic enzymes including tyrosinase, TYRP1, and DCT, increasing eumelanin (brown-black) synthesis at the expense of phaeomelanin (red-yellow). In MC1R loss-of-function variants (associated with red hair phenotype in humans), eumelanin production is impaired, explaining the increased UV sensitivity observed in these individuals. In mouse melanocyte and human primary melanocyte cultures, MT-II at 1–100 nM increases tyrosinase activity in a dose-dependent manner, upregulates MITF expression by 2–4-fold, and shifts the eumelanin:phaeomelanin ratio significantly. These in-vitro findings correlate with visible pigmentation changes observed in rodent tanning models following systemic MT-II administration. Photoprotection Models Beyond cosmetic pigmentation, MC1R activation is studied for its role in DNA repair following UV exposure. Eumelanin absorbs UV radiation with greater efficiency than phaeomelanin and also directly scavenges reactive oxygen species generated during UV exposure. Preclinical studies in MC1R-variant mice demonstrate that systemic MT-II administration prior to UV challenge reduces cyclobutane pyrimidine dimer (CPD) formation, decreases oxidative DNA damage markers (8-oxo-dG), and reduces sunburn cell frequency in skin biopsies compared to vehicle controls — independent of visible tanning. This suggests a photoprotective mechanism that operates beyond simple photon absorption and may involve direct DNA damage response pathway modulation downstream of MC1R.",
+    "articleSection": "Melanocortin Research",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-02-14",
+    "datePublished": "2026-02-14",
+    "description": "Melanotan II (MT-II) is a cyclic heptapeptide analogue of alpha-melanocyte-stimulating hormone (alpha-MSH). It displays potent, non-selective agonism across…",
+    "headline": "Melanotan II and Melanocortin Receptor Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "melanotan 2, melanocortin receptor, alpha-MSH, MC1R, pigmentation research, photoprotection, ACTH",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/melanotan-2-melanocortin-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT10M",
+    "url": "https://phlabs.co.uk/resources/melanotan-2-melanocortin-research",
+    "wordCount": 300,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/melanotan-2-melanocortin-research",
+        "name": "Melanotan II and Melanocortin Receptor Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/mots-c-mitochondrial-derived-peptide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/mots-c-mitochondrial-derived-peptide#article",
+    "@type": "Article",
+    "alternativeHeadline": "A detailed scientific review of MOTS-c — its mitochondrial genome origin, AMPK/AICAR-mediated metabolic signalling, skeletal muscle biology, and evidence from preclinical exercise and ageing research models",
+    "articleBody": "MOTS-c (mitochondrial open reading frame of the 12S rRNA type-c) is a 16-amino acid peptide (sequence: MRWQEMGYIFYPRKLR) encoded within the 12S ribosomal RNA gene of the mitochondrial genome — a region previously considered non-coding. Identified by Lee et al. in 2015, MOTS-c represented a paradigm shift in mitochondrial biology: the first mitochondrial-derived peptide (MDP) convincingly demonstrated to function as a systemic circulating hormone with endocrine effects on distant tissues. The discovery resolved a long-standing paradox: the mitochondrial genome, despite its compact and nearly entirely protein-coding organisation, was known to contain small open reading frames (sORFs) with no assigned function. MOTS-c arises from an overlapping reading frame within 12S rRNA, translated by mitochondrial ribosomes and subsequently secreted into the cytoplasm and circulation. Plasma MOTS-c levels in humans are measurable by ELISA and exhibit characteristic decline with age — a pattern mirrored by several hallmarks of metabolic dysfunction including reduced insulin sensitivity and skeletal muscle mass. Mitochondrial Origin and Translocation Unlike nuclear-encoded proteins, MOTS-c is synthesised within the mitochondrial matrix. The mechanism of secretion — from matrix to cytoplasm and then to the extracellular space — involves stress-dependent mitochondrial outer membrane permeabilisation and possibly vesicular export through mitochondria-derived vesicles (MDVs). Under conditions of energy stress (glucose deprivation, exercise, oxidative stress), MOTS-c production increases, suggesting a feedback loop whereby mitochondrial metabolic sensors regulate MDP secretion. Once in the cytoplasm, MOTS-c translocates to the nucleus under certain stress conditions. This nuclear translocation was demonstrated using fluorescently tagged MOTS-c constructs and independently confirmed by fractionation-Western blot. In the nucleus, MOTS-c interacts with the integrated stress response (ISR) transcription factor ATF4 and appears to regulate the transcriptional programme that coordinates nuclear and mitochondrial gene expression — a function termed mitochondrial-nuclear communication or "mito-nuclear" signalling. AMPK Activation via the Folate Cycle and AICAR Accumulation The primary metabolic mechanism of MOTS-c involves activation of AMP-activated protein kinase (AMPK) — the master cellular energy sensor — through an indirect but well-characterised pathway. MOTS-c inhibits the folate cycle by targeting MTHFD1 (methylenetetrahydrofolate dehydrogenase 1), a bifunctional enzyme in the mitochondrial one-carbon metabolic network. Inhibition of MTHFD1 reduces tetrahydrofolate (THF) recycling, which in turn reduces purine nucleotide synthesis. The consequent accumulation of AICAR (5-aminoimidazole-4-carboxamide ribonucleotide, also known as ZMP) — a natural AMP analogue and direct AMPK activator — then activates AMPK through the same mechanism as the pharmacological agent AICAR/acadesine. AMPK phosphorylation at Thr172 by LKB1/CAMKK2 kinases then triggers a cascade of metabolic adaptations: upregulation of mitochondrial biogenesis (via PGC-1α), inhibition of mTORC1-mediated anabolic pathways, enhanced fatty acid oxidation (via ACC phosphorylation), and critically — increased GLUT4 translocation to the plasma membrane in skeletal muscle, improving glucose uptake independent of insulin. Skeletal Muscle Metabolism and Exercise Mimetic Properties Skeletal muscle is the primary site of insulin-stimulated glucose disposal and a major determinant of whole-body metabolic rate. MOTS-c's AMPK-mediated effects in muscle have been the focus of intensive preclinical investigation, driven by its potential as an "exercise mimetic" — a compound that recapitulates aspects of exercise-induced metabolic adaptation. In C2C12 myotube cultures, MOTS-c at 1–10 μM dose-dependently increased glucose uptake (2-deoxyglucose assay), GLUT4 surface expression, AMPK phosphorylation, and mitochondrial oxygen consumption rate (Seahorse XF analyser). Fatty acid oxidation (measured by 14C-palmitate oxidation) was also increased. These in-vitro findings were confirmed in vivo: intraperitoneal MOTS-c injection in mice (15 mg/kg daily × 4 weeks) produced improvements in glucose tolerance (GTT), insulin sensitivity (ITT), and hindlimb muscle GLUT4 expression compared to vehicle controls on a standard or high-fat diet. Crucially, a 2023 study published in Nature Aging demonstrated that exogenous MOTS-c administration to aged mice (18–20 months, equivalent to approximately 60 human years) produced metabolic improvements comparable to those seen in young mice following exercise training. Treadmill endurance capacity, grip strength, body composition (reduced fat mass, preserved lean mass), and mitochondrial content in soleus muscle were all significantly improved. These results in an aged model are particularly notable given that aged muscle typically shows blunted AMPK responsivene",
+    "articleSection": "Peptide Science",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-04-01",
+    "datePublished": "2026-04-01",
+    "description": "MOTS-c is a 16-amino acid peptide encoded within the mitochondrial genome — the first mitochondrial-derived peptide shown to function as a systemic hormone.…",
+    "headline": "MOTS-C: The Mitochondrial-Derived Peptide Regulating Metabolic Homeostasis and Exercise Adaptation",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "MOTS-c, mitochondrial derived peptide, AMPK, AICAR, metabolic research, insulin sensitivity, exercise, ageing, skeletal muscle",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/mots-c-mitochondrial-derived-peptide",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT14M",
+    "url": "https://phlabs.co.uk/resources/mots-c-mitochondrial-derived-peptide",
+    "wordCount": 1152,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/mots-c-mitochondrial-derived-peptide",
+        "name": "MOTS-C: The Mitochondrial-Derived Peptide Regulating Metabolic Homeostasis and Exercise Adaptation",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/nad-nicotinamide-adenine-dinucleotide-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/nad-nicotinamide-adenine-dinucleotide-research#article",
+    "@type": "Article",
+    "alternativeHeadline": "A comprehensive review of nicotinamide adenine dinucleotide — its biosynthetic pathways, roles in oxidative phosphorylation and DNA repair, sirtuin-mediated signalling, age-related decline, and the current landscape of NAD+ precursor and direct supplementation research",
+    "articleBody": "Nicotinamide adenine dinucleotide (NAD+) is a dinucleotide coenzyme found in every living cell. As the oxidised form of the NAD+/NADH redox couple, it accepts electrons from metabolic oxidation reactions and transfers them to the mitochondrial electron transport chain (ETC), driving ATP synthesis via oxidative phosphorylation. Beyond this foundational role in energy metabolism, NAD+ functions as the obligate substrate for three major enzyme families: sirtuins (class III HDACs, NAD+-dependent deacylases), poly(ADP-ribose) polymerases (PARPs, DNA damage sensors), and cyclic ADP-ribose synthases (cADPRS, including CD38 and CD157). These NAD+-consuming enzymes establish a fundamental tension: robust DNA damage response, immune activation, and inflammation all increase NAD+ consumption through PARP and CD38 activity, potentially depleting the pool available for sirtuin-mediated metabolic regulation. Understanding this competition between NAD+-consuming pathways is central to interpreting the biological effects of NAD+ supplementation strategies in preclinical research. Biosynthetic Pathways: De Novo, Salvage, and Preiss-Handler Cells maintain NAD+ levels through three biosynthetic routes. The de novo pathway synthesises NAD+ from dietary tryptophan via the kynurenine pathway, ending at quinolinate phosphoribosyltransferase (QPRT), which produces NaMN (nicotinic acid mononucleotide). This is the longest pathway and quantitatively less important in most tissues under normal conditions. The Preiss-Handler pathway utilises dietary nicotinic acid (niacin), converting it to NaMN via nicotinic acid phosphoribosyltransferase (NaPRT), then to NaAD, and finally to NAD+ via NAD synthetase (NADS). Nicotinic acid is a potent NAD+ precursor but can cause prostaglandin-mediated flushing at effective doses. The salvage pathway is quantitatively dominant in most human tissues. Nicotinamide (NAM) — the primary product of NAD+ cleavage by sirtuins, PARPs, and CD38 — is recycled back to NAD+ via nicotinamide phosphoribosyltransferase (NAMPT, the rate-limiting enzyme), producing NMN, then to NAD+ via NMN adenylyltransferases (NMNATs 1-3). NMN (nicotinamide mononucleotide) and NR (nicotinamide riboside) are exogenous NAD+ precursors that enter the salvage pathway at different points and have been the focus of substantial preclinical and clinical research as supplementation strategies. Sirtuins: NAD+-Dependent Metabolic Regulators Sirtuins (SIRT1–7) are the most studied NAD+-consuming enzymes from a metabolic ageing perspective. They are class III HDACs that use NAD+ as a co-substrate rather than merely a cofactor — each deacylation reaction consumes one NAD+ molecule, producing nicotinamide and 2'-O-acetyl-ADP-ribose alongside the deacylated product. This stoichiometric coupling means that sirtuin activity is directly regulated by the NAD+/NADH ratio. SIRT1 (nucleus/cytoplasm) deacetylates histones (H3K9Ac, H3K56Ac) to modulate chromatin structure and transcription, and deacetylates key metabolic regulators including PGC-1α (promoting mitochondrial biogenesis), FOXO1/3 (promoting stress resistance and gluconeogenesis suppression), p53 (modulating DNA damage response), and NF-κB (anti-inflammatory). SIRT3 (mitochondria) deacetylates and activates a large fraction of the mitochondrial proteome including succinate dehydrogenase (SDH), isocitrate dehydrogenase (IDH2), and manganese superoxide dismutase (MnSOD). SIRT3 knockout mice show accelerated mitochondrial protein acetylation, impaired TCA cycle activity, increased reactive oxygen species, and premature metabolic decline. SIRT6 (nucleus) regulates genomic stability through histone deacetylation, DNA double-strand break repair, and telomere maintenance. SIRT6 activity decreases with age in human tissue, and SIRT6 knockout mice show pronounced accelerated ageing phenotypes. NAD+ Decline with Age: Mechanisms and Evidence A reproducible finding across species — from yeast and C. elegans to mice, rats, non-human primates, and humans — is that tissue NAD+ levels decline substantially with age. In humans, NAD+ levels in blood and skeletal muscle are approximately 40–60% lower in individuals aged 60–80 years compared to individuals aged 20–30, as measured by HPLC or enzymatic cycling assays. Several mechanisms contribute to age-related NAD+ decline. First, CD38 — a NADase expressed on immune cells and other tissues — increases with age and with sterile inflammation (inflammageing), accelerating NAD+ catabolism. Genetic or pharmacological inhibition of CD38 in aged mice partially restores NAD+ levels and improves metabolic phenotype. Second, NAMPT expression and activity decline in aged skeletal muscle, liver, and adipose tissue, reducing the efficiency of salvage pathway recycling. Third, increased PARP activity in aged DNA-damaged cells chronically consumes NAD+. Finally, reduced mitochondrial function with age means less driving force for regenerating NADH back to NAD+ through the ETC. Th",
+    "articleSection": "Metabolic Research",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-04-03",
+    "datePublished": "2026-04-03",
+    "description": "NAD+ is a cofactor central to cellular energy metabolism, DNA repair, and sirtuins-mediated epigenetic regulation. Its intracellular levels decline…",
+    "headline": "NAD+: Cellular Energy Currency, Sirtuin Activation, and the Biochemistry of Ageing",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "NAD+, NADH, nicotinamide adenine dinucleotide, sirtuins, SIRT1, PARP, NAD precursors, NMN, NR, ageing, mitochondria, CD38",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/nad-nicotinamide-adenine-dinucleotide-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT16M",
+    "url": "https://phlabs.co.uk/resources/nad-nicotinamide-adenine-dinucleotide-research",
+    "wordCount": 1144,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/nad-nicotinamide-adenine-dinucleotide-research",
+        "name": "NAD+: Cellular Energy Currency, Sirtuin Activation, and the Biochemistry of Ageing",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/peptide-storage-lyophilisation-science 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/peptide-storage-lyophilisation-science#article",
+    "@type": "Article",
+    "alternativeHeadline": "A practical and scientific guide to the physical chemistry of peptide lyophilisation, optimal storage conditions, reconstitution protocols, and common stability failure modes",
+    "articleBody": "The shelf life and research utility of a lyophilised peptide depends on several interconnected factors: the physical chemistry of the lyophilisation process itself, the moisture content of the final cake, the presence of excipients, storage temperature, and the handling protocol on reconstitution. Understanding these factors allows researchers to maximise the stability and reproducibility of their results. What Lyophilisation Actually Does Freeze-drying (lyophilisation) removes water from a peptide solution by sublimation under vacuum, converting the liquid sample directly from a frozen state into vapour without passing through a liquid phase. The result is a dry, porous cake that retains the original molecular distribution without exposing the peptide to the thermal and oxidative stresses of evaporative drying. Residual moisture content in the final product is typically 1–3% by weight; values above 5% significantly accelerate degradation pathways including deamidation (Asn → Asp, Gln → Glu) and oxidation of Met and Cys residues. Storage Temperature Regimes The Arrhenius relationship predicts that reducing storage temperature by 10°C approximately halves the rate of chemical degradation. For most research-grade peptides: Reconstitution Best Practices Before reconstituting a lyophilised peptide, allow the vial to equilibrate to room temperature while sealed — this prevents condensation from entering the vial when opened and introducing moisture. Add reconstitution solvent slowly (dropwise if possible) down the side of the vial rather than directly onto the cake. Gentle rotation or inversion is preferred over vortexing, which can cause mechanical shear-induced aggregation in longer peptides. Standard reconstitution solvents include sterile water, 0.9% saline, or PBS pH 7.4. Peptides with hydrophobic sequences may require initial dissolution in a small volume of sterile acetic acid (10–100 mM) or DMSO before dilution into aqueous buffer. Freeze-Thaw Cycles Repeated freeze-thaw cycles are among the most common causes of peptide degradation in research settings. Ice crystal formation during freezing can disrupt peptide tertiary structure, while thawing introduces brief periods of elevated concentration and local pH gradients. Best practice is to aliquot reconstituted peptide into single-use volumes immediately after reconstitution, freeze at -80°C, and never refreeze a thawed aliquot. For peptides under 10 amino acids, up to 3–5 freeze-thaw cycles are typically tolerated with <5% loss of activity, but this is highly sequence-dependent and should be validated for each compound in the specific assay format used.",
+    "articleSection": "Research Methods",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-04-02",
+    "datePublished": "2026-04-02",
+    "description": "The shelf life and research utility of peptides depends critically on how they are stored and reconstituted. This guide covers the physical chemistry of…",
+    "headline": "Peptide Storage Science: Lyophilisation, Reconstitution, and Stability Maximisation",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "peptide storage, lyophilisation, freeze-drying, reconstitution, peptide stability, research chemicals, storage conditions",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/peptide-storage-lyophilisation-science",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT8M",
+    "url": "https://phlabs.co.uk/resources/peptide-storage-lyophilisation-science",
+    "wordCount": 375,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/peptide-storage-lyophilisation-science",
+        "name": "Peptide Storage Science: Lyophilisation, Reconstitution, and Stability Maximisation",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/peptide-storage-reconstitution 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/peptide-storage-reconstitution#article",
+    "@type": "Article",
+    "alternativeHeadline": "Best practices for lyophilised peptide handling, solvent selection, concentration calculation, and long-term storage to maintain research compound integrity",
+    "articleBody": "Lyophilised (freeze-dried) peptides are the standard delivery form for research compounds because the removal of water dramatically slows chemical degradation pathways including hydrolysis, oxidation, and Maillard reaction. However, careless handling during reconstitution and subsequent storage is a common source of reduced efficacy and irreproducible results in peptide research. This guide outlines evidence-based handling practices. Choosing the Correct Reconstitution Solvent The choice of reconstitution solvent should be guided by the peptide's physicochemical properties, particularly its isoelectric point (pI) and the presence of reactive side chains: Calculating Working Concentrations To prepare a 1 mg/mL stock solution: add solvent volume (mL) = [peptide mass (mg)] / [desired concentration (mg/mL)]. For a 5 mg vial at 1 mg/mL, add 5 mL solvent. For cell-based assays requiring nanomolar concentrations, prepare a concentrated stock (1–10 mg/mL) and perform serial dilutions in cell culture medium or buffer. Example: BPC-157 MW = 1419.5 g/mol. To prepare a 1 mM working stock from a 5 mg vial: moles = 0.005 g / 1419.5 g/mol = 3.52 µmol. Required volume for 1 mM = 3.52 µmol / 1000 µmol/mL = 3.52 mL. Add 3.52 mL bacteriostatic water to the 5 mg vial. Dilute further to 1 µM or 10 nM as needed for assays. Freeze-Thaw Cycles and Aliquoting Strategy Repeated freeze-thaw cycles are one of the primary causes of peptide degradation in research settings. Each cycle subjects the peptide to mechanical stress (ice crystal formation), concentration extremes as water crystallises, and oxidative damage during thawing. Best practice is to prepare single-use aliquots of the reconstituted stock — sufficient volume for one or two experiments — and store them at -80°C (preferred) or -20°C. The main stock vial should remain frozen until the next aliquot is required. Lyophilised peptides are generally stable for 24–36 months when stored at -20°C in a sealed, desiccated environment. Once reconstituted, peptide stability is dramatically reduced: short-term use (within 24 hours) at 4°C is acceptable for most peptides; for periods beyond one week, -20°C or -80°C storage in aliquots is recommended regardless of the 0.9% benzyl alcohol preservative. Common Solubility Problems and Troubleshooting If a peptide does not fully dissolve after gentle mixing: (1) Allow more time — some peptides dissolve slowly; (2) Try brief bath sonication (30–60 seconds at room temperature); (3) If using aqueous solvent, add a small volume of DMSO (up to 10% final concentration), then dilute with buffer; (4) Check that the solvent choice matches the peptide's pI as outlined above; (5) Verify that the solvent and vial are at room temperature — cold solvent can reduce solubility for hydrophobic sequences. Visible turbidity in a reconstituted peptide solution does not always indicate insolubility — some peptides form reversible aggregates that resuspend upon warming to 37°C or light sonication.",
+    "articleSection": "Laboratory Protocols",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-03-10",
+    "datePublished": "2026-03-10",
+    "description": "Proper storage and reconstitution are critical to peptide research reproducibility. This guide covers choosing the right solvent, calculating working…",
+    "headline": "Peptide Storage and Reconstitution: A Laboratory Protocol Guide",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "peptide reconstitution, bacteriostatic water, peptide storage, lyophilised peptide, working concentration, peptide stability, research protocols",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/peptide-storage-reconstitution",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT9M",
+    "url": "https://phlabs.co.uk/resources/peptide-storage-reconstitution",
+    "wordCount": 456,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/peptide-storage-reconstitution",
+        "name": "Peptide Storage and Reconstitution: A Laboratory Protocol Guide",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/pt-141-bremelanotide-melanocortin-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/pt-141-bremelanotide-melanocortin-research#article",
+    "@type": "Article",
+    "alternativeHeadline": "A comprehensive review of PT-141's pharmacology as an MC3R/MC4R agonist, its derivation from Melanotan II, mechanism of central arousal signalling via hypothalamic pathways, and the clinical and preclinical evidence base",
+    "articleBody": "PT-141, the research designation for bremelanotide, is a synthetic cyclic heptapeptide with the sequence Ac-Nle-cyclo[Asp-His-D-Phe-Arg-Trp-Lys]-OH. It is a structural derivative of Melanotan II (MTII), a cyclic analogue of alpha-MSH that was originally developed as a tanning agent but found to produce unexpected arousal-related effects in early clinical studies. PT-141 was designed to retain the central melanocortin receptor activity of MTII while eliminating the melanotropic (skin-darkening) and blood pressure-affecting properties of the parent compound. The compound achieves FDA approval in 2019 (marketed as Vyleesi by AMAG Pharmaceuticals) for the treatment of hypoactive sexual desire disorder (HSDD) in premenopausal women — the first approved pharmacological treatment for this condition. This regulatory milestone established PT-141 as one of the only CNS-active melanocortin agonists with clinical validation, making it a pharmacologically well-characterised tool compound for central melanocortin receptor research. Structural Chemistry: Cyclic Peptide Architecture PT-141 is a cyclic lactam heptapeptide with molecular formula C50H68N14O10 and molecular weight of approximately 1025.2 Da. The cyclic structure — formed by a lactam bridge between the aspartate gamma-carboxyl and the lysine epsilon-amino groups — provides exceptional conformational stability compared to linear peptides of equivalent length. This rigidity pre-organises the pharmacophoric residues (His-D-Phe-Arg-Trp, known as the HFRW core) in the bioactive conformation required for melanocortin receptor binding. The D-Phe4 substitution (replacing L-Phe in native α-MSH) is critical for potency — it enhances receptor binding affinity approximately 100-fold over natural α-MSH at MC4R and MC3R by stabilising a beta-turn conformation at the receptor-binding loop. N-terminal acetylation (Ac) protects against aminopeptidase degradation, contributing to the compound's extended half-life of approximately 2.7 hours — substantially longer than linear melanocortin peptides. The lactam cyclisation also prevents the compound from binding the MC1R (the primary melanotropic receptor) with high affinity, selectively directing receptor activity toward MC3R and MC4R — a deliberate design feature that reduced melanotropic side effects observed with MTII. Receptor Pharmacology: MC3R and MC4R Selectivity PT-141 is a potent agonist of MC3R and MC4R, with reported binding affinities (Ki) in the low nanomolar range. In cAMP accumulation assays in stably transfected HEK293 cells: MC4R: EC50 ≈ 0.7–1.2 nM; intrinsic activity (relative to α-MSH) ≈ 80–95% MC3R: EC50 ≈ 3–8 nM; intrinsic activity ≈ 70–90% MC1R: EC50 ≈ 50–500 nM (substantially lower affinity — rationale for reduced melanotropism) MC5R: Moderate affinity; functional relevance in physiological context unclear MC4R is expressed at high density in the paraventricular nucleus (PVN), dorsal medial nucleus (DMN), and lateral hypothalamic area (LHA) of the hypothalamus, as well as in the spinal cord, brainstem, limbic system, and cortex. MC3R has a complementary hypothalamic distribution with additional expression in the limbic system, striatum, and hippocampus. The dense expression of both receptors in hypothalamic circuits that regulate autonomic outflow, reward, and reproductive behaviour provides the anatomical basis for PT-141's central pharmacodynamic effects. Hypothalamic Arousal Circuits: MC4R Signalling Mechanisms The central mechanism by which MC4R agonism modulates arousal-related behaviour involves multiple hypothalamic circuits. MC4R activation in the PVN and LHA triggers cAMP/PKA signalling in neurons projecting to the spinal cord preganglionic nuclei and brainstem arousal centres. This neuronal activation modulates autonomic outflow through both sympathetic and parasympathetic pathways. Key mechanistic findings from rodent studies include: (1) MC4R-deficient mice show blunted arousal responses despite normal hormonal and peripheral vascular function, establishing the receptor as necessary for centrally-mediated arousal; (2) viral vector-mediated selective MC4R knockdown in the PVN specifically reduces arousal-related behaviour without affecting locomotion, food intake, or baseline cardiovascular parameters; (3) c-Fos mapping (a marker of neuronal activation) following PT-141 administration shows activation primarily in the medial preoptic area (MPOA), PVN, arcuate nucleus, and bed nucleus of the stria terminalis — all regions classically associated with reproductive neuroendocrine regulation. The dopaminergic system interaction is also critical: MC4R activation in the ventral tegmental area (VTA) and nucleus accumbens (NAc) modulates dopamine release, linking melanocortin signalling to the mesolimbic reward pathway. This connectivity suggests that PT-141's central effects are mediated partly through reward and motivational neural circuits rather than exclusively through reproductive autonomic pathways. ",
+    "articleSection": "Peptide Science",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-04-05",
+    "datePublished": "2026-04-05",
+    "description": "PT-141 (bremelanotide) is a cyclic heptapeptide melanocortin receptor agonist derived from Melanotan II. Unlike peripherally acting compounds, it engages…",
+    "headline": "PT-141 (Bremelanotide): Melanocortin Receptor Pharmacology and Central Arousal Pathway Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "PT-141, bremelanotide, melanocortin, MC4R, MC3R, hypothalamus, arousal, melanotan II, cyclic peptide",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/pt-141-bremelanotide-melanocortin-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT12M",
+    "url": "https://phlabs.co.uk/resources/pt-141-bremelanotide-melanocortin-research",
+    "wordCount": 1140,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/pt-141-bremelanotide-melanocortin-research",
+        "name": "PT-141 (Bremelanotide): Melanocortin Receptor Pharmacology and Central Arousal Pathway Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/research-peptides-uk 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/research-peptides-uk#article",
+    "@type": "Article",
+    "alternativeHeadline": "Where to buy HPLC-verified research peptides in the UK, what purity to insist on, and which compounds are driving the most active British research programmes",
+    "articleBody": "If you are sourcing research peptides in the UK in 2026, the calculation has changed. Post-Brexit customs delays, rising shipping temperatures, and tighter expectations from university ethics committees mean a US or EU supplier that worked in 2020 often no longer makes sense. British labs increasingly insist on a UK-based supplier with HPLC ≥99% purity, batch-specific CoAs, and next-day domestic dispatch . This guide covers what to insist on, which compounds drive the most active UK research, and how to browse the full PH Labs catalogue . Why Source Research Peptides from a UK Supplier Three practical reasons dominate: **1. Cold-chain integrity.** Peptides are temperature-sensitive. International shipments routinely sit in customs holding for 3–7 days at uncontrolled temperatures. A UK supplier dispatching by Royal Mail Tracked 24 or DPD next-day keeps the cold chain under 48 hours end-to-end. **2. Brexit customs friction.** EU and US imports now require commercial invoices, HS codes, and frequently VAT-on-import payment at delivery. A domestic UK order avoids all of this — what you pay at checkout is what you pay total. **3. CoA documentation in English, batch-matched to your vial.** UK suppliers serving British research labs default to batch-specific HPLC certificates with the chromatogram, retention time, and purity percentage clearly labelled. Many overseas suppliers still ship "generic" CoAs reused across batches, which fails most ethics-committee documentation standards. The Compounds British Labs Order Most Based on UK ordering patterns across 2025–2026, five compounds dominate domestic research peptide demand: Retatrutide UK: The Highest-Demand Frontier Compound Retatrutide is currently the single most-searched research peptide in the UK, driven by Phase 2 data showing −24.2% body weight reduction at 48 weeks (Rosenstock et al., 2023). Its triple receptor architecture — simultaneous GLP-1, GIP, and glucagon receptor activation — makes it a unique tool for dissecting metabolic pathway contributions. UK ordering volumes for retatrutide have grown roughly 4× year-on-year as British metabolic research groups expand triagonist work. BPC-157 UK: The Tissue-Repair Workhorse BPC-157 remains the most consistently ordered tissue-repair peptide in the UK. Its activity at the FAK-paxillin pathway, VEGFR2 upregulation, and prostaglandin-independent gastroprotection give British researchers a single reagent that crosses vascular, musculoskeletal, and epithelial research models. Read the full mechanism review: BPC-157 and Tissue Repair: The Preclinical Evidence . Tirzepatide and Semaglutide: The GLP-1 Reference Standards For UK metabolic research, Tirzepatide (dual GLP-1/GIP) and Semaglutide (GLP-1 mono-agonist) remain the comparator reference standards against which newer compounds are benchmarked. A direct mechanistic comparison is available in Retatrutide vs Tirzepatide vs Semaglutide . What a Real UK CoA Should Show A legitimate Certificate of Analysis from a UK supplier must include: • **Batch number** matching your vial label exactly • **HPLC chromatogram** (the graph showing peaks against retention time) • **Retention time** in minutes, with the target peak identified • **Purity percentage** (≥99% for research-grade, calculated from peak area integration) • **Mass spectrometry data** confirming identity (±1 Da of calculated mass) • **Analysis date** within the last 12 months • **Laboratory signature** or analyst initials If any of these are missing — particularly the chromatogram itself or a batch-matched analysis date — the document is not a real CoA. For a full walkthrough of how to read these documents, see How to Read an HPLC Certificate of Analysis . How to Vet a UK Peptide Supplier in Five Minutes Run this checklist before placing your first order with any UK supplier: **1. Can they email you a sample CoA before purchase?** A legitimate supplier will share a redacted historical CoA on request. If they refuse or only offer a "generic" certificate, do not buy. **2. Do they list a UK business address and contact phone?** A web form is not enough. UK-registered suppliers must publish a Companies House number and business address. **3. Is cold-pack shipping standard, not extra-cost?** Peptides must ship insulated. If cold-pack is an upsell or seasonal extra, the supplier is cutting corners. **4. Do they make any therapeutic or medical claims?** Research peptides are sold strictly for in-vitro and preclinical research. Any supplier marketing weight loss, muscle growth, or anti-ageing benefits to consumers is operating outside the research-chemical scope and likely cuts corners on analytical work too. **5. Do they respond to a technical question?** Email and ask about solubility, recommended reconstitution diluent, or expected retention time. A supplier serving real research labs will answer in a sentence; a reseller will not. Where to Buy Research Peptides UK PH Labs is a UK-based research peptide supplier ",
+    "articleSection": "UK Sourcing",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-05-24",
+    "datePublished": "2026-05-24",
+    "description": "Buying research peptides in the UK in 2026 means navigating Brexit-era import friction, cold-chain integrity, and rising expectations for analytical…",
+    "headline": "Research Peptides UK: The 2026 Sourcing Guide for British Laboratories",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "research peptides uk, buy peptides uk, uk peptide supplier, hplc verified peptides uk, retatrutide uk, bpc-157 uk, tirzepatide uk, semaglutide uk",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/research-peptides-uk",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT12M",
+    "url": "https://phlabs.co.uk/resources/research-peptides-uk",
+    "wordCount": 808,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/research-peptides-uk",
+        "name": "Research Peptides UK: The 2026 Sourcing Guide for British Laboratories",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/retatrutide-vs-tirzepatide-vs-semaglutide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/retatrutide-vs-tirzepatide-vs-semaglutide#article",
+    "@type": "Article",
+    "alternativeHeadline": "A mechanistic and data-driven comparison of the three leading incretin-based investigational peptides across receptor pharmacology, preclinical models, and clinical trial outcomes",
+    "articleBody": "The past decade has seen a dramatic expansion in the number and complexity of incretin-based research compounds. From the first-generation GLP-1 receptor mono-agonists to the novel triple-agonist class, each successive compound incorporates additional receptor targets in an attempt to produce greater metabolic benefit. Understanding the mechanistic distinctions between semaglutide (mono-agonist), tirzepatide (dual-agonist), and retatrutide (triple-agonist) is essential for researchers designing experiments in the metabolic biology space. Buy research-grade: Semaglutide | Tirzepatide | Retatrutide . Structural and Pharmacological Overview All three compounds are acylated peptides engineered for once-weekly administration via subcutaneous injection. Acylation with a fatty acid moiety (C18 in semaglutide and retatrutide, C20 in tirzepatide) promotes non-covalent binding to serum albumin, extending the effective half-life to 5–7 days and reducing renal clearance. Semaglutide is a 31-amino-acid analogue of native GLP-1 with two amino acid substitutions (Aib8, Arg34) to resist DPP-IV cleavage. It binds exclusively to GLP-1R. Tirzepatide is a 39-amino-acid chimeric molecule designed with sequence elements from both GIP and GLP-1, conferring dual receptor agonism. Retatrutide is a 36-amino-acid molecule that adds partial GCGR agonism to this dual-agonist scaffold, creating the first clinically studied triple incretin receptor agonist. Weight Change Observations Across Clinical Trials Direct head-to-head comparison is complicated by differences in trial design, participant populations, and dose titration schedules. The data below represents maximum-dose arms from Phase 2/3 trials in adults with obesity (BMI ≥30 or ≥27 with comorbidity) at 52–72 weeks, selected as the most comparable available data. These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds: Mechanistic Explanation for Differential Efficacy The stepwise improvement in weight reduction across the three compounds broadly tracks the addition of receptor targets. The GIPR activation in tirzepatide adds to the GLP-1R effect through complementary pathways: GIPR stimulates adipocyte lipolysis and, when co-activated with GLP-1R, produces synergistic satiety signalling through circuits that do not respond to GLP-1R activation alone (including distinct hypothalamic subpopulations). The additional GCGR activation in retatrutide contributes the most novel mechanism: direct enhancement of hepatic energy expenditure through increased fatty acid oxidation and, at the adipose level, stimulation of uncoupling protein 1 (UCP1) expression in brown and beige adipocytes. This thermogenic effect is partially independent of caloric restriction and accounts for a portion of the body-weight change observed in trial cohorts that cannot be attributed to appetite suppression alone. Hepatic and Cardiometabolic Effects Beyond body weight change, all three compounds show observed effects on ectopic fat deposition and cardiometabolic markers. Semaglutide trial cohorts reported liver fat changes of approximately −30 to −35% in NASH-spectrum disease trials (NASH is now termed MASH). Tirzepatide trial cohorts in SURMOUNT-NASH reported MASH resolution rates exceeding 50% in the highest-dose group. Retatrutide Phase 2 cohorts reported MRI-PDFF-measured liver fat changes of approximately −80% at the highest dose, attributed to combined GCGR-driven hepatic lipolysis and GIPR/GLP-1R-mediated reduction in de novo lipogenesis. These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds. Cardiovascular outcome data are available only for semaglutide (SUSTAIN-6, SELECT trials), where trial cohorts reported significant changes in major adverse cardiovascular events (MACE). Tirzepatide cardiovascular outcomes data from SURMOUNT-MMO is anticipated in 2025–2026. No cardiovascular outcomes data exist for retatrutide at the time of writing.",
+    "articleSection": "Metabolic Research",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-03-28",
+    "datePublished": "2026-03-28",
+    "description": "Semaglutide, tirzepatide, and retatrutide represent three generations of incretin-based research compounds. This comparison covers their receptor targets,…",
+    "headline": "Retatrutide vs Tirzepatide vs Semaglutide: A Research Comparison",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "retatrutide vs tirzepatide, tirzepatide vs semaglutide, GLP-1 agonist comparison, incretin research, GIP receptor, metabolic peptides",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/retatrutide-vs-tirzepatide-vs-semaglutide",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT15M",
+    "url": "https://phlabs.co.uk/resources/retatrutide-vs-tirzepatide-vs-semaglutide",
+    "wordCount": 534,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/retatrutide-vs-tirzepatide-vs-semaglutide",
+        "name": "Retatrutide vs Tirzepatide vs Semaglutide: A Research Comparison",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/selank-anxiolytic-nootropic-peptide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/selank-anxiolytic-nootropic-peptide#article",
+    "@type": "Article",
+    "alternativeHeadline": "Mechanistic review of Selank, GABAergic, serotonergic, and BDNF-modulating properties in preclinical anxiety, memory, and immune regulation models",
+    "articleBody": "Selank (Thr-Lys-Pro-Arg-Pro-Gly-Pro) is a synthetic heptapeptide developed at the Institute of Molecular Genetics of the Russian Academy of Sciences. It was designed as a stabilised analogue of tuftsin (Thr-Lys-Pro-Arg), a natural immunomodulatory tetrapeptide derived from the Fc region of IgG. The three C-terminal additions (Pro-Gly-Pro) significantly reduce enzymatic degradation compared to native tuftsin, extending the compound's biological half-life in plasma and CNS tissue. GABAergic and Serotonergic Mechanisms Selank's anxiolytic-like effects in preclinical models appear to be mediated through multiple neurotransmitter systems. Electrophysiological studies in rat cortical neurons demonstrate that Selank potentiates GABA-A receptor-mediated chloride currents in a manner analogous to, but pharmacologically distinct from, benzodiazepines — without the high-affinity benzodiazepine binding site interaction observed with classical anxiolytics. Additionally, microdialysis studies in the frontal cortex of rats show that Selank administration is associated with increased serotonin (5-HT) turnover and reduced noradrenaline release, a neurochemical profile consistent with anxiolytic and mild antidepressant-like properties in rodent behavioural assays (elevated plus maze, open field, forced swim). BDNF Upregulation and Cognitive Effects One of the most studied effects of Selank in the preclinical literature is its ability to upregulate brain-derived neurotrophic factor (BDNF) mRNA expression in the hippocampus and prefrontal cortex. BDNF is a key regulator of synaptic plasticity, long-term potentiation (LTP), and memory consolidation. In rat models of social isolation stress (a model of anxiety-related cognitive impairment), Selank administration partially reversed stress-induced BDNF downregulation and improved performance in spatial memory tasks. These findings position Selank as a candidate tool compound for studying BDNF-dependent plasticity mechanisms. Immune Modulation Reflecting its tuftsin lineage, Selank retains immunomodulatory properties. Studies in mice report normalisation of dysregulated IL-6, TNF-alpha, and IL-1beta levels under acute stress conditions, suggesting a bidirectional immunoregulatory effect that may contribute to its anti-stress profile. This immune-CNS interface makes Selank an interesting tool compound for psychoneuroimmunology research — the study of how stress-related neurobiological changes interact with peripheral immune function.",
+    "articleSection": "Neuroscience",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-04-05",
+    "datePublished": "2026-04-05",
+    "description": "Selank is a synthetic heptapeptide analogue of the endogenous immunomodulatory peptide tuftsin (Thr-Lys-Pro-Arg), extended with a Gly-Glu-Pro sequence to…",
+    "headline": "Selank: The Synthetic Tuftsin Analogue at the Frontier of Anxiolytic Peptide Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "Selank, anxiolytic peptide, tuftsin, GABA, serotonin, BDNF, nootropic, anxiety research",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/selank-anxiolytic-nootropic-peptide",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT9M",
+    "url": "https://phlabs.co.uk/resources/selank-anxiolytic-nootropic-peptide",
+    "wordCount": 314,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/selank-anxiolytic-nootropic-peptide",
+        "name": "Selank: The Synthetic Tuftsin Analogue at the Frontier of Anxiolytic Peptide Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/semax-cognitive-neuroprotective-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/semax-cognitive-neuroprotective-research#article",
+    "@type": "Article",
+    "alternativeHeadline": "Mechanistic review of Semax (Met-Glu-His-Phe-Pro-Gly-Pro), its origins as an ACTH(4-7) analogue, and preclinical data on cognitive enhancement, ischaemic neuroprotection, and neurotrophic factor modulation",
+    "articleBody": "Semax (Met-Glu-His-Phe-Pro-Gly-Pro) is a synthetic heptapeptide derived from the core sequence of ACTH(4-7) (Met-Glu-His-Phe), extended by a C-terminal Pro-Gly-Pro tripeptide that confers resistance to enzymatic degradation and modifies pharmacokinetic properties. Crucially, the modifications eliminate the corticotropic activity of native ACTH — Semax does not stimulate cortisol release via the adrenal axis — while preserving and amplifying the neurotrophic and neuroprotective properties mapped to the ACTH(4-10) fragment. BDNF and NGF Upregulation The most extensively characterised molecular effect of Semax is its ability to rapidly upregulate brain-derived neurotrophic factor (BDNF) and nerve growth factor (NGF) in multiple brain regions. RT-PCR studies in rats demonstrate 2–4-fold increases in BDNF mRNA in the hippocampus and frontal cortex within 1–2 hours of intranasal administration, with elevated protein levels persisting for 12–24 hours. NGF upregulation shows a similar but slightly delayed profile. These neurotrophins regulate synaptic plasticity, hippocampal neurogenesis, and are reduced in models of neurodegenerative disease and acute brain injury — making Semax a useful tool compound for studying neurotrophic factor biology. Ischaemia and Neuroprotection Models Semax has been studied in focal and global cerebral ischaemia models in rats and mice. In middle cerebral artery occlusion (MCAO) models, Semax administration significantly reduced infarct volume (by 40–60% in several studies), attenuated blood-brain barrier disruption, and improved neurological deficit scores in post-ischaemic behavioural testing. Proposed mechanisms include reduction in excitotoxic glutamate release, attenuation of caspase-3 activation (apoptotic pathway), and anti-inflammatory effects mediated through BDNF-TrkB signalling and NF-κB pathway modulation. Serotonin System and Mood Research Semax administration in rats is associated with changes in serotonergic neurotransmission, including increased 5-HT synthesis and turnover in limbic regions. In chronic unpredictable stress models — a standard rodent model for studying depressive-like states — Semax treatment partially normalised anhedonia (reduced sucrose preference), immobility in forced swim tests, and corticosterone hypersecretion. These findings overlap with the neurotrophic hypothesis of depression, in which BDNF deficit is a central pathological feature, and suggest Semax as a tool compound for studying neurotrophic approaches to mood disorder biology.",
+    "articleSection": "Neuroscience",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-04-08",
+    "datePublished": "2026-04-08",
+    "description": "Semax is a synthetic heptapeptide analogue of ACTH(4-10) developed by the Institute of Molecular Genetics in Moscow. Research documents significant BDNF and…",
+    "headline": "Semax: ACTH-Derived Neuropeptide Research in Cognition, BDNF Signalling, and Neuroprotection",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "Semax, ACTH analogue, BDNF, neuroprotection, cognitive enhancement, ischaemia, nootropic peptide",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/semax-cognitive-neuroprotective-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT10M",
+    "url": "https://phlabs.co.uk/resources/semax-cognitive-neuroprotective-research",
+    "wordCount": 331,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/semax-cognitive-neuroprotective-research",
+        "name": "Semax: ACTH-Derived Neuropeptide Research in Cognition, BDNF Signalling, and Neuroprotection",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/tb-500-thymosin-beta-4 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4#article",
+    "@type": "Article",
+    "alternativeHeadline": "Exploring the endogenous actin-binding peptide Thymosin beta4, its synthetic fragment TB-500, and preclinical evidence across cardiac, dermal, and musculoskeletal models",
+    "articleBody": "Thymosin Beta-4 (Tbeta4) is one of the most abundant intracellular peptides in mammalian cells, present at concentrations of 200–500 µM in platelets and neutrophils. Its primary function is the sequestration of G-actin monomers: by binding actin with high affinity (Kd ~0.7 µM), Tbeta4 regulates the dynamic equilibrium between actin monomer pools and filamentous actin networks. This control over the actin cytoskeleton has downstream consequences for cell migration, morphology, and the cellular response to injury. Buy research-grade TB-500 / Thymosin Beta-4 (≥99% HPLC) . TB-500 as a Research Fragment The commercially available research compound TB-500 refers primarily to a synthetic peptide corresponding to the Tbeta4 sequence — specifically the actin-binding domain. TB-500 reconstituted for in-vitro use produces comparable actin-binding and cell migration-promoting effects as the full-length endogenous peptide, making it a convenient tool for studying the Tbeta4 pathway in research settings. It is important to note that "TB-500" is a commercial term and not a formal scientific designation; publications reference Tbeta4 or specific fragment sequences directly. Cardiac Repair Models The most clinically significant preclinical application of Tbeta4 research involves myocardial injury. In mouse myocardial infarction models, Tbeta4 administered systemically or locally promoted cardiomyocyte survival, reduced infarct scar size by 30–40%, and — crucially — stimulated the activation of epicardial progenitor cells (EPDCs) that migrated into the infarct zone and differentiated into cardiomyocytes and vascular smooth muscle cells. This represented one of the first demonstrations that an exogenously delivered peptide could activate endogenous cardiac progenitor pools in a post-infarction context. VEGF and FGF pathway upregulation was confirmed by qRT-PCR in Tbeta4-treated myocardial tissue, consistent with the angiogenic effects observed histologically (CD31+ vessel density increased ~50% versus controls). Functional echocardiographic measurements showed improved fractional shortening at 4 weeks. Dermal Wound Closure and Corneal Healing In full-thickness excisional wound models in mice, topical or systemic Tbeta4 administration accelerated re-epithelialisation, increased keratinocyte migration rates, and improved dermis collagen organisation. The mechanism operates through enhanced lamellipodia formation in migrating keratinocytes — a directly actin-cytoskeleton-dependent process. Alpha-smooth muscle actin (alpha-SMA) expression in wound myofibroblasts was also modulated, suggesting an effect on the contractile phase of wound healing. Corneal wound healing has emerged as one of the most reproducible applications: alkali-burn and excimer laser corneal injury models in rabbits demonstrate faster epithelial gap closure and reduced stromal haze with Tbeta4 eye drops compared to vehicle alone.",
+    "articleSection": "Tissue Repair Research",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-02-08",
+    "datePublished": "2026-02-08",
+    "description": "Thymosin Beta-4 (Tbeta4) is a 43-amino-acid peptide involved in actin polymerisation, cell migration, and wound healing. Its synthetic C-terminal fragment,…",
+    "headline": "TB-500 and Thymosin Beta-4: Actin Sequestration and Tissue Regeneration Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "TB-500, thymosin beta-4, actin sequestration, wound healing, cardiac repair, cell migration, Tbeta4",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT12M",
+    "url": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4",
+    "wordCount": 388,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4",
+        "name": "TB-500 and Thymosin Beta-4: Actin Sequestration and Tissue Regeneration Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/tb-500-thymosin-beta-4-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4-research#article",
+    "@type": "Article",
+    "alternativeHeadline": "A mechanistic review of the G-actin sequestering peptide Tbeta4, its synthetic analogue TB-500, and their roles in cell migration, angiogenesis, and wound healing models",
+    "articleBody": "Thymosin beta-4 (Tbeta4) is one of the most abundant intracellular peptides in mammalian cells, with particularly high concentrations in platelets, macrophages, and wound fluid. Its primary biochemical role is sequestration of G-actin monomers — preventing their spontaneous polymerisation into F-actin filaments, thereby regulating the dynamic state of the actin cytoskeleton. This cytoskeletal regulatory function has downstream consequences for a broad range of cellular processes including migration, adhesion, and proliferation. The LKKTET Motif: Active Fragment and TB-500 The biological activity of Tbeta4 in promoting cell migration and tissue repair has been mapped largely to a central tetrapeptide motif — Ac-SDKP — and the actin-binding region centred on the LKKTET hexapeptide sequence. TB-500 is a synthetic peptide consisting of the sequence Ac-LSKLLLQNDLKKLLEEILSKLIPKGQHTSEKL-OH, corresponding to amino acids 17–23 of Tbeta4. In cell migration assays, TB-500 recapitulates the pro-migratory effect of full-length Tbeta4 by promoting lamellipodia extension through focal adhesion kinase (FAK) and Rho GTPase pathway modulation. Angiogenic and Anti-Inflammatory Properties Multiple in-vitro studies demonstrate that Tbeta4 stimulates endothelial cell migration and tubulogenesis in matrigel assays, suggesting a role in angiogenic remodelling. In murine wound models, topical or systemic administration accelerates re-epithelialisation, increases dermal collagen deposition, and reduces pro-inflammatory cytokines (IL-1beta, TNF-alpha) at the wound site. The anti-inflammatory effects appear to be partly mediated through NF-κB pathway suppression and promotion of an M2 macrophage polarisation state, which is associated with tissue repair rather than pro-inflammatory immune activity. Cardiac and Neural Tissue Models Beyond wound healing, Tbeta4 has been studied in models of myocardial injury and neurological damage. In rat myocardial infarction models, systemic Tbeta4 administration was associated with improved left ventricular function metrics, reduced infarct size, and increased epicardial progenitor cell activation (Wt1+ cells). In neural injury models, Tbeta4 treatment was associated with reduced astrogliosis and improved oligodendrocyte survival following demyelination challenges, suggesting a potential role in remyelination-supportive environments.",
+    "articleSection": "Peptide Science",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-03-20",
+    "datePublished": "2026-03-20",
+    "description": "Thymosin beta-4 (Tbeta4) is a 43-amino acid actin-sequestering peptide with pleiotropic roles in cell motility, angiogenesis, and tissue repair. TB-500, a…",
+    "headline": "TB-500 and Thymosin Beta-4: Actin Sequestration and Tissue Remodelling Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "TB-500, thymosin beta-4, actin sequestration, wound healing, angiogenesis, cell migration, anti-inflammatory",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT10M",
+    "url": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4-research",
+    "wordCount": 305,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/tb-500-thymosin-beta-4-research",
+        "name": "TB-500 and Thymosin Beta-4: Actin Sequestration and Tissue Remodelling Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/tirzepatide-dual-agonist-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/tirzepatide-dual-agonist-research#article",
+    "@type": "Article",
+    "alternativeHeadline": "A detailed examination of tirzepatide's molecular pharmacology, preclinical data, and phase 3 clinical trial findings — including its unique incretin co-agonism mechanism and implications for metabolic pathway research",
+    "articleBody": "Tirzepatide (LY3298176, Eli Lilly) represents a pivotal advance in incretin pharmacology — the first dual co-agonist of the glucose-dependent insulinotropic polypeptide receptor (GIPR) and the glucagon-like peptide-1 receptor (GLP-1R) to reach clinical approval. Its development emerged from a re-evaluation of the role of GIP in metabolic regulation, reversing a long-standing view that GIP was a therapeutically inert or even counterproductive target. The compound is structurally based on the native GIP peptide sequence with selective modifications to extend half-life, maintain GLP-1R potency, and optimise receptor co-activation stoichiometry. Understanding tirzepatide's mechanism requires appreciating that the two incretin hormones — GIP (secreted from K-cells in the proximal intestine) and GLP-1 (secreted from L-cells in the distal intestine and colon) — are co-released in response to nutrient ingestion and act through distinct but complementary receptor systems. The decision to combine them in a single molecule rather than administer them sequentially reflects accumulating evidence that synergistic signalling occurs when both receptors are activated simultaneously. Molecular Structure and Receptor Engagement Tirzepatide is a 39-amino acid acylated peptide. Its sequence is based on GIP(1–42) with selective amino acid substitutions that introduce GLP-1R binding affinity without eliminating native GIPR potency. A C20 fatty diacid moiety is attached via a linker to lysine at position 26, enabling non-covalent albumin binding and extending the plasma half-life to approximately 5 days — enabling once-weekly subcutaneous injection. In transfected HEK293 cell assays measuring cAMP accumulation, tirzepatide displays balanced agonism at both receptors. Its EC50 at GLP-1R is approximately 0.5–1 nM, and at GIPR approximately 0.06–0.5 nM depending on the cell system used. These values are comparable to native peptide agonists, indicating that the structural modifications introduced for half-life extension did not significantly compromise receptor binding geometry. Importantly, tirzepatide does not engage the glucagon receptor (GCGR), distinguishing it mechanistically from retatrutide. The β-arrestin recruitment profile of tirzepatide has been studied in detail. Like other GLP-1R agonists, tirzepatide promotes both cAMP signalling and β-arrestin-mediated internalisation, the latter contributing to receptor desensitisation. The relative bias toward cAMP over β-arrestin at GLP-1R is favourable for sustained insulinotropic signalling compared to some first-generation analogues. GIP Receptor Pharmacology: Reassessing the Role of GIPR For more than two decades, GIP was considered a poor therapeutic target. Clinical trials using GIPR antagonists failed to show meaningful metabolic improvement, and obese individuals exhibit GIP resistance — reduced GIPR-mediated insulin secretion. This apparent paradox — that GIPR agonism improves metabolic outcomes — was resolved through several complementary mechanisms: First, GIPR is expressed not only in pancreatic beta cells but also in adipocytes, the central nervous system (hypothalamus, arcuate nucleus, hippocampus), bone, and the gut. GIP signalling in hypothalamic neurons appears to modulate energy homeostasis directly, independent of pancreatic effects. Rodent studies using neuronal-specific GIPR knockout demonstrated that central GIPR is required for the full appetite-suppressive effect of GIPR agonism. Second, when GIPR and GLP-1R are activated simultaneously, the adipocyte response changes qualitatively. Co-activation promotes greater lipolysis and reduced lipid accumulation in visceral depots compared to either receptor alone. This synergistic adipocyte effect may contribute significantly to the visceral fat reduction observed in tirzepatide trials. Third, GIP appears to potentiate GLP-1R signalling in beta cells through convergent cAMP pathways, producing supraadditive insulin secretion. This mechanism may explain why dual agonism consistently outperforms mono-agonism in head-to-head comparisons. Preclinical Data: Rodent Models and Energy Expenditure In diet-induced obese (DIO) mouse studies conducted prior to clinical development, the dual GIP/GLP-1 agonist approach produced greater reductions in body weight, fat mass, and hepatic triglyceride content compared to equimolar GLP-1R mono-agonist comparators. The incremental benefit of GIPR co-activation was abolished in GIPR knockout mice but preserved in GLP-1R knockout mice, establishing that the GIPR component provides additive metabolic benefit beyond GLP-1 signalling alone. Pair-feeding experiments indicated that approximately 50–60% of the additional body-weight change reported under dual agonism was attributable to non-intake mechanisms — primarily increased energy expenditure. Indirect calorimetry showed elevated oxygen consumption and respiratory quotient shifts suggesting enhanced fat oxidation. Brown adipose tissue (BA",
+    "articleSection": "Metabolic Research",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-03-22",
+    "datePublished": "2026-03-22",
+    "description": "Tirzepatide is a synthetic dual agonist of the GIP and GLP-1 receptors that demonstrated superior metabolic outcomes compared to GLP-1 mono-agonists in the…",
+    "headline": "Tirzepatide: Dual GIP/GLP-1 Receptor Agonism and Its Role in Metabolic Research",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "tirzepatide, GIP receptor, GLP-1 receptor, dual agonist, incretin, metabolic research, LY3298176, SURPASS, SURMOUNT",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/tirzepatide-dual-agonist-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT15M",
+    "url": "https://phlabs.co.uk/resources/tirzepatide-dual-agonist-research",
+    "wordCount": 1252,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/tirzepatide-dual-agonist-research",
+        "name": "Tirzepatide: Dual GIP/GLP-1 Receptor Agonism and Its Role in Metabolic Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/what-is-retatrutide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/what-is-retatrutide#article",
+    "@type": "Article",
+    "alternativeHeadline": "A comprehensive look at the triple-agonist GIP/GLP-1/glucagon receptor peptide and its mechanistic profile in preclinical models",
+    "articleBody": "Retatrutide (LY3437943, Eli Lilly) represents a third generation of incretin-based investigational compounds. Unlike earlier analogues that target a single receptor — or the dual GIP/GLP-1 approach of tirzepatide — retatrutide simultaneously engages three complementary pathways: the glucose-dependent insulinotropic polypeptide receptor (GIPR), the glucagon-like peptide-1 receptor (GLP-1R), and the glucagon receptor (GCGR). This triagonism is designed to create additive and potentially synergistic metabolic effects that exceed what any single pathway can achieve alone. Buy research-grade Retatrutide (≥99% HPLC) . Receptor Pharmacology and Molecular Mechanism Retatrutide is a 36-amino acid acylated peptide engineered with a C18 fatty diacid moiety that confers extended half-life via albumin binding — enabling once-weekly administration in clinical protocols. Its binding affinities have been characterised in transfected cell lines expressing each receptor subtype. Relative to native peptide ligands, retatrutide displays balanced agonism across all three receptors, though with a slight bias toward GLP-1R at physiologically relevant concentrations. GLP-1R activation increases insulin secretion in a glucose-dependent manner, slows gastric emptying, and reduces appetite via central hypothalamic pathways including the arcuate nucleus. GIPR activation amplifies insulin secretion, promotes adipocyte lipolysis, and — in contrast to earlier beliefs — contributes to satiety signalling when co-activated with GLP-1R. GCGR activation stimulates hepatic glucose output and markedly increases energy expenditure through thermogenic mechanisms, an effect that historically limited glucagon mimetics due to hyperglycaemia risk. In the triagonist context, however, the concurrent GLP-1R and GIPR activity counterbalances any hyperglycaemic tendency from GCGR activation, while preserving the energy-expenditure benefit. Preclinical Findings in Rodent Models In diet-induced obese (DIO) mouse models, treated cohorts reported a dose-dependent mean body weight change of up to −25% over 28 days — substantially exceeding the −12 to −15% changes typically observed with GLP-1R mono-agonists at comparable doses. Pair-feeding studies confirmed that the effect is not explained entirely by reduced caloric intake; a significant component derives from increased energy expenditure, evidenced by elevated oxygen consumption and brown adipose tissue (BAT) activation on PET imaging. Hepatic fat content was observed to change by greater than −70% in ob/ob mice over a 12-week treatment window. Triglyceride synthesis pathways (SREBP-1c, FAS) were downregulated at the transcriptional level, while fatty acid oxidation genes (CPT1a, ACOX1) were upregulated. Glucose markers returned toward baseline in the study group and insulin sensitivity indices (HOMA-IR) were observed to change within four weeks across all DIO cohorts studied. Phase 2 Human Research Data (SURMOUNT programme) These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds. Phase 2 data published in the New England Journal of Medicine (Jastreboff et al., 2023) reported that trial cohorts receiving retatrutide 12 mg once weekly recorded a mean body weight change of −17.5% at 24 weeks and −24.2% at 48 weeks — the highest figures reported for any pharmacological agent at the time of publication. The trial enrolled adults with body mass index ≥27 kg/m2 and at least one weight-related comorbidity. Waist circumference, HbA1c, fasting insulin, and liver enzyme indices were observed to change toward baseline across all active-dose cohorts. The compound is currently progressing through Phase 3 evaluation (TRIUMPH programme), with primary endpoints including total body weight change, cardiovascular event rates, and hepatic steatosis resolution as assessed by MRI-PDFF. These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds. Comparative Receptor Activity Profile The table below summarises the comparative receptor agonism profile of retatrutide versus related investigational compounds, based on published cAMP accumulation assays in stably transfected HEK293 cells. Research Considerations and Stability For in-vitro receptor binding assays, retatrutide is typically reconstituted in sterile water with 0.1% BSA to minimise adsorption to labware surfaces. The peptide is stable for up to 48 hours at 4°C post-reconstitution; lyophilised stock should be stored at -20°C and protected from repeated freeze-thaw cycles. cAMP assays using HTRF or AlphaScreen detection formats are the standard methods for quantifying receptor agonism. For cell-based assays involving primary adipocytes or hepatocytes, concentrations in the 1–100 nM range are typically used depending on the endpoint measured.",
+    "articleSection": "Metabolic Research",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "dateModified": "2026-03-18",
+    "datePublished": "2026-03-18",
+    "description": "Retatrutide is a novel triple-agonist peptide targeting GIP, GLP-1, and glucagon receptors simultaneously. In early-phase studies, trial cohorts reported…",
+    "headline": "What is Retatrutide and How Does It Work in Research?",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "keywords": "retatrutide, GIP receptor, GLP-1 receptor, glucagon receptor, triple agonist, metabolic research, LY3437943",
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/what-is-retatrutide",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "timeRequired": "PT14M",
+    "url": "https://phlabs.co.uk/resources/what-is-retatrutide",
+    "wordCount": 665,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/what-is-retatrutide",
+        "name": "What is Retatrutide and How Does It Work in Research?",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Product JSON-LD snapshots > /products/bpc-157 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/bpc-157#product",
+    "@type": "Product",
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "unit_pricing_measure",
+        "value": "5 mg",
+      },
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "bestRating": "5",
+      "ratingValue": "4.9",
+      "reviewCount": "127",
+      "worstRating": "1",
+    },
+    "brand": {
+      "@type": "Brand",
+      "name": "PH Labs",
+      "url": "https://phlabs.co.uk",
+    },
+    "category": "Tissue Repair Research",
+    "description": "Synthetic pentadecapeptide for tissue-repair research.",
+    "image": "https://phlabs.co.uk/products/bpc-157.jpg",
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "mpn": "prod_bpc157",
+    "name": "BPC-157 5mg",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/OutOfStock",
+      "eligibleQuantity": {
+        "@type": "QuantitativeValue",
+        "unitCode": "MGM",
+        "value": 5,
+      },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "GB",
+        "merchantReturnDays": 14,
+        "returnFees": "https://schema.org/FreeReturn",
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      },
+      "itemCondition": "https://schema.org/NewCondition",
+      "price": "29.99",
+      "priceCurrency": "GBP",
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 1,
+            "minValue": 0,
+            "unitCode": "DAY",
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 2,
+            "minValue": 1,
+            "unitCode": "DAY",
+          },
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "GB",
+        },
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "currency": "GBP",
+          "value": "4.99",
+        },
+      },
+      "url": "https://phlabs.co.uk/products/bpc-157",
+    },
+    "size": "5 mg",
+    "sku": "prod_bpc157",
+    "url": "https://phlabs.co.uk/products/bpc-157",
+    "weight": {
+      "@type": "QuantitativeValue",
+      "unitCode": "MGM",
+      "value": 5,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products",
+        "name": "Products",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products/bpc-157",
+        "name": "BPC-157 5mg",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Product JSON-LD snapshots > /products/ghk-cu 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/ghk-cu#product",
+    "@type": "Product",
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "unit_pricing_measure",
+        "value": "50 mg",
+      },
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "bestRating": "5",
+      "ratingValue": "4.9",
+      "reviewCount": "127",
+      "worstRating": "1",
+    },
+    "brand": {
+      "@type": "Brand",
+      "name": "PH Labs",
+      "url": "https://phlabs.co.uk",
+    },
+    "category": "Cosmetic Research",
+    "description": "Copper-binding tripeptide for skin and tissue research.",
+    "image": "https://phlabs.co.uk/products/ghk-cu.jpg",
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "mpn": "prod_ghkcu",
+    "name": "GHK-Cu 50mg",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "eligibleQuantity": {
+        "@type": "QuantitativeValue",
+        "unitCode": "MGM",
+        "value": 50,
+      },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "GB",
+        "merchantReturnDays": 14,
+        "returnFees": "https://schema.org/FreeReturn",
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      },
+      "itemCondition": "https://schema.org/NewCondition",
+      "price": "24.00",
+      "priceCurrency": "GBP",
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 1,
+            "minValue": 0,
+            "unitCode": "DAY",
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 2,
+            "minValue": 1,
+            "unitCode": "DAY",
+          },
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "GB",
+        },
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "currency": "GBP",
+          "value": "4.99",
+        },
+      },
+      "url": "https://phlabs.co.uk/products/ghk-cu",
+    },
+    "size": "50 mg",
+    "sku": "prod_ghkcu",
+    "url": "https://phlabs.co.uk/products/ghk-cu",
+    "weight": {
+      "@type": "QuantitativeValue",
+      "unitCode": "MGM",
+      "value": 50,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products",
+        "name": "Products",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products/ghk-cu",
+        "name": "GHK-Cu 50mg",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Product JSON-LD snapshots > /products/retatrutide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/retatrutide#product",
+    "@type": "Product",
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "unit_pricing_measure",
+        "value": "5 mg",
+      },
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "bestRating": "5",
+      "ratingValue": "4.9",
+      "reviewCount": "127",
+      "worstRating": "1",
+    },
+    "brand": {
+      "@type": "Brand",
+      "name": "PH Labs",
+      "url": "https://phlabs.co.uk",
+    },
+    "category": "Metabolic Research",
+    "description": "Triple-agonist research peptide (GIP/GLP-1/glucagon).",
+    "image": "https://phlabs.co.uk/products/retatrutide.jpg",
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "mpn": "prod_retatrutide",
+    "name": "Retatrutide 5mg",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "eligibleQuantity": {
+        "@type": "QuantitativeValue",
+        "unitCode": "MGM",
+        "value": 5,
+      },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "GB",
+        "merchantReturnDays": 14,
+        "returnFees": "https://schema.org/FreeReturn",
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      },
+      "itemCondition": "https://schema.org/NewCondition",
+      "price": "79.00",
+      "priceCurrency": "GBP",
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 1,
+            "minValue": 0,
+            "unitCode": "DAY",
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 2,
+            "minValue": 1,
+            "unitCode": "DAY",
+          },
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "GB",
+        },
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "currency": "GBP",
+          "value": "4.99",
+        },
+      },
+      "url": "https://phlabs.co.uk/products/retatrutide",
+    },
+    "size": "5 mg",
+    "sku": "prod_retatrutide",
+    "url": "https://phlabs.co.uk/products/retatrutide",
+    "weight": {
+      "@type": "QuantitativeValue",
+      "unitCode": "MGM",
+      "value": 5,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products",
+        "name": "Products",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products/retatrutide",
+        "name": "Retatrutide 5mg",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Product JSON-LD snapshots > /products/tb-500 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/tb-500#product",
+    "@type": "Product",
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "unit_pricing_measure",
+        "value": "5 mg",
+      },
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "bestRating": "5",
+      "ratingValue": "4.9",
+      "reviewCount": "127",
+      "worstRating": "1",
+    },
+    "brand": {
+      "@type": "Brand",
+      "name": "PH Labs",
+      "url": "https://phlabs.co.uk",
+    },
+    "category": "Tissue Repair Research",
+    "description": "Thymosin Beta-4 fragment for regenerative research.",
+    "image": "https://phlabs.co.uk/products/tb-500.jpg",
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "mpn": "prod_tb500",
+    "name": "TB-500 5mg",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "eligibleQuantity": {
+        "@type": "QuantitativeValue",
+        "unitCode": "MGM",
+        "value": 5,
+      },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "GB",
+        "merchantReturnDays": 14,
+        "returnFees": "https://schema.org/FreeReturn",
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      },
+      "itemCondition": "https://schema.org/NewCondition",
+      "price": "34.50",
+      "priceCurrency": "GBP",
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 1,
+            "minValue": 0,
+            "unitCode": "DAY",
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 2,
+            "minValue": 1,
+            "unitCode": "DAY",
+          },
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "GB",
+        },
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "currency": "GBP",
+          "value": "4.99",
+        },
+      },
+      "url": "https://phlabs.co.uk/products/tb-500",
+    },
+    "size": "5 mg",
+    "sku": "prod_tb500",
+    "url": "https://phlabs.co.uk/products/tb-500",
+    "weight": {
+      "@type": "QuantitativeValue",
+      "unitCode": "MGM",
+      "value": 5,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products",
+        "name": "Products",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products/tb-500",
+        "name": "TB-500 5mg",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Product JSON-LD snapshots > /products/tirzepatide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/products/tirzepatide#product",
+    "@type": "Product",
+    "additionalProperty": [
+      {
+        "@type": "PropertyValue",
+        "name": "unit_pricing_measure",
+        "value": "10 mg",
+      },
+    ],
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "bestRating": "5",
+      "ratingValue": "4.9",
+      "reviewCount": "127",
+      "worstRating": "1",
+    },
+    "brand": {
+      "@type": "Brand",
+      "name": "PH Labs",
+      "url": "https://phlabs.co.uk",
+    },
+    "category": "Metabolic Research",
+    "description": "Research-grade tirzepatide, ≥99% HPLC verified.",
+    "image": "https://phlabs.co.uk/products/tirzepatide.jpg",
+    "manufacturer": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "mpn": "prod_tirzepatide",
+    "name": "Tirzepatide 10mg",
+    "offers": {
+      "@type": "Offer",
+      "availability": "https://schema.org/InStock",
+      "eligibleQuantity": {
+        "@type": "QuantitativeValue",
+        "unitCode": "MGM",
+        "value": 10,
+      },
+      "hasMerchantReturnPolicy": {
+        "@type": "MerchantReturnPolicy",
+        "applicableCountry": "GB",
+        "merchantReturnDays": 14,
+        "returnFees": "https://schema.org/FreeReturn",
+        "returnMethod": "https://schema.org/ReturnByMail",
+        "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+      },
+      "itemCondition": "https://schema.org/NewCondition",
+      "price": "49.99",
+      "priceCurrency": "GBP",
+      "shippingDetails": {
+        "@type": "OfferShippingDetails",
+        "deliveryTime": {
+          "@type": "ShippingDeliveryTime",
+          "handlingTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 1,
+            "minValue": 0,
+            "unitCode": "DAY",
+          },
+          "transitTime": {
+            "@type": "QuantitativeValue",
+            "maxValue": 2,
+            "minValue": 1,
+            "unitCode": "DAY",
+          },
+        },
+        "shippingDestination": {
+          "@type": "DefinedRegion",
+          "addressCountry": "GB",
+        },
+        "shippingRate": {
+          "@type": "MonetaryAmount",
+          "currency": "GBP",
+          "value": "4.99",
+        },
+      },
+      "url": "https://phlabs.co.uk/products/tirzepatide",
+    },
+    "size": "10 mg",
+    "sku": "prod_tirzepatide",
+    "url": "https://phlabs.co.uk/products/tirzepatide",
+    "weight": {
+      "@type": "QuantitativeValue",
+      "unitCode": "MGM",
+      "value": 10,
+    },
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products",
+        "name": "Products",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/products/tirzepatide",
+        "name": "Tirzepatide 10mg",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
