@@ -43,8 +43,9 @@ import SecurityAuditTab from './tabs/SecurityAuditTab';
 import SecurityEventsTab from './tabs/SecurityEventsTab';
 import FenaTab from './tabs/FenaTab';
 import PaymentsTab from './tabs/PaymentsTab';
+import AIAssistantTab from './tabs/AIAssistantTab';
 
-type Tab = 'dashboard' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'gscmonitor' | 'merchantfeed' | 'securityaudit' | 'securityevents' | 'fena' | 'payments';
+type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'gscmonitor' | 'merchantfeed' | 'securityaudit' | 'securityevents' | 'fena' | 'payments';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
