@@ -116,8 +116,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
                 availableLanguage: ["English"],
               },
               sameAs: [
-                "https://www.facebook.com/prohealthpeptides",
-                "https://www.instagram.com/prohealthpeptides",
+                "https://www.facebook.com/phlabs",
+                "https://www.instagram.com/phlabs",
+                "https://x.com/phlabs",
               ],
             },
             {
