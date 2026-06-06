@@ -468,6 +468,7 @@ export default function CheckoutPage() {
       if (!form.postcode.trim()) e.postcode = 'Required';
       else if (!/^[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}$/i.test(form.postcode.trim())) e.postcode = 'Enter a valid UK postcode';
       if (!form.country.trim()) e.country = 'Required';
+      if (!form.shippingMethod) e.shippingMethod = 'Please choose a shipping method';
     }
     if (step === 3) {
       if (!form.ageVerified) e.age = 'You must confirm you are 18 or older to place this order';
