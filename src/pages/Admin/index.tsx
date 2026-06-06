@@ -45,8 +45,9 @@ import FenaTab from './tabs/FenaTab';
 import PaymentsTab from './tabs/PaymentsTab';
 import AIAssistantTab from './tabs/AIAssistantTab';
 import ShopifyTab from './tabs/ShopifyTab';
+import SemrushTab from './tabs/SemrushTab';
 
-type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'gscmonitor' | 'merchantfeed' | 'securityaudit' | 'securityevents' | 'fena' | 'payments' | 'shopify';
+type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'gscmonitor' | 'merchantfeed' | 'securityaudit' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -388,6 +389,7 @@ export default function AdminPage() {
         case 'securityaudit': return <SecurityAuditTab />;
         case 'securityevents': return <SecurityEventsTab />;
         case 'shopify': return <ShopifyTab />;
+        case 'semrush': return <SemrushTab />;
         default: return <DashboardTab />;
       }
     })();
@@ -407,7 +409,7 @@ export default function AdminPage() {
     tools: 'Tools', themes: 'Themes', database: 'Database', backup: 'Backup',
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', diagnostics: 'Diagnostics',
     prerenderstatus: 'Prerender Status', gscmonitor: 'GSC Monitor', merchantfeed: 'Merchant Feed',
-    securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', shopify: 'Shopify',
+    securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', shopify: 'Shopify', semrush: 'Semrush',
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
 
