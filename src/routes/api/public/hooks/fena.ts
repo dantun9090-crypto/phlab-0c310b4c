@@ -333,7 +333,26 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
         const currentStatus = String(orderRow.status ?? "pending").toLowerCase();
         const isPaid = transitionedToPaid;
 
-        await updateDocAdmin("orders", orderId, updates);
+        try {
+          await updateDocAdmin("orders", orderId, updates);
+        } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
+          await logEvent("error", "order update failed", {
+            orderId,
+            fenaPaymentId,
+            error: errMsg,
+          });
+          await raiseFenaAlert("fena_order_update_failed", "critical", {
+            orderId,
+            fenaPaymentId,
+            fenaStatus,
+            attemptedUpdates: updates,
+            error: errMsg,
+            hint: "Order will stay in its current status; Fena will retry the webhook.",
+          });
+          // 5xx → Fena will retry.
+          return new Response("Order update failed", { status: 500 });
+        }
 
         // Enqueue confirmation mail on first paid transition.
         if (isPaid && currentStatus !== "paid") {
