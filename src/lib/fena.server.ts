@@ -235,11 +235,15 @@ export interface FenaBankAccount {
 
 async function fenaJson<T>(path: string, init: RequestInit = {}): Promise<T> {
   const base = await getFenaBase();
-  const res = await fetch(`${base}${path}`, {
-    ...init,
-    headers: { ...authHeaders(), ...(init.headers || {}) },
-    signal: init.signal ?? AbortSignal.timeout(15_000),
-  });
+  const res = await meteredFenaFetch(
+    `${init.method || "GET"} ${path}`,
+    `${base}${path}`,
+    {
+      ...init,
+      headers: { ...authHeaders(), ...(init.headers || {}) },
+      signal: init.signal ?? AbortSignal.timeout(15_000),
+    },
+  );
   const text = await res.text();
   if (!res.ok) {
     throw new Error(`Fena ${init.method || "GET"} ${path} ${res.status}: ${text.slice(0, 400)}`);
