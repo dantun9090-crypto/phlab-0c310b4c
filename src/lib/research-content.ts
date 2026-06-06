@@ -94,3 +94,4 @@ export const RESEARCH_CONTENT: Record<string, ResearchContent> = {
       { slug: "bacteriostatic-water-research-compound", label: "Bacteriostatic Water", relationship: "Recommended diluent for reconstitution." },
     ],
   },
+};
