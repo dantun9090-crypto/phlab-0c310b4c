@@ -14,13 +14,19 @@ import { z } from 'zod';
 import { runValidateCart, type ValidateCartResult } from './cart-validation.server';
 import { addDocAdmin } from './server/firestore-admin';
 import { verifyFirebaseIdToken } from './server/firebase-auth-admin';
+import {
+  SHIPPING_CONFIG,
+  checkNextDayEligibility,
+  getStandardDeliveryWindow,
+  getCutoffInstant,
+} from './shipping/next-day';
 
 const SHIPPING_OPTIONS = {
-  standard: { id: 'standard', label: 'Standard Delivery', price: 4.99 },
-  express:  { id: 'express',  label: 'Express Delivery',  price: 9.99 },
+  standard:    { id: 'standard',    label: 'Standard 1–3 Day Delivery', price: SHIPPING_CONFIG.standardPrice },
+  next_day_12: { id: 'next_day_12', label: 'Next Day by 12 PM',         price: SHIPPING_CONFIG.nextDayPrice },
 } as const;
 
-const FREE_SHIPPING_THRESHOLD = 50;
+const FREE_SHIPPING_THRESHOLD = SHIPPING_CONFIG.freeThreshold;
 
 const itemSchema = z.object({
   productId: z.string().min(1).max(128),
@@ -42,7 +48,7 @@ export const createOrderInputSchema = z.object({
     postcode:  z.string().min(1).max(20),
     country:   z.string().min(1).max(80),
   }),
-  shippingMethod: z.enum(['standard', 'express']),
+  shippingMethod: z.enum(['standard', 'next_day_12']),
   paymentMethod: z.enum(['bank_transfer', 'pay_by_bank']),
   ageVerified: z.literal(true),
   termsAccepted: z.literal(true),
