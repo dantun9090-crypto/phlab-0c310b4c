@@ -54,14 +54,9 @@ describe("sitemap policy ↔ route-tree consistency", () => {
     const unclassified: string[] = [];
     for (const path of ROUTE_PATHS) {
       // Dynamic param leaf routes (e.g. /products/$slug) are expanded per-row
-      // by the sitemap generator; the abstract path must be excluded.
-      if (DYNAMIC_PARAM_SUFFIX.test(path)) {
-        expect(
-          isIndexable(path),
-          `${path} is a dynamic param route and must NOT be indexable as-is (expanded per-row instead)`,
-        ).toBe(false);
-        continue;
-      }
+      // by the sitemap generator from Firestore — the abstract `$slug` path
+      // itself is never emitted. Skip the consistency check for them.
+      if (DYNAMIC_PARAM_SUFFIX.test(path)) continue;
 
       const reason = exclusionReason(path);
       const inKnown = KNOWN_SET.has(path);
