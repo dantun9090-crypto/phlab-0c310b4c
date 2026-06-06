@@ -24,6 +24,7 @@ import {
 import { fenaGetPayment, fenaGetBankAccount } from "@/lib/fena.server";
 import { computeFenaOrderUpdates } from "@/lib/fena-webhook-updates";
 import { enforceRateLimit } from "@/lib/rate-limit";
+import { raiseFenaAlert } from "@/lib/fena-alerts.server";
 
 interface FenaWebhookBody {
   eventScope?: string;
