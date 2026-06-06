@@ -184,7 +184,7 @@ export default function AboutPage() {
               </span>
             </h1>
 
-            <p className="text-[#8aabcf] text-lg md:text-xl max-w-2xl leading-relaxed mb-10">
+            <p className="text-[#cfe0f5] text-lg md:text-xl max-w-2xl leading-relaxed mb-10">
               PH Labs is a UK-based laboratory reagent supplier of synthetic peptides for in-vitro research use only.
               Every batch HPLC-tested. Every result documented. <strong className="text-[#e8f0fe]">Not for human or veterinary consumption.</strong>
             </p>
@@ -223,7 +223,7 @@ export default function AboutPage() {
                 <div className="py-10 px-6 lg:px-10 text-center group">
                   <s.icon className="w-5 h-5 text-blue-400/60 mx-auto mb-3 group-hover:text-blue-400 transition-colors" />
                   <div className="text-2xl md:text-3xl font-bold text-[#f0f6ff] mb-1">{s.value}</div>
-                  <div className="text-[#9cb8d9] text-xs uppercase tracking-wider font-medium">{s.label}</div>
+                  <div className="text-[#b8ccea] text-xs uppercase tracking-wider font-medium">{s.label}</div>
                 </div>
               </FadeIn>
             ))}
@@ -245,12 +245,12 @@ export default function AboutPage() {
                 Raising the Standard for<br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Research Compounds</span>
               </h2>
-              <p className="text-[#8aabcf] text-base md:text-lg leading-relaxed">
+              <p className="text-[#cfe0f5] text-base md:text-lg leading-relaxed">
                 We founded PH Labs with a single conviction: researchers deserve suppliers
                 they can fully trust. That means HPLC analytical data for every batch, clear labelling,
                 and support from people who actually understand the science.
               </p>
-              <p className="text-[#9cb8d9] leading-relaxed">
+              <p className="text-[#b8ccea] leading-relaxed">
                 All compounds are sourced from accredited manufacturers, tested for identity and purity
                 before dispatch, and shipped from the UK with no import complications.
               </p>
@@ -310,7 +310,7 @@ export default function AboutPage() {
             <h2 className="text-3xl md:text-4xl font-bold text-[#f0f6ff] mb-4">
               Built on Four Commitments
             </h2>
-            <p className="text-[#9cb8d9] max-w-xl mx-auto">
+            <p className="text-[#b8ccea] max-w-xl mx-auto">
               Every decision we make returns to the same foundation: quality, transparency, reliability, and care.
             </p>
           </FadeIn>
@@ -331,7 +331,7 @@ export default function AboutPage() {
                     <p.icon className={`w-5 h-5 ${p.iconColor}`} />
                   </div>
                   <h3 className="text-[#e8f0fe] font-bold text-base mb-3 leading-snug">{p.title}</h3>
-                  <p className="text-[#9cb8d9] text-sm leading-relaxed">{p.desc}</p>
+                  <p className="text-[#b8ccea] text-sm leading-relaxed">{p.desc}</p>
                 </div>
               </FadeIn>
             ))}
@@ -369,7 +369,7 @@ export default function AboutPage() {
               Every Batch. Every Detail.<br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-300">No Exceptions.</span>
             </h2>
-            <p className="text-[#8aabcf] leading-relaxed">
+            <p className="text-[#cfe0f5] leading-relaxed">
               Our QA process is non-negotiable. From sourcing through dispatch, every compound passes
               strict criteria before it ever reaches a researcher.
             </p>
@@ -381,7 +381,7 @@ export default function AboutPage() {
                     <div className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-emerald-600/30 transition-colors">
                       <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                     </div>
-                    <span className="text-[#8aabcf] text-sm leading-relaxed">{s}</span>
+                    <span className="text-[#cfe0f5] text-sm leading-relaxed">{s}</span>
                   </li>
                 </FadeIn>
               ))}
@@ -413,7 +413,7 @@ export default function AboutPage() {
             <h2 className="text-3xl md:text-4xl font-bold text-[#f0f6ff] mb-4">
               People Behind the Science
             </h2>
-            <p className="text-[#9cb8d9] max-w-xl mx-auto">
+            <p className="text-[#b8ccea] max-w-xl mx-auto">
               A dedicated team with backgrounds in biochemistry, pharmaceutical supply, and customer experience.
             </p>
           </FadeIn>
@@ -432,7 +432,7 @@ export default function AboutPage() {
                   </div>
 
                   <h3 className="text-[#e8f0fe] font-bold text-base mb-1">{m.name}</h3>
-                  <p className="text-[#9cb8d9] text-sm">{m.role}</p>
+                  <p className="text-[#b8ccea] text-sm">{m.role}</p>
                 </div>
               </FadeIn>
             ))}
@@ -457,7 +457,7 @@ export default function AboutPage() {
                 <h2 className="text-2xl md:text-3xl font-bold text-[#f0f6ff] mb-3">
                   Explore Our Full Reagent Catalogue
                 </h2>
-                <p className="text-[#9cb8d9] max-w-md">
+                <p className="text-[#b8ccea] max-w-md">
                   Synthetic peptides, GLP-1 analogues and NAD+ precursors — HPLC-tested, UK-dispatched. Research Use Only.
                 </p>
               </div>
