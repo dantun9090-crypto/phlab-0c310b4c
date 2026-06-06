@@ -115,9 +115,19 @@ if (!sitemapDirective) {
   }
 }
 
-// 6) __root.tsx — JSON-LD musi używać kanonicznego hosta we wszystkich URL-ach
+// 6) __root.tsx — JSON-LD musi używać kanonicznego hosta we własnych URL-ach.
+// Zewnętrzne profile (sameAs: facebook/instagram/x/youtube/linkedin) są dozwolone.
+const EXTERNAL_ALLOW = [
+  "schema.org",
+  "facebook.com",
+  "instagram.com",
+  "x.com",
+  "twitter.com",
+  "linkedin.com",
+  "youtube.com",
+  "tiktok.com",
+];
 const root = read("src/routes/__root.tsx");
-// Szukamy URL-i wewnątrz JSON-LD bloku (organization/website)
 const jsonldMatch = root.match(/"@context":\s*"https:\/\/schema\.org"[\s\S]*?\}\),/);
 if (!jsonldMatch) {
   fail("src/routes/__root.tsx", "nie znaleziono bloku JSON-LD do walidacji");
@@ -125,11 +135,10 @@ if (!jsonldMatch) {
   const block = jsonldMatch[0];
   const urls = [...block.matchAll(/https?:\/\/[^\s"'<>]+/g)].map((m) => m[0]);
   for (const u of urls) {
-    if (u.startsWith("https://schema.org")) continue;
+    if (EXTERNAL_ALLOW.some((d) => u.includes(`://${d}`) || u.includes(`://www.${d}`))) continue;
     if (CANONICAL_HOST && !u.includes(CANONICAL_HOST)) {
       fail("src/routes/__root.tsx", `JSON-LD URL "${u}" nie używa hosta ${CANONICAL_HOST}`);
     }
-    // Apex enforcement: nie chcemy www.<host> w canonical/JSON-LD
     if (CANONICAL_HOST && u.includes(`www.${CANONICAL_HOST}`)) {
       fail(
         "src/routes/__root.tsx",
