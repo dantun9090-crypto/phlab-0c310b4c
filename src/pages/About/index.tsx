@@ -163,15 +163,21 @@ export default function AboutPage() {
 
       {/* ── HERO ── */}
       <section ref={heroRef} className="page-hero relative min-h-[680px] md:min-h-[780px] overflow-hidden flex items-end hero-scanline">
-        {/* Parallax image */}
+        {/* Parallax image (or gradient fallback) */}
         <motion.div className="absolute inset-0" style={{ y: heroY }}>
-          <img
-            src={heroImg}
-            alt="PH Labs laboratory"
-            className="w-full h-full object-cover object-center scale-110"
-            loading="eager"
-          />
+          {heroImg ? (
+            <img
+              src={heroImg}
+              alt="PH Labs laboratory"
+              className="w-full h-full object-cover object-center scale-110"
+              loading="eager"
+              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; setHeroImg(''); }}
+            />
+          ) : (
+            <ImageFallback />
+          )}
         </motion.div>
+
 
         {/* Multi-layer overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#060f1e] via-[#060f1e]/60 to-transparent" />
