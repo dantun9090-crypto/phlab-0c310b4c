@@ -1,4 +1,4 @@
-import { emailWrapper, ctaButton, divider, EMAIL_COLORS as C } from './emailBase';
+import { emailWrapper, ctaButton, divider, escapeHtml as esc, EMAIL_COLORS as C } from './emailBase';
 
 export interface AdminInvoiceEmailOptions {
   customerName: string;
@@ -30,14 +30,14 @@ export function buildAdminInvoiceEmail(opts: AdminInvoiceEmailOptions): string {
           <td align="right">
             <div style="display:inline-block;padding:6px 16px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:8px;">
               <div style="font-size:10px;color:${C.textMuted};text-transform:uppercase;letter-spacing:1px;font-weight:600;">Invoice</div>
-              <div style="font-size:14px;color:${C.accent};font-weight:700;font-family:monospace;">${opts.invoiceRef}</div>
+              <div style="font-size:14px;color:${C.accent};font-weight:700;font-family:monospace;">${esc(opts.invoiceRef)}</div>
             </div>
           </td>
         </tr>
       </table>
 
       <p style="color:${C.text};font-size:15px;line-height:1.6;margin:0 0 24px;">
-        Dear <strong style="color:${C.textBright};">${opts.customerName}</strong>,<br><br>
+        Dear <strong style="color:${C.textBright};">${esc(opts.customerName)}</strong>,<br><br>
         Please find below your invoice from PH Labs. Kindly ensure payment is made by the due date.
       </p>
 
@@ -45,7 +45,7 @@ export function buildAdminInvoiceEmail(opts: AdminInvoiceEmailOptions): string {
       <div style="background:${C.bgCard};border:1px solid ${C.borderStrong};border-radius:14px;overflow:hidden;margin-bottom:24px;">
         <div style="padding:16px 20px;border-bottom:1px solid ${C.border};">
           <div style="font-size:11px;color:${C.textMuted};text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:6px;">Description</div>
-          <div style="font-size:14px;color:${C.text};line-height:1.5;">${opts.description}</div>
+          <div style="font-size:14px;color:${C.text};line-height:1.5;">${esc(opts.description)}</div>
         </div>
         <div style="padding:20px;">
           <table cellpadding="0" cellspacing="0" width="100%">
@@ -57,7 +57,7 @@ export function buildAdminInvoiceEmail(opts: AdminInvoiceEmailOptions): string {
             <tr>
               <td colspan="2" style="padding-top:12px;">
                 <div style="display:inline-block;padding:6px 14px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.25);border-radius:8px;margin-top:8px;">
-                  <span style="color:#fbbf24;font-size:12px;font-weight:600;">Due: ${opts.dueDate}</span>
+                  <span style="color:#fbbf24;font-size:12px;font-weight:600;">Due: ${esc(opts.dueDate)}</span>
                 </div>
               </td>
             </tr>` : ''}
@@ -68,7 +68,7 @@ export function buildAdminInvoiceEmail(opts: AdminInvoiceEmailOptions): string {
       ${opts.notes ? `
       <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);border-radius:12px;padding:16px 20px;margin-bottom:24px;">
         <div style="font-size:11px;color:${C.textMuted};text-transform:uppercase;letter-spacing:0.8px;font-weight:600;margin-bottom:8px;">Notes</div>
-        <div style="font-size:13px;color:${C.text};line-height:1.5;">${opts.notes}</div>
+        <div style="font-size:13px;color:${C.text};line-height:1.5;">${esc(opts.notes)}</div>
       </div>` : ''}
 
       ${ctaButton('Pay Now', 'https://phlabs.co.uk')}
