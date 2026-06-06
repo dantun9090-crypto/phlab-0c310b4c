@@ -299,6 +299,10 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
             } catch {/* swallow — webhook must not 5xx for logging */}
           }
           await logEvent("error", "ORPHAN: Fena payment has no matching order", orphanCtx);
+          // Only alert for confirmed-paid orphans (real money in, no order).
+          if (String(authoritative.status ?? "").toLowerCase() === "paid") {
+            await raiseFenaAlert("fena_orphan_payment", "critical", orphanCtx);
+          }
           // Ack so Fena stops retrying; flagged as error level in the admin tab.
           return new Response("No matching order (logged as orphan)", { status: 200 });
         }
