@@ -295,15 +295,20 @@ export default function AboutPage() {
           {/* Image */}
           <FadeIn direction="right" delay={120}>
             <div className="relative">
-              <div className="rounded-3xl overflow-hidden border border-white/[0.08] shadow-[0_32px_80px_rgba(0,0,0,0.7)]">
-                <img
-                  src={missionImg}
-                  alt="Research laboratory"
-                  width="800"
-                  height="520"
-                  className="w-full h-[400px] lg:h-[520px] object-cover object-center"
-                  loading="lazy"
-                />
+              <div className="rounded-3xl overflow-hidden border border-white/[0.08] shadow-[0_32px_80px_rgba(0,0,0,0.7)] h-[400px] lg:h-[520px]">
+                {missionImg ? (
+                  <img
+                    src={missionImg}
+                    alt="Research laboratory"
+                    width="800"
+                    height="520"
+                    className="w-full h-full object-cover object-center"
+                    loading="lazy"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; setMissionImg(''); }}
+                  />
+                ) : (
+                  <ImageFallback />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#060f1e]/40 to-transparent" />
               </div>
               {/* Floating badge */}
