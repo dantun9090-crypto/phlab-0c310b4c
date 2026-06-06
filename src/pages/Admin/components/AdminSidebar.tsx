@@ -40,6 +40,7 @@ const navGroups = [
       { id: 'invoices', label: 'Invoices', icon: FileText },
       { id: 'payments', label: 'Payment Gateways', icon: CreditCard },
       { id: 'fena', label: 'Fena Payments', icon: CreditCard },
+      { id: 'shopify', label: 'Shopify', icon: ShoppingBag },
 
 
 
