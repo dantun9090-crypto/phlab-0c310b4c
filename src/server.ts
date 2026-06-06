@@ -56,7 +56,7 @@ const REDIRECT_HOSTS = new Set<string>([
 // scripts transitively, so the host list is a fallback for non-CSP3 browsers.
 const CSP_TEMPLATE = [
   "default-src 'self'",
-  "script-src 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://js.stripe.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net 'unsafe-eval'",
+  "script-src 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://js.stripe.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net",
   "script-src-elem 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://js.stripe.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com",
@@ -79,7 +79,7 @@ const CSP_TEMPLATE = [
 const SECURITY_HEADERS: Record<string, string> = {
   "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
   "x-content-type-options": "nosniff",
-  "x-frame-options": "SAMEORIGIN",
+  "x-frame-options": "DENY",
   "referrer-policy": "strict-origin-when-cross-origin",
   "permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(self)",
   "x-xss-protection": "0",
