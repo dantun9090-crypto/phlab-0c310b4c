@@ -205,9 +205,15 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
         try {
           authoritative = await fenaGetPayment(fenaPaymentId);
         } catch (err) {
+          const errMsg = err instanceof Error ? err.message : String(err);
           await logEvent("error", "fena api re-fetch failed", {
             fenaPaymentId,
-            error: err instanceof Error ? err.message : String(err),
+            error: errMsg,
+          });
+          await raiseFenaAlert("fena_refetch_failed", "error", {
+            fenaPaymentId,
+            error: errMsg,
+            hint: "Verify FENA_TERMINAL_ID / FENA_TERMINAL_SECRET and Fena API reachability.",
           });
           // Tell Fena to retry later (5xx).
           return new Response("Upstream verify failed", { status: 502 });
