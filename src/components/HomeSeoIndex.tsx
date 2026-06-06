@@ -16,6 +16,7 @@ const ALL_PRODUCTS: Array<{ slug: string; name: string }> = [
   { slug: 'tb-500-thymosin-beta-4', name: 'TB-500 (Thymosin β-4)' },
   { slug: 'tirzepatide-research-peptide', name: 'Tirzepatide' },
   { slug: 'bacteriostatic-water-research-compound', name: 'Bacteriostatic Water' },
+  { slug: 'bpc-157', name: 'BPC-157' },
   { slug: 'glow-blend', name: 'Glow Blend' },
   { slug: 'klow-blend', name: 'Klow Blend' },
 ];
