@@ -225,6 +225,19 @@ export const Route = createFileRoute("/api/public/send-mail")({
               const shipping = Number(order.shippingCost ?? 0);
               const discount = Number(order.discount ?? 0);
               const total = Number(order.totalAmount ?? order.total ?? 0);
+              const shippingLabel = typeof order.shippingLabel === "string" ? order.shippingLabel : undefined;
+              // Build delivery message from authoritative server-stamped fields.
+              let deliveryMessage: string | undefined;
+              const fmtDate = (k: string) => {
+                const [y, m, d] = k.split("-").map(Number);
+                if (!y || !m || !d) return k;
+                return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", weekday: "long", day: "numeric", month: "long" }).format(new Date(Date.UTC(y, m - 1, d, 12)));
+              };
+              if (order.shippingMethod === "next_day_12" && typeof order.expectedDeliveryDate === "string") {
+                deliveryMessage = `Your order qualifies for <strong>Next Day delivery by 12 PM</strong>. Expected delivery: <strong>${fmtDate(order.expectedDeliveryDate)}</strong> before 12:00 PM.`;
+              } else if (typeof order.expectedDeliveryFrom === "string" && typeof order.expectedDeliveryTo === "string") {
+                deliveryMessage = `Your order will be dispatched within 1–3 business days. Expected delivery: <strong>${fmtDate(order.expectedDeliveryFrom)} – ${fmtDate(order.expectedDeliveryTo)}</strong>.`;
+              }
 
               // Bank-transfer details: fetch from the trusted
               // settings/bankTransfer Firestore doc. NEVER trust client input.
@@ -275,6 +288,8 @@ export const Route = createFileRoute("/api/public/send-mail")({
                 bankAccountNumber,
                 bankIBAN,
                 bankInstructions,
+                shippingLabel,
+                deliveryMessage,
               });
               break;
             }
