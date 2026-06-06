@@ -106,7 +106,10 @@ function buildCsp(nonce: string): string {
 
 // ==================== Bot management + Prerender.io ====================
 const PRERENDER_ORIGIN = "https://service.prerender.io";
-const PRERENDER_TIMEOUT_MS = 15_000;
+// Bumped from 15s → 30s: Googlebot was getting 5xx on /contact and other
+// static pages when Prerender.io's cold render exceeded the old budget.
+// 30s matches Prerender.io's own default and Googlebot's tolerance.
+const PRERENDER_TIMEOUT_MS = 30_000;
 const PRERENDER_CACHE_TTL = 3600;
 const PRERENDER_SWR_TTL = 86_400;
 const LOOP_HEADER = "x-prerender-loop";
@@ -114,6 +117,32 @@ const LOOP_HEADER = "x-prerender-loop";
 // Pliki/ścieżki, dla których nigdy nie wołamy prerendera
 const STATIC_EXT = /\.(js|mjs|css|map|png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|eot|mp4|webm|mp3|pdf|xml|txt|json|wasm|zip)(\?|$)/i;
 const BYPASS_PATH_PREFIXES = ["/api/", "/_build/", "/assets/", "/static/", "/__health"];
+
+// Static content pages: server-rendered HTML is complete without JS, so
+// Prerender.io adds latency + a 5xx failure mode for no SEO benefit.
+// Googlebot fetches these directly from the origin (SSR) instead.
+const PRERENDER_BYPASS_PATHS = new Set<string>([
+  "/contact",
+  "/about",
+  "/privacy-policy",
+  "/shipping-policy",
+  "/refund-policy",
+  "/terms-and-conditions",
+  "/cookies",
+  "/cookie-policy",
+  "/lab-reports",
+  "/quality-control",
+  "/research",
+  "/resources",
+]);
+
+function isPrerenderBypassPath(pathname: string): boolean {
+  // Normalize trailing slash so /contact and /contact/ both match.
+  const p = pathname.length > 1 && pathname.endsWith("/")
+    ? pathname.slice(0, -1)
+    : pathname;
+  return PRERENDER_BYPASS_PATHS.has(p);
+}
 
 const PRERENDER_BOTS = [
   "googlebot", "google-inspectiontool", "apis-google", "storebot-google",
