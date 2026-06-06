@@ -141,9 +141,22 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     };
   });
 
-  const shippingLabel = isFreeShipping
-    ? 'Free Delivery (order over £50)'
-    : SHIPPING_OPTIONS[input.shippingMethod].label;
+  const shippingLabel = isNextDay
+    ? SHIPPING_OPTIONS.next_day_12.label
+    : (isFreeShipping ? 'Free Delivery (order over £50)' : SHIPPING_OPTIONS.standard.label);
+
+  // Compute expected delivery + cut-off stamps for fulfilment.
+  const cutoffInstant = getCutoffInstant(nowAtOrder);
+  let expectedDeliveryDate: string | null = null;
+  let expectedDeliveryFrom: string | null = null;
+  let expectedDeliveryTo: string | null = null;
+  if (isNextDay && eligibility.qualifies && eligibility.expectedDeliveryDate) {
+    expectedDeliveryDate = eligibility.expectedDeliveryDate;
+  } else {
+    const window = getStandardDeliveryWindow(nowAtOrder);
+    expectedDeliveryFrom = window.from;
+    expectedDeliveryTo = window.to;
+  }
 
   const orderData = {
     orderId,
@@ -155,6 +168,12 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     shippingCost,
     shippingMethod: input.shippingMethod,
     shippingLabel,
+    cutoffTime: cutoffInstant,
+    orderedBeforeCutoff: eligibility.qualifies,
+    expectedDeliveryDate,
+    expectedDeliveryFrom,
+    expectedDeliveryTo,
+    nextDayMissedCutoff,
     total: totalAmount,
     totalAmount,
     currency: 'GBP',
