@@ -3,8 +3,14 @@ import type {} from "@tanstack/react-start";
 import { articles } from "@/pages/Resources/data/articles";
 import { fetchAllProducts } from "@/lib/firestore-rest";
 import { isIndexable } from "@/lib/sitemap-policy";
+// DOMAIN GUARD: jedynym źródłem kanonicznej domeny jest src/lib/seo-meta.ts
+// (SITE_URL + assertCanonicalUrl). Nie hardkoduj "https://phlabs.co.uk" tutaj —
+// zmiana w jednym miejscu musi pociągać sitemap, robots, JSON-LD i canonical.
+// CI: scripts/check-url-consistency.ts + scripts/check-domains.ts.
+import { SITE_URL, assertCanonicalUrl } from "@/lib/seo-meta";
 
-const BASE_URL = "https://phlabs.co.uk";
+const BASE_URL = SITE_URL;
+
 
 interface SitemapEntry {
   path: string;
