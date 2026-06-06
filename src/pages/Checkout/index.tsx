@@ -37,15 +37,20 @@ interface CheckoutForm {
   ageVerified: boolean;
   createAccount: boolean;
   password: string;
-  shippingMethod: 'standard' | 'express';
+  shippingMethod: 'standard' | 'next_day_12';
 }
 
-const SHIPPING_OPTIONS = [
-  { id: 'standard' as const, label: 'Standard Delivery', desc: '3–5 working days', price: 4.99 },
-  { id: 'express' as const, label: 'Express Delivery', desc: 'Next working day (order before 2pm)', price: 9.99 },
-] as const;
+import { checkNextDayEligibility, SHIPPING_CONFIG, formatLondonDate } from '@/lib/shipping/next-day';
 
-const FREE_SHIPPING_THRESHOLD = 50;
+type ShippingOptionId = 'standard' | 'next_day_12';
+interface ShippingOption { id: ShippingOptionId; label: string; desc: string; price: number; }
+
+const SHIPPING_OPTIONS_ALL: ShippingOption[] = [
+  { id: 'standard',     label: 'Standard 1–3 Day Delivery', desc: 'Dispatched within 1–3 working days', price: SHIPPING_CONFIG.standardPrice },
+  { id: 'next_day_12',  label: 'Next Day by 12 PM',         desc: 'Order before 11:30 AM Mon–Fri',      price: SHIPPING_CONFIG.nextDayPrice },
+];
+
+const FREE_SHIPPING_THRESHOLD = SHIPPING_CONFIG.freeThreshold;
 
 type Step = 1 | 2 | 3;
 
