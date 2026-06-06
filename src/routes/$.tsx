@@ -28,12 +28,21 @@ export const Route = createFileRoute("/$")({
     if (resourcesMatch) {
       const article = articles.find((a) => a.slug === resourcesMatch[1]);
       if (article) {
+        const bodyText = article.content
+          .map((s) => `${s.heading ?? ""} ${s.body ?? ""}`)
+          .join(" ")
+          .replace(/<[^>]+>/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+        const wordCount = bodyText ? bodyText.split(" ").length : undefined;
         scripts.push({
           type: "application/ld+json",
           children: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "Article",
+            "@id": `${url}#article`,
             headline: clamp(article.title, 110),
+            alternativeHeadline: article.subtitle,
             description: clamp(article.excerpt, SEO_LIMITS.descriptionMax),
             image: [OG_IMAGE],
             datePublished: article.publishDate,
@@ -41,6 +50,11 @@ export const Route = createFileRoute("/$")({
             inLanguage: "en-GB",
             articleSection: article.category,
             keywords: article.keywords?.join(", "),
+            wordCount,
+            timeRequired: `PT${article.readTime}M`,
+            articleBody: bodyText.slice(0, 5000),
+            url,
+            isAccessibleForFree: true,
             author: {
               "@type": "Organization",
               name: "PH Labs UK",
