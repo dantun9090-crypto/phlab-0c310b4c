@@ -1421,6 +1421,10 @@ export default function ProductDetail() {
               </button>
             </div>
 
+            {/* ── Next Day delivery countdown ── */}
+            <NextDayCountdown />
+
+
             {/* ── Reassurance strip ── */}
             <div className="grid grid-cols-3 gap-3 text-center">
               {[
