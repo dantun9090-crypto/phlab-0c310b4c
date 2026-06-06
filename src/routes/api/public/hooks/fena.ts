@@ -23,6 +23,7 @@ import {
 } from "@/lib/server/firestore-admin";
 import { fenaGetPayment, fenaGetBankAccount } from "@/lib/fena.server";
 import { computeFenaOrderUpdates } from "@/lib/fena-webhook-updates";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 interface FenaWebhookBody {
   eventScope?: string;
@@ -57,6 +58,13 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const limited = await enforceRateLimit(request, "/api/public/hooks/fena", {
+          limit: 60,
+          windowMs: 60_000,
+          retryAfterSec: 60,
+        });
+        if (limited) return limited;
+
         let bodyText = "";
         try {
           bodyText = await request.text();

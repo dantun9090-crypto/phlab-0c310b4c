@@ -11,6 +11,7 @@
  */
 import { createFileRoute } from '@tanstack/react-router';
 import { timingSafeEqualStr } from '@/lib/timing-safe-equal';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 interface ServiceAccount {
   client_email: string;
@@ -121,9 +122,27 @@ export const Route = createFileRoute('/api/public/hooks/security-cleanup')({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const ENDPOINT = '/api/public/hooks/security-cleanup';
+
+        // 1) Default per-IP throttle — 30 req/min.
+        const limited = await enforceRateLimit(request, ENDPOINT, {
+          limit: 30,
+          windowMs: 60_000,
+          retryAfterSec: 120,
+        });
+        if (limited) return limited;
+
         const expected = process.env.CLEANUP_SECRET;
         const provided = request.headers.get('x-cleanup-secret');
         if (!expected || !provided || !timingSafeEqualStr(provided, expected)) {
+          // 2) Separate bad-auth bucket — 10 req/min for failed auth.
+          const badAuthLimited = await enforceRateLimit(request, ENDPOINT, {
+            limit: 10,
+            windowMs: 60_000,
+            retryAfterSec: 120,
+            bucketKind: 'bad-auth',
+          });
+          if (badAuthLimited) return badAuthLimited;
           return new Response('Unauthorized', { status: 401 });
         }
         const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;

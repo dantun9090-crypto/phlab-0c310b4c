@@ -13,6 +13,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqualStr } from "@/lib/timing-safe-equal";
+import { enforceRateLimit } from "@/lib/rate-limit";
 
 const SITEMAP_URL = "https://phlabs.co.uk/sitemap.xml";
 const RECACHE_URL = "https://api.prerender.io/recache";
@@ -41,6 +42,16 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const ENDPOINT = "/api/public/hooks/prerender-recache";
+
+        // 1) Default per-IP throttle — 30 req/min.
+        const limited = await enforceRateLimit(request, ENDPOINT, {
+          limit: 30,
+          windowMs: 60_000,
+          retryAfterSec: 120,
+        });
+        if (limited) return limited;
+
         const token = process.env.PRERENDER_TOKEN;
         if (!token) {
           return Response.json(
@@ -52,6 +63,15 @@ export const Route = createFileRoute("/api/public/hooks/prerender-recache")({
         const provided = request.headers.get("x-recache-secret");
         const url = new URL(request.url);
         if (!provided || !timingSafeEqualStr(provided, token)) {
+          // 2) Separate bad-auth bucket — 10 req/min — so brute-force
+          // attempts get throttled hard without exhausting the default bucket.
+          const badAuthLimited = await enforceRateLimit(request, ENDPOINT, {
+            limit: 10,
+            windowMs: 60_000,
+            retryAfterSec: 120,
+            bucketKind: "bad-auth",
+          });
+          if (badAuthLimited) return badAuthLimited;
           return new Response("Unauthorized", { status: 401 });
         }
 
