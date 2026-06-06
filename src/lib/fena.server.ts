@@ -133,12 +133,16 @@ export async function fenaCreateAndProcess(input: {
     remitterAccountSelectionType: "any",
   };
   const base = await getFenaBase();
-  const res = await fetch(`${base}/payments/single/create-and-process`, {
-    method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(20_000),
-  });
+  const res = await meteredFenaFetch(
+    "POST /payments/single/create-and-process",
+    `${base}/payments/single/create-and-process`,
+    {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(20_000),
+    },
+  );
   const text = await res.text();
   if (!res.ok) {
     throw new Error(`Fena create-and-process ${res.status}: ${text.slice(0, 400)}`);
