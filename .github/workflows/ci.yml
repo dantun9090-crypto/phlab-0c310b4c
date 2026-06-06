@@ -24,6 +24,11 @@ jobs:
       - name: Typecheck (tsc --noEmit)
         run: bun run typecheck
 
+      # Scans /resources/* articles for efficacy-outcome claims and
+      # missing investigational disclaimers (UK MHRA / Google Merchant).
+      - name: Resources content compliance scan
+        run: bun run compliance:scan
+
       # Runs the EXACT production build that ships to Cloudflare Workers.
       # No --mode development, no dev-only shortcuts.
       - name: Production build
