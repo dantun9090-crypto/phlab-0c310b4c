@@ -578,7 +578,8 @@ export default function HomePage() {
       {/* ════════════════════════════════
           TRUST BAR
       ════════════════════════════════ */}
-      <section id="trust-bar" style={{ background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <section id="trust-bar" aria-labelledby="trust-bar-heading" style={{ background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <h2 id="trust-bar-heading" className="sr-only">Quality and delivery guarantees</h2>
         <div className="container mx-auto px-6 py-4">
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
             {trustBadges.map(({ icon: Icon, title, desc }) => (
@@ -865,7 +866,8 @@ export default function HomePage() {
       {/* ════════════════════════════════
           STATS STRIP
       ════════════════════════════════ */}
-      <section id="stats" style={{ background: 'rgba(16,185,129,0.03)', borderTop: '1px solid rgba(16,185,129,0.1)', borderBottom: '1px solid rgba(16,185,129,0.1)' }}>
+      <section id="stats" aria-labelledby="stats-heading" style={{ background: 'rgba(16,185,129,0.03)', borderTop: '1px solid rgba(16,185,129,0.1)', borderBottom: '1px solid rgba(16,185,129,0.1)' }}>
+        <h2 id="stats-heading" className="sr-only">PH Labs by the numbers</h2>
         <div className="container mx-auto px-6 py-10">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 will-fade">
             {[
@@ -978,6 +980,7 @@ export default function HomePage() {
                         <button
                           type="button"
                           onClick={copyDiscountCode}
+                          aria-label={codeCopied ? 'Discount code copied to clipboard' : `Copy discount code ${revealedCode} to clipboard`}
                           className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                           style={{ background: 'rgba(16,185,129,0.18)', color: '#4ade80', border: '1px solid rgba(16,185,129,0.35)' }}
                         >
