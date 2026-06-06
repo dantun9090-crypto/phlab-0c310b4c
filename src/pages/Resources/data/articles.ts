@@ -315,11 +315,11 @@ Semaglutide is a 31-amino-acid analogue of native GLP-1 with two amino acid subs
         heading: 'Weight Change Observations Across Clinical Trials',
         body: `Direct head-to-head comparison is complicated by differences in trial design, participant populations, and dose titration schedules. The data below represents maximum-dose arms from Phase 2/3 trials in adults with obesity (BMI ≥30 or ≥27 with comorbidity) at 52–72 weeks, selected as the most comparable available data. These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds:`,
         table: {
-          headers: ['Compound', 'Max Dose', 'Trial Duration', 'Mean Weight Loss', 'Trial'],
+          headers: ['Compound', 'Max Dose', 'Trial Duration', 'Mean Body Weight Change', 'Trial'],
           rows: [
-            ['Semaglutide 2.4 mg', '2.4 mg/week s.c.', '68 weeks', '-14.9% body weight', 'STEP 1 (Wilding, NEJM 2021)'],
-            ['Tirzepatide 15 mg', '15 mg/week s.c.', '72 weeks', '-20.9% body weight', 'SURMOUNT-1 (Jastreboff, NEJM 2022)'],
-            ['Retatrutide 12 mg', '12 mg/week s.c.', '48 weeks', '-24.2% body weight', 'Phase 2 (Jastreboff, NEJM 2023)'],
+            ['Semaglutide 2.4 mg', '2.4 mg/week s.c.', '68 weeks', '−14.9% body weight', 'STEP 1 (Wilding, NEJM 2021)'],
+            ['Tirzepatide 15 mg', '15 mg/week s.c.', '72 weeks', '−20.9% body weight', 'SURMOUNT-1 (Jastreboff, NEJM 2022)'],
+            ['Retatrutide 12 mg', '12 mg/week s.c.', '48 weeks', '−24.2% body weight', 'Phase 2 (Jastreboff, NEJM 2023)'],
           ]
         }
       },
