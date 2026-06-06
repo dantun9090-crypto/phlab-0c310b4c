@@ -890,3 +890,188 @@ export const getFenaIntegrationStatus = createServerFn({ method: "POST" })
       approxRequestVolume24h: events24.length,
     };
   });
+
+
+// ---------- Paginated / filterable webhook events ----------
+
+const WebhookListInput = z.object({
+  idToken: z.string().min(10).max(4096),
+  pageSize: z.number().int().min(1).max(100).optional(),
+  /** ISO timestamp of the last row from the previous page. */
+  cursorCreatedAt: z.string().min(1).max(40).optional(),
+  level: z.enum(["info", "warn", "error"]).optional(),
+  outcome: z
+    .enum(["matched", "orphan", "duplicate", "bank_account", "error", "info"])
+    .optional(),
+  /** Case-insensitive substring search over message, orderId, fenaPaymentId. */
+  search: z.string().max(200).optional(),
+});
+
+export interface FenaWebhookEventsPage {
+  rows: FenaWebhookEventRow[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+export const listFenaWebhookEventsPaged = createServerFn({ method: "POST" })
+  .inputValidator((d) => WebhookListInput.parse(d))
+  .handler(async ({ data }): Promise<FenaWebhookEventsPage> => {
+    await requireFirebaseAdmin(data.idToken);
+    // When a search/outcome filter is active, broaden the server-side fetch
+    // so post-filtering can still fill a full page.
+    const wantFilter = Boolean(data.search || data.outcome);
+    const pageSize = data.pageSize ?? 25;
+    const fetchSize = wantFilter ? 200 : Math.min(pageSize + 1, 100);
+    const rawRows = await listDocsAdmin("fena_webhook_events", {
+      orderBy: "createdAt",
+      direction: "DESCENDING",
+      limit: fetchSize,
+      startAfter: data.cursorCreatedAt,
+      where: data.level ? { field: "level", value: data.level } : undefined,
+    });
+    const search = data.search?.trim().toLowerCase() ?? "";
+    const mapped = rawRows.map((row): FenaWebhookEventRow => {
+      const ctxObj =
+        row.ctx && typeof row.ctx === "object" && !Array.isArray(row.ctx)
+          ? (row.ctx as Record<string, unknown>)
+          : {};
+      const message = typeof row.message === "string" ? row.message : "";
+      const level = typeof row.level === "string" ? row.level : "";
+      const orderId = pickStr(ctxObj, "orderId");
+      const reason = pickStr(ctxObj, "reason");
+      const matchOutcome: FenaWebhookEventRow["matchOutcome"] = /^ORPHAN/i.test(message)
+        ? "orphan"
+        : /^bank-accounts:/i.test(message)
+          ? "bank_account"
+          : /^duplicate event/i.test(message)
+            ? "duplicate"
+            : /^processed$/i.test(message) && orderId
+              ? "matched"
+              : level === "error"
+                ? "error"
+                : "info";
+      return {
+        id: row.id,
+        level: level || undefined,
+        message: message || undefined,
+        ctx: Object.keys(ctxObj).length ? JSON.stringify(ctxObj, null, 2) : undefined,
+        createdAt: typeof row.createdAt === "string" ? row.createdAt : undefined,
+        orderId,
+        fenaPaymentId: pickStr(ctxObj, "fenaPaymentId"),
+        fenaStatus: pickStr(ctxObj, "fenaStatus"),
+        newStatus: pickStr(ctxObj, "newStatus"),
+        reason,
+        matchOutcome,
+      };
+    });
+    const filtered = mapped.filter((r) => {
+      if (data.outcome && r.matchOutcome !== data.outcome) return false;
+      if (search) {
+        const hay = `${r.message ?? ""} ${r.orderId ?? ""} ${r.fenaPaymentId ?? ""} ${r.reference ?? ""}`.toLowerCase();
+        if (!hay.includes(search)) return false;
+      }
+      return true;
+    });
+    const page = filtered.slice(0, pageSize);
+    const hasMore = filtered.length > pageSize || (!wantFilter && rawRows.length === fetchSize);
+    const last = page[page.length - 1];
+    return {
+      rows: page,
+      nextCursor: hasMore && last?.createdAt ? last.createdAt : null,
+      hasMore,
+    };
+  });
+
+
+// ---------- Quota / metering ----------
+
+export type FenaQuotaStatus = FenaQuotaSnapshot;
+
+export const getFenaQuotaStatus = createServerFn({ method: "POST" })
+  .inputValidator((d) => AdminEventsInput.parse(d))
+  .handler(async ({ data }): Promise<FenaQuotaStatus> => {
+    await requireFirebaseAdmin(data.idToken);
+    return getFenaQuotaSnapshot();
+  });
+
+const SetLimitInput = z.object({
+  idToken: z.string().min(10).max(4096),
+  dailyLimit: z.number().int().min(10).max(1_000_000),
+});
+
+export const setFenaQuotaDailyLimit = createServerFn({ method: "POST" })
+  .inputValidator((d) => SetLimitInput.parse(d))
+  .handler(async ({ data }): Promise<{ dailyLimit: number }> => {
+    await requireFirebaseAdmin(data.idToken);
+    const dailyLimit = await setFenaDailyLimit(data.dailyLimit);
+    return { dailyLimit };
+  });
+
+
+// ---------- Retry queue ----------
+
+export interface FenaRetryRow {
+  id: string;
+  orderId: string;
+  fenaPaymentId: string;
+  attempts: number;
+  maxAttempts: number;
+  nextAttemptAt?: string;
+  enqueuedAt?: string;
+  lastEnqueuedAt?: string;
+  lastError?: string;
+  source?: string;
+  exhausted: boolean;
+  exhaustedAt?: string;
+}
+
+function coerceRetryRow(row: Record<string, unknown> & { id: string }): FenaRetryRow {
+  return {
+    id: row.id,
+    orderId: typeof row.orderId === "string" ? row.orderId : "",
+    fenaPaymentId: typeof row.fenaPaymentId === "string" ? row.fenaPaymentId : "",
+    attempts: Number(row.attempts ?? 0),
+    maxAttempts: MAX_RETRY_ATTEMPTS,
+    nextAttemptAt: typeof row.nextAttemptAt === "string" ? row.nextAttemptAt : undefined,
+    enqueuedAt: typeof row.enqueuedAt === "string" ? row.enqueuedAt : undefined,
+    lastEnqueuedAt: typeof row.lastEnqueuedAt === "string" ? row.lastEnqueuedAt : undefined,
+    lastError: typeof row.lastError === "string" ? row.lastError : undefined,
+    source: typeof row.source === "string" ? row.source : undefined,
+    exhausted: row.exhausted === true,
+    exhaustedAt: typeof row.exhaustedAt === "string" ? row.exhaustedAt : undefined,
+  };
+}
+
+export const listFenaRetryQueue = createServerFn({ method: "POST" })
+  .inputValidator((d) => AdminEventsInput.parse(d))
+  .handler(async ({ data }): Promise<FenaRetryRow[]> => {
+    await requireFirebaseAdmin(data.idToken);
+    const rows = await listDocsAdmin("fena_retry_queue", {
+      orderBy: "lastEnqueuedAt",
+      direction: "DESCENDING",
+      limit: 50,
+    });
+    return rows.map(coerceRetryRow);
+  });
+
+export const processFenaRetriesAdmin = createServerFn({ method: "POST" })
+  .inputValidator((d) => AdminEventsInput.parse(d))
+  .handler(async ({ data }): Promise<RetryProcessResult> => {
+    await requireFirebaseAdmin(data.idToken);
+    return processFenaRetries(async (orderId, updates) => {
+      await updateDocAdmin("orders", orderId, updates);
+    });
+  });
+
+const DeleteRetryInput = z.object({
+  idToken: z.string().min(10).max(4096),
+  id: z.string().min(1).max(256).regex(/^[A-Za-z0-9_-]+$/),
+});
+
+export const deleteFenaRetryRow = createServerFn({ method: "POST" })
+  .inputValidator((d) => DeleteRetryInput.parse(d))
+  .handler(async ({ data }): Promise<{ ok: true }> => {
+    await requireFirebaseAdmin(data.idToken);
+    await deleteDocAdmin("fena_retry_queue", data.id);
+    return { ok: true };
+  });
