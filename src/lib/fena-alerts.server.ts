@@ -23,7 +23,10 @@ export type FenaAlertCode =
   | "fena_bank_account_write_failed"
   | "fena_webhook_unverified"
   | "fena_orphan_payment"
-  | "fena_credentials_missing";
+  | "fena_credentials_missing"
+  | "fena_quota_warning"
+  | "fena_quota_429"
+  | "fena_retry_exhausted";
 
 const THROTTLE_MS = 30 * 60 * 1000; // 30 min between emails per code
 
