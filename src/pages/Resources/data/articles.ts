@@ -44,7 +44,7 @@ export const articles: Article[] = [
     category: 'Metabolic Research',
     readTime: 14,
     publishDate: '2026-03-18',
-    excerpt: 'Retatrutide is a novel triple-agonist peptide targeting GIP, GLP-1, and glucagon receptors simultaneously. In early-phase studies it produced greater reductions in body weight than dual-agonist comparators, making it one of the most studied compounds in metabolic research.',
+    excerpt: 'Retatrutide is a novel triple-agonist peptide targeting GIP, GLP-1, and glucagon receptors simultaneously. In early-phase studies, trial cohorts reported greater mean body weight changes than dual-agonist comparators, making it one of the most studied compounds in metabolic research.',
     keywords: ['retatrutide', 'GIP receptor', 'GLP-1 receptor', 'glucagon receptor', 'triple agonist', 'metabolic research', 'LY3437943'],
     relatedSlugs: ['retatrutide-vs-tirzepatide-vs-semaglutide', 'hplc-testing-explained', 'bpc-157-tissue-repair'],
     content: [
@@ -59,9 +59,9 @@ GLP-1R activation increases insulin secretion in a glucose-dependent manner, slo
       },
       {
         heading: 'Preclinical Findings in Rodent Models',
-        body: `In diet-induced obese (DIO) mouse models, retatrutide produced dose-dependent reductions in body weight of up to 25% over 28 days — substantially exceeding the 12–15% reductions typically observed with GLP-1R mono-agonists at comparable doses. Pair-feeding studies confirmed that the effect is not explained entirely by reduced caloric intake; a significant component derives from increased energy expenditure, evidenced by elevated oxygen consumption and brown adipose tissue (BAT) activation on PET imaging.
+        body: `In diet-induced obese (DIO) mouse models, treated cohorts reported a dose-dependent mean body weight change of up to −25% over 28 days — substantially exceeding the −12 to −15% changes typically observed with GLP-1R mono-agonists at comparable doses. Pair-feeding studies confirmed that the effect is not explained entirely by reduced caloric intake; a significant component derives from increased energy expenditure, evidenced by elevated oxygen consumption and brown adipose tissue (BAT) activation on PET imaging.
 
-Hepatic fat content was reduced by greater than 70% in ob/ob mice over a 12-week treatment window. Triglyceride synthesis pathways (SREBP-1c, FAS) were downregulated at the transcriptional level, while fatty acid oxidation genes (CPT1a, ACOX1) were upregulated. Fasting glucose and insulin resistance indices (HOMA-IR) normalised within four weeks in all DIO cohorts studied.`,
+Hepatic fat content was observed to change by greater than −70% in ob/ob mice over a 12-week treatment window. Triglyceride synthesis pathways (SREBP-1c, FAS) were downregulated at the transcriptional level, while fatty acid oxidation genes (CPT1a, ACOX1) were upregulated. Glucose markers returned toward baseline in the study group and insulin sensitivity indices (HOMA-IR) were observed to change within four weeks across all DIO cohorts studied.`,
         callout: {
           type: 'info',
           text: 'All referenced findings are from preclinical in-vivo studies. Retatrutide is an investigational compound; these observations do not establish therapeutic claims for human use.'
@@ -69,9 +69,9 @@ Hepatic fat content was reduced by greater than 70% in ob/ob mice over a 12-week
       },
       {
         heading: 'Phase 2 Human Research Data (SURMOUNT programme)',
-        body: `Phase 2 data published in the New England Journal of Medicine (Jastreboff et al., 2023) demonstrated that participants receiving retatrutide 12 mg once weekly achieved a mean body weight reduction of 17.5% at 24 weeks and 24.2% at 48 weeks — the highest figures reported for any pharmacological agent at the time of publication. The trial enrolled adults with body mass index ≥27 kg/m2 and at least one weight-related comorbidity. Reductions in waist circumference, HbA1c, fasting insulin, and liver enzyme levels were also recorded across all active-dose cohorts.
+        body: `These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds. Phase 2 data published in the New England Journal of Medicine (Jastreboff et al., 2023) reported that trial cohorts receiving retatrutide 12 mg once weekly recorded a mean body weight change of −17.5% at 24 weeks and −24.2% at 48 weeks — the highest figures reported for any pharmacological agent at the time of publication. The trial enrolled adults with body mass index ≥27 kg/m2 and at least one weight-related comorbidity. Waist circumference, HbA1c, fasting insulin, and liver enzyme indices were observed to change toward baseline across all active-dose cohorts.
 
-The compound is currently progressing through Phase 3 evaluation (TRIUMPH programme), with primary endpoints including total body weight reduction, cardiovascular event rates, and hepatic steatosis resolution as assessed by MRI-PDFF.`
+The compound is currently progressing through Phase 3 evaluation (TRIUMPH programme), with primary endpoints including total body weight change, cardiovascular event rates, and hepatic steatosis resolution as assessed by MRI-PDFF. These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds.`
       },
       {
         heading: 'Comparative Receptor Activity Profile',
@@ -312,14 +312,14 @@ Semaglutide is a 31-amino-acid analogue of native GLP-1 with two amino acid subs
         }
       },
       {
-        heading: 'Weight Reduction Comparison Across Clinical Trials',
-        body: `Direct head-to-head comparison is complicated by differences in trial design, patient populations, and dose titration schedules. The data below represents maximum dose arms from Phase 2/3 trials in adults with obesity (BMI ≥30 or ≥27 with comorbidity) at 52–72 weeks, selected as the most comparable available data:`,
+        heading: 'Weight Change Observations Across Clinical Trials',
+        body: `Direct head-to-head comparison is complicated by differences in trial design, participant populations, and dose titration schedules. The data below represents maximum-dose arms from Phase 2/3 trials in adults with obesity (BMI ≥30 or ≥27 with comorbidity) at 52–72 weeks, selected as the most comparable available data. These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds:`,
         table: {
-          headers: ['Compound', 'Max Dose', 'Trial Duration', 'Mean Weight Loss', 'Trial'],
+          headers: ['Compound', 'Max Dose', 'Trial Duration', 'Mean Body Weight Change', 'Trial'],
           rows: [
-            ['Semaglutide 2.4 mg', '2.4 mg/week s.c.', '68 weeks', '-14.9% body weight', 'STEP 1 (Wilding, NEJM 2021)'],
-            ['Tirzepatide 15 mg', '15 mg/week s.c.', '72 weeks', '-20.9% body weight', 'SURMOUNT-1 (Jastreboff, NEJM 2022)'],
-            ['Retatrutide 12 mg', '12 mg/week s.c.', '48 weeks', '-24.2% body weight', 'Phase 2 (Jastreboff, NEJM 2023)'],
+            ['Semaglutide 2.4 mg', '2.4 mg/week s.c.', '68 weeks', '−14.9% body weight', 'STEP 1 (Wilding, NEJM 2021)'],
+            ['Tirzepatide 15 mg', '15 mg/week s.c.', '72 weeks', '−20.9% body weight', 'SURMOUNT-1 (Jastreboff, NEJM 2022)'],
+            ['Retatrutide 12 mg', '12 mg/week s.c.', '48 weeks', '−24.2% body weight', 'Phase 2 (Jastreboff, NEJM 2023)'],
           ]
         }
       },
@@ -331,9 +331,9 @@ The additional GCGR activation in retatrutide contributes the most novel mechani
       },
       {
         heading: 'Hepatic and Cardiometabolic Effects',
-        body: `Beyond weight reduction, all three compounds show effects on ectopic fat deposition and cardiometabolic risk markers. Semaglutide reduced liver fat by approximately 30–35% in NASH-spectrum disease trials (NASH is now termed MASH). Tirzepatide demonstrated MASH resolution in the SURMOUNT-NASH trial at rates exceeding 50% in the highest dose group. Retatrutide Phase 2 data showed MRI-PDFF-measured liver fat reductions of approximately 80% at the highest dose, attributed to combined GCGR-driven hepatic lipolysis and GIPR/GLP-1R-mediated reduction in de novo lipogenesis.
+        body: `Beyond body weight change, all three compounds show observed effects on ectopic fat deposition and cardiometabolic markers. Semaglutide trial cohorts reported liver fat changes of approximately −30 to −35% in NASH-spectrum disease trials (NASH is now termed MASH). Tirzepatide trial cohorts in SURMOUNT-NASH reported MASH resolution rates exceeding 50% in the highest-dose group. Retatrutide Phase 2 cohorts reported MRI-PDFF-measured liver fat changes of approximately −80% at the highest dose, attributed to combined GCGR-driven hepatic lipolysis and GIPR/GLP-1R-mediated reduction in de novo lipogenesis. These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds.
 
-Cardiovascular outcome data are available only for semaglutide (SUSTAIN-6, SELECT trials), which demonstrated significant reduction in major adverse cardiovascular events (MACE). Tirzepatide cardiovascular outcomes data from SURMOUNT-MMO is anticipated in 2025–2026. No cardiovascular outcomes data exist for retatrutide at the time of writing.`
+Cardiovascular outcome data are available only for semaglutide (SUSTAIN-6, SELECT trials), where trial cohorts reported significant changes in major adverse cardiovascular events (MACE). Tirzepatide cardiovascular outcomes data from SURMOUNT-MMO is anticipated in 2025–2026. No cardiovascular outcomes data exist for retatrutide at the time of writing.`
       }
     ],
     references: [
@@ -964,15 +964,15 @@ Third, GIP appears to potentiate GLP-1R signalling in beta cells through converg
 
 Pair-feeding experiments indicated that approximately 50–60% of the additional weight loss from dual agonism was attributable to non-intake mechanisms — primarily increased energy expenditure. Indirect calorimetry showed elevated oxygen consumption and respiratory quotient shifts suggesting enhanced fat oxidation. Brown adipose tissue (BAT) thermogenesis, assessed by uncoupling protein-1 (UCP1) expression and 18F-FDG PET uptake, was greater in dual-agonist treated animals than in GLP-1R mono-agonist controls at matched doses.
 
-In non-human primate studies, tirzepatide-analogous dual GIP/GLP-1 compounds produced dose-dependent reductions in body weight of up to 11.3% over 12 weeks with concurrent improvements in insulin sensitivity (euglycaemic clamp), postprandial lipid clearance, and hepatic fat content assessed by MRI.`
+In non-human primate studies, tirzepatide-analogous dual GIP/GLP-1 compounds reported a dose-dependent mean body weight change of up to −11.3% over 12 weeks; insulin sensitivity indices (euglycaemic clamp), postprandial lipid clearance markers, and hepatic fat content (MRI) were observed to change concurrently.`
       },
       {
         heading: 'Phase 3 Clinical Data: SURPASS and SURMOUNT Programmes',
-        body: `The SURPASS programme comprised six global phase 3 trials evaluating tirzepatide across the type 2 diabetes spectrum. Across doses of 5, 10, and 15 mg weekly, HbA1c reductions ranged from −1.87% to −2.59% at 40–52 weeks — consistently exceeding those achieved with semaglutide 1 mg (SURPASS-2: −2.01% tirzepatide 15 mg vs −1.86% semaglutide 1 mg, with greater weight loss for tirzepatide: −11.2 kg vs −5.7 kg).
+        body: `These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds. The SURPASS programme comprised six global phase 3 trials evaluating tirzepatide across the type 2 diabetes spectrum. Across doses of 5, 10, and 15 mg weekly, trial cohorts reported mean HbA1c changes ranging from −1.87% to −2.59% at 40–52 weeks — consistently exceeding those observed with semaglutide 1 mg (SURPASS-2: −2.01% tirzepatide 15 mg vs −1.86% semaglutide 1 mg, with a greater mean body weight change for tirzepatide cohorts: −11.2 kg vs −5.7 kg).
 
-The SURMOUNT programme evaluated tirzepatide in adults without type 2 diabetes but with obesity (BMI ≥30 kg/m2) or overweight with comorbidities. SURMOUNT-1 (Jastreboff et al., NEJM 2022), the pivotal trial, enrolled 2,539 participants across 56 sites. After 72 weeks, mean weight reductions were −15.0% (5 mg), −19.5% (10 mg), and −20.9% (15 mg) compared to −3.1% for placebo. Approximately 37% of participants receiving tirzepatide 15 mg achieved ≥25% body weight reduction — a threshold previously associated only with bariatric surgery outcomes.
+The SURMOUNT programme evaluated tirzepatide in adults without type 2 diabetes but with obesity (BMI ≥30 kg/m2) or overweight with comorbidities. SURMOUNT-1 (Jastreboff et al., NEJM 2022), the pivotal trial, enrolled 2,539 participants across 56 sites. After 72 weeks, trial cohorts reported a mean body weight change of −15.0% (5 mg), −19.5% (10 mg), and −20.9% (15 mg) compared to −3.1% for placebo. Approximately 37% of participants receiving tirzepatide 15 mg recorded a body weight change of −25% or greater — a threshold previously associated only with bariatric surgery outcomes.
 
-SURMOUNT-2 confirmed these findings in participants with type 2 diabetes and obesity, and SURMOUNT-3 and -4 examined weight maintenance after intensive lifestyle lead-in and tirzepatide continuation respectively.`,
+SURMOUNT-2 reported similar observations in participants with type 2 diabetes and obesity, and SURMOUNT-3 and -4 examined weight maintenance after intensive lifestyle lead-in and tirzepatide continuation respectively. These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds.`,
         table: {
           headers: ['Trial', 'Population', 'Duration', 'Weight Reduction (15 mg)', 'Key Comparator'],
           rows: [
@@ -1127,7 +1127,7 @@ Crucially, a 2023 study published in Nature Aging demonstrated that exogenous MO
 
 In the liver, MOTS-c treatment reduced hepatic gluconeogenic enzyme expression (PEPCK, G6Pase) and lowered fasting hepatic glucose output, as quantified by hyperinsulinaemic-euglycaemic clamp. These hepatic effects are AMPK-independent in part — MOTS-c was shown to activate hepatic SIRT1-PGC-1α signalling, reducing gluconeogenic gene transcription through deacetylation of FOXO1.
 
-Human observational data corroborate the preclinical findings: plasma MOTS-c levels in elderly individuals correlate positively with skeletal muscle mass (appendicular lean mass index), insulin sensitivity (HOMA-IR), and aerobic capacity (VO2 max), and are significantly lower in individuals with type 2 diabetes or metabolic syndrome compared to age-matched metabolically healthy controls.`
+Human observational data corroborate the preclinical findings: plasma MOTS-c levels in elderly individuals correlate positively with skeletal muscle mass (appendicular lean mass index), insulin sensitivity indices (HOMA-IR), and aerobic capacity (VO2 max), and are significantly lower in individuals with type 2 diabetes or metabolic syndrome compared to age-matched metabolically healthy controls. These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds.`
       },
       {
         heading: 'Ageing Biology and Longevity Research',
