@@ -496,7 +496,9 @@ export default function OrdersTab() {
       address.toLowerCase().includes(s);
     const matchStatus = statusFilter === 'all' || o.status === statusFilter ||
       (statusFilter === 'pending' && o.status === 'pending_payment') ||
-      (statusFilter === 'fena_paid' && isFenaAutoPaid(o));
+      (statusFilter === 'fena_paid' && isFenaAutoPaid(o)) ||
+      (statusFilter === 'next_day_12' && (o as any).shippingMethod === 'next_day_12') ||
+      (statusFilter === 'next_day_missed' && (o as any).nextDayMissedCutoff === true);
     return matchSearch && matchStatus;
   });
 
