@@ -30,7 +30,7 @@ jobs:
         run: bun run compliance:scan
 
       # Guards canonical host: fails if any source references the wrong
-      # domain (www., phplabs typo, prohealthpeptides legacy, preview hosts).
+      # domain (typo of brand, legacy domain, preview hosts). check-domains-allow-line
       - name: Domain consistency guard
         run: bun run check:domains
 
