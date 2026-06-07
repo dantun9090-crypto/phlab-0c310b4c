@@ -53,6 +53,11 @@ async function logEvent(level: "info" | "warn" | "error", message: string, ctx: 
 export const Route = createFileRoute("/api/public/hooks/truelayer")({
   server: {
     handlers: {
+      GET: async () =>
+        new Response("Method Not Allowed", {
+          status: 405,
+          headers: { Allow: "POST" },
+        }),
       POST: async ({ request }) => {
         const limited = await enforceRateLimit(request, "/api/public/hooks/truelayer", {
           limit: 60,

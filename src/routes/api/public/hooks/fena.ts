@@ -60,6 +60,11 @@ async function logEvent(
 export const Route = createFileRoute("/api/public/hooks/fena")({
   server: {
     handlers: {
+      GET: async () =>
+        new Response("Method Not Allowed", {
+          status: 405,
+          headers: { Allow: "POST" },
+        }),
       POST: async ({ request }) => {
         const limited = await enforceRateLimit(request, "/api/public/hooks/fena", {
           limit: 60,
