@@ -84,6 +84,25 @@ export const Route = createFileRoute("/api/public/hooks/truelayer")({
           return Response.json({ ok: true, pong: true });
         }
 
+        // Only act on actionable lifecycle events. Anything else (future
+        // event types, informational pings) is acknowledged and logged so
+        // TrueLayer does not retry, but we skip the API re-fetch.
+        const eventType = String(payload.type ?? "").toLowerCase();
+        const ACTIONABLE = new Set([
+          "payment_authorized",
+          "payment_executed",
+          "payment_settled",
+          "payment_failed",
+        ]);
+        if (eventType && !ACTIONABLE.has(eventType)) {
+          await logEvent("info", "non-actionable event ignored", {
+            type: eventType,
+            paymentId: payload.payment_id,
+            eventId: payload.event_id,
+          });
+          return Response.json({ ok: true, ignored: eventType });
+        }
+
         const paymentId = String(payload.payment_id);
         const eventId = String(payload.event_id ?? `${paymentId}:${payload.status ?? ""}`);
 
