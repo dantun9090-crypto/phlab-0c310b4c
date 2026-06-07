@@ -1,5 +1,4 @@
 import { createServerFn } from '@tanstack/react-start';
-import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { requireFirebaseAdmin } from '@/lib/server/firebase-auth-admin';
 
 const EXPECTED_PRERENDER_TOKEN_LENGTH = 22;
@@ -11,8 +10,12 @@ const EXPECTED_PRERENDER_TOKEN_LENGTH = 22;
  * configured token is the wrong size (commonly truncated to 20 on paste).
  */
 export const checkPrerenderTokenLength = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .inputValidator((data: { idToken: string }) => {
+    if (!data?.idToken || typeof data.idToken !== 'string') throw new Error('idToken required');
+    return data;
+  })
+  .handler(async ({ data }) => {
+    await requireFirebaseAdmin(data.idToken);
     const token = process.env.PRERENDER_TOKEN ?? '';
     const length = token.length;
     return {
