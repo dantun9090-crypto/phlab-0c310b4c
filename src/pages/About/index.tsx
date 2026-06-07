@@ -178,7 +178,7 @@ export default function AboutPage() {
     <div className="min-h-screen bg-[#060f1e] text-white overflow-x-hidden">
 
       {/* ── HERO ── */}
-      <section ref={heroRef} className="page-hero relative min-h-[680px] md:min-h-[780px] overflow-hidden flex items-end hero-scanline">
+      <section ref={heroRef} className="page-hero relative min-h-[460px] md:min-h-[780px] overflow-hidden flex items-center md:items-end hero-scanline">
         {/* Parallax image (or gradient fallback) */}
         <motion.div className="absolute inset-0" style={{ y: heroY }}>
           {heroImg ? (
@@ -205,7 +205,7 @@ export default function AboutPage() {
         <div className="hero-top-shimmer pointer-events-none" />
 
         {/* Content */}
-        <div className="relative z-10 max-w-6xl mx-auto px-6 lg:px-10 pb-16 w-full">
+        <div className="relative z-10 max-w-6xl mx-auto px-6 lg:px-10 pt-10 pb-16 md:pt-0 md:pb-16 w-full">
           <motion.div
             initial={{ opacity: 1, y: 0 }}
             animate={{ opacity: 1, y: 0 }}
