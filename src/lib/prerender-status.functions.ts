@@ -224,9 +224,12 @@ const DEFAULT_TARGETS = [
 ];
 
 export const probePrerenderStatus = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: { urls?: string[] } | undefined) => data ?? {})
+  .inputValidator((data: { urls?: string[]; idToken: string }) => {
+    if (!data?.idToken || typeof data.idToken !== 'string') throw new Error('idToken required');
+    return data;
+  })
   .handler(async ({ data }) => {
+    await requireFirebaseAdmin(data.idToken);
     const requested =
       data.urls && data.urls.length > 0 ? data.urls.slice(0, 12) : DEFAULT_TARGETS;
     const urls = requested.filter(isAllowedUrl);
