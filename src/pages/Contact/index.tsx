@@ -28,7 +28,9 @@ interface SiteSettings {
 /* ── Scroll fade ── */
 function useScrollFade() {
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  // Default visible: prevents content getting stuck at opacity:0 on mobile
+  // when the IntersectionObserver doesn't fire (throttling, prerender, etc.).
+  const [visible, setVisible] = useState(true);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
