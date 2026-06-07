@@ -130,6 +130,7 @@ export const getOrderPaymentStatus = createServerFn({ method: "POST" })
     const orderId = data.orderId || (typeof orderIdFromPayment?.__id === "string" ? orderIdFromPayment.__id : "");
     const order = orderIdFromPayment || (orderId ? await getDocAdmin("orders", orderId) : null);
     if (!order) throw new Error("Order not found");
+    if (!orderId) throw new Error("Order id could not be resolved");
     if (order.userId && order.userId !== user.uid) {
       throw new Error("Forbidden");
     }
