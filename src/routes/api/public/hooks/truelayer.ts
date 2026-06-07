@@ -25,6 +25,7 @@ import {
 } from "@/lib/payments/truelayer.server";
 import { getGatewayConfig } from "@/lib/payments/gateway-config.server";
 import { enforceRateLimit } from "@/lib/rate-limit";
+import { escapeHtml } from "@/templates/emailBase";
 
 interface TLWebhookBody {
   event_id?: string;
@@ -192,7 +193,7 @@ export const Route = createFileRoute("/api/public/hooks/truelayer")({
                   html: `<!doctype html><html><body style="font-family:Arial,sans-serif;padding:24px;color:#0f172a">
                     <h2 style="color:#10b981">Payment received</h2>
                     <p>Thank you — we've received your payment for order
-                    <strong>${ref}</strong> via TrueLayer Open Banking.</p>
+                    <strong>${escapeHtml(ref)}</strong> via TrueLayer Open Banking.</p>
                   </body></html>`,
                   text: `Payment received for order ${ref}. Thank you.`,
                 },

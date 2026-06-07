@@ -26,6 +26,7 @@ import { computeFenaOrderUpdates } from "@/lib/fena-webhook-updates";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { raiseFenaAlert } from "@/lib/fena-alerts.server";
 import { enqueueFenaUpdateRetry } from "@/lib/fena-retry-queue.server";
+import { escapeHtml } from "@/templates/emailBase";
 
 interface FenaWebhookBody {
   eventScope?: string;
@@ -393,7 +394,7 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
                   html: `<!doctype html><html><body style="font-family:Arial,sans-serif;padding:24px;color:#0f172a">
                     <h2 style="color:#10b981">Payment received</h2>
                     <p>Thank you — we've received your payment for order
-                    <strong>${reference}</strong>.</p>
+                    <strong>${escapeHtml(reference)}</strong>.</p>
                     <p>We'll send dispatch details shortly. Reply to this email
                     if you need help.</p>
                     <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0">
