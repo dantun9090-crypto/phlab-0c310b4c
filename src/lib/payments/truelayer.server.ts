@@ -218,10 +218,24 @@ export async function truelayerTestConnection(sandbox: boolean): Promise<{ ok: t
   return { ok: true, durationMs: Date.now() - t0 };
 }
 
-/** Map TrueLayer payment status to our internal order status. */
+/**
+ * Map TrueLayer payment status to our internal order status.
+ *
+ * TrueLayer payment lifecycle:
+ *   authorization_required → authorizing → authorized → executed → settled
+ *                                                                ↘ failed
+ */
 export function mapTrueLayerStatus(status: string): "pending" | "paid" | "cancelled" {
   const s = status.toLowerCase();
+  // Terminal success: funds in flight (executed) or confirmed in merchant account (settled).
   if (s === "executed" || s === "settled") return "paid";
+  // Terminal failure.
   if (s === "failed") return "cancelled";
+  // Intermediate / in-progress states explicitly named for maintenance clarity.
+  if (
+    s === "authorization_required" ||
+    s === "authorizing" ||
+    s === "authorized"
+  ) return "pending";
   return "pending";
 }
