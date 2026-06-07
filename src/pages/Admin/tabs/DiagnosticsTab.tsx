@@ -1,6 +1,8 @@
-import { useState } from 'react';
-import { db, collection, getDocs, addDoc, doc, deleteDoc, query, limit, Timestamp } from '@/lib/firebase';
-import { Loader2, CheckCircle2, XCircle, Play } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useServerFn } from '@tanstack/react-start';
+import { db, collection, getDocs, addDoc, doc, deleteDoc, query, limit, Timestamp, auth } from '@/lib/firebase';
+import { Loader2, CheckCircle2, XCircle, Play, RefreshCw, Gauge, Bot } from 'lucide-react';
+import { probeEdgeHealth } from '@/lib/edge-health.functions';
 
 type Status = 'idle' | 'running' | 'ok' | 'fail';
 interface CheckResult { status: Status; message: string; }
