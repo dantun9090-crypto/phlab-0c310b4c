@@ -148,16 +148,42 @@ export async function truelayerCreatePayment(
 
   // POST /v3/payments — TrueLayer's API reference requires the /v3/ prefix
   // for all new integrations (the unversioned path is implicitly deprecated).
+  const bodyJson = JSON.stringify(body);
+  const idempotencyKey = randomIdempotencyKey();
+
+  // Sign request with Tl-Signature (ES512 JWS detached) — REQUIRED by
+  // TrueLayer for POST /v3/payments. The signing key (KID + private PEM)
+  // is registered in TrueLayer Console → Payments settings → Signing keys.
+  let tlSignature: string | null = null;
+  const privateKey = process.env.TRUELAYER_PRIVATE_KEY;
+  const kid = process.env.TRUELAYER_KEY_ID;
+  if (privateKey && kid) {
+    const { sign, HttpMethod } = await import("truelayer-signing");
+    tlSignature = sign({
+      kid,
+      privateKeyPem: privateKey,
+      method: HttpMethod.Post,
+      path: "/v3/payments",
+      headers: { "Idempotency-Key": idempotencyKey },
+      body: bodyJson,
+    });
+
+  } else {
+    throw new Error("TrueLayer signing key not configured (TRUELAYER_KEY_ID / TRUELAYER_PRIVATE_KEY)");
+  }
+
   const res = await fetchWithRetry(`${api}/v3/payments`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
       authorization: `Bearer ${token}`,
-      "idempotency-key": randomIdempotencyKey(),
+      "idempotency-key": idempotencyKey,
+      "tl-signature": tlSignature,
     },
-    body: JSON.stringify(body),
+    body: bodyJson,
     signal: AbortSignal.timeout(15_000),
   });
+
   const text = await res.text();
   if (!res.ok) {
     throw new Error(`TrueLayer create-payment ${res.status}: ${text.slice(0, 400)}`);
