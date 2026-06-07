@@ -146,7 +146,7 @@ export const getOrderPaymentStatus = createServerFn({ method: "POST" })
         const liveStatus = String(live.status ?? "").toLowerCase();
         if (liveStatus) fenaStatus = liveStatus;
         if (liveStatus === "paid" && status !== "paid") {
-          await updateDocAdmin("orders", data.orderId, {
+          await updateDocAdmin("orders", orderId, {
             status: "paid",
             paidAt: new Date(),
             fenaStatus: liveStatus,
@@ -155,13 +155,13 @@ export const getOrderPaymentStatus = createServerFn({ method: "POST" })
           });
           status = "paid";
         } else if ((liveStatus === "cancelled" || liveStatus === "expired") && status === "pending") {
-          await updateDocAdmin("orders", data.orderId, {
+          await updateDocAdmin("orders", orderId, {
             status: "cancelled",
             fenaStatus: liveStatus,
           });
           status = "cancelled";
         } else if (liveStatus && liveStatus !== order.fenaStatus) {
-          await updateDocAdmin("orders", data.orderId, { fenaStatus: liveStatus });
+          await updateDocAdmin("orders", orderId, { fenaStatus: liveStatus });
         }
       } catch {
         // Don't fail the poll if Fena is briefly unreachable.
