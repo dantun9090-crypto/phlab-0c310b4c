@@ -85,6 +85,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "distribution", content: "UK" },
       { name: "target_country", content: "GB" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "theme-color", content: "#060f1e" },
+      { name: "apple-mobile-web-app-title", content: "PH Labs" },
+      { name: "application-name", content: "PH Labs" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "google-site-verification", content: "tYtU-dRlfAq14D7lyPTYf8noiJH-b0LifcvvrGi8AZw" },
       // og:type intentionally omitted at root — set per-leaf-route
       // (website on home, product on PDPs, article on resource articles)
