@@ -14,7 +14,7 @@ export const Route = createFileRoute('/admin/merchant-feed-preview')({
 });
 
 function MerchantFeedPreview() {
-  const [authChecked2, _setAuthChecked2] = useState(false); void authChecked2;
+  
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [xml, setXml] = useState<string>('');
