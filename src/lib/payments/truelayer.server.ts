@@ -75,6 +75,30 @@ function randomIdempotencyKey(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/**
+ * fetch() wrapper that retries idempotent failures (network errors, 5xx,
+ * and 429) up to twice with exponential backoff (250ms, 750ms). Safe to
+ * use for POSTs that carry an Idempotency-Key — TrueLayer guarantees
+ * the same key returns the same payment.
+ */
+async function fetchWithRetry(url: string, init: RequestInit): Promise<Response> {
+  const delays = [250, 750];
+  let lastErr: unknown = null;
+  for (let attempt = 0; attempt <= delays.length; attempt += 1) {
+    try {
+      const res = await fetch(url, init);
+      if (res.status < 500 && res.status !== 429) return res;
+      if (attempt === delays.length) return res;
+      lastErr = new Error(`HTTP ${res.status}`);
+    } catch (err) {
+      lastErr = err;
+      if (attempt === delays.length) throw err;
+    }
+    await new Promise((r) => setTimeout(r, delays[attempt]));
+  }
+  throw lastErr instanceof Error ? lastErr : new Error("fetchWithRetry failed");
+}
+
 export interface TrueLayerCreatePaymentInput {
   amountMinor: number;
   reference: string;
@@ -122,7 +146,9 @@ export async function truelayerCreatePayment(
     },
   };
 
-  const res = await fetch(`${api}/payments`, {
+  // POST /v3/payments — TrueLayer's API reference requires the /v3/ prefix
+  // for all new integrations (the unversioned path is implicitly deprecated).
+  const res = await fetchWithRetry(`${api}/v3/payments`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
@@ -171,7 +197,7 @@ export async function truelayerGetPayment(
 ): Promise<TrueLayerPaymentStatus> {
   const token = await getAccessToken(sandbox);
   const { api } = hosts(sandbox);
-  const res = await fetch(`${api}/payments/${encodeURIComponent(paymentId)}`, {
+  const res = await fetch(`${api}/v3/payments/${encodeURIComponent(paymentId)}`, {
     headers: { authorization: `Bearer ${token}` },
     signal: AbortSignal.timeout(10_000),
   });
@@ -192,10 +218,24 @@ export async function truelayerTestConnection(sandbox: boolean): Promise<{ ok: t
   return { ok: true, durationMs: Date.now() - t0 };
 }
 
-/** Map TrueLayer payment status to our internal order status. */
+/**
+ * Map TrueLayer payment status to our internal order status.
+ *
+ * TrueLayer payment lifecycle:
+ *   authorization_required → authorizing → authorized → executed → settled
+ *                                                                ↘ failed
+ */
 export function mapTrueLayerStatus(status: string): "pending" | "paid" | "cancelled" {
   const s = status.toLowerCase();
+  // Terminal success: funds in flight (executed) or confirmed in merchant account (settled).
   if (s === "executed" || s === "settled") return "paid";
+  // Terminal failure.
   if (s === "failed") return "cancelled";
+  // Intermediate / in-progress states explicitly named for maintenance clarity.
+  if (
+    s === "authorization_required" ||
+    s === "authorizing" ||
+    s === "authorized"
+  ) return "pending";
   return "pending";
 }
