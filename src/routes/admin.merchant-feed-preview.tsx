@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Loader2, Shield, RefreshCw, Copy, ExternalLink } from 'lucide-react';
 import { auth, db, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
