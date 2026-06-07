@@ -1,12 +1,9 @@
 /**
- * Failover tests for the cross-gateway dispatcher.
+ * Tests for the cross-gateway dispatcher.
  *
- * Simulates the primary gateway throwing while creating a payment link and
- * confirms that `createPaymentLinkForOrder`:
- *   1. transparently retries the next enabled backup,
- *   2. returns a working redirect link from the backup,
- *   3. records the failure on the primary and a success on the backup,
- *   4. throws only when every candidate fails.
+ * Simulates enabled gateways and confirms that `createPaymentLinkForOrder`
+ * only uses the configured primary gateway. Failed primary payments must be
+ * surfaced clearly instead of silently redirecting customers to a backup.
  *
  * All server-only collaborators (Firestore admin SDK, Fena/TrueLayer
  * adapters, gateway config) are mocked so the test runs in jsdom.
@@ -87,8 +84,8 @@ beforeEach(() => {
 
 // --- Tests ----------------------------------------------------------------
 
-describe("createPaymentLinkForOrder — failover", () => {
-  it("retries the backup gateway when the primary throws and returns its redirect link", async () => {
+describe("createPaymentLinkForOrder", () => {
+  it("does not retry a backup gateway when the primary throws", async () => {
     resolveActiveGateways.mockResolvedValue({
       primary: gw("fena", { priority: "primary" }),
       backups: [gw("truelayer")],
@@ -98,32 +95,22 @@ describe("createPaymentLinkForOrder — failover", () => {
     fenaCreateAndProcess.mockRejectedValueOnce(
       new Error("Fena API 502 Bad Gateway"),
     );
-    // …backup succeeds.
-    truelayerCreatePayment.mockResolvedValueOnce({
-      id: "tl_pay_999",
-      status: "authorization_required",
-      hppUrl: "https://payment.truelayer-sandbox.com/payments#tl_pay_999",
-    });
-
     const { createPaymentLinkForOrder } = await import(
       "@/lib/payments/dispatch.server"
     );
-    const result = await createPaymentLinkForOrder(ORDER_CTX);
+    await expect(createPaymentLinkForOrder(ORDER_CTX)).rejects.toThrow(
+      /Fena API 502 Bad Gateway/,
+    );
 
-    expect(result.gateway).toBe("truelayer");
-    expect(result.hppUrl).toMatch(/truelayer-sandbox\.com/);
-    expect(result.externalPaymentId).toBe("tl_pay_999");
-
-    // Failover was attempted.
     expect(fenaCreateAndProcess).toHaveBeenCalledTimes(1);
-    expect(truelayerCreatePayment).toHaveBeenCalledTimes(1);
+    expect(truelayerCreatePayment).not.toHaveBeenCalled();
 
-    // Health tracker should record the primary failure and the backup success.
+    // Health tracker should record the primary failure only.
     const calls = (recordGatewayTest.mock.calls as Array<[string, { ok: boolean }]>).map(
       ([gateway, payload]) => ({ gateway, ok: payload.ok }),
     );
     expect(calls).toContainEqual({ gateway: "fena", ok: false });
-    expect(calls).toContainEqual({ gateway: "truelayer", ok: true });
+    expect(calls).not.toContainEqual({ gateway: "truelayer", ok: true });
   });
 
   it("returns the primary's link when the primary succeeds (no backup attempt)", async () => {
@@ -147,7 +134,7 @@ describe("createPaymentLinkForOrder — failover", () => {
     expect(truelayerCreatePayment).not.toHaveBeenCalled();
   });
 
-  it("throws the last error when every gateway fails", async () => {
+  it("throws the primary error without trying configured backups", async () => {
     resolveActiveGateways.mockResolvedValue({
       primary: gw("fena", { priority: "primary" }),
       backups: [gw("truelayer")],
@@ -160,10 +147,10 @@ describe("createPaymentLinkForOrder — failover", () => {
     );
 
     await expect(createPaymentLinkForOrder(ORDER_CTX)).rejects.toThrow(
-      /truelayer down/,
+      /fena down/,
     );
     expect(fenaCreateAndProcess).toHaveBeenCalledTimes(1);
-    expect(truelayerCreatePayment).toHaveBeenCalledTimes(1);
+    expect(truelayerCreatePayment).not.toHaveBeenCalled();
   });
 
   it("throws a clear error when no gateways are enabled", async () => {

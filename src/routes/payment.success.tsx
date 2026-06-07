@@ -21,17 +21,21 @@ function PaymentSuccessPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    // Accept both ?order_id=... (Fena convention) and ?orderId=...
-    // Firestore order doc IDs are uppercase (PHP-…); Fena echoes back lowercase.
-    const rawOrderId = params.get("order_id") || params.get("orderId") || "";
+    const paymentId = params.get("payment_id") || "";
+    const storedOrderId = paymentId
+      ? localStorage.getItem(`php_tl_order_${paymentId}`) || ""
+      : "";
+    // Accept ?order_id=... / ?orderId=... from legacy providers, or TrueLayer's
+    // ?payment_id=... and resolve the order server-side.
+    const rawOrderId = params.get("order_id") || params.get("orderId") || storedOrderId;
     const orderId = rawOrderId.toUpperCase();
-    setReference(orderId);
-    if (!orderId) {
+    setReference(orderId || paymentId);
+    if (!orderId && !paymentId) {
       setPhase("error");
       setError("No order reference in URL. Please complete checkout from your cart.");
       return;
     }
-    if (!/^PHP-[A-Z0-9-]{6,}$/.test(orderId)) {
+    if (orderId && !/^PHP-[A-Z0-9-]{6,}$/.test(orderId)) {
       setPhase("error");
       setError(
         `Invalid order reference "${rawOrderId}". This usually means an old browser tab or a direct link. Please return to checkout and place the order again.`,
@@ -53,8 +57,9 @@ function PaymentSuccessPage() {
         if (stopRef.current) return;
         try {
           const idToken = await user.getIdToken();
-          console.log("Success page checking order:", orderId);
-          const res = await fetchStatus({ data: { idToken, orderId } });
+          console.log("Success page checking payment:", orderId || paymentId);
+          const res = await fetchStatus({ data: orderId ? { idToken, orderId } : { idToken, paymentId } });
+          if (res.orderId) setReference(res.orderId);
           console.log("Order found:", true, "status:", res.status, "paid:", res.paid);
           if (res.paid) {
             setPhase("paid");

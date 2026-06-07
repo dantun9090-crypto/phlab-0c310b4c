@@ -385,6 +385,11 @@ function DetailsModal({ row, onClose }: { row: PaymentGatewayConfig; onClose: ()
           <Field label="Webhook URL">
             <code className="text-emerald-400 text-xs break-all">{row.webhookUrl}</code>
           </Field>
+          {row.id === 'truelayer' && (
+            <Field label="Return URI">
+              <code className="text-emerald-400 text-xs break-all">https://phlabs.co.uk/payment/success</code>
+            </Field>
+          )}
           <Field label="Last tested">
             {row.lastTestedAt ? (
               <span className={row.testStatus === 'ok' ? 'text-emerald-400' : 'text-rose-400'}>

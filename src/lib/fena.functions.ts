@@ -34,6 +34,11 @@ import {
   type FenaListedPayment,
 } from "@/lib/fena.server";
 import {
+  mapTrueLayerStatus,
+  truelayerGetPayment,
+} from "@/lib/payments/truelayer.server";
+import { getGatewayConfig } from "@/lib/payments/gateway-config.server";
+import {
   getFenaQuotaSnapshot,
   setFenaDailyLimit,
   type FenaQuotaSnapshot,
@@ -111,15 +116,21 @@ export const createFenaPaymentLink = createServerFn({ method: "POST" })
 
 const StatusInput = z.object({
   idToken: z.string().min(10).max(4096),
-  orderId: z.string().min(6).max(128).regex(/^[A-Za-z0-9_-]+$/),
-});
+  orderId: z.string().min(6).max(128).regex(/^[A-Za-z0-9_-]+$/).optional(),
+  paymentId: z.string().min(6).max(128).regex(/^[A-Za-z0-9_-]+$/).optional(),
+}).refine((d) => d.orderId || d.paymentId, { message: "orderId or paymentId is required" });
 
 export const getOrderPaymentStatus = createServerFn({ method: "POST" })
   .inputValidator((d) => StatusInput.parse(d))
   .handler(async ({ data }) => {
     const user = await verifyFirebaseIdToken(data.idToken);
-    const order = await getDocAdmin("orders", data.orderId);
+    const orderIdFromPayment = data.paymentId
+      ? await findDocByFieldAdmin("orders", "truelayerPaymentId", data.paymentId)
+      : null;
+    const orderId = data.orderId || (typeof orderIdFromPayment?.__id === "string" ? orderIdFromPayment.__id : "");
+    const order = orderIdFromPayment || (orderId ? await getDocAdmin("orders", orderId) : null);
     if (!order) throw new Error("Order not found");
+    if (!orderId) throw new Error("Order id could not be resolved");
     if (order.userId && order.userId !== user.uid) {
       throw new Error("Forbidden");
     }
@@ -136,7 +147,7 @@ export const getOrderPaymentStatus = createServerFn({ method: "POST" })
         const liveStatus = String(live.status ?? "").toLowerCase();
         if (liveStatus) fenaStatus = liveStatus;
         if (liveStatus === "paid" && status !== "paid") {
-          await updateDocAdmin("orders", data.orderId, {
+          await updateDocAdmin("orders", orderId, {
             status: "paid",
             paidAt: new Date(),
             fenaStatus: liveStatus,
@@ -145,20 +156,51 @@ export const getOrderPaymentStatus = createServerFn({ method: "POST" })
           });
           status = "paid";
         } else if ((liveStatus === "cancelled" || liveStatus === "expired") && status === "pending") {
-          await updateDocAdmin("orders", data.orderId, {
+          await updateDocAdmin("orders", orderId, {
             status: "cancelled",
             fenaStatus: liveStatus,
           });
           status = "cancelled";
         } else if (liveStatus && liveStatus !== order.fenaStatus) {
-          await updateDocAdmin("orders", data.orderId, { fenaStatus: liveStatus });
+          await updateDocAdmin("orders", orderId, { fenaStatus: liveStatus });
         }
       } catch {
         // Don't fail the poll if Fena is briefly unreachable.
       }
     }
 
+    const truelayerPaymentId = typeof order.truelayerPaymentId === "string" ? order.truelayerPaymentId : data.paymentId || "";
+    if (truelayerPaymentId && !settled.includes(status)) {
+      try {
+        const cfg = await getGatewayConfig("truelayer");
+        const live = await truelayerGetPayment(truelayerPaymentId, cfg.sandbox);
+        const liveStatus = String(live.status ?? "").toLowerCase();
+        const mapped = mapTrueLayerStatus(liveStatus);
+        if (mapped === "paid" && status !== "paid") {
+          await updateDocAdmin("orders", orderId, {
+            status: "paid",
+            paidAt: new Date(),
+            truelayerStatus: liveStatus,
+            paymentProvider: "truelayer",
+            truelayerSelfHealedAt: new Date(),
+          });
+          status = "paid";
+        } else if (mapped === "cancelled" && status === "pending") {
+          await updateDocAdmin("orders", orderId, {
+            status: "cancelled",
+            truelayerStatus: liveStatus,
+          });
+          status = "cancelled";
+        } else if (liveStatus && liveStatus !== order.truelayerStatus) {
+          await updateDocAdmin("orders", orderId, { truelayerStatus: liveStatus });
+        }
+      } catch {
+        // Don't fail the poll if TrueLayer is briefly unreachable.
+      }
+    }
+
     return {
+      orderId,
       status,
       paid: ["paid", "completed", "shipped", "fulfilled"].includes(status),
       fenaStatus,

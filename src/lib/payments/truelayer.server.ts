@@ -157,6 +157,7 @@ export interface TrueLayerCreatePaymentInput {
   userName: string;
   userEmail?: string;
   returnUri: string;
+  state?: string;
   sandbox: boolean;
 }
 
@@ -178,6 +179,11 @@ export async function truelayerCreatePayment(
   const body = {
     amount_in_minor: input.amountMinor,
     currency: "GBP",
+    hosted_page: {
+      return_uri: input.returnUri,
+      country_code: "GB",
+      language_code: "en",
+    },
     payment_method: {
       type: "bank_transfer",
       provider_selection: {
@@ -243,15 +249,24 @@ export async function truelayerCreatePayment(
     id?: string;
     resource_token?: string;
     status?: string;
+    hosted_page?: { uri?: string };
   };
   if (!parsed.id || !parsed.resource_token) {
     throw new Error("TrueLayer create-payment: missing id/resource_token");
   }
 
-  const hppUrl =
-    `${hpp}/payments#payment_id=${encodeURIComponent(parsed.id)}` +
-    `&resource_token=${encodeURIComponent(parsed.resource_token)}` +
-    `&return_uri=${encodeURIComponent(input.returnUri)}`;
+  const appendState = (url: string) => {
+    if (!input.state) return url;
+    const joiner = url.includes("#") ? "&" : "#";
+    return `${url}${joiner}state=${encodeURIComponent(input.state)}`;
+  };
+
+  const hppUrl = appendState(
+    parsed.hosted_page?.uri ||
+      `${hpp}/payments#payment_id=${encodeURIComponent(parsed.id)}` +
+        `&resource_token=${encodeURIComponent(parsed.resource_token)}` +
+        `&return_uri=${encodeURIComponent(input.returnUri)}`,
+  );
 
   return {
     id: parsed.id,

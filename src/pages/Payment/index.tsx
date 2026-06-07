@@ -145,6 +145,9 @@ export default function PaymentPage() {
       if (parsed.protocol !== 'https:' || !okHost) {
         throw new Error('Unexpected payment redirect host.');
       }
+      if (result.gateway === 'truelayer' && result.externalPaymentId) {
+        localStorage.setItem(`php_tl_order_${result.externalPaymentId}`, loadState.orderId);
+      }
 
       setStatus({ message: 'Redirecting to your bank…', type: 'success' });
       window.location.href = parsed.toString();
