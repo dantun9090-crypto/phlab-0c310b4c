@@ -290,7 +290,7 @@ export default function Contact() {
 
         <div className="max-w-6xl mx-auto px-6 lg:px-10 py-20 md:py-28 relative z-10">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 1, y: 0 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: 'easeOut' }}
             className="max-w-2xl"
