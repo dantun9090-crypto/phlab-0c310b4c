@@ -18,6 +18,9 @@ interface CachedToken {
 }
 
 let cachedToken: CachedToken | null = null;
+let cachedMerchantAccount: { id: string; sandbox: boolean; expiresAt: number } | null = null;
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function hosts(sandbox: boolean): { auth: string; api: string; hpp: string } {
   return sandbox
@@ -75,6 +78,32 @@ function randomIdempotencyKey(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function isUuid(value: string | undefined): value is string {
+  return Boolean(value && UUID_RE.test(value.trim()));
+}
+
+async function uuidFromString(raw: string): Promise<string> {
+  if (isUuid(raw)) return raw.trim();
+  const digest = new Uint8Array(
+    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw || randomIdempotencyKey())),
+  );
+  digest[6] = (digest[6] & 0x0f) | 0x40;
+  digest[8] = (digest[8] & 0x3f) | 0x80;
+  const hex = Array.from(digest.slice(0, 16), (b) => b.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+
+function normalizePem(raw: string): string {
+  const expanded = raw.trim().replace(/\\n/g, "\n");
+  const match = expanded.match(
+    /(-----BEGIN [^-]+-----)\s*([A-Za-z0-9+/=\s]+?)\s*(-----END [^-]+-----)/,
+  );
+  if (!match) return expanded;
+  const body = match[2].replace(/\s+/g, "");
+  const lines = body.match(/.{1,64}/g) ?? [body];
+  return `${match[1]}\n${lines.join("\n")}\n${match[3]}`;
+}
+
 /**
  * fetch() wrapper that retries idempotent failures (network errors, 5xx,
  * and 429) up to twice with exponential backoff (250ms, 750ms). Safe to
@@ -99,6 +128,28 @@ async function fetchWithRetry(url: string, init: RequestInit): Promise<Response>
   throw lastErr instanceof Error ? lastErr : new Error("fetchWithRetry failed");
 }
 
+async function resolveMerchantAccountId(sandbox: boolean, token: string): Promise<string> {
+  const configured = process.env.TRUELAYER_MERCHANT_ACCOUNT_ID?.trim();
+  if (isUuid(configured)) return configured;
+  const now = Date.now();
+  if (cachedMerchantAccount && cachedMerchantAccount.sandbox === sandbox && cachedMerchantAccount.expiresAt > now) {
+    return cachedMerchantAccount.id;
+  }
+  const { api } = hosts(sandbox);
+  const res = await fetch(`${api}/v3/merchant-accounts`, {
+    headers: { authorization: `Bearer ${token}` },
+    signal: AbortSignal.timeout(10_000),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`TrueLayer merchant-accounts ${res.status}: ${text.slice(0, 300)}`);
+  const parsed = JSON.parse(text) as { items?: Array<{ id?: string; currency?: string }> };
+  const account = parsed.items?.find((item) => item.currency === "GBP" && isUuid(item.id))
+    ?? parsed.items?.find((item) => isUuid(item.id));
+  if (!account?.id) throw new Error("TrueLayer merchant account UUID could not be resolved");
+  cachedMerchantAccount = { id: account.id, sandbox, expiresAt: now + 5 * 60_000 };
+  return account.id;
+}
+
 export interface TrueLayerCreatePaymentInput {
   amountMinor: number;
   reference: string;
@@ -119,10 +170,10 @@ export interface TrueLayerCreatedPayment {
 export async function truelayerCreatePayment(
   input: TrueLayerCreatePaymentInput,
 ): Promise<TrueLayerCreatedPayment> {
-  const merchantAccountId = process.env.TRUELAYER_MERCHANT_ACCOUNT_ID;
-  if (!merchantAccountId) throw new Error("TRUELAYER_MERCHANT_ACCOUNT_ID is not set");
   const token = await getAccessToken(input.sandbox);
   const { api, hpp } = hosts(input.sandbox);
+  const merchantAccountId = await resolveMerchantAccountId(input.sandbox, token);
+  const userId = await uuidFromString(input.userId);
 
   const body = {
     amount_in_minor: input.amountMinor,
@@ -140,7 +191,7 @@ export async function truelayerCreatePayment(
       },
     },
     user: {
-      id: input.userId,
+      id: userId,
       name: input.userName.slice(0, 100),
       ...(input.userEmail ? { email: input.userEmail.slice(0, 254) } : {}),
     },
@@ -158,11 +209,11 @@ export async function truelayerCreatePayment(
   const privateKey = process.env.TRUELAYER_PRIVATE_KEY;
   const kid = process.env.TRUELAYER_KEY_ID;
   if (privateKey && kid) {
-    const { sign, HttpMethod } = await import("truelayer-signing");
+    const { sign } = await import("truelayer-signing");
     tlSignature = sign({
       kid,
-      privateKeyPem: privateKey,
-      method: HttpMethod.Post,
+      privateKeyPem: normalizePem(privateKey),
+      method: "POST" as unknown as import("truelayer-signing").HttpMethod,
       path: "/v3/payments",
       headers: { "Idempotency-Key": idempotencyKey },
       body: bodyJson,

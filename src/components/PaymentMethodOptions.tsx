@@ -82,7 +82,7 @@ export default function PaymentMethodOptions({
                   {options.primary.sandbox && " (sandbox)"}
                   {options.backups.length > 0 && (
                     <span className="text-gray-400">
-                      {" "}· auto-failover to{" "}
+                      {" "}· backup configured: {" "}
                       {options.backups.map((b) => b.name).join(", ")}
                     </span>
                   )}

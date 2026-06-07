@@ -117,8 +117,8 @@ export default function PaymentsTab() {
         <p className="text-sm text-slate-400 mt-1">
           Toggle, prioritise and test the Open Banking providers used at checkout.
           Customers always see the <strong className="text-emerald-400">Primary</strong> gateway first;
-          if it fails to create a payment link, the next enabled <strong className="text-blue-400">Backup</strong> is tried automatically.
-          If none are available, the manual bank transfer fallback is shown.
+          checkout will not silently switch to a <strong className="text-blue-400">Backup</strong> provider if the primary fails.
+          If no primary is available, the manual bank transfer fallback is shown.
         </p>
       </div>
 
@@ -144,7 +144,7 @@ export default function PaymentsTab() {
                 {b.name} (backup)
               </span>
             ))}
-            <span className="text-slate-500 text-xs">+ Manual bank transfer fallback</span>
+            <span className="text-slate-500 text-xs">+ Manual bank transfer fallback if customer selects it</span>
           </div>
         ) : (
           <p className="text-amber-300 text-sm">

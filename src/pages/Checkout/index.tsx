@@ -397,6 +397,7 @@ export default function CheckoutPage() {
   const hasDiscount = discount > 0 || couponFreeShipping;
   const totalItems = cart.reduce((s, i) => s + i.quantity, 0);
   const hasItemsWithoutVariant = cart.some(item => !item.dosage || item.dosage === '');
+  const activePayByBankName = paymentOptions?.primary?.name ?? 'Open Banking';
 
   const updateQty = (key: string, delta: number) => {
     setCart(prev => {
@@ -626,7 +627,7 @@ export default function CheckoutPage() {
       setBankTransferRef(btRef);
       setConfirmedTotal(totalAmount.toFixed(2));
 
-      // Pay by Bank (Open Banking via Fena, handled by our in-app server
+      // Pay by Bank (Open Banking, handled by our in-app server
       // function — same origin, no external Worker, no CORS).
       if (form.paymentMethod === 'pay_by_bank') {
         setFenaOrderId(orderId);
@@ -939,7 +940,7 @@ export default function CheckoutPage() {
                     <p className="text-emerald-300/70 text-xs mt-0.5">
                       {fenaStep === 'creating-order' && 'Reserving stock and locking the total in £.'}
                       {fenaStep === 'creating-link' && (
-                        <>Order ref <span className="font-mono">{fenaOrderId || '…'}</span>. Talking to Fena Open Banking.</>
+                        <>Order ref <span className="font-mono">{fenaOrderId || '…'}</span>. Talking to {activePayByBankName}.</>
                       )}
                       {fenaStep === 'redirecting' && (
                         <>After you approve in your banking app, you'll come back to <span className="font-mono">/payment/success</span> and we'll wait for the bank webhook to mark the order as paid.</>
