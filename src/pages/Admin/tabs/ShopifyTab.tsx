@@ -74,7 +74,8 @@ export default function ShopifyTab() {
     setSyncing(true);
     setError(null);
     try {
-      const [s, p] = await Promise.all([info(), list({ data: { limit: 250 } })]);
+      const idToken = await getIdToken();
+      const [s, p] = await Promise.all([info({ data: { idToken } }), list({ data: { idToken, limit: 250 } })]);
       setShop(s);
       setProducts(p as AdminProduct[]);
       setConnected(true);
