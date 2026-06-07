@@ -25,7 +25,7 @@ function MerchantFeedPreview() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        navigate({ to: '/login' });
+        if (typeof window !== 'undefined') window.location.href = '/login';
         return;
       }
       try {
