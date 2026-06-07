@@ -35,9 +35,12 @@ export const checkPrerenderTokenLength = createServerFn({ method: 'POST' })
  * (`invalid-x-prerender-token-provided` is the usual culprit).
  */
 export const checkGooglebotResponse = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: { url?: string } | undefined) => data ?? {})
+  .inputValidator((data: { url?: string; idToken: string }) => {
+    if (!data?.idToken || typeof data.idToken !== 'string') throw new Error('idToken required');
+    return data;
+  })
   .handler(async ({ data }) => {
+    await requireFirebaseAdmin(data.idToken);
     const target = data.url && isAllowedUrl(data.url) ? data.url : 'https://phlabs.co.uk/';
     const started = Date.now();
     try {
