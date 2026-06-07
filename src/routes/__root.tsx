@@ -94,6 +94,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // og:type intentionally omitted at root — set per-leaf-route
       // (website on home, product on PDPs, article on resource articles)
       // so the type matches the page and doesn't conflict with leaves.
+      { title: "PH LABS — Research Peptides UK" },
+      { property: "og:title", content: "PH LABS — Research Peptides UK" },
+      { name: "twitter:title", content: "PH LABS — Research Peptides UK" },
+      { name: "description", content: "Premium research peptides for laboratory use. GHK-Cu, TB-500, BPC-157 & more. UK-based, fast delivery." },
+      { property: "og:description", content: "Premium research peptides for laboratory use. GHK-Cu, TB-500, BPC-157 & more. UK-based, fast delivery." },
+      { name: "twitter:description", content: "Premium research peptides for laboratory use. GHK-Cu, TB-500, BPC-157 & more. UK-based, fast delivery." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/16474cca-36ac-48c9-a2f9-35fdb9fd017d" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/16474cca-36ac-48c9-a2f9-35fdb9fd017d" },
+      { property: "og:type", content: "website" },
     ],
     scripts: [
       {
