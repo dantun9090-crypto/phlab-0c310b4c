@@ -85,6 +85,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "distribution", content: "UK" },
       { name: "target_country", content: "GB" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "theme-color", content: "#060f1e" },
+      { name: "apple-mobile-web-app-title", content: "PH Labs" },
+      { name: "application-name", content: "PH Labs" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "google-site-verification", content: "tYtU-dRlfAq14D7lyPTYf8noiJH-b0LifcvvrGi8AZw" },
       // og:type intentionally omitted at root — set per-leaf-route
       // (website on home, product on PDPs, article on resource articles)
@@ -140,6 +145,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.ico", sizes: "any" },
+      { rel: "icon", type: "image/png", sizes: "16x16", href: "/icon-16.png" },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: "/icon-32.png" },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: "/icon-192.png" },
+      { rel: "icon", type: "image/png", sizes: "512x512", href: "/icon-512.png" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png" },
+      { rel: "manifest", href: "/site.webmanifest" },
       { rel: "sitemap", type: "application/xml", href: "/sitemap.xml" },
       // hreflang removed from root — hardcoding href="/" on every route was
       // wrong (pointed every page at the homepage). Single-language UK site
