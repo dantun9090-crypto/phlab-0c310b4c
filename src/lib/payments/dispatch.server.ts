@@ -77,7 +77,8 @@ async function runAdapter(gateway: GatewayId, ctx: OrderCtx, sandbox: boolean): 
       userId: ctx.customerUid || ctx.orderId,
       userName: ctx.customerName || "PH Labs Customer",
       userEmail: ctx.customerEmail || undefined,
-      returnUri: `${SITE_ORIGIN}/payment/success?orderId=${encodeURIComponent(ctx.orderId)}`,
+      returnUri: `${SITE_ORIGIN}/payment/success`,
+      state: ctx.orderId,
       sandbox,
     });
     await updateDocAdmin("orders", ctx.orderId, {
