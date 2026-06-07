@@ -178,7 +178,7 @@ export default function AboutPage() {
     <div className="min-h-screen bg-[#060f1e] text-white overflow-x-hidden">
 
       {/* ── HERO ── */}
-      <section ref={heroRef} className="page-hero relative min-h-[680px] md:min-h-[780px] overflow-hidden flex items-end hero-scanline">
+      <section ref={heroRef} className="page-hero relative min-h-[460px] md:min-h-[780px] overflow-hidden flex items-center md:items-end hero-scanline">
         {/* Parallax image (or gradient fallback) */}
         <motion.div className="absolute inset-0" style={{ y: heroY }}>
           {heroImg ? (
