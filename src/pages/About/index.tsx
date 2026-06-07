@@ -35,11 +35,12 @@ function ImageFallback({ className = '', variant = 'blue' }: { className?: strin
 /* ── Scroll-triggered fade ── */
 function useScrollFade() {
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  // Default to visible so content NEVER stays hidden if the observer
+  // never fires (mobile browsers throttle IO, prerender, reduced-motion, etc.).
+  const [visible, setVisible] = useState(true);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    // Already in viewport on mount — show immediately
     const rect = el.getBoundingClientRect();
     if (rect.top < window.innerHeight && rect.bottom > 0) {
       setVisible(true);
