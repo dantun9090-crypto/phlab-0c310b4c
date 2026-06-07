@@ -205,7 +205,7 @@ export default function AboutPage() {
         <div className="hero-top-shimmer pointer-events-none" />
 
         {/* Content */}
-        <div className="relative z-10 max-w-6xl mx-auto px-6 lg:px-10 pb-16 w-full">
+        <div className="relative z-10 max-w-6xl mx-auto px-6 lg:px-10 pt-10 pb-16 md:pt-0 md:pb-16 w-full">
           <motion.div
             initial={{ opacity: 1, y: 0 }}
             animate={{ opacity: 1, y: 0 }}
