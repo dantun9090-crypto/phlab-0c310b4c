@@ -162,7 +162,7 @@ export async function truelayerCreatePayment(
     tlSignature = sign({
       kid,
       privateKeyPem: privateKey,
-      method: "POST",
+      method: "POST" as unknown as import("truelayer-signing").HttpMethod,
       path: "/v3/payments",
       headers: { "Idempotency-Key": idempotencyKey },
       body: bodyJson,
