@@ -1,7 +1,11 @@
 import { createServerFn } from '@tanstack/react-start';
+import { z } from 'zod';
+import { requireFirebaseAdmin } from '@/lib/server/firebase-auth-admin';
 
 const SHOPIFY_DOMAIN = '12h2iy-t0.myshopify.com';
 const SHOPIFY_API_VERSION = '2025-07';
+
+const idTokenSchema = z.string().min(10).max(4096);
 
 function adminUrl(path: string) {
   return `https://${SHOPIFY_DOMAIN}/admin/api/${SHOPIFY_API_VERSION}/${path}`;
@@ -27,24 +31,31 @@ async function shopifyFetch(path: string, init?: RequestInit) {
   return text ? JSON.parse(text) : null;
 }
 
-export const getShopInfo = createServerFn({ method: 'GET' }).handler(async () => {
-  const data = await shopifyFetch('shop.json');
-  return {
-    domain: data.shop.domain,
-    myshopifyDomain: data.shop.myshopify_domain,
-    name: data.shop.name,
-    email: data.shop.email,
-    currency: data.shop.currency,
-    planName: data.shop.plan_name,
-    country: data.shop.country_name,
-    createdAt: data.shop.created_at,
-    apiVersion: SHOPIFY_API_VERSION,
-  };
-});
-
-export const listAdminProducts = createServerFn({ method: 'GET' })
-  .inputValidator((d: { limit?: number } | undefined) => ({ limit: d?.limit ?? 250 }))
+export const getShopInfo = createServerFn({ method: 'POST' })
+  .inputValidator((d: { idToken: string }) => ({ idToken: idTokenSchema.parse(d?.idToken) }))
   .handler(async ({ data }) => {
+    await requireFirebaseAdmin(data.idToken);
+    const res = await shopifyFetch('shop.json');
+    return {
+      domain: res.shop.domain,
+      myshopifyDomain: res.shop.myshopify_domain,
+      name: res.shop.name,
+      email: res.shop.email,
+      currency: res.shop.currency,
+      planName: res.shop.plan_name,
+      country: res.shop.country_name,
+      createdAt: res.shop.created_at,
+      apiVersion: SHOPIFY_API_VERSION,
+    };
+  });
+
+export const listAdminProducts = createServerFn({ method: 'POST' })
+  .inputValidator((d: { idToken: string; limit?: number }) => ({
+    idToken: idTokenSchema.parse(d?.idToken),
+    limit: d?.limit ?? 250,
+  }))
+  .handler(async ({ data }) => {
+    await requireFirebaseAdmin(data.idToken);
     const json = await shopifyFetch(`products.json?limit=${Math.min(data.limit, 250)}`);
     return (json.products || []).map((p: any) => ({
       id: p.id,
@@ -67,10 +78,12 @@ export const listAdminProducts = createServerFn({ method: 'GET' })
 
 export const createAdminProduct = createServerFn({ method: 'POST' })
   .inputValidator((d: {
+    idToken: string;
     title: string; body_html?: string; price?: string; vendor?: string;
     product_type?: string; images?: string[]; status?: 'active' | 'draft';
-  }) => d)
+  }) => ({ ...d, idToken: idTokenSchema.parse(d?.idToken) }))
   .handler(async ({ data }) => {
+    await requireFirebaseAdmin(data.idToken);
     const body = {
       product: {
         title: data.title,
@@ -87,11 +100,13 @@ export const createAdminProduct = createServerFn({ method: 'POST' })
 
 export const updateAdminProduct = createServerFn({ method: 'POST' })
   .inputValidator((d: {
+    idToken: string;
     id: number; title?: string; body_html?: string; price?: string;
     vendor?: string; product_type?: string; images?: string[];
     status?: 'active' | 'draft'; variantId?: number | null;
-  }) => d)
+  }) => ({ ...d, idToken: idTokenSchema.parse(d?.idToken) }))
   .handler(async ({ data }) => {
+    await requireFirebaseAdmin(data.idToken);
     const product: any = { id: data.id };
     if (data.title !== undefined) product.title = data.title;
     if (data.body_html !== undefined) product.body_html = data.body_html;

@@ -1,5 +1,4 @@
 import { createServerFn } from '@tanstack/react-start';
-import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { requireFirebaseAdmin } from '@/lib/server/firebase-auth-admin';
 
 const EXPECTED_PRERENDER_TOKEN_LENGTH = 22;
@@ -11,8 +10,12 @@ const EXPECTED_PRERENDER_TOKEN_LENGTH = 22;
  * configured token is the wrong size (commonly truncated to 20 on paste).
  */
 export const checkPrerenderTokenLength = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .inputValidator((data: { idToken: string }) => {
+    if (!data?.idToken || typeof data.idToken !== 'string') throw new Error('idToken required');
+    return data;
+  })
+  .handler(async ({ data }) => {
+    await requireFirebaseAdmin(data.idToken);
     const token = process.env.PRERENDER_TOKEN ?? '';
     const length = token.length;
     return {
@@ -32,9 +35,12 @@ export const checkPrerenderTokenLength = createServerFn({ method: 'POST' })
  * (`invalid-x-prerender-token-provided` is the usual culprit).
  */
 export const checkGooglebotResponse = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: { url?: string } | undefined) => data ?? {})
+  .inputValidator((data: { url?: string; idToken: string }) => {
+    if (!data?.idToken || typeof data.idToken !== 'string') throw new Error('idToken required');
+    return data;
+  })
   .handler(async ({ data }) => {
+    await requireFirebaseAdmin(data.idToken);
     const target = data.url && isAllowedUrl(data.url) ? data.url : 'https://phlabs.co.uk/';
     const started = Date.now();
     try {
@@ -218,9 +224,12 @@ const DEFAULT_TARGETS = [
 ];
 
 export const probePrerenderStatus = createServerFn({ method: 'POST' })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: { urls?: string[] } | undefined) => data ?? {})
+  .inputValidator((data: { urls?: string[]; idToken: string }) => {
+    if (!data?.idToken || typeof data.idToken !== 'string') throw new Error('idToken required');
+    return data;
+  })
   .handler(async ({ data }) => {
+    await requireFirebaseAdmin(data.idToken);
     const requested =
       data.urls && data.urls.length > 0 ? data.urls.slice(0, 12) : DEFAULT_TARGETS;
     const urls = requested.filter(isAllowedUrl);

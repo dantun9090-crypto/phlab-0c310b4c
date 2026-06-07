@@ -7,6 +7,13 @@ import {
 import {
   getShopInfo, listAdminProducts, createAdminProduct, updateAdminProduct,
 } from '@/lib/shopify-admin.functions';
+import { auth } from '@/lib/firebase';
+
+async function getIdToken() {
+  const t = await auth.currentUser?.getIdToken();
+  if (!t) throw new Error('Not signed in');
+  return t;
+}
 
 const SHOPIFY_DOMAIN_DEFAULT = '12h2iy-t0.myshopify.com';
 const SHOPIFY_ADMIN_URL = 'https://admin.shopify.com/store/12h2iy-t0';
@@ -67,7 +74,8 @@ export default function ShopifyTab() {
     setSyncing(true);
     setError(null);
     try {
-      const [s, p] = await Promise.all([info(), list({ data: { limit: 250 } })]);
+      const idToken = await getIdToken();
+      const [s, p] = await Promise.all([info({ data: { idToken } }), list({ data: { idToken, limit: 250 } })]);
       setShop(s);
       setProducts(p as AdminProduct[]);
       setConnected(true);
@@ -340,10 +348,11 @@ export default function ShopifyTab() {
           product={editing}
           onClose={() => { setShowCreate(false); setEditing(null); }}
           onSave={async (form) => {
+            const idToken = await getIdToken();
             if (editing) {
-              await update({ data: { id: editing.id, variantId: editing.variantId, ...form } });
+              await update({ data: { idToken, id: editing.id, variantId: editing.variantId, ...form } });
             } else {
-              await create({ data: form });
+              await create({ data: { idToken, ...form } });
             }
             setShowCreate(false);
             setEditing(null);
