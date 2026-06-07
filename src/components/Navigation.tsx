@@ -336,6 +336,9 @@ export function Navigation({
               <span className="text-[15px]">Login / Register</span>
             </Link>
           )}
+
+          <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '8px 0' }} />
+          <InstallAppButton onAfter={onMobileMenuToggle} />
         </nav>
 
         {/* Bottom trust strip */}
