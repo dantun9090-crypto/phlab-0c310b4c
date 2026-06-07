@@ -75,6 +75,17 @@ function randomIdempotencyKey(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function normalizePem(raw: string): string {
+  const expanded = raw.trim().replace(/\\n/g, "\n");
+  const match = expanded.match(
+    /(-----BEGIN [^-]+-----)\s*([A-Za-z0-9+/=\s]+?)\s*(-----END [^-]+-----)/,
+  );
+  if (!match) return expanded;
+  const body = match[2].replace(/\s+/g, "");
+  const lines = body.match(/.{1,64}/g) ?? [body];
+  return `${match[1]}\n${lines.join("\n")}\n${match[3]}`;
+}
+
 /**
  * fetch() wrapper that retries idempotent failures (network errors, 5xx,
  * and 429) up to twice with exponential backoff (250ms, 750ms). Safe to
@@ -161,7 +172,7 @@ export async function truelayerCreatePayment(
     const { sign } = await import("truelayer-signing");
     tlSignature = sign({
       kid,
-      privateKeyPem: privateKey,
+      privateKeyPem: normalizePem(privateKey),
       method: "POST" as unknown as import("truelayer-signing").HttpMethod,
       path: "/v3/payments",
       headers: { "Idempotency-Key": idempotencyKey },
