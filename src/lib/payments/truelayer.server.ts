@@ -158,15 +158,16 @@ export async function truelayerCreatePayment(
   const privateKey = process.env.TRUELAYER_PRIVATE_KEY;
   const kid = process.env.TRUELAYER_KEY_ID;
   if (privateKey && kid) {
-    const { sign } = await import("truelayer-signing");
+    const { sign, HttpMethod } = await import("truelayer-signing");
     tlSignature = sign({
       kid,
       privateKeyPem: privateKey,
-      method: "POST",
+      method: HttpMethod.Post,
       path: "/v3/payments",
       headers: { "Idempotency-Key": idempotencyKey },
       body: bodyJson,
     });
+
   } else {
     throw new Error("TrueLayer signing key not configured (TRUELAYER_KEY_ID / TRUELAYER_PRIVATE_KEY)");
   }
