@@ -10,11 +10,18 @@ import { AnimatedBackground } from '@/components/AnimatedBackground';
 /* ── Scroll-fade hook ───────────────────────────────────────────── */
 function useScrollFade(options?: IntersectionObserverInit) {
   const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
+  // Default visible: ensures content is never stuck invisible if the
+  // IntersectionObserver never fires (mobile throttling, prerender, etc.).
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
+      setVisible(true);
+      return;
+    }
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
       { threshold: 0.08, rootMargin: '0px 0px -40px 0px', ...options }
