@@ -82,6 +82,8 @@ export default function DiagnosticsTab() {
         </p>
       </div>
 
+      <EdgeHealthCard />
+
       <button
         onClick={runChecks}
         disabled={running}
