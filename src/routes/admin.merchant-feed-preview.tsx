@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Loader2, Shield, RefreshCw, Copy, ExternalLink } from 'lucide-react';
 import { auth, db, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
@@ -14,7 +14,7 @@ export const Route = createFileRoute('/admin/merchant-feed-preview')({
 });
 
 function MerchantFeedPreview() {
-  const navigate = useNavigate();
+  
   const [authChecked, setAuthChecked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [xml, setXml] = useState<string>('');
@@ -25,7 +25,7 @@ function MerchantFeedPreview() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
-        navigate({ to: '/login' });
+        if (typeof window !== 'undefined') window.location.href = '/login';
         return;
       }
       try {
@@ -37,7 +37,7 @@ function MerchantFeedPreview() {
       setAuthChecked(true);
     });
     return () => unsub();
-  }, [navigate]);
+  }, []);
 
   const loadFeed = async () => {
     setLoading(true);
