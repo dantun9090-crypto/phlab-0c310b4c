@@ -639,7 +639,7 @@ export default function CheckoutPage() {
             current = anon.user;
           }
           const idTokenForFena = await current.getIdToken();
-          const { hppUrl, gateway } = await createGatewayPaymentLink({
+          const { hppUrl, gateway, externalPaymentId } = await createGatewayPaymentLink({
             data: { orderId, idToken: idTokenForFena },
           });
           // Allowlist redirect hosts per gateway — defence-in-depth.
@@ -655,6 +655,9 @@ export default function CheckoutPage() {
             (gateway === 'yapily' && yapilyOk);
           if (parsed.protocol !== 'https:' || !okHost) {
             throw new Error('Unexpected payment redirect host.');
+          }
+          if (gateway === 'truelayer' && externalPaymentId) {
+            localStorage.setItem(`php_tl_order_${externalPaymentId}`, orderId);
           }
           setFenaStep('redirecting');
           localStorage.removeItem('php_cart');
