@@ -6,6 +6,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { subscribeToProducts } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
+import InstallAppButton from '@/components/InstallAppButton';
 
 interface DropdownItem {
   name: string;
@@ -335,6 +336,9 @@ export function Navigation({
               <span className="text-[15px]">Login / Register</span>
             </Link>
           )}
+
+          <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '8px 0' }} />
+          <InstallAppButton onAfter={onMobileMenuToggle} />
         </nav>
 
         {/* Bottom trust strip */}
