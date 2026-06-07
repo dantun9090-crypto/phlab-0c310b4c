@@ -129,10 +129,25 @@ const stats = [
   { value: 'Fast', label: 'Dispatch & delivery', icon: Zap },
 ];
 
-const team = [
-  { initials: 'JM', name: 'James Mitchell', role: 'Founder & Head of Procurement', gradient: 'from-blue-600 to-blue-800' },
-  { initials: 'SK', name: 'Sarah Keane', role: 'Quality Assurance Lead', gradient: 'from-emerald-600 to-emerald-800' },
-  { initials: 'RP', name: 'Ryan Patel', role: 'Customer Experience Manager', gradient: 'from-cyan-600 to-cyan-800' },
+const expertise = [
+  {
+    icon: FlaskConical,
+    title: 'Analytical Chemistry',
+    desc: 'HPLC method development and batch verification carried out before any compound is released for dispatch.',
+    gradient: 'from-blue-600 to-blue-800',
+  },
+  {
+    icon: ShieldCheck,
+    title: 'Quality Assurance',
+    desc: 'Documented QA workflow covering supplier qualification, identity testing, traceability and record retention.',
+    gradient: 'from-emerald-600 to-emerald-800',
+  },
+  {
+    icon: HeartHandshake,
+    title: 'Research Support',
+    desc: 'Technical correspondence handled by staff familiar with peptide chemistry, handling protocols and CoA requests.',
+    gradient: 'from-cyan-600 to-cyan-800',
+  },
 ];
 
 export default function AboutPage() {
