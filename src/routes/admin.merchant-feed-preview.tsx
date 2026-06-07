@@ -37,7 +37,7 @@ function MerchantFeedPreview() {
       setAuthChecked(true);
     });
     return () => unsub();
-  }, [navigate]);
+  }, []);
 
   const loadFeed = async () => {
     setLoading(true);
