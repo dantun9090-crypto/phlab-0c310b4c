@@ -347,7 +347,8 @@ function TokenLengthCard() {
     setLoading(true);
     setError(null);
     try {
-      const res = await check({ data: undefined });
+      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const res = await check({ data: { idToken } });
       setState(res);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
