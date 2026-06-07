@@ -26,6 +26,7 @@ import {
 import { getGatewayConfig } from "@/lib/payments/gateway-config.server";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { escapeHtml } from "@/templates/emailBase";
+import { verifyHmacSignature } from "@/lib/webhook-signature";
 
 interface TLWebhookBody {
   event_id?: string;
@@ -74,6 +75,28 @@ export const Route = createFileRoute("/api/public/hooks/truelayer")({
         }
         if (bodyText.length > 32_000) {
           return new Response("Payload too large", { status: 413 });
+        }
+
+        // HMAC verification. TrueLayer's official `Tl-Signature` is a JWS
+        // (ES512) — when a shared HMAC secret is provisioned here we verify
+        // it as an additional/alternative integrity check. Falls back to
+        // the re-fetch-with-credentials check below when unset.
+        const tlSecret = process.env.TRUELAYER_WEBHOOK_SECRET;
+        if (tlSecret) {
+          const sigHeader =
+            request.headers.get("x-webhook-signature") ||
+            request.headers.get("tl-signature") ||
+            request.headers.get("x-hub-signature-256");
+          const ok = await verifyHmacSignature(bodyText, sigHeader, tlSecret);
+          if (!ok) {
+            await logEvent("warn", "invalid signature", {
+              hasHeader: Boolean(sigHeader),
+              ip: request.headers.get("cf-connecting-ip") ?? null,
+            });
+            return new Response("Invalid signature", { status: 401 });
+          }
+        } else {
+          await logEvent("warn", "TRUELAYER_WEBHOOK_SECRET not configured — skipping HMAC check", {});
         }
 
         let payload: TLWebhookBody;

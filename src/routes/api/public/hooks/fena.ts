@@ -27,6 +27,7 @@ import { enforceRateLimit } from "@/lib/rate-limit";
 import { raiseFenaAlert } from "@/lib/fena-alerts.server";
 import { enqueueFenaUpdateRetry } from "@/lib/fena-retry-queue.server";
 import { escapeHtml } from "@/templates/emailBase";
+import { verifyHmacSignature } from "@/lib/webhook-signature";
 
 interface FenaWebhookBody {
   eventScope?: string;
@@ -81,6 +82,29 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
         }
         if (bodyText.length > 32_000) {
           return new Response("Payload too large", { status: 413 });
+        }
+
+        // HMAC verification. If FENA_WEBHOOK_SECRET is configured, require a
+        // valid signature on every request — this blocks spoofed POSTs at the
+        // edge, before we do any work or re-fetch. If the env var is unset
+        // we fall back to the "re-fetch with terminal secret" check below
+        // (still safe, but log a warning so the secret gets configured).
+        const fenaSecret = process.env.FENA_WEBHOOK_SECRET;
+        if (fenaSecret) {
+          const sigHeader =
+            request.headers.get("x-fena-signature") ||
+            request.headers.get("x-webhook-signature") ||
+            request.headers.get("x-hub-signature-256");
+          const ok = await verifyHmacSignature(bodyText, sigHeader, fenaSecret);
+          if (!ok) {
+            await logEvent("warn", "invalid signature", {
+              hasHeader: Boolean(sigHeader),
+              ip: request.headers.get("cf-connecting-ip") ?? null,
+            });
+            return new Response("Invalid signature", { status: 401 });
+          }
+        } else {
+          await logEvent("warn", "FENA_WEBHOOK_SECRET not configured — skipping HMAC check", {});
         }
 
         let payload: FenaWebhookBody;
