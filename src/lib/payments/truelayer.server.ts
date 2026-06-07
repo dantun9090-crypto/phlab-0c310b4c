@@ -197,7 +197,7 @@ export async function truelayerGetPayment(
 ): Promise<TrueLayerPaymentStatus> {
   const token = await getAccessToken(sandbox);
   const { api } = hosts(sandbox);
-  const res = await fetch(`${api}/payments/${encodeURIComponent(paymentId)}`, {
+  const res = await fetch(`${api}/v3/payments/${encodeURIComponent(paymentId)}`, {
     headers: { authorization: `Bearer ${token}` },
     signal: AbortSignal.timeout(10_000),
   });
