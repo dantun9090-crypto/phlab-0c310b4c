@@ -122,7 +122,9 @@ export async function truelayerCreatePayment(
     },
   };
 
-  const res = await fetch(`${api}/payments`, {
+  // POST /v3/payments — TrueLayer's API reference requires the /v3/ prefix
+  // for all new integrations (the unversioned path is implicitly deprecated).
+  const res = await fetchWithRetry(`${api}/v3/payments`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
