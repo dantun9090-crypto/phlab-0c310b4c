@@ -211,18 +211,31 @@ export default function PaymentsTab() {
                           Coming Soon
                         </span>
                       ) : (
-                        <label className="inline-flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={row.enabled}
-                            disabled={!row.credentialsConfigured || busy === `${row.id}:toggle`}
-                            onChange={(e) => toggleEnabled(row, e.target.checked)}
-                            className="w-4 h-4"
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={row.enabled}
+                          disabled={!row.credentialsConfigured || busy === `${row.id}:toggle`}
+                          onClick={() => toggleEnabled(row, !row.enabled)}
+                          className={
+                            'inline-flex items-center gap-2 rounded-full px-1 py-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ' +
+                            (row.enabled ? 'bg-emerald-600' : 'bg-slate-700')
+                          }
+                          title={row.enabled ? 'Click to disable' : 'Click to enable'}
+                        >
+                          <span
+                            className={
+                              'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ' +
+                              (row.enabled ? 'translate-x-6' : 'translate-x-0')
+                            }
                           />
-                          <span className="text-xs font-semibold text-slate-200">
-                            {row.enabled ? 'Enabled' : 'Disabled'}
+                          <span className={
+                            'pr-2 text-[11px] font-bold uppercase tracking-wider ' +
+                            (row.enabled ? 'text-white' : 'text-slate-300')
+                          }>
+                            {busy === `${row.id}:toggle` ? '…' : row.enabled ? 'ON' : 'OFF'}
                           </span>
-                        </label>
+                        </button>
                       )}
                       {!row.credentialsConfigured && row.status !== 'pending' && (
                         <p className="text-[10px] text-rose-400 mt-1">missing secrets</p>
