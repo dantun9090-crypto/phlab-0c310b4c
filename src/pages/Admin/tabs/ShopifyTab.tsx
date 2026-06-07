@@ -348,10 +348,11 @@ export default function ShopifyTab() {
           product={editing}
           onClose={() => { setShowCreate(false); setEditing(null); }}
           onSave={async (form) => {
+            const idToken = await getIdToken();
             if (editing) {
-              await update({ data: { id: editing.id, variantId: editing.variantId, ...form } });
+              await update({ data: { idToken, id: editing.id, variantId: editing.variantId, ...form } });
             } else {
-              await create({ data: form });
+              await create({ data: { idToken, ...form } });
             }
             setShowCreate(false);
             setEditing(null);
