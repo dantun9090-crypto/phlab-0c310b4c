@@ -426,14 +426,13 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex items-center justify-between h-[64px]">
 
             {/* ── Logo (far left) ── */}
-            <Link to="/" className="flex items-center self-center gap-2 sm:gap-3 min-w-0 mr-auto group">
+            <Link to="/" className="flex items-center self-center gap-2.5 sm:gap-3 min-w-0 mr-auto group">
               <div className="relative shrink-0 flex items-center">
-                <div className="absolute inset-0 bg-emerald-500/15 rounded-xl" />
-                <Logo size="md" />
+                <Logo size="lg" />
               </div>
-              <div className="flex flex-col leading-none min-w-0">
-                <span className="font-bold text-white text-[13px] sm:text-[15px] tracking-tight group-hover:text-emerald-300 transition-colors duration-200 truncate">PH Labs</span>
-                <span className="text-[9px] sm:text-[10px] text-emerald-300/90 font-medium tracking-widest uppercase">Research Grade</span>
+              <div className="flex flex-col leading-[1.05] min-w-0">
+                <span className="font-extrabold text-white text-[18px] sm:text-[22px] tracking-tight group-hover:text-emerald-300 transition-colors duration-200 truncate">PH Labs</span>
+                <span className="text-[10px] sm:text-[11px] text-emerald-400/90 font-semibold tracking-[0.22em] uppercase mt-0.5">Research Grade</span>
               </div>
             </Link>
 
