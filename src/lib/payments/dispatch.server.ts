@@ -1,8 +1,9 @@
 /**
  * Cross-gateway dispatcher.
  *
- * `createPaymentLinkForOrder` resolves the primary enabled gateway, calls
- * its adapter, and falls back to the first backup if the primary throws.
+ * `createPaymentLinkForOrder` resolves the primary enabled gateway and calls
+ * only that adapter. Failed primary payments must surface clearly to checkout
+ * instead of silently sending customers to a different provider.
  * Always stores `paymentProvider` + provider-specific ids on the order so
  * webhooks and the customer success page know which adapter to consult.
  *
@@ -105,35 +106,22 @@ async function runAdapter(gateway: GatewayId, ctx: OrderCtx, sandbox: boolean): 
 }
 
 export async function createPaymentLinkForOrder(ctx: OrderCtx): Promise<DispatchResult> {
-  const { primary, backups } = await resolveActiveGateways();
-  const candidates = [primary, ...backups].filter(Boolean) as Array<{
-    id: GatewayId;
-    sandbox: boolean;
-  }>;
-  if (candidates.length === 0) {
+  const { primary } = await resolveActiveGateways();
+  if (!primary) {
     throw new Error("No payment gateways enabled");
   }
 
-  let lastError: unknown = null;
-  for (const candidate of candidates) {
-    try {
-      const result = await runAdapter(candidate.id, ctx, candidate.sandbox);
-      // Clear any prior failure flag on success.
-      await recordGatewayTest(candidate.id, { ok: true }).catch(() => undefined);
-      return result;
-    } catch (err) {
-      lastError = err;
-      await recordGatewayTest(candidate.id, {
-        ok: false,
-        message: err instanceof Error ? err.message : String(err),
-      }).catch(() => undefined);
-      // Try next candidate
-      continue;
-    }
+  try {
+    const result = await runAdapter(primary.id, ctx, primary.sandbox);
+    await recordGatewayTest(primary.id, { ok: true }).catch(() => undefined);
+    return result;
+  } catch (err) {
+    await recordGatewayTest(primary.id, {
+      ok: false,
+      message: err instanceof Error ? err.message : String(err),
+    }).catch(() => undefined);
+    throw err;
   }
-  throw lastError instanceof Error
-    ? lastError
-    : new Error("All payment gateways failed to create a payment link");
 }
 
 /** Verify the order exists, is unsettled, and return a normalised ctx. */
