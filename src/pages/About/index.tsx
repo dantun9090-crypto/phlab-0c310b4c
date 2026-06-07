@@ -451,45 +451,44 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ── TEAM ── */}
+      {/* ── EXPERTISE ── */}
       <section className="relative py-24 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-600/[0.03] to-transparent pointer-events-none" />
         <div className="max-w-6xl mx-auto px-6 lg:px-10">
           <FadeIn direction="up" className="text-center mb-16">
             <div className="flex items-center justify-center gap-3 mb-4">
               <div className="h-px w-8 bg-blue-400/50" />
-              <span className="text-blue-400 text-xs font-bold uppercase tracking-[0.2em]">The Team</span>
+              <span className="text-blue-400 text-xs font-bold uppercase tracking-[0.2em]">Our Expertise</span>
               <div className="h-px w-8 bg-blue-400/50" />
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-[#f0f6ff] mb-4">
-              People Behind the Science
+              Disciplines Behind Every Batch
             </h2>
             <p className="text-[#b8ccea] max-w-xl mx-auto">
-              A dedicated team with backgrounds in biochemistry, pharmaceutical supply, and customer experience.
+              PH Labs operates with dedicated functions for analytical testing, quality assurance, and researcher support.
             </p>
           </FadeIn>
 
           <div className="grid sm:grid-cols-3 gap-6">
-            {team.map((m, i) => (
-              <FadeIn key={m.name} delay={i * 100} direction="up">
-                <div className="group relative bg-[#0b1a30]/60 border border-white/[0.07] rounded-2xl p-8 hover:border-blue-500/25 hover:bg-[#0d1e35]/80 transition-all duration-400 text-center overflow-hidden">
-                  {/* Hover glow */}
+            {expertise.map((m, i) => (
+              <FadeIn key={m.title} delay={i * 100} direction="up">
+                <div className="group relative bg-[#0b1a30]/60 border border-white/[0.07] rounded-2xl p-8 hover:border-blue-500/25 hover:bg-[#0d1e35]/80 transition-all duration-400 text-center overflow-hidden h-full">
                   <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-blue-600/15 pointer-events-none" />
 
-                  {/* Avatar */}
-                  <div className={`relative w-16 h-16 rounded-2xl bg-gradient-to-br ${m.gradient} flex items-center justify-center text-xl font-bold text-white mx-auto mb-5 shadow-lg`}>
-                    {m.initials}
+                  <div className={`relative w-16 h-16 rounded-2xl bg-gradient-to-br ${m.gradient} flex items-center justify-center mx-auto mb-5 shadow-lg`}>
+                    <m.icon className="w-7 h-7 text-white" />
                     <div className="absolute inset-0 rounded-2xl ring-1 ring-white/10" />
                   </div>
 
-                  <h3 className="text-[#e8f0fe] font-bold text-base mb-1">{m.name}</h3>
-                  <p className="text-[#b8ccea] text-sm">{m.role}</p>
+                  <h3 className="text-[#e8f0fe] font-bold text-base mb-2">{m.title}</h3>
+                  <p className="text-[#b8ccea] text-sm leading-relaxed">{m.desc}</p>
                 </div>
               </FadeIn>
             ))}
           </div>
         </div>
       </section>
+
 
       {/* ── CTA BAND ── */}
       <section className="max-w-6xl mx-auto px-6 lg:px-10 pb-24">
