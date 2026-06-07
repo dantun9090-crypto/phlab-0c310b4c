@@ -192,7 +192,7 @@ export default function AboutPage() {
         {/* Content */}
         <div className="relative z-10 max-w-6xl mx-auto px-6 lg:px-10 pb-16 w-full">
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 1, y: 0 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
           >
