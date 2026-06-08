@@ -56,16 +56,22 @@ export function CookieConsent() {
       return () => { if (timer) clearTimeout(timer); };
     }
 
-    // Poll briefly for the gate to clear (covers both confirm and dismiss).
+    // Wait for the gate to clear (covers both confirm and dismiss), with polling as fallback.
     const poll = setInterval(() => {
       if (!isGateBlocking() || !document.querySelector('[aria-label="Research use confirmation"]')) {
         clearInterval(poll);
         show();
       }
     }, 400);
+    const onGateCleared = () => {
+      clearInterval(poll);
+      show();
+    };
+    window.addEventListener('php:research-gate-cleared', onGateCleared, { once: true });
 
     return () => {
       clearInterval(poll);
+      window.removeEventListener('php:research-gate-cleared', onGateCleared);
       if (timer) clearTimeout(timer);
     };
   }, []);
