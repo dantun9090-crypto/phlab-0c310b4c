@@ -28,6 +28,10 @@ function saveConfirmation() {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ts: Date.now() })); } catch { /* storage unavailable */ }
 }
 
+function notifyGateCleared() {
+  try { window.dispatchEvent(new CustomEvent('php:research-gate-cleared')); } catch { /* noop */ }
+}
+
 // Fetch whether a product requires the research gate by slug
 async function fetchProductRequiresGate(slug: string): Promise<boolean | null> {
   try {
@@ -92,6 +96,7 @@ export default function ResearchGate() {
     saveConfirmation();
     setConfirmed(true);
     setShowModal(false);
+    notifyGateCleared();
   };
 
   return (
@@ -255,9 +260,10 @@ export default function ResearchGate() {
           aria-label="Research use confirmation"
           style={{
             position: 'fixed', inset: 0,
-            zIndex: 9000,
+            zIndex: 10000,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '16px',
+            padding: 'max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left))',
+            overflowY: 'auto',
             // Overlay: deep navy, not pure black — feels on-brand
             background: 'rgba(3, 8, 18, 0.84)',
           }}
@@ -268,6 +274,8 @@ export default function ResearchGate() {
               position: 'relative',
               width: '100%',
               maxWidth: '452px',
+              maxHeight: 'calc(100svh - 24px)',
+              overflowY: 'auto',
               // Card: matches site card bg (#0b1a30 area)
               background: 'linear-gradient(162deg, #0c1c32 0%, #070f1d 100%)',
               border: '1px solid rgba(255,255,255,0.07)',
@@ -426,7 +434,7 @@ export default function ResearchGate() {
             {/* Dismiss link */}
             <button
               className="rg-dismiss"
-              onClick={() => setShowModal(false)}
+              onClick={() => { setShowModal(false); notifyGateCleared(); }}
               aria-label="Not interested — close"
               style={{
                 display: 'block', width: '100%',
