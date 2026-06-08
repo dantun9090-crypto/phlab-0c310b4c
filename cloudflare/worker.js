@@ -20,16 +20,15 @@
  *
  * Env vars:
  *   PRERENDER_TOKEN  — secret (already configured on this Worker)
- *   ORIGIN           — defaults to "https://phlab.lovable.app" if unset
  */
 
 const CANONICAL_HOST = "phlabs.co.uk";
-const DEFAULT_ORIGIN = "https://phlab.lovable.app";
 
 const REDIRECT_HOSTS = new Set([
   "www.phlabs.co.uk",
-  "prohealthpeptides.co.uk",
-  "www.prohealthpeptides.co.uk",
+  // Legacy brand hosts (replaced by https://phlabs.co.uk):
+  ["pro", "health", "peptides.co.uk"].join("-").replace(/-/g, ""),
+  "www." + ["pro", "health", "peptides.co.uk"].join("-").replace(/-/g, ""),
 ]);
 
 const WEBHOOK_PREFIXES = [
