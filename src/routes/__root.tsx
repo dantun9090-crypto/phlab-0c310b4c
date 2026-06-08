@@ -10,7 +10,6 @@ import {
 
 import appCss from "../styles.css?url";
 import "@/lib/chunk-reload";
-import "@/lib/sw-register";
 
 function NotFoundComponent() {
   return (
@@ -89,6 +88,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "theme-color", content: "#060f1e" },
       { name: "apple-mobile-web-app-title", content: "PH Labs" },
       { name: "application-name", content: "PH Labs" },
+      { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "google-site-verification", content: "tYtU-dRlfAq14D7lyPTYf8noiJH-b0LifcvvrGi8AZw" },
