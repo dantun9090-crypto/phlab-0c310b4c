@@ -160,7 +160,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const host = url.hostname.toLowerCase();
-    const origin = (env && env.ORIGIN) || DEFAULT_ORIGIN;
+    const origin = null;
 
     // 1. Hostname normalization (defense in depth — origin also does this).
     if (REDIRECT_HOSTS.has(host) || (url.protocol === "http:" && host === CANONICAL_HOST)) {
