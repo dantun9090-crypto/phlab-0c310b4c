@@ -259,7 +259,7 @@ export default function CheckoutPage() {
       } finally {
         if (runId === preflightRunId.current) setPreflightChecking(false);
       }
-    }, 400);
+    }, 800);
     return () => clearTimeout(handle);
   }, [cart]);
 
@@ -619,22 +619,9 @@ export default function CheckoutPage() {
         try { await redeemCoupon(appliedCoupon.id); } catch { /* ignore */ }
       }
 
-      for (const item of cart) {
-        try {
-          const pRef = doc(db, 'products', String(item.id));
-          const snap = await getDoc(pRef);
-          if (!snap.exists()) continue;
-          const d = snap.data();
-          if (d.variants?.length && item.variantId) {
-            const variants = d.variants.map((v: any) =>
-              v.id === item.variantId ? { ...v, stock: Math.max(0, (v.stock || 0) - item.quantity) } : v
-            );
-            await updateDoc(pRef, { variants });
-          } else if (typeof d.stock === 'number') {
-            await updateDoc(pRef, { stock: Math.max(0, d.stock - item.quantity) });
-          }
-        } catch { /* ignore */ }
-      }
+      // Stock decrement is now performed server-side inside runCreateOrder
+      // (Firebase Admin transaction) so it cannot be skipped if the client
+      // disconnects between order creation and the stock update.
 
       setBankTransferRef(btRef);
       setConfirmedTotal(totalAmount.toFixed(2));
