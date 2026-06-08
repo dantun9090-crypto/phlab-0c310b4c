@@ -458,7 +458,7 @@ export default function HomePage() {
                 }}>
                   Synthetic Peptides<br />
                   <span style={{ color: '#10b981' }}>For In-Vitro Research</span><br />
-                  <span style={{ color: '#c9d8f0', fontWeight: 400, fontSize: 'clamp(1.2rem, 6vw, 0.72em)', overflowWrap: 'break-word' }}>HPLC-Verified ≥99% Purity · CoA Per Batch</span>
+                  <span style={{ color: '#c9d8f0', fontWeight: 400, fontSize: '0.72em', overflowWrap: 'break-word' }}>HPLC-Verified ≥99% Purity · CoA Per Batch</span>
                 </h1>
               </div>
 
