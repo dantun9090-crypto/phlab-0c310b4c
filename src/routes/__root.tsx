@@ -229,9 +229,64 @@ const BOOT_WATCHDOG = `
   try{
     var qs=new URLSearchParams(location.search);
     if(qs.get('sw')==='off'){
-      try{ if('caches' in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});} }catch(e){}
-      try{ if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});} }catch(e){}
-      try{ localStorage.removeItem('php_pwa_prompted'); sessionStorage.clear(); }catch(e){}
+      var DONE='__phl_sw_off_done';
+      if(sessionStorage.getItem(DONE)==='1'){
+        // Already cleaned this session — strip ?sw=off so the URL is clean.
+        try{
+          qs.delete('sw'); qs.delete('_r');
+          var clean=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
+          history.replaceState(null,'',clean);
+        }catch(e){}
+      } else {
+        var settle=function(p){ return Promise.resolve(p).catch(function(){}); };
+        var jobs=[];
+        // 1. Delete every Cache Storage bucket (Workbox, runtime, custom).
+        try{
+          if('caches' in window){
+            jobs.push(settle(caches.keys().then(function(ks){
+              return Promise.all(ks.map(function(k){ return settle(caches.delete(k)); }));
+            })));
+          }
+        }catch(e){}
+        // 2. Unregister EVERY service worker registration on this origin.
+        try{
+          if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){
+            jobs.push(settle(navigator.serviceWorker.getRegistrations().then(function(rs){
+              return Promise.all(rs.map(function(r){ return settle(r.unregister()); }));
+            })));
+          }
+        }catch(e){}
+        // 3. Best-effort: drop IndexedDB databases used by Workbox / app shells.
+        try{
+          if(indexedDB&&indexedDB.databases){
+            jobs.push(settle(indexedDB.databases().then(function(dbs){
+              return Promise.all((dbs||[]).map(function(db){
+                return new Promise(function(res){
+                  try{ var req=indexedDB.deleteDatabase(db.name); req.onsuccess=req.onerror=req.onblocked=function(){res();}; }
+                  catch(e){ res(); }
+                });
+              }));
+            })));
+          }
+        }catch(e){}
+        // 4. Clear app storage flags.
+        try{ localStorage.removeItem('php_pwa_prompted'); sessionStorage.clear(); }catch(e){}
+        // 5. Wait (max 4s) for cleanup then hard reload to a clean URL.
+        var FALLBACK=setTimeout(finish, 4000);
+        function finish(){
+          clearTimeout(FALLBACK);
+          try{ sessionStorage.setItem(DONE,'1'); }catch(e){}
+          try{
+            qs.delete('sw'); qs.delete('_r');
+            var url=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
+            location.replace(url);
+          }catch(e){ location.reload(); }
+        }
+        Promise.all(jobs).then(finish, finish);
+        // Stop further script eval on this page — we're about to reload.
+        if(document.documentElement) document.documentElement.style.visibility='hidden';
+        return;
+      }
     }
     var KEY='__phl_boot_reload_at';
     var MAX_RELOADS_KEY='__phl_boot_reload_count';
