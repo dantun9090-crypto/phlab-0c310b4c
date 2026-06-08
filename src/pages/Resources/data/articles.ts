@@ -1899,6 +1899,103 @@ For in vitro combination studies, the recommended substrate is primary human der
       { id: 3, authors: 'MHRA.', year: 2024, title: 'Guidance on the supply of unlicensed medicinal products', journal: 'UK Government', doi: '' },
     ]
   },
+  // ---------------------------------------------
+  // BPC-157 vs TB-500 — comparison guide
+  // ---------------------------------------------
+  {
+    slug: 'bpc-157-vs-tb-500',
+    title: 'BPC-157 vs TB-500: Mechanisms, Pathways and Research Comparison',
+    subtitle: 'A side-by-side technical comparison of two leading regenerative research peptides — angiogenesis-driven cytoprotection versus actin-mediated cell migration.',
+    category: 'Comparative Research',
+    readTime: 12,
+    publishDate: '2026-06-08',
+    excerpt: 'BPC-157 and TB-500 are the two most studied regenerative research peptides, but they act through fundamentally different molecular pathways. BPC-157 drives angiogenesis and nitric-oxide–mediated cytoprotection; TB-500 sequesters G-actin and accelerates cell migration. This guide compares their pharmacology, preclinical findings, stability and handling.',
+    keywords: ['BPC-157 vs TB-500', 'BPC-157', 'TB-500', 'thymosin beta-4', 'regenerative peptides', 'angiogenesis', 'cell migration', 'tissue repair research'],
+    relatedSlugs: ['bpc-157-tissue-repair', 'tb-500-thymosin-beta-4', 'peptide-storage-reconstitution'],
+    content: [
+      {
+        body: `BPC-157 (Body Protection Compound-157) and TB-500 (a synthetic fragment of <a href="/resources/tb-500-thymosin-beta-4" style="color: #10b981; text-decoration: underline;">Thymosin Beta-4</a>) are the two most frequently studied regenerative research peptides. Both appear repeatedly in connective-tissue, tendon, and mucosal-repair literature, and both are commonly used as reference compounds in comparative in-vivo models. They are, however, mechanistically distinct: BPC-157 acts predominantly through angiogenesis and nitric-oxide signalling, while TB-500 acts through G-actin sequestration and cell migration. Understanding this distinction is essential when designing a study or interpreting published results. <strong><a href="/products/bpc-157" style="color: #10b981; text-decoration: underline; font-weight: 700;">Buy research-grade BPC-157 (≥99% HPLC)</a></strong> or <strong><a href="/products/tb-500" style="color: #10b981; text-decoration: underline; font-weight: 700;">research-grade TB-500</a></strong>.`,
+        callout: {
+          type: 'info',
+          text: 'For Research Use Only. Not for Human Consumption. This article describes preclinical findings only and does not constitute medical advice, dosage guidance, or any therapeutic claim.'
+        }
+      },
+      {
+        heading: 'Structural and Source Differences',
+        body: `BPC-157 is a stable pentadecapeptide (15 amino acids, sequence GEPPPGKPADDAGLV) derived from a partial sequence of body protection compound originally isolated from human gastric juice. It is notable for its exceptional stability in acidic environments — it survives the gastric milieu in preclinical models without significant degradation, which is why much of the published literature uses oral, intragastric and intraperitoneal routes interchangeably.
+
+TB-500 is a synthetic 17-mer (LKKTETQ being the active core, often referred to as the actin-binding fragment) derived from the central region of full-length Thymosin Beta-4 (Tβ4, a naturally occurring 43-amino acid protein). TB-500 is not Tβ4 itself; it is a research-grade synthetic fragment that contains the actin-binding domain responsible for the majority of Tβ4's regenerative effects in published assays. Full-length Tβ4 has additional immunomodulatory and anti-inflammatory domains not present in TB-500.`
+      },
+      {
+        heading: 'Mechanism of Action — Angiogenesis vs Cell Migration',
+        body: `The most important distinction between the two compounds lies in their primary molecular targets.
+
+<strong>BPC-157</strong> upregulates expression of vascular endothelial growth factor receptor 2 (VEGFR2) and stimulates the nitric-oxide (NO) system through endothelial nitric oxide synthase (eNOS) activation. The downstream effect is accelerated <em>angiogenesis</em> — the formation of new blood vessels from existing vasculature — which improves perfusion and oxygen delivery to injured tissue. BPC-157 has also been observed to modulate the dopaminergic, serotonergic, and GABAergic systems in CNS injury models, and to upregulate growth-hormone receptor expression in tendon fibroblasts (Chang et al., 2014).
+
+<strong>TB-500</strong>, by contrast, binds and sequesters monomeric G-actin via its central LKKTETQ motif, regulating the G-actin/F-actin equilibrium inside the cell. This actin-binding activity is what enables rapid <em>cell migration</em> — endothelial cells, keratinocytes, and stem cells migrate into damaged areas faster when intracellular actin dynamics are accelerated. TB-500 also upregulates expression of laminin-5 and accelerates the recruitment of bone-marrow-derived progenitor cells to sites of injury (Goldstein et al., 2012).
+
+In short: BPC-157 builds the vascular plumbing that delivers nutrients to the wound; TB-500 mobilises the cells that rebuild the tissue. The mechanisms are complementary, not redundant — which is why combined-protocol research designs have appeared in the literature.`,
+        table: {
+          headers: ['Property', 'BPC-157', 'TB-500'],
+          rows: [
+            ['Length / Class', '15 aa pentadecapeptide', '17 aa Tβ4 fragment'],
+            ['Origin', 'Synthetic; sequence from gastric BPC', 'Synthetic fragment of Thymosin Beta-4'],
+            ['Primary mechanism', 'Angiogenesis via VEGFR2 + eNOS/NO', 'G-actin sequestration → cell migration'],
+            ['Key target', 'Endothelial cells, fibroblasts, tendon', 'Endothelial / epithelial / stem cells'],
+            ['Reported half-life (rodent)', '~ minutes plasma; effects persist hours', '~ 2 hours; effects persist days'],
+            ['Typical research route', 'Subcutaneous, intraperitoneal, oral (rodent)', 'Subcutaneous, intramuscular (rodent)'],
+            ['Stability in gastric pH', 'Exceptionally stable', 'Not gastric-stable; injected in preclinical work'],
+            ['Lyophilised storage', '−20 °C long term; 2–8 °C short term', '−20 °C long term; 2–8 °C short term'],
+          ],
+        }
+      },
+      {
+        heading: 'Preclinical Findings — Tendon, Ligament and Mucosal Models',
+        body: `In Achilles-tendon transection models in rats, BPC-157 has been reported to accelerate biomechanical recovery, increase tendon fibroblast outgrowth in explant culture, and upregulate growth-hormone receptor expression — findings replicated across multiple independent labs (Krivic et al., 2008; Chang et al., 2014). Mucosal-injury models (ethanol-gastric-lesion, NSAID-induced enteropathy, colitis) consistently show reduced lesion area and faster epithelial restitution in BPC-157-treated cohorts.
+
+TB-500 has been most extensively characterised in cutaneous wound-healing, corneal-epithelial-defect and cardiac-ischaemia models. In murine full-thickness wound assays, TB-500-treated groups have shown faster re-epithelialisation, reduced scar collagen disorganisation, and increased capillary density at the wound margin (Malinda et al., 1999; Philp et al., 2003). In rodent myocardial-infarction models, intracardiac TB-500 administration has been reported to reduce infarct size and improve left-ventricular function via epicardial progenitor recruitment (Bock-Marquette et al., 2004).
+
+Direct head-to-head comparisons in identical models remain sparse — most published literature studies one compound at a time, which is itself a useful gap for new comparative research designs.`,
+        callout: {
+          type: 'note',
+          text: 'All findings cited are from preclinical animal models. Neither BPC-157 nor TB-500 is approved as a therapeutic agent in any jurisdiction; both are investigational compounds for laboratory research only.'
+        }
+      },
+      {
+        heading: 'Stability, Reconstitution and Handling',
+        body: `Both peptides ship lyophilised and should be stored at −20 °C for long-term integrity. After reconstitution with <a href="/products/bacteriostatic-water" style="color: #10b981; text-decoration: underline;">bacteriostatic water</a>, store at 2–8 °C and use within 2–4 weeks for typical research workflows. Avoid repeated freeze–thaw cycles — aliquot the reconstituted solution into single-use volumes before freezing if longer storage is required.
+
+BPC-157 tolerates a wider pH range and is generally considered the more forgiving of the two during handling. TB-500 should be reconstituted gently — vortexing can shear the longer peptide chain. Both should be protected from light and from prolonged exposure to ambient temperature during preparation. See the <a href="/resources/peptide-storage-reconstitution" style="color: #10b981; text-decoration: underline;">peptide storage and reconstitution</a> guide for full protocols.`
+      },
+      {
+        heading: 'Which Compound for Which Research Question?',
+        body: `Choosing between BPC-157 and TB-500 (or designing a combined-arm study) depends entirely on the research question:
+
+• <strong>Vascular-perfusion or angiogenesis-driven repair models</strong> (tendon, ligament, gastric mucosa, anastomotic healing) are dominated by BPC-157 literature — its VEGFR2/NO mechanism aligns directly with these endpoints.
+
+• <strong>Cell-migration and re-epithelialisation models</strong> (skin wounds, corneal defects, cardiac progenitor recruitment) align more closely with TB-500's actin-sequestration mechanism.
+
+• <strong>Combined-arm designs</strong> may be of interest where both vascularisation and rapid cellular mobilisation are relevant — but combined-protocol studies should declare the rationale explicitly because the two compounds engage non-overlapping pathways and dose-response curves cannot be assumed to be additive.
+
+For analytical background on purity verification, see the <a href="/resources/hplc-testing-explained" style="color: #10b981; text-decoration: underline;">HPLC testing</a> primer. Every PH Labs batch ships with a compound-specific HPLC ≥99% Certificate of Analysis — see <a href="/lab-reports" style="color: #10b981; text-decoration: underline;">Lab Reports</a>.`
+      },
+      {
+        heading: 'Where to Buy BPC-157 and TB-500 (UK Research Supply)',
+        body: `PH Labs is a UK-based research peptide supplier dispatching from a domestic warehouse with next-day Royal Mail Tracked 24 and DPD options. Every vial of <a href="/products/bpc-157" style="color: #10b981; text-decoration: underline; font-weight: 700;">BPC-157</a> and <a href="/products/tb-500" style="color: #10b981; text-decoration: underline; font-weight: 700;">TB-500</a> ships with a batch-specific HPLC ≥99% purity certificate, cold-pack insulation, and the technical documentation required for laboratory record-keeping. Browse the full <a href="/products" style="color: #10b981; text-decoration: underline;">UK research peptide catalogue</a> or review the <a href="/quality-control" style="color: #10b981; text-decoration: underline;">Quality Control</a> protocol summary.
+
+<strong>For Research Use Only. Not for Human Consumption.</strong>`
+      }
+    ],
+    references: [
+      { id: 1, authors: 'Sikiric P, Seiwerth S, Rucman R, et al.', year: 2018, title: 'Stable gastric pentadecapeptide BPC 157 in the management of musculoskeletal injuries', journal: 'Curr Pharm Des', doi: '10.2174/1381612824666180717152934' },
+      { id: 2, authors: 'Chang CH, Tsai WC, Hsu YH, Pang JH.', year: 2014, title: 'Pentadecapeptide BPC 157 enhances the growth hormone receptor expression in tendon fibroblasts', journal: 'Molecules', doi: '10.3390/molecules191119066' },
+      { id: 3, authors: 'Krivic A, Anic T, Seiwerth S, et al.', year: 2008, title: 'Achilles detachment in rat and stable gastric pentadecapeptide BPC 157', journal: 'J Orthop Res', doi: '10.1002/jor.20420' },
+      { id: 4, authors: 'Goldstein AL, Hannappel E, Sosne G, Kleinman HK.', year: 2012, title: 'Thymosin β4: a multi-functional regenerative peptide', journal: 'Expert Opin Biol Ther', doi: '10.1517/14712598.2012.634793' },
+      { id: 5, authors: 'Malinda KM, Sidhu GS, Mani H, et al.', year: 1999, title: 'Thymosin beta4 accelerates wound healing', journal: 'J Invest Dermatol', doi: '10.1046/j.1523-1747.1999.00608.x' },
+      { id: 6, authors: 'Philp D, Goldstein AL, Kleinman HK.', year: 2003, title: 'Thymosin beta4 promotes angiogenesis, wound healing, and hair follicle development', journal: 'Mech Ageing Dev', doi: '10.1016/s0047-6374(03)00128-x' },
+      { id: 7, authors: 'Bock-Marquette I, Saxena A, White MD, et al.', year: 2004, title: 'Thymosin beta4 activates integrin-linked kinase and promotes cardiac cell migration, survival and cardiac repair', journal: 'Nature', doi: '10.1038/nature03000' },
+    ]
+  },
 ];
 
 export function getArticle(slug: string): Article | undefined {
