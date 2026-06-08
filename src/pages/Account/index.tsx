@@ -1,12 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   User, Package, MapPin, LogOut, ShoppingBag, Loader2, Edit2, Save, X,
   Trash2, CheckCircle2, Clock, Truck, Check, AlertCircle, ChevronRight,
   RotateCcw, Bell, ShieldAlert, FileText, Download, RefreshCw,
-  Gift, Copy, Share2, Users, TrendingUp, Tag, CheckCheck, Crown
+  Gift, Copy, Share2, Users, TrendingUp, Tag, CheckCheck, Crown,
+  FlaskConical, Upload, Eye
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { auth, db, getUserOrders, logoutUser, Order, redeemReferralBalance, doc, getDoc, updateDoc, deleteDoc, onAuthStateChanged, FirebaseUser, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendEmailVerification } from '@/lib/firebase';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  auth, db, storage, getUserOrders, logoutUser, Order, redeemReferralBalance,
+  doc, getDoc, updateDoc, deleteDoc, onAuthStateChanged, FirebaseUser,
+  deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword,
+  sendEmailVerification, collection, addDoc, getDocs, query, where, orderBy,
+  storageRef, uploadBytes, getDownloadURL, deleteObject,
+} from '@/lib/firebase';
+import { serverTimestamp } from 'firebase/firestore';
 import { revokeMyRefreshTokens } from '@/lib/revoke-refresh-tokens.functions';
 import { logSecurityEvent } from '@/lib/security-events';
 import { OrderTrackingBar } from '@/components/OrderTrackingBar';
@@ -120,9 +128,10 @@ export default function AccountPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'invoices' | 'referral' | 'profile' | 'security'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'invoices' | 'lab-report' | 'referral' | 'profile' | 'security'>('overview');
   const [saveMsg, setSaveMsg] = useState('');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Noindex for SEO
   useEffect(() => {
@@ -173,6 +182,89 @@ export default function AccountPage() {
   const [verifError, setVerifError] = useState('');
   const [verifCooldown, setVerifCooldown] = useState(0);
 
+  // ── Lab Reports (PWA file_handlers target) ───────────────────────────────
+  interface PendingReport { id: string; file: File; url: string; }
+  interface SavedReport {
+    id: string;
+    name: string;
+    size: number;
+    url: string;
+    storagePath: string;
+    contentType?: string;
+    createdAt?: any;
+  }
+  const [pendingReports, setPendingReports] = useState<PendingReport[]>([]);
+  const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [reportError, setReportError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Accept PDFs from drag-drop, file picker, or PWA launchQueue
+  const acceptFiles = (files: FileList | File[] | null) => {
+    if (!files) return;
+    const arr = Array.from(files as ArrayLike<File>);
+    const pdfs = arr.filter(f => f.type === 'application/pdf' || /\.pdf$/i.test(f.name));
+    if (pdfs.length === 0) {
+      if (arr.length) setReportError('Only PDF lab reports can be imported.');
+      return;
+    }
+    setReportError('');
+    const mapped: PendingReport[] = pdfs.map(f => ({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      file: f,
+      url: URL.createObjectURL(f),
+    }));
+    setPendingReports(prev => [...mapped, ...prev]);
+  };
+
+  // PWA file_handlers entry point: window.launchQueue delivers the PDFs the
+  // OS opened with the PH Labs app. Switches to the lab-report tab and shows
+  // them in the importer.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const lq = (window as any).launchQueue;
+    if (!lq || typeof lq.setConsumer !== 'function') return;
+    lq.setConsumer(async (launchParams: any) => {
+      if (!launchParams?.files?.length) return;
+      const files: File[] = [];
+      for (const handle of launchParams.files) {
+        try { files.push(await handle.getFile()); } catch { /* skip */ }
+      }
+      if (!files.length) return;
+      acceptFiles(files);
+      setActiveTab('lab-report');
+    });
+  }, []);
+
+  // Honour ?import=lab-report (the file_handlers action URL) and ?tab=...
+  useEffect(() => {
+    const importParam = searchParams.get('import');
+    const tabParam = searchParams.get('tab');
+    if (importParam === 'lab-report' || tabParam === 'lab-report') {
+      setActiveTab('lab-report');
+      if (importParam) {
+        // Strip the trigger so a manual refresh doesn't re-arm anything.
+        const next = new URLSearchParams(searchParams);
+        next.delete('import');
+        setSearchParams(next, { replace: true });
+      }
+    } else if (tabParam === 'orders') {
+      setActiveTab('orders');
+    }
+  }, [searchParams, setSearchParams]);
+
+  // Revoke blob URLs on unmount to avoid leaks
+  useEffect(() => {
+    return () => {
+      pendingReports.forEach(r => URL.revokeObjectURL(r.url));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
@@ -191,6 +283,7 @@ export default function AccountPage() {
           }
           const userOrders = await getUserOrders(u.uid);
           setOrders(userOrders);
+          await loadSavedReports(u.uid);
         } catch (e) {
           console.error(e);
         }
@@ -200,10 +293,101 @@ export default function AccountPage() {
     return unsub;
   }, []);
 
+  const loadSavedReports = async (uid: string) => {
+    setReportsLoading(true);
+    try {
+      const q = query(
+        collection(db, 'lab_reports'),
+        where('uid', '==', uid),
+        orderBy('createdAt', 'desc'),
+      );
+      const snap = await getDocs(q);
+      const rows: SavedReport[] = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+      setSavedReports(rows);
+    } catch (e) {
+      console.error('[account] failed to load lab reports', e);
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
+  const handleSaveReport = async (pending: PendingReport) => {
+    if (!user) return;
+    if (pending.file.size > 10 * 1024 * 1024) {
+      setReportError('Lab report must be under 10 MB.');
+      return;
+    }
+    setUploadingId(pending.id);
+    setReportError('');
+    try {
+      const safeName = pending.file.name.replace(/[^\w.\-]+/g, '_').slice(0, 200);
+      const storagePath = `users/${user.uid}/lab_reports/${Date.now()}-${safeName}`;
+      const ref = storageRef(storage, storagePath);
+      await uploadBytes(ref, pending.file, {
+        contentType: pending.file.type || 'application/pdf',
+      });
+      const url = await getDownloadURL(ref);
+      const docRef = await addDoc(collection(db, 'lab_reports'), {
+        uid: user.uid,
+        name: pending.file.name.slice(0, 255),
+        size: pending.file.size,
+        contentType: pending.file.type || 'application/pdf',
+        storagePath,
+        url,
+        createdAt: serverTimestamp(),
+      });
+      setSavedReports(prev => [{
+        id: docRef.id,
+        uid: user.uid,
+        name: pending.file.name,
+        size: pending.file.size,
+        contentType: pending.file.type || 'application/pdf',
+        storagePath,
+        url,
+        createdAt: new Date(),
+      } as SavedReport, ...prev]);
+      URL.revokeObjectURL(pending.url);
+      setPendingReports(prev => prev.filter(p => p.id !== pending.id));
+    } catch (e: any) {
+      console.error('[account] lab report save failed', e);
+      setReportError(e?.message || 'Failed to save lab report. Please try again.');
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+  const handleDiscardPending = (id: string) => {
+    setPendingReports(prev => {
+      const target = prev.find(p => p.id === id);
+      if (target) URL.revokeObjectURL(target.url);
+      return prev.filter(p => p.id !== id);
+    });
+  };
+
+  const handleDeleteSavedReport = async (report: SavedReport) => {
+    if (!user) return;
+    if (!confirm(`Delete "${report.name}"? This cannot be undone.`)) return;
+    try {
+      try { await deleteObject(storageRef(storage, report.storagePath)); } catch { /* ignore */ }
+      await deleteDoc(doc(db, 'lab_reports', report.id));
+      setSavedReports(prev => prev.filter(r => r.id !== report.id));
+    } catch (e: any) {
+      setReportError(e?.message || 'Failed to delete report.');
+    }
+  };
+
+  const formatBytes = (n: number) => {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
   const handleLogout = async () => {
     await logoutUser();
     navigate('/');
   };
+
+
 
   const handleSaveProfile = async () => {
     if (!user) return;
@@ -369,6 +553,7 @@ export default function AccountPage() {
     { id: 'overview', label: 'Overview', icon: Crown },
     { id: 'orders', label: 'Orders', icon: Package, count: orders.length },
     { id: 'invoices', label: 'Receipts', icon: FileText },
+    { id: 'lab-report', label: 'Lab Reports', icon: FlaskConical, count: savedReports.length + pendingReports.length },
     { id: 'referral', label: 'Referrals', icon: Gift },
     { id: 'profile', label: 'Profile', icon: Edit2 },
     { id: 'security', label: 'Security', icon: ShieldAlert },
@@ -862,6 +1047,204 @@ export default function AccountPage() {
                   </div>
                 </motion.div>
               )}
+
+              {/* ── LAB REPORTS (PWA file_handlers target) ── */}
+              {activeTab === 'lab-report' && (
+                <motion.div key="lab-report" initial={{ y: 10 }} animate={{ y: 0 }} exit={{ y: -10 }} transition={{ duration: 0.25 }} className="space-y-5">
+                  <div className={`${cardBase} overflow-hidden`}>
+                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-400/[0.18] to-transparent" />
+                    <div className="px-6 pt-6 pb-4 border-b border-white/[0.06] flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center flex-shrink-0">
+                        <FlaskConical className="w-5 h-5 text-emerald-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-white font-bold text-base">Lab Reports</h2>
+                        <p className="text-[#9cb8d9] text-xs mt-1 leading-relaxed">
+                          Import a PDF certificate of analysis or HPLC report. When the PH Labs app is installed,
+                          opening any PDF with it lands here automatically.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Importer */}
+                    <div className="p-5">
+                      <div
+                        onDragOver={(e) => { e.preventDefault(); }}
+                        onDrop={(e) => { e.preventDefault(); acceptFiles(e.dataTransfer?.files || null); }}
+                        className="rounded-xl border-2 border-dashed border-white/[0.10] hover:border-emerald-400/40 transition-colors bg-white/[0.02] p-6 text-center"
+                      >
+                        <Upload className="w-7 h-7 text-emerald-400 mx-auto mb-3 opacity-80" />
+                        <p className="text-white text-sm font-medium mb-1">Drop a PDF here</p>
+                        <p className="text-[#9cb8d9] text-xs mb-4">or pick one from your device — up to 10&nbsp;MB</p>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="application/pdf,.pdf"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => { acceptFiles(e.target.files); e.target.value = ''; }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-sm font-semibold transition-colors"
+                        >
+                          <Upload className="w-4 h-4" /> Choose PDF
+                        </button>
+                      </div>
+
+                      {reportError && (
+                        <div className="mt-4 flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/25 text-red-300 text-xs">
+                          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                          <span>{reportError}</span>
+                        </div>
+                      )}
+
+                      {/* Pending (just-imported, not yet saved) */}
+                      {pendingReports.length > 0 && (
+                        <div className="mt-6">
+                          <h3 className="text-white text-sm font-semibold mb-3 flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-amber-400" /> Just imported — review &amp; save
+                          </h3>
+                          <div className="space-y-4">
+                            {pendingReports.map(p => (
+                              <div key={p.id} className="rounded-xl bg-white/[0.03] border border-white/[0.08] overflow-hidden">
+                                <div className="px-4 py-3 flex items-center gap-3 border-b border-white/[0.06]">
+                                  <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                                    <FileText className="w-4 h-4 text-amber-400" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-white text-sm font-medium truncate">{p.file.name}</p>
+                                    <p className="text-[#9cb8d9] text-xs">{formatBytes(p.file.size)} · application/pdf</p>
+                                  </div>
+                                  <button
+                                    onClick={() => handleSaveReport(p)}
+                                    disabled={uploadingId === p.id}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-semibold disabled:opacity-50"
+                                  >
+                                    {uploadingId === p.id
+                                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</>
+                                      : <><Save className="w-3.5 h-3.5" /> Save</>}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDiscardPending(p.id)}
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[#9cb8d9] border border-white/[0.08] text-xs"
+                                    aria-label="Discard"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                <object
+                                  data={p.url}
+                                  type="application/pdf"
+                                  className="w-full h-[420px] bg-black/40"
+                                >
+                                  <div className="p-4 text-xs text-[#9cb8d9]">
+                                    Your browser can&apos;t preview PDFs inline.{' '}
+                                    <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-emerald-300 underline">Open in a new tab</a>.
+                                  </div>
+                                </object>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Saved reports */}
+                      <div className="mt-7">
+                        <h3 className="text-white text-sm font-semibold mb-3 flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Saved to your account
+                        </h3>
+                        {reportsLoading ? (
+                          <div className="flex items-center gap-2 text-[#9cb8d9] text-sm py-4">
+                            <Loader2 className="w-4 h-4 animate-spin" /> Loading reports…
+                          </div>
+                        ) : savedReports.length === 0 ? (
+                          <div className="text-center py-8 border border-dashed border-white/[0.06] rounded-xl">
+                            <FlaskConical className="w-10 h-10 text-[#3a5a82] mx-auto mb-3 opacity-50" />
+                            <p className="text-[#9cb8d9] text-sm">No lab reports saved yet.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {savedReports.map(r => (
+                              <div key={r.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.10] transition-all">
+                                <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                                  <FileText className="w-4 h-4 text-emerald-400" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-white text-sm font-medium truncate">{r.name}</p>
+                                  <p className="text-[#3a5a82] text-xs">
+                                    {formatBytes(r.size)}
+                                    {r.createdAt && ` · ${formatDate(r.createdAt)}`}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => setPreviewUrl(r.url)}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[#9cb8d9] border border-white/[0.08] text-xs"
+                                  aria-label="Preview"
+                                >
+                                  <Eye className="w-3.5 h-3.5" /> View
+                                </button>
+                                <a
+                                  href={r.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  download={r.name}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 text-xs"
+                                >
+                                  <Download className="w-3.5 h-3.5" /> Download
+                                </a>
+                                <button
+                                  onClick={() => handleDeleteSavedReport(r)}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs"
+                                  aria-label="Delete"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <p className="mt-6 text-[#3a5a82] text-[11px] leading-relaxed">
+                        For research use only. Lab reports are stored privately in your PH Labs account — only you
+                        and our compliance team can access them.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Saved-report fullscreen preview */}
+                  {previewUrl && (
+                    <div
+                      role="dialog"
+                      aria-modal="true"
+                      onClick={() => setPreviewUrl(null)}
+                      className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+                    >
+                      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-4xl h-[85vh] rounded-2xl overflow-hidden bg-slate-950 border border-white/[0.08] shadow-2xl flex flex-col">
+                        <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.08]">
+                          <span className="text-white text-sm font-medium">Lab report preview</span>
+                          <button
+                            onClick={() => setPreviewUrl(null)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[#9cb8d9] border border-white/[0.08] text-xs"
+                          >
+                            <X className="w-3.5 h-3.5" /> Close
+                          </button>
+                        </div>
+                        <object data={previewUrl} type="application/pdf" className="flex-1 w-full bg-black/40">
+                          <div className="p-4 text-xs text-[#9cb8d9]">
+                            Can&apos;t preview inline.{' '}
+                            <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-emerald-300 underline">Open in a new tab</a>.
+                          </div>
+                        </object>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+
 
               {/* ── REFERRAL ── */}
               {activeTab === 'referral' && (
