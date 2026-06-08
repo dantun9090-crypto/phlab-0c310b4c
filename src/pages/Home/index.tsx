@@ -11,7 +11,10 @@ import { sendPublicMail } from '@/lib/sendPublicMail';
 import { useSEO } from '@/hooks/useSEO';
 
 const AnimatedBackground = lazy(() => import('@/components/AnimatedBackground').then(m => ({ default: m.AnimatedBackground })));
-import HomeSeoIndex from '@/components/HomeSeoIndex';
+// Site-index link hub lives at the very bottom of the page (below the fold).
+// Lazy-loading it keeps the initial Home chunk smaller and defers ~30 link
+// items + lucide icons + the article-title index until the user scrolls down.
+const HomeSeoIndex = lazy(() => import('@/components/HomeSeoIndex'));
 
 // ── Static data ───────────────────────────────────────────────────────────────
 
