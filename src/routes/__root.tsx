@@ -92,18 +92,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "google-site-verification", content: "tYtU-dRlfAq14D7lyPTYf8noiJH-b0LifcvvrGi8AZw" },
-      // og:type intentionally omitted at root — set per-leaf-route
-      // (website on home, product on PDPs, article on resource articles)
-      // so the type matches the page and doesn't conflict with leaves.
-      { title: "PH LABS — Research Peptides UK" },
-      { property: "og:title", content: "PH LABS — Research Peptides UK" },
-      { name: "twitter:title", content: "PH LABS — Research Peptides UK" },
-      { name: "description", content: "Premium research peptides for laboratory use. GHK-Cu, TB-500, BPC-157 & more. UK-based, fast delivery." },
-      { property: "og:description", content: "Premium research peptides for laboratory use. GHK-Cu, TB-500, BPC-157 & more. UK-based, fast delivery." },
-      { name: "twitter:description", content: "Premium research peptides for laboratory use. GHK-Cu, TB-500, BPC-157 & more. UK-based, fast delivery." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/16474cca-36ac-48c9-a2f9-35fdb9fd017d" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/16474cca-36ac-48c9-a2f9-35fdb9fd017d" },
-      { property: "og:type", content: "website" },
+      // title, description, og:title/description/image, twitter:* and og:type
+      // are intentionally set per-leaf-route (see src/routes/index.tsx,
+      // src/routes/products.tsx, src/routes/products.$slug.tsx, src/routes/$.tsx).
+      // Defining them here too creates duplicate <title>/<meta> in <head>
+      // because TanStack concatenates parent + leaf meta when names collide
+      // on different keys (title vs name="description" vs property="og:*").
     ],
     scripts: [
       {
@@ -135,6 +129,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
                 "https://www.instagram.com/phlabs",
                 "https://x.com/phlabs",
               ],
+            },
+            {
+              "@type": "LocalBusiness",
+              "@id": "https://phlabs.co.uk/#localbusiness",
+              name: "PH Labs UK",
+              url: "https://phlabs.co.uk",
+              image: "https://phlabs.co.uk/og-image.jpg",
+              telephone: "+44 20 8175 4060",
+              email: "info@phlabs.co.uk",
+              priceRange: "££",
+              address: {
+                "@type": "PostalAddress",
+                addressCountry: "GB",
+                addressRegion: "England",
+              },
+              areaServed: "GB",
+              parentOrganization: { "@id": "https://phlabs.co.uk/#organization" },
             },
             {
               "@type": "WebSite",
