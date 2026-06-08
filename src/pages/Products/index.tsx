@@ -9,7 +9,7 @@ const AnimatedBackground = lazy(() =>
   import('@/components/AnimatedBackground').then(m => ({ default: m.AnimatedBackground }))
 );
 import { dispatchAddToCart, CartItem } from '@/components/Layout';
-import { auth, db, subscribeToProducts, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
+import { auth, db, getAllProducts, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
 import {
   markPrerenderPending,
   markPrerenderReady,
@@ -174,16 +174,18 @@ export default function Products() {
     return () => window.removeEventListener('cartUpdated', loadCart);
   }, []);
 
-  // Products subscription
+  // Products load — cached one-time read for shoppers to avoid permanent backend streams
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     setFirestoreError(false);
     setSlowLoad(false);
     const slowTimer = setTimeout(() => setSlowLoad(true), 4000);
     markPrerenderPending();
 
-    const unsub = subscribeToProducts(
-      (products) => {
+    getAllProducts()
+      .then((products) => {
+        if (cancelled) return;
         clearTimeout(slowTimer);
         setSlowLoad(false);
         const visible = products
@@ -195,16 +197,16 @@ export default function Products() {
         // Matches the [data-product-card] attribute set by <ProductCard /> —
         // excludes nav links and the SSR-only crawler catalogue block.
         flipPrerenderReadyWhenRendered('[data-product-card]', visible.length);
-      },
-      () => {
+      })
+      .catch(() => {
+        if (cancelled) return;
         clearTimeout(slowTimer);
         setSlowLoad(false);
         setFirestoreError(true);
         setLoading(false);
         markPrerenderReady();
-      }
-    );
-    return () => { unsub(); clearTimeout(slowTimer); };
+      });
+    return () => { cancelled = true; clearTimeout(slowTimer); };
   }, []);
 
   // Admin check
