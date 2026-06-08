@@ -264,6 +264,16 @@ export default function PrerenderStatusTab() {
         <p>• <span className="text-white">x-prerendered: yes</span> means our edge served the Prerender.io snapshot instead of raw SSR.</p>
         {/* check-domains-allow-next-line */}
         <p>• <span className="text-white">Redirect 301</span> on legacy product slugs and prohealthpeptides.co.uk URLs is correct — Cloudflare should send them to <code className="text-emerald-400">https://phlabs.co.uk</code>.</p>
+        <p className="pt-2 border-t border-white/[0.05] mt-2">
+          • <span className="text-white">Worker timeout: 45s</span> (bumped 2026-06-08 from 25s).
+          Fresh uncached homepage prerenders take ~18s — the old limit caused
+          <code className="text-amber-400"> AbortError</code> fallback to origin SSR on first crawl.
+          Cached snapshots serve in ~60–80&nbsp;ms with <code className="text-emerald-400">cf-cache-status: HIT</code>.
+        </p>
+        <p>
+          • Debug header on bot path: <code className="text-emerald-400">x-phl-via</code> = <code>prerender</code> or
+          <code> origin-bot-fallback;pre=…;err=…</code> — visible via <code>curl -A Googlebot/2.1 -D-</code>.
+        </p>
       </div>
     </div>
   );
