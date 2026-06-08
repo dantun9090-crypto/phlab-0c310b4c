@@ -18,35 +18,34 @@
   "related_applications": [
     {
       "platform": "webapp",
-      "url": "https://phlabs.co.uk/site.webmanifest",
-      "id": "phlabs.co.uk"
+      "url": "https://phlabs.co.uk/site.webmanifest"
     }
   ],
   "screenshots": [
     {
       "src": "/screenshots/mobile-1.jpg",
-      "sizes": "1024x1024",
+      "sizes": "540x1170",
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "PH Labs catalogue — research peptides on mobile"
     },
     {
       "src": "/screenshots/mobile-2.jpg",
-      "sizes": "1024x1024",
+      "sizes": "540x1170",
       "type": "image/jpeg",
       "form_factor": "narrow",
       "label": "Account — orders and lab reports"
     },
     {
       "src": "/screenshots/desktop-1.jpg",
-      "sizes": "1024x1024",
+      "sizes": "1280x720",
       "type": "image/jpeg",
       "form_factor": "wide",
       "label": "PH Labs catalogue on desktop"
     },
     {
       "src": "/screenshots/desktop-2.jpg",
-      "sizes": "1024x1024",
+      "sizes": "1280x720",
       "type": "image/jpeg",
       "form_factor": "wide",
       "label": "Product detail page — For Research Use Only"
@@ -114,10 +113,10 @@
       "data": "/widgets/quick-shop.data.json",
       "type": "application/json",
       "screenshots": [
-        { "src": "/screenshots/desktop-1.jpg", "sizes": "1024x1024", "label": "PH Labs Quick Shop widget" }
+        { "src": "/screenshots/desktop-1.jpg", "sizes": "1280x720", "label": "PH Labs Quick Shop widget" }
       ],
       "icons": [
-        { "src": "/icon-192.png", "sizes": "192x192" }
+        { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }
       ],
       "auth": false,
       "update": 86400
