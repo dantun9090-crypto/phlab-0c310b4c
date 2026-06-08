@@ -311,8 +311,8 @@ export default function ProductDetail() {
 
           // Preserve imageIndex on each variant — required for variant→image sync
           const variants = (Array.isArray(data.variants) && data.variants.length > 0)
-            ? data.variants.map((v: any) => ({
-                id: toText(v?.id, toText(v?.sku, `v${Math.random().toString(36).slice(2, 8)}`)),
+            ? data.variants.map((v: any, idx: number) => ({
+                id: toText(v?.id, toText(v?.sku, `v${idx + 1}`)),
                 name: toText(v?.name, toText(v?.dosage, 'Standard')),
                 sku: toText(v?.sku),
                 stock: toStockNumber(v?.stock),
