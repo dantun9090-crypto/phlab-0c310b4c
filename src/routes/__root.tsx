@@ -33,9 +33,59 @@ function NotFoundComponent() {
   );
 }
 
+function isStaleChunkError(err: unknown): boolean {
+  if (!err) return false;
+  const msg = (err as any)?.message ?? String(err);
+  return (
+    /Failed to fetch dynamically imported module/i.test(msg) ||
+    /Importing a module script failed/i.test(msg) ||
+    /Loading chunk [\w-]+ failed/i.test(msg) ||
+    /ChunkLoadError/i.test(msg) ||
+    /error loading dynamically imported module/i.test(msg) ||
+    /Unable to preload (?:CSS|module)/i.test(msg)
+  );
+}
+
+// Force a clean reload that bypasses the service worker and the browser
+// HTTP cache. Used by Try-again and by the auto-recovery for stale chunks
+// after a deploy.
+function hardReload() {
+  try {
+    if (typeof navigator !== "undefined" && navigator.serviceWorker) {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((r) => r.unregister().catch(() => {}));
+      }).catch(() => {});
+    }
+    if (typeof caches !== "undefined") {
+      caches.keys().then((keys) => {
+        keys.forEach((k) => caches.delete(k).catch(() => {}));
+      }).catch(() => {});
+    }
+  } catch { /* never block reload */ }
+  const url = new URL(window.location.href);
+  url.searchParams.set("_r", String(Date.now()));
+  window.location.replace(url.toString());
+}
+
+const AUTO_RELOAD_KEY = "__phl_route_err_reload_at";
+const AUTO_RELOAD_COOLDOWN_MS = 30_000;
+
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+
+  // Auto-recover from stale-chunk errors (typically the first navigation
+  // in a tab that was open across a deploy). One hard reload per 30s.
+  if (typeof window !== "undefined" && isStaleChunkError(error)) {
+    try {
+      const last = Number(sessionStorage.getItem(AUTO_RELOAD_KEY) ?? "0");
+      if (Date.now() - last > AUTO_RELOAD_COOLDOWN_MS) {
+        sessionStorage.setItem(AUTO_RELOAD_KEY, String(Date.now()));
+        // Defer to next tick so React can finish committing the error UI.
+        setTimeout(hardReload, 50);
+      }
+    } catch { /* ignore */ }
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -49,8 +99,15 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
-              router.invalidate();
-              reset();
+              // Hard reload bypasses the service worker AND the HTTP cache,
+              // which is what users hit when chunks are stale after a deploy.
+              // Falls through to router.invalidate()+reset() only in dev.
+              if (import.meta.env.PROD) {
+                hardReload();
+              } else {
+                router.invalidate();
+                reset();
+              }
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
