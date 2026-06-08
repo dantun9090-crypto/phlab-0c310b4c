@@ -128,9 +128,10 @@ export default function AccountPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'invoices' | 'referral' | 'profile' | 'security'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'invoices' | 'lab-report' | 'referral' | 'profile' | 'security'>('overview');
   const [saveMsg, setSaveMsg] = useState('');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Noindex for SEO
   useEffect(() => {
