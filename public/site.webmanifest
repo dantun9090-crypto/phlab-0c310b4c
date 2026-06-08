@@ -15,7 +15,43 @@
   "categories": ["shopping", "science", "health"],
   "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7",
   "prefer_related_applications": false,
-  "related_applications": [],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://phlabs.co.uk/site.webmanifest",
+      "id": "phlabs.co.uk"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile-1.jpg",
+      "sizes": "1024x1024",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "PH Labs catalogue — research peptides on mobile"
+    },
+    {
+      "src": "/screenshots/mobile-2.jpg",
+      "sizes": "1024x1024",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Account — orders and lab reports"
+    },
+    {
+      "src": "/screenshots/desktop-1.jpg",
+      "sizes": "1024x1024",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "PH Labs catalogue on desktop"
+    },
+    {
+      "src": "/screenshots/desktop-2.jpg",
+      "sizes": "1024x1024",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Product detail page — For Research Use Only"
+    }
+  ],
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
@@ -33,7 +69,9 @@
   },
   "handle_links": "preferred",
   "scope_extensions": [
-    { "origin": "https://www.phlabs.co.uk" }
+    { "origin": "https://www.phlabs.co.uk" },
+    { "origin": "https://phlabs.app" },
+    { "origin": "https://www.phlabs.app" }
   ],
   "protocol_handlers": [
     { "protocol": "web+phlabs", "url": "/?handler=%s" }
@@ -76,7 +114,7 @@
       "data": "/widgets/quick-shop.data.json",
       "type": "application/json",
       "screenshots": [
-        { "src": "/icon-512.png", "sizes": "512x512", "label": "PH Labs Quick Shop" }
+        { "src": "/screenshots/desktop-1.jpg", "sizes": "1024x1024", "label": "PH Labs Quick Shop widget" }
       ],
       "icons": [
         { "src": "/icon-192.png", "sizes": "192x192" }
