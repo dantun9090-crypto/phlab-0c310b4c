@@ -56,16 +56,22 @@ export function CookieConsent() {
       return () => { if (timer) clearTimeout(timer); };
     }
 
-    // Poll briefly for the gate to clear (covers both confirm and dismiss).
+    // Wait for the gate to clear (covers both confirm and dismiss), with polling as fallback.
     const poll = setInterval(() => {
       if (!isGateBlocking() || !document.querySelector('[aria-label="Research use confirmation"]')) {
         clearInterval(poll);
         show();
       }
     }, 400);
+    const onGateCleared = () => {
+      clearInterval(poll);
+      show();
+    };
+    window.addEventListener('php:research-gate-cleared', onGateCleared, { once: true });
 
     return () => {
       clearInterval(poll);
+      window.removeEventListener('php:research-gate-cleared', onGateCleared);
       if (timer) clearTimeout(timer);
     };
   }, []);
@@ -104,7 +110,7 @@ export function CookieConsent() {
             <p className="text-[#f0f6ff] text-sm font-semibold leading-snug">We use cookies</p>
             <p className="text-[#9cb8d9] text-xs mt-0.5 leading-relaxed">
               Essential cookies only by default. We never sell your data.{" "}
-              <Link to="/privacy" onClick={() => setVisible(false)} className="text-blue-400 hover:underline">
+              <Link to="/privacy-policy" onClick={() => setVisible(false)} className="text-blue-400 hover:underline">
                 Privacy Policy
               </Link>
             </p>

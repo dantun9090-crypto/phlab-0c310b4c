@@ -8,7 +8,7 @@ import {
   ArrowRight, Microscope, TestTube, Dna, Settings as SettingsIcon,
   Lock, Landmark, BadgeCheck, Search, Truck, Menu
 } from 'lucide-react';
-import { auth, db, doc, getDoc, onAuthStateChanged, FirebaseUser, subscribeToProducts } from '@/lib/firebase';
+import { auth, db, doc, getDoc, onAuthStateChanged, FirebaseUser, getAllProducts } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
 
 // Articles bundle (~196KB) is loaded lazily — only when the search panel opens —
@@ -251,18 +251,22 @@ export function Layout({ children }: LayoutProps) {
     }
   }, [isSearchOpen]);
 
-  // Lazily subscribe to products for autocomplete (only once)
+  // Lazily load products for autocomplete (one-time cached read; avoids a sitewide live stream)
   useEffect(() => {
-    let unsub: (() => void) | undefined;
+    let cancelled = false;
     const load = () => {
-      unsub = subscribeToProducts((prods) => setSearchProducts(prods));
+      getAllProducts().then((prods) => {
+        if (!cancelled) setSearchProducts(prods);
+      }).catch(() => {
+        if (!cancelled) setSearchProducts([]);
+      });
     };
     if (typeof requestIdleCallback !== 'undefined') {
       requestIdleCallback(load, { timeout: 5000 });
     } else {
       setTimeout(load, 1500);
     }
-    return () => unsub?.();
+    return () => { cancelled = true; };
   }, []);
 
   // Lazy-load the articles bundle the first time the search panel opens.
@@ -310,7 +314,7 @@ export function Layout({ children }: LayoutProps) {
   const getSubtotal = useCallback(() => subtotal, [subtotal]);
 
   const shippingCost = useMemo(() => subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 4.99, [subtotal]);
-  const getTotalPrice = useCallback(() => Math.max(0, subtotal - shippingCost).toFixed(2), [subtotal, shippingCost]);
+  const getTotalPrice = useCallback(() => Math.max(0, subtotal + shippingCost).toFixed(2), [subtotal, shippingCost]);
 
   const addToCart = (item: CartItem) => {
     setCart(prev => {

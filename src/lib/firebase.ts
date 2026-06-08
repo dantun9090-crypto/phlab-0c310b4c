@@ -844,7 +844,13 @@ export const subscribeToProducts = (
   onError?: (err: Error) => void
 ) => {
   return onSnapshot(collection(db, PRODUCTS_COL), (snap) => {
-    callback(snap.docs.map((d) => normaliseProduct(d.id, d.data())));
+    const products = snap.docs.map((d) => normaliseProduct(d.id, d.data()));
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify({ ts: Date.now(), products }));
+      }
+    } catch { /* ignore quota errors */ }
+    callback(products);
   }, (err) => {
     console.warn('subscribeToProducts error:', err);
     callback([]);
