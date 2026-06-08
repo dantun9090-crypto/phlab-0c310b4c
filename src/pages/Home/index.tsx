@@ -1201,7 +1201,9 @@ export default function HomePage() {
       </div>
 
       {/* SEO link-index — SSR-rendered hub linking to every product + article */}
-      <HomeSeoIndex />
+      <Suspense fallback={null}>
+        <HomeSeoIndex />
+      </Suspense>
 
     </div>
   );
