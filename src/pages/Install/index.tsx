@@ -110,9 +110,10 @@ export default function InstallPage() {
             <p className="text-xs uppercase tracking-wider text-slate-400 mb-2">Detected</p>
             <p className="text-white font-semibold text-lg mb-4">{label}</p>
             <InstallAppButton />
+            <QuickActions platform={platform} />
             <p className="text-slate-400 text-xs mt-3">
               Tap the button — if your browser supports a native prompt it'll appear,
-              otherwise you'll see step-by-step instructions below.
+              otherwise follow the platform-specific link below.
             </p>
           </div>
         )}
