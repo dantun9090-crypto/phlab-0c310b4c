@@ -118,21 +118,12 @@ function fwdHeaders(req) {
   return out;
 }
 
-function proxyToOrigin(request, origin) {
-  const reqUrl = new URL(request.url);
-  const target = new URL(reqUrl.pathname + reqUrl.search, origin);
-  const headers = fwdHeaders(request);
-  // Ensure correct Host + forwarded IP for the origin.
-  headers.set("host", new URL(origin).host);
-  const cfIp = request.headers.get("cf-connecting-ip");
-  if (cfIp) headers.set("x-forwarded-for", cfIp);
-  headers.set("x-forwarded-proto", "https");
-  return fetch(target.toString(), {
-    method: request.method,
-    headers,
-    body: request.body,
-    redirect: "manual",
-  });
+function proxyToOrigin(request, _origin) {
+  // Pass-through via Cloudflare's DNS-based routing. This preserves Host
+  // (phlabs.co.uk) so the origin does not 302 back to the canonical host
+  // — Lovable's published hosting redirects phlab.lovable.app → phlabs.co.uk,
+  // so we MUST NOT rewrite the URL/host to the lovable.app origin.
+  return fetch(request, { redirect: "manual" });
 }
 
 async function fetchPrerender(request, token) {
