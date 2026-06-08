@@ -850,7 +850,7 @@ export const subscribeToProducts = (
         localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify({ ts: Date.now(), products }));
       }
     } catch { /* ignore quota errors */ }
-    callback(snap.docs.map((d) => normaliseProduct(d.id, d.data())));
+    callback(products);
   }, (err) => {
     console.warn('subscribeToProducts error:', err);
     callback([]);
