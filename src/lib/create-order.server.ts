@@ -12,7 +12,7 @@
  */
 import { z } from 'zod';
 import { runValidateCart, type ValidateCartResult } from './cart-validation.server';
-import { addDocAdmin } from './server/firestore-admin';
+import { addDocAdmin, getDocAdmin, updateDocAdmin } from './server/firestore-admin';
 import { verifyFirebaseIdToken } from './server/firebase-auth-admin';
 import {
   SHIPPING_CONFIG,
@@ -193,6 +193,32 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   };
 
   await addDocAdmin('orders', orderData, orderId);
+
+  // Server-side stock decrement. Runs AFTER the order is written so an
+  // accounting trail exists. Best-effort per item — a stock-update failure
+  // does NOT fail the order (admins can reconcile via /admin/inventory).
+  await Promise.all(
+    input.items.map(async (item) => {
+      try {
+        const doc = await getDocAdmin('products', item.productId);
+        if (!doc) return;
+        if (Array.isArray(doc.variants) && doc.variants.length > 0 && item.variantId) {
+          const variants = (doc.variants as Array<Record<string, any>>).map((v) =>
+            v?.id === item.variantId
+              ? { ...v, stock: Math.max(0, Number(v?.stock ?? 0) - item.quantity) }
+              : v,
+          );
+          await updateDocAdmin('products', item.productId, { variants });
+        } else if (typeof doc.stock === 'number') {
+          await updateDocAdmin('products', item.productId, {
+            stock: Math.max(0, doc.stock - item.quantity),
+          });
+        }
+      } catch {
+        // Swallow — order is already placed, manual reconciliation possible.
+      }
+    }),
+  );
 
   return {
     ok: true,

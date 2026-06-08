@@ -663,8 +663,10 @@ export default function CheckoutPage() {
             localStorage.setItem(`php_tl_order_${externalPaymentId}`, orderId);
           }
           setFenaStep('redirecting');
-          localStorage.removeItem('php_cart');
-          setCart([]);
+          // Persist orderId so the success page can clear the cart only
+          // after the bank confirms payment. If the user cancels/aborts
+          // the redirect, the cart stays intact and they can retry.
+          try { localStorage.setItem('php_pending_order', orderId); } catch { /* ignore */ }
           setTimeout(() => { window.location.href = parsed.toString(); }, 250);
           return;
         } catch (err: any) {
