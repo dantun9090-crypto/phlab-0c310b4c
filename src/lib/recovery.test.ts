@@ -193,7 +193,7 @@ describe("clearClientCaches", () => {
   });
 
   it("never hangs past its timeout when caches.keys() stalls forever", async () => {
-    // @ts-expect-error — partial CacheStorage stub
+    // @ts-expect-error — partial CacheStorage stub for the timeout test
     globalThis.caches = {
       keys: () => new Promise<string[]>(() => { /* never resolves */ }),
     };
