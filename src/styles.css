@@ -143,3 +143,131 @@
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+ * THEME PERSONALITY HOOKS
+ * Drive layout/feel from [data-theme] + theme CSS vars set by
+ * ThemeContext, so switching themes reshapes the whole site
+ * (not just colors).
+ * ═══════════════════════════════════════════════════════════════ */
+
+html[data-theme] body {
+  font-family: var(--theme-font-body, inherit);
+}
+
+html[data-theme] h1,
+html[data-theme] h2,
+html[data-theme] h3,
+html[data-theme] .font-display {
+  font-family: var(--theme-font-display, inherit);
+}
+
+/* ──── FLAGSHIP: Business Pro · Luxury Laboratory ──── */
+html[data-theme="luxury-laboratory"] body {
+  background:
+    radial-gradient(1200px 600px at 15% -10%, rgba(201,162,76,0.10), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(245,230,184,0.06), transparent 55%),
+    #08070a;
+  letter-spacing: 0.005em;
+}
+
+html[data-theme="luxury-laboratory"] h1,
+html[data-theme="luxury-laboratory"] h2,
+html[data-theme="luxury-laboratory"] h3 {
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.08;
+}
+
+html[data-theme="luxury-laboratory"] h1 {
+  background: linear-gradient(180deg, #f7f3e9 0%, #c9a24c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+html[data-theme="luxury-laboratory"] header,
+html[data-theme="luxury-laboratory"] nav {
+  background: rgba(8, 7, 10, 0.72) !important;
+  backdrop-filter: saturate(140%) blur(14px);
+  -webkit-backdrop-filter: saturate(140%) blur(14px);
+  border-bottom: 1px solid rgba(201,162,76,0.18);
+}
+
+html[data-theme="luxury-laboratory"] .min-h-screen {
+  background: transparent !important;
+}
+
+/* Cards / panels — glass + gold hairline */
+html[data-theme="luxury-laboratory"] [class*="rounded-xl"],
+html[data-theme="luxury-laboratory"] [class*="rounded-2xl"],
+html[data-theme="luxury-laboratory"] [class*="rounded-lg"] {
+  border-radius: 18px;
+}
+
+html[data-theme="luxury-laboratory"] .bg-card,
+html[data-theme="luxury-laboratory"] [class*="bg-slate-900"],
+html[data-theme="luxury-laboratory"] [class*="bg-slate-800"] {
+  background: linear-gradient(180deg, rgba(28,24,36,0.85) 0%, rgba(15,13,20,0.85) 100%) !important;
+  border: 1px solid rgba(201,162,76,0.18) !important;
+  box-shadow:
+    0 24px 60px -28px rgba(0,0,0,0.7),
+    inset 0 1px 0 rgba(245,230,184,0.06);
+}
+
+/* Primary buttons — champagne gold gradient */
+html[data-theme="luxury-laboratory"] button[class*="bg-blue"],
+html[data-theme="luxury-laboratory"] button[class*="bg-emerald"],
+html[data-theme="luxury-laboratory"] button[class*="bg-primary"],
+html[data-theme="luxury-laboratory"] a[class*="bg-blue"],
+html[data-theme="luxury-laboratory"] a[class*="bg-emerald"] {
+  background: linear-gradient(135deg, #c9a24c 0%, #e6c875 50%, #c9a24c 100%) !important;
+  color: #1a1408 !important;
+  border: 1px solid rgba(245,230,184,0.5) !important;
+  box-shadow:
+    0 10px 30px -10px rgba(201,162,76,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.25);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+html[data-theme="luxury-laboratory"] button[class*="bg-blue"]:hover,
+html[data-theme="luxury-laboratory"] button[class*="bg-emerald"]:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+/* Links + accent text */
+html[data-theme="luxury-laboratory"] a:not([class*="bg-"]) {
+  color: #e6c875;
+}
+
+/* Form controls */
+html[data-theme="luxury-laboratory"] input,
+html[data-theme="luxury-laboratory"] textarea,
+html[data-theme="luxury-laboratory"] select {
+  background: rgba(19,17,26,0.8) !important;
+  border: 1px solid rgba(201,162,76,0.25) !important;
+  color: #f7f3e9 !important;
+}
+
+html[data-theme="luxury-laboratory"] input:focus,
+html[data-theme="luxury-laboratory"] textarea:focus {
+  border-color: #c9a24c !important;
+  box-shadow: 0 0 0 3px rgba(201,162,76,0.18) !important;
+}
+
+/* Scrollbar */
+html[data-theme="luxury-laboratory"] ::-webkit-scrollbar { width: 10px; height: 10px; }
+html[data-theme="luxury-laboratory"] ::-webkit-scrollbar-track { background: #08070a; }
+html[data-theme="luxury-laboratory"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #c9a24c, #6e6757);
+  border-radius: 999px;
+}
+
+/* Generic personality for ANY theme using var fallbacks */
+html[data-theme]:not([data-theme="navy-professional"]) .shadow-xl,
+html[data-theme]:not([data-theme="navy-professional"]) .shadow-2xl {
+  box-shadow: var(--theme-shadow, 0 20px 50px -20px rgba(0,0,0,0.5));
+}
+
+

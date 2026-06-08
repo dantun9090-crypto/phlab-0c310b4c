@@ -6,6 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 const CATEGORIES = [
   { id: 'all',       label: 'All Templates' },
+  { id: 'luxury',    label: 'Luxury' },
   { id: 'medical',   label: 'Medical' },
   { id: 'corporate', label: 'Corporate' },
   { id: 'modern',    label: 'Modern' },
@@ -13,6 +14,7 @@ const CATEGORIES = [
   { id: 'vibrant',   label: 'Vibrant' },
   { id: 'dark',      label: 'Dark' },
 ];
+
 
 function ColorSwatch({ colors }: { colors: ThemeTemplate['colors'] }) {
   return (
@@ -186,6 +188,7 @@ export default function ThemesTab() {
                       {template.name}
                     </h3>
                     <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
+                      template.category === 'luxury'    ? 'bg-amber-500/15 text-amber-300 ring-1 ring-amber-400/30' :
                       template.category === 'medical'   ? 'bg-blue-500/15 text-blue-300' :
                       template.category === 'corporate' ? 'bg-slate-500/15 text-slate-300' :
                       template.category === 'modern'    ? 'bg-blue-500/15 text-purple-300' :
@@ -195,6 +198,7 @@ export default function ThemesTab() {
                     }`}>
                       {template.category}
                     </span>
+
                   </div>
                   <p className="text-[#3a5a82] text-xs leading-relaxed mb-3">
                     {template.description}

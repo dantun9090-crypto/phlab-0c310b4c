@@ -12,7 +12,7 @@ export interface ThemeTemplate {
   id: string;
   name: string;
   description: string;
-  category: 'medical' | 'corporate' | 'modern' | 'minimal' | 'vibrant' | 'dark';
+  category: 'luxury' | 'medical' | 'corporate' | 'modern' | 'minimal' | 'vibrant' | 'dark';
   preview: string; // URL to preview image
   
   // Color Palette
@@ -59,8 +59,48 @@ export interface ThemeTemplate {
 // ═══════════════════════════════════════════════════════════
 
 export const THEME_TEMPLATES: ThemeTemplate[] = [
+  // ──────── FLAGSHIP — BUSINESS PRO LUXURY LABORATORY ────────
+  {
+    id: 'luxury-laboratory',
+    name: 'Business Pro · Luxury Laboratory',
+    description: 'Obsidian + champagne gold + platinum. Serif display, glass cards, premium shadows. Transforms the entire site feel.',
+    category: 'luxury',
+    preview: '/templates/luxury-laboratory.jpg',
+    colors: {
+      primary: '#c9a24c',      // champagne gold
+      secondary: '#e6c875',    // light gold
+      accent: '#f5e6b8',       // platinum
+      background: '#08070a',   // obsidian
+      surface: '#13111a',      // deep onyx
+      text: {
+        primary: '#f7f3e9',    // warm ivory
+        secondary: '#c9beaa',  // muted parchment
+        muted: '#6e6757',      // bronze dust
+      },
+      border: 'rgba(201,162,76,0.22)',
+    },
+    skeleton: {
+      headerStyle: 'floating',
+      heroLayout: 'asymmetric',
+      cardStyle: 'glass',
+      footerStyle: 'mega',
+    },
+    animations: {
+      pageTransition: 'fade',
+      hoverEffect: 'glow',
+      scrollReveal: true,
+      particleEffects: true,
+    },
+    typography: {
+      headingFont: '"Cormorant Garamond", "Playfair Display", Georgia, serif',
+      bodyFont: '"Inter Tight", "Inter", -apple-system, "Segoe UI", sans-serif',
+      scale: 'large',
+    },
+  },
+
   // ──────── MEDICAL / PHARMACEUTICAL (10 templates) ────────
   {
+
     id: 'navy-professional',
     name: 'Navy Professional',
     description: 'Deep navy with clinical precision — current PH Labs theme',

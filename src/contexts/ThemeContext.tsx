@@ -26,13 +26,31 @@ function applyThemeCSSVars(template: ThemeTemplate) {
   root.style.setProperty('--theme-accent',      c.accent);
   root.style.setProperty('--theme-bg',          c.background);
   root.style.setProperty('--theme-surface',     c.surface);
-  root.style.setProperty('--theme-surface2',    c.surface); // darker variant
+  root.style.setProperty('--theme-surface2',    c.surface);
   root.style.setProperty('--theme-text',        c.text.primary);
   root.style.setProperty('--theme-text-sub',    c.text.secondary);
   root.style.setProperty('--theme-text-muted',  c.text.muted);
   root.style.setProperty('--theme-border',      c.border);
 
-  // Also update the legacy design tokens so utility classes pick them up
+  // Personality tokens — derived from skeleton + typography so [data-theme] CSS
+  // rules can reshape the whole layout (radius, shadow, density, fonts).
+  const radiusMap = { flat: '6px', outlined: '10px', elevated: '14px', glass: '18px', gradient: '22px' } as const;
+  const shadowMap = {
+    flat:     '0 1px 2px rgba(0,0,0,0.08)',
+    outlined: '0 1px 3px rgba(0,0,0,0.08)',
+    elevated: '0 12px 32px -12px rgba(0,0,0,0.45)',
+    glass:    '0 24px 60px -20px rgba(0,0,0,0.55), 0 0 0 1px ' + c.border + ' inset',
+    gradient: '0 30px 80px -30px ' + c.primary + '55',
+  } as const;
+  const densityMap = { compact: '0.92', standard: '1', large: '1.08' } as const;
+
+  root.style.setProperty('--theme-radius',       radiusMap[template.skeleton.cardStyle]);
+  root.style.setProperty('--theme-shadow',       shadowMap[template.skeleton.cardStyle]);
+  root.style.setProperty('--theme-density',      densityMap[template.typography.scale]);
+  root.style.setProperty('--theme-font-display', template.typography.headingFont);
+  root.style.setProperty('--theme-font-body',    template.typography.bodyFont);
+
+  // Legacy design tokens so existing utility classes pick them up
   root.style.setProperty('--color-navy-950',       c.background);
   root.style.setProperty('--color-navy-900',       c.background);
   root.style.setProperty('--color-navy-800',       c.surface);
@@ -47,6 +65,7 @@ function applyThemeCSSVars(template: ThemeTemplate) {
   document.body.style.backgroundColor = c.background;
   document.body.style.color = c.text.primary;
   document.body.style.fontFamily = template.typography.bodyFont;
+
 
   // Force all min-h-screen wrappers (page roots) to use theme background
   document.querySelectorAll<HTMLElement>('.min-h-screen').forEach(el => {
