@@ -448,7 +448,7 @@ export default function HomePage() {
               {/* H1 */}
               <div>
                 <h1 style={{
-                  fontSize: 'clamp(2rem, 9vw, 4.2rem)',
+                  fontSize: 'clamp(1.75rem, 7.5vw, 4.2rem)',
                   fontWeight: 900,
                   lineHeight: 1.04,
                   letterSpacing: 0,
