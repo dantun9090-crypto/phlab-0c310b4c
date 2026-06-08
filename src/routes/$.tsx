@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 import { SEO_LIMITS, SITE_URL, canonicalUrl, clamp, metaForPath } from "@/lib/seo-meta";
-import { articles } from "@/pages/Resources/data/articles";
+import { ARTICLE_INDEX as articles } from "@/pages/Resources/data/articles-index";
 import { LoadingFallback } from "@/components/LoadingFallback";
 import { KNOWN_ROOTS } from "@/lib/known-roots";
 
@@ -28,13 +28,6 @@ export const Route = createFileRoute("/$")({
     if (resourcesMatch) {
       const article = articles.find((a) => a.slug === resourcesMatch[1]);
       if (article) {
-        const bodyText = article.content
-          .map((s) => `${s.heading ?? ""} ${s.body ?? ""}`)
-          .join(" ")
-          .replace(/<[^>]+>/g, " ")
-          .replace(/\s+/g, " ")
-          .trim();
-        const wordCount = bodyText ? bodyText.split(" ").length : undefined;
         scripts.push({
           type: "application/ld+json",
           children: JSON.stringify({
@@ -42,17 +35,9 @@ export const Route = createFileRoute("/$")({
             "@type": "Article",
             "@id": `${url}#article`,
             headline: clamp(article.title, 110),
-            alternativeHeadline: article.subtitle,
-            description: clamp(article.excerpt, SEO_LIMITS.descriptionMax),
+            description: description,
             image: [OG_IMAGE],
-            datePublished: article.publishDate,
-            dateModified: article.publishDate,
             inLanguage: "en-GB",
-            articleSection: article.category,
-            keywords: article.keywords?.join(", "),
-            wordCount,
-            timeRequired: `PT${article.readTime}M`,
-            articleBody: bodyText.slice(0, 5000),
             url,
             isAccessibleForFree: true,
             author: {
