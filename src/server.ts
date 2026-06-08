@@ -421,9 +421,22 @@ export default {
     };
 
     try {
-      // 0. Health probe — przed czymkolwiek innym
-      if (url.pathname === "/__health") {
-        return new Response("ok", { status: 200, headers: { "content-type": "text/plain" } });
+      // 0. Health probe — /_health (public) and /__health (legacy/internal).
+      // Returns JSON with version + timestamp, never cached, never prerendered.
+      if (url.pathname === "/_health" || url.pathname === "/__health") {
+        const body = JSON.stringify({
+          status: "ok",
+          timestamp: new Date().toISOString(),
+          version: "1.0.0",
+        });
+        return new Response(body, {
+          status: 200,
+          headers: {
+            "content-type": "application/json; charset=utf-8",
+            "cache-control": "no-store, no-cache, must-revalidate",
+            "x-robots-tag": "noindex, nofollow",
+          },
+        });
       }
 
       // 0b. Firebase Auth proxy — custom auth domain phlabs.co.uk
