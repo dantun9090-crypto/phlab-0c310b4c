@@ -40,6 +40,7 @@ export const Route = createFileRoute("/")({
       // on the home route until the Firestore banner resolves.
       { rel: "preload", as: "image", href: HOME_OG_IMAGE, fetchpriority: "high" } as any,
     ],
+  }),
   component: LegacyMount,
 });
 
