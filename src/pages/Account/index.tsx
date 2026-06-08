@@ -1,12 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   User, Package, MapPin, LogOut, ShoppingBag, Loader2, Edit2, Save, X,
   Trash2, CheckCircle2, Clock, Truck, Check, AlertCircle, ChevronRight,
   RotateCcw, Bell, ShieldAlert, FileText, Download, RefreshCw,
-  Gift, Copy, Share2, Users, TrendingUp, Tag, CheckCheck, Crown
+  Gift, Copy, Share2, Users, TrendingUp, Tag, CheckCheck, Crown,
+  FlaskConical, Upload, Eye
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { auth, db, getUserOrders, logoutUser, Order, redeemReferralBalance, doc, getDoc, updateDoc, deleteDoc, onAuthStateChanged, FirebaseUser, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendEmailVerification } from '@/lib/firebase';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  auth, db, storage, getUserOrders, logoutUser, Order, redeemReferralBalance,
+  doc, getDoc, updateDoc, deleteDoc, onAuthStateChanged, FirebaseUser,
+  deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword,
+  sendEmailVerification, collection, addDoc, getDocs, query, where, orderBy,
+  storageRef, uploadBytes, getDownloadURL, deleteObject,
+} from '@/lib/firebase';
+import { serverTimestamp } from 'firebase/firestore';
 import { revokeMyRefreshTokens } from '@/lib/revoke-refresh-tokens.functions';
 import { logSecurityEvent } from '@/lib/security-events';
 import { OrderTrackingBar } from '@/components/OrderTrackingBar';
