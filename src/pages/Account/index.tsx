@@ -547,6 +547,7 @@ export default function AccountPage() {
     { id: 'overview', label: 'Overview', icon: Crown },
     { id: 'orders', label: 'Orders', icon: Package, count: orders.length },
     { id: 'invoices', label: 'Receipts', icon: FileText },
+    { id: 'lab-report', label: 'Lab Reports', icon: FlaskConical, count: savedReports.length + pendingReports.length },
     { id: 'referral', label: 'Referrals', icon: Gift },
     { id: 'profile', label: 'Profile', icon: Edit2 },
     { id: 'security', label: 'Security', icon: ShieldAlert },
