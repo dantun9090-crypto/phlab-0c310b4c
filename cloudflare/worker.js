@@ -248,9 +248,17 @@ export default {
       }
     }
 
-    // 6. Normal proxy → origin (preserves CF edge caching configured by Rulesets).
+    // 6. Normal proxy → origin. We pass `cf.cacheEverything` on GETs of
+    //    safe public HTML routes / sitemap / merchant feed so the edge
+    //    cache actually fills (Worker subrequests bypass cache by default).
+    const isXmlFeed =
+      url.pathname === "/sitemap.xml" || url.pathname === "/google-merchant-feed.xml";
+    const cacheOpts =
+      isGet && isHtmlCacheable(url)
+        ? { cacheEverything: true, cacheTtl: isXmlFeed ? 300 : 300 }
+        : undefined;
     try {
-      const res = await proxyToOrigin(request, origin);
+      const res = await proxyToOrigin(request, origin, cacheOpts);
 
       // Error 1000-style infinite redirect / DNS loop detection.
       if (res.status === 0 || res.status === 521 || res.status === 522 || res.status === 523) {
@@ -263,8 +271,16 @@ export default {
         noCache(h);
       } else if (isStatic) {
         if (!h.has("cache-control")) h.set("cache-control", "public, max-age=31536000, immutable");
+      } else if (isXmlFeed) {
+        // Sitemap + merchant feed: 5 min browser cache, correct content-type.
+        h.set("cache-control", "public, max-age=300, stale-while-revalidate=3600");
+        if (url.pathname === "/google-merchant-feed.xml" || url.pathname === "/sitemap.xml") {
+          h.set("content-type", "application/xml; charset=utf-8");
+        }
       } else if ((h.get("content-type") || "").includes("text/html")) {
-        if (!h.has("cache-control")) h.set("cache-control", "public, max-age=3600, stale-while-revalidate=86400");
+        if (!h.has("cache-control") || /no-cache|no-store|max-age=0/i.test(h.get("cache-control") || "")) {
+          h.set("cache-control", "public, max-age=300, stale-while-revalidate=86400");
+        }
       }
 
       // 5xx → branded HTML + try stale cache.
