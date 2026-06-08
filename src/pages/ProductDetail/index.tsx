@@ -450,8 +450,18 @@ export default function ProductDetail() {
     const highPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : price;
 
     // ══ META TAGS — Collection Template Dynamic ══
-    const rawDosage = product.variants?.[selectedVariantIdx]?.name;
-    const dosage = typeof rawDosage === 'string' ? rawDosage.trim() : '';
+    // Only use variant data in SEO meta when the variant itself is valid:
+    // - has a non-empty trimmed string name
+    // - has a finite, non-negative price
+    // Otherwise fall back to product-level fields only (no dosage suffix).
+    const rawDosage = selectedVariant?.name;
+    const variantPriceForSeo = Number(selectedVariant?.price ?? NaN);
+    const isVariantValidForSeo =
+      typeof rawDosage === 'string' &&
+      rawDosage.trim().length > 0 &&
+      Number.isFinite(variantPriceForSeo) &&
+      variantPriceForSeo >= 0;
+    const dosage = isVariantValidForSeo ? (rawDosage as string).trim() : '';
     const titleDosage = dosage ? ` ${dosage}` : '';
     
     // Dynamic Title: {{Product Name}} | ≥99% HPLC | PH Labs UK
