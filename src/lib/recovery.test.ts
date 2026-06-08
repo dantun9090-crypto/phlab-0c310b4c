@@ -62,8 +62,7 @@ function installFakeCaches(buckets: Record<string, FakeCache>) {
     match: vi.fn(),
     has: vi.fn(),
   };
-  // @ts-expect-error — jsdom doesn't ship CacheStorage
-  globalThis.caches = cs;
+  (globalThis as { caches?: unknown }).caches = cs;
   return cs;
 }
 
