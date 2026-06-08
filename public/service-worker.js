@@ -2,9 +2,10 @@
 // Mirrors /sw.js so old registrations on either path clear the app-shell cache
 // and unregister themselves instead of serving stale offline content.
 
-const CACHE_PREFIXES = ['phlabs-offline-', 'workbox-', 'precache-', 'runtime-'];
+const CACHE_PREFIXES = ['phlabs-offline-', 'phlabs-', 'workbox-', 'precache-', 'runtime-'];
 
 function isAppShellCache(name) {
+  if (name.startsWith('phlabs-lkg-')) return false;
   return CACHE_PREFIXES.some((prefix) => name.startsWith(prefix)) ||
     /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(name);
 }

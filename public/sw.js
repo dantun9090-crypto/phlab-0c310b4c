@@ -3,9 +3,10 @@
 // clears the old offline cache and unregisters itself so browsers cannot get
 // stranded on a stale blank app shell.
 
-const CACHE_PREFIXES = ['phlabs-offline-', 'workbox-', 'precache-', 'runtime-'];
+const CACHE_PREFIXES = ['phlabs-offline-', 'phlabs-', 'workbox-', 'precache-', 'runtime-'];
 
 function isAppShellCache(name) {
+  if (name.startsWith('phlabs-lkg-')) return false;
   return CACHE_PREFIXES.some((prefix) => name.startsWith(prefix)) ||
     /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(name);
 }

@@ -395,12 +395,12 @@ export default function ToolsTab() {
           <div>
             <h3 className="text-[#f0f6ff] font-semibold">Browser Cache Safety</h3>
             <p className="text-[#9cb8d9] text-xs mt-0.5">
-              Offline app-shell service worker is disabled. Returning browsers receive a one-time cache cleanup and reload from the live site.
+              Offline app-shell service worker is disabled. Returning browsers receive scoped cache cleanup, while last-known page fallback remains available if the network drops.
             </p>
           </div>
         </div>
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-900/10 p-4 text-sm text-emerald-300">
-          If a device still shows a blank navy screen, open <code className="text-emerald-200">https://phlabs.co.uk/?sw=off</code> once. The page now clears stale service-worker storage on load; <code className="text-emerald-200">/sw.js</code> and <code className="text-emerald-200">/service-worker.js</code> are routed through no-store recovery headers before static assets, with static no-store headers as fallback.
+          If a device still shows a blank navy screen, open <code className="text-emerald-200">https://phlabs.co.uk/?sw=off</code> once. The page now clears only PH Labs app-shell service-worker/cache buckets, keeps offline last-known content, and <code className="text-emerald-200">/sw.js</code> plus <code className="text-emerald-200">/service-worker.js</code> use no-store recovery headers.
         </div>
       </motion.div>
 
