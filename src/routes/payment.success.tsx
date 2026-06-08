@@ -63,6 +63,13 @@ function PaymentSuccessPage() {
           console.log("Order found:", true, "status:", res.status, "paid:", res.paid);
           if (res.paid) {
             setPhase("paid");
+            // Clear the cart only AFTER the bank confirms — keeps the
+            // basket intact if the user cancels at the bank's HPP.
+            try {
+              localStorage.removeItem("php_cart");
+              localStorage.removeItem("php_pending_order");
+              window.dispatchEvent(new StorageEvent("storage", { key: "php_cart" }));
+            } catch { /* ignore */ }
             return;
           }
           if (Date.now() > deadline) {

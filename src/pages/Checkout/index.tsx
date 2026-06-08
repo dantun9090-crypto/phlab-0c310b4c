@@ -259,7 +259,7 @@ export default function CheckoutPage() {
       } finally {
         if (runId === preflightRunId.current) setPreflightChecking(false);
       }
-    }, 400);
+    }, 800);
     return () => clearTimeout(handle);
   }, [cart]);
 
@@ -570,7 +570,11 @@ export default function CheckoutPage() {
       // client-writable rules). The client never supplies totalAmount.
       let serverResult: Awaited<ReturnType<typeof createOrder>>;
       try {
-        const idToken = auth.currentUser && !auth.currentUser.isAnonymous
+        // Always send the idToken if we have a current user (including
+        // anonymous) so the order document is linked to the same UID the
+        // payment success page will be authenticated as. Without this the
+        // pay_by_bank flow's anon UID would never match orders.userId.
+        const idToken = auth.currentUser
           ? await auth.currentUser.getIdToken().catch(() => null)
           : null;
         serverResult = await createOrder({
@@ -619,22 +623,9 @@ export default function CheckoutPage() {
         try { await redeemCoupon(appliedCoupon.id); } catch { /* ignore */ }
       }
 
-      for (const item of cart) {
-        try {
-          const pRef = doc(db, 'products', String(item.id));
-          const snap = await getDoc(pRef);
-          if (!snap.exists()) continue;
-          const d = snap.data();
-          if (d.variants?.length && item.variantId) {
-            const variants = d.variants.map((v: any) =>
-              v.id === item.variantId ? { ...v, stock: Math.max(0, (v.stock || 0) - item.quantity) } : v
-            );
-            await updateDoc(pRef, { variants });
-          } else if (typeof d.stock === 'number') {
-            await updateDoc(pRef, { stock: Math.max(0, d.stock - item.quantity) });
-          }
-        } catch { /* ignore */ }
-      }
+      // Stock decrement is now performed server-side inside runCreateOrder
+      // (Firebase Admin transaction) so it cannot be skipped if the client
+      // disconnects between order creation and the stock update.
 
       setBankTransferRef(btRef);
       setConfirmedTotal(totalAmount.toFixed(2));
@@ -672,8 +663,10 @@ export default function CheckoutPage() {
             localStorage.setItem(`php_tl_order_${externalPaymentId}`, orderId);
           }
           setFenaStep('redirecting');
-          localStorage.removeItem('php_cart');
-          setCart([]);
+          // Persist orderId so the success page can clear the cart only
+          // after the bank confirms payment. If the user cancels/aborts
+          // the redirect, the cart stays intact and they can retry.
+          try { localStorage.setItem('php_pending_order', orderId); } catch { /* ignore */ }
           setTimeout(() => { window.location.href = parsed.toString(); }, 250);
           return;
         } catch (err: any) {

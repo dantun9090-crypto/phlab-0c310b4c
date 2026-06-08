@@ -117,12 +117,26 @@ function fwdHeaders(req) {
   return out;
 }
 
-function proxyToOrigin(request, _origin) {
-  // Pass-through via Cloudflare's DNS-based routing. This preserves Host
-  // (phlabs.co.uk) so the origin does not 302 back to the canonical host
-  // — Lovable's published hosting redirects the preview host → https://phlabs.co.uk,
-  // so we MUST NOT rewrite the URL/host away from the canonical apex.
-  return fetch(request, { redirect: "manual" });
+// Routes safe to edge-cache as HTML. Matches the `phlabs cache` ruleset
+// exclusion list (admin/account/cart/checkout/payment/login/register/api/
+// search/vip-store/webhook) so we never cache personalised pages.
+const HTML_CACHE_EXCLUDE_PREFIXES = [
+  "/admin", "/account", "/cart", "/checkout", "/payment", "/login",
+  "/register", "/api", "/search", "/vip-store", "/webhook",
+];
+function isHtmlCacheable(url) {
+  if (url.pathname === "/sw.js" || url.pathname === "/service-worker.js") return false;
+  return !HTML_CACHE_EXCLUDE_PREFIXES.some((p) => url.pathname.startsWith(p));
+}
+
+function proxyToOrigin(request, _origin, cacheOpts) {
+  // Pass-through via Cloudflare's DNS-based routing. Without the `cf`
+  // option Worker subrequests bypass the edge cache entirely — so we
+  // pass cacheEverything/cacheTtl explicitly for safe HTML routes,
+  // which restores the 5-min edge cache that the Rulesets describe.
+  const init = { redirect: "manual" };
+  if (cacheOpts) init.cf = cacheOpts;
+  return fetch(request, init);
 }
 
 async function fetchPrerender(request, token) {
@@ -234,9 +248,17 @@ export default {
       }
     }
 
-    // 6. Normal proxy → origin (preserves CF edge caching configured by Rulesets).
+    // 6. Normal proxy → origin. We pass `cf.cacheEverything` on GETs of
+    //    safe public HTML routes / sitemap / merchant feed so the edge
+    //    cache actually fills (Worker subrequests bypass cache by default).
+    const isXmlFeed =
+      url.pathname === "/sitemap.xml" || url.pathname === "/google-merchant-feed.xml";
+    const cacheOpts =
+      isGet && isHtmlCacheable(url)
+        ? { cacheEverything: true, cacheTtl: isXmlFeed ? 300 : 300 }
+        : undefined;
     try {
-      const res = await proxyToOrigin(request, origin);
+      const res = await proxyToOrigin(request, origin, cacheOpts);
 
       // Error 1000-style infinite redirect / DNS loop detection.
       if (res.status === 0 || res.status === 521 || res.status === 522 || res.status === 523) {
@@ -249,8 +271,16 @@ export default {
         noCache(h);
       } else if (isStatic) {
         if (!h.has("cache-control")) h.set("cache-control", "public, max-age=31536000, immutable");
+      } else if (isXmlFeed) {
+        // Sitemap + merchant feed: 5 min browser cache, correct content-type.
+        h.set("cache-control", "public, max-age=300, stale-while-revalidate=3600");
+        if (url.pathname === "/google-merchant-feed.xml" || url.pathname === "/sitemap.xml") {
+          h.set("content-type", "application/xml; charset=utf-8");
+        }
       } else if ((h.get("content-type") || "").includes("text/html")) {
-        if (!h.has("cache-control")) h.set("cache-control", "public, max-age=3600, stale-while-revalidate=86400");
+        if (!h.has("cache-control") || /no-cache|no-store|max-age=0/i.test(h.get("cache-control") || "")) {
+          h.set("cache-control", "public, max-age=300, stale-while-revalidate=86400");
+        }
       }
 
       // 5xx → branded HTML + try stale cache.
