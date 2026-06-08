@@ -11,6 +11,16 @@ import { useEffect, useState } from "react";
 
 import appCss from "../styles.css?url";
 import "@/lib/chunk-reload";
+import {
+  clearClientCaches as _clearClientCaches, // re-exported for tests if needed
+  findCachedLastKnownUrl,
+  HARD_RELOAD_FLAG,
+  hardReload,
+  isOnline,
+  isStaleChunkError,
+} from "@/lib/recovery";
+import { schedulePrecacheCurrentPage } from "@/lib/lkg-cache";
+void _clearClientCaches;
 
 function NotFoundComponent() {
   return (
