@@ -244,10 +244,16 @@ export default function AccountPage() {
     const tabParam = searchParams.get('tab');
     if (importParam === 'lab-report' || tabParam === 'lab-report') {
       setActiveTab('lab-report');
+      if (importParam) {
+        // Strip the trigger so a manual refresh doesn't re-arm anything.
+        const next = new URLSearchParams(searchParams);
+        next.delete('import');
+        setSearchParams(next, { replace: true });
+      }
     } else if (tabParam === 'orders') {
       setActiveTab('orders');
     }
-  }, [searchParams]);
+  }, [searchParams, setSearchParams]);
 
   // Revoke blob URLs on unmount to avoid leaks
   useEffect(() => {
