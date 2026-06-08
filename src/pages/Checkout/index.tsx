@@ -570,7 +570,11 @@ export default function CheckoutPage() {
       // client-writable rules). The client never supplies totalAmount.
       let serverResult: Awaited<ReturnType<typeof createOrder>>;
       try {
-        const idToken = auth.currentUser && !auth.currentUser.isAnonymous
+        // Always send the idToken if we have a current user (including
+        // anonymous) so the order document is linked to the same UID the
+        // payment success page will be authenticated as. Without this the
+        // pay_by_bank flow's anon UID would never match orders.userId.
+        const idToken = auth.currentUser
           ? await auth.currentUser.getIdToken().catch(() => null)
           : null;
         serverResult = await createOrder({
