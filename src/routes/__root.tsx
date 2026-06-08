@@ -288,6 +288,10 @@ const BOOT_WATCHDOG = `
         return;
       }
     }
+    // Skip the watchdog on dev/preview hosts — Vite cold module loads can
+    // exceed the timeout and trigger a reload loop before React mounts.
+    var h=location.hostname;
+    if(h==='localhost'||h==='127.0.0.1'||h.endsWith('.lovableproject.com')||h.endsWith('.lovable.app')||h.endsWith('.lovable.dev')) return;
     var KEY='__phl_boot_reload_at';
     var MAX_RELOADS_KEY='__phl_boot_reload_count';
     var now=Date.now();
@@ -319,7 +323,8 @@ const BOOT_WATCHDOG = `
         }
       }catch(e){}
       location.replace(location.pathname+location.search+(location.search?'&':'?')+'_r='+Date.now()+location.hash);
-    },10000);
+    },20000);
+
   }catch(e){}
 })();
 `;
