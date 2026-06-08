@@ -425,24 +425,33 @@ export default function ProductDetail() {
   useEffect(() => {
     if (!product) return;
     const selectedVariant = product.variants?.[selectedVariantIdx];
-    const price = selectedVariant?.price ?? product.price ?? 0;
-    const inStock = (selectedVariant?.stock ?? product.stock ?? 0) > 0;
+    // Guard every variant-derived field before it touches the DOM / JSON-LD.
+    // Invalid (NaN, negative, non-string) values become safe defaults so the
+    // page never throws inside the SEO effect.
+    const rawPrice = selectedVariant?.price ?? product.price ?? 0;
+    const price = Number.isFinite(Number(rawPrice)) && Number(rawPrice) >= 0 ? Number(rawPrice) : 0;
+    const rawStock = selectedVariant?.stock ?? product.stock ?? 0;
+    const inStock = Number.isFinite(Number(rawStock)) && Number(rawStock) > 0;
     const productImage = product.imageUrl || product.images?.[0] || '';
-    const productSku = selectedVariant?.sku || product.sku || product.id;
+    const productSku = (typeof selectedVariant?.sku === 'string' && selectedVariant.sku) || product.sku || product.id;
 
     // Use slug for SEO-friendly canonical URLs; fall back to nameToSlug or id
     const productSlug = product.slug || nameToSlug(product.name) || product.id;
     const productUrl = `https://phlabs.co.uk/products/${productSlug}`;
 
-    // For multi-variant products, calculate price range for AggregateOffer
+    // For multi-variant products, calculate price range for AggregateOffer.
+    // Filter to numeric, finite, non-negative prices only — protects toFixed().
     const variants = product.variants ?? [];
     const hasMultipleVariants = variants.length > 1;
-    const variantPrices = variants.map(v => Number(v.price ?? 0)).filter(p => p > 0);
+    const variantPrices = variants
+      .map((v) => Number(v?.price ?? 0))
+      .filter((p) => Number.isFinite(p) && p >= 0);
     const lowPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : price;
     const highPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : price;
 
     // ══ META TAGS — Collection Template Dynamic ══
-    const dosage = product.variants?.[selectedVariantIdx]?.name || '';
+    const rawDosage = product.variants?.[selectedVariantIdx]?.name;
+    const dosage = typeof rawDosage === 'string' ? rawDosage.trim() : '';
     const titleDosage = dosage ? ` ${dosage}` : '';
     
     // Dynamic Title: {{Product Name}} | ≥99% HPLC | PH Labs UK
@@ -534,25 +543,31 @@ export default function ProductDetail() {
         '@type': 'AggregateOffer',
         url: productUrl,
         priceCurrency: 'GBP',
-        lowPrice: lowPrice.toFixed(2),
-        highPrice: highPrice.toFixed(2),
+        lowPrice: (Number.isFinite(lowPrice) ? lowPrice : 0).toFixed(2),
+        highPrice: (Number.isFinite(highPrice) ? highPrice : 0).toFixed(2),
         offerCount: variants.length,
-        offers: variants.map((v, idx) => ({
-          '@type': 'Offer',
-          url: productUrl,
-          priceCurrency: 'GBP',
-          price: Number(v.price ?? 0).toFixed(2),
-          itemCondition: 'https://schema.org/NewCondition',
-          availability: (v.stock ?? 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          sku: v.sku || `${product.id}-v${idx + 1}`,
-          name: `${product.name} — ${v.name}`,
-        })),
+        offers: variants.map((v, idx) => {
+          const vPrice = Number(v?.price ?? 0);
+          const vStock = Number(v?.stock ?? 0);
+          const vName = typeof v?.name === 'string' && v.name.trim() ? v.name.trim() : `Option ${idx + 1}`;
+          const vSku = (typeof v?.sku === 'string' && v.sku) || `${product.id}-v${idx + 1}`;
+          return {
+            '@type': 'Offer',
+            url: productUrl,
+            priceCurrency: 'GBP',
+            price: (Number.isFinite(vPrice) && vPrice >= 0 ? vPrice : 0).toFixed(2),
+            itemCondition: 'https://schema.org/NewCondition',
+            availability: Number.isFinite(vStock) && vStock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            sku: vSku,
+            name: `${product.name} — ${vName}`,
+          };
+        }),
         seller: { '@type': 'Organization', name: 'PH Labs', url: 'https://phlabs.co.uk' },
       } : {
         '@type': 'Offer',
         url: productUrl,
         priceCurrency: 'GBP',
-        price: price.toFixed(2),
+        price: (Number.isFinite(price) && price >= 0 ? price : 0).toFixed(2),
         priceValidUntil: `${new Date().getFullYear() + 1}-12-31`,
         itemCondition: 'https://schema.org/NewCondition',
         availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
