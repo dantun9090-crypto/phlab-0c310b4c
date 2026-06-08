@@ -1405,7 +1405,7 @@ export default function ProductDetail() {
             {/* ── Price block ── */}
             <div className="rounded-3xl p-6 shadow-[0_4px_32px_rgba(0,0,0,0.4)]" style={{ background: '#0b1a30', border: '1px solid rgba(255,255,255,0.08)' }}>
               <div className="flex items-baseline gap-3 mb-3">
-                <span className="text-5xl font-bold text-[#f0f6ff] tracking-tight">£{variantPrice.toFixed(2)}</span>
+                <span className="text-5xl font-bold text-[#f0f6ff] tracking-tight">£{displayPrice.toFixed(2)}</span>
                 <span className="text-[#3a5a82] text-sm font-medium">per vial</span>
               </div>
 
@@ -1857,7 +1857,7 @@ export default function ProductDetail() {
             >
               <div className="bg-[#060f1e]/97 border-t border-white/[0.1] flex items-center gap-3" style={{ padding: 'max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left))' }}>
                 <div className="flex-1 min-w-0">
-                  <p className="text-blue-400 font-bold text-base">£{variantPrice.toFixed(2)}</p>
+                  <p className="text-blue-400 font-bold text-base">£{displayPrice.toFixed(2)}</p>
                   <p className="text-[#4ade80] text-xs font-semibold">
                     <Truck className="w-3 h-3 inline mr-1" />
                     Free UK Shipping
