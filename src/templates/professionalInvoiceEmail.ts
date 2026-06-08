@@ -189,7 +189,7 @@ export function buildProfessionalInvoiceEmail(rawOpts: InvoiceEmailOptions): str
             <table width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td>
-                  <img src="https://cdn.wegic.ai/assets/onepage/uploads/2031481443271393281/image/2026/03/14/01KKPB20SGJ3T4RK47TQPSAV0N.png"
+                  <img src="https://phlabs.co.uk/logo.png"
                     alt="PH Labs" width="48" height="48"
                     style="border-radius:12px;display:block;margin-bottom:12px;" />
                   <p style="color:${BLUE};font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;margin:0 0 4px 0;">PH Labs</p>
