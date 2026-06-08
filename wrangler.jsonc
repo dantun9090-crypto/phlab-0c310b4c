@@ -4,4 +4,10 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "src/server.ts",
+  "assets": {
+    // Force these service-worker paths through src/server.ts before static assets.
+    // If the app Worker is unavailable, public/_headers still marks the same
+    // static files as no-store, so neither route can be pinned at Cloudflare.
+    "run_worker_first": ["/sw.js", "/service-worker.js"]
+  },
 }
