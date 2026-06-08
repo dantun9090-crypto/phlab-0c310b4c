@@ -1,0 +1,14 @@
+{
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    { "type": "TextBlock", "text": "PH Labs — Quick Shop", "weight": "Bolder", "size": "Medium", "color": "Light" },
+    { "type": "TextBlock", "text": "HPLC-verified research peptides. UK supplier.", "wrap": true, "isSubtle": true },
+    { "type": "TextBlock", "text": "${featured}", "wrap": true, "spacing": "Medium" }
+  ],
+  "actions": [
+    { "type": "Action.OpenUrl", "title": "Shop peptides", "url": "https://phlabs.co.uk/products" },
+    { "type": "Action.OpenUrl", "title": "My account", "url": "https://phlabs.co.uk/account" }
+  ],
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json"
+}
