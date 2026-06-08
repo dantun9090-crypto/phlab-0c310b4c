@@ -110,9 +110,10 @@ export default function InstallPage() {
             <p className="text-xs uppercase tracking-wider text-slate-400 mb-2">Detected</p>
             <p className="text-white font-semibold text-lg mb-4">{label}</p>
             <InstallAppButton />
+            <QuickActions platform={platform} />
             <p className="text-slate-400 text-xs mt-3">
               Tap the button — if your browser supports a native prompt it'll appear,
-              otherwise you'll see step-by-step instructions below.
+              otherwise follow the platform-specific link below.
             </p>
           </div>
         )}
@@ -229,5 +230,55 @@ function Faq({ q, children }: { q: string; children: React.ReactNode }) {
       </summary>
       <p className="text-slate-300 text-sm leading-relaxed mt-3">{children}</p>
     </details>
+  );
+}
+
+function QuickActions({ platform }: { platform: Platform }) {
+  const [copied, setCopied] = useState(false);
+  const url = 'https://phlabs.co.uk/install';
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const baseBtn =
+    'flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium text-sm min-h-[48px] transition-colors w-full';
+  const primaryStyle = {
+    background: 'rgba(255,255,255,0.05)',
+    color: '#cfe1f5',
+    border: '1px solid rgba(255,255,255,0.10)',
+  } as const;
+
+  return (
+    <div className="mt-3 grid gap-2">
+      {platform === 'ios-other' && (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={baseBtn}
+          style={primaryStyle}
+        >
+          <Apple className="w-4 h-4" /> Open this page in Safari
+        </a>
+      )}
+      {platform === 'ios-safari' && (
+        <p className="text-slate-400 text-xs px-1">
+          Apple does not allow websites to trigger install on iPhone. Tap{' '}
+          <Share className="inline w-3.5 h-3.5 mx-0.5 align-text-bottom" />{' '}
+          <strong>Share → Add to Home Screen</strong> in Safari's bottom bar.
+        </p>
+      )}
+      <button type="button" onClick={copy} className={baseBtn} style={primaryStyle}>
+        {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Download className="w-4 h-4" />}
+        {copied ? 'Link copied!' : 'Copy install link (phlabs.co.uk/install)'}
+      </button>
+    </div>
   );
 }
