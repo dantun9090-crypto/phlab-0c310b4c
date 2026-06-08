@@ -39,6 +39,15 @@ export function isAppOwnedCache(name: string): boolean {
   return /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(name);
 }
 
+// Caches safe to evict during a deploy recovery. Keep phlabs-lkg-* so if the
+// network is still unavailable after the hard reload, the offline screen can
+// still offer last-known content instead of a dead end.
+export function isEvictableAppCache(name: string): boolean {
+  if (name.startsWith("phlabs-lkg-")) return false;
+  if (APP_CACHE_PREFIXES.some((p) => name.startsWith(p))) return true;
+  return /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(name);
+}
+
 // Matches the SW we register in src/lib/sw-register.ts. Filtering by
 // scriptURL means we never touch a Firebase Messaging or third-party SW.
 export const APP_SW_SCRIPT_BASENAMES = new Set(["sw.js", "service-worker.js"]);
@@ -101,7 +110,7 @@ export async function clearClientCaches(timeoutMs = 1500): Promise<void> {
           .then((keys) =>
             Promise.allSettled(
               keys
-                .filter(isAppOwnedCache)
+                .filter(isEvictableAppCache)
                 .map((k) => caches.delete(k).catch(() => false)),
             ),
           )

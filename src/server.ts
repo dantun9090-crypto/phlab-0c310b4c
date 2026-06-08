@@ -292,9 +292,9 @@ function applyCacheRecoveryHeaders(response: Response, url: URL): Response {
     // ALWAYS revalidates the worker bytes on the next navigation, even if the
     // previous registration is partially broken or stuck activating.
   }
-  if (swOff && response.headers.get("content-type")?.includes("text/html")) {
-    headers.set("clear-site-data", '"cache", "storage"');
-  }
+  // Do not use Clear-Site-Data here: it is origin-wide and would wipe
+  // unrelated browser storage/caches. The client recovery script performs a
+  // scoped cleanup of only PH Labs app-shell registrations and cache buckets.
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,

@@ -356,6 +356,18 @@ const BOOT_WATCHDOG = `
 (function(){
   try{
     var qs=new URLSearchParams(location.search);
+    var settle=function(p){ return Promise.resolve(p).catch(function(){}); };
+    var ownCache=function(k){ return /^phlabs-offline-/.test(k)||/^phlabs-(?!lkg-)/.test(k)||/^workbox-/.test(k)||/^precache-/.test(k)||/^runtime-/.test(k)||/(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(k); };
+    var ownReg=function(r){
+      try{
+        var s=(r.active&&r.active.scriptURL)||(r.installing&&r.installing.scriptURL)||(r.waiting&&r.waiting.scriptURL)||'';
+        if(!s) return false;
+        var u=new URL(s);
+        if(u.origin!==location.origin) return false;
+        var b=u.pathname.split('/').pop();
+        return b==='sw.js'||b==='service-worker.js';
+      }catch(e){ return false; }
+    };
     if(qs.get('sw')==='off'){
       var DONE='__phl_sw_off_done';
       if(sessionStorage.getItem(DONE)==='1'){
@@ -366,40 +378,26 @@ const BOOT_WATCHDOG = `
           history.replaceState(null,'',clean);
         }catch(e){}
       } else {
-        var settle=function(p){ return Promise.resolve(p).catch(function(){}); };
         var jobs=[];
-        // 1. Delete every Cache Storage bucket (Workbox, runtime, custom).
+        // 1. Delete only app-shell cache buckets. Keep last-known-good HTML.
         try{
           if('caches' in window){
             jobs.push(settle(caches.keys().then(function(ks){
-              return Promise.all(ks.map(function(k){ return settle(caches.delete(k)); }));
+              return Promise.all(ks.filter(ownCache).map(function(k){ return settle(caches.delete(k)); }));
             })));
           }
         }catch(e){}
-        // 2. Unregister EVERY service worker registration on this origin.
+        // 2. Unregister only PH Labs app-shell service workers on this origin.
         try{
           if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){
             jobs.push(settle(navigator.serviceWorker.getRegistrations().then(function(rs){
-              return Promise.all(rs.map(function(r){ return settle(r.unregister()); }));
+              return Promise.all(rs.filter(ownReg).map(function(r){ return settle(r.unregister()); }));
             })));
           }
         }catch(e){}
-        // 3. Best-effort: drop IndexedDB databases used by Workbox / app shells.
-        try{
-          if(indexedDB&&indexedDB.databases){
-            jobs.push(settle(indexedDB.databases().then(function(dbs){
-              return Promise.all((dbs||[]).map(function(db){
-                return new Promise(function(res){
-                  try{ var req=indexedDB.deleteDatabase(db.name); req.onsuccess=req.onerror=req.onblocked=function(){res();}; }
-                  catch(e){ res(); }
-                });
-              }));
-            })));
-          }
-        }catch(e){}
-        // 4. Clear app storage flags.
-        try{ localStorage.removeItem('php_pwa_prompted'); sessionStorage.clear(); }catch(e){}
-        // 5. Wait (max 4s) for cleanup then hard reload to a clean URL.
+        // 3. Clear only PH Labs recovery flags, not all site/browser storage.
+        try{ localStorage.removeItem('php_pwa_prompted'); sessionStorage.removeItem('__phl_hard_reload_in_flight'); sessionStorage.removeItem('__phl_route_err_reload_at'); sessionStorage.removeItem('__phl_route_err_reload_count'); sessionStorage.removeItem('__phl_boot_reload_at'); sessionStorage.removeItem('__phl_boot_reload_count'); }catch(e){}
+        // 4. Wait (max 4s) for cleanup then hard reload to a clean URL.
         var FALLBACK=setTimeout(finish, 4000);
         function finish(){
           clearTimeout(FALLBACK);
@@ -443,14 +441,18 @@ const BOOT_WATCHDOG = `
       if(now-last<15000) return;
       sessionStorage.setItem(KEY,String(Date.now()));
       sessionStorage.setItem(MAX_RELOADS_KEY,String(count+1));
+      var jobs=[];
       try{
-        // force fresh fetch — bypass HTTP cache & service worker
-        if('caches' in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}
+        // force fresh fetch — bypass app-shell cache & service worker only
+        if('caches' in window){jobs.push(settle(caches.keys().then(function(ks){return Promise.all(ks.filter(ownCache).map(function(k){return settle(caches.delete(k));}));})));}
         if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){
-          navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});
+          jobs.push(settle(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.filter(ownReg).map(function(r){return settle(r.unregister());}));})));
         }
       }catch(e){}
-      location.replace(location.pathname+location.search+(location.search?'&':'?')+'_r='+Date.now()+location.hash);
+      var done=false;
+      function go(){ if(done) return; done=true; location.replace(location.pathname+location.search+(location.search?'&':'?')+'_r='+Date.now()+location.hash); }
+      var fallback=setTimeout(go,1500);
+      Promise.all(jobs).then(function(){clearTimeout(fallback);go();},function(){clearTimeout(fallback);go();});
     },20000);
 
   }catch(e){}
