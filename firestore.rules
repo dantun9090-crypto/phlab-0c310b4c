@@ -265,6 +265,28 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ---------- lab reports (user-imported PDFs via PWA file_handlers) ----------
+    // Each doc is owned by a single user. Owner can CRUD their own; admins can read all.
+    // Schema is locked so the collection can't be repurposed.
+    match /lab_reports/{id} {
+      allow read:   if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow create: if isSignedIn()
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() < 256
+                    && request.resource.data.size is int
+                    && request.resource.data.size > 0
+                    && request.resource.data.size < 10 * 1024 * 1024
+                    && request.resource.data.storagePath is string
+                    && request.resource.data.storagePath.size() < 512
+                    && request.resource.data.url is string
+                    && request.resource.data.url.size() < 2048
+                    && request.resource.data.createdAt == request.time;
+      allow update: if false;
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+    }
+
 
     // ---------- default deny ----------
     match /{document=**} {
