@@ -73,7 +73,9 @@ const SECURITY_HEADERS = {
 };
 
 const PRERENDER_ORIGIN = "https://service.prerender.io";
-const PRERENDER_TIMEOUT_MS = 25_000;
+// 45s — fresh (uncached) prerender renders of the homepage take ~18s; 25s
+// was too tight and caused AbortError fallback to origin SSR on first crawl.
+const PRERENDER_TIMEOUT_MS = 45_000;
 
 // ---------- helpers ----------
 
@@ -225,24 +227,30 @@ export default {
     const isLoop = request.headers.has("x-prerender-loop");
 
     if (isBot && isGet && !isStatic && token && !isLoop) {
+      let preStatus = "skipped";
+      let preErr = "";
       try {
         const pre = await fetchPrerender(request, token);
+        preStatus = pre ? String(pre.status) : "null";
         if (pre && pre.status < 500 && pre.status !== 429) {
           const h = new Headers(pre.headers);
           h.set("x-prerendered", "true");
+          h.set("x-phl-via", "prerender");
           h.delete("x-robots-tag");
           if (!h.has("cache-control")) h.set("cache-control", "public, max-age=3600, stale-while-revalidate=86400");
           return applySecurityHeaders(new Response(pre.body, { status: pre.status, statusText: pre.statusText, headers: h }));
         }
-      } catch (_) {
-        // timeout / network — fall through to origin
+      } catch (e) {
+        preErr = (e && (e.name || e.message)) ? String(e.name || e.message).slice(0, 60) : "err";
       }
       // Fallback to origin with loop marker so we don't re-enter prerender.
       const reReq = new Request(request, { headers: new Headers(request.headers) });
       reReq.headers.set("x-prerender-loop", "1");
       try {
         const res = await proxyToOrigin(reReq, origin);
-        return applySecurityHeaders(res);
+        const h = new Headers(res.headers);
+        h.set("x-phl-via", `origin-bot-fallback;pre=${preStatus};err=${preErr}`);
+        return applySecurityHeaders(new Response(res.body, { status: res.status, statusText: res.statusText, headers: h }));
       } catch (_) {
         return serveStaleOrError(request);
       }
