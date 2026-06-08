@@ -1281,13 +1281,13 @@ export function Layout({ children }: LayoutProps) {
             Chat with us
           </span>
           {/* Button */}
-          <div className="relative w-14 h-14 shrink-0">
+          <div className="relative w-11 h-11 shrink-0">
             {/* Pulse rings */}
             <span className="absolute inset-0 rounded-full bg-[#25D366]/40 animate-ping" style={{ animationDuration: '2s' }} />
             <span className="absolute inset-1 rounded-full bg-[#25D366]/20 animate-ping" style={{ animationDuration: '2s', animationDelay: '0.4s' }} />
             {/* Main circle */}
-            <span className="absolute inset-0 w-14 h-14 rounded-full bg-[#25D366] group-hover:bg-[#1ebe5c] flex items-center justify-center transition-all duration-300 group-hover:scale-110 active:scale-95 shadow-[0_4px_24px_rgba(37,211,102,0.5)]">
-              <WhatsAppIcon className="w-7 h-7 text-white" />
+            <span className="absolute inset-0 w-11 h-11 rounded-full bg-[#25D366] group-hover:bg-[#1ebe5c] flex items-center justify-center transition-all duration-300 group-hover:scale-110 active:scale-95 shadow-[0_4px_24px_rgba(37,211,102,0.5)]">
+              <WhatsAppIcon className="w-5 h-5 text-white" />
             </span>
           </div>
         </a>
