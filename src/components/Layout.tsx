@@ -314,7 +314,7 @@ export function Layout({ children }: LayoutProps) {
   const getSubtotal = useCallback(() => subtotal, [subtotal]);
 
   const shippingCost = useMemo(() => subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : 4.99, [subtotal]);
-  const getTotalPrice = useCallback(() => Math.max(0, subtotal - shippingCost).toFixed(2), [subtotal, shippingCost]);
+  const getTotalPrice = useCallback(() => Math.max(0, subtotal + shippingCost).toFixed(2), [subtotal, shippingCost]);
 
   const addToCart = (item: CartItem) => {
     setCart(prev => {
