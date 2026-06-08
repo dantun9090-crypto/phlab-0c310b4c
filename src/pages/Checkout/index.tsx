@@ -727,7 +727,7 @@ export default function CheckoutPage() {
   // ── Order Success ──
   if (orderPlaced) {
     return (
-      <section id="checkout-success" className="min-h-screen bg-[#060f1e] flex items-center justify-center px-4 py-16">
+      <section ref={successRef} id="checkout-success" className="min-h-screen bg-[#060f1e] flex items-center justify-center px-4 py-16">
         <div className="w-full max-w-lg text-center">
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 rounded-full bg-emerald-500/15 flex items-center justify-center">
