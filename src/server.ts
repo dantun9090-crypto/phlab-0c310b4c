@@ -259,6 +259,29 @@ function stripInternalHeaders(response: Response): Response {
   });
 }
 
+function applyCacheRecoveryHeaders(response: Response, url: URL): Response {
+  const swOff = url.searchParams.get("sw") === "off";
+  const isServiceWorker = url.pathname === "/sw.js" || url.pathname === "/service-worker.js";
+  if (!swOff && !isServiceWorker) return response;
+
+  const headers = new Headers(response.headers);
+  headers.set("cache-control", "no-store, no-cache, must-revalidate, max-age=0");
+  headers.set("pragma", "no-cache");
+  headers.set("expires", "0");
+  if (isServiceWorker) {
+    headers.set("content-type", "text/javascript; charset=utf-8");
+    headers.set("service-worker-allowed", "/");
+  }
+  if (swOff && response.headers.get("content-type")?.includes("text/html")) {
+    headers.set("clear-site-data", '"cache", "storage"');
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 function applySecurityHeaders(response: Response, nonce: string): Response {
   const stripped = stripInternalHeaders(response);
   const contentType = stripped.headers.get("content-type") ?? "";
