@@ -3,7 +3,7 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 
 import { Link } from 'react-router-dom';
 import { getProductImage } from '@/lib/productImages';
-import { subscribeToProducts, db, doc, getDoc, getDocs, collection, query, where, addDoc, Timestamp } from '@/lib/firebase';
+import { getAllProducts, db, doc, getDoc, getDocs, collection, query, where, addDoc, Timestamp } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
 import { nameToSlug } from '@/lib/seedProducts';
 import { sendPublicMail } from '@/lib/sendPublicMail';
@@ -166,11 +166,13 @@ export default function HomePage() {
   }, [products]);
 
   useEffect(() => {
-    // Defer products subscription past LCP window — avoids TBT
-    let unsub: (() => void) | undefined;
+    // Defer cached product load past LCP window — avoids TBT and a permanent live stream
+    let cancelled = false;
     const loadProducts = () => {
-      unsub = subscribeToProducts((prods: Product[]) => {
-        setProducts(prods);
+      getAllProducts().then((prods: Product[]) => {
+        if (!cancelled) setProducts(prods);
+      }).catch(() => {
+        if (!cancelled) setProducts([]);
       });
     };
     if (typeof requestIdleCallback !== 'undefined') {
@@ -209,7 +211,7 @@ export default function HomePage() {
       setTimeout(deferredLoad, 30);
     }
 
-    return () => unsub?.();
+    return () => { cancelled = true; };
   }, []);
 
   const enrichedFeatured = (featuredProducts.length > 0 ? featuredProducts : products
