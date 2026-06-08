@@ -117,12 +117,26 @@ function fwdHeaders(req) {
   return out;
 }
 
-function proxyToOrigin(request, _origin) {
-  // Pass-through via Cloudflare's DNS-based routing. This preserves Host
-  // (phlabs.co.uk) so the origin does not 302 back to the canonical host
-  // — Lovable's published hosting redirects the preview host → https://phlabs.co.uk,
-  // so we MUST NOT rewrite the URL/host away from the canonical apex.
-  return fetch(request, { redirect: "manual" });
+// Routes safe to edge-cache as HTML. Matches the `phlabs cache` ruleset
+// exclusion list (admin/account/cart/checkout/payment/login/register/api/
+// search/vip-store/webhook) so we never cache personalised pages.
+const HTML_CACHE_EXCLUDE_PREFIXES = [
+  "/admin", "/account", "/cart", "/checkout", "/payment", "/login",
+  "/register", "/api", "/search", "/vip-store", "/webhook",
+];
+function isHtmlCacheable(url) {
+  if (url.pathname === "/sw.js" || url.pathname === "/service-worker.js") return false;
+  return !HTML_CACHE_EXCLUDE_PREFIXES.some((p) => url.pathname.startsWith(p));
+}
+
+function proxyToOrigin(request, _origin, cacheOpts) {
+  // Pass-through via Cloudflare's DNS-based routing. Without the `cf`
+  // option Worker subrequests bypass the edge cache entirely — so we
+  // pass cacheEverything/cacheTtl explicitly for safe HTML routes,
+  // which restores the 5-min edge cache that the Rulesets describe.
+  const init = { redirect: "manual" };
+  if (cacheOpts) init.cf = cacheOpts;
+  return fetch(request, init);
 }
 
 async function fetchPrerender(request, token) {
