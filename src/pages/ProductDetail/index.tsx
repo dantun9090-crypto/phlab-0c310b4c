@@ -1753,9 +1753,8 @@ export default function ProductDetail() {
                 const rpImg = getProductImage(rp.name, rp.imageUrl, rp.images);
                 const rpSlug = (rp as any).slug || nameToSlug(rp.name);
                 const rpVariants: any[] = (rp as any).variants || [];
-                const rpPrice = rpVariants.length > 0
-                  ? Math.min(...rpVariants.map((v: any) => typeof v.price === 'number' ? v.price : rp.price))
-                  : rp.price;
+                const rpPrices = rpVariants.map((v: any) => toMoneyNumber(v?.price, rp.price)).filter(Number.isFinite);
+                const rpPrice = rpPrices.length > 0 ? Math.min(...rpPrices) : toMoneyNumber(rp.price);
                 return (
                   <Link
                     key={rp.id}
