@@ -1042,6 +1042,204 @@ export default function AccountPage() {
                 </motion.div>
               )}
 
+              {/* ── LAB REPORTS (PWA file_handlers target) ── */}
+              {activeTab === 'lab-report' && (
+                <motion.div key="lab-report" initial={{ y: 10 }} animate={{ y: 0 }} exit={{ y: -10 }} transition={{ duration: 0.25 }} className="space-y-5">
+                  <div className={`${cardBase} overflow-hidden`}>
+                    <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-emerald-400/[0.18] to-transparent" />
+                    <div className="px-6 pt-6 pb-4 border-b border-white/[0.06] flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center flex-shrink-0">
+                        <FlaskConical className="w-5 h-5 text-emerald-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-white font-bold text-base">Lab Reports</h2>
+                        <p className="text-[#9cb8d9] text-xs mt-1 leading-relaxed">
+                          Import a PDF certificate of analysis or HPLC report. When the PH Labs app is installed,
+                          opening any PDF with it lands here automatically.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Importer */}
+                    <div className="p-5">
+                      <div
+                        onDragOver={(e) => { e.preventDefault(); }}
+                        onDrop={(e) => { e.preventDefault(); acceptFiles(e.dataTransfer?.files || null); }}
+                        className="rounded-xl border-2 border-dashed border-white/[0.10] hover:border-emerald-400/40 transition-colors bg-white/[0.02] p-6 text-center"
+                      >
+                        <Upload className="w-7 h-7 text-emerald-400 mx-auto mb-3 opacity-80" />
+                        <p className="text-white text-sm font-medium mb-1">Drop a PDF here</p>
+                        <p className="text-[#9cb8d9] text-xs mb-4">or pick one from your device — up to 10&nbsp;MB</p>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="application/pdf,.pdf"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => { acceptFiles(e.target.files); e.target.value = ''; }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-sm font-semibold transition-colors"
+                        >
+                          <Upload className="w-4 h-4" /> Choose PDF
+                        </button>
+                      </div>
+
+                      {reportError && (
+                        <div className="mt-4 flex items-start gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/25 text-red-300 text-xs">
+                          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                          <span>{reportError}</span>
+                        </div>
+                      )}
+
+                      {/* Pending (just-imported, not yet saved) */}
+                      {pendingReports.length > 0 && (
+                        <div className="mt-6">
+                          <h3 className="text-white text-sm font-semibold mb-3 flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-amber-400" /> Just imported — review &amp; save
+                          </h3>
+                          <div className="space-y-4">
+                            {pendingReports.map(p => (
+                              <div key={p.id} className="rounded-xl bg-white/[0.03] border border-white/[0.08] overflow-hidden">
+                                <div className="px-4 py-3 flex items-center gap-3 border-b border-white/[0.06]">
+                                  <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+                                    <FileText className="w-4 h-4 text-amber-400" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-white text-sm font-medium truncate">{p.file.name}</p>
+                                    <p className="text-[#9cb8d9] text-xs">{formatBytes(p.file.size)} · application/pdf</p>
+                                  </div>
+                                  <button
+                                    onClick={() => handleSaveReport(p)}
+                                    disabled={uploadingId === p.id}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-semibold disabled:opacity-50"
+                                  >
+                                    {uploadingId === p.id
+                                      ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving…</>
+                                      : <><Save className="w-3.5 h-3.5" /> Save</>}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDiscardPending(p.id)}
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[#9cb8d9] border border-white/[0.08] text-xs"
+                                    aria-label="Discard"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                                <object
+                                  data={p.url}
+                                  type="application/pdf"
+                                  className="w-full h-[420px] bg-black/40"
+                                >
+                                  <div className="p-4 text-xs text-[#9cb8d9]">
+                                    Your browser can&apos;t preview PDFs inline.{' '}
+                                    <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-emerald-300 underline">Open in a new tab</a>.
+                                  </div>
+                                </object>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Saved reports */}
+                      <div className="mt-7">
+                        <h3 className="text-white text-sm font-semibold mb-3 flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Saved to your account
+                        </h3>
+                        {reportsLoading ? (
+                          <div className="flex items-center gap-2 text-[#9cb8d9] text-sm py-4">
+                            <Loader2 className="w-4 h-4 animate-spin" /> Loading reports…
+                          </div>
+                        ) : savedReports.length === 0 ? (
+                          <div className="text-center py-8 border border-dashed border-white/[0.06] rounded-xl">
+                            <FlaskConical className="w-10 h-10 text-[#3a5a82] mx-auto mb-3 opacity-50" />
+                            <p className="text-[#9cb8d9] text-sm">No lab reports saved yet.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {savedReports.map(r => (
+                              <div key={r.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.06] hover:border-white/[0.10] transition-all">
+                                <div className="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                                  <FileText className="w-4 h-4 text-emerald-400" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-white text-sm font-medium truncate">{r.name}</p>
+                                  <p className="text-[#3a5a82] text-xs">
+                                    {formatBytes(r.size)}
+                                    {r.createdAt && ` · ${formatDate(r.createdAt)}`}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => setPreviewUrl(r.url)}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[#9cb8d9] border border-white/[0.08] text-xs"
+                                  aria-label="Preview"
+                                >
+                                  <Eye className="w-3.5 h-3.5" /> View
+                                </button>
+                                <a
+                                  href={r.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  download={r.name}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 text-xs"
+                                >
+                                  <Download className="w-3.5 h-3.5" /> Download
+                                </a>
+                                <button
+                                  onClick={() => handleDeleteSavedReport(r)}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-xs"
+                                  aria-label="Delete"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <p className="mt-6 text-[#3a5a82] text-[11px] leading-relaxed">
+                        For research use only. Lab reports are stored privately in your PH Labs account — only you
+                        and our compliance team can access them.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Saved-report fullscreen preview */}
+                  {previewUrl && (
+                    <div
+                      role="dialog"
+                      aria-modal="true"
+                      onClick={() => setPreviewUrl(null)}
+                      className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+                    >
+                      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-4xl h-[85vh] rounded-2xl overflow-hidden bg-slate-950 border border-white/[0.08] shadow-2xl flex flex-col">
+                        <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.08]">
+                          <span className="text-white text-sm font-medium">Lab report preview</span>
+                          <button
+                            onClick={() => setPreviewUrl(null)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[#9cb8d9] border border-white/[0.08] text-xs"
+                          >
+                            <X className="w-3.5 h-3.5" /> Close
+                          </button>
+                        </div>
+                        <object data={previewUrl} type="application/pdf" className="flex-1 w-full bg-black/40">
+                          <div className="p-4 text-xs text-[#9cb8d9]">
+                            Can&apos;t preview inline.{' '}
+                            <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-emerald-300 underline">Open in a new tab</a>.
+                          </div>
+                        </object>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+
+
               {/* ── REFERRAL ── */}
               {activeTab === 'referral' && (
                 <motion.div key="referral" initial={{ y: 10 }} animate={{ y: 0 }} exit={{ y: -10 }} transition={{ duration: 0.25 }} className="space-y-5">
