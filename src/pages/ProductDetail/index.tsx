@@ -783,6 +783,7 @@ export default function ProductDetail() {
   const variant = allVariants[selectedVariantIdx] || allVariants[0];
   const isOutOfStock = !variant || variant.stock === 0;
   const variantPrice = Number(variant?.price ?? product.price ?? 0);
+  const displayPrice = Number.isFinite(variantPrice) ? variantPrice : 0;
 
   const handleAddToCart = () => {
     if (isOutOfStock || !variant) return;
@@ -792,8 +793,8 @@ export default function ProductDetail() {
       variantId: variant.id,
       variantName: variant.name,
       dosage: variant.name,
-      price: `£${variantPrice.toFixed(2)}`,
-      priceNum: variantPrice,
+      price: `£${displayPrice.toFixed(2)}`,
+      priceNum: displayPrice,
       quantity: 1,
       image: getProductImage(product.name, product.imageUrl, product.images),
       stock: variant.stock,
