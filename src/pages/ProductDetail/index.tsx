@@ -543,19 +543,25 @@ export default function ProductDetail() {
         '@type': 'AggregateOffer',
         url: productUrl,
         priceCurrency: 'GBP',
-        lowPrice: lowPrice.toFixed(2),
-        highPrice: highPrice.toFixed(2),
+        lowPrice: (Number.isFinite(lowPrice) ? lowPrice : 0).toFixed(2),
+        highPrice: (Number.isFinite(highPrice) ? highPrice : 0).toFixed(2),
         offerCount: variants.length,
-        offers: variants.map((v, idx) => ({
-          '@type': 'Offer',
-          url: productUrl,
-          priceCurrency: 'GBP',
-          price: Number(v.price ?? 0).toFixed(2),
-          itemCondition: 'https://schema.org/NewCondition',
-          availability: (v.stock ?? 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-          sku: v.sku || `${product.id}-v${idx + 1}`,
-          name: `${product.name} — ${v.name}`,
-        })),
+        offers: variants.map((v, idx) => {
+          const vPrice = Number(v?.price ?? 0);
+          const vStock = Number(v?.stock ?? 0);
+          const vName = typeof v?.name === 'string' && v.name.trim() ? v.name.trim() : `Option ${idx + 1}`;
+          const vSku = (typeof v?.sku === 'string' && v.sku) || `${product.id}-v${idx + 1}`;
+          return {
+            '@type': 'Offer',
+            url: productUrl,
+            priceCurrency: 'GBP',
+            price: (Number.isFinite(vPrice) && vPrice >= 0 ? vPrice : 0).toFixed(2),
+            itemCondition: 'https://schema.org/NewCondition',
+            availability: Number.isFinite(vStock) && vStock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            sku: vSku,
+            name: `${product.name} — ${vName}`,
+          };
+        }),
         seller: { '@type': 'Organization', name: 'PH Labs', url: 'https://phlabs.co.uk' },
       } : {
         '@type': 'Offer',
