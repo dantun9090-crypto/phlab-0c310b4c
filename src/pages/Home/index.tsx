@@ -377,7 +377,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen shadow-none" style={{ background: '#030a14', color: '#e4f0ff' }}>
+    <div className="min-h-screen shadow-none overflow-x-hidden" style={{ background: '#030a14', color: '#e4f0ff' }}>
 
       {/* ── Research disclaimer strip ── */}
       <div style={{
@@ -427,11 +427,11 @@ export default function HomePage() {
         <div className="absolute inset-x-0 bottom-0 h-48 pointer-events-none"
           style={{ background: 'linear-gradient(to bottom, transparent, #030a14)' }} />
 
-        <div className="container mx-auto px-6 relative z-10">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <div className="container mx-auto px-4 sm:px-6 relative z-10 min-w-0">
+          <div className="grid lg:grid-cols-2 gap-16 items-center min-w-0">
 
             {/* Left — Copy — no fade animation here so H1 paints immediately (LCP) */}
-            <div className="space-y-8">
+            <div className="space-y-8 min-w-0">
               {/* Eyebrow */}
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 px-3 py-1 rounded-full" style={{
@@ -448,15 +448,17 @@ export default function HomePage() {
               {/* H1 */}
               <div>
                 <h1 style={{
-                  fontSize: 'clamp(2.6rem, 5.5vw, 4.2rem)',
+                  fontSize: 'clamp(2rem, 9vw, 4.2rem)',
                   fontWeight: 900,
                   lineHeight: 1.04,
-                  letterSpacing: '-0.03em',
+                  letterSpacing: 0,
                   color: '#f0f8ff',
+                  maxWidth: '100%',
+                  overflowWrap: 'break-word',
                 }}>
                   Synthetic Peptides<br />
                   <span style={{ color: '#10b981' }}>For In-Vitro Research</span><br />
-                  <span style={{ color: '#c9d8f0', fontWeight: 400, fontSize: '0.72em' }}>HPLC-Verified ≥99% Purity · CoA Per Batch</span>
+                  <span style={{ color: '#c9d8f0', fontWeight: 400, fontSize: 'clamp(1.2rem, 6vw, 0.72em)', overflowWrap: 'break-word' }}>HPLC-Verified ≥99% Purity · CoA Per Batch</span>
                 </h1>
               </div>
 
