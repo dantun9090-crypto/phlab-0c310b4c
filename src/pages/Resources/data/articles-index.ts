@@ -23,6 +23,7 @@ export const ARTICLE_INDEX: ArticleIndexEntry[] = [
   { slug: 'melanotan-2-melanocortin-research', title: 'Melanotan II and Melanocortin Receptor Research' },
   { slug: 'tb-500-thymosin-beta-4-research', title: 'TB-500 and Thymosin Beta-4: Actin Sequestration and Tissue Remodelling Research' },
   { slug: 'ghk-cu-copper-peptide-research', title: 'GHK-Cu: The Copper Tripeptide at the Intersection of Wound Healing, Gene Regulation, and Anti-Ageing Biology' },
+  { slug: 'ghk-cu-research-guide', title: 'GHK-Cu Peptide: A Technical Research Guide for UK Laboratories' },
   { slug: 'peptide-storage-lyophilisation-science', title: 'Peptide Storage Science: Lyophilisation, Reconstitution, and Stability Maximisation' },
   { slug: 'selank-anxiolytic-nootropic-peptide', title: 'Selank: The Synthetic Tuftsin Analogue at the Frontier of Anxiolytic Peptide Research' },
   { slug: 'epithalon-telomere-epigenetic-research', title: 'Epithalon: Telomerase Activation, Epigenetic Remodelling, and Longevity Research' },
