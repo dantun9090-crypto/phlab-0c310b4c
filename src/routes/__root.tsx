@@ -523,6 +523,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  // Best-effort precache of the current page's HTML + critical assets so
+  // the offline fallback (see OfflineScreen / findCachedLastKnownUrl) has
+  // something to offer when the network drops. No-op in dev/preview.
+  useEffect(() => {
+    schedulePrecacheCurrentPage();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
