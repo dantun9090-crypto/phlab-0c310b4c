@@ -15,8 +15,23 @@ function isLovablePreviewHost(host: string): boolean {
     host === 'lovableproject-dev.com' ||
     host.endsWith('.lovableproject-dev.com') ||
     host === 'beta.lovable.dev' ||
-    host.endsWith('.beta.lovable.dev')
+    host.endsWith('.beta.lovable.dev') ||
+    host.endsWith('.lovable.app') ||
+    host.endsWith('.lovable.dev')
   );
+}
+
+function isOwnRegistration(r: ServiceWorkerRegistration): boolean {
+  const scriptURL = r.active?.scriptURL || r.installing?.scriptURL || r.waiting?.scriptURL || '';
+  if (!scriptURL) return false;
+  try {
+    const u = new URL(scriptURL);
+    if (u.origin !== window.location.origin) return false;
+    const basename = u.pathname.split('/').pop();
+    return basename === 'sw.js' || basename === 'service-worker.js';
+  } catch (_) {
+    return false;
+  }
 }
 
 async function unregisterOwnSW() {
@@ -24,8 +39,7 @@ async function unregisterOwnSW() {
     const regs = await navigator.serviceWorker.getRegistrations();
     await Promise.all(
       regs.map(async (r) => {
-        const scriptURL = r.active?.scriptURL || r.installing?.scriptURL || r.waiting?.scriptURL || '';
-        if (scriptURL.endsWith(SW_URL)) {
+        if (isOwnRegistration(r)) {
           try { await r.unregister(); } catch (_) {}
         }
       })

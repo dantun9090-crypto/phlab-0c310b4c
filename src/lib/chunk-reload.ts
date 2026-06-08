@@ -1,3 +1,5 @@
+import { hardReload, isOnline, isStaleChunkError } from "@/lib/recovery";
+
 // Robust auto-recovery for a frozen / stuck page.
 //
 // Three layers:
@@ -16,20 +18,8 @@ const REVISIT_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
 const ERROR_BURST_WINDOW_MS = 4_000;
 const ERROR_BURST_LIMIT = 6;
 
-function isChunkLoadError(err: unknown): boolean {
-  if (!err) return false;
-  const msg = (err as any)?.message ?? String(err);
-  return (
-    /Failed to fetch dynamically imported module/i.test(msg) ||
-    /Importing a module script failed/i.test(msg) ||
-    /Loading chunk [\w-]+ failed/i.test(msg) ||
-    /ChunkLoadError/i.test(msg) ||
-    /error loading dynamically imported module/i.test(msg) ||
-    /Unable to preload CSS/i.test(msg)
-  );
-}
-
 function reloadOnce(reason: string) {
+  if (!isOnline()) return;
   try {
     const last = Number(sessionStorage.getItem(RELOAD_KEY) ?? "0");
     if (Date.now() - last < COOLDOWN_MS) return; // avoid loops
@@ -39,18 +29,18 @@ function reloadOnce(reason: string) {
   }
   // eslint-disable-next-line no-console
   console.warn("[chunk-reload] reloading:", reason);
-  window.location.reload();
+  void hardReload();
 }
 
 if (typeof window !== "undefined") {
   // --- Layer 1: chunk errors ---
   window.addEventListener("error", (event) => {
-    if (isChunkLoadError(event.error ?? event.message)) {
+    if (isStaleChunkError(event.error ?? event.message)) {
       reloadOnce("chunk error");
     }
   });
   window.addEventListener("unhandledrejection", (event) => {
-    if (isChunkLoadError(event.reason)) {
+    if (isStaleChunkError(event.reason)) {
       reloadOnce("chunk rejection");
     }
   });
