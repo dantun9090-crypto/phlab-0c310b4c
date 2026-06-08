@@ -120,8 +120,8 @@ function fwdHeaders(req) {
 function proxyToOrigin(request, _origin) {
   // Pass-through via Cloudflare's DNS-based routing. This preserves Host
   // (phlabs.co.uk) so the origin does not 302 back to the canonical host
-  // — Lovable's published hosting redirects phlab.lovable.app → phlabs.co.uk,
-  // so we MUST NOT rewrite the URL/host to the lovable.app origin.
+  // — Lovable's published hosting redirects the preview host → https://phlabs.co.uk,
+  // so we MUST NOT rewrite the URL/host away from the canonical apex.
   return fetch(request, { redirect: "manual" });
 }
 
