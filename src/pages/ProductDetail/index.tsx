@@ -780,7 +780,15 @@ export default function ProductDetail() {
   }
 
   const allVariants = product.variants ?? [];
-  const variant = allVariants[selectedVariantIdx] || allVariants[0];
+  // A variant is "valid" only if it has a non-empty name and a finite, non-negative price.
+  // This protects against malformed Firestore docs that would otherwise crash the page.
+  const validVariants = allVariants.filter(
+    (v) => v && typeof v.name === 'string' && v.name.trim().length > 0 && Number.isFinite(Number(v.price)) && Number(v.price) >= 0,
+  );
+  const hasValidVariants = validVariants.length > 0;
+  const variant = hasValidVariants
+    ? (validVariants[selectedVariantIdx] || validVariants[0])
+    : undefined;
   const isOutOfStock = !variant || variant.stock === 0;
   const variantPrice = Number(variant?.price ?? product.price ?? 0);
   const displayPrice = Number.isFinite(variantPrice) ? variantPrice : 0;
