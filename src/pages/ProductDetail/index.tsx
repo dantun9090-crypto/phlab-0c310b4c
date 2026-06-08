@@ -362,10 +362,18 @@ export default function ProductDetail() {
               .slice(0, 3)
               .map(d => {
                 const rd = d.data();
-                let rp = rd.price;
-                if (typeof rp === 'string') rp = parseFloat(rp.replace(/[^0-9.]/g, '')) || 0;
-                const rImages: string[] = Array.isArray(rd.images) ? rd.images.filter((i: any) => typeof i === 'string' && i.trim()) : [];
-                return { ...rd, id: d.id, price: rp, imageUrl: rd.imageUrl || rImages[0] || '', images: rImages } as any;
+                const rp = toMoneyNumber(rd.price);
+                const rImages = toStringArray(rd.images);
+                const rVariants = Array.isArray(rd.variants)
+                  ? rd.variants.map((v: any, idx: number) => ({
+                      ...v,
+                      id: toText(v?.id, toText(v?.sku, `v${idx + 1}`)),
+                      name: toText(v?.name, toText(v?.dosage, 'Standard')),
+                      price: toMoneyNumber(v?.price, rp),
+                      stock: toStockNumber(v?.stock),
+                    }))
+                  : [];
+                return { ...rd, id: d.id, price: rp, imageUrl: toText(rd.imageUrl, rImages[0] || ''), images: rImages, variants: rVariants } as any;
               });
             setRelatedProducts(related);
           } catch { /* non-blocking */ }
