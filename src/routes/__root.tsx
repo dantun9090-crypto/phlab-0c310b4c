@@ -47,39 +47,81 @@ function isStaleChunkError(err: unknown): boolean {
   );
 }
 
-// Force a clean reload that bypasses the service worker and the browser
-// HTTP cache. Used by Try-again and by the auto-recovery for stale chunks
-// after a deploy.
-//
-// Hardened: awaits SW unregistration + cache deletion BEFORE navigating, so
-// the next request can't be intercepted by the old worker or served from a
-// stale Cache Storage entry. Bounded wait so the button never hangs.
+// Caches owned by THIS app's service worker (see public/sw.js). Anything
+// else on the origin — notably `firebase-messaging-*` for FCM push and
+// any future third-party worker — is left untouched so we don't break
+// unrelated background features when we evict.
+const APP_CACHE_PREFIXES = [
+  "phlabs-offline-",
+  "phlabs-",
+  "workbox-",
+  "precache-",
+  "runtime-",
+];
+
+function isAppOwnedCache(name: string): boolean {
+  if (APP_CACHE_PREFIXES.some((p) => name.startsWith(p))) return true;
+  // Workbox auto-named buckets that include the SW scope.
+  return /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(name);
+}
+
+// Matches the SW we register in src/lib/sw-register.ts. Filtering by
+// scriptURL means we never touch a Firebase Messaging or third-party SW.
+const APP_SW_SCRIPT_BASENAMES = new Set(["sw.js", "service-worker.js"]);
+
+function isAppOwnedRegistration(reg: ServiceWorkerRegistration): boolean {
+  const url =
+    reg.active?.scriptURL ||
+    reg.installing?.scriptURL ||
+    reg.waiting?.scriptURL ||
+    "";
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    if (u.origin !== window.location.origin) return false;
+    const basename = u.pathname.split("/").pop() || "";
+    return APP_SW_SCRIPT_BASENAMES.has(basename);
+  } catch {
+    return false;
+  }
+}
+
+// Scoped eviction: unregisters ONLY our app-shell service worker(s) and
+// deletes ONLY the cache buckets we own. Leaves Firebase Messaging,
+// third-party workers, and any non-app caches alone. Awaits so the next
+// navigation can't be intercepted by the old worker. 1.5s bounded race
+// so the caller never hangs.
 async function clearClientCaches(): Promise<void> {
   const tasks: Promise<unknown>[] = [];
 
-  // 1. Unregister every service worker controlling this origin.
   try {
     if (typeof navigator !== "undefined" && navigator.serviceWorker) {
       tasks.push(
         navigator.serviceWorker
           .getRegistrations()
           .then((regs) =>
-            Promise.allSettled(regs.map((r) => r.unregister().catch(() => false))),
+            Promise.allSettled(
+              regs
+                .filter(isAppOwnedRegistration)
+                .map((r) => r.unregister().catch(() => false)),
+            ),
           )
           .catch(() => undefined),
       );
     }
   } catch { /* ignore */ }
 
-  // 2. Drop every Cache Storage bucket (Workbox precache, runtime, FCM, …).
-  //    Origin-scoped, so safe — we're already in a broken state.
   try {
     if (typeof caches !== "undefined") {
       tasks.push(
         caches
           .keys()
           .then((keys) =>
-            Promise.allSettled(keys.map((k) => caches.delete(k).catch(() => false))),
+            Promise.allSettled(
+              keys
+                .filter(isAppOwnedCache)
+                .map((k) => caches.delete(k).catch(() => false)),
+            ),
           )
           .catch(() => undefined),
       );
@@ -94,9 +136,16 @@ async function clearClientCaches(): Promise<void> {
 
 const HARD_RELOAD_FLAG = "__phl_hard_reload_in_flight";
 
+function isOnline(): boolean {
+  try {
+    return typeof navigator === "undefined" ? true : navigator.onLine !== false;
+  } catch {
+    return true;
+  }
+}
+
 async function hardReload(): Promise<void> {
-  // Re-entry guard so double-clicks don't queue multiple navigations while
-  // we're awaiting the cache clears.
+  // Re-entry guard so double-clicks don't queue multiple navigations.
   try {
     if (sessionStorage.getItem(HARD_RELOAD_FLAG) === "1") return;
     sessionStorage.setItem(HARD_RELOAD_FLAG, "1");
@@ -115,20 +164,118 @@ async function hardReload(): Promise<void> {
   }
 }
 
+// Best-effort "last good HTML" lookup from any app-owned Cache Storage
+// bucket. Used by the offline screen so we can offer to navigate to a
+// cached page instead of stranding the user.
+async function findCachedLastKnownUrl(): Promise<string | null> {
+  try {
+    if (typeof caches === "undefined") return null;
+    const keys = await caches.keys();
+    for (const name of keys.filter(isAppOwnedCache)) {
+      const cache = await caches.open(name).catch(() => null);
+      if (!cache) continue;
+      const reqs = await cache.keys().catch(() => [] as Request[]);
+      // Prefer "/" then any same-origin HTML response.
+      const sameOrigin = reqs.filter((r) => {
+        try { return new URL(r.url).origin === window.location.origin; }
+        catch { return false; }
+      });
+      const root = sameOrigin.find((r) => new URL(r.url).pathname === "/");
+      const candidates = root ? [root, ...sameOrigin] : sameOrigin;
+      for (const req of candidates) {
+        const res = await cache.match(req).catch(() => null);
+        if (res && (res.headers.get("content-type") || "").includes("text/html")) {
+          return new URL(req.url).pathname + new URL(req.url).search;
+        }
+      }
+    }
+  } catch { /* ignore */ }
+  return null;
+}
+
 const AUTO_RELOAD_KEY = "__phl_route_err_reload_at";
 const AUTO_RELOAD_COUNT_KEY = "__phl_route_err_reload_count";
 const AUTO_RELOAD_COOLDOWN_MS = 30_000;
 const AUTO_RELOAD_MAX_ATTEMPTS = 2;
 
+function OfflineScreen() {
+  const [cachedUrl, setCachedUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void findCachedLastKnownUrl().then((u) => { if (!cancelled) setCachedUrl(u); });
+
+    // Auto-retry when the browser reports the connection is back.
+    const onOnline = () => { void hardReload(); };
+    window.addEventListener("online", onOnline);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("online", onOnline);
+    };
+  }, []);
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="max-w-md text-center">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          Check your connection
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          You appear to be offline. We'll retry automatically as soon as you're
+          back online.
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          <button
+            onClick={() => { void hardReload(); }}
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Retry now
+          </button>
+          {cachedUrl ? (
+            <a
+              href={cachedUrl}
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Open last cached page
+            </a>
+          ) : (
+            <a
+              href="/offline.html"
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              View offline page
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const [offline, setOffline] = useState<boolean>(() => !isOnline());
 
-  // Auto-recover from stale-chunk errors (typically the first navigation
-  // in a tab that was open across a deploy). At most AUTO_RELOAD_MAX_ATTEMPTS
-  // hard reloads within the cooldown window — if we still fail after that,
-  // stop looping and let the user act manually.
-  if (typeof window !== "undefined" && isStaleChunkError(error)) {
+  // Track connectivity in real time so the screen can flip without a reload
+  // (e.g. user toggles wifi while staring at the error).
+  useEffect(() => {
+    const sync = () => setOffline(!isOnline());
+    window.addEventListener("online", sync);
+    window.addEventListener("offline", sync);
+    return () => {
+      window.removeEventListener("online", sync);
+      window.removeEventListener("offline", sync);
+    };
+  }, []);
+
+  // Auto-recover from stale-chunk errors after a deploy. Skip when offline
+  // (a hard reload would just fail again and waste an attempt).
+  if (
+    typeof window !== "undefined" &&
+    isStaleChunkError(error) &&
+    isOnline()
+  ) {
     try {
       const now = Date.now();
       const last = Number(sessionStorage.getItem(AUTO_RELOAD_KEY) ?? "0");
@@ -140,11 +287,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
       if (count < AUTO_RELOAD_MAX_ATTEMPTS) {
         sessionStorage.setItem(AUTO_RELOAD_KEY, String(now));
         sessionStorage.setItem(AUTO_RELOAD_COUNT_KEY, String(count + 1));
-        // Defer to next tick so React can finish committing the error UI.
         setTimeout(() => { void hardReload(); }, 50);
       }
     } catch { /* ignore */ }
   }
+
+  // Offline path: don't show the generic "didn't load" copy; we know why.
+  if (offline) return <OfflineScreen />;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -166,6 +315,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
                 sessionStorage.removeItem(AUTO_RELOAD_COUNT_KEY);
                 sessionStorage.removeItem(HARD_RELOAD_FLAG);
               } catch { /* ignore */ }
+              if (!isOnline()) { setOffline(true); return; }
               if (import.meta.env.PROD) {
                 void hardReload();
               } else {
