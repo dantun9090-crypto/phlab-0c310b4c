@@ -740,24 +740,57 @@ export default function CheckoutPage() {
           <p className="text-emerald-400 font-medium mb-6">Order reserved — payment pending</p>
 
           {bankTransferRef && (
-            <div className="bg-[#0b1a30] border border-white/10 rounded-2xl p-6 mb-6 text-left">
+            <div className="bg-[#0b1a30] border border-white/10 rounded-2xl p-5 sm:p-6 mb-6 text-left">
               <p className="text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-3 flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Your Payment Reference
+                <CheckCircle2 className="w-3.5 h-3.5" /> Bank Transfer Details
               </p>
-              <div className="bg-[#060f1e] border border-white/10 rounded-xl px-4 py-4 text-center mb-4">
-                <p className="text-white font-mono font-bold text-lg tracking-widest">{bankTransferRef}</p>
-                <p className="text-gray-400 text-xs mt-1">Use this as your payment reference</p>
-              </div>
-              <div className="space-y-2 text-sm">
+
+              <div className="grid gap-3 mb-4">
                 {siteSettings.bankTransferName && (
-                  <div className="flex justify-between"><span className="text-gray-400 text-xs">Account Name</span><span className="text-white text-xs font-medium">{siteSettings.bankTransferName}</span></div>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard?.writeText(siteSettings.bankTransferName || '')}
+                    className="w-full text-left bg-[#060f1e] border border-white/15 hover:border-emerald-500/50 rounded-xl px-4 py-3 transition-colors"
+                  >
+                    <p className="text-[10px] uppercase tracking-wider text-emerald-400/80 font-semibold mb-1">Account Name</p>
+                    <p className="text-white font-semibold text-base sm:text-lg break-words">{siteSettings.bankTransferName}</p>
+                    <p className="text-[10px] text-gray-500 mt-1">Tap to copy</p>
+                  </button>
                 )}
                 {siteSettings.bankTransferSortCode && (
-                  <div className="flex justify-between"><span className="text-gray-400 text-xs">Sort Code</span><span className="text-white font-mono text-xs">{siteSettings.bankTransferSortCode}</span></div>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard?.writeText(siteSettings.bankTransferSortCode || '')}
+                    className="w-full text-left bg-[#060f1e] border border-white/15 hover:border-emerald-500/50 rounded-xl px-4 py-3 transition-colors"
+                  >
+                    <p className="text-[10px] uppercase tracking-wider text-emerald-400/80 font-semibold mb-1">Sort Code</p>
+                    <p className="text-white font-mono font-bold text-xl sm:text-2xl tracking-widest">{siteSettings.bankTransferSortCode}</p>
+                    <p className="text-[10px] text-gray-500 mt-1">Tap to copy</p>
+                  </button>
                 )}
                 {siteSettings.bankTransferAccountNumber && (
-                  <div className="flex justify-between"><span className="text-gray-400 text-xs">Account No.</span><span className="text-white font-mono text-xs">{siteSettings.bankTransferAccountNumber}</span></div>
+                  <button
+                    type="button"
+                    onClick={() => navigator.clipboard?.writeText(siteSettings.bankTransferAccountNumber || '')}
+                    className="w-full text-left bg-[#060f1e] border border-white/15 hover:border-emerald-500/50 rounded-xl px-4 py-3 transition-colors"
+                  >
+                    <p className="text-[10px] uppercase tracking-wider text-emerald-400/80 font-semibold mb-1">Account Number</p>
+                    <p className="text-white font-mono font-bold text-xl sm:text-2xl tracking-widest">{siteSettings.bankTransferAccountNumber}</p>
+                    <p className="text-[10px] text-gray-500 mt-1">Tap to copy</p>
+                  </button>
                 )}
+              </div>
+
+              <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3">
+                <p className="text-[10px] uppercase tracking-wider text-amber-300 font-semibold mb-1">Payment Reference (important)</p>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard?.writeText(bankTransferRef)}
+                  className="w-full text-left"
+                >
+                  <p className="text-white font-mono font-bold text-lg sm:text-xl tracking-widest break-all">{bankTransferRef}</p>
+                  <p className="text-[10px] text-amber-200/80 mt-1">Use this as the payment reference so we can match your transfer · Tap to copy</p>
+                </button>
               </div>
             </div>
           )}
