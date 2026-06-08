@@ -277,6 +277,7 @@ export default function AccountPage() {
           }
           const userOrders = await getUserOrders(u.uid);
           setOrders(userOrders);
+          await loadSavedReports(u.uid);
         } catch (e) {
           console.error(e);
         }
@@ -286,10 +287,101 @@ export default function AccountPage() {
     return unsub;
   }, []);
 
+  const loadSavedReports = async (uid: string) => {
+    setReportsLoading(true);
+    try {
+      const q = query(
+        collection(db, 'lab_reports'),
+        where('uid', '==', uid),
+        orderBy('createdAt', 'desc'),
+      );
+      const snap = await getDocs(q);
+      const rows: SavedReport[] = snap.docs.map(d => ({ id: d.id, ...(d.data() as any) }));
+      setSavedReports(rows);
+    } catch (e) {
+      console.error('[account] failed to load lab reports', e);
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
+  const handleSaveReport = async (pending: PendingReport) => {
+    if (!user) return;
+    if (pending.file.size > 10 * 1024 * 1024) {
+      setReportError('Lab report must be under 10 MB.');
+      return;
+    }
+    setUploadingId(pending.id);
+    setReportError('');
+    try {
+      const safeName = pending.file.name.replace(/[^\w.\-]+/g, '_').slice(0, 200);
+      const storagePath = `users/${user.uid}/lab_reports/${Date.now()}-${safeName}`;
+      const ref = storageRef(storage, storagePath);
+      await uploadBytes(ref, pending.file, {
+        contentType: pending.file.type || 'application/pdf',
+      });
+      const url = await getDownloadURL(ref);
+      const docRef = await addDoc(collection(db, 'lab_reports'), {
+        uid: user.uid,
+        name: pending.file.name.slice(0, 255),
+        size: pending.file.size,
+        contentType: pending.file.type || 'application/pdf',
+        storagePath,
+        url,
+        createdAt: serverTimestamp(),
+      });
+      setSavedReports(prev => [{
+        id: docRef.id,
+        uid: user.uid,
+        name: pending.file.name,
+        size: pending.file.size,
+        contentType: pending.file.type || 'application/pdf',
+        storagePath,
+        url,
+        createdAt: new Date(),
+      } as SavedReport, ...prev]);
+      URL.revokeObjectURL(pending.url);
+      setPendingReports(prev => prev.filter(p => p.id !== pending.id));
+    } catch (e: any) {
+      console.error('[account] lab report save failed', e);
+      setReportError(e?.message || 'Failed to save lab report. Please try again.');
+    } finally {
+      setUploadingId(null);
+    }
+  };
+
+  const handleDiscardPending = (id: string) => {
+    setPendingReports(prev => {
+      const target = prev.find(p => p.id === id);
+      if (target) URL.revokeObjectURL(target.url);
+      return prev.filter(p => p.id !== id);
+    });
+  };
+
+  const handleDeleteSavedReport = async (report: SavedReport) => {
+    if (!user) return;
+    if (!confirm(`Delete "${report.name}"? This cannot be undone.`)) return;
+    try {
+      try { await deleteObject(storageRef(storage, report.storagePath)); } catch { /* ignore */ }
+      await deleteDoc(doc(db, 'lab_reports', report.id));
+      setSavedReports(prev => prev.filter(r => r.id !== report.id));
+    } catch (e: any) {
+      setReportError(e?.message || 'Failed to delete report.');
+    }
+  };
+
+  const formatBytes = (n: number) => {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
   const handleLogout = async () => {
     await logoutUser();
     navigate('/');
   };
+
+
 
   const handleSaveProfile = async () => {
     if (!user) return;
