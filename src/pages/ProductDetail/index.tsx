@@ -302,32 +302,39 @@ export default function ProductDetail() {
         if (productDoc) {
           const data = productDoc.data();
           // Normalise fields to match Product interface
-          let price = data.price;
-          if (typeof price === 'string') price = parseFloat(price.replace(/[^0-9.]/g, '')) || 0;
-          let stock: number;
-          if (typeof data.stock === 'number') stock = data.stock;
-          else if (typeof data.inStock === 'boolean') stock = data.inStock ? 99 : 0;
-          else stock = 0;
+          const price = toMoneyNumber(data.price);
+          const stock = toStockNumber(data.stock, typeof data.inStock === 'boolean' ? toStockNumber(data.inStock) : 0);
           // Preserve full images array from Firestore — DO NOT collapse to [imageUrl]
-          const imagesFromDb: string[] = Array.isArray(data.images)
-            ? data.images.filter((img: any) => typeof img === 'string' && img.trim())
-            : [];
-          const imageUrl = data.imageUrl || imagesFromDb[0] || '';
+          const imagesFromDb = toStringArray(data.images);
+          const imageUrl = toText(data.imageUrl, imagesFromDb[0] || '');
           const finalImages = imagesFromDb.length > 0 ? imagesFromDb : (imageUrl ? [imageUrl] : []);
 
           // Preserve imageIndex on each variant — required for variant→image sync
-          const variants = (data.variants && data.variants.length > 0)
+          const variants = (Array.isArray(data.variants) && data.variants.length > 0)
             ? data.variants.map((v: any) => ({
-                id: v.id,
-                name: v.name,
-                sku: v.sku || '',
-                stock: typeof v.stock === 'number' ? v.stock : 0,
-                price: v.price,
+                id: toText(v?.id, toText(v?.sku, `v${Math.random().toString(36).slice(2, 8)}`)),
+                name: toText(v?.name, toText(v?.dosage, 'Standard')),
+                sku: toText(v?.sku),
+                stock: toStockNumber(v?.stock),
+                price: toMoneyNumber(v?.price, price),
                 imageIndex: typeof v.imageIndex === 'number' ? v.imageIndex : undefined,
               }))
-            : [{ id: 'v1', name: data.dosage || 'Standard', sku: data.sku || id, stock, price }];
+            : [{ id: 'v1', name: toText(data.dosage, 'Standard'), sku: toText(data.sku, id), stock, price }];
 
-          const loadedProduct = { ...data, id: productDoc.id, price, stock, imageUrl, images: finalImages, variants } as any;
+          const loadedProduct = {
+            ...data,
+            id: productDoc.id,
+            name: toText(data.name, 'Research Product'),
+            description: toText(data.description),
+            category: toText(data.category),
+            sku: toText(data.sku),
+            purity: toText(data.purity, '99%+'),
+            price,
+            stock,
+            imageUrl,
+            images: finalImages,
+            variants,
+          } as any;
           setProduct(loadedProduct);
 
           // Track this product as recently viewed
