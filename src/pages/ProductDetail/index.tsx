@@ -166,6 +166,36 @@ function getArticleForProduct(productName: string): { slug: string; title: strin
   return null;
 }
 
+const toText = (value: unknown, fallback = ''): string => {
+  if (typeof value === 'string') return value;
+  if (value == null) return fallback;
+  return String(value);
+};
+
+const toMoneyNumber = (value: unknown, fallback = 0): number => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value.replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+  return fallback;
+};
+
+const toStockNumber = (value: unknown, fallback = 0): number => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
+  if (typeof value === 'boolean') return value ? 99 : 0;
+  if (typeof value === 'string') {
+    const parsed = parseInt(value.replace(/[^0-9-]/g, ''), 10);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+  return fallback;
+};
+
+const toStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+};
+
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -272,32 +302,52 @@ export default function ProductDetail() {
         if (productDoc) {
           const data = productDoc.data();
           // Normalise fields to match Product interface
-          let price = data.price;
-          if (typeof price === 'string') price = parseFloat(price.replace(/[^0-9.]/g, '')) || 0;
-          let stock: number;
-          if (typeof data.stock === 'number') stock = data.stock;
-          else if (typeof data.inStock === 'boolean') stock = data.inStock ? 99 : 0;
-          else stock = 0;
+          const price = toMoneyNumber(data.price);
+          const stock = toStockNumber(data.stock, typeof data.inStock === 'boolean' ? toStockNumber(data.inStock) : 0);
           // Preserve full images array from Firestore — DO NOT collapse to [imageUrl]
-          const imagesFromDb: string[] = Array.isArray(data.images)
-            ? data.images.filter((img: any) => typeof img === 'string' && img.trim())
-            : [];
-          const imageUrl = data.imageUrl || imagesFromDb[0] || '';
+          const imagesFromDb = toStringArray(data.images);
+          const imageUrl = toText(data.imageUrl, imagesFromDb[0] || '');
           const finalImages = imagesFromDb.length > 0 ? imagesFromDb : (imageUrl ? [imageUrl] : []);
 
           // Preserve imageIndex on each variant — required for variant→image sync
-          const variants = (data.variants && data.variants.length > 0)
-            ? data.variants.map((v: any) => ({
-                id: v.id,
-                name: v.name,
-                sku: v.sku || '',
-                stock: typeof v.stock === 'number' ? v.stock : 0,
-                price: v.price,
+          const variants = (Array.isArray(data.variants) && data.variants.length > 0)
+            ? data.variants.map((v: any, idx: number) => ({
+                id: toText(v?.id, toText(v?.sku, `v${idx + 1}`)),
+                name: toText(v?.name, toText(v?.dosage, 'Standard')),
+                sku: toText(v?.sku),
+                stock: toStockNumber(v?.stock),
+                price: toMoneyNumber(v?.price, price),
                 imageIndex: typeof v.imageIndex === 'number' ? v.imageIndex : undefined,
               }))
-            : [{ id: 'v1', name: data.dosage || 'Standard', sku: data.sku || id, stock, price }];
+            : [{ id: 'v1', name: toText(data.dosage, 'Standard'), sku: toText(data.sku, id), stock, price }];
 
-          const loadedProduct = { ...data, id: productDoc.id, price, stock, imageUrl, images: finalImages, variants } as any;
+          const loadedProduct = {
+            ...data,
+            id: productDoc.id,
+            name: toText(data.name, 'Research Product'),
+            description: toText(data.description),
+            category: toText(data.category),
+            sku: toText(data.sku),
+            purity: toText(data.purity, '99%+'),
+            bannerImageUrl: toText(data.bannerImageUrl),
+            productManualUrl: toText(data.productManualUrl),
+            productManualName: toText(data.productManualName),
+            specs: data.specs && typeof data.specs === 'object'
+              ? {
+                  casNumber: toText(data.specs.casNumber, 'N/A'),
+                  molecularWeight: toText(data.specs.molecularWeight, 'N/A'),
+                  formula: toText(data.specs.formula, 'Peptide analog'),
+                  storage: toText(data.specs.storage, 'Store at 2-8°C (36-46°F)'),
+                  shelfLife: toText(data.specs.shelfLife, '24 months when stored properly'),
+                  solvent: toText(data.specs.solvent, 'Sterile water or bacteriostatic water'),
+                }
+              : undefined,
+            price,
+            stock,
+            imageUrl,
+            images: finalImages,
+            variants,
+          } as any;
           setProduct(loadedProduct);
 
           // Track this product as recently viewed
@@ -325,10 +375,18 @@ export default function ProductDetail() {
               .slice(0, 3)
               .map(d => {
                 const rd = d.data();
-                let rp = rd.price;
-                if (typeof rp === 'string') rp = parseFloat(rp.replace(/[^0-9.]/g, '')) || 0;
-                const rImages: string[] = Array.isArray(rd.images) ? rd.images.filter((i: any) => typeof i === 'string' && i.trim()) : [];
-                return { ...rd, id: d.id, price: rp, imageUrl: rd.imageUrl || rImages[0] || '', images: rImages } as any;
+                const rp = toMoneyNumber(rd.price);
+                const rImages = toStringArray(rd.images);
+                const rVariants = Array.isArray(rd.variants)
+                  ? rd.variants.map((v: any, idx: number) => ({
+                      ...v,
+                      id: toText(v?.id, toText(v?.sku, `v${idx + 1}`)),
+                      name: toText(v?.name, toText(v?.dosage, 'Standard')),
+                      price: toMoneyNumber(v?.price, rp),
+                      stock: toStockNumber(v?.stock),
+                    }))
+                  : [];
+                return { ...rd, id: d.id, price: rp, imageUrl: toText(rd.imageUrl, rImages[0] || ''), images: rImages, variants: rVariants } as any;
               });
             setRelatedProducts(related);
           } catch { /* non-blocking */ }
@@ -725,6 +783,7 @@ export default function ProductDetail() {
   const variant = allVariants[selectedVariantIdx] || allVariants[0];
   const isOutOfStock = !variant || variant.stock === 0;
   const variantPrice = Number(variant?.price ?? product.price ?? 0);
+  const displayPrice = Number.isFinite(variantPrice) ? variantPrice : 0;
 
   const handleAddToCart = () => {
     if (isOutOfStock || !variant) return;
@@ -734,8 +793,8 @@ export default function ProductDetail() {
       variantId: variant.id,
       variantName: variant.name,
       dosage: variant.name,
-      price: `£${variantPrice.toFixed(2)}`,
-      priceNum: variantPrice,
+      price: `£${displayPrice.toFixed(2)}`,
+      priceNum: displayPrice,
       quantity: 1,
       image: getProductImage(product.name, product.imageUrl, product.images),
       stock: variant.stock,
@@ -1346,7 +1405,7 @@ export default function ProductDetail() {
             {/* ── Price block ── */}
             <div className="rounded-3xl p-6 shadow-[0_4px_32px_rgba(0,0,0,0.4)]" style={{ background: '#0b1a30', border: '1px solid rgba(255,255,255,0.08)' }}>
               <div className="flex items-baseline gap-3 mb-3">
-                <span className="text-5xl font-bold text-[#f0f6ff] tracking-tight">£{variantPrice.toFixed(2)}</span>
+                <span className="text-5xl font-bold text-[#f0f6ff] tracking-tight">£{displayPrice.toFixed(2)}</span>
                 <span className="text-[#3a5a82] text-sm font-medium">per vial</span>
               </div>
 
@@ -1694,9 +1753,8 @@ export default function ProductDetail() {
                 const rpImg = getProductImage(rp.name, rp.imageUrl, rp.images);
                 const rpSlug = (rp as any).slug || nameToSlug(rp.name);
                 const rpVariants: any[] = (rp as any).variants || [];
-                const rpPrice = rpVariants.length > 0
-                  ? Math.min(...rpVariants.map((v: any) => typeof v.price === 'number' ? v.price : rp.price))
-                  : rp.price;
+                const rpPrices = rpVariants.map((v: any) => toMoneyNumber(v?.price, rp.price)).filter(Number.isFinite);
+                const rpPrice = rpPrices.length > 0 ? Math.min(...rpPrices) : toMoneyNumber(rp.price);
                 return (
                   <Link
                     key={rp.id}
@@ -1798,7 +1856,7 @@ export default function ProductDetail() {
             >
               <div className="bg-[#060f1e]/97 border-t border-white/[0.1] flex items-center gap-3" style={{ padding: 'max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left))' }}>
                 <div className="flex-1 min-w-0">
-                  <p className="text-blue-400 font-bold text-base">£{variantPrice.toFixed(2)}</p>
+                  <p className="text-blue-400 font-bold text-base">£{displayPrice.toFixed(2)}</p>
                   <p className="text-[#4ade80] text-xs font-semibold">
                     <Truck className="w-3 h-3 inline mr-1" />
                     Free UK Shipping
