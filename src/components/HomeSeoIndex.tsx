@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { FlaskConical, BookOpen, Microscope } from 'lucide-react';
-import { articles } from '@/pages/Resources/data/articles';
+import { ARTICLE_INDEX as articles } from '@/pages/Resources/data/articles-index';
 
 // Static, SSR-rendered link hub. Exists to give Googlebot direct anchors to
 // every product slug + every resource article from the homepage — fixes
