@@ -382,6 +382,28 @@ export default function ToolsTab() {
         </AnimatePresence>
       </motion.div>
 
+      {/* ── Browser cache / PWA safety ─────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-[#0b1a30]/70 border border-white/[0.08] rounded-2xl p-6 space-y-3"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-blue-600/20 flex items-center justify-center shrink-0">
+            <Shield className="w-5 h-5 text-blue-400" />
+          </div>
+          <div>
+            <h3 className="text-[#f0f6ff] font-semibold">Browser Cache Safety</h3>
+            <p className="text-[#9cb8d9] text-xs mt-0.5">
+              Offline app-shell service worker is disabled. Returning browsers receive a one-time cache cleanup and reload from the live site.
+            </p>
+          </div>
+        </div>
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-900/10 p-4 text-sm text-emerald-300">
+          If a device still shows a blank navy screen, open <code className="text-emerald-200">https://phlabs.co.uk/?sw=off</code> once.
+        </div>
+      </motion.div>
+
       {/* ── Dedupe Products by Slug ───────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
