@@ -119,7 +119,7 @@ export function emailWrapper(content: string, topBarGradient?: string): string {
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td width="52" style="vertical-align:middle;">
-                        <img src="https://cdn.wegic.ai/assets/onepage/uploads/2031481443271393281/image/2026/03/14/01KKPB20SGJ3T4RK47TQPSAV0N.png"
+                        <img src="https://phlabs.co.uk/logo.png"
                           alt="PH Labs" width="44" height="44"
                           style="display:block;width:44px;height:44px;border-radius:10px;border:1px solid rgba(59,130,246,0.3);" />
                       </td>
