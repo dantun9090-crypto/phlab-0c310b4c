@@ -416,6 +416,23 @@ export default {
         return Response.redirect(dest.toString(), 301);
       }
 
+      // 1b. Trailing-slash normalization → 301 to non-trailing-slash form.
+      // Keep "/" itself; skip API/asset paths and anything with a file extension.
+      if (
+        url.pathname.length > 1 &&
+        url.pathname.endsWith("/") &&
+        !url.pathname.startsWith("/api/") &&
+        !url.pathname.startsWith("/lovable/") &&
+        !/\.[a-z0-9]+$/i.test(url.pathname)
+      ) {
+        const dest = new URL(url.toString());
+        dest.pathname = url.pathname.replace(/\/+$/, "");
+        log.info({ event: "worker.redirect", status: 301, reason: "trailing-slash", to: dest.pathname, ...baseFields });
+        return Response.redirect(dest.toString(), 301);
+      }
+
+
+
       // 2. 301 redirect legacy (Wegic) URLs before SSR runs.
       const legacy = resolveLegacyRedirect(url.pathname);
       if (legacy && legacy !== url.pathname) {
