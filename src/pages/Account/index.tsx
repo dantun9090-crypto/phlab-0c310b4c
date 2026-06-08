@@ -182,6 +182,83 @@ export default function AccountPage() {
   const [verifError, setVerifError] = useState('');
   const [verifCooldown, setVerifCooldown] = useState(0);
 
+  // ── Lab Reports (PWA file_handlers target) ───────────────────────────────
+  interface PendingReport { id: string; file: File; url: string; }
+  interface SavedReport {
+    id: string;
+    name: string;
+    size: number;
+    url: string;
+    storagePath: string;
+    contentType?: string;
+    createdAt?: any;
+  }
+  const [pendingReports, setPendingReports] = useState<PendingReport[]>([]);
+  const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [reportError, setReportError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Accept PDFs from drag-drop, file picker, or PWA launchQueue
+  const acceptFiles = (files: FileList | File[] | null) => {
+    if (!files) return;
+    const arr = Array.from(files as ArrayLike<File>);
+    const pdfs = arr.filter(f => f.type === 'application/pdf' || /\.pdf$/i.test(f.name));
+    if (pdfs.length === 0) {
+      if (arr.length) setReportError('Only PDF lab reports can be imported.');
+      return;
+    }
+    setReportError('');
+    const mapped: PendingReport[] = pdfs.map(f => ({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      file: f,
+      url: URL.createObjectURL(f),
+    }));
+    setPendingReports(prev => [...mapped, ...prev]);
+  };
+
+  // PWA file_handlers entry point: window.launchQueue delivers the PDFs the
+  // OS opened with the PH Labs app. Switches to the lab-report tab and shows
+  // them in the importer.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const lq = (window as any).launchQueue;
+    if (!lq || typeof lq.setConsumer !== 'function') return;
+    lq.setConsumer(async (launchParams: any) => {
+      if (!launchParams?.files?.length) return;
+      const files: File[] = [];
+      for (const handle of launchParams.files) {
+        try { files.push(await handle.getFile()); } catch { /* skip */ }
+      }
+      if (!files.length) return;
+      acceptFiles(files);
+      setActiveTab('lab-report');
+    });
+  }, []);
+
+  // Honour ?import=lab-report (the file_handlers action URL) and ?tab=...
+  useEffect(() => {
+    const importParam = searchParams.get('import');
+    const tabParam = searchParams.get('tab');
+    if (importParam === 'lab-report' || tabParam === 'lab-report') {
+      setActiveTab('lab-report');
+    } else if (tabParam === 'orders') {
+      setActiveTab('orders');
+    }
+  }, [searchParams]);
+
+  // Revoke blob URLs on unmount to avoid leaks
+  useEffect(() => {
+    return () => {
+      pendingReports.forEach(r => URL.revokeObjectURL(r.url));
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u);
