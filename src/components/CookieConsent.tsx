@@ -110,7 +110,7 @@ export function CookieConsent() {
             <p className="text-[#f0f6ff] text-sm font-semibold leading-snug">We use cookies</p>
             <p className="text-[#9cb8d9] text-xs mt-0.5 leading-relaxed">
               Essential cookies only by default. We never sell your data.{" "}
-              <Link to="/privacy" onClick={() => setVisible(false)} className="text-blue-400 hover:underline">
+              <Link to="/privacy-policy" onClick={() => setVisible(false)} className="text-blue-400 hover:underline">
                 Privacy Policy
               </Link>
             </p>
