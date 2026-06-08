@@ -13,10 +13,10 @@
  */
 export function renderErrorPage(): string {
   return `<!doctype html>
-<html lang="en">
+<html lang="en-GB">
   <head>
     <meta charset="utf-8" />
-    <title>Something went wrong | PH Labs</title>
+    <title>Temporary Error | PH Labs UK</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <meta name="theme-color" content="#020617" />
@@ -63,65 +63,34 @@ export function renderErrorPage(): string {
         border-radius: 9999px;
         background: #10b981;
       }
-      h1 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin: 0 0 0.75rem;
-        color: #ffffff;
-      }
-      p {
-        color: #cbd5e1;
-        margin: 0 0 1.75rem;
-      }
-      .actions {
-        display: flex;
-        gap: 0.625rem;
-        justify-content: center;
-        flex-wrap: wrap;
-      }
+      h1 { font-size: 1.5rem; font-weight: 600; margin: 0 0 0.75rem; color: #ffffff; }
+      p { color: #cbd5e1; margin: 0 0 1.75rem; }
+      .actions { display: flex; gap: 0.625rem; justify-content: center; flex-wrap: wrap; }
       .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 44px;
-        padding: 0.625rem 1.25rem;
-        border-radius: 0.5rem;
-        font: inherit;
-        font-weight: 500;
-        text-decoration: none;
-        cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        min-height: 44px; padding: 0.625rem 1.25rem; border-radius: 0.5rem;
+        font: inherit; font-weight: 500; text-decoration: none; cursor: pointer;
         border: 1px solid transparent;
         transition: background-color 0.15s ease, border-color 0.15s ease;
       }
-      .btn-primary {
-        background: #10b981;
-        color: #022c22;
-      }
+      .btn-primary { background: #10b981; color: #022c22; }
       .btn-primary:hover { background: #34d399; }
-      .btn-secondary {
-        background: transparent;
-        color: #f1f5f9;
-        border-color: #334155;
-      }
+      .btn-secondary { background: transparent; color: #f1f5f9; border-color: #334155; }
       .btn-secondary:hover { border-color: #10b981; color: #10b981; }
-      .meta {
-        margin-top: 1.5rem;
-        font-size: 0.8125rem;
-        color: #64748b;
-      }
+      .meta { margin-top: 1.5rem; font-size: 0.8125rem; color: #64748b; }
       .meta a { color: #94a3b8; }
     </style>
   </head>
   <body>
     <main class="card" role="alert" aria-live="assertive">
-      <span class="badge">PH Labs</span>
-      <h1>This page didn&rsquo;t load</h1>
-      <p>Something went wrong on our end. Your cart and account are safe &mdash; please try again, or head back to the home page.</p>
+      <span class="badge">PH Labs UK</span>
+      <h1>Temporary Error</h1>
+      <p>Our laboratory systems are updating. Please retry in 30 seconds.</p>
       <div class="actions">
-        <button class="btn btn-primary" type="button" onclick="location.reload()">Try again</button>
+        <button class="btn btn-primary" type="button" onclick="setTimeout(function(){location.reload();},2000)">Retry</button>
         <a class="btn btn-secondary" href="/">Go home</a>
       </div>
-      <p class="meta">Still stuck? Email <a href="mailto:support@phlabs.co.uk">support@phlabs.co.uk</a>.</p>
+      <p class="meta">Still stuck? Email <a href="mailto:info@phlabs.co.uk">info@phlabs.co.uk</a>.</p>
     </main>
   </body>
 </html>`;
