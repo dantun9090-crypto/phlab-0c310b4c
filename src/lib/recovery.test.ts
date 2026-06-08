@@ -12,6 +12,7 @@ import {
   hardReload,
   HARD_RELOAD_FLAG,
   isAppOwnedCache,
+  isEvictableAppCache,
   isAppOwnedRegistration,
   isStaleChunkError,
 } from "./recovery";
@@ -122,6 +123,13 @@ describe("scoped eviction", () => {
     expect(isAppOwnedCache("some-other-app")).toBe(false);
   });
 
+  it("keeps last-known-good HTML cache out of deploy eviction", () => {
+    expect(isEvictableAppCache("phlabs-offline-v1")).toBe(true);
+    expect(isEvictableAppCache("workbox-precache-v2-x")).toBe(true);
+    expect(isEvictableAppCache("phlabs-lkg-v1")).toBe(false);
+    expect(isEvictableAppCache("firebase-messaging-default")).toBe(false);
+  });
+
   it("isAppOwnedRegistration accepts /sw.js, rejects firebase-messaging-sw.js", () => {
     const ours = {
       active: { scriptURL: `${window.location.origin}/sw.js` },
@@ -157,7 +165,7 @@ describe("clearClientCaches", () => {
     vi.restoreAllMocks();
   });
 
-  it("deletes ONLY app-owned cache buckets and leaves FCM caches intact", async () => {
+  it("deletes ONLY evictable app-shell cache buckets and leaves LKG/FCM caches intact", async () => {
     const buckets: Record<string, FakeCache> = {
       "phlabs-offline-v1": makeFakeCache(),
       "phlabs-lkg-v1": makeFakeCache(),
@@ -169,11 +177,11 @@ describe("clearClientCaches", () => {
 
     await clearClientCaches(200);
 
-    // App-owned: gone.
+    // Evictable app-shell caches: gone.
     expect("phlabs-offline-v1" in buckets).toBe(false);
-    expect("phlabs-lkg-v1" in buckets).toBe(false);
     expect("workbox-precache-v2-x" in buckets).toBe(false);
-    // Third-party: preserved.
+    // Offline fallback + third-party: preserved.
+    expect("phlabs-lkg-v1" in buckets).toBe(true);
     expect("firebase-messaging-default" in buckets).toBe(true);
     expect("onesignal-cache" in buckets).toBe(true);
   });
@@ -262,8 +270,9 @@ describe("hardReload", () => {
     // User clicks "Try again" → hardReload runs.
     await hardReload();
 
-    // Old SW unregistered, stale LKG bucket gone, FCM bucket untouched.
+    // Old SW unregistered, stale app shell evicted, LKG + FCM buckets untouched.
     expect(unregister).toHaveBeenCalledTimes(1);
+    expect(await findCachedLastKnownUrl()).toBe("/");
     expect(replace).toHaveBeenCalledTimes(1);
 
     // Navigation went to the same URL with a fresh _r= buster.
