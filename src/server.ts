@@ -607,6 +607,8 @@ export default {
         });
       }
 
+      normalized = applyCacheRecoveryHeaders(normalized, url);
+
       const ms = Date.now() - start;
       log.info({
         event: "worker.request",
