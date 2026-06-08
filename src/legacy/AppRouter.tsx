@@ -184,6 +184,7 @@ export const router = createBrowserRouter([
       { path: 'resources',         element: <Resources /> },
       { path: 'resources/:slug',   element: <ArticlePage /> },
       { path: 'research',          element: <Research /> },
+      { path: 'install',           element: <Install /> },
       { path: '*',                 element: <NotFound /> },
     ],
   },
