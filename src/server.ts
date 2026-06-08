@@ -265,12 +265,32 @@ function applyCacheRecoveryHeaders(response: Response, url: URL): Response {
   if (!swOff && !isServiceWorker) return response;
 
   const headers = new Headers(response.headers);
-  headers.set("cache-control", "no-store, no-cache, must-revalidate, max-age=0");
+
+  // Hard no-store across browser AND every CDN tier. Cloudflare honors
+  // `cache-control: no-store`, but if any prior rule set an Edge TTL we
+  // override with the explicit CDN-tier headers below. `Surrogate-Control`
+  // covers Fastly/Varnish-style proxies in front of CF (defense in depth).
+  headers.set("cache-control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0");
+  headers.set("cdn-cache-control", "no-store");
+  headers.set("cloudflare-cdn-cache-control", "no-store");
+  headers.set("surrogate-control", "no-store");
   headers.set("pragma", "no-cache");
   headers.set("expires", "0");
+
+  // Strip validators so browsers/CDNs can't serve a 304 from a stale copy.
+  headers.delete("etag");
+  headers.delete("last-modified");
+  headers.delete("age");
+
+  // Prevent any intermediary from collapsing variants of this response.
+  headers.set("vary", "*");
+
   if (isServiceWorker) {
     headers.set("content-type", "text/javascript; charset=utf-8");
     headers.set("service-worker-allowed", "/");
+    // Service-Worker-Allowed + explicit no-store ensures a returning browser
+    // ALWAYS revalidates the worker bytes on the next navigation, even if the
+    // previous registration is partially broken or stuck activating.
   }
   if (swOff && response.headers.get("content-type")?.includes("text/html")) {
     headers.set("clear-site-data", '"cache", "storage"');
@@ -628,7 +648,9 @@ export default {
         ...baseFields,
       });
       console.error(error);
-      return brandedErrorResponse(nonce);
+      // Even on a 500, /sw.js and ?sw=off MUST never be cached — otherwise a
+      // single bad deploy can get pinned at the edge or in browsers for hours.
+      return applyCacheRecoveryHeaders(brandedErrorResponse(nonce), url);
     }
   },
 };
