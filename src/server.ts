@@ -532,6 +532,20 @@ export default {
       const response = await handler.fetch(request, env, ctx);
       let normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response, nonce), nonce);
 
+      // Fix asset content-types that the static handler mis-detects.
+      // `.webmanifest` is served as application/octet-stream by default, which
+      // some browsers reject — must be application/manifest+json for PWA install.
+      if (url.pathname.endsWith(".webmanifest")) {
+        const h = new Headers(normalized.headers);
+        h.set("content-type", "application/manifest+json; charset=utf-8");
+        normalized = new Response(normalized.body, {
+          status: normalized.status,
+          statusText: normalized.statusText,
+          headers: h,
+        });
+      }
+
+
       // 4b. Unknown top-level path → real HTTP 404 + noindex header so Google
       // doesn't index junk URLs (meta name=robots is overridden by the HTTP
       // header otherwise).
