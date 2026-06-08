@@ -68,9 +68,9 @@
   },
   "handle_links": "preferred",
   "scope_extensions": [
-    { "origin": "https://www.phlabs.co.uk" },
-    { "origin": "https://phlabs.app" },
-    { "origin": "https://www.phlabs.app" }
+    { "type": "web", "origin": "https://www.phlabs.co.uk" },
+    { "type": "web", "origin": "https://phlabs.app" },
+    { "type": "web", "origin": "https://www.phlabs.app" }
   ],
   "protocol_handlers": [
     { "protocol": "web+phlabs", "url": "/?handler=%s" }
