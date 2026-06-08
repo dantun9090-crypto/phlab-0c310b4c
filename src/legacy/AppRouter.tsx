@@ -38,6 +38,7 @@ const CookiePolicy   = lazy(() => import('@/pages/CookiePolicy'));
 const Payment        = lazy(() => import('@/pages/Payment'));
 const Checkout       = lazy(() => import('@/pages/Checkout'));
 const NotFound       = lazy(() => import('@/pages/NotFound'));
+const Install        = lazy(() => import('@/pages/Install'));
 
 // Minimal spinner shown while lazy chunks load
 function PageLoader() {
@@ -183,6 +184,7 @@ export const router = createBrowserRouter([
       { path: 'resources',         element: <Resources /> },
       { path: 'resources/:slug',   element: <ArticlePage /> },
       { path: 'research',          element: <Research /> },
+      { path: 'install',           element: <Install /> },
       { path: '*',                 element: <NotFound /> },
     ],
   },

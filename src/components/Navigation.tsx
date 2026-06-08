@@ -339,6 +339,11 @@ export function Navigation({
 
           <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', margin: '8px 0' }} />
           <InstallAppButton onAfter={onMobileMenuToggle} />
+          <Link to="/install" onClick={onMobileMenuToggle}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-medium mt-1"
+            style={{ background: 'rgba(255,255,255,0.03)', color: '#9cb8d9', border: '1px solid rgba(255,255,255,0.06)' }}>
+            How to install on iPhone, Android & desktop →
+          </Link>
         </nav>
 
         {/* Bottom trust strip */}
