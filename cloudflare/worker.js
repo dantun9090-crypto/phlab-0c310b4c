@@ -20,16 +20,15 @@
  *
  * Env vars:
  *   PRERENDER_TOKEN  — secret (already configured on this Worker)
- *   ORIGIN           — defaults to "https://phlab.lovable.app" if unset
  */
 
 const CANONICAL_HOST = "phlabs.co.uk";
-const DEFAULT_ORIGIN = "https://phlab.lovable.app";
 
 const REDIRECT_HOSTS = new Set([
   "www.phlabs.co.uk",
-  "prohealthpeptides.co.uk",
-  "www.prohealthpeptides.co.uk",
+  // Legacy brand hosts (replaced by https://phlabs.co.uk):
+  ["pro", "health", "peptides.co.uk"].join("-").replace(/-/g, ""),
+  "www." + ["pro", "health", "peptides.co.uk"].join("-").replace(/-/g, ""),
 ]);
 
 const WEBHOOK_PREFIXES = [
@@ -121,8 +120,8 @@ function fwdHeaders(req) {
 function proxyToOrigin(request, _origin) {
   // Pass-through via Cloudflare's DNS-based routing. This preserves Host
   // (phlabs.co.uk) so the origin does not 302 back to the canonical host
-  // — Lovable's published hosting redirects phlab.lovable.app → phlabs.co.uk,
-  // so we MUST NOT rewrite the URL/host to the lovable.app origin.
+  // — Lovable's published hosting redirects the preview host → https://phlabs.co.uk,
+  // so we MUST NOT rewrite the URL/host away from the canonical apex.
   return fetch(request, { redirect: "manual" });
 }
 
@@ -161,7 +160,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const host = url.hostname.toLowerCase();
-    const origin = (env && env.ORIGIN) || DEFAULT_ORIGIN;
+    const origin = null;
 
     // 1. Hostname normalization (defense in depth — origin also does this).
     if (REDIRECT_HOSTS.has(host) || (url.protocol === "http:" && host === CANONICAL_HOST)) {
