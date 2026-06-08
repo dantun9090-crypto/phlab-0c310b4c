@@ -356,6 +356,7 @@ const BOOT_WATCHDOG = `
 (function(){
   try{
     var qs=new URLSearchParams(location.search);
+    var settle=function(p){ return Promise.resolve(p).catch(function(){}); };
     var ownCache=function(k){ return /^phlabs-offline-/.test(k)||/^phlabs-(?!lkg-)/.test(k)||/^workbox-/.test(k)||/^precache-/.test(k)||/^runtime-/.test(k)||/(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(k); };
     var ownReg=function(r){
       try{
@@ -377,7 +378,6 @@ const BOOT_WATCHDOG = `
           history.replaceState(null,'',clean);
         }catch(e){}
       } else {
-        var settle=function(p){ return Promise.resolve(p).catch(function(){}); };
         var jobs=[];
         // 1. Delete only app-shell cache buckets. Keep last-known-good HTML.
         try{
@@ -441,14 +441,18 @@ const BOOT_WATCHDOG = `
       if(now-last<15000) return;
       sessionStorage.setItem(KEY,String(Date.now()));
       sessionStorage.setItem(MAX_RELOADS_KEY,String(count+1));
+      var jobs=[];
       try{
         // force fresh fetch — bypass app-shell cache & service worker only
-        if('caches' in window){caches.keys().then(function(ks){ks.filter(ownCache).forEach(function(k){caches.delete(k);});});}
+        if('caches' in window){jobs.push(settle(caches.keys().then(function(ks){return Promise.all(ks.filter(ownCache).map(function(k){return settle(caches.delete(k));}));})));}
         if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){
-          navigator.serviceWorker.getRegistrations().then(function(rs){rs.filter(ownReg).forEach(function(r){r.unregister();});});
+          jobs.push(settle(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.filter(ownReg).map(function(r){return settle(r.unregister());}));})));
         }
       }catch(e){}
-      location.replace(location.pathname+location.search+(location.search?'&':'?')+'_r='+Date.now()+location.hash);
+      var done=false;
+      function go(){ if(done) return; done=true; location.replace(location.pathname+location.search+(location.search?'&':'?')+'_r='+Date.now()+location.hash); }
+      var fallback=setTimeout(go,1500);
+      Promise.all(jobs).then(function(){clearTimeout(fallback);go();},function(){clearTimeout(fallback);go();});
     },20000);
 
   }catch(e){}
