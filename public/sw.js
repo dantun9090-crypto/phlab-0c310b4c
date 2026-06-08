@@ -5,6 +5,11 @@
 
 const CACHE_PREFIXES = ['phlabs-offline-', 'workbox-', 'precache-', 'runtime-'];
 
+function isAppShellCache(name) {
+  return CACHE_PREFIXES.some((prefix) => name.startsWith(prefix)) ||
+    /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(name);
+}
+
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
@@ -22,7 +27,7 @@ self.addEventListener('activate', (event) => {
       const keys = await caches.keys();
       await Promise.allSettled(
         keys
-          .filter((key) => CACHE_PREFIXES.some((prefix) => key.startsWith(prefix)))
+          .filter(isAppShellCache)
           .map((key) => caches.delete(key))
       );
       await self.clients.claim();
