@@ -400,7 +400,7 @@ export default function ToolsTab() {
           </div>
         </div>
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-900/10 p-4 text-sm text-emerald-300">
-          If a device still shows a blank navy screen, open <code className="text-emerald-200">https://phlabs.co.uk/?sw=off</code> once.
+          If a device still shows a blank navy screen, open <code className="text-emerald-200">https://phlabs.co.uk/?sw=off</code> once. The page now sends no-cache recovery headers and clears stale service-worker storage on load.
         </div>
       </motion.div>
 
