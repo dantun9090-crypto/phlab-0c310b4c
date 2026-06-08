@@ -73,7 +73,9 @@ const SECURITY_HEADERS = {
 };
 
 const PRERENDER_ORIGIN = "https://service.prerender.io";
-const PRERENDER_TIMEOUT_MS = 25_000;
+// 45s — fresh (uncached) prerender renders of the homepage take ~18s; 25s
+// was too tight and caused AbortError fallback to origin SSR on first crawl.
+const PRERENDER_TIMEOUT_MS = 45_000;
 
 // ---------- helpers ----------
 
