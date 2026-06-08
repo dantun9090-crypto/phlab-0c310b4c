@@ -631,6 +631,71 @@ In mouse melanocyte and human primary melanocyte cultures, MT-II at 1–100 nM i
   },
 
   // ---------------------------------------------
+  // 9b. GHK-Cu Research Guide — keyword-targeted (in-vitro / biochemical focus)
+  // ---------------------------------------------
+  {
+    slug: 'ghk-cu-research-guide',
+    title: 'GHK-Cu Peptide: A Technical Research Guide for UK Laboratories',
+    subtitle: 'A laboratory-focused overview of the GHK-Cu peptide — biochemical properties, copper coordination chemistry, and in-vitro assay applications in collagen synthesis and angiogenesis models',
+    category: 'Peptide Science',
+    readTime: 8,
+    publishDate: '2026-05-12',
+    excerpt: 'A scientific research guide to the GHK-Cu peptide (glycyl-L-histidyl-L-lysine copper complex) for UK laboratory researchers. Covers biochemical properties, copper(II) coordination, fibroblast culture protocols, and in-vitro applications in collagen synthesis and angiogenesis assay models. For Research Use Only. Not for Human Consumption.',
+    keywords: ['ghk-cu peptide', 'ghk cu', 'copper tripeptide', 'glycyl-histidyl-lysine', 'in-vitro research', 'collagen synthesis assay', 'angiogenesis model', 'laboratory reagent UK'],
+    relatedSlugs: ['ghk-cu-copper-peptide-research', 'bpc-157-tissue-repair', 'peptide-storage-lyophilisation-science'],
+    content: [
+      {
+        body: `The GHK-Cu peptide — glycyl-L-histidyl-L-lysine complexed with copper(II) — is a small tripeptide–metal complex widely used as a laboratory reagent in dermal biology, extracellular matrix, and angiogenesis research. This guide is written for UK research laboratories sourcing GHK-Cu as an in-vitro reagent. All content is strictly research-focused; the peptide is supplied For Research Use Only and is not intended for human consumption.`
+      },
+      {
+        heading: 'Biochemical Properties of the GHK-Cu Peptide',
+        body: `GHK-Cu is the copper(II) coordination complex of the linear tripeptide Gly-His-Lys (molecular weight of the free tripeptide: 340.4 g/mol; copper-coordinated complex: ~402.9 g/mol). The histidine imidazole nitrogen, the deprotonated amide nitrogen of glycyl-histidine, and the terminal amine cooperatively chelate Cu(II) with a dissociation constant in the order of 10^-14 M at physiological pH. The resulting square-planar complex is responsible for the characteristic deep blue colour of lyophilised GHK-Cu powder and for its superoxide dismutase (SOD)-like redox behaviour in cell-free assays. Solubility in sterile water and PBS (pH 7.4) is excellent at working concentrations of 1 ng/mL to 100 µg/mL; the complex is stable for up to 7 days at 4 °C after reconstitution and should be protected from strong reducing agents that can dissociate the Cu(II) coordination.`,
+        table: {
+          headers: ['Property', 'Value', 'Notes'],
+          rows: [
+            ['Free tripeptide sequence', 'Gly-His-Lys (GHK)', 'Linear, no disulfide bridges'],
+            ['Molecular weight (Cu complex)', '~402.9 g/mol', 'Includes one Cu(II) ion'],
+            ['Cu(II) binding affinity (Kd)', '~10^-14 M (pH 7.4)', 'Among the tightest naturally occurring Cu chelators'],
+            ['Appearance', 'Blue lyophilised powder', 'Colour from Cu(II) d-d transition'],
+            ['Storage (lyophilised)', '-20 °C, desiccated', 'See peptide storage guide'],
+            ['Storage (reconstituted)', '4 °C, ≤ 7 days', 'Avoid repeated freeze-thaw cycles'],
+          ]
+        }
+      },
+      {
+        heading: 'In-Vitro Assay Applications: Collagen Synthesis Models',
+        body: `The most widely replicated in-vitro application of the GHK-Cu peptide is the stimulation of collagen and glycosaminoglycan synthesis in primary human dermal fibroblast cultures. Standard assay formats use sub-confluent fibroblasts in DMEM supplemented with 1% FBS and treat with GHK-Cu at 1–10 ng/mL for 24–72 hours, followed by hydroxyproline quantification, ELISA for type I/III procollagen, or qPCR for COL1A1 and COL3A1 transcripts. Reported responses include dose-dependent upregulation of type I collagen mRNA, increased decorin synthesis, and changes in MMP-1/TIMP-1 ratio favouring matrix accumulation. Vehicle controls should match the reconstitution buffer; CuSO4 controls at equimolar copper are recommended to distinguish peptide-specific effects from copper-only effects.`,
+        callout: {
+          type: 'info',
+          text: 'GHK-Cu working concentrations of 1–10 ng/mL are typical for fibroblast collagen synthesis assays. Higher concentrations (>1 µg/mL) can introduce non-specific copper-mediated effects and should be controlled with CuSO4 at the equivalent metal concentration.'
+        }
+      },
+      {
+        heading: 'In-Vitro Assay Applications: Angiogenesis Models',
+        body: `GHK-Cu has been used as a positive control and modulator in in-vitro angiogenesis assay systems. Common formats include the HUVEC tube formation assay on Matrigel (typically 6–18 hours, scoring branch points and tube length by image analysis), endothelial cell migration assays (scratch/wound or Transwell), and 3-D fibrin gel sprouting assays using HUVEC-coated cytodex beads. Reported endpoints include upregulation of VEGF expression, increased endothelial tube formation at low ng/mL concentrations, and stimulation of capillary-like sprouting in 3-D matrices. As with collagen assays, copper-only controls are essential to attribute observed effects to the intact GHK-Cu complex rather than free copper ions liberated under assay conditions.`
+      },
+      {
+        heading: 'Handling, Reconstitution, and Quality Control',
+        body: `Reconstitute lyophilised GHK-Cu in sterile water or PBS pH 7.4 to a stock concentration of 1 mg/mL; further dilute into assay medium immediately before use. Avoid vortexing — gentle inversion preserves the Cu(II) coordination geometry. For studies requiring identity confirmation, ESI-MS should resolve the expected mass of the copper-coordinated complex and HPLC at 214 nm should show a single major peak. Each batch supplied by PH Labs ships with an HPLC certificate of analysis; for the methodology behind those certificates, see the related HPLC guide. The GHK-Cu Research Peptide product page lists current variants, purity specifications, and stock status.`,
+        callout: {
+          type: 'warning',
+          text: 'For Research Use Only. Not for Human Consumption. GHK-Cu supplied by PH Labs is sold as a laboratory reagent for in-vitro and ex-vivo research conducted by trained personnel in institutional or commercial laboratory settings under UK research-use regulations.'
+        }
+      },
+      {
+        heading: 'Sourcing the GHK-Cu Peptide in the UK',
+        body: `PH Labs supplies GHK-Cu as a UK-stocked research peptide with batch-level HPLC certificates of analysis and lyophilised storage. The product is listed on the GHK-Cu Research Peptide product page with current variants and purity specifications. Researchers comparing reagent options should review the related copper-peptide biology article for an in-depth mechanistic background, and the peptide storage guide for handling protocols across the reconstitution and freeze-thaw lifecycle.`
+      }
+    ],
+    references: [
+      { id: 1, authors: 'Pickart L, Vasquez-Soltero JM, Margolina A.', year: 2015, title: 'GHK Peptide as a Natural Modulator of Multiple Cellular Pathways in Skin Regeneration', journal: 'BioMed Res Int', doi: '10.1155/2015/648108' },
+      { id: 2, authors: 'Pickart L, Margolina A.', year: 2018, title: 'Regenerative and Protective Actions of the GHK-Cu Peptide in the Light of the New Gene Data', journal: 'Int J Mol Sci', doi: '10.3390/ijms19071987' },
+      { id: 3, authors: 'Dou Y, Lee A, Zhu L, et al.', year: 2021, title: 'The potential of GHK as an anti-aging peptide', journal: 'Ageing Res Rev', doi: '10.1016/j.arr.2021.101412' },
+      { id: 4, authors: 'Maquart FX, Pickart L, Laurent M, et al.', year: 1988, title: 'Stimulation of collagen synthesis in fibroblast cultures by the tripeptide-copper complex glycyl-L-histidyl-L-lysine-Cu2+', journal: 'FEBS Lett', doi: '10.1016/0014-5793(88)80289-x' },
+    ]
+  },
+
+  // ---------------------------------------------
   // 10. Peptide Storage and Lyophilisation Science
   // ---------------------------------------------
   {
