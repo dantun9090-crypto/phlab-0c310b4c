@@ -356,6 +356,17 @@ const BOOT_WATCHDOG = `
 (function(){
   try{
     var qs=new URLSearchParams(location.search);
+    var ownCache=function(k){ return /^phlabs-offline-/.test(k)||/^phlabs-(?!lkg-)/.test(k)||/^workbox-/.test(k)||/^precache-/.test(k)||/^runtime-/.test(k)||/(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(k); };
+    var ownReg=function(r){
+      try{
+        var s=(r.active&&r.active.scriptURL)||(r.installing&&r.installing.scriptURL)||(r.waiting&&r.waiting.scriptURL)||'';
+        if(!s) return false;
+        var u=new URL(s);
+        if(u.origin!==location.origin) return false;
+        var b=u.pathname.split('/').pop();
+        return b==='sw.js'||b==='service-worker.js';
+      }catch(e){ return false; }
+    };
     if(qs.get('sw')==='off'){
       var DONE='__phl_sw_off_done';
       if(sessionStorage.getItem(DONE)==='1'){
@@ -367,17 +378,6 @@ const BOOT_WATCHDOG = `
         }catch(e){}
       } else {
         var settle=function(p){ return Promise.resolve(p).catch(function(){}); };
-        var ownCache=function(k){ return /^phlabs-offline-/.test(k)||/^phlabs-(?!lkg-)/.test(k)||/^workbox-/.test(k)||/^precache-/.test(k)||/^runtime-/.test(k)||/(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(k); };
-        var ownReg=function(r){
-          try{
-            var s=(r.active&&r.active.scriptURL)||(r.installing&&r.installing.scriptURL)||(r.waiting&&r.waiting.scriptURL)||'';
-            if(!s) return false;
-            var u=new URL(s);
-            if(u.origin!==location.origin) return false;
-            var b=u.pathname.split('/').pop();
-            return b==='sw.js'||b==='service-worker.js';
-          }catch(e){ return false; }
-        };
         var jobs=[];
         // 1. Delete only app-shell cache buckets. Keep last-known-good HTML.
         try{
@@ -442,10 +442,10 @@ const BOOT_WATCHDOG = `
       sessionStorage.setItem(KEY,String(Date.now()));
       sessionStorage.setItem(MAX_RELOADS_KEY,String(count+1));
       try{
-        // force fresh fetch — bypass HTTP cache & service worker
-        if('caches' in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}
+        // force fresh fetch — bypass app-shell cache & service worker only
+        if('caches' in window){caches.keys().then(function(ks){ks.filter(ownCache).forEach(function(k){caches.delete(k);});});}
         if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){
-          navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});
+          navigator.serviceWorker.getRegistrations().then(function(rs){rs.filter(ownReg).forEach(function(r){r.unregister();});});
         }
       }catch(e){}
       location.replace(location.pathname+location.search+(location.search?'&':'?')+'_r='+Date.now()+location.hash);
