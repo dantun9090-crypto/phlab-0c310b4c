@@ -329,6 +329,19 @@ export default function ProductDetail() {
             category: toText(data.category),
             sku: toText(data.sku),
             purity: toText(data.purity, '99%+'),
+            bannerImageUrl: toText(data.bannerImageUrl),
+            productManualUrl: toText(data.productManualUrl),
+            productManualName: toText(data.productManualName),
+            specs: data.specs && typeof data.specs === 'object'
+              ? {
+                  casNumber: toText(data.specs.casNumber, 'N/A'),
+                  molecularWeight: toText(data.specs.molecularWeight, 'N/A'),
+                  formula: toText(data.specs.formula, 'Peptide analog'),
+                  storage: toText(data.specs.storage, 'Store at 2-8°C (36-46°F)'),
+                  shelfLife: toText(data.specs.shelfLife, '24 months when stored properly'),
+                  solvent: toText(data.specs.solvent, 'Sterile water or bacteriostatic water'),
+                }
+              : undefined,
             price,
             stock,
             imageUrl,
