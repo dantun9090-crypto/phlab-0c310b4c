@@ -166,6 +166,36 @@ function getArticleForProduct(productName: string): { slug: string; title: strin
   return null;
 }
 
+const toText = (value: unknown, fallback = ''): string => {
+  if (typeof value === 'string') return value;
+  if (value == null) return fallback;
+  return String(value);
+};
+
+const toMoneyNumber = (value: unknown, fallback = 0): number => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value.replace(/[^0-9.-]/g, ''));
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+  return fallback;
+};
+
+const toStockNumber = (value: unknown, fallback = 0): number => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : fallback;
+  if (typeof value === 'boolean') return value ? 99 : 0;
+  if (typeof value === 'string') {
+    const parsed = parseInt(value.replace(/[^0-9-]/g, ''), 10);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+  return fallback;
+};
+
+const toStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
+};
+
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
