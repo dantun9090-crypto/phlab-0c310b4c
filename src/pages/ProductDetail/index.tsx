@@ -780,7 +780,15 @@ export default function ProductDetail() {
   }
 
   const allVariants = product.variants ?? [];
-  const variant = allVariants[selectedVariantIdx] || allVariants[0];
+  // A variant is "valid" only if it has a non-empty name and a finite, non-negative price.
+  // This protects against malformed Firestore docs that would otherwise crash the page.
+  const validVariants = allVariants.filter(
+    (v) => v && typeof v.name === 'string' && v.name.trim().length > 0 && Number.isFinite(Number(v.price)) && Number(v.price) >= 0,
+  );
+  const hasValidVariants = validVariants.length > 0;
+  const variant = hasValidVariants
+    ? (validVariants[selectedVariantIdx] || validVariants[0])
+    : undefined;
   const isOutOfStock = !variant || variant.stock === 0;
   const variantPrice = Number(variant?.price ?? product.price ?? 0);
   const displayPrice = Number.isFinite(variantPrice) ? variantPrice : 0;
@@ -1361,46 +1369,63 @@ export default function ProductDetail() {
             {/* Variant Selector */}
             <div>
               <p className="text-xs font-bold text-[#4a6a8a] uppercase tracking-[0.2em] mb-3">Select Concentration / Quantity</p>
-              <div className="flex flex-wrap gap-2.5">
-                {(product.variants ?? []).map((v, idx) => {
-                  const outOfStock = v.stock === 0;
-                  const isSelected = idx === selectedVariantIdx;
-                  return (
-                    <button
-                      key={v.id}
-                      onClick={() => {
-                        if (outOfStock) return;
-                        setSelectedVariantIdx(idx);
-                        // Switch to the image assigned to this variant
-                        const imgs = (product.images || []).filter(Boolean);
-                        if (imgs.length < 2) return; // only 1 image — nothing to switch
-                        if (typeof v.imageIndex === 'number' && v.imageIndex >= 0 && v.imageIndex < imgs.length) {
-                          // admin assigned a specific image to this variant
-                          setSelectedImageIdx(v.imageIndex);
-                        } else {
-                          // fallback: variant 0→img0, variant 1→img1, etc.
-                          setSelectedImageIdx(Math.min(idx, imgs.length - 1));
-                        }
-                      }}
-                      disabled={outOfStock}
-                      className={`relative px-4 py-3 min-h-[46px] rounded-xl border text-sm font-bold transition-all duration-200 ${
-                        isSelected
-                          ? 'bg-blue-600 border-blue-500 text-white shadow-[0_2px_20px_rgba(37,99,235,0.5)] scale-[1.02]'
-                          : outOfStock
-                          ? 'border-white/[0.05] text-white/20 cursor-not-allowed bg-white/[0.02] line-through'
-                          : 'border-white/[0.1] text-[#8caad4] hover:border-blue-500/60 hover:text-white bg-white/[0.04] hover:bg-blue-600/10'
-                      }`}
-                    >
-                      {v.name}
-                      {outOfStock && <span className="ml-1 text-xs text-red-400">(OOS)</span>}
-                      {!outOfStock && v.stock > 0 && v.stock <= 10 && (
-                        <span className="ml-1 text-[10px] text-amber-400">({v.stock} left)</span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+              {hasValidVariants ? (
+                <div className="flex flex-wrap gap-2.5">
+                  {validVariants.map((v, idx) => {
+                    const outOfStock = v.stock === 0;
+                    const isSelected = idx === selectedVariantIdx;
+                    return (
+                      <button
+                        key={v.id ?? `variant-${idx}`}
+                        onClick={() => {
+                          if (outOfStock) return;
+                          setSelectedVariantIdx(idx);
+                          // Switch to the image assigned to this variant
+                          const imgs = (product.images || []).filter(Boolean);
+                          if (imgs.length < 2) return; // only 1 image — nothing to switch
+                          if (typeof v.imageIndex === 'number' && v.imageIndex >= 0 && v.imageIndex < imgs.length) {
+                            // admin assigned a specific image to this variant
+                            setSelectedImageIdx(v.imageIndex);
+                          } else {
+                            // fallback: variant 0→img0, variant 1→img1, etc.
+                            setSelectedImageIdx(Math.min(idx, imgs.length - 1));
+                          }
+                        }}
+                        disabled={outOfStock}
+                        className={`relative px-4 py-3 min-h-[46px] rounded-xl border text-sm font-bold transition-all duration-200 ${
+                          isSelected
+                            ? 'bg-blue-600 border-blue-500 text-white shadow-[0_2px_20px_rgba(37,99,235,0.5)] scale-[1.02]'
+                            : outOfStock
+                            ? 'border-white/[0.05] text-white/20 cursor-not-allowed bg-white/[0.02] line-through'
+                            : 'border-white/[0.1] text-[#8caad4] hover:border-blue-500/60 hover:text-white bg-white/[0.04] hover:bg-blue-600/10'
+                        }`}
+                      >
+                        {v.name}
+                        {outOfStock && <span className="ml-1 text-xs text-red-400">(OOS)</span>}
+                        {!outOfStock && v.stock > 0 && v.stock <= 10 && (
+                          <span className="ml-1 text-[10px] text-amber-400">({v.stock} left)</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                // Fallback when Firestore variant data is missing or malformed.
+                // We keep the page usable instead of crashing the whole route.
+                <div
+                  role="status"
+                  className="rounded-xl border border-amber-500/25 bg-amber-500/[0.06] px-4 py-3 text-sm text-amber-200"
+                >
+                  <p className="font-semibold mb-0.5">Concentration options unavailable</p>
+                  <p className="text-amber-200/80 text-xs leading-relaxed">
+                    We couldn't load variant details for this product. Please{' '}
+                    <a href="/contact" className="underline hover:text-white">contact us</a>{' '}
+                    and we'll confirm available sizes and pricing.
+                  </p>
+                </div>
+              )}
             </div>
+
 
             {/* ── Price block ── */}
             <div className="rounded-3xl p-6 shadow-[0_4px_32px_rgba(0,0,0,0.4)]" style={{ background: '#0b1a30', border: '1px solid rgba(255,255,255,0.08)' }}>
