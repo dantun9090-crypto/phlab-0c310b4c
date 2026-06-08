@@ -227,6 +227,12 @@ const NONCE_PROPAGATOR = `
 const BOOT_WATCHDOG = `
 (function(){
   try{
+    var qs=new URLSearchParams(location.search);
+    if(qs.get('sw')==='off'){
+      try{ if('caches' in window){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});} }catch(e){}
+      try{ if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});});} }catch(e){}
+      try{ localStorage.removeItem('php_pwa_prompted'); sessionStorage.clear(); }catch(e){}
+    }
     var KEY='__phl_boot_reload_at';
     var MAX_RELOADS_KEY='__phl_boot_reload_count';
     var now=Date.now();
