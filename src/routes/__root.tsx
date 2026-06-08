@@ -49,40 +49,98 @@ function isStaleChunkError(err: unknown): boolean {
 // Force a clean reload that bypasses the service worker and the browser
 // HTTP cache. Used by Try-again and by the auto-recovery for stale chunks
 // after a deploy.
-function hardReload() {
+//
+// Hardened: awaits SW unregistration + cache deletion BEFORE navigating, so
+// the next request can't be intercepted by the old worker or served from a
+// stale Cache Storage entry. Bounded wait so the button never hangs.
+async function clearClientCaches(): Promise<void> {
+  const tasks: Promise<unknown>[] = [];
+
+  // 1. Unregister every service worker controlling this origin.
   try {
     if (typeof navigator !== "undefined" && navigator.serviceWorker) {
-      navigator.serviceWorker.getRegistrations().then((regs) => {
-        regs.forEach((r) => r.unregister().catch(() => {}));
-      }).catch(() => {});
+      tasks.push(
+        navigator.serviceWorker
+          .getRegistrations()
+          .then((regs) =>
+            Promise.allSettled(regs.map((r) => r.unregister().catch(() => false))),
+          )
+          .catch(() => undefined),
+      );
     }
+  } catch { /* ignore */ }
+
+  // 2. Drop every Cache Storage bucket (Workbox precache, runtime, FCM, …).
+  //    Origin-scoped, so safe — we're already in a broken state.
+  try {
     if (typeof caches !== "undefined") {
-      caches.keys().then((keys) => {
-        keys.forEach((k) => caches.delete(k).catch(() => {}));
-      }).catch(() => {});
+      tasks.push(
+        caches
+          .keys()
+          .then((keys) =>
+            Promise.allSettled(keys.map((k) => caches.delete(k).catch(() => false))),
+          )
+          .catch(() => undefined),
+      );
     }
-  } catch { /* never block reload */ }
-  const url = new URL(window.location.href);
-  url.searchParams.set("_r", String(Date.now()));
-  window.location.replace(url.toString());
+  } catch { /* ignore */ }
+
+  await Promise.race([
+    Promise.allSettled(tasks),
+    new Promise((r) => setTimeout(r, 1500)),
+  ]);
+}
+
+const HARD_RELOAD_FLAG = "__phl_hard_reload_in_flight";
+
+async function hardReload(): Promise<void> {
+  // Re-entry guard so double-clicks don't queue multiple navigations while
+  // we're awaiting the cache clears.
+  try {
+    if (sessionStorage.getItem(HARD_RELOAD_FLAG) === "1") return;
+    sessionStorage.setItem(HARD_RELOAD_FLAG, "1");
+  } catch { /* ignore */ }
+
+  await clearClientCaches();
+
+  try {
+    const url = new URL(window.location.href);
+    // Strip any prior buster so the URL doesn't accumulate _r=… across loops.
+    url.searchParams.delete("_r");
+    url.searchParams.set("_r", String(Date.now()));
+    window.location.replace(url.toString());
+  } catch {
+    try { window.location.reload(); } catch { /* give up */ }
+  }
 }
 
 const AUTO_RELOAD_KEY = "__phl_route_err_reload_at";
+const AUTO_RELOAD_COUNT_KEY = "__phl_route_err_reload_count";
 const AUTO_RELOAD_COOLDOWN_MS = 30_000;
+const AUTO_RELOAD_MAX_ATTEMPTS = 2;
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
 
   // Auto-recover from stale-chunk errors (typically the first navigation
-  // in a tab that was open across a deploy). One hard reload per 30s.
+  // in a tab that was open across a deploy). At most AUTO_RELOAD_MAX_ATTEMPTS
+  // hard reloads within the cooldown window — if we still fail after that,
+  // stop looping and let the user act manually.
   if (typeof window !== "undefined" && isStaleChunkError(error)) {
     try {
+      const now = Date.now();
       const last = Number(sessionStorage.getItem(AUTO_RELOAD_KEY) ?? "0");
-      if (Date.now() - last > AUTO_RELOAD_COOLDOWN_MS) {
-        sessionStorage.setItem(AUTO_RELOAD_KEY, String(Date.now()));
+      const count =
+        now - last > AUTO_RELOAD_COOLDOWN_MS
+          ? 0
+          : Number(sessionStorage.getItem(AUTO_RELOAD_COUNT_KEY) ?? "0");
+
+      if (count < AUTO_RELOAD_MAX_ATTEMPTS) {
+        sessionStorage.setItem(AUTO_RELOAD_KEY, String(now));
+        sessionStorage.setItem(AUTO_RELOAD_COUNT_KEY, String(count + 1));
         // Defer to next tick so React can finish committing the error UI.
-        setTimeout(hardReload, 50);
+        setTimeout(() => { void hardReload(); }, 50);
       }
     } catch { /* ignore */ }
   }
@@ -99,11 +157,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
-              // Hard reload bypasses the service worker AND the HTTP cache,
-              // which is what users hit when chunks are stale after a deploy.
-              // Falls through to router.invalidate()+reset() only in dev.
+              // Manual Try again: always take the hard path in prod so the SW
+              // and HTTP cache are evicted. Reset auto-recovery counters so
+              // this click is treated as a fresh attempt, not a loop.
+              try {
+                sessionStorage.removeItem(AUTO_RELOAD_KEY);
+                sessionStorage.removeItem(AUTO_RELOAD_COUNT_KEY);
+                sessionStorage.removeItem(HARD_RELOAD_FLAG);
+              } catch { /* ignore */ }
               if (import.meta.env.PROD) {
-                hardReload();
+                void hardReload();
               } else {
                 router.invalidate();
                 reset();
