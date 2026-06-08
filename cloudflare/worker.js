@@ -122,10 +122,13 @@ function proxyToOrigin(request, origin) {
   const reqUrl = new URL(request.url);
   const target = new URL(reqUrl.pathname + reqUrl.search, origin);
   const headers = fwdHeaders(request);
-  // Ensure correct Host + forwarded IP for the origin.
-  headers.set("host", new URL(origin).host);
+  // Host-preserving pass-through: keep the original Host (phlabs.co.uk) so the
+  // origin renders apex URLs and does NOT 301 back to the canonical host.
+  // The TCP/SNI connection still goes to the origin URL via DNS.
+  headers.set("host", reqUrl.hostname);
   const cfIp = request.headers.get("cf-connecting-ip");
   if (cfIp) headers.set("x-forwarded-for", cfIp);
+  headers.set("x-forwarded-host", reqUrl.hostname);
   headers.set("x-forwarded-proto", "https");
   return fetch(target.toString(), {
     method: request.method,
