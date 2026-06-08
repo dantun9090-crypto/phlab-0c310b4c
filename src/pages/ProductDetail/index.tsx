@@ -567,7 +567,7 @@ export default function ProductDetail() {
         '@type': 'Offer',
         url: productUrl,
         priceCurrency: 'GBP',
-        price: price.toFixed(2),
+        price: (Number.isFinite(price) && price >= 0 ? price : 0).toFixed(2),
         priceValidUntil: `${new Date().getFullYear() + 1}-12-31`,
         itemCondition: 'https://schema.org/NewCondition',
         availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
