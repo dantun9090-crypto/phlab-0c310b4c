@@ -131,6 +131,7 @@ export default function CheckoutPage() {
   const [paymentOptions, setPaymentOptions] = useState<CheckoutPaymentOptions | null>(null);
   const [, setSummaryExpanded] = useState(false);
   const stepRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const successRef = useRef<HTMLElement | null>(null);
 
   // Banner state: set when the cart we loaded was in the legacy shape and
   // had to be rewritten (or when the server reports stale/missing products).
@@ -261,6 +262,17 @@ export default function CheckoutPage() {
     }, 400);
     return () => clearTimeout(handle);
   }, [cart]);
+
+  useEffect(() => {
+    if (!orderPlaced) return;
+
+    requestAnimationFrame(() => {
+      successRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    });
+  }, [orderPlaced]);
 
   // Load cart from localStorage. Runs `migrateStoredCart` first so legacy
   // carts (concatenated `<productId>-<variantId>` ids) are rewritten in
