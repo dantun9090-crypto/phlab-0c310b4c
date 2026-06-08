@@ -27,8 +27,19 @@ export const Route = createFileRoute("/")({
       { name: "twitter:url", content: HOME_URL },
       { name: "twitter:image", content: HOME_OG_IMAGE },
     ],
-    links: [{ rel: "canonical", href: HOME_URL }],
-  }),
+    links: [
+      { rel: "canonical", href: HOME_URL },
+      // Warm DNS + TLS to the Firebase Storage + Firestore origins that the
+      // Home page hits within the first ~200ms (banner image, products list).
+      // preconnect saves ~100–300ms on first paint vs cold DNS+TLS.
+      { rel: "preconnect", href: "https://firestore.googleapis.com", crossOrigin: "" },
+      { rel: "preconnect", href: "https://firebasestorage.googleapis.com", crossOrigin: "" },
+      { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
+      // Preload the OG image at high priority — it doubles as the share card
+      // and the social-preview placeholder, and is the largest static asset
+      // on the home route until the Firestore banner resolves.
+      { rel: "preload", as: "image", href: HOME_OG_IMAGE, fetchpriority: "high" } as any,
+    ],
   component: LegacyMount,
 });
 
