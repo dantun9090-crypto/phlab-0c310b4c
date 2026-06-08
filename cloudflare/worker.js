@@ -295,6 +295,7 @@ export default {
         return await serveStaleOrError(request);
       }
 
+      h.set("x-phl-via", `normal;bot=${isBot ? 1 : 0};tok=${token ? 1 : 0};ua=${ua.slice(0, 40)}`);
       return applySecurityHeaders(new Response(res.body, { status: res.status, statusText: res.statusText, headers: h }));
     } catch (_) {
       return await serveStaleOrError(request);
