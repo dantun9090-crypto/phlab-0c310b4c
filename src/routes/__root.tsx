@@ -10,6 +10,7 @@ import {
 
 import appCss from "../styles.css?url";
 import "@/lib/chunk-reload";
+import "@/lib/sw-register";
 
 function NotFoundComponent() {
   return (
