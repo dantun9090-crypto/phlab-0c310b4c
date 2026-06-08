@@ -38,7 +38,7 @@ export const Route = createFileRoute("/")({
       // Preload the OG image at high priority — it doubles as the share card
       // and the social-preview placeholder, and is the largest static asset
       // on the home route until the Firestore banner resolves.
-      { rel: "preload", as: "image", href: HOME_OG_IMAGE, fetchpriority: "high" } as any,
+      { rel: "preload", as: "image", href: HOME_OG_IMAGE, fetchPriority: "high" } as any,
     ],
   }),
   component: LegacyMount,
