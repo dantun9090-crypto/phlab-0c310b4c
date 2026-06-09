@@ -282,19 +282,6 @@ export default {
     if (isBot && isGet && !isStatic && token && !isLoop && !PRERENDER_RENDERER_RX.test(ua)) {
       let preStatus = "skipped";
       let preErr = "";
-      const publicUrl = normalizePublicUrl(url);
-      const cacheKey = new Request(publicUrl, { method: "GET", headers: { accept: "text/html" } });
-      try {
-        const cached = await caches.default.match(cacheKey);
-        if (cached) {
-          const h = new Headers(cached.headers);
-          h.set("x-prerendered", "true");
-          h.set("x-prerender-cache", "HIT");
-          h.set("x-phl-via", "prerender-cache");
-          h.delete("x-robots-tag");
-          return applySecurityHeaders(new Response(cached.body, { status: cached.status, statusText: cached.statusText, headers: h }), url);
-        }
-      } catch (_) {}
       try {
         const pre = await fetchPrerender(request, token);
         preStatus = pre ? String(pre.status) : "null";
@@ -307,7 +294,6 @@ export default {
           h.set("cache-control", `public, max-age=${PRERENDER_CACHE_TTL}, s-maxage=${PRERENDER_CACHE_TTL}, stale-while-revalidate=${PRERENDER_SWR_TTL}`);
           h.delete("set-cookie");
           const out = applySecurityHeaders(new Response(pre.body, { status: pre.status, statusText: pre.statusText, headers: h }), url);
-          if (pre.status < 400) ctx?.waitUntil?.(caches.default.put(cacheKey, out.clone()));
           return out;
         }
       } catch (e) {
