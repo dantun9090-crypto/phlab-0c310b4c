@@ -95,24 +95,33 @@ async function purgeCloudflare(urls: string[]): Promise<{ ok: boolean; status: n
   }
 }
 
-async function recachePrerender(urls: string[]): Promise<{ ok: boolean; status: number; error?: string }> {
+async function recachePrerender(urls: string[]): Promise<{ ok: boolean; desktop: { ok: boolean; status: number; error?: string }; mobile: { ok: boolean; status: number; error?: string } }> {
   const token = process.env.PRERENDER_TOKEN;
-  if (!token) return { ok: false, status: 0, error: 'PRERENDER_TOKEN missing' };
+  if (!token) {
+    const missing = { ok: false, status: 0, error: 'PRERENDER_TOKEN missing' };
+    return { ok: false, desktop: missing, mobile: missing };
+  }
 
   // Prerender.io /recache accepts up to 1000 URLs; split if needed (we have ~20).
-  try {
+  const post = async (adaptiveType: 'desktop' | 'mobile') => {
     const res = await fetch('https://api.prerender.io/recache', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Prerender-Token': token,
       },
-      body: JSON.stringify({ prerenderToken: token, urls }),
+      body: JSON.stringify({ prerenderToken: token, urls, adaptiveType }),
       signal: AbortSignal.timeout(10_000),
     });
     return { ok: res.ok, status: res.status };
+  };
+
+  try {
+    const [desktop, mobile] = await Promise.all([post('desktop'), post('mobile')]);
+    return { ok: desktop.ok && mobile.ok, desktop, mobile };
   } catch (e) {
-    return { ok: false, status: 0, error: e instanceof Error ? e.message : String(e) };
+    const failed = { ok: false, status: 0, error: e instanceof Error ? e.message : String(e) };
+    return { ok: false, desktop: failed, mobile: failed };
   }
 }
 
@@ -137,7 +146,7 @@ export const invalidateProductCache = createServerFn({ method: 'POST' })
       recachePrerender(urls),
     ]);
     return {
-      ok: true,
+      ok: cf.ok && pr.ok,
       urls: urls.length,
       cloudflare: cf,
       prerender: pr,
