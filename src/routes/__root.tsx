@@ -17,7 +17,6 @@ import {
   HARD_RELOAD_FLAG,
   hardReload,
   isOnline,
-  isStaleChunkError,
 } from "@/lib/recovery";
 import { schedulePrecacheCurrentPage } from "@/lib/lkg-cache";
 void _clearClientCaches;
@@ -143,10 +142,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          Refreshing latest store
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          We detected an old browser copy and are clearing it automatically.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -169,7 +168,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Try again
+            Reload store
           </button>
           <a
             href="/"
