@@ -68,7 +68,6 @@ body {
                'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 
                'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Switch to custom font when loaded */
@@ -237,13 +236,9 @@ body.modal-open {
 
   html {
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    font-display: swap; /* Critical for LCP */
     text-rendering: optimizeLegibility;
     font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
     scroll-behavior: smooth;
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
     box-sizing: border-box;
   }
 
@@ -421,7 +416,8 @@ body.modal-open {
   /* Animated top border shimmer for heroes */
   .hero-top-shimmer {
     position: absolute;
-    inset-x: 0;
+    left: 0;
+    right: 0;
     top: 0;
     height: 1.5px;
     background: linear-gradient(90deg,
@@ -1403,5 +1399,5 @@ html[data-theme]:not([data-theme="navy-professional"]) .border-blue-500\/30 {
 @font-face {
   font-family: 'Inter';
   src: local('Inter');
-  font-display: swap !important;
+  font-display: swap;
 }
