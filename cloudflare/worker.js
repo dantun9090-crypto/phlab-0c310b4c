@@ -134,7 +134,8 @@ function fwdHeaders(req) {
 // search/vip-store/webhook) so we never cache personalised pages.
 const HTML_CACHE_EXCLUDE_PREFIXES = [
   "/admin", "/account", "/cart", "/checkout", "/payment", "/login",
-  "/register", "/api", "/search", "/vip-store", "/webhook",
+  "/register", "/api", "/search", "/vip-store", "/webhook", "/__/auth",
+  "/__/firebase",
 ];
 function isHtmlCacheable(url) {
   if (url.pathname === "/sw.js" || url.pathname === "/service-worker.js") return false;
@@ -287,6 +288,9 @@ export default {
       const h = new Headers(res.headers);
       if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/webhook/")) {
         noCache(h);
+      } else if (isFirebaseAuthHelperPath(url)) {
+        noCache(h);
+        h.delete("x-frame-options");
       } else if (isStatic) {
         if (!h.has("cache-control")) h.set("cache-control", "public, max-age=31536000, immutable");
       } else if (isXmlFeed) {
