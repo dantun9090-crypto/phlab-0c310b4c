@@ -242,7 +242,7 @@ export default function Register() {
                   <div className="relative">
                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a5a82] pointer-events-none z-10" />
                     <input
-                      id="reg-email"
+                      id="reg-email" name="email"
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -260,7 +260,7 @@ export default function Register() {
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a5a82] pointer-events-none z-10" />
                     <input
-                      id="reg-password"
+                      id="reg-password" name="new-password"
                       type={showPassword ? 'text' : 'password'}
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -302,7 +302,7 @@ export default function Register() {
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a5a82] pointer-events-none z-10" />
                     <input
-                      id="reg-confirmPassword"
+                      id="reg-confirmPassword" name="confirm-password"
                       type={showConfirmPassword ? 'text' : 'password'}
                       value={formData.confirmPassword}
                       onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
@@ -328,7 +328,7 @@ export default function Register() {
                   <div className="relative">
                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3a5a82] pointer-events-none z-10" />
                     <input
-                      id="reg-phone"
+                      id="reg-phone" name="tel"
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
