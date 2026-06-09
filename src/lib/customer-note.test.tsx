@@ -129,10 +129,10 @@ describe("Admin Orders – customer note display", () => {
   });
 
   it("the OrdersTab source still contains the customerNote panel", async () => {
-    // Source-level guard: catches accidental deletion of the rendering block.
     const fs = await import("node:fs/promises");
+    const path = await import("node:path");
     const src = await fs.readFile(
-      new URL("../pages/Admin/tabs/OrdersTab.tsx", import.meta.url),
+      path.resolve(process.cwd(), "src/pages/Admin/tabs/OrdersTab.tsx"),
       "utf8",
     );
     expect(src).toMatch(/customerNote/);
