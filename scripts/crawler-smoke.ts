@@ -4,7 +4,7 @@
  *
  * Verifies, against the live production origin:
  *   1. www → apex 301/308 redirect (path preserved)
- *   2. prohealthpeptides.co.uk → apex 301/308 redirect
+ *   2. legacy domain → apex 301/308 redirect (check-domains-allow-line)
  *   3. /robots.txt: 200, lists Sitemap, allows /, disallows /admin /checkout
  *      /payment /account /api, blocks AdsBot-Google
  *   4. /sitemap.xml: 200, valid XML, contains apex URLs and at least one
