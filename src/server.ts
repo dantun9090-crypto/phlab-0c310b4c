@@ -476,6 +476,16 @@ export default {
         return Response.redirect(dest.toString(), 301);
       }
 
+      // 1a. Sandbox/mobile recovery: /index is not a real PH Labs route.
+      // Redirect it to the home page before the SPA/catch-all can render a
+      // blank/blocked preview shell.
+      if (url.pathname === "/index") {
+        const dest = new URL(url.toString());
+        dest.pathname = "/";
+        log.info({ event: "worker.redirect", status: 301, reason: "index-alias", to: dest.pathname, ...baseFields });
+        return Response.redirect(dest.toString(), 301);
+      }
+
       // 1b. Trailing-slash normalization → 301 to non-trailing-slash form.
       // Keep "/" itself; skip API/asset paths and anything with a file extension.
       if (
