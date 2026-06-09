@@ -1018,8 +1018,10 @@ export const updateProduct = async (id: string, updates: Partial<Product>) => {
   invalidateProductsCache();
   const nextSlug = (updates as any).slug || existing?.slug || (updates.name ? productNameToSlug(updates.name) : undefined);
   const nextCategory = (updates as any).category || existing?.category;
+  const slugs = Array.from(new Set([existing?.slug, nextSlug].filter((slug): slug is string => typeof slug === 'string' && slug.length > 0)));
   triggerCdnInvalidation({
     slug: nextSlug,
+    slugs,
     category: nextCategory,
   });
 };
