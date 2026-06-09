@@ -1005,6 +1005,7 @@ export default function HomePage() {
                         id="protocol-library-email"
                         name="email"
                         type="email"
+                        autoComplete="email"
                         value={emailInput}
                         onChange={e => setEmailInput(e.target.value)}
                         placeholder="your@email.com"
