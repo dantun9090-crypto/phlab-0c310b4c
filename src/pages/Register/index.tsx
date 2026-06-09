@@ -211,7 +211,7 @@ export default function Register() {
                   <div>
                     <label htmlFor="reg-firstName" className="block text-sm font-medium text-[#9cb8d9] mb-2">First Name</label>
                     <input
-                      id="reg-firstName"
+                      id="reg-firstName" name="given-name"
                       type="text"
                       value={formData.firstName}
                       onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
@@ -224,7 +224,7 @@ export default function Register() {
                   <div>
                     <label htmlFor="reg-lastName" className="block text-sm font-medium text-[#9cb8d9] mb-2">Last Name</label>
                     <input
-                      id="reg-lastName"
+                      id="reg-lastName" name="family-name"
                       type="text"
                       value={formData.lastName}
                       onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
