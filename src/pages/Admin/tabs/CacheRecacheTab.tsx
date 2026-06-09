@@ -125,6 +125,7 @@ export default function CacheRecacheTab() {
           <code className="text-emerald-400">/sitemap.xml</code>. Every Lovable Publish auto-fires
           a full Cloudflare purge + Prerender desktop/mobile recache on first visitor request
           (build-id compared server-side via <code className="text-emerald-400">/api/public/post-publish-check</code>).
+          The live Cloudflare Worker sends bots directly through Prerender.io and lets Cloudflare purge/recache control freshness.
           Use the buttons below for ad-hoc purges or to re-trigger manually.
         </p>
       </div>
