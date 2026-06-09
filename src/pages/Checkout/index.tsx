@@ -1424,6 +1424,23 @@ export default function CheckoutPage() {
                       </button>
                     </div>
 
+                    {/* Optional order notes / special instructions */}
+                    <div>
+                      <label htmlFor="customerNote" className="block text-xs font-semibold text-white mb-1.5">
+                        Order notes <span className="text-[#9cb8d9] font-normal">(optional)</span>
+                      </label>
+                      <textarea
+                        id="customerNote"
+                        value={form.customerNote}
+                        onChange={e => setField('customerNote', e.target.value.slice(0, 500))}
+                        maxLength={500}
+                        rows={3}
+                        placeholder="Special delivery instructions, PO number, or any requirements for our team."
+                        style={{ ...inputStyle(false), resize: 'vertical', minHeight: '76px', fontFamily: 'inherit' }}
+                      />
+                      <p className="text-[10px] text-[#7a96bf] mt-1 text-right">{form.customerNote.length}/500</p>
+                    </div>
+
                     {/* Age verification 18+ — UK compliance */}
                     <label className="flex items-start gap-3 cursor-pointer group">
                       <div className="relative flex items-center justify-center w-6 h-6 mt-0.5 shrink-0">
