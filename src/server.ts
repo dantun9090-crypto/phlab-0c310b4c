@@ -337,7 +337,7 @@ function applySecurityHeaders(response: Response, nonce: string): Response {
           el.setAttribute("nonce", nonce);
         },
       })
-      .transform(stripped);
+      .transform(htmlResponse);
   }
 
 
