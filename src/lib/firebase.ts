@@ -980,6 +980,12 @@ function triggerCdnInvalidation(opts: { slug?: string; category?: string } = {})
 
 
 export const updateProduct = async (id: string, updates: Partial<Product>) => {
+  let existing: Product | null = null;
+  try {
+    const snap = await getDoc(doc(db, PRODUCTS_COL, id));
+    if (snap.exists()) existing = normaliseProduct(id, snap.data());
+  } catch { /* best-effort cache targeting */ }
+
   // Ensure images array is preserved and properly formatted
   const data: any = { ...updates, updatedAt: Timestamp.now() };
 
@@ -1010,9 +1016,11 @@ export const updateProduct = async (id: string, updates: Partial<Product>) => {
 
   await updateDoc(doc(db, PRODUCTS_COL, id), data);
   invalidateProductsCache();
+  const nextSlug = (updates as any).slug || existing?.slug || (updates.name ? productNameToSlug(updates.name) : undefined);
+  const nextCategory = (updates as any).category || existing?.category;
   triggerCdnInvalidation({
-    slug: (updates as any).slug,
-    category: (updates as any).category,
+    slug: nextSlug,
+    category: nextCategory,
   });
 };
 
