@@ -127,6 +127,11 @@ export async function clearClientCaches(timeoutMs = 1500): Promise<void> {
 
 export const HARD_RELOAD_FLAG = "__phl_hard_reload_in_flight";
 
+type HardReloadOptions = {
+  clean?: boolean;
+  home?: boolean;
+};
+
 export function isOnline(): boolean {
   try {
     return typeof navigator === "undefined" ? true : navigator.onLine !== false;
@@ -140,17 +145,22 @@ export function isOnline(): boolean {
  * `_r` cache-buster. Re-entrant: a second concurrent call is a no-op so
  * double-clicks can't queue multiple navigations.
  */
-export async function hardReload(): Promise<void> {
+export async function hardReload(options: HardReloadOptions = {}): Promise<void> {
   try {
     if (sessionStorage.getItem(HARD_RELOAD_FLAG) === "1") return;
     sessionStorage.setItem(HARD_RELOAD_FLAG, "1");
   } catch { /* ignore */ }
 
-  await clearClientCaches();
+  await clearClientCaches(options.clean ? 4000 : 1500);
 
   try {
     const url = new URL(window.location.href);
+    if (options.home) {
+      url.pathname = "/";
+      url.hash = "";
+    }
     url.searchParams.delete("_r");
+    if (options.clean) url.searchParams.set("sw", "off");
     url.searchParams.set("_r", String(Date.now()));
     window.location.replace(url.toString());
   } catch {
