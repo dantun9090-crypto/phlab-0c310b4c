@@ -69,7 +69,8 @@ const STRIP_RESPONSE_HEADERS = ["x-powered-by", "server", "x-deployment-id", "x-
 const SECURITY_HEADERS = {
   "strict-transport-security": "max-age=63072000; includeSubDomains; preload",
   "x-content-type-options": "nosniff",
-  "x-frame-options": "DENY",
+  // X-Frame-Options + X-XSS-Protection removed (deprecated). Framing is
+  // controlled by CSP `frame-ancestors 'none'` set by the origin (src/server.ts).
   "referrer-policy": "strict-origin-when-cross-origin",
   "permissions-policy": "geolocation=(), microphone=(), camera=()",
 };
