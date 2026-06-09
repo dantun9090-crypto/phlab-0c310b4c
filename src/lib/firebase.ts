@@ -643,19 +643,18 @@ export const onAuthChange = (callback: (user: FirebaseUser | null) => void) =>
 const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-export const signInWithGoogle = async () => {
-  let result;
-  try {
-    result = await signInWithPopup(auth, googleProvider);
-  } catch (err) {
-    
-    logAuthFailure('google_failure', err);
-    throw err;
-  }
+// Mobile / in-app browsers handle popups badly — use redirect instead.
+const shouldUseRedirect = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const ua = navigator.userAgent || '';
+  const isMobile = /Android|iPhone|iPad|iPod|Mobile|Opera Mini|IEMobile/i.test(ua);
+  const isInApp = /FBAN|FBAV|Instagram|Line|WeChat|MicroMessenger|TikTok|Snapchat/i.test(ua);
+  const isSmall = window.innerWidth < 768;
+  return isMobile || isInApp || isSmall;
+};
 
-  const user = result.user;
-
-  // Upsert customer profile — create if first time, update lastLoginAt if returning
+// Upsert customer profile after Google sign-in (used by popup + redirect flow).
+const upsertGoogleCustomer = async (user: FirebaseUser) => {
   const customerRef = doc(db, 'customers', user.uid);
   const snap = await getDoc(customerRef);
   if (!snap.exists()) {
@@ -684,16 +683,59 @@ export const signInWithGoogle = async () => {
       ...(storedRef ? { referredBy: storedRef } : {}),
     });
     if (storedRef) clearStoredReferralCode();
-    // Send welcome email for new Google users
     await sendWelcomeEmail(user.email || '', firstName).catch(console.error);
     await logActivity({ type: 'signup', message: `New Google user: ${user.email}`, userId: user.uid });
   } else {
     await updateDoc(customerRef, { lastLoginAt: Timestamp.now() });
   }
-  
   logAuthEvent({ type: 'google_success', email: user.email ?? null, uid: user.uid });
+};
+
+export const signInWithGoogle = async () => {
+  // Mobile → redirect flow (popups are unreliable / blocked on mobile browsers).
+  if (shouldUseRedirect()) {
+    try {
+      sessionStorage.setItem('phlabs_google_redirect_pending', '1');
+    } catch {}
+    await signInWithRedirect(auth, googleProvider);
+    // Page will navigate away; nothing more to do.
+    return null as any;
+  }
+
+  let result;
+  try {
+    result = await signInWithPopup(auth, googleProvider);
+  } catch (err) {
+    logAuthFailure('google_failure', err);
+    throw err;
+  }
+  await upsertGoogleCustomer(result.user);
   return result;
 };
+
+// Handle the redirect result on app load. Call once from app bootstrap.
+export const completeGoogleRedirect = async (): Promise<FirebaseUser | null> => {
+  try {
+    const pending = typeof sessionStorage !== 'undefined'
+      ? sessionStorage.getItem('phlabs_google_redirect_pending')
+      : null;
+    const result = await getRedirectResult(auth);
+    if (result?.user) {
+      try { sessionStorage.removeItem('phlabs_google_redirect_pending'); } catch {}
+      await upsertGoogleCustomer(result.user);
+      return result.user;
+    }
+    if (pending) {
+      try { sessionStorage.removeItem('phlabs_google_redirect_pending'); } catch {}
+    }
+    return null;
+  } catch (err) {
+    try { sessionStorage.removeItem('phlabs_google_redirect_pending'); } catch {}
+    logAuthFailure('google_failure', err);
+    return null;
+  }
+};
+
 
 
 export const getUserProfile = async (uid: string): Promise<User | null> => {
