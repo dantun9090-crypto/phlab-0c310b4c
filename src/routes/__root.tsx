@@ -52,8 +52,7 @@ function NotFoundComponent() {
 
 const AUTO_RELOAD_KEY = "__phl_route_err_reload_at";
 const AUTO_RELOAD_COUNT_KEY = "__phl_route_err_reload_count";
-const AUTO_RELOAD_COOLDOWN_MS = 30_000;
-const AUTO_RELOAD_MAX_ATTEMPTS = 2;
+const AUTO_RECOVERY_DONE_KEY = "__phl_route_auto_recovery_done";
 
 function OfflineScreen() {
   const [cachedUrl, setCachedUrl] = useState<string | null>(null);
@@ -114,6 +113,17 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   const [offline, setOffline] = useState<boolean>(() => !isOnline());
 
+  useEffect(() => {
+    if (!isOnline()) return;
+    try {
+      if (sessionStorage.getItem(AUTO_RECOVERY_DONE_KEY) === "1") return;
+      sessionStorage.setItem(AUTO_RECOVERY_DONE_KEY, "1");
+      sessionStorage.removeItem(HARD_RELOAD_FLAG);
+    } catch { /* ignore */ }
+    const t = setTimeout(() => { void hardReload({ clean: true, home: true }); }, 250);
+    return () => clearTimeout(t);
+  }, []);
+
   // Track connectivity in real time so the screen can flip without a reload
   // (e.g. user toggles wifi while staring at the error).
   useEffect(() => {
@@ -125,29 +135,6 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
       window.removeEventListener("offline", sync);
     };
   }, []);
-
-  // Auto-recover from stale-chunk errors after a deploy. Skip when offline
-  // (a hard reload would just fail again and waste an attempt).
-  if (
-    typeof window !== "undefined" &&
-    isStaleChunkError(error) &&
-    isOnline()
-  ) {
-    try {
-      const now = Date.now();
-      const last = Number(sessionStorage.getItem(AUTO_RELOAD_KEY) ?? "0");
-      const count =
-        now - last > AUTO_RELOAD_COOLDOWN_MS
-          ? 0
-          : Number(sessionStorage.getItem(AUTO_RELOAD_COUNT_KEY) ?? "0");
-
-      if (count < AUTO_RELOAD_MAX_ATTEMPTS) {
-        sessionStorage.setItem(AUTO_RELOAD_KEY, String(now));
-        sessionStorage.setItem(AUTO_RELOAD_COUNT_KEY, String(count + 1));
-        setTimeout(() => { void hardReload(); }, 50);
-      }
-    } catch { /* ignore */ }
-  }
 
   // Offline path: don't show the generic "didn't load" copy; we know why.
   if (offline) return <OfflineScreen />;
