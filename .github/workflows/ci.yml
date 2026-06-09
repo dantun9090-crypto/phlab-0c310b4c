@@ -83,6 +83,17 @@ jobs:
       - name: WWW -> apex redirect check
         run: bun run check:www-redirect
 
+      # Live crawler / SEO smoke against phlabs.co.uk:
+      #   - www + legacy domain → apex 301 (path preserved)
+      #   - /robots.txt: 200, Sitemap directive, disallow admin/checkout/etc.
+      #   - /sitemap.xml: 200, valid XML, apex URLs, product entries
+      #   - Prerender output for /, /products, /products/bpc-157, /about,
+      #     /contact against Googlebot, Bingbot, Facebook, Twitter, LinkedIn
+      # Self-skips with SKIP_CRAWLER_SMOKE=1.
+      - name: Crawler / SEO smoke (redirects + robots + sitemap + prerender)
+        run: bun run smoke:crawler
+        continue-on-error: true
+
       # Live Fena API contract tests — only run when the workflow has the
       # FENA_TERMINAL_ID / FENA_TERMINAL_SECRET secrets injected. Tests
       # self-skip otherwise (FENA_INTEGRATION must equal "1").

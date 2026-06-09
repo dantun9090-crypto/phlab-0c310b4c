@@ -19,6 +19,7 @@
     "check:domains": "bun scripts/check-domains.ts",
     "check:url-consistency": "bun scripts/check-url-consistency.ts",
     "check:www-redirect": "bun scripts/check-www-redirect.ts",
+    "smoke:crawler": "bun scripts/crawler-smoke.ts",
     "test:jsonld": "vitest run tests/jsonld-validation.test.ts tests/jsonld-snapshots.test.ts tests/jsonld-edge-cases.test.ts",
     "test:sitemap": "vitest run tests/sitemap-validation.test.ts tests/sitemap-policy-consistency.test.ts tests/sitemap-ci-consistency.test.ts",
     "typecheck": "tsc --noEmit",
