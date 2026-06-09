@@ -162,6 +162,7 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   const orderData = {
     orderId,
     customer: input.customer,
+    customerNote: (input.customerNote ?? '').trim() || null,
     items: orderItems,
     subtotal: validation.subtotal,
     discount: validation.discount,
