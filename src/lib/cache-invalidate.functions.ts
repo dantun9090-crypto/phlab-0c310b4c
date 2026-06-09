@@ -35,6 +35,10 @@ const InputSchema = z.object({
     .max(120)
     .regex(/^[a-z0-9][a-z0-9-]*$/i, 'invalid slug')
     .optional(),
+  slugs: z
+    .array(z.string().min(1).max(120).regex(/^[a-z0-9][a-z0-9-]*$/i, 'invalid slug'))
+    .max(10)
+    .optional(),
   // Category slug to scope the purge to.
   category: z
     .string()
@@ -49,7 +53,7 @@ const InputSchema = z.object({
 });
 
 
-function productUrls(slug?: string, category?: string): string[] {
+function productUrls(slugs?: string[], category?: string): string[] {
   const urls = new Set<string>([
     `${ORIGIN}/products`,
     `${ORIGIN}/`,
@@ -65,8 +69,8 @@ function productUrls(slug?: string, category?: string): string[] {
     urls.add(`${ORIGIN}/products?category=${category}`);
   }
 
-  if (slug) {
-    urls.add(`${ORIGIN}/products/${slug}`);
+  for (const slug of slugs ?? []) {
+    if (slug) urls.add(`${ORIGIN}/products/${slug}`);
   }
 
   return [...urls];
@@ -140,7 +144,8 @@ export const invalidateProductCache = createServerFn({ method: 'POST' })
       } as const;
     }
 
-    const urls = productUrls(data.slug, data.category);
+    const slugs = Array.from(new Set([data.slug, ...(data.slugs ?? [])].filter(Boolean)));
+    const urls = productUrls(slugs, data.category);
     const [cf, pr] = await Promise.all([
       purgeCloudflare(urls),
       recachePrerender(urls),
