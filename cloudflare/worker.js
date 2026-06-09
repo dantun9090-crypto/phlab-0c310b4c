@@ -311,7 +311,7 @@ export default {
         return await serveStaleOrError(request);
       }
 
-      return applySecurityHeaders(new Response(res.body, { status: res.status, statusText: res.statusText, headers: h }));
+      return applySecurityHeaders(new Response(res.body, { status: res.status, statusText: res.statusText, headers: h }), url);
     } catch (_) {
       return await serveStaleOrError(request);
     }
