@@ -166,12 +166,15 @@ export function CookieConsent() {
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[#f0f6ff] text-xs font-semibold">Marketing Cookies</p>
                   <button
+                    type="button"
                     role="switch"
                     aria-checked={marketing}
+                    aria-label="Toggle marketing cookies"
                     onClick={() => setMarketing(v => !v)}
                     className={"relative w-10 h-6 rounded-full transition-colors shrink-0 " + (marketing ? "bg-blue-600" : "bg-white/10")}
                   >
-                    <span className={"absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform " + (marketing ? "translate-x-4" : "translate-x-0")} />
+                    <span className="sr-only">Toggle marketing cookies</span>
+                    <span aria-hidden="true" className={"absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow transition-transform " + (marketing ? "translate-x-4" : "translate-x-0")} />
                   </button>
                 </div>
                 <p className="text-[#9cb8d9] text-[11px] mt-1 leading-relaxed">
