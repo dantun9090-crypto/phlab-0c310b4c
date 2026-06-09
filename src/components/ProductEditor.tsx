@@ -24,42 +24,14 @@ const generateSlug = (name: string) =>
 
 const validateSlug = (slug: string) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
 
-// ── Image compression — skip if already small enough ─────────────────────────
-async function compressImage(file: File, maxPx = 1200, quality = 0.82): Promise<File> {
-  // Skip compression entirely for tiny files (< 150 KB) — no visible gain
-  if (file.size < 150_000) return file;
-  return new Promise((resolve) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      // Skip canvas resize if image is already within bounds
-      if (img.width <= maxPx && img.height <= maxPx && file.size < 400_000) {
-        resolve(file);
-        return;
-      }
-      let { width, height } = img;
-      if (width > maxPx || height > maxPx) {
-        if (width > height) { height = Math.round((height / width) * maxPx); width = maxPx; }
-        else { width = Math.round((width / height) * maxPx); height = maxPx; }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = width; canvas.height = height;
-      const ctx = canvas.getContext('2d')!;
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, 0, 0, width, height);
-      canvas.toBlob(
-        (blob) => {
-          if (!blob || blob.size >= file.size) { resolve(file); return; } // never make it bigger
-          resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }));
-        },
-        'image/jpeg', quality
-      );
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
-    img.src = url;
-  });
+// ── Image compression — re-encode every upload to WebP ≤ 200 KB ──────────────
+// Shared helper so Banner + Inventory uploads behave identically. Hard ceiling
+// keeps Lighthouse mobile page weight under control (the 15 MB blow-up was
+// uncompressed PNGs sitting in Firebase Storage).
+import { compressToWebp } from '@/lib/imageCompress';
+
+async function compressImage(file: File, maxPx = 1600, quality = 0.82): Promise<File> {
+  return compressToWebp(file, { maxPx, quality, targetBytes: 200_000 });
 }
 
 // ── Upload helper ─────────────────────────────────────────────────────────────
