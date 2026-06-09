@@ -942,6 +942,12 @@ export default function OrdersTab() {
                         }
                         return null;
                       })()}
+                      {(selected as any).customerNote && (
+                        <div className="mt-3 pt-3 border-t border-white/10">
+                          <p className="text-amber-300 text-xs font-semibold uppercase tracking-wide mb-1">Customer note</p>
+                          <p className="text-white text-sm whitespace-pre-wrap break-words">{(selected as any).customerNote}</p>
+                        </div>
+                      )}
                     </div>
                   );
                 })()}
