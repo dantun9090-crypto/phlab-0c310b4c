@@ -358,9 +358,10 @@ const BOOT_WATCHDOG = `
     if(qs.get('sw')==='off'){
       var DONE='__phl_sw_off_done';
       if(sessionStorage.getItem(DONE)==='1'){
-        // Already cleaned this session — strip ?sw=off so the URL is clean.
+        // Already cleaned this session — strip ?sw=off but keep _r so the
+        // browser must fetch fresh HTML instead of reusing an old error shell.
         try{
-          qs.delete('sw'); qs.delete('_r');
+          qs.delete('sw');
           var clean=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
           history.replaceState(null,'',clean);
         }catch(e){}
@@ -390,7 +391,7 @@ const BOOT_WATCHDOG = `
           clearTimeout(FALLBACK);
           try{ sessionStorage.setItem(DONE,'1'); }catch(e){}
           try{
-            qs.delete('sw'); qs.delete('_r');
+            qs.delete('sw');
             var url=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
             location.replace(url);
           }catch(e){ location.reload(); }
