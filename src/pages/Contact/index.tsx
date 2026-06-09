@@ -462,7 +462,9 @@ export default function Contact() {
                           </label>
                           <input
                             id="contact-email"
+                            name="email"
                             type="email"
+                            autoComplete="email"
                             value={form.email}
                             onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
                             placeholder="your@email.com"
