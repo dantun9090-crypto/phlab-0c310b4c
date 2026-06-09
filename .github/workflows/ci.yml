@@ -50,6 +50,14 @@ jobs:
       - name: JSON-LD schema tests
         run: bun run test:jsonld
 
+      # Checkout + Admin Orders regression suite:
+      #   - createOrder server schema (customerNote optional/trim/500-char cap)
+      #   - Admin → Orders "Customer note" panel render contract
+      #   - Checkout source wiring (textarea + forward to createOrder)
+      #   - Cart price validation, order tracking, payment retry, recovery
+      - name: Checkout + Admin Orders regression
+        run: bun run test:checkout
+
       # Sitemap CI guardrail:
       #   - sitemap policy ↔ route-tree consistency
       #   - sitemap BASE_URL ↔ seo-meta SITE_URL
