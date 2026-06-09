@@ -625,7 +625,7 @@ export default {
           if (env.PRERENDER_LOG === "1") log.info({ event: "worker.prerender.hit", ...baseFields });
           const ms = Date.now() - start;
           log.info({ event: "worker.request", status: cached.status, ms, prerender: "HIT", ...baseFields });
-          return decoratePrerender(cached, true, method, nonce);
+          return decoratePrerender(cached, true, method, nonce, url.hostname);
         }
 
         try {
