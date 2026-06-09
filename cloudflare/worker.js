@@ -269,28 +269,45 @@ export default {
     const isGet = request.method === "GET";
     const isStatic = STATIC_EXT_RX.test(url.pathname);
     const token = env && env.PRERENDER_TOKEN;
-    const isLoop = request.headers.has("x-prerender-loop");
+    const isLoop = request.headers.has(LOOP_HEADER);
 
-    if (isBot && isGet && !isStatic && token && !isLoop) {
+    if (isBot && isGet && !isStatic && token && !isLoop && !PRERENDER_RENDERER_RX.test(ua)) {
       let preStatus = "skipped";
       let preErr = "";
+      const publicUrl = normalizePublicUrl(url);
+      const cacheKey = new Request(publicUrl, { method: "GET", headers: { accept: "text/html" } });
+      try {
+        const cached = await caches.default.match(cacheKey);
+        if (cached) {
+          const h = new Headers(cached.headers);
+          h.set("x-prerendered", "true");
+          h.set("x-prerender-cache", "HIT");
+          h.set("x-phl-via", "prerender-cache");
+          h.delete("x-robots-tag");
+          return applySecurityHeaders(new Response(cached.body, { status: cached.status, statusText: cached.statusText, headers: h }), url);
+        }
+      } catch (_) {}
       try {
         const pre = await fetchPrerender(request, token);
         preStatus = pre ? String(pre.status) : "null";
         if (pre && pre.status < 500 && pre.status !== 429) {
           const h = new Headers(pre.headers);
           h.set("x-prerendered", "true");
+          h.set("x-prerender-cache", "MISS");
           h.set("x-phl-via", "prerender");
           h.delete("x-robots-tag");
-          if (!h.has("cache-control")) h.set("cache-control", "public, max-age=3600, stale-while-revalidate=86400");
-          return applySecurityHeaders(new Response(pre.body, { status: pre.status, statusText: pre.statusText, headers: h }));
+          h.set("cache-control", `public, max-age=${PRERENDER_CACHE_TTL}, s-maxage=${PRERENDER_CACHE_TTL}, stale-while-revalidate=${PRERENDER_SWR_TTL}`);
+          h.delete("set-cookie");
+          const out = applySecurityHeaders(new Response(pre.body, { status: pre.status, statusText: pre.statusText, headers: h }), url);
+          if (pre.status < 400) ctx?.waitUntil?.(caches.default.put(cacheKey, out.clone()));
+          return out;
         }
       } catch (e) {
         preErr = (e && (e.name || e.message)) ? String(e.name || e.message).slice(0, 60) : "err";
       }
       // Fallback to origin with loop marker so we don't re-enter prerender.
       const reReq = new Request(request, { headers: new Headers(request.headers) });
-      reReq.headers.set("x-prerender-loop", "1");
+      reReq.headers.set(LOOP_HEADER, "1");
       try {
         const res = await proxyToOrigin(reReq, origin);
         const h = new Headers(res.headers);
