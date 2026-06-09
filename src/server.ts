@@ -734,7 +734,7 @@ export default {
       console.error(error);
       // Even on a 500, /sw.js and ?sw=off MUST never be cached — otherwise a
       // single bad deploy can get pinned at the edge or in browsers for hours.
-      return applyCacheRecoveryHeaders(brandedErrorResponse(nonce), url);
+      return applyCacheRecoveryHeaders(brandedErrorResponse(nonce, url.hostname), url);
     }
   },
 };
