@@ -50,12 +50,13 @@ const REDIRECT_HOSTS = new Set<string>([
 ]);
 
 
-// Content-Security-Policy — script-src is nonce + 'strict-dynamic' only.
-// In CSP3 browsers, 'strict-dynamic' makes host allowlists in script-src
-// be IGNORED — listing them produces Firefox console warnings without
-// adding any protection. Trust flows from the nonce on the initial scripts
-// to anything they dynamically load. Host allowlists remain on
-// img-src / connect-src / frame-src / style-src where they still apply.
+// Content-Security-Policy — script-src is nonce + 'strict-dynamic' only on
+// the production host. In CSP3 browsers, 'strict-dynamic' makes host
+// allowlists in script-src be IGNORED — listing them produces Firefox
+// console warnings without adding any protection. Trust flows from the
+// nonce on the initial scripts to anything they dynamically load. Host
+// allowlists remain on img-src / connect-src / frame-src / style-src
+// where they still apply.
 const CSP_TEMPLATE = [
   "default-src 'self'",
   "script-src 'nonce-__NONCE__' 'strict-dynamic'",
@@ -74,6 +75,34 @@ const CSP_TEMPLATE = [
   "form-action 'self'",
   "frame-ancestors 'none'",
   "upgrade-insecure-requests",
+  "report-uri /api/public/csp-report",
+  "report-to csp-endpoint",
+].join("; ");
+
+// Permissive CSP for Lovable preview / staging hosts. The Lovable preview
+// wrapper injects extra inline bootstrap scripts and external assets
+// (cdn.gpteng.co/lovable.js, /__l5e/events.js) AFTER our worker returns —
+// HTMLRewriter can't nonce them, and 'strict-dynamic' ignores host
+// allowlists. Without this, the preview boots into a blank page because
+// the Lovable bootstrap inline script is blocked. Production (phlabs.co.uk)
+// keeps the strict nonce + strict-dynamic policy above.
+const CSP_TEMPLATE_PREVIEW = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:",
+  "script-src-elem 'self' 'unsafe-inline' https: data:",
+  "style-src 'self' 'unsafe-inline' https:",
+  "style-src-elem 'self' 'unsafe-inline' https:",
+  "style-src-attr 'unsafe-inline'",
+  "font-src 'self' data: https:",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' https: data: blob:",
+  "connect-src 'self' https: wss: data: blob:",
+  "frame-src 'self' https:",
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'self' https://lovable.dev https://*.lovable.dev https://*.lovable.app https://*.lovableproject.com",
   "report-uri /api/public/csp-report",
   "report-to csp-endpoint",
 ].join("; ");
@@ -100,7 +129,20 @@ function generateNonce(): string {
   return btoa(s);
 }
 
-function buildCsp(nonce: string): string {
+function isLovableHost(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+  return (
+    h.endsWith(".lovable.app") ||
+    h.endsWith(".lovableproject.com") ||
+    h.endsWith(".lovable.dev") ||
+    h === "lovable.dev"
+  );
+}
+
+function buildCsp(nonce: string, hostname?: string): string {
+  if (hostname && isLovableHost(hostname)) {
+    return CSP_TEMPLATE_PREVIEW;
+  }
   // Replace ALL occurrences of __NONCE__ (script-src + script-src-elem).
   return CSP_TEMPLATE.split("__NONCE__").join(nonce);
 }
