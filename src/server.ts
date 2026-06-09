@@ -570,7 +570,10 @@ export default {
         const normalized = normalizePrerenderUrl(url);
         const target = `${PRERENDER_ORIGIN}/${normalized}`;
         const cache = (caches as unknown as { default: Cache }).default;
-        const cacheKey = new Request(target, { method: "GET", headers: { accept: "text/html" } });
+        // Cache under the public PH Labs URL, not the upstream Prerender.io URL.
+        // This makes selective Cloudflare purges for https://phlabs.co.uk/*
+        // invalidate bot HTML too; the old upstream-keyed entries are no longer read.
+        const cacheKey = new Request(normalized, { method: "GET", headers: { accept: "text/html" } });
 
         const cached = await cache.match(cacheKey);
         if (cached) {
