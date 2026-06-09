@@ -51,26 +51,19 @@ export function registerOfflineSW() {
   if (typeof window === 'undefined') return;
   if (!('serviceWorker' in navigator)) return;
 
-  const inIframe = window.top !== window.self;
-  const host = window.location.hostname;
-  const killSwitch = new URLSearchParams(window.location.search).get('sw') === 'off';
-
-  const refuse =
-    !import.meta.env.PROD ||
-    inIframe ||
-    killSwitch ||
-    isLovablePreviewHost(host);
-
-  if (refuse) {
-    void unregisterOwnSW();
-    return;
-  }
-
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register(SW_URL, { scope: '/' }).catch(() => {
-      /* silent — offline fallback is best-effort */
-    });
-  });
+  // We do NOT register any service worker. Caching an app-shell SW caused
+  // stale-chunk blank pages on mobile / installed PWAs after deploys; the
+  // chunk-reload safety net (src/lib/chunk-reload.ts) handles recovery on
+  // the rare lazy-import failure without holding stale HTML.
+  //
+  // We still proactively unregister our own SW on every load so any browser
+  // that still has the legacy caching worker installed gets cleaned up.
+  // Touches only sw.js / service-worker.js on this origin — Firebase
+  // Messaging and any third-party worker are left alone.
+  void unregisterOwnSW();
+  // Reference SW_URL so the export stays meaningful and the variable is not
+  // dropped by tree-shaking lints.
+  void SW_URL;
 }
 
 registerOfflineSW();
