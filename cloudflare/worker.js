@@ -38,6 +38,8 @@ const WEBHOOK_PREFIXES = [
   "/webhook/",
 ];
 
+const FIREBASE_AUTH_PREFIXES = ["/__/auth/", "/__/firebase/"];
+
 // Bot UAs that should receive a prerendered HTML snapshot.
 const BOT_UA_RX = new RegExp(
   [
@@ -79,10 +81,18 @@ const PRERENDER_TIMEOUT_MS = 45_000;
 
 // ---------- helpers ----------
 
-function applySecurityHeaders(res) {
+function isFirebaseAuthHelperPath(url) {
+  return FIREBASE_AUTH_PREFIXES.some((p) => url.pathname.startsWith(p));
+}
+
+function applySecurityHeaders(res, url) {
   const h = new Headers(res.headers);
   for (const k of STRIP_RESPONSE_HEADERS) h.delete(k);
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
+    // Firebase's Google auth helper is intentionally opened in a provider popup
+    // / redirect helper context. A global X-Frame-Options:DENY on /__/auth/*
+    // prevents the SDK from delivering the selected Google account back to the app.
+    if (k === "x-frame-options" && url && isFirebaseAuthHelperPath(url)) continue;
     if (!h.has(k)) h.set(k, v);
   }
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
@@ -124,7 +134,8 @@ function fwdHeaders(req) {
 // search/vip-store/webhook) so we never cache personalised pages.
 const HTML_CACHE_EXCLUDE_PREFIXES = [
   "/admin", "/account", "/cart", "/checkout", "/payment", "/login",
-  "/register", "/api", "/search", "/vip-store", "/webhook",
+  "/register", "/api", "/search", "/vip-store", "/webhook", "/__/auth",
+  "/__/firebase",
 ];
 function isHtmlCacheable(url) {
   if (url.pathname === "/sw.js" || url.pathname === "/service-worker.js") return false;
@@ -277,6 +288,9 @@ export default {
       const h = new Headers(res.headers);
       if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/webhook/")) {
         noCache(h);
+      } else if (isFirebaseAuthHelperPath(url)) {
+        noCache(h);
+        h.delete("x-frame-options");
       } else if (isStatic) {
         if (!h.has("cache-control")) h.set("cache-control", "public, max-age=31536000, immutable");
       } else if (isXmlFeed) {
@@ -297,7 +311,7 @@ export default {
         return await serveStaleOrError(request);
       }
 
-      return applySecurityHeaders(new Response(res.body, { status: res.status, statusText: res.statusText, headers: h }));
+      return applySecurityHeaders(new Response(res.body, { status: res.status, statusText: res.statusText, headers: h }), url);
     } catch (_) {
       return await serveStaleOrError(request);
     }

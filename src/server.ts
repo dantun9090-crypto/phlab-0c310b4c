@@ -451,11 +451,15 @@ export default {
           redirect: "manual",
         });
         const fbResp = await fetch(fbReq);
-        // Preserve all Firebase headers; just pass the response through.
+        const headers = new Headers(fbResp.headers);
+        headers.delete("x-frame-options");
+        headers.set("cache-control", "no-cache, no-store, must-revalidate");
+        headers.set("pragma", "no-cache");
+        headers.set("expires", "0");
         return new Response(fbResp.body, {
           status: fbResp.status,
           statusText: fbResp.statusText,
-          headers: fbResp.headers,
+          headers,
         });
       }
 

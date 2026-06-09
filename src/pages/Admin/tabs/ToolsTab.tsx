@@ -404,6 +404,27 @@ export default function ToolsTab() {
         </div>
       </motion.div>
 
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-[#0b1a30]/70 border border-white/[0.08] rounded-2xl p-6 space-y-3"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-600/20 flex items-center justify-center shrink-0">
+            <Shield className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div>
+            <h3 className="text-[#f0f6ff] font-semibold">Google Auth Helper</h3>
+            <p className="text-[#9cb8d9] text-xs mt-0.5">
+              The edge Worker excludes <code className="bg-[#04101f] px-1.5 py-0.5 rounded text-[#8caad4]">/__/auth/*</code> and <code className="bg-[#04101f] px-1.5 py-0.5 rounded text-[#8caad4]">/__/firebase/*</code> from HTML cache and frame-deny headers so Google account selection can return the session to PH Labs.
+            </p>
+          </div>
+        </div>
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-900/10 p-4 text-sm text-emerald-300">
+          If Google shows accounts but does not complete sign-in, publish the latest Worker update and test directly on <code className="text-emerald-200">https://phlabs.co.uk/login</code> outside the preview frame.
+        </div>
+      </motion.div>
+
       {/* ── Dedupe Products by Slug ───────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
