@@ -4,7 +4,7 @@
  *
  * Verifies, against the live production origin:
  *   1. www → apex 301/308 redirect (path preserved)
- *   2. prohealthpeptides.co.uk → apex 301/308 redirect
+ *   2. legacy domain → apex 301/308 redirect (check-domains-allow-line)
  *   3. /robots.txt: 200, lists Sitemap, allows /, disallows /admin /checkout
  *      /payment /account /api, blocks AdsBot-Google
  *   4. /sitemap.xml: 200, valid XML, contains apex URLs and at least one
@@ -15,7 +15,7 @@
  *      prerender Worker is actually serving rendered HTML, not the JS shell).
  *
  * Run via:    bun scripts/crawler-smoke.ts
- * Override:   SMOKE_BASE_URL=https://phlab.lovable.app bun scripts/crawler-smoke.ts
+ * Override:   SMOKE_BASE_URL=https://example.lovable.app bun scripts/crawler-smoke.ts
  * Skip CI:    SKIP_CRAWLER_SMOKE=1 bun scripts/crawler-smoke.ts
  */
 
@@ -158,7 +158,7 @@ async function checkPrerender() {
 async function main() {
   console.log(`▶ Crawler smoke against ${BASE}\n`);
   await checkRedirect(`www.${APEX_HOST}`, "www→apex");
-  await checkRedirect("prohealthpeptides.co.uk", "legacy→apex");
+  await checkRedirect("prohealthpeptides.co.uk", "legacy→apex"); // check-domains-allow-line
   await checkRobots();
   await checkSitemap();
   await checkPrerender();
