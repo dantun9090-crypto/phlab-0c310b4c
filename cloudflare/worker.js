@@ -215,7 +215,28 @@ async function serveStaleOrError(request) {
   return brandedErrorResponse(503, 30);
 }
 
+// Strip Lovable editor/analytics scripts (/~flock.js, /__l5e/events.js) that
+// the Lovable hosting layer injects into the origin HTML. They trigger CSP
+// violations and are only useful in the Lovable editor preview.
+class StripLovableScripts {
+  element(el) {
+    const src = el.getAttribute("src") || "";
+    if (src.startsWith("/~flock") || src.startsWith("/__l5e/")) {
+      el.remove();
+    }
+  }
+}
+
+function stripLovableInjectedScripts(response) {
+  const ct = response.headers.get("content-type") || "";
+  if (!ct.includes("text/html")) return response;
+  return new HTMLRewriter()
+    .on("script[src]", new StripLovableScripts())
+    .transform(response);
+}
+
 // ---------- main ----------
+
 
 export default {
   async fetch(request, env, ctx) {
