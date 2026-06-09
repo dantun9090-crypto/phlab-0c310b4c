@@ -38,6 +38,7 @@ interface CheckoutForm {
   createAccount: boolean;
   password: string;
   shippingMethod: 'standard' | 'next_day_12' | '';
+  customerNote: string;
 }
 
 import { checkNextDayEligibility, SHIPPING_CONFIG, formatLondonDate } from '@/lib/shipping/next-day';
@@ -106,6 +107,7 @@ export default function CheckoutPage() {
     createAccount: false,
     password: '',
     shippingMethod: '',
+    customerNote: '',
   });
 
   const [currentStep, setCurrentStep] = useState<Step>(1);
@@ -601,6 +603,7 @@ export default function CheckoutPage() {
             ageVerified: true,
             termsAccepted: true,
             couponCode: appliedCoupon?.code ?? null,
+            customerNote: form.customerNote.trim() || null,
             idToken,
           },
         });
@@ -1420,6 +1423,23 @@ export default function CheckoutPage() {
                         <span>Order Summary ({totalItems} item{totalItems !== 1 ? 's' : ''})</span>
                         <span className="text-emerald-400">£{total}</span>
                       </button>
+                    </div>
+
+                    {/* Optional order notes / special instructions */}
+                    <div>
+                      <label htmlFor="customerNote" className="block text-xs font-semibold text-white mb-1.5">
+                        Order notes <span className="text-[#9cb8d9] font-normal">(optional)</span>
+                      </label>
+                      <textarea
+                        id="customerNote"
+                        value={form.customerNote}
+                        onChange={e => setField('customerNote', e.target.value.slice(0, 500))}
+                        maxLength={500}
+                        rows={3}
+                        placeholder="Special delivery instructions, PO number, or any requirements for our team."
+                        style={{ ...inputStyle(false), resize: 'vertical', minHeight: '76px', fontFamily: 'inherit' }}
+                      />
+                      <p className="text-[10px] text-[#7a96bf] mt-1 text-right">{form.customerNote.length}/500</p>
                     </div>
 
                     {/* Age verification 18+ — UK compliance */}
