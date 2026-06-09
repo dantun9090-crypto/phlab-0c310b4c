@@ -390,7 +390,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
     if (!headers.has(k)) headers.set(k, v);
   }
-  headers.set("content-security-policy", buildCsp(nonce));
+  headers.set("content-security-policy", buildCsp(nonce, hostname));
   return new Response(rewritten.body, {
     status: rewritten.status,
     statusText: rewritten.statusText,
