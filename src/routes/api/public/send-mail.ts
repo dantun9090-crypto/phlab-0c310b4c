@@ -240,7 +240,8 @@ export const Route = createFileRoute("/api/public/send-mail")({
               }
 
               // Bank-transfer details: fetch from the trusted
-              // settings/bankTransfer Firestore doc. NEVER trust client input.
+              // settings/siteSettings Firestore doc (managed in
+              // Admin → Site Settings → Bank Transfer). NEVER trust client input.
               const paymentMethod =
                 order.paymentMethod === "card" || order.paymentMethod === "bank_transfer"
                   ? (order.paymentMethod as "card" | "bank_transfer")
@@ -253,16 +254,19 @@ export const Route = createFileRoute("/api/public/send-mail")({
               let bankInstructions: string | undefined;
 
               if (paymentMethod === "bank_transfer") {
-                const bank = await getDocAdmin("settings", "bankTransfer");
-                if (bank) {
-                  bankName = typeof bank.bankName === "string" ? bank.bankName : undefined;
-                  bankSortCode = typeof bank.sortCode === "string" ? bank.sortCode : undefined;
-                  bankAccountNumber =
-                    typeof bank.accountNumber === "string" ? bank.accountNumber : undefined;
-                  bankIBAN = typeof bank.iban === "string" ? bank.iban : undefined;
-                  bankInstructions =
-                    typeof bank.instructions === "string" ? bank.instructions : undefined;
-                }
+                // Primary: settings/siteSettings (admin panel writes here).
+                // Fallback: settings/bankTransfer (legacy doc, kept for back-compat).
+                const site = await getDocAdmin("settings", "siteSettings");
+                const legacy = await getDocAdmin("settings", "bankTransfer");
+                const pick = (a: unknown, b: unknown) =>
+                  typeof a === "string" && a.trim() ? a
+                  : typeof b === "string" && b.trim() ? b
+                  : undefined;
+                bankName = pick(site?.bankTransferName, legacy?.bankName);
+                bankSortCode = pick(site?.bankTransferSortCode, legacy?.sortCode);
+                bankAccountNumber = pick(site?.bankTransferAccountNumber, legacy?.accountNumber);
+                bankIBAN = pick(site?.bankTransferIBAN, legacy?.iban);
+                bankInstructions = pick(site?.bankTransferInstructions, legacy?.instructions);
               }
 
               to = input.email;
