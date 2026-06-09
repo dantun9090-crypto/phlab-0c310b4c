@@ -309,6 +309,15 @@ function applySecurityHeaders(response: Response, nonce: string): Response {
   // breaking sitemap, JSON-LD endpoints, and prerender.io content sniffing.
   if (!contentType.includes("text/html")) return stripped;
 
+  const htmlHeaders = new Headers(stripped.headers);
+  htmlHeaders.set("cache-control", "public, max-age=0, s-maxage=300, stale-while-revalidate=86400, must-revalidate");
+  htmlHeaders.delete("age");
+  const htmlResponse = new Response(stripped.body, {
+    status: stripped.status,
+    statusText: stripped.statusText,
+    headers: htmlHeaders,
+  });
+
   // Inject the per-request nonce into every <script> element via workerd's
   // built-in HTMLRewriter. This covers TanStack's <Scripts /> output, the
   // BOOT_WATCHDOG + CANONICAL_ENFORCER inline blocks in __root.tsx, and the
@@ -319,7 +328,7 @@ function applySecurityHeaders(response: Response, nonce: string): Response {
   };
   const RewriterCtor = (globalThis as { HTMLRewriter?: new () => Rewriter }).HTMLRewriter;
 
-  let rewritten = stripped;
+  let rewritten = htmlResponse;
   if (RewriterCtor) {
     const rewriter: Rewriter = new RewriterCtor();
     rewritten = rewriter
