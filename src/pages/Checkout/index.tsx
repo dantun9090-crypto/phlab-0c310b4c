@@ -603,6 +603,7 @@ export default function CheckoutPage() {
             ageVerified: true,
             termsAccepted: true,
             couponCode: appliedCoupon?.code ?? null,
+            customerNote: form.customerNote.trim() || null,
             idToken,
           },
         });
