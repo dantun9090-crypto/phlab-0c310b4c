@@ -964,7 +964,7 @@ function invalidateProductsCache() {
  * Dynamically imported so the server-fn RPC stub doesn't load on cold
  * customer-facing reads.
  */
-function triggerCdnInvalidation(opts: { slug?: string; category?: string } = {}) {
+function triggerCdnInvalidation(opts: { slug?: string; slugs?: string[]; category?: string } = {}) {
   if (typeof window === 'undefined') return;
   void (async () => {
     try {
