@@ -107,6 +107,7 @@ export default function CheckoutPage() {
     createAccount: false,
     password: '',
     shippingMethod: '',
+    customerNote: '',
   });
 
   const [currentStep, setCurrentStep] = useState<Step>(1);
