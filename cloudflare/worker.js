@@ -232,6 +232,14 @@ export default {
       return Response.redirect(dest.toString(), 301);
     }
 
+    // Lovable preview sometimes opens /index; PH Labs only has /. Keep this
+    // alias at the edge so preview and live never land on an empty shell.
+    if (url.pathname === "/index") {
+      const dest = new URL(url.toString());
+      dest.pathname = "/";
+      return Response.redirect(dest.toString(), 301);
+    }
+
     // 2. Health endpoint — never hits origin, never prerendered.
     if (url.pathname === "/_health" || url.pathname === "/__health") {
       return jsonResponse({
@@ -329,6 +337,12 @@ export default {
         : undefined;
     try {
       const res = await proxyToOrigin(request, origin, cacheOpts);
+      if (isServiceWorkerPath(url)) {
+        const h = new Headers(res.headers);
+        h.set("content-type", "text/javascript; charset=utf-8");
+        h.set("service-worker-allowed", "/");
+        return applySecurityHeaders(applyNoStoreHeaders(new Response(res.body, { status: res.status, statusText: res.statusText, headers: h })), url);
+      }
 
       // Error 1000-style infinite redirect / DNS loop detection.
       if (res.status === 0 || res.status === 521 || res.status === 522 || res.status === 523) {
