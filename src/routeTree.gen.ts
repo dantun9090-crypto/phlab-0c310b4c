@@ -17,7 +17,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsSlugRouteImport } from './routes/products.$slug'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentCancelRouteImport } from './routes/payment.cancel'
-import { Route as IndexAliasRouteImport } from './routes/index.alias'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
@@ -67,11 +66,6 @@ const PaymentSuccessRoute = PaymentSuccessRouteImport.update({
 const PaymentCancelRoute = PaymentCancelRouteImport.update({
   id: '/payment/cancel',
   path: '/payment/cancel',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexAliasRoute = IndexAliasRouteImport.update({
-  id: '/index/alias',
-  path: '/index/alias',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminMerchantFeedPreviewRoute =
@@ -131,7 +125,6 @@ export interface FileRoutesByFullPath {
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
-  '/index/alias': typeof IndexAliasRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -151,7 +144,6 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
-  '/index/alias': typeof IndexAliasRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -172,7 +164,6 @@ export interface FileRoutesById {
   '/products': typeof ProductsRouteWithChildren
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
-  '/index/alias': typeof IndexAliasRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
@@ -194,7 +185,6 @@ export interface FileRouteTypes {
     | '/products'
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
-    | '/index/alias'
     | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
@@ -214,7 +204,6 @@ export interface FileRouteTypes {
     | '/products'
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
-    | '/index/alias'
     | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
@@ -234,7 +223,6 @@ export interface FileRouteTypes {
     | '/products'
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
-    | '/index/alias'
     | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
@@ -255,7 +243,6 @@ export interface RootRouteChildren {
   ProductsRoute: typeof ProductsRouteWithChildren
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
-  IndexAliasRoute: typeof IndexAliasRoute
   PaymentCancelRoute: typeof PaymentCancelRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
@@ -324,13 +311,6 @@ declare module '@tanstack/react-router' {
       path: '/payment/cancel'
       fullPath: '/payment/cancel'
       preLoaderRoute: typeof PaymentCancelRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/index/alias': {
-      id: '/index/alias'
-      path: '/index/alias'
-      fullPath: '/index/alias'
-      preLoaderRoute: typeof IndexAliasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/merchant-feed-preview': {
@@ -418,7 +398,6 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsRoute: ProductsRouteWithChildren,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
-  IndexAliasRoute: IndexAliasRoute,
   PaymentCancelRoute: PaymentCancelRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
@@ -433,3 +412,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
