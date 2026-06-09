@@ -1018,9 +1018,14 @@ export const updateProduct = async (id: string, updates: Partial<Product>) => {
 };
 
 export const deleteProduct = async (id: string) => {
+  let existing: Product | null = null;
+  try {
+    const snap = await getDoc(doc(db, PRODUCTS_COL, id));
+    if (snap.exists()) existing = normaliseProduct(id, snap.data());
+  } catch { /* best-effort cache targeting */ }
   await deleteDoc(doc(db, PRODUCTS_COL, id));
   invalidateProductsCache();
-  triggerCdnInvalidation();
+  triggerCdnInvalidation({ slug: existing?.slug, category: existing?.category });
 };
 
 export const bulkUpdateProducts = async (updates: { id: string; stock?: number; price?: number }[]) => {
