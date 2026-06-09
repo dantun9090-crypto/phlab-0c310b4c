@@ -295,7 +295,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
     try {
       const compressed = await compressImage(file);
       const pid = pendingId.current;
-      const path = `products/${pid}/images/img${index + 1}_${Date.now()}.jpg`;
+      const path = `products/${pid}/images/img${index + 1}_${Date.now()}.webp`;
       const url = await uploadToStorage(compressed, path, (p) => {
         setSlotProgress(prev => { const n = [...prev]; n[index] = p; return n; });
       });
