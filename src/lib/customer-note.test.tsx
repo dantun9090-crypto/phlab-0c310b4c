@@ -145,16 +145,14 @@ describe("Admin Orders – customer note display", () => {
 describe("Checkout source – customer note field is wired", () => {
   it("renders a textarea for customerNote and forwards it to createOrder", async () => {
     const fs = await import("node:fs/promises");
+    const path = await import("node:path");
     const src = await fs.readFile(
-      new URL("../pages/Checkout/index.tsx", import.meta.url),
+      path.resolve(process.cwd(), "src/pages/Checkout/index.tsx"),
       "utf8",
     );
-    // Form state field
     expect(src).toMatch(/customerNote:\s*['"]['"]/);
-    // UI textarea
     expect(src).toMatch(/id="customerNote"/);
     expect(src).toMatch(/maxLength=\{500\}/);
-    // Forwarded to server fn
     expect(src).toMatch(/customerNote:\s*form\.customerNote/);
   });
 });
