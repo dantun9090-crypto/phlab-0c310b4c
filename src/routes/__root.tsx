@@ -344,7 +344,7 @@ const BOOT_WATCHDOG = `
   try{
     var qs=new URLSearchParams(location.search);
     var settle=function(p){ return Promise.resolve(p).catch(function(){}); };
-    var ownCache=function(k){ return /^phlabs-offline-/.test(k)||/^phlabs-(?!lkg-)/.test(k)||/^workbox-/.test(k)||/^precache-/.test(k)||/^runtime-/.test(k)||/(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(k); };
+    var ownCache=function(k){ return /^phlabs-offline-/.test(k)||/^phlabs-(?!lkg-)/.test(k)||/^workbox-/.test(k)||/^precache-/.test(k)||/^runtime-/.test(k)||/(^|-)precache-v\\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(k); };
     var ownReg=function(r){
       try{
         var s=(r.active&&r.active.scriptURL)||(r.installing&&r.installing.scriptURL)||(r.waiting&&r.waiting.scriptURL)||'';
@@ -404,11 +404,38 @@ const BOOT_WATCHDOG = `
         return;
       }
     }
-    // Boot-reload watchdog disabled 2026-06-09: was triggering false-positive
-    // ?_r=ts reloads on production when the age-gate modal or other
-    // late-mounted UI delayed the 50x50 element heuristic past 20s.
-    // The service-worker / cache cleanup path above still runs for ?sw=off.
-    return;
+    var WATCH='__phl_blank_watchdog_done';
+    var started=Date.now();
+    var hasPaint=function(){
+      try{
+        if(document.querySelector('[data-phl-app-ready], header, main, #research-gate, #home, #products, [role="dialog"]')) return true;
+        var body=document.body;
+        if(!body) return false;
+        var text=(body.innerText||'').replace(/\s+/g,' ').trim();
+        if(text.length>80) return true;
+        var rects=Array.prototype.slice.call(body.querySelectorAll('body *')).filter(function(el){
+          try{ var r=el.getBoundingClientRect(); return r.width>80&&r.height>40; }catch(e){ return false; }
+        });
+        return rects.length>2;
+      }catch(e){ return false; }
+    };
+    var tick=function(){
+      if(hasPaint()) return;
+      if(Date.now()-started<7000){ setTimeout(tick,700); return; }
+      try{
+        var last=Number(sessionStorage.getItem(WATCH)||'0');
+        if(last&&Date.now()-last<60000) return;
+        sessionStorage.setItem(WATCH,String(Date.now()));
+        qs.set('sw','off');
+        qs.set('_r',String(Date.now()));
+        location.replace('/?'+qs.toString());
+      }catch(e){ location.replace('/?sw=off&_r='+Date.now()); }
+    };
+    if(document.readyState==='loading'){
+      document.addEventListener('DOMContentLoaded',function(){ setTimeout(tick,7000); },{once:true});
+    }else{
+      setTimeout(tick,7000);
+    }
 
 
 
