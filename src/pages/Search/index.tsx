@@ -377,12 +377,17 @@ export default function SearchPage() {
               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
             >
               <Search className="w-4 h-4 shrink-0" style={{ color: '#3a5a82' }} />
+              <label htmlFor="search-page-input" className="sr-only">Search</label>
               <input
+                id="search-page-input"
+                name="q"
                 type="search"
+                autoComplete="off"
                 autoFocus
                 value={inputValue}
                 onChange={e => setInputValue(e.target.value)}
                 placeholder="Search peptides, articles, guides..."
+                aria-label="Search peptides, articles, guides"
                 className="flex-1 bg-transparent text-sm outline-none"
                 style={{ color: '#f0f6ff' }}
               />
