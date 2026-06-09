@@ -398,13 +398,14 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   });
 }
 
-function brandedErrorResponse(nonce: string): Response {
+function brandedErrorResponse(nonce: string, hostname?: string): Response {
   return applySecurityHeaders(
     new Response(renderErrorPage(), {
       status: 500,
       headers: { "content-type": "text/html; charset=utf-8" },
     }),
     nonce,
+    hostname,
   );
 }
 
