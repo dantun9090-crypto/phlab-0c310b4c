@@ -156,11 +156,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
               try {
                 sessionStorage.removeItem(AUTO_RELOAD_KEY);
                 sessionStorage.removeItem(AUTO_RELOAD_COUNT_KEY);
+                sessionStorage.removeItem(AUTO_RECOVERY_DONE_KEY);
                 sessionStorage.removeItem(HARD_RELOAD_FLAG);
               } catch { /* ignore */ }
               if (!isOnline()) { setOffline(true); return; }
               if (import.meta.env.PROD) {
-                void hardReload();
+                void hardReload({ clean: true, home: true });
               } else {
                 router.invalidate();
                 reset();
