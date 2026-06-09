@@ -785,6 +785,14 @@ export const subscribeToUsers = (callback: (users: User[]) => void) => {
 // The real Firestore collection is 'product_stock'
 const PRODUCTS_COL = 'product_stock';
 
+function productNameToSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[()[\]]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 // Normalise a raw Firestore document to the Product type
 function normaliseProduct(id: string, data: any): Product {
   // price may be stored as a string like "£57.99"
@@ -826,6 +834,7 @@ function normaliseProduct(id: string, data: any): Product {
 
   return {
     id,
+    slug: data.slug || productNameToSlug(data.name || ''),
     name: data.name || '',
     description: data.description || '',
     price,
