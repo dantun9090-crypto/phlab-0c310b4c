@@ -15,7 +15,7 @@
  *      prerender Worker is actually serving rendered HTML, not the JS shell).
  *
  * Run via:    bun scripts/crawler-smoke.ts
- * Override:   SMOKE_BASE_URL=https://phlab.lovable.app bun scripts/crawler-smoke.ts
+ * Override:   SMOKE_BASE_URL=https://example.lovable.app bun scripts/crawler-smoke.ts
  * Skip CI:    SKIP_CRAWLER_SMOKE=1 bun scripts/crawler-smoke.ts
  */
 
