@@ -414,46 +414,12 @@ const BOOT_WATCHDOG = `
         return;
       }
     }
-    // Skip the watchdog on dev/preview hosts — Vite cold module loads can
-    // exceed the timeout and trigger a reload loop before React mounts.
-    var h=location.hostname;
-    if(h==='localhost'||h==='127.0.0.1'||h.endsWith('.lovableproject.com')||h.endsWith('.lovable.app')||h.endsWith('.lovable.dev')) return;
-    var KEY='__phl_boot_reload_at';
-    var MAX_RELOADS_KEY='__phl_boot_reload_count';
-    var now=Date.now();
-    var last=Number(sessionStorage.getItem(KEY)||'0');
-    var count=Number(sessionStorage.getItem(MAX_RELOADS_KEY)||'0');
-    // Reset counter if last reload was > 2 min ago
-    if(now-last>120000){count=0;sessionStorage.setItem(MAX_RELOADS_KEY,'0');}
-    function hasContent(){
-      var b=document.body; if(!b) return false;
-      // any element other than <script>/<style> with size?
-      var els=b.querySelectorAll('div,main,section,header,nav,article,h1,h2,img,a,button');
-      for(var i=0;i<els.length;i++){
-        var r=els[i].getBoundingClientRect();
-        if(r.width>50&&r.height>50) return true;
-      }
-      return false;
-    }
-    setTimeout(function(){
-      if(hasContent()) return;
-      if(count>=2) return; // stop after 2 attempts to avoid loops
-      if(now-last<15000) return;
-      sessionStorage.setItem(KEY,String(Date.now()));
-      sessionStorage.setItem(MAX_RELOADS_KEY,String(count+1));
-      var jobs=[];
-      try{
-        // force fresh fetch — bypass app-shell cache & service worker only
-        if('caches' in window){jobs.push(settle(caches.keys().then(function(ks){return Promise.all(ks.filter(ownCache).map(function(k){return settle(caches.delete(k));}));})));}
-        if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){
-          jobs.push(settle(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.filter(ownReg).map(function(r){return settle(r.unregister());}));})));
-        }
-      }catch(e){}
-      var done=false;
-      function go(){ if(done) return; done=true; location.replace(location.pathname+location.search+(location.search?'&':'?')+'_r='+Date.now()+location.hash); }
-      var fallback=setTimeout(go,1500);
-      Promise.all(jobs).then(function(){clearTimeout(fallback);go();},function(){clearTimeout(fallback);go();});
-    },20000);
+    // Boot-reload watchdog disabled 2026-06-09: was triggering false-positive
+    // `?_r=<ts>` reloads on production when the age-gate modal or other
+    // late-mounted UI delayed the >50x50 element heuristic past 20s.
+    // The service-worker / cache cleanup path above still runs for ?sw=clear.
+    return;
+
 
   }catch(e){}
 })();
