@@ -56,14 +56,19 @@ export default function Register() {
     setGoogleLoading(true);
     try {
       await setAuthPersistence(rememberMe);
-      await signInWithGoogle();
+      const res = await signInWithGoogle();
+      // Mobile: signInWithGoogle triggers full-page redirect and returns null.
+      // Don't navigate or clear loader — the page is about to unload.
+      if (res === null) return;
       navigate('/account');
     } catch (err: any) {
       setError('Google sign-in failed. Please try again or use email registration below.');
-    } finally {
       setGoogleLoading(false);
+      return;
     }
+    setGoogleLoading(false);
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
