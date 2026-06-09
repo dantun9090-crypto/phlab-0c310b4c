@@ -415,10 +415,11 @@ const BOOT_WATCHDOG = `
       }
     }
     // Boot-reload watchdog disabled 2026-06-09: was triggering false-positive
-    // `?_r=<ts>` reloads on production when the age-gate modal or other
-    // late-mounted UI delayed the >50x50 element heuristic past 20s.
+    // ?_r=ts reloads on production when the age-gate modal or other
+    // late-mounted UI delayed the 50x50 element heuristic past 20s.
     // The service-worker / cache cleanup path above still runs for ?sw=clear.
     return;
+
 
 
   }catch(e){}
