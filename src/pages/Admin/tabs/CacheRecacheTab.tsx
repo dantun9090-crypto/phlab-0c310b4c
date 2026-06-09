@@ -123,7 +123,7 @@ export default function CacheRecacheTab() {
         <p className="text-sm text-[#9cb8d9] mt-1">
           Purge Cloudflare edge cache and trigger Prerender.io to rebuild every URL from{' '}
           <code className="text-emerald-400">/sitemap.xml</code>. Use after publishing big content
-          changes when you don&apos;t want to wait for the 15-min cron.
+          changes or to confirm the automatic product-edit purge/recache has completed.
         </p>
       </div>
 
@@ -138,7 +138,7 @@ export default function CacheRecacheTab() {
             <p className="text-xs text-[#9cb8d9] mt-1">
               Calls <code className="text-emerald-400">POST /zones/{`{zone}`}/purge_cache</code> with{' '}
               <code className="text-emerald-400">{`{"purge_everything": true}`}</code>. Removes every cached HTML, asset and prerender
-              snapshot on Cloudflare&apos;s edge for the phlabs.co.uk zone.
+              snapshot on Cloudflare&apos;s edge for the phlabs.co.uk zone. Product edits automatically purge the affected product/category URLs and recache desktop + mobile bot snapshots.
             </p>
             <div className="mt-2 flex items-start gap-2 text-xs text-amber-300/90">
               <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />

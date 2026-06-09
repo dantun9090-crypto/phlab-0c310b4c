@@ -35,6 +35,10 @@ const InputSchema = z.object({
     .max(120)
     .regex(/^[a-z0-9][a-z0-9-]*$/i, 'invalid slug')
     .optional(),
+  slugs: z
+    .array(z.string().min(1).max(120).regex(/^[a-z0-9][a-z0-9-]*$/i, 'invalid slug'))
+    .max(10)
+    .optional(),
   // Category slug to scope the purge to.
   category: z
     .string()
@@ -49,7 +53,7 @@ const InputSchema = z.object({
 });
 
 
-function productUrls(slug?: string, category?: string): string[] {
+function productUrls(slugs?: string[], category?: string): string[] {
   const urls = new Set<string>([
     `${ORIGIN}/products`,
     `${ORIGIN}/`,
@@ -65,8 +69,8 @@ function productUrls(slug?: string, category?: string): string[] {
     urls.add(`${ORIGIN}/products?category=${category}`);
   }
 
-  if (slug) {
-    urls.add(`${ORIGIN}/products/${slug}`);
+  for (const slug of slugs ?? []) {
+    if (slug) urls.add(`${ORIGIN}/products/${slug}`);
   }
 
   return [...urls];
@@ -95,24 +99,33 @@ async function purgeCloudflare(urls: string[]): Promise<{ ok: boolean; status: n
   }
 }
 
-async function recachePrerender(urls: string[]): Promise<{ ok: boolean; status: number; error?: string }> {
+async function recachePrerender(urls: string[]): Promise<{ ok: boolean; desktop: { ok: boolean; status: number; error?: string }; mobile: { ok: boolean; status: number; error?: string } }> {
   const token = process.env.PRERENDER_TOKEN;
-  if (!token) return { ok: false, status: 0, error: 'PRERENDER_TOKEN missing' };
+  if (!token) {
+    const missing = { ok: false, status: 0, error: 'PRERENDER_TOKEN missing' };
+    return { ok: false, desktop: missing, mobile: missing };
+  }
 
   // Prerender.io /recache accepts up to 1000 URLs; split if needed (we have ~20).
-  try {
+  const post = async (adaptiveType: 'desktop' | 'mobile') => {
     const res = await fetch('https://api.prerender.io/recache', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Prerender-Token': token,
       },
-      body: JSON.stringify({ prerenderToken: token, urls }),
+      body: JSON.stringify({ prerenderToken: token, urls, adaptiveType }),
       signal: AbortSignal.timeout(10_000),
     });
     return { ok: res.ok, status: res.status };
+  };
+
+  try {
+    const [desktop, mobile] = await Promise.all([post('desktop'), post('mobile')]);
+    return { ok: desktop.ok && mobile.ok, desktop, mobile };
   } catch (e) {
-    return { ok: false, status: 0, error: e instanceof Error ? e.message : String(e) };
+    const failed = { ok: false, status: 0, error: e instanceof Error ? e.message : String(e) };
+    return { ok: false, desktop: failed, mobile: failed };
   }
 }
 
@@ -131,13 +144,16 @@ export const invalidateProductCache = createServerFn({ method: 'POST' })
       } as const;
     }
 
-    const urls = productUrls(data.slug, data.category);
+    const slugs = Array.from(
+      new Set([data.slug, ...(data.slugs ?? [])].filter((slug): slug is string => typeof slug === 'string' && slug.length > 0)),
+    );
+    const urls = productUrls(slugs, data.category);
     const [cf, pr] = await Promise.all([
       purgeCloudflare(urls),
       recachePrerender(urls),
     ]);
     return {
-      ok: true,
+      ok: cf.ok && pr.ok,
       urls: urls.length,
       cloudflare: cf,
       prerender: pr,

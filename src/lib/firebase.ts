@@ -785,6 +785,14 @@ export const subscribeToUsers = (callback: (users: User[]) => void) => {
 // The real Firestore collection is 'product_stock'
 const PRODUCTS_COL = 'product_stock';
 
+function productNameToSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[()[\]]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 // Normalise a raw Firestore document to the Product type
 function normaliseProduct(id: string, data: any): Product {
   // price may be stored as a string like "£57.99"
@@ -826,6 +834,7 @@ function normaliseProduct(id: string, data: any): Product {
 
   return {
     id,
+    slug: data.slug || productNameToSlug(data.name || ''),
     name: data.name || '',
     description: data.description || '',
     price,
@@ -904,6 +913,7 @@ export const subscribeToProducts = (
 
 export const addProduct = async (product: Omit<Product, 'id'>) => {
   const data = {
+    slug: product.slug || productNameToSlug(product.name),
     name: product.name,
     description: product.description,
     price: product.price,
@@ -925,17 +935,7 @@ export const addProduct = async (product: Omit<Product, 'id'>) => {
   };
   const ref = await addDoc(collection(db, PRODUCTS_COL), data);
   invalidateProductsCache();
-  // Fire-and-forget CDN/prerender invalidation (defined below)
-  if (typeof window !== 'undefined') {
-    void (async () => {
-      try {
-        const idToken = await auth.currentUser?.getIdToken();
-        if (!idToken) return;
-        const { invalidateProductCache } = await import('./cache-invalidate.functions');
-        await invalidateProductCache({ data: { category: data.category, idToken } }).catch(() => {});
-      } catch { /* ignore */ }
-    })();
-  }
+  triggerCdnInvalidation({ slug: data.slug, category: data.category });
 
   return ref.id;
 };
@@ -955,7 +955,7 @@ function invalidateProductsCache() {
  * Dynamically imported so the server-fn RPC stub doesn't load on cold
  * customer-facing reads.
  */
-function triggerCdnInvalidation(opts: { slug?: string; category?: string } = {}) {
+function triggerCdnInvalidation(opts: { slug?: string; slugs?: string[]; category?: string } = {}) {
   if (typeof window === 'undefined') return;
   void (async () => {
     try {
@@ -971,6 +971,12 @@ function triggerCdnInvalidation(opts: { slug?: string; category?: string } = {})
 
 
 export const updateProduct = async (id: string, updates: Partial<Product>) => {
+  let existing: Product | null = null;
+  try {
+    const snap = await getDoc(doc(db, PRODUCTS_COL, id));
+    if (snap.exists()) existing = normaliseProduct(id, snap.data());
+  } catch { /* best-effort cache targeting */ }
+
   // Ensure images array is preserved and properly formatted
   const data: any = { ...updates, updatedAt: Timestamp.now() };
 
@@ -1001,16 +1007,25 @@ export const updateProduct = async (id: string, updates: Partial<Product>) => {
 
   await updateDoc(doc(db, PRODUCTS_COL, id), data);
   invalidateProductsCache();
+  const nextSlug = (updates as any).slug || existing?.slug || (updates.name ? productNameToSlug(updates.name) : undefined);
+  const nextCategory = (updates as any).category || existing?.category;
+  const slugs = Array.from(new Set([existing?.slug, nextSlug].filter((slug): slug is string => typeof slug === 'string' && slug.length > 0)));
   triggerCdnInvalidation({
-    slug: (updates as any).slug,
-    category: (updates as any).category,
+    slug: nextSlug,
+    slugs,
+    category: nextCategory,
   });
 };
 
 export const deleteProduct = async (id: string) => {
+  let existing: Product | null = null;
+  try {
+    const snap = await getDoc(doc(db, PRODUCTS_COL, id));
+    if (snap.exists()) existing = normaliseProduct(id, snap.data());
+  } catch { /* best-effort cache targeting */ }
   await deleteDoc(doc(db, PRODUCTS_COL, id));
   invalidateProductsCache();
-  triggerCdnInvalidation();
+  triggerCdnInvalidation({ slug: existing?.slug, category: existing?.category });
 };
 
 export const bulkUpdateProducts = async (updates: { id: string; stock?: number; price?: number }[]) => {
