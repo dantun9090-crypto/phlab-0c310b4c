@@ -38,6 +38,7 @@ interface CheckoutForm {
   createAccount: boolean;
   password: string;
   shippingMethod: 'standard' | 'next_day_12' | '';
+  customerNote: string;
 }
 
 import { checkNextDayEligibility, SHIPPING_CONFIG, formatLondonDate } from '@/lib/shipping/next-day';
