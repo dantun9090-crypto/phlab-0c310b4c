@@ -50,6 +50,14 @@ jobs:
       - name: JSON-LD schema tests
         run: bun run test:jsonld
 
+      # Checkout + Admin Orders regression suite:
+      #   - createOrder server schema (customerNote optional/trim/500-char cap)
+      #   - Admin → Orders "Customer note" panel render contract
+      #   - Checkout source wiring (textarea + forward to createOrder)
+      #   - Cart price validation, order tracking, payment retry, recovery
+      - name: Checkout + Admin Orders regression
+        run: bun run test:checkout
+
       # Sitemap CI guardrail:
       #   - sitemap policy ↔ route-tree consistency
       #   - sitemap BASE_URL ↔ seo-meta SITE_URL
@@ -85,5 +93,47 @@ jobs:
           FENA_TERMINAL_ID: ${{ secrets.FENA_TERMINAL_ID }}
           FENA_TERMINAL_SECRET: ${{ secrets.FENA_TERMINAL_SECRET }}
         run: bun run test:fena
+
+  # Fast, path-filtered regression — runs in parallel with the main build
+  # only when Checkout, Admin Orders, or the order/cart server code changes.
+  # Keeps PR feedback under a minute for touch-and-go UI tweaks.
+  checkout-orders-regression:
+    name: Checkout + Admin Orders regression (fast)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect changed paths
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            checkout:
+              - 'src/pages/Checkout/**'
+              - 'src/pages/Admin/tabs/OrdersTab.tsx'
+              - 'src/lib/create-order.*'
+              - 'src/lib/cart-validation.*'
+              - 'src/lib/order-tracking.*'
+              - 'src/lib/order-payment-retry.*'
+              - 'src/lib/customer-note.test.tsx'
+              - 'src/lib/recovery.*'
+
+      - uses: oven-sh/setup-bun@v2
+        if: steps.changes.outputs.checkout == 'true'
+        with:
+          bun-version: latest
+
+      - name: Install deps
+        if: steps.changes.outputs.checkout == 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Run checkout + admin orders regression
+        if: steps.changes.outputs.checkout == 'true'
+        run: bun run test:checkout
+
 
 
