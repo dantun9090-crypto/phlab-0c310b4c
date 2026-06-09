@@ -255,7 +255,7 @@ async function fetchPrerender(target: string, request: Request, token: string): 
   }
 }
 
-function decoratePrerender(resp: Response, fromCache: boolean, method: string, nonce: string): Response {
+function decoratePrerender(resp: Response, fromCache: boolean, method: string, nonce: string, hostname?: string): Response {
   const headers = new Headers(resp.headers);
   headers.set("x-prerendered", "true");
   headers.set("x-prerender-cache", fromCache ? "HIT" : "MISS");
