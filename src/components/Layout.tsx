@@ -556,8 +556,11 @@ export function Layout({ children }: LayoutProps) {
               className="flex items-center gap-3"
             >
               <Search className="w-4 h-4 text-[#9cb8d9] shrink-0" />
+              <label htmlFor="site-search" className="sr-only">Search</label>
               <input
                 ref={searchInputRef}
+                id="site-search"
+                name="q"
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -568,6 +571,7 @@ export function Layout({ children }: LayoutProps) {
                   else if (e.key === 'Escape') { setIsSearchOpen(false); setSearchQuery(''); }
                 }}
                 placeholder="Search peptides, articles, guides..."
+                aria-label="Search peptides, articles, guides"
                 className="flex-1 bg-transparent text-[#f0f6ff] placeholder-[#5a80a6] text-sm outline-none"
                 autoComplete="off"
               />
