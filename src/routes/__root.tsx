@@ -17,7 +17,6 @@ import {
   HARD_RELOAD_FLAG,
   hardReload,
   isOnline,
-  isStaleChunkError,
 } from "@/lib/recovery";
 import { schedulePrecacheCurrentPage } from "@/lib/lkg-cache";
 void _clearClientCaches;
@@ -52,8 +51,7 @@ function NotFoundComponent() {
 
 const AUTO_RELOAD_KEY = "__phl_route_err_reload_at";
 const AUTO_RELOAD_COUNT_KEY = "__phl_route_err_reload_count";
-const AUTO_RELOAD_COOLDOWN_MS = 30_000;
-const AUTO_RELOAD_MAX_ATTEMPTS = 2;
+const AUTO_RECOVERY_DONE_KEY = "__phl_route_auto_recovery_done";
 
 function OfflineScreen() {
   const [cachedUrl, setCachedUrl] = useState<string | null>(null);
@@ -114,6 +112,17 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   const [offline, setOffline] = useState<boolean>(() => !isOnline());
 
+  useEffect(() => {
+    if (!isOnline()) return;
+    try {
+      if (sessionStorage.getItem(AUTO_RECOVERY_DONE_KEY) === "1") return;
+      sessionStorage.setItem(AUTO_RECOVERY_DONE_KEY, "1");
+      sessionStorage.removeItem(HARD_RELOAD_FLAG);
+    } catch { /* ignore */ }
+    const t = setTimeout(() => { void hardReload({ clean: true, home: true }); }, 250);
+    return () => clearTimeout(t);
+  }, []);
+
   // Track connectivity in real time so the screen can flip without a reload
   // (e.g. user toggles wifi while staring at the error).
   useEffect(() => {
@@ -126,29 +135,6 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     };
   }, []);
 
-  // Auto-recover from stale-chunk errors after a deploy. Skip when offline
-  // (a hard reload would just fail again and waste an attempt).
-  if (
-    typeof window !== "undefined" &&
-    isStaleChunkError(error) &&
-    isOnline()
-  ) {
-    try {
-      const now = Date.now();
-      const last = Number(sessionStorage.getItem(AUTO_RELOAD_KEY) ?? "0");
-      const count =
-        now - last > AUTO_RELOAD_COOLDOWN_MS
-          ? 0
-          : Number(sessionStorage.getItem(AUTO_RELOAD_COUNT_KEY) ?? "0");
-
-      if (count < AUTO_RELOAD_MAX_ATTEMPTS) {
-        sessionStorage.setItem(AUTO_RELOAD_KEY, String(now));
-        sessionStorage.setItem(AUTO_RELOAD_COUNT_KEY, String(count + 1));
-        setTimeout(() => { void hardReload(); }, 50);
-      }
-    } catch { /* ignore */ }
-  }
-
   // Offline path: don't show the generic "didn't load" copy; we know why.
   if (offline) return <OfflineScreen />;
 
@@ -156,10 +142,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          Refreshing latest store
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          We detected an old browser copy and are clearing it automatically.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -170,11 +156,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
               try {
                 sessionStorage.removeItem(AUTO_RELOAD_KEY);
                 sessionStorage.removeItem(AUTO_RELOAD_COUNT_KEY);
+                sessionStorage.removeItem(AUTO_RECOVERY_DONE_KEY);
                 sessionStorage.removeItem(HARD_RELOAD_FLAG);
               } catch { /* ignore */ }
               if (!isOnline()) { setOffline(true); return; }
               if (import.meta.env.PROD) {
-                void hardReload();
+                void hardReload({ clean: true, home: true });
               } else {
                 router.invalidate();
                 reset();
@@ -182,7 +169,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Try again
+            Reload store
           </button>
           <a
             href="/"
@@ -370,10 +357,13 @@ const BOOT_WATCHDOG = `
     };
     if(qs.get('sw')==='off'){
       var DONE='__phl_sw_off_done';
-      if(sessionStorage.getItem(DONE)==='1'){
-        // Already cleaned this session — strip ?sw=off so the URL is clean.
+      var lastDone=0;
+      try{ lastDone=Number(sessionStorage.getItem(DONE)||'0'); }catch(e){}
+      if(lastDone && Date.now()-lastDone<10000){
+        // Already cleaned this session — strip ?sw=off but keep _r so the
+        // browser must fetch fresh HTML instead of reusing an old error shell.
         try{
-          qs.delete('sw'); qs.delete('_r');
+          qs.delete('sw');
           var clean=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
           history.replaceState(null,'',clean);
         }catch(e){}
@@ -401,9 +391,9 @@ const BOOT_WATCHDOG = `
         var FALLBACK=setTimeout(finish, 4000);
         function finish(){
           clearTimeout(FALLBACK);
-          try{ sessionStorage.setItem(DONE,'1'); }catch(e){}
+          try{ sessionStorage.setItem(DONE,String(Date.now())); }catch(e){}
           try{
-            qs.delete('sw'); qs.delete('_r');
+            qs.delete('sw');
             var url=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
             location.replace(url);
           }catch(e){ location.reload(); }
@@ -417,7 +407,7 @@ const BOOT_WATCHDOG = `
     // Boot-reload watchdog disabled 2026-06-09: was triggering false-positive
     // ?_r=ts reloads on production when the age-gate modal or other
     // late-mounted UI delayed the 50x50 element heuristic past 20s.
-    // The service-worker / cache cleanup path above still runs for ?sw=clear.
+    // The service-worker / cache cleanup path above still runs for ?sw=off.
     return;
 
 
