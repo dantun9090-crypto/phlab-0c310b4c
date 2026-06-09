@@ -79,10 +79,10 @@ const CSP_TEMPLATE = [
 const SECURITY_HEADERS: Record<string, string> = {
   "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
   "x-content-type-options": "nosniff",
-  "x-frame-options": "DENY",
+  // Note: X-Frame-Options + X-XSS-Protection removed (deprecated).
+  // Framing is controlled by CSP `frame-ancestors 'none'` (see CSP_TEMPLATE).
   "referrer-policy": "strict-origin-when-cross-origin",
   "permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(self)",
-  "x-xss-protection": "0",
   "cross-origin-opener-policy": "same-origin-allow-popups",
   // Reporting API v1 — modern browsers POST violations here as application/reports+json.
   "reporting-endpoints": 'csp-endpoint="/api/public/csp-report"',
