@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Users, LogOut,
   Database, FileText, Image, Settings,
   Zap, Palette, Megaphone, HardDrive, Radio, FlaskConical,
-  Scale, Rocket, Shield, PanelLeftClose, PanelLeft, Mail, Lock, Star, Eye, Search, ShieldCheck, Map, X, ChevronDown, Tag, Activity, ShoppingBag, CreditCard, Sparkles, TrendingUp
+  Scale, Rocket, Shield, PanelLeftClose, PanelLeft, Mail, Lock, Star, Eye, Search, ShieldCheck, Map, X, ChevronDown, Tag, Activity, ShoppingBag, CreditCard, Sparkles, TrendingUp, Cloud
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { auth, signOut } from '@/lib/firebase';
@@ -71,6 +71,7 @@ const navGroups = [
       { id: 'sitemap', label: 'Sitemap Manager', icon: Map },
       { id: 'sitemapaudit', label: 'Sitemap Audit', icon: Map },
       { id: 'prerenderstatus', label: 'Prerender Status', icon: Activity },
+      { id: 'cacherecache', label: 'Cache & Recache', icon: Cloud },
       { id: 'gscmonitor', label: 'GSC Monitor', icon: Search },
       { id: 'semrush', label: 'Semrush', icon: TrendingUp },
       { id: 'merchantfeed', label: 'Merchant Feed', icon: ShoppingBag },
