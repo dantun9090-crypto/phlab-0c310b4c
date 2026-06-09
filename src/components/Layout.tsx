@@ -198,6 +198,12 @@ export function Layout({ children }: LayoutProps) {
 
   // Auth state listener
   useEffect(() => {
+    // Complete Google sign-in redirect flow (mobile). Safe to call always —
+    // it's a no-op when there's no pending redirect.
+    import('@/lib/firebase').then(m => {
+      m.completeGoogleRedirect?.().catch(() => { /* ignore */ });
+    }).catch(() => { /* ignore */ });
+
     const unsub = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
       if (user) {
@@ -222,6 +228,7 @@ export function Layout({ children }: LayoutProps) {
     });
     return () => unsub();
   }, []);
+
 
   // Listen for add-to-cart events
   useEffect(() => {

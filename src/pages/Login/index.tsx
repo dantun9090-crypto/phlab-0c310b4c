@@ -110,23 +110,28 @@ export default function Login() {
     setGoogleLoading(true);
     try {
       await setAuthPersistence(rememberMe);
-      await signInWithGoogle();
+      const res = await signInWithGoogle();
+      // On mobile the call triggers a full-page redirect and returns null —
+      // do NOT navigate or stop the loader; the browser is about to leave.
+      if (res === null) return;
       navigate(redirectTarget);
     } catch (err: any) {
       console.error('Google sign-in error:', err?.code, err?.message);
       if (err?.code === 'auth/popup-blocked') {
-        setError('Popup was blocked by your browser. Please allow popups for this site and try again.');
-      } else if (err?.code === 'auth/popup-closed-by-user') {
+        setError('Popup was blocked. Please allow popups or try again — we will use a redirect on mobile.');
+      } else if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
         setError('Sign-in window was closed. Please try again.');
       } else if (err?.code === 'auth/unauthorized-domain') {
         setError('This domain is not authorised for Google sign-in. Please use email/password login instead.');
       } else {
         setError(err?.message || 'Google sign-in failed. Please try again.');
       }
-    } finally {
       setGoogleLoading(false);
+      return;
     }
+    setGoogleLoading(false);
   };
+
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
