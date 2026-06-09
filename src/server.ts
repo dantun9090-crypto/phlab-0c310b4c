@@ -646,11 +646,11 @@ export default {
               ctx?.waitUntil?.(cache.put(cacheKey, cacheable.clone()));
               const ms = Date.now() - start;
               log.info({ event: "worker.request", status: cacheable.status, ms, prerender: "MISS", ...baseFields });
-              return decoratePrerender(cacheable, false, method, nonce);
+              return decoratePrerender(cacheable, false, method, nonce, url.hostname);
             }
             const ms = Date.now() - start;
             log.info({ event: "worker.request", status: fresh.status, ms, prerender: "PASS", ...baseFields });
-            return decoratePrerender(fresh, false, method, nonce);
+            return decoratePrerender(fresh, false, method, nonce, url.hostname);
           }
           log.warn({ event: "worker.prerender.fallback", status: fresh?.status, ...baseFields });
         } catch (err) {
