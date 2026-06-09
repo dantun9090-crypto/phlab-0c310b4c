@@ -13,6 +13,8 @@ import {
   sendEmailVerification,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   deleteUser,
   EmailAuthProvider,
   reauthenticateWithCredential,
