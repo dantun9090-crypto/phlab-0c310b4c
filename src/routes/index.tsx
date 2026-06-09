@@ -35,10 +35,9 @@ export const Route = createFileRoute("/")({
       { rel: "preconnect", href: "https://firestore.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://firebasestorage.googleapis.com", crossOrigin: "" },
       { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
-      // Preload the OG image at high priority — it doubles as the share card
-      // and the social-preview placeholder, and is the largest static asset
-      // on the home route until the Firestore banner resolves.
-      { rel: "preload", as: "image", href: HOME_OG_IMAGE, fetchPriority: "high" } as any,
+      // OG image is referenced by og:image / twitter:image meta only — no
+      // <link rel="preload"> because the image is not actually rendered on
+      // the home page, and an unused preload triggers a console warning.
     ],
   }),
   component: LegacyMount,
