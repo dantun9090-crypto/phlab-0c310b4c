@@ -6,10 +6,20 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+// Build-time identifier — changes on every Lovable Publish (new build = new
+// timestamp). Used by /api/public/post-publish-check to detect a fresh
+// deployment and fire Cloudflare purge + Prerender recache exactly once.
+const BUILD_ID = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
 // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
 export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
+  },
+  vite: {
+    define: {
+      __BUILD_ID__: JSON.stringify(BUILD_ID),
+    },
   },
 });

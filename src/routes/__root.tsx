@@ -514,6 +514,19 @@ function RootComponent() {
   // something to offer when the network drops. No-op in dev/preview.
   useEffect(() => {
     schedulePrecacheCurrentPage();
+    // Fire-and-forget: tell the server to detect a fresh Lovable Publish and
+    // (if so) trigger Cloudflare purge_everything + Prerender.io recache
+    // exactly once. Safe to call on every page load — the server-side
+    // build-id compare keeps it idempotent. Skip on localhost / preview.
+    try {
+      const host = typeof window !== 'undefined' ? window.location.hostname : '';
+      const isProd = /(^|\.)phlabs\.co\.uk$/.test(host);
+      if (isProd) {
+        fetch('/api/public/post-publish-check', { method: 'GET', credentials: 'omit', cache: 'no-store' }).catch(() => {});
+      }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   return (

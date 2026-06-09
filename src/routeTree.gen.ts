@@ -19,6 +19,7 @@ import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentCancelRouteImport } from './routes/payment.cancel'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
+import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as ApiPublicHooksYapilyRouteImport } from './routes/api/public/hooks/yapily'
 import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public/hooks/truelayer'
@@ -79,6 +80,12 @@ const ApiPublicSendMailRoute = ApiPublicSendMailRouteImport.update({
   path: '/api/public/send-mail',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPostPublishCheckRoute =
+  ApiPublicPostPublishCheckRouteImport.update({
+    id: '/api/public/post-publish-check',
+    path: '/api/public/post-publish-check',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
   id: '/api/public/csp-report',
   path: '/api/public/csp-report',
@@ -129,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
@@ -148,6 +156,7 @@ export interface FileRoutesByTo {
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
@@ -168,6 +177,7 @@ export interface FileRoutesById {
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/products/$slug'
     | '/api/public/csp-report'
+    | '/api/public/post-publish-check'
     | '/api/public/send-mail'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/products/$slug'
     | '/api/public/csp-report'
+    | '/api/public/post-publish-check'
     | '/api/public/send-mail'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
@@ -227,6 +239,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/products/$slug'
     | '/api/public/csp-report'
+    | '/api/public/post-publish-check'
     | '/api/public/send-mail'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
@@ -246,6 +259,7 @@ export interface RootRouteChildren {
   PaymentCancelRoute: typeof PaymentCancelRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
+  ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
   ApiPublicHooksFenaRoute: typeof ApiPublicHooksFenaRoute
   ApiPublicHooksFenaProcessRetriesRoute: typeof ApiPublicHooksFenaProcessRetriesRoute
@@ -327,6 +341,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSendMailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/post-publish-check': {
+      id: '/api/public/post-publish-check'
+      path: '/api/public/post-publish-check'
+      fullPath: '/api/public/post-publish-check'
+      preLoaderRoute: typeof ApiPublicPostPublishCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/csp-report': {
       id: '/api/public/csp-report'
       path: '/api/public/csp-report'
@@ -401,6 +422,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaymentCancelRoute: PaymentCancelRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
+  ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
   ApiPublicHooksFenaRoute: ApiPublicHooksFenaRoute,
   ApiPublicHooksFenaProcessRetriesRoute: ApiPublicHooksFenaProcessRetriesRoute,
