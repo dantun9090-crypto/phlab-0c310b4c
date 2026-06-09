@@ -369,7 +369,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
     try {
       const compressed = await compressImage(file, 1920, 0.85);
       const pid = pendingId.current;
-      const path = `products/${pid}/banner/banner.jpg`;
+      const path = `products/${pid}/banner/banner.webp`;
       const url = await uploadToStorage(compressed, path, setBannerProgress);
       setBannerUrl(url);
     } catch (e: any) {
