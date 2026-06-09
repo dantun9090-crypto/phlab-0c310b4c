@@ -346,7 +346,7 @@ function applyCacheRecoveryHeaders(response: Response, url: URL): Response {
   });
 }
 
-function applySecurityHeaders(response: Response, nonce: string): Response {
+function applySecurityHeaders(response: Response, nonce: string, hostname?: string): Response {
   const stripped = stripInternalHeaders(response);
   const contentType = stripped.headers.get("content-type") ?? "";
   // Only decorate HTML — leaving JSON/XML/asset responses untouched avoids
