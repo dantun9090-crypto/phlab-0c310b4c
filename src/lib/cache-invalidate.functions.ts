@@ -144,7 +144,9 @@ export const invalidateProductCache = createServerFn({ method: 'POST' })
       } as const;
     }
 
-    const slugs = Array.from(new Set([data.slug, ...(data.slugs ?? [])].filter(Boolean)));
+    const slugs = Array.from(
+      new Set([data.slug, ...(data.slugs ?? [])].filter((slug): slug is string => typeof slug === 'string' && slug.length > 0)),
+    );
     const urls = productUrls(slugs, data.category);
     const [cf, pr] = await Promise.all([
       purgeCloudflare(urls),
