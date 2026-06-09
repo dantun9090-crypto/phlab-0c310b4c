@@ -69,7 +69,8 @@ const STRIP_RESPONSE_HEADERS = ["x-powered-by", "server", "x-deployment-id", "x-
 const SECURITY_HEADERS = {
   "strict-transport-security": "max-age=63072000; includeSubDomains; preload",
   "x-content-type-options": "nosniff",
-  "x-frame-options": "DENY",
+  // X-Frame-Options + X-XSS-Protection removed (deprecated). Framing is
+  // controlled by CSP `frame-ancestors 'none'` set by the origin (src/server.ts).
   "referrer-policy": "strict-origin-when-cross-origin",
   "permissions-policy": "geolocation=(), microphone=(), camera=()",
 };
@@ -92,11 +93,10 @@ function isFirebaseAuthHelperPath(url) {
 function applySecurityHeaders(res, url) {
   const h = new Headers(res.headers);
   for (const k of STRIP_RESPONSE_HEADERS) h.delete(k);
+  // Strip any upstream legacy headers — replaced by CSP frame-ancestors.
+  h.delete("x-frame-options");
+  h.delete("x-xss-protection");
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
-    // Firebase's Google auth helper is intentionally opened in a provider popup
-    // / redirect helper context. A global X-Frame-Options:DENY on /__/auth/*
-    // prevents the SDK from delivering the selected Google account back to the app.
-    if (k === "x-frame-options" && url && isFirebaseAuthHelperPath(url)) continue;
     if (!h.has(k)) h.set(k, v);
   }
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
