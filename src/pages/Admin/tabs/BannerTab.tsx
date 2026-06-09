@@ -106,13 +106,18 @@ export default function BannerTab() {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const original = e.target.files?.[0];
+    if (!original) return;
     setUploading(true);
     setUploadProgress(0);
     setImageError(false);
     try {
-      const path = `banners/${Date.now()}_${file.name}`;
+      // Re-encode to WebP ≤ 200 KB before upload — banners were the biggest
+      // single contributor to the 15 MB mobile page weight.
+      const { compressToWebp } = await import('@/lib/imageCompress');
+      const file = await compressToWebp(original, { maxPx: 1920, quality: 0.85, targetBytes: 200_000 });
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, '_');
+      const path = `banners/${Date.now()}_${safeName}`;
       const sRef = storageRef(storage, path);
       const task = uploadBytesResumable(sRef, file);
       task.on('state_changed',
@@ -122,6 +127,7 @@ export default function BannerTab() {
           const url = await getDownloadURL(task.snapshot.ref);
           setBanner(prev => ({ ...prev, imageUrl: url }));
           setUploading(false);
+          setMsg({ type: 'success', text: `Uploaded as WebP (${Math.round(file.size / 1024)} KB)` });
         }
       );
     } catch (err: any) {
