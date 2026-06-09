@@ -400,7 +400,7 @@ export default function ToolsTab() {
           </div>
         </div>
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-900/10 p-4 text-sm text-emerald-300">
-          If a browser opens an old app shell, the root error fallback now automatically runs the same <code className="text-emerald-200">?sw=off</code> cleanup, removes PH Labs app-shell service workers/cache buckets, and reloads the clean home URL. Manual recovery remains <code className="text-emerald-200">https://phlabs.co.uk/?sw=off</code>; <code className="text-emerald-200">/sw.js</code> and <code className="text-emerald-200">/service-worker.js</code> stay no-store.
+          If a browser opens an old app shell, the root error fallback now automatically runs the same <code className="text-emerald-200">?sw=off</code> cleanup, removes PH Labs app-shell service workers/cache buckets, and reloads the clean home URL. Manual recovery remains <code className="text-emerald-200">https://phlabs.co.uk/?sw=off</code>; <code className="text-emerald-200">/index</code> redirects to <code className="text-emerald-200">/</code> for sandbox/mobile preview recovery; <code className="text-emerald-200">/sw.js</code> and <code className="text-emerald-200">/service-worker.js</code> stay no-store.
         </div>
       </motion.div>
 
