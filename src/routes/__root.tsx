@@ -357,7 +357,9 @@ const BOOT_WATCHDOG = `
     };
     if(qs.get('sw')==='off'){
       var DONE='__phl_sw_off_done';
-      if(sessionStorage.getItem(DONE)==='1'){
+      var lastDone=0;
+      try{ lastDone=Number(sessionStorage.getItem(DONE)||'0'); }catch(e){}
+      if(lastDone && Date.now()-lastDone<10000){
         // Already cleaned this session — strip ?sw=off but keep _r so the
         // browser must fetch fresh HTML instead of reusing an old error shell.
         try{
@@ -389,7 +391,7 @@ const BOOT_WATCHDOG = `
         var FALLBACK=setTimeout(finish, 4000);
         function finish(){
           clearTimeout(FALLBACK);
-          try{ sessionStorage.setItem(DONE,'1'); }catch(e){}
+          try{ sessionStorage.setItem(DONE,String(Date.now())); }catch(e){}
           try{
             qs.delete('sw');
             var url=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
@@ -405,7 +407,7 @@ const BOOT_WATCHDOG = `
     // Boot-reload watchdog disabled 2026-06-09: was triggering false-positive
     // ?_r=ts reloads on production when the age-gate modal or other
     // late-mounted UI delayed the 50x50 element heuristic past 20s.
-    // The service-worker / cache cleanup path above still runs for ?sw=clear.
+    // The service-worker / cache cleanup path above still runs for ?sw=off.
     return;
 
 
