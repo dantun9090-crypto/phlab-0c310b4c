@@ -158,7 +158,7 @@ async function checkPrerender() {
 async function main() {
   console.log(`▶ Crawler smoke against ${BASE}\n`);
   await checkRedirect(`www.${APEX_HOST}`, "www→apex");
-  await checkRedirect("prohealthpeptides.co.uk", "legacy→apex");
+  await checkRedirect("prohealthpeptides.co.uk", "legacy→apex"); // check-domains-allow-line
   await checkRobots();
   await checkSitemap();
   await checkPrerender();
