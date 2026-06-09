@@ -400,7 +400,7 @@ export default function ToolsTab() {
           </div>
         </div>
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-900/10 p-4 text-sm text-emerald-300">
-          If a device still shows a blank navy screen, open <code className="text-emerald-200">https://phlabs.co.uk/?sw=off</code> once. The page now clears only PH Labs app-shell service-worker/cache buckets, keeps offline last-known content, and <code className="text-emerald-200">/sw.js</code> plus <code className="text-emerald-200">/service-worker.js</code> use no-store recovery headers.
+          If a browser opens an old app shell, the root error fallback now automatically runs the same <code className="text-emerald-200">?sw=off</code> cleanup, removes PH Labs app-shell service workers/cache buckets, and reloads the clean home URL. Manual recovery remains <code className="text-emerald-200">https://phlabs.co.uk/?sw=off</code>; <code className="text-emerald-200">/sw.js</code> and <code className="text-emerald-200">/service-worker.js</code> stay no-store.
         </div>
       </motion.div>
 
