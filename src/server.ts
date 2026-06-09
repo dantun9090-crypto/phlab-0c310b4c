@@ -50,14 +50,16 @@ const REDIRECT_HOSTS = new Set<string>([
 ]);
 
 
-// Content-Security-Policy — script-src uses per-request nonce + 'strict-dynamic'.
-// Exact-host allowlist only — no `https:` wildcard, no `*.googleapis.com`
-// wildcard, no Wegic CDN. 'strict-dynamic' lets nonce'd scripts load further
-// scripts transitively, so the host list is a fallback for non-CSP3 browsers.
+// Content-Security-Policy — script-src is nonce + 'strict-dynamic' only.
+// In CSP3 browsers, 'strict-dynamic' makes host allowlists in script-src
+// be IGNORED — listing them produces Firefox console warnings without
+// adding any protection. Trust flows from the nonce on the initial scripts
+// to anything they dynamically load. Host allowlists remain on
+// img-src / connect-src / frame-src / style-src where they still apply.
 const CSP_TEMPLATE = [
   "default-src 'self'",
-  "script-src 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://js.stripe.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net",
-  "script-src-elem 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://apis.google.com https://www.gstatic.com https://js.stripe.com https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net",
+  "script-src 'nonce-__NONCE__' 'strict-dynamic'",
+  "script-src-elem 'nonce-__NONCE__' 'strict-dynamic'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "style-src-attr 'unsafe-inline'",
