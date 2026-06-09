@@ -913,6 +913,7 @@ export const subscribeToProducts = (
 
 export const addProduct = async (product: Omit<Product, 'id'>) => {
   const data = {
+    slug: product.slug || productNameToSlug(product.name),
     name: product.name,
     description: product.description,
     price: product.price,
@@ -934,17 +935,7 @@ export const addProduct = async (product: Omit<Product, 'id'>) => {
   };
   const ref = await addDoc(collection(db, PRODUCTS_COL), data);
   invalidateProductsCache();
-  // Fire-and-forget CDN/prerender invalidation (defined below)
-  if (typeof window !== 'undefined') {
-    void (async () => {
-      try {
-        const idToken = await auth.currentUser?.getIdToken();
-        if (!idToken) return;
-        const { invalidateProductCache } = await import('./cache-invalidate.functions');
-        await invalidateProductCache({ data: { category: data.category, idToken } }).catch(() => {});
-      } catch { /* ignore */ }
-    })();
-  }
+  triggerCdnInvalidation({ slug: data.slug, category: data.category });
 
   return ref.id;
 };
