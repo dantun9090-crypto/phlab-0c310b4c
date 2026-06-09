@@ -53,6 +53,7 @@ export const createOrderInputSchema = z.object({
   ageVerified: z.literal(true),
   termsAccepted: z.literal(true),
   couponCode: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/).optional().nullable(),
+  customerNote: z.string().trim().max(500).optional().nullable(),
   idToken: z.string().min(1).max(4096).optional().nullable(),
 });
 
