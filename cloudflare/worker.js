@@ -78,6 +78,10 @@ const PRERENDER_ORIGIN = "https://service.prerender.io";
 // 45s — fresh (uncached) prerender renders of the homepage take ~18s; 25s
 // was too tight and caused AbortError fallback to origin SSR on first crawl.
 const PRERENDER_TIMEOUT_MS = 45_000;
+const PRERENDER_CACHE_TTL = 3600;
+const PRERENDER_SWR_TTL = 86_400;
+const LOOP_HEADER = "x-prerender-loop";
+const PRERENDER_RENDERER_RX = /Prerender \(\+https:\/\/github\.com\/prerender\/prerender\)/i;
 
 // ---------- helpers ----------
 
@@ -129,6 +133,36 @@ function fwdHeaders(req) {
   return out;
 }
 
+function normalizePublicUrl(url) {
+  const u = new URL(url.toString());
+  u.protocol = "https:";
+  u.hostname = CANONICAL_HOST;
+  u.port = "";
+  u.hash = "";
+  const params = [...u.searchParams.entries()].sort(([a], [b]) => a.localeCompare(b));
+  u.search = "";
+  for (const [k, v] of params) u.searchParams.append(k, v);
+  return u.toString();
+}
+
+function isServiceWorkerPath(url) {
+  return url.pathname === "/sw.js" || url.pathname === "/service-worker.js";
+}
+
+function applyNoStoreHeaders(response) {
+  const h = new Headers(response.headers);
+  h.set("cache-control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0");
+  h.set("cdn-cache-control", "no-store");
+  h.set("cloudflare-cdn-cache-control", "no-store");
+  h.set("surrogate-control", "no-store");
+  h.set("pragma", "no-cache");
+  h.set("expires", "0");
+  h.delete("etag");
+  h.delete("last-modified");
+  h.delete("age");
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers: h });
+}
+
 // Routes safe to edge-cache as HTML. Matches the `phlabs cache` ruleset
 // exclusion list (admin/account/cart/checkout/payment/login/register/api/
 // search/vip-store/webhook) so we never cache personalised pages.
@@ -138,7 +172,7 @@ const HTML_CACHE_EXCLUDE_PREFIXES = [
   "/__/firebase",
 ];
 function isHtmlCacheable(url) {
-  if (url.pathname === "/sw.js" || url.pathname === "/service-worker.js") return false;
+  if (isServiceWorkerPath(url)) return false;
   return !HTML_CACHE_EXCLUDE_PREFIXES.some((p) => url.pathname.startsWith(p));
 }
 
