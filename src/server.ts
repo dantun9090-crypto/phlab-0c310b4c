@@ -271,7 +271,7 @@ function decoratePrerender(resp: Response, fromCache: boolean, method: string, n
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
     headers.set(k, v);
   }
-  headers.set("content-security-policy", buildCsp(nonce));
+  headers.set("content-security-policy", buildCsp(nonce, hostname));
 
   const body = method === "HEAD" ? null : resp.body;
   return new Response(body, { status: resp.status, statusText: resp.statusText, headers });
