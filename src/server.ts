@@ -540,6 +540,13 @@ export default {
         return Response.redirect(dest.toString(), 301);
       }
 
+      // 1a-bis. Calculator lives on phlabs.app — 301 legacy /calculator hits
+      // so Bing/Google can clear the 404 entry from their index.
+      if (url.pathname === "/calculator" || url.pathname.startsWith("/calculator/")) {
+        log.info({ event: "worker.redirect", status: 301, reason: "calculator-app", ...baseFields });
+        return Response.redirect("https://phlabs.app/", 301);
+      }
+
       // 1b. Trailing-slash normalization → 301 to non-trailing-slash form.
       // Keep "/" itself; skip API/asset paths and anything with a file extension.
       if (

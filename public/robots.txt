@@ -10,6 +10,10 @@ Disallow: /login
 Disallow: /register
 Disallow: /search
 Disallow: /vip-store
+Disallow: /calculator
+# Firebase Auth iframe — never indexable, never prerendered
+Disallow: /__/
+Disallow: /__/auth/
 # Internal API / server endpoints — never indexable
 Disallow: /api/
 Disallow: /webhook/
