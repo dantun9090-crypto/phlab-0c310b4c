@@ -11,6 +11,14 @@ const PROJECT_ID = "prohealthpeptides-a0808";
 const API_KEY = "AIzaSyB5sWYCTkzeFFup0mqyg3PzCIzjP2oGJdM";
 const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 
+function buildCacheBust(): string {
+  try {
+    return typeof __BUILD_ID__ === "string" && __BUILD_ID__ ? __BUILD_ID__ : String(Date.now());
+  } catch {
+    return String(Date.now());
+  }
+}
+
 export interface UnitPricingMeasure {
   value: number;
   unit: "mg" | "g" | "kg" | "ml" | "cl" | "l" | "ct";
@@ -192,8 +200,8 @@ function isHidden(p: SeoProduct): boolean {
 
 /** Fetch all active, visible products from Firestore via REST. */
 export async function fetchAllProducts(): Promise<SeoProduct[]> {
-  const url = `${BASE}/product_stock?key=${API_KEY}&pageSize=300`;
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
+  const url = `${BASE}/product_stock?key=${API_KEY}&pageSize=300&v=${encodeURIComponent(buildCacheBust())}`;
+  const res = await fetch(url, { headers: { Accept: "application/json", "Cache-Control": "no-cache" }, cache: "no-store" });
   if (!res.ok) return [];
   const json: any = await res.json();
   const docs: any[] = json.documents ?? [];
