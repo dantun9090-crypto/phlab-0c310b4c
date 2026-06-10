@@ -1,8 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense } from "react";
 import { fetchAllProducts, type SeoProduct } from "@/lib/firestore-rest";
 import { SITE_URL } from "@/lib/seo-meta";
-import { LoadingFallback } from "@/components/LoadingFallback";
 
 const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
