@@ -11,10 +11,14 @@
 
 const MAX_WAIT_MS_DEFAULT = 8000;
 
-/** Mark the page as not ready yet. Call before async data fetching starts. */
+/**
+ * No-op: route loaders now provide data synchronously to prerender, so we
+ * never want to set prerenderReady=false (it would block snapshot capture
+ * while we wait for client-side Firebase reads that aren't required for SEO).
+ */
 export function markPrerenderPending(): void {
   if (typeof window === 'undefined') return;
-  (window as any).prerenderReady = false;
+  (window as any).prerenderReady = true;
 }
 
 /** Force-flip prerenderReady to true (use for hard errors / abort paths). */
