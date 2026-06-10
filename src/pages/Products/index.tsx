@@ -19,7 +19,7 @@ import type { Product } from '@/lib/firebase';
 import { nameToSlug } from '@/lib/seedProducts';
 
 // Route-critical visuals are eager. Do not wrap route/page content in
-// Suspense fallback={null}; stale chunks after publish can leave staging stuck
+// Suspense with an empty fallback; stale chunks after publish can leave staging stuck
 // on the boot loader with no visible route body.
 
 // ─── Categories ──────────────────────────────────────────────────────────────
