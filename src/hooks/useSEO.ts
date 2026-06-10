@@ -129,36 +129,26 @@ export function useSEO(pageKey: string, fallback: SEOData) {
       setMeta('meta[name="twitter:image"]',       'name=twitter:image',       ogImage);
     };
 
+    // Apply fallback immediately so first paint contains correct meta.
+    apply(fallback);
+    if (typeof window !== 'undefined') (window as any).prerenderReady = true;
+
+    // Then asynchronously merge Firestore overrides if present.
     (async () => {
       try {
         const snap = await getDoc(doc(db, 'settings', 'seoPages'));
-        if (!mounted) return;
-
-        let seoData = { ...fallback };
-        if (snap.exists()) {
-          const allPages = snap.data();
-          if (allPages[pageKey]) {
-            seoData = { ...fallback, ...allPages[pageKey] };
-          }
+        if (!mounted || !snap.exists()) return;
+        const allPages = snap.data();
+        if (allPages[pageKey]) {
+          apply({ ...fallback, ...allPages[pageKey] });
         }
-
-        apply(seoData);
-
-        seoLoaded = true;
-        if (typeof window !== 'undefined') (window as any).prerenderReady = true;
       } catch {
-        // Fallback on Firestore error
-        apply(fallback);
-        seoLoaded = true;
-        if (typeof window !== 'undefined') (window as any).prerenderReady = true;
+        // ignore — fallback already applied
       }
     })();
 
     return () => {
       mounted = false;
-      if (!seoLoaded && typeof window !== 'undefined') {
-        (window as any).prerenderReady = true;
-      }
     };
   }, [pageKey, fallback.title, fallback.metaDescription, fallback.canonical]);
 }
