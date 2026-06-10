@@ -1,5 +1,5 @@
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense } from "react";
 import { fetchProductBySlug, type SeoProduct } from "@/lib/firestore-rest";
 import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
 
