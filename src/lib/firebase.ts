@@ -27,7 +27,6 @@ import {
 import { checkLockout, recordFailure, clearFailures, formatRemaining } from '@/lib/login-lockout';
 import { getStorage, ref as storageRef, uploadBytesResumable, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from 'firebase/storage';
 import { logAuthEvent, logAuthFailure } from '@/lib/auth-events';
-import { getFirestoreCacheBustParam } from '@/lib/build-cache';
 // Email template builders are dynamically imported inside their send-helpers
 // (sendWelcomeEmail / sendOrderStatusEmail / processReferralReward) so the
 // large HTML template strings don't ship in the home/PDP bundles.
@@ -863,35 +862,53 @@ function normaliseProduct(id: string, data: any): Product {
 const PRODUCTS_CACHE_KEY = 'php_products_cache_v1';
 const PRODUCTS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-export const getAllProducts = async (): Promise<Product[]> => {
-  // Serve from localStorage cache when fresh — avoids repeated Firestore reads
+function readCachedProducts(): Product[] | null {
   try {
-    if (typeof window !== 'undefined') {
-      const raw = localStorage.getItem(PRODUCTS_CACHE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw) as { ts: number; products: Product[] };
-        if (parsed && Date.now() - parsed.ts < PRODUCTS_CACHE_TTL && Array.isArray(parsed.products)) {
-          return parsed.products;
-        }
-      }
+    if (typeof window === 'undefined') return null;
+    const raw = localStorage.getItem(PRODUCTS_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { ts: number; products: Product[] };
+    if (parsed && Date.now() - parsed.ts < PRODUCTS_CACHE_TTL && Array.isArray(parsed.products)) {
+      return parsed.products;
     }
   } catch { /* ignore cache errors */ }
+  return null;
+}
 
+function writeCachedProducts(products: Product[]): void {
   try {
-    // Cap at 50 products to keep payload small
-    const q = query(collection(db, PRODUCTS_COL), limit(50));
-    const snap = await getDocs(q);
-    const products = snap.docs.map((d) => normaliseProduct(d.id, d.data()));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify({ ts: Date.now(), products }));
+    }
+  } catch { /* ignore quota errors */ }
+}
+
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const getAllProducts = async (): Promise<Product[]> => {
+  const cachedFallback = readCachedProducts();
+  const q = query(collection(db, PRODUCTS_COL), limit(300));
+
+  // Firestore is authoritative on every page load. Do not return localStorage
+  // first; stale product caches after publish caused "0 compounds" on staging.
+  // getDocsFromServer bypasses the SDK's local persistence cache; if the first
+  // backend read fails, retry once after 2s before falling back to saved data.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify({ ts: Date.now(), products }));
+      const snap = await getDocsFromServer(q);
+      const products = snap.docs.map((d) => normaliseProduct(d.id, d.data()));
+      writeCachedProducts(products);
+      return products;
+    } catch (e) {
+      if (attempt === 0) {
+        await wait(2000);
+        continue;
       }
-    } catch { /* ignore quota errors */ }
-    return products;
-  } catch (e) {
-    console.warn('getAllProducts error:', e);
-    return [];
+      console.warn('getAllProducts error after retry:', e);
+    }
   }
+
+  return cachedFallback ?? [];
 };
 
 export const subscribeToProducts = (
