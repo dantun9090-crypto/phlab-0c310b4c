@@ -272,7 +272,7 @@ export default function ProductDetail() {
         // 0. Stable short-slug override → fetch by known doc ID
         const overrideDocId = SLUG_TO_DOC_ID[id];
         if (overrideDocId) {
-          const overrideDoc = await getDoc(doc(db, 'product_stock', overrideDocId));
+          const overrideDoc = await getDocFromServer(doc(db, 'product_stock', overrideDocId));
           if (overrideDoc.exists()) productDoc = overrideDoc;
         }
 
@@ -283,21 +283,31 @@ export default function ProductDetail() {
             where('slug', '==', id),
             limit(1)
           );
-          const slugSnap = await getDocs(slugQuery);
+          const slugSnap = await getDocsFromServer(slugQuery);
 
           if (!slugSnap.empty) {
             productDoc = slugSnap.docs[0];
           } else {
             // 2. Fallback: try direct Firestore document ID (legacy URLs)
-            const directDoc = await getDoc(doc(db, 'product_stock', id));
+            const directDoc = await getDocFromServer(doc(db, 'product_stock', id));
             if (directDoc.exists()) {
               productDoc = directDoc;
             } else {
               // 3. Last resort: query by name-derived slug (for products not yet re-seeded)
-              const allSnap = await getDocs(collection(db, 'product_stock'));
-              const match = allSnap.docs.find(d => nameToSlug(d.data().name || '') === id);
+              const allSnap = await getDocsFromServer(collection(db, 'product_stock'));
+              const match = allSnap.docs.find((d: any) => nameToSlug(d.data().name || '') === id);
               if (match) productDoc = match;
             }
+          }
+        }
+
+        if (!productDoc) {
+          const legacySlugSnap = await getDocsFromServer(query(collection(db, 'products'), where('slug', '==', id), limit(1)));
+          if (!legacySlugSnap.empty) {
+            productDoc = legacySlugSnap.docs[0];
+          } else {
+            const legacyDirectDoc = await getDocFromServer(doc(db, 'products', id));
+            if (legacyDirectDoc.exists()) productDoc = legacyDirectDoc;
           }
         }
 
