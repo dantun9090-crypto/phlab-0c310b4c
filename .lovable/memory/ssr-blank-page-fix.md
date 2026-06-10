@@ -17,8 +17,9 @@ If every page renders blank (especially in incognito / on production), the root 
    - `src/routes/products.tsx`
    - `src/routes/products.$slug.tsx`
    - `src/routes/$.tsx`
-4. **`src/server.ts`** — HTML document responses get `cache-control: no-store, no-cache, must-revalidate` so publishes are never served from stale CDN cache.
+4. **`src/server.ts`** — HTML document responses are cached at the CF edge for **60s only** (`cdn-cache-control: public, max-age=60, stale-while-revalidate=86400`) with browser `max-age=0, must-revalidate`. After a publish, returning users get fresh HTML within 60s (or immediately if CF purge is run). Sensitive routes (`/admin`, `/cart`, `/checkout`, `/payment`, `/account`, `/login`, `/register`, `/api/*`, `/vip*`) stay full `no-store`. **Do NOT raise the HTML TTL above 60s** — longer = stale HTML + new hashed chunks = blank pages on returning users after publish. **Do NOT go back to no-store everywhere** — that costs 500-800ms TTFB on every request.
 5. **Cloudflare `phlabs cache` ruleset** — must continue to bypass cache for `/sw.js` and `/service-worker.js`.
+6. **MolecularIntro overlay was removed 2026-06-10** — it rendered a "PH Labs loading" overlay for 650ms over every first-paint and looked identical to a blank page. Do not re-add it.
 
 ## Symptoms of regression
 
