@@ -402,8 +402,9 @@ export default function Products() {
       </section>
 
       {/* ── MAIN LAYOUT ─────────────────────────────────────────────────────── */}
-      <section id="catalogue" className="py-10">
+      <section id="catalogue" className="py-10" aria-labelledby="catalogue-heading">
         <div className="container mx-auto px-4 sm:px-6">
+          <h2 id="catalogue-heading" className="sr-only">Research Peptide Catalogue</h2>
           <div className="flex gap-6 lg:gap-8">
 
             {/* ── SIDEBAR ──────────────────────────────────────────────────── */}
