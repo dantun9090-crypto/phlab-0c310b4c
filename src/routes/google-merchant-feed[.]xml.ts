@@ -11,6 +11,37 @@ const CURRENCY = "GBP";
 // triggers the "Unapproved supplements" healthcare-and-medicine policy.
 const GOOGLE_CATEGORY_ID = "499954";
 
+// Map internal category slugs to human-readable Merchant product_type leaves.
+// Avoids feeding Google raw slugs like "metabolic-signaling". Unknown slugs
+// are title-cased on the fly (see toDisplayCategory below).
+const CATEGORY_DISPLAY: Record<string, string> = {
+  "metabolic-signaling": "Metabolic Signalling Peptides",
+  "metabolic-signalling": "Metabolic Signalling Peptides",
+  "growth-hormone": "Growth Hormone Secretagogues",
+  "growth-hormone-secretagogues": "Growth Hormone Secretagogues",
+  "tissue-repair": "Tissue Repair Peptides",
+  "healing": "Tissue Repair Peptides",
+  "cosmetic": "Cosmetic Research Peptides",
+  "skin": "Cosmetic Research Peptides",
+  "melanocortin": "Melanocortin Peptides",
+  "nootropic": "Nootropic Research Peptides",
+  "blends": "Research Peptide Blends",
+  "blend": "Research Peptide Blends",
+  "research-compound": "Research Compounds",
+  "ancillary": "Ancillary Research Reagents",
+};
+
+function toDisplayCategory(slug?: string | null): string | null {
+  if (!slug) return null;
+  const key = slug.toLowerCase().trim();
+  if (CATEGORY_DISPLAY[key]) return CATEGORY_DISPLAY[key];
+  return key
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 /**
  * All products are included in the Merchant feed. Per-product exclusion
  * can be managed from the admin panel via the product's `excludeFromMerchantFeed`
