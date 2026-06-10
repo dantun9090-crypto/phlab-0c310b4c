@@ -1,4 +1,4 @@
-import { createBrowserRouter, Outlet, Navigate, useLocation } from 'react-router-dom';
+import { createBrowserRouter, createMemoryRouter, Outlet, Navigate, useLocation } from 'react-router-dom';
 import React, { useEffect, useState, useCallback } from 'react';
 import { Layout } from '@/components/Layout';
 import ScrollToTop from '@/components/ScrollToTop';
@@ -128,7 +128,7 @@ function AppLayout() {
   );
 }
 
-export const router = createBrowserRouter([
+const routes = [
   // ── Admin — rendered completely outside Layout (no nav, no animations, no overlays) ──
   {
     path: '/admin',
@@ -178,4 +178,11 @@ export const router = createBrowserRouter([
       { path: '*',                 element: <NotFound /> },
     ],
   },
-]);
+];
+
+export function createLegacyRouter(initialPath = '/') {
+  if (typeof document === 'undefined') {
+    return createMemoryRouter(routes, { initialEntries: [initialPath || '/'] });
+  }
+  return createBrowserRouter(routes);
+}
