@@ -900,7 +900,7 @@ export const getAllProducts = async (): Promise<Product[]> => {
     try {
       const snap = await getDocsFromServer(q);
       const products = snap.docs.map((d) => normaliseProduct(d.id, d.data()));
-      writeCachedProducts(products);
+      if (products.length > 0) writeCachedProducts(products);
       return products;
     } catch (e) {
       if (attempt === 0) {
