@@ -381,11 +381,11 @@ export default function ProductDetail() {
               orderBy('name'),
               limit(5)
             );
-            const relSnap = await getDocs(relQ);
+            const relSnap = await getDocsFromServer(relQ);
             const related: Product[] = relSnap.docs
-              .filter(d => d.id !== productDoc.id)
+              .filter((d: any) => d.id !== productDoc.id)
               .slice(0, 3)
-              .map(d => {
+              .map((d: any) => {
                 const rd = d.data();
                 const rp = toMoneyNumber(rd.price);
                 const rImages = toStringArray(rd.images);
