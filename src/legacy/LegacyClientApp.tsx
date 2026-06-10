@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 
-type LegacyAppComponent = React.ComponentType;
+type LegacyAppComponent = ComponentType;
 
 function LegacyFallback() {
   return null;
