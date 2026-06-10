@@ -108,9 +108,7 @@ export function useSEO(pageKey: string, fallback: SEOData) {
         setMeta('meta[property="og:title"]',       'property=og:title',       title);
         setMeta('meta[property="og:site_name"]',   'property=og:site_name',   'PH Labs');
       }
-      if (description) {
-        setMeta('meta[property="og:description"]', 'property=og:description', description);
-      }
+      // og:description owned by route head() — do not overwrite here.
       setMeta('meta[property="og:url"]',           'property=og:url',         canonicalUrl);
       setMeta('meta[property="og:type"]',          'property=og:type',        ogType);
       setMeta('meta[property="og:image"]',         'property=og:image',       ogImage);
@@ -123,7 +121,7 @@ export function useSEO(pageKey: string, fallback: SEOData) {
       setMeta('meta[name="twitter:site"]',        'name=twitter:site',        '@PHLabsUK');
       setMeta('meta[name="twitter:url"]',         'name=twitter:url',         canonicalUrl);
       if (title)       setMeta('meta[name="twitter:title"]',       'name=twitter:title',       title);
-      if (description) setMeta('meta[name="twitter:description"]', 'name=twitter:description', description);
+      // twitter:description owned by route head() — do not overwrite here.
       setMeta('meta[name="twitter:image"]',       'name=twitter:image',       ogImage);
     };
 
