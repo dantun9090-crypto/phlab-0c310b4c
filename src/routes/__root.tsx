@@ -473,12 +473,12 @@ function installCanonicalEnforcer() {
   const originalPushState = history.pushState;
   const originalReplaceState = history.replaceState;
   const schedule = () => window.setTimeout(enforce, 0);
-  history.pushState = function patchedPushState(...args) {
+  history.pushState = function patchedPushState(...args: Parameters<typeof history.pushState>) {
     const result = originalPushState.apply(this, args);
     schedule();
     return result;
   };
-  history.replaceState = function patchedReplaceState(...args) {
+  history.replaceState = function patchedReplaceState(...args: Parameters<typeof history.replaceState>) {
     const result = originalReplaceState.apply(this, args);
     schedule();
     return result;
