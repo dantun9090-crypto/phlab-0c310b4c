@@ -8,7 +8,9 @@ const HOME_URL = "https://phlabs.co.uk/";
 const HOME_OG_IMAGE = "https://phlabs.co.uk/og-image.jpg";
 
 export const Route = createFileRoute("/")({
-  ssr: false,
+  // Public content routes must SSR a non-empty body. Do not re-add `ssr:false`
+  // here or wrap the route in lazy/Suspense fallback={null}; that combination
+  // caused staging to stick on the boot loader after publishes.
   head: () => ({
     meta: [
       { title: HOME_TITLE },
