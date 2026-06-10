@@ -1,9 +1,7 @@
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
+import LegacyApp from "@/legacy/LegacyApp";
 import { fetchProductBySlug, type SeoProduct } from "@/lib/firestore-rest";
 import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
-
-const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
 const OG_IMAGE_FALLBACK = `${SITE_URL}/og-image.jpg`;
 
@@ -231,9 +229,5 @@ function SeoProductBlock({ product }: { product: SeoProduct }) {
 }
 
 function LegacyMount() {
-  return (
-    <Suspense fallback={null}>
-      <LegacyApp />
-    </Suspense>
-  );
+  return <LegacyApp />;
 }
