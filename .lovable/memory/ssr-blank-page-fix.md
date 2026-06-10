@@ -1,0 +1,34 @@
+---
+name: SSR blank page fix
+description: Fix for blank pages on phlabs.co.uk caused by legacy router SSR crash and stale CDN cache
+type: feature
+---
+
+# Blank page fix (June 2026) — works, do not regress
+
+If every page renders blank (especially in incognito / on production), the root cause is the legacy React Router (`createBrowserRouter`) crashing during SSR because `document` is undefined, plus Cloudflare caching the empty shell.
+
+## Required pieces (all must stay in place)
+
+1. **`src/legacy/AppRouter.tsx`** — uses `createMemoryRouter` on the server and `createBrowserRouter` in the browser. `AppLayout` forces `showIntro = false` during SSR (no dark intro overlay in initial HTML).
+2. **`src/legacy/LegacyApp.tsx`** — stable singleton for the browser router; accepts `initialPath` for SSR.
+3. **Route entry files** pass `initialPath` to `LegacyApp`:
+   - `src/routes/index.tsx`
+   - `src/routes/products.tsx`
+   - `src/routes/products.$slug.tsx`
+   - `src/routes/$.tsx`
+4. **`src/server.ts`** — HTML document responses get `cache-control: no-store, no-cache, must-revalidate` so publishes are never served from stale CDN cache.
+5. **Cloudflare `phlabs cache` ruleset** — must continue to bypass cache for `/sw.js` and `/service-worker.js`.
+
+## Symptoms of regression
+
+- Blank white/dark page on https://phlabs.co.uk in incognito
+- Server logs: `ReferenceError: document is not defined` or React hydration error #419
+- View-source shows empty `<div id="root">` (no SSR content)
+
+## First checks if it breaks again
+
+1. View source on the live URL — is `<div id="root">` empty? → SSR crash returned.
+2. Did anyone re-introduce a client-only mount (useEffect dynamic import of LegacyApp)? Revert.
+3. Did `src/server.ts` lose the `no-store` HTML cache-control? Re-add.
+4. Purge Cloudflare cache for the apex (`phlabs.co.uk`) after deploying.
