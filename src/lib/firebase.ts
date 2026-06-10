@@ -27,6 +27,7 @@ import {
 import { checkLockout, recordFailure, clearFailures, formatRemaining } from '@/lib/login-lockout';
 import { getStorage, ref as storageRef, uploadBytesResumable, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from 'firebase/storage';
 import { logAuthEvent, logAuthFailure } from '@/lib/auth-events';
+import { clearStoreCachesForNewBuild } from '@/lib/build-cache';
 // Email template builders are dynamically imported inside their send-helpers
 // (sendWelcomeEmail / sendOrderStatusEmail / processReferralReward) so the
 // large HTML template strings don't ship in the home/PDP bundles.
@@ -887,6 +888,7 @@ function writeCachedProducts(products: Product[]): void {
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const getAllProducts = async (): Promise<Product[]> => {
+  clearStoreCachesForNewBuild();
   const cachedFallback = readCachedProducts();
   const q = query(collection(db, PRODUCTS_COL), limit(300));
 
