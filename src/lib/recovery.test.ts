@@ -244,7 +244,7 @@ describe("hardReload", () => {
     if (origLoc) Object.defineProperty(window, "location", origLoc);
   });
 
-  it("reproduces the stale-chunk recovery flow: evicts app caches and navigates with cache-buster", async () => {
+  it("reproduces the stale-chunk recovery flow: evicts app caches and navigates to a clean URL", async () => {
     // Simulate a tab open across a deploy: the old chunk reference is dead.
     const chunkErr = new Error(
       "Failed to fetch dynamically imported module: https://phlabs.co.uk/assets/Home-OLDHASH.js",
@@ -275,11 +275,12 @@ describe("hardReload", () => {
     expect(await findCachedLastKnownUrl()).toBe("/");
     expect(replace).toHaveBeenCalledTimes(1);
 
-    // Navigation went to the same URL with a fresh _r= buster.
+    // Navigation went to the same URL, without recovery-only query params.
     const target = new URL(replace.mock.calls[0][0] as string);
     expect(target.pathname).toBe("/products");
     expect(target.searchParams.get("foo")).toBe("bar");
-    expect(target.searchParams.get("_r")).toMatch(/^\d+$/);
+    expect(target.searchParams.has("_r")).toBe(false);
+    expect(target.searchParams.has("sw")).toBe(false);
   });
 
   it("is re-entrant: a second concurrent call is a no-op", async () => {
