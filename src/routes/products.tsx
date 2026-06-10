@@ -1,9 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
+import LegacyApp from "@/legacy/LegacyApp";
 import { fetchAllProducts, type SeoProduct } from "@/lib/firestore-rest";
 import { SITE_URL } from "@/lib/seo-meta";
-
-const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
 const TITLE = "Research Peptides UK | Full Catalogue | PH Labs";
 const DESCRIPTION =
@@ -100,9 +98,5 @@ function SeoCatalogue({ products }: { products: SeoProduct[] }) {
 }
 
 function LegacyMount() {
-  return (
-    <Suspense fallback={null}>
-      <LegacyApp />
-    </Suspense>
-  );
+  return <LegacyApp />;
 }
