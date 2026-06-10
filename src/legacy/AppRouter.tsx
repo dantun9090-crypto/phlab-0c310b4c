@@ -124,9 +124,7 @@ function AppLayout() {
         <ScrollToTop />
         <Layout>
           <ErrorBoundary>
-            <Suspense fallback={<PageLoader />}>
-              <Outlet />
-            </Suspense>
+            <Outlet />
           </ErrorBoundary>
         </Layout>
       </div>
@@ -140,11 +138,9 @@ export const router = createBrowserRouter([
     path: '/admin',
     element: (
       <ErrorBoundary>
-        <Suspense fallback={<PageLoader />}>
-          <RequireAuth>
-            <Admin />
-          </RequireAuth>
-        </Suspense>
+        <RequireAuth>
+          <Admin />
+        </RequireAuth>
       </ErrorBoundary>
     ),
   },
