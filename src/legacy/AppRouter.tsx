@@ -1,4 +1,4 @@
-import { createBrowserRouter, Outlet, Navigate, useLocation } from 'react-router-dom';
+import { createBrowserRouter, createMemoryRouter, Outlet, Navigate, useLocation } from 'react-router-dom';
 import React, { useEffect, useState, useCallback } from 'react';
 import { Layout } from '@/components/Layout';
 import ScrollToTop from '@/components/ScrollToTop';
@@ -77,6 +77,7 @@ function AppLayout() {
   })();
 
   const [showIntro, setShowIntro] = useState(() => {
+    if (typeof window === 'undefined') return false;
     if (isCrawler) return false;
     try {
       if (sessionStorage.getItem(INTRO_SEEN_KEY)) return false;
@@ -87,6 +88,7 @@ function AppLayout() {
   });
 
   const [pageReady, setPageReady] = useState(() => {
+    if (typeof window === 'undefined') return true;
     if (isCrawler) return true;
     try { return !!sessionStorage.getItem(INTRO_SEEN_KEY); } catch { return false; }
   });
@@ -128,7 +130,7 @@ function AppLayout() {
   );
 }
 
-export const router = createBrowserRouter([
+const routes = [
   // ── Admin — rendered completely outside Layout (no nav, no animations, no overlays) ──
   {
     path: '/admin',
@@ -178,4 +180,11 @@ export const router = createBrowserRouter([
       { path: '*',                 element: <NotFound /> },
     ],
   },
-]);
+];
+
+export function createLegacyRouter(initialPath = '/') {
+  if (typeof document === 'undefined') {
+    return createMemoryRouter(routes, { initialEntries: [initialPath || '/'] });
+  }
+  return createBrowserRouter(routes);
+}

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import LegacyClientApp from "@/legacy/LegacyClientApp";
+import LegacyApp from "@/legacy/LegacyApp";
 import { fetchAllProducts, type SeoProduct } from "@/lib/firestore-rest";
 import { SITE_URL } from "@/lib/seo-meta";
 
@@ -98,5 +98,5 @@ function SeoCatalogue({ products }: { products: SeoProduct[] }) {
 }
 
 function LegacyMount() {
-  return <LegacyClientApp />;
+  return <LegacyApp initialPath="/products" />;
 }
