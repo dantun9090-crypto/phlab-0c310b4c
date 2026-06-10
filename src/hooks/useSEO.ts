@@ -66,11 +66,10 @@ function setLink(rel: string, value: string) {
 export function useSEO(pageKey: string, fallback: SEOData) {
   useEffect(() => {
     let mounted = true;
-    let seoLoaded = false;
 
-    if (typeof window !== 'undefined') {
-      (window as any).prerenderReady = false;
-    }
+    // Apply fallback SEO synchronously so prerender.io captures content
+    // on the first render without waiting for Firestore. Mark ready immediately.
+
 
     const apply = (seoData: SEOData) => {
       // Use || so empty strings stored in Firestore fall back to defaults,
