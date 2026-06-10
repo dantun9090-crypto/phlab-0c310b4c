@@ -245,36 +245,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
                 "https://x.com/phlabs",
               ],
             },
-            {
-              "@type": "LocalBusiness",
-              "@id": "https://phlabs.co.uk/#localbusiness",
-              name: "PH Labs UK",
-              url: "https://phlabs.co.uk",
-              image: "https://phlabs.co.uk/og-image.jpg",
-              telephone: "+44 20 8175 4060",
-              email: "info@phlabs.co.uk",
-              priceRange: "££",
-              address: {
-                "@type": "PostalAddress",
-                addressCountry: "GB",
-                addressRegion: "England",
-              },
-              areaServed: "GB",
-              parentOrganization: { "@id": "https://phlabs.co.uk/#organization" },
-            },
-            {
-              "@type": "WebSite",
-              "@id": "https://phlabs.co.uk/#website",
-              url: "https://phlabs.co.uk",
-              name: "PH Labs UK",
-              inLanguage: "en-GB",
-              publisher: { "@id": "https://phlabs.co.uk/#organization" },
-              potentialAction: {
-                "@type": "SearchAction",
-                target: "https://phlabs.co.uk/search?q={search_term_string}",
-                "query-input": "required name=search_term_string",
-              },
-            },
+            // NOTE: LocalBusiness + WebSite (with SearchAction) live on
+            // the home route (src/routes/index.tsx) only — they're sitewide
+            // identity blocks that don't need to be repeated on every page.
+            // Keeping them root-wide bloated product HTML by ~3 KB and
+            // diluted entity signals (Google prefers single canonical home).
           ],
         }),
       },

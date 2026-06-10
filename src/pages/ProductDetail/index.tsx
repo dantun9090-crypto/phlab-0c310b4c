@@ -794,7 +794,7 @@ export default function ProductDetail() {
           <meta name="robots" content="noindex, nofollow" />
         </head>
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-[#f0f6ff] mb-4">Page Not Available</h1>
+          <h2 className="text-2xl font-bold text-[#f0f6ff] mb-4">Page Not Available</h2>
           <p className="text-[#9cb8d9] mb-6">This product is no longer available or has been removed.</p>
           <Link to="/products" className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all shadow-[0_2px_12px_rgba(37,99,235,0.3)]">
             <ArrowLeft className="w-4 h-4" /> Back to Products

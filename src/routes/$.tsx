@@ -74,10 +74,20 @@ export const Route = createFileRoute("/$")({
     // /products?category=… variants and flagging them as "Crawled - currently
     // not indexed" / "Discovered - currently not indexed".
     const firstSeg = splat.split("/")[0] ?? "";
+    // Private/transactional/admin routes — must not be indexed. robots.txt
+    // already blocks crawl, but URL-only entries can still surface in SERPs
+    // if linked externally, so emit an explicit noindex meta tag too.
+    const PRIVATE_ROOTS = new Set([
+      "admin", "checkout", "cart", "payment",
+      "account", "login", "register", "signup",
+      "auth", "reset-password", "forgot-password", "verify",
+      "order", "orders", "thank-you", "success", "cancel",
+    ]);
     const shouldNoindex =
       firstSeg === "search" ||
       splat.startsWith("products?") ||
-      splat.includes("?category=");
+      splat.includes("?category=") ||
+      PRIVATE_ROOTS.has(firstSeg);
 
     const meta: Array<Record<string, string>> = [
       { title },
@@ -93,7 +103,8 @@ export const Route = createFileRoute("/$")({
       { name: "twitter:url", content: url },
     ];
     if (shouldNoindex) {
-      meta.push({ name: "robots", content: "noindex, follow" });
+      // noarchive prevents cached snapshots from leaking checkout/admin UI.
+      meta.push({ name: "robots", content: "noindex,nofollow,noarchive" });
     }
 
     // Signal 404 for unknown top-level paths so Prerender.io serves a real
