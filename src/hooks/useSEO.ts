@@ -88,12 +88,10 @@ export function useSEO(pageKey: string, fallback: SEOData) {
       }
 
       // ── Meta description ───────────────────────────────────────────────────
-      if (description) {
-        const desc = document.querySelector('meta[name="description"]') as HTMLMetaElement;
-        if (desc) desc.content = description;
-        const descEl = document.getElementById('page-description') as HTMLMetaElement;
-        if (descEl) descEl.content = description;
-      }
+      // Intentionally NOT writing description here. Each TanStack route owns
+      // its <meta name="description"> via head() — overwriting it from a
+      // legacy page's generic intro produced a duplicate / wrong description
+      // in the prerender snapshot.
 
       // ── Canonical / og:url / twitter:url ───────────────────────────────────
       // ALWAYS force onto https://phlabs.co.uk, regardless of input.
@@ -110,9 +108,7 @@ export function useSEO(pageKey: string, fallback: SEOData) {
         setMeta('meta[property="og:title"]',       'property=og:title',       title);
         setMeta('meta[property="og:site_name"]',   'property=og:site_name',   'PH Labs');
       }
-      if (description) {
-        setMeta('meta[property="og:description"]', 'property=og:description', description);
-      }
+      // og:description owned by route head() — do not overwrite here.
       setMeta('meta[property="og:url"]',           'property=og:url',         canonicalUrl);
       setMeta('meta[property="og:type"]',          'property=og:type',        ogType);
       setMeta('meta[property="og:image"]',         'property=og:image',       ogImage);
@@ -125,7 +121,7 @@ export function useSEO(pageKey: string, fallback: SEOData) {
       setMeta('meta[name="twitter:site"]',        'name=twitter:site',        '@PHLabsUK');
       setMeta('meta[name="twitter:url"]',         'name=twitter:url',         canonicalUrl);
       if (title)       setMeta('meta[name="twitter:title"]',       'name=twitter:title',       title);
-      if (description) setMeta('meta[name="twitter:description"]', 'name=twitter:description', description);
+      // twitter:description owned by route head() — do not overwrite here.
       setMeta('meta[name="twitter:image"]',       'name=twitter:image',       ogImage);
     };
 
