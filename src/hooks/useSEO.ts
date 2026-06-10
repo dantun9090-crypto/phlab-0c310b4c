@@ -88,12 +88,10 @@ export function useSEO(pageKey: string, fallback: SEOData) {
       }
 
       // ── Meta description ───────────────────────────────────────────────────
-      if (description) {
-        const desc = document.querySelector('meta[name="description"]') as HTMLMetaElement;
-        if (desc) desc.content = description;
-        const descEl = document.getElementById('page-description') as HTMLMetaElement;
-        if (descEl) descEl.content = description;
-      }
+      // Intentionally NOT writing description here. Each TanStack route owns
+      // its <meta name="description"> via head() — overwriting it from a
+      // legacy page's generic intro produced a duplicate / wrong description
+      // in the prerender snapshot.
 
       // ── Canonical / og:url / twitter:url ───────────────────────────────────
       // ALWAYS force onto https://phlabs.co.uk, regardless of input.
