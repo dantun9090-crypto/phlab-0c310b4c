@@ -1,7 +1,9 @@
 import { ArrowRight, CheckCircle2, ShieldCheck, Zap, Mail, Microscope, CreditCard, Truck, Flame, Star, Dna, Activity, Brain, RefreshCw, Shield, Snowflake, FileCheck, FlaskConical, ChevronDown, Lock, Loader2 } from 'lucide-react';
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 
 import { Link } from 'react-router-dom';
+import { AnimatedBackground } from '@/components/AnimatedBackground';
+import HomeSeoIndex from '@/components/HomeSeoIndex';
 import { getProductImage } from '@/lib/productImages';
 import { getAllProducts, db, doc, getDoc, getDocs, collection, query, where, addDoc, Timestamp } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
@@ -10,11 +12,9 @@ import { sendPublicMail } from '@/lib/sendPublicMail';
 
 import { useSEO } from '@/hooks/useSEO';
 
-const AnimatedBackground = lazy(() => import('@/components/AnimatedBackground').then(m => ({ default: m.AnimatedBackground })));
-// Site-index link hub lives at the very bottom of the page (below the fold).
-// Lazy-loading it keeps the initial Home chunk smaller and defers ~30 link
-// items + lucide icons + the article-title index until the user scrolls down.
-const HomeSeoIndex = lazy(() => import('@/components/HomeSeoIndex'));
+// Route-critical components must stay eager. Lazy route/page chunks with
+// empty Suspense fallbacks caused staging to render a persistent blank loader
+// after publish when returning browsers held stale chunks.
 
 // ── Static data ───────────────────────────────────────────────────────────────
 
@@ -407,9 +407,7 @@ export default function HomePage() {
           paddingBottom: '4rem',
         }}
       >
-        <Suspense fallback={null}>
-          <AnimatedBackground variant="blue" />
-        </Suspense>
+        <AnimatedBackground variant="blue" />
 
         {/* Radial glow accent — pointer-events off, composited layer after LCP */}
         <div className="absolute pointer-events-none" style={{
@@ -1207,9 +1205,7 @@ export default function HomePage() {
       </div>
 
       {/* SEO link-index — SSR-rendered hub linking to every product + article */}
-      <Suspense fallback={null}>
-        <HomeSeoIndex />
-      </Suspense>
+      <HomeSeoIndex />
 
     </div>
   );
