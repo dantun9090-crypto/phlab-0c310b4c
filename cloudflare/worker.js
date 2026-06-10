@@ -261,6 +261,12 @@ export default {
       return Response.redirect(dest.toString(), 301);
     }
 
+    // Calculator lives on phlabs.app — 301 any legacy /calculator hit there so
+    // Bing/Google can drop the 404 entry.
+    if (url.pathname === "/calculator" || url.pathname.startsWith("/calculator/")) {
+      return Response.redirect("https://phlabs.app/", 301);
+    }
+
     // 2. Health endpoint — never hits origin, never prerendered.
     if (url.pathname === "/_health" || url.pathname === "/__health") {
       return jsonResponse({
