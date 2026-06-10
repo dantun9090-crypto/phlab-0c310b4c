@@ -68,7 +68,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-const INTRO_SEEN_KEY = 'php_intro_seen';
+
 
 function AppLayout() {
   return (
