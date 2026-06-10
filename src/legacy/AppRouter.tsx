@@ -71,64 +71,14 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
 const INTRO_SEEN_KEY = 'php_intro_seen';
 
 function AppLayout() {
-  const isCrawler = (() => {
-    try {
-      const ua = navigator.userAgent;
-      // Skip intro for bots, Lighthouse, PageSpeed, and automated testing tools
-      return /googlebot|bingbot|slurp|duckduckbot|baiduspider|yandexbot|facebookexternalhit|twitterbot|rogerbot|linkedinbot|bot|crawl|spider|lighthouse|pagespeed|headlesschrome|puppeteer|playwright/i.test(ua);
-    } catch { return false; }
-  })();
-
-  const [showIntro, setShowIntro] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    if (isCrawler) return false;
-    try {
-      if (sessionStorage.getItem(INTRO_SEEN_KEY)) return false;
-      const conn = (navigator as any).connection;
-      if (conn && (conn.saveData || conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g')) return false;
-      return true;
-    } catch { return true; }
-  });
-
-  const [pageReady, setPageReady] = useState(() => {
-    if (typeof window === 'undefined') return true;
-    if (isCrawler) return true;
-    try { return !!sessionStorage.getItem(INTRO_SEEN_KEY); } catch { return false; }
-  });
-
-  const handleIntroDone = useCallback(() => {
-    try { sessionStorage.setItem(INTRO_SEEN_KEY, '1'); } catch { /* noop */ }
-    setShowIntro(false);
-    setPageReady(true);
-  }, []);
-
-  // Safety timeout: if intro doesn't self-complete in 650ms, force skip
-  useEffect(() => {
-    if (!showIntro) return;
-    const t = setTimeout(() => {
-      handleIntroDone();
-    }, 650);
-    return () => clearTimeout(t);
-  }, [showIntro, handleIntroDone]);
-
   return (
     <>
-      {showIntro && (
-        <MolecularIntro onDone={handleIntroDone} />
-      )}
-      {/* Page content always in DOM — intro overlays on top.
-          Only pointer-events are blocked during intro so LCP element paints immediately. */}
-      <div
-        style={showIntro ? { pointerEvents: 'none' } : undefined}
-        className={pageReady && showIntro === false ? 'fade-in-page' : ''}
-      >
-        <ScrollToTop />
-        <Layout>
-          <ErrorBoundary>
-            <Outlet />
-          </ErrorBoundary>
-        </Layout>
-      </div>
+      <ScrollToTop />
+      <Layout>
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
+      </Layout>
     </>
   );
 }
