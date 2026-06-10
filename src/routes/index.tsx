@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import LegacyApp from "@/legacy/LegacyApp";
+import LegacyClientApp from "@/legacy/LegacyClientApp";
 
 const HOME_TITLE = "HPLC-Tested Research Peptides UK — Batch CoA | PH Labs";
 const HOME_DESCRIPTION =
@@ -82,5 +82,5 @@ export const Route = createFileRoute("/")({
 });
 
 function LegacyMount() {
-  return <LegacyApp />;
+  return <LegacyClientApp />;
 }

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import LegacyApp from "@/legacy/LegacyApp";
+import LegacyClientApp from "@/legacy/LegacyClientApp";
 import { SEO_LIMITS, SITE_URL, canonicalUrl, clamp, metaForPath } from "@/lib/seo-meta";
 import { ARTICLE_INDEX as articles } from "@/pages/Resources/data/articles-index";
 import { KNOWN_ROOTS } from "@/lib/known-roots";
@@ -126,5 +126,5 @@ export const Route = createFileRoute("/$")({
 });
 
 function LegacyMount() {
-  return <LegacyApp />;
+  return <LegacyClientApp />;
 }
