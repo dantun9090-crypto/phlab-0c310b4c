@@ -264,9 +264,7 @@ export default function ProductDetail() {
     if (!id) return;
     // Signal prerender.io to wait until product data has loaded before snapshotting.
     markPrerenderPending();
-    const loadProduct = async () => {
-      setLoading(true);
-      try {
+    const findProductDoc = async () => {
         let productDoc: any = null;
 
         // 0. Stable short-slug override → fetch by known doc ID
@@ -308,6 +306,26 @@ export default function ProductDetail() {
           } else {
             const legacyDirectDoc = await getDocFromServer(doc(db, 'products', id));
             if (legacyDirectDoc.exists()) productDoc = legacyDirectDoc;
+          }
+        }
+        return productDoc;
+    };
+
+    const loadProduct = async () => {
+      setLoading(true);
+      setProduct(null);
+      try {
+        let productDoc: any = null;
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          try {
+            productDoc = await findProductDoc();
+            break;
+          } catch (error) {
+            if (attempt === 0) {
+              await wait(2000);
+              continue;
+            }
+            throw error;
           }
         }
 
