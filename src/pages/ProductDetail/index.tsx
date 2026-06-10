@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { dispatchAddToCart } from '@/components/Layout';
 import NextDayCountdown from '@/components/NextDayCountdown';
 import { ProductEditor } from '@/components/ProductEditor';
-import { auth, db, doc, getDoc, collection, query, where, getDocs, limit, orderBy, onAuthStateChanged } from '@/lib/firebase';
+import { auth, db, doc, getDoc, getDocFromServer, collection, query, where, getDocsFromServer, limit, orderBy, onAuthStateChanged } from '@/lib/firebase';
 
 import type { Product } from '@/lib/firebase';
 import { getProductImage } from '@/lib/productImages';
@@ -195,6 +195,8 @@ const toStringArray = (value: unknown): string[] => {
   if (!Array.isArray(value)) return [];
   return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
 };
+
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export default function ProductDetail() {
   const { id } = useParams();
