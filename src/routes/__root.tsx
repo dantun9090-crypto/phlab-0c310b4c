@@ -427,52 +427,71 @@ const BOOT_WATCHDOG = `
 })();
 `;
 
-const CANONICAL_ENFORCER = `
-(function(){
-  var ORIGIN='https://phlabs.co.uk';
-  function upsertLink(rel,href){
-    var el=document.querySelector('link[rel="'+rel+'"]');
-    if(!el){el=document.createElement('link');el.setAttribute('rel',rel);document.head.appendChild(el);}
-    if(el.getAttribute('href')!==href) el.setAttribute('href',href);
+function installCanonicalEnforcer() {
+  const ORIGIN = "https://phlabs.co.uk";
+  let running = false;
+
+  function upsertLink(rel: string, href: string) {
+    let el = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null;
+    if (!el) {
+      el = document.createElement("link");
+      el.setAttribute("rel", rel);
+      document.head.appendChild(el);
+    }
+    if (el.getAttribute("href") !== href) el.setAttribute("href", href);
   }
-  function upsertMeta(attr,name,content){
-    var el=document.querySelector('meta['+attr+'="'+name+'"]');
-    if(!el){el=document.createElement('meta');el.setAttribute(attr,name);document.head.appendChild(el);}
-    if(el.getAttribute('content')!==content) el.setAttribute('content',content);
+
+  function upsertMeta(attr: "name" | "property", name: string, content: string) {
+    let el = document.querySelector(`meta[${attr}="${name}"]`) as HTMLMetaElement | null;
+    if (!el) {
+      el = document.createElement("meta");
+      el.setAttribute(attr, name);
+      document.head.appendChild(el);
+    }
+    if (el.getAttribute("content") !== content) el.setAttribute("content", content);
   }
-  function upsertHreflang(hreflang,href){
-    var sel='link[rel="alternate"][hreflang="'+hreflang+'"]';
-    var el=document.querySelector(sel);
-    if(!el){el=document.createElement('link');el.setAttribute('rel','alternate');el.setAttribute('hreflang',hreflang);document.head.appendChild(el);}
-    if(el.getAttribute('href')!==href) el.setAttribute('href',href);
+
+  function enforce() {
+    if (running) return;
+    running = true;
+    try {
+      let path = location.pathname.replace(/\/{2,}/g, "/");
+      if (path.length > 1 && path.endsWith("/")) path = path.slice(0, -1);
+      const qs = new URLSearchParams(location.search);
+      qs.delete("_r");
+      qs.delete("sw");
+      const query = qs.toString();
+      const url = `${ORIGIN}${path}${query ? `?${query}` : ""}`;
+      upsertLink("canonical", url);
+      upsertMeta("property", "og:url", url);
+      upsertMeta("name", "twitter:url", url);
+    } finally {
+      running = false;
+    }
   }
-  function enforce(){
-    try{
-      var path=location.pathname.replace(/\\/{2,}/g,'/');
-      if(path.length>1&&path.endsWith('/')) path=path.slice(0,-1);
-      var qs=new URLSearchParams(location.search);
-      qs.delete('_r');
-      qs.delete('sw');
-      var query=qs.toString();
-      var url=ORIGIN+path+(query?'?'+query:'');
-      upsertLink('canonical',url);
-      upsertMeta('property','og:url',url);
-      upsertMeta('name','twitter:url',url);
-      upsertHreflang('en-GB',url);
-      upsertHreflang('x-default',url);
-    }catch(e){}
-  }
-  enforce();
-  var _ps=history.pushState, _rs=history.replaceState;
-  history.pushState=function(){var r=_ps.apply(this,arguments);setTimeout(enforce,0);return r;};
-  history.replaceState=function(){var r=_rs.apply(this,arguments);setTimeout(enforce,0);return r;};
-  window.addEventListener('popstate',function(){setTimeout(enforce,0);});
-  try{
-    var mo=new MutationObserver(function(){enforce();});
-    mo.observe(document.head,{childList:true,subtree:true,attributes:true,attributeFilter:['href','content']});
-  }catch(e){}
-})();
-`;
+
+  const originalPushState = history.pushState;
+  const originalReplaceState = history.replaceState;
+  const schedule = () => window.setTimeout(enforce, 0);
+  history.pushState = function patchedPushState(...args: Parameters<typeof history.pushState>) {
+    const result = originalPushState.apply(this, args);
+    schedule();
+    return result;
+  };
+  history.replaceState = function patchedReplaceState(...args: Parameters<typeof history.replaceState>) {
+    const result = originalReplaceState.apply(this, args);
+    schedule();
+    return result;
+  };
+  window.addEventListener("popstate", schedule);
+  schedule();
+
+  return () => {
+    history.pushState = originalPushState;
+    history.replaceState = originalReplaceState;
+    window.removeEventListener("popstate", schedule);
+  };
+}
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
@@ -483,7 +502,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
             anything else runs, so subsequent injected scripts inherit nonce. */}
         <script dangerouslySetInnerHTML={{ __html: NONCE_PROPAGATOR }} />
         <script dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
-        <script dangerouslySetInnerHTML={{ __html: CANONICAL_ENFORCER }} />
       </head>
 
       <body style={{ backgroundColor: "#060f1e", color: "#f0f6ff", margin: 0 }}>
@@ -499,6 +517,10 @@ function RootComponent() {
 
   useEffect(() => {
     clearStoreCachesForNewBuild();
+  }, []);
+
+  useEffect(() => {
+    return installCanonicalEnforcer();
   }, []);
 
   // Best-effort precache of the current page's HTML + critical assets so

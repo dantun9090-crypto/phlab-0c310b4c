@@ -758,7 +758,13 @@ export default {
       ) {
         const h = new Headers(normalized.headers);
         h.set("x-robots-tag", "noindex, follow");
-        h.set("cache-control", "public, max-age=300");
+        h.set("cache-control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0");
+        h.set("cdn-cache-control", "no-store");
+        h.set("cloudflare-cdn-cache-control", "no-store");
+        h.set("surrogate-control", "no-store");
+        h.set("pragma", "no-cache");
+        h.set("expires", "0");
+        h.delete("age");
         normalized = new Response(normalized.body, {
           status: 404,
           statusText: "Not Found",
