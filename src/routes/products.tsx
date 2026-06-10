@@ -100,11 +100,8 @@ function SeoCatalogue({ products }: { products: SeoProduct[] }) {
 }
 
 function LegacyMount() {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) return <LoadingFallback />;
   return (
-    <Suspense fallback={<LoadingFallback />}>
+    <Suspense fallback={null}>
       <LegacyApp />
     </Suspense>
   );
