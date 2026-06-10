@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
 import { FlaskConical, ChevronRight, ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { subscribeToProducts } from '@/lib/firebase';
@@ -6,10 +6,10 @@ import type { Product } from '@/lib/firebase';
 import { ProductCard } from '@/components/ProductCard';
 import { dispatchAddToCart } from '@/components/Layout';
 import { useSEO } from '@/hooks/useSEO';
+import { AnimatedBackground } from '@/components/AnimatedBackground';
 
-const AnimatedBackground = lazy(() =>
-  import('@/components/AnimatedBackground').then(m => ({ default: m.AnimatedBackground }))
-);
+// Route-level page components must remain eagerly imported; no empty Suspense
+// fallbacks around routed content after publish.
 
 // ─── Category config ──────────────────────────────────────────────────────────
 interface CategoryConfig {
@@ -203,9 +203,7 @@ export default function CategoryPage() {
 
   return (
     <div className="relative min-h-screen" style={{ background: '#030914' }}>
-      <Suspense fallback={null}>
-        <AnimatedBackground />
-      </Suspense>
+      <AnimatedBackground />
 
       {/* ── Hero / Header ───────────────────────────────────────────── */}
       <section id="hero" className="relative pt-28 pb-14 px-4 overflow-hidden">

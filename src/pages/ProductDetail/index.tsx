@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { dispatchAddToCart } from '@/components/Layout';
 import NextDayCountdown from '@/components/NextDayCountdown';
 import { ProductEditor } from '@/components/ProductEditor';
-import { auth, db, doc, getDoc, collection, query, where, getDocs, limit, orderBy, onAuthStateChanged } from '@/lib/firebase';
+import { auth, db, doc, getDoc, getDocFromServer, collection, query, where, getDocsFromServer, limit, orderBy, onAuthStateChanged } from '@/lib/firebase';
 
 import type { Product } from '@/lib/firebase';
 import { getProductImage } from '@/lib/productImages';
@@ -196,6 +196,8 @@ const toStringArray = (value: unknown): string[] => {
   return value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
 };
 
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -262,15 +264,13 @@ export default function ProductDetail() {
     if (!id) return;
     // Signal prerender.io to wait until product data has loaded before snapshotting.
     markPrerenderPending();
-    const loadProduct = async () => {
-      setLoading(true);
-      try {
+    const findProductDoc = async () => {
         let productDoc: any = null;
 
         // 0. Stable short-slug override → fetch by known doc ID
         const overrideDocId = SLUG_TO_DOC_ID[id];
         if (overrideDocId) {
-          const overrideDoc = await getDoc(doc(db, 'product_stock', overrideDocId));
+          const overrideDoc = await getDocFromServer(doc(db, 'product_stock', overrideDocId));
           if (overrideDoc.exists()) productDoc = overrideDoc;
         }
 
@@ -281,21 +281,51 @@ export default function ProductDetail() {
             where('slug', '==', id),
             limit(1)
           );
-          const slugSnap = await getDocs(slugQuery);
+          const slugSnap = await getDocsFromServer(slugQuery);
 
           if (!slugSnap.empty) {
             productDoc = slugSnap.docs[0];
           } else {
             // 2. Fallback: try direct Firestore document ID (legacy URLs)
-            const directDoc = await getDoc(doc(db, 'product_stock', id));
+            const directDoc = await getDocFromServer(doc(db, 'product_stock', id));
             if (directDoc.exists()) {
               productDoc = directDoc;
             } else {
               // 3. Last resort: query by name-derived slug (for products not yet re-seeded)
-              const allSnap = await getDocs(collection(db, 'product_stock'));
-              const match = allSnap.docs.find(d => nameToSlug(d.data().name || '') === id);
+              const allSnap = await getDocsFromServer(collection(db, 'product_stock'));
+              const match = allSnap.docs.find((d: any) => nameToSlug(d.data().name || '') === id);
               if (match) productDoc = match;
             }
+          }
+        }
+
+        if (!productDoc) {
+          const legacySlugSnap = await getDocsFromServer(query(collection(db, 'products'), where('slug', '==', id), limit(1)));
+          if (!legacySlugSnap.empty) {
+            productDoc = legacySlugSnap.docs[0];
+          } else {
+            const legacyDirectDoc = await getDocFromServer(doc(db, 'products', id));
+            if (legacyDirectDoc.exists()) productDoc = legacyDirectDoc;
+          }
+        }
+        return productDoc;
+    };
+
+    const loadProduct = async () => {
+      setLoading(true);
+      setProduct(null);
+      try {
+        let productDoc: any = null;
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          try {
+            productDoc = await findProductDoc();
+            break;
+          } catch (error) {
+            if (attempt === 0) {
+              await wait(2000);
+              continue;
+            }
+            throw error;
           }
         }
 
@@ -369,11 +399,11 @@ export default function ProductDetail() {
               orderBy('name'),
               limit(5)
             );
-            const relSnap = await getDocs(relQ);
+            const relSnap = await getDocsFromServer(relQ);
             const related: Product[] = relSnap.docs
-              .filter(d => d.id !== productDoc.id)
+              .filter((d: any) => d.id !== productDoc.id)
               .slice(0, 3)
-              .map(d => {
+              .map((d: any) => {
                 const rd = d.data();
                 const rp = toMoneyNumber(rd.price);
                 const rImages = toStringArray(rd.images);

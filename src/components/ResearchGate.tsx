@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import { db, collection, query, where, getDocs, limit } from '@/lib/firebase';
+import { db, collection, query, where, getDocsFromServer, limit } from '@/lib/firebase';
 
 const STORAGE_KEY = 'php_research_confirmed';
 const EXPIRY_DAYS = 30;
@@ -35,15 +35,17 @@ function notifyGateCleared() {
 // Fetch whether a product requires the research gate by slug
 async function fetchProductRequiresGate(slug: string): Promise<boolean | null> {
   try {
-    const snap = await getDocs(query(collection(db, 'products'), where('slug', '==', slug), limit(1)));
+    const snap = await getDocsFromServer(query(collection(db, 'product_stock'), where('slug', '==', slug), limit(1)));
     if (!snap.empty) return snap.docs[0].data().requiresResearchGate === true;
     // Fallback: try matching by name-derived slug
-    const allSnap = await getDocs(collection(db, 'products'));
+    const allSnap = await getDocsFromServer(collection(db, 'product_stock'));
     for (const d of allSnap.docs) {
       const name: string = d.data().name || '';
       const derived = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       if (derived === slug) return d.data().requiresResearchGate === true;
     }
+    const legacySnap = await getDocsFromServer(query(collection(db, 'products'), where('slug', '==', slug), limit(1)));
+    if (!legacySnap.empty) return legacySnap.docs[0].data().requiresResearchGate === true;
     return null;
   } catch { return null; }
 }

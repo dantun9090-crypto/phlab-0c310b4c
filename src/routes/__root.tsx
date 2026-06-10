@@ -19,6 +19,7 @@ import {
   isOnline,
 } from "@/lib/recovery";
 import { schedulePrecacheCurrentPage } from "@/lib/lkg-cache";
+import { clearStoreCachesForNewBuild } from "@/lib/build-cache";
 void _clearClientCaches;
 
 function NotFoundComponent() {
@@ -483,6 +484,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    clearStoreCachesForNewBuild();
+  }, []);
 
   // Best-effort precache of the current page's HTML + critical assets so
   // the offline fallback (see OfflineScreen / findCachedLastKnownUrl) has

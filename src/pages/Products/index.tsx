@@ -3,11 +3,9 @@ import {
   X, ChevronDown, Package, WifiOff, RefreshCw, Microscope,
   CheckCircle2, LayoutGrid, List, Filter,
 } from 'lucide-react';
-import { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-const AnimatedBackground = lazy(() =>
-  import('@/components/AnimatedBackground').then(m => ({ default: m.AnimatedBackground }))
-);
+import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { dispatchAddToCart, CartItem } from '@/components/Layout';
 import { auth, db, getAllProducts, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
 import {
@@ -19,6 +17,10 @@ import { ProductEditor } from '@/components/ProductEditor';
 import { ProductCard } from '@/components/ProductCard';
 import type { Product } from '@/lib/firebase';
 import { nameToSlug } from '@/lib/seedProducts';
+
+// Route-critical visuals are eager. Do not wrap route/page content in
+// Suspense with an empty fallback; stale chunks after publish can leave staging stuck
+// on the boot loader with no visible route body.
 
 // ─── Categories ──────────────────────────────────────────────────────────────
 const CATEGORIES = [
@@ -339,9 +341,7 @@ export default function Products() {
 
       {/* ── HERO ────────────────────────────────────────────────────────────── */}
       <section id="hero" className="relative overflow-hidden" style={{ background: '#030812', paddingTop: 'calc(var(--nav-h, 80px) + 2rem)', paddingBottom: '4rem' }}>
-        <Suspense fallback={null}>
-          <AnimatedBackground variant="blue" />
-        </Suspense>
+        <AnimatedBackground variant="blue" />
 
         {/* Decorative rings */}
         <div className="absolute pointer-events-none hidden lg:block" style={{ top: '-30%', right: '-8%', width: 640, height: 640, borderRadius: '50%', border: '1px solid rgba(37,99,235,0.07)' }} />
