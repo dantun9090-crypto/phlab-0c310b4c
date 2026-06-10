@@ -10,7 +10,7 @@ function getLegacyRouter(initialPath: string) {
   if (typeof document === "undefined") {
     return createLegacyRouter(initialPath);
   }
-  return browserRouter;
+  return browserRouter as ReturnType<typeof createLegacyRouter>;
 }
 
 export default function LegacyApp({ initialPath = "/" }: { initialPath?: string }) {
