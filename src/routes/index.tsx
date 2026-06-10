@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
-
-const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
+import LegacyApp from "@/legacy/LegacyApp";
 
 const HOME_TITLE = "HPLC-Tested Research Peptides UK — Batch CoA | PH Labs";
 const HOME_DESCRIPTION =
@@ -82,9 +80,5 @@ export const Route = createFileRoute("/")({
 });
 
 function LegacyMount() {
-  return (
-    <Suspense fallback={null}>
-      <LegacyApp />
-    </Suspense>
-  );
+  return <LegacyApp />;
 }
