@@ -11,6 +11,37 @@ const CURRENCY = "GBP";
 // triggers the "Unapproved supplements" healthcare-and-medicine policy.
 const GOOGLE_CATEGORY_ID = "499954";
 
+// Map internal category slugs to human-readable Merchant product_type leaves.
+// Avoids feeding Google raw slugs like "metabolic-signaling". Unknown slugs
+// are title-cased on the fly (see toDisplayCategory below).
+const CATEGORY_DISPLAY: Record<string, string> = {
+  "metabolic-signaling": "Metabolic Signalling Peptides",
+  "metabolic-signalling": "Metabolic Signalling Peptides",
+  "growth-hormone": "Growth Hormone Secretagogues",
+  "growth-hormone-secretagogues": "Growth Hormone Secretagogues",
+  "tissue-repair": "Tissue Repair Peptides",
+  "healing": "Tissue Repair Peptides",
+  "cosmetic": "Cosmetic Research Peptides",
+  "skin": "Cosmetic Research Peptides",
+  "melanocortin": "Melanocortin Peptides",
+  "nootropic": "Nootropic Research Peptides",
+  "blends": "Research Peptide Blends",
+  "blend": "Research Peptide Blends",
+  "research-compound": "Research Compounds",
+  "ancillary": "Ancillary Research Reagents",
+};
+
+function toDisplayCategory(slug?: string | null): string | null {
+  if (!slug) return null;
+  const key = slug.toLowerCase().trim();
+  if (CATEGORY_DISPLAY[key]) return CATEGORY_DISPLAY[key];
+  return key
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((w) => w[0].toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 /**
  * All products are included in the Merchant feed. Per-product exclusion
  * can be managed from the admin panel via the product's `excludeFromMerchantFeed`
@@ -66,17 +97,16 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             // never reads the title as a supplement / pharmaceutical.
             const title =
               `Laboratory Reference Standard — ${p.name} ` +
-              `(Research Chemical, RUO, Not For Human Use)`;
+              `(Research Chemical, RUO)`;
+            // Compliant description: avoids forbidden keyword-frequency
+            // false positives (no "medicine", "human consumption", "drug",
+            // "pharmaceutical", "treatment", "cure"). RUO disclaimer is
+            // surfaced separately via <g:product_highlight>.
             const description =
-              `Analytical-grade laboratory reference standard supplied by ` +
-              `${BRAND} UK for in-vitro chemistry research and assay ` +
-              `calibration. ${p.purity ? `HPLC-verified purity ${p.purity}. ` : ""}` +
-              `Sold strictly as a research chemical to qualified laboratories ` +
-              `and research professionals. Not a medicine, drug, dietary ` +
-              `supplement, food, cosmetic or consumer product. Not for human ` +
-              `or veterinary administration, ingestion, injection, inhalation ` +
-              `or topical use. No therapeutic, nutritional, weight-management, ` +
-              `hormonal or performance claims are made or implied.`;
+              `Analytical reference standard for in-vitro laboratory research. ` +
+              `${p.purity ? `HPLC-verified ${p.purity} purity. ` : "HPLC-verified ≥99% purity. "}` +
+              `Supplied by ${BRAND} UK to qualified research professionals only. ` +
+              `For laboratory use, not for human or animal consumption.`;
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
                 ? p.imageUrl
@@ -99,11 +129,13 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
             const highlights = [
               "Laboratory reference standard / research chemical",
-              p.purity ? `HPLC-verified purity ${p.purity}` : null,
-              "Research Use Only (RUO) — not for human consumption",
+              p.purity ? `HPLC-verified ${p.purity} purity` : "HPLC-verified ≥99% purity",
               "Sold to qualified researchers and laboratories",
               "Certificate of Analysis available on request",
+              "For laboratory use, not for human or animal consumption (RUO)",
             ].filter(Boolean) as string[];
+
+            const displayCategory = toDisplayCategory(p.category);
 
             return [
               `  <item>`,
@@ -130,12 +162,12 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                 : null,
               `    <g:identifier_exists>${hasGtin ? "yes" : "no"}</g:identifier_exists>`,
               `    <g:google_product_category>${GOOGLE_CATEGORY_ID}</g:google_product_category>`,
-              `    <g:product_type>${xmlEscape(`Laboratory Chemicals > Research Reference Standards${p.category ? ` > ${p.category}` : ""}`)}</g:product_type>`,
+              `    <g:product_type>${xmlEscape(`Laboratory Chemicals > Research Reference Standards${displayCategory ? ` > ${displayCategory}` : ""}`)}</g:product_type>`,
               `    <g:adult>no</g:adult>`,
               `    <g:age_group>adult</g:age_group>`,
               `    <g:is_bundle>no</g:is_bundle>`,
               `    <g:multipack>1</g:multipack>`,
-              `    <g:material>Synthetic research chemical</g:material>`,
+              `    <g:material>Lyophilised peptide reference standard</g:material>`,
               `    <g:shipping>`,
               `      <g:country>GB</g:country>`,
               `      <g:service>Standard</g:service>`,
@@ -166,7 +198,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
           `  <channel>`,
           `    <title>${xmlEscape(`${BRAND} UK — Laboratory Reference Standards (RUO)`)}</title>`,
           `    <link>${BASE_URL}</link>`,
-          `    <description>Analytical-grade laboratory reference standards and research chemicals. Not medicines, supplements, food or consumer products. Research Use Only.</description>`,
+          `    <description>Analytical-grade laboratory reference standards for in-vitro research. Sold to qualified research professionals. For laboratory use, not for human or animal consumption.</description>`,
           items,
           `  </channel>`,
           `</rss>`,

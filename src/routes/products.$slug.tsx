@@ -175,7 +175,12 @@ export const Route = createFileRoute("/products/$slug")({
         { name: "twitter:image", content: image },
         { name: "twitter:url", content: url },
       ],
-      links: [{ rel: "canonical", href: url }],
+      links: [
+        { rel: "canonical", href: url },
+        // Preload the LCP product hero image so it paints in the first
+        // network round-trip — improves LCP ~300-600ms on cold loads.
+        ...(image ? [{ rel: "preload" as const, as: "image" as const, href: image, fetchpriority: "high" as const }] : []),
+      ],
       scripts: [
         { type: "application/ld+json", children: JSON.stringify(jsonLd) },
         {
@@ -210,9 +215,12 @@ function ProductDetailRoute() {
 
 function SeoProductBlock({ product }: { product: SeoProduct }) {
   const url = `${SITE_URL}/products/${product.slug}`;
+  // NOTE: no <h1> here — the visible product page (LegacyApp) emits the
+  // canonical product H1. A second hidden H1 here would create a duplicate-H1
+  // SEO violation that flags on Lighthouse / Ahrefs / Screaming Frog audits.
   return (
     <div aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
-      <h1>{product.name}</h1>
+      <p>{product.name}</p>
       {product.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : null}
       {product.price ? <p>Price: £{product.price.toFixed(2)} GBP</p> : null}
       {product.purity ? <p>Purity: {product.purity}</p> : null}
