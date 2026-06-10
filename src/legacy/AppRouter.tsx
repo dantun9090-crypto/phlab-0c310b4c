@@ -1,12 +1,10 @@
 import { createBrowserRouter, Outlet, Navigate, useLocation } from 'react-router-dom';
-import React, { useEffect, useState, useCallback, Suspense, lazy } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Layout } from '@/components/Layout';
 import ScrollToTop from '@/components/ScrollToTop';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { auth, onAuthStateChanged } from '@/lib/firebase-auth';
-
-// Lazy-load intro animation — keeps it out of the critical-path bundle
-const MolecularIntro = lazy(() => import('@/components/MolecularIntro'));
+import MolecularIntro from '@/components/MolecularIntro';
 
 // Route pages are loaded eagerly so every direct URL paints immediately.
 import Home from '@/pages/Home';
@@ -111,9 +109,7 @@ function AppLayout() {
   return (
     <>
       {showIntro && (
-        <Suspense fallback={null}>
-          <MolecularIntro onDone={handleIntroDone} />
-        </Suspense>
+        <MolecularIntro onDone={handleIntroDone} />
       )}
       {/* Page content always in DOM — intro overlays on top.
           Only pointer-events are blocked during intro so LCP element paints immediately. */}
