@@ -1,18 +1,23 @@
-import { ClientOnly } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
+import { useEffect, useState } from "react";
 
-const LegacyApp = lazy(() => import("./LegacyApp"));
+type LegacyAppComponent = React.ComponentType;
 
 function LegacyFallback() {
   return null;
 }
 
 export default function LegacyClientApp() {
-  return (
-    <ClientOnly fallback={<LegacyFallback />}>
-      <Suspense fallback={<LegacyFallback />}>
-        <LegacyApp />
-      </Suspense>
-    </ClientOnly>
-  );
+  const [LegacyApp, setLegacyApp] = useState<LegacyAppComponent | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    void import("./LegacyApp").then((module) => {
+      if (alive) setLegacyApp(() => module.default);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  return LegacyApp ? <LegacyApp /> : <LegacyFallback />;
 }
