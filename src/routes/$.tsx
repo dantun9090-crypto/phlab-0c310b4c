@@ -1,11 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
+import LegacyApp from "@/legacy/LegacyApp";
 import { SEO_LIMITS, SITE_URL, canonicalUrl, clamp, metaForPath } from "@/lib/seo-meta";
 import { ARTICLE_INDEX as articles } from "@/pages/Resources/data/articles-index";
-import { LoadingFallback } from "@/components/LoadingFallback";
 import { KNOWN_ROOTS } from "@/lib/known-roots";
-
-const LegacyApp = lazy(() => import("@/legacy/LegacyApp"));
 
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
@@ -127,9 +124,5 @@ export const Route = createFileRoute("/$")({
 });
 
 function LegacyMount() {
-  return (
-    <Suspense fallback={<LoadingFallback />}>
-      <LegacyApp />
-    </Suspense>
-  );
+  return <LegacyApp />;
 }
