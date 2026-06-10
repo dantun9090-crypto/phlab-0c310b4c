@@ -346,7 +346,39 @@ function applyCacheRecoveryHeaders(response: Response, url: URL): Response {
   });
 }
 
-function applySecurityHeaders(response: Response, nonce: string, hostname?: string): Response {
+// HTML routes that must NEVER be edge-cached (sensitive / dynamic per user).
+// Anything not matching these gets a short 60s CF edge cache so returning
+// users see ~50ms TTFB instead of 500-800ms origin renders.
+// SAFETY: TTL is short (60s) so the window for stale-HTML-vs-new-chunks after
+// a publish is bounded. sw.js + service-worker.js are still hard no-store
+// via applyCacheRecoveryHeaders. Hashed JS/CSS assets are immutable.
+const NO_CACHE_HTML_PREFIXES = [
+  "/admin",
+  "/cart",
+  "/checkout",
+  "/payment",
+  "/account",
+  "/login",
+  "/register",
+  "/api/",
+  "/vip",
+  "/__/",
+  "/_health",
+  "/__health",
+];
+
+function isCacheableHtmlPath(pathname: string): boolean {
+  for (const p of NO_CACHE_HTML_PREFIXES) {
+    if (p.endsWith("/")) {
+      if (pathname.startsWith(p)) return false;
+    } else if (pathname === p || pathname.startsWith(p + "/") || pathname.startsWith(p + "-")) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function applySecurityHeaders(response: Response, nonce: string, hostname?: string, pathname?: string): Response {
   const stripped = stripInternalHeaders(response);
   const contentType = stripped.headers.get("content-type") ?? "";
   // Only decorate HTML — leaving JSON/XML/asset responses untouched avoids
@@ -354,16 +386,27 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   if (!contentType.includes("text/html")) return stripped;
 
   const htmlHeaders = new Headers(stripped.headers);
-  // Never edge-cache human HTML. A cached document can reference the previous
-  // build's hashed chunks after a publish, leaving returning users on a blank
-  // shell until the CDN TTL expires. Hashed assets remain cacheable; only the
-  // route document must be fetched fresh every time.
-  htmlHeaders.set("cache-control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0");
-  htmlHeaders.set("cdn-cache-control", "no-store");
-  htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
-  htmlHeaders.set("surrogate-control", "no-store");
-  htmlHeaders.set("pragma", "no-cache");
-  htmlHeaders.set("expires", "0");
+  const cacheable = pathname ? isCacheableHtmlPath(pathname) : false;
+  if (cacheable && stripped.status === 200) {
+    // Browsers must always revalidate (max-age=0) so a publish is visible
+    // immediately on next nav. CF edge holds the response for 60s + can serve
+    // stale up to 24h while revalidating. After a publish, purge CF cache
+    // or wait <=60s for fresh HTML to propagate.
+    htmlHeaders.set("cache-control", "public, max-age=0, must-revalidate");
+    htmlHeaders.set("cdn-cache-control", "public, max-age=60, stale-while-revalidate=86400");
+    htmlHeaders.set("cloudflare-cdn-cache-control", "public, max-age=60, stale-while-revalidate=86400");
+    htmlHeaders.delete("surrogate-control");
+    htmlHeaders.delete("pragma");
+    htmlHeaders.delete("expires");
+  } else {
+    // Sensitive routes — never cache.
+    htmlHeaders.set("cache-control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0");
+    htmlHeaders.set("cdn-cache-control", "no-store");
+    htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
+    htmlHeaders.set("surrogate-control", "no-store");
+    htmlHeaders.set("pragma", "no-cache");
+    htmlHeaders.set("expires", "0");
+  }
   htmlHeaders.delete("age");
   const htmlResponse = new Response(stripped.body, {
     status: stripped.status,
@@ -372,9 +415,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   });
 
   // Inject the per-request nonce into every <script> element via workerd's
-  // built-in HTMLRewriter. This covers TanStack's <Scripts /> output, the
-  // BOOT_WATCHDOG + CANONICAL_ENFORCER inline blocks in __root.tsx, and the
-  // ld+json schema script (harmless — browsers ignore `nonce` on non-JS types).
+  // built-in HTMLRewriter.
   type Rewriter = {
     on: (selector: string, handlers: { element: (el: { setAttribute: (k: string, v: string) => void }) => void }) => Rewriter;
     transform: (r: Response) => Response;
@@ -392,8 +433,6 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
       })
       .transform(htmlResponse);
   }
-
-
 
   const headers = new Headers(rewritten.headers);
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
