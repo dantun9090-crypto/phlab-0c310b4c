@@ -4,13 +4,12 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { createLegacyRouter } from "./AppRouter";
 import "@/legacy-styles.css";
 
-let browserRouter: ReturnType<typeof createLegacyRouter> | null = null;
+const browserRouter = typeof document !== "undefined" ? createLegacyRouter("/") : null;
 
 function getLegacyRouter(initialPath: string) {
   if (typeof document === "undefined") {
     return createLegacyRouter(initialPath);
   }
-  if (!browserRouter) browserRouter = createLegacyRouter(initialPath);
   return browserRouter;
 }
 
