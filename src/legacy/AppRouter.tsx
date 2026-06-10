@@ -8,37 +8,35 @@ import { auth, onAuthStateChanged } from '@/lib/firebase-auth';
 // Lazy-load intro animation — keeps it out of the critical-path bundle
 const MolecularIntro = lazy(() => import('@/components/MolecularIntro'));
 
-// Critical path — Home loaded eagerly (LCP/homepage)
+// Route pages are loaded eagerly so every direct URL paints immediately.
 import Home from '@/pages/Home';
-const Products       = lazy(() => import('@/pages/Products'));
-const ProductDetail  = lazy(() => import('@/pages/ProductDetail'));
-const CategoryPage   = lazy(() => import('@/pages/CategoryPage'));
-
-// Everything else — lazy loaded to reduce initial bundle
-const SearchPage     = lazy(() => import('@/pages/Search'));
-const StorageGuide   = lazy(() => import('@/pages/StorageGuide'));
-const Account        = lazy(() => import('@/pages/Account'));
-const Register       = lazy(() => import('@/pages/Register'));
-const Login          = lazy(() => import('@/pages/Login'));
-const Admin          = lazy(() => import('@/pages/Admin'));
-const Contact        = lazy(() => import('@/pages/Contact'));
-const About          = lazy(() => import('@/pages/About'));
-const LandingPage    = lazy(() => import('@/pages/LandingPage'));
-const VipStore       = lazy(() => import('@/pages/VipStore'));
-const QualityControl = lazy(() => import('@/pages/QualityControl'));
-const LabReports     = lazy(() => import('@/pages/LabReports'));
-const Resources      = lazy(() => import('@/pages/Resources'));
-const ArticlePage    = lazy(() => import('@/pages/Resources/ArticlePage'));
-const Research       = lazy(() => import('@/pages/Research'));
-const RefundPolicy   = lazy(() => import('@/pages/RefundPolicy'));
-const ShippingPolicy = lazy(() => import('@/pages/ShippingPolicy'));
-const Terms            = lazy(() => import('@/pages/Terms'));
-const PrivacyPolicy  = lazy(() => import('@/pages/PrivacyPolicy'));
-const CookiePolicy   = lazy(() => import('@/pages/CookiePolicy'));
-const Payment        = lazy(() => import('@/pages/Payment'));
-const Checkout       = lazy(() => import('@/pages/Checkout'));
-const NotFound       = lazy(() => import('@/pages/NotFound'));
-const Install        = lazy(() => import('@/pages/Install'));
+import Products from '@/pages/Products';
+import ProductDetail from '@/pages/ProductDetail';
+import CategoryPage from '@/pages/CategoryPage';
+import SearchPage from '@/pages/Search';
+import StorageGuide from '@/pages/StorageGuide';
+import Account from '@/pages/Account';
+import Register from '@/pages/Register';
+import Login from '@/pages/Login';
+import Admin from '@/pages/Admin';
+import Contact from '@/pages/Contact';
+import About from '@/pages/About';
+import LandingPage from '@/pages/LandingPage';
+import VipStore from '@/pages/VipStore';
+import QualityControl from '@/pages/QualityControl';
+import LabReports from '@/pages/LabReports';
+import Resources from '@/pages/Resources';
+import ArticlePage from '@/pages/Resources/ArticlePage';
+import Research from '@/pages/Research';
+import RefundPolicy from '@/pages/RefundPolicy';
+import ShippingPolicy from '@/pages/ShippingPolicy';
+import Terms from '@/pages/Terms';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import CookiePolicy from '@/pages/CookiePolicy';
+import Payment from '@/pages/Payment';
+import Checkout from '@/pages/Checkout';
+import NotFound from '@/pages/NotFound';
+import Install from '@/pages/Install';
 
 // Minimal spinner shown while lazy chunks load
 function PageLoader() {
