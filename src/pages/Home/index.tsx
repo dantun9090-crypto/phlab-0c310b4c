@@ -13,7 +13,7 @@ import { sendPublicMail } from '@/lib/sendPublicMail';
 import { useSEO } from '@/hooks/useSEO';
 
 // Route-critical components must stay eager. Lazy route/page chunks with
-// empty Suspense fallbacks caused staging to render a persistent blank loader
+// empty loading fallbacks caused staging to render a persistent blank loader
 // after publish when returning browsers held stale chunks.
 
 // ── Static data ───────────────────────────────────────────────────────────────
