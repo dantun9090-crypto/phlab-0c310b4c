@@ -25,11 +25,8 @@ const STATIC_LASTMOD = "2026-06-01";
 const staticEntries: SitemapEntry[] = [
   { path: "/", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "1.0" },
   { path: "/products", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.9" },
-  { path: "/research", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
   { path: "/quality-control", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.8" },
-  { path: "/lab-reports", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
   { path: "/resources", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
-  { path: "/storage-guide", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.6" },
   { path: "/about", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.6" },
   { path: "/contact", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.6" },
   { path: "/shipping-policy", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.4" },
@@ -37,6 +34,9 @@ const staticEntries: SitemapEntry[] = [
   { path: "/terms-and-conditions", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.3" },
   { path: "/privacy-policy", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.3" },
   { path: "/cookies", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.3" },
+  // /research, /lab-reports, /storage-guide removed 2026-06-10 — pages were
+  // returning empty content / 404 to crawlers and dragging down crawl budget.
+  // /google-merchant-feed.xml is discovered separately by Merchant Center.
 ];
 
 // Fallback product entries: only used if Firestore fetch fails. BPC-157 was
