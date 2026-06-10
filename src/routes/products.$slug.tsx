@@ -1,5 +1,5 @@
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
-import LegacyApp from "@/legacy/LegacyApp";
+import LegacyClientApp from "@/legacy/LegacyClientApp";
 import { fetchProductBySlug, type SeoProduct } from "@/lib/firestore-rest";
 import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
 
@@ -229,5 +229,5 @@ function SeoProductBlock({ product }: { product: SeoProduct }) {
 }
 
 function LegacyMount() {
-  return <LegacyApp />;
+  return <LegacyClientApp />;
 }

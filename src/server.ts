@@ -354,7 +354,16 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   if (!contentType.includes("text/html")) return stripped;
 
   const htmlHeaders = new Headers(stripped.headers);
-  htmlHeaders.set("cache-control", "public, max-age=0, s-maxage=300, stale-while-revalidate=86400, must-revalidate");
+  // Never edge-cache human HTML. A cached document can reference the previous
+  // build's hashed chunks after a publish, leaving returning users on a blank
+  // shell until the CDN TTL expires. Hashed assets remain cacheable; only the
+  // route document must be fetched fresh every time.
+  htmlHeaders.set("cache-control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0");
+  htmlHeaders.set("cdn-cache-control", "no-store");
+  htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
+  htmlHeaders.set("surrogate-control", "no-store");
+  htmlHeaders.set("pragma", "no-cache");
+  htmlHeaders.set("expires", "0");
   htmlHeaders.delete("age");
   const htmlResponse = new Response(stripped.body, {
     status: stripped.status,
