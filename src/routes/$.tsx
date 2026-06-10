@@ -10,7 +10,7 @@ const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 export const Route = createFileRoute("/$")({
 
   // Public fallback routes are intentionally SSR-enabled. Re-introducing
-  // disabled SSR with lazy routed content or an empty Suspense fallback can leave
+  // disabled SSR with deferred routed content or an empty fallback can leave
   // staging visitors stuck on the PH Labs loading screen after a publish.
   head: ({ params }) => {
     const splat = (params as { _splat?: string })._splat ?? "";
