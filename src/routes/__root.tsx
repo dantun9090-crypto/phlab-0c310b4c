@@ -450,7 +450,11 @@ const CANONICAL_ENFORCER = `
     try{
       var path=location.pathname.replace(/\\/{2,}/g,'/');
       if(path.length>1&&path.endsWith('/')) path=path.slice(0,-1);
-      var url=ORIGIN+path+location.search;
+      var qs=new URLSearchParams(location.search);
+      qs.delete('_r');
+      qs.delete('sw');
+      var query=qs.toString();
+      var url=ORIGIN+path+(query?'?'+query:'');
       upsertLink('canonical',url);
       upsertMeta('property','og:url',url);
       upsertMeta('name','twitter:url',url);
