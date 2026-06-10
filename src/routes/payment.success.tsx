@@ -7,6 +7,16 @@ import { getOrderPaymentStatus } from "@/lib/fena.functions";
 import { Loader, CheckCircle2, AlertCircle } from "lucide-react";
 
 export const Route = createFileRoute("/payment/success")({
+  head: () => ({
+    meta: [
+      { title: "Payment Confirmed — PH Labs" },
+      { name: "description", content: "Your research peptide order with PH Labs UK has been received and is being processed for tracked dispatch." },
+      { property: "og:title", content: "Payment Confirmed — PH Labs" },
+      { property: "og:description", content: "Your research peptide order with PH Labs UK has been received and is being processed for tracked dispatch." },
+      { name: "twitter:description", content: "Your research peptide order with PH Labs UK has been received and is being processed for tracked dispatch." },
+      { name: "robots", content: "noindex, nofollow, noarchive" },
+    ],
+  }),
   component: PaymentSuccessPage,
 });
 
