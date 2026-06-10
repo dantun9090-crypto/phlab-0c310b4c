@@ -4,7 +4,10 @@ import { Layout } from '@/components/Layout';
 import ScrollToTop from '@/components/ScrollToTop';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { auth, onAuthStateChanged } from '@/lib/firebase-auth';
-import MolecularIntro from '@/components/MolecularIntro';
+// MolecularIntro removed 2026-06-10 — it was rendering a "PH Labs loading"
+// overlay for 650ms on every first visit, hurting LCP and looking like a
+// blank page to non-bot users. Boots had nothing to do with SSR; content
+// was always under the overlay.
 
 // Route pages are loaded eagerly so every direct URL paints immediately.
 import Home from '@/pages/Home';
