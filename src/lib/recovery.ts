@@ -132,6 +132,11 @@ type HardReloadOptions = {
   home?: boolean;
 };
 
+function stripRecoveryParams(url: URL): void {
+  url.searchParams.delete("_r");
+  url.searchParams.delete("sw");
+}
+
 export function isOnline(): boolean {
   try {
     return typeof navigator === "undefined" ? true : navigator.onLine !== false;
@@ -141,9 +146,9 @@ export function isOnline(): boolean {
 }
 
 /**
- * Performs the scoped eviction then navigates to the same URL with a fresh
- * `_r` cache-buster. Re-entrant: a second concurrent call is a no-op so
- * double-clicks can't queue multiple navigations.
+ * Performs the scoped eviction then navigates to a clean version of the same
+ * URL. Re-entrant: a second concurrent call is a no-op so double-clicks can't
+ * queue multiple navigations.
  */
 export async function hardReload(options: HardReloadOptions = {}): Promise<void> {
   try {
@@ -159,9 +164,8 @@ export async function hardReload(options: HardReloadOptions = {}): Promise<void>
       url.pathname = "/";
       url.hash = "";
     }
-    url.searchParams.delete("_r");
+    stripRecoveryParams(url);
     if (options.clean) url.searchParams.set("sw", "off");
-    url.searchParams.set("_r", String(Date.now()));
     window.location.replace(url.toString());
   } catch {
     try { window.location.reload(); } catch { /* give up */ }

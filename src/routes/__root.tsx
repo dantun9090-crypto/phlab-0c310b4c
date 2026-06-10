@@ -319,6 +319,13 @@ const BOOT_WATCHDOG = `
 (function(){
   try{
     var qs=new URLSearchParams(location.search);
+    if(qs.has('_r')){
+      try{
+        qs.delete('_r');
+        var cleanRecoveryUrl=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
+        history.replaceState(null,'',cleanRecoveryUrl);
+      }catch(e){}
+    }
     var settle=function(p){ return Promise.resolve(p).catch(function(){}); };
     var ownCache=function(k){ return /^phlabs-offline-/.test(k)||/^phlabs-(?!lkg-)/.test(k)||/^workbox-/.test(k)||/^precache-/.test(k)||/^runtime-/.test(k)||/(^|-)precache-v\\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(k); };
     var ownReg=function(r){
@@ -336,10 +343,10 @@ const BOOT_WATCHDOG = `
       var lastDone=0;
       try{ lastDone=Number(sessionStorage.getItem(DONE)||'0'); }catch(e){}
       if(lastDone && Date.now()-lastDone<10000){
-        // Already cleaned this session — strip ?sw=off but keep _r so the
-        // browser must fetch fresh HTML instead of reusing an old error shell.
+        // Already cleaned this session — strip recovery-only parameters.
         try{
           qs.delete('sw');
+          qs.delete('_r');
           var clean=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
           history.replaceState(null,'',clean);
         }catch(e){}
@@ -370,6 +377,7 @@ const BOOT_WATCHDOG = `
           try{ sessionStorage.setItem(DONE,String(Date.now())); }catch(e){}
           try{
             qs.delete('sw');
+            qs.delete('_r');
             var url=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
             location.replace(url);
           }catch(e){ location.reload(); }
@@ -403,9 +411,9 @@ const BOOT_WATCHDOG = `
         if(last&&Date.now()-last<60000) return;
         sessionStorage.setItem(WATCH,String(Date.now()));
         qs.set('sw','off');
-        qs.set('_r',String(Date.now()));
-        location.replace('/?'+qs.toString());
-      }catch(e){ location.replace('/?sw=off&_r='+Date.now()); }
+        qs.delete('_r');
+        location.replace(location.pathname+'?'+qs.toString()+location.hash);
+      }catch(e){ location.replace('/?sw=off'); }
     };
     if(document.readyState==='loading'){
       document.addEventListener('DOMContentLoaded',function(){ setTimeout(tick,7000); },{once:true});
@@ -442,7 +450,11 @@ const CANONICAL_ENFORCER = `
     try{
       var path=location.pathname.replace(/\\/{2,}/g,'/');
       if(path.length>1&&path.endsWith('/')) path=path.slice(0,-1);
-      var url=ORIGIN+path+location.search;
+      var qs=new URLSearchParams(location.search);
+      qs.delete('_r');
+      qs.delete('sw');
+      var query=qs.toString();
+      var url=ORIGIN+path+(query?'?'+query:'');
       upsertLink('canonical',url);
       upsertMeta('property','og:url',url);
       upsertMeta('name','twitter:url',url);
