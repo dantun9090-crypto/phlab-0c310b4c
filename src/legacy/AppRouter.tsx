@@ -77,6 +77,7 @@ function AppLayout() {
   })();
 
   const [showIntro, setShowIntro] = useState(() => {
+    if (typeof window === 'undefined') return false;
     if (isCrawler) return false;
     try {
       if (sessionStorage.getItem(INTRO_SEEN_KEY)) return false;
@@ -87,6 +88,7 @@ function AppLayout() {
   });
 
   const [pageReady, setPageReady] = useState(() => {
+    if (typeof window === 'undefined') return true;
     if (isCrawler) return true;
     try { return !!sessionStorage.getItem(INTRO_SEEN_KEY); } catch { return false; }
   });
