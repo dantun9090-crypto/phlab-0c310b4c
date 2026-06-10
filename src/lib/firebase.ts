@@ -35,6 +35,7 @@ import {
   doc,
   setDoc,
   getDoc,
+  getDocFromServer,
   collection,
   addDoc,
   query,
@@ -1472,7 +1473,7 @@ export const saveOrder = async (userId: string, orderData: any) => {
   );
 };
 
-export { Timestamp, doc, getDoc, getDocs, collection, query, where, orderBy, limit, deleteDoc, updateDoc, onSnapshot, writeBatch, runTransaction, addDoc, setDoc, onAuthStateChanged, signInAnonymously, signOut, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendEmailVerification, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, storageRef, uploadBytesResumable, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata };
+export { Timestamp, doc, getDoc, getDocFromServer, getDocs, getDocsFromServer, collection, query, where, orderBy, limit, deleteDoc, updateDoc, onSnapshot, writeBatch, runTransaction, addDoc, setDoc, onAuthStateChanged, signInAnonymously, signOut, deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword, sendEmailVerification, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, storageRef, uploadBytesResumable, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata };
 export type { FirebaseUser };
 
 // ==================== FIREBASE STORAGE UPLOADS ====================
