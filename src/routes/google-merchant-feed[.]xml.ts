@@ -210,6 +210,8 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
           headers: {
             "Content-Type": "application/xml; charset=utf-8",
             "Cache-Control": "public, max-age=3600",
+            "X-Feed-Items": String(products.length),
+            "X-Feed-Debug-Error": debugError.slice(0, 200) || "none",
           },
         });
       },
