@@ -37,6 +37,15 @@ export const Route = createFileRoute("/")({
       { rel: "preconnect", href: "https://firestore.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://firebasestorage.googleapis.com", crossOrigin: "" },
       { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
+      // LCP preload — server-loaded promo banner image (skipped if absent).
+      ...(loaderData?.banner?.imageUrl
+        ? [{
+            rel: "preload",
+            as: "image",
+            href: loaderData.banner.imageUrl,
+            fetchpriority: "high",
+          } as const]
+        : []),
     ],
     scripts: [
       // Sitewide identity (LocalBusiness + WebSite/SearchAction) lives here
