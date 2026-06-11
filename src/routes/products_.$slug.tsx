@@ -5,7 +5,7 @@ import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
 
 const OG_IMAGE_FALLBACK = `${SITE_URL}/og-image.jpg`;
 
-export const Route = createFileRoute("/products/$slug")({
+export const Route = createFileRoute("/products_/$slug")({
   loader: async ({ params }) => {
     // Server fn — runs on the Worker; the underlying call to
     // firestore.googleapis.com never happens in the browser.
