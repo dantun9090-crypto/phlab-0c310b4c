@@ -546,6 +546,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <PageviewBeacon />
       <Outlet />
     </QueryClientProvider>
   );
