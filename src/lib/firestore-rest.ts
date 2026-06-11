@@ -12,11 +12,9 @@ const API_KEY = "AIzaSyB5sWYCTkzeFFup0mqyg3PzCIzjP2oGJdM";
 const BASE = `https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents`;
 
 function buildCacheBust(): string {
-  try {
-    return typeof __BUILD_ID__ === "string" && __BUILD_ID__ ? __BUILD_ID__ : String(Date.now());
-  } catch {
-    return String(Date.now());
-  }
+  // Always per-request timestamp so Firestore REST never serves a cached
+  // response — feed/SSR always sees the latest product_stock writes.
+  return String(Date.now());
 }
 
 export interface UnitPricingMeasure {
