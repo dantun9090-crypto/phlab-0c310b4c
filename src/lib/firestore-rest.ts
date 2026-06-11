@@ -198,8 +198,20 @@ function isHidden(p: SeoProduct): boolean {
 
 /** Fetch all active, visible products from Firestore via REST. */
 export async function fetchAllProducts(): Promise<SeoProduct[]> {
-  const url = `${BASE}/product_stock?key=${API_KEY}&pageSize=300&v=${encodeURIComponent(buildCacheBust())}`;
-  const res = await fetch(url, { headers: { Accept: "application/json", "Cache-Control": "no-cache" }, cache: "no-store" });
+  // Firestore's REST list endpoint rejects unknown query params, so cache busting
+  // must happen through Fetch cache semantics/headers rather than `&v=...`.
+  // The per-request timestamp keeps request metadata unique for intermediate
+  // proxies while preserving a valid Google API URL.
+  const url = `${BASE}/product_stock?key=${API_KEY}&pageSize=300`;
+  const res = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+      Pragma: "no-cache",
+      "X-PH-Cache-Bust": buildCacheBust(),
+    },
+    cache: "no-store",
+  });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(`firestore_rest_${res.status}: ${body.slice(0, 160)}`);

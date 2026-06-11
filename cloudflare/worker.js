@@ -39,6 +39,7 @@ const WEBHOOK_PREFIXES = [
 ];
 
 const FIREBASE_AUTH_PREFIXES = ["/__/auth/", "/__/firebase/"];
+const XML_FEED_PATHS = new Set(["/sitemap.xml", "/google-merchant-feed.xml"]);
 
 // Bot UAs that should receive a prerendered HTML snapshot.
 const BOT_UA_RX = new RegExp(
@@ -339,14 +340,13 @@ export default {
       }
     }
 
-    // 6. Normal proxy → origin. We pass `cf.cacheEverything` on GETs of
-    //    safe public HTML routes / sitemap / merchant feed so the edge
-    //    cache actually fills (Worker subrequests bypass cache by default).
-    const isXmlFeed =
-      url.pathname === "/sitemap.xml" || url.pathname === "/google-merchant-feed.xml";
+    // 6. Normal proxy → origin. We pass `cf.cacheEverything` only for safe
+    //    public HTML routes. XML feeds must stay uncached so Merchant Center
+    //    and sitemap crawlers always see fresh backend data.
+    const isXmlFeed = XML_FEED_PATHS.has(url.pathname);
     const cacheOpts =
-      isGet && isHtmlCacheable(url)
-        ? { cacheEverything: true, cacheTtl: isXmlFeed ? 300 : 300 }
+      isGet && !isXmlFeed && isHtmlCacheable(url)
+        ? { cacheEverything: true, cacheTtl: 300 }
         : undefined;
     try {
       const res = await proxyToOrigin(request, origin, cacheOpts);
@@ -372,11 +372,11 @@ export default {
       } else if (isStatic) {
         if (!h.has("cache-control")) h.set("cache-control", "public, max-age=31536000, immutable");
       } else if (isXmlFeed) {
-        // Sitemap + merchant feed: 5 min browser cache, correct content-type.
-        h.set("cache-control", "public, max-age=300, stale-while-revalidate=3600");
-        if (url.pathname === "/google-merchant-feed.xml" || url.pathname === "/sitemap.xml") {
-          h.set("content-type", "application/xml; charset=utf-8");
-        }
+        // Sitemap + merchant feed: no edge/browser cache; origin sets item/debug headers.
+        h.set("cache-control", "no-store, no-cache, must-revalidate, max-age=0");
+        h.set("cdn-cache-control", "no-store");
+        h.set("cloudflare-cdn-cache-control", "no-store");
+        h.set("content-type", "application/xml; charset=utf-8");
       } else if ((h.get("content-type") || "").includes("text/html")) {
         if (!h.has("cache-control") || /no-cache|no-store|max-age=0/i.test(h.get("cache-control") || "")) {
           h.set("cache-control", "public, max-age=300, stale-while-revalidate=86400");
