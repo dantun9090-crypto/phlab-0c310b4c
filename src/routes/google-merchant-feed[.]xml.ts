@@ -5,11 +5,18 @@ import { fetchAllProducts } from "@/lib/firestore-rest";
 const BASE_URL = "https://phlabs.co.uk";
 const BRAND = "PH Labs";
 const CURRENCY = "GBP";
-// Google product category ID: Business & Industrial > Science & Laboratory
-// Supplies > Laboratory Chemicals. Numeric IDs are preferred by Google and
-// keep us out of the "Health & Beauty > Health Care" classifier that
-// triggers the "Unapproved supplements" healthcare-and-medicine policy.
-const GOOGLE_CATEGORY_ID = "499954";
+// Google UK product taxonomy: Business & Industrial > Science & Laboratory >
+// Biochemicals (ID 6975). Peptide research compounds are biochemicals under
+// the UK taxonomy. Numeric IDs are preferred by Google and keep us out of
+// the "Health & Beauty > Health Care" classifier that triggers the
+// "Unapproved supplements" healthcare-and-medicine policy.
+// Reference UK IDs for related leaves:
+//   1624 — Business & Industrial > Science & Laboratory
+//   6975 — ...> Biochemicals (used here)
+//   3002 — ...> Laboratory Chemicals
+//   7325 — ...> Dissection Kits
+const GOOGLE_CATEGORY_ID = "6975";
+const GOOGLE_CATEGORY_PATH = "Business & Industrial > Science & Laboratory > Biochemicals";
 
 // Map internal category slugs to human-readable Merchant product_type leaves.
 // Avoids feeding Google raw slugs like "metabolic-signaling". Unknown slugs
@@ -210,7 +217,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                 : null,
               `    <g:identifier_exists>${hasGtin ? "yes" : "no"}</g:identifier_exists>`,
               `    <g:google_product_category>${GOOGLE_CATEGORY_ID}</g:google_product_category>`,
-              `    <g:product_type>${xmlEscape(`Laboratory Chemicals > Research Reference Standards${displayCategory ? ` > ${displayCategory}` : ""}`)}</g:product_type>`,
+              `    <g:product_type>${xmlEscape(`${GOOGLE_CATEGORY_PATH}${displayCategory ? ` > ${displayCategory}` : ""}`)}</g:product_type>`,
               `    <g:adult>no</g:adult>`,
               `    <g:age_group>adult</g:age_group>`,
               `    <g:is_bundle>no</g:is_bundle>`,
