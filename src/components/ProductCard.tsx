@@ -76,9 +76,15 @@ export function ProductCard({
 
   const getProductAlt = (n: string, cat?: string) => {
     const c = cat?.replace(/-/g, ' ') || 'research peptide';
-    // MHRA / Google Merchant safe: no mg sizes, no dosages, no medical claims.
-    // Uniqueness comes from product name + category + form, not quantities.
-    return `${n} — lyophilised ${c} vial for laboratory research use only, ≥99% HPLC-verified with batch Certificate of Analysis — PH Labs UK research reagent (not for human consumption)`;
+    // MHRA-safe: vial sizes / variant labels only (product attributes).
+    // Never include per-use dosages, frequencies, or administration instructions.
+    const sizes = vars
+      .map((v: any) => v.name || v.dosage)
+      .filter(Boolean)
+      .slice(0, 4)
+      .join(' / ');
+    const sizePart = sizes ? ` ${sizes} vial` : ' vial';
+    return `${n} —${sizePart} of lyophilised ${c} for laboratory research use only, ≥99% HPLC-verified with batch Certificate of Analysis — PH Labs UK research reagent (not for human consumption)`;
   };
 
   return (
