@@ -1,5 +1,6 @@
-/* Import external stylesheets FIRST */
-@import './styles/cls-fixes.css';
+/* cls-fixes.css now imported globally from src/styles.css (loaded by
+   __root.tsx) — eliminates the legacy-styles → cls-fixes CSS waterfall
+   that delayed FCP by ~150ms. */
 
 /* Tailwind directives */
 
