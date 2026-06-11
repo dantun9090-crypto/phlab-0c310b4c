@@ -433,7 +433,7 @@ export const reconcileFenaOrphans = createServerFn({ method: "POST" })
                   html: `<!doctype html><html><body style="font-family:Arial,sans-serif;padding:24px;color:#0f172a">
                     <h2 style="color:#10b981">Payment received</h2>
                     <p>Thank you — we've received your payment for order
-                    <strong>${reference || orderId}</strong>.</p>
+                    <strong>${escapeHtml(reference || orderId)}</strong>.</p>
                   </body></html>`,
                   text: `Payment received for order ${reference || orderId}. Thank you.`,
                 },
