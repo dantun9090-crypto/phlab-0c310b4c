@@ -206,10 +206,17 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
           `</rss>`,
         ].join("\n");
 
+        // If product fetch failed or returned empty, respond 503 + no-store
+        // so Cloudflare does NOT cache the empty feed shell for an hour.
+        const emptyFeed = products.length === 0;
         return new Response(xml, {
+          status: emptyFeed ? 503 : 200,
           headers: {
             "Content-Type": "application/xml; charset=utf-8",
-            "Cache-Control": "public, max-age=3600",
+            "Cache-Control": emptyFeed
+              ? "no-store, no-cache, must-revalidate"
+              : "public, max-age=3600",
+            "CDN-Cache-Control": emptyFeed ? "no-store" : "public, max-age=3600",
             "X-Feed-Items": String(products.length),
             "X-Feed-Debug-Error": debugError.slice(0, 200) || "none",
           },
