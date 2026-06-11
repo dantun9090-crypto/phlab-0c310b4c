@@ -245,6 +245,45 @@ export default {
     const host = url.hostname.toLowerCase();
     const origin = null;
 
+    // 0. Pageview beacon — must run BEFORE redirects/prerender/cache.
+    //    Cache-cached HTML never reaches the origin, so Lovable's visit
+    //    counter misses ~95% of traffic. This endpoint always returns 200
+    //    no-store, and the client fires POST /api/pageview on each route
+    //    change. Cloudflare must NOT cache this path (rules + headers).
+    if (url.pathname === "/api/pageview") {
+      const allowOrigin = "https://" + CANONICAL_HOST;
+      if (request.method === "OPTIONS") {
+        return new Response(null, {
+          status: 204,
+          headers: {
+            "access-control-allow-origin": allowOrigin,
+            "access-control-allow-methods": "POST, OPTIONS",
+            "access-control-allow-headers": "Content-Type",
+            "access-control-max-age": "86400",
+            "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+            "cdn-cache-control": "no-store",
+            "cloudflare-cdn-cache-control": "no-store",
+          },
+        });
+      }
+      return new Response("OK", {
+        status: 200,
+        headers: {
+          "access-control-allow-origin": allowOrigin,
+          "access-control-allow-methods": "POST, OPTIONS",
+          "access-control-allow-headers": "Content-Type",
+          "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+          "cdn-cache-control": "no-store",
+          "cloudflare-cdn-cache-control": "no-store",
+          "pragma": "no-cache",
+          "expires": "0",
+          "content-type": "text/plain; charset=utf-8",
+          "x-phl-via": "beacon",
+        },
+      });
+    }
+
+
     // 1. Hostname normalization (defense in depth — origin also does this).
     if (REDIRECT_HOSTS.has(host) || (url.protocol === "http:" && host === CANONICAL_HOST)) {
       const dest = new URL(url.toString());
