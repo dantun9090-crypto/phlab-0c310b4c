@@ -694,14 +694,14 @@ export function Layout({ children }: LayoutProps) {
             <div className="hidden md:flex flex-col gap-1.5 absolute right-3 top-1/2 -translate-y-1/2 z-10">
               <button
                 onClick={() => scrollRef.current?.scrollBy({ top: -300, behavior: 'smooth' })}
-                className="w-11 h-11 rounded-full bg-gray-700/80 hover:bg-blue-600 border border-white/10 hover:border-blue-500 flex items-center justify-center text-gray-400 hover:text-white transition-all shadow-lg"
+                className="w-11 h-11 rounded-full bg-gray-700/80 hover:bg-blue-600 border border-white/10 hover:border-blue-500 flex items-center justify-center text-gray-200 hover:text-white transition-all shadow-lg"
                 aria-label="Scroll up"
               >
                 <ChevronUp className="w-4 h-4" />
               </button>
               <button
                 onClick={() => scrollRef.current?.scrollBy({ top: 300, behavior: 'smooth' })}
-                className="w-11 h-11 rounded-full bg-gray-700/80 hover:bg-blue-600 border border-white/10 hover:border-blue-500 flex items-center justify-center text-gray-400 hover:text-white transition-all shadow-lg"
+                className="w-11 h-11 rounded-full bg-gray-700/80 hover:bg-blue-600 border border-white/10 hover:border-blue-500 flex items-center justify-center text-gray-200 hover:text-white transition-all shadow-lg"
                 aria-label="Scroll down"
               >
                 <ChevronDown className="w-4 h-4" />
