@@ -2,8 +2,8 @@ import { CheckCircle2, AlertCircle, ArrowRight } from 'lucide-react';
 
 const BRAND = 'PH Labs';
 const CURRENCY = 'GBP';
-const GOOGLE_CATEGORY_ID = '499954';
-const GOOGLE_CATEGORY_NAME = 'Laboratory Chemicals > Research Reference Standards';
+const GOOGLE_CATEGORY_ID = '6975';
+const GOOGLE_CATEGORY_NAME = 'Business & Industrial > Science & Laboratory > Biochemicals';
 
 interface PreviewProduct {
   name?: string;
