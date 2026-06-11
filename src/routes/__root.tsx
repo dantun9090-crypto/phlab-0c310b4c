@@ -256,6 +256,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           ],
         }),
       },
+      {
+        // Swap the Google Fonts stylesheet back to media="all" after the
+        // browser finishes downloading it. Pairs with the `media="print"`
+        // hint on the <link> above so fonts never block first paint.
+        children:
+          "(function(){var l=document.getElementById('gfonts');if(!l)return;function s(){l.media='all'}if(l.sheet){s()}else{l.addEventListener('load',s,{once:true})}})();",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
