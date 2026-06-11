@@ -98,10 +98,18 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
           products = [];
         }
 
-        // ?debug=1 — returns JSON with full diagnostic info, bypassing the
-        // CF Worker's 5xx→branded-HTML interceptor (handler is always 200).
+        // ?debug=1 — gated behind a server-only secret header. Returns JSON
+        // with diagnostic info, bypassing the CF Worker's 5xx→branded-HTML
+        // interceptor (handler is always 200). Without a valid
+        // `x-debug-secret` header matching `MERCHANT_FEED_DEBUG_SECRET`, the
+        // request falls through to the normal XML feed below — no info leak.
         const url = new URL(request.url);
         if (url.searchParams.get("debug") === "1") {
+          const expected = process.env.MERCHANT_FEED_DEBUG_SECRET || "";
+          const provided = request.headers.get("x-debug-secret") || "";
+          if (!expected || !provided || provided !== expected) {
+            return new Response("Not found", { status: 404 });
+          }
           try {
             const r = await fetch(
               "https://firestore.googleapis.com/v1/projects/prohealthpeptides-a0808/databases/(default)/documents/product_stock?key=AIzaSyB5sWYCTkzeFFup0mqyg3PzCIzjP2oGJdM&pageSize=300",
@@ -125,6 +133,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             { status: 200, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } },
           );
         }
+
 
 
 
