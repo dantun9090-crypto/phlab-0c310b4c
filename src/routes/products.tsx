@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import LegacyApp from "@/legacy/LegacyApp";
-import { fetchAllProducts, type SeoProduct } from "@/lib/firestore-rest";
+import { fetchAllProductsFn, type SeoProduct } from "@/lib/products-rest.functions";
 import { SITE_URL } from "@/lib/seo-meta";
 
 const TITLE = "Research Peptides UK | Full Catalogue | PH Labs";
@@ -11,8 +11,11 @@ const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
 export const Route = createFileRoute("/products")({
   loader: async () => {
+    // Server fn — runs on the Worker on both SSR and client navigation,
+    // so no browser-side fetch to firestore.googleapis.com (avoids CORS
+    // preflight failure on the custom cache-bust header).
     try {
-      const products = await fetchAllProducts();
+      const products = await fetchAllProductsFn();
       return { products };
     } catch {
       return { products: [] as SeoProduct[] };
