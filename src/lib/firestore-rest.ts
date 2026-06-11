@@ -202,16 +202,22 @@ function isHidden(p: SeoProduct): boolean {
 export async function fetchAllProducts(): Promise<SeoProduct[]> {
   const url = `${BASE}/product_stock?key=${API_KEY}&pageSize=300&v=${encodeURIComponent(buildCacheBust())}`;
   const res = await fetch(url, { headers: { Accept: "application/json", "Cache-Control": "no-cache" }, cache: "no-store" });
-  if (!res.ok) return [];
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`firestore_rest_${res.status}: ${body.slice(0, 160)}`);
+  }
   const json: any = await res.json();
   const docs: any[] = json.documents ?? [];
-  const products = docs
-    .map(toProduct)
+  const mapped = docs.map(toProduct);
+  const products = mapped
     .filter(
       (p): p is SeoProduct =>
         p != null && p.isActive && p.visibility !== "hidden" && !isHidden(p),
     )
     .sort((a, b) => a.displayOrder - b.displayOrder);
+  if (docs.length > 0 && products.length === 0) {
+    throw new Error(`all_filtered_out: docs=${docs.length} mapped=${mapped.filter(Boolean).length}`);
+  }
   return products;
 }
 
