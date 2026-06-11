@@ -1,13 +1,15 @@
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 import LegacyApp from "@/legacy/LegacyApp";
-import { fetchProductBySlug, type SeoProduct } from "@/lib/firestore-rest";
+import { fetchProductBySlugFn, type SeoProduct } from "@/lib/products-rest.functions";
 import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
 
 const OG_IMAGE_FALLBACK = `${SITE_URL}/og-image.jpg`;
 
 export const Route = createFileRoute("/products/$slug")({
   loader: async ({ params }) => {
-    const product = await fetchProductBySlug(params.slug);
+    // Server fn — runs on the Worker; the underlying call to
+    // firestore.googleapis.com never happens in the browser.
+    const product = await fetchProductBySlugFn({ data: { slug: params.slug } });
     if (!product) throw notFound();
     // If we resolved via prefix/legacy match, 301 to the canonical slug
     // so Google Merchant Center short URLs (e.g. /products/klow-blend)
