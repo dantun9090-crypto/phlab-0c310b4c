@@ -85,6 +85,12 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
         let products = [] as Awaited<ReturnType<typeof fetchAllProducts>>;
         let debugError = "";
         let rawDocCount = -1;
+        const generatedAt = new Date().toISOString();
+        // Always pull fresh products from Firestore on every request — no
+        // in-process memoisation, no edge-cached XML. The handler itself is
+        // cheap (~1 Firestore REST round-trip) and Google Merchant only
+        // fetches the feed a handful of times per day, so we always serve
+        // the absolute latest product_stock state.
         try {
           products = await fetchAllProducts();
         } catch (e: any) {
