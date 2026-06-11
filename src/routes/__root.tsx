@@ -519,6 +519,7 @@ function RootComponent() {
 
   useEffect(() => {
     clearStoreCachesForNewBuild();
+    initWebVitals();
   }, []);
 
   useEffect(() => {
