@@ -422,7 +422,8 @@ export default {
         h.set("content-type", "application/xml; charset=utf-8");
       } else if ((h.get("content-type") || "").includes("text/html")) {
         if (!h.has("cache-control") || /no-cache|no-store|max-age=0/i.test(h.get("cache-control") || "")) {
-          h.set("cache-control", "public, max-age=300, stale-while-revalidate=86400");
+          const browserMax = url.pathname === "/" ? 3600 : 300;
+          h.set("cache-control", `public, max-age=${browserMax}, stale-while-revalidate=86400`);
         }
       }
 
