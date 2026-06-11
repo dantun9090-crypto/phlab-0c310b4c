@@ -206,11 +206,13 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
           `</rss>`,
         ].join("\n");
 
-        // If product fetch failed or returned empty, respond 503 + no-store
-        // so Cloudflare does NOT cache the empty feed shell for an hour.
+        // Always return 200. If empty, signal via header + no-store so CDN
+        // doesn't pin an empty feed, but avoid 5xx which the Cloudflare
+        // `phlabs-prerender` Worker turns into a branded HTML error page
+        // (stripping our debug headers and replacing the XML entirely).
         const emptyFeed = products.length === 0;
         return new Response(xml, {
-          status: emptyFeed ? 503 : 200,
+          status: 200,
           headers: {
             "Content-Type": "application/xml; charset=utf-8",
             "Cache-Control": emptyFeed
@@ -218,9 +220,11 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               : "public, max-age=3600",
             "CDN-Cache-Control": emptyFeed ? "no-store" : "public, max-age=3600",
             "X-Feed-Items": String(products.length),
+            "X-Feed-Empty": emptyFeed ? "true" : "false",
             "X-Feed-Debug-Error": debugError.slice(0, 200) || "none",
           },
         });
+
       },
     },
   },
