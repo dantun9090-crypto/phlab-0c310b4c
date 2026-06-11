@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Helmet } from "react-helmet-async";
 import { auth, onAuthStateChanged } from "@/lib/firebase";
 import { getOrderPaymentStatus } from "@/lib/fena.functions";
 import { Loader, CheckCircle2, AlertCircle } from "lucide-react";
@@ -110,10 +109,6 @@ function PaymentSuccessPage() {
 
   return (
     <>
-      <Helmet>
-        <title>Payment — PH Labs</title>
-        <meta name="robots" content="noindex, nofollow" />
-      </Helmet>
       <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-950">
         <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
           {phase === "checking" && (
