@@ -46,7 +46,13 @@ export const Route = createFileRoute("/products")({
         { name: "twitter:image", content: OG_IMAGE },
         { name: "twitter:url", content: URL },
       ],
-      links: [{ rel: "canonical", href: URL }],
+      // NOTE: canonical intentionally NOT set here. /products is a parent
+      // route for /products/$slug — TanStack concatenates `links` without
+      // dedup (TanStack/router#6719), so a canonical here would emit a
+      // second <link rel="canonical"> on every product detail page next to
+      // the leaf's canonical (invalid SEO). The client-side canonical
+      // enforcer in src/routes/__root.tsx sets the correct /products
+      // canonical at runtime, and prerender.io captures it in the snapshot.
       scripts: [
         {
           type: "application/ld+json",
