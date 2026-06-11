@@ -48,6 +48,7 @@ import {
   MAX_RETRY_ATTEMPTS,
   type RetryProcessResult,
 } from "@/lib/fena-retry-queue.server";
+import { escapeHtml } from "@/templates/emailBase";
 
 const SITE_ORIGIN = "https://phlabs.co.uk";
 
