@@ -258,3 +258,35 @@ export async function fetchProductBySlug(slug: string): Promise<SeoProduct | nul
 }
 
 export { slugify };
+
+/**
+ * Fetch the active promo banner (settings/promoBanner) via Firestore REST
+ * so the home route loader can emit a `<link rel="preload" as="image">`
+ * for the LCP banner image without bundling the Firebase JS SDK on the
+ * server. Returns null on any error so SSR never fails for a missing/
+ * broken banner.
+ */
+export interface PromoBannerLite {
+  imageUrl: string;
+  altText?: string;
+  heightPx?: number;
+}
+
+export async function fetchPromoBanner(): Promise<PromoBannerLite | null> {
+  try {
+    const url = `${BASE}/settings/promoBanner?key=${API_KEY}&_cb=${buildCacheBust()}`;
+    const res = await fetch(url, { headers: { accept: "application/json" } });
+    if (!res.ok) return null;
+    const json: any = await res.json();
+    const f = unwrapFields(json.fields ?? {});
+    const imageUrl = typeof f.imageUrl === "string" ? f.imageUrl : "";
+    if (!imageUrl) return null;
+    return {
+      imageUrl,
+      altText: typeof f.altText === "string" ? f.altText : undefined,
+      heightPx: typeof f.heightPx === "number" ? f.heightPx : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
