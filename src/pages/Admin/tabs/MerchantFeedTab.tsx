@@ -93,6 +93,7 @@ function validateItem(item: ParsedItem): { errors: string[]; warnings: string[] 
 
 export default function MerchantFeedTab() {
   const [xml, setXml] = useState<string>('');
+  const [feedMeta, setFeedMeta] = useState<{ items: string; empty: string; generatedAt: string; debugError: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -104,6 +105,12 @@ export default function MerchantFeedTab() {
     setFetchError(null);
     try {
       const res = await fetch(FEED_URL, { headers: { Accept: 'application/xml' }, cache: 'no-store' });
+      setFeedMeta({
+        items: res.headers.get('x-feed-items') || 'unknown',
+        empty: res.headers.get('x-feed-empty') || 'unknown',
+        generatedAt: res.headers.get('x-feed-generated-at') || 'unknown',
+        debugError: res.headers.get('x-feed-debug-error') || 'unknown',
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setXml(await res.text());
     } catch (e: any) {
@@ -156,7 +163,7 @@ export default function MerchantFeedTab() {
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">Google Merchant Feed Preview</h1>
           <p className="text-sm text-slate-400">
-            Live preview of <code className="text-emerald-400">{FEED_URL}</code> with required-field validation before submitting to Merchant Center.
+            Live no-cache preview of <code className="text-emerald-400">{FEED_URL}</code> with required-field validation before submitting to Merchant Center.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -185,6 +192,15 @@ export default function MerchantFeedTab() {
         <SummaryCard label="Total errors" value={totals.totalErrors} tone={totals.totalErrors ? 'error' : 'ok'} />
         <SummaryCard label="Total warnings" value={totals.totalWarnings} tone={totals.totalWarnings ? 'warn' : 'ok'} />
       </div>
+
+      {feedMeta && (
+        <div className="p-4 rounded-lg bg-slate-900 border-2 border-slate-800 text-xs text-slate-300 grid grid-cols-1 md:grid-cols-4 gap-2 font-mono">
+          <span>X-Feed-Items: <b className="text-white">{feedMeta.items}</b></span>
+          <span>X-Feed-Empty: <b className={feedMeta.empty === 'true' ? 'text-red-300' : 'text-emerald-300'}>{feedMeta.empty}</b></span>
+          <span>Generated: <b className="text-white">{feedMeta.generatedAt}</b></span>
+          <span>Debug: <b className={feedMeta.debugError === 'none' ? 'text-emerald-300' : 'text-red-300'}>{feedMeta.debugError}</b></span>
+        </div>
+      )}
 
       {fetchError && (
         <div className="p-4 rounded-lg bg-red-950/40 border-2 border-red-800 text-red-200 text-sm">
