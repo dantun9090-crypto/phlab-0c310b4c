@@ -21,6 +21,7 @@ import {
 import { schedulePrecacheCurrentPage } from "@/lib/lkg-cache";
 import { clearStoreCachesForNewBuild } from "@/lib/build-cache";
 import { PageviewBeacon } from "@/components/PageviewBeacon";
+import { initWebVitals } from "@/lib/web-vitals";
 void _clearClientCaches;
 
 function NotFoundComponent() {
@@ -518,6 +519,7 @@ function RootComponent() {
 
   useEffect(() => {
     clearStoreCachesForNewBuild();
+    initWebVitals();
   }, []);
 
   useEffect(() => {
