@@ -109,10 +109,6 @@ function PaymentSuccessPage() {
 
   return (
     <>
-      <Helmet>
-        <title>Payment — PH Labs</title>
-        <meta name="robots" content="noindex, nofollow" />
-      </Helmet>
       <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-950">
         <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
           {phase === "checking" && (
