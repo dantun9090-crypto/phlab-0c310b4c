@@ -243,21 +243,21 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
           `</rss>`,
         ].join("\n");
 
-        // Always return 200. If empty, signal via header + no-store so CDN
-        // doesn't pin an empty feed, but avoid 5xx which the Cloudflare
-        // `phlabs-prerender` Worker turns into a branded HTML error page
-        // (stripping our debug headers and replacing the XML entirely).
+        // Always bypass edge cache so every Merchant fetch triggers a fresh
+        // Firestore read. Without no-store the Cloudflare HTML cache rule
+        // would pin the previous XML for up to 5 minutes and admin edits
+        // wouldn't show up in the feed until the TTL expired.
         const emptyFeed = products.length === 0;
         return new Response(xml, {
           status: 200,
           headers: {
             "Content-Type": "application/xml; charset=utf-8",
-            "Cache-Control": emptyFeed
-              ? "no-store, no-cache, must-revalidate"
-              : "public, max-age=3600",
-            "CDN-Cache-Control": emptyFeed ? "no-store" : "public, max-age=3600",
+            "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+            "CDN-Cache-Control": "no-store",
+            "Cloudflare-CDN-Cache-Control": "no-store",
             "X-Feed-Items": String(products.length),
             "X-Feed-Empty": emptyFeed ? "true" : "false",
+            "X-Feed-Generated-At": generatedAt,
             "X-Feed-Debug-Error": debugError.slice(0, 200) || "none",
           },
         });
