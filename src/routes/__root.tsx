@@ -20,6 +20,7 @@ import {
 } from "@/lib/recovery";
 import { schedulePrecacheCurrentPage } from "@/lib/lkg-cache";
 import { clearStoreCachesForNewBuild } from "@/lib/build-cache";
+import { PageviewBeacon } from "@/components/PageviewBeacon";
 void _clearClientCaches;
 
 function NotFoundComponent() {
