@@ -383,9 +383,13 @@ export default {
     //    public HTML routes. XML feeds must stay uncached so Merchant Center
     //    and sitemap crawlers always see fresh backend data.
     const isXmlFeed = XML_FEED_PATHS.has(url.pathname);
+    // Home page is stable enough to cache for 1h at the edge (banner + product
+    // grid only change on admin writes, which already trigger purges).
+    // All other safe HTML routes stay at the 5-min default.
+    const htmlTtl = url.pathname === "/" ? 3600 : 300;
     const cacheOpts =
       isGet && !isXmlFeed && isHtmlCacheable(url)
-        ? { cacheEverything: true, cacheTtl: 300 }
+        ? { cacheEverything: true, cacheTtl: htmlTtl }
         : undefined;
     try {
       const res = await proxyToOrigin(request, origin, cacheOpts);
