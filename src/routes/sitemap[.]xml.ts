@@ -20,7 +20,7 @@ interface SitemapEntry {
 }
 
 // Static-page lastmod. Bumped manually when site-wide content/layout changes.
-const STATIC_LASTMOD = "2026-06-01";
+const STATIC_LASTMOD = "2026-06-11";
 
 const staticEntries: SitemapEntry[] = [
   { path: "/", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "1.0" },
