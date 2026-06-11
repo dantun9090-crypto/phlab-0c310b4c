@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import LegacyApp from "@/legacy/LegacyApp";
+import { fetchPromoBanner } from "@/lib/firestore-rest";
 
 const HOME_TITLE = "HPLC-Tested Research Peptides UK — Batch CoA | PH Labs";
 const HOME_DESCRIPTION =
@@ -8,10 +9,13 @@ const HOME_URL = "https://phlabs.co.uk/";
 const HOME_OG_IMAGE = "https://phlabs.co.uk/og-image.jpg";
 
 export const Route = createFileRoute("/")({
+  // Fetch active promo banner on the server so we can preload the LCP image.
+  // Returns null on any error — never blocks SSR.
+  loader: async () => ({ banner: await fetchPromoBanner() }),
   // Public content routes must SSR a non-empty body. Do not disable SSR
   // here or wrap the route in deferred loading with an empty fallback; that combination
   // caused staging to stick on the boot loader after publishes.
-  head: () => ({
+  head: ({ loaderData }) => ({
     meta: [
       { title: HOME_TITLE },
       { name: "description", content: HOME_DESCRIPTION },
@@ -33,6 +37,15 @@ export const Route = createFileRoute("/")({
       { rel: "preconnect", href: "https://firestore.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://firebasestorage.googleapis.com", crossOrigin: "" },
       { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
+      // LCP preload — server-loaded promo banner image (skipped if absent).
+      ...(loaderData?.banner?.imageUrl
+        ? [{
+            rel: "preload",
+            as: "image",
+            href: loaderData.banner.imageUrl,
+            fetchpriority: "high",
+          } as const]
+        : []),
     ],
     scripts: [
       // Sitewide identity (LocalBusiness + WebSite/SearchAction) lives here

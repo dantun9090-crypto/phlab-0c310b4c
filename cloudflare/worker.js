@@ -383,9 +383,13 @@ export default {
     //    public HTML routes. XML feeds must stay uncached so Merchant Center
     //    and sitemap crawlers always see fresh backend data.
     const isXmlFeed = XML_FEED_PATHS.has(url.pathname);
+    // Home page is stable enough to cache for 1h at the edge (banner + product
+    // grid only change on admin writes, which already trigger purges).
+    // All other safe HTML routes stay at the 5-min default.
+    const htmlTtl = url.pathname === "/" ? 3600 : 300;
     const cacheOpts =
       isGet && !isXmlFeed && isHtmlCacheable(url)
-        ? { cacheEverything: true, cacheTtl: 300 }
+        ? { cacheEverything: true, cacheTtl: htmlTtl }
         : undefined;
     try {
       const res = await proxyToOrigin(request, origin, cacheOpts);
@@ -418,7 +422,8 @@ export default {
         h.set("content-type", "application/xml; charset=utf-8");
       } else if ((h.get("content-type") || "").includes("text/html")) {
         if (!h.has("cache-control") || /no-cache|no-store|max-age=0/i.test(h.get("cache-control") || "")) {
-          h.set("cache-control", "public, max-age=300, stale-while-revalidate=86400");
+          const browserMax = url.pathname === "/" ? 3600 : 300;
+          h.set("cache-control", `public, max-age=${browserMax}, stale-while-revalidate=86400`);
         }
       }
 

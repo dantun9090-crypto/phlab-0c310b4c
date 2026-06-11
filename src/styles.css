@@ -1,6 +1,9 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+/* CLS prevention — must load on every route, in parallel with the main
+   CSS, so legacy-styles.css doesn't serial-fetch it (FCP regression). */
+@import "./styles/cls-fixes.css";
 
 @custom-variant dark (&:is(.dark *));
 
