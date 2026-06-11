@@ -83,9 +83,11 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
     handlers: {
       GET: async () => {
         let products = [] as Awaited<ReturnType<typeof fetchAllProducts>>;
+        let debugError = "";
         try {
           products = await fetchAllProducts();
-        } catch {
+        } catch (e: any) {
+          debugError = String(e?.message || e || "unknown");
           products = [];
         }
 
