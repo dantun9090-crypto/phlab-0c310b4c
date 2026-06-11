@@ -256,6 +256,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           ],
         }),
       },
+      {
+        // Swap the Google Fonts stylesheet back to media="all" after the
+        // browser finishes downloading it. Pairs with the `media="print"`
+        // hint on the <link> above so fonts never block first paint.
+        children:
+          "(function(){var l=document.getElementById('gfonts');if(!l)return;function s(){l.media='all'}if(l.sheet){s()}else{l.addEventListener('load',s,{once:true})}})();",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -276,7 +283,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://identitytoolkit.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700&display=swap" },
+      // Non-blocking font load (media=print swap pattern). The stylesheet
+      // downloads in the background without delaying first paint; the
+      // inline script in `scripts` below swaps media back to "all" once
+      // it's loaded, so the fonts apply as soon as they're ready. FOUT is
+      // accepted in exchange for a faster FCP/LCP.
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700&display=swap", media: "print", id: "gfonts" },
       { rel: "dns-prefetch", href: "https://firestore.googleapis.com" },
       { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
 
