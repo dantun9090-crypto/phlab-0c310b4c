@@ -104,7 +104,7 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
             return new Response("Invalid signature", { status: 401 });
           }
         } else {
-          await logEvent("warn", "FENA_WEBHOOK_SECRET not configured — skipping HMAC check", {});
+          await logEvent("warn", "Webhook secret not configured, using authoritative re-fetch", { provider: "fena" });
         }
 
         let payload: FenaWebhookBody;
