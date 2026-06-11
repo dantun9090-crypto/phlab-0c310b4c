@@ -81,15 +81,46 @@ function cdata(s: string): string {
 export const Route = createFileRoute("/google-merchant-feed.xml")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
         let products = [] as Awaited<ReturnType<typeof fetchAllProducts>>;
         let debugError = "";
+        let rawDocCount = -1;
         try {
           products = await fetchAllProducts();
         } catch (e: any) {
           debugError = String(e?.message || e || "unknown");
           products = [];
         }
+
+        // ?debug=1 — returns JSON with full diagnostic info, bypassing the
+        // CF Worker's 5xx→branded-HTML interceptor (handler is always 200).
+        const url = new URL(request.url);
+        if (url.searchParams.get("debug") === "1") {
+          try {
+            const r = await fetch(
+              "https://firestore.googleapis.com/v1/projects/prohealthpeptides-a0808/databases/(default)/documents/product_stock?key=AIzaSyB5sWYCTkzeFFup0mqyg3PzCIzjP2oGJdM&pageSize=300",
+              { headers: { Accept: "application/json" }, cache: "no-store" },
+            );
+            const j: any = await r.json().catch(() => ({}));
+            rawDocCount = Array.isArray(j.documents) ? j.documents.length : -2;
+          } catch (e: any) {
+            rawDocCount = -3;
+          }
+          return new Response(
+            JSON.stringify({
+              handlerVersion: "v3",
+              productsAfterFilter: products.length,
+              rawDocCount,
+              debugError: debugError || "none",
+              firstProduct: products[0]
+                ? { id: products[0].id, name: products[0].name, slug: products[0].slug, isActive: products[0].isActive, visibility: products[0].visibility }
+                : null,
+            }, null, 2),
+            { status: 200, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } },
+          );
+        }
+
+
 
         const items = products
           .filter((p) => !isBlockedForMerchant(p as any))
