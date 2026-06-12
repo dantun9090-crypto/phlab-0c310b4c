@@ -89,6 +89,8 @@ const RULES: RedirectRule[] = [
   { type: "exact", from: "/products/mt-2", to: "/products/melanotan-ii-research-peptide" },
   { type: "exact", from: "/products/mt-2-melanotan-ii", to: "/products/melanotan-ii-research-peptide" },
   { type: "exact", from: "/products/melanotan-ii", to: "/products/melanotan-ii-research-peptide" },
+  { type: "exact", from: "/products/melanotan-2", to: "/products/melanotan-ii-research-peptide" },
+  { type: "exact", from: "/products/melanotan-2-research-peptide", to: "/products/melanotan-ii-research-peptide" },
   { type: "exact", from: "/products/melanotan-ii-laboratory-research-compound-research", to: "/products/melanotan-ii-research-peptide" },
   { type: "exact", from: "/products/melanotan-ii-laboratory-reference-compound-research", to: "/products/melanotan-ii-research-peptide" },
   { type: "exact", from: "/products/melanotan-ii-synthetic-cyclic-heptapeptide-analytical-standard-99-hplc-cas-121062-08-6-for-research-use-only-ruo", to: "/products/melanotan-ii-research-peptide" },
