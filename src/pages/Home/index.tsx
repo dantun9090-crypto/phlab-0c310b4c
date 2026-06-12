@@ -212,10 +212,12 @@ export default function HomePage() {
           setAdverts(allAdverts);
           const heroCount = allAdverts.filter((a: any) => a.placement === 'homepage_hero').length;
           localStorage.setItem('php_adverts_hero_count', heroCount > 0 ? '1' : '0');
+          localStorage.setItem('php_adverts_cache', JSON.stringify({ ts: Date.now(), data: allAdverts }));
         } catch { /* ignore */ }
       }).catch(() => {});
     };
 
+    // Adverts contain the LCP image — fetch immediately, not under idle callback.
     if (typeof requestIdleCallback !== 'undefined') {
       requestIdleCallback(deferredLoad, { timeout: 1500 });
     } else {
