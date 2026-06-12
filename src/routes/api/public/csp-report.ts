@@ -15,6 +15,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { log, extractClientIp, truncate } from "@/lib/worker-log";
+import { enforceRateLimit } from "@/lib/rate-limit";
+
 
 type LegacyReport = {
   "csp-report"?: {
@@ -90,9 +92,26 @@ export const Route = createFileRoute("/api/public/csp-report")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        // Rate limit (10/min/IP) — prevents report flooding.
+        const limited = await enforceRateLimit(request, "/api/public/csp-report", {
+          limit: 10,
+          windowMs: 60_000,
+          retryAfterSec: 60,
+        });
+        if (limited) return limited;
+
         const ip = extractClientIp(request);
         const ua = truncate(request.headers.get("user-agent"));
         const ct = (request.headers.get("content-type") ?? "").toLowerCase();
+
+        // Only accept the two formats browsers actually send.
+        const ctOk =
+          ct.includes("application/csp-report") ||
+          ct.includes("application/reports+json") ||
+          ct.includes("application/json");
+        if (!ctOk) {
+          return new Response(null, { status: 415 });
+        }
 
         let raw: unknown;
         try {
@@ -101,6 +120,7 @@ export const Route = createFileRoute("/api/public/csp-report")({
           // Some browsers send empty body on dropped reports — accept and move on.
           return new Response(null, { status: 204 });
         }
+
 
         const reports: Array<ReturnType<typeof extractLegacy> | ReturnType<typeof extractModern>> = [];
         try {

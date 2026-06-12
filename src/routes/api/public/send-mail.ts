@@ -19,6 +19,36 @@ import { buildProfessionalInvoiceEmail } from "@/templates/professionalInvoiceEm
 
 const INTERNAL_RECIPIENT = "info@phlabs.co.uk";
 
+// ---- Origin allowlist (CORS hardening) ----
+// Reject cross-origin POSTs from any host not on this list. Browsers that
+// omit the Origin header (server-to-server, curl) are allowed through —
+// the input validation + Firestore rules below still apply.
+const ALLOWED_ORIGINS = new Set<string>([
+  "https://phlabs.co.uk",
+  "https://www.phlabs.co.uk",
+]);
+function isAllowedOrigin(origin: string | null): boolean {
+  if (!origin) return true; // non-browser caller
+  if (ALLOWED_ORIGINS.has(origin)) return true;
+  try {
+    const host = new URL(origin).hostname.toLowerCase();
+    // Lovable preview / published domains.
+    if (host.endsWith(".lovable.app") || host.endsWith(".lovable.dev")) return true;
+  } catch {
+    return false;
+  }
+  return false;
+}
+function corsHeaders(origin: string | null): Record<string, string> {
+  const allow = origin && isAllowedOrigin(origin) ? origin : "https://phlabs.co.uk";
+  return {
+    "access-control-allow-origin": allow,
+    "access-control-allow-methods": "POST, OPTIONS",
+    "access-control-allow-headers": "content-type",
+    "vary": "origin",
+  };
+}
+
 // ---- best-effort per-IP rate limit (per worker isolate) ----
 const HITS = new Map<string, { count: number; resetAt: number }>();
 const WINDOW_MS = 60_000;
@@ -35,6 +65,7 @@ function rateLimited(ip: string): boolean {
   if (cur.count > MAX_PER_WINDOW) return true;
   return false;
 }
+
 
 const emailSchema = z.string().email().max(320);
 
@@ -119,6 +150,13 @@ export const Route = createFileRoute("/api/public/send-mail")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const origin = request.headers.get("origin");
+        if (!isAllowedOrigin(origin)) {
+          return new Response(JSON.stringify({ error: "forbidden_origin" }), {
+            status: 403,
+            headers: { "content-type": "application/json" },
+          });
+        }
         const ip =
           request.headers.get("cf-connecting-ip") ||
           request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
@@ -127,6 +165,7 @@ export const Route = createFileRoute("/api/public/send-mail")({
         if (rateLimited(ip)) {
           return json({ error: "rate_limited" }, 429);
         }
+
 
         let raw: unknown;
         try {
@@ -315,15 +354,17 @@ export const Route = createFileRoute("/api/public/send-mail")({
           return json({ error: "send_failed" }, 500);
         }
       },
-      OPTIONS: async () =>
-        new Response(null, {
+      OPTIONS: async ({ request }) => {
+        const origin = request.headers.get("origin");
+        if (!isAllowedOrigin(origin)) {
+          return new Response(null, { status: 403 });
+        }
+        return new Response(null, {
           status: 204,
-          headers: {
-            "access-control-allow-origin": "*",
-            "access-control-allow-methods": "POST, OPTIONS",
-            "access-control-allow-headers": "content-type",
-          },
-        }),
+          headers: corsHeaders(origin),
+        });
+      },
+
     },
   },
 });

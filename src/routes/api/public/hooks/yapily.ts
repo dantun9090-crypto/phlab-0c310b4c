@@ -1,16 +1,22 @@
 /**
- * Yapily webhook receiver — placeholder.
+ * Yapily webhook receiver — placeholder, but locked.
  *
  * URL: https://phlabs.co.uk/api/public/hooks/yapily
  *
- * Yapily is not yet enabled (awaiting application approval). For now we
- * accept the request, log it as `info`, and return 200 so Yapily can
- * validate the URL during onboarding. The real handler will be wired when
- * YAPILY_APPLICATION_ID / YAPILY_APPLICATION_SECRET are provided.
+ * Yapily integration is pending application approval, but the endpoint is
+ * still public on the internet. To prevent it being used as an
+ * unauthenticated log-write / DoS vector while the adapter is wired up,
+ * we require a valid HMAC signature on every request:
+ *   - YAPILY_WEBHOOK_SECRET must be configured (otherwise 503).
+ *   - Each POST must carry `x-yapily-signature` / `x-webhook-signature`
+ *     verified with the shared secret (otherwise 401, dropped).
+ *
+ * The body is only logged for diagnostics after the signature check passes.
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { addDocAdmin } from "@/lib/server/firestore-admin";
 import { enforceRateLimit } from "@/lib/rate-limit";
+import { verifyHmacSignature } from "@/lib/webhook-signature";
 
 export const Route = createFileRoute("/api/public/hooks/yapily")({
   server: {
@@ -31,6 +37,20 @@ export const Route = createFileRoute("/api/public/hooks/yapily")({
         }
         if (bodyText.length > 32_000) {
           return new Response("Payload too large", { status: 413 });
+        }
+
+        // Mandatory signature verification.
+        const secret = process.env.YAPILY_WEBHOOK_SECRET;
+        if (!secret) {
+          return new Response("Webhook secret not configured", { status: 503 });
+        }
+        const sigHeader =
+          request.headers.get("x-yapily-signature") ||
+          request.headers.get("x-webhook-signature") ||
+          request.headers.get("x-hub-signature-256");
+        const ok = await verifyHmacSignature(bodyText, sigHeader, secret);
+        if (!ok) {
+          return new Response("Invalid signature", { status: 401 });
         }
 
         try {
