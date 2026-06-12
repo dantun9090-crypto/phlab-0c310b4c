@@ -212,19 +212,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "google-site-verification", content: "tYtU-dRlfAq14D7lyPTYf8noiJH-b0LifcvvrGi8AZw" },
       // title, description, og:title/description/image, twitter:* and og:type
       // are intentionally set per-leaf-route (see src/routes/index.tsx,
-      // src/routes/products.tsx, src/routes/products.$slug.tsx, src/routes/$.tsx).
-      // Defining them here too creates duplicate <title>/<meta> in <head>
-      // because TanStack concatenates parent + leaf meta when names collide
-      // on different keys (title vs name="description" vs property="og:*").
-      { title: "PH LABS | Premium Research Peptides UK" },
-      { property: "og:title", content: "PH LABS | Premium Research Peptides UK" },
-      { name: "twitter:title", content: "PH LABS | Premium Research Peptides UK" },
-      { name: "description", content: "UK-based supplier of high-purity research peptides & biochemicals for laboratory use. RUO-certified, fast delivery, batch-tested. Trusted by research profession" },
-      { property: "og:description", content: "UK-based supplier of high-purity research peptides & biochemicals for laboratory use. RUO-certified, fast delivery, batch-tested. Trusted by research profession" },
-      { name: "twitter:description", content: "UK-based supplier of high-purity research peptides & biochemicals for laboratory use. RUO-certified, fast delivery, batch-tested. Trusted by research profession" },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/a5dac3bf-e8f0-4cf0-8e86-2d95cded11e0" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/a5dac3bf-e8f0-4cf0-8e86-2d95cded11e0" },
-      { property: "og:type", content: "website" },
+      // src/routes/products.tsx, src/routes/products_.$slug.tsx, src/routes/$.tsx)
+      // to avoid duplicate <title>/<meta> tags in <head> — TanStack
+      // concatenates parent + leaf meta when keys differ.
     ],
     scripts: [
       {
