@@ -267,8 +267,11 @@ export const runSitemapAudit = createServerFn({ method: "POST" })
       );
     }
 
-    // Per-admin rate limit — 10 runs / hour (see MAX_AUDIT_RUNS_PER_HOUR).
-    const rl = checkAuditRateLimit(user.uid);
+    // Per-admin rate limit — 10 runs / hour, counted in Firestore so
+    // Cloudflare Worker isolates share the same window.
+    const rl = await checkAuditRateLimitPersistent(user.uid);
+    // Keep the cheap in-memory pre-check current too.
+    checkAuditRateLimit(user.uid);
     if (!rl.allowed) {
       await logUnauthorized({
         reason: "rate_limited",
@@ -281,7 +284,8 @@ export const runSitemapAudit = createServerFn({ method: "POST" })
         `rate_limited: max ${MAX_AUDIT_RUNS_PER_HOUR} runs/hour. Try again in ~${mins} min.`,
       );
     }
-    void logAuthorizedRun(user.uid, user.email, rl.remaining);
+    // Await so the row exists before the handler can be re-entered.
+    await logAuthorizedRun(user.uid, user.email, rl.remaining);
 
 
     const errors: string[] = [];
