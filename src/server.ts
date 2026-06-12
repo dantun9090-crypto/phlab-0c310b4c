@@ -573,6 +573,58 @@ export default {
         });
       }
 
+      // 0c. Admin second-factor gate. When ADMIN_GATE_SECRET is configured,
+      // every /admin and /admin/* HTML request must carry an `admin_gate`
+      // cookie matching the secret. Runs BEFORE the SPA shell is served, so
+      // a stolen Firebase ID token alone cannot reach the admin UI. The
+      // cookie is provisioned via GET /admin-unlock?token=... (constant-time
+      // compared). Disabled when the secret is unset (no behaviour change).
+      const adminGateSecret = env?.ADMIN_GATE_SECRET;
+      if (adminGateSecret) {
+        const ctEq = (a: string, b: string): boolean => {
+          const ea = new TextEncoder().encode(a);
+          const eb = new TextEncoder().encode(b);
+          let diff = ea.length ^ eb.length;
+          const len = Math.max(ea.length, eb.length);
+          for (let i = 0; i < len; i++) diff |= (ea[i] ?? 0) ^ (eb[i] ?? 0);
+          return diff === 0;
+        };
+        if (url.pathname === "/admin-unlock") {
+          const token = url.searchParams.get("token") ?? "";
+          if (!ctEq(token, adminGateSecret)) {
+            return new Response("Forbidden", { status: 403, headers: { "cache-control": "no-store" } });
+          }
+          return new Response(null, {
+            status: 302,
+            headers: {
+              location: "/admin",
+              "set-cookie": `admin_gate=${encodeURIComponent(adminGateSecret)}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=43200`,
+              "cache-control": "no-store",
+            },
+          });
+        }
+        const isAdminPath = url.pathname === "/admin" || url.pathname.startsWith("/admin/");
+        if (isAdminPath) {
+          const cookieHeader = request.headers.get("cookie") ?? "";
+          const match = /(?:^|;\s*)admin_gate=([^;]+)/.exec(cookieHeader);
+          const supplied = match ? decodeURIComponent(match[1]) : "";
+          if (!ctEq(supplied, adminGateSecret)) {
+            log.warn({ event: "admin_gate.blocked", ...baseFields });
+            return new Response(
+              "<!doctype html><html><head><title>Admin gate</title><meta name=\"robots\" content=\"noindex\"></head><body style=\"font-family:system-ui;padding:32px;background:#020617;color:#fff\"><h1>Additional authorisation required</h1><p>Visit <code>/admin-unlock?token=YOUR_SECRET</code> to enable admin access from this device.</p></body></html>",
+              {
+                status: 401,
+                headers: {
+                  "content-type": "text/html; charset=utf-8",
+                  "cache-control": "no-store",
+                  "x-robots-tag": "noindex, nofollow",
+                },
+              },
+            );
+          }
+        }
+      }
+
       // 1. Canonical host redirect (legacy brand domains → phlabs.co.uk).
       // phlabs.co.uk is intentionally served directly until the hosting-level
       // www → apex redirect is removed; otherwise production loops.
