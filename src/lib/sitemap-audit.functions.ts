@@ -257,6 +257,7 @@ export const runSitemapAudit = createServerFn({ method: "POST" })
     // Admin-only: verify Firebase ID token + isAdmin flag on customers doc.
     let user: { uid: string; email: string | null };
     try {
+      const { requireFirebaseAdmin } = await import("@/lib/server/firebase-auth-admin");
       user = await requireFirebaseAdmin(data.idToken);
     } catch (err) {
       const msg = (err as Error).message;
