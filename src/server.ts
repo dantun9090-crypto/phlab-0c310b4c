@@ -44,6 +44,9 @@ async function getServerEntry(): Promise<ServerEntry> {
 // stale `phl_p0_recovery_20260601_2300` build that 302'd www → apex and caused
 // an infinite redirect loop with the app-level long→short canonical.
 const CANONICAL_HOST = "phlabs.co.uk";
+
+// In-memory rate-limit bucket for /admin-unlock (per Worker isolate).
+const adminUnlockAttempts = new Map<string, { count: number; start: number }>();
 // Hosts that should 301 to the canonical host (legacy brand domains).
 // Lovable preview/published hosts (*.lovable.app, *.lovableproject.com) are
 // intentionally excluded so previews keep working. phlabs.co.uk apex is NOT
@@ -590,10 +593,39 @@ export default {
           return diff === 0;
         };
         if (url.pathname === "/admin-unlock") {
+          // Rate-limit: 3 attempts per IP per hour to prevent brute-forcing ADMIN_GATE_SECRET.
+          const ip = request.headers.get("cf-connecting-ip")
+            ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+            ?? "unknown";
+          const now = Date.now();
+          const WINDOW_MS = 60 * 60 * 1000;
+          const MAX_ATTEMPTS = 3;
+          // Module-level map persists per Worker isolate.
+          const bucket = adminUnlockAttempts.get(ip);
+          if (bucket && now - bucket.start < WINDOW_MS) {
+            if (bucket.count >= MAX_ATTEMPTS) {
+              log.warn({ event: "admin_unlock.rate_limited", ...baseFields, ip });
+              return new Response("Too many attempts. Try again later.", {
+                status: 429,
+                headers: { "cache-control": "no-store", "retry-after": String(Math.ceil((WINDOW_MS - (now - bucket.start)) / 1000)) },
+              });
+            }
+            bucket.count += 1;
+          } else {
+            adminUnlockAttempts.set(ip, { count: 1, start: now });
+          }
+          // Opportunistic cleanup to bound memory.
+          if (adminUnlockAttempts.size > 1000) {
+            for (const [k, v] of adminUnlockAttempts) {
+              if (now - v.start > WINDOW_MS) adminUnlockAttempts.delete(k);
+            }
+          }
           const token = url.searchParams.get("token") ?? "";
           if (!ctEq(token, adminGateSecret)) {
             return new Response("Forbidden", { status: 403, headers: { "cache-control": "no-store" } });
           }
+          // Success — reset bucket for this IP.
+          adminUnlockAttempts.delete(ip);
           return new Response(null, {
             status: 302,
             headers: {
@@ -603,6 +635,7 @@ export default {
             },
           });
         }
+
         const isAdminPath = url.pathname === "/admin" || url.pathname.startsWith("/admin/");
         if (isAdminPath) {
           const cookieHeader = request.headers.get("cookie") ?? "";
