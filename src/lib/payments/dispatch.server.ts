@@ -12,7 +12,7 @@
 import { getDocAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
 import { fenaCreateAndProcess } from "@/lib/fena.server";
 import { truelayerCreatePayment } from "./truelayer.server";
-import { yapilyCreatePayment } from "./yapily.server";
+
 import {
   getGatewayConfig,
   recordGatewayTest,
@@ -97,11 +97,6 @@ async function runAdapter(gateway: GatewayId, ctx: OrderCtx, sandbox: boolean): 
     };
   }
 
-  if (gateway === "yapily") {
-    await yapilyCreatePayment();
-    // unreachable — yapilyCreatePayment always throws while pending
-    throw new Error("Yapily unavailable");
-  }
 
   throw new Error(`Unknown gateway: ${gateway}`);
 }

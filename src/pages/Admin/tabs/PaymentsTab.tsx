@@ -347,7 +347,6 @@ function DetailsModal({ row, onClose }: { row: PaymentGatewayConfig; onClose: ()
   const envVars: Record<string, string[]> = {
     fena: ['FENA_TERMINAL_ID', 'FENA_TERMINAL_SECRET', 'FENA_ENV'],
     truelayer: ['TRUELAYER_CLIENT_ID', 'TRUELAYER_CLIENT_SECRET', 'TRUELAYER_MERCHANT_ACCOUNT_ID', 'TRUELAYER_ENV'],
-    yapily: ['YAPILY_APPLICATION_ID', 'YAPILY_APPLICATION_SECRET'],
   };
   return (
     <div
@@ -433,8 +432,7 @@ function DetailsModal({ row, onClose }: { row: PaymentGatewayConfig; onClose: ()
         <a
           href={
             row.id === 'fena' ? 'https://merchant.fena.co'
-            : row.id === 'truelayer' ? 'https://console.truelayer.com'
-            : 'https://dashboard.yapily.com'
+            : 'https://console.truelayer.com'
           }
           target="_blank"
           rel="noreferrer"

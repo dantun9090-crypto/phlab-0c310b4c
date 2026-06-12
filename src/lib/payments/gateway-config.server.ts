@@ -1,7 +1,7 @@
 /**
  * Read/write the `payment_gateways/{id}` collection via the Firebase
  * service account. Auto-seeds defaults on first read so the admin panel
- * always has Fena/TrueLayer/Yapily rows to manage.
+ * always has Fena/TrueLayer rows to manage.
  *
  * Credentials are NEVER stored here — they live in process.env secrets.
  * This collection only holds enabled / priority / sandbox / health.
@@ -48,13 +48,6 @@ export function gatewayCredentialsStatus(id: GatewayId): {
         masked: maskKey(k),
       };
     }
-    case "yapily": {
-      const k = process.env.YAPILY_APPLICATION_ID;
-      return {
-        configured: Boolean(k && process.env.YAPILY_APPLICATION_SECRET),
-        masked: maskKey(k),
-      };
-    }
   }
 }
 
@@ -70,7 +63,6 @@ interface RawGatewayDoc {
 
 function defaultConfig(id: GatewayId): PaymentGatewayConfig {
   const creds = gatewayCredentialsStatus(id);
-  const isPending = id === "yapily" && !creds.configured;
   const enabled = id === "fena" && creds.configured;
   const priority: GatewayPriority = id === "fena" ? "primary" : "disabled";
   return {
@@ -79,7 +71,7 @@ function defaultConfig(id: GatewayId): PaymentGatewayConfig {
     enabled,
     priority,
     sandbox: String(process.env[`${id.toUpperCase()}_ENV`] ?? "").toLowerCase() === "sandbox",
-    status: isPending ? "pending" : enabled ? "enabled" : "disabled",
+    status: enabled ? "enabled" : "disabled",
     lastTestedAt: null,
     testStatus: null,
     errorMessage: null,
@@ -96,13 +88,11 @@ function mergeRow(id: GatewayId, raw: RawGatewayDoc | null): PaymentGatewayConfi
   const enabled = typeof raw.enabled === "boolean" ? raw.enabled : def.enabled;
   const priority = (raw.priority ?? def.priority) as GatewayPriority;
   const sandbox = typeof raw.sandbox === "boolean" ? raw.sandbox : def.sandbox;
-  const creds = gatewayCredentialsStatus(id);
-  const status: PaymentGatewayConfig["status"] =
-    id === "yapily" && !creds.configured ? "pending" : enabled ? "enabled" : "disabled";
+  const status: PaymentGatewayConfig["status"] = enabled ? "enabled" : "disabled";
   return {
     ...def,
     enabled,
-    priority: status === "pending" ? "disabled" : priority,
+    priority,
     sandbox,
     status,
     lastTestedAt: raw.lastTestedAt ?? null,
@@ -112,7 +102,7 @@ function mergeRow(id: GatewayId, raw: RawGatewayDoc | null): PaymentGatewayConfi
   };
 }
 
-const ALL_IDS: GatewayId[] = ["fena", "truelayer", "yapily"];
+const ALL_IDS: GatewayId[] = ["fena", "truelayer"];
 
 async function ensureRow(id: GatewayId): Promise<void> {
   const existing = await getDocAdmin(COLLECTION, id);

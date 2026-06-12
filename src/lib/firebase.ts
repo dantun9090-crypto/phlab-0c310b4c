@@ -167,8 +167,6 @@ export interface User {
   createdAt?: Timestamp;
   displayName?: string;
   isAdmin?: boolean;
-  stripeId?: string;
-  stripeLink?: string;
   role?: string;
   shippingAddress?: string;
   billingAddress?: string;
@@ -263,8 +261,6 @@ export interface Product {
   variants?: ProductVariant[];
   weight?: number;
   purity?: string;
-  // Stripe Price ID — used by Firebase Stripe Extension for checkout
-  stripePrice?: string;
   // Product manual PDF (uploaded to Firebase Storage)
   productManualUrl?: string;
   productManualName?: string;
@@ -856,7 +852,7 @@ function normaliseProduct(id: string, data: any): Product {
     tags: data.tags || [],
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
-    stripePrice: data.stripePrice || '',
+    
     bannerImageUrl: data.bannerImageUrl || '',
   };
 }
@@ -1022,10 +1018,6 @@ export const updateProduct = async (id: string, updates: Partial<Product>) => {
     data.bannerImageUrl = updates.bannerImageUrl || '';
   }
 
-  // Ensure stripePrice is preserved
-  if (updates.stripePrice !== undefined) {
-    data.stripePrice = updates.stripePrice || '';
-  }
 
   await updateDoc(doc(db, PRODUCTS_COL, id), data);
   invalidateProductsCache();

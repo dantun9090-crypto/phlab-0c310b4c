@@ -243,7 +243,7 @@ export default function InvoicesTab() {
             Invoices
           </h1>
           <p className="text-[#2a4a7a] text-sm mt-1">
-            Create & send invoices to customers via Stripe
+            Create & send invoices to customers
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -596,7 +596,7 @@ export default function InvoicesTab() {
                 {/* Info note */}
                 <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-3 text-xs text-blue-300 leading-relaxed">
                   This creates a document in the <code className="bg-blue-500/10 px-1 rounded">invoices</code> collection.
-                  The <strong>Firebase Stripe Invoices</strong> extension will pick it up and send the email automatically.
+                  The invoice email is sent automatically by the backend.
                 </div>
 
                 {/* Feedback in modal */}

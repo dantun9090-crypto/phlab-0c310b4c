@@ -70,7 +70,7 @@ export interface CartItem {
   quantity: number;
   image?: string;
   stock?: number;
-  stripePrice?: string;
+  
 }
 
 const FREE_SHIPPING_THRESHOLD = 50;

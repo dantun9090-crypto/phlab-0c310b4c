@@ -184,7 +184,7 @@ export default function CategoryPage() {
       variantId: variantId || undefined,
       variantName: variant?.name,
       stock: variant?.stock ?? product.stock,
-      stripePrice: product.stripePrice,
+      
     };
     dispatchAddToCart(cartItem);
     setAddedIds(prev => ({ ...prev, [product.id]: true }));
