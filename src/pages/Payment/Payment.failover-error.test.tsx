@@ -144,7 +144,7 @@ describe('<PaymentPage /> — primary + backup both fail', () => {
     // No anchor pointing at a payment HPP host exists in the document.
     const externalAnchors = Array.from(
       document.querySelectorAll<HTMLAnchorElement>('a[href]'),
-    ).filter((a) => /fena|truelayer|yapily/i.test(a.getAttribute('href') || ''));
+    ).filter((a) => /fena|truelayer/i.test(a.getAttribute('href') || ''));
     expect(externalAnchors).toEqual([]);
 
     // The original Pay button is no longer rendered (fallback took over).

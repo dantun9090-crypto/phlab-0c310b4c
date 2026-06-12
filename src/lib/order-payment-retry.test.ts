@@ -37,7 +37,7 @@ describe('canRetryPayment', () => {
   });
 
   it('rejects cancelled orders that were NOT Pay-by-Bank/Fena (admin cancel)', () => {
-    expect(canRetryPayment({ status: 'cancelled', paymentProvider: 'stripe' })).toBe(false);
+    expect(canRetryPayment({ status: 'cancelled', paymentProvider: 'other' })).toBe(false);
     expect(canRetryPayment({ status: 'cancelled' })).toBe(false);
   });
 
@@ -63,7 +63,7 @@ describe('getDisplayStatus', () => {
   it('keeps admin-cancelled (non-retryable) orders as cancelled', () => {
     expect(getDisplayStatus({ status: 'cancelled' })).toBe('cancelled');
     expect(
-      getDisplayStatus({ status: 'cancelled', paymentProvider: 'stripe' }),
+      getDisplayStatus({ status: 'cancelled', paymentProvider: 'other' }),
     ).toBe('cancelled');
   });
 

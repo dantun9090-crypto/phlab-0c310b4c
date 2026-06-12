@@ -31,10 +31,6 @@ vi.mock("@/lib/payments/truelayer.server", () => ({
     truelayerCreatePayment(...args),
 }));
 
-const yapilyCreatePayment = vi.fn<(...a: any[]) => any>();
-vi.mock("@/lib/payments/yapily.server", () => ({
-  yapilyCreatePayment: (...args: any[]) => yapilyCreatePayment(...args),
-}));
 
 const resolveActiveGateways = vi.fn<(...a: any[]) => any>();
 const recordGatewayTest = vi.fn<(...a: any[]) => any>(async () => undefined);
@@ -48,7 +44,7 @@ vi.mock("@/lib/payments/gateway-config.server", () => ({
 // --- Helpers --------------------------------------------------------------
 
 function gw(
-  id: "fena" | "truelayer" | "yapily",
+  id: "fena" | "truelayer",
   overrides: Partial<PaymentGatewayConfig> = {},
 ): PaymentGatewayConfig {
   return {

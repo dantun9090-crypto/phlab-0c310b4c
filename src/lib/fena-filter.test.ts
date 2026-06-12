@@ -20,7 +20,7 @@ describe("isFenaAutoPaid (admin Orders 'Fena Auto-Paid' filter)", () => {
   });
 
   it("rejects non-Fena providers even if they're paid", () => {
-    expect(isFenaAutoPaid({ paymentProvider: "stripe", fenaStatus: "paid" })).toBe(false);
+    expect(isFenaAutoPaid({ paymentProvider: "other", fenaStatus: "paid" })).toBe(false);
     expect(isFenaAutoPaid({ paymentProvider: "bank_transfer", fenaStatus: "paid" })).toBe(false);
     expect(isFenaAutoPaid({ status: "paid", paidAt: new Date() })).toBe(false);
   });

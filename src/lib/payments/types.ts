@@ -3,7 +3,7 @@
  * Safe to import on the client (no server-only modules referenced).
  */
 
-export type GatewayId = "fena" | "truelayer" | "yapily";
+export type GatewayId = "fena" | "truelayer";
 
 export type GatewayPriority = "primary" | "backup" | "disabled";
 
@@ -13,7 +13,6 @@ export interface PaymentGatewayConfig {
   enabled: boolean;
   priority: GatewayPriority;
   sandbox: boolean;
-  /** "pending" when keys aren't configured yet (Yapily). */
   status: "enabled" | "disabled" | "pending";
   /** ISO timestamp from the last test-connection call. */
   lastTestedAt?: string | null;
@@ -51,10 +50,5 @@ export const GATEWAY_DISPLAY: Record<GatewayId, { name: string; label: string; d
     name: "TrueLayer",
     label: "Pay by Bank",
     description: "Instant Open Banking transfer via TrueLayer. FCA-regulated.",
-  },
-  yapily: {
-    name: "Yapily",
-    label: "Pay by Bank",
-    description: "Instant Open Banking transfer via Yapily.",
   },
 };

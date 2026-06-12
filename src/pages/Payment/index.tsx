@@ -137,11 +137,9 @@ export default function PaymentPage() {
         host === 'truelayer.com' ||
         host.endsWith('.truelayer.com') ||
         host.endsWith('.truelayer-sandbox.com');
-      const yapilyOk = host === 'yapily.com' || host.endsWith('.yapily.com');
       const okHost =
         (result.gateway === 'fena' && fenaOk) ||
-        (result.gateway === 'truelayer' && tlOk) ||
-        (result.gateway === 'yapily' && yapilyOk);
+        (result.gateway === 'truelayer' && tlOk);
       if (parsed.protocol !== 'https:' || !okHost) {
         throw new Error('Unexpected payment redirect host.');
       }

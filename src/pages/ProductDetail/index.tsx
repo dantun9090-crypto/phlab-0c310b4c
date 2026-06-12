@@ -861,7 +861,7 @@ export default function ProductDetail() {
       quantity: 1,
       image: getProductImage(product.name, product.imageUrl, product.images),
       stock: variant.stock,
-      stripePrice: (product as any).stripePrice || '',
+      
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);

@@ -26,12 +26,12 @@ import {
 } from "@/lib/payments/gateway-config.server";
 import { truelayerTestConnection } from "@/lib/payments/truelayer.server";
 import { fenaListBankAccounts } from "@/lib/fena.server";
-import { yapilyConfigured } from "@/lib/payments/yapily.server";
+
 import type { CheckoutPaymentOptions, GatewayId, PaymentGatewayConfig } from "@/lib/payments/types";
 import { GATEWAY_DISPLAY } from "@/lib/payments/types";
 
 const TokenInput = z.object({ idToken: z.string().min(10).max(4096) });
-const GatewayIdSchema = z.enum(["fena", "truelayer", "yapily"]);
+const GatewayIdSchema = z.enum(["fena", "truelayer"]);
 
 export const listPaymentGateways = createServerFn({ method: "POST" })
   .inputValidator((d) => TokenInput.parse(d))
@@ -115,17 +115,6 @@ export const testPaymentGateway = createServerFn({ method: "POST" })
             durationMs: Date.now() - t0,
             message: `OK — TrueLayer ${cfg?.sandbox ? "sandbox" : "live"} auth handshake successful`,
           };
-        }
-        if (data.gateway === "yapily") {
-          if (!yapilyConfigured()) {
-            const msg = "Yapily credentials not configured (YAPILY_APPLICATION_ID / SECRET).";
-            await recordGatewayTest("yapily", { ok: false, message: msg });
-            return { ok: false, durationMs: Date.now() - t0, message: msg };
-          }
-          // No live endpoint wired yet; report configured-but-not-implemented.
-          const msg = "Credentials present but Yapily adapter is not implemented yet.";
-          await recordGatewayTest("yapily", { ok: false, message: msg });
-          return { ok: false, durationMs: Date.now() - t0, message: msg };
         }
         return { ok: false, durationMs: Date.now() - t0, message: "Unknown gateway" };
       } catch (err) {

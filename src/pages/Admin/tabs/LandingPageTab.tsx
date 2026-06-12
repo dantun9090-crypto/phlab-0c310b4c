@@ -54,7 +54,7 @@ const DEFAULT_DATA: LandingPageData = {
     { icon: '📦', title: 'Thermal Packaging', desc: 'Orders packed in thermally sealed bags. No ice packs included.' },
     { icon: '📄', title: 'Batch Results', desc: 'Analytical results on file. Available on request with order reference.' },
     { icon: '⚡', title: 'Fast UK Dispatch', desc: 'Orders processed within 1–3 working days.' },
-    { icon: '🔒', title: 'Secure Checkout', desc: '256-bit SSL. Payments via Stripe.' },
+    { icon: '🔒', title: 'Secure Checkout', desc: '256-bit SSL. Pay by Bank via Open Banking.' },
     { icon: '🧪', title: 'Research Only', desc: 'Compounds supplied strictly for scientific research purposes.' },
   ],
   trustBullets: [

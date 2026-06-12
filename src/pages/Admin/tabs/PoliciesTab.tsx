@@ -20,7 +20,7 @@ Buyer Eligibility: By purchasing, you confirm that you are at least 18 years of 
 An order placed through the Site constitutes an offer to purchase. No contract exists until we send you an Order Confirmation email. We reserve the right to refuse or cancel any order at our discretion.
 
 4. PRICING AND PAYMENT
-All prices are in GBP (£) and include applicable VAT unless stated otherwise. Prices may change without notice. We accept payment via Stripe (Visa, Mastercard, Amex) and bank transfer.
+All prices are in GBP (£) and include applicable VAT unless stated otherwise. Prices may change without notice. We accept payment via Pay by Bank (Open Banking) and bank transfer.
 
 5. SHIPPING AND DELIVERY
 We aim to dispatch orders within 1–3 working days. UK delivery is typically 1–2 working days after dispatch. International shipping may be subject to customs delays. Risk passes to you upon delivery. See our Shipping Policy for full details.
@@ -46,7 +46,7 @@ PH Labs ("we", "us") is committed to protecting your personal data. This Privacy
 2. DATA WE COLLECT
 - Account data: name, email address, password (hashed)
 - Order data: shipping address, billing address, order history
-- Payment data: processed by Stripe — we never store card details
+- Payment data: processed by our regulated Open Banking provider — we never store card details
 - Usage data: pages visited, browser type, IP address (via analytics)
 - Communications: messages you send us via email or contact form
 
@@ -73,7 +73,7 @@ We process your data on the following lawful bases:
 Under GDPR you have the right to: access your data, correct inaccurate data, request deletion, object to processing, and data portability. To exercise these rights, email: info@phlabs.co.uk
 
 7. THIRD PARTIES
-- Stripe: payment processing (PCI DSS compliant)
+- FCA-regulated Open Banking provider: payment processing
 - Firebase/Google: hosting and database
 - Analytics providers: anonymised usage data
 

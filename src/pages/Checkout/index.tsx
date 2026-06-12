@@ -654,11 +654,9 @@ export default function CheckoutPage() {
           const host = parsed.hostname.toLowerCase();
           const fenaOk = host === 'fena.co' || host === 'fena.io' || host.endsWith('.fena.co') || host.endsWith('.fena.io');
           const tlOk = host === 'truelayer.com' || host.endsWith('.truelayer.com') || host.endsWith('.truelayer-sandbox.com');
-          const yapilyOk = host === 'yapily.com' || host.endsWith('.yapily.com');
           const okHost =
             (gateway === 'fena' && fenaOk) ||
-            (gateway === 'truelayer' && tlOk) ||
-            (gateway === 'yapily' && yapilyOk);
+            (gateway === 'truelayer' && tlOk);
           if (parsed.protocol !== 'https:' || !okHost) {
             throw new Error('Unexpected payment redirect host.');
           }

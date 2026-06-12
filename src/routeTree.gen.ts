@@ -21,7 +21,6 @@ import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.mer
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
-import { Route as ApiPublicHooksYapilyRouteImport } from './routes/api/public/hooks/yapily'
 import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public/hooks/truelayer'
 import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/public/hooks/security-cleanup'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
@@ -91,11 +90,6 @@ const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
   path: '/api/public/csp-report',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicHooksYapilyRoute = ApiPublicHooksYapilyRouteImport.update({
-  id: '/api/public/hooks/yapily',
-  path: '/api/public/hooks/yapily',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicHooksTruelayerRoute = ApiPublicHooksTruelayerRouteImport.update({
   id: '/api/public/hooks/truelayer',
   path: '/api/public/hooks/truelayer',
@@ -143,7 +137,6 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
-  '/api/public/hooks/yapily': typeof ApiPublicHooksYapilyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -163,7 +156,6 @@ export interface FileRoutesByTo {
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
-  '/api/public/hooks/yapily': typeof ApiPublicHooksYapilyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -184,7 +176,6 @@ export interface FileRoutesById {
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
-  '/api/public/hooks/yapily': typeof ApiPublicHooksYapilyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -206,7 +197,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
-    | '/api/public/hooks/yapily'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -226,7 +216,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
-    | '/api/public/hooks/yapily'
   id:
     | '__root__'
     | '/'
@@ -246,7 +235,6 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
-    | '/api/public/hooks/yapily'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -267,7 +255,6 @@ export interface RootRouteChildren {
   ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
   ApiPublicHooksSecurityCleanupRoute: typeof ApiPublicHooksSecurityCleanupRoute
   ApiPublicHooksTruelayerRoute: typeof ApiPublicHooksTruelayerRoute
-  ApiPublicHooksYapilyRoute: typeof ApiPublicHooksYapilyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -356,13 +343,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCspReportRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/yapily': {
-      id: '/api/public/hooks/yapily'
-      path: '/api/public/hooks/yapily'
-      fullPath: '/api/public/hooks/yapily'
-      preLoaderRoute: typeof ApiPublicHooksYapilyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/truelayer': {
       id: '/api/public/hooks/truelayer'
       path: '/api/public/hooks/truelayer'
@@ -419,7 +399,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
   ApiPublicHooksSecurityCleanupRoute: ApiPublicHooksSecurityCleanupRoute,
   ApiPublicHooksTruelayerRoute: ApiPublicHooksTruelayerRoute,
-  ApiPublicHooksYapilyRoute: ApiPublicHooksYapilyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

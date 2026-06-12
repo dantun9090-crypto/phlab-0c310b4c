@@ -8,7 +8,7 @@ type Props = {
  * Orange "Payment not completed — Pay Again" card shown in the expanded
  * order detail on the customer account page. Renders nothing when the
  * order is not retryable (paid, shipped, refunded, admin-cancelled,
- * Stripe-cancelled, etc.).
+ * provider-cancelled, etc.).
  */
 export function PayAgainCTA({ order }: Props) {
   if (!canRetryPayment(order)) return null;

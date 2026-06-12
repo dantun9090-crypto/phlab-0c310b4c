@@ -16,8 +16,6 @@ interface CustomerProfile {
   isAdmin?: boolean;
   isActive?: boolean;
   isVip?: boolean;
-  stripeId?: string;
-  stripeLink?: string;
   createdAt?: any;
   totalSpend: number;
   orderCount: number;
@@ -294,12 +292,6 @@ export default function CustomersTab() {
                               {c.isActive === false && <span className="ml-1 text-xs text-red-400">(deactivated)</span>}
                             </p>
                             <p className="text-[#9cb8d9] text-xs truncate">{c.email}</p>
-                            {c.stripeLink && (
-                              <a href={c.stripeLink} target="_blank" rel="noopener noreferrer"
-                                className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
-                                View in Stripe →
-                              </a>
-                            )}
                           </div>
                         </div>
                       </td>
