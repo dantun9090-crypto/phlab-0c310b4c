@@ -192,6 +192,18 @@ export default function HomePage() {
       setTimeout(loadProducts, 500);
     }
 
+    // LCP-critical: adverts contain the hero banner image. Fire immediately,
+    // outside requestIdleCallback, so the network request is not delayed.
+    getDocs(query(collection(db, 'adverts'), where('active', '==', true))).then(snap => {
+      try {
+        const allAdverts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (!cancelled) setAdverts(allAdverts);
+        const heroCount = allAdverts.filter((a: any) => a.placement === 'homepage_hero').length;
+        localStorage.setItem('php_adverts_hero_count', heroCount > 0 ? '1' : '0');
+        localStorage.setItem('php_adverts_cache', JSON.stringify({ ts: Date.now(), data: allAdverts }));
+      } catch { /* ignore */ }
+    }).catch(() => {});
+
     const deferredLoad = () => {
       getDoc(doc(db, 'settings', 'promoBanner')).then(snap => {
         if (snap.exists()) setBanner(snap.data());
@@ -205,19 +217,8 @@ export default function HomePage() {
       getDoc(doc(db, 'settings', 'site')).then(snap => {
         if (snap.exists()) setSiteSettings(snap.data() as Record<string, string>);
       }).catch(() => {});
-
-      getDocs(query(collection(db, 'adverts'), where('active', '==', true))).then(snap => {
-        try {
-          const allAdverts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          setAdverts(allAdverts);
-          const heroCount = allAdverts.filter((a: any) => a.placement === 'homepage_hero').length;
-          localStorage.setItem('php_adverts_hero_count', heroCount > 0 ? '1' : '0');
-          localStorage.setItem('php_adverts_cache', JSON.stringify({ ts: Date.now(), data: allAdverts }));
-        } catch { /* ignore */ }
-      }).catch(() => {});
     };
 
-    // Adverts contain the LCP image — fetch immediately, not under idle callback.
     if (typeof requestIdleCallback !== 'undefined') {
       requestIdleCallback(deferredLoad, { timeout: 1500 });
     } else {
