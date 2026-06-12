@@ -16,13 +16,29 @@ function authHeaders() {
   } as Record<string, string>;
 }
 
+const ALLOWED_GSC_HOSTS = new Set(['phlabs.co.uk', 'www.phlabs.co.uk']);
+
+function assertAllowedSiteUrl(siteUrl: string): void {
+  try {
+    const u = new URL(siteUrl);
+    if (!ALLOWED_GSC_HOSTS.has(u.hostname.toLowerCase())) {
+      throw new Error('Only phlabs.co.uk siteUrls are permitted');
+    }
+  } catch {
+    throw new Error('Invalid siteUrl');
+  }
+}
+
 /**
  * Fetch Search Analytics performance (last 28 days, by page).
  */
 export const fetchGscPerformance = createServerFn({ method: 'POST' })
   .inputValidator((data: { idToken: string; days?: number; siteUrl?: string }) => {
     if (!data?.idToken) throw new Error('idToken required');
-    return { idToken: data.idToken, days: data.days ?? 28, siteUrl: data.siteUrl ?? SITE_URL };
+    const days = Math.min(Math.max(Number(data.days ?? 28), 1), 90);
+    const siteUrl = data.siteUrl ?? SITE_URL;
+    assertAllowedSiteUrl(siteUrl);
+    return { idToken: data.idToken, days, siteUrl };
   })
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
