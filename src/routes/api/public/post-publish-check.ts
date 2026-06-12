@@ -132,10 +132,10 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
             });
           }
         } catch (e) {
+          console.error('[post-publish-check] Firestore write failed:', e);
           return Response.json({
             ok: false,
             error: 'firestore_write_failed',
-            detail: e instanceof Error ? e.message : String(e),
             buildId: currentBuildId,
           });
         }
