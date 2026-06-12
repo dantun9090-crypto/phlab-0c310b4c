@@ -20,8 +20,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireFirebaseAdmin } from "@/lib/server/firebase-auth-admin";
-import { addDocAdmin, listDocsAdmin } from "@/lib/server/firestore-admin";
+// Server-only modules under src/lib/server/* are blocked from the client
+// bundle by the TanStack import-protection plugin. Load them dynamically
+// inside handler bodies below (never at module scope).
 import {
   exclusionReason,
   isIndexable,
@@ -79,13 +80,14 @@ export async function checkAuditRateLimitPersistent(uid: string): Promise<{
 }> {
   const now = Date.now();
   try {
+    const { listDocsAdmin } = await import("@/lib/server/firestore-admin");
     const rows = await listDocsAdmin("sitemap_audit_log", {
       where: { field: "uid", op: "EQUAL", value: uid },
       orderBy: "timestamp",
       direction: "DESCENDING",
       limit: MAX_AUDIT_RUNS_PER_HOUR * 3,
     });
-    const recentRuns = rows.filter((r) => {
+    const recentRuns = rows.filter((r: Record<string, unknown>) => {
       if (r.kind !== "run") return false;
       const ts = r.timestamp;
       const t = typeof ts === "string" ? Date.parse(ts) : 0;
@@ -139,6 +141,7 @@ async function logUnauthorized(ctx: UnauthorizedContext): Promise<void> {
     JSON.stringify({ ...ctx, ip, ua, ts: new Date().toISOString() }),
   );
   try {
+    const { addDocAdmin } = await import("@/lib/server/firestore-admin");
     await addDocAdmin("sitemap_audit_log", {
       kind: "unauthorized",
       reason: ctx.reason,
@@ -160,6 +163,7 @@ async function logAuthorizedRun(
   remaining: number,
 ): Promise<void> {
   try {
+    const { addDocAdmin } = await import("@/lib/server/firestore-admin");
     await addDocAdmin("sitemap_audit_log", {
       kind: "run",
       uid,
@@ -253,6 +257,7 @@ export const runSitemapAudit = createServerFn({ method: "POST" })
     // Admin-only: verify Firebase ID token + isAdmin flag on customers doc.
     let user: { uid: string; email: string | null };
     try {
+      const { requireFirebaseAdmin } = await import("@/lib/server/firebase-auth-admin");
       user = await requireFirebaseAdmin(data.idToken);
     } catch (err) {
       const msg = (err as Error).message;
