@@ -141,6 +141,7 @@ async function logUnauthorized(ctx: UnauthorizedContext): Promise<void> {
     JSON.stringify({ ...ctx, ip, ua, ts: new Date().toISOString() }),
   );
   try {
+    const { addDocAdmin } = await import("@/lib/server/firestore-admin");
     await addDocAdmin("sitemap_audit_log", {
       kind: "unauthorized",
       reason: ctx.reason,
