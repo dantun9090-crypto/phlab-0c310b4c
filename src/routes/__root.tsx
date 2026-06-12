@@ -215,6 +215,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // src/routes/products.tsx, src/routes/products_.$slug.tsx, src/routes/$.tsx)
       // to avoid duplicate <title>/<meta> tags in <head> — TanStack
       // concatenates parent + leaf meta when keys differ.
+      { title: "PH LABS | Premium Research Peptides" },
+      { property: "og:title", content: "PH LABS | Premium Research Peptides" },
+      { name: "twitter:title", content: "PH LABS | Premium Research Peptides" },
+      { name: "description", content: "PH LABS supplies premium research peptides for scientific study. UK-based, fast delivery, lab-tested purity. Browse Retatrutide, NAD+, GHK-Cu and more." },
+      { property: "og:description", content: "PH LABS supplies premium research peptides for scientific study. UK-based, fast delivery, lab-tested purity. Browse Retatrutide, NAD+, GHK-Cu and more." },
+      { name: "twitter:description", content: "PH LABS supplies premium research peptides for scientific study. UK-based, fast delivery, lab-tested purity. Browse Retatrutide, NAD+, GHK-Cu and more." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/8a9bd430-bada-4a52-ae3f-7ea0c19bc5d7" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/8a9bd430-bada-4a52-ae3f-7ea0c19bc5d7" },
+      { property: "og:type", content: "website" },
     ],
     scripts: [
       {
