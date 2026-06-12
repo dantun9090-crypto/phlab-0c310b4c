@@ -147,7 +147,18 @@ export default function HomePage() {
   const [banner, setBanner] = useState<any>(null);
   const [bannerResolved, setBannerResolved] = useState(false);
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
-  const [adverts, setAdverts] = useState<any[]>([]);
+  const [adverts, setAdverts] = useState<any[]>(() => {
+    // Hydrate from localStorage cache instantly so LCP banner renders without
+    // waiting for a Firestore round-trip on repeat visits.
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = localStorage.getItem('php_adverts_cache');
+      if (!raw) return [];
+      const { ts, data } = JSON.parse(raw);
+      if (Date.now() - ts > 10 * 60_000) return []; // 10-min TTL
+      return Array.isArray(data) ? data : [];
+    } catch { return []; }
+  });
 
   // Intersection observer for scroll animations
   useEffect(() => {
@@ -181,6 +192,18 @@ export default function HomePage() {
       setTimeout(loadProducts, 500);
     }
 
+    // LCP-critical: adverts contain the hero banner image. Fire immediately,
+    // outside requestIdleCallback, so the network request is not delayed.
+    getDocs(query(collection(db, 'adverts'), where('active', '==', true))).then(snap => {
+      try {
+        const allAdverts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (!cancelled) setAdverts(allAdverts);
+        const heroCount = allAdverts.filter((a: any) => a.placement === 'homepage_hero').length;
+        localStorage.setItem('php_adverts_hero_count', heroCount > 0 ? '1' : '0');
+        localStorage.setItem('php_adverts_cache', JSON.stringify({ ts: Date.now(), data: allAdverts }));
+      } catch { /* ignore */ }
+    }).catch(() => {});
+
     const deferredLoad = () => {
       getDoc(doc(db, 'settings', 'promoBanner')).then(snap => {
         if (snap.exists()) setBanner(snap.data());
@@ -193,15 +216,6 @@ export default function HomePage() {
 
       getDoc(doc(db, 'settings', 'site')).then(snap => {
         if (snap.exists()) setSiteSettings(snap.data() as Record<string, string>);
-      }).catch(() => {});
-
-      getDocs(query(collection(db, 'adverts'), where('active', '==', true))).then(snap => {
-        try {
-          const allAdverts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          setAdverts(allAdverts);
-          const heroCount = allAdverts.filter((a: any) => a.placement === 'homepage_hero').length;
-          localStorage.setItem('php_adverts_hero_count', heroCount > 0 ? '1' : '0');
-        } catch { /* ignore */ }
       }).catch(() => {});
     };
 
