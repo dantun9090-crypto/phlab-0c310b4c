@@ -77,27 +77,27 @@ export const Route = createFileRoute("/api/public/hooks/truelayer")({
           return new Response("Payload too large", { status: 413 });
         }
 
-        // HMAC verification. TrueLayer's official `Tl-Signature` is a JWS
-        // (ES512) — when a shared HMAC secret is provisioned here we verify
-        // it as an additional/alternative integrity check. Falls back to
-        // the re-fetch-with-credentials check below when unset.
+        // HMAC verification is MANDATORY. TRUELAYER_WEBHOOK_SECRET must be
+        // configured (shared HMAC secret provisioned alongside the official
+        // Tl-Signature JWS). Missing/invalid → 401, drop the request.
         const tlSecret = process.env.TRUELAYER_WEBHOOK_SECRET;
-        if (tlSecret) {
-          const sigHeader =
-            request.headers.get("x-webhook-signature") ||
-            request.headers.get("tl-signature") ||
-            request.headers.get("x-hub-signature-256");
-          const ok = await verifyHmacSignature(bodyText, sigHeader, tlSecret);
-          if (!ok) {
-            await logEvent("warn", "invalid signature", {
-              hasHeader: Boolean(sigHeader),
-              ip: request.headers.get("cf-connecting-ip") ?? null,
-            });
-            return new Response("Invalid signature", { status: 401 });
-          }
-        } else {
-          await logEvent("warn", "Webhook secret not configured, using authoritative re-fetch", { provider: "truelayer" });
+        if (!tlSecret) {
+          await logEvent("error", "TRUELAYER_WEBHOOK_SECRET not configured — rejecting", {});
+          return new Response("Webhook secret not configured", { status: 503 });
         }
+        const sigHeader =
+          request.headers.get("x-webhook-signature") ||
+          request.headers.get("tl-signature") ||
+          request.headers.get("x-hub-signature-256");
+        const sigOk = await verifyHmacSignature(bodyText, sigHeader, tlSecret);
+        if (!sigOk) {
+          await logEvent("warn", "invalid signature", {
+            hasHeader: Boolean(sigHeader),
+            ip: request.headers.get("cf-connecting-ip") ?? null,
+          });
+          return new Response("Invalid signature", { status: 401 });
+        }
+
 
         let payload: TLWebhookBody;
         try {
