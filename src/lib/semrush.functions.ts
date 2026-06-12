@@ -1,9 +1,13 @@
 import { createServerFn } from '@tanstack/react-start';
+import { z } from 'zod';
 import { requireFirebaseAdmin } from '@/lib/server/firebase-auth-admin';
 
 const GATEWAY = 'https://connector-gateway.lovable.dev/semrush';
 const DEFAULT_DOMAIN = 'phlabs.co.uk';
 const DEFAULT_DATABASE = 'uk';
+// Strict allowlist: only first-party hosts may be queried via the connector.
+const ALLOWED_DOMAINS = new Set(['phlabs.co.uk', 'www.phlabs.co.uk']);
+const DatabaseEnum = z.enum(['uk', 'us', 'au', 'ca', 'de', 'fr', 'es', 'it', 'nl', 'ie']);
 
 function authHeaders() {
   const lovable = process.env.LOVABLE_API_KEY;
