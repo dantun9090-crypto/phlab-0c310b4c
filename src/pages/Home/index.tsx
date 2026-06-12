@@ -648,19 +648,28 @@ export default function HomePage() {
       ════════════════════════════════ */}
       {heroAdverts.length > 0 && (
         <div className="container mx-auto px-6 py-6">
-          {heroAdverts.map((ad: any) => (
-            <div key={ad.id} className="relative rounded-2xl overflow-hidden" style={{ minHeight: '160px' }}>
-              {ad.ctaUrl ? (
-                <a href={ad.ctaUrl} target="_blank" rel="noopener noreferrer">
-                  <img src={ad.imageUrl} alt={ad.altText || 'PH Labs featured peptide product offer'} loading="lazy" className="w-full object-cover" style={{ maxHeight: '280px' }} />
-                </a>
-              ) : (
-                <img src={ad.imageUrl} alt={ad.altText || 'PH Labs featured peptide product offer'} loading="lazy" className="w-full object-cover" style={{ maxHeight: '280px' }} />
-              )}
-            </div>
-          ))}
+          {heroAdverts.map((ad: any, idx: number) => {
+            // First hero advert is the LCP candidate — eager-load with high
+            // fetch priority. Subsequent ones can lazy-load below the fold.
+            const isLcp = idx === 0;
+            const imgProps = isLcp
+              ? { loading: "eager" as const, fetchPriority: "high" as const, decoding: "async" as const }
+              : { loading: "lazy" as const, decoding: "async" as const };
+            return (
+              <div key={ad.id} className="relative rounded-2xl overflow-hidden" style={{ minHeight: '160px' }}>
+                {ad.ctaUrl ? (
+                  <a href={ad.ctaUrl} target="_blank" rel="noopener noreferrer">
+                    <img src={ad.imageUrl} alt={ad.altText || 'PH Labs featured peptide product offer'} width={1600} height={280} className="w-full object-cover" style={{ maxHeight: '280px' }} {...imgProps} />
+                  </a>
+                ) : (
+                  <img src={ad.imageUrl} alt={ad.altText || 'PH Labs featured peptide product offer'} width={1600} height={280} className="w-full object-cover" style={{ maxHeight: '280px' }} {...imgProps} />
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
+
 
       {/* ════════════════════════════════
           FEATURED PRODUCTS
