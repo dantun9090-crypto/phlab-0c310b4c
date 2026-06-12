@@ -54,26 +54,6 @@ export const getSemrushOverview = createServerFn({ method: 'POST' })
       database: parsed.database || DEFAULT_DATABASE,
     };
   })
-
-function rowsToObjects(data: any): Array<Record<string, any>> {
-  const cols: string[] = data?.data?.columnNames ?? [];
-  const rows: any[][] = data?.data?.rows ?? [];
-  return rows.map((r) => {
-    const o: Record<string, any> = {};
-    cols.forEach((c, i) => { o[c] = r[i]; });
-    return o;
-  });
-}
-
-export const getSemrushOverview = createServerFn({ method: 'POST' })
-  .inputValidator((data: { idToken: string; domain?: string; database?: string }) => {
-    if (!data?.idToken) throw new Error('idToken required');
-    return {
-      idToken: data.idToken,
-      domain: data.domain || DEFAULT_DOMAIN,
-      database: data.database || DEFAULT_DATABASE,
-    };
-  })
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
 
@@ -108,3 +88,14 @@ export const getSemrushOverview = createServerFn({ method: 'POST' })
       backlinks: backlinksOverview.status === 'fulfilled' ? rowsToObjects(backlinksOverview.value)[0] ?? null : { error: String((backlinksOverview as any).reason?.message ?? backlinksOverview) },
     };
   });
+
+function rowsToObjects(data: any): Array<Record<string, any>> {
+  const cols: string[] = data?.data?.columnNames ?? [];
+  const rows: any[][] = data?.data?.rows ?? [];
+  return rows.map((r) => {
+    const o: Record<string, any> = {};
+    cols.forEach((c, i) => { o[c] = r[i]; });
+    return o;
+  });
+}
+
