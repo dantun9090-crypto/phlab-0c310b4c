@@ -80,13 +80,14 @@ export async function checkAuditRateLimitPersistent(uid: string): Promise<{
 }> {
   const now = Date.now();
   try {
+    const { listDocsAdmin } = await import("@/lib/server/firestore-admin");
     const rows = await listDocsAdmin("sitemap_audit_log", {
       where: { field: "uid", op: "EQUAL", value: uid },
       orderBy: "timestamp",
       direction: "DESCENDING",
       limit: MAX_AUDIT_RUNS_PER_HOUR * 3,
     });
-    const recentRuns = rows.filter((r) => {
+    const recentRuns = rows.filter((r: Record<string, unknown>) => {
       if (r.kind !== "run") return false;
       const ts = r.timestamp;
       const t = typeof ts === "string" ? Date.parse(ts) : 0;
