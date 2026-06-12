@@ -84,28 +84,27 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
           return new Response("Payload too large", { status: 413 });
         }
 
-        // HMAC verification. If FENA_WEBHOOK_SECRET is configured, require a
-        // valid signature on every request — this blocks spoofed POSTs at the
-        // edge, before we do any work or re-fetch. If the env var is unset
-        // we fall back to the "re-fetch with terminal secret" check below
-        // (still safe, but log a warning so the secret gets configured).
+        // HMAC verification is MANDATORY. The webhook secret must be
+        // configured (FENA_WEBHOOK_SECRET) and every request must carry a
+        // valid signature. Missing/invalid → 401, drop the request.
         const fenaSecret = process.env.FENA_WEBHOOK_SECRET;
-        if (fenaSecret) {
-          const sigHeader =
-            request.headers.get("x-fena-signature") ||
-            request.headers.get("x-webhook-signature") ||
-            request.headers.get("x-hub-signature-256");
-          const ok = await verifyHmacSignature(bodyText, sigHeader, fenaSecret);
-          if (!ok) {
-            await logEvent("warn", "invalid signature", {
-              hasHeader: Boolean(sigHeader),
-              ip: request.headers.get("cf-connecting-ip") ?? null,
-            });
-            return new Response("Invalid signature", { status: 401 });
-          }
-        } else {
-          await logEvent("warn", "Webhook secret not configured, using authoritative re-fetch", { provider: "fena" });
+        if (!fenaSecret) {
+          await logEvent("error", "FENA_WEBHOOK_SECRET not configured — rejecting", {});
+          return new Response("Webhook secret not configured", { status: 503 });
         }
+        const sigHeader =
+          request.headers.get("x-fena-signature") ||
+          request.headers.get("x-webhook-signature") ||
+          request.headers.get("x-hub-signature-256");
+        const sigOk = await verifyHmacSignature(bodyText, sigHeader, fenaSecret);
+        if (!sigOk) {
+          await logEvent("warn", "invalid signature", {
+            hasHeader: Boolean(sigHeader),
+            ip: request.headers.get("cf-connecting-ip") ?? null,
+          });
+          return new Response("Invalid signature", { status: 401 });
+        }
+
 
         let payload: FenaWebhookBody;
         try {
