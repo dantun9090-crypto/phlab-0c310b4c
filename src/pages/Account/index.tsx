@@ -476,7 +476,21 @@ export default function AccountPage() {
     setVerifError('');
     setVerifSent(false);
     try {
-      await sendEmailVerification(user);
+      // Per-IP throttled (max 5 / 15 min) via server fn — Firebase's own
+      // quota is per-project and not enough to stop targeted abuse.
+      const idToken = await user.getIdToken();
+      const { requestEmailVerification } = await import('@/lib/auth-throttle.functions');
+      const result = await requestEmailVerification({ data: { idToken } });
+      if (result?.throttled) {
+        setVerifError('Too many requests. Please wait 15 minutes before trying again.');
+        setVerifSending(false);
+        return;
+      }
+      if (!result?.ok) {
+        setVerifError('Unable to send verification email right now. Please try again later.');
+        setVerifSending(false);
+        return;
+      }
       setVerifSent(true);
       setVerifCooldown(60);
       const interval = setInterval(() => {

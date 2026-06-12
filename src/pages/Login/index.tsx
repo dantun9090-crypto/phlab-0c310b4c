@@ -138,10 +138,19 @@ export default function Login() {
     setResetError('');
     setResetLoading(true);
     try {
-      await resetPassword(resetEmail);
-      setResetSent(true);
-    } catch (err: any) {
-      setResetError(err.code === 'auth/user-not-found' ? 'No account found with this email.' : (err.message || 'Failed to send reset email.'));
+      // Routed through the Worker-side rate-limited server fn so we can
+      // throttle per-IP (max 5 / 15 min) and never leak whether the email
+      // exists. Falls back to client SDK only if the server fn import fails.
+      const { requestPasswordReset } = await import('@/lib/auth-throttle.functions');
+      const result = await requestPasswordReset({ data: { email: resetEmail.trim() } });
+      if (result?.throttled) {
+        setResetError('Too many reset requests from your network. Try again in 15 minutes.');
+      } else {
+        // Generic success message — never reveal whether the address is registered.
+        setResetSent(true);
+      }
+    } catch {
+      setResetError('Unable to send reset email right now. Please try again later.');
     } finally {
       setResetLoading(false);
     }
