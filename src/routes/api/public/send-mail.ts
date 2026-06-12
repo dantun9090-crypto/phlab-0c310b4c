@@ -354,15 +354,17 @@ export const Route = createFileRoute("/api/public/send-mail")({
           return json({ error: "send_failed" }, 500);
         }
       },
-      OPTIONS: async () =>
-        new Response(null, {
+      OPTIONS: async ({ request }) => {
+        const origin = request.headers.get("origin");
+        if (!isAllowedOrigin(origin)) {
+          return new Response(null, { status: 403 });
+        }
+        return new Response(null, {
           status: 204,
-          headers: {
-            "access-control-allow-origin": "*",
-            "access-control-allow-methods": "POST, OPTIONS",
-            "access-control-allow-headers": "content-type",
-          },
-        }),
+          headers: corsHeaders(origin),
+        });
+      },
+
     },
   },
 });
