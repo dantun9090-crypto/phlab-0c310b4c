@@ -150,6 +150,13 @@ export const Route = createFileRoute("/api/public/send-mail")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        const origin = request.headers.get("origin");
+        if (!isAllowedOrigin(origin)) {
+          return new Response(JSON.stringify({ error: "forbidden_origin" }), {
+            status: 403,
+            headers: { "content-type": "application/json" },
+          });
+        }
         const ip =
           request.headers.get("cf-connecting-ip") ||
           request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
@@ -158,6 +165,7 @@ export const Route = createFileRoute("/api/public/send-mail")({
         if (rateLimited(ip)) {
           return json({ error: "rate_limited" }, 429);
         }
+
 
         let raw: unknown;
         try {
