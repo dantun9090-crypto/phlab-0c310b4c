@@ -118,7 +118,8 @@ export default function AdvertsTab() {
     setUploadProgress(0);
     let uploadedUrl = '';
     try {
-      const path = `adverts/${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
+      const { validateAndBuildStoragePath } = await import('@/lib/upload-validation');
+      const path = await validateAndBuildStoragePath(file, 'adverts');
       const task = uploadBytesResumable(storageRef(storage, path), file);
       await new Promise<void>((resolve, reject) => {
         task.on('state_changed',

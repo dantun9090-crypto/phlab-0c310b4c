@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { getDocAdmin, addDocAdmin, updateDocAdmin } from '@/lib/server/firestore-admin';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 /**
  * Public, unauthenticated endpoint that auto-fires Cloudflare cache purge +
@@ -103,7 +104,15 @@ async function runInvalidation(buildId: string): Promise<void> {
 export const Route = createFileRoute('/api/public/post-publish-check')({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
+        // Per-IP rate limit — endpoint is public and triggers Firestore reads
+        // on every call. Matches the pattern used by other /api/public/* routes.
+        const limited = await enforceRateLimit(request, '/api/public/post-publish-check', {
+          limit: 30,
+          windowMs: 60_000,
+          retryAfterSec: 60,
+        });
+        if (limited) return limited;
         const currentBuildId = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'unknown';
 
         let stored: string | null = null;

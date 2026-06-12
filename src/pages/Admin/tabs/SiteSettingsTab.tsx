@@ -261,6 +261,8 @@ export default function SiteSettingsTab() {
   ) => {
     setImgUploading(p => ({ ...p, [key]: true }));
     try {
+      const { validateImageFile } = await import('@/lib/upload-validation');
+      await validateImageFile(file);
       const [maxW, maxH] = IMG_LIMITS[key];
       const compressed = await compressImage(file, maxW, maxH);
       const path = `settings/about/${key}_${Date.now()}.jpg`;
