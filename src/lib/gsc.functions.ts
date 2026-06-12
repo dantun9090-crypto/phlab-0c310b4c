@@ -63,7 +63,7 @@ export const fetchGscPerformance = createServerFn({ method: 'POST' })
     );
     const text = await res.text();
     if (!res.ok) {
-      throw new Error(`GSC performance ${res.status}: ${text.slice(0, 300)}`);
+      throw new Error(`GSC performance ${res.status}: ${text.slice(0, 80)}`);
     }
     const json = JSON.parse(text) as {
       rows?: Array<{ keys: string[]; clicks: number; impressions: number; ctr: number; position: number }>;
@@ -117,7 +117,7 @@ export const inspectGscUrl = createServerFn({ method: 'POST' })
     });
     const text = await res.text();
     if (!res.ok) {
-      throw new Error(`GSC inspect ${res.status}: ${text.slice(0, 300)}`);
+      throw new Error(`GSC inspect ${res.status}: ${text.slice(0, 80)}`);
     }
     const json = JSON.parse(text) as {
       inspectionResult?: {
@@ -163,7 +163,7 @@ export const listGscSites = createServerFn({ method: 'POST' })
       signal: AbortSignal.timeout(15_000),
     });
     const text = await res.text();
-    if (!res.ok) throw new Error(`GSC sites ${res.status}: ${text.slice(0, 300)}`);
+    if (!res.ok) throw new Error(`GSC sites ${res.status}: ${text.slice(0, 80)}`);
     const json = JSON.parse(text) as {
       siteEntry?: Array<{ siteUrl: string; permissionLevel: string }>;
     };
