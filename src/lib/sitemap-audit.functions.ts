@@ -20,8 +20,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { requireFirebaseAdmin } from "@/lib/server/firebase-auth-admin";
-import { addDocAdmin, listDocsAdmin } from "@/lib/server/firestore-admin";
+// Server-only modules under src/lib/server/* are blocked from the client
+// bundle by the TanStack import-protection plugin. Load them dynamically
+// inside handler bodies below (never at module scope).
 import {
   exclusionReason,
   isIndexable,
