@@ -75,7 +75,9 @@ function AppLayout() {
       <ScrollToTop />
       <Layout>
         <ErrorBoundary>
-          <Outlet />
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
         </ErrorBoundary>
       </Layout>
     </>
@@ -89,7 +91,9 @@ const routes = [
     element: (
       <ErrorBoundary>
         <RequireAuth>
-          <Admin />
+          <Suspense fallback={<PageLoader />}>
+            <Admin />
+          </Suspense>
         </RequireAuth>
       </ErrorBoundary>
     ),
