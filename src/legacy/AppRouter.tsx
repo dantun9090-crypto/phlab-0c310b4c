@@ -1,29 +1,20 @@
 import { createBrowserRouter, createMemoryRouter, Outlet, Navigate, useLocation } from 'react-router-dom';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { Layout } from '@/components/Layout';
 import ScrollToTop from '@/components/ScrollToTop';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { auth, onAuthStateChanged } from '@/lib/firebase-auth';
-// MolecularIntro removed 2026-06-10 — it was rendering a "PH Labs loading"
-// overlay for 650ms on every first visit, hurting LCP and looking like a
-// blank page to non-bot users. Boots had nothing to do with SSR; content
-// was always under the overlay.
 
-// Route pages are loaded eagerly so every direct URL paints immediately.
+// Public, high-traffic routes — eager so every direct URL paints immediately.
 import Home from '@/pages/Home';
 import Products from '@/pages/Products';
 import ProductDetail from '@/pages/ProductDetail';
 import CategoryPage from '@/pages/CategoryPage';
 import SearchPage from '@/pages/Search';
 import StorageGuide from '@/pages/StorageGuide';
-import Account from '@/pages/Account';
-import Register from '@/pages/Register';
-import Login from '@/pages/Login';
-import Admin from '@/pages/Admin';
 import Contact from '@/pages/Contact';
 import About from '@/pages/About';
 import LandingPage from '@/pages/LandingPage';
-import VipStore from '@/pages/VipStore';
 import QualityControl from '@/pages/QualityControl';
 import LabReports from '@/pages/LabReports';
 import Resources from '@/pages/Resources';
@@ -34,10 +25,18 @@ import ShippingPolicy from '@/pages/ShippingPolicy';
 import Terms from '@/pages/Terms';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import CookiePolicy from '@/pages/CookiePolicy';
-import Payment from '@/pages/Payment';
-import Checkout from '@/pages/Checkout';
 import NotFound from '@/pages/NotFound';
 import Install from '@/pages/Install';
+
+// Code-split: admin, checkout, payment, auth, account, VIP — not needed for
+// first paint of the public store. Saves ~250–300 KB from the main bundle.
+const Admin = lazy(() => import('@/pages/Admin'));
+const Checkout = lazy(() => import('@/pages/Checkout'));
+const Payment = lazy(() => import('@/pages/Payment'));
+const Account = lazy(() => import('@/pages/Account'));
+const Login = lazy(() => import('@/pages/Login'));
+const Register = lazy(() => import('@/pages/Register'));
+const VipStore = lazy(() => import('@/pages/VipStore'));
 
 // Minimal spinner shown while lazy chunks load
 function PageLoader() {
