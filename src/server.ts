@@ -604,7 +604,7 @@ export default {
           const bucket = adminUnlockAttempts.get(ip);
           if (bucket && now - bucket.start < WINDOW_MS) {
             if (bucket.count >= MAX_ATTEMPTS) {
-              log.warn({ event: "admin_unlock.rate_limited", ip, ...baseFields });
+              log.warn({ event: "admin_unlock.rate_limited", ...baseFields, ip });
               return new Response("Too many attempts. Try again later.", {
                 status: 429,
                 headers: { "cache-control": "no-store", "retry-after": String(Math.ceil((WINDOW_MS - (now - bucket.start)) / 1000)) },
