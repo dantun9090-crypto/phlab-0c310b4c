@@ -36,7 +36,14 @@ async function compressImage(file: File, maxPx = 1600, quality = 0.82): Promise<
 
 // ── Upload helper ─────────────────────────────────────────────────────────────
 function uploadToStorage(file: File, path: string, onProgress?: (p: number) => void): Promise<string> {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const { validateImageFile } = await import('@/lib/upload-validation');
+      await validateImageFile(file);
+    } catch (err) {
+      reject(err);
+      return;
+    }
     const ref = storageRef(storage, path);
     const task = uploadBytesResumable(ref, file);
     task.on('state_changed',

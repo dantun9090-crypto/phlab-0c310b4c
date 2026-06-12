@@ -112,11 +112,16 @@ export default function BannerTab() {
     setUploadProgress(0);
     setImageError(false);
     try {
+      // Defence-in-depth: enforce MIME allowlist + 5MB cap + filename
+      // sanitisation BEFORE compression/upload. Storage rules remain the
+      // server-side gate.
+      const { validateImageFile, sanitizeFilename } = await import('@/lib/upload-validation');
+      await validateImageFile(original);
       // Re-encode to WebP ≤ 200 KB before upload — banners were the biggest
       // single contributor to the 15 MB mobile page weight.
       const { compressToWebp } = await import('@/lib/imageCompress');
       const file = await compressToWebp(original, { maxPx: 1920, quality: 0.85, targetBytes: 200_000 });
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, '_');
+      const safeName = sanitizeFilename(file.name);
       const path = `banners/${Date.now()}_${safeName}`;
       const sRef = storageRef(storage, path);
       const task = uploadBytesResumable(sRef, file);

@@ -317,14 +317,22 @@ export default function AccountPage() {
       setReportError('Lab report must be under 10 MB.');
       return;
     }
+    // Lab reports are PDFs uploaded by the customer — enforce strict
+    // type/size and sanitise filename before building the Storage path.
+    const allowedMime = ['application/pdf'];
+    if (!allowedMime.includes(pending.file.type)) {
+      setReportError('Only PDF files are accepted.');
+      return;
+    }
     setUploadingId(pending.id);
     setReportError('');
     try {
-      const safeName = pending.file.name.replace(/[^\w.\-]+/g, '_').slice(0, 200);
+      const { sanitizeFilename } = await import('@/lib/upload-validation');
+      const safeName = sanitizeFilename(pending.file.name);
       const storagePath = `users/${user.uid}/lab_reports/${Date.now()}-${safeName}`;
       const ref = storageRef(storage, storagePath);
       await uploadBytes(ref, pending.file, {
-        contentType: pending.file.type || 'application/pdf',
+        contentType: 'application/pdf',
       });
       const url = await getDownloadURL(ref);
       const docRef = await addDoc(collection(db, 'lab_reports'), {
