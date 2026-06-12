@@ -1,9 +1,13 @@
 import { createServerFn } from '@tanstack/react-start';
+import { z } from 'zod';
 import { requireFirebaseAdmin } from '@/lib/server/firebase-auth-admin';
 
 const GATEWAY = 'https://connector-gateway.lovable.dev/semrush';
 const DEFAULT_DOMAIN = 'phlabs.co.uk';
 const DEFAULT_DATABASE = 'uk';
+// Strict allowlist: only first-party hosts may be queried via the connector.
+const ALLOWED_DOMAINS = new Set(['phlabs.co.uk', 'www.phlabs.co.uk']);
+const DatabaseEnum = z.enum(['uk', 'us', 'au', 'ca', 'de', 'fr', 'es', 'it', 'nl', 'ie']);
 
 function authHeaders() {
   const lovable = process.env.LOVABLE_API_KEY;
@@ -27,27 +31,27 @@ async function gwGet(path: string, params: Record<string, string | number | unde
     signal: AbortSignal.timeout(20_000),
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(`Semrush ${res.status}: ${text.slice(0, 300)}`);
-  try { return JSON.parse(text); } catch { throw new Error(`Semrush invalid JSON: ${text.slice(0, 200)}`); }
+  if (!res.ok) throw new Error(`Semrush ${res.status}: ${text.slice(0, 80)}`);
+  try { return JSON.parse(text); } catch { throw new Error(`Semrush invalid JSON: ${text.slice(0, 80)}`); }
 }
 
-function rowsToObjects(data: any): Array<Record<string, any>> {
-  const cols: string[] = data?.data?.columnNames ?? [];
-  const rows: any[][] = data?.data?.rows ?? [];
-  return rows.map((r) => {
-    const o: Record<string, any> = {};
-    cols.forEach((c, i) => { o[c] = r[i]; });
-    return o;
-  });
-}
+const OverviewInput = z.object({
+  idToken: z.string().min(10).max(4096),
+  domain: z.string().min(1).max(253).regex(/^[a-z0-9.-]+$/i).optional(),
+  database: DatabaseEnum.optional(),
+});
 
 export const getSemrushOverview = createServerFn({ method: 'POST' })
-  .inputValidator((data: { idToken: string; domain?: string; database?: string }) => {
-    if (!data?.idToken) throw new Error('idToken required');
+  .inputValidator((data: unknown) => {
+    const parsed = OverviewInput.parse(data);
+    const domain = (parsed.domain || DEFAULT_DOMAIN).toLowerCase();
+    if (!ALLOWED_DOMAINS.has(domain)) {
+      throw new Error('domain not on allowlist');
+    }
     return {
-      idToken: data.idToken,
-      domain: data.domain || DEFAULT_DOMAIN,
-      database: data.database || DEFAULT_DATABASE,
+      idToken: parsed.idToken,
+      domain,
+      database: parsed.database || DEFAULT_DATABASE,
     };
   })
   .handler(async ({ data }) => {
@@ -84,3 +88,14 @@ export const getSemrushOverview = createServerFn({ method: 'POST' })
       backlinks: backlinksOverview.status === 'fulfilled' ? rowsToObjects(backlinksOverview.value)[0] ?? null : { error: String((backlinksOverview as any).reason?.message ?? backlinksOverview) },
     };
   });
+
+function rowsToObjects(data: any): Array<Record<string, any>> {
+  const cols: string[] = data?.data?.columnNames ?? [];
+  const rows: any[][] = data?.data?.rows ?? [];
+  return rows.map((r) => {
+    const o: Record<string, any> = {};
+    cols.forEach((c, i) => { o[c] = r[i]; });
+    return o;
+  });
+}
+
