@@ -15,6 +15,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import { log, extractClientIp, truncate } from "@/lib/worker-log";
+import { enforceRateLimit } from "@/lib/rate-limit";
+
 
 type LegacyReport = {
   "csp-report"?: {
