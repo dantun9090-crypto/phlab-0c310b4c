@@ -67,6 +67,14 @@ function rateLimited(ip: string): boolean {
 }
 
 
+
+// Strip CR, LF, and NUL from any value that will be embedded into an SMTP
+// header (Subject, Reply-To, To). Zod .trim() only handles leading/trailing
+// whitespace and does NOT prevent header injection via embedded CRLF.
+function sanitizeHeader(v: string): string {
+  return v.replace(/[\r\n\x00]/g, "").slice(0, 998);
+}
+
 const emailSchema = z.string().email().max(320);
 
 const ContactInput = z.object({
@@ -192,8 +200,8 @@ export const Route = createFileRoute("/api/public/send-mail")({
           switch (input.template) {
             case "contact": {
               to = INTERNAL_RECIPIENT;
-              replyTo = input.email;
-              subject = `[PHP Contact] ${input.subject || "New Enquiry"} — from ${input.name}`;
+              replyTo = sanitizeHeader(input.email);
+              subject = sanitizeHeader(`[PHP Contact] ${input.subject || "New Enquiry"} — from ${input.name}`);
               html = buildContactFormEmail({
                 senderName: input.name,
                 senderEmail: input.email,
