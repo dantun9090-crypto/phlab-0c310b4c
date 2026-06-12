@@ -21,7 +21,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireFirebaseAdmin } from "@/lib/server/firebase-auth-admin";
-import { addDocAdmin } from "@/lib/server/firestore-admin";
+import { addDocAdmin, listDocsAdmin } from "@/lib/server/firestore-admin";
 import {
   exclusionReason,
   isIndexable,
@@ -35,10 +35,11 @@ import { SITE_URL } from "@/lib/seo-meta";
 const BASE_URL = SITE_URL;
 
 /**
- * Per-admin in-memory rate limiter. Caveat: Cloudflare Worker isolates do
- * not share memory, so this is best-effort — combined with the persistent
- * `sitemap_audit_log` Firestore collection it gives an auditable cap.
- * (See knowledge/no-backend-rate-limiting — no standard primitive yet.)
+ * Per-admin rate limiter. The Firestore-backed variant is the source of
+ * truth at runtime — Cloudflare Worker isolates do not share memory, so
+ * counting prior `kind: "run"` rows in `sitemap_audit_log` gives a real
+ * shared cap across isolates. The in-memory variant is retained for unit
+ * tests and as a cheap pre-check.
  */
 export const MAX_AUDIT_RUNS_PER_HOUR = 10;
 const HOUR_MS = 60 * 60 * 1000;
@@ -62,6 +63,55 @@ export function checkAuditRateLimit(uid: string): {
     remaining: MAX_AUDIT_RUNS_PER_HOUR - arr.length,
     resetMs: HOUR_MS,
   };
+}
+
+/**
+ * Firestore-backed rate limit: counts `kind: "run"` rows for this uid in
+ * the last hour. Shared across all Worker isolates. If Firestore is
+ * unreachable, we fail OPEN (return allowed=true) so a transient outage
+ * does not lock admins out — the in-memory pre-check still applies and
+ * any abuse remains visible in the audit log.
+ */
+export async function checkAuditRateLimitPersistent(uid: string): Promise<{
+  allowed: boolean;
+  remaining: number;
+  resetMs: number;
+}> {
+  const now = Date.now();
+  try {
+    const rows = await listDocsAdmin("sitemap_audit_log", {
+      where: { field: "uid", op: "EQUAL", value: uid },
+      orderBy: "timestamp",
+      direction: "DESCENDING",
+      limit: MAX_AUDIT_RUNS_PER_HOUR * 3,
+    });
+    const recentRuns = rows.filter((r) => {
+      if (r.kind !== "run") return false;
+      const ts = r.timestamp;
+      const t = typeof ts === "string" ? Date.parse(ts) : 0;
+      return t > 0 && now - t < HOUR_MS;
+    });
+    if (recentRuns.length >= MAX_AUDIT_RUNS_PER_HOUR) {
+      const oldest = recentRuns[recentRuns.length - 1].timestamp as string;
+      const oldestT = Date.parse(oldest);
+      return {
+        allowed: false,
+        remaining: 0,
+        resetMs: HOUR_MS - (now - oldestT),
+      };
+    }
+    return {
+      allowed: true,
+      remaining: MAX_AUDIT_RUNS_PER_HOUR - recentRuns.length,
+      resetMs: HOUR_MS,
+    };
+  } catch (err) {
+    console.warn(
+      "[sitemap-audit] persistent rate-limit check failed, failing open",
+      (err as Error).message,
+    );
+    return { allowed: true, remaining: MAX_AUDIT_RUNS_PER_HOUR, resetMs: HOUR_MS };
+  }
 }
 
 interface UnauthorizedContext {
@@ -217,8 +267,11 @@ export const runSitemapAudit = createServerFn({ method: "POST" })
       );
     }
 
-    // Per-admin rate limit — 10 runs / hour (see MAX_AUDIT_RUNS_PER_HOUR).
-    const rl = checkAuditRateLimit(user.uid);
+    // Per-admin rate limit — 10 runs / hour, counted in Firestore so
+    // Cloudflare Worker isolates share the same window.
+    const rl = await checkAuditRateLimitPersistent(user.uid);
+    // Keep the cheap in-memory pre-check current too.
+    checkAuditRateLimit(user.uid);
     if (!rl.allowed) {
       await logUnauthorized({
         reason: "rate_limited",
@@ -231,7 +284,8 @@ export const runSitemapAudit = createServerFn({ method: "POST" })
         `rate_limited: max ${MAX_AUDIT_RUNS_PER_HOUR} runs/hour. Try again in ~${mins} min.`,
       );
     }
-    void logAuthorizedRun(user.uid, user.email, rl.remaining);
+    // Await so the row exists before the handler can be re-entered.
+    await logAuthorizedRun(user.uid, user.email, rl.remaining);
 
 
     const errors: string[] = [];
