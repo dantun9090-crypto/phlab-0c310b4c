@@ -44,6 +44,9 @@ async function getServerEntry(): Promise<ServerEntry> {
 // stale `phl_p0_recovery_20260601_2300` build that 302'd www → apex and caused
 // an infinite redirect loop with the app-level long→short canonical.
 const CANONICAL_HOST = "phlabs.co.uk";
+
+// In-memory rate-limit bucket for /admin-unlock (per Worker isolate).
+const adminUnlockAttempts = new Map<string, { count: number; start: number }>();
 // Hosts that should 301 to the canonical host (legacy brand domains).
 // Lovable preview/published hosts (*.lovable.app, *.lovableproject.com) are
 // intentionally excluded so previews keep working. phlabs.co.uk apex is NOT
