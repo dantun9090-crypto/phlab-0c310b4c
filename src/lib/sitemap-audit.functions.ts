@@ -163,6 +163,7 @@ async function logAuthorizedRun(
   remaining: number,
 ): Promise<void> {
   try {
+    const { addDocAdmin } = await import("@/lib/server/firestore-admin");
     await addDocAdmin("sitemap_audit_log", {
       kind: "run",
       uid,
