@@ -31,9 +31,29 @@ async function gwGet(path: string, params: Record<string, string | number | unde
     signal: AbortSignal.timeout(20_000),
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(`Semrush ${res.status}: ${text.slice(0, 300)}`);
-  try { return JSON.parse(text); } catch { throw new Error(`Semrush invalid JSON: ${text.slice(0, 200)}`); }
+  if (!res.ok) throw new Error(`Semrush ${res.status}: ${text.slice(0, 80)}`);
+  try { return JSON.parse(text); } catch { throw new Error(`Semrush invalid JSON: ${text.slice(0, 80)}`); }
 }
+
+const OverviewInput = z.object({
+  idToken: z.string().min(10).max(4096),
+  domain: z.string().min(1).max(253).regex(/^[a-z0-9.-]+$/i).optional(),
+  database: DatabaseEnum.optional(),
+});
+
+export const getSemrushOverview = createServerFn({ method: 'POST' })
+  .inputValidator((data: unknown) => {
+    const parsed = OverviewInput.parse(data);
+    const domain = (parsed.domain || DEFAULT_DOMAIN).toLowerCase();
+    if (!ALLOWED_DOMAINS.has(domain)) {
+      throw new Error('domain not on allowlist');
+    }
+    return {
+      idToken: parsed.idToken,
+      domain,
+      database: parsed.database || DEFAULT_DATABASE,
+    };
+  })
 
 function rowsToObjects(data: any): Array<Record<string, any>> {
   const cols: string[] = data?.data?.columnNames ?? [];
