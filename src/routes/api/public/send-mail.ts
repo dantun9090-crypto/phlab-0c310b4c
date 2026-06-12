@@ -200,8 +200,8 @@ export const Route = createFileRoute("/api/public/send-mail")({
           switch (input.template) {
             case "contact": {
               to = INTERNAL_RECIPIENT;
-              replyTo = input.email;
-              subject = `[PHP Contact] ${input.subject || "New Enquiry"} — from ${input.name}`;
+              replyTo = sanitizeHeader(input.email);
+              subject = sanitizeHeader(`[PHP Contact] ${input.subject || "New Enquiry"} — from ${input.name}`);
               html = buildContactFormEmail({
                 senderName: input.name,
                 senderEmail: input.email,
