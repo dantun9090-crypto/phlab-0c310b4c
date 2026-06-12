@@ -21,7 +21,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { requireFirebaseAdmin } from "@/lib/server/firebase-auth-admin";
-import { addDocAdmin } from "@/lib/server/firestore-admin";
+import { addDocAdmin, listDocsAdmin } from "@/lib/server/firestore-admin";
 import {
   exclusionReason,
   isIndexable,
