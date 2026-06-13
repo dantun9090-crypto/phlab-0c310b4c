@@ -1,0 +1,24 @@
+# Wrangler config for the Royal Mail label Worker.
+#
+# Deploy (once you have wrangler logged into the PH Labs Cloudflare account):
+#   cd cloudflare
+#   wrangler deploy --config royal-mail-label-wrangler.toml
+#
+# Set secrets (one-time):
+#   wrangler secret put ROYAL_MAIL_API_KEY --config royal-mail-label-wrangler.toml
+#   wrangler secret put SHARED_SECRET     --config royal-mail-label-wrangler.toml
+#
+# IMPORTANT: this Worker is NOT bound to phlabs.co.uk. It lives on its own
+# workers.dev subdomain so it never collides with the phlabs-prerender Worker
+# that fronts the apex domain.
+
+name = "royal-mail-label"
+main = "royal-mail-label-worker.js"
+compatibility_date = "2025-09-24"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGINS = "https://phlabs.co.uk,https://www.phlabs.co.uk,https://phlab.lovable.app"
+
+[observability]
+enabled = true
