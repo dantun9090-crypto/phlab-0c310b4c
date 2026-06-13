@@ -16,8 +16,9 @@
 
 name = "royal-mail-order"
 main = "royal-mail-order-worker.js"
-compatibility_date = "2025-09-24"
+compatibility_date = "2026-06-13"
 workers_dev = true
+preview_urls = false
 
 [vars]
 ALLOWED_ORIGINS = "https://phlabs.co.uk,https://www.phlabs.co.uk"
