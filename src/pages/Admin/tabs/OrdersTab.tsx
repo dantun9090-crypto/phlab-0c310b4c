@@ -245,7 +245,7 @@ export default function OrdersTab() {
     // Royal Mail fields
     const existingRmOrderId = (selected as any)?.royalMailOrderId || null;
     const existingRmTracking = (selected as any)?.royalMailTracking || null;
-    setRmService(((selected as any)?.royalMailService as 'CRL1' | 'CRL2' | 'TRM') || 'CRL1');
+    setRmService(((selected as any)?.royalMailService as '' | 'CRL1' | 'CRL2' | 'TRM') || '');
     setRmWeight(100);
     setRmError('');
     setRmCopied(false);
