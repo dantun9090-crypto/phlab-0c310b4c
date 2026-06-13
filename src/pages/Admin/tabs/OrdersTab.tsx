@@ -526,7 +526,7 @@ export default function OrdersTab() {
           city, postcode, email,
           phone: (c.phone || (selected as any).phone || '') as string,
           countryCode: 'GB',
-          serviceCode: rmService,
+          ...(rmService ? { serviceCode: rmService } : {}),
           weightGrams: Number(rmWeight) || 100,
           subtotal: Number((selected as any).subtotal ?? selected.totalAmount ?? 0),
           shippingCostCharged: Number((selected as any).shippingCost ?? 0),
