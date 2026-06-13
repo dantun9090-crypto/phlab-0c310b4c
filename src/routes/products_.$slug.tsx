@@ -196,8 +196,9 @@ export const Route = createFileRoute("/products_/$slug")({
     };
   },
   component: ProductDetailRoute,
-  notFoundComponent: () => <LegacyMount />,
+  notFoundComponent: NotFoundLegacy,
   errorComponent: () => <LegacyMount />,
+
 });
 
 function ProductDetailRoute() {
