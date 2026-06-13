@@ -1251,11 +1251,9 @@ export default function OrdersTab() {
                           />
                         </div>
                       )}
-                      {!rmResult.trackingNumber && (
-                        <p className="text-[#9cb8d9] text-xs">
-                          Order created in Click & Drop. Generate the label there to obtain a tracking number.
-                        </p>
-                      )}
+                      <p className="text-[#9cb8d9] text-xs">
+                        Order created. Print label at parcel.royalmail.com.
+                      </p>
                     </div>
                   )}
 
