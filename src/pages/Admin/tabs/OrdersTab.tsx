@@ -217,6 +217,14 @@ export default function OrdersTab() {
   const [trackingError, setTrackingError] = useState('');
   const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null);
 
+  // Royal Mail label state
+  const [rmService, setRmService] = useState<'CRL1' | 'CRL2' | 'TRM'>('CRL1');
+  const [rmWeight, setRmWeight] = useState<number>(100);
+  const [rmLoading, setRmLoading] = useState(false);
+  const [rmError, setRmError] = useState('');
+  const [rmResult, setRmResult] = useState<{ trackingNumber: string; labelUrl?: string | null } | null>(null);
+  const [rmCopied, setRmCopied] = useState(false);
+
   // Bank transfer payment state
   const [transferRefInput, setTransferRefInput] = useState('');
   const [paymentStatusInput, setPaymentStatusInput] = useState<'pending_bank_transfer' | 'paid' | 'cancelled'>('pending_bank_transfer');
@@ -234,6 +242,14 @@ export default function OrdersTab() {
     setTrackingSuccess('');
     setTrackingError('');
     setCopiedTrackingId(null);
+    // Royal Mail fields
+    const existingRm = (selected as any)?.royalMailTracking || null;
+    const existingRmUrl = (selected as any)?.royalMailLabelUrl || null;
+    setRmService(((selected as any)?.royalMailService as 'CRL1' | 'CRL2' | 'TRM') || 'CRL1');
+    setRmWeight(100);
+    setRmError('');
+    setRmCopied(false);
+    setRmResult(existingRm ? { trackingNumber: existingRm, labelUrl: existingRmUrl } : null);
     // Bank transfer fields
     setTransferRefInput((selected as any)?.transferReference || '');
     setPaymentStatusInput((selected as any)?.paymentStatus || 'pending_bank_transfer');
@@ -472,6 +488,79 @@ export default function OrdersTab() {
       setTrackingError(e?.message || 'Failed to save. Please try again.');
     } finally {
       setTrackingLoading(false);
+    }
+  };
+
+  const handleGenerateRoyalMailLabel = async () => {
+    if (!selected) return;
+    setRmError('');
+    setRmResult(null);
+    const workerUrl = (import.meta as any).env?.VITE_ROYAL_MAIL_WORKER_URL as string | undefined;
+    const workerToken = (import.meta as any).env?.VITE_ROYAL_MAIL_WORKER_TOKEN as string | undefined;
+    if (!workerUrl || !workerToken) {
+      setRmError('Royal Mail worker is not configured (missing VITE_ROYAL_MAIL_WORKER_URL / TOKEN).');
+      return;
+    }
+    const c: any = (selected as any).customer || {};
+    const firstName = c.firstName || (selected as any).shippingFirstName || '';
+    const lastName = c.lastName || (selected as any).shippingLastName || '';
+    const addressLine1 = c.address || (selected as any).addressLine1 || '';
+    const addressLine2 = c.city || (selected as any).addressLine2 || '';
+    const postcode = (c.postcode || (selected as any).postcode || '').toUpperCase();
+    const email = c.email || selected.userEmail || '';
+    if (!firstName || !lastName || !addressLine1 || !postcode || !email) {
+      setRmError('Order is missing required address fields (name, addressLine1, postcode, email).');
+      return;
+    }
+    setRmLoading(true);
+    try {
+      const res = await fetch(workerUrl, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-phlabs-auth': workerToken },
+        body: JSON.stringify({
+          orderId: selected.id,
+          firstName, lastName, addressLine1, addressLine2,
+          postcode, email,
+          service: rmService,
+          weightGrams: Number(rmWeight) || 100,
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body?.error || `Worker returned ${res.status}`);
+      }
+      const trackingNumber = String(body.trackingNumber || '').trim();
+      const labelUrl = body.labelUrl ? String(body.labelUrl) : null;
+      if (!trackingNumber) throw new Error('Worker did not return a tracking number');
+
+      // Save to Firestore
+      const updatePayload: Record<string, unknown> = {
+        royalMailTracking: trackingNumber,
+        royalMailService: rmService,
+        royalMailLabelUrl: labelUrl,
+        royalMailGeneratedAt: Timestamp.now(),
+        trackingNumber,
+        courier: 'Royal Mail',
+      };
+      await updateDoc(doc(db, 'orders', selected.id), updatePayload);
+      await logAdminAction({
+        action: 'order.dispatch',
+        target: `orders/${selected.id}`,
+        meta: { royalMail: { service: rmService, trackingNumber, weightGrams: Number(rmWeight) || 100 } },
+      });
+
+      setRmResult({ trackingNumber, labelUrl });
+      setTrackingInput(trackingNumber);
+      setCourierInput('Royal Mail');
+      setOrders(prev => prev.map(o => o.id === selected.id
+        ? { ...o, trackingNumber, courier: 'Royal Mail' } as Order
+        : o));
+      setSelected(prev => prev ? { ...prev, trackingNumber, courier: 'Royal Mail' } as Order : prev);
+    } catch (e: any) {
+      console.error('[royal-mail] generate failed', e);
+      setRmError(e?.message || 'Failed to generate label.');
+    } finally {
+      setRmLoading(false);
     }
   };
 
@@ -1074,6 +1163,86 @@ export default function OrdersTab() {
                       <span className="text-green-400">£{((selected as any).total || selected.totalAmount || 0).toFixed(2)}</span>
                     </div>
                   </div>
+                </div>
+
+                {/* Royal Mail Label */}
+                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 mb-4">
+                  <p className="text-emerald-300 text-xs font-medium uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                    <Package className="w-3.5 h-3.5" /> Royal Mail Label
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <select
+                      value={rmService}
+                      onChange={(e) => setRmService(e.target.value as 'CRL1' | 'CRL2' | 'TRM')}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    >
+                      <option value="CRL1">2nd Class (CRL1)</option>
+                      <option value="CRL2">1st Class (CRL2)</option>
+                      <option value="TRM">Tracked 24 (TRM)</option>
+                    </select>
+                    <input
+                      type="number"
+                      min={1}
+                      max={2000}
+                      value={rmWeight}
+                      onChange={(e) => setRmWeight(parseInt(e.target.value, 10) || 0)}
+                      placeholder="Weight (g)"
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleGenerateRoyalMailLabel}
+                    disabled={rmLoading}
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    {rmLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
+                    {rmLoading ? 'Generating…' : 'Generate Royal Mail Label'}
+                  </button>
+
+                  {rmResult && (
+                    <div className="mt-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                      <p className="text-xs text-[#9cb8d9] mb-1">Tracking number</p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          readOnly
+                          value={rmResult.trackingNumber}
+                          className="flex-1 px-2 py-1.5 bg-white border border-gray-300 rounded text-gray-900 text-sm font-mono"
+                          onFocus={(e) => e.currentTarget.select()}
+                        />
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(rmResult.trackingNumber);
+                            setRmCopied(true);
+                            setTimeout(() => setRmCopied(false), 2000);
+                          }}
+                          className="p-2 bg-emerald-600 hover:bg-emerald-500 rounded text-white"
+                          title="Copy"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      {rmCopied && <p className="mt-1 text-emerald-300 text-xs">Copied!</p>}
+                      {rmResult.labelUrl && (
+                        <a
+                          href={rmResult.labelUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 text-emerald-300 hover:text-emerald-200 text-xs font-medium"
+                        >
+                          <ExternalLink className="w-3 h-3" /> Open label PDF
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {rmError && (
+                    <p className="mt-2 text-red-400 text-xs" role="alert">{rmError}</p>
+                  )}
+                  <p className="mt-2 text-[#2a4a7a] text-xs">
+                    Calls the secure worker — the Royal Mail API key is never exposed to the browser. Saves tracking to the order and prefills the Dispatch form below.
+                  </p>
                 </div>
 
                 {/* Dispatch / Tracking Section */}
