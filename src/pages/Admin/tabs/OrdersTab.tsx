@@ -218,7 +218,7 @@ export default function OrdersTab() {
   const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null);
 
   // Royal Mail order state
-  const [rmService, setRmService] = useState<'CRL1' | 'CRL2' | 'TRM'>('CRL1');
+  const [rmService, setRmService] = useState<'' | 'CRL1' | 'CRL2' | 'TRM'>('');
   const [rmWeight, setRmWeight] = useState<number>(100);
   const [rmLoading, setRmLoading] = useState(false);
   const [rmError, setRmError] = useState('');
@@ -245,7 +245,7 @@ export default function OrdersTab() {
     // Royal Mail fields
     const existingRmOrderId = (selected as any)?.royalMailOrderId || null;
     const existingRmTracking = (selected as any)?.royalMailTracking || null;
-    setRmService(((selected as any)?.royalMailService as 'CRL1' | 'CRL2' | 'TRM') || 'CRL1');
+    setRmService(((selected as any)?.royalMailService as '' | 'CRL1' | 'CRL2' | 'TRM') || '');
     setRmWeight(100);
     setRmError('');
     setRmCopied(false);
@@ -526,7 +526,7 @@ export default function OrdersTab() {
           city, postcode, email,
           phone: (c.phone || (selected as any).phone || '') as string,
           countryCode: 'GB',
-          serviceCode: rmService,
+          ...(rmService ? { serviceCode: rmService } : {}),
           weightGrams: Number(rmWeight) || 100,
           subtotal: Number((selected as any).subtotal ?? selected.totalAmount ?? 0),
           shippingCostCharged: Number((selected as any).shippingCost ?? 0),
@@ -1187,9 +1187,10 @@ export default function OrdersTab() {
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     <select
                       value={rmService}
-                      onChange={(e) => setRmService(e.target.value as 'CRL1' | 'CRL2' | 'TRM')}
+                      onChange={(e) => setRmService(e.target.value as '' | 'CRL1' | 'CRL2' | 'TRM')}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                     >
+                      <option value="">— No service (manual postage) —</option>
                       <option value="CRL1">2nd Class (CRL1)</option>
                       <option value="CRL2">1st Class (CRL2)</option>
                       <option value="TRM">Tracked 24 (TRM)</option>
@@ -1250,11 +1251,9 @@ export default function OrdersTab() {
                           />
                         </div>
                       )}
-                      {!rmResult.trackingNumber && (
-                        <p className="text-[#9cb8d9] text-xs">
-                          Order created in Click & Drop. Generate the label there to obtain a tracking number.
-                        </p>
-                      )}
+                      <p className="text-[#9cb8d9] text-xs">
+                        Order created. Print label at parcel.royalmail.com.
+                      </p>
                     </div>
                   )}
 
