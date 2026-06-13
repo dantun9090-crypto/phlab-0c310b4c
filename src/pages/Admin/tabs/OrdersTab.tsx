@@ -528,9 +528,9 @@ export default function OrdersTab() {
           countryCode: 'GB',
           serviceCode: rmService,
           weightGrams: Number(rmWeight) || 100,
-          subtotal: Number((selected as any).subtotal ?? selected.totalPrice ?? 0),
+          subtotal: Number((selected as any).subtotal ?? selected.totalAmount ?? 0),
           shippingCostCharged: Number((selected as any).shippingCost ?? 0),
-          total: Number(selected.totalPrice ?? 0),
+          total: Number((selected as any).total ?? selected.totalAmount ?? 0),
         }),
       });
       const body = await res.json().catch(() => ({}));
