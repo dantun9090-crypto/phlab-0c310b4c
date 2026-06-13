@@ -522,20 +522,24 @@ export default function OrdersTab() {
         headers: { 'content-type': 'application/json', 'x-phlabs-auth': workerToken },
         body: JSON.stringify({
           orderId: selected.id,
-          firstName, lastName, addressLine1, addressLine2, city,
+          firstName, lastName, addressLine1, addressLine2,
           postcode, email,
-          service: rmService,
+          countryCode: 'GB',
+          serviceCode: rmService,
           weightGrams: Number(rmWeight) || 100,
         }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(body?.error || `Worker returned ${res.status}`);
+        const errMsg = typeof body?.error === 'string'
+          ? body.error
+          : body?.error ? JSON.stringify(body.error) : `Worker returned ${res.status}`;
+        throw new Error(errMsg);
       }
-      const orderIdentifier = String(body.orderIdentifier || '').trim();
-      const orderReference = body.orderReference ? String(body.orderReference) : selected.id;
+      const orderIdentifier = String(body.orderId || '').trim();
+      const orderReference = selected.id;
       const trackingNumber = body.trackingNumber ? String(body.trackingNumber).trim() : null;
-      if (!orderIdentifier) throw new Error('Worker did not return an orderIdentifier');
+      if (!orderIdentifier) throw new Error('Worker did not return an orderId');
 
       // Save to Firestore
       const updatePayload: Record<string, unknown> = {
