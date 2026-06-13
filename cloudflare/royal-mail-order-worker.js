@@ -91,28 +91,27 @@ export default {
       if (phoneNumber) recipient.phoneNumber = phoneNumber;
       if (emailAddress) recipient.emailAddress = emailAddress;
 
-      const payload = {
-        items: [
+      const serviceCode = clean(order.serviceCode, 10);
+      const item = {
+        orderReference: clean(order.orderId, 40),
+        recipient,
+        packages: [
           {
-            orderReference: clean(order.orderId, 40),
-            recipient,
-            packages: [
-              {
-                weightInGrams,
-                packageFormatIdentifier: clean(order.packageFormat || 'smallParcel', 50)
-              }
-            ],
-            orderDate: nowIso,
-            subtotal,
-            shippingCostCharged,
-            total,
-            currencyCode: 'GBP',
-            postageDetails: {
-              serviceCode: clean(order.serviceCode || 'CRL1', 10)
-            }
+            weightInGrams,
+            packageFormatIdentifier: clean(order.packageFormat || 'smallParcel', 50)
           }
-        ]
+        ],
+        orderDate: nowIso,
+        subtotal,
+        shippingCostCharged,
+        total,
+        currencyCode: 'GBP'
       };
+      if (serviceCode) {
+        item.postageDetails = { serviceCode };
+      }
+
+      const payload = { orders: [item] };
 
 
 
