@@ -401,6 +401,7 @@ export default {
     // 6. Normal proxy → origin. We pass `cf.cacheEverything` only for safe
     //    public HTML routes. XML feeds must stay uncached so Merchant Center
     //    and sitemap crawlers always see fresh backend data.
+    const normalProxyVia = `normal-proxy;bot=${isBot ? 1 : 0};tok=${token ? 1 : 0};loop=${isLoop ? 1 : 0};gb=${isGooglebot ? 1 : 0}`;
     const isXmlFeed = XML_FEED_PATHS.has(url.pathname);
     // Home page is stable enough to cache for 1h at the edge (banner + product
     // grid only change on admin writes, which already trigger purges).
