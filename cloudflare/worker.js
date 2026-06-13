@@ -453,6 +453,7 @@ export default {
         return await serveStaleOrError(request);
       }
 
+      h.set("x-phl-via", normalProxyVia);
       const out = new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
       return applySecurityHeaders(stripLovableInjectedScripts(out), url);
     } catch (_) {
