@@ -491,6 +491,79 @@ export default function OrdersTab() {
     }
   };
 
+  const handleGenerateRoyalMailLabel = async () => {
+    if (!selected) return;
+    setRmError('');
+    setRmResult(null);
+    const workerUrl = (import.meta as any).env?.VITE_ROYAL_MAIL_WORKER_URL as string | undefined;
+    const workerToken = (import.meta as any).env?.VITE_ROYAL_MAIL_WORKER_TOKEN as string | undefined;
+    if (!workerUrl || !workerToken) {
+      setRmError('Royal Mail worker is not configured (missing VITE_ROYAL_MAIL_WORKER_URL / TOKEN).');
+      return;
+    }
+    const c: any = (selected as any).customer || {};
+    const firstName = c.firstName || (selected as any).shippingFirstName || '';
+    const lastName = c.lastName || (selected as any).shippingLastName || '';
+    const addressLine1 = c.address || (selected as any).addressLine1 || '';
+    const addressLine2 = c.city || (selected as any).addressLine2 || '';
+    const postcode = (c.postcode || (selected as any).postcode || '').toUpperCase();
+    const email = c.email || selected.userEmail || '';
+    if (!firstName || !lastName || !addressLine1 || !postcode || !email) {
+      setRmError('Order is missing required address fields (name, addressLine1, postcode, email).');
+      return;
+    }
+    setRmLoading(true);
+    try {
+      const res = await fetch(workerUrl, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-phlabs-auth': workerToken },
+        body: JSON.stringify({
+          orderId: selected.id,
+          firstName, lastName, addressLine1, addressLine2,
+          postcode, email,
+          service: rmService,
+          weightGrams: Number(rmWeight) || 100,
+        }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(body?.error || `Worker returned ${res.status}`);
+      }
+      const trackingNumber = String(body.trackingNumber || '').trim();
+      const labelUrl = body.labelUrl ? String(body.labelUrl) : null;
+      if (!trackingNumber) throw new Error('Worker did not return a tracking number');
+
+      // Save to Firestore
+      const updatePayload: Record<string, unknown> = {
+        royalMailTracking: trackingNumber,
+        royalMailService: rmService,
+        royalMailLabelUrl: labelUrl,
+        royalMailGeneratedAt: Timestamp.now(),
+        trackingNumber,
+        courier: 'Royal Mail',
+      };
+      await updateDoc(doc(db, 'orders', selected.id), updatePayload);
+      await logAdminAction({
+        action: 'order.dispatch',
+        target: `orders/${selected.id}`,
+        meta: { royalMail: { service: rmService, trackingNumber, weightGrams: Number(rmWeight) || 100 } },
+      });
+
+      setRmResult({ trackingNumber, labelUrl });
+      setTrackingInput(trackingNumber);
+      setCourierInput('Royal Mail');
+      setOrders(prev => prev.map(o => o.id === selected.id
+        ? { ...o, trackingNumber, courier: 'Royal Mail' } as Order
+        : o));
+      setSelected(prev => prev ? { ...prev, trackingNumber, courier: 'Royal Mail' } as Order : prev);
+    } catch (e: any) {
+      console.error('[royal-mail] generate failed', e);
+      setRmError(e?.message || 'Failed to generate label.');
+    } finally {
+      setRmLoading(false);
+    }
+  };
+
   const copyToClipboard = (text: string, orderId: string) => {
     navigator.clipboard.writeText(text);
     setCopiedTrackingId(orderId);
