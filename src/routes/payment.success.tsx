@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { auth, onAuthStateChanged } from "@/lib/firebase";
 import { getOrderPaymentStatus } from "@/lib/fena.functions";
 import { Loader, CheckCircle2, AlertCircle } from "lucide-react";
+import SourceSurveyCard from "@/components/SourceSurveyCard";
 
 export const Route = createFileRoute("/payment/success")({
   head: () => ({
@@ -134,6 +135,9 @@ function PaymentSuccessPage() {
               >
                 View my orders
               </a>
+              {reference && /^PHP-/i.test(reference) && (
+                <SourceSurveyCard orderId={reference} />
+              )}
             </>
           )}
           {phase === "pending" && (
