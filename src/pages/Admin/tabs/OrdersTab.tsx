@@ -1165,6 +1165,86 @@ export default function OrdersTab() {
                   </div>
                 </div>
 
+                {/* Royal Mail Label */}
+                <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 mb-4">
+                  <p className="text-emerald-300 text-xs font-medium uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                    <Package className="w-3.5 h-3.5" /> Royal Mail Label
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <select
+                      value={rmService}
+                      onChange={(e) => setRmService(e.target.value as 'CRL1' | 'CRL2' | 'TRM')}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    >
+                      <option value="CRL1">2nd Class (CRL1)</option>
+                      <option value="CRL2">1st Class (CRL2)</option>
+                      <option value="TRM">Tracked 24 (TRM)</option>
+                    </select>
+                    <input
+                      type="number"
+                      min={1}
+                      max={2000}
+                      value={rmWeight}
+                      onChange={(e) => setRmWeight(parseInt(e.target.value, 10) || 0)}
+                      placeholder="Weight (g)"
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    />
+                  </div>
+
+                  <button
+                    onClick={handleGenerateRoyalMailLabel}
+                    disabled={rmLoading}
+                    className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    {rmLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
+                    {rmLoading ? 'Generating…' : 'Generate Royal Mail Label'}
+                  </button>
+
+                  {rmResult && (
+                    <div className="mt-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                      <p className="text-xs text-[#9cb8d9] mb-1">Tracking number</p>
+                      <div className="flex items-center gap-2">
+                        <input
+                          readOnly
+                          value={rmResult.trackingNumber}
+                          className="flex-1 px-2 py-1.5 bg-white border border-gray-300 rounded text-gray-900 text-sm font-mono"
+                          onFocus={(e) => e.currentTarget.select()}
+                        />
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(rmResult.trackingNumber);
+                            setRmCopied(true);
+                            setTimeout(() => setRmCopied(false), 2000);
+                          }}
+                          className="p-2 bg-emerald-600 hover:bg-emerald-500 rounded text-white"
+                          title="Copy"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      {rmCopied && <p className="mt-1 text-emerald-300 text-xs">Copied!</p>}
+                      {rmResult.labelUrl && (
+                        <a
+                          href={rmResult.labelUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 text-emerald-300 hover:text-emerald-200 text-xs font-medium"
+                        >
+                          <ExternalLink className="w-3 h-3" /> Open label PDF
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {rmError && (
+                    <p className="mt-2 text-red-400 text-xs" role="alert">{rmError}</p>
+                  )}
+                  <p className="mt-2 text-[#2a4a7a] text-xs">
+                    Calls the secure worker — the Royal Mail API key is never exposed to the browser. Saves tracking to the order and prefills the Dispatch form below.
+                  </p>
+                </div>
+
                 {/* Dispatch / Tracking Section */}
                 <div className="bg-blue-500/5 border border-blue-500/20 rounded-xl p-4 mb-4">
                   <p className="text-blue-300 text-xs font-medium uppercase tracking-wide mb-3 flex items-center gap-1.5">
