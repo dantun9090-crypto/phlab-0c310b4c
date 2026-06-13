@@ -217,12 +217,12 @@ export default function OrdersTab() {
   const [trackingError, setTrackingError] = useState('');
   const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null);
 
-  // Royal Mail label state
+  // Royal Mail order state
   const [rmService, setRmService] = useState<'CRL1' | 'CRL2' | 'TRM'>('CRL1');
   const [rmWeight, setRmWeight] = useState<number>(100);
   const [rmLoading, setRmLoading] = useState(false);
   const [rmError, setRmError] = useState('');
-  const [rmResult, setRmResult] = useState<{ trackingNumber: string; labelUrl?: string | null } | null>(null);
+  const [rmResult, setRmResult] = useState<{ orderIdentifier: string; orderReference?: string; trackingNumber?: string | null } | null>(null);
   const [rmCopied, setRmCopied] = useState(false);
 
   // Bank transfer payment state
@@ -243,13 +243,15 @@ export default function OrdersTab() {
     setTrackingError('');
     setCopiedTrackingId(null);
     // Royal Mail fields
-    const existingRm = (selected as any)?.royalMailTracking || null;
-    const existingRmUrl = (selected as any)?.royalMailLabelUrl || null;
+    const existingRmOrderId = (selected as any)?.royalMailOrderId || null;
+    const existingRmTracking = (selected as any)?.royalMailTracking || null;
     setRmService(((selected as any)?.royalMailService as 'CRL1' | 'CRL2' | 'TRM') || 'CRL1');
     setRmWeight(100);
     setRmError('');
     setRmCopied(false);
-    setRmResult(existingRm ? { trackingNumber: existingRm, labelUrl: existingRmUrl } : null);
+    setRmResult(existingRmOrderId
+      ? { orderIdentifier: existingRmOrderId, orderReference: selected?.id, trackingNumber: existingRmTracking }
+      : null);
     // Bank transfer fields
     setTransferRefInput((selected as any)?.transferReference || '');
     setPaymentStatusInput((selected as any)?.paymentStatus || 'pending_bank_transfer');
@@ -491,7 +493,7 @@ export default function OrdersTab() {
     }
   };
 
-  const handleGenerateRoyalMailLabel = async () => {
+  const handleCreateRoyalMailOrder = async () => {
     if (!selected) return;
     setRmError('');
     setRmResult(null);
@@ -505,7 +507,8 @@ export default function OrdersTab() {
     const firstName = c.firstName || (selected as any).shippingFirstName || '';
     const lastName = c.lastName || (selected as any).shippingLastName || '';
     const addressLine1 = c.address || (selected as any).addressLine1 || '';
-    const addressLine2 = c.city || (selected as any).addressLine2 || '';
+    const addressLine2 = (selected as any).addressLine2 || '';
+    const city = c.city || (selected as any).city || '';
     const postcode = (c.postcode || (selected as any).postcode || '').toUpperCase();
     const email = c.email || selected.userEmail || '';
     if (!firstName || !lastName || !addressLine1 || !postcode || !email) {
@@ -519,7 +522,7 @@ export default function OrdersTab() {
         headers: { 'content-type': 'application/json', 'x-phlabs-auth': workerToken },
         body: JSON.stringify({
           orderId: selected.id,
-          firstName, lastName, addressLine1, addressLine2,
+          firstName, lastName, addressLine1, addressLine2, city,
           postcode, email,
           service: rmService,
           weightGrams: Number(rmWeight) || 100,
@@ -529,36 +532,37 @@ export default function OrdersTab() {
       if (!res.ok) {
         throw new Error(body?.error || `Worker returned ${res.status}`);
       }
-      const trackingNumber = String(body.trackingNumber || '').trim();
-      const labelUrl = body.labelUrl ? String(body.labelUrl) : null;
-      if (!trackingNumber) throw new Error('Worker did not return a tracking number');
+      const orderIdentifier = String(body.orderIdentifier || '').trim();
+      const orderReference = body.orderReference ? String(body.orderReference) : selected.id;
+      const trackingNumber = body.trackingNumber ? String(body.trackingNumber).trim() : null;
+      if (!orderIdentifier) throw new Error('Worker did not return an orderIdentifier');
 
       // Save to Firestore
       const updatePayload: Record<string, unknown> = {
-        royalMailTracking: trackingNumber,
+        royalMailOrderId: orderIdentifier,
         royalMailService: rmService,
-        royalMailLabelUrl: labelUrl,
-        royalMailGeneratedAt: Timestamp.now(),
-        trackingNumber,
+        royalMailTracking: trackingNumber,
+        royalMailCreatedAt: Timestamp.now(),
         courier: 'Royal Mail',
       };
+      if (trackingNumber) updatePayload.trackingNumber = trackingNumber;
       await updateDoc(doc(db, 'orders', selected.id), updatePayload);
       await logAdminAction({
-        action: 'order.dispatch',
+        action: 'order.royal_mail_create',
         target: `orders/${selected.id}`,
-        meta: { royalMail: { service: rmService, trackingNumber, weightGrams: Number(rmWeight) || 100 } },
+        meta: { service: rmService, royalMailOrderId: orderIdentifier, weightGrams: Number(rmWeight) || 100 },
       });
 
-      setRmResult({ trackingNumber, labelUrl });
-      setTrackingInput(trackingNumber);
+      setRmResult({ orderIdentifier, orderReference, trackingNumber });
+      if (trackingNumber) setTrackingInput(trackingNumber);
       setCourierInput('Royal Mail');
       setOrders(prev => prev.map(o => o.id === selected.id
-        ? { ...o, trackingNumber, courier: 'Royal Mail' } as Order
+        ? { ...o, ...(trackingNumber ? { trackingNumber } : {}), courier: 'Royal Mail' } as Order
         : o));
-      setSelected(prev => prev ? { ...prev, trackingNumber, courier: 'Royal Mail' } as Order : prev);
+      setSelected(prev => prev ? { ...prev, ...(trackingNumber ? { trackingNumber } : {}), courier: 'Royal Mail' } as Order : prev);
     } catch (e: any) {
-      console.error('[royal-mail] generate failed', e);
-      setRmError(e?.message || 'Failed to generate label.');
+      console.error('[royal-mail] create order failed', e);
+      setRmError(e?.message || 'Failed to create Royal Mail order.');
     } finally {
       setRmLoading(false);
     }
@@ -1165,10 +1169,10 @@ export default function OrdersTab() {
                   </div>
                 </div>
 
-                {/* Royal Mail Label */}
+                {/* Royal Mail Order */}
                 <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 mb-4">
                   <p className="text-emerald-300 text-xs font-medium uppercase tracking-wide mb-3 flex items-center gap-1.5">
-                    <Package className="w-3.5 h-3.5" /> Royal Mail Label
+                    <Package className="w-3.5 h-3.5" /> Create Royal Mail Order
                   </p>
 
                   <div className="grid grid-cols-2 gap-2 mb-3">
@@ -1193,46 +1197,54 @@ export default function OrdersTab() {
                   </div>
 
                   <button
-                    onClick={handleGenerateRoyalMailLabel}
+                    onClick={handleCreateRoyalMailOrder}
                     disabled={rmLoading}
                     className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
                   >
                     {rmLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Package className="w-3.5 h-3.5" />}
-                    {rmLoading ? 'Generating…' : 'Generate Royal Mail Label'}
+                    {rmLoading ? 'Creating…' : 'Create Royal Mail Order'}
                   </button>
 
                   {rmResult && (
-                    <div className="mt-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
-                      <p className="text-xs text-[#9cb8d9] mb-1">Tracking number</p>
-                      <div className="flex items-center gap-2">
-                        <input
-                          readOnly
-                          value={rmResult.trackingNumber}
-                          className="flex-1 px-2 py-1.5 bg-white border border-gray-300 rounded text-gray-900 text-sm font-mono"
-                          onFocus={(e) => e.currentTarget.select()}
-                        />
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(rmResult.trackingNumber);
-                            setRmCopied(true);
-                            setTimeout(() => setRmCopied(false), 2000);
-                          }}
-                          className="p-2 bg-emerald-600 hover:bg-emerald-500 rounded text-white"
-                          title="Copy"
-                        >
-                          <Copy className="w-3.5 h-3.5" />
-                        </button>
+                    <div className="mt-3 p-2.5 bg-emerald-500/10 rounded-lg border border-emerald-500/20 space-y-2">
+                      <div>
+                        <p className="text-xs text-[#9cb8d9] mb-1">Royal Mail order ID</p>
+                        <div className="flex items-center gap-2">
+                          <input
+                            readOnly
+                            value={rmResult.orderIdentifier}
+                            className="flex-1 px-2 py-1.5 bg-white border border-gray-300 rounded text-gray-900 text-sm font-mono"
+                            onFocus={(e) => e.currentTarget.select()}
+                          />
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(rmResult.orderIdentifier);
+                              setRmCopied(true);
+                              setTimeout(() => setRmCopied(false), 2000);
+                            }}
+                            className="p-2 bg-emerald-600 hover:bg-emerald-500 rounded text-white"
+                            title="Copy"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        {rmCopied && <p className="mt-1 text-emerald-300 text-xs">Copied!</p>}
                       </div>
-                      {rmCopied && <p className="mt-1 text-emerald-300 text-xs">Copied!</p>}
-                      {rmResult.labelUrl && (
-                        <a
-                          href={rmResult.labelUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 inline-flex items-center gap-1 text-emerald-300 hover:text-emerald-200 text-xs font-medium"
-                        >
-                          <ExternalLink className="w-3 h-3" /> Open label PDF
-                        </a>
+                      {rmResult.trackingNumber && (
+                        <div>
+                          <p className="text-xs text-[#9cb8d9] mb-1">Tracking number</p>
+                          <input
+                            readOnly
+                            value={rmResult.trackingNumber}
+                            className="w-full px-2 py-1.5 bg-white border border-gray-300 rounded text-gray-900 text-sm font-mono"
+                            onFocus={(e) => e.currentTarget.select()}
+                          />
+                        </div>
+                      )}
+                      {!rmResult.trackingNumber && (
+                        <p className="text-[#9cb8d9] text-xs">
+                          Order created in Click & Drop. Generate the label there to obtain a tracking number.
+                        </p>
                       )}
                     </div>
                   )}
@@ -1241,7 +1253,7 @@ export default function OrdersTab() {
                     <p className="mt-2 text-red-400 text-xs" role="alert">{rmError}</p>
                   )}
                   <p className="mt-2 text-[#2a4a7a] text-xs">
-                    Calls the secure worker — the Royal Mail API key is never exposed to the browser. Saves tracking to the order and prefills the Dispatch form below.
+                    Calls the secure worker — the Royal Mail API key is never exposed to the browser. Creates the shipment in Click & Drop and prefills the Dispatch form below.
                   </p>
                 </div>
 
