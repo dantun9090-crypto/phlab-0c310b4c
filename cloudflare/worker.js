@@ -474,29 +474,34 @@ export default {
       }
 
       h.set("x-phl-via", normalProxyVia);
-      const out = new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
-      const finalRes = applySecurityHeaders(stripLovableInjectedScripts(out), url);
 
-      // 6b. Store HTML in edge cache so the NEXT request HITs. We strip
-      //     Set-Cookie (incl. __cf_bm) on the cached copy ONLY — the live
-      //     response to this visitor still carries the cookie unchanged.
-      if (htmlCacheable && cacheKey && finalRes.status === 200 &&
-          (finalRes.headers.get("content-type") || "").includes("text/html")) {
+      // 6b. Edge-cache HTML via Cache API so the NEXT visitor HITs at ~50ms.
+      //     HTMLRewriter/finalRes streams aren't reliably teeable, so we
+      //     buffer the upstream HTML into an ArrayBuffer once and build two
+      //     independent Responses from it: one for the cache, one for the
+      //     client (which still passes through HTMLRewriter + security
+      //     headers and keeps the visitor's Set-Cookie intact).
+      const isHtml = (h.get("content-type") || "").includes("text/html");
+      if (htmlCacheable && cacheKey && res.status === 200 && isHtml) {
         try {
-          const [a, b] = finalRes.body ? finalRes.body.tee() : [null, null];
-          const cacheHeaders = new Headers(finalRes.headers);
+          const buf = await res.arrayBuffer();
+          // Cached copy — strip per-visitor cookies, force public TTL.
+          const cacheHeaders = new Headers(h);
           cacheHeaders.delete("set-cookie");
+          cacheHeaders.delete("x-phl-via");
           cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);
-          const toCache = new Response(b, {
-            status: finalRes.status,
-            statusText: finalRes.statusText,
-            headers: cacheHeaders,
-          });
-          ctx.waitUntil(caches.default.put(cacheKey, toCache));
-          return new Response(a, { status: finalRes.status, statusText: finalRes.statusText, headers: finalRes.headers });
-        } catch (_) { /* fall through with original response */ }
+          cacheHeaders.set("x-phl-cached-at", new Date().toISOString());
+          ctx.waitUntil(
+            caches.default.put(cacheKey, new Response(buf, { status: 200, headers: cacheHeaders })),
+          );
+          // Live response — full headers (incl. cookies), HTMLRewriter applied.
+          const liveOut = new Response(buf, { status: res.status, statusText: res.statusText, headers: h });
+          return applySecurityHeaders(stripLovableInjectedScripts(liveOut), url);
+        } catch (_) { /* fall through to streaming path */ }
       }
-      return finalRes;
+
+      const out = new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
+      return applySecurityHeaders(stripLovableInjectedScripts(out), url);
     } catch (_) {
       return await serveStaleOrError(request);
     }
