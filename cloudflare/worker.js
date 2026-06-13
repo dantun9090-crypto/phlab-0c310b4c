@@ -489,6 +489,9 @@ export default {
           const cacheHeaders = new Headers(h);
           cacheHeaders.delete("set-cookie");
           cacheHeaders.delete("x-phl-via");
+          // Origin returns `vary: accept-encoding`; our cache lookup Request
+          // doesn't include that header, so Vary causes match() to miss.
+          cacheHeaders.delete("vary");
           cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);
           cacheHeaders.set("x-phl-cached-at", new Date().toISOString());
           ctx.waitUntil(
