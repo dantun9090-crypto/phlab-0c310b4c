@@ -218,7 +218,7 @@ export default function OrdersTab() {
   const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null);
 
   // Royal Mail order state
-  const [rmService, setRmService] = useState<'CRL1' | 'CRL2' | 'TRM'>('CRL1');
+  const [rmService, setRmService] = useState<'' | 'CRL1' | 'CRL2' | 'TRM'>('');
   const [rmWeight, setRmWeight] = useState<number>(100);
   const [rmLoading, setRmLoading] = useState(false);
   const [rmError, setRmError] = useState('');
