@@ -20,7 +20,7 @@ compatibility_date = "2025-09-24"
 workers_dev = true
 
 [vars]
-ALLOWED_ORIGINS = "https://phlabs.co.uk,https://www.phlabs.co.uk,https://phlab.lovable.app"
+ALLOWED_ORIGINS = "https://phlabs.co.uk,https://www.phlabs.co.uk"
 
 [observability]
 enabled = true
