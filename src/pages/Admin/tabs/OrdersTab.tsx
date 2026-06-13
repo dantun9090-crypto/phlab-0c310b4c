@@ -217,6 +217,14 @@ export default function OrdersTab() {
   const [trackingError, setTrackingError] = useState('');
   const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null);
 
+  // Royal Mail label state
+  const [rmService, setRmService] = useState<'CRL1' | 'CRL2' | 'TRM'>('CRL1');
+  const [rmWeight, setRmWeight] = useState<number>(100);
+  const [rmLoading, setRmLoading] = useState(false);
+  const [rmError, setRmError] = useState('');
+  const [rmResult, setRmResult] = useState<{ trackingNumber: string; labelUrl?: string | null } | null>(null);
+  const [rmCopied, setRmCopied] = useState(false);
+
   // Bank transfer payment state
   const [transferRefInput, setTransferRefInput] = useState('');
   const [paymentStatusInput, setPaymentStatusInput] = useState<'pending_bank_transfer' | 'paid' | 'cancelled'>('pending_bank_transfer');
@@ -234,6 +242,14 @@ export default function OrdersTab() {
     setTrackingSuccess('');
     setTrackingError('');
     setCopiedTrackingId(null);
+    // Royal Mail fields
+    const existingRm = (selected as any)?.royalMailTracking || null;
+    const existingRmUrl = (selected as any)?.royalMailLabelUrl || null;
+    setRmService(((selected as any)?.royalMailService as 'CRL1' | 'CRL2' | 'TRM') || 'CRL1');
+    setRmWeight(100);
+    setRmError('');
+    setRmCopied(false);
+    setRmResult(existingRm ? { trackingNumber: existingRm, labelUrl: existingRmUrl } : null);
     // Bank transfer fields
     setTransferRefInput((selected as any)?.transferReference || '');
     setPaymentStatusInput((selected as any)?.paymentStatus || 'pending_bank_transfer');
