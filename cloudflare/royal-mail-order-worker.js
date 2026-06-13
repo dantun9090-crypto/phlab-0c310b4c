@@ -61,28 +61,42 @@ export default {
       }
 
       const payload = {
-        orders: [
+        items: [
           {
             orderReference: order.orderId,
             recipient: {
-              addressLine1: order.addressLine1,
-              addressLine2: order.addressLine2 || '',
-              postCode: order.postcode,
-              countryCode: order.countryCode || 'GB',
-              firstName: order.firstName || '',
-              lastName: order.lastName || '',
-              email: order.email || ''
+              address: {
+                fullName: `${order.firstName || ''} ${order.lastName || ''}`.trim() || 'Customer',
+                companyName: '',
+                addressLine1: order.addressLine1,
+                addressLine2: order.addressLine2 || '',
+                addressLine3: '',
+                city: order.city || '',
+                county: '',
+                postcode: order.postcode,
+                countryCode: order.countryCode || 'GB'
+              },
+              phoneNumber: order.phone || '',
+              emailAddress: order.email || ''
             },
             packages: [
               {
                 weightInGrams: order.weightGrams || 100,
-                packageFormatIdentifier: 'Parcel'
+                packageFormatIdentifier: order.packageFormat || 'smallParcel'
               }
             ],
-            serviceCode: order.serviceCode || 'CRL1'
+            subtotal: 0,
+            shippingCostCharged: 0,
+            total: 0,
+            currencyCode: 'GBP',
+            postageDetails: {
+              sendNoEmail: false,
+              serviceCode: order.serviceCode || 'CRL1'
+            }
           }
         ]
       };
+
 
       const rmRes = await fetch('https://api.parcel.royalmail.com/api/v1/Orders', {
         method: 'POST',
