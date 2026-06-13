@@ -135,6 +135,9 @@ function PaymentSuccessPage() {
               >
                 View my orders
               </a>
+              {reference && /^PHP-/i.test(reference) && (
+                <SourceSurveyCard orderId={reference} />
+              )}
             </>
           )}
           {phase === "pending" && (
