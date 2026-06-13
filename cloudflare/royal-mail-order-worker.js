@@ -60,19 +60,17 @@ export default {
         });
       }
 
+      const nowIso = new Date().toISOString();
       const payload = {
         items: [
           {
-            orderReference: order.orderId,
+            orderReference: String(order.orderId).slice(0, 40),
             recipient: {
               address: {
                 fullName: `${order.firstName || ''} ${order.lastName || ''}`.trim() || 'Customer',
-                companyName: '',
                 addressLine1: order.addressLine1,
                 addressLine2: order.addressLine2 || '',
-                addressLine3: '',
-                city: order.city || '',
-                county: '',
+                city: order.city || order.postcode, // city is REQUIRED by RM
                 postcode: order.postcode,
                 countryCode: order.countryCode || 'GB'
               },
@@ -85,17 +83,18 @@ export default {
                 packageFormatIdentifier: order.packageFormat || 'smallParcel'
               }
             ],
-            subtotal: 0,
-            shippingCostCharged: 0,
-            total: 0,
+            orderDate: nowIso,
+            subtotal: Number(order.subtotal) || 0,
+            shippingCostCharged: Number(order.shippingCostCharged) || 0,
+            total: Number(order.total) || Number(order.subtotal) || 0,
             currencyCode: 'GBP',
             postageDetails: {
-              sendNoEmail: false,
               serviceCode: order.serviceCode || 'CRL1'
             }
           }
         ]
       };
+
 
 
       const rmRes = await fetch('https://api.parcel.royalmail.com/api/v1/Orders', {

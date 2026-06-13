@@ -523,10 +523,14 @@ export default function OrdersTab() {
         body: JSON.stringify({
           orderId: selected.id,
           firstName, lastName, addressLine1, addressLine2,
-          postcode, email,
+          city, postcode, email,
+          phone: (c.phone || (selected as any).phone || '') as string,
           countryCode: 'GB',
           serviceCode: rmService,
           weightGrams: Number(rmWeight) || 100,
+          subtotal: Number((selected as any).subtotal ?? selected.totalAmount ?? 0),
+          shippingCostCharged: Number((selected as any).shippingCost ?? 0),
+          total: Number((selected as any).total ?? selected.totalAmount ?? 0),
         }),
       });
       const body = await res.json().catch(() => ({}));
