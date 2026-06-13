@@ -407,10 +407,30 @@ export default {
     // grid only change on admin writes, which already trigger purges).
     // All other safe HTML routes stay at the 5-min default.
     const htmlTtl = url.pathname === "/" ? 3600 : 300;
-    const cacheOpts =
-      isGet && !isXmlFeed && isHtmlCacheable(url)
-        ? { cacheEverything: true, cacheTtl: htmlTtl }
-        : undefined;
+    const htmlCacheable = isGet && !isXmlFeed && isHtmlCacheable(url);
+    const cacheOpts = htmlCacheable
+      ? { cacheEverything: true, cacheTtl: htmlTtl }
+      : undefined;
+
+    // 6a. Cache API lookup for HTML pages. With a Worker bound to the route,
+    //     `cf.cacheEverything` only caches the inner subrequest — the *outer*
+    //     client response always says `cf-cache-status: DYNAMIC` unless we
+    //     explicitly hit caches.default. Use a normalized cache key (no
+    //     cookies, GET) so __cf_bm and per-visitor headers can't bust it.
+    let cacheKey = null;
+    if (htmlCacheable) {
+      cacheKey = new Request(normalizePublicUrl(url), { method: "GET" });
+      try {
+        const hit = await caches.default.match(cacheKey);
+        if (hit) {
+          const h = new Headers(hit.headers);
+          h.set("x-phl-via", "edge-cache-hit");
+          h.set("cf-cache-status", "HIT");
+          return new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers: h });
+        }
+      } catch (_) { /* cache miss / unsupported — fall through */ }
+    }
+
     try {
       const res = await proxyToOrigin(request, origin, cacheOpts);
       if (isServiceWorkerPath(url)) {
@@ -455,9 +475,31 @@ export default {
 
       h.set("x-phl-via", normalProxyVia);
       const out = new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
-      return applySecurityHeaders(stripLovableInjectedScripts(out), url);
+      const finalRes = applySecurityHeaders(stripLovableInjectedScripts(out), url);
+
+      // 6b. Store HTML in edge cache so the NEXT request HITs. We strip
+      //     Set-Cookie (incl. __cf_bm) on the cached copy ONLY — the live
+      //     response to this visitor still carries the cookie unchanged.
+      if (htmlCacheable && cacheKey && finalRes.status === 200 &&
+          (finalRes.headers.get("content-type") || "").includes("text/html")) {
+        try {
+          const [a, b] = finalRes.body ? finalRes.body.tee() : [null, null];
+          const cacheHeaders = new Headers(finalRes.headers);
+          cacheHeaders.delete("set-cookie");
+          cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);
+          const toCache = new Response(b, {
+            status: finalRes.status,
+            statusText: finalRes.statusText,
+            headers: cacheHeaders,
+          });
+          ctx.waitUntil(caches.default.put(cacheKey, toCache));
+          return new Response(a, { status: finalRes.status, statusText: finalRes.statusText, headers: finalRes.headers });
+        } catch (_) { /* fall through with original response */ }
+      }
+      return finalRes;
     } catch (_) {
       return await serveStaleOrError(request);
     }
   },
 };
+
