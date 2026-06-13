@@ -538,7 +538,8 @@ export default function OrdersTab() {
         const errMsg = typeof body?.error === 'string'
           ? body.error
           : body?.error ? JSON.stringify(body.error) : `Worker returned ${res.status}`;
-        throw new Error(errMsg);
+        const detailMsg = body?.details ? ` — ${JSON.stringify(body.details)}` : '';
+        throw new Error(`${errMsg}${detailMsg}`);
       }
       const orderIdentifier = String(body.orderId || '').trim();
       const orderReference = selected.id;
