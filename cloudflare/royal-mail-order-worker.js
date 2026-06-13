@@ -14,8 +14,8 @@
  *   - SHARED_SECRET        random string; must match VITE_ROYAL_MAIL_WORKER_TOKEN
  *
  * Request:  POST /  JSON body {
- *   orderId, firstName, lastName, addressLine1, addressLine2?, postcode,
- *   countryCode?, email?, serviceCode, weightGrams
+ *   orderId, firstName, lastName, addressLine1, addressLine2?, city, postcode,
+ *   countryCode?, email?, phone?, serviceCode, weightGrams, subtotal, shippingCostCharged, total
  * }
  * Header:  x-phlabs-auth: <SHARED_SECRET>
  *
@@ -61,35 +61,54 @@ export default {
       }
 
       const nowIso = new Date().toISOString();
+      const clean = (value, maxLength) => {
+        const text = String(value ?? '').replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim();
+        return maxLength ? text.slice(0, maxLength) : text;
+      };
+      const money = (value) => {
+        const n = Number(value);
+        return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : 0;
+      };
+      const weightInGrams = Math.min(30000, Math.max(1, Math.round(Number(order.weightGrams) || 100)));
+      const subtotal = money(order.subtotal);
+      const shippingCostCharged = money(order.shippingCostCharged);
+      const total = money(order.total || subtotal + shippingCostCharged);
+      const countryCode = clean(order.countryCode || 'GB', 3).toUpperCase() || 'GB';
+      const fullName = clean(`${order.firstName || ''} ${order.lastName || ''}`, 210) || 'Customer';
+      const address = {
+        fullName,
+        addressLine1: clean(order.addressLine1, 100),
+        city: clean(order.city || order.postcode, 100),
+        postcode: clean(order.postcode, 20).toUpperCase(),
+        countryCode
+      };
+      const addressLine2 = clean(order.addressLine2, 100);
+      if (addressLine2) address.addressLine2 = addressLine2;
+
+      const recipient = { address };
+      const phoneNumber = clean(order.phone, 25);
+      const emailAddress = clean(order.email, 254);
+      if (phoneNumber) recipient.phoneNumber = phoneNumber;
+      if (emailAddress) recipient.emailAddress = emailAddress;
+
       const payload = {
         items: [
           {
-            orderReference: String(order.orderId).slice(0, 40),
-            recipient: {
-              address: {
-                fullName: `${order.firstName || ''} ${order.lastName || ''}`.trim() || 'Customer',
-                addressLine1: order.addressLine1,
-                addressLine2: order.addressLine2 || '',
-                city: order.city || order.postcode, // city is REQUIRED by RM
-                postcode: order.postcode,
-                countryCode: order.countryCode || 'GB'
-              },
-              phoneNumber: order.phone || '',
-              emailAddress: order.email || ''
-            },
+            orderReference: clean(order.orderId, 40),
+            recipient,
             packages: [
               {
-                weightInGrams: order.weightGrams || 100,
-                packageFormatIdentifier: order.packageFormat || 'smallParcel'
+                weightInGrams,
+                packageFormatIdentifier: clean(order.packageFormat || 'smallParcel', 50)
               }
             ],
             orderDate: nowIso,
-            subtotal: Number(order.subtotal) || 0,
-            shippingCostCharged: Number(order.shippingCostCharged) || 0,
-            total: Number(order.total) || Number(order.subtotal) || 0,
+            subtotal,
+            shippingCostCharged,
+            total,
             currencyCode: 'GBP',
             postageDetails: {
-              serviceCode: order.serviceCode || 'CRL1'
+              serviceCode: clean(order.serviceCode || 'CRL1', 10)
             }
           }
         ]
@@ -97,7 +116,7 @@ export default {
 
 
 
-      const rmRes = await fetch('https://api.parcel.royalmail.com/api/v1/Orders', {
+      const rmRes = await fetch('https://api.parcel.royalmail.com/api/v1/orders', {
         method: 'POST',
         headers: {
           'Authorization': env.ROYAL_MAIL_API_KEY,
@@ -107,17 +126,36 @@ export default {
         body: JSON.stringify(payload)
       });
 
-      const rmData = await rmRes.json();
+      const rmText = await rmRes.text();
+      let rmData;
+      try {
+        rmData = rmText ? JSON.parse(rmText) : {};
+      } catch {
+        rmData = { message: rmText || 'Royal Mail returned a non-JSON response' };
+      }
 
       if (!rmRes.ok) {
-        return new Response(JSON.stringify({ error: rmData }), {
+        return new Response(JSON.stringify({
+          error: rmData?.message || rmData,
+          details: rmData?.details || rmData?.failedOrders || null
+        }), {
           status: rmRes.status,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
         });
       }
 
+      if ((rmData.errorsCount || 0) > 0 || !rmData.createdOrders?.length) {
+        return new Response(JSON.stringify({
+          error: 'Royal Mail rejected the order',
+          details: rmData.failedOrders || rmData
+        }), {
+          status: 422,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
+      }
+
       const createdOrder = rmData.createdOrders?.[0] || {};
-      const trackingNumber = createdOrder.trackingNumber || null;
+      const trackingNumber = createdOrder.trackingNumber || createdOrder.packages?.[0]?.trackingNumber || null;
 
       return new Response(JSON.stringify({
         success: true,
