@@ -27,6 +27,10 @@ void _clearClientCaches;
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      {/* React 19 hoists these meta tags into <head> during SSR so prerender.io
+          sees the 404 signal in the server-rendered HTML, not only after hydration. */}
+      <meta name="prerender-status-code" content="404" />
+      <meta name="robots" content="noindex, follow" />
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
@@ -45,6 +49,7 @@ function NotFoundComponent() {
     </div>
   );
 }
+
 
 // Stale-chunk detection, scoped SW/cache eviction, hard reload, and the
 // last-known-good lookup live in src/lib/recovery.ts so they can be unit

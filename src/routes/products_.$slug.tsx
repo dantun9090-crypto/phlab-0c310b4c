@@ -196,8 +196,9 @@ export const Route = createFileRoute("/products_/$slug")({
     };
   },
   component: ProductDetailRoute,
-  notFoundComponent: () => <LegacyMount />,
+  notFoundComponent: NotFoundLegacy,
   errorComponent: () => <LegacyMount />,
+
 });
 
 function ProductDetailRoute() {
@@ -234,3 +235,17 @@ function LegacyMount() {
   const { slug } = Route.useParams();
   return <LegacyApp initialPath={`/products/${slug}`} />;
 }
+
+function NotFoundLegacy() {
+  // React 19 hoists these meta tags into <head> during SSR so prerender.io
+  // sees a 404 signal for missing product slugs (loader throws notFound()
+  // before head() can run).
+  return (
+    <>
+      <meta name="prerender-status-code" content="404" />
+      <meta name="robots" content="noindex, follow" />
+      <LegacyMount />
+    </>
+  );
+}
+
