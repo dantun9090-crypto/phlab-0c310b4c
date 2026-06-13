@@ -340,13 +340,32 @@ export default {
 
     // 5. Bot detection → Prerender.io (GET only, non-static).
     const ua = request.headers.get("user-agent") || "";
-    const isBot = BOT_UA_RX.test(ua);
+    const uaLower = ua.toLowerCase();
+    // Explicit case-insensitive fast-path for Googlebot variants
+    // (Googlebot, Googlebot-Image, Storebot-Google, AdsBot-Google, …).
+    const isGooglebot = uaLower.includes("googlebot") || uaLower.includes("google-inspectiontool") || uaLower.includes("adsbot-google") || uaLower.includes("storebot-google");
+    const isBot = isGooglebot || BOT_UA_RX.test(ua);
     const isGet = request.method === "GET";
     const isStatic = STATIC_EXT_RX.test(url.pathname);
     const token = env && env.PRERENDER_TOKEN;
     const isLoop = request.headers.has(LOOP_HEADER);
 
+    // Safe debug log — boolean for token presence, never the value itself.
+    // Visible in `wrangler tail` / Cloudflare Logs without leaking secrets.
+    if (isBot && isGet && !isStatic) {
+      const branch = token && !isLoop && !PRERENDER_RENDERER_RX.test(ua) ? "prerender" : "normal-proxy";
+      console.log(JSON.stringify({
+        tag: "phlabs-prerender",
+        branch,
+        path: url.pathname,
+        tokenPresent: Boolean(token),
+        uaSample: ua.slice(0, 80),
+        isGooglebot,
+      }));
+    }
+
     if (isBot && isGet && !isStatic && token && !isLoop && !PRERENDER_RENDERER_RX.test(ua)) {
+
       let preStatus = "skipped";
       let preErr = "";
       try {
@@ -382,15 +401,36 @@ export default {
     // 6. Normal proxy → origin. We pass `cf.cacheEverything` only for safe
     //    public HTML routes. XML feeds must stay uncached so Merchant Center
     //    and sitemap crawlers always see fresh backend data.
+    const normalProxyVia = `normal-proxy;bot=${isBot ? 1 : 0};tok=${token ? 1 : 0};loop=${isLoop ? 1 : 0};gb=${isGooglebot ? 1 : 0}`;
     const isXmlFeed = XML_FEED_PATHS.has(url.pathname);
     // Home page is stable enough to cache for 1h at the edge (banner + product
     // grid only change on admin writes, which already trigger purges).
     // All other safe HTML routes stay at the 5-min default.
     const htmlTtl = url.pathname === "/" ? 3600 : 300;
-    const cacheOpts =
-      isGet && !isXmlFeed && isHtmlCacheable(url)
-        ? { cacheEverything: true, cacheTtl: htmlTtl }
-        : undefined;
+    const htmlCacheable = isGet && !isXmlFeed && isHtmlCacheable(url);
+    const cacheOpts = htmlCacheable
+      ? { cacheEverything: true, cacheTtl: htmlTtl }
+      : undefined;
+
+    // 6a. Cache API lookup for HTML pages. With a Worker bound to the route,
+    //     `cf.cacheEverything` only caches the inner subrequest — the *outer*
+    //     client response always says `cf-cache-status: DYNAMIC` unless we
+    //     explicitly hit caches.default. Use a normalized cache key (no
+    //     cookies, GET) so __cf_bm and per-visitor headers can't bust it.
+    let cacheKey = null;
+    if (htmlCacheable) {
+      cacheKey = new Request(normalizePublicUrl(url), { method: "GET" });
+      try {
+        const hit = await caches.default.match(cacheKey);
+        if (hit) {
+          const h = new Headers(hit.headers);
+          h.set("x-phl-via", "edge-cache-hit");
+          h.set("cf-cache-status", "HIT");
+          return new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers: h });
+        }
+      } catch (_) { /* cache miss / unsupported — fall through */ }
+    }
+
     try {
       const res = await proxyToOrigin(request, origin, cacheOpts);
       if (isServiceWorkerPath(url)) {
@@ -433,6 +473,36 @@ export default {
         return await serveStaleOrError(request);
       }
 
+      h.set("x-phl-via", normalProxyVia);
+
+      // 6b. Edge-cache HTML via Cache API so the NEXT visitor HITs at ~50ms.
+      //     HTMLRewriter/finalRes streams aren't reliably teeable, so we
+      //     buffer the upstream HTML into an ArrayBuffer once and build two
+      //     independent Responses from it: one for the cache, one for the
+      //     client (which still passes through HTMLRewriter + security
+      //     headers and keeps the visitor's Set-Cookie intact).
+      const isHtml = (h.get("content-type") || "").includes("text/html");
+      if (htmlCacheable && cacheKey && res.status === 200 && isHtml) {
+        try {
+          const buf = await res.arrayBuffer();
+          // Cached copy — strip per-visitor cookies, force public TTL.
+          const cacheHeaders = new Headers(h);
+          cacheHeaders.delete("set-cookie");
+          cacheHeaders.delete("x-phl-via");
+          // Origin returns `vary: accept-encoding`; our cache lookup Request
+          // doesn't include that header, so Vary causes match() to miss.
+          cacheHeaders.delete("vary");
+          cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);
+          cacheHeaders.set("x-phl-cached-at", new Date().toISOString());
+          ctx.waitUntil(
+            caches.default.put(cacheKey, new Response(buf, { status: 200, headers: cacheHeaders })),
+          );
+          // Live response — full headers (incl. cookies), HTMLRewriter applied.
+          const liveOut = new Response(buf, { status: res.status, statusText: res.statusText, headers: h });
+          return applySecurityHeaders(stripLovableInjectedScripts(liveOut), url);
+        } catch (_) { /* fall through to streaming path */ }
+      }
+
       const out = new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
       return applySecurityHeaders(stripLovableInjectedScripts(out), url);
     } catch (_) {
@@ -440,3 +510,4 @@ export default {
     }
   },
 };
+
