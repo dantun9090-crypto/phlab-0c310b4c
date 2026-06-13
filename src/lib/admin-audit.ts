@@ -11,6 +11,7 @@ export type AdminAuditAction =
   | 'customer.deactivate'
   | 'order.status.update'
   | 'order.dispatch'
+  | 'order.royal_mail_create'
   | 'order.refund'
   | 'order.delete'
   | 'product.update'

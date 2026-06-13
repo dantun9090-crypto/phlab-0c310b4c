@@ -1,24 +1,25 @@
 /**
- * Royal Mail Label Worker
+ * Royal Mail Order Worker
  * --------------------------------------------------------------
- * Deployed as a standalone Cloudflare Worker (NOT bound to phlabs.co.uk).
- * Receives an admin request from src/pages/Admin/tabs/OrdersTab.tsx,
- * authenticates it with a shared secret, then calls the Royal Mail
- * Click & Drop API server-side so the real ROYAL_MAIL_API_KEY never
- * ships in the browser bundle.
+ * Deployed at: https://royal-mail-order.dantun9090.workers.dev
+ * Standalone Cloudflare Worker (NOT bound to phlabs.co.uk).
  *
- * Required Worker secrets (configured in the Cloudflare dashboard or via
- * `wrangler secret put`):
+ * Receives an admin request from src/pages/Admin/tabs/OrdersTab.tsx,
+ * authenticates with a shared secret, then creates an order in the Royal
+ * Mail Click & Drop API. This worker only CREATES the order — it does
+ * not generate or fetch the label PDF. Label printing is done by an
+ * operator in Click & Drop or via a separate flow.
+ *
+ * Required Worker secrets (set via `wrangler secret put`):
  *   - ROYAL_MAIL_API_KEY   Click & Drop API token
  *   - SHARED_SECRET        random string; must match VITE_ROYAL_MAIL_WORKER_TOKEN
  *
  * Optional Worker var:
- *   - ALLOWED_ORIGINS      comma-separated list, defaults to phlabs.co.uk
- *                         + lovable preview origins
+ *   - ALLOWED_ORIGINS      comma-separated list (defaults below)
  *
- * Endpoint: POST /  (JSON body — see SCHEMA below)
- * Response: { trackingNumber, labelUrl? }  on success
- *           { error: string }              on failure (with proper status)
+ * Endpoint: POST /  (JSON body — see validate() below)
+ * Response: { orderIdentifier, orderReference, trackingNumber? }  on success
+ *           { error: string }                                     on failure
  */
 
 const SERVICE_CODES = new Set(['CRL1', 'CRL2', 'TRM']);
@@ -30,13 +31,14 @@ const DEFAULT_ALLOWED_ORIGINS = [
 
 function corsHeaders(origin, env) {
   const allowed = (env.ALLOWED_ORIGINS || DEFAULT_ALLOWED_ORIGINS.join(','))
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const allowOrigin =
-    origin && (allowed.includes(origin) || /\.lovable\.app$/.test(new URL(origin).hostname))
-      ? origin
-      : allowed[0];
+    .split(',').map((s) => s.trim()).filter(Boolean);
+  let allowOrigin = allowed[0];
+  if (origin) {
+    try {
+      const host = new URL(origin).hostname;
+      if (allowed.includes(origin) || /\.lovable\.app$/.test(host)) allowOrigin = origin;
+    } catch { /* ignore */ }
+  }
   return {
     'Access-Control-Allow-Origin': allowOrigin,
     'Vary': 'Origin',
@@ -57,7 +59,6 @@ function json(body, status, origin, env) {
   });
 }
 
-// Timing-safe string compare (constant-time-ish via XOR over equal-length input)
 function safeEqual(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
   if (a.length !== b.length) return false;
@@ -78,6 +79,7 @@ function validate(body) {
   const lastName = clampStr(body?.lastName, 80);
   const addressLine1 = clampStr(body?.addressLine1, 200);
   const addressLine2 = clampStr(body?.addressLine2, 200);
+  const city = clampStr(body?.city, 80);
   const postcode = clampStr(body?.postcode, 20).toUpperCase();
   const email = clampStr(body?.email, 200);
   const service = clampStr(body?.service, 10);
@@ -97,41 +99,34 @@ function validate(body) {
   return {
     ok: errors.length === 0,
     errors,
-    data: {
-      orderId, firstName, lastName, addressLine1, addressLine2,
-      postcode, email, service, weightGrams,
-    },
+    data: { orderId, firstName, lastName, addressLine1, addressLine2, city, postcode, email, service, weightGrams },
   };
 }
 
-// Map UI service code → Royal Mail Click & Drop serviceCode
 const RM_SERVICE_MAP = {
   CRL1: 'CRL1', // 2nd Class
   CRL2: 'CRL2', // 1st Class
   TRM:  'TRM',  // Tracked 24
 };
 
-async function createRoyalMailLabel(input, env) {
+async function createRoyalMailOrder(input, env) {
   const orderPayload = {
-    orderReference: input.orderId,
-    recipient: {
-      address: {
-        fullName: `${input.firstName} ${input.lastName}`.trim(),
-        addressLine1: input.addressLine1,
-        addressLine2: input.addressLine2 || undefined,
-        postcode: input.postcode,
-        country: 'GB',
+    items: [{
+      orderReference: input.orderId,
+      recipient: {
+        address: {
+          fullName: `${input.firstName} ${input.lastName}`.trim(),
+          addressLine1: input.addressLine1,
+          addressLine2: input.addressLine2 || undefined,
+          city: input.city || undefined,
+          postcode: input.postcode,
+          countryCode: 'GB',
+        },
+        emailAddress: input.email,
       },
-      emailAddress: input.email,
-    },
-    packages: [
-      { weightInGrams: input.weightGrams, packageFormatIdentifier: 'smallParcel' },
-    ],
-    shippingService: {
-      serviceCode: RM_SERVICE_MAP[input.service],
-      serviceRegisterCode: input.service === 'TRM' ? 'TPN' : undefined,
-    },
-    label: { includeLabelInResponse: true, includeReturnsLabel: false },
+      packages: [{ weightInGrams: input.weightGrams, packageFormatIdentifier: 'smallParcel' }],
+      shippingService: { serviceCode: RM_SERVICE_MAP[input.service] },
+    }],
   };
 
   const res = await fetch('https://api.parcel.royalmail.com/api/v1/orders', {
@@ -160,25 +155,25 @@ async function createRoyalMailLabel(input, env) {
     throw err;
   }
 
-  // Click & Drop returns either createdOrders[0] or a single object
-  const created = parsed?.createdOrders?.[0] || parsed;
+  const created = parsed?.createdOrders?.[0] || parsed?.orders?.[0] || parsed;
+  const orderIdentifier =
+    created?.orderIdentifier ||
+    created?.orderId ||
+    created?.id ||
+    null;
+  const orderReference = created?.orderReference || input.orderId;
   const trackingNumber =
     created?.trackingNumber ||
     created?.shipmentNumber ||
-    created?.label?.trackingNumber ||
-    null;
-  const labelUrl =
-    created?.label?.labelUrl ||
-    created?.labelUrl ||
     null;
 
-  if (!trackingNumber) {
-    const err = new Error('Royal Mail response missing trackingNumber');
+  if (!orderIdentifier) {
+    const err = new Error('Royal Mail response missing orderIdentifier');
     err.status = 502;
     throw err;
   }
 
-  return { trackingNumber, labelUrl };
+  return { orderIdentifier, orderReference, trackingNumber };
 }
 
 export default {
@@ -191,7 +186,6 @@ export default {
     if (request.method !== 'POST') {
       return json({ error: 'Method not allowed' }, 405, origin, env);
     }
-
     if (!env.ROYAL_MAIL_API_KEY || !env.SHARED_SECRET) {
       return json({ error: 'Worker not configured' }, 500, origin, env);
     }
@@ -209,7 +203,7 @@ export default {
     if (!ok) return json({ error: errors.join('; ') }, 400, origin, env);
 
     try {
-      const result = await createRoyalMailLabel(data, env);
+      const result = await createRoyalMailOrder(data, env);
       console.log(JSON.stringify({ orderId: data.orderId, status: 'ok' }));
       return json(result, 200, origin, env);
     } catch (e) {

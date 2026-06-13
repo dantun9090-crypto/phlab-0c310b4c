@@ -1,0 +1,26 @@
+# Wrangler config for the Royal Mail Order Worker.
+#
+# Already deployed at: https://royal-mail-order.dantun9090.workers.dev
+#
+# Redeploy (after editing royal-mail-order-worker.js):
+#   cd cloudflare
+#   wrangler deploy --config royal-mail-order-wrangler.toml
+#
+# Set secrets (one-time):
+#   wrangler secret put ROYAL_MAIL_API_KEY --config royal-mail-order-wrangler.toml
+#   wrangler secret put SHARED_SECRET     --config royal-mail-order-wrangler.toml
+#
+# This Worker is NOT bound to phlabs.co.uk. It lives on its own workers.dev
+# subdomain so it never collides with the phlabs-prerender Worker that fronts
+# the apex domain.
+
+name = "royal-mail-order"
+main = "royal-mail-order-worker.js"
+compatibility_date = "2025-09-24"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGINS = "https://phlabs.co.uk,https://www.phlabs.co.uk,https://phlab.lovable.app"
+
+[observability]
+enabled = true
