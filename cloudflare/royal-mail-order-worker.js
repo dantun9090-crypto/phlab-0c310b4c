@@ -123,7 +123,7 @@ export default {
       return new Response(JSON.stringify({
         success: true,
         trackingNumber: trackingNumber,
-        orderId: createdOrder.orderId || order.orderId,
+        orderId: createdOrder.orderIdentifier || createdOrder.orderId || order.orderId,
         message: 'Order created in Click & Drop. Print label from Royal Mail dashboard.'
       }), {
         headers: {
