@@ -340,13 +340,32 @@ export default {
 
     // 5. Bot detection → Prerender.io (GET only, non-static).
     const ua = request.headers.get("user-agent") || "";
-    const isBot = BOT_UA_RX.test(ua);
+    const uaLower = ua.toLowerCase();
+    // Explicit case-insensitive fast-path for Googlebot variants
+    // (Googlebot, Googlebot-Image, Storebot-Google, AdsBot-Google, …).
+    const isGooglebot = uaLower.includes("googlebot") || uaLower.includes("google-inspectiontool") || uaLower.includes("adsbot-google") || uaLower.includes("storebot-google");
+    const isBot = isGooglebot || BOT_UA_RX.test(ua);
     const isGet = request.method === "GET";
     const isStatic = STATIC_EXT_RX.test(url.pathname);
     const token = env && env.PRERENDER_TOKEN;
     const isLoop = request.headers.has(LOOP_HEADER);
 
+    // Safe debug log — boolean for token presence, never the value itself.
+    // Visible in `wrangler tail` / Cloudflare Logs without leaking secrets.
+    if (isBot && isGet && !isStatic) {
+      const branch = token && !isLoop && !PRERENDER_RENDERER_RX.test(ua) ? "prerender" : "normal-proxy";
+      console.log(JSON.stringify({
+        tag: "phlabs-prerender",
+        branch,
+        path: url.pathname,
+        tokenPresent: Boolean(token),
+        uaSample: ua.slice(0, 80),
+        isGooglebot,
+      }));
+    }
+
     if (isBot && isGet && !isStatic && token && !isLoop && !PRERENDER_RENDERER_RX.test(ua)) {
+
       let preStatus = "skipped";
       let preErr = "";
       try {
