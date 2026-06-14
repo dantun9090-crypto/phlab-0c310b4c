@@ -224,6 +224,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // og:site_name, og:locale, and twitter:card are sitewide identity
       // values that don't vary per route, so they stay above.
 
+      { title: "PH LABS - Research Chemicals & Laboratory Supplies UK" },
+      { property: "og:title", content: "PH LABS - Research Chemicals & Laboratory Supplies UK" },
+      { name: "twitter:title", content: "PH LABS - Research Chemicals & Laboratory Supplies UK" },
+      { name: "description", content: "Premium research chemicals and laboratory reference materials for scientific and analytical use. UK-based supplier with fast, discreet delivery." },
+      { property: "og:description", content: "Premium research chemicals and laboratory reference materials for scientific and analytical use. UK-based supplier with fast, discreet delivery." },
+      { name: "twitter:description", content: "Premium research chemicals and laboratory reference materials for scientific and analytical use. UK-based supplier with fast, discreet delivery." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/e2fa3332-67ff-4f9b-981a-b24364062057" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/e2fa3332-67ff-4f9b-981a-b24364062057" },
+      { property: "og:type", content: "website" },
     ],
     scripts: [
       {
