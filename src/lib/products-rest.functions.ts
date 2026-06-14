@@ -21,6 +21,7 @@ import { createServerFn } from '@tanstack/react-start';
 import {
   fetchAllProducts,
   fetchProductBySlug,
+  fetchProductById,
   type SeoProduct,
 } from './firestore-rest';
 
