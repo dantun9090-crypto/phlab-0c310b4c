@@ -224,15 +224,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // og:site_name, og:locale, and twitter:card are sitewide identity
       // values that don't vary per route, so they stay above.
 
-      { title: "PH LABS - Research Chemicals & Laboratory Supplies UK" },
-      { property: "og:title", content: "PH LABS - Research Chemicals & Laboratory Supplies UK" },
-      { name: "twitter:title", content: "PH LABS - Research Chemicals & Laboratory Supplies UK" },
-      { name: "description", content: "Premium research chemicals and laboratory reference materials for scientific and analytical use. UK-based supplier with fast, discreet delivery." },
-      { property: "og:description", content: "Premium research chemicals and laboratory reference materials for scientific and analytical use. UK-based supplier with fast, discreet delivery." },
-      { name: "twitter:description", content: "Premium research chemicals and laboratory reference materials for scientific and analytical use. UK-based supplier with fast, discreet delivery." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/b5cd6ce6-ed6f-465c-b5c5-7173a775f57c" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/b5cd6ce6-ed6f-465c-b5c5-7173a775f57c" },
-      { property: "og:type", content: "website" },
+      // title/description/og:title/og:description/og:image/og:type and
+      // twitter:title/description/image are set per-leaf-route only to avoid
+      // duplicate tags in the concatenated head. og:site_name, og:locale,
+      // and twitter:card stay above as sitewide identity defaults.
     ],
     scripts: [
       {
