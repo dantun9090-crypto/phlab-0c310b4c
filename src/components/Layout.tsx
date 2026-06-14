@@ -18,6 +18,7 @@ import { CookieConsent } from '@/components/CookieConsent';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import { getRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { migrateStoredCart } from '@/lib/cart-migration';
+import { initAnalytics, trackPageView } from '@/lib/analytics';
 
 import { Logo } from './Logo';
 import { UnderConstruction } from './UnderConstruction';
