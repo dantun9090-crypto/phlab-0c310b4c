@@ -389,6 +389,7 @@ export default function AdminPage() {
         case 'prerenderstatus': return <PrerenderStatusTab />;
         case 'cacherecache': return <CacheRecacheTab />;
         case 'gscmonitor': return <GSCMonitorTab />;
+        case 'urlmonitor': return <UrlMonitorTab />;
         case 'merchantfeed': return <MerchantFeedTab />;
         case 'bingfeed': return <BingFeedTab />;
         case 'securityaudit': return <SecurityAuditTab />;
