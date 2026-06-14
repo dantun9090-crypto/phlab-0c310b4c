@@ -27,6 +27,8 @@ Disallow: /*?gclid=
 Disallow: /*?session=
 Disallow: /*?sid=
 Disallow: /blog-single-page-layout
+Disallow: /modules-1-item/
+Disallow: /finances/
 Disallow: /real-estate-single-page-layout
 
 # Google Merchant / Shopping ads crawler — needs full product access
@@ -41,6 +43,8 @@ Disallow: /api/
 Disallow: /webhook/
 Disallow: /server-functions/
 Disallow: /lovable/
+Disallow: /modules-1-item/
+Disallow: /finances/
 
 # Mobile Shopping ads crawler
 User-agent: AdsBot-Google-Mobile
@@ -54,6 +58,8 @@ Disallow: /api/
 Disallow: /webhook/
 Disallow: /server-functions/
 Disallow: /lovable/
+Disallow: /modules-1-item/
+Disallow: /finances/
 
 # Google Images — allow indexing of product photos
 User-agent: Googlebot-Image
