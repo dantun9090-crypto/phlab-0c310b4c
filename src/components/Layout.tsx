@@ -85,6 +85,16 @@ export function Layout({ children }: LayoutProps) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Google Analytics 4 — load once on mount, then fire page_view on every SPA route change
+  useEffect(() => {
+    const id = (siteSettings.googleAnalyticsId as string | undefined)?.trim() || undefined;
+    initAnalytics(id);
+  }, []);
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location.pathname, location.search]);
+
+
   // Auth pages handle their own full-screen layout — no nav padding needed
   const isAuthPage = ['/login', '/register'].includes(location.pathname);
   // Admin also gets clean layout — no overlapping fixed bars
