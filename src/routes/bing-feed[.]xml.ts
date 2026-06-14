@@ -79,9 +79,11 @@ export const Route = createFileRoute("/bing-feed.xml")({
           .map((p) => {
             const link = `${BASE_URL}/products/${p.slug}`;
             const title = `${p.name} | For Research Use Only`;
+            // Bing/Microsoft Merchant flags "human consumption" the same
+            // way Google does — keep the copy neutral analytical-supply.
             const desc =
-              `Research chemical for laboratory and analytical use only. ` +
-              `Not for human consumption. ` +
+              `Research chemical for laboratory and analytical use. ` +
+              `Research-use only (RUO). ` +
               stripHtml(p.description || "");
             const description = desc.slice(0, 5000);
             const image = p.imageUrl
