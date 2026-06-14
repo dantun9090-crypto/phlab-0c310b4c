@@ -7,8 +7,11 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAllOrders, updateOrderStatus, Order, db, doc, updateDoc, addDoc, collection, Timestamp, deleteDoc, sendOrderStatusEmail } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { logAdminAction } from '@/lib/admin-audit';
 import { isFenaAutoPaid } from '@/lib/fena-filter';
+import { createRoyalMailOrder } from '@/lib/royal-mail.functions';
+
 
 import { buildDispatchEmail } from '@/templates/dispatchEmail';
 
@@ -497,12 +500,6 @@ export default function OrdersTab() {
     if (!selected) return;
     setRmError('');
     setRmResult(null);
-    const workerUrl = (import.meta as any).env?.VITE_ROYAL_MAIL_WORKER_URL as string | undefined;
-    const workerToken = (import.meta as any).env?.VITE_ROYAL_MAIL_WORKER_TOKEN as string | undefined;
-    if (!workerUrl || !workerToken) {
-      setRmError('Royal Mail worker is not configured (missing VITE_ROYAL_MAIL_WORKER_URL / TOKEN).');
-      return;
-    }
     const c: any = (selected as any).customer || {};
     const firstName = c.firstName || (selected as any).shippingFirstName || '';
     const lastName = c.lastName || (selected as any).shippingLastName || '';
@@ -517,10 +514,15 @@ export default function OrdersTab() {
     }
     setRmLoading(true);
     try {
-      const res = await fetch(workerUrl, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-phlabs-auth': workerToken },
-        body: JSON.stringify({
+      const idToken = (await auth.currentUser?.getIdToken()) ?? '';
+      if (!idToken) {
+        setRmError('You must be signed in as an admin to create Royal Mail orders.');
+        setRmLoading(false);
+        return;
+      }
+      const result = await createRoyalMailOrder({
+        data: {
+          idToken,
           orderId: selected.id,
           firstName, lastName, addressLine1, addressLine2,
           city, postcode, email,
@@ -531,20 +533,17 @@ export default function OrdersTab() {
           subtotal: Number((selected as any).subtotal ?? selected.totalAmount ?? 0),
           shippingCostCharged: Number((selected as any).shippingCost ?? 0),
           total: Number((selected as any).total ?? selected.totalAmount ?? 0),
-        }),
+        },
       });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const errMsg = typeof body?.error === 'string'
-          ? body.error
-          : body?.error ? JSON.stringify(body.error) : `Worker returned ${res.status}`;
-        const detailMsg = body?.details ? ` — ${JSON.stringify(body.details)}` : '';
-        throw new Error(`${errMsg}${detailMsg}`);
+      if (!result.ok) {
+        const detail = result.details ? ` — ${result.details}` : '';
+        throw new Error(`${result.error ?? 'Failed to create Royal Mail order.'}${detail}`);
       }
-      const orderIdentifier = String(body.orderId || '').trim();
+      const orderIdentifier = String(result.orderId || '').trim();
       const orderReference = selected.id;
-      const trackingNumber = body.trackingNumber ? String(body.trackingNumber).trim() : null;
+      const trackingNumber = result.trackingNumber ? String(result.trackingNumber).trim() : null;
       if (!orderIdentifier) throw new Error('Worker did not return an orderId');
+
 
       // Save to Firestore
       const updatePayload: Record<string, unknown> = {
