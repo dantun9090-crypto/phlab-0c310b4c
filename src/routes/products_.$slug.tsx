@@ -2,8 +2,10 @@ import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 import LegacyApp from "@/legacy/LegacyApp";
 import { fetchProductBySlugFn, type SeoProduct } from "@/lib/products-rest.functions";
 import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
+import { RESEARCH_CONTENT } from "@/lib/research-content";
 
 const OG_IMAGE_FALLBACK = `${SITE_URL}/og-image.jpg`;
+
 
 export const Route = createFileRoute("/products_/$slug")({
   loader: async ({ params }) => {
@@ -192,6 +194,23 @@ export const Route = createFileRoute("/products_/$slug")({
             ],
           }),
         },
+        // FAQPage JSON-LD — only when the visible ResearchContentBlock will
+        // render Q&As for this slug, so structured data mirrors on-page content.
+        ...(RESEARCH_CONTENT[params.slug]?.faqs?.length
+          ? [{
+              type: "application/ld+json" as const,
+              children: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                "@id": `${url}#faq`,
+                mainEntity: RESEARCH_CONTENT[params.slug]!.faqs.map((f) => ({
+                  "@type": "Question",
+                  name: f.q,
+                  acceptedAnswer: { "@type": "Answer", text: f.a },
+                })),
+              }),
+            }]
+          : []),
       ],
     };
   },

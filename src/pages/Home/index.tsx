@@ -256,26 +256,15 @@ export default function HomePage() {
 
   useEffect(() => {
     const injectSchemas = () => {
-      // NOTE: Organization & WebSite schemas are already emitted SSR-side by
-      // src/routes/__root.tsx (@graph). Re-injecting them here created
-      // duplicate @id entries which Schema validators flag as warnings. We
-      // only inject the FAQPage schema (page-specific, not in root).
-      // Remove any legacy duplicates left in the DOM from previous renders.
+      // NOTE: Organization, WebSite, and FAQPage schemas are all emitted
+      // SSR-side (root + this route's head()). Strip any legacy duplicates
+      // left in the DOM from older client-side injections so validators
+      // don't flag duplicate @id entries.
       document.getElementById('org-schema')?.remove();
       document.getElementById('site-schema')?.remove();
-
-      const faqSchema = {
-        '@context': 'https://schema.org',
-        '@type': 'FAQPage',
-        mainEntity: faqs.map(f => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
-      };
-      const faqScript = document.createElement('script');
-      faqScript.type = 'application/ld+json';
-      faqScript.id = 'faq-schema';
-      faqScript.textContent = JSON.stringify(faqSchema);
       document.getElementById('faq-schema')?.remove();
-      document.head.appendChild(faqScript);
     };
+
 
     if (typeof requestIdleCallback !== 'undefined') {
       requestIdleCallback(injectSchemas, { timeout: 2000 });
