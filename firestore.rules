@@ -131,6 +131,15 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ---------- URL monitor scans (append-only by server) ----------
+    // Written by /api/public/hooks/monitor-product-urls via firebase-admin
+    // (bypasses rules). Admins read the history in the URL Monitor tab.
+    // Clients never write.
+    match /url_monitor_scans/{id} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
     // ---------- auth events (append-only diagnostic log) ----------
     // Anyone (including unauthenticated visitors) may CREATE an auth event so
     // failed logins are still captured. The shape is locked down to prevent

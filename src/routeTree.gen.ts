@@ -25,6 +25,7 @@ import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-
 import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public/hooks/truelayer'
 import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/public/hooks/security-cleanup'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
+import { Route as ApiPublicHooksMonitorProductUrlsRouteImport } from './routes/api/public/hooks/monitor-product-urls'
 import { Route as ApiPublicHooksFenaProcessRetriesRouteImport } from './routes/api/public/hooks/fena-process-retries'
 import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hooks/fena'
 
@@ -113,6 +114,12 @@ const ApiPublicHooksPrerenderRecacheRoute =
     path: '/api/public/hooks/prerender-recache',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksMonitorProductUrlsRoute =
+  ApiPublicHooksMonitorProductUrlsRouteImport.update({
+    id: '/api/public/hooks/monitor-product-urls',
+    path: '/api/public/hooks/monitor-product-urls',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksFenaProcessRetriesRoute =
   ApiPublicHooksFenaProcessRetriesRouteImport.update({
     id: '/api/public/hooks/fena-process-retries',
@@ -141,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
+  '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
@@ -161,6 +169,7 @@ export interface FileRoutesByTo {
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
+  '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
@@ -182,6 +191,7 @@ export interface FileRoutesById {
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
+  '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/api/public/send-mail'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
+    | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/api/public/send-mail'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
+    | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
@@ -244,6 +256,7 @@ export interface FileRouteTypes {
     | '/api/public/send-mail'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
+    | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
@@ -265,6 +278,7 @@ export interface RootRouteChildren {
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
   ApiPublicHooksFenaRoute: typeof ApiPublicHooksFenaRoute
   ApiPublicHooksFenaProcessRetriesRoute: typeof ApiPublicHooksFenaProcessRetriesRoute
+  ApiPublicHooksMonitorProductUrlsRoute: typeof ApiPublicHooksMonitorProductUrlsRoute
   ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
   ApiPublicHooksSecurityCleanupRoute: typeof ApiPublicHooksSecurityCleanupRoute
   ApiPublicHooksTruelayerRoute: typeof ApiPublicHooksTruelayerRoute
@@ -384,6 +398,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksPrerenderRecacheRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/monitor-product-urls': {
+      id: '/api/public/hooks/monitor-product-urls'
+      path: '/api/public/hooks/monitor-product-urls'
+      fullPath: '/api/public/hooks/monitor-product-urls'
+      preLoaderRoute: typeof ApiPublicHooksMonitorProductUrlsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/fena-process-retries': {
       id: '/api/public/hooks/fena-process-retries'
       path: '/api/public/hooks/fena-process-retries'
@@ -417,6 +438,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
   ApiPublicHooksFenaRoute: ApiPublicHooksFenaRoute,
   ApiPublicHooksFenaProcessRetriesRoute: ApiPublicHooksFenaProcessRetriesRoute,
+  ApiPublicHooksMonitorProductUrlsRoute: ApiPublicHooksMonitorProductUrlsRoute,
   ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
   ApiPublicHooksSecurityCleanupRoute: ApiPublicHooksSecurityCleanupRoute,
   ApiPublicHooksTruelayerRoute: ApiPublicHooksTruelayerRoute,
@@ -424,13 +446,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
