@@ -36,7 +36,7 @@ export default function PrerenderStatusTab() {
   const runProbe = async (urls?: string[]) => {
     setLoading(true);
     try {
-      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const idToken = await getAdminIdToken();
       const res = await probe({ data: urls ? { urls, idToken } : { idToken } });
       setResults(res.results);
       setCheckedAt(res.checkedAt);
