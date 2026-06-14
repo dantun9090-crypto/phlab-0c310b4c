@@ -542,13 +542,14 @@ export default function OrdersTab() {
       const orderIdentifier = String(result.orderId || '').trim();
       const orderReference = selected.id;
       const trackingNumber = result.trackingNumber ? String(result.trackingNumber).trim() : null;
+      const serviceCodeUsed = result.serviceCodeUsed ?? '';
       if (!orderIdentifier) throw new Error('Worker did not return an orderId');
 
 
       // Save to Firestore
       const updatePayload: Record<string, unknown> = {
         royalMailOrderId: orderIdentifier,
-        royalMailService: rmService,
+        royalMailService: serviceCodeUsed,
         royalMailTracking: trackingNumber,
         royalMailCreatedAt: Timestamp.now(),
         courier: 'Royal Mail',
@@ -558,7 +559,7 @@ export default function OrdersTab() {
       await logAdminAction({
         action: 'order.royal_mail_create',
         target: `orders/${selected.id}`,
-        meta: { service: rmService, royalMailOrderId: orderIdentifier, weightGrams: Number(rmWeight) || 100 },
+        meta: { service: serviceCodeUsed, requestedService: rmService, royalMailOrderId: orderIdentifier, weightGrams: Number(rmWeight) || 100 },
       });
 
       setRmResult({ orderIdentifier, orderReference, trackingNumber });
