@@ -80,6 +80,7 @@ const navGroups = [
       { id: 'prerenderstatus', label: 'Prerender Status', icon: Activity },
       { id: 'cacherecache', label: 'Cache & Recache', icon: Cloud },
       { id: 'gscmonitor', label: 'GSC Monitor', icon: Search },
+      { id: 'urlmonitor', label: 'URL Monitor', icon: Activity },
       { id: 'semrush', label: 'Semrush', icon: TrendingUp },
     ],
   },
