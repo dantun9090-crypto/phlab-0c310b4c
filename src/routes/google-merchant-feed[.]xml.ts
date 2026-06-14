@@ -246,11 +246,6 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `      <g:price>4.99 ${CURRENCY}</g:price>`,
               `    </g:shipping>`,
               `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
-              `    <g:tax>`,
-              `      <g:country>GB</g:country>`,
-              `      <g:rate>0.00</g:rate>`,
-              `      <g:tax_ship>no</g:tax_ship>`,
-              `    </g:tax>`,
               ...highlights.map(
                 (h) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
               ),
