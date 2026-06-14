@@ -247,8 +247,17 @@ function TableOfContents({ sections, activeId }: { sections: Section[]; activeId
   );
 }
 
+// Legacy/external article slug aliases → canonical article slug.
+// Keeps old inbound links (and Google index entries) from soft-404'ing
+// against the Resources index.
+const ARTICLE_SLUG_ALIASES: Record<string, string> = {
+  'selank-nootropic-research': 'selank-anxiolytic-nootropic-peptide',
+};
+
 export default function ArticlePage() {
   const { slug } = useParams<{ slug: string }>();
+  const aliased = slug ? ARTICLE_SLUG_ALIASES[slug] : undefined;
+  if (aliased) return <Navigate to={`/resources/${aliased}`} replace />;
   const article = getArticle(slug ?? '');
   const related = getRelatedArticles(article?.relatedSlugs ?? []);
   const relatedProducts = ARTICLE_PRODUCT_MAP[article?.slug ?? ''] ?? [];
