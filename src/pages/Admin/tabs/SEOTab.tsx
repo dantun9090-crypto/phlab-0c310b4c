@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { recachePrerenderUrlsBulk } from '@/lib/prerender-status.functions';
 
 
+import { getAdminIdToken } from '@/lib/auth-ready';
 type SubTab = 'global' | 'pages' | 'products' | 'resources' | 'prerender';
 
 interface SEOData {
@@ -170,7 +171,7 @@ export default function SEOTab() {
     setRecaching(true);
     addLog('info', `Recaching ${urls.length} pages (${KEY_URLS.length} core + ${productSlugs.length} products)…`);
     try {
-      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const idToken = await getAdminIdToken();
       const res = await recacheBulk({ data: { urls, idToken } });
       pushRecacheResult({ kind: 'Desktop (all)', urls, ...res });
       if (res.ok) {
@@ -198,7 +199,7 @@ export default function SEOTab() {
     setRecaching(true);
     addLog('info', `Recaching ${urls.length} product pages only…`);
     try {
-      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const idToken = await getAdminIdToken();
       const res = await recacheBulk({ data: { urls, idToken } });
       pushRecacheResult({ kind: 'Products only', urls, ...res });
       if (res.ok) {
@@ -220,7 +221,7 @@ export default function SEOTab() {
     setRecaching(true);
     addLog('info', `Recaching ${urls.length} mobile pages…`);
     try {
-      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const idToken = await getAdminIdToken();
       const res = await recacheBulk({ data: { urls, adaptiveType: 'mobile', idToken } });
       pushRecacheResult({ kind: 'Mobile (all)', urls, ...res });
       if (res.ok) {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { auth } from '@/lib/firebase';
+import { getAdminIdToken } from '@/lib/auth-ready';
 import {
   listFenaWebhookEvents,
   listFenaWebhookEventsPaged,
@@ -59,7 +60,7 @@ export default function FenaTab() {
   const [statusLoading, setStatusLoading] = useState(false);
 
   async function getToken() {
-    const idToken = await auth.currentUser?.getIdToken();
+    const idToken = await getAdminIdToken();
     if (!idToken) throw new Error('Not signed in');
     return idToken;
   }

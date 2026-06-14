@@ -13,6 +13,7 @@ import {
 } from '@/lib/payment-gateways.functions';
 import type { PaymentGatewayConfig } from '@/lib/payments/types';
 
+import { getAdminIdToken } from '@/lib/auth-ready';
 type TestResult = { ok: boolean; durationMs: number; message: string; at: number };
 
 export default function PaymentsTab() {
@@ -24,7 +25,7 @@ export default function PaymentsTab() {
   const [editing, setEditing] = useState<PaymentGatewayConfig | null>(null);
 
   async function getToken() {
-    const t = await auth.currentUser?.getIdToken();
+    const t = await getAdminIdToken();
     if (!t) throw new Error('Not signed in');
     return t;
   }

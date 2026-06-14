@@ -15,6 +15,7 @@ import { createRoyalMailOrder } from '@/lib/royal-mail.functions';
 
 import { buildDispatchEmail } from '@/templates/dispatchEmail';
 
+import { getAdminIdToken } from '@/lib/auth-ready';
 // ── Payment status config for bank transfer orders ──
 const PAYMENT_STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   pending_bank_transfer: { label: 'Awaiting Payment', color: 'bg-amber-500/20 text-amber-400 border-amber-500/30', icon: Clock },
@@ -514,7 +515,7 @@ export default function OrdersTab() {
     }
     setRmLoading(true);
     try {
-      const idToken = (await auth.currentUser?.getIdToken()) ?? '';
+      const idToken = await getAdminIdToken();
       if (!idToken) {
         setRmError('You must be signed in as an admin to create Royal Mail orders.');
         setRmLoading(false);

@@ -9,8 +9,9 @@ import {
 } from '@/lib/shopify-admin.functions';
 import { auth } from '@/lib/firebase';
 
+import { getAdminIdToken } from '@/lib/auth-ready';
 async function getIdToken() {
-  const t = await auth.currentUser?.getIdToken();
+  const t = await getAdminIdToken();
   if (!t) throw new Error('Not signed in');
   return t;
 }

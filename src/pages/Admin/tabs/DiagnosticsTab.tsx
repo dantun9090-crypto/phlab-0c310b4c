@@ -4,6 +4,7 @@ import { db, collection, getDocs, addDoc, doc, deleteDoc, query, limit, Timestam
 import { Loader2, CheckCircle2, XCircle, Play, RefreshCw, Gauge, Bot } from 'lucide-react';
 import { probeEdgeHealth } from '@/lib/edge-health.functions';
 
+import { getAdminIdToken } from '@/lib/auth-ready';
 type Status = 'idle' | 'running' | 'ok' | 'fail';
 interface CheckResult { status: Status; message: string; }
 
@@ -124,7 +125,7 @@ function EdgeHealthCard() {
     setLoading(true);
     setError(null);
     try {
-      const idToken = (await auth.currentUser?.getIdToken()) ?? '';
+      const idToken = await getAdminIdToken();
       const res = await probe({ data: { idToken } });
       setData(res);
     } catch (e) {
