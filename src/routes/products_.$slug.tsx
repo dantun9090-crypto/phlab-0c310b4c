@@ -7,6 +7,7 @@ import {
 } from "@/lib/products-rest.functions";
 import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
 import { RESEARCH_CONTENT } from "@/lib/research-content";
+import { resolveSlugFromId } from "@/lib/product-id-slug-map";
 
 const OG_IMAGE_FALLBACK = `${SITE_URL}/og-image.jpg`;
 
@@ -36,8 +37,20 @@ export const Route = createFileRoute("/products_/$slug")({
       throw notFound();
     }
 
-    // 2) Otherwise treat as a Firestore document ID and 301-redirect to
-    //    the canonical slug URL so the address bar shows the pretty URL.
+    // 2) Otherwise treat as a Firestore document ID. Use the static backend
+    //    ID→slug map first (deterministic, no network) so the redirect is
+    //    instant and reliable. This guarantees we NEVER fall back to the
+    //    /products listing page for a known product ID.
+    const mappedSlug = resolveSlugFromId(raw);
+    if (mappedSlug) {
+      throw redirect({
+        to: "/products/$slug",
+        params: { slug: mappedSlug },
+        statusCode: 301,
+      });
+    }
+
+    // 3) Fallback: live Firestore lookup for IDs not yet in the static map.
     try {
       const product = await fetchProductByIdFn({ data: { id: raw } });
       if (product?.slug) {
