@@ -10,23 +10,16 @@ import Home from '@/pages/Home';
 import Products from '@/pages/Products';
 import ProductDetail from '@/pages/ProductDetail';
 import CategoryPage from '@/pages/CategoryPage';
-import SearchPage from '@/pages/Search';
-import StorageGuide from '@/pages/StorageGuide';
 import Contact from '@/pages/Contact';
 import About from '@/pages/About';
-import LandingPage from '@/pages/LandingPage';
 import QualityControl from '@/pages/QualityControl';
-import LabReports from '@/pages/LabReports';
 import Resources from '@/pages/Resources';
-import ArticlePage from '@/pages/Resources/ArticlePage';
-import Research from '@/pages/Research';
 import RefundPolicy from '@/pages/RefundPolicy';
 import ShippingPolicy from '@/pages/ShippingPolicy';
 import Terms from '@/pages/Terms';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
 import CookiePolicy from '@/pages/CookiePolicy';
 import NotFound from '@/pages/NotFound';
-import Install from '@/pages/Install';
 
 // Code-split: admin, checkout, payment, auth, account, VIP — not needed for
 // first paint of the public store. Saves ~250–300 KB from the main bundle.
@@ -37,6 +30,15 @@ const Account = lazy(() => import('@/pages/Account'));
 const Login = lazy(() => import('@/pages/Login'));
 const Register = lazy(() => import('@/pages/Register'));
 const VipStore = lazy(() => import('@/pages/VipStore'));
+// Code-split: low-traffic content routes. SearchPage and ArticlePage both
+// pull the full ~212 KB articles bundle — keep them out of every page load.
+const SearchPage = lazy(() => import('@/pages/Search'));
+const ArticlePage = lazy(() => import('@/pages/Resources/ArticlePage'));
+const LandingPage = lazy(() => import('@/pages/LandingPage'));
+const StorageGuide = lazy(() => import('@/pages/StorageGuide'));
+const LabReports = lazy(() => import('@/pages/LabReports'));
+const Research = lazy(() => import('@/pages/Research'));
+const Install = lazy(() => import('@/pages/Install'));
 
 // Minimal spinner shown while lazy chunks load
 function PageLoader() {
