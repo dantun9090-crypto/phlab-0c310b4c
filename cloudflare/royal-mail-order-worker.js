@@ -110,6 +110,7 @@ export default {
       if (serviceCode) {
         item.postageDetails = { serviceCode };
       }
+      let serviceCodeUsed = serviceCode || null;
 
       const payload = { items: [item] };
 
@@ -141,6 +142,7 @@ export default {
             && String(error?.fields?.[0]?.fieldName || '').toLowerCase() === 'postagedetails.servicecode'));
       if (unsupportedService && item.postageDetails?.serviceCode) {
         delete item.postageDetails;
+        serviceCodeUsed = null;
         rmRes = await sendToRoyalMail({ items: [item] });
         rmText = await rmRes.text();
         try {
@@ -177,6 +179,7 @@ export default {
         success: true,
         trackingNumber: trackingNumber,
         orderId: createdOrder.orderIdentifier || createdOrder.orderId || order.orderId,
+        serviceCodeUsed,
         message: 'Order created in Click & Drop. Print label from Royal Mail dashboard.'
       }), {
         headers: {
