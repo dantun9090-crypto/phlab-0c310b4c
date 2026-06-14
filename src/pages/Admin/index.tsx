@@ -5,8 +5,9 @@ import { auth, db, doc, getDoc, onAuthStateChanged, logoutUser } from '@/lib/fir
 import { checkAdminIpAllowed } from '@/lib/admin-ip-gate.functions';
 import { logSecurityEvent } from '@/lib/security-events';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Loader2, Menu, WifiOff, RefreshCw, Clock } from 'lucide-react';
+import { Shield, Loader2, Menu, WifiOff, RefreshCw, Clock, Command as CmdIcon, ExternalLink, LogOut, Cloud } from 'lucide-react';
 import AdminSidebar from './components/AdminSidebar';
+import CommandPalette, { type CommandItem } from './components/CommandPalette';
 import DashboardTab from './tabs/DashboardTab';
 import InventoryTab from './tabs/InventoryTab';
 import OrdersTab from './tabs/OrdersTab';
@@ -94,9 +95,39 @@ export default function AdminPage() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [idleWarningSec, setIdleWarningSec] = useState(0);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [recachePending, setRecachePending] = useState(false);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ⌘K / Ctrl+K opens the command palette
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Track recache-pending flag (set elsewhere via window event 'admin:save')
+  useEffect(() => {
+    const read = () => {
+      try { setRecachePending(localStorage.getItem('php_recache_pending') === '1'); } catch { /* noop */ }
+    };
+    read();
+    const onSave = () => { try { localStorage.setItem('php_recache_pending', '1'); } catch { /* noop */ } read(); };
+    const onStorage = (e: StorageEvent) => { if (e.key === 'php_recache_pending') read(); };
+    window.addEventListener('admin:save', onSave);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener('admin:save', onSave);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
 
   useEffect(() => {
     const update = () => setIsLargeScreen(window.innerWidth >= 1024);
