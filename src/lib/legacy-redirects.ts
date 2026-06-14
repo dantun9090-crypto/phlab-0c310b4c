@@ -146,7 +146,7 @@ const RULES: RedirectRule[] = [
   { type: "exact", from: "/products/selank", to: "/products" },
   { type: "exact", from: "/products/semax", to: "/products" },
   { type: "exact", from: "/products/semaglutide", to: "/products" },
-  { type: "exact", from: "/products/epithalon", to: "/products" },
+  // epithalon → handled below as 410 Gone (discontinued, no replacement product)
   { type: "exact", from: "/products/ss-31-elamipretide", to: "/products" },
   { type: "exact", from: "/products/ss-31", to: "/products" },
   { type: "exact", from: "/products/elamipretide", to: "/products" },
