@@ -248,7 +248,9 @@ function ProductDetailRoute() {
   return (
     <>
       <SeoProductBlock product={product} />
-      <LegacyMount />
+      {/* When opened via /products/{id}, the legacy app needs the SLUG
+          to look up and render the product — pass the resolved slug. */}
+      <LegacyApp initialPath={`/products/${product.slug}`} />
     </>
   );
 }
