@@ -23,10 +23,28 @@ declare global {
 
 const DEFAULT_MEASUREMENT_ID = 'G-5HM4YT7HDW';
 const STORAGE_KEY = 'php_cookie_consent';
+const DEBUG_FLAG_KEY = 'php_ga_debug';
 
 let loaded = false;
 let currentId: string | null = null;
 let lastTrackedPath: string | null = null;
+let debugMode = false;
+
+function isDebug(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (new URLSearchParams(window.location.search).get('ga_debug') === '1') {
+      localStorage.setItem(DEBUG_FLAG_KEY, '1');
+      return true;
+    }
+    return localStorage.getItem(DEBUG_FLAG_KEY) === '1';
+  } catch { return false; }
+}
+
+function log(...args: unknown[]) {
+  if (debugMode) console.log('%c[GA4]', 'color:#f9a825;font-weight:bold', ...args);
+}
+
 
 function isBot(): boolean {
   if (typeof navigator === 'undefined') return true;
@@ -87,12 +105,14 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
 
   currentId = id;
   loaded = true;
+  debugMode = isDebug();
 
   window.dataLayer = window.dataLayer || [];
   window.gtag = function (...args: unknown[]) { window.dataLayer!.push(args); };
 
   // GDPR Consent Mode v2 — defaults BEFORE any tag load
   const consent = readStoredConsent();
+  log('init', { id, debugMode, consent });
   gtag('consent', 'default', {
     ad_storage: consent.marketing ? 'granted' : 'denied',
     ad_user_data: consent.marketing ? 'granted' : 'denied',
@@ -102,6 +122,7 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
     security_storage: 'granted',
     wait_for_update: 500,
   });
+  log('consent default', consent);
 
   try {
     await injectScript(id);
@@ -116,6 +137,7 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
     anonymize_ip: true,
     allow_google_signals: consent.marketing,
     allow_ad_personalization_signals: consent.marketing,
+    debug_mode: debugMode, // surfaces in GA4 DebugView
   });
 
   // Fire initial page view
@@ -124,6 +146,7 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
   // Listen for consent changes from the cookie banner
   window.addEventListener('php:cookie-consent-changed', ((e: Event) => {
     const detail = (e as CustomEvent<{ analytics: boolean; marketing: boolean }>).detail || { analytics: false, marketing: false };
+    log('consent update', detail);
     gtag('consent', 'update', {
       analytics_storage: detail.analytics ? 'granted' : 'denied',
       ad_storage: detail.marketing ? 'granted' : 'denied',
@@ -137,18 +160,58 @@ export function trackPageView(path: string): void {
   if (!loaded || !currentId || typeof window === 'undefined' || !window.gtag) return;
   if (path === lastTrackedPath) return;
   lastTrackedPath = path;
+  log('page_view', path);
   window.gtag('event', 'page_view', {
     page_path: path,
     page_location: window.location.href,
     page_title: document.title,
     send_to: currentId,
+    debug_mode: debugMode,
   });
 }
 
 export function trackEvent(name: string, params?: Record<string, unknown>): void {
   if (!loaded || !currentId || typeof window === 'undefined' || !window.gtag) return;
-  window.gtag('event', name, { ...(params || {}), send_to: currentId });
+  log(name, params);
+  window.gtag('event', name, { ...(params || {}), send_to: currentId, debug_mode: debugMode });
 }
+
+// ============= GA4 Ecommerce helpers =============
+
+export type GaItem = {
+  item_id: string;
+  item_name: string;
+  item_variant?: string;
+  item_category?: string;
+  price?: number;
+  quantity?: number;
+  currency?: string;
+};
+
+export function trackAddToCart(item: GaItem, value?: number): void {
+  trackEvent('add_to_cart', {
+    currency: item.currency || 'GBP',
+    value: value ?? (item.price ?? 0) * (item.quantity ?? 1),
+    items: [item],
+  });
+}
+
+export function trackBeginCheckout(items: GaItem[], value: number): void {
+  trackEvent('begin_checkout', {
+    currency: 'GBP',
+    value,
+    items,
+  });
+}
+
+export function trackCtaClick(label: string, location?: string): void {
+  trackEvent('cta_click', { cta_label: label, cta_location: location || window.location.pathname });
+}
+
+export function trackPurchase(transactionId: string, value: number, items: GaItem[]): void {
+  trackEvent('purchase', { transaction_id: transactionId, currency: 'GBP', value, items });
+}
+
 
 export function getAnalyticsStatus() {
   return {

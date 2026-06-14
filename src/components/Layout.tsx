@@ -18,7 +18,7 @@ import { CookieConsent } from '@/components/CookieConsent';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import { getRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { migrateStoredCart } from '@/lib/cart-migration';
-import { initAnalytics, trackPageView } from '@/lib/analytics';
+import { initAnalytics, trackPageView, trackAddToCart, trackBeginCheckout } from '@/lib/analytics';
 
 import { Logo } from './Logo';
 import { UnderConstruction } from './UnderConstruction';
@@ -355,7 +355,18 @@ export function Layout({ children }: LayoutProps) {
       return [...prev, { ...item, quantity: 1 }];
     });
     setIsCartOpen(true);
+    try {
+      trackAddToCart({
+        item_id: String(item.id),
+        item_name: item.name,
+        item_variant: item.dosage || item.variantId,
+        price: item.priceNum || Number(item.price) || 0,
+        quantity: 1,
+        currency: 'GBP',
+      });
+    } catch { /* analytics never breaks UX */ }
   };
+
 
   const updateQuantity = (cartKey: string, delta: number) => {
     setCart(prev =>
@@ -875,7 +886,24 @@ export function Layout({ children }: LayoutProps) {
                       <span className="text-white text-lg">£{getTotalPrice()}</span>
                     </div>
                     <button
-                      onClick={() => { if (!hasItemsWithoutVariant) { closeCart(); navigate('/checkout'); } }}
+                      onClick={() => {
+                        if (hasItemsWithoutVariant) return;
+                        try {
+                          trackBeginCheckout(
+                            cart.map(c => ({
+                              item_id: String(c.id),
+                              item_name: c.name,
+                              item_variant: c.dosage || c.variantId,
+                              price: c.priceNum || Number(c.price) || 0,
+                              quantity: c.quantity,
+                              currency: 'GBP',
+                            })),
+                            Number(getTotalPrice()),
+                          );
+                        } catch { /* never block checkout */ }
+                        closeCart();
+                        navigate('/checkout');
+                      }}
                       disabled={hasItemsWithoutVariant}
                       aria-label="Proceed to checkout"
                       className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
