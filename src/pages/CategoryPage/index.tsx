@@ -162,6 +162,24 @@ export default function CategoryPage() {
     return () => unsub();
   }, [slug]);
 
+  // SEO: when a category is empty (no in-stock products), tell crawlers
+  // to skip it. Avoids "0 compounds available" pages appearing in the
+  // index as soft-404s. Tag is removed when products are present.
+  useEffect(() => {
+    if (loading) return;
+    const SEL = 'meta[name="robots"][data-category-empty]';
+    document.querySelector(SEL)?.remove();
+    if (products.length === 0) {
+      const m = document.createElement('meta');
+      m.setAttribute('name', 'robots');
+      m.setAttribute('content', 'noindex, follow');
+      m.setAttribute('data-category-empty', '1');
+      document.head.appendChild(m);
+    }
+    return () => { document.querySelector(SEL)?.remove(); };
+  }, [products.length, loading]);
+
+
   // Redirect if no slug
   if (!slug) return <Navigate to="/products" replace />;
 
