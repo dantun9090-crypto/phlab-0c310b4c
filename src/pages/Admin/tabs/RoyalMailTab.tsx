@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package2, MapPin, Mail, Phone, Scale, Truck, CheckCircle2, AlertTriangle, Loader2, Copy, ExternalLink, RotateCcw } from 'lucide-react';
+import { Package2, MapPin, Mail, Phone, Scale, Truck, CheckCircle2, AlertTriangle, Loader2, Copy, ExternalLink, RotateCcw, Download } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { createRoyalMailOrder } from '@/lib/royal-mail.functions';
 import { logAdminAction } from '@/lib/admin-audit';
@@ -491,16 +491,26 @@ function LabelPreview({ form, service }: { form: FormState; service: typeof SERV
           </div>
           <h2 className="text-white font-semibold text-[14px]">Label preview</h2>
         </div>
-        <span
-          className="text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded border"
-          style={
-            ready
-              ? { background: 'rgba(16,185,129,0.12)', color: 'rgb(110 231 183)', borderColor: 'rgba(16,185,129,0.35)' }
-              : { background: 'rgba(251,191,36,0.1)', color: 'rgb(252 211 77)', borderColor: 'rgba(251,191,36,0.35)' }
-          }
-        >
-          {ready ? 'Ready' : `${issues.length} missing`}
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => downloadPreviewPdf(form, service)}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium border border-slate-700 hover:border-blue-400/60 text-slate-300 hover:text-white bg-slate-800/60 transition-colors"
+            title="Download a preview PDF for visual confirmation (not a real Royal Mail label)"
+          >
+            <Download className="w-3 h-3" /> Download PDF
+          </button>
+          <span
+            className="text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded border"
+            style={
+              ready
+                ? { background: 'rgba(16,185,129,0.12)', color: 'rgb(110 231 183)', borderColor: 'rgba(16,185,129,0.35)' }
+                : { background: 'rgba(251,191,36,0.1)', color: 'rgb(252 211 77)', borderColor: 'rgba(251,191,36,0.35)' }
+            }
+          >
+            {ready ? 'Ready' : `${issues.length} missing`}
+          </span>
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-4">
