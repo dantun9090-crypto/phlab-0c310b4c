@@ -50,12 +50,29 @@ function toDisplayCategory(slug?: string | null): string | null {
 }
 
 /**
- * All products are included in the Merchant feed. Per-product exclusion
- * can be managed from the admin panel via the product's `excludeFromMerchantFeed`
- * flag in Firestore (optional — defaults to included).
+ * Manual opt-in model. Google must NOT auto-pick up every product. A
+ * product only appears in the feed if its Firestore doc has
+ * `includeInMerchantFeed === true`. The legacy `excludeFromMerchantFeed`
+ * flag is still respected as a hard block. Tirzepatide is additionally
+ * hard-blocked by slug/name regardless of flag state.
  */
-function isBlockedForMerchant(p: { name: string; excludeFromMerchantFeed?: boolean }): boolean {
-  return p.excludeFromMerchantFeed === true;
+const HARD_BLOCKED_SLUGS = new Set<string>([
+  "tirzepatide-research-peptide",
+  "tirzepatide",
+]);
+
+function isAllowedForMerchant(p: {
+  name?: string;
+  slug?: string;
+  excludeFromMerchantFeed?: boolean;
+  includeInMerchantFeed?: boolean;
+}): boolean {
+  if (p.excludeFromMerchantFeed === true) return false;
+  const slug = (p.slug || "").toLowerCase();
+  const name = (p.name || "").toLowerCase();
+  if (HARD_BLOCKED_SLUGS.has(slug)) return false;
+  if (name.includes("tirzepatide")) return false;
+  return p.includeInMerchantFeed === true;
 }
 
 
