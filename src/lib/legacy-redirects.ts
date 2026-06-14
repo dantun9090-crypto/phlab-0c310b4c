@@ -220,6 +220,9 @@ const GONE_EXACT = new Set<string>([
   "/feature-1",
   "/news-1",
   "/event-1",
+  // Discontinued products with no replacement — hard 410 (avoid soft-404
+  // signal from redirecting to /products which has unrelated content).
+  "/products/epithalon",
 ]);
 
 /**
