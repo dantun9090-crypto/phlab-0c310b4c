@@ -47,6 +47,9 @@ const staticEntries: SitemapEntry[] = [
   { path: "/products/category/melanin", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
   { path: "/products/category/neurological", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
   { path: "/products/category/tissue-repair", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
+];
+
+
 
 // Fallback product entries: only used if Firestore fetch fails. BPC-157 was
 // removed here on 2026-06-02 — it's now unhidden and served dynamically with
