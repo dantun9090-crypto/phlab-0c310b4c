@@ -27,6 +27,8 @@ Disallow: /*?gclid=
 Disallow: /*?session=
 Disallow: /*?sid=
 Disallow: /blog-single-page-layout
+Disallow: /modules-1-item/
+Disallow: /finances/
 Disallow: /real-estate-single-page-layout
 
 # Google Merchant / Shopping ads crawler — needs full product access
