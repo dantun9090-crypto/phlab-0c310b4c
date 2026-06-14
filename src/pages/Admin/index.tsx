@@ -414,7 +414,7 @@ export default function AdminPage() {
     seo: 'SEO Settings', sitemap: 'Sitemap Manager', settings: 'Site Settings',
     tools: 'Tools', themes: 'Themes', database: 'Database', backup: 'Backup',
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', diagnostics: 'Diagnostics',
-    prerenderstatus: 'Prerender Status', cacherecache: 'Cache & Recache', gscmonitor: 'GSC Monitor', merchantfeed: 'Merchant Feed', bingfeed: 'Bing Shopping',
+    prerenderstatus: 'Prerender Status', cacherecache: 'Cache & Recache', gscmonitor: 'GSC Monitor', urlmonitor: 'URL Monitor', merchantfeed: 'Merchant Feed', bingfeed: 'Bing Shopping',
     securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', shopify: 'Shopify', semrush: 'Semrush',
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
