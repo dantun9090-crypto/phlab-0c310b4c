@@ -37,6 +37,7 @@ const staticEntries: SitemapEntry[] = [
   // /research, /lab-reports, /storage-guide removed 2026-06-10 — pages were
   // returning empty content / 404 to crawlers and dragging down crawl budget.
   // /google-merchant-feed.xml is discovered separately by Merchant Center.
+  { path: "/bing-feed.xml", lastmod: STATIC_LASTMOD, changefreq: "daily", priority: "0.2" },
 ];
 
 // Fallback product entries: only used if Firestore fetch fails. BPC-157 was
