@@ -151,8 +151,10 @@ const RULES: RedirectRule[] = [
   { type: "exact", from: "/products/ss-31", to: "/products" },
   { type: "exact", from: "/products/elamipretide", to: "/products" },
 
-  // Firestore doc-ID style URLs (legacy) → catalogue
-  { type: "prefix", from: "/products/2s5IGEx2RgUDLfbfjBbF", to: "/products" },
+  // NOTE: Firestore doc-ID style URLs (e.g. /products/2s5IGEx2RgUDLfbfjBbF)
+  // are intentionally NOT redirected here — the /products/$slug route
+  // resolves them to the matching product page (used by Google Merchant feed).
+
 ];
 
 
