@@ -221,7 +221,7 @@ export default function OrdersTab() {
   const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null);
 
   // Royal Mail order state
-  const [rmService, setRmService] = useState<'' | 'CRL1' | 'CRL2' | 'TRM'>('');
+  const [rmService, setRmService] = useState<'' | 'CRL1' | 'CRL2' | 'TPN24' | 'TPN48' | 'SD1' | 'SD2'>('');
   const [rmWeight, setRmWeight] = useState<number>(100);
   const [rmLoading, setRmLoading] = useState(false);
   const [rmError, setRmError] = useState('');
@@ -248,7 +248,7 @@ export default function OrdersTab() {
     // Royal Mail fields
     const existingRmOrderId = (selected as any)?.royalMailOrderId || null;
     const existingRmTracking = (selected as any)?.royalMailTracking || null;
-    setRmService(((selected as any)?.royalMailService as '' | 'CRL1' | 'CRL2' | 'TRM') || '');
+    setRmService(((selected as any)?.royalMailService as '' | 'CRL1' | 'CRL2' | 'TPN24' | 'TPN48' | 'SD1' | 'SD2') || '');
     setRmWeight(100);
     setRmError('');
     setRmCopied(false);
@@ -1186,13 +1186,16 @@ export default function OrdersTab() {
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     <select
                       value={rmService}
-                      onChange={(e) => setRmService(e.target.value as '' | 'CRL1' | 'CRL2' | 'TRM')}
+                      onChange={(e) => setRmService(e.target.value as '' | 'CRL1' | 'CRL2' | 'TPN24' | 'TPN48' | 'SD1' | 'SD2')}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                     >
                       <option value="">— No service (manual postage) —</option>
-                      <option value="CRL1">2nd Class (CRL1)</option>
-                      <option value="CRL2">1st Class (CRL2)</option>
-                      <option value="TRM">Tracked 24 (TRM)</option>
+                      <option value="CRL1">1st Class (CRL1)</option>
+                      <option value="CRL2">2nd Class (CRL2)</option>
+                      <option value="TPN24">Tracked 24 (TPN24)</option>
+                      <option value="TPN48">Tracked 48 (TPN48)</option>
+                      <option value="SD1">Special Delivery 1pm (SD1)</option>
+                      <option value="SD2">Special Delivery 9am (SD2)</option>
                     </select>
                     <input
                       type="number"
