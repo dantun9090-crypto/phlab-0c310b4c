@@ -1186,16 +1186,17 @@ export default function OrdersTab() {
                   <div className="grid grid-cols-2 gap-2 mb-3">
                     <select
                       value={rmService}
-                      onChange={(e) => setRmService(e.target.value as '' | 'CRL1' | 'CRL2' | 'TPN24' | 'TPN48' | 'SD1' | 'SD2')}
+                      onChange={(e) => setRmService(e.target.value.trim().toUpperCase())}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                     >
-                      <option value="">— No service (manual postage) —</option>
-                      <option value="CRL1">1st Class (CRL1)</option>
-                      <option value="CRL2">2nd Class (CRL2)</option>
-                      <option value="TPN24">Tracked 24 (TPN24)</option>
-                      <option value="TPN48">Tracked 48 (TPN48)</option>
+                      <option value="">Use Click & Drop default service</option>
+                      <option value="CRL24">Royal Mail 24 (CRL24)</option>
+                      <option value="CRL48">Royal Mail 48 (CRL48)</option>
+                      <option value="TPS24">Tracked 24 (TPS24)</option>
+                      <option value="TPS48">Tracked 48 (TPS48)</option>
+                      <option value="TPN24">Tracked 24 OBA only (TPN24)</option>
+                      <option value="TPN48">Tracked 48 OBA only (TPN48)</option>
                       <option value="SD1">Special Delivery 1pm (SD1)</option>
-                      <option value="SD2">Special Delivery 9am (SD2)</option>
                     </select>
                     <input
                       type="number"
