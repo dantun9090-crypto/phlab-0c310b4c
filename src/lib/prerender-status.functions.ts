@@ -1,13 +1,13 @@
 import { createServerFn } from '@tanstack/react-start';
 import { requireFirebaseAdmin } from '@/lib/server/firebase-auth-admin';
 
-const EXPECTED_PRERENDER_TOKEN_LENGTH = 22;
+const MIN_EXPECTED_PRERENDER_TOKEN_LENGTH = 20;
 
 /**
  * Return only the length of PRERENDER_TOKEN and whether it matches the
- * expected Prerender.io token length (22 chars). Never returns the token
- * value itself — admin UI uses this to surface a clear error when the
- * configured token is the wrong size (commonly truncated to 20 on paste).
+ * expected Prerender.io token length range. Never returns the token value
+ * itself — admin UI only needs to know whether a token is configured and
+ * plausibly sized. Live Googlebot simulation verifies the real outcome.
  */
 export const checkPrerenderTokenLength = createServerFn({ method: 'POST' })
   .inputValidator((data: { idToken: string }) => {
@@ -21,8 +21,8 @@ export const checkPrerenderTokenLength = createServerFn({ method: 'POST' })
     return {
       configured: length > 0,
       length,
-      expected: EXPECTED_PRERENDER_TOKEN_LENGTH,
-      ok: length === EXPECTED_PRERENDER_TOKEN_LENGTH,
+      expected: MIN_EXPECTED_PRERENDER_TOKEN_LENGTH,
+      ok: length >= MIN_EXPECTED_PRERENDER_TOKEN_LENGTH,
       checkedAt: new Date().toISOString(),
     } as const;
   });
@@ -54,15 +54,18 @@ export const checkGooglebotResponse = createServerFn({ method: 'POST' })
         signal: AbortSignal.timeout(15_000),
       });
       const status = res.status;
+      const prerendered = res.headers.get('x-prerendered') === 'true';
+      const routedVia = res.headers.get('x-phl-via');
       const verdict: 'ok' | 'soft_fail' | 'fail' =
-        status === 200 ? 'ok' : status >= 500 ? 'fail' : 'soft_fail';
+        status === 200 && prerendered ? 'ok' : status >= 500 ? 'fail' : 'soft_fail';
       return {
         url: target,
         status,
-        ok: status === 200,
+        ok: status === 200 && prerendered,
         verdict,
         rejectReason: res.headers.get('x-prerender-reject-reason'),
-        prerendered: res.headers.get('x-prerendered') === 'true',
+        prerendered,
+        routedVia,
         prerenderCache: res.headers.get('x-prerender-cache'),
         cfCache: res.headers.get('cf-cache-status'),
         cfRay: res.headers.get('cf-ray'),
@@ -78,6 +81,7 @@ export const checkGooglebotResponse = createServerFn({ method: 'POST' })
         verdict: 'fail' as const,
         rejectReason: null,
         prerendered: false,
+        routedVia: null,
         prerenderCache: null,
         cfCache: null,
         cfRay: null,
