@@ -666,6 +666,8 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} items={paletteItems} />
     </div>
   );
 }
