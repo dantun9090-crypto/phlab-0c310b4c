@@ -488,7 +488,7 @@ function GooglebotCheckCard() {
     setLoading(true);
     setErr(null);
     try {
-      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const idToken = await getAdminIdToken();
       const out = await check({ data: { url, idToken } });
       setRes(out);
     } catch (e) {
