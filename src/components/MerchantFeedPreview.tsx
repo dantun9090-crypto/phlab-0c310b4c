@@ -13,6 +13,7 @@ interface PreviewProduct {
   price?: number;
   sku?: string;
   excludeFromMerchantFeed?: boolean;
+  includeInMerchantFeed?: boolean;
 }
 
 interface FeedEntry {
