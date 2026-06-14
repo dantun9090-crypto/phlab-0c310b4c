@@ -75,7 +75,7 @@ export const Route = createFileRoute("/bing-feed.xml")({
         }
 
         const items = products
-          .filter((p) => !isBlocked(p as any))
+          .filter((p) => isAllowed(p as any))
           .map((p) => {
             const link = `${BASE_URL}/products/${p.slug}`;
             const title = `${p.name} | For Research Use Only`;
@@ -136,7 +136,7 @@ export const Route = createFileRoute("/bing-feed.xml")({
             // 1-hour cache as requested; Bing fetches at most a few times a day.
             "Cache-Control": "public, max-age=3600, s-maxage=3600",
             "X-Feed-Items": String(
-              products.filter((p) => !isBlocked(p as any)).length,
+              products.filter((p) => isAllowed(p as any)).length,
             ),
             "X-Feed-Generated-At": generatedAt,
             "X-Feed-Debug-Error": debugError.slice(0, 200) || "none",
