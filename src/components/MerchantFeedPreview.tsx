@@ -6,6 +6,7 @@ const GOOGLE_CATEGORY_ID = '6975';
 const GOOGLE_CATEGORY_NAME = 'Business & Industrial > Science & Laboratory > Biochemicals';
 
 interface PreviewProduct {
+  id?: string;
   name?: string;
   slug?: string;
   category?: string;
@@ -31,16 +32,17 @@ interface FeedEntry {
 function buildFeedEntry(product: PreviewProduct): FeedEntry {
   const name = product.name?.trim() || 'Product Name';
   const slug = product.slug?.trim() || 'product-slug';
+  const linkId = product.id?.trim() || slug;
   const purity = product.purity?.trim();
   const price = typeof product.price === 'number' ? product.price : 0;
   return {
     included: product.includeInMerchantFeed === true && product.excludeFromMerchantFeed !== true && !(product.name || '').toLowerCase().includes('tirzepatide'),
-    title: `Laboratory Reference Standard — ${name} (Research Chemical, RUO, Not For Human Use)`,
+    title: `Laboratory Reference Standard — ${name} (Research Chemical, RUO)`,
     description:
-      `Analytical-grade laboratory reference standard supplied by ${BRAND} UK for in-vitro chemistry research and assay calibration. ` +
-      `${purity ? `HPLC-verified purity ${purity}. ` : ''}` +
-      `Sold strictly as a research chemical to qualified laboratories and research professionals. Not a medicine, drug, dietary supplement, food, cosmetic or consumer product. Not for human or veterinary administration, ingestion, injection, inhalation or topical use. No therapeutic, nutritional, weight-management, hormonal or performance claims are made or implied.`,
-    link: `https://phlabs.co.uk/products/${slug}`,
+      `Analytical reference standard for in-vitro laboratory research. ` +
+      `${purity ? `HPLC-verified ${purity} purity. ` : 'HPLC-verified ≥99% purity. '}` +
+      `Supplied by ${BRAND} UK to qualified research professionals and laboratories. Research-use only (RUO) laboratory chemical.`,
+    link: `https://phlabs.co.uk/products/${linkId}`,
     price: `${price.toFixed(2)} ${CURRENCY}`,
     brand: BRAND,
     category: `${GOOGLE_CATEGORY_ID} (${GOOGLE_CATEGORY_NAME})`,
