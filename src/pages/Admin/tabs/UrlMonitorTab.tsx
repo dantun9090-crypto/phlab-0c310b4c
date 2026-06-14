@@ -6,7 +6,7 @@ import {
   orderBy,
   query,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import {
   Activity, RefreshCw, AlertCircle, CheckCircle2, XCircle,
   ExternalLink, Clock, Link2,
