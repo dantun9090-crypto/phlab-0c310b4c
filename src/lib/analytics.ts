@@ -23,10 +23,28 @@ declare global {
 
 const DEFAULT_MEASUREMENT_ID = 'G-5HM4YT7HDW';
 const STORAGE_KEY = 'php_cookie_consent';
+const DEBUG_FLAG_KEY = 'php_ga_debug';
 
 let loaded = false;
 let currentId: string | null = null;
 let lastTrackedPath: string | null = null;
+let debugMode = false;
+
+function isDebug(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (new URLSearchParams(window.location.search).get('ga_debug') === '1') {
+      localStorage.setItem(DEBUG_FLAG_KEY, '1');
+      return true;
+    }
+    return localStorage.getItem(DEBUG_FLAG_KEY) === '1';
+  } catch { return false; }
+}
+
+function log(...args: unknown[]) {
+  if (debugMode) console.log('%c[GA4]', 'color:#f9a825;font-weight:bold', ...args);
+}
+
 
 function isBot(): boolean {
   if (typeof navigator === 'undefined') return true;
