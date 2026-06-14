@@ -886,7 +886,24 @@ export function Layout({ children }: LayoutProps) {
                       <span className="text-white text-lg">£{getTotalPrice()}</span>
                     </div>
                     <button
-                      onClick={() => { if (!hasItemsWithoutVariant) { closeCart(); navigate('/checkout'); } }}
+                      onClick={() => {
+                        if (hasItemsWithoutVariant) return;
+                        try {
+                          trackBeginCheckout(
+                            cart.map(c => ({
+                              item_id: String(c.id),
+                              item_name: c.name,
+                              item_variant: c.dosage || c.variantId,
+                              price: typeof c.price === 'number' ? c.price : Number(c.price) || 0,
+                              quantity: c.quantity,
+                              currency: 'GBP',
+                            })),
+                            Number(getTotalPrice()),
+                          );
+                        } catch { /* never block checkout */ }
+                        closeCart();
+                        navigate('/checkout');
+                      }}
                       disabled={hasItemsWithoutVariant}
                       aria-label="Proceed to checkout"
                       className={`w-full py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
