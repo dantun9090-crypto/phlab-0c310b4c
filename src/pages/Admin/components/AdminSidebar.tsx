@@ -75,6 +75,7 @@ const navGroups = [
       { id: 'gscmonitor', label: 'GSC Monitor', icon: Search },
       { id: 'semrush', label: 'Semrush', icon: TrendingUp },
       { id: 'merchantfeed', label: 'Merchant Feed', icon: ShoppingBag },
+      { id: 'bingfeed', label: 'Bing Shopping', icon: ShoppingCart },
     ],
   },
   {
