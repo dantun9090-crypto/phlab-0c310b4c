@@ -19,7 +19,7 @@ type WorkerEnv = {
    * `admin_gate` cookie whose value equals this secret BEFORE the SPA
    * shell is served — so a stolen Firebase ID token alone can't reach
    * the admin panel. Unset = disabled (no behaviour change).
-   * Cookie is provisioned via GET /admin-unlock?token=<secret>.
+   * Cookie is provisioned via POST /admin-unlock (form field `token`).
    */
   ADMIN_GATE_SECRET?: string;
 };
