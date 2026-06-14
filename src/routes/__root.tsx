@@ -230,8 +230,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Premium research chemicals and laboratory reference materials for scientific and analytical use. UK-based supplier with fast, discreet delivery." },
       { property: "og:description", content: "Premium research chemicals and laboratory reference materials for scientific and analytical use. UK-based supplier with fast, discreet delivery." },
       { name: "twitter:description", content: "Premium research chemicals and laboratory reference materials for scientific and analytical use. UK-based supplier with fast, discreet delivery." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/e2fa3332-67ff-4f9b-981a-b24364062057" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/e2fa3332-67ff-4f9b-981a-b24364062057" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/b5cd6ce6-ed6f-465c-b5c5-7173a775f57c" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/b5cd6ce6-ed6f-465c-b5c5-7173a775f57c" },
       { property: "og:type", content: "website" },
     ],
     scripts: [
