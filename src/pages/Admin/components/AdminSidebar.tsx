@@ -65,6 +65,13 @@ const navGroups = [
     ],
   },
   {
+    label: 'Feeds',
+    items: [
+      { id: 'merchantfeed', label: 'Google Merchant Feed', icon: ShoppingBag },
+      { id: 'bingfeed', label: 'Bing Shopping Feed', icon: ShoppingCart },
+    ],
+  },
+  {
     label: 'SEO',
     items: [
       { id: 'seo', label: 'SEO Settings', icon: Search },
@@ -74,10 +81,9 @@ const navGroups = [
       { id: 'cacherecache', label: 'Cache & Recache', icon: Cloud },
       { id: 'gscmonitor', label: 'GSC Monitor', icon: Search },
       { id: 'semrush', label: 'Semrush', icon: TrendingUp },
-      { id: 'merchantfeed', label: 'Merchant Feed', icon: ShoppingBag },
-      { id: 'bingfeed', label: 'Bing Shopping', icon: ShoppingCart },
     ],
   },
+
   {
     label: 'System',
     items: [
