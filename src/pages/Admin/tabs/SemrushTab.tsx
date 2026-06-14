@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import { Loader2, RefreshCw, TrendingUp, Link2, Search, AlertTriangle, ExternalLink } from 'lucide-react';
-import { auth } from '@/lib/firebase';
+import { getAdminIdToken } from '@/lib/auth-ready';
 import { getSemrushOverview } from '@/lib/semrush.functions';
 
 interface OverviewData {
@@ -36,9 +36,7 @@ export default function SemrushTab() {
     setLoading(true);
     setError(null);
     try {
-      const user = auth.currentUser;
-      if (!user) throw new Error('Not signed in');
-      const idToken = await user.getIdToken();
+      const idToken = await getAdminIdToken();
       const result = await fetchOverview({ data: { idToken, domain, database } });
       setData(result as OverviewData);
     } catch (e: any) {

@@ -6,7 +6,7 @@ import {
   orderBy,
   query,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import {
   Activity, RefreshCw, AlertCircle, CheckCircle2, XCircle,
   ExternalLink, Clock, Link2,
@@ -59,6 +59,13 @@ export default function UrlMonitorTab() {
     setLoading(true);
     setErr(null);
     try {
+      // Wait for Firebase Auth to restore the session before querying — the
+      // url_monitor_scans collection is admin-read-only, so an unauthenticated
+      // query silently fails the rules check.
+      await auth.authStateReady();
+      if (!auth.currentUser) {
+        throw new Error('Not signed in — please sign in as an admin first.');
+      }
       const q = query(
         collection(db, 'url_monitor_scans'),
         orderBy('scannedAt', 'desc'),

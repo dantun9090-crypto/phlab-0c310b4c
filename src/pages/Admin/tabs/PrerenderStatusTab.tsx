@@ -12,7 +12,7 @@ import {
   type ProbeResult,
 
 } from '@/lib/prerender-status.functions';
-import { auth } from '@/lib/firebase';
+import { getAdminIdToken } from '@/lib/auth-ready';
 
 
 interface RecacheLog {
@@ -36,7 +36,7 @@ export default function PrerenderStatusTab() {
   const runProbe = async (urls?: string[]) => {
     setLoading(true);
     try {
-      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const idToken = await getAdminIdToken();
       const res = await probe({ data: urls ? { urls, idToken } : { idToken } });
       setResults(res.results);
       setCheckedAt(res.checkedAt);
@@ -50,7 +50,7 @@ export default function PrerenderStatusTab() {
   const runRecache = async (url: string) => {
     setRecachingUrl(url);
     try {
-      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const idToken = await getAdminIdToken();
       const res = await recache({ data: { url, idToken } });
       setRecacheLog((prev) => [
         {
@@ -357,7 +357,7 @@ function TokenLengthCard() {
     setLoading(true);
     setError(null);
     try {
-      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const idToken = await getAdminIdToken();
       const res = await check({ data: { idToken } });
       setState(res);
     } catch (err) {
@@ -488,7 +488,7 @@ function GooglebotCheckCard() {
     setLoading(true);
     setErr(null);
     try {
-      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const idToken = await getAdminIdToken();
       const out = await check({ data: { url, idToken } });
       setRes(out);
     } catch (e) {
