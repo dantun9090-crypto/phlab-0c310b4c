@@ -13,9 +13,11 @@ export const Route = createFileRoute("/payment/success")({
       { name: "description", content: "Your research peptide order with PH Labs UK has been received and is being processed for tracked dispatch." },
       { property: "og:title", content: "Payment Confirmed — PH Labs" },
       { property: "og:description", content: "Your research peptide order with PH Labs UK has been received and is being processed for tracked dispatch." },
+      { property: "og:url", content: "https://phlabs.co.uk/payment/success" },
       { name: "twitter:description", content: "Your research peptide order with PH Labs UK has been received and is being processed for tracked dispatch." },
       { name: "robots", content: "noindex, nofollow, noarchive" },
     ],
+    links: [{ rel: "canonical", href: "https://phlabs.co.uk/payment/success" }],
   }),
   component: PaymentSuccessPage,
 });
