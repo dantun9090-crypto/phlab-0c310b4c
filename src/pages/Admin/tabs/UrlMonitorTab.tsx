@@ -59,6 +59,13 @@ export default function UrlMonitorTab() {
     setLoading(true);
     setErr(null);
     try {
+      // Wait for Firebase Auth to restore the session before querying — the
+      // url_monitor_scans collection is admin-read-only, so an unauthenticated
+      // query silently fails the rules check.
+      await auth.authStateReady();
+      if (!auth.currentUser) {
+        throw new Error('Not signed in — please sign in as an admin first.');
+      }
       const q = query(
         collection(db, 'url_monitor_scans'),
         orderBy('scannedAt', 'desc'),
