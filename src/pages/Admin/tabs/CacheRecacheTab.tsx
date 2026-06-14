@@ -7,6 +7,7 @@ import {
 } from '@/lib/cache-admin.functions';
 import { auth } from '@/lib/firebase';
 
+import { getAdminIdToken } from '@/lib/auth-ready';
 interface OpResult {
   kind: 'purge' | 'recache';
   ok: boolean;
@@ -33,7 +34,7 @@ export default function CacheRecacheTab() {
     }
     setPurging(true);
     try {
-      const idToken = (await auth.currentUser?.getIdToken()) ?? '';
+      const idToken = await getAdminIdToken();
       const res = await purgeFn({ data: { idToken, purgeEverything: true } });
       pushLog({
         kind: 'purge',
@@ -66,7 +67,7 @@ export default function CacheRecacheTab() {
     }
     setPurging(true);
     try {
-      const idToken = (await auth.currentUser?.getIdToken()) ?? '';
+      const idToken = await getAdminIdToken();
       const res = await purgeFn({ data: { idToken, purgeEverything: false, files } });
       pushLog({
         kind: 'purge',
@@ -91,7 +92,7 @@ export default function CacheRecacheTab() {
   const runRecache = async () => {
     setRecaching(true);
     try {
-      const idToken = (await auth.currentUser?.getIdToken()) ?? '';
+      const idToken = await getAdminIdToken();
       const res = await recacheFn({ data: { idToken, includeMobile } });
       pushLog({
         kind: 'recache',

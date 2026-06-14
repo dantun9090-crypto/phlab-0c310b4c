@@ -5,6 +5,7 @@ import { auth } from '@/lib/firebase';
 import { createRoyalMailOrder } from '@/lib/royal-mail.functions';
 import { logAdminAction } from '@/lib/admin-audit';
 
+import { getAdminIdToken } from '@/lib/auth-ready';
 // Royal Mail service codes (Click & Drop). Curated to the services PH Labs uses.
 const SERVICES: { code: string; name: string; eta: string; tracked: boolean }[] = [
   { code: 'TPN24',  name: 'Tracked 24',         eta: '1 working day',  tracked: true },
@@ -91,7 +92,7 @@ export default function RoyalMailTab() {
     setResult(null);
     setLoading(true);
     try {
-      const idToken = (await auth.currentUser?.getIdToken()) ?? '';
+      const idToken = await getAdminIdToken();
       if (!idToken) throw new Error('You must be signed in as an admin.');
 
       const reference = form.reference.trim() || `MANUAL-${Date.now().toString(36).toUpperCase()}`;

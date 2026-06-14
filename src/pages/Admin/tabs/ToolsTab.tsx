@@ -9,6 +9,7 @@ import { db, collection, getDocs, doc, deleteDoc, getAllProducts, updateProduct,
 import { seedProducts, nameToSlug } from '@/lib/seedProducts';
 import { findMerchantEntry, MERCHANT_SEO_ENTRIES } from '@/lib/merchantSeoData';
 
+import { getAdminIdToken } from '@/lib/auth-ready';
 const SITE_BASE = 'https://phlabs.co.uk';
 
 // Static pages to always include in recache
@@ -221,7 +222,7 @@ export default function ToolsTab() {
       //    VITE_* var is inlined into the public JS bundle.
       const { recachePrerenderUrlsBulk } = await import('@/lib/prerender-status.functions');
       const { auth } = await import('@/lib/firebase');
-      const idToken = (await auth.currentUser?.getIdToken()) ?? '';
+      const idToken = await getAdminIdToken();
       if (!idToken) {
         setPrerenderResult({
           type: 'error',

@@ -15,6 +15,7 @@ import {
   type SitemapAuditReport,
 } from "@/lib/sitemap-audit.functions";
 import { auth, db, doc, getDoc, onAuthStateChanged } from "@/lib/firebase";
+import { getAdminIdToken } from '@/lib/auth-ready';
 import {
   Map as MapIcon,
   RefreshCw,
@@ -113,7 +114,7 @@ export default function SitemapAuditTab() {
     setLoading(true);
     setError(null);
     try {
-      const idToken = (await auth.currentUser?.getIdToken()) ?? "";
+      const idToken = await getAdminIdToken();
       if (!idToken) throw new Error("Not signed in");
       const r = await run({ data: { idToken } });
       setReport(r);

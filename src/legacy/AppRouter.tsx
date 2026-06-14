@@ -9,7 +9,7 @@ import { auth, onAuthStateChanged } from '@/lib/firebase-auth';
 import Home from '@/pages/Home';
 import Products from '@/pages/Products';
 import ProductDetail from '@/pages/ProductDetail';
-import CategoryPage from '@/pages/CategoryPage';
+
 import Contact from '@/pages/Contact';
 import About from '@/pages/About';
 import QualityControl from '@/pages/QualityControl';
@@ -39,6 +39,7 @@ const StorageGuide = lazy(() => import('@/pages/StorageGuide'));
 const LabReports = lazy(() => import('@/pages/LabReports'));
 const Research = lazy(() => import('@/pages/Research'));
 const Install = lazy(() => import('@/pages/Install'));
+const CategoryPage = lazy(() => import('@/pages/CategoryPage'));
 
 // Minimal spinner shown while lazy chunks load
 function PageLoader() {
