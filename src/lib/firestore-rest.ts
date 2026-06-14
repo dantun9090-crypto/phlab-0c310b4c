@@ -43,6 +43,8 @@ export interface SeoProduct {
   stock?: number;
   coaUrl?: string;
   updatedAt?: string;
+  includeInMerchantFeed?: boolean;
+  excludeFromMerchantFeed?: boolean;
   /** Parsed from variant name/dosage, e.g. "10 mg" → { value: 10, unit: "mg" }. */
   unitPricingMeasure?: UnitPricingMeasure;
   /** Net weight in grams (for shipping_weight). */
@@ -175,6 +177,8 @@ function toProduct(doc: any): SeoProduct | null {
     stock: totalStock,
     coaUrl: typeof f.coaUrl === "string" && f.coaUrl.trim() ? f.coaUrl : undefined,
     updatedAt: typeof f.updatedAt === "string" ? f.updatedAt : undefined,
+    includeInMerchantFeed: f.includeInMerchantFeed === true,
+    excludeFromMerchantFeed: f.excludeFromMerchantFeed === true,
     unitPricingMeasure,
     weightGrams,
   };
