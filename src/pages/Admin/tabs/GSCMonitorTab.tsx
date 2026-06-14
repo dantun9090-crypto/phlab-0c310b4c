@@ -4,7 +4,7 @@ import {
   Search, RefreshCw, Loader2, CheckCircle2, XCircle, AlertTriangle,
   ExternalLink, TrendingUp, Eye, MousePointerClick,
 } from 'lucide-react';
-import { auth } from '@/lib/firebase';
+import { getAdminIdToken } from '@/lib/auth-ready';
 import {
   fetchGscPerformance,
   inspectGscUrl,
