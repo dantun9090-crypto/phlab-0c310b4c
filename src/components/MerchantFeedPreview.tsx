@@ -13,6 +13,7 @@ interface PreviewProduct {
   price?: number;
   sku?: string;
   excludeFromMerchantFeed?: boolean;
+  includeInMerchantFeed?: boolean;
 }
 
 interface FeedEntry {
@@ -33,7 +34,7 @@ function buildFeedEntry(product: PreviewProduct): FeedEntry {
   const purity = product.purity?.trim();
   const price = typeof product.price === 'number' ? product.price : 0;
   return {
-    included: product.excludeFromMerchantFeed !== true,
+    included: product.includeInMerchantFeed === true && product.excludeFromMerchantFeed !== true && !(product.name || '').toLowerCase().includes('tirzepatide'),
     title: `Laboratory Reference Standard — ${name} (Research Chemical, RUO, Not For Human Use)`,
     description:
       `Analytical-grade laboratory reference standard supplied by ${BRAND} UK for in-vitro chemistry research and assay calibration. ` +

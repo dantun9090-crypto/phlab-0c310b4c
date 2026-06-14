@@ -50,12 +50,29 @@ function toDisplayCategory(slug?: string | null): string | null {
 }
 
 /**
- * All products are included in the Merchant feed. Per-product exclusion
- * can be managed from the admin panel via the product's `excludeFromMerchantFeed`
- * flag in Firestore (optional — defaults to included).
+ * Manual opt-in model. Google must NOT auto-pick up every product. A
+ * product only appears in the feed if its Firestore doc has
+ * `includeInMerchantFeed === true`. The legacy `excludeFromMerchantFeed`
+ * flag is still respected as a hard block. Tirzepatide is additionally
+ * hard-blocked by slug/name regardless of flag state.
  */
-function isBlockedForMerchant(p: { name: string; excludeFromMerchantFeed?: boolean }): boolean {
-  return p.excludeFromMerchantFeed === true;
+const HARD_BLOCKED_SLUGS = new Set<string>([
+  "tirzepatide-research-peptide",
+  "tirzepatide",
+]);
+
+function isAllowedForMerchant(p: {
+  name?: string;
+  slug?: string;
+  excludeFromMerchantFeed?: boolean;
+  includeInMerchantFeed?: boolean;
+}): boolean {
+  if (p.excludeFromMerchantFeed === true) return false;
+  const slug = (p.slug || "").toLowerCase();
+  const name = (p.name || "").toLowerCase();
+  if (HARD_BLOCKED_SLUGS.has(slug)) return false;
+  if (name.includes("tirzepatide")) return false;
+  return p.includeInMerchantFeed === true;
 }
 
 
@@ -145,7 +162,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
 
         const items = products
-          .filter((p) => !isBlockedForMerchant(p as any))
+          .filter((p) => isAllowedForMerchant(p as any))
           .map((p) => {
             const link = `${BASE_URL}/products/${p.slug}`;
             // Lead with the laboratory-reagent framing so the classifier
@@ -229,11 +246,6 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `      <g:price>4.99 ${CURRENCY}</g:price>`,
               `    </g:shipping>`,
               `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
-              `    <g:tax>`,
-              `      <g:country>GB</g:country>`,
-              `      <g:rate>0.00</g:rate>`,
-              `      <g:tax_ship>no</g:tax_ship>`,
-              `    </g:tax>`,
               ...highlights.map(
                 (h) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
               ),

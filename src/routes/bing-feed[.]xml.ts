@@ -41,8 +41,23 @@ function stripHtml(s: string): string {
   return s.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function isBlocked(p: { excludeFromMerchantFeed?: boolean }): boolean {
-  return p.excludeFromMerchantFeed === true;
+const HARD_BLOCKED_SLUGS = new Set<string>([
+  "tirzepatide-research-peptide",
+  "tirzepatide",
+]);
+
+function isAllowed(p: {
+  name?: string;
+  slug?: string;
+  excludeFromMerchantFeed?: boolean;
+  includeInMerchantFeed?: boolean;
+}): boolean {
+  if (p.excludeFromMerchantFeed === true) return false;
+  const slug = (p.slug || "").toLowerCase();
+  const name = (p.name || "").toLowerCase();
+  if (HARD_BLOCKED_SLUGS.has(slug)) return false;
+  if (name.includes("tirzepatide")) return false;
+  return p.includeInMerchantFeed === true;
 }
 
 export const Route = createFileRoute("/bing-feed.xml")({
@@ -60,7 +75,7 @@ export const Route = createFileRoute("/bing-feed.xml")({
         }
 
         const items = products
-          .filter((p) => !isBlocked(p as any))
+          .filter((p) => isAllowed(p as any))
           .map((p) => {
             const link = `${BASE_URL}/products/${p.slug}`;
             const title = `${p.name} | For Research Use Only`;
@@ -121,7 +136,7 @@ export const Route = createFileRoute("/bing-feed.xml")({
             // 1-hour cache as requested; Bing fetches at most a few times a day.
             "Cache-Control": "public, max-age=3600, s-maxage=3600",
             "X-Feed-Items": String(
-              products.filter((p) => !isBlocked(p as any)).length,
+              products.filter((p) => isAllowed(p as any)).length,
             ),
             "X-Feed-Generated-At": generatedAt,
             "X-Feed-Debug-Error": debugError.slice(0, 200) || "none",

@@ -711,15 +711,15 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                 </div>
                 <div className="flex items-start gap-3 p-3 bg-gray-900/40 border border-white/[0.05] rounded-lg">
                   <input
-                    id="excludeFromMerchantFeed"
+                    id="includeInMerchantFeed"
                     type="checkbox"
-                    checked={(formData as any).excludeFromMerchantFeed === true}
-                    onChange={e => setFormData(p => ({ ...p, excludeFromMerchantFeed: e.target.checked } as any))}
+                    checked={(formData as any).includeInMerchantFeed === true}
+                    onChange={e => setFormData(p => ({ ...p, includeInMerchantFeed: e.target.checked } as any))}
                     className="mt-0.5 w-4 h-4 accent-emerald-500"
                   />
-                  <label htmlFor="excludeFromMerchantFeed" className="text-xs text-white/80 leading-relaxed cursor-pointer">
-                    <span className="font-medium">Exclude from Google Merchant feed</span>
-                    <span className="block text-white/50 mt-0.5">Product stays live on the site but is removed from google-merchant-feed.xml.</span>
+                  <label htmlFor="includeInMerchantFeed" className="text-xs text-white/80 leading-relaxed cursor-pointer">
+                    <span className="font-medium">Include in Google / Bing Merchant feed</span>
+                    <span className="block text-white/50 mt-0.5">Manual opt-in. Products are excluded by default — tick this box to publish the product to google-merchant-feed.xml and bing-feed.xml.</span>
                   </label>
                 </div>
               </div>

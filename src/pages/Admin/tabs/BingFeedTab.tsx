@@ -165,9 +165,9 @@ export default function BingFeedTab() {
           <p className="text-xs text-slate-500 leading-relaxed pt-2">
             Feed is generated server-side on every request and cached for 1 hour at the edge.
             All items are submitted as <b>Laboratory Chemicals (RUO)</b> — no medical or
-            pharmaceutical categories. Products excluded via the per-product
-            <code className="text-emerald-400 mx-1">excludeFromMerchantFeed</code> flag are
-            also excluded from the Bing feed.
+            pharmaceutical categories. Manual opt-in: only products with the
+            <code className="text-emerald-400 mx-1">includeInMerchantFeed</code> flag enabled
+            in the product editor appear in this feed. Tirzepatide is hard-blocked.
           </p>
         </div>
       </div>
