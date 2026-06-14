@@ -36,6 +36,7 @@ export interface RoyalMailResult {
   ok: boolean;
   orderId?: string;
   trackingNumber?: string | null;
+  serviceCodeUsed?: string | null;
   error?: string;
   details?: string;
   status?: number;
@@ -87,5 +88,6 @@ export const createRoyalMailOrder = createServerFn({ method: 'POST' })
       ok: true,
       orderId: body?.orderId ? String(body.orderId) : undefined,
       trackingNumber: body?.trackingNumber ? String(body.trackingNumber) : null,
+      serviceCodeUsed: body?.serviceCodeUsed ? String(body.serviceCodeUsed) : null,
     };
   });
