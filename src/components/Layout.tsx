@@ -87,12 +87,17 @@ export function Layout({ children }: LayoutProps) {
 
   // Google Analytics 4 — load once on mount, then fire page_view on every SPA route change
   useEffect(() => {
-    const id = (siteSettings.googleAnalyticsId as string | undefined)?.trim() || undefined;
+    let id: string | undefined;
+    try {
+      const cached = localStorage.getItem('php_site_settings');
+      if (cached) id = (JSON.parse(cached) as { googleAnalyticsId?: string }).googleAnalyticsId?.trim() || undefined;
+    } catch { /* ignore */ }
     initAnalytics(id);
   }, []);
   useEffect(() => {
     trackPageView(location.pathname + location.search);
   }, [location.pathname, location.search]);
+
 
 
   // Auth pages handle their own full-screen layout — no nav padding needed
