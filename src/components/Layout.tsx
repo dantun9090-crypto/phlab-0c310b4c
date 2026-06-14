@@ -355,7 +355,18 @@ export function Layout({ children }: LayoutProps) {
       return [...prev, { ...item, quantity: 1 }];
     });
     setIsCartOpen(true);
+    try {
+      trackAddToCart({
+        item_id: String(item.id),
+        item_name: item.name,
+        item_variant: item.dosage || item.variantId,
+        price: typeof item.price === 'number' ? item.price : Number(item.price) || 0,
+        quantity: 1,
+        currency: 'GBP',
+      });
+    } catch { /* analytics never breaks UX */ }
   };
+
 
   const updateQuantity = (cartKey: string, delta: number) => {
     setCart(prev =>
