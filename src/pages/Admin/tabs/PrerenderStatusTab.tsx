@@ -12,7 +12,7 @@ import {
   type ProbeResult,
 
 } from '@/lib/prerender-status.functions';
-import { auth } from '@/lib/firebase';
+import { getAdminIdToken } from '@/lib/auth-ready';
 
 
 interface RecacheLog {
