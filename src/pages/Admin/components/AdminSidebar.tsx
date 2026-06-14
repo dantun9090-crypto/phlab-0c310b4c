@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Users, LogOut,
   Database, FileText, Image, Settings,
   Zap, Palette, Megaphone, HardDrive, Radio, FlaskConical,
-  Scale, Rocket, Shield, PanelLeftClose, PanelLeft, Mail, Lock, Star, Eye, Search, ShieldCheck, Map, X, ChevronDown, Tag, Activity, ShoppingBag, CreditCard, Sparkles, TrendingUp, Cloud
+  Scale, Rocket, Shield, PanelLeftClose, PanelLeft, Mail, Lock, Star, Eye, Search, ShieldCheck, Map, X, ChevronDown, Tag, Activity, ShoppingBag, CreditCard, Sparkles, TrendingUp, Cloud, Package2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { auth, signOut } from '@/lib/firebase';
@@ -41,6 +41,7 @@ const navGroups = [
       { id: 'payments', label: 'Payment Gateways', icon: CreditCard },
       { id: 'fena', label: 'Fena Payments', icon: CreditCard },
       { id: 'shopify', label: 'Shopify', icon: ShoppingBag },
+      { id: 'royalmail', label: 'Royal Mail Labels', icon: Package2 },
 
 
 
