@@ -5,8 +5,9 @@ import { auth, db, doc, getDoc, onAuthStateChanged, logoutUser } from '@/lib/fir
 import { checkAdminIpAllowed } from '@/lib/admin-ip-gate.functions';
 import { logSecurityEvent } from '@/lib/security-events';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Loader2, Menu, WifiOff, RefreshCw, Clock } from 'lucide-react';
+import { Shield, Loader2, Menu, WifiOff, RefreshCw, Clock, Command as CmdIcon, ExternalLink, LogOut, Cloud } from 'lucide-react';
 import AdminSidebar from './components/AdminSidebar';
+import CommandPalette, { type CommandItem } from './components/CommandPalette';
 import DashboardTab from './tabs/DashboardTab';
 import InventoryTab from './tabs/InventoryTab';
 import OrdersTab from './tabs/OrdersTab';
@@ -94,9 +95,39 @@ export default function AdminPage() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
   const [idleWarningSec, setIdleWarningSec] = useState(0);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [recachePending, setRecachePending] = useState(false);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // ⌘K / Ctrl+K opens the command palette
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Track recache-pending flag (set elsewhere via window event 'admin:save')
+  useEffect(() => {
+    const read = () => {
+      try { setRecachePending(localStorage.getItem('php_recache_pending') === '1'); } catch { /* noop */ }
+    };
+    read();
+    const onSave = () => { try { localStorage.setItem('php_recache_pending', '1'); } catch { /* noop */ } read(); };
+    const onStorage = (e: StorageEvent) => { if (e.key === 'php_recache_pending') read(); };
+    window.addEventListener('admin:save', onSave);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener('admin:save', onSave);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
 
   useEffect(() => {
     const update = () => setIsLargeScreen(window.innerWidth >= 1024);
@@ -419,6 +450,47 @@ export default function AdminPage() {
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
 
+  // Command palette items: every tab + quick actions
+  const paletteItems: CommandItem[] = [
+    ...Object.entries(TAB_LABELS).map(([id, label]) => ({
+      id: `tab:${id}`,
+      label,
+      group: 'Navigate',
+      keywords: id,
+      action: () => setActiveTab(id as Tab),
+    })),
+    {
+      id: 'action:recache',
+      label: 'Cache & Recache',
+      group: 'Actions',
+      icon: Cloud,
+      keywords: 'purge cloudflare prerender',
+      action: () => setActiveTab('cacherecache'),
+    },
+    {
+      id: 'action:clear-pending',
+      label: 'Clear pending-publish flag',
+      group: 'Actions',
+      icon: RefreshCw,
+      keywords: 'amber dot pending',
+      action: () => { try { localStorage.removeItem('php_recache_pending'); } catch { /* noop */ } setRecachePending(false); },
+    },
+    {
+      id: 'action:open-site',
+      label: 'Open phlabs.co.uk in new tab',
+      group: 'Actions',
+      icon: ExternalLink,
+      action: () => window.open('https://phlabs.co.uk', '_blank', 'noreferrer'),
+    },
+    {
+      id: 'action:logout',
+      label: 'Log out',
+      group: 'Actions',
+      icon: LogOut,
+      action: () => { logoutUser().finally(() => navigate('/login')); },
+    },
+  ];
+
   return (
     <div
       id="admin-panel"
@@ -508,8 +580,10 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Recache pending dot */}
-          <div className="shrink-0 w-2 h-2 rounded-full bg-amber-400/80 shadow-[0_0_6px_rgba(251,191,36,0.6)]" title="Changes pending publish" />
+          {/* Recache pending dot — only when a save has set the flag */}
+          {recachePending && (
+            <div className="shrink-0 w-2 h-2 rounded-full bg-amber-400/80 shadow-[0_0_6px_rgba(251,191,36,0.6)]" title="Changes pending publish" />
+          )}
         </header>
 
         {/* ── Desktop header bar ── */}
@@ -527,15 +601,32 @@ export default function AdminPage() {
             <span style={{ color: 'rgba(59,130,246,0.2)' }}>/</span>
             <span className="text-[13px] font-semibold text-white/80">{activeLabel}</span>
           </div>
-          <a
-            href="/"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1.5 text-[11px] text-[#3a5a82] hover:text-[#9cb8d9] transition-colors"
-          >
-            <Shield className="w-3 h-3" />
-            <span>phlabs.co.uk</span>
-          </a>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setPaletteOpen(true)}
+              className="flex items-center gap-2 px-2.5 py-1 rounded-md text-[11px] text-[#9cb8d9] hover:text-white transition-colors border border-white/10 hover:border-blue-400/40 bg-white/[0.02]"
+              title="Open command palette"
+            >
+              <CmdIcon className="w-3 h-3" />
+              <span>Quick jump</span>
+              <kbd className="font-mono text-[10px] text-[#3a5a82] border border-white/10 rounded px-1">⌘K</kbd>
+            </button>
+            {recachePending && (
+              <span className="flex items-center gap-1.5 text-[10px] text-amber-300/90" title="Changes pending publish">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400/80 shadow-[0_0_6px_rgba(251,191,36,0.6)]" />
+                pending
+              </span>
+            )}
+            <a
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 text-[11px] text-[#3a5a82] hover:text-[#9cb8d9] transition-colors"
+            >
+              <Shield className="w-3 h-3" />
+              <span>phlabs.co.uk</span>
+            </a>
+          </div>
         </header>
 
         {/* ── Tab content ── */}
@@ -575,6 +666,8 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} items={paletteItems} />
     </div>
   );
 }
