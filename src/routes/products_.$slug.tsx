@@ -30,6 +30,14 @@ export const Route = createFileRoute("/products_/$slug")({
 
     // 1) Slug-shaped → existing behavior: slug lookup + canonical redirect.
     if (looksLikeSlug) {
+      const aliasTarget = LEGACY_SLUG_ALIASES[raw];
+      if (aliasTarget) {
+        throw redirect({
+          to: "/products/$slug",
+          params: { slug: aliasTarget },
+          statusCode: 301,
+        });
+      }
       const product = await fetchProductBySlugFn({ data: { slug: raw } });
       if (product) {
         if (product.slug !== raw) {
