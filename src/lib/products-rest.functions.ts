@@ -21,6 +21,7 @@ import { createServerFn } from '@tanstack/react-start';
 import {
   fetchAllProducts,
   fetchProductBySlug,
+  fetchProductById,
   type SeoProduct,
 } from './firestore-rest';
 
@@ -57,6 +58,28 @@ export const fetchProductBySlugFn = createServerFn({ method: 'GET' })
       return await fetchProductBySlug(data.slug);
     } catch (err) {
       console.error('[products-rest.functions] fetchProductBySlug failed', err);
+      return null;
+    }
+  });
+
+export const fetchProductByIdFn = createServerFn({ method: 'GET' })
+  .inputValidator((input: { id: string }) => {
+    if (
+      !input ||
+      typeof input.id !== 'string' ||
+      input.id.length === 0 ||
+      input.id.length > 200 ||
+      !/^[A-Za-z0-9_-]+$/.test(input.id)
+    ) {
+      throw new Error('invalid_id');
+    }
+    return { id: input.id };
+  })
+  .handler(async ({ data }): Promise<SeoProduct | null> => {
+    try {
+      return await fetchProductById(data.id);
+    } catch (err) {
+      console.error('[products-rest.functions] fetchProductById failed', err);
       return null;
     }
   });

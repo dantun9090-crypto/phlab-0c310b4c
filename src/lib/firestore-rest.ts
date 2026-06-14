@@ -257,6 +257,15 @@ export async function fetchProductBySlug(slug: string): Promise<SeoProduct | nul
   return null;
 }
 
+/**
+ * Look up a product by its Firestore document ID. Powers the dual-URL
+ * support at /products/:id (alongside the canonical /products/:slug).
+ */
+export async function fetchProductById(id: string): Promise<SeoProduct | null> {
+  const all = await fetchAllProducts();
+  return all.find((p) => p.id === id) ?? null;
+}
+
 export { slugify };
 
 /**
