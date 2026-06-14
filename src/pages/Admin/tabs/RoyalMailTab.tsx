@@ -697,7 +697,7 @@ async function downloadPreviewPdf(form: FormState, service: typeof SERVICES[numb
 
   // Pseudo-barcode strip (bottom-left)
   const bx = 20, by = H - 60, bw = 220, bh = 36;
-  doc.setFillColor(0);
+  doc.setFillColor(0, 0, 0);
   let cursor = bx;
   let i = 0;
   while (cursor < bx + bw) {
