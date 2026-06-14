@@ -127,12 +127,27 @@ export default {
 
       let rmRes = await sendToRoyalMail(payload);
 
-      const rmText = await rmRes.text();
+      let rmText = await rmRes.text();
       let rmData;
       try {
         rmData = rmText ? JSON.parse(rmText) : {};
       } catch {
         rmData = { message: rmText || 'Royal Mail returned a non-JSON response' };
+      }
+
+      const unsupportedService = Array.isArray(rmData?.failedOrders)
+        && rmData.failedOrders.some((failed) => Array.isArray(failed?.errors)
+          && failed.errors.some((error) => Number(error?.errorCode) === 31
+            && String(error?.fields?.[0]?.fieldName || '').toLowerCase() === 'postagedetails.servicecode'));
+      if (unsupportedService && item.postageDetails?.serviceCode) {
+        delete item.postageDetails;
+        rmRes = await sendToRoyalMail({ items: [item] });
+        rmText = await rmRes.text();
+        try {
+          rmData = rmText ? JSON.parse(rmText) : {};
+        } catch {
+          rmData = { message: rmText || 'Royal Mail returned a non-JSON response' };
+        }
       }
 
       if (!rmRes.ok) {
