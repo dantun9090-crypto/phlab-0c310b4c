@@ -19,7 +19,7 @@ type WorkerEnv = {
    * `admin_gate` cookie whose value equals this secret BEFORE the SPA
    * shell is served — so a stolen Firebase ID token alone can't reach
    * the admin panel. Unset = disabled (no behaviour change).
-   * Cookie is provisioned via GET /admin-unlock?token=<secret>.
+   * Cookie is provisioned via POST /admin-unlock (form field `token`).
    */
   ADMIN_GATE_SECRET?: string;
 };
@@ -593,6 +593,25 @@ export default {
           return diff === 0;
         };
         if (url.pathname === "/admin-unlock") {
+          // GET renders a small form so the secret is typed into a POST body,
+          // never the URL (which would land in CF logs, browser history, Referer).
+          if (request.method === "GET") {
+            return new Response(
+              "<!doctype html><html><head><title>Admin unlock</title><meta name=\"robots\" content=\"noindex\"><meta name=\"referrer\" content=\"no-referrer\"></head><body style=\"font-family:system-ui;padding:32px;background:#020617;color:#fff\"><h1>Admin unlock</h1><form method=\"POST\" action=\"/admin-unlock\" autocomplete=\"off\"><label for=\"token\">Token</label><br><input id=\"token\" name=\"token\" type=\"password\" autocomplete=\"off\" autocapitalize=\"off\" spellcheck=\"false\" style=\"min-width:320px;padding:8px;margin:8px 0;background:#0f172a;color:#fff;border:1px solid #334155;border-radius:6px\"><br><button type=\"submit\" style=\"padding:8px 16px;background:#10b981;color:#020617;border:0;border-radius:6px;font-weight:600;cursor:pointer\">Unlock</button></form></body></html>",
+              {
+                status: 200,
+                headers: {
+                  "content-type": "text/html; charset=utf-8",
+                  "cache-control": "no-store",
+                  "x-robots-tag": "noindex, nofollow",
+                  "referrer-policy": "no-referrer",
+                },
+              },
+            );
+          }
+          if (request.method !== "POST") {
+            return new Response("Method Not Allowed", { status: 405, headers: { "cache-control": "no-store", allow: "GET, POST" } });
+          }
           // Rate-limit: 3 attempts per IP per hour to prevent brute-forcing ADMIN_GATE_SECRET.
           const ip = request.headers.get("cf-connecting-ip")
             ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
@@ -600,7 +619,6 @@ export default {
           const now = Date.now();
           const WINDOW_MS = 60 * 60 * 1000;
           const MAX_ATTEMPTS = 3;
-          // Module-level map persists per Worker isolate.
           const bucket = adminUnlockAttempts.get(ip);
           if (bucket && now - bucket.start < WINDOW_MS) {
             if (bucket.count >= MAX_ATTEMPTS) {
@@ -614,27 +632,42 @@ export default {
           } else {
             adminUnlockAttempts.set(ip, { count: 1, start: now });
           }
-          // Opportunistic cleanup to bound memory.
           if (adminUnlockAttempts.size > 1000) {
             for (const [k, v] of adminUnlockAttempts) {
               if (now - v.start > WINDOW_MS) adminUnlockAttempts.delete(k);
             }
           }
-          const token = url.searchParams.get("token") ?? "";
-          if (!ctEq(token, adminGateSecret)) {
-            return new Response("Forbidden", { status: 403, headers: { "cache-control": "no-store" } });
+          // Read token from POST body (form-encoded). Never accept it from the query string.
+          let token = "";
+          try {
+            const ct = request.headers.get("content-type") ?? "";
+            if (ct.includes("application/x-www-form-urlencoded") || ct.includes("multipart/form-data")) {
+              const form = await request.formData();
+              const v = form.get("token");
+              token = typeof v === "string" ? v : "";
+            } else {
+              // Fallback: raw body parsed as urlencoded.
+              const body = await request.text();
+              token = new URLSearchParams(body).get("token") ?? "";
+            }
+          } catch {
+            token = "";
           }
-          // Success — reset bucket for this IP.
+          if (!token || !ctEq(token, adminGateSecret)) {
+            return new Response("Forbidden", { status: 403, headers: { "cache-control": "no-store", "referrer-policy": "no-referrer" } });
+          }
           adminUnlockAttempts.delete(ip);
           return new Response(null, {
-            status: 302,
+            status: 303,
             headers: {
               location: "/admin",
               "set-cookie": `admin_gate=${encodeURIComponent(adminGateSecret)}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=43200`,
               "cache-control": "no-store",
+              "referrer-policy": "no-referrer",
             },
           });
         }
+
 
         const isAdminPath = url.pathname === "/admin" || url.pathname.startsWith("/admin/");
         if (isAdminPath) {
@@ -644,7 +677,7 @@ export default {
           if (!ctEq(supplied, adminGateSecret)) {
             log.warn({ event: "admin_gate.blocked", ...baseFields });
             return new Response(
-              "<!doctype html><html><head><title>Admin gate</title><meta name=\"robots\" content=\"noindex\"></head><body style=\"font-family:system-ui;padding:32px;background:#020617;color:#fff\"><h1>Additional authorisation required</h1><p>Visit <code>/admin-unlock?token=YOUR_SECRET</code> to enable admin access from this device.</p></body></html>",
+              "<!doctype html><html><head><title>Admin gate</title><meta name=\"robots\" content=\"noindex\"><meta name=\"referrer\" content=\"no-referrer\"></head><body style=\"font-family:system-ui;padding:32px;background:#020617;color:#fff\"><h1>Additional authorisation required</h1><p>Visit <a href=\"/admin-unlock\" style=\"color:#10b981\">/admin-unlock</a> and submit the secret to enable admin access from this device.</p></body></html>",
               {
                 status: 401,
                 headers: {
