@@ -367,6 +367,10 @@ export default function RoyalMailTab() {
         </Card>
       </div>
 
+      {/* ── Label preview ── */}
+      <LabelPreview form={form} service={service} />
+
+
       {/* ── Footer summary + submit ── */}
       <div
         className="sticky bottom-0 -mx-4 sm:-mx-6 px-4 sm:px-6 py-4 backdrop-blur-md border-t flex items-center justify-between gap-3 flex-wrap"
