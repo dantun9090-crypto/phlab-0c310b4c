@@ -111,7 +111,8 @@ export function ProductCard({
           <img
             src={imgUrl}
             alt={getProductAlt(name, product.category)}
-            loading="lazy"
+            loading={isAboveFold ? "eager" : "lazy"}
+            fetchPriority={isAboveFold ? "high" : "auto"}
             width="288"
             height="216"
             decoding="async"
