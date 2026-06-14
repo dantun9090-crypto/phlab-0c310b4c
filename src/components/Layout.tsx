@@ -18,6 +18,7 @@ import { CookieConsent } from '@/components/CookieConsent';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import { getRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { migrateStoredCart } from '@/lib/cart-migration';
+import { initAnalytics, trackPageView } from '@/lib/analytics';
 
 import { Logo } from './Logo';
 import { UnderConstruction } from './UnderConstruction';
@@ -83,6 +84,21 @@ export function Layout({ children }: LayoutProps) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Google Analytics 4 — load once on mount, then fire page_view on every SPA route change
+  useEffect(() => {
+    let id: string | undefined;
+    try {
+      const cached = localStorage.getItem('php_site_settings');
+      if (cached) id = (JSON.parse(cached) as { googleAnalyticsId?: string }).googleAnalyticsId?.trim() || undefined;
+    } catch { /* ignore */ }
+    initAnalytics(id);
+  }, []);
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location.pathname, location.search]);
+
+
 
   // Auth pages handle their own full-screen layout — no nav padding needed
   const isAuthPage = ['/login', '/register'].includes(location.pathname);

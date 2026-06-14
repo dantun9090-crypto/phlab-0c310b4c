@@ -1,86 +1,159 @@
 /**
- * Analytics helper — writes to Supabase `analytics_events`.
+ * Google Analytics 4 loader with GDPR Consent Mode v2.
  *
- * RLS allows anon + authenticated to INSERT as long as the payload
- * passes the size checks (event_type 1–100 chars, path ≤ 2048,
- * user_agent ≤ 1024, metadata ≤ 4 KB). Reads are admin-only.
+ * Behaviour:
+ *  - gtag.js is loaded once on first call to initAnalytics().
+ *  - Consent defaults to DENIED (GDPR-safe). After the user accepts
+ *    analytics in the cookie banner, we call gtag('consent','update',...)
+ *    which is the official Google pattern — no PII leaves the device
+ *    before consent is granted.
+ *  - SPA page_view events are dispatched on every route change.
+ *  - Bots / prerender.io / DNT users are skipped entirely.
  *
- * Usage:
- *   import { trackEvent, trackPageView } from "@/lib/analytics";
- *
- *   // On route change:
- *   trackPageView();
- *
- *   // Custom event:
- *   trackEvent("add_to_cart", { productId: "bpc-157", qty: 1 });
+ * The CookieConsent component dispatches `php:cookie-consent-changed`
+ * with `{ analytics: boolean, marketing: boolean }` — we listen here.
  */
-import { supabase } from "@/integrations/supabase/client";
 
-type Json = Record<string, unknown> | null | undefined;
-
-const EVENT_TYPE_MAX = 100;
-const PATH_MAX = 2048;
-const UA_MAX = 1024;
-const METADATA_MAX_BYTES = 4096;
-
-function clamp(value: string | null | undefined, max: number): string | null {
-  if (!value) return null;
-  return value.length > max ? value.slice(0, max) : value;
+declare global {
+  interface Window {
+    dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
+  }
 }
 
-function safeMetadata(meta: Json): Json {
-  if (!meta) return null;
+const DEFAULT_MEASUREMENT_ID = 'G-5HM4YT7HDW';
+const STORAGE_KEY = 'php_cookie_consent';
+
+let loaded = false;
+let currentId: string | null = null;
+let lastTrackedPath: string | null = null;
+
+function isBot(): boolean {
+  if (typeof navigator === 'undefined') return true;
+  const ua = navigator.userAgent || '';
+  return /bot|crawl|spider|prerender|headless|lighthouse|pagespeed|gtmetrix/i.test(ua);
+}
+
+function dntEnabled(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  // @ts-expect-error legacy MS prefix
+  const dnt = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+  return dnt === '1' || dnt === 'yes';
+}
+
+function readStoredConsent(): { analytics: boolean; marketing: boolean } {
   try {
-    const json = JSON.stringify(meta);
-    // Rough byte estimate; UTF-8 ASCII = 1 byte/char, safe upper bound.
-    if (new Blob([json]).size > METADATA_MAX_BYTES) {
-      if (import.meta.env.DEV) {
-        console.warn("[analytics] metadata exceeds 4KB, dropping payload");
-      }
-      return null;
-    }
-    return meta;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { analytics: false, marketing: false };
+    const p = JSON.parse(raw);
+    return { analytics: !!p.analytics, marketing: !!p.marketing };
   } catch {
-    return null;
+    return { analytics: false, marketing: false };
   }
 }
 
-/**
- * Record a single analytics event. Fire-and-forget — never throws,
- * never blocks the UI. Failures are logged in dev only.
- */
-export async function trackEvent(
-  eventType: string,
-  metadata?: Json,
-  options?: { path?: string },
-): Promise<void> {
-  if (typeof window === "undefined") return; // SSR guard
-  if (!eventType || eventType.length === 0) return;
+function gtag(...args: unknown[]) {
+  window.dataLayer = window.dataLayer || [];
+  window.dataLayer.push(args);
+}
 
-  const type = clamp(eventType, EVENT_TYPE_MAX)!;
-  const path =
-    clamp(options?.path ?? window.location.pathname + window.location.search, PATH_MAX);
-  const userAgent = clamp(navigator.userAgent, UA_MAX);
-  const meta = safeMetadata(metadata);
+function injectScript(id: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[data-ga-id="${id}"]`)) {
+      resolve();
+      return;
+    }
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = `https://www.googletagmanager.com/gtag/js?id=${id}`;
+    s.dataset.gaId = id;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Failed to load gtag.js'));
+    document.head.appendChild(s);
+  });
+}
+
+/**
+ * Initialise GA4. Safe to call multiple times — only loads once.
+ * Pass a custom Measurement ID to override the default.
+ */
+export async function initAnalytics(measurementId?: string): Promise<void> {
+  if (typeof window === 'undefined') return;
+  if (loaded) return;
+  if (isBot() || dntEnabled()) return;
+
+  const id = (measurementId && measurementId.trim()) || DEFAULT_MEASUREMENT_ID;
+  if (!/^G-[A-Z0-9]{6,}$/i.test(id)) return;
+
+  currentId = id;
+  loaded = true;
+
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = function (...args: unknown[]) { window.dataLayer!.push(args); };
+
+  // GDPR Consent Mode v2 — defaults BEFORE any tag load
+  const consent = readStoredConsent();
+  gtag('consent', 'default', {
+    ad_storage: consent.marketing ? 'granted' : 'denied',
+    ad_user_data: consent.marketing ? 'granted' : 'denied',
+    ad_personalization: consent.marketing ? 'granted' : 'denied',
+    analytics_storage: consent.analytics ? 'granted' : 'denied',
+    functionality_storage: 'granted',
+    security_storage: 'granted',
+    wait_for_update: 500,
+  });
 
   try {
-    const { error } = await supabase.from("analytics_events").insert({
-      event_type: type,
-      path,
-      user_agent: userAgent,
-      metadata: meta as never,
-    });
-    if (error && import.meta.env.DEV) {
-      console.warn("[analytics] insert failed:", error.message);
-    }
-  } catch (err) {
-    if (import.meta.env.DEV) console.warn("[analytics] threw:", err);
+    await injectScript(id);
+  } catch {
+    loaded = false;
+    return;
   }
+
+  gtag('js', new Date());
+  gtag('config', id, {
+    send_page_view: false, // we fire manually on route changes
+    anonymize_ip: true,
+    allow_google_signals: consent.marketing,
+    allow_ad_personalization_signals: consent.marketing,
+  });
+
+  // Fire initial page view
+  trackPageView(window.location.pathname + window.location.search);
+
+  // Listen for consent changes from the cookie banner
+  window.addEventListener('php:cookie-consent-changed', ((e: Event) => {
+    const detail = (e as CustomEvent<{ analytics: boolean; marketing: boolean }>).detail || { analytics: false, marketing: false };
+    gtag('consent', 'update', {
+      analytics_storage: detail.analytics ? 'granted' : 'denied',
+      ad_storage: detail.marketing ? 'granted' : 'denied',
+      ad_user_data: detail.marketing ? 'granted' : 'denied',
+      ad_personalization: detail.marketing ? 'granted' : 'denied',
+    });
+  }) as EventListener);
 }
 
-/**
- * Record a page view. Call on initial mount and after every route change.
- */
-export function trackPageView(metadata?: Json): void {
-  void trackEvent("page_view", metadata);
+export function trackPageView(path: string): void {
+  if (!loaded || !currentId || typeof window === 'undefined' || !window.gtag) return;
+  if (path === lastTrackedPath) return;
+  lastTrackedPath = path;
+  window.gtag('event', 'page_view', {
+    page_path: path,
+    page_location: window.location.href,
+    page_title: document.title,
+    send_to: currentId,
+  });
+}
+
+export function trackEvent(name: string, params?: Record<string, unknown>): void {
+  if (!loaded || !currentId || typeof window === 'undefined' || !window.gtag) return;
+  window.gtag('event', name, { ...(params || {}), send_to: currentId });
+}
+
+export function getAnalyticsStatus() {
+  return {
+    loaded,
+    measurementId: currentId,
+    consent: readStoredConsent(),
+  };
 }

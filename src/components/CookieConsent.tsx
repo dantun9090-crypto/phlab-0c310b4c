@@ -22,6 +22,13 @@ export function getCookiePreferences(): CookiePreferences | null {
 
 function savePreferences(prefs: CookiePreferences) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+  try {
+    window.dispatchEvent(new CustomEvent('php:cookie-consent-changed', {
+      detail: { analytics: prefs.analytics, marketing: prefs.marketing },
+    }));
+  } catch {
+    /* noop */
+  }
 }
 
 export function CookieConsent() {
