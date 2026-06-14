@@ -215,20 +215,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "google-site-verification", content: "tYtU-dRlfAq14D7lyPTYf8noiJH-b0LifcvvrGi8AZw" },
-      // title, description, og:title/description/image, twitter:* and og:type
-      // are intentionally set per-leaf-route (see src/routes/index.tsx,
-      // src/routes/products.tsx, src/routes/products_.$slug.tsx, src/routes/$.tsx)
-      // to avoid duplicate <title>/<meta> tags in <head> — TanStack
-      // concatenates parent + leaf meta when keys differ.
-      { title: "PH LABS | Premium Research Peptides" },
-      { property: "og:title", content: "PH LABS | Premium Research Peptides" },
-      { name: "twitter:title", content: "PH LABS | Premium Research Peptides" },
-      { name: "description", content: "PH LABS supplies premium research peptides for scientific study. UK-based, fast delivery, lab-tested purity. Browse Retatrutide, NAD+, GHK-Cu and more." },
-      { property: "og:description", content: "PH LABS supplies premium research peptides for scientific study. UK-based, fast delivery, lab-tested purity. Browse Retatrutide, NAD+, GHK-Cu and more." },
-      { name: "twitter:description", content: "PH LABS supplies premium research peptides for scientific study. UK-based, fast delivery, lab-tested purity. Browse Retatrutide, NAD+, GHK-Cu and more." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/8a9bd430-bada-4a52-ae3f-7ea0c19bc5d7" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/8a9bd430-bada-4a52-ae3f-7ea0c19bc5d7" },
-      { property: "og:type", content: "website" },
+      // title, description, og:title/description/image/type and twitter:title/
+      // description/image are intentionally set per-leaf-route only (see
+      // src/routes/index.tsx, src/routes/products.tsx,
+      // src/routes/products_.$slug.tsx, src/routes/$.tsx). Keeping defaults
+      // here would concatenate with leaf entries in the head and show
+      // up as redundant og:title / og:description / og:image tags.
+      // og:site_name, og:locale, and twitter:card are sitewide identity
+      // values that don't vary per route, so they stay above.
+
     ],
     scripts: [
       {
