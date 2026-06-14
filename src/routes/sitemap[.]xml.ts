@@ -34,11 +34,19 @@ const staticEntries: SitemapEntry[] = [
   { path: "/terms-and-conditions", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.3" },
   { path: "/privacy-policy", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.3" },
   { path: "/cookies", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.3" },
-  // /research, /lab-reports, /storage-guide removed 2026-06-10 — pages were
-  // returning empty content / 404 to crawlers and dragging down crawl budget.
+  { path: "/research", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
+  { path: "/lab-reports", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.6" },
+  { path: "/storage-guide", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.6" },
   // /google-merchant-feed.xml is discovered separately by Merchant Center.
   { path: "/bing-feed.xml", lastmod: STATIC_LASTMOD, changefreq: "daily", priority: "0.2" },
-];
+  // Category landing pages (legacy router /products/category/:slug)
+  { path: "/products/category/cellular-aging", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
+  { path: "/products/category/blends", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
+  { path: "/products/category/metabolic-signaling", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
+  { path: "/products/category/accessories", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.6" },
+  { path: "/products/category/melanin", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
+  { path: "/products/category/neurological", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
+  { path: "/products/category/tissue-repair", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
 
 // Fallback product entries: only used if Firestore fetch fails. BPC-157 was
 // removed here on 2026-06-02 — it's now unhidden and served dynamically with
