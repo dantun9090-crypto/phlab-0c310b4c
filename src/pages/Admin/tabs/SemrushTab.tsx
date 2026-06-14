@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import { Loader2, RefreshCw, TrendingUp, Link2, Search, AlertTriangle, ExternalLink } from 'lucide-react';
-import { auth } from '@/lib/firebase';
+import { getAdminIdToken } from '@/lib/auth-ready';
 import { getSemrushOverview } from '@/lib/semrush.functions';
 
 interface OverviewData {
