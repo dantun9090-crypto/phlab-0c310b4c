@@ -360,7 +360,7 @@ export function Layout({ children }: LayoutProps) {
         item_id: String(item.id),
         item_name: item.name,
         item_variant: item.dosage || item.variantId,
-        price: typeof item.price === 'number' ? item.price : Number(item.price) || 0,
+        price: item.priceNum || Number(item.price) || 0,
         quantity: 1,
         currency: 'GBP',
       });
@@ -894,7 +894,7 @@ export function Layout({ children }: LayoutProps) {
                               item_id: String(c.id),
                               item_name: c.name,
                               item_variant: c.dosage || c.variantId,
-                              price: typeof c.price === 'number' ? c.price : Number(c.price) || 0,
+                              price: c.priceNum || Number(c.price) || 0,
                               quantity: c.quantity,
                               currency: 'GBP',
                             })),
