@@ -388,9 +388,9 @@ function TokenLengthCard() {
             Cloudflare Prerender token validation
           </h3>
           <p className="text-xs text-[#9cb8d9] mt-1">
-            Checks that <code className="text-emerald-400">PRERENDER_TOKEN</code> is exactly{' '}
-            <span className="text-white font-semibold">22 characters</span> — the standard
-            Prerender.io token length. Shorter usually means the value was truncated when pasted.
+            Checks that <code className="text-emerald-400">PRERENDER_TOKEN</code> is configured and
+            long enough to be a valid Prerender.io token. The live Googlebot check below confirms
+            whether the edge integration is actually using it.
           </p>
 
           {loading && (
@@ -410,7 +410,7 @@ function TokenLengthCard() {
                   length: <span className={state.ok ? 'text-emerald-400' : 'text-red-400'}>{state.length}</span>
                 </span>
                 <span className="px-2 py-1 rounded bg-slate-900/60 border border-white/[0.06] text-[#9cb8d9]">
-                  expected: <span className="text-white">{state.expected}</span>
+                  minimum: <span className="text-white">{state.expected}</span>
                 </span>
                 <span className="px-2 py-1 rounded bg-slate-900/60 border border-white/[0.06] text-[#9cb8d9]">
                   configured: <span className={state.configured ? 'text-emerald-400' : 'text-red-400'}>{state.configured ? 'yes' : 'no'}</span>
@@ -428,23 +428,20 @@ function TokenLengthCard() {
                 <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-md p-2.5 space-y-1">
                   <p>
                     <strong className="text-red-200">
-                      Token length is {state.length}, expected {state.expected}.
+                      Token length is {state.length}, minimum expected is {state.expected}.
                     </strong>{' '}
-                    This will cause Prerender.io to reject every bot request with
-                    {' '}<code className="text-red-200">invalid-x-prerender-token-provided</code> (HTTP 503).
+                    This may cause Prerender.io to reject bot requests if the value was truncated.
                   </p>
                   <p>
-                    Open the Prerender.io dashboard, click the <strong>copy</strong> button next
-                    to the token (don't manually select), and paste it into the secret. Also update
-                    the matching token inside the Cloudflare Prerender.io app integration.
+                    Update the <code className="text-red-200">PRERENDER_TOKEN</code> secret with the current
+                    token copied from Prerender.io, then re-run the live Googlebot check.
                   </p>
                 </div>
               )}
 
               {state.ok && (
                 <div className="text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-md p-2.5">
-                  Token length looks correct. If bot requests still return 503, the token may be
-                  valid but rotated — copy the current value from the Prerender.io dashboard.
+                  Token length is plausible. Use the live Googlebot simulation below as the source of truth.
                 </div>
               )}
 
@@ -521,8 +518,8 @@ function GooglebotCheckCard() {
             Server-side fetch with the real Googlebot User-Agent. Reports
             <span className="text-emerald-400 font-semibold"> 200 (OK)</span> when bots get
             prerendered HTML, or
-            <span className="text-red-400 font-semibold"> 503 (FAIL)</span> when Prerender.io
-            rejects the request (usually an invalid token).
+            <span className="text-amber-400 font-semibold"> WARN</span> when the page returns normal HTML
+            but did not pass through Prerender.io.
           </p>
 
           <div className="mt-3 flex flex-col sm:flex-row gap-2">
@@ -573,6 +570,7 @@ function GooglebotCheckCard() {
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] font-mono">
                 <Stat label="x-prerendered" value={res.prerendered ? 'yes' : 'no'} tone={res.prerendered ? 'ok' : 'neutral'} />
+                <Stat label="Route" value={res.routedVia ?? '—'} tone={res.prerendered ? 'ok' : 'warn'} />
                 <Stat label="Prerender cache" value={res.prerenderCache ?? '—'} />
                 <Stat label="CF cache" value={res.cfCache ?? '—'} />
                 <Stat label="Server" value={res.server ?? '—'} />
@@ -582,9 +580,8 @@ function GooglebotCheckCard() {
 
               {tone === 'bad' && res.rejectReason?.includes('invalid-x-prerender-token') && (
                 <div className="text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-md p-2.5">
-                  Prerender.io is rejecting the token configured in the Cloudflare Prerender.io
-                  app. Open Cloudflare → Apps → Prerender.io and paste the current token from your
-                  Prerender.io dashboard.
+                  Prerender.io is rejecting the configured token. Update the PRERENDER_TOKEN secret
+                  with the current token copied from Prerender.io.
                 </div>
               )}
             </div>

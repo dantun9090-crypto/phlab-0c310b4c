@@ -1,16 +1,11 @@
 import { useEffect, useState } from 'react';
-import {
-  collection,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-} from 'firebase/firestore';
-import { db, auth } from '@/lib/firebase';
+import { useServerFn } from '@tanstack/react-start';
 import {
   Activity, RefreshCw, AlertCircle, CheckCircle2, XCircle,
   ExternalLink, Clock, Link2,
 } from 'lucide-react';
+import { getAdminIdToken } from '@/lib/auth-ready';
+import { listUrlMonitorScans } from '@/lib/url-monitor.functions';
 
 interface UrlCheck {
   url: string;
@@ -49,6 +44,7 @@ interface ScanDoc {
 const ENDPOINT = '/api/public/hooks/monitor-product-urls';
 
 export default function UrlMonitorTab() {
+  const listScans = useServerFn(listUrlMonitorScans);
   const [history, setHistory] = useState<ScanDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
@@ -59,40 +55,9 @@ export default function UrlMonitorTab() {
     setLoading(true);
     setErr(null);
     try {
-      // Wait for Firebase Auth to restore the session before querying — the
-      // url_monitor_scans collection is admin-read-only, so an unauthenticated
-      // query silently fails the rules check.
-      await auth.authStateReady();
-      if (!auth.currentUser) {
-        throw new Error('Not signed in — please sign in as an admin first.');
-      }
-      const q = query(
-        collection(db, 'url_monitor_scans'),
-        orderBy('scannedAt', 'desc'),
-        limit(20),
-      );
-      const snap = await getDocs(q);
-      const docs: ScanDoc[] = snap.docs.map((d) => {
-        const data = d.data() as any;
-        const ts = data.scannedAt;
-        const iso =
-          ts && typeof ts.toDate === 'function'
-            ? ts.toDate().toISOString()
-            : typeof ts === 'string'
-              ? ts
-              : new Date().toISOString();
-        return {
-          id: d.id,
-          scannedAt: iso,
-          origin: data.origin ?? '',
-          totalProducts: data.totalProducts ?? 0,
-          totalChecks: data.totalChecks ?? 0,
-          failedChecks: data.failedChecks ?? 0,
-          durationMs: data.durationMs ?? 0,
-          failingChecks: Array.isArray(data.failingChecks) ? data.failingChecks : [],
-        };
-      });
-      setHistory(docs);
+      const idToken = await getAdminIdToken();
+      const res = await listScans({ data: { idToken } });
+      setHistory(res.scans as ScanDoc[]);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {

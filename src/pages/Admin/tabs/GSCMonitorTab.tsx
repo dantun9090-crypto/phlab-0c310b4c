@@ -64,6 +64,7 @@ export default function GSCMonitorTab() {
   const [customUrl, setCustomUrl] = useState('');
 
   const [sites, setSites] = useState<{ siteUrl: string; permissionLevel: string }[]>([]);
+  const [selectedSite, setSelectedSite] = useState<string | null>(null);
   const [sitesErr, setSitesErr] = useState<string | null>(null);
 
   const idToken = async () => getAdminIdToken();
@@ -123,6 +124,7 @@ export default function GSCMonitorTab() {
     try {
       const res = await sitesFn({ data: { idToken: await idToken() } });
       setSites(res.sites);
+      setSelectedSite(res.selectedSiteUrl ?? null);
     } catch (e) {
       setSitesErr(e instanceof Error ? e.message : String(e));
     }
@@ -156,6 +158,7 @@ export default function GSCMonitorTab() {
 
       {sites.length > 0 && (
         <div className="text-xs text-slate-400 bg-slate-900/60 border border-slate-700 rounded-lg p-3">
+          {selectedSite && <div className="mb-1 text-emerald-300">Using property: {selectedSite}</div>}
           Verified properties: {sites.map((s) => `${s.siteUrl} (${s.permissionLevel})`).join(' · ')}
         </div>
       )}
