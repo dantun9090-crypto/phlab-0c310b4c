@@ -607,3 +607,112 @@ function Row({ label, value, ok, mono, muted }: { label: string; value: string; 
   );
 }
 
+/**
+ * Generate a preview-only PDF that mirrors the on-screen label mock.
+ * NOT a real Royal Mail label — Click & Drop must issue the real one.
+ * 6" × 4" landscape (standard shipping label size).
+ */
+async function downloadPreviewPdf(form: FormState, service: typeof SERVICES[number]) {
+  const { default: jsPDF } = await import('jspdf');
+  // 6in x 4in @ 72pt = 432 x 288 pt
+  const W = 432, H = 288;
+  const doc = new jsPDF({ unit: 'pt', format: [W, H], orientation: 'landscape' });
+
+  // Border
+  doc.setDrawColor(0); doc.setLineWidth(1);
+  doc.rect(8, 8, W - 16, H - 16);
+
+  // Header bar
+  doc.setFillColor(220, 38, 38);
+  doc.rect(8, 8, W - 16, 32, 'F');
+  doc.setTextColor(255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text('ROYAL MAIL', 20, 30);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text('PREVIEW ONLY — NOT A VALID POSTAGE LABEL', W - 20, 30, { align: 'right' });
+
+  // Service block
+  doc.setTextColor(0);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('SERVICE', 20, 58);
+  doc.setFontSize(13);
+  doc.text(service.name, 20, 74);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${service.code}  ·  ${form.weightGrams} g  ·  ${service.eta}`, 20, 88);
+
+  // Sender (right side, top)
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold');
+  doc.text('FROM', W - 150, 58);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text('PH Labs', W - 150, 70);
+  doc.text('phlabs.co.uk', W - 150, 82);
+
+  // Divider
+  doc.setDrawColor(180); doc.setLineWidth(0.5);
+  doc.line(20, 98, W - 20, 98);
+
+  // Deliver To
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(80);
+  doc.text('DELIVER TO', 20, 114);
+
+  doc.setTextColor(0);
+  let y = 130;
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`${form.firstName} ${form.lastName}`.trim().toUpperCase() || '—', 20, y);
+  y += 16;
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  const lines = [form.addressLine1, form.addressLine2, form.city].filter(Boolean);
+  for (const line of lines) { doc.text(line, 20, y); y += 14; }
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.text(form.postcode.toUpperCase() || '—', 20, y + 4);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text('UNITED KINGDOM', 20, y + 18);
+
+  // Reference + meta (bottom right)
+  const ref = form.reference.trim() || `PREVIEW-${Date.now().toString(36).toUpperCase()}`;
+  doc.setFontSize(7);
+  doc.setTextColor(80);
+  doc.text('REFERENCE', W - 150, H - 60);
+  doc.setTextColor(0);
+  doc.setFont('courier', 'bold');
+  doc.setFontSize(10);
+  doc.text(ref, W - 150, H - 48);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(7);
+  doc.setTextColor(80);
+  doc.text(`Generated ${new Date().toLocaleString('en-GB')}`, W - 150, H - 36);
+  if (form.declaredValue > 0) doc.text(`Declared value: £${form.declaredValue.toFixed(2)}`, W - 150, H - 24);
+
+  // Pseudo-barcode strip (bottom-left)
+  const bx = 20, by = H - 60, bw = 220, bh = 36;
+  doc.setFillColor(0);
+  let cursor = bx;
+  let i = 0;
+  while (cursor < bx + bw) {
+    const w = (i * 7) % 3 === 0 ? 2.4 : 0.9;
+    doc.rect(cursor, by, w, bh, 'F');
+    cursor += w + 1.4;
+    i++;
+  }
+  doc.setFontSize(8);
+  doc.setFont('courier', 'normal');
+  doc.setTextColor(0);
+  doc.text(ref, bx + bw / 2, by + bh + 10, { align: 'center' });
+
+  const fname = `RM-preview-${(form.postcode.replace(/\s/g, '') || 'label').toUpperCase()}.pdf`;
+  doc.save(fname);
+}
+
+
