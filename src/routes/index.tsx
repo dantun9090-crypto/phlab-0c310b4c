@@ -119,16 +119,9 @@ export const Route = createFileRoute("/")({
 });
 
 function LegacyMount() {
-  return (
-    <>
-      {/* SSR-visible H1 — guarantees a single H1 in the first-byte HTML for
-          crawlers and SEO scanners that don't execute JS or hit Prerender.io.
-          The visible hero H1 inside LegacyApp renders post-hydration; this
-          sr-only tag keeps the document outline valid before then. */}
-      <h1 className="sr-only">
-        HPLC-Tested Research Peptides UK — Batch CoA | PH Labs
-      </h1>
-      <LegacyApp initialPath="/" />
-    </>
-  );
+  // NOTE: no sr-only <h1> here — the visible hero H1 inside LegacyApp is the
+  // single canonical H1. Bots get the fully-rendered HTML via Prerender.io,
+  // so an extra SSR-only H1 would just create a duplicate-H1 SEO violation.
+  return <LegacyApp initialPath="/" />;
 }
+

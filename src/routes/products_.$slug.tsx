@@ -273,7 +273,7 @@ function SeoProductBlock({ product }: { product: SeoProduct }) {
   return (
     <div aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
       <p>{product.name}</p>
-      {product.imageUrl ? <img src={product.imageUrl} alt={product.name} /> : null}
+      {product.imageUrl ? <img src={product.imageUrl} alt={`${product.name} research peptide vial — PH Labs UK`} /> : null}
       {product.price ? <p>Price: £{product.price.toFixed(2)} GBP</p> : null}
       {product.purity ? <p>Purity: {product.purity}</p> : null}
       <p>{product.description}</p>
