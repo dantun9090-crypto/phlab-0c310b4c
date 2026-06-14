@@ -1,29 +1,50 @@
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 import LegacyApp from "@/legacy/LegacyApp";
-import { fetchProductBySlugFn, type SeoProduct } from "@/lib/products-rest.functions";
+import {
+  fetchProductBySlugFn,
+  fetchProductByIdFn,
+  type SeoProduct,
+} from "@/lib/products-rest.functions";
 import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
 import { RESEARCH_CONTENT } from "@/lib/research-content";
 
 const OG_IMAGE_FALLBACK = `${SITE_URL}/og-image.jpg`;
 
+// A "slug-shaped" param is lowercase alnum+hyphens; anything else (uppercase,
+// underscores) is treated as a Firestore document ID.
+const SLUG_RE = /^[a-z0-9-]+$/;
+
 
 export const Route = createFileRoute("/products_/$slug")({
   loader: async ({ params }) => {
-    // Server fn — runs on the Worker; the underlying call to
-    // firestore.googleapis.com never happens in the browser.
-    const product = await fetchProductBySlugFn({ data: { slug: params.slug } });
-    if (!product) throw notFound();
-    // If we resolved via prefix/legacy match, 301 to the canonical slug
-    // so Google Merchant Center short URLs (e.g. /products/klow-blend)
-    // redirect to the real product page instead of returning 404.
-    if (product.slug !== params.slug) {
-      throw redirect({
-        to: "/products/$slug",
-        params: { slug: product.slug },
-        statusCode: 301,
-      });
+    const raw = params.slug;
+    const looksLikeSlug = SLUG_RE.test(raw);
+
+    // 1) Slug-shaped → existing behavior: slug lookup + canonical redirect.
+    if (looksLikeSlug) {
+      const product = await fetchProductBySlugFn({ data: { slug: raw } });
+      if (product) {
+        if (product.slug !== raw) {
+          throw redirect({
+            to: "/products/$slug",
+            params: { slug: product.slug },
+            statusCode: 301,
+          });
+        }
+        return { product, matchedBy: "slug" as const };
+      }
+      throw notFound();
     }
-    return { product };
+
+    // 2) Otherwise treat as a Firestore document ID. Render in place
+    //    (no redirect) so the URL the user opened stays in the address bar.
+    try {
+      const product = await fetchProductByIdFn({ data: { id: raw } });
+      if (product) return { product, matchedBy: "id" as const };
+    } catch {
+      // fall through to notFound
+    }
+    throw notFound();
   },
   head: ({ params, loaderData }) => {
     const product = loaderData?.product;
