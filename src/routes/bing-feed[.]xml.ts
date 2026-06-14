@@ -41,8 +41,23 @@ function stripHtml(s: string): string {
   return s.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function isBlocked(p: { excludeFromMerchantFeed?: boolean }): boolean {
-  return p.excludeFromMerchantFeed === true;
+const HARD_BLOCKED_SLUGS = new Set<string>([
+  "tirzepatide-research-peptide",
+  "tirzepatide",
+]);
+
+function isAllowed(p: {
+  name?: string;
+  slug?: string;
+  excludeFromMerchantFeed?: boolean;
+  includeInMerchantFeed?: boolean;
+}): boolean {
+  if (p.excludeFromMerchantFeed === true) return false;
+  const slug = (p.slug || "").toLowerCase();
+  const name = (p.name || "").toLowerCase();
+  if (HARD_BLOCKED_SLUGS.has(slug)) return false;
+  if (name.includes("tirzepatide")) return false;
+  return p.includeInMerchantFeed === true;
 }
 
 export const Route = createFileRoute("/bing-feed.xml")({
