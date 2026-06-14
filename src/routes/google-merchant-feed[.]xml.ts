@@ -165,11 +165,10 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
         const items = merchantProducts
           .map((p) => {
-            // Use Firestore document ID in the Merchant feed link so each
-            // <g:id> matches its <link> path exactly. The product page route
-            // resolves both /products/{slug} and /products/{id} to the same
-            // page; canonical still points to the slug URL.
-            const link = `${BASE_URL}/products/${p.id || p.slug}`;
+            // Use the slug-based URL so feed <link> matches the canonical
+            // product page URL. The route still resolves ID URLs as a 301
+            // fallback for older deep links.
+            const link = `${BASE_URL}/products/${p.slug || p.id}`;
             // Lead with the laboratory-reagent framing so the classifier
             // never reads the title as a supplement / pharmaceutical.
             const title =

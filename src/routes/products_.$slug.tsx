@@ -36,13 +36,21 @@ export const Route = createFileRoute("/products_/$slug")({
       throw notFound();
     }
 
-    // 2) Otherwise treat as a Firestore document ID. Render in place
-    //    (no redirect) so the URL the user opened stays in the address bar.
+    // 2) Otherwise treat as a Firestore document ID and 301-redirect to
+    //    the canonical slug URL so the address bar shows the pretty URL.
     try {
       const product = await fetchProductByIdFn({ data: { id: raw } });
+      if (product?.slug) {
+        throw redirect({
+          to: "/products/$slug",
+          params: { slug: product.slug },
+          statusCode: 301,
+        });
+      }
       if (product) return { product, matchedBy: "id" as const };
-    } catch {
-      // fall through to notFound
+    } catch (e) {
+      // Re-throw redirects; swallow lookup errors and fall through to notFound
+      if (e && typeof e === "object" && "isRedirect" in (e as any)) throw e;
     }
     throw notFound();
   },
