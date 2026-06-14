@@ -161,8 +161,9 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
 
 
-        const items = products
-          .filter((p) => isAllowedForMerchant(p as any))
+        const merchantProducts = products.filter((p) => isAllowedForMerchant(p as any));
+
+        const items = merchantProducts
           .map((p) => {
             // Use Firestore document ID in the Merchant feed link so each
             // <g:id> matches its <link> path exactly. The product page route
@@ -270,7 +271,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
           `  <channel>`,
           `    <title>${xmlEscape(`${BRAND} UK — Laboratory Reference Standards (RUO)`)}</title>`,
           `    <link>${BASE_URL}</link>`,
-          `    <description>Analytical-grade laboratory reference standards for in-vitro research. Sold to qualified research professionals. For laboratory use, not for human or animal consumption.</description>`,
+          `    <description>Analytical-grade laboratory reference standards for in-vitro research. Supplied to qualified research professionals and laboratories.</description>`,
           items,
           `  </channel>`,
           `</rss>`,
@@ -280,7 +281,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
         // Firestore read. Without no-store the Cloudflare HTML cache rule
         // would pin the previous XML for up to 5 minutes and admin edits
         // wouldn't show up in the feed until the TTL expired.
-        const emptyFeed = products.length === 0;
+        const emptyFeed = merchantProducts.length === 0;
         return new Response(xml, {
           status: 200,
           headers: {
@@ -288,7 +289,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
             "CDN-Cache-Control": "no-store",
             "Cloudflare-CDN-Cache-Control": "no-store",
-            "X-Feed-Items": String(products.length),
+            "X-Feed-Items": String(merchantProducts.length),
             "X-Feed-Empty": emptyFeed ? "true" : "false",
             "X-Feed-Generated-At": generatedAt,
             "X-Feed-Debug-Error": debugError.slice(0, 200) || "none",
