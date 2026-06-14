@@ -111,19 +111,21 @@ export default {
         item.postageDetails = { serviceCode };
       }
 
-      const payload = { orders: [item] };
+      const payload = { items: [item] };
 
 
 
-      const rmRes = await fetch('https://api.parcel.royalmail.com/api/v1/orders', {
+      const sendToRoyalMail = (body) => fetch('https://api.parcel.royalmail.com/api/v1/orders', {
         method: 'POST',
         headers: {
           'Authorization': env.ROYAL_MAIL_API_KEY,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(body)
       });
+
+      let rmRes = await sendToRoyalMail(payload);
 
       const rmText = await rmRes.text();
       let rmData;
