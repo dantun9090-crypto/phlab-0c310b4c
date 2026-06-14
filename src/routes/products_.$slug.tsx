@@ -194,6 +194,23 @@ export const Route = createFileRoute("/products_/$slug")({
             ],
           }),
         },
+        // FAQPage JSON-LD — only when the visible ResearchContentBlock will
+        // render Q&As for this slug, so structured data mirrors on-page content.
+        ...(RESEARCH_CONTENT[params.slug]?.faqs?.length
+          ? [{
+              type: "application/ld+json" as const,
+              children: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                "@id": `${url}#faq`,
+                mainEntity: RESEARCH_CONTENT[params.slug]!.faqs.map((f) => ({
+                  "@type": "Question",
+                  name: f.q,
+                  acceptedAnswer: { "@type": "Answer", text: f.a },
+                })),
+              }),
+            }]
+          : []),
       ],
     };
   },
