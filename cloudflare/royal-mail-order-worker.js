@@ -110,27 +110,46 @@ export default {
       if (serviceCode) {
         item.postageDetails = { serviceCode };
       }
+      let serviceCodeUsed = serviceCode || null;
 
-      const payload = { orders: [item] };
+      const payload = { items: [item] };
 
 
 
-      const rmRes = await fetch('https://api.parcel.royalmail.com/api/v1/orders', {
+      const sendToRoyalMail = (body) => fetch('https://api.parcel.royalmail.com/api/v1/orders', {
         method: 'POST',
         headers: {
           'Authorization': env.ROYAL_MAIL_API_KEY,
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(body)
       });
 
-      const rmText = await rmRes.text();
+      let rmRes = await sendToRoyalMail(payload);
+
+      let rmText = await rmRes.text();
       let rmData;
       try {
         rmData = rmText ? JSON.parse(rmText) : {};
       } catch {
         rmData = { message: rmText || 'Royal Mail returned a non-JSON response' };
+      }
+
+      const unsupportedService = Array.isArray(rmData?.failedOrders)
+        && rmData.failedOrders.some((failed) => Array.isArray(failed?.errors)
+          && failed.errors.some((error) => Number(error?.errorCode) === 31
+            && String(error?.fields?.[0]?.fieldName || '').toLowerCase() === 'postagedetails.servicecode'));
+      if (unsupportedService && item.postageDetails?.serviceCode) {
+        delete item.postageDetails;
+        serviceCodeUsed = null;
+        rmRes = await sendToRoyalMail({ items: [item] });
+        rmText = await rmRes.text();
+        try {
+          rmData = rmText ? JSON.parse(rmText) : {};
+        } catch {
+          rmData = { message: rmText || 'Royal Mail returned a non-JSON response' };
+        }
       }
 
       if (!rmRes.ok) {
@@ -160,6 +179,7 @@ export default {
         success: true,
         trackingNumber: trackingNumber,
         orderId: createdOrder.orderIdentifier || createdOrder.orderId || order.orderId,
+        serviceCodeUsed,
         message: 'Order created in Click & Drop. Print label from Royal Mail dashboard.'
       }), {
         headers: {
