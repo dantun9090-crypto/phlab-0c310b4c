@@ -39,6 +39,7 @@ const StorageGuide = lazy(() => import('@/pages/StorageGuide'));
 const LabReports = lazy(() => import('@/pages/LabReports'));
 const Research = lazy(() => import('@/pages/Research'));
 const Install = lazy(() => import('@/pages/Install'));
+const CategoryPage = lazy(() => import('@/pages/CategoryPage'));
 
 // Minimal spinner shown while lazy chunks load
 function PageLoader() {
