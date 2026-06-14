@@ -15,6 +15,13 @@ const OG_IMAGE_FALLBACK = `${SITE_URL}/og-image.jpg`;
 // underscores) is treated as a Firestore document ID.
 const SLUG_RE = /^[a-z0-9-]+$/;
 
+// Legacy/external slug aliases → 301 to the canonical product slug.
+// Keeps old inbound links (and Google index entries) from 404'ing.
+const LEGACY_SLUG_ALIASES: Record<string, string> = {
+  "bpc-157-research-peptide": "bpc-157",
+  "tb-500-research-peptide": "tb-500-thymosin-beta-4",
+};
+
 
 export const Route = createFileRoute("/products_/$slug")({
   loader: async ({ params }) => {
