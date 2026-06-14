@@ -36,9 +36,7 @@ export default function SemrushTab() {
     setLoading(true);
     setError(null);
     try {
-      const user = auth.currentUser;
-      if (!user) throw new Error('Not signed in');
-      const idToken = await user.getIdToken();
+      const idToken = await getAdminIdToken();
       const result = await fetchOverview({ data: { idToken, domain, database } });
       setData(result as OverviewData);
     } catch (e: any) {
