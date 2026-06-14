@@ -2,8 +2,10 @@ import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 import LegacyApp from "@/legacy/LegacyApp";
 import { fetchProductBySlugFn, type SeoProduct } from "@/lib/products-rest.functions";
 import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
+import { RESEARCH_CONTENT } from "@/lib/research-content";
 
 const OG_IMAGE_FALLBACK = `${SITE_URL}/og-image.jpg`;
+
 
 export const Route = createFileRoute("/products_/$slug")({
   loader: async ({ params }) => {
