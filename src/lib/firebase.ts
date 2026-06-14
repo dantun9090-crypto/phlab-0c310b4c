@@ -272,6 +272,9 @@ export interface Product {
   requiresResearchGate?: boolean;
   // SEO — exclude this product from sitemap.xml
   excludeFromSitemap?: boolean;
+  // Manual merchant-feed controls used by Google/Bing feed generation.
+  includeInMerchantFeed?: boolean;
+  excludeFromMerchantFeed?: boolean;
 }
 
 export interface ProductVariant {
@@ -852,6 +855,8 @@ function normaliseProduct(id: string, data: any): Product {
     tags: data.tags || [],
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
+    includeInMerchantFeed: data.includeInMerchantFeed === true,
+    excludeFromMerchantFeed: data.excludeFromMerchantFeed === true,
     
     bannerImageUrl: data.bannerImageUrl || '',
   };
@@ -948,6 +953,8 @@ export const addProduct = async (product: Omit<Product, 'id'>) => {
     lowStockThreshold: product.lowStockThreshold ?? 10,
     variants: product.variants || [],
     tags: product.tags || [],
+    includeInMerchantFeed: product.includeInMerchantFeed === true,
+    excludeFromMerchantFeed: product.excludeFromMerchantFeed === true,
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   };
