@@ -307,7 +307,7 @@ export const recachePrerenderUrlsBulk = createServerFn({ method: 'POST' })
     return { urls: filtered, adaptiveType: data.adaptiveType, idToken: data.idToken };
   })
   .handler(async ({ data }) => {
-    await requireFirebaseAdmin(data.idToken);
+    await requireAdmin(data.idToken);
     const token = process.env.PRERENDER_TOKEN;
     if (!token) throw new Error('PRERENDER_TOKEN not configured');
     const started = Date.now();
