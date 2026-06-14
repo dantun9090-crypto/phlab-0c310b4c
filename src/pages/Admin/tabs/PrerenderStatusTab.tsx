@@ -357,7 +357,7 @@ function TokenLengthCard() {
     setLoading(true);
     setError(null);
     try {
-      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const idToken = await getAdminIdToken();
       const res = await check({ data: { idToken } });
       setState(res);
     } catch (err) {
