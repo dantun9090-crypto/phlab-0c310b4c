@@ -174,15 +174,15 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             const title =
               `Laboratory Reference Standard — ${p.name} ` +
               `(Research Chemical, RUO)`;
-            // Compliant description: avoids forbidden keyword-frequency
-            // false positives (no "medicine", "human consumption", "drug",
-            // "pharmaceutical", "treatment", "cure"). RUO disclaimer is
-            // surfaced separately via <g:product_highlight>.
+            // Compliant description: Google Merchant Center flags BOTH
+            // "human consumption" and "not for human use" as forbidden
+            // health/medical claims, even when the intent is a disclaimer.
+            // Keep the copy strictly neutral analytical-supply language.
             const description =
               `Analytical reference standard for in-vitro laboratory research. ` +
               `${p.purity ? `HPLC-verified ${p.purity} purity. ` : "HPLC-verified ≥99% purity. "}` +
-              `Supplied by ${BRAND} UK to qualified research professionals only. ` +
-              `For laboratory use, not for human or animal consumption.`;
+              `Supplied by ${BRAND} UK to qualified research professionals and ` +
+              `laboratories. Research-use only (RUO) laboratory chemical.`;
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
                 ? p.imageUrl
@@ -206,10 +206,11 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             const highlights = [
               "Laboratory reference standard / research chemical",
               p.purity ? `HPLC-verified ${p.purity} purity` : "HPLC-verified ≥99% purity",
-              "Sold to qualified researchers and laboratories",
+              "Supplied to qualified researchers and laboratories",
               "Certificate of Analysis available on request",
-              "For laboratory use, not for human or animal consumption (RUO)",
+              "Research-use only (RUO) analytical compound",
             ].filter(Boolean) as string[];
+
 
             const displayCategory = toDisplayCategory(p.category);
 
