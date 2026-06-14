@@ -83,7 +83,8 @@ function ProductsRoute() {
 function SeoCatalogue({ products }: { products: SeoProduct[] }) {
   return (
     <div aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
-      <h1>Research Peptides UK — Full Catalogue</h1>
+      {/* h2, not h1 — the visible hero already owns the single h1 on /products */}
+      <h2>Research Peptides UK — Full Catalogue</h2>
       <p>
         HPLC-tested, research-grade lyophilised peptides from PH Labs
         Peptides UK. {products.length} compounds available.
