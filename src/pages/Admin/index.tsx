@@ -601,15 +601,32 @@ export default function AdminPage() {
             <span style={{ color: 'rgba(59,130,246,0.2)' }}>/</span>
             <span className="text-[13px] font-semibold text-white/80">{activeLabel}</span>
           </div>
-          <a
-            href="/"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1.5 text-[11px] text-[#3a5a82] hover:text-[#9cb8d9] transition-colors"
-          >
-            <Shield className="w-3 h-3" />
-            <span>phlabs.co.uk</span>
-          </a>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setPaletteOpen(true)}
+              className="flex items-center gap-2 px-2.5 py-1 rounded-md text-[11px] text-[#9cb8d9] hover:text-white transition-colors border border-white/10 hover:border-blue-400/40 bg-white/[0.02]"
+              title="Open command palette"
+            >
+              <CmdIcon className="w-3 h-3" />
+              <span>Quick jump</span>
+              <kbd className="font-mono text-[10px] text-[#3a5a82] border border-white/10 rounded px-1">⌘K</kbd>
+            </button>
+            {recachePending && (
+              <span className="flex items-center gap-1.5 text-[10px] text-amber-300/90" title="Changes pending publish">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400/80 shadow-[0_0_6px_rgba(251,191,36,0.6)]" />
+                pending
+              </span>
+            )}
+            <a
+              href="/"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1.5 text-[11px] text-[#3a5a82] hover:text-[#9cb8d9] transition-colors"
+            >
+              <Shield className="w-3 h-3" />
+              <span>phlabs.co.uk</span>
+            </a>
+          </div>
         </header>
 
         {/* ── Tab content ── */}
