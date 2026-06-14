@@ -471,3 +471,129 @@ function KeyValue({ label, value, onCopy, copied, extra }: { label: string; valu
     </div>
   );
 }
+
+function LabelPreview({ form, service }: { form: FormState; service: typeof SERVICES[number] }) {
+  const fullName = `${form.firstName || ''} ${form.lastName || ''}`.trim();
+  const issues: string[] = [];
+  if (!fullName) issues.push('Recipient name');
+  if (!form.addressLine1.trim()) issues.push('Address line 1');
+  if (!form.postcode.trim()) issues.push('Postcode');
+  if (!form.email.trim()) issues.push('Email');
+  const ready = issues.length === 0;
+  const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  return (
+    <div className="rounded-2xl p-5 border" style={{ background: 'linear-gradient(180deg, rgba(15,23,42,0.9) 0%, rgba(2,8,20,0.9) 100%)', borderColor: 'rgba(59,130,246,0.15)' }}>
+      <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-white/5">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center">
+            <Package2 className="w-4 h-4" />
+          </div>
+          <h2 className="text-white font-semibold text-[14px]">Label preview</h2>
+        </div>
+        <span
+          className="text-[10px] font-bold tracking-widest uppercase px-2 py-0.5 rounded border"
+          style={
+            ready
+              ? { background: 'rgba(16,185,129,0.12)', color: 'rgb(110 231 183)', borderColor: 'rgba(16,185,129,0.35)' }
+              : { background: 'rgba(251,191,36,0.1)', color: 'rgb(252 211 77)', borderColor: 'rgba(251,191,36,0.35)' }
+          }
+        >
+          {ready ? 'Ready' : `${issues.length} missing`}
+        </span>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        {/* Paper label mock */}
+        <div
+          className="relative rounded-lg p-4 font-mono text-[12px] text-slate-900 overflow-hidden"
+          style={{
+            background: 'repeating-linear-gradient(45deg, #fafaf7 0 10px, #f4f4ee 10px 20px)',
+            boxShadow: '0 12px 30px -10px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(0,0,0,0.08)',
+          }}
+        >
+          <div className="flex items-center justify-between border-b-2 border-red-600 pb-2 mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-sm bg-red-600 text-white flex items-center justify-center font-bold text-[10px]">RM</div>
+              <span className="text-red-700 font-bold tracking-wide text-[11px]">ROYAL MAIL</span>
+            </div>
+            <span className="text-[9px] text-slate-600 tracking-wider uppercase">{today}</span>
+          </div>
+
+          <div className="mb-3">
+            <p className="text-[8px] tracking-widest uppercase text-slate-500 mb-0.5">Service</p>
+            <p className="font-bold text-[13px] leading-tight">{service.name}</p>
+            <p className="text-[9px] text-slate-600">{service.code} · {form.weightGrams} g</p>
+          </div>
+
+          <div className="mb-3">
+            <p className="text-[8px] tracking-widest uppercase text-slate-500 mb-1">Deliver to</p>
+            <p className="font-bold text-[13px] leading-snug uppercase">{fullName || '—'}</p>
+            <p className="text-[11px] leading-snug">{form.addressLine1 || '—'}</p>
+            {form.addressLine2 && <p className="text-[11px] leading-snug">{form.addressLine2}</p>}
+            {form.city && <p className="text-[11px] leading-snug">{form.city}</p>}
+            <p className="font-bold text-[14px] mt-1 tracking-widest">{form.postcode || '—'}</p>
+            <p className="text-[10px] text-slate-600">UNITED KINGDOM</p>
+          </div>
+
+          {/* Barcode placeholder */}
+          <div className="flex items-end gap-[2px] h-10 mt-2">
+            {Array.from({ length: 42 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-slate-900"
+                style={{
+                  width: (i * 7) % 3 === 0 ? 3 : 1,
+                  height: `${60 + ((i * 13) % 40)}%`,
+                  opacity: ready ? 1 : 0.4,
+                }}
+              />
+            ))}
+          </div>
+          <p className="text-center text-[10px] tracking-[0.3em] mt-1 text-slate-700">
+            {form.reference.trim() || 'AUTO-REF-' + (form.postcode.replace(/\s/g, '').slice(0, 6) || '------').toUpperCase()}
+          </p>
+
+          {!ready && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px]">
+              <span className="rotate-[-12deg] text-red-600/80 border-2 border-red-600/80 px-3 py-1 font-bold tracking-widest text-[11px]">
+                INCOMPLETE
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Checklist */}
+        <div className="space-y-3">
+          <Row label="Recipient" value={fullName || '—'} ok={!!fullName} />
+          <Row label="Address" value={[form.addressLine1, form.addressLine2, form.city].filter(Boolean).join(', ') || '—'} ok={!!form.addressLine1.trim()} />
+          <Row label="Postcode" value={form.postcode || '—'} ok={!!form.postcode.trim()} mono />
+          <Row label="Email" value={form.email || '—'} ok={!!form.email.trim()} />
+          <Row label="Phone" value={form.phone || '—'} ok={true} muted={!form.phone} />
+          <Row label="Service" value={`${service.name} (${service.code})`} ok />
+          <Row label="Weight" value={`${form.weightGrams} g`} ok mono />
+          <Row label="Declared value" value={`£${form.declaredValue.toFixed(2)}`} ok={true} muted={form.declaredValue === 0} />
+        </div>
+      </div>
+
+      {!ready && (
+        <p className="mt-4 text-[12px] text-amber-300/90 flex items-center gap-2">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+          Missing: {issues.join(', ')}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function Row({ label, value, ok, mono, muted }: { label: string; value: string; ok: boolean; mono?: boolean; muted?: boolean }) {
+  return (
+    <div className="flex items-start justify-between gap-3 pb-2 border-b border-white/5">
+      <span className="text-[11px] uppercase tracking-widest text-slate-500 shrink-0 pt-0.5">{label}</span>
+      <span className={`text-[13px] text-right break-words ${mono ? 'font-mono' : ''} ${muted ? 'text-slate-500' : ok ? 'text-white' : 'text-amber-300'}`}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
