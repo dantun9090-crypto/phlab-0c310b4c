@@ -37,9 +37,10 @@ export interface RoyalMailResult {
   orderId?: string;
   trackingNumber?: string | null;
   error?: string;
-  details?: unknown;
+  details?: string;
   status?: number;
 }
+
 
 export const createRoyalMailOrder = createServerFn({ method: 'POST' })
   .inputValidator((d) => Input.parse(d))
@@ -74,8 +75,14 @@ export const createRoyalMailOrder = createServerFn({ method: 'POST' })
         : body?.error
           ? JSON.stringify(body.error)
           : `worker_status_${res.status}`;
-      return { ok: false, status: res.status, error: errMsg, details: body?.details };
+      return {
+        ok: false,
+        status: res.status,
+        error: errMsg,
+        details: body?.details ? JSON.stringify(body.details).slice(0, 1000) : undefined,
+      };
     }
+
     return {
       ok: true,
       orderId: body?.orderId ? String(body.orderId) : undefined,
