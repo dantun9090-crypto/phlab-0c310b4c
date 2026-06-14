@@ -66,7 +66,7 @@ export default function GSCMonitorTab() {
   const [sites, setSites] = useState<{ siteUrl: string; permissionLevel: string }[]>([]);
   const [sitesErr, setSitesErr] = useState<string | null>(null);
 
-  const idToken = async () => (await auth.currentUser?.getIdToken()) ?? '';
+  const idToken = async () => getAdminIdToken();
 
   const runPerf = async () => {
     setPerfLoading(true);
