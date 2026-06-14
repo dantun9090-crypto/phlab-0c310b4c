@@ -119,5 +119,16 @@ export const Route = createFileRoute("/")({
 });
 
 function LegacyMount() {
-  return <LegacyApp initialPath="/" />;
+  return (
+    <>
+      {/* SSR-visible H1 — guarantees a single H1 in the first-byte HTML for
+          crawlers and SEO scanners that don't execute JS or hit Prerender.io.
+          The visible hero H1 inside LegacyApp renders post-hydration; this
+          sr-only tag keeps the document outline valid before then. */}
+      <h1 className="sr-only">
+        HPLC-Tested Research Peptides UK — Batch CoA | PH Labs
+      </h1>
+      <LegacyApp initialPath="/" />
+    </>
+  );
 }
