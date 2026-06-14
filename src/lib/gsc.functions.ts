@@ -3,6 +3,13 @@ import { requireFirebaseAdmin } from '@/lib/server/firebase-auth-admin';
 
 const GATEWAY = 'https://connector-gateway.lovable.dev/google_search_console';
 const SITE_URL = 'https://phlabs.co.uk/';
+const DOMAIN_PROPERTY = 'sc-domain:phlabs.co.uk';
+const FALLBACK_SITE_CANDIDATES = [SITE_URL, DOMAIN_PROPERTY, 'https://www.phlabs.co.uk/'];
+
+interface GscSiteEntry {
+  siteUrl: string;
+  permissionLevel: string;
+}
 
 function authHeaders() {
   const lovable = process.env.LOVABLE_API_KEY;
@@ -19,6 +26,7 @@ function authHeaders() {
 const ALLOWED_GSC_HOSTS = new Set(['phlabs.co.uk', 'www.phlabs.co.uk']);
 
 function assertAllowedSiteUrl(siteUrl: string): void {
+  if (siteUrl === DOMAIN_PROPERTY) return;
   try {
     const u = new URL(siteUrl);
     if (!ALLOWED_GSC_HOSTS.has(u.hostname.toLowerCase())) {
@@ -27,6 +35,43 @@ function assertAllowedSiteUrl(siteUrl: string): void {
   } catch {
     throw new Error('Invalid siteUrl');
   }
+}
+
+function formatGscError(action: string, status: number, text: string): string {
+  try {
+    const parsed = JSON.parse(text) as { error?: { message?: string; status?: string } };
+    const message = parsed.error?.message ?? text;
+    return `${action} ${status}: ${message}`;
+  } catch {
+    return `${action} ${status}: ${text.slice(0, 300)}`;
+  }
+}
+
+async function fetchGscSiteEntries(): Promise<GscSiteEntry[]> {
+  const res = await fetch(`${GATEWAY}/webmasters/v3/sites`, {
+    headers: authHeaders(),
+    signal: AbortSignal.timeout(15_000),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(formatGscError('GSC sites', res.status, text));
+  const json = JSON.parse(text) as { siteEntry?: GscSiteEntry[] };
+  return json.siteEntry ?? [];
+}
+
+async function resolveAccessibleSiteUrl(requestedSiteUrl?: string): Promise<string> {
+  const requested = requestedSiteUrl ?? SITE_URL;
+  assertAllowedSiteUrl(requested);
+  const sites = await fetchGscSiteEntries();
+  const available = new Set(sites.map((site) => site.siteUrl));
+  const selected = [requested, ...FALLBACK_SITE_CANDIDATES].find((candidate) => available.has(candidate));
+  if (selected) return selected;
+
+  const verified = sites.length
+    ? sites.map((site) => site.siteUrl).join(', ')
+    : 'none returned by the connected account';
+  throw new Error(
+    `Search Console account has no verified phlabs.co.uk property. Verified properties: ${verified}`,
+  );
 }
 
 /**
@@ -42,10 +87,11 @@ export const fetchGscPerformance = createServerFn({ method: 'POST' })
   })
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
+    const siteUrl = await resolveAccessibleSiteUrl(data.siteUrl);
     const end = new Date();
     const start = new Date(end.getTime() - data.days * 86_400_000);
     const fmt = (d: Date) => d.toISOString().slice(0, 10);
-    const encodedSite = encodeURIComponent(data.siteUrl);
+    const encodedSite = encodeURIComponent(siteUrl);
 
     const res = await fetch(
       `${GATEWAY}/webmasters/v3/sites/${encodedSite}/searchAnalytics/query`,
@@ -63,7 +109,7 @@ export const fetchGscPerformance = createServerFn({ method: 'POST' })
     );
     const text = await res.text();
     if (!res.ok) {
-      throw new Error(`GSC performance ${res.status}: ${text.slice(0, 80)}`);
+      throw new Error(formatGscError('GSC performance', res.status, text));
     }
     const json = JSON.parse(text) as {
       rows?: Array<{ keys: string[]; clicks: number; impressions: number; ctr: number; position: number }>;
@@ -76,7 +122,7 @@ export const fetchGscPerformance = createServerFn({ method: 'POST' })
       position: r.position,
     }));
     return {
-      siteUrl: data.siteUrl,
+      siteUrl,
       startDate: fmt(start),
       endDate: fmt(end),
       totalRows: rows.length,
@@ -105,19 +151,20 @@ export const inspectGscUrl = createServerFn({ method: 'POST' })
   })
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
+    const siteUrl = await resolveAccessibleSiteUrl(data.siteUrl);
     const res = await fetch(`${GATEWAY}/v1/urlInspection/index:inspect`, {
       method: 'POST',
       headers: authHeaders(),
       body: JSON.stringify({
         inspectionUrl: data.inspectionUrl,
-        siteUrl: data.siteUrl,
+        siteUrl,
         languageCode: 'en-GB',
       }),
       signal: AbortSignal.timeout(20_000),
     });
     const text = await res.text();
     if (!res.ok) {
-      throw new Error(`GSC inspect ${res.status}: ${text.slice(0, 80)}`);
+      throw new Error(formatGscError('GSC inspect', res.status, text));
     }
     const json = JSON.parse(text) as {
       inspectionResult?: {
@@ -158,14 +205,7 @@ export const listGscSites = createServerFn({ method: 'POST' })
   })
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
-    const res = await fetch(`${GATEWAY}/webmasters/v3/sites`, {
-      headers: authHeaders(),
-      signal: AbortSignal.timeout(15_000),
-    });
-    const text = await res.text();
-    if (!res.ok) throw new Error(`GSC sites ${res.status}: ${text.slice(0, 80)}`);
-    const json = JSON.parse(text) as {
-      siteEntry?: Array<{ siteUrl: string; permissionLevel: string }>;
-    };
-    return { sites: json.siteEntry ?? [], fetchedAt: new Date().toISOString() };
+    const sites = await fetchGscSiteEntries();
+    const selectedSiteUrl = await resolveAccessibleSiteUrl();
+    return { sites, selectedSiteUrl, fetchedAt: new Date().toISOString() };
   });
