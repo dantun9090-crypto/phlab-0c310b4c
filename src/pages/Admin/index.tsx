@@ -450,6 +450,47 @@ export default function AdminPage() {
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
 
+  // Command palette items: every tab + quick actions
+  const paletteItems: CommandItem[] = [
+    ...Object.entries(TAB_LABELS).map(([id, label]) => ({
+      id: `tab:${id}`,
+      label,
+      group: 'Navigate',
+      keywords: id,
+      action: () => setActiveTab(id as Tab),
+    })),
+    {
+      id: 'action:recache',
+      label: 'Cache & Recache',
+      group: 'Actions',
+      icon: Cloud,
+      keywords: 'purge cloudflare prerender',
+      action: () => setActiveTab('cacherecache'),
+    },
+    {
+      id: 'action:clear-pending',
+      label: 'Clear pending-publish flag',
+      group: 'Actions',
+      icon: RefreshCw,
+      keywords: 'amber dot pending',
+      action: () => { try { localStorage.removeItem('php_recache_pending'); } catch { /* noop */ } setRecachePending(false); },
+    },
+    {
+      id: 'action:open-site',
+      label: 'Open phlabs.co.uk in new tab',
+      group: 'Actions',
+      icon: ExternalLink,
+      action: () => window.open('https://phlabs.co.uk', '_blank', 'noreferrer'),
+    },
+    {
+      id: 'action:logout',
+      label: 'Log out',
+      group: 'Actions',
+      icon: LogOut,
+      action: () => { logoutUser().finally(() => navigate('/login')); },
+    },
+  ];
+
   return (
     <div
       id="admin-panel"
@@ -539,8 +580,10 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Recache pending dot */}
-          <div className="shrink-0 w-2 h-2 rounded-full bg-amber-400/80 shadow-[0_0_6px_rgba(251,191,36,0.6)]" title="Changes pending publish" />
+          {/* Recache pending dot — only when a save has set the flag */}
+          {recachePending && (
+            <div className="shrink-0 w-2 h-2 rounded-full bg-amber-400/80 shadow-[0_0_6px_rgba(251,191,36,0.6)]" title="Changes pending publish" />
+          )}
         </header>
 
         {/* ── Desktop header bar ── */}
