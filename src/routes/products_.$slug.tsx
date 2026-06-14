@@ -37,33 +37,22 @@ export const Route = createFileRoute("/products_/$slug")({
       throw notFound();
     }
 
-    // 2) Otherwise treat as a Firestore document ID. Use the static backend
-    //    ID→slug map first (deterministic, no network) so the redirect is
-    //    instant and reliable. This guarantees we NEVER fall back to the
-    //    /products listing page for a known product ID.
+    // 2) Otherwise treat as a Firestore document ID. Render the SAME product
+    //    page in place — do NOT redirect — so the address bar keeps the ID
+    //    URL (used by Google Merchant feed). The canonical <link> below
+    //    still points to the slug version, so SEO consolidates correctly.
     const mappedSlug = resolveSlugFromId(raw);
     if (mappedSlug) {
-      throw redirect({
-        to: "/products/$slug",
-        params: { slug: mappedSlug },
-        statusCode: 301,
-      });
+      const product = await fetchProductBySlugFn({ data: { slug: mappedSlug } });
+      if (product) return { product, matchedBy: "id" as const };
     }
 
     // 3) Fallback: live Firestore lookup for IDs not yet in the static map.
     try {
       const product = await fetchProductByIdFn({ data: { id: raw } });
-      if (product?.slug) {
-        throw redirect({
-          to: "/products/$slug",
-          params: { slug: product.slug },
-          statusCode: 301,
-        });
-      }
       if (product) return { product, matchedBy: "id" as const };
-    } catch (e) {
-      // Re-throw redirects; swallow lookup errors and fall through to notFound
-      if (e && typeof e === "object" && "isRedirect" in (e as any)) throw e;
+    } catch {
+      // swallow lookup errors and fall through to notFound
     }
     throw notFound();
   },

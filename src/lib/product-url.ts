@@ -1,31 +1,20 @@
+import type { SeoProduct } from "./firestore-rest";
+import { SITE_URL } from "./seo-meta";
+
 /**
- * Canonical product URL helper.
+ * Canonical product URL builder.
  *
- * Two URL formats are supported (both render the same product page):
- *   - 'slug' → /products/{slug}  — canonical, SEO-friendly, used in
- *                                  sitemap.xml, Bing feed, internal nav.
- *   - 'id'   → /products/{id}    — Firestore document ID, used in the
- *                                  Google Merchant feed only.
+ * - format = 'slug' → /products/{slug}  (sitemap, Bing feed, internal links)
+ * - format = 'id'   → /products/{id}    (Google Merchant feed only)
+ *
+ * Both formats resolve to the same product page. The slug URL is canonical;
+ * the ID URL renders the same page with the same canonical <link> pointing
+ * back to the slug version (no redirect — the URL stays as the ID).
  */
-export type ProductUrlFormat = "slug" | "id";
-
-export interface ProductLike {
-  id?: string;
-  slug?: string;
-}
-
-const SITE = "https://phlabs.co.uk";
-
 export function getProductUrl(
-  product: ProductLike,
-  format: ProductUrlFormat = "slug",
-  baseUrl: string = SITE,
+  product: Pick<SeoProduct, "id" | "slug">,
+  format: "slug" | "id" = "slug",
 ): string {
-  const base = baseUrl.replace(/\/$/, "");
-  if (format === "id") {
-    const id = product.id || product.slug;
-    return `${base}/products/${id}`;
-  }
-  const slug = product.slug || product.id;
-  return `${base}/products/${slug}`;
+  const path = format === "id" ? product.id : product.slug;
+  return `${SITE_URL}/products/${path}`;
 }
