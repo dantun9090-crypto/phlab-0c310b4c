@@ -677,7 +677,7 @@ export default {
           if (!ctEq(supplied, adminGateSecret)) {
             log.warn({ event: "admin_gate.blocked", ...baseFields });
             return new Response(
-              "<!doctype html><html><head><title>Admin gate</title><meta name=\"robots\" content=\"noindex\"></head><body style=\"font-family:system-ui;padding:32px;background:#020617;color:#fff\"><h1>Additional authorisation required</h1><p>Visit <code>/admin-unlock?token=YOUR_SECRET</code> to enable admin access from this device.</p></body></html>",
+              "<!doctype html><html><head><title>Admin gate</title><meta name=\"robots\" content=\"noindex\"><meta name=\"referrer\" content=\"no-referrer\"></head><body style=\"font-family:system-ui;padding:32px;background:#020617;color:#fff\"><h1>Additional authorisation required</h1><p>Visit <a href=\"/admin-unlock\" style=\"color:#10b981\">/admin-unlock</a> and submit the secret to enable admin access from this device.</p></body></html>",
               {
                 status: 401,
                 headers: {
