@@ -221,7 +221,7 @@ export default function OrdersTab() {
   const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null);
 
   // Royal Mail order state
-  const [rmService, setRmService] = useState<'' | 'CRL1' | 'CRL2' | 'TPN24' | 'TPN48' | 'SD1' | 'SD2'>('');
+  const [rmService, setRmService] = useState('');
   const [rmWeight, setRmWeight] = useState<number>(100);
   const [rmLoading, setRmLoading] = useState(false);
   const [rmError, setRmError] = useState('');
@@ -248,7 +248,7 @@ export default function OrdersTab() {
     // Royal Mail fields
     const existingRmOrderId = (selected as any)?.royalMailOrderId || null;
     const existingRmTracking = (selected as any)?.royalMailTracking || null;
-    setRmService(((selected as any)?.royalMailService as '' | 'CRL1' | 'CRL2' | 'TPN24' | 'TPN48' | 'SD1' | 'SD2') || '');
+    setRmService(typeof (selected as any)?.royalMailService === 'string' ? (selected as any).royalMailService : '');
     setRmWeight(100);
     setRmError('');
     setRmCopied(false);
