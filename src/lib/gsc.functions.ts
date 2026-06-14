@@ -1,5 +1,4 @@
 import { createServerFn } from '@tanstack/react-start';
-import { requireFirebaseAdmin } from '@/lib/server/firebase-auth-admin';
 
 const GATEWAY = 'https://connector-gateway.lovable.dev/google_search_console';
 const SITE_URL = 'https://phlabs.co.uk/';
@@ -74,6 +73,11 @@ async function resolveAccessibleSiteUrl(requestedSiteUrl?: string): Promise<stri
   );
 }
 
+async function requireAdmin(idToken: string): Promise<void> {
+  const { requireFirebaseAdmin } = await import('@/lib/server/firebase-auth-admin');
+  await requireFirebaseAdmin(idToken);
+}
+
 /**
  * Fetch Search Analytics performance (last 28 days, by page).
  */
@@ -86,7 +90,7 @@ export const fetchGscPerformance = createServerFn({ method: 'POST' })
     return { idToken: data.idToken, days, siteUrl };
   })
   .handler(async ({ data }) => {
-    await requireFirebaseAdmin(data.idToken);
+    await requireAdmin(data.idToken);
     const siteUrl = await resolveAccessibleSiteUrl(data.siteUrl);
     const end = new Date();
     const start = new Date(end.getTime() - data.days * 86_400_000);
@@ -150,7 +154,7 @@ export const inspectGscUrl = createServerFn({ method: 'POST' })
     return { ...data, siteUrl: data.siteUrl ?? SITE_URL };
   })
   .handler(async ({ data }) => {
-    await requireFirebaseAdmin(data.idToken);
+    await requireAdmin(data.idToken);
     const siteUrl = await resolveAccessibleSiteUrl(data.siteUrl);
     const res = await fetch(`${GATEWAY}/v1/urlInspection/index:inspect`, {
       method: 'POST',
@@ -204,7 +208,7 @@ export const listGscSites = createServerFn({ method: 'POST' })
     return data;
   })
   .handler(async ({ data }) => {
-    await requireFirebaseAdmin(data.idToken);
+    await requireAdmin(data.idToken);
     const sites = await fetchGscSiteEntries();
     const selectedSiteUrl = await resolveAccessibleSiteUrl();
     return { sites, selectedSiteUrl, fetchedAt: new Date().toISOString() };

@@ -1,5 +1,9 @@
 import { createServerFn } from '@tanstack/react-start';
-import { requireFirebaseAdmin } from '@/lib/server/firebase-auth-admin';
+
+async function requireAdmin(idToken: string): Promise<void> {
+  const { requireFirebaseAdmin } = await import('@/lib/server/firebase-auth-admin');
+  await requireFirebaseAdmin(idToken);
+}
 
 export const listUrlMonitorScans = createServerFn({ method: 'POST' })
   .inputValidator((data: { idToken: string }) => {
@@ -7,7 +11,7 @@ export const listUrlMonitorScans = createServerFn({ method: 'POST' })
     return data;
   })
   .handler(async ({ data }) => {
-    await requireFirebaseAdmin(data.idToken);
+    await requireAdmin(data.idToken);
     const { listDocsAdmin } = await import('@/lib/server/firestore-admin');
     const rows = await listDocsAdmin('url_monitor_scans', {
       orderBy: 'scannedAt',

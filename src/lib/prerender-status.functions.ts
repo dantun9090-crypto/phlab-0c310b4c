@@ -1,7 +1,11 @@
 import { createServerFn } from '@tanstack/react-start';
-import { requireFirebaseAdmin } from '@/lib/server/firebase-auth-admin';
 
 const MIN_EXPECTED_PRERENDER_TOKEN_LENGTH = 20;
+
+async function requireAdmin(idToken: string): Promise<void> {
+  const { requireFirebaseAdmin } = await import('@/lib/server/firebase-auth-admin');
+  await requireFirebaseAdmin(idToken);
+}
 
 /**
  * Return only the length of PRERENDER_TOKEN and whether it matches the
@@ -15,7 +19,7 @@ export const checkPrerenderTokenLength = createServerFn({ method: 'POST' })
     return data;
   })
   .handler(async ({ data }) => {
-    await requireFirebaseAdmin(data.idToken);
+    await requireAdmin(data.idToken);
     const token = process.env.PRERENDER_TOKEN ?? '';
     const length = token.length;
     return {
@@ -40,7 +44,7 @@ export const checkGooglebotResponse = createServerFn({ method: 'POST' })
     return data;
   })
   .handler(async ({ data }) => {
-    await requireFirebaseAdmin(data.idToken);
+    await requireAdmin(data.idToken);
     const target = data.url && isAllowedUrl(data.url) ? data.url : 'https://phlabs.co.uk/';
     const started = Date.now();
     try {
@@ -233,7 +237,7 @@ export const probePrerenderStatus = createServerFn({ method: 'POST' })
     return data;
   })
   .handler(async ({ data }) => {
-    await requireFirebaseAdmin(data.idToken);
+    await requireAdmin(data.idToken);
     const requested =
       data.urls && data.urls.length > 0 ? data.urls.slice(0, 12) : DEFAULT_TARGETS;
     const urls = requested.filter(isAllowedUrl);
@@ -259,7 +263,7 @@ export const recachePrerenderUrl = createServerFn({ method: 'POST' })
     return data;
   })
   .handler(async ({ data }) => {
-    await requireFirebaseAdmin(data.idToken);
+    await requireAdmin(data.idToken);
     const token = process.env.PRERENDER_TOKEN;
     if (!token) throw new Error('PRERENDER_TOKEN not configured');
     const started = Date.now();
