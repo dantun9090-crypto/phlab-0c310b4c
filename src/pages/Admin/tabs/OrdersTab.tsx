@@ -1193,7 +1193,6 @@ export default function OrdersTab() {
                       <option value="">Use Click & Drop default service</option>
                       <option value="CRL24">Royal Mail 24 (CRL24)</option>
                       <option value="CRL48">Royal Mail 48 (CRL48)</option>
-                      <option value="TPS24">Tracked 24 (TPS24)</option>
                       <option value="TPS48">Tracked 48 (TPS48)</option>
                       <option value="TPN24">Tracked 24 OBA only (TPN24)</option>
                       <option value="TPN48">Tracked 48 OBA only (TPN48)</option>
