@@ -50,7 +50,7 @@ export default function PrerenderStatusTab() {
   const runRecache = async (url: string) => {
     setRecachingUrl(url);
     try {
-      const idToken = await auth.currentUser?.getIdToken() ?? '';
+      const idToken = await getAdminIdToken();
       const res = await recache({ data: { url, idToken } });
       setRecacheLog((prev) => [
         {
