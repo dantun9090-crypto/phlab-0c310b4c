@@ -9,6 +9,8 @@ import { getAllProducts, db, doc, getDoc, getDocs, collection, query, where, add
 import type { Product } from '@/lib/firebase';
 import { nameToSlug } from '@/lib/seedProducts';
 import { sendPublicMail } from '@/lib/sendPublicMail';
+import { cfImgProps } from '@/lib/cf-image';
+
 
 import { useSEO } from '@/hooks/useSEO';
 
