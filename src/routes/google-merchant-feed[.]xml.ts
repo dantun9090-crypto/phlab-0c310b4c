@@ -268,6 +268,11 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               p.purity && /[0-9%]/.test(p.purity) && !/-/.test(p.purity)
                 ? `    <g:custom_label_0>${xmlEscape(p.purity)}</g:custom_label_0>`
                 : null,
+              // Unit pricing measure — net content per item (e.g. "10 mg").
+              // Parsed from variant name/dosage in firestore-rest.ts.
+              p.unitPricingMeasure && p.unitPricingMeasure.value > 0
+                ? `    <g:unit_pricing_measure>${p.unitPricingMeasure.value}${p.unitPricingMeasure.unit}</g:unit_pricing_measure>`
+                : null,
 
               `  </item>`,
             ].filter(Boolean).join("\n");
