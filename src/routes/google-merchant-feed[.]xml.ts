@@ -243,7 +243,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                 : null,
               `    <g:identifier_exists>${hasGtin ? "yes" : "no"}</g:identifier_exists>`,
               `    <g:google_product_category>${GOOGLE_CATEGORY_ID}</g:google_product_category>`,
-              `    <g:product_type>${xmlEscape(`${GOOGLE_CATEGORY_PATH}${displayCategory ? ` > ${displayCategory}` : ""}`)}</g:product_type>`,
+              `    <g:product_type>${xmlEscape(GOOGLE_CATEGORY_PATH)}</g:product_type>`,
               `    <g:adult>no</g:adult>`,
               `    <g:age_group>adult</g:age_group>`,
               `    <g:is_bundle>no</g:is_bundle>`,
