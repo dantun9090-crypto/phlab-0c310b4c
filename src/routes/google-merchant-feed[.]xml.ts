@@ -234,20 +234,12 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `    <g:sku>${xmlEscape(sku)}</g:sku>`,
               `    <g:item_group_id>${xmlEscape(p.id || p.slug)}</g:item_group_id>`,
               hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
-              p.unitPricingMeasure
-                ? `    <g:unit_pricing_measure>${p.unitPricingMeasure.value}${p.unitPricingMeasure.unit}</g:unit_pricing_measure>`
-                : null,
-              p.unitPricingMeasure
-                ? `    <g:unit_pricing_base_measure>1${p.unitPricingMeasure.unit}</g:unit_pricing_base_measure>`
-                : null,
-              `    <g:identifier_exists>${hasGtin ? "yes" : "no"}</g:identifier_exists>`,
               `    <g:google_product_category>${GOOGLE_CATEGORY_ID}</g:google_product_category>`,
               `    <g:product_type>${xmlEscape(GOOGLE_CATEGORY_PATH)}</g:product_type>`,
               `    <g:adult>no</g:adult>`,
               `    <g:age_group>adult</g:age_group>`,
               `    <g:is_bundle>no</g:is_bundle>`,
               `    <g:multipack>1</g:multipack>`,
-              `    <g:material>Lyophilised reference standard</g:material>`,
               `    <g:shipping>`,
               `      <g:country>GB</g:country>`,
               `      <g:service>Standard</g:service>`,
@@ -257,10 +249,10 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               ...highlights.map(
                 (h) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
               ),
-              `    <g:custom_label_0>Research Use Only</g:custom_label_0>`,
-              `    <g:custom_label_1>Laboratory Reference Standard</g:custom_label_1>`,
-              null,
-              p.purity ? `    <g:custom_label_3>${xmlEscape(p.purity)}</g:custom_label_3>` : null,
+              // Custom labels: internal segmentation only. No compliance
+              // text here — Google flags it as a workaround.
+              p.category ? `    <g:custom_label_0>${xmlEscape(p.category)}</g:custom_label_0>` : null,
+              p.purity ? `    <g:custom_label_1>${xmlEscape(p.purity)}</g:custom_label_1>` : null,
               `  </item>`,
             ].filter(Boolean).join("\n");
 
