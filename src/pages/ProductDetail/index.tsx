@@ -1082,7 +1082,9 @@ export default function ProductDetail() {
                       <AnimatePresence mode="wait">
                         <motion.img
                           key={selectedImageIdx}
-                          src={src(selectedImageIdx)}
+                          src={cfImg(src(selectedImageIdx), { width: 800, quality: 82 }) || src(selectedImageIdx)}
+                          srcSet={[400, 600, 800, 1200].map(w => `${cfImg(src(selectedImageIdx), { width: w, quality: 82 })} ${w}w`).filter(s => !s.startsWith(' ')).join(', ') || undefined}
+                          sizes="(max-width: 1024px) 100vw, 512px"
                           alt={`${product.name}${product.variants?.[selectedVariantIdx]?.name ? ` ${product.variants[selectedVariantIdx].name}` : ''} HPLC-verified research peptide vial UK`}
                           width="400"
                           height="400"
@@ -1091,6 +1093,7 @@ export default function ProductDetail() {
                           fetchPriority="high"
                           decoding="async"
                           initial={{ opacity: 0, scale: 1.03 }}
+
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.97 }}
                           transition={{ duration: 0.2, ease: 'easeOut' }}
