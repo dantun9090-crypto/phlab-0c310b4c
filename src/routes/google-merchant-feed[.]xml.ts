@@ -183,6 +183,10 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             if (/\bmots[-\s]?c\b/i.test(cleanName)) {
               cleanName = "Mitochondrial Open Reading Frame of the 12S rRNA-c";
             }
+            // Normalise hyphenated codes that trigger health classifiers.
+            cleanName = cleanName
+              .replace(/\bBPC[-\s]?157\b/gi, "BPC157")
+              .replace(/\bTB[-\s]?500\b/gi, "TB500");
             const title = `${cleanName || p.name} — Laboratory Reference Standard`;
 
             // Single, neutral compliance line. No repetition, no "human",
