@@ -631,14 +631,15 @@ export default function HomePage() {
           })()}
           {banner.ctaUrl ? (
             <a href={banner.ctaUrl} className="block">
-              <img src={banner.imageUrl} alt={banner.altText || 'PH Labs research peptides promotional banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
+              <img {...cfImgProps(banner.imageUrl, { widths: [640, 960, 1280, 1600, 1920], sizes: '100vw' })} alt={banner.altText || 'PH Labs research peptides promotional banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
                 style={{ height: banner.heightPx ? `${banner.heightPx}px` : '320px', objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
             </a>
           ) : (
-            <img src={banner.imageUrl} alt={banner.altText || 'PH Labs research peptides promotional banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
+            <img {...cfImgProps(banner.imageUrl, { widths: [640, 960, 1280, 1600, 1920], sizes: '100vw' })} alt={banner.altText || 'PH Labs research peptides promotional banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
               style={{ height: banner.heightPx ? `${banner.heightPx}px` : '320px', objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
 
           )}
+
           {banner.overlayText && (
             <div className="absolute inset-0 flex flex-col items-center justify-center z-[10] pointer-events-none text-center px-6">
               <p className="font-black text-white max-w-2xl" style={{ fontSize: 'clamp(1.5rem,4vw,3rem)', textShadow: '0 2px 24px rgba(0,0,0,0.7)' }}>{banner.overlayText}</p>
