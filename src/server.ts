@@ -170,8 +170,8 @@ const PRERENDER_SWR_TTL = 86_400;
 const LOOP_HEADER = "x-prerender-loop";
 
 // Pliki/ścieżki, dla których nigdy nie wołamy prerendera
-const STATIC_EXT = /\.(js|mjs|css|map|png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|eot|mp4|webm|mp3|pdf|xml|txt|json|wasm|zip)(\?|$)/i;
-const BYPASS_PATH_PREFIXES = ["/api/", "/_build/", "/assets/", "/static/", "/__health"];
+const STATIC_EXT = /\.(js|mjs|css|map|png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|eot|mp4|webm|mp3|pdf|xml|txt|json|wasm|zip|webmanifest)(\?|$)/i;
+const BYPASS_PATH_PREFIXES = ["/api/", "/_build/", "/assets/", "/static/", "/__health", "/_serverFn/", "/_server/", "/.well-known/", "/cdn-cgi/", "/_img"];
 
 // Static content pages: server-rendered HTML is complete without JS, so
 // Prerender.io adds latency + a 5xx failure mode for no SEO benefit.
