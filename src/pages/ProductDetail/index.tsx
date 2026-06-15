@@ -1043,12 +1043,13 @@ export default function ProductDetail() {
         {product.bannerImageUrl && (
           <div className="mb-8 rounded-3xl overflow-hidden border border-white/[0.08] shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
             <img
-              src={product.bannerImageUrl}
+              {...cfImgProps(product.bannerImageUrl, { widths: [640, 960, 1280, 1600], sizes: '(max-width: 1024px) 100vw, 1024px' })}
               alt={`${product.name} research peptide promotional banner — PH Labs UK`}
               className="w-full object-cover max-h-[240px]"
               loading="eager"
               fetchPriority="high"
             />
+
           </div>
         )}
 
