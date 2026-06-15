@@ -283,6 +283,59 @@ export default {
       });
     }
 
+    // 0b. Image transformation proxy — /_img/?u=<encoded firebase url>&w=600&f=auto&q=80
+    //     Uses Cloudflare Image Resizing via `cf.image` on a Worker subrequest,
+    //     which works for any origin we can fetch (bypasses the same-zone limit
+    //     of /cdn-cgi/image/). Negotiates AVIF/WebP from the client Accept header.
+    if (url.pathname === "/_img" || url.pathname === "/_img/") {
+      const target = url.searchParams.get("u");
+      if (!target) return new Response("missing u", { status: 400 });
+      let src;
+      try {
+        src = new URL(target);
+      } catch (_) {
+        return new Response("bad url", { status: 400 });
+      }
+      // Allowlist: only Firebase Storage + googleusercontent (avoid open proxy).
+      const ALLOWED_IMG_HOSTS = new Set([
+        "firebasestorage.googleapis.com",
+        "storage.googleapis.com",
+        "lh3.googleusercontent.com",
+      ]);
+      if (!ALLOWED_IMG_HOSTS.has(src.hostname)) {
+        return new Response("forbidden host", { status: 403 });
+      }
+      const w = Math.max(16, Math.min(2400, parseInt(url.searchParams.get("w") || "0", 10) || 0));
+      const q = Math.max(30, Math.min(95, parseInt(url.searchParams.get("q") || "80", 10)));
+      const fParam = (url.searchParams.get("f") || "auto").toLowerCase();
+      const format = ["auto", "avif", "webp", "json", "jpeg", "png"].includes(fParam) ? fParam : "auto";
+      const imageOpts = { quality: q, format };
+      if (w) imageOpts.width = w;
+      const fit = url.searchParams.get("fit");
+      if (fit && ["cover", "contain", "scale-down", "crop", "pad"].includes(fit)) imageOpts.fit = fit;
+      try {
+        const upstream = await fetch(src.toString(), {
+          cf: { image: imageOpts, cacheEverything: true, cacheTtl: 86400 },
+          headers: { accept: request.headers.get("accept") || "image/avif,image/webp,*/*" },
+        });
+        const h = new Headers(upstream.headers);
+        h.set("cache-control", "public, max-age=31536000, immutable");
+        h.set("x-phl-via", "img-resize");
+        h.delete("set-cookie");
+        return applySecurityHeaders(new Response(upstream.body, { status: upstream.status, statusText: upstream.statusText, headers: h }), url);
+      } catch (_) {
+        // Fallback to original
+        try {
+          const raw = await fetch(src.toString());
+          return new Response(raw.body, { status: raw.status, headers: raw.headers });
+        } catch (__) {
+          return new Response("upstream error", { status: 502 });
+        }
+      }
+    }
+
+
+
 
     // 1. Hostname normalization (defense in depth — origin also does this).
     if (REDIRECT_HOSTS.has(host) || (url.protocol === "http:" && host === CANONICAL_HOST)) {
