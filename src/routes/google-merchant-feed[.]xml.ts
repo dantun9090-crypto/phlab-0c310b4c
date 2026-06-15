@@ -174,11 +174,15 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             // chemical", no "blend" — these phrases trigger Google's
             // supplement / health classifier even when wrapped in
             // laboratory language. Strip them from the raw product name.
-            const cleanName = (p.name || "")
+            let cleanName = (p.name || "")
               .replace(/\b(research\s+peptide|research\s+chemical|research\s+compound|reference\s+standard|peptide\s+blend|blend|ruo)\b/gi, "")
               .replace(/\s+/g, " ")
               .replace(/[-–—\s]+$/g, "")
               .trim();
+            // Expand MOTS-c to its full scientific name for the feed.
+            if (/\bmots[-\s]?c\b/i.test(cleanName)) {
+              cleanName = "Mitochondrial Open Reading Frame of the 12S rRNA-c";
+            }
             const title = `Laboratory Reference Standard — ${cleanName || p.name}`;
 
             // Single, neutral compliance line. No repetition, no "human",
