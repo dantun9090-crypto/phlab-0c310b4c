@@ -61,17 +61,22 @@ export default function ResearchGate() {
   const params = useParams<{ id?: string }>();
 
   const isExempt = MODAL_EXEMPT_PATHS.some(p => location.pathname.startsWith(p));
+  const hideGateCompletely = location.pathname.startsWith('/landing');
   // Detect product pages but exclude /products/category/:slug
   const isProductPage = location.pathname.startsWith('/products/') &&
     !location.pathname.startsWith('/products/category/') && !!params.id;
 
   useEffect(() => {
+    if (hideGateCompletely) {
+      document.documentElement.style.setProperty('--rg-banner-h', '0px');
+      return;
+    }
     const h = bannerVisible ? BANNER_H : 0;
     document.documentElement.style.setProperty('--rg-banner-h', `${h}px`);
     return () => {
       document.documentElement.style.setProperty('--rg-banner-h', '0px');
     };
-  }, [bannerVisible]);
+  }, [bannerVisible, hideGateCompletely]);
 
   useEffect(() => {
     const already = isConfirmed();
@@ -93,6 +98,8 @@ export default function ResearchGate() {
       return () => clearTimeout(t);
     }
   }, [location.pathname]);
+
+  if (hideGateCompletely) return null;
 
   const handleConfirm = () => {
     saveConfirmation();

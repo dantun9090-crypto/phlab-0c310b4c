@@ -104,7 +104,9 @@ export function Layout({ children }: LayoutProps) {
   const isAuthPage = ['/login', '/register'].includes(location.pathname);
   // Admin also gets clean layout — no overlapping fixed bars
   const isAdminPage = location.pathname.startsWith('/admin');
+  const isLandingPage = location.pathname.startsWith('/landing');
   const isCleanPage = isAuthPage || isAdminPage;
+  const researchBannerOffset = isLandingPage ? '0px' : 'var(--rg-banner-h, 0px)';
   
   // Check if any cart items have no variant selected
   const hasItemsWithoutVariant = useMemo(() => {
@@ -400,7 +402,7 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       {/* Research confirmation gate + sticky research banner */}
-      {!isCleanPage && <ResearchGate />}
+      {!isCleanPage && !isLandingPage && <ResearchGate />}
 
       {/* Maintenance Mode — admins bypass */}
       {siteSettings.maintenanceMode && !isAdmin && (
@@ -413,7 +415,7 @@ export function Layout({ children }: LayoutProps) {
       {!isCleanPage && <div
         className="fixed left-0 right-0 z-[51] flex items-center justify-center gap-4 px-4 text-center"
         style={{
-          top: 'var(--rg-banner-h, 0px)',
+          top: researchBannerOffset,
           height: '32px',
           background: '#030a14',
           borderBottom: '1px solid rgba(16,185,129,0.12)',
@@ -458,7 +460,7 @@ export function Layout({ children }: LayoutProps) {
       ═══════════════════════════════════════════════════════════════ */}
       {!isAuthPage && <header
         className="fixed left-0 right-0 z-50 border-b border-white/[0.06]"
-        style={{ background: '#030a14', top: 'calc(var(--rg-banner-h, 34px) + 32px)', paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}
+        style={{ background: '#030a14', top: `calc(${researchBannerOffset} + 32px)`, paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}
       >
         <div className="w-full pl-4 pr-4 sm:pl-4 sm:pr-6">
           <div className="flex items-center justify-between h-[64px]">
@@ -1283,7 +1285,7 @@ export function Layout({ children }: LayoutProps) {
       </footer>}
 
       {/* GDPR Cookie Consent Banner */}
-      {siteSettings.cookieConsentEnabled && <CookieConsent />}
+      {siteSettings.cookieConsentEnabled && !isLandingPage && <CookieConsent />}
 
       {/* Admin Quick-Access Button — only visible to admins */}
       {isAdmin && (
