@@ -9,6 +9,8 @@ import { auth, db, doc, getDoc, getDocFromServer, collection, query, where, getD
 
 import type { Product } from '@/lib/firebase';
 import { getProductImage } from '@/lib/productImages';
+import { cfImg, cfImgProps } from '@/lib/cf-image';
+
 import { nameToSlug } from '@/lib/seedProducts';
 import { PRODUCT_SEO_CONTENT } from '@/lib/productSEO';
 import { SEO_LIMITS, clamp } from '@/lib/seo-meta';
