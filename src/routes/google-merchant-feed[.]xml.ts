@@ -171,9 +171,16 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             // back to the slug URL so SEO authority consolidates.
             const link = `${BASE_URL}/products/${p.id}`;
             // Neutral title: no "research peptide", no "RUO", no "research
-            // chemical" — these phrases trigger Google's supplement / health
-            // classifier even when wrapped in laboratory language.
-            const title = `Laboratory Reference Standard — ${p.name}`;
+            // chemical", no "blend" — these phrases trigger Google's
+            // supplement / health classifier even when wrapped in
+            // laboratory language. Strip them from the raw product name.
+            const cleanName = (p.name || "")
+              .replace(/\b(research\s+peptide|research\s+chemical|research\s+compound|reference\s+standard|peptide\s+blend|blend|ruo)\b/gi, "")
+              .replace(/\s+/g, " ")
+              .replace(/[-–—\s]+$/g, "")
+              .trim();
+            const title = `Laboratory Reference Standard — ${cleanName || p.name}`;
+
             // Single, neutral compliance line. No repetition, no "human",
             // no "consumption", no "RUO" stuffing.
             const description =
