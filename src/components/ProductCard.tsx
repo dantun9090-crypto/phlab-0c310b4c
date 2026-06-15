@@ -4,6 +4,8 @@ import { getProductImage } from '@/lib/productImages';
 import type { Product } from '@/lib/firebase';
 import { nameToSlug } from '@/lib/seedProducts';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { cfImgProps } from '@/lib/cf-image';
+
 
 interface ProductCardProps {
   product: Product;
