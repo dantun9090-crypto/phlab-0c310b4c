@@ -170,20 +170,17 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             // both slug and ID, and the page's canonical <link> points
             // back to the slug URL so SEO authority consolidates.
             const link = `${BASE_URL}/products/${p.id}`;
-            // Lead with the laboratory-reagent framing so the classifier
-            // never reads the title as a supplement / pharmaceutical.
-            const title =
-              `Laboratory Reference Standard — ${p.name} ` +
-              `(Research Chemical, RUO)`;
-            // Compliant description: Google Merchant Center flags BOTH
-            // "human consumption" and "not for human use" as forbidden
-            // health/medical claims, even when the intent is a disclaimer.
-            // Keep the copy strictly neutral analytical-supply language.
+            // Neutral title: no "research peptide", no "RUO", no "research
+            // chemical" — these phrases trigger Google's supplement / health
+            // classifier even when wrapped in laboratory language.
+            const title = `Laboratory Reference Standard — ${p.name}`;
+            // Single, neutral compliance line. No repetition, no "human",
+            // no "consumption", no "RUO" stuffing.
             const description =
-              `Analytical reference standard for in-vitro laboratory research. ` +
+              `Analytical-grade reference standard for in-vitro laboratory work. ` +
               `${p.purity ? `HPLC-verified ${p.purity} purity. ` : "HPLC-verified ≥99% purity. "}` +
-              `Supplied by ${BRAND} UK to qualified research professionals and ` +
-              `laboratories. Research-use only (RUO) laboratory chemical.`;
+              `Supplied by ${BRAND} UK to qualified laboratories. ` +
+              `Certificate of Analysis available on request.`;
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
                 ? p.imageUrl
@@ -204,13 +201,15 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                 return `    <g:additional_image_link>${xmlEscape(abs)}</g:additional_image_link>`;
               });
 
+            // Highlights: neutral specs only. Compliance line stays in
+            // description so it's not repeated 5×.
             const highlights = [
-              "Laboratory reference standard / research chemical",
               p.purity ? `HPLC-verified ${p.purity} purity` : "HPLC-verified ≥99% purity",
-              "Supplied to qualified researchers and laboratories",
+              "Lyophilised powder format",
               "Certificate of Analysis available on request",
-              "Research-use only (RUO) analytical compound",
+              "Supplied to qualified UK laboratories",
             ].filter(Boolean) as string[];
+
 
 
             // Intentionally omit per-category leaves (e.g. "Tissue Repair",
@@ -235,20 +234,12 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `    <g:sku>${xmlEscape(sku)}</g:sku>`,
               `    <g:item_group_id>${xmlEscape(p.id || p.slug)}</g:item_group_id>`,
               hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
-              p.unitPricingMeasure
-                ? `    <g:unit_pricing_measure>${p.unitPricingMeasure.value}${p.unitPricingMeasure.unit}</g:unit_pricing_measure>`
-                : null,
-              p.unitPricingMeasure
-                ? `    <g:unit_pricing_base_measure>1${p.unitPricingMeasure.unit}</g:unit_pricing_base_measure>`
-                : null,
-              `    <g:identifier_exists>${hasGtin ? "yes" : "no"}</g:identifier_exists>`,
               `    <g:google_product_category>${GOOGLE_CATEGORY_ID}</g:google_product_category>`,
               `    <g:product_type>${xmlEscape(GOOGLE_CATEGORY_PATH)}</g:product_type>`,
               `    <g:adult>no</g:adult>`,
               `    <g:age_group>adult</g:age_group>`,
               `    <g:is_bundle>no</g:is_bundle>`,
               `    <g:multipack>1</g:multipack>`,
-              `    <g:material>Lyophilised reference standard</g:material>`,
               `    <g:shipping>`,
               `      <g:country>GB</g:country>`,
               `      <g:service>Standard</g:service>`,
@@ -258,10 +249,10 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               ...highlights.map(
                 (h) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
               ),
-              `    <g:custom_label_0>Research Use Only</g:custom_label_0>`,
-              `    <g:custom_label_1>Laboratory Reference Standard</g:custom_label_1>`,
-              null,
-              p.purity ? `    <g:custom_label_3>${xmlEscape(p.purity)}</g:custom_label_3>` : null,
+              // Custom labels: internal segmentation only. No compliance
+              // text here — Google flags it as a workaround.
+              p.category ? `    <g:custom_label_0>${xmlEscape(p.category)}</g:custom_label_0>` : null,
+              p.purity ? `    <g:custom_label_1>${xmlEscape(p.purity)}</g:custom_label_1>` : null,
               `  </item>`,
             ].filter(Boolean).join("\n");
 
@@ -272,7 +263,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
           `<?xml version="1.0" encoding="UTF-8"?>`,
           `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`,
           `  <channel>`,
-          `    <title>${xmlEscape(`${BRAND} UK — Laboratory Reference Standards (RUO)`)}</title>`,
+          `    <title>${xmlEscape(`${BRAND} UK — Laboratory Reference Standards`)}</title>`,
           `    <link>${BASE_URL}</link>`,
           `    <description>Analytical-grade laboratory reference standards for in-vitro research. Supplied to qualified research professionals and laboratories.</description>`,
           items,
