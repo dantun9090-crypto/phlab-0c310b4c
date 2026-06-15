@@ -20,6 +20,10 @@ const SLUG_RE = /^[a-z0-9-]+$/;
 const LEGACY_SLUG_ALIASES: Record<string, string> = {
   "bpc-157-research-peptide": "bpc-157",
   "tb-500-research-peptide": "tb-500-thymosin-beta-4",
+  // Short Google Merchant / inbound slugs → canonical long slug.
+  retatrutide: "retatrutide-research-peptide",
+  tirzepatide: "tirzepatide-research-peptide",
+  "nad-plus": "nad-research-compound",
 };
 
 
