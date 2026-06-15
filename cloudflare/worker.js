@@ -58,7 +58,28 @@ const BOT_UA_RX = new RegExp(
 );
 
 const STATIC_EXT_RX =
-  /\.(js|mjs|css|map|png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|eot|mp4|webm|mp3|pdf|xml|txt|json|wasm|zip)(\?|$)/i;
+  /\.(js|mjs|css|map|png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|eot|mp4|webm|mp3|pdf|xml|txt|json|wasm|zip|webmanifest)(\?|$)/i;
+
+// Path prefixes that must NEVER be sent to Prerender.io — these are RPC
+// endpoints, webhooks, well-known files, or app-internal APIs. Sending bot
+// UAs through Prerender for these returns 504 because headless Chrome can
+// not render a JSON/RPC response.
+const PRERENDER_BYPASS_PREFIXES = [
+  "/_serverFn/",
+  "/_server/",
+  "/api/",
+  "/.well-known/",
+  "/cdn-cgi/",
+  "/_img",
+];
+const PRERENDER_BYPASS_EXACT = new Set([
+  "/site.webmanifest",
+  "/manifest.webmanifest",
+  "/manifest.json",
+  "/apple-app-site-association",
+  "/sw.js",
+  "/service-worker.js",
+]);
 
 const HOP_BY_HOP = new Set([
   "connection", "keep-alive", "proxy-authenticate", "proxy-authorization",
