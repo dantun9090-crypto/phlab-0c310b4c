@@ -7,7 +7,7 @@ const EXPIRY_DAYS = 30;
 const BANNER_H = 34;
 
 // Pages where the modal should never block interaction
-const MODAL_EXEMPT_PATHS = ['/login', '/register', '/admin', '/account'];
+const MODAL_EXEMPT_PATHS = ['/login', '/register', '/admin', '/account', '/landing'];
 
 function isConfirmed(): boolean {
   if (typeof window === 'undefined') return true;
