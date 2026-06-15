@@ -49,14 +49,27 @@ export const Route = createFileRoute("/")({
       { rel: "preconnect", href: "https://firebasestorage.googleapis.com", crossOrigin: "" },
       { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
       // LCP preload — server-loaded promo banner image (skipped if absent).
+      // Goes through /_img (Cloudflare Image Resizing → AVIF/WebP) and
+      // includes `imagesrcset`/`imagesizes` so the preload picks the right
+      // variant for the viewport instead of pulling the largest source file.
       ...(loaderData?.banner?.imageUrl
-        ? [{
-            rel: "preload",
-            as: "image",
-            href: loaderData.banner.imageUrl,
-            fetchpriority: "high",
-          } as const]
+        ? (() => {
+            const src = loaderData.banner.imageUrl as string;
+            const isFirebase = /^https:\/\/(firebasestorage|storage)\.googleapis\.com\//.test(src);
+            const widths = [640, 960, 1280, 1600, 1920];
+            const enc = (w: number) =>
+              `/_img/?u=${encodeURIComponent(src)}&w=${w}&f=auto&q=80`;
+            return [{
+              rel: "preload",
+              as: "image",
+              href: isFirebase ? enc(1280) : src,
+              imagesrcset: isFirebase ? widths.map(w => `${enc(w)} ${w}w`).join(", ") : undefined,
+              imagesizes: isFirebase ? "100vw" : undefined,
+              fetchpriority: "high",
+            } as const];
+          })()
         : []),
+
     ],
     scripts: [
       // Sitewide identity (LocalBusiness + WebSite/SearchAction) lives here
