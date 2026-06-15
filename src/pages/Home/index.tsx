@@ -667,11 +667,12 @@ export default function HomePage() {
               <div key={ad.id} className="relative rounded-2xl overflow-hidden" style={{ minHeight: '160px' }}>
                 {ad.ctaUrl ? (
                   <a href={ad.ctaUrl} target="_blank" rel="noopener noreferrer">
-                    <img src={ad.imageUrl} alt={ad.altText || 'PH Labs featured peptide product offer'} width={1600} height={280} className="w-full object-cover" style={{ maxHeight: '280px' }} {...imgProps} />
+                    <img {...cfImgProps(ad.imageUrl, { widths: [640, 960, 1280, 1600], sizes: '100vw' })} alt={ad.altText || 'PH Labs featured peptide product offer'} width={1600} height={280} className="w-full object-cover" style={{ maxHeight: '280px' }} {...imgProps} />
                   </a>
                 ) : (
-                  <img src={ad.imageUrl} alt={ad.altText || 'PH Labs featured peptide product offer'} width={1600} height={280} className="w-full object-cover" style={{ maxHeight: '280px' }} {...imgProps} />
+                  <img {...cfImgProps(ad.imageUrl, { widths: [640, 960, 1280, 1600], sizes: '100vw' })} alt={ad.altText || 'PH Labs featured peptide product offer'} width={1600} height={280} className="w-full object-cover" style={{ maxHeight: '280px' }} {...imgProps} />
                 )}
+
               </div>
             );
           })}
