@@ -183,7 +183,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             if (/\bmots[-\s]?c\b/i.test(cleanName)) {
               cleanName = "Mitochondrial Open Reading Frame of the 12S rRNA-c";
             }
-            const title = `Laboratory Reference Standard — ${cleanName || p.name}`;
+            const title = `${cleanName || p.name} — Laboratory Reference Standard`;
 
             // Single, neutral compliance line. No repetition, no "human",
             // no "consumption", no "RUO" stuffing.
