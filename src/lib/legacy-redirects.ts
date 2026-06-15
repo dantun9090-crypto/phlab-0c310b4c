@@ -151,6 +151,21 @@ const RULES: RedirectRule[] = [
   { type: "exact", from: "/products/ss-31", to: "/products" },
   { type: "exact", from: "/products/elamipretide", to: "/products" },
 
+  // Old Shopify-era landing & collection URLs (still in Bing/Google index)
+  { type: "exact", from: "/landing", to: "/" },
+  { type: "prefix", from: "/landing/", to: "/" },
+  { type: "exact", from: "/collections/all", to: "/products" },
+  { type: "prefix", from: "/collections/", to: "/products" },
+
+  // Legacy products in Bing/Google index but never offered → catalogue
+  { type: "exact", from: "/products/mk-677-ibutamoren", to: "/products" },
+  { type: "exact", from: "/products/mk-677", to: "/products" },
+  { type: "exact", from: "/products/ibutamoren", to: "/products" },
+  { type: "exact", from: "/products/ghrp-6", to: "/products" },
+  { type: "exact", from: "/products/ghrp-2", to: "/products" },
+  { type: "exact", from: "/products/cjc-1295-dac", to: "/products" },
+  { type: "exact", from: "/products/cjc-1295-no-dac", to: "/products" },
+
   // NOTE: Firestore doc-ID style URLs (e.g. /products/2s5IGEx2RgUDLfbfjBbF)
   // are intentionally NOT redirected here — the /products/$slug route
   // resolves them to the matching product page (used by Google Merchant feed).
