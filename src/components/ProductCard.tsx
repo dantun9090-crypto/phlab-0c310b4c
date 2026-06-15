@@ -4,6 +4,8 @@ import { getProductImage } from '@/lib/productImages';
 import type { Product } from '@/lib/firebase';
 import { nameToSlug } from '@/lib/seedProducts';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
+import { cfImgProps } from '@/lib/cf-image';
+
 
 interface ProductCardProps {
   product: Product;
@@ -109,7 +111,7 @@ export function ProductCard({
       <Link to={`/products/${slug}`} className="relative block overflow-hidden" style={{ aspectRatio: '4/3', background: '#030a14' }}>
         {imgUrl ? (
           <img
-            src={imgUrl}
+            {...cfImgProps(imgUrl, { widths: [200, 300, 400, 600, 800], sizes: '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 288px' })}
             alt={getProductAlt(name, product.category)}
             loading={isAboveFold ? "eager" : "lazy"}
             fetchPriority={isAboveFold ? "high" : "auto"}
@@ -119,6 +121,7 @@ export function ProductCard({
             style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
             className="transition-transform duration-700 group-hover:scale-105"
           />
+
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <FlaskConical style={{ width: 48, height: 48, color: 'rgba(16,185,129,0.2)' }} />

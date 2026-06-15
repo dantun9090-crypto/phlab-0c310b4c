@@ -9,6 +9,8 @@ import { auth, db, doc, getDoc, getDocFromServer, collection, query, where, getD
 
 import type { Product } from '@/lib/firebase';
 import { getProductImage } from '@/lib/productImages';
+import { cfImg, cfImgProps } from '@/lib/cf-image';
+
 import { nameToSlug } from '@/lib/seedProducts';
 import { PRODUCT_SEO_CONTENT } from '@/lib/productSEO';
 import { SEO_LIMITS, clamp } from '@/lib/seo-meta';
@@ -1041,12 +1043,13 @@ export default function ProductDetail() {
         {product.bannerImageUrl && (
           <div className="mb-8 rounded-3xl overflow-hidden border border-white/[0.08] shadow-[0_8px_40px_rgba(0,0,0,0.4)]">
             <img
-              src={product.bannerImageUrl}
+              {...cfImgProps(product.bannerImageUrl, { widths: [640, 960, 1280, 1600], sizes: '(max-width: 1024px) 100vw, 1024px' })}
               alt={`${product.name} research peptide promotional banner — PH Labs UK`}
               className="w-full object-cover max-h-[240px]"
               loading="eager"
               fetchPriority="high"
             />
+
           </div>
         )}
 
@@ -1079,7 +1082,9 @@ export default function ProductDetail() {
                       <AnimatePresence mode="wait">
                         <motion.img
                           key={selectedImageIdx}
-                          src={src(selectedImageIdx)}
+                          src={cfImg(src(selectedImageIdx), { width: 800, quality: 82 }) || src(selectedImageIdx)}
+                          srcSet={[400, 600, 800, 1200].map(w => `${cfImg(src(selectedImageIdx), { width: w, quality: 82 })} ${w}w`).filter(s => !s.startsWith(' ')).join(', ') || undefined}
+                          sizes="(max-width: 1024px) 100vw, 512px"
                           alt={`${product.name}${product.variants?.[selectedVariantIdx]?.name ? ` ${product.variants[selectedVariantIdx].name}` : ''} HPLC-verified research peptide vial UK`}
                           width="400"
                           height="400"
@@ -1088,6 +1093,7 @@ export default function ProductDetail() {
                           fetchPriority="high"
                           decoding="async"
                           initial={{ opacity: 0, scale: 1.03 }}
+
                           animate={{ opacity: 1, scale: 1 }}
                           exit={{ opacity: 0, scale: 0.97 }}
                           transition={{ duration: 0.2, ease: 'easeOut' }}
@@ -1158,9 +1164,10 @@ export default function ProductDetail() {
                               : 'border-white/10 hover:border-white/30 opacity-50 hover:opacity-90 hover:scale-105'
                           }`}
                         >
-                          <img src={thumbSrc} alt={`${product.name}${product.variants?.[idx]?.name ? ` ${product.variants[idx].name}` : ''} HPLC-verified research peptide vial UK — view ${idx + 1}`}
+                          <img src={cfImg(thumbSrc, { width: 128, quality: 75 }) || thumbSrc} alt={`${product.name}${product.variants?.[idx]?.name ? ` ${product.variants[idx].name}` : ''} HPLC-verified research peptide vial UK — view ${idx + 1}`}
                             width="64" height="64"
                             className="w-full h-full object-cover" loading="lazy" />
+
                         </button>
                       ))}
                     </div>
@@ -1257,7 +1264,10 @@ export default function ProductDetail() {
                     <AnimatePresence mode="wait">
                       <motion.img
                         key={selectedImageIdx}
-                        src={src(selectedImageIdx)}
+                        src={cfImg(src(selectedImageIdx), { width: 1600, quality: 88 }) || src(selectedImageIdx)}
+                        srcSet={[800, 1200, 1600, 2000].map(w => `${cfImg(src(selectedImageIdx), { width: w, quality: 88 })} ${w}w`).filter(s => !s.startsWith(' ')).join(', ') || undefined}
+                        sizes="100vw"
+
                         alt={`${product.name} — HPLC-tested research peptide UK, image ${selectedImageIdx + 1}`}
                         className="max-w-full max-h-[calc(100vh-140px)] object-contain rounded-xl select-none"
                         initial={{ opacity: 0, scale: 0.96 }}
@@ -1303,7 +1313,7 @@ export default function ProductDetail() {
                               : 'border-white/20 opacity-45 hover:opacity-80 hover:border-white/50'
                           }`}
                         >
-                          <img src={thumbSrc} alt={`${product.name} research peptide UK thumbnail ${idx + 1}`} className="w-full h-full object-contain bg-black/60" loading="lazy" />
+                          <img src={cfImg(thumbSrc, { width: 128, quality: 75 }) || thumbSrc} alt={`${product.name} research peptide UK thumbnail ${idx + 1}`} className="w-full h-full object-contain bg-black/60" loading="lazy" />
                         </button>
                       ))}
                     </div>

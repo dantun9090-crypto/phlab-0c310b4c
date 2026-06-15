@@ -9,6 +9,8 @@ import { getAllProducts, db, doc, getDoc, getDocs, collection, query, where, add
 import type { Product } from '@/lib/firebase';
 import { nameToSlug } from '@/lib/seedProducts';
 import { sendPublicMail } from '@/lib/sendPublicMail';
+import { cfImgProps } from '@/lib/cf-image';
+
 
 import { useSEO } from '@/hooks/useSEO';
 
@@ -629,14 +631,15 @@ export default function HomePage() {
           })()}
           {banner.ctaUrl ? (
             <a href={banner.ctaUrl} className="block">
-              <img src={banner.imageUrl} alt={banner.altText || 'PH Labs research peptides promotional banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
+              <img {...cfImgProps(banner.imageUrl, { widths: [640, 960, 1280, 1600, 1920], sizes: '100vw' })} alt={banner.altText || 'PH Labs research peptides promotional banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
                 style={{ height: banner.heightPx ? `${banner.heightPx}px` : '320px', objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
             </a>
           ) : (
-            <img src={banner.imageUrl} alt={banner.altText || 'PH Labs research peptides promotional banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
+            <img {...cfImgProps(banner.imageUrl, { widths: [640, 960, 1280, 1600, 1920], sizes: '100vw' })} alt={banner.altText || 'PH Labs research peptides promotional banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
               style={{ height: banner.heightPx ? `${banner.heightPx}px` : '320px', objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
 
           )}
+
           {banner.overlayText && (
             <div className="absolute inset-0 flex flex-col items-center justify-center z-[10] pointer-events-none text-center px-6">
               <p className="font-black text-white max-w-2xl" style={{ fontSize: 'clamp(1.5rem,4vw,3rem)', textShadow: '0 2px 24px rgba(0,0,0,0.7)' }}>{banner.overlayText}</p>
@@ -664,11 +667,12 @@ export default function HomePage() {
               <div key={ad.id} className="relative rounded-2xl overflow-hidden" style={{ minHeight: '160px' }}>
                 {ad.ctaUrl ? (
                   <a href={ad.ctaUrl} target="_blank" rel="noopener noreferrer">
-                    <img src={ad.imageUrl} alt={ad.altText || 'PH Labs featured peptide product offer'} width={1600} height={280} className="w-full object-cover" style={{ maxHeight: '280px' }} {...imgProps} />
+                    <img {...cfImgProps(ad.imageUrl, { widths: [640, 960, 1280, 1600], sizes: '100vw' })} alt={ad.altText || 'PH Labs featured peptide product offer'} width={1600} height={280} className="w-full object-cover" style={{ maxHeight: '280px' }} {...imgProps} />
                   </a>
                 ) : (
-                  <img src={ad.imageUrl} alt={ad.altText || 'PH Labs featured peptide product offer'} width={1600} height={280} className="w-full object-cover" style={{ maxHeight: '280px' }} {...imgProps} />
+                  <img {...cfImgProps(ad.imageUrl, { widths: [640, 960, 1280, 1600], sizes: '100vw' })} alt={ad.altText || 'PH Labs featured peptide product offer'} width={1600} height={280} className="w-full object-cover" style={{ maxHeight: '280px' }} {...imgProps} />
                 )}
+
               </div>
             );
           })}
@@ -715,7 +719,7 @@ export default function HomePage() {
                   {/* Image area */}
                   <div className="relative overflow-hidden" style={{ aspectRatio: '4/3', background: '#040d1a' }}>
                     {p.image ? (
-                      <img src={p.image} alt={`${p.name} research peptide vial`} loading="lazy" width="400" height="300" decoding="async" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
+                      <img {...cfImgProps(p.image, { widths: [200, 300, 400, 600, 800], sizes: '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw' })} alt={`${p.name} research peptide vial`} loading="lazy" width="400" height="300" decoding="async" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <FlaskConical style={{ width: 48, height: 48, color: 'rgba(16,185,129,0.3)' }} />
