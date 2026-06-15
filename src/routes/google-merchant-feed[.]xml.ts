@@ -171,9 +171,16 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             // back to the slug URL so SEO authority consolidates.
             const link = `${BASE_URL}/products/${p.id}`;
             // Neutral title: no "research peptide", no "RUO", no "research
-            // chemical" — these phrases trigger Google's supplement / health
-            // classifier even when wrapped in laboratory language.
-            const title = `Laboratory Reference Standard — ${p.name}`;
+            // chemical", no "blend" — these phrases trigger Google's
+            // supplement / health classifier even when wrapped in
+            // laboratory language. Strip them from the raw product name.
+            const cleanName = (p.name || "")
+              .replace(/\b(research\s+peptide|research\s+chemical|research\s+compound|reference\s+standard|peptide\s+blend|blend|ruo)\b/gi, "")
+              .replace(/\s+/g, " ")
+              .replace(/[-–—\s]+$/g, "")
+              .trim();
+            const title = `Laboratory Reference Standard — ${cleanName || p.name}`;
+
             // Single, neutral compliance line. No repetition, no "human",
             // no "consumption", no "RUO" stuffing.
             const description =
@@ -249,10 +256,12 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               ...highlights.map(
                 (h) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
               ),
-              // Custom labels: internal segmentation only. No compliance
-              // text here — Google flags it as a workaround.
-              p.category ? `    <g:custom_label_0>${xmlEscape(p.category)}</g:custom_label_0>` : null,
-              p.purity ? `    <g:custom_label_1>${xmlEscape(p.purity)}</g:custom_label_1>` : null,
+              // Custom labels: purity only. Category slugs like
+              // "tissue-repair", "metabolic-signaling", "cellular-aging"
+              // are intentionally NOT emitted — Google's classifier reads
+              // them as health claims.
+              p.purity ? `    <g:custom_label_0>${xmlEscape(p.purity)}</g:custom_label_0>` : null,
+
               `  </item>`,
             ].filter(Boolean).join("\n");
 
