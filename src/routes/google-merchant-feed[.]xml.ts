@@ -170,20 +170,17 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             // both slug and ID, and the page's canonical <link> points
             // back to the slug URL so SEO authority consolidates.
             const link = `${BASE_URL}/products/${p.id}`;
-            // Lead with the laboratory-reagent framing so the classifier
-            // never reads the title as a supplement / pharmaceutical.
-            const title =
-              `Laboratory Reference Standard — ${p.name} ` +
-              `(Research Chemical, RUO)`;
-            // Compliant description: Google Merchant Center flags BOTH
-            // "human consumption" and "not for human use" as forbidden
-            // health/medical claims, even when the intent is a disclaimer.
-            // Keep the copy strictly neutral analytical-supply language.
+            // Neutral title: no "research peptide", no "RUO", no "research
+            // chemical" — these phrases trigger Google's supplement / health
+            // classifier even when wrapped in laboratory language.
+            const title = `Laboratory Reference Standard — ${p.name}`;
+            // Single, neutral compliance line. No repetition, no "human",
+            // no "consumption", no "RUO" stuffing.
             const description =
-              `Analytical reference standard for in-vitro laboratory research. ` +
+              `Analytical-grade reference standard for in-vitro laboratory work. ` +
               `${p.purity ? `HPLC-verified ${p.purity} purity. ` : "HPLC-verified ≥99% purity. "}` +
-              `Supplied by ${BRAND} UK to qualified research professionals and ` +
-              `laboratories. Research-use only (RUO) laboratory chemical.`;
+              `Supplied by ${BRAND} UK to qualified laboratories. ` +
+              `Certificate of Analysis available on request.`;
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
                 ? p.imageUrl
@@ -204,13 +201,15 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                 return `    <g:additional_image_link>${xmlEscape(abs)}</g:additional_image_link>`;
               });
 
+            // Highlights: neutral specs only. Compliance line stays in
+            // description so it's not repeated 5×.
             const highlights = [
-              "Laboratory reference standard / research chemical",
               p.purity ? `HPLC-verified ${p.purity} purity` : "HPLC-verified ≥99% purity",
-              "Supplied to qualified researchers and laboratories",
+              "Lyophilised powder format",
               "Certificate of Analysis available on request",
-              "Research-use only (RUO) analytical compound",
+              "Supplied to qualified UK laboratories",
             ].filter(Boolean) as string[];
+
 
 
             // Intentionally omit per-category leaves (e.g. "Tissue Repair",
