@@ -256,10 +256,12 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               ...highlights.map(
                 (h) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
               ),
-              // Custom labels: internal segmentation only. No compliance
-              // text here — Google flags it as a workaround.
-              p.category ? `    <g:custom_label_0>${xmlEscape(p.category)}</g:custom_label_0>` : null,
-              p.purity ? `    <g:custom_label_1>${xmlEscape(p.purity)}</g:custom_label_1>` : null,
+              // Custom labels: purity only. Category slugs like
+              // "tissue-repair", "metabolic-signaling", "cellular-aging"
+              // are intentionally NOT emitted — Google's classifier reads
+              // them as health claims.
+              p.purity ? `    <g:custom_label_0>${xmlEscape(p.purity)}</g:custom_label_0>` : null,
+
               `  </item>`,
             ].filter(Boolean).join("\n");
 
