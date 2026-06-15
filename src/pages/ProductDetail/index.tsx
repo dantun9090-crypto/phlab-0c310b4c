@@ -1164,9 +1164,10 @@ export default function ProductDetail() {
                               : 'border-white/10 hover:border-white/30 opacity-50 hover:opacity-90 hover:scale-105'
                           }`}
                         >
-                          <img src={thumbSrc} alt={`${product.name}${product.variants?.[idx]?.name ? ` ${product.variants[idx].name}` : ''} HPLC-verified research peptide vial UK — view ${idx + 1}`}
+                          <img src={cfImg(thumbSrc, { width: 128, quality: 75 }) || thumbSrc} alt={`${product.name}${product.variants?.[idx]?.name ? ` ${product.variants[idx].name}` : ''} HPLC-verified research peptide vial UK — view ${idx + 1}`}
                             width="64" height="64"
                             className="w-full h-full object-cover" loading="lazy" />
+
                         </button>
                       ))}
                     </div>
