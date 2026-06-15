@@ -104,6 +104,7 @@ export function Layout({ children }: LayoutProps) {
   const isAuthPage = ['/login', '/register'].includes(location.pathname);
   // Admin also gets clean layout — no overlapping fixed bars
   const isAdminPage = location.pathname.startsWith('/admin');
+  const isLandingPage = location.pathname.startsWith('/landing');
   const isCleanPage = isAuthPage || isAdminPage;
   
   // Check if any cart items have no variant selected
@@ -400,7 +401,7 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       {/* Research confirmation gate + sticky research banner */}
-      {!isCleanPage && <ResearchGate />}
+      {!isCleanPage && !isLandingPage && <ResearchGate />}
 
       {/* Maintenance Mode — admins bypass */}
       {siteSettings.maintenanceMode && !isAdmin && (
@@ -1283,7 +1284,7 @@ export function Layout({ children }: LayoutProps) {
       </footer>}
 
       {/* GDPR Cookie Consent Banner */}
-      {siteSettings.cookieConsentEnabled && <CookieConsent />}
+      {siteSettings.cookieConsentEnabled && !isLandingPage && <CookieConsent />}
 
       {/* Admin Quick-Access Button — only visible to admins */}
       {isAdmin && (
