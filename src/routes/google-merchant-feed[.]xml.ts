@@ -213,7 +213,10 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             ].filter(Boolean) as string[];
 
 
-            const displayCategory = toDisplayCategory(p.category);
+            // Intentionally omit per-category leaves (e.g. "Tissue Repair",
+            // "Metabolic Signalling", "Healing") from product_type and
+            // custom labels — Google's classifier flagged those as health
+            // claims. Feed only the neutral Biochemicals path.
 
             return [
               `  <item>`,
