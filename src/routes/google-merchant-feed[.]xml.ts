@@ -260,7 +260,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               ),
               `    <g:custom_label_0>Research Use Only</g:custom_label_0>`,
               `    <g:custom_label_1>Laboratory Reference Standard</g:custom_label_1>`,
-              p.category ? `    <g:custom_label_2>${xmlEscape(p.category)}</g:custom_label_2>` : null,
+              null,
               p.purity ? `    <g:custom_label_3>${xmlEscape(p.purity)}</g:custom_label_3>` : null,
               `  </item>`,
             ].filter(Boolean).join("\n");
