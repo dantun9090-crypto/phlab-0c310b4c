@@ -1313,7 +1313,7 @@ export default function ProductDetail() {
                               : 'border-white/20 opacity-45 hover:opacity-80 hover:border-white/50'
                           }`}
                         >
-                          <img src={thumbSrc} alt={`${product.name} research peptide UK thumbnail ${idx + 1}`} className="w-full h-full object-contain bg-black/60" loading="lazy" />
+                          <img src={cfImg(thumbSrc, { width: 128, quality: 75 }) || thumbSrc} alt={`${product.name} research peptide UK thumbnail ${idx + 1}`} className="w-full h-full object-contain bg-black/60" loading="lazy" />
                         </button>
                       ))}
                     </div>
