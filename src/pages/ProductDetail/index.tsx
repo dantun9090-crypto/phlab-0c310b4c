@@ -1264,7 +1264,10 @@ export default function ProductDetail() {
                     <AnimatePresence mode="wait">
                       <motion.img
                         key={selectedImageIdx}
-                        src={src(selectedImageIdx)}
+                        src={cfImg(src(selectedImageIdx), { width: 1600, quality: 88 }) || src(selectedImageIdx)}
+                        srcSet={[800, 1200, 1600, 2000].map(w => `${cfImg(src(selectedImageIdx), { width: w, quality: 88 })} ${w}w`).filter(s => !s.startsWith(' ')).join(', ') || undefined}
+                        sizes="100vw"
+
                         alt={`${product.name} — HPLC-tested research peptide UK, image ${selectedImageIdx + 1}`}
                         className="max-w-full max-h-[calc(100vh-140px)] object-contain rounded-xl select-none"
                         initial={{ opacity: 0, scale: 0.96 }}
