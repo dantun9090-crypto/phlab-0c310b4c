@@ -213,7 +213,10 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             ].filter(Boolean) as string[];
 
 
-            const displayCategory = toDisplayCategory(p.category);
+            // Intentionally omit per-category leaves (e.g. "Tissue Repair",
+            // "Metabolic Signalling", "Healing") from product_type and
+            // custom labels — Google's classifier flagged those as health
+            // claims. Feed only the neutral Biochemicals path.
 
             return [
               `  <item>`,
@@ -240,12 +243,12 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                 : null,
               `    <g:identifier_exists>${hasGtin ? "yes" : "no"}</g:identifier_exists>`,
               `    <g:google_product_category>${GOOGLE_CATEGORY_ID}</g:google_product_category>`,
-              `    <g:product_type>${xmlEscape(`${GOOGLE_CATEGORY_PATH}${displayCategory ? ` > ${displayCategory}` : ""}`)}</g:product_type>`,
+              `    <g:product_type>${xmlEscape(GOOGLE_CATEGORY_PATH)}</g:product_type>`,
               `    <g:adult>no</g:adult>`,
               `    <g:age_group>adult</g:age_group>`,
               `    <g:is_bundle>no</g:is_bundle>`,
               `    <g:multipack>1</g:multipack>`,
-              `    <g:material>Lyophilised peptide reference standard</g:material>`,
+              `    <g:material>Lyophilised reference standard</g:material>`,
               `    <g:shipping>`,
               `      <g:country>GB</g:country>`,
               `      <g:service>Standard</g:service>`,
@@ -257,7 +260,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               ),
               `    <g:custom_label_0>Research Use Only</g:custom_label_0>`,
               `    <g:custom_label_1>Laboratory Reference Standard</g:custom_label_1>`,
-              p.category ? `    <g:custom_label_2>${xmlEscape(p.category)}</g:custom_label_2>` : null,
+              null,
               p.purity ? `    <g:custom_label_3>${xmlEscape(p.purity)}</g:custom_label_3>` : null,
               `  </item>`,
             ].filter(Boolean).join("\n");
