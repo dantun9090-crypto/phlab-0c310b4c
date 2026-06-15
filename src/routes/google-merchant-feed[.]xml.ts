@@ -256,11 +256,14 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               ...highlights.map(
                 (h) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
               ),
-              // Custom labels: purity only. Category slugs like
-              // "tissue-repair", "metabolic-signaling", "cellular-aging"
-              // are intentionally NOT emitted — Google's classifier reads
-              // them as health claims.
-              p.purity ? `    <g:custom_label_0>${xmlEscape(p.purity)}</g:custom_label_0>` : null,
+              // Custom labels: purity only, AND only when it looks like a
+              // real purity value (contains a digit / %). Category slugs
+              // like "tissue-repair", "metabolic-signaling",
+              // "cellular-aging" must NEVER be emitted — Google's
+              // classifier reads them as health claims.
+              p.purity && /[0-9%]/.test(p.purity) && !/-/.test(p.purity)
+                ? `    <g:custom_label_0>${xmlEscape(p.purity)}</g:custom_label_0>`
+                : null,
 
               `  </item>`,
             ].filter(Boolean).join("\n");
