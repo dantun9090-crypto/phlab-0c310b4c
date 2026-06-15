@@ -420,7 +420,10 @@ export default {
     const isGooglebot = uaLower.includes("googlebot") || uaLower.includes("google-inspectiontool") || uaLower.includes("adsbot-google") || uaLower.includes("storebot-google");
     const isBot = isGooglebot || BOT_UA_RX.test(ua);
     const isGet = request.method === "GET";
-    const isStatic = STATIC_EXT_RX.test(url.pathname);
+    const isStatic =
+      STATIC_EXT_RX.test(url.pathname) ||
+      PRERENDER_BYPASS_EXACT.has(url.pathname) ||
+      PRERENDER_BYPASS_PREFIXES.some((p) => url.pathname.startsWith(p));
     const token = env && env.PRERENDER_TOKEN;
     const isLoop = request.headers.has(LOOP_HEADER);
 
