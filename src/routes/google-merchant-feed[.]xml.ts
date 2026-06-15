@@ -248,7 +248,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `    <g:age_group>adult</g:age_group>`,
               `    <g:is_bundle>no</g:is_bundle>`,
               `    <g:multipack>1</g:multipack>`,
-              `    <g:material>Lyophilised peptide reference standard</g:material>`,
+              `    <g:material>Lyophilised reference standard</g:material>`,
               `    <g:shipping>`,
               `      <g:country>GB</g:country>`,
               `      <g:service>Standard</g:service>`,
