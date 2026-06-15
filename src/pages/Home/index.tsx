@@ -719,7 +719,7 @@ export default function HomePage() {
                   {/* Image area */}
                   <div className="relative overflow-hidden" style={{ aspectRatio: '4/3', background: '#040d1a' }}>
                     {p.image ? (
-                      <img src={p.image} alt={`${p.name} research peptide vial`} loading="lazy" width="400" height="300" decoding="async" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
+                      <img {...cfImgProps(p.image, { widths: [200, 300, 400, 600, 800], sizes: '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw' })} alt={`${p.name} research peptide vial`} loading="lazy" width="400" height="300" decoding="async" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover' }} className="transition-transform duration-700 group-hover:scale-105" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <FlaskConical style={{ width: 48, height: 48, color: 'rgba(16,185,129,0.3)' }} />
