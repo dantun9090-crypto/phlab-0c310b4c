@@ -57,6 +57,43 @@ const BOT_UA_RX = new RegExp(
   "i",
 );
 
+// Hostile AI / scraper UAs — hard-blocked at the edge with 403.
+// robots.txt is honor-based; these bots either ignore it, scrape PII, or
+// resell content to LLMs. Block list is enforced before any origin hop.
+const HOSTILE_BOT_UA_RX = new RegExp(
+  [
+    // OpenAI
+    "gptbot", "chatgpt-user", "oai-searchbot",
+    // Anthropic
+    "claudebot", "claude-web", "anthropic-ai",
+    // Google AI training (separate from Googlebot search)
+    "google-extended",
+    // Perplexity
+    "perplexitybot", "perplexity-user",
+    // Common Crawl (feeds most LLM training sets)
+    "ccbot",
+    // ByteDance / TikTok
+    "bytespider",
+    // Amazon AI
+    "amazonbot",
+    // Apple AI training (separate from Applebot search)
+    "applebot-extended",
+    // Meta AI
+    "meta-externalagent", "facebookbot",
+    // Scrapers / data resellers
+    "diffbot", "omgilibot", "omgili", "timpibot", "imagesiftbot",
+    "cohere-ai", "cohere-training-data-crawler",
+    "ai2bot", "ai2bot-dolma",
+    "mistralai-user",
+    "youbot",
+    "petalbot",
+    "semrushbot", "ahrefsbot", "mj12bot", "dotbot", "blexbot",
+    "dataforseobot", "serpstatbot", "linguabot",
+    "seznambot",
+  ].join("|"),
+  "i",
+);
+
 const STATIC_EXT_RX =
   /\.(js|mjs|css|map|png|jpe?g|gif|webp|avif|svg|ico|woff2?|ttf|otf|eot|mp4|webm|mp3|pdf|xml|txt|json|wasm|zip|webmanifest)(\?|$)/i;
 
@@ -418,6 +455,21 @@ export default {
     // Explicit case-insensitive fast-path for Googlebot variants
     // (Googlebot, Googlebot-Image, Storebot-Google, AdsBot-Google, …).
     const isGooglebot = uaLower.includes("googlebot") || uaLower.includes("google-inspectiontool") || uaLower.includes("adsbot-google") || uaLower.includes("storebot-google");
+    // 5a. Hostile AI / scraper hard-block — return 403 before any origin hop.
+    //     These UAs either ignore robots.txt, scrape PII, or feed LLM training
+    //     sets. Edge block is the only enforceable layer.
+    if (HOSTILE_BOT_UA_RX.test(ua)) {
+      return new Response("Forbidden: automated scraping not permitted.\n", {
+        status: 403,
+        headers: {
+          "content-type": "text/plain; charset=utf-8",
+          "cache-control": "no-store",
+          "x-phl-block": "hostile-bot",
+          "x-robots-tag": "noindex, nofollow",
+        },
+      });
+    }
+
     const isBot = isGooglebot || BOT_UA_RX.test(ua);
     const isGet = request.method === "GET";
     const isStatic =
