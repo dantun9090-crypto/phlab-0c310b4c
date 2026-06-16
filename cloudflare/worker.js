@@ -87,9 +87,10 @@ const HOSTILE_BOT_UA_RX = new RegExp(
     "mistralai-user",
     "youbot",
     "petalbot",
-    "semrushbot", "ahrefsbot", "mj12bot", "dotbot", "blexbot",
-    "dataforseobot", "serpstatbot", "linguabot",
-    "seznambot",
+    // NOTE: SEO crawlers (SemrushBot, AhrefsBot, MJ12bot, DotBot, BLEXBot,
+    // DataForSeoBot, SerpstatBot, LinguaBot, SeznamBot) are intentionally
+    // NOT blocked — they power Semrush/Ahrefs/Lovable SEO dashboards that
+    // we rely on. Blocking them = empty SEO data for this project.
   ].join("|"),
   "i",
 );
