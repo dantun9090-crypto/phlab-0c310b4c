@@ -2061,6 +2061,85 @@ For analytical background on purity verification, see the <a href="/resources/hp
       { id: 7, authors: 'Bock-Marquette I, Saxena A, White MD, et al.', year: 2004, title: 'Thymosin beta4 activates integrin-linked kinase and promotes cardiac cell migration, survival and cardiac repair', journal: 'Nature', doi: '10.1038/nature03000' },
     ]
   },
+  // ---------------------------------------------
+  // Retatrutide Research Guide (UK)
+  // ---------------------------------------------
+  {
+    slug: 'retatrutide-research-guide',
+    title: 'Retatrutide Research Peptide: An Analytical Profile for UK Laboratories',
+    subtitle: 'A detailed scientific overview of retatrutide (LY3437943) — molecular structure, receptor pharmacology, research history, and in-vitro protocol considerations for UK research settings',
+    category: 'Metabolic Research',
+    readTime: 16,
+    publishDate: '2026-06-16',
+    excerpt: 'Retatrutide (LY3437943) is a 39-residue acylated triagonist peptide engaging the GIP, GLP-1, and glucagon receptors. This analytical profile summarises its molecular architecture, peer-reviewed research history, and the handling, reconstitution and assay considerations relevant to UK laboratories sourcing research-grade material.',
+    keywords: ['buy retatrutide uk', 'retatrutide uk', 'retatrutide research peptide', 'LY3437943', 'triple agonist peptide', 'GIP GLP-1 glucagon agonist', 'retatrutide research guide'],
+    relatedSlugs: ['what-is-retatrutide', 'retatrutide-vs-tirzepatide-vs-semaglutide', 'tirzepatide-dual-agonist-research', 'peptide-storage-reconstitution'],
+    content: [
+      {
+        body: `Retatrutide (development code <strong>LY3437943</strong>, Eli Lilly) is one of the most actively investigated peptides in contemporary metabolic research. As a single-molecule triagonist engaging the glucose-dependent insulinotropic polypeptide receptor (GIPR), the glucagon-like peptide-1 receptor (GLP-1R), and the glucagon receptor (GCGR), it sits structurally and pharmacologically beyond the dual-agonist class typified by <a href="/products/tirzepatide" style="color: #10b981; text-decoration: underline;">tirzepatide</a>. This guide is written for UK laboratories sourcing research-grade material and summarises what is currently established in peer-reviewed literature, alongside the handling and analytical considerations relevant to in-vitro work. <strong><a href="/products/retatrutide" style="color: #10b981; text-decoration: underline; font-weight: 700;">Buy research-grade Retatrutide (≥99% HPLC) in the UK</a></strong>. For Research Use Only. Not for Human Consumption.`
+      },
+      {
+        heading: 'Molecular Structure and Chemistry',
+        body: `Retatrutide is a 39-amino acid linear peptide acylated with a C20 fatty diacid moiety attached via a γGlu-2xOEG linker at Lys17. The fatty-acid tail confers reversible albumin binding, extending plasma half-life to approximately 6 days in human pharmacokinetic studies and supporting once-weekly dosing in clinical protocols. The peptide backbone is derived in part from a modified glucagon scaffold rather than the exendin scaffold used by many GLP-1R selective agonists, which contributes to its broader receptor engagement profile.
+
+Reported monoisotopic mass is approximately 4731 Da, with a molecular formula in the region of C221H343N51O64. Standard analytical batches characterise the molecule by reversed-phase HPLC (typically ≥99% area purity at 214 nm), ESI mass spectrometry for identity confirmation, and Karl Fischer titration for residual moisture. UK laboratories receiving research-grade lyophilisate should expect a Certificate of Analysis (CoA) covering all four parameters; see our <a href="/resources/how-to-read-hplc-certificate-of-analysis" style="color: #10b981; text-decoration: underline;">guide to reading an HPLC CoA</a> for the specific fields that matter.`
+      },
+      {
+        heading: 'Research History and Development Timeline',
+        body: `Retatrutide originated from a programme at Eli Lilly aimed at extending the dual GIP/GLP-1 mechanism of tirzepatide with additional glucagon receptor engagement. The compound first entered the public literature with a Phase 1 single- and multiple-ascending dose study in adults with type 2 diabetes (Urva et al., <em>Lancet</em>, 2022), which characterised pharmacokinetics and tolerability across 0.5 mg to 12 mg dose levels.
+
+Phase 2 results in obesity were published the following year by Jastreboff and colleagues (<em>New England Journal of Medicine</em>, 2023). Trial cohorts receiving 12 mg once weekly recorded mean body-weight changes of approximately −17.5% at 24 weeks and −24.2% at 48 weeks. A parallel Phase 2 trial in type 2 diabetes (Rosenstock et al., <em>Lancet</em>, 2023) reported HbA1c changes toward baseline alongside weight changes. A subsequent dedicated trial in metabolic dysfunction-associated steatotic liver disease (Sanyal et al., 2024) reported substantial changes in MRI-PDFF-measured hepatic fat fraction.
+
+The compound is currently progressing through the Phase 3 TRIUMPH programme, with primary endpoints covering total body-weight change, cardiovascular event rates and hepatic steatosis resolution. These are investigational findings from controlled trials and do not constitute efficacy claims for research compounds.`,
+        callout: {
+          type: 'info',
+          text: 'All clinical figures cited are from peer-reviewed publications describing investigational trials. Retatrutide is not an approved medicinal product in the United Kingdom or any other jurisdiction at the time of writing.'
+        }
+      },
+      {
+        heading: 'Receptor Pharmacology Profile',
+        body: `Functional cAMP accumulation assays in HEK293 cells stably expressing each human receptor have characterised retatrutide as a balanced triagonist with modest bias depending on the assay system. The comparative profile below is drawn from published literature on retatrutide and adjacent triagonist research compounds.`,
+        table: {
+          headers: ['Compound', 'GLP-1R', 'GIPR', 'GCGR', 'Plasma half-life'],
+          rows: [
+            ['Retatrutide (LY3437943)', 'Full agonist', 'Full agonist', 'Full agonist', '~6 days'],
+            ['Tirzepatide', 'Full agonist', 'Full agonist', '—', '~5 days'],
+            ['Semaglutide', 'Full agonist', '—', '—', '~7 days'],
+            ['Native GLP-1', 'Full agonist', '—', '—', '<2 minutes'],
+          ]
+        }
+      },
+      {
+        heading: 'In-Vitro Protocol Considerations',
+        body: `For UK laboratories planning receptor binding, cAMP accumulation, or downstream signalling assays with retatrutide, several handling factors are worth flagging. The acylated structure means the peptide is highly protein-bound in serum-containing media; binding assays in the presence of albumin typically require correction for free-fraction effects, and EC50 values reported in low-albumin buffers are not directly comparable to serum-supplemented conditions.
+
+Stock solutions are typically prepared by reconstituting lyophilisate in <a href="/products/bacteriostatic-water" style="color: #10b981; text-decoration: underline;">bacteriostatic water</a> or sterile-filtered phosphate buffer. The peptide is reasonably soluble at neutral pH but, as with most acylated incretin analogues, can show concentration-dependent self-association at higher concentrations; working stocks at 1 mg/mL or below are generally well-behaved. Stock aliquots should be stored at −20°C or below, with avoidance of repeated freeze-thaw cycles; our <a href="/resources/peptide-storage-lyophilisation-science" style="color: #10b981; text-decoration: underline;">peptide storage guide</a> covers the underlying lyophilisation and stability principles in detail.
+
+Identity should be confirmed by mass spectrometry before any assay programme begins; see our <a href="/resources/mass-spectrometry-peptide-identity-verification" style="color: #10b981; text-decoration: underline;">mass spectrometry guide</a> for ESI-MS and MALDI-TOF interpretation. Purity should be re-verified by analytical HPLC if material has been stored beyond the CoA validity period.`
+      },
+      {
+        heading: 'Comparative Context Within the Incretin Class',
+        body: `Retatrutide sits at the current frontier of multi-receptor incretin research, but its scientific value in a laboratory context depends on appropriate comparators. Researchers working on metabolic signalling typically include a GLP-1R-selective comparator such as semaglutide, a dual GIP/GLP-1 comparator such as <a href="/products/tirzepatide" style="color: #10b981; text-decoration: underline;">tirzepatide</a>, and, where glucagon-axis effects are central to the hypothesis, a glucagon-only reference. Our dedicated <a href="/resources/retatrutide-vs-tirzepatide-vs-semaglutide" style="color: #10b981; text-decoration: underline;">comparative research article</a> covers the pharmacological distinctions in more depth.`
+      },
+      {
+        heading: 'Sourcing Research-Grade Retatrutide in the UK',
+        body: `When sourcing retatrutide for in-vitro work in the UK, the key acceptance criteria are independent HPLC purity (typically ≥99%), ESI-MS identity confirmation matching the expected monoisotopic mass, residual moisture below 5% by Karl Fischer, and a stated lyophilisation date. PH Labs supplies retatrutide as a lyophilised research compound with a batch-specific CoA covering these parameters. Material is intended exclusively for laboratory research and is not supplied for human or veterinary use.
+
+<strong><a href="/products/retatrutide" style="color: #10b981; text-decoration: underline; font-weight: 700;">View Retatrutide research peptide product page</a></strong>. For Research Use Only. Not for Human Consumption.`,
+        callout: {
+          type: 'warning',
+          text: 'Retatrutide is supplied strictly as a research compound. It is not a medicine, is not approved for human or veterinary use, and must not be administered to humans or animals. Buyers must be 18+ and a bona fide research entity.'
+        }
+      }
+    ],
+    references: [
+      { id: 1, authors: 'Jastreboff AM, Kaplan LM, Frías JP, et al.', year: 2023, title: 'Triple-hormone-receptor agonist retatrutide for obesity — a phase 2 trial', journal: 'N Engl J Med', doi: '10.1056/NEJMoa2301972' },
+      { id: 2, authors: 'Rosenstock J, Frias J, Jastreboff AM, et al.', year: 2023, title: 'Retatrutide, a GIP, GLP-1 and glucagon receptor agonist, for people with type 2 diabetes: a randomised, double-blind, placebo and active-controlled, parallel-group, phase 2 trial', journal: 'Lancet', doi: '10.1016/S0140-6736(23)01053-X' },
+      { id: 3, authors: 'Urva S, Coskun T, Loh MT, et al.', year: 2022, title: 'LY3437943, a novel triple GIP, GLP-1, and glucagon receptor agonist in people with type 2 diabetes: a phase 1b, multicentre, double-blind, placebo-controlled, randomised, multiple-ascending dose trial', journal: 'Lancet', doi: '10.1016/S0140-6736(22)01473-5' },
+      { id: 4, authors: 'Coskun T, Urva S, Roell WC, et al.', year: 2022, title: 'LY3437943, a novel triple glucagon, GIP, and GLP-1 receptor agonist for glycemic control and weight loss: from discovery to clinical proof of concept', journal: 'Cell Metab', doi: '10.1016/j.cmet.2022.07.013' },
+      { id: 5, authors: 'Sanyal AJ, Kaplan LM, Frias JP, et al.', year: 2024, title: 'Triple hormone receptor agonist retatrutide for metabolic dysfunction-associated steatotic liver disease: a randomized phase 2a trial', journal: 'Nat Med', doi: '10.1038/s41591-024-03018-2' },
+    ]
+  },
 ];
 
 export function getArticle(slug: string): Article | undefined {
