@@ -1402,3 +1402,40 @@ html[data-theme]:not([data-theme="navy-professional"]) .border-blue-500\/30 {
   src: local('Inter');
   font-display: swap;
 }
+
+/* ─── CLS-killer font fallbacks ─────────────────────────────────────────────
+ * The Google Fonts stylesheet is loaded with media=print swap (see
+ * src/routes/__root.tsx) so it never blocks first paint. Until the real
+ * woff2 lands, we render with a system-font fallback whose metrics are
+ * tuned (ascent/descent/size-adjust) to match the real face — so when
+ * the swap happens, the text doesn't reflow. Result: CLS ~0 from fonts.
+ */
+@font-face {
+  font-family: 'Inter Tight Fallback';
+  src: local('Arial');
+  ascent-override: 96%;
+  descent-override: 24%;
+  line-gap-override: 0%;
+  size-adjust: 102%;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Cormorant Garamond Fallback';
+  src: local('Times New Roman'), local('Times');
+  ascent-override: 92%;
+  descent-override: 28%;
+  line-gap-override: 0%;
+  size-adjust: 108%;
+  font-display: swap;
+}
+
+:root {
+  --font-sans-fallback: 'Inter Tight', 'Inter Tight Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-serif-fallback: 'Cormorant Garamond', 'Cormorant Garamond Fallback', Georgia, 'Times New Roman', serif;
+}
+
+body {
+  font-family: var(--font-sans-fallback);
+}
+
