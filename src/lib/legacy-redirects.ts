@@ -166,6 +166,17 @@ const RULES: RedirectRule[] = [
   { type: "exact", from: "/products/cjc-1295-dac", to: "/products" },
   { type: "exact", from: "/products/cjc-1295-no-dac", to: "/products" },
 
+  // Bare-slug variants (some external links use root-level slugs)
+  { type: "exact", from: "/mk-677-ibutamoren", to: "/products" },
+  { type: "exact", from: "/mk-677", to: "/products" },
+  { type: "exact", from: "/ibutamoren", to: "/products" },
+  { type: "exact", from: "/ghrp-6", to: "/products" },
+  { type: "exact", from: "/ghrp-2", to: "/products" },
+  { type: "exact", from: "/cjc-1295-dac", to: "/products" },
+  { type: "exact", from: "/cjc-1295-no-dac", to: "/products" },
+  { type: "exact", from: "/ss-31", to: "/products" },
+  { type: "exact", from: "/elamipretide", to: "/products" },
+
   // NOTE: Firestore doc-ID style URLs (e.g. /products/2s5IGEx2RgUDLfbfjBbF)
   // are intentionally NOT redirected here — the /products/$slug route
   // resolves them to the matching product page (used by Google Merchant feed).
