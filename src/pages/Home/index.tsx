@@ -149,18 +149,12 @@ export default function HomePage() {
   const [banner, setBanner] = useState<any>(null);
   const [bannerResolved, setBannerResolved] = useState(false);
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
-  const [adverts, setAdverts] = useState<any[]>(() => {
-    // Hydrate from localStorage cache instantly so LCP banner renders without
-    // waiting for a Firestore round-trip on repeat visits.
-    if (typeof window === 'undefined') return [];
-    try {
-      const raw = localStorage.getItem('php_adverts_cache');
-      if (!raw) return [];
-      const { ts, data } = JSON.parse(raw);
-      if (Date.now() - ts > 10 * 60_000) return []; // 10-min TTL
-      return Array.isArray(data) ? data : [];
-    } catch { return []; }
-  });
+  // IMPORTANT: do NOT seed from localStorage in the lazy initializer — SSR
+  // returns [] and the client's first render must match, otherwise React
+  // throws hydration error #419 (recoverable hydration mismatch) and
+  // discards the SSR tree. The cached adverts are hydrated post-mount
+  // in the useEffect below (runs synchronously after first commit).
+  const [adverts, setAdverts] = useState<any[]>([]);
 
   // Intersection observer for scroll animations
   useEffect(() => {
