@@ -558,7 +558,11 @@ export default {
         return await serveStaleOrError(request);
       }
 
-      h.set("x-phl-via", normalProxyVia);
+      // Surface the subrequest's tier-cache status to the outer client so
+      // we can verify HIT vs MISS from the browser without wrangler tail.
+      const innerCf = res.headers.get("cf-cache-status");
+      if (innerCf) h.set("cf-cache-status", innerCf);
+      h.set("x-phl-via", `${normalProxyVia};inner=${innerCf || "n/a"}`);
 
       // 6b. Edge-cache HTML via Cache API so the NEXT visitor HITs at ~50ms.
       //     HTMLRewriter/finalRes streams aren't reliably teeable, so we
