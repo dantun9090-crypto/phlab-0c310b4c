@@ -463,7 +463,7 @@ export default function Products() {
                         onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)')}
                       />
                       {searchQuery && (
-                        <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: '#3a5a82' }}>
+                        <button type="button" aria-label="Clear search query" onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: '#3a5a82' }}>
                           <X className="w-3.5 h-3.5" />
                         </button>
                       )}
