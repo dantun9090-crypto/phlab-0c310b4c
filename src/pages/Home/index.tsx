@@ -1211,6 +1211,8 @@ export default function HomePage() {
         background: 'rgba(3,10,20,0.97)',
         borderTop: '1px solid rgba(16,185,129,0.15)',
         padding: 'max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left))',
+        transform: 'translateZ(0)',
+        contain: 'layout paint',
       }}>
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
