@@ -43,4 +43,5 @@ export const ARTICLE_INDEX: ArticleIndexEntry[] = [
   { slug: 'complete-uk-peptide-guide-2025', title: 'Complete UK Research Peptide Guide 2025: BPC-157, TB-500, Semaglutide & GLP-1 Agonists for Laboratory Use' },
   { slug: 'research-peptides-uk', title: 'Research Peptides UK: The 2026 Sourcing Guide for British Laboratories' },
   { slug: 'bpc-157-vs-tb-500', title: 'BPC-157 vs TB-500: Mechanisms, Pathways and Research Comparison' },
+  { slug: 'retatrutide-research-guide', title: 'Retatrutide Research Peptide: An Analytical Profile for UK Laboratories' },
 ];
