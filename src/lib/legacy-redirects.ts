@@ -151,9 +151,11 @@ const RULES: RedirectRule[] = [
   { type: "exact", from: "/products/ss-31", to: "/products" },
   { type: "exact", from: "/products/elamipretide", to: "/products" },
 
-  // Old Shopify-era landing & collection URLs (still in Bing/Google index)
+  // Old Shopify-era landing & collection URLs (still in Bing/Google index).
+  // NOTE: only the bare /landing URL redirects to home — /landing/:slug routes
+  // are real Firestore-backed landing pages handled by src/pages/LandingPage,
+  // so a broad /landing/ prefix rule would 301 them to a 404.
   { type: "exact", from: "/landing", to: "/" },
-  { type: "prefix", from: "/landing/", to: "/" },
   { type: "exact", from: "/collections/all", to: "/products" },
   { type: "prefix", from: "/collections/", to: "/products" },
 
