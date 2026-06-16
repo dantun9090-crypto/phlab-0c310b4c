@@ -455,6 +455,21 @@ export default {
     // Explicit case-insensitive fast-path for Googlebot variants
     // (Googlebot, Googlebot-Image, Storebot-Google, AdsBot-Google, …).
     const isGooglebot = uaLower.includes("googlebot") || uaLower.includes("google-inspectiontool") || uaLower.includes("adsbot-google") || uaLower.includes("storebot-google");
+    // 5a. Hostile AI / scraper hard-block — return 403 before any origin hop.
+    //     These UAs either ignore robots.txt, scrape PII, or feed LLM training
+    //     sets. Edge block is the only enforceable layer.
+    if (HOSTILE_BOT_UA_RX.test(ua)) {
+      return new Response("Forbidden: automated scraping not permitted.\n", {
+        status: 403,
+        headers: {
+          "content-type": "text/plain; charset=utf-8",
+          "cache-control": "no-store",
+          "x-phl-block": "hostile-bot",
+          "x-robots-tag": "noindex, nofollow",
+        },
+      });
+    }
+
     const isBot = isGooglebot || BOT_UA_RX.test(ua);
     const isGet = request.method === "GET";
     const isStatic =
