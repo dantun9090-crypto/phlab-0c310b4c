@@ -215,20 +215,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "google-site-verification", content: "tYtU-dRlfAq14D7lyPTYf8noiJH-b0LifcvvrGi8AZw" },
-      // title, description, og:title/description/image/type and twitter:title/
-      // description/image are intentionally set per-leaf-route only (see
-      // src/routes/index.tsx, src/routes/products.tsx,
-      // src/routes/products_.$slug.tsx, src/routes/$.tsx). Keeping defaults
-      // here would concatenate with leaf entries in the head and show
-      // up as redundant og:title / og:description / og:image tags.
-      // og:site_name, og:locale, and twitter:card are sitewide identity
-      // values that don't vary per route, so they stay above.
-
-      // title/description/og:title/og:description/og:image/og:type and
-      // twitter:title/description/image are set per-leaf-route only to avoid
-      // duplicate tags in the concatenated head. og:site_name, og:locale,
-      // and twitter:card stay above as sitewide identity defaults.
-
+      // Sitewide defaults — Lovable's publish dialog reads these to know the
+      // site has proper website info. Leaf routes (index, products,
+      // products_.$slug, $) override title/description/og:title/og:description/
+      // og:image with their own per-page values; TanStack dedupes head items
+      // by name/property, so the leaf entry wins where present.
+      { title: "PH Labs UK — HPLC-Verified Research Peptides | Fast UK Dispatch" },
+      { name: "description", content: "UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals. For research use only." },
+      { property: "og:title", content: "PH Labs UK — HPLC-Verified Research Peptides" },
+      { property: "og:description", content: "UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, fast UK dispatch. For research use only." },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://phlabs.co.uk/" },
+      { property: "og:image", content: "https://phlabs.co.uk/og-image.jpg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "PH Labs UK — Research Peptides" },
+      { name: "twitter:title", content: "PH Labs UK — HPLC-Verified Research Peptides" },
+      { name: "twitter:description", content: "UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, fast UK dispatch." },
+      { name: "twitter:image", content: "https://phlabs.co.uk/og-image.jpg" },
     ],
     scripts: [
       {
