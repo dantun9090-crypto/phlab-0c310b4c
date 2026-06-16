@@ -220,7 +220,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // products_.$slug, $) override title/description/og:title/og:description/
       // og:image with their own per-page values; TanStack dedupes head items
       // by name/property, so the leaf entry wins where present.
-      { title: "PH Labs UK — HPLC-Verified Research Peptides | Fast UK Dispatch" },
+      { title: "PH Labs UK — HPLC-Verified Research Peptides" },
       { name: "description", content: "UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, and fast UK dispatch for research professionals. For research use only." },
       { property: "og:title", content: "PH Labs UK — HPLC-Verified Research Peptides" },
       { property: "og:description", content: "UK supplier of HPLC-verified research peptides. Lab-tested purity, transparent COAs, fast UK dispatch. For research use only." },
