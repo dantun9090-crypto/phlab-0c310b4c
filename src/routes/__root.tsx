@@ -228,15 +228,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // twitter:title/description/image are set per-leaf-route only to avoid
       // duplicate tags in the concatenated head. og:site_name, og:locale,
       // and twitter:card stay above as sitewide identity defaults.
-      { title: "PH Labs | Buy Research Peptides Online UK | GHK-Cu" },
-      { property: "og:title", content: "PH Labs | Buy Research Peptides Online UK | GHK-Cu" },
-      { name: "twitter:title", content: "PH Labs | Buy Research Peptides Online UK | GHK-Cu" },
-      { name: "description", content: "Premium research peptides for laboratory use. GHK-Cu, Retatrutide, NAD+, GLOW& more. Fast UK shipping. Trusted by scientists." },
-      { property: "og:description", content: "Premium research peptides for laboratory use. GHK-Cu, Retatrutide, NAD+, GLOW& more. Fast UK shipping. Trusted by scientists." },
-      { name: "twitter:description", content: "Premium research peptides for laboratory use. GHK-Cu, Retatrutide, NAD+, GLOW& more. Fast UK shipping. Trusted by scientists." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/62325bba-0c9e-4368-8d7e-336a73a5b0e5" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/62325bba-0c9e-4368-8d7e-336a73a5b0e5" },
-      { property: "og:type", content: "website" },
+
     ],
     scripts: [
       {
