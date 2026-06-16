@@ -485,8 +485,16 @@ export default {
     // All other safe HTML routes stay at the 5-min default.
     const htmlTtl = url.pathname === "/" ? 3600 : 300;
     const htmlCacheable = isGet && !isXmlFeed && isHtmlCacheable(url);
+    // `cacheEverything` + `cacheTtl` forces CF's tiered HTTP cache to store
+    // the subrequest response regardless of the origin's `max-age=0`, so the
+    // next visitor in any colo hits the tier cache (~10-30ms) instead of the
+    // origin. `cacheTtlByStatus` makes sure transient 5xx never poisons it.
     const cacheOpts = htmlCacheable
-      ? { cacheEverything: true, cacheTtl: htmlTtl }
+      ? {
+          cacheEverything: true,
+          cacheTtl: htmlTtl,
+          cacheTtlByStatus: { "200-299": htmlTtl, "301-302": 600, "404": 30, "500-599": 0 },
+        }
       : undefined;
 
     // 6a. Cache API lookup for HTML pages. With a Worker bound to the route,
