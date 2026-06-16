@@ -188,6 +188,19 @@ export default function HomePage() {
       setTimeout(loadProducts, 500);
     }
 
+    // Post-mount: instantly hydrate adverts from the 10-min localStorage cache
+    // so repeat visits paint the hero banner without waiting on Firestore.
+    // Runs AFTER the first commit, so it never causes a hydration mismatch.
+    try {
+      const raw = localStorage.getItem('php_adverts_cache');
+      if (raw) {
+        const { ts, data } = JSON.parse(raw);
+        if (Array.isArray(data) && Date.now() - ts <= 10 * 60_000 && !cancelled) {
+          setAdverts(data);
+        }
+      }
+    } catch { /* ignore */ }
+
     // LCP-critical: adverts contain the hero banner image. Fire immediately,
     // outside requestIdleCallback, so the network request is not delayed.
     getDocs(query(collection(db, 'adverts'), where('active', '==', true))).then(snap => {
