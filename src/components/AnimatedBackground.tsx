@@ -203,8 +203,9 @@ export function AnimatedBackground({ variant = 'blue', className = '' }: Animate
 
   return (
     <div
-      className={`absolute inset-0 pointer-events-none overflow-hidden ${className}`}
+      className={`absolute inset-0 pointer-events-none overflow-hidden ab-root ${className}`}
       aria-hidden="true"
+      style={{ contain: 'strict' as any }}
     >
       {/* Multi-layer depth glows */}
       <div className="absolute inset-0" style={{
@@ -215,8 +216,8 @@ export function AnimatedBackground({ variant = 'blue', className = '' }: Animate
         `,
       }} />
 
-      {/* Fine molecular grid */}
-      <div className="absolute inset-0" style={{
+      {/* Fine molecular grid — desktop only (paint cost too high on mobile) */}
+      <div className="absolute inset-0 ab-grid" style={{
         backgroundImage: `
           linear-gradient(rgba(${variant === 'blue' ? '37,99,235' : '16,185,129'},0.02) 1px, transparent 1px),
           linear-gradient(90deg, rgba(${variant === 'blue' ? '37,99,235' : '16,185,129'},0.02) 1px, transparent 1px)
@@ -224,8 +225,8 @@ export function AnimatedBackground({ variant = 'blue', className = '' }: Animate
         backgroundSize: '56px 56px',
       }} />
 
-      {/* Subtle dot grid on top */}
-      <div className="absolute inset-0" style={{
+      {/* Subtle dot grid — desktop only */}
+      <div className="absolute inset-0 ab-grid" style={{
         backgroundImage: `radial-gradient(circle, rgba(${variant === 'blue' ? '99,179,255' : '52,211,153'},0.08) 1px, transparent 1px)`,
         backgroundSize: '28px 28px',
       }} />
@@ -242,8 +243,8 @@ export function AnimatedBackground({ variant = 'blue', className = '' }: Animate
         background: 'linear-gradient(to bottom, #030812 0%, transparent 15%, transparent 85%, #030812 100%)',
       }} />
 
-      {/* Horizontal scan-line shimmer — CSS-only, zero JS */}
-      <div className="absolute inset-0 animate-bg-scan" style={{
+      {/* Horizontal scan-line shimmer — desktop only (animation repaints full layer = mobile jank) */}
+      <div className="absolute inset-0 animate-bg-scan ab-scan" style={{
         background: `linear-gradient(to bottom, transparent 0%, rgba(${variant === 'blue' ? '56,130,246' : '16,185,129'},0.018) 50%, transparent 100%)`,
         backgroundSize: '100% 200px',
       }} />
@@ -255,6 +256,12 @@ export function AnimatedBackground({ variant = 'blue', className = '' }: Animate
         }
         .animate-bg-scan {
           animation: bg-scan 12s linear infinite;
+        }
+        @media (max-width: 900px) {
+          .ab-scan, .ab-grid { display: none !important; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-bg-scan { animation: none !important; }
         }
       `}</style>
     </div>
