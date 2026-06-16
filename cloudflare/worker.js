@@ -485,8 +485,16 @@ export default {
     // All other safe HTML routes stay at the 5-min default.
     const htmlTtl = url.pathname === "/" ? 3600 : 300;
     const htmlCacheable = isGet && !isXmlFeed && isHtmlCacheable(url);
+    // `cacheEverything` + `cacheTtl` forces CF's tiered HTTP cache to store
+    // the subrequest response regardless of the origin's `max-age=0`, so the
+    // next visitor in any colo hits the tier cache (~10-30ms) instead of the
+    // origin. `cacheTtlByStatus` makes sure transient 5xx never poisons it.
     const cacheOpts = htmlCacheable
-      ? { cacheEverything: true, cacheTtl: htmlTtl }
+      ? {
+          cacheEverything: true,
+          cacheTtl: htmlTtl,
+          cacheTtlByStatus: { "200-299": htmlTtl, "301-302": 600, "404": 30, "500-599": 0 },
+        }
       : undefined;
 
     // 6a. Cache API lookup for HTML pages. With a Worker bound to the route,
@@ -550,7 +558,11 @@ export default {
         return await serveStaleOrError(request);
       }
 
-      h.set("x-phl-via", normalProxyVia);
+      // Surface the subrequest's tier-cache status to the outer client so
+      // we can verify HIT vs MISS from the browser without wrangler tail.
+      const innerCf = res.headers.get("cf-cache-status");
+      if (innerCf) h.set("cf-cache-status", innerCf);
+      h.set("x-phl-via", `${normalProxyVia};inner=${innerCf || "n/a"}`);
 
       // 6b. Edge-cache HTML via Cache API so the NEXT visitor HITs at ~50ms.
       //     HTMLRewriter/finalRes streams aren't reliably teeable, so we
