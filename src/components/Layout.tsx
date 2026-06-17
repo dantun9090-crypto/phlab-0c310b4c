@@ -1264,7 +1264,7 @@ export function Layout({ children }: LayoutProps) {
               'UK Registered Company',
               'CoA With Every Order',
             ].map(badge => (
-              <span key={badge} className="text-[10px] font-bold tracking-wider uppercase" style={{ color: '#2a4060' }}>
+              <span key={badge} className="text-[10px] font-bold tracking-wider uppercase" style={{ color: '#8caad4' }}>
                 {badge}
               </span>
             ))}
@@ -1272,12 +1272,12 @@ export function Layout({ children }: LayoutProps) {
 
           {/* ── Bottom bar ── */}
           <div className="flex flex-col md:flex-row justify-between items-center gap-3">
-            <p className="text-[#1e3a60] text-xs">
+            <p className="text-[#7a9ec2] text-xs">
               © 2026 PH Labs Ltd. All rights reserved. Registered in England &amp; Wales.
               {siteSettings.companyRegNumber && <> Company No. {siteSettings.companyRegNumber}.</>}
               {siteSettings.companyAddress && <> {siteSettings.companyAddress}.</>}
             </p>
-            <p className="text-[#1a3050] text-xs text-center md:text-right">
+            <p className="text-[#7a9ec2] text-xs text-center md:text-right">
               For laboratory research use only. Not for human or veterinary consumption.
             </p>
           </div>
