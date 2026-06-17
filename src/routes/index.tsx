@@ -132,9 +132,10 @@ export const Route = createFileRoute("/")({
 });
 
 function LegacyMount() {
+  const { banner } = Route.useLoaderData();
   // NOTE: no sr-only <h1> here — the visible hero H1 inside LegacyApp is the
   // single canonical H1. Bots get the fully-rendered HTML via Prerender.io,
   // so an extra SSR-only H1 would just create a duplicate-H1 SEO violation.
-  return <LegacyApp initialPath="/" />;
+  return <LegacyApp initialPath="/" initialBanner={banner ?? null} />;
 }
 

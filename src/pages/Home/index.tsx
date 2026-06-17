@@ -1,5 +1,6 @@
 import { ArrowRight, CheckCircle2, ShieldCheck, Zap, Mail, Microscope, CreditCard, Truck, Flame, Star, Dna, Activity, Brain, RefreshCw, Shield, Snowflake, FileCheck, FlaskConical, ChevronDown, Lock, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useSSRBanner } from '@/legacy/SSRDataContext';
 
 import { Link } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
@@ -146,8 +147,12 @@ export default function HomePage() {
   const [retryAttempt, setRetryAttempt] = useState(0);
   const [revealedCode, setRevealedCode] = useState<string>('PROTOCOL10');
   const [codeCopied, setCodeCopied] = useState(false);
-  const [banner, setBanner] = useState<any>(null);
-  const [bannerResolved, setBannerResolved] = useState(false);
+  // Seed banner from SSR loader data so the LCP image renders on first paint
+  // (the preloaded bytes from <link rel="preload"> attach to an <img> immediately
+  // instead of waiting for a client-side Firestore round-trip).
+  const ssrBanner = useSSRBanner();
+  const [banner, setBanner] = useState<any>(ssrBanner ?? null);
+  const [bannerResolved, setBannerResolved] = useState<boolean>(!!ssrBanner);
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
   // IMPORTANT: do NOT seed from localStorage in the lazy initializer — SSR
   // returns [] and the client's first render must match, otherwise React
