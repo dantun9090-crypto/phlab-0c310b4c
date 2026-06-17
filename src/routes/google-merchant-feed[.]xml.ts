@@ -235,15 +235,18 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             cleanName = cleanName
               .replace(/\bBPC[-\s]?157\b/gi, "BPC157")
               .replace(/\bTB[-\s]?500\b/gi, "TB500");
-            const title = `${cleanName || p.name} — Laboratory Reference Standard`;
+            // Compact, professional title. Include net content when known
+            // (e.g. "10 mg") for buyer clarity and to differentiate variants
+            // in Merchant Center diagnostics.
+            const sizeTag =
+              p.unitPricingMeasure && p.unitPricingMeasure.value > 0
+                ? `${p.unitPricingMeasure.value} ${p.unitPricingMeasure.unit}`
+                : "";
+            const title = `${cleanName || p.name}${sizeTag ? ` ${sizeTag}` : ""} — Analytical Reference Standard | PH Labs`;
 
-            // Single, neutral compliance line. No repetition, no "human",
-            // no "consumption", no "RUO" stuffing.
-            const description =
-              `Analytical-grade reference standard for in-vitro laboratory work. ` +
-              `${p.purity ? `HPLC-verified ${p.purity} purity. ` : "HPLC-verified ≥99% purity. "}` +
-              `Supplied by ${BRAND} UK to qualified laboratories. ` +
-              `Certificate of Analysis available on request.`;
+            // Per-compound unique scientific description. No human/health
+            // language; emphasises in-vitro laboratory and analytical use.
+            const description = descriptionForCompound(cleanName || p.name || "", p.purity);
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
                 ? p.imageUrl
@@ -255,14 +258,25 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             const sku = p.sku || p.id || p.slug;
             const mpn = p.mpn || sku;
             const hasGtin = !!p.gtin;
+            // Dedupe: never repeat the primary image as an additional image,
+            // and never emit the same additional URL twice (Google flags
+            // duplicate image links in the feed diagnostics).
+            const seenImages = new Set<string>([image]);
             const additionalImageTags = (p.additionalImages ?? [])
+              .map((u) =>
+                u.startsWith("http") ? u : `${BASE_URL}${u.startsWith("/") ? "" : "/"}${u}`,
+              )
+              .filter((abs) => {
+                if (seenImages.has(abs)) return false;
+                seenImages.add(abs);
+                return true;
+              })
               .slice(0, 10)
-              .map((u) => {
-                const abs = u.startsWith("http")
-                  ? u
-                  : `${BASE_URL}${u.startsWith("/") ? "" : "/"}${u}`;
-                return `    <g:additional_image_link>${xmlEscape(abs)}</g:additional_image_link>`;
-              });
+              .map(
+                (abs) =>
+                  `    <g:additional_image_link>${xmlEscape(abs)}</g:additional_image_link>`,
+              );
+
 
             // Highlights: neutral specs only. Compliance line stays in
             // description so it's not repeated 5×.
