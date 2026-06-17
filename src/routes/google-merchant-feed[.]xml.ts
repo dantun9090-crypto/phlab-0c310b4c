@@ -15,8 +15,9 @@ const CURRENCY = "GBP";
 //   6975 — ...> Biochemicals (used here)
 //   3002 — ...> Laboratory Chemicals
 //   7325 — ...> Dissection Kits
-const GOOGLE_CATEGORY_ID = "6975";
-const GOOGLE_CATEGORY_PATH = "Business & Industrial > Science & Laboratory > Biochemicals";
+const GOOGLE_CATEGORY_ID = "5605";
+const GOOGLE_CATEGORY_PATH = "Business & Industrial > Science & Laboratory > Laboratory Supplies";
+
 
 // Map internal category slugs to human-readable Merchant product_type leaves.
 // Avoids feeding Google raw slugs like "metabolic-signaling". Unknown slugs
