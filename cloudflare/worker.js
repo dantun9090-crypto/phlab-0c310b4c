@@ -146,6 +146,67 @@ const PRERENDER_RENDERER_RX = /Prerender \(\+https:\/\/github\.com\/prerender\/p
 
 // ---------- helpers ----------
 
+// Per-request CSP nonce rewrite.
+//
+// When the origin emits cacheable HTML, it bakes a fixed placeholder
+// (`__CSP_NONCE__`) into both the `Content-Security-Policy` header and every
+// `<script nonce="...">` attribute. The body is therefore byte-identical
+// across requests and survives the edge cache. This helper runs on EVERY
+// response we return (cache HIT or live origin) and swaps the placeholder
+// for a fresh per-request nonce — so each visitor still gets a unique
+// nonce in their HTML and CSP header, preserving the security model.
+//
+// Backward-compatible: if the response has no `__CSP_NONCE__` placeholder
+// in its CSP header, this helper is a no-op (legacy origins still using
+// per-request nonces continue to work).
+const NONCE_PLACEHOLDER = "__CSP_NONCE__";
+const NONCE_PLACEHOLDER_RX = /__CSP_NONCE__/g;
+
+function generateNonce() {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  // base64 (workerd supports btoa). Strip padding to keep CSP header tidy.
+  let s = "";
+  for (let i = 0; i < bytes.length; i += 1) s += String.fromCharCode(bytes[i]);
+  return btoa(s).replace(/=+$/, "");
+}
+
+function rewriteCspNonce(response) {
+  const csp = response.headers.get("content-security-policy") || "";
+  if (!csp.includes(NONCE_PLACEHOLDER)) return response;
+
+  const nonce = generateNonce();
+  const headers = new Headers(response.headers);
+  headers.set("content-security-policy", csp.replace(NONCE_PLACEHOLDER_RX, nonce));
+
+  // HTMLRewriter swaps the placeholder on every <script> nonce attribute
+  // (and any other element that the origin marked with the placeholder).
+  // We only touch elements that actually carry the placeholder so we never
+  // overwrite a real value an origin set deliberately.
+  const rewritten = new HTMLRewriter()
+    .on("script[nonce]", {
+      element(el) {
+        const cur = el.getAttribute("nonce");
+        if (cur === NONCE_PLACEHOLDER) el.setAttribute("nonce", nonce);
+      },
+    })
+    .on("style[nonce]", {
+      element(el) {
+        const cur = el.getAttribute("nonce");
+        if (cur === NONCE_PLACEHOLDER) el.setAttribute("nonce", nonce);
+      },
+    })
+    .transform(new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    }));
+
+  return rewritten;
+}
+
+
+
 function isFirebaseAuthHelperPath(url) {
   return FIREBASE_AUTH_PREFIXES.some((p) => url.pathname.startsWith(p));
 }
