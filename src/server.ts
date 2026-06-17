@@ -419,14 +419,26 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
     htmlHeaders.set("expires", "0");
   }
   htmlHeaders.delete("age");
+
+  // For cacheable HTML, emit a fixed placeholder nonce in both the body and
+  // the CSP header. The body becomes byte-identical across requests, so the
+  // edge cache and downstream Worker (phlabs-prerender) can store and serve
+  // it. The Worker then rewrites `__CSP_NONCE__` to a fresh per-request
+  // nonce in the HTML and CSP header before sending to the visitor — so
+  // each user still gets a unique, unpredictable nonce.
+  //
+  // For non-cacheable HTML (admin, account, checkout, etc.) we keep the
+  // per-request real nonce baked at the origin.
+  const effectiveNonce = (cacheable && stripped.status === 200) ? "__CSP_NONCE__" : nonce;
+
   const htmlResponse = new Response(stripped.body, {
     status: stripped.status,
     statusText: stripped.statusText,
     headers: htmlHeaders,
   });
 
-  // Inject the per-request nonce into every <script> element via workerd's
-  // built-in HTMLRewriter.
+  // Inject the (placeholder or real) nonce into every <script> element via
+  // workerd's built-in HTMLRewriter.
   type Rewriter = {
     on: (selector: string, handlers: { element: (el: { setAttribute: (k: string, v: string) => void }) => void }) => Rewriter;
     transform: (r: Response) => Response;
@@ -439,7 +451,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
     rewritten = rewriter
       .on("script", {
         element(el) {
-          el.setAttribute("nonce", nonce);
+          el.setAttribute("nonce", effectiveNonce);
         },
       })
       .transform(htmlResponse);
@@ -449,7 +461,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
     if (!headers.has(k)) headers.set(k, v);
   }
-  headers.set("content-security-policy", buildCsp(nonce, hostname));
+  headers.set("content-security-policy", buildCsp(effectiveNonce, hostname));
   return new Response(rewritten.body, {
     status: rewritten.status,
     statusText: rewritten.statusText,
