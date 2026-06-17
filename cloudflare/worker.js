@@ -703,14 +703,15 @@ export default {
           ctx.waitUntil(
             caches.default.put(cacheKey, new Response(buf, { status: 200, headers: cacheHeaders })),
           );
-          // Live response — full headers (incl. cookies), HTMLRewriter applied.
+          // Live response — full headers (incl. cookies), then nonce rewrite
+          // + security header pass.
           const liveOut = new Response(buf, { status: res.status, statusText: res.statusText, headers: h });
-          return applySecurityHeaders(stripLovableInjectedScripts(liveOut), url);
+          return rewriteCspNonce(applySecurityHeaders(stripLovableInjectedScripts(liveOut), url));
         } catch (_) { /* fall through to streaming path */ }
       }
 
       const out = new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
-      return applySecurityHeaders(stripLovableInjectedScripts(out), url);
+      return rewriteCspNonce(applySecurityHeaders(stripLovableInjectedScripts(out), url));
     } catch (_) {
       return await serveStaleOrError(request);
     }
