@@ -228,10 +228,11 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               .replace(/\s+/g, " ")
               .replace(/[-–—\s]+$/g, "")
               .trim();
-            // Expand MOTS-c to its full scientific name for the feed.
+            // Keep MOTS-c as the compact compound code (no biology expansion).
             if (/\bmots[-\s]?c\b/i.test(cleanName)) {
-              cleanName = "Mitochondrial Open Reading Frame of the 12S rRNA-c";
+              cleanName = "MOTS-c";
             }
+
             // Normalise hyphenated codes that trigger health classifiers.
             cleanName = cleanName
               .replace(/\bBPC[-\s]?157\b/gi, "BPC157")
