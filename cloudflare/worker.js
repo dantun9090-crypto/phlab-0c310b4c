@@ -625,7 +625,10 @@ export default {
           const h = new Headers(hit.headers);
           h.set("x-phl-via", "edge-cache-hit");
           h.set("cf-cache-status", "HIT");
-          return new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers: h });
+          // Cached body contains the `__CSP_NONCE__` placeholder. Swap in a
+          // fresh per-request nonce before serving so every visitor gets a
+          // unique nonce in both the HTML and the CSP header.
+          return rewriteCspNonce(new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers: h }));
         }
       } catch (_) { /* cache miss / unsupported — fall through */ }
     }
