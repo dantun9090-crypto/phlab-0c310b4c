@@ -1264,7 +1264,7 @@ export function Layout({ children }: LayoutProps) {
               'UK Registered Company',
               'CoA With Every Order',
             ].map(badge => (
-              <span key={badge} className="text-[10px] font-bold tracking-wider uppercase" style={{ color: '#2a4060' }}>
+              <span key={badge} className="text-[10px] font-bold tracking-wider uppercase" style={{ color: '#8caad4' }}>
                 {badge}
               </span>
             ))}
