@@ -1,5 +1,6 @@
 import { ArrowRight, CheckCircle2, ShieldCheck, Zap, Mail, Microscope, CreditCard, Truck, Flame, Star, Dna, Activity, Brain, RefreshCw, Shield, Snowflake, FileCheck, FlaskConical, ChevronDown, Lock, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useSSRBanner } from '@/legacy/SSRDataContext';
 
 import { Link } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
