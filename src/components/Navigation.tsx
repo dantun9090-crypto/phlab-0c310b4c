@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { subscribeToProducts } from '@/lib/firebase';
+import { getAllProducts } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
 import InstallAppButton from '@/components/InstallAppButton';
 
@@ -45,30 +45,36 @@ function useNavLinks(): NavLink[] {
   const [categories, setCategories] = useState<DropdownItem[]>([]);
 
   useEffect(() => {
-    let unsub: (() => void) | undefined;
+    let cancelled = false;
     const load = () => {
-      unsub = subscribeToProducts((prods: Product[]) => {
-        const active = prods.filter(p => p.isActive !== false && p.stock > 0 && p.category);
-        const seen = new Set<string>();
-        const cats: DropdownItem[] = [{ name: 'All Products', href: '/products' }];
-        active.forEach(p => {
-          const slug = p.category!;
-          if (seen.has(slug)) return;
-          seen.add(slug);
-          const cfg = CATEGORY_DISPLAY[slug];
-          const label = cfg?.label ?? slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-          const badge = cfg?.badge;
-          cats.push({ name: label, href: `/products/category/${slug}`, category: badge, color: cfg?.color });
-        });
-        setCategories(cats);
-      });
+      // One-shot read (no realtime listener) — the category list rarely
+      // changes and a long-lived Listen channel kept Firestore connected
+      // on every page, hurting LCP/INP measurements.
+      getAllProducts()
+        .then((prods: Product[]) => {
+          if (cancelled) return;
+          const active = prods.filter(p => p.isActive !== false && p.stock > 0 && p.category);
+          const seen = new Set<string>();
+          const cats: DropdownItem[] = [{ name: 'All Products', href: '/products' }];
+          active.forEach(p => {
+            const slug = p.category!;
+            if (seen.has(slug)) return;
+            seen.add(slug);
+            const cfg = CATEGORY_DISPLAY[slug];
+            const label = cfg?.label ?? slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+            const badge = cfg?.badge;
+            cats.push({ name: label, href: `/products/category/${slug}`, category: badge, color: cfg?.color });
+          });
+          setCategories(cats);
+        })
+        .catch(() => { /* navigation falls back to base links */ });
     };
     if (typeof requestIdleCallback !== 'undefined') {
       requestIdleCallback(load, { timeout: 3000 });
     } else {
       setTimeout(load, 800);
     }
-    return () => unsub?.();
+    return () => { cancelled = true; };
   }, []);
 
   return BASE_NAV.map(link =>
