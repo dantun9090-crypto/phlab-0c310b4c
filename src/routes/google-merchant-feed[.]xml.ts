@@ -354,7 +354,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
           `  <channel>`,
           `    <title>${xmlEscape(`${BRAND} UK — Laboratory Reference Standards`)}</title>`,
           `    <link>${BASE_URL}</link>`,
-          `    <description>Analytical-grade laboratory reference standards for in-vitro research. Supplied to qualified research professionals and laboratories.</description>`,
+          `    <description>Analytical reference standards supplied as lyophilised solids for in-vitro laboratory use. Distributed to qualified research professionals and laboratories.</description>`,
           items,
           `  </channel>`,
           `</rss>`,
