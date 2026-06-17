@@ -90,6 +90,54 @@ function cdata(s: string): string {
 }
 
 /**
+ * Per-compound scientific descriptions. Each entry is a unique, neutral,
+ * laboratory-oriented paragraph — no health, dosing, human-use, or
+ * therapeutic language. Keyed by an uppercase token derived from the
+ * cleaned product name. Falls back to a generic line when no match.
+ */
+const COMPOUND_DESCRIPTIONS: Record<string, string> = {
+  RETATRUTIDE:
+    "Synthetic 39-residue triple agonist peptide supplied as a lyophilised solid for in-vitro biochemical assays and receptor-binding studies. Characterised by reversed-phase HPLC and ESI mass spectrometry; certified purity ≥99%. Intended exclusively for qualified laboratory and analytical reference use.",
+  KPV:
+    "Tripeptide fragment (Lys-Pro-Val) supplied as a lyophilised solid for use as an analytical reference standard and in cellular signalling research. Identity and purity confirmed by RP-HPLC and mass spectrometry. Distributed solely to laboratories and qualified research professionals.",
+  "MITOCHONDRIAL OPEN READING FRAME OF THE 12S RRNA-C":
+    "MOTS-c, a 16-residue mitochondrial-derived peptide, supplied as a lyophilised solid for in-vitro metabolic-pathway and mitochondrial biology research. Purity ≥99% verified by HPLC and confirmed by mass spectrometry. For laboratory reference and analytical use only.",
+  BPC157:
+    "Synthetic 15-residue pentadecapeptide supplied as a lyophilised solid for in-vitro cell-culture studies and analytical reference work. Identity confirmed by ESI-MS, purity ≥99% by reversed-phase HPLC. Distributed exclusively for qualified laboratory research applications.",
+  TB500:
+    "Synthetic acetylated thymosin β4 fragment supplied as a lyophilised solid for in-vitro cytoskeletal and cellular research. Characterised by RP-HPLC and mass spectrometry, certified purity ≥99%. Provided as an analytical reference standard for qualified laboratories.",
+  "PT-141":
+    "Synthetic cyclic heptapeptide melanocortin-receptor research ligand supplied as a lyophilised solid for in-vitro receptor-binding and pharmacological screening assays. Identity and ≥99% purity confirmed by HPLC-MS. Strictly for laboratory and analytical reference use.",
+  "NAD+":
+    "Nicotinamide adenine dinucleotide (oxidised form) supplied as a high-purity lyophilised powder for use as a biochemical cofactor in enzyme assays, redox studies, and analytical reference work. Purity ≥98% by HPLC. For qualified laboratory use only.",
+  "GHK-CU":
+    "Copper(II)-tripeptide complex (glycyl-L-histidyl-L-lysine·Cu) supplied as a lyophilised solid for in-vitro biochemical and materials-science research. Purity ≥99% by HPLC with elemental analysis on request. Provided as an analytical reference standard for qualified laboratories.",
+  GLOW:
+    "Multi-component peptide reference mixture (GHK-Cu, BPC-157 fragment and TB-500 fragment) supplied as a co-lyophilised solid for comparative in-vitro assay development and analytical method validation. Component identities confirmed by RP-HPLC and mass spectrometry. For laboratory reference use only.",
+  KLOW:
+    "Multi-component peptide reference mixture (KPV, GHK-Cu, BPC-157 and TB-500 fragments) supplied as a co-lyophilised solid for analytical method development and in-vitro comparative assay work. Composition characterised by HPLC and mass spectrometry. Distributed for qualified laboratory use only.",
+  "MELANOTAN-II":
+    "Synthetic cyclic heptapeptide melanocortin-receptor research ligand supplied as a lyophilised solid for in-vitro receptor-binding studies and analytical reference applications. Identity and ≥99% purity confirmed by HPLC-MS. For qualified laboratory use only.",
+  "BACTERIOSTATIC WATER":
+    "Sterile-filtered water containing 0.9% benzyl alcohol as a bacteriostatic agent, supplied as a laboratory reconstitution diluent for in-vitro preparation of lyophilised reference standards. USP-grade components. For qualified laboratory use only — not a medicinal product.",
+};
+
+function descriptionForCompound(cleanName: string, purity: string | undefined): string {
+  const key = cleanName.trim().toUpperCase();
+  const specific = COMPOUND_DESCRIPTIONS[key];
+  const purityLine = purity && /[0-9]/.test(purity) ? ` Lot purity: ${purity}.` : "";
+  if (specific) {
+    return `${specific}${purityLine} Certificate of Analysis available on request. Supplied by PH Labs UK to qualified laboratories and research institutions.`;
+  }
+  return (
+    `Analytical-grade biochemical reference standard supplied as a lyophilised solid for in-vitro laboratory research and analytical method development. ` +
+    `Identity and purity confirmed by reversed-phase HPLC and mass spectrometry${purityLine ? "" : "; ≥99% purity"}.` +
+    `${purityLine} Certificate of Analysis available on request. Supplied by PH Labs UK to qualified laboratories and research institutions.`
+  );
+}
+
+
+/**
  * Google Merchant Center product feed (RSS 2.0 + g: namespace).
  *
  * Products are listed as **laboratory reference standards / research
