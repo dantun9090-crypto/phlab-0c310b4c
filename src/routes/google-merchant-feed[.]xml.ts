@@ -97,29 +97,29 @@ function cdata(s: string): string {
  */
 const COMPOUND_DESCRIPTIONS: Record<string, string> = {
   RETATRUTIDE:
-    "Synthetic 39-residue triple agonist peptide supplied as a lyophilised solid for in-vitro biochemical assays and receptor-binding studies. Characterised by reversed-phase HPLC and ESI mass spectrometry; certified purity ≥99%. Intended exclusively for qualified laboratory and analytical reference use.",
+    "Synthetic 39-residue peptide analytical reference standard supplied as a lyophilised solid. Identity verified by ESI mass spectrometry; purity ≥99% by reversed-phase HPLC. Strictly for in-vitro laboratory and analytical reference use.",
   KPV:
-    "Tripeptide fragment (Lys-Pro-Val) supplied as a lyophilised solid for use as an analytical reference standard and in cellular signalling research. Identity and purity confirmed by RP-HPLC and mass spectrometry. Distributed solely to laboratories and qualified research professionals.",
-  "MITOCHONDRIAL OPEN READING FRAME OF THE 12S RRNA-C":
-    "MOTS-c, a 16-residue mitochondrial-derived peptide, supplied as a lyophilised solid for in-vitro metabolic-pathway and mitochondrial biology research. Purity ≥99% verified by HPLC and confirmed by mass spectrometry. For laboratory reference and analytical use only.",
+    "Synthetic tripeptide (Lys-Pro-Val) analytical reference standard supplied as a lyophilised solid. Identity confirmed by mass spectrometry; purity ≥99% by RP-HPLC. Strictly for in-vitro laboratory and analytical reference use.",
+  "MOTS-C":
+    "Synthetic 16-residue peptide analytical reference standard supplied as a lyophilised solid. Identity confirmed by mass spectrometry; purity ≥99% by RP-HPLC. Strictly for in-vitro laboratory and analytical reference use.",
   BPC157:
-    "Synthetic 15-residue pentadecapeptide supplied as a lyophilised solid for in-vitro cell-culture studies and analytical reference work. Identity confirmed by ESI-MS, purity ≥99% by reversed-phase HPLC. Distributed exclusively for qualified laboratory research applications.",
+    "Synthetic 15-residue peptide analytical reference standard supplied as a lyophilised solid. Identity confirmed by ESI-MS; purity ≥99% by reversed-phase HPLC. Strictly for in-vitro laboratory and analytical reference use.",
   TB500:
-    "Synthetic acetylated thymosin β4 fragment supplied as a lyophilised solid for in-vitro cytoskeletal and cellular research. Characterised by RP-HPLC and mass spectrometry, certified purity ≥99%. Provided as an analytical reference standard for qualified laboratories.",
+    "Synthetic acetylated peptide fragment analytical reference standard supplied as a lyophilised solid. Identity confirmed by mass spectrometry; purity ≥99% by RP-HPLC. Strictly for in-vitro laboratory and analytical reference use.",
   "PT-141":
-    "Synthetic cyclic heptapeptide melanocortin-receptor research ligand supplied as a lyophilised solid for in-vitro receptor-binding and pharmacological screening assays. Identity and ≥99% purity confirmed by HPLC-MS. Strictly for laboratory and analytical reference use.",
+    "Synthetic cyclic heptapeptide analytical reference standard supplied as a lyophilised solid. Identity confirmed by HPLC-MS; purity ≥99%. Strictly for in-vitro laboratory and analytical reference use.",
   "NAD+":
-    "Nicotinamide adenine dinucleotide (oxidised form) supplied as a high-purity lyophilised powder for use as a biochemical cofactor in enzyme assays, redox studies, and analytical reference work. Purity ≥98% by HPLC. For qualified laboratory use only.",
+    "Nicotinamide adenine dinucleotide (oxidised form) analytical reference standard supplied as a lyophilised powder. Purity ≥98% by HPLC. Strictly for in-vitro laboratory and analytical reference use.",
   "GHK-CU":
-    "Copper(II)-tripeptide complex (glycyl-L-histidyl-L-lysine·Cu) supplied as a lyophilised solid for in-vitro biochemical and materials-science research. Purity ≥99% by HPLC with elemental analysis on request. Provided as an analytical reference standard for qualified laboratories.",
+    "Copper(II)-tripeptide complex (glycyl-L-histidyl-L-lysine·Cu) analytical reference standard supplied as a lyophilised solid. Purity ≥99% by HPLC with elemental analysis available on request. Strictly for in-vitro laboratory and analytical reference use.",
   GLOW:
-    "Multi-component peptide reference mixture (GHK-Cu, BPC-157 fragment and TB-500 fragment) supplied as a co-lyophilised solid for comparative in-vitro assay development and analytical method validation. Component identities confirmed by RP-HPLC and mass spectrometry. For laboratory reference use only.",
+    "Multi-component peptide analytical reference mixture (GHK-Cu, BPC-157 fragment, TB-500 fragment) supplied as a co-lyophilised solid for analytical method development. Component identities confirmed by RP-HPLC and mass spectrometry. Strictly for in-vitro laboratory and analytical reference use.",
   KLOW:
-    "Multi-component peptide reference mixture (KPV, GHK-Cu, BPC-157 and TB-500 fragments) supplied as a co-lyophilised solid for analytical method development and in-vitro comparative assay work. Composition characterised by HPLC and mass spectrometry. Distributed for qualified laboratory use only.",
+    "Multi-component peptide analytical reference mixture (KPV, GHK-Cu, BPC-157 fragment, TB-500 fragment) supplied as a co-lyophilised solid for analytical method development. Composition characterised by HPLC and mass spectrometry. Strictly for in-vitro laboratory and analytical reference use.",
   "MELANOTAN-II":
-    "Synthetic cyclic heptapeptide melanocortin-receptor research ligand supplied as a lyophilised solid for in-vitro receptor-binding studies and analytical reference applications. Identity and ≥99% purity confirmed by HPLC-MS. For qualified laboratory use only.",
+    "Synthetic cyclic heptapeptide analytical reference standard supplied as a lyophilised solid. Identity confirmed by HPLC-MS; purity ≥99%. Strictly for in-vitro laboratory and analytical reference use.",
   "BACTERIOSTATIC WATER":
-    "Sterile-filtered water containing 0.9% benzyl alcohol as a bacteriostatic agent, supplied as a laboratory reconstitution diluent for in-vitro preparation of lyophilised reference standards. USP-grade components. For qualified laboratory use only — not a medicinal product.",
+    "Sterile-filtered water containing 0.9% benzyl alcohol, supplied as a laboratory diluent for in-vitro reconstitution of lyophilised reference standards. USP-grade components. For qualified laboratory use only — not a medicinal product.",
 };
 
 function descriptionForCompound(cleanName: string, purity: string | undefined): string {
@@ -130,11 +130,12 @@ function descriptionForCompound(cleanName: string, purity: string | undefined): 
     return `${specific}${purityLine} Certificate of Analysis available on request. Supplied by PH Labs UK to qualified laboratories and research institutions.`;
   }
   return (
-    `Analytical-grade biochemical reference standard supplied as a lyophilised solid for in-vitro laboratory research and analytical method development. ` +
+    `Analytical reference standard supplied as a lyophilised solid for in-vitro laboratory use and analytical method development. ` +
     `Identity and purity confirmed by reversed-phase HPLC and mass spectrometry${purityLine ? "" : "; ≥99% purity"}.` +
     `${purityLine} Certificate of Analysis available on request. Supplied by PH Labs UK to qualified laboratories and research institutions.`
   );
 }
+
 
 
 /**
