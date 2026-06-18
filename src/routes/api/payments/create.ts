@@ -1,8 +1,22 @@
+/**
+ * POST /api/payments/create — Wallid Pay-by-Bank session creator.
+ *
+ * Security model:
+ *   - Caller MUST provide a Firebase ID token (verified server-side).
+ *   - The order is loaded from Firestore via `buildOrderCtxForPayment`,
+ *     which enforces ownership and unsettled status.
+ *   - The amount sent to Wallid comes from the DB order, NEVER from the
+ *     client body — prevents price manipulation.
+ *   - Items/customer email are derived from the request only for display
+ *     purposes; the authoritative charge amount is the order total.
+ */
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { createWallidPayment, WallidError } from "@/lib/wallid.server";
 import { checkRateLimit, getClientIp, rateLimitedResponse } from "@/lib/rate-limit";
 import { readWallidEnabled } from "@/lib/wallid-config.server";
+import { verifyFirebaseIdToken } from "@/lib/server/firebase-auth-admin";
+import { buildOrderCtxForPayment } from "@/lib/payments/dispatch.server";
 
 const ItemSchema = z.object({
   name: z.string().min(1).max(200),
@@ -13,6 +27,7 @@ const ItemSchema = z.object({
 });
 
 const BodySchema = z.object({
+  idToken: z.string().min(10).max(4096),
   orderId: z.string().min(3).max(128).regex(/^[A-Za-z0-9_-]+$/),
   amount: z.number().positive().max(100000),
   currency: z.literal("GBP"),
@@ -50,7 +65,41 @@ export const Route = createFileRoute("/api/payments/create")({
         if (!parsed.success) {
           return json({ error: "Invalid payment details", details: parsed.error.flatten() }, 400);
         }
-        const { orderId, amount, currency, items, customerEmail } = parsed.data;
+        const { idToken, orderId, amount: clientAmount, currency, items, customerEmail } = parsed.data;
+
+        // 1) Authenticate caller
+        let user;
+        try {
+          user = await verifyFirebaseIdToken(idToken);
+        } catch {
+          return json({ error: "Authentication required" }, 401);
+        }
+
+        // 2) Load order, verify ownership + unsettled status, derive trusted amount
+        let ctx;
+        try {
+          ctx = await buildOrderCtxForPayment(orderId, user.uid, user.email);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          if (/forbidden/i.test(msg)) return json({ error: "Forbidden" }, 403);
+          if (/not found/i.test(msg)) return json({ error: "Order not found" }, 404);
+          if (/already settled/i.test(msg)) return json({ error: "Order already settled" }, 409);
+          return json({ error: msg || "Invalid order" }, 400);
+        }
+
+        // 3) Verify client amount matches the DB order amount (defense-in-depth)
+        const dbMinor = Math.round(ctx.amountGbp * 100);
+        const clientMinor = Math.round(clientAmount * 100);
+        if (dbMinor !== clientMinor) {
+          console.warn(
+            `[Wallid] amount mismatch: order=${orderId} db=${dbMinor} client=${clientMinor} uid=${user.uid}`,
+          );
+          return json({ error: "Amount does not match order total" }, 400);
+        }
+
+        // 4) Use the authoritative DB amount + email for the Wallid charge
+        const trustedAmount = ctx.amountGbp;
+        const trustedEmail = ctx.customerEmail || customerEmail;
 
         const successUrl = `https://phlabs.co.uk/checkout/success?order_id=${encodeURIComponent(orderId)}`;
         const failUrl = `https://phlabs.co.uk/checkout/cancel?order_id=${encodeURIComponent(orderId)}`;
@@ -58,9 +107,9 @@ export const Route = createFileRoute("/api/payments/create")({
         try {
           const wallid = await createWallidPayment({
             orderId,
-            amount,
+            amount: trustedAmount,
             currency,
-            customerEmail,
+            customerEmail: trustedEmail,
             items,
             successUrl,
             failUrl,
@@ -71,15 +120,14 @@ export const Route = createFileRoute("/api/payments/create")({
             order_id: orderId,
             api_payment_id: wallid.api_payment_id,
             payment_link: wallid.payment_link,
-            amount: Math.round(amount * 100),
+            amount: dbMinor,
             currency,
             status: String(wallid.status || "pending"),
-            customer_email: customerEmail,
-            metadata: { items, raw: wallid } as never,
+            customer_email: trustedEmail,
+            metadata: { items, user_uid: user.uid, raw: wallid } as never,
           });
           if (dbErr) {
             console.error("[Wallid] DB insert failed:", dbErr.message);
-            // Continue — payment_link is still usable; we just lose audit row.
           }
 
           return json({

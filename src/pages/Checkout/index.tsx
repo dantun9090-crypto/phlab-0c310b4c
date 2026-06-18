@@ -695,10 +695,20 @@ export default function CheckoutPage() {
         setFenaOrderId(orderId);
         setFenaStep('creating-link');
         try {
+          // Wallid create requires an authenticated caller; reuse the
+          // current Firebase session (anonymous is fine — order ownership
+          // is enforced by uid match in the server route).
+          const wallidIdToken = auth.currentUser
+            ? await auth.currentUser.getIdToken().catch(() => null)
+            : null;
+          if (!wallidIdToken) {
+            throw new Error('Could not authenticate your session. Please refresh and try again.');
+          }
           const res = await fetch('/api/payments/create', {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
+              idToken: wallidIdToken,
               orderId,
               amount: Number(totalAmount),
               currency: 'GBP',
