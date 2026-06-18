@@ -222,20 +222,24 @@ export default function WallidBanksTab() {
       )}
 
       {/* Live preview */}
-      <div className="bg-[#0a1424] border-2 border-slate-700 rounded-lg p-4">
-        <p className="text-sm font-semibold text-white mb-3">Live preview (checkout)</p>
+      <div className="bg-[#0a1424] border-2 border-slate-700 rounded-lg p-4 flex flex-col items-center text-center">
+        <p className="text-sm font-semibold text-white mb-3 self-start">Live preview (checkout)</p>
         <img
-          src={payByBankBadge.url}
+          src={payByBankBadge1x.url}
+          srcSet={`${payByBankBadge1x.url} 1x, ${payByBankBadge2x.url} 2x`}
           alt="Pay by Bank"
           loading="lazy"
-          className="w-full max-w-[210px] h-auto rounded-xl"
-          style={{ display: 'block' }}
+          decoding="async"
+          width={260}
+          height={173}
+          className="block h-auto w-full max-w-[260px] sm:max-w-[280px] md:max-w-[300px] rounded-xl mx-auto"
         />
-        <p className="text-[11px] text-gray-400 mt-2 leading-snug">
+        <p className="text-[11px] text-gray-400 mt-2 leading-snug max-w-[300px]">
           Your payment is processed securely via FCA-regulated open banking.
           No card details stored.
         </p>
       </div>
+
 
       {/* Sticky save bar */}
       <div className="sticky bottom-0 -mx-4 px-4 py-3 bg-slate-950/95 backdrop-blur border-t border-slate-800 flex items-center justify-between gap-3">
