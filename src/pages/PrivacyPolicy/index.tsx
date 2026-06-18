@@ -184,6 +184,56 @@ export default function PrivacyPolicy() {
       ),
     },
     {
+      id: 'transfers',
+      icon: Plane,
+      iconColor: '#34d399',
+      title: 'International Data Transfers',
+      content: (
+        <div className="space-y-3 text-sm" style={{ color: '#9cb8d9' }}>
+          <p className="leading-relaxed text-xs">
+            Personal data is primarily stored on servers located in the UK/EEA. Some processors (e.g. Google Analytics, email infrastructure) may transfer data outside the UK/EEA. Where this happens, we rely on the following safeguards under UK GDPR Art. 46:
+          </p>
+          <ul className="space-y-2 text-xs">
+            {[
+              'UK adequacy regulations / EU adequacy decisions where applicable',
+              'Standard Contractual Clauses (SCCs) approved by the ICO',
+              'International Data Transfer Addendum (IDTA) for US-based processors',
+            ].map((item) => (
+              <li key={item} className="flex items-start gap-2">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#34d399' }} />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-[11px]" style={{ color: '#3a5a82' }}>
+            A copy of the safeguards in place is available on request from info@phlabs.co.uk.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: 'complaints',
+      icon: Gavel,
+      iconColor: '#fbbf24',
+      title: 'Right to Complain (ICO)',
+      content: (
+        <div className="space-y-3 text-sm" style={{ color: '#9cb8d9' }}>
+          <p className="leading-relaxed text-xs">
+            If you believe we have mishandled your personal data, please contact us first at <a href="mailto:info@phlabs.co.uk" className="underline font-semibold" style={{ color: '#fbbf24' }}>info@phlabs.co.uk</a> so we can put it right. You also have the right to lodge a complaint with the UK supervisory authority:
+          </p>
+          <div className="p-3 rounded-lg border space-y-1 text-xs" style={{ background: 'rgba(251,191,36,0.05)', borderColor: 'rgba(251,191,36,0.2)' }}>
+            <p className="font-semibold" style={{ color: '#fbbf24' }}>Information Commissioner's Office (ICO)</p>
+            <p>Wycliffe House, Water Lane, Wilmslow, Cheshire SK9 5AF</p>
+            <p>Helpline: 0303 123 1113</p>
+            <p>Website: <a href="https://ico.org.uk/make-a-complaint/" target="_blank" rel="noopener noreferrer" className="underline">ico.org.uk/make-a-complaint</a></p>
+          </div>
+          <p className="text-[11px]" style={{ color: '#3a5a82' }}>
+            To exercise your data rights directly, use our <Link to="/privacy-requests" className="underline font-semibold" style={{ color: '#fbbf24' }}>Privacy Requests form</Link>.
+          </p>
+        </div>
+      ),
+    },
+    {
       id: 'retention',
       icon: FileText,
       iconColor: '#ec4899',
