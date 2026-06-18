@@ -10,8 +10,8 @@
  *   - src/pages/Admin/tabs/WallidPreviewTab.tsx (admin simulator)
  *   - src/pages/Admin/tabs/WallidBadgesTab.tsx (live preview)
  */
-import * as LucideIcons from 'lucide-react';
 import { ShieldCheck } from 'lucide-react';
+import payByBankBadge from '@/assets/pay-by-bank-badge.png.asset.json';
 import { WALLID_BADGE_CATALOG } from '@/lib/wallid-badge-catalog';
 import { useWallidBadgeIds } from '@/lib/wallid-badge-store';
 
@@ -24,6 +24,7 @@ interface WallidTrustElementsProps {
 }
 
 function resolveIcon(name: string) {
+  const LucideIcons = await import('lucide-react');
   const Comp = (LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[name];
   return Comp ?? ShieldCheck;
 }
