@@ -25,10 +25,8 @@ interface Props {
 export function UnderConstruction({ targetDate }: Props) {
   const [visible, setVisible] = useState(false);
 
-  // Default: 7 days from now if no date set
-  const target = targetDate ? new Date(targetDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>(getTimeLeft(target));
+  // Initialise to zeros so SSR and first client render match; populate in effect (fixes React #419)
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 50);
@@ -36,9 +34,11 @@ export function UnderConstruction({ targetDate }: Props) {
   }, []);
 
   useEffect(() => {
+    const target = targetDate ? new Date(targetDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    setTimeLeft(getTimeLeft(target));
     const interval = setInterval(() => setTimeLeft(getTimeLeft(target)), 1000);
     return () => clearInterval(interval);
-  }, [target.getTime()]);
+  }, [targetDate]);
 
   const units: { label: string; value: number }[] = [
     { label: 'Days',    value: timeLeft.days },
