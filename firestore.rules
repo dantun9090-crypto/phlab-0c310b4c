@@ -68,16 +68,25 @@ service cloud.firestore {
 
 
     // ---------- email subscribers (newsletter) ----------
-    // Locked shape: valid email regex, server-set timestamp, optional source.
+    // Locked shape: valid email regex, timestamp required, optional source +
+    // discountCode + ISO timestamp (homepage protocol-library flow). Read /
+    // update / delete is admin-only so the list can't be enumerated.
     match /emailSubscribers/{docId} {
-      allow create: if request.resource.data.keys().hasOnly(['email','subscribedAt','source'])
+      allow create: if request.resource.data.keys().hasOnly(['email','subscribedAt','source','discountCode','timestamp'])
+                    && request.resource.data.keys().hasAll(['email','subscribedAt'])
                     && request.resource.data.email is string
                     && request.resource.data.email.size() < 320
                     && request.resource.data.email.matches('^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+[.][A-Za-z]{2,}$')
-                    && request.resource.data.subscribedAt == request.time
+                    && request.resource.data.subscribedAt is timestamp
                     && (!('source' in request.resource.data)
                         || (request.resource.data.source is string
-                            && request.resource.data.source.size() < 100));
+                            && request.resource.data.source.size() < 100))
+                    && (!('discountCode' in request.resource.data)
+                        || (request.resource.data.discountCode is string
+                            && request.resource.data.discountCode.size() < 64))
+                    && (!('timestamp' in request.resource.data)
+                        || (request.resource.data.timestamp is string
+                            && request.resource.data.timestamp.size() < 64));
       allow read, update, delete: if isAdmin();
     }
 
