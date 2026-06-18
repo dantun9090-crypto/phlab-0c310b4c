@@ -124,7 +124,7 @@ const COMPOUND_SPECS: Record<string, CompoundSpec> = {
     weight: "1024.18 g/mol",
     sequence: "Ac-Nle-cyclo(Asp-His-D-Phe-Arg-Trp-Lys)-NH2",
   },
-  "MOTS-C": {
+  MOTSC: {
     cas: "1627580-64-6",
     formula: "C100H152N28O22S2",
     weight: "2174.55 g/mol",
@@ -312,7 +312,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               .trim();
             // Keep MOTS-c as the compact compound code (no biology expansion).
             if (/\bmots[-\s]?c\b/i.test(cleanName)) {
-              cleanName = "MOTS-c";
+              cleanName = "MOTSC";
             }
 
             // Normalise hyphenated codes that trigger health classifiers.
