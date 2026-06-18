@@ -452,7 +452,7 @@ export default function CheckoutPage() {
           return k === key ? { ...item, quantity: item.quantity + delta } : item;
         })
         .filter(item => item.quantity > 0);
-      try { localStorage.setItem('php_cart', JSON.stringify(next)); } catch { /* ignore */ }
+      safeCartWrite('php_cart', JSON.stringify(next), 'checkout:updateQty');
       return next;
     });
   };
