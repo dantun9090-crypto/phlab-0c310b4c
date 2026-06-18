@@ -27,12 +27,6 @@ export default function PaymentMethodOptions({
   value,
   onChange,
 }: PaymentMethodOptionsProps) {
-
-export default function PaymentMethodOptions({
-  options,
-  value,
-  onChange,
-}: PaymentMethodOptionsProps) {
   const hasOnline = Boolean(
     options && (options.primary || options.backups.length > 0),
   );
