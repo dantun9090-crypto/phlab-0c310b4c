@@ -156,6 +156,11 @@ export function Layout({ children }: LayoutProps) {
     try { return JSON.parse(localStorage.getItem('php_recent_searches') || '[]'); } catch { return []; }
   });
 
+  // Track whether the initial cart hydration from localStorage has completed.
+  // Until it has, we must NOT persist the empty initial React state — otherwise
+  // we'd clobber the stored cart on first paint.
+  const cartHydratedRef = useRef(false);
+
   // Load cart from localStorage — deferred to avoid blocking paint.
   // Runs `migrateStoredCart` first so legacy carts that stored the variantId
   // concatenated into `id` (e.g. `"retatrutide-5mg"`) get rewritten into the
@@ -171,6 +176,7 @@ export function Layout({ children }: LayoutProps) {
         const saved = localStorage.getItem('php_cart');
         if (saved) setCart(JSON.parse(saved));
       } catch { /* ignore */ }
+      finally { cartHydratedRef.current = true; }
     };
     if (typeof requestIdleCallback !== 'undefined') {
       requestIdleCallback(loadCart, { timeout: 1000 });
@@ -212,7 +218,9 @@ export function Layout({ children }: LayoutProps) {
       // state — on a fresh mount React renders cart=[] before the load
       // effect runs, and this save effect would otherwise wipe the
       // localStorage written synchronously by dispatchAddToCart.
-      if (cart.length === 0) {
+      // After hydration completes, always persist (including empty cart,
+      // so removing all items doesn't bring them back on next mount).
+      if (cart.length === 0 && !cartHydratedRef.current) {
         const existing = localStorage.getItem('php_cart');
         if (existing && existing !== '[]' && existing !== 'null') return;
       }
