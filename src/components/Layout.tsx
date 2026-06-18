@@ -234,8 +234,34 @@ export function Layout({ children }: LayoutProps) {
         const existing = localStorage.getItem('php_cart');
         if (existing && existing !== '[]' && existing !== 'null') return;
       }
-      localStorage.setItem('php_cart', JSON.stringify(cart));
-    } catch { /* ignore */ }
+      // Detect an unexpected clear: hydrated, in-memory empty, but persisted non-empty.
+      if (cart.length === 0 && cartHydratedRef.current) {
+        try {
+          const existing = localStorage.getItem('php_cart');
+          if (existing && existing !== '[]' && existing !== 'null') {
+            const parsed = JSON.parse(existing);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              logCartEvent({
+                type: 'cart_cleared_unexpectedly',
+                memoryCount: 0,
+                storedCount: parsed.length,
+                source: 'layout:save',
+                message: 'In-memory cart became empty while localStorage still had items',
+              });
+            }
+          }
+        } catch { /* ignore */ }
+      }
+      safeCartWrite('php_cart', JSON.stringify(cart), 'layout:save');
+    } catch (e) {
+      const err = e as { name?: string; message?: string };
+      logCartEvent({
+        type: 'unknown_error',
+        code: err?.name || 'save_effect',
+        message: err?.message || 'cart save effect crashed',
+        source: 'layout:save',
+      });
+    }
   }, [cart]);
 
   // Auth state listener
