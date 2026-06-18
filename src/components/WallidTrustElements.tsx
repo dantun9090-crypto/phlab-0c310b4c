@@ -12,7 +12,8 @@
  */
 import * as LucideIcons from 'lucide-react';
 import { ShieldCheck } from 'lucide-react';
-import payByBankBadge from '@/assets/pay-by-bank-badge.png.asset.json';
+import payByBankBadge1x from '@/assets/pay-by-bank-badge-1x.png.asset.json';
+import payByBankBadge2x from '@/assets/pay-by-bank-badge-2x.png.asset.json';
 import { WALLID_BADGE_CATALOG } from '@/lib/wallid-badge-catalog';
 import { useWallidBadgeIds } from '@/lib/wallid-badge-store';
 
