@@ -21,8 +21,6 @@ interface WallidTrustElementsProps {
   showBadges?: boolean;
   /** Override the live Firestore badge selection (admin simulator). */
   badgeIdsOverride?: string[];
-  /** Override the live Firestore bank selection (admin simulator). */
-  bankIdsOverride?: string[];
 }
 
 function resolveIcon(name: string) {
