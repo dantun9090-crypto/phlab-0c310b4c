@@ -207,7 +207,14 @@ export function Layout({ children }: LayoutProps) {
   // route then read `null` from localStorage and showed "Your cart is
   // empty" while the header badge still showed the in-memory count.
   useEffect(() => {
-    try { localStorage.setItem('php_cart', JSON.stringify(cart)); } catch { /* ignore */ }
+    try {
+      localStorage.setItem('php_cart', JSON.stringify(cart));
+      // eslint-disable-next-line no-console
+      console.log('[cart-debug] save', cart.length, 'items, ls len:', localStorage.length);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.log('[cart-debug] save failed', e);
+    }
   }, [cart]);
 
   // Auth state listener
