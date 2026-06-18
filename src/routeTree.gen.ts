@@ -27,6 +27,7 @@ import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-
 import { Route as ApiPaymentsStatusRouteImport } from './routes/api/payments/status'
 import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/create'
 import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/cancel'
+import { Route as ApiDsrProcessRouteImport } from './routes/api/dsr/process'
 import { Route as ApiConfigPaymentsRouteImport } from './routes/api/config/payments'
 import { Route as ApiPublicHooksWallidRouteImport } from './routes/api/public/hooks/wallid'
 import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public/hooks/truelayer'
@@ -129,6 +130,11 @@ const ApiPaymentsCancelRoute = ApiPaymentsCancelRouteImport.update({
   path: '/api/payments/cancel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDsrProcessRoute = ApiDsrProcessRouteImport.update({
+  id: '/api/dsr/process',
+  path: '/api/dsr/process',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiConfigPaymentsRoute = ApiConfigPaymentsRouteImport.update({
   id: '/api/config/payments',
   path: '/api/config/payments',
@@ -188,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
+  '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
+  '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
@@ -245,6 +253,7 @@ export interface FileRoutesById {
   '/payment/success': typeof PaymentSuccessRoute
   '/products_/$slug': typeof ProductsSlugRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
+  '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
@@ -275,6 +284,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/products/$slug'
     | '/api/config/payments'
+    | '/api/dsr/process'
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/status'
@@ -303,6 +313,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/products/$slug'
     | '/api/config/payments'
+    | '/api/dsr/process'
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/status'
@@ -331,6 +342,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/products_/$slug'
     | '/api/config/payments'
+    | '/api/dsr/process'
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/status'
@@ -360,6 +372,7 @@ export interface RootRouteChildren {
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
   ApiConfigPaymentsRoute: typeof ApiConfigPaymentsRoute
+  ApiDsrProcessRoute: typeof ApiDsrProcessRoute
   ApiPaymentsCancelRoute: typeof ApiPaymentsCancelRoute
   ApiPaymentsCreateRoute: typeof ApiPaymentsCreateRoute
   ApiPaymentsStatusRoute: typeof ApiPaymentsStatusRoute
@@ -503,6 +516,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPaymentsCancelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/dsr/process': {
+      id: '/api/dsr/process'
+      path: '/api/dsr/process'
+      fullPath: '/api/dsr/process'
+      preLoaderRoute: typeof ApiDsrProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/config/payments': {
       id: '/api/config/payments'
       path: '/api/config/payments'
@@ -576,6 +596,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaymentSuccessRoute: PaymentSuccessRoute,
   ProductsSlugRoute: ProductsSlugRoute,
   ApiConfigPaymentsRoute: ApiConfigPaymentsRoute,
+  ApiDsrProcessRoute: ApiDsrProcessRoute,
   ApiPaymentsCancelRoute: ApiPaymentsCancelRoute,
   ApiPaymentsCreateRoute: ApiPaymentsCreateRoute,
   ApiPaymentsStatusRoute: ApiPaymentsStatusRoute,
