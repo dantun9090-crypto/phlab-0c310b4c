@@ -1183,6 +1183,7 @@ export function Layout({ children }: LayoutProps) {
                   { label: 'Refund Policy', href: '/refund-policy' },
                   { label: 'Shipping Policy', href: '/shipping-policy' },
                   { label: 'Cookie Policy', href: '/cookies' },
+                  { label: 'Privacy Requests', href: '/privacy-requests' },
                 ].map(l => (
                   <li key={l.label}>
                     <Link to={l.href} className="group flex items-center gap-2 text-[#5a80a6] hover:text-[#8caad4] transition-colors text-sm">
@@ -1191,6 +1192,18 @@ export function Layout({ children }: LayoutProps) {
                     </Link>
                   </li>
                 ))}
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      import('@/components/CookieConsent').then(m => m.openCookieSettings());
+                    }}
+                    className="group flex items-center gap-2 text-[#5a80a6] hover:text-[#8caad4] transition-colors text-sm w-full text-left"
+                  >
+                    <span className="w-1 h-1 rounded-full bg-blue-600/40 group-hover:bg-blue-400 transition-colors flex-shrink-0" />
+                    Cookie Settings
+                  </button>
+                </li>
               </ul>
             </div>
 
