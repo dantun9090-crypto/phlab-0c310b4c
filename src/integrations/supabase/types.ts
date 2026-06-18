@@ -173,6 +173,42 @@ export type Database = {
         }
         Relationships: []
       }
+      wallid_webhook_events: {
+        Row: {
+          api_payment_id: string | null
+          created_at: string
+          event_id: string
+          id: string
+          occurred_at: string | null
+          order_id: string | null
+          processed_at: string
+          raw: Json | null
+          status: string | null
+        }
+        Insert: {
+          api_payment_id?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          occurred_at?: string | null
+          order_id?: string | null
+          processed_at?: string
+          raw?: Json | null
+          status?: string | null
+        }
+        Update: {
+          api_payment_id?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          occurred_at?: string | null
+          order_id?: string | null
+          processed_at?: string
+          raw?: Json | null
+          status?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
