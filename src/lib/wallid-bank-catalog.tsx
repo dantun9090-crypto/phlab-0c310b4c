@@ -104,11 +104,17 @@ interface BankMarkProps {
  * the bank's monogram. Used both on checkout and inside the admin picker.
  */
 export function BankMark({ bank, size = 60, className = '', style }: BankMarkProps) {
-  const bg = bank.invert
+  const logoUrl = bankLogoUrl(bank, size >= 64 ? 128 : 64);
+  const [logoFailed, setLogoFailed] = useState(false);
+  const showLogo = !!logoUrl && !logoFailed;
+
+  const bg = showLogo
     ? '#ffffff'
-    : bank.accent
-      ? `linear-gradient(135deg, ${bank.color} 0%, ${bank.accent} 100%)`
-      : bank.color;
+    : bank.invert
+      ? '#ffffff'
+      : bank.accent
+        ? `linear-gradient(135deg, ${bank.color} 0%, ${bank.accent} 100%)`
+        : bank.color;
   const fg = bank.invert ? bank.color : (bank.textColor ?? '#ffffff');
   const fontSize = bank.monogram.length >= 3
     ? Math.round(size * 0.32)
@@ -121,7 +127,7 @@ export function BankMark({ bank, size = 60, className = '', style }: BankMarkPro
       role="img"
       aria-label={bank.name}
       title={bank.name}
-      className={`flex items-center justify-center font-black tracking-tight select-none ${className}`}
+      className={`flex items-center justify-center font-black tracking-tight select-none overflow-hidden ${className}`}
       style={{
         width: size,
         height: size,
@@ -133,13 +139,29 @@ export function BankMark({ bank, size = 60, className = '', style }: BankMarkPro
         fontSize,
         lineHeight: 1,
         letterSpacing: '-0.02em',
-        boxShadow: bank.invert
-          ? `inset 0 0 0 1px ${bank.color}33`
-          : '0 1px 2px rgba(0,0,0,0.15)',
+        boxShadow: showLogo
+          ? 'inset 0 0 0 1px rgba(0,0,0,0.08)'
+          : bank.invert
+            ? `inset 0 0 0 1px ${bank.color}33`
+            : '0 1px 2px rgba(0,0,0,0.15)',
         ...style,
       }}
     >
-      {bank.monogram}
+      {showLogo ? (
+        <img
+          src={logoUrl!}
+          alt={bank.name}
+          loading="lazy"
+          onError={() => setLogoFailed(true)}
+          style={{
+            width: '78%',
+            height: '78%',
+            objectFit: 'contain',
+          }}
+        />
+      ) : (
+        bank.monogram
+      )}
     </div>
   );
 }
