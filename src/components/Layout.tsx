@@ -200,18 +200,24 @@ export function Layout({ children }: LayoutProps) {
     }
   }, []);
 
-  // Save cart to localStorage — deferred to idle so it never blocks renders
+  // Save cart to localStorage synchronously. Previously deferred via
+  // requestIdleCallback, but the cleanup cancelled the pending save on
+  // unmount — clicking "Continue to Checkout" right after Add to Cart
+  // raced the idle callback, the write was cancelled, and the checkout
+  // route then read `null` from localStorage and showed "Your cart is
+  // empty" while the header badge still showed the in-memory count.
   useEffect(() => {
-    const save = () => {
-      try { localStorage.setItem('php_cart', JSON.stringify(cart)); } catch { /* ignore */ }
-    };
-    if (typeof requestIdleCallback !== 'undefined') {
-      const id = requestIdleCallback(save, { timeout: 2000 });
-      return () => cancelIdleCallback(id);
-    } else {
-      const t = setTimeout(save, 100);
-      return () => clearTimeout(t);
-    }
+    try {
+      // Don't clobber a persisted non-empty cart with the empty initial
+      // state — on a fresh mount React renders cart=[] before the load
+      // effect runs, and this save effect would otherwise wipe the
+      // localStorage written synchronously by dispatchAddToCart.
+      if (cart.length === 0) {
+        const existing = localStorage.getItem('php_cart');
+        if (existing && existing !== '[]' && existing !== 'null') return;
+      }
+      localStorage.setItem('php_cart', JSON.stringify(cart));
+    } catch { /* ignore */ }
   }, [cart]);
 
   // Auth state listener
@@ -1373,5 +1379,27 @@ export function Layout({ children }: LayoutProps) {
 // Export helper for product pages to add items via event
 export const cartEventName = 'php:add-to-cart';
 export function dispatchAddToCart(item: CartItem) {
+  // Persist to localStorage SYNCHRONOUSLY first, so a navigation to /checkout
+  // that happens before React's save effect commits still finds the item.
+  // The Layout's event handler will then reconcile in-memory state.
+  try {
+    const raw = localStorage.getItem('php_cart');
+    const existing: CartItem[] = raw ? JSON.parse(raw) : [];
+    const list = Array.isArray(existing) ? existing : [];
+    const key = item.variantId ? `${item.id}-${item.variantId}` : String(item.id);
+    const idx = list.findIndex(i => {
+      const k = i.variantId ? `${i.id}-${i.variantId}` : String(i.id);
+      return k === key;
+    });
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], quantity: (list[idx].quantity || 0) + 1 };
+    } else {
+      list.push({ ...item, quantity: 1 });
+    }
+    localStorage.setItem('php_cart', JSON.stringify(list));
+  } catch { /* ignore */ }
   window.dispatchEvent(new CustomEvent(cartEventName, { detail: item }));
 }
+
+
+
