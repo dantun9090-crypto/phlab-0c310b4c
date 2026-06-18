@@ -1044,7 +1044,7 @@ export default function CheckoutPage() {
               )}
 
               {/* Pay by Bank (Fena) live status */}
-              {form.paymentMethod === 'pay_by_bank' && fenaStep !== 'idle' && fenaStep !== 'failed' && (
+              {(form.paymentMethod === 'pay_by_bank' || form.paymentMethod === 'wallid') && fenaStep !== 'idle' && fenaStep !== 'failed' && (
                 <div className="flex items-start gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3">
                   <div className="w-4 h-4 mt-0.5 shrink-0 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin" />
                   <div className="flex-1 min-w-0 text-sm">
