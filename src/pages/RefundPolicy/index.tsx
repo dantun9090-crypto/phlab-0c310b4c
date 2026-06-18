@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 export default function RefundPolicy() {
   useSEO('refund-policy', {
     title: 'Return & Refund Policy | PH Labs UK',
-    metaDescription: 'Return and refund policy for PH Labs Ltd. We accept returns for defective items within 14 days of delivery. UK research peptide supplier.',
+    metaDescription: 'Return & refund policy for PH Labs Ltd UK. 14-day statutory right to cancel (CCR 2013) plus defective-item returns. UK research peptide supplier.',
     canonical: 'https://phlabs.co.uk/refund-policy',
   });
 
