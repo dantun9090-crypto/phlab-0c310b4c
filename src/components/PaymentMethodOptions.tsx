@@ -78,6 +78,9 @@ export default function PaymentMethodOptions({
           </div>
         </button>
       )}
+      {wallidEnabled && value === "wallid" && (
+        <WallidTrustElements className="mb-3" />
+      )}
       <div
         className={`grid grid-cols-1 ${hasOnline ? "sm:grid-cols-2" : ""} gap-2`}
       >
