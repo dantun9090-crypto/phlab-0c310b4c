@@ -1,22 +1,19 @@
 /**
- * Trust badges + UK bank tile grid shown on checkout ONLY when the
+ * Trust badges + Pay by Bank badge shown on checkout ONLY when the
  * customer has selected the Wallid "Pay by Bank" option.
  *
- * Both the badge selection and the bank-tile selection are admin-curated
- * and persisted in Firestore (see wallid-badge-store / wallid-bank-store).
+ * The badge selection is admin-curated and persisted in Firestore
+ * (see wallid-badge-store).
  *
  * Used by:
  *   - src/components/PaymentMethodOptions.tsx (live checkout)
  *   - src/pages/Admin/tabs/WallidPreviewTab.tsx (admin simulator)
  *   - src/pages/Admin/tabs/WallidBadgesTab.tsx (live preview)
- *   - src/pages/Admin/tabs/WallidBanksTab.tsx  (live preview)
  */
 import * as LucideIcons from 'lucide-react';
 import { ShieldCheck } from 'lucide-react';
 import { WALLID_BADGE_CATALOG } from '@/lib/wallid-badge-catalog';
 import { useWallidBadgeIds } from '@/lib/wallid-badge-store';
-import { WALLID_BANK_CATALOG, BankMark } from '@/lib/wallid-bank-catalog';
-import { useWallidBankIds } from '@/lib/wallid-bank-store';
 
 interface WallidTrustElementsProps {
   className?: string;
@@ -24,8 +21,6 @@ interface WallidTrustElementsProps {
   showBadges?: boolean;
   /** Override the live Firestore badge selection (admin simulator). */
   badgeIdsOverride?: string[];
-  /** Override the live Firestore bank selection (admin simulator). */
-  bankIdsOverride?: string[];
 }
 
 function resolveIcon(name: string) {
@@ -37,20 +32,13 @@ export default function WallidTrustElements({
   className = '',
   showBadges = true,
   badgeIdsOverride,
-  bankIdsOverride,
 }: WallidTrustElementsProps) {
   const { ids: liveBadgeIds } = useWallidBadgeIds();
-  const { ids: liveBankIds } = useWallidBankIds();
 
   const badgeIds = badgeIdsOverride ?? liveBadgeIds;
-  const bankIds = bankIdsOverride ?? liveBankIds;
 
   const badges = badgeIds
     .map((id) => WALLID_BADGE_CATALOG.find((b) => b.id === id))
-    .filter((b): b is NonNullable<typeof b> => Boolean(b));
-
-  const banks = bankIds
-    .map((id) => WALLID_BANK_CATALOG.find((b) => b.id === id))
     .filter((b): b is NonNullable<typeof b> => Boolean(b));
 
   return (
@@ -90,28 +78,19 @@ export default function WallidTrustElements({
         </div>
       )}
 
-      {banks.length > 0 && (
-        <div style={{ animation: 'wallidFadeInSlow 300ms ease-out 100ms both' }}>
-          <p className="text-xs font-semibold text-gray-200 mb-2">Choose your bank</p>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {banks.map((bank) => (
-              <button
-                key={bank.id}
-                type="button"
-                className="bg-white rounded-lg border border-white/10 h-[64px] w-full flex items-center justify-center hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer p-1.5"
-                title={bank.name}
-                aria-label={bank.name}
-              >
-                <BankMark bank={bank} size={44} />
-              </button>
-            ))}
-          </div>
-          <p className="text-[11px] text-gray-400 mt-2 leading-snug">
-            Your payment is processed securely via FCA-regulated open banking.
-            No card details stored.
-          </p>
-        </div>
-      )}
+      <div style={{ animation: 'wallidFadeInSlow 300ms ease-out 100ms both' }}>
+        <img
+          src="/pay-by-bank-badge.png"
+          alt="Pay by Bank — Open Banking, Secure, FCA Regulated"
+          loading="lazy"
+          className="w-full max-w-[420px] h-auto rounded-xl"
+          style={{ display: 'block' }}
+        />
+        <p className="text-[11px] text-gray-400 mt-2 leading-snug">
+          Your payment is processed securely via FCA-regulated open banking.
+          No card details stored.
+        </p>
+      </div>
     </div>
   );
 }

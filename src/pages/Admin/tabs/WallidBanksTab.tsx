@@ -13,7 +13,6 @@ import {
   type WallidBankCategory,
 } from '@/lib/wallid-bank-catalog';
 import { loadWallidBankIds, saveWallidBankIds } from '@/lib/wallid-bank-store';
-import WallidTrustElements from '@/components/WallidTrustElements';
 
 const CATEGORIES: ('all' | WallidBankCategory)[] = [
   'all', 'high-street', 'digital', 'building-society', 'business',
@@ -223,7 +222,17 @@ export default function WallidBanksTab() {
       {/* Live preview */}
       <div className="bg-[#0a1424] border-2 border-slate-700 rounded-lg p-4">
         <p className="text-sm font-semibold text-white mb-3">Live preview (checkout)</p>
-        <WallidTrustElements bankIdsOverride={selected} />
+        <img
+          src="/pay-by-bank-badge.png"
+          alt="Pay by Bank"
+          loading="lazy"
+          className="w-full max-w-[420px] h-auto rounded-xl"
+          style={{ display: 'block' }}
+        />
+        <p className="text-[11px] text-gray-400 mt-2 leading-snug">
+          Your payment is processed securely via FCA-regulated open banking.
+          No card details stored.
+        </p>
       </div>
 
       {/* Sticky save bar */}
