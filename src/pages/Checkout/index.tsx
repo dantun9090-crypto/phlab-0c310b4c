@@ -17,6 +17,7 @@ import { createOrder } from '@/lib/create-order.functions';
 import { createGatewayPaymentLink, getCheckoutPaymentOptions } from '@/lib/payment-gateways.functions';
 import type { CheckoutPaymentOptions } from '@/lib/payments/types';
 import { migrateStoredCart } from '@/lib/cart-migration';
+import { logCartEvent, safeCartWrite } from '@/lib/cart-telemetry';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
 import UkBankBadges from '@/components/UkBankBadges';
