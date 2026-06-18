@@ -35,6 +35,11 @@ export const Route = createFileRoute("/api/payments/create")({
         const rl = checkRateLimit(ip, "wallid:create", 5, 60_000);
         if (!rl.allowed) return rateLimitedResponse(rl.retryAfterSec);
 
+        // Kill switch — admins can disable Wallid from the admin panel.
+        if (!(await readWallidEnabled())) {
+          return json({ error: "Wallid payments are currently disabled" }, 403);
+        }
+
         let body: unknown;
         try {
           body = await request.json();
