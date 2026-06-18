@@ -6,7 +6,7 @@ export const KNOWN_ROOTS: ReadonlySet<string> = new Set<string>([
   "", "products", "product", "resources", "research", "search",
   "about", "contact",
   "shipping-policy", "refund-policy", "terms-and-conditions",
-  "privacy-policy", "cookies", "cookie-policy",
+  "privacy-policy", "cookies", "cookie-policy", "privacy-requests",
   "lab-reports", "quality-control", "storage-guide",
   "landing",
   "cart", "checkout", "order", "orders", "account", "login", "signup",
