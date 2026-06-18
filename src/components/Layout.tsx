@@ -200,18 +200,14 @@ export function Layout({ children }: LayoutProps) {
     }
   }, []);
 
-  // Save cart to localStorage — deferred to idle so it never blocks renders
+  // Save cart to localStorage synchronously. Previously deferred via
+  // requestIdleCallback, but the cleanup cancelled the pending save on
+  // unmount — clicking "Continue to Checkout" right after Add to Cart
+  // raced the idle callback, the write was cancelled, and the checkout
+  // route then read `null` from localStorage and showed "Your cart is
+  // empty" while the header badge still showed the in-memory count.
   useEffect(() => {
-    const save = () => {
-      try { localStorage.setItem('php_cart', JSON.stringify(cart)); } catch { /* ignore */ }
-    };
-    if (typeof requestIdleCallback !== 'undefined') {
-      const id = requestIdleCallback(save, { timeout: 2000 });
-      return () => cancelIdleCallback(id);
-    } else {
-      const t = setTimeout(save, 100);
-      return () => clearTimeout(t);
-    }
+    try { localStorage.setItem('php_cart', JSON.stringify(cart)); } catch { /* ignore */ }
   }, [cart]);
 
   // Auth state listener
