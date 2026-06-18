@@ -1376,5 +1376,25 @@ export function Layout({ children }: LayoutProps) {
 // Export helper for product pages to add items via event
 export const cartEventName = 'php:add-to-cart';
 export function dispatchAddToCart(item: CartItem) {
+  // Persist to localStorage SYNCHRONOUSLY first, so a navigation to /checkout
+  // that happens before React's save effect commits still finds the item.
+  // The Layout's event handler will then reconcile in-memory state.
+  try {
+    const raw = localStorage.getItem('php_cart');
+    const existing: CartItem[] = raw ? JSON.parse(raw) : [];
+    const list = Array.isArray(existing) ? existing : [];
+    const key = item.variantId ? `${item.id}-${item.variantId}` : String(item.id);
+    const idx = list.findIndex(i => {
+      const k = i.variantId ? `${i.id}-${i.variantId}` : String(i.id);
+      return k === key;
+    });
+    if (idx >= 0) {
+      list[idx] = { ...list[idx], quantity: (list[idx].quantity || 0) + 1 };
+    } else {
+      list.push({ ...item, quantity: 1 });
+    }
+    localStorage.setItem('php_cart', JSON.stringify(list));
+  } catch { /* ignore */ }
   window.dispatchEvent(new CustomEvent(cartEventName, { detail: item }));
 }
+
