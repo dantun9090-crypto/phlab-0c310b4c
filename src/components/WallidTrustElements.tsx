@@ -10,6 +10,7 @@
  *   - src/pages/Admin/tabs/WallidPreviewTab.tsx (admin simulator)
  *   - src/pages/Admin/tabs/WallidBadgesTab.tsx (live preview)
  */
+import * as LucideIcons from 'lucide-react';
 import { ShieldCheck } from 'lucide-react';
 import payByBankBadge from '@/assets/pay-by-bank-badge.png.asset.json';
 import { WALLID_BADGE_CATALOG } from '@/lib/wallid-badge-catalog';
@@ -24,7 +25,6 @@ interface WallidTrustElementsProps {
 }
 
 function resolveIcon(name: string) {
-  const LucideIcons = await import('lucide-react');
   const Comp = (LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[name];
   return Comp ?? ShieldCheck;
 }
@@ -81,10 +81,10 @@ export default function WallidTrustElements({
 
       <div style={{ animation: 'wallidFadeInSlow 300ms ease-out 100ms both' }}>
         <img
-          src="/pay-by-bank-badge.png"
+          src={payByBankBadge.url}
           alt="Pay by Bank — Open Banking, Secure, FCA Regulated"
           loading="lazy"
-          className="w-full max-w-[420px] h-auto rounded-xl"
+          className="w-full max-w-[210px] h-auto rounded-xl"
           style={{ display: 'block' }}
         />
         <p className="text-[11px] text-gray-400 mt-2 leading-snug">
