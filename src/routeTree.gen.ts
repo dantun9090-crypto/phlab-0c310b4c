@@ -27,6 +27,7 @@ import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-
 import { Route as ApiPaymentsStatusRouteImport } from './routes/api/payments/status'
 import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/create'
 import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/cancel'
+import { Route as ApiPublicHooksWallidRouteImport } from './routes/api/public/hooks/wallid'
 import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public/hooks/truelayer'
 import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/public/hooks/security-cleanup'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
@@ -127,6 +128,11 @@ const ApiPaymentsCancelRoute = ApiPaymentsCancelRouteImport.update({
   path: '/api/payments/cancel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksWallidRoute = ApiPublicHooksWallidRouteImport.update({
+  id: '/api/public/hooks/wallid',
+  path: '/api/public/hooks/wallid',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksTruelayerRoute = ApiPublicHooksTruelayerRouteImport.update({
   id: '/api/public/hooks/truelayer',
   path: '/api/public/hooks/truelayer',
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
+  '/api/public/hooks/wallid': typeof ApiPublicHooksWallidRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -213,6 +220,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
+  '/api/public/hooks/wallid': typeof ApiPublicHooksWallidRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -240,6 +248,7 @@ export interface FileRoutesById {
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
+  '/api/public/hooks/wallid': typeof ApiPublicHooksWallidRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
+    | '/api/public/hooks/wallid'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -294,6 +304,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
+    | '/api/public/hooks/wallid'
   id:
     | '__root__'
     | '/'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
+    | '/api/public/hooks/wallid'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -347,6 +359,7 @@ export interface RootRouteChildren {
   ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
   ApiPublicHooksSecurityCleanupRoute: typeof ApiPublicHooksSecurityCleanupRoute
   ApiPublicHooksTruelayerRoute: typeof ApiPublicHooksTruelayerRoute
+  ApiPublicHooksWallidRoute: typeof ApiPublicHooksWallidRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -477,6 +490,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPaymentsCancelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/wallid': {
+      id: '/api/public/hooks/wallid'
+      path: '/api/public/hooks/wallid'
+      fullPath: '/api/public/hooks/wallid'
+      preLoaderRoute: typeof ApiPublicHooksWallidRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/truelayer': {
       id: '/api/public/hooks/truelayer'
       path: '/api/public/hooks/truelayer'
@@ -547,7 +567,18 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
   ApiPublicHooksSecurityCleanupRoute: ApiPublicHooksSecurityCleanupRoute,
   ApiPublicHooksTruelayerRoute: ApiPublicHooksTruelayerRoute,
+  ApiPublicHooksWallidRoute: ApiPublicHooksWallidRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
