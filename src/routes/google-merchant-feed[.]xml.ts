@@ -96,44 +96,125 @@ function cdata(s: string): string {
  * therapeutic language. Keyed by an uppercase token derived from the
  * cleaned product name. Falls back to a generic line when no match.
  */
-const COMPOUND_DESCRIPTIONS: Record<string, string> = {
-  RETATRUTIDE:
-    "Synthetic 39-residue peptide analytical reference standard supplied as a lyophilised solid. Identity verified by ESI mass spectrometry; purity ≥99% by reversed-phase HPLC. Strictly for in-vitro laboratory and analytical reference use.",
-  KPV:
-    "Synthetic tripeptide (Lys-Pro-Val) analytical reference standard supplied as a lyophilised solid. Identity confirmed by mass spectrometry; purity ≥99% by RP-HPLC. Strictly for in-vitro laboratory and analytical reference use.",
-  "MOTS-C":
-    "Synthetic 16-residue peptide analytical reference standard supplied as a lyophilised solid. Identity confirmed by mass spectrometry; purity ≥99% by RP-HPLC. Strictly for in-vitro laboratory and analytical reference use.",
-  BPC157:
-    "Synthetic 15-residue peptide analytical reference standard supplied as a lyophilised solid. Identity confirmed by ESI-MS; purity ≥99% by reversed-phase HPLC. Strictly for in-vitro laboratory and analytical reference use.",
-  TB500:
-    "Synthetic acetylated peptide fragment analytical reference standard supplied as a lyophilised solid. Identity confirmed by mass spectrometry; purity ≥99% by RP-HPLC. Strictly for in-vitro laboratory and analytical reference use.",
-  "PT-141":
-    "Synthetic cyclic heptapeptide analytical reference standard supplied as a lyophilised solid. Identity confirmed by HPLC-MS; purity ≥99%. Strictly for in-vitro laboratory and analytical reference use.",
-  "NAD+":
-    "Nicotinamide adenine dinucleotide (oxidised form) analytical reference standard supplied as a lyophilised powder. Purity ≥98% by HPLC. Strictly for in-vitro laboratory and analytical reference use.",
-  "GHK-CU":
-    "Copper(II)-tripeptide complex (glycyl-L-histidyl-L-lysine·Cu) analytical reference standard supplied as a lyophilised solid. Purity ≥99% by HPLC with elemental analysis available on request. Strictly for in-vitro laboratory and analytical reference use.",
-  GLOW:
-    "Multi-component peptide analytical reference mixture (GHK-Cu, BPC-157 fragment, TB-500 fragment) supplied as a co-lyophilised solid for analytical method development. Component identities confirmed by RP-HPLC and mass spectrometry. Strictly for in-vitro laboratory and analytical reference use.",
-  KLOW:
-    "Multi-component peptide analytical reference mixture (KPV, GHK-Cu, BPC-157 fragment, TB-500 fragment) supplied as a co-lyophilised solid for analytical method development. Composition characterised by HPLC and mass spectrometry. Strictly for in-vitro laboratory and analytical reference use.",
-  "MELANOTAN-II":
-    "Synthetic cyclic heptapeptide analytical reference standard supplied as a lyophilised solid. Identity confirmed by HPLC-MS; purity ≥99%. Strictly for in-vitro laboratory and analytical reference use.",
-  "BACTERIOSTATIC WATER":
-    "Sterile-filtered water containing 0.9% benzyl alcohol, supplied as a laboratory diluent for in-vitro reconstitution of lyophilised reference standards. USP-grade components. For qualified laboratory use only — not a medicinal product.",
+type CompoundSpec = {
+  cas: string;
+  formula: string;
+  weight: string; // g/mol
+  sequence?: string; // optional for non-peptides / blends
+  purity?: string; // override (e.g. ≥98% for NAD+)
+  notes?: string; // extra spec lines (e.g. blend composition)
+};
+
+const COMPOUND_SPECS: Record<string, CompoundSpec> = {
+  KPV: {
+    cas: "67727-97-3",
+    formula: "C16H30N4O4",
+    weight: "342.43 g/mol",
+    sequence: "Lys-Pro-Val (H-Lys-Pro-Val-OH)",
+  },
+  "PT-141": {
+    cas: "189691-06-3",
+    formula: "C50H68N14O10",
+    weight: "1025.18 g/mol",
+    sequence: "Ac-Nle-cyclo(Asp-His-D-Phe-Arg-Trp-Lys)-OH",
+  },
+  "MELANOTAN-II": {
+    cas: "121062-08-6",
+    formula: "C50H69N15O9",
+    weight: "1024.18 g/mol",
+    sequence: "Ac-Nle-cyclo(Asp-His-D-Phe-Arg-Trp-Lys)-NH2",
+  },
+  "MOTS-C": {
+    cas: "1627580-64-6",
+    formula: "C100H152N28O22S2",
+    weight: "2174.55 g/mol",
+    sequence: "Met-Arg-Trp-Gln-Glu-Met-Gly-Tyr-Ile-Phe-Tyr-Pro-Arg-Lys-Leu-Arg",
+  },
+  BPC157: {
+    cas: "137525-51-0",
+    formula: "C62H98N16O22",
+    weight: "1419.53 g/mol",
+    sequence: "Gly-Glu-Pro-Pro-Pro-Gly-Lys-Pro-Ala-Asp-Asp-Ala-Gly-Leu-Val",
+  },
+  TB500: {
+    cas: "77591-33-4",
+    formula: "C212H350N56O78S",
+    weight: "4963.44 g/mol",
+    sequence: "Acetylated 43-residue peptide fragment (N-Ac-Ser-Asp-Lys-Pro-…-Glu-Ser)",
+  },
+  RETATRUTIDE: {
+    cas: "2381089-83-2",
+    formula: "C221H343N51O66",
+    weight: "4731.4 g/mol",
+    sequence: "Synthetic 39-residue peptide (full sequence available on request)",
+  },
+  "GHK-CU": {
+    cas: "49557-75-7",
+    formula: "C14H22CuN6O4",
+    weight: "401.91 g/mol",
+    sequence: "Glycyl-L-histidyl-L-lysine · Cu(II) (Gly-His-Lys·Cu)",
+  },
+  "NAD+": {
+    cas: "53-84-9",
+    formula: "C21H27N7O14P2",
+    weight: "663.43 g/mol",
+    sequence: "Nicotinamide adenine dinucleotide (oxidised form)",
+    purity: "≥98% by RP-HPLC",
+  },
+  GLOW: {
+    cas: "N/A (multi-component reference mixture)",
+    formula: "Mixture (GHK-Cu + BPC-157 + TB-500 fragment)",
+    weight: "Composite (see Certificate of Analysis)",
+    notes:
+      "Component CAS numbers: GHK-Cu 49557-75-7; BPC-157 137525-51-0; TB-500 fragment 77591-33-4",
+  },
+  KLOW: {
+    cas: "N/A (multi-component reference mixture)",
+    formula: "Mixture (KPV + GHK-Cu + BPC-157 + TB-500 fragment)",
+    weight: "Composite (see Certificate of Analysis)",
+    notes:
+      "Component CAS numbers: KPV 67727-97-3; GHK-Cu 49557-75-7; BPC-157 137525-51-0; TB-500 fragment 77591-33-4",
+  },
+  "BACTERIOSTATIC WATER": {
+    cas: "7732-18-5 (water) / 100-51-6 (benzyl alcohol)",
+    formula: "H2O + 0.9% C6H5CH2OH",
+    weight: "18.02 g/mol (water)",
+    purity: "USP-grade components",
+    notes: "Sterile-filtered water containing 0.9% benzyl alcohol as bacteriostatic agent",
+  },
 };
 
 function descriptionForCompound(cleanName: string, purity: string | undefined): string {
   const key = cleanName.trim().toUpperCase();
-  const specific = COMPOUND_DESCRIPTIONS[key];
-  const purityLine = purity && /[0-9]/.test(purity) ? ` Lot purity: ${purity}.` : "";
-  if (specific) {
-    return `${specific}${purityLine} Certificate of Analysis available on request. Supplied by PH Labs UK to qualified laboratories and research institutions.`;
-  }
+  const spec = COMPOUND_SPECS[key];
+  const cas = spec?.cas ?? "Available on Certificate of Analysis";
+  const formula = spec?.formula ?? "See Certificate of Analysis";
+  const weight = spec?.weight ?? "See Certificate of Analysis";
+  const sequence = spec?.sequence;
+  const lotPurity =
+    purity && /[0-9]/.test(purity)
+      ? purity
+      : spec?.purity ?? "≥99% by RP-HPLC";
+
+  const specLines = [
+    `• CAS Number: ${cas}`,
+    `• Molecular Formula: ${formula}`,
+    `• Molecular Weight: ${weight}`,
+    sequence ? `• Amino Acid Sequence: ${sequence}` : null,
+    `• Purity: ${lotPurity}`,
+    `• Physical Form: Lyophilised powder, sealed glass vial`,
+    `• Storage: Store sealed at −20°C, protect from light and moisture`,
+    spec?.notes ? `• Notes: ${spec.notes}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
   return (
-    `Analytical reference standard supplied as a lyophilised solid for in-vitro laboratory use and analytical method development. ` +
-    `Identity and purity confirmed by reversed-phase HPLC and mass spectrometry${purityLine ? "" : "; ≥99% purity"}.` +
-    `${purityLine} Certificate of Analysis available on request. Supplied by PH Labs UK to qualified laboratories and research institutions.`
+    `For laboratory and analytical research only. Strictly for in-vitro scientific testing and reference standards.\n\n` +
+    `Technical specification:\n${specLines}\n\n` +
+    `Supplied as an analytical reference material to qualified research professionals and laboratories in the United Kingdom. ` +
+    `Each batch ships with a batch-specific Certificate of Analysis including HPLC chromatogram, batch number, and manufacture date.\n\n` +
+    `Not a medicinal product, not a dietary supplement, not a cosmetic. Not for human or veterinary administration, ingestion, injection, topical application, or any in-vivo use. Not for diagnostic or therapeutic purposes.`
   );
 }
 
