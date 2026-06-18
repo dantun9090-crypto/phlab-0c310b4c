@@ -312,7 +312,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               .trim();
             // Keep MOTS-c as the compact compound code (no biology expansion).
             if (/\bmots[-\s]?c\b/i.test(cleanName)) {
-              cleanName = "MOTS-c";
+              cleanName = "MOTSC";
             }
 
             // Normalise hyphenated codes that trigger health classifiers.
