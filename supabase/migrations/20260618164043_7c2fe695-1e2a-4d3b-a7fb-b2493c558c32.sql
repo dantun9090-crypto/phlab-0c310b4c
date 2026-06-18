@@ -1,0 +1,1 @@
+INSERT INTO public.app_config (key, value) VALUES ('wallid_enabled', 'false') ON CONFLICT (key) DO NOTHING;

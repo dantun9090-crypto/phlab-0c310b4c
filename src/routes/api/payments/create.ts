@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { createWallidPayment, WallidError } from "@/lib/wallid.server";
 import { checkRateLimit, getClientIp, rateLimitedResponse } from "@/lib/rate-limit";
+import { readWallidEnabled } from "@/lib/wallid-config.server";
 
 const ItemSchema = z.object({
   name: z.string().min(1).max(200),
@@ -33,6 +34,11 @@ export const Route = createFileRoute("/api/payments/create")({
         const ip = getClientIp(request);
         const rl = checkRateLimit(ip, "wallid:create", 5, 60_000);
         if (!rl.allowed) return rateLimitedResponse(rl.retryAfterSec);
+
+        // Kill switch — admins can disable Wallid from the admin panel.
+        if (!(await readWallidEnabled())) {
+          return json({ error: "Wallid payments are currently disabled" }, 403);
+        }
 
         let body: unknown;
         try {

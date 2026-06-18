@@ -15,12 +15,15 @@ import type { CheckoutPaymentOptions } from "@/lib/payments/types";
 
 export interface PaymentMethodOptionsProps {
   options: CheckoutPaymentOptions | null;
+  /** Wallid Pay-by-Bank kill switch from admin panel (default false). */
+  wallidEnabled?: boolean;
   value: "pay_by_bank" | "bank_transfer" | "wallid";
   onChange: (next: "pay_by_bank" | "bank_transfer" | "wallid") => void;
 }
 
 export default function PaymentMethodOptions({
   options,
+  wallidEnabled = false,
   value,
   onChange,
 }: PaymentMethodOptionsProps) {
@@ -43,35 +46,37 @@ export default function PaymentMethodOptions({
           48 hours.
         </div>
       )}
-      {/* Wallid Pay by Bank — primary option (instant UK bank transfer) */}
-      <button
-        type="button"
-        data-testid="wallid-pay-by-bank-button"
-        onClick={() => onChange("wallid")}
-        className={`w-full flex items-start gap-3 text-left p-3 rounded-xl border transition-all mb-2 ${
-          value === "wallid"
-            ? "border-emerald-500/60 bg-emerald-500/10"
-            : "border-white/10 bg-[#060f1e] hover:border-white/20"
-        }`}
-      >
-        <Landmark
-          className={`w-5 h-5 mt-0.5 shrink-0 ${
-            value === "wallid" ? "text-emerald-400" : "text-gray-400"
+      {/* Wallid Pay by Bank — only when enabled by admin kill switch */}
+      {wallidEnabled && (
+        <button
+          type="button"
+          data-testid="wallid-pay-by-bank-button"
+          onClick={() => onChange("wallid")}
+          className={`w-full flex items-start gap-3 text-left p-3 rounded-xl border transition-all mb-2 ${
+            value === "wallid"
+              ? "border-emerald-500/60 bg-emerald-500/10"
+              : "border-white/10 bg-[#060f1e] hover:border-white/20"
           }`}
-        />
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-white flex items-center gap-2 flex-wrap">
-            Pay by Bank (Instant UK Bank Transfer)
-            <span className="text-[10px] uppercase tracking-wider bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">
-              Recommended
-            </span>
-          </p>
-          <p className="text-[11px] text-gray-400 leading-snug mt-0.5">
-            Pay securely from any UK bank app — instant confirmation, no card needed.
-          </p>
-          <UkBankBadges className="mt-2" />
-        </div>
-      </button>
+        >
+          <Landmark
+            className={`w-5 h-5 mt-0.5 shrink-0 ${
+              value === "wallid" ? "text-emerald-400" : "text-gray-400"
+            }`}
+          />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white flex items-center gap-2 flex-wrap">
+              Pay by Bank (Instant UK Bank Transfer)
+              <span className="text-[10px] uppercase tracking-wider bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">
+                Recommended
+              </span>
+            </p>
+            <p className="text-[11px] text-gray-400 leading-snug mt-0.5">
+              Pay securely from any UK bank app — instant confirmation, no card needed.
+            </p>
+            <UkBankBadges className="mt-2" />
+          </div>
+        </button>
+      )}
       <div
         className={`grid grid-cols-1 ${hasOnline ? "sm:grid-cols-2" : ""} gap-2`}
       >

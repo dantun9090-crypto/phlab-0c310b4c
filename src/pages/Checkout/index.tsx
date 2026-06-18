@@ -132,6 +132,7 @@ export default function CheckoutPage() {
   const [fenaStep, setFenaStep] = useState<FenaStep>('idle');
   const [fenaOrderId, setFenaOrderId] = useState<string>('');
   const [paymentOptions, setPaymentOptions] = useState<CheckoutPaymentOptions | null>(null);
+  const [wallidEnabled, setWallidEnabled] = useState<boolean>(false);
   const [, setSummaryExpanded] = useState(false);
   const stepRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const successRef = useRef<HTMLElement | null>(null);
@@ -392,6 +393,31 @@ export default function CheckoutPage() {
         // Fail safe: hide Pay-by-Bank, only manual fallback.
         setPaymentOptions({ primary: null, backups: [], manualFallback: true });
         setForm((prev) => prev.paymentMethod === 'pay_by_bank'
+          ? { ...prev, paymentMethod: 'bank_transfer' }
+          : prev);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Wallid Pay-by-Bank kill switch — admin toggle from Payment Gateways panel.
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/config/payments', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : { wallid_enabled: false })
+      .then((cfg: { wallid_enabled?: boolean }) => {
+        if (cancelled) return;
+        const on = Boolean(cfg?.wallid_enabled);
+        setWallidEnabled(on);
+        if (!on) {
+          setForm((prev) => prev.paymentMethod === 'wallid'
+            ? { ...prev, paymentMethod: 'bank_transfer' }
+            : prev);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setWallidEnabled(false);
+        setForm((prev) => prev.paymentMethod === 'wallid'
           ? { ...prev, paymentMethod: 'bank_transfer' }
           : prev);
       });
@@ -1373,6 +1399,7 @@ export default function CheckoutPage() {
                     {/* Payment method selector — Pay-by-Bank only when an Open Banking gateway is enabled */}
                     <PaymentMethodOptions
                       options={paymentOptions}
+                      wallidEnabled={wallidEnabled}
                       value={form.paymentMethod}
                       onChange={(v) => setField('paymentMethod', v)}
                     />
