@@ -15,9 +15,18 @@ import type { CheckoutPaymentOptions } from "@/lib/payments/types";
 
 export interface PaymentMethodOptionsProps {
   options: CheckoutPaymentOptions | null;
+  /** Wallid Pay-by-Bank kill switch from admin panel (default false). */
+  wallidEnabled?: boolean;
   value: "pay_by_bank" | "bank_transfer" | "wallid";
   onChange: (next: "pay_by_bank" | "bank_transfer" | "wallid") => void;
 }
+
+export default function PaymentMethodOptions({
+  options,
+  wallidEnabled = false,
+  value,
+  onChange,
+}: PaymentMethodOptionsProps) {
 
 export default function PaymentMethodOptions({
   options,
