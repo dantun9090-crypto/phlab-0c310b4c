@@ -18,58 +18,66 @@ export type WallidBankCategory =
 export interface WallidBankDef {
   id: string;
   name: string;
-  /** Brand colour for the tile background. */
+  /** Brand colour for the tile background (used as fallback). */
   color: string;
   /** Optional secondary brand colour for accent (gradient). */
   accent?: string;
-  /** 1–3 letter monogram shown on the tile. */
+  /** 1–3 letter monogram shown on the tile as fallback. */
   monogram: string;
   /** Text colour for the monogram. Defaults to white. */
   textColor?: string;
   /** White tile with coloured letter instead of coloured tile. */
   invert?: boolean;
+  /** Official site domain — used to fetch the real logo. */
+  domain?: string;
   category: WallidBankCategory;
   keywords?: string[];
 }
 
+/** Resolve the real logo URL for a bank via Google's high-res favicon service. */
+export function bankLogoUrl(bank: WallidBankDef, size = 128): string | null {
+  if (!bank.domain) return null;
+  return `https://www.google.com/s2/favicons?domain=${bank.domain}&sz=${size}`;
+}
+
 export const WALLID_BANK_CATALOG: WallidBankDef[] = [
   // ── High-street ──
-  { id: 'lloyds',        name: 'Lloyds Bank',         color: '#006A4D', monogram: 'L',  category: 'high-street', keywords: ['lloydstsb'] },
-  { id: 'barclays',      name: 'Barclays',            color: '#00AEEF', monogram: 'B',  category: 'high-street' },
-  { id: 'hsbc',          name: 'HSBC',                color: '#DB0011', monogram: 'H',  category: 'high-street' },
-  { id: 'natwest',       name: 'NatWest',             color: '#5A287D', monogram: 'NW', category: 'high-street' },
-  { id: 'santander',     name: 'Santander',           color: '#EC0000', monogram: 'S',  category: 'high-street' },
-  { id: 'halifax',       name: 'Halifax',             color: '#005EB8', monogram: 'H',  category: 'high-street' },
-  { id: 'tsb',           name: 'TSB',                 color: '#1B3F94', monogram: 'TSB',category: 'high-street' },
-  { id: 'rbs',           name: 'Royal Bank of Scotland', color: '#5A287D', monogram: 'RBS', category: 'high-street', keywords: ['scotland'] },
-  { id: 'bos',           name: 'Bank of Scotland',    color: '#0050A0', monogram: 'BS', category: 'high-street' },
-  { id: 'coop',          name: 'The Co-operative Bank', color: '#00B5E2', monogram: 'CO', category: 'high-street', keywords: ['cooperative'] },
-  { id: 'firstdirect',   name: 'first direct',        color: '#000000', monogram: 'fd', category: 'high-street' },
-  { id: 'metro',         name: 'Metro Bank',          color: '#DC0032', monogram: 'M',  category: 'high-street' },
-  { id: 'virginmoney',   name: 'Virgin Money',        color: '#E10A0A', monogram: 'V',  category: 'high-street' },
-  { id: 'ulsterbank',    name: 'Ulster Bank',         color: '#0033A0', monogram: 'UB', category: 'high-street' },
-  { id: 'cooperative-bank', name: 'Cumberland BS',    color: '#005DA9', monogram: 'CU', category: 'building-society' },
+  { id: 'lloyds',        name: 'Lloyds Bank',         color: '#006A4D', monogram: 'L',  domain: 'lloydsbank.com',           category: 'high-street', keywords: ['lloydstsb'] },
+  { id: 'barclays',      name: 'Barclays',            color: '#00AEEF', monogram: 'B',  domain: 'barclays.co.uk',           category: 'high-street' },
+  { id: 'hsbc',          name: 'HSBC',                color: '#DB0011', monogram: 'H',  domain: 'hsbc.co.uk',               category: 'high-street' },
+  { id: 'natwest',       name: 'NatWest',             color: '#5A287D', monogram: 'NW', domain: 'natwest.com',              category: 'high-street' },
+  { id: 'santander',     name: 'Santander',           color: '#EC0000', monogram: 'S',  domain: 'santander.co.uk',          category: 'high-street' },
+  { id: 'halifax',       name: 'Halifax',             color: '#005EB8', monogram: 'H',  domain: 'halifax.co.uk',            category: 'high-street' },
+  { id: 'tsb',           name: 'TSB',                 color: '#1B3F94', monogram: 'TSB',domain: 'tsb.co.uk',                category: 'high-street' },
+  { id: 'rbs',           name: 'Royal Bank of Scotland', color: '#5A287D', monogram: 'RBS', domain: 'rbs.co.uk',            category: 'high-street', keywords: ['scotland'] },
+  { id: 'bos',           name: 'Bank of Scotland',    color: '#0050A0', monogram: 'BS', domain: 'bankofscotland.co.uk',     category: 'high-street' },
+  { id: 'coop',          name: 'The Co-operative Bank', color: '#00B5E2', monogram: 'CO', domain: 'co-operativebank.co.uk', category: 'high-street', keywords: ['cooperative'] },
+  { id: 'firstdirect',   name: 'first direct',        color: '#000000', monogram: 'fd', domain: 'firstdirect.com',          category: 'high-street' },
+  { id: 'metro',         name: 'Metro Bank',          color: '#DC0032', monogram: 'M',  domain: 'metrobankonline.co.uk',    category: 'high-street' },
+  { id: 'virginmoney',   name: 'Virgin Money',        color: '#E10A0A', monogram: 'V',  domain: 'virginmoney.com',          category: 'high-street' },
+  { id: 'ulsterbank',    name: 'Ulster Bank',         color: '#0033A0', monogram: 'UB', domain: 'ulsterbank.co.uk',         category: 'high-street' },
+  { id: 'cooperative-bank', name: 'Cumberland BS',    color: '#005DA9', monogram: 'CU', domain: 'cumberland.co.uk',         category: 'building-society' },
 
   // ── Building societies ──
-  { id: 'nationwide',    name: 'Nationwide',          color: '#15366F', monogram: 'N',  category: 'building-society' },
-  { id: 'yorkshire-bs',  name: 'Yorkshire BS',        color: '#003366', monogram: 'Y',  category: 'building-society' },
-  { id: 'coventry-bs',   name: 'Coventry BS',         color: '#005EB8', monogram: 'CV', category: 'building-society' },
-  { id: 'skipton-bs',    name: 'Skipton BS',          color: '#0072CE', monogram: 'SK', category: 'building-society' },
+  { id: 'nationwide',    name: 'Nationwide',          color: '#15366F', monogram: 'N',  domain: 'nationwide.co.uk',         category: 'building-society' },
+  { id: 'yorkshire-bs',  name: 'Yorkshire BS',        color: '#003366', monogram: 'Y',  domain: 'ybs.co.uk',                category: 'building-society' },
+  { id: 'coventry-bs',   name: 'Coventry BS',         color: '#005EB8', monogram: 'CV', domain: 'coventrybuildingsociety.co.uk', category: 'building-society' },
+  { id: 'skipton-bs',    name: 'Skipton BS',          color: '#0072CE', monogram: 'SK', domain: 'skipton.co.uk',            category: 'building-society' },
 
   // ── Digital / challenger ──
-  { id: 'monzo',         name: 'Monzo',               color: '#FF4F5F', accent: '#00D4AA', monogram: 'M', category: 'digital' },
-  { id: 'starling',      name: 'Starling Bank',       color: '#7433FF', monogram: 'S',  category: 'digital' },
-  { id: 'revolut',       name: 'Revolut',             color: '#000000', monogram: 'R',  category: 'digital' },
-  { id: 'chase',         name: 'Chase UK',            color: '#117ACA', monogram: 'C',  category: 'digital' },
-  { id: 'wise',          name: 'Wise',                color: '#163300', accent: '#9FE870', monogram: 'W', category: 'digital', keywords: ['transferwise'] },
-  { id: 'atom',          name: 'Atom Bank',           color: '#F02D33', monogram: 'A',  category: 'digital' },
-  { id: 'kroo',          name: 'Kroo',                color: '#1E1E1E', monogram: 'K',  category: 'digital' },
-  { id: 'zopa',          name: 'Zopa',                color: '#00C8A0', monogram: 'Z',  category: 'digital' },
+  { id: 'monzo',         name: 'Monzo',               color: '#FF4F5F', accent: '#00D4AA', monogram: 'M', domain: 'monzo.com',        category: 'digital' },
+  { id: 'starling',      name: 'Starling Bank',       color: '#7433FF', monogram: 'S',  domain: 'starlingbank.com',         category: 'digital' },
+  { id: 'revolut',       name: 'Revolut',             color: '#000000', monogram: 'R',  domain: 'revolut.com',              category: 'digital' },
+  { id: 'chase',         name: 'Chase UK',            color: '#117ACA', monogram: 'C',  domain: 'chase.co.uk',              category: 'digital' },
+  { id: 'wise',          name: 'Wise',                color: '#163300', accent: '#9FE870', monogram: 'W', domain: 'wise.com', category: 'digital', keywords: ['transferwise'] },
+  { id: 'atom',          name: 'Atom Bank',           color: '#F02D33', monogram: 'A',  domain: 'atombank.co.uk',           category: 'digital' },
+  { id: 'kroo',          name: 'Kroo',                color: '#1E1E1E', monogram: 'K',  domain: 'kroo.com',                 category: 'digital' },
+  { id: 'zopa',          name: 'Zopa',                color: '#00C8A0', monogram: 'Z',  domain: 'zopa.com',                 category: 'digital' },
 
   // ── Business ──
-  { id: 'tide',          name: 'Tide',                color: '#1E2329', monogram: 'T',  category: 'business' },
-  { id: 'anna',          name: 'ANNA Money',          color: '#000000', monogram: 'A',  category: 'business' },
-  { id: 'cashplus',      name: 'Cashplus Bank',       color: '#003C71', monogram: 'C+', category: 'business' },
+  { id: 'tide',          name: 'Tide',                color: '#1E2329', monogram: 'T',  domain: 'tide.co',                  category: 'business' },
+  { id: 'anna',          name: 'ANNA Money',          color: '#000000', monogram: 'A',  domain: 'anna.money',               category: 'business' },
+  { id: 'cashplus',      name: 'Cashplus Bank',       color: '#003C71', monogram: 'C+', domain: 'cashplus.com',             category: 'business' },
 ];
 
 export const DEFAULT_WALLID_BANK_IDS = [
