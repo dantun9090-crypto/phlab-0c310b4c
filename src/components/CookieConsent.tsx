@@ -48,7 +48,19 @@ export function CookieConsent() {
   const [marketing, setMarketing] = useState(false);
 
   useEffect(() => {
-    if (getCookiePreferences()) return;
+    // Allow re-opening the banner from anywhere (footer link, account page).
+    const onOpen = () => {
+      const existing = getCookiePreferences();
+      if (existing) {
+        setAnalytics(!!existing.analytics);
+        setMarketing(!!existing.marketing);
+      }
+      setShowDetails(true);
+      setVisible(true);
+    };
+    window.addEventListener(OPEN_EVENT, onOpen as EventListener);
+
+    if (getCookiePreferences()) return () => window.removeEventListener(OPEN_EVENT, onOpen as EventListener);
 
     // Wait until the Research Gate is confirmed/dismissed before showing
     // the cookie banner — otherwise on small viewports the banner overlaps
@@ -70,7 +82,10 @@ export function CookieConsent() {
 
     if (!isGateBlocking()) {
       show();
-      return () => { if (timer) clearTimeout(timer); };
+      return () => {
+        if (timer) clearTimeout(timer);
+        window.removeEventListener(OPEN_EVENT, onOpen as EventListener);
+      };
     }
 
     // Wait for the gate to clear (covers both confirm and dismiss), with polling as fallback.
@@ -89,6 +104,7 @@ export function CookieConsent() {
     return () => {
       clearInterval(poll);
       window.removeEventListener('php:research-gate-cleared', onGateCleared);
+      window.removeEventListener(OPEN_EVENT, onOpen as EventListener);
       if (timer) clearTimeout(timer);
     };
   }, []);
@@ -98,8 +114,10 @@ export function CookieConsent() {
     setVisible(false);
   };
 
-  const essentialOnly = () => {
+  const rejectAll = () => {
     savePreferences({ essential: true, analytics: false, marketing: false });
+    setAnalytics(false);
+    setMarketing(false);
     setVisible(false);
   };
 
