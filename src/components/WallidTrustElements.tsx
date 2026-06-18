@@ -90,28 +90,19 @@ export default function WallidTrustElements({
         </div>
       )}
 
-      {banks.length > 0 && (
-        <div style={{ animation: 'wallidFadeInSlow 300ms ease-out 100ms both' }}>
-          <p className="text-xs font-semibold text-gray-200 mb-2">Choose your bank</p>
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {banks.map((bank) => (
-              <button
-                key={bank.id}
-                type="button"
-                className="bg-white rounded-lg border border-white/10 h-[64px] w-full flex items-center justify-center hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer p-1.5"
-                title={bank.name}
-                aria-label={bank.name}
-              >
-                <BankMark bank={bank} size={44} />
-              </button>
-            ))}
-          </div>
-          <p className="text-[11px] text-gray-400 mt-2 leading-snug">
-            Your payment is processed securely via FCA-regulated open banking.
-            No card details stored.
-          </p>
-        </div>
-      )}
+      <div style={{ animation: 'wallidFadeInSlow 300ms ease-out 100ms both' }}>
+        <img
+          src="/pay-by-bank-badge.png"
+          alt="Pay by Bank — Open Banking, Secure, FCA Regulated"
+          loading="lazy"
+          className="w-full max-w-[420px] h-auto rounded-xl"
+          style={{ display: 'block' }}
+        />
+        <p className="text-[11px] text-gray-400 mt-2 leading-snug">
+          Your payment is processed securely via FCA-regulated open banking.
+          No card details stored.
+        </p>
+      </div>
     </div>
   );
 }
