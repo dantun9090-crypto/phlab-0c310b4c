@@ -33,7 +33,7 @@ interface CheckoutForm {
   city: string;
   postcode: string;
   country: string;
-  paymentMethod: 'bank_transfer' | 'pay_by_bank';
+  paymentMethod: 'bank_transfer' | 'pay_by_bank' | 'wallid';
   acceptedTerms: boolean;
   ageVerified: boolean;
   createAccount: boolean;
