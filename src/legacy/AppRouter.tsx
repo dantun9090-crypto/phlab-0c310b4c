@@ -40,6 +40,7 @@ const LabReports = lazy(() => import('@/pages/LabReports'));
 const Research = lazy(() => import('@/pages/Research'));
 const Install = lazy(() => import('@/pages/Install'));
 const CategoryPage = lazy(() => import('@/pages/CategoryPage'));
+const PrivacyRequests = lazy(() => import('@/pages/PrivacyRequests'));
 
 // Minimal spinner shown while lazy chunks load
 function PageLoader() {
