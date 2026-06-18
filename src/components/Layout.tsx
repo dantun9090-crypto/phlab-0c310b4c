@@ -208,13 +208,16 @@ export function Layout({ children }: LayoutProps) {
   // empty" while the header badge still showed the in-memory count.
   useEffect(() => {
     try {
+      // Don't clobber a persisted non-empty cart with the empty initial
+      // state — on a fresh mount React renders cart=[] before the load
+      // effect runs, and this save effect would otherwise wipe the
+      // localStorage written synchronously by dispatchAddToCart.
+      if (cart.length === 0) {
+        const existing = localStorage.getItem('php_cart');
+        if (existing && existing !== '[]' && existing !== 'null') return;
+      }
       localStorage.setItem('php_cart', JSON.stringify(cart));
-      // eslint-disable-next-line no-console
-      console.log('[cart-debug] save', cart.length, 'items, ls len:', localStorage.length);
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.log('[cart-debug] save failed', e);
-    }
+    } catch { /* ignore */ }
   }, [cart]);
 
   // Auth state listener
