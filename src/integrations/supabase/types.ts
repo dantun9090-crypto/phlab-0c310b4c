@@ -113,6 +113,66 @@ export type Database = {
         }
         Relationships: []
       }
+      wallid_payments: {
+        Row: {
+          amount: number
+          api_payment_id: string | null
+          created_at: string
+          currency: string
+          customer_email: string | null
+          id: string
+          metadata: Json | null
+          order_id: string
+          payment_link: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          api_payment_id?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id: string
+          payment_link?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          api_payment_id?: string | null
+          created_at?: string
+          currency?: string
+          customer_email?: string | null
+          id?: string
+          metadata?: Json | null
+          order_id?: string
+          payment_link?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wallid_rate_limits: {
+        Row: {
+          created_at: string
+          id: number
+          ip: string
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          ip: string
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          ip?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

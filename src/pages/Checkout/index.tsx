@@ -33,7 +33,7 @@ interface CheckoutForm {
   city: string;
   postcode: string;
   country: string;
-  paymentMethod: 'bank_transfer' | 'pay_by_bank';
+  paymentMethod: 'bank_transfer' | 'pay_by_bank' | 'wallid';
   acceptedTerms: boolean;
   ageVerified: boolean;
   createAccount: boolean;
@@ -664,6 +664,49 @@ export default function CheckoutPage() {
       setBankTransferRef(btRef);
       setConfirmedTotal(totalAmount.toFixed(2));
 
+      // Wallid Pay-by-Bank (new direct integration — calls our /api/payments/create).
+      if (form.paymentMethod === 'wallid') {
+        setFenaOrderId(orderId);
+        setFenaStep('creating-link');
+        try {
+          const res = await fetch('/api/payments/create', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              orderId,
+              amount: Number(totalAmount),
+              currency: 'GBP',
+              customerEmail: form.email,
+              items: cart.map(item => ({
+                name: item.name,
+                category: 'Research Peptides',
+                price: Number(item.priceNum),
+                image_url: (item as any).image || undefined,
+                product_url: typeof window !== 'undefined'
+                  ? `${window.location.origin}/products/${(item as any).slug || item.id}`
+                  : undefined,
+              })),
+            }),
+          });
+          const data = await res.json().catch(() => ({} as any));
+          if (!res.ok || !data.payment_link) {
+            throw new Error(data?.error || 'Could not start Pay by Bank.');
+          }
+          let parsed: URL;
+          try { parsed = new URL(data.payment_link); } catch { throw new Error('Invalid payment redirect URL.'); }
+          if (parsed.protocol !== 'https:') throw new Error('Unexpected payment redirect.');
+          try { localStorage.setItem('php_pending_order', orderId); } catch { /* ignore */ }
+          setFenaStep('redirecting');
+          setTimeout(() => { window.location.href = parsed.toString(); }, 250);
+          return;
+        } catch (err: any) {
+          setFenaStep('failed');
+          setLoginError(err?.message || 'Could not start Pay by Bank. Please try again or use Manual Bank Transfer.');
+          setIsPlacing(false);
+          return;
+        }
+      }
+
       // Pay by Bank (Open Banking, handled by our in-app server
       // function — same origin, no external Worker, no CORS).
       if (form.paymentMethod === 'pay_by_bank') {
@@ -1001,7 +1044,7 @@ export default function CheckoutPage() {
               )}
 
               {/* Pay by Bank (Fena) live status */}
-              {form.paymentMethod === 'pay_by_bank' && fenaStep !== 'idle' && fenaStep !== 'failed' && (
+              {(form.paymentMethod === 'pay_by_bank' || form.paymentMethod === 'wallid') && fenaStep !== 'idle' && fenaStep !== 'failed' && (
                 <div className="flex items-start gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3">
                   <div className="w-4 h-4 mt-0.5 shrink-0 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin" />
                   <div className="flex-1 min-w-0 text-sm">
@@ -1537,7 +1580,7 @@ export default function CheckoutPage() {
                         </>
                       ) : (
                         <>
-                          <Lock className="w-4 h-4" /> {form.paymentMethod === 'pay_by_bank' ? `Pay by Bank — £${total}` : `Place Order — £${total}`}
+                          <Lock className="w-4 h-4" /> {form.paymentMethod === 'pay_by_bank' || form.paymentMethod === 'wallid' ? `Pay by Bank — £${total}` : `Place Order — £${total}`}
                         </>
                       )}
                     </button>
