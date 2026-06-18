@@ -80,15 +80,22 @@ export default function WallidTrustElements({
         </div>
       )}
 
-      <div style={{ animation: 'wallidFadeInSlow 300ms ease-out 100ms both' }}>
+      <div
+        className="flex flex-col items-center text-center"
+        style={{ animation: 'wallidFadeInSlow 300ms ease-out 100ms both' }}
+      >
         <img
-          src={payByBankBadge.url}
+          src={payByBankBadge1x.url}
+          srcSet={`${payByBankBadge1x.url} 1x, ${payByBankBadge2x.url} 2x`}
           alt="Pay by Bank — Open Banking, Secure, FCA Regulated"
           loading="lazy"
-          className="w-full max-w-[210px] h-auto rounded-xl"
-          style={{ display: 'block' }}
+          decoding="async"
+          width={260}
+          height={173}
+          className="block h-auto w-full max-w-[260px] sm:max-w-[280px] md:max-w-[300px] rounded-xl mx-auto"
+          style={{ imageRendering: 'auto' }}
         />
-        <p className="text-[11px] text-gray-400 mt-2 leading-snug">
+        <p className="text-[11px] text-gray-400 mt-2 leading-snug max-w-[300px]">
           Your payment is processed securely via FCA-regulated open banking.
           No card details stored.
         </p>
