@@ -11,6 +11,7 @@
  */
 import { Landmark } from "lucide-react";
 import UkBankBadges from "@/components/UkBankBadges";
+import WallidTrustElements from "@/components/WallidTrustElements";
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
 
 export interface PaymentMethodOptionsProps {
@@ -76,6 +77,9 @@ export default function PaymentMethodOptions({
             <UkBankBadges className="mt-2" />
           </div>
         </button>
+      )}
+      {wallidEnabled && value === "wallid" && (
+        <WallidTrustElements className="mb-3" />
       )}
       <div
         className={`grid grid-cols-1 ${hasOnline ? "sm:grid-cols-2" : ""} gap-2`}
