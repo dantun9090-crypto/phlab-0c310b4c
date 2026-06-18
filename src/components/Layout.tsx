@@ -218,7 +218,9 @@ export function Layout({ children }: LayoutProps) {
       // state — on a fresh mount React renders cart=[] before the load
       // effect runs, and this save effect would otherwise wipe the
       // localStorage written synchronously by dispatchAddToCart.
-      if (cart.length === 0) {
+      // After hydration completes, always persist (including empty cart,
+      // so removing all items doesn't bring them back on next mount).
+      if (cart.length === 0 && !cartHydratedRef.current) {
         const existing = localStorage.getItem('php_cart');
         if (existing && existing !== '[]' && existing !== 'null') return;
       }
