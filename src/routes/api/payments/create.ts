@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { createWallidPayment, WallidError } from "@/lib/wallid.server";
 import { checkRateLimit, getClientIp, rateLimitedResponse } from "@/lib/rate-limit";
+import { readWallidEnabled } from "@/lib/wallid-config.server";
 
 const ItemSchema = z.object({
   name: z.string().min(1).max(200),

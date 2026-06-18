@@ -27,6 +27,7 @@ import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-
 import { Route as ApiPaymentsStatusRouteImport } from './routes/api/payments/status'
 import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/create'
 import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/cancel'
+import { Route as ApiConfigPaymentsRouteImport } from './routes/api/config/payments'
 import { Route as ApiPublicHooksWallidRouteImport } from './routes/api/public/hooks/wallid'
 import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public/hooks/truelayer'
 import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/public/hooks/security-cleanup'
@@ -128,6 +129,11 @@ const ApiPaymentsCancelRoute = ApiPaymentsCancelRouteImport.update({
   path: '/api/payments/cancel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiConfigPaymentsRoute = ApiConfigPaymentsRouteImport.update({
+  id: '/api/config/payments',
+  path: '/api/config/payments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksWallidRoute = ApiPublicHooksWallidRouteImport.update({
   id: '/api/public/hooks/wallid',
   path: '/api/public/hooks/wallid',
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
@@ -236,6 +244,7 @@ export interface FileRoutesById {
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products_/$slug': typeof ProductsSlugRoute
+  '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
@@ -265,6 +274,7 @@ export interface FileRouteTypes {
     | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
+    | '/api/config/payments'
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/status'
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
+    | '/api/config/payments'
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/status'
@@ -319,6 +330,7 @@ export interface FileRouteTypes {
     | '/payment/cancel'
     | '/payment/success'
     | '/products_/$slug'
+    | '/api/config/payments'
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/status'
@@ -347,6 +359,7 @@ export interface RootRouteChildren {
   PaymentCancelRoute: typeof PaymentCancelRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
+  ApiConfigPaymentsRoute: typeof ApiConfigPaymentsRoute
   ApiPaymentsCancelRoute: typeof ApiPaymentsCancelRoute
   ApiPaymentsCreateRoute: typeof ApiPaymentsCreateRoute
   ApiPaymentsStatusRoute: typeof ApiPaymentsStatusRoute
@@ -490,6 +503,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPaymentsCancelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/config/payments': {
+      id: '/api/config/payments'
+      path: '/api/config/payments'
+      fullPath: '/api/config/payments'
+      preLoaderRoute: typeof ApiConfigPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/wallid': {
       id: '/api/public/hooks/wallid'
       path: '/api/public/hooks/wallid'
@@ -555,6 +575,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaymentCancelRoute: PaymentCancelRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ProductsSlugRoute: ProductsSlugRoute,
+  ApiConfigPaymentsRoute: ApiConfigPaymentsRoute,
   ApiPaymentsCancelRoute: ApiPaymentsCancelRoute,
   ApiPaymentsCreateRoute: ApiPaymentsCreateRoute,
   ApiPaymentsStatusRoute: ApiPaymentsStatusRoute,
