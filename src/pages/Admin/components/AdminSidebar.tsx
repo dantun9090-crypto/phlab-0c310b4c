@@ -40,6 +40,7 @@ const navGroups = [
       { id: 'cartevents', label: 'Cart Events', icon: ShoppingCart },
       { id: 'invoices', label: 'Invoices', icon: FileText },
       { id: 'payments', label: 'Payment Gateways', icon: CreditCard },
+      { id: 'wallidpreview', label: 'Wallid Preview', icon: Eye },
       { id: 'fena', label: 'Fena Payments', icon: CreditCard },
       { id: 'shopify', label: 'Shopify', icon: ShoppingBag },
       { id: 'royalmail', label: 'Royal Mail Labels', icon: Package2 },
