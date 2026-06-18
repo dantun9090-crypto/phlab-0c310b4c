@@ -7,7 +7,7 @@
  * licensing issues). Add new banks here and they appear in the
  * admin picker automatically.
  */
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 
 export type WallidBankCategory =
   | 'high-street'
