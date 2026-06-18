@@ -115,6 +115,7 @@ export function BankMark({ bank, size = 60, className = '', style }: BankMarkPro
   const logoUrl = bankLogoUrl(bank, size >= 64 ? 128 : 64);
   const [logoFailed, setLogoFailed] = useState(false);
   const showLogo = !!logoUrl && !logoFailed;
+  const logoWidth = showLogo ? Math.round(size * 1.8) : size;
 
   const bg = showLogo
     ? 'transparent'
@@ -137,9 +138,10 @@ export function BankMark({ bank, size = 60, className = '', style }: BankMarkPro
       title={bank.name}
       className={`flex items-center justify-center font-black tracking-tight select-none overflow-hidden ${className}`}
       style={{
-        width: size,
+        width: logoWidth,
+        minWidth: logoWidth,
         height: size,
-        borderRadius: Math.round(size * 0.22),
+        borderRadius: Math.round(size * 0.18),
         background: bg,
         color: fg,
         fontFamily:
@@ -164,8 +166,8 @@ export function BankMark({ bank, size = 60, className = '', style }: BankMarkPro
           style={{
             width: '100%',
             height: '100%',
-            objectFit: 'cover',
-            borderRadius: 'inherit',
+            objectFit: 'contain',
+            padding: Math.max(2, Math.round(size * 0.08)),
             display: 'block',
           }}
         />
