@@ -184,38 +184,11 @@ const COMPOUND_SPECS: Record<string, CompoundSpec> = {
   },
 };
 
-function descriptionForCompound(cleanName: string, purity: string | undefined): string {
+function descriptionForCompound(cleanName: string, _purity: string | undefined): string {
   const key = cleanName.trim().toUpperCase();
   const spec = COMPOUND_SPECS[key];
   const cas = spec?.cas ?? "Available on Certificate of Analysis";
-  const formula = spec?.formula ?? "See Certificate of Analysis";
-  const weight = spec?.weight ?? "See Certificate of Analysis";
-  const sequence = spec?.sequence;
-  const lotPurity =
-    purity && /[0-9]/.test(purity)
-      ? purity
-      : spec?.purity ?? "≥99% by RP-HPLC";
-
-  const specLines = [
-    `• CAS Number: ${cas}`,
-    `• Molecular Formula: ${formula}`,
-    `• Molecular Weight: ${weight}`,
-    sequence ? `• Amino Acid Sequence: ${sequence}` : null,
-    `• Purity: ${lotPurity}`,
-    `• Physical Form: Lyophilised powder, sealed glass vial`,
-    `• Storage: Store sealed at −20°C, protect from light and moisture`,
-    spec?.notes ? `• Notes: ${spec.notes}` : null,
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  return (
-    `For laboratory and analytical research only. Strictly for in-vitro scientific testing and reference standards.\n\n` +
-    `Technical specification:\n${specLines}\n\n` +
-    `Supplied as an analytical reference material to qualified research professionals and laboratories in the United Kingdom. ` +
-    `Each batch ships with a batch-specific Certificate of Analysis including HPLC chromatogram, batch number, and manufacture date.\n\n` +
-    `Not a medicinal product, not a dietary supplement, not a cosmetic. Not for human or veterinary administration, ingestion, injection, topical application, or any in-vivo use. Not for diagnostic or therapeutic purposes.`
-  );
+  return `For laboratory and analytical research only. Strictly for in-vitro scientific testing and reference standards. Technical specification: • CAS Number: ${cas}`;
 }
 
 
