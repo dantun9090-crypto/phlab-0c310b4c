@@ -132,6 +132,7 @@ export default function CheckoutPage() {
   const [fenaStep, setFenaStep] = useState<FenaStep>('idle');
   const [fenaOrderId, setFenaOrderId] = useState<string>('');
   const [paymentOptions, setPaymentOptions] = useState<CheckoutPaymentOptions | null>(null);
+  const [wallidEnabled, setWallidEnabled] = useState<boolean>(false);
   const [, setSummaryExpanded] = useState(false);
   const stepRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const successRef = useRef<HTMLElement | null>(null);
