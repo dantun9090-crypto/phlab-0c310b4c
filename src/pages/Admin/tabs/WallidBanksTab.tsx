@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Search, Save, RotateCcw, Check, X, ArrowUp, ArrowDown } from 'lucide-react';
 import payByBankBadge from '@/assets/pay-by-bank-badge.png.asset.json';
+import {
   WALLID_BANK_CATALOG,
   WALLID_BANK_CATEGORY_LABELS,
   DEFAULT_WALLID_BANK_IDS,
