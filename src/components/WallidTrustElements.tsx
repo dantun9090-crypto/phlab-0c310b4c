@@ -9,7 +9,7 @@
  *   - src/components/PaymentMethodOptions.tsx (live checkout)
  *   - src/pages/Admin/tabs/WallidPreviewTab.tsx (admin simulator)
  */
-import { ShieldCheck, Landmark, Zap, CreditCardOff } from 'lucide-react';
+import { ShieldCheck, Landmark, Zap, CreditCard } from 'lucide-react';
 
 interface WallidTrustElementsProps {
   className?: string;
