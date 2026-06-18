@@ -117,7 +117,7 @@ export function BankMark({ bank, size = 60, className = '', style }: BankMarkPro
   const showLogo = !!logoUrl && !logoFailed;
 
   const bg = showLogo
-    ? '#ffffff'
+    ? 'transparent'
     : bank.invert
       ? '#ffffff'
       : bank.accent
@@ -148,7 +148,7 @@ export function BankMark({ bank, size = 60, className = '', style }: BankMarkPro
         lineHeight: 1,
         letterSpacing: '-0.02em',
         boxShadow: showLogo
-          ? 'inset 0 0 0 1px rgba(0,0,0,0.08)'
+          ? 'none'
           : bank.invert
             ? `inset 0 0 0 1px ${bank.color}33`
             : '0 1px 2px rgba(0,0,0,0.15)',
@@ -162,9 +162,11 @@ export function BankMark({ bank, size = 60, className = '', style }: BankMarkPro
           loading="lazy"
           onError={() => setLogoFailed(true)}
           style={{
-            width: '78%',
-            height: '78%',
-            objectFit: 'contain',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            borderRadius: 'inherit',
+            display: 'block',
           }}
         />
       ) : (
