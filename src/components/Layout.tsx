@@ -19,6 +19,7 @@ import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import { getRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { migrateStoredCart } from '@/lib/cart-migration';
 import { initAnalytics, trackPageView, trackAddToCart, trackBeginCheckout } from '@/lib/analytics';
+import { logCartEvent, safeCartWrite, safeCartRead } from '@/lib/cart-telemetry';
 
 import { Logo } from './Logo';
 import { UnderConstruction } from './UnderConstruction';
