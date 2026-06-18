@@ -1,4 +1,4 @@
-import { Shield, Database, UserCheck, Cookie, Mail, Lock, FileText, Eye, AlertCircle, Globe } from 'lucide-react';
+import { Shield, Database, UserCheck, Cookie, Mail, Lock, FileText, Eye, AlertCircle, Globe, Building2, Scale, Plane, Gavel } from 'lucide-react';
 import { useSEO } from '@/hooks/useSEO';
 import { Link } from 'react-router-dom';
 
