@@ -282,19 +282,13 @@ export default function CheckoutPage() {
   useEffect(() => {
     try {
       const before = localStorage.getItem('php_cart');
-      // eslint-disable-next-line no-console
-      console.log('[cart-debug] checkout mount, ls=', before);
       const migrated = migrateStoredCart<CartItem>();
       const after = localStorage.getItem('php_cart');
       if (migrated && migrated.length > 0) {
-        // eslint-disable-next-line no-console
-        console.log('[cart-debug] setCart with migrated, len=', migrated.length, migrated);
         setCart(migrated);
         if (before && after && before !== after) setCartStale(true);
       } else {
         const stored = localStorage.getItem('php_cart');
-        // eslint-disable-next-line no-console
-        console.log('[cart-debug] setCart fallback, stored=', stored, 'migrated=', migrated);
         if (stored) setCart(JSON.parse(stored));
       }
     } catch { /* ignore */ }
