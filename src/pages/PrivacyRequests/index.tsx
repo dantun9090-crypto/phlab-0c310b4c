@@ -93,17 +93,70 @@ export default function PrivacyRequests() {
         </div>
 
         {done ? (
-          <div className="bg-slate-900 border border-emerald-500/40 rounded-2xl p-6 text-center space-y-3">
-            <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
-            <h2 className="text-lg font-bold">Request received</h2>
-            <p className="text-sm text-slate-300">
-              Reference <span className="font-mono text-emerald-300">{done.slice(0, 8).toUpperCase()}</span>.
-              We'll verify your identity by replying to <strong>{email}</strong> and complete your request within 30 days.
-            </p>
+          <div className="bg-slate-900 border border-emerald-500/40 rounded-2xl p-6 space-y-5">
+            <div className="text-center space-y-2">
+              <CheckCircle2 className="w-14 h-14 text-emerald-400 mx-auto" />
+              <h2 className="text-xl font-bold">Request received</h2>
+              <p className="text-sm text-slate-300">
+                Your reference number is{' '}
+                <span className="inline-block font-mono text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-md px-2 py-0.5 select-all">
+                  {done.slice(0, 8).toUpperCase()}
+                </span>
+              </p>
+              <p className="text-xs text-slate-400">
+                Save this reference — quote it in any follow-up email.
+              </p>
+            </div>
+
+            <div className="border-t border-slate-800 pt-5">
+              <p className="text-xs font-bold tracking-wider uppercase text-slate-400 mb-3">
+                What happens next
+              </p>
+              <ol className="space-y-3">
+                {[
+                  {
+                    n: 1,
+                    title: 'Identity verification (within 72 hours)',
+                    body: <>We'll email <strong className="text-slate-200">{email}</strong> from <span className="font-mono">privacy@phlabs.co.uk</span> to confirm the request came from you. Reply to that email to verify.</>,
+                  },
+                  {
+                    n: 2,
+                    title: 'Request processed (within 30 days)',
+                    body: <>Once verified, our DPO completes your request. Article 12(3) UK GDPR allows one 2-month extension for complex requests — we'll tell you if that applies.</>,
+                  },
+                  {
+                    n: 3,
+                    title: 'Outcome delivered',
+                    body: <>Access / export requests: encrypted JSON download. Deletion: confirmation that your customer record and personal data have been erased (anonymised where retention is legally required, e.g. invoices kept for 6 years under HMRC rules).</>,
+                  },
+                ].map(step => (
+                  <li key={step.n} className="flex gap-3">
+                    <span className="shrink-0 w-7 h-7 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-bold flex items-center justify-center">
+                      {step.n}
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{step.title}</p>
+                      <p className="text-xs text-slate-400 leading-relaxed mt-0.5">{step.body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="border-t border-slate-800 pt-4 text-xs text-slate-400 space-y-1">
+              <p>
+                <strong className="text-slate-200">Not happy with our response?</strong> You can complain to the
+                UK Information Commissioner's Office at{' '}
+                <a href="https://ico.org.uk/make-a-complaint/" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">
+                  ico.org.uk
+                </a>.
+              </p>
+            </div>
+
             <button
               type="button"
               onClick={() => { setDone(null); setDetails(''); setConfirm(false); }}
-              className="text-sm text-slate-400 hover:text-white underline"
+              className="text-sm text-slate-400 hover:text-white underline w-full text-center"
             >
               Submit another request
             </button>
