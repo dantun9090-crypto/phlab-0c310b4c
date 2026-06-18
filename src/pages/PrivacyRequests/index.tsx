@@ -24,11 +24,10 @@ const schema = z.object({
 });
 
 export default function PrivacyRequests() {
-  useSEO({
+  useSEO('privacy-requests', {
     title: 'Privacy Requests (GDPR/DSR) — PH Labs',
-    description: 'Exercise your GDPR rights: request access, correction, deletion, export, or object to processing of your personal data held by PH Labs.',
+    metaDescription: 'Exercise your GDPR rights: request access, correction, deletion, export, or object to processing of your personal data held by PH Labs.',
     canonical: 'https://phlabs.co.uk/privacy-requests',
-    noindex: true,
   });
 
   const [type, setType] = useState<RequestType>('access');
