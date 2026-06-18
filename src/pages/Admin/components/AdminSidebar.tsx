@@ -100,6 +100,7 @@ const navGroups = [
       { id: 'mailhealth', label: 'Mail Health', icon: Mail },
       { id: 'securityaudit', label: 'Security Audit', icon: ShieldCheck },
       { id: 'securityevents', label: 'Security Events', icon: Activity },
+      { id: 'webhooktest', label: 'Webhook Test', icon: Zap },
     ],
   },
 ];
