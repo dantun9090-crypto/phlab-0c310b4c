@@ -399,6 +399,31 @@ export default function CheckoutPage() {
     return () => { cancelled = true; };
   }, []);
 
+  // Wallid Pay-by-Bank kill switch — admin toggle from Payment Gateways panel.
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/config/payments', { cache: 'no-store' })
+      .then((r) => r.ok ? r.json() : { wallid_enabled: false })
+      .then((cfg: { wallid_enabled?: boolean }) => {
+        if (cancelled) return;
+        const on = Boolean(cfg?.wallid_enabled);
+        setWallidEnabled(on);
+        if (!on) {
+          setForm((prev) => prev.paymentMethod === 'wallid'
+            ? { ...prev, paymentMethod: 'bank_transfer' }
+            : prev);
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setWallidEnabled(false);
+        setForm((prev) => prev.paymentMethod === 'wallid'
+          ? { ...prev, paymentMethod: 'bank_transfer' }
+          : prev);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
   // Calculations
   const subtotal = cart.reduce((s, i) => s + i.priceNum * i.quantity, 0);
   const discount = appliedCoupon ? (
