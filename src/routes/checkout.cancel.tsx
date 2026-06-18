@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { XCircle } from "lucide-react";
+import { auth } from "@/lib/firebase";
 
 export const Route = createFileRoute("/checkout/cancel")({
   head: () => ({
@@ -24,14 +25,22 @@ function CheckoutCancelPage() {
     const params = new URLSearchParams(window.location.search);
     const oid = params.get("order_id") || params.get("orderId") || "";
     setOrderId(oid);
-    if (oid) {
-      // Best-effort: mark the Wallid payment as cancelled in our DB.
-      fetch("/api/payments/cancel", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ orderId: oid }),
-      }).catch(() => { /* ignore */ });
-    }
+    if (!oid) return;
+    // Best-effort: mark the Wallid payment as cancelled in our DB.
+    // Requires a valid Firebase session — the server enforces order ownership.
+    (async () => {
+      try {
+        const idToken = auth.currentUser
+          ? await auth.currentUser.getIdToken().catch(() => null)
+          : null;
+        if (!idToken) return;
+        await fetch("/api/payments/cancel", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ idToken, orderId: oid }),
+        });
+      } catch { /* ignore */ }
+    })();
   }, []);
 
   return (
