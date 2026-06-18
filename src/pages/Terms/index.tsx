@@ -213,11 +213,12 @@ export default function Terms() {
       content: (
         <>
           <p className="leading-relaxed text-sm mb-4" style={{ color: '#9cb8d9' }}>
-            Due to the sensitive nature of research compounds, we operate a strict returns policy:
+            UK consumers have a 14-day statutory right to cancel under the Consumer Contracts Regulations 2013, in addition to our defective-item guarantee:
           </p>
           <ul className="space-y-3 mb-4">
             {[
-              'Returns accepted within 14 days of delivery (unopened only)',
+              '14-day cooling-off period from delivery — consumer right under CCR 2013',
+              'Returns accepted within 14 days of delivery (unopened, original sealed condition)',
               'Product must be in original sealed condition',
               'Temperature-sensitive items must have been stored correctly',
               'Refunds processed within 5–10 business days',

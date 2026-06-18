@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 export default function RefundPolicy() {
   useSEO('refund-policy', {
     title: 'Return & Refund Policy | PH Labs UK',
-    metaDescription: 'Return and refund policy for PH Labs Ltd. We accept returns for defective items within 14 days of delivery. UK research peptide supplier.',
+    metaDescription: 'Return & refund policy for PH Labs Ltd UK. 14-day statutory right to cancel (CCR 2013) plus defective-item returns. UK research peptide supplier.',
     canonical: 'https://phlabs.co.uk/refund-policy',
   });
 
@@ -60,7 +60,7 @@ export default function RefundPolicy() {
           <h1 className="text-3xl md:text-4xl font-bold text-[#f0f6ff] mb-3">Return &amp; Refund Policy</h1>
           <p className="text-[#9cb8d9] text-sm">Last updated: May 2026 &mdash; PH Labs Ltd</p>
           <p className="text-[#8caad4] mt-4 max-w-xl mx-auto text-sm leading-relaxed">
-            We stand behind every batch we dispatch. Returns are accepted for defective items within 14 days of delivery.
+            Consumers have a 14-day statutory right to cancel under UK Consumer Contracts Regulations 2013, plus our quality guarantee on defective items.
           </p>
         </div>
 
@@ -75,6 +75,33 @@ export default function RefundPolicy() {
 
         {/* Sections */}
         <div className="space-y-5">
+
+          {/* Statutory Right to Cancel (CCR 2013) */}
+          <section className="rounded-2xl p-6" style={{ background: '#0b1a30', border: '1px solid rgba(34,211,238,0.2)' }}>
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(34,211,238,0.1)' }}>
+                <Scale className="w-5 h-5 text-cyan-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">Your Statutory Right to Cancel (UK Consumer Contracts Regulations 2013)</h2>
+                <p className="text-[#9cb8d9] text-sm leading-relaxed mb-3">
+                  If you are a consumer buying at a distance, UK law gives you a <strong className="text-[#c8daf0]">14-day cooling-off period</strong> to cancel your order without giving a reason. This right is separate from, and additional to, the defective-item return rights below.
+                </p>
+                <ul className="space-y-2 text-sm text-[#8caad4] mb-3">
+                  <li className="flex gap-2"><span className="text-cyan-400">•</span>The 14-day period starts the day after you (or your nominated recipient) receive the goods.</li>
+                  <li className="flex gap-2"><span className="text-cyan-400">•</span>To cancel, email <a href="mailto:info@phlabs.co.uk" className="underline text-cyan-300">info@phlabs.co.uk</a> stating your order number and intention to cancel.</li>
+                  <li className="flex gap-2"><span className="text-cyan-400">•</span>Return the goods within 14 days of notifying us. You are responsible for the cost of return postage unless the goods are defective.</li>
+                  <li className="flex gap-2"><span className="text-cyan-400">•</span>We will refund the full purchase price (including original standard delivery) within 14 days of receiving the goods back, or proof of return.</li>
+                </ul>
+                <div className="rounded-lg p-3 text-xs" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.2)' }}>
+                  <p className="text-amber-300/90 leading-relaxed">
+                    <strong>Statutory exceptions (CCR 2013 Reg. 28):</strong> the right to cancel does not apply to sealed research compounds that have been unsealed after delivery and are not suitable for return for health-protection or hygiene reasons, or to goods which by their nature become inseparably mixed with other items after delivery.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
 
           {/* Our Commitment */}
           <section className="rounded-2xl p-6" style={{ background: '#0b1a30', border: '1px solid rgba(16,185,129,0.15)' }}>
