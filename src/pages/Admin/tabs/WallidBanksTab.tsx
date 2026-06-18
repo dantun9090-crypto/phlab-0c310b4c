@@ -156,7 +156,7 @@ export default function WallidBanksTab() {
                     : 'border-slate-700 bg-slate-900 hover:border-slate-500'
                 }`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0 pr-5">
                   <BankMark bank={b} size={48} />
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-white truncate">{b.name}</div>
