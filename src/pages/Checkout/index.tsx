@@ -463,7 +463,7 @@ export default function CheckoutPage() {
         const k = item.variantId ? `${item.id}-${item.variantId}` : String(item.id);
         return k !== key;
       });
-      try { localStorage.setItem('php_cart', JSON.stringify(next)); } catch { /* ignore */ }
+      safeCartWrite('php_cart', JSON.stringify(next), 'checkout:removeItem');
       return next;
     });
   };
