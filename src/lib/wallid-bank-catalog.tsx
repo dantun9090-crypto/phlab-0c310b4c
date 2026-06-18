@@ -34,10 +34,18 @@ export interface WallidBankDef {
   keywords?: string[];
 }
 
-/** Resolve the real logo URL for a bank via Google's high-res favicon service. */
-export function bankLogoUrl(bank: WallidBankDef, size = 128): string | null {
-  if (!bank.domain) return null;
-  return `https://www.google.com/s2/favicons?domain=${bank.domain}&sz=${size}`;
+/** Map of bank id → local logo filename slug under /public/bank-logos/. */
+const LOGO_SLUG: Record<string, string> = {
+  'cooperative-bank': 'cumberland',
+  'yorkshire-bs': 'ybs',
+  'coventry-bs': 'coventry',
+  'skipton-bs': 'skipton',
+};
+
+/** Resolve the local high-quality wordmark SVG for a bank. */
+export function bankLogoUrl(bank: WallidBankDef, _size = 128): string | null {
+  const slug = LOGO_SLUG[bank.id] ?? bank.id;
+  return `/bank-logos/${slug}.svg`;
 }
 
 export const WALLID_BANK_CATALOG: WallidBankDef[] = [
@@ -109,7 +117,7 @@ export function BankMark({ bank, size = 60, className = '', style }: BankMarkPro
   const showLogo = !!logoUrl && !logoFailed;
 
   const bg = showLogo
-    ? '#ffffff'
+    ? 'transparent'
     : bank.invert
       ? '#ffffff'
       : bank.accent
@@ -140,7 +148,7 @@ export function BankMark({ bank, size = 60, className = '', style }: BankMarkPro
         lineHeight: 1,
         letterSpacing: '-0.02em',
         boxShadow: showLogo
-          ? 'inset 0 0 0 1px rgba(0,0,0,0.08)'
+          ? 'none'
           : bank.invert
             ? `inset 0 0 0 1px ${bank.color}33`
             : '0 1px 2px rgba(0,0,0,0.15)',
@@ -154,9 +162,11 @@ export function BankMark({ bank, size = 60, className = '', style }: BankMarkPro
           loading="lazy"
           onError={() => setLogoFailed(true)}
           style={{
-            width: '78%',
-            height: '78%',
-            objectFit: 'contain',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            borderRadius: 'inherit',
+            display: 'block',
           }}
         />
       ) : (
