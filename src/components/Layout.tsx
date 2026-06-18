@@ -1397,13 +1397,9 @@ export function dispatchAddToCart(item: CartItem) {
       list.push({ ...item, quantity: 1 });
     }
     localStorage.setItem('php_cart', JSON.stringify(list));
-    // eslint-disable-next-line no-console
-    console.log('[cart-debug] dispatch wrote ls, len=', list.length, 'value=', localStorage.getItem('php_cart'));
-  } catch (e) {
-    // eslint-disable-next-line no-console
-    console.log('[cart-debug] dispatch failed', e);
-  }
+  } catch { /* ignore */ }
   window.dispatchEvent(new CustomEvent(cartEventName, { detail: item }));
 }
+
 
 
