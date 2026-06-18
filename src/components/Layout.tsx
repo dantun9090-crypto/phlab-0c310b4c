@@ -1440,8 +1440,27 @@ export function dispatchAddToCart(item: CartItem) {
     } else {
       list.push({ ...item, quantity: 1 });
     }
-    localStorage.setItem('php_cart', JSON.stringify(list));
-  } catch { /* ignore */ }
+    const ok = safeCartWrite('php_cart', JSON.stringify(list), 'dispatchAddToCart');
+    if (!ok) {
+      logCartEvent({
+        type: 'add_to_cart_failure',
+        key: String(item.id),
+        message: 'localStorage write failed during add-to-cart',
+        source: 'dispatchAddToCart',
+        extra: { productId: item.id, variantId: item.variantId ?? null, listSize: list.length },
+      });
+    }
+  } catch (e) {
+    const err = e as { name?: string; message?: string };
+    logCartEvent({
+      type: 'add_to_cart_failure',
+      key: String(item.id),
+      code: err?.name || 'unknown',
+      message: err?.message || 'dispatchAddToCart crashed',
+      source: 'dispatchAddToCart',
+      extra: { productId: item.id, variantId: item.variantId ?? null },
+    });
+  }
   window.dispatchEvent(new CustomEvent(cartEventName, { detail: item }));
 }
 
