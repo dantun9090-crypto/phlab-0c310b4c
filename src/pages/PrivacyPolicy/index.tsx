@@ -1,4 +1,4 @@
-import { Shield, Database, UserCheck, Cookie, Mail, Lock, FileText, Eye, AlertCircle, Globe } from 'lucide-react';
+import { Shield, Database, UserCheck, Cookie, Mail, Lock, FileText, Eye, AlertCircle, Globe, Building2, Scale, Plane, Gavel } from 'lucide-react';
 import { useSEO } from '@/hooks/useSEO';
 import { Link } from 'react-router-dom';
 
@@ -11,6 +11,52 @@ export default function PrivacyPolicy() {
   });
 
   const sections = [
+    {
+      id: 'controller',
+      icon: Building2,
+      iconColor: '#22d3ee',
+      title: 'Data Controller (Who We Are)',
+      content: (
+        <div className="space-y-3 text-sm" style={{ color: '#9cb8d9' }}>
+          <p className="leading-relaxed">
+            The data controller responsible for your personal data under UK GDPR is:
+          </p>
+          <div className="p-4 rounded-lg border space-y-1 text-xs" style={{ background: 'rgba(34,211,238,0.05)', borderColor: 'rgba(34,211,238,0.2)' }}>
+            <p><span className="font-semibold" style={{ color: '#22d3ee' }}>Company:</span> PH Labs Ltd</p>
+            <p><span className="font-semibold" style={{ color: '#22d3ee' }}>Jurisdiction:</span> United Kingdom</p>
+            <p><span className="font-semibold" style={{ color: '#22d3ee' }}>Data Protection contact:</span> <a href="mailto:info@phlabs.co.uk" className="underline">info@phlabs.co.uk</a></p>
+            <p><span className="font-semibold" style={{ color: '#22d3ee' }}>Supervisory authority:</span> Information Commissioner's Office (ICO), UK</p>
+          </div>
+          <p className="leading-relaxed text-xs">
+            We do not have a statutory obligation to appoint a Data Protection Officer (DPO); the contact above handles all data protection enquiries and Data Subject Requests.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: 'legal-basis',
+      icon: Scale,
+      iconColor: '#a78bfa',
+      title: 'Legal Basis for Processing (UK GDPR Art. 6)',
+      content: (
+        <div className="space-y-3">
+          {[
+            { basis: 'Contract', purpose: 'Order fulfilment, shipping, customer support, returns', art: 'Art. 6(1)(b)' },
+            { basis: 'Legal Obligation', purpose: 'Tax records (HMRC), accounting, fraud prevention, regulatory compliance', art: 'Art. 6(1)(c)' },
+            { basis: 'Legitimate Interest', purpose: 'Site security, fraud detection, service improvement, transactional emails', art: 'Art. 6(1)(f)' },
+            { basis: 'Consent', purpose: 'Non-essential cookies, analytics, marketing communications (withdrawable any time)', art: 'Art. 6(1)(a)' },
+          ].map(({ basis, purpose, art }) => (
+            <div key={basis} className="p-3 rounded-lg border" style={{ background: 'rgba(167,139,250,0.05)', borderColor: 'rgba(167,139,250,0.2)' }}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-semibold" style={{ color: '#a78bfa' }}>{basis}</span>
+                <span className="text-[10px] font-mono" style={{ color: '#3a5a82' }}>{art}</span>
+              </div>
+              <p className="text-[11px]" style={{ color: '#9cb8d9' }}>{purpose}</p>
+            </div>
+          ))}
+        </div>
+      ),
+    },
     {
       id: 'collect',
       icon: Database,
@@ -135,6 +181,56 @@ export default function PrivacyPolicy() {
             </p>
           </div>
         </>
+      ),
+    },
+    {
+      id: 'transfers',
+      icon: Plane,
+      iconColor: '#34d399',
+      title: 'International Data Transfers',
+      content: (
+        <div className="space-y-3 text-sm" style={{ color: '#9cb8d9' }}>
+          <p className="leading-relaxed text-xs">
+            Personal data is primarily stored on servers located in the UK/EEA. Some processors (e.g. Google Analytics, email infrastructure) may transfer data outside the UK/EEA. Where this happens, we rely on the following safeguards under UK GDPR Art. 46:
+          </p>
+          <ul className="space-y-2 text-xs">
+            {[
+              'UK adequacy regulations / EU adequacy decisions where applicable',
+              'Standard Contractual Clauses (SCCs) approved by the ICO',
+              'International Data Transfer Addendum (IDTA) for US-based processors',
+            ].map((item) => (
+              <li key={item} className="flex items-start gap-2">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#34d399' }} />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-[11px]" style={{ color: '#3a5a82' }}>
+            A copy of the safeguards in place is available on request from info@phlabs.co.uk.
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: 'complaints',
+      icon: Gavel,
+      iconColor: '#fbbf24',
+      title: 'Right to Complain (ICO)',
+      content: (
+        <div className="space-y-3 text-sm" style={{ color: '#9cb8d9' }}>
+          <p className="leading-relaxed text-xs">
+            If you believe we have mishandled your personal data, please contact us first at <a href="mailto:info@phlabs.co.uk" className="underline font-semibold" style={{ color: '#fbbf24' }}>info@phlabs.co.uk</a> so we can put it right. You also have the right to lodge a complaint with the UK supervisory authority:
+          </p>
+          <div className="p-3 rounded-lg border space-y-1 text-xs" style={{ background: 'rgba(251,191,36,0.05)', borderColor: 'rgba(251,191,36,0.2)' }}>
+            <p className="font-semibold" style={{ color: '#fbbf24' }}>Information Commissioner's Office (ICO)</p>
+            <p>Wycliffe House, Water Lane, Wilmslow, Cheshire SK9 5AF</p>
+            <p>Helpline: 0303 123 1113</p>
+            <p>Website: <a href="https://ico.org.uk/make-a-complaint/" target="_blank" rel="noopener noreferrer" className="underline">ico.org.uk/make-a-complaint</a></p>
+          </div>
+          <p className="text-[11px]" style={{ color: '#3a5a82' }}>
+            To exercise your data rights directly, use our <Link to="/privacy-requests" className="underline font-semibold" style={{ color: '#fbbf24' }}>Privacy Requests form</Link>.
+          </p>
+        </div>
       ),
     },
     {
