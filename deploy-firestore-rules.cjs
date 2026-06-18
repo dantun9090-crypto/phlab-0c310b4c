@@ -27,10 +27,10 @@ async function deployRules(rulesPath, releaseName, rulesetName) {
   console.log(`✓ Created ruleset for ${rulesPath}: ${rulesetId}`);
 
   // 2. Update release to point to new ruleset
-  const updateRes = await fetch(`https://firebaserules.googleapis.com/v1/projects/${projectId}/releases/${releaseName}?updateMask=rulesetName`, {
+  const updateRes = await fetch(`https://firebaserules.googleapis.com/v1/projects/${projectId}/releases/${releaseName}?updateMask=ruleset_name`, {
     method: 'PATCH',
     headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: `projects/${projectId}/releases/${releaseName}`, rulesetName: rulesetId }),
+    body: JSON.stringify({ name: `projects/${projectId}/releases/${releaseName}`, ruleset_name: rulesetId }),
   });
   const updateJson = await updateRes.json();
   if (!updateRes.ok) throw new Error('updateRelease: ' + JSON.stringify(updateJson));
