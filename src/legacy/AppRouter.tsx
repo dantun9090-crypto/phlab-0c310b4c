@@ -126,6 +126,7 @@ const routes = [
       { path: 'terms-and-conditions', element: <Terms /> },
       { path: 'privacy-policy',    element: <PrivacyPolicy /> },
       { path: 'cookies',           element: <CookiePolicy /> },
+      { path: 'privacy-requests',  element: <PrivacyRequests /> },
       { path: 'payment',           element: <Payment /> },
       { path: 'checkout',           element: <Checkout /> },
       { path: 'landing/peptides',  element: <Navigate to="/products" replace /> },
