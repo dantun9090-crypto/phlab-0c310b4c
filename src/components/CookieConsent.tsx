@@ -3,6 +3,7 @@ import { Cookie, ShieldCheck, BarChart2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const STORAGE_KEY = 'php_cookie_consent';
+const OPEN_EVENT = 'php:open-cookie-settings';
 
 export type CookiePreferences = {
   essential: true;
@@ -17,6 +18,15 @@ export function getCookiePreferences(): CookiePreferences | null {
     return JSON.parse(raw);
   } catch {
     return null;
+  }
+}
+
+/** Re-open the consent banner from anywhere (e.g. footer "Cookie Settings"). */
+export function openCookieSettings() {
+  try {
+    window.dispatchEvent(new CustomEvent(OPEN_EVENT));
+  } catch {
+    /* noop */
   }
 }
 
