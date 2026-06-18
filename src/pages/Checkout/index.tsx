@@ -282,6 +282,8 @@ export default function CheckoutPage() {
   useEffect(() => {
     try {
       const before = localStorage.getItem('php_cart');
+      // eslint-disable-next-line no-console
+      console.log('[cart-debug] checkout mount, ls=', before);
       const migrated = migrateStoredCart<CartItem>();
       const after = localStorage.getItem('php_cart');
       if (migrated && migrated.length > 0) {
