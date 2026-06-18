@@ -9,20 +9,24 @@
  *   - src/components/PaymentMethodOptions.tsx (live checkout)
  *   - src/pages/Admin/tabs/WallidPreviewTab.tsx (admin simulator)
  */
-import { ShieldCheck, Landmark, Zap, CreditCard } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
+import { WALLID_BADGE_CATALOG } from '@/lib/wallid-badge-catalog';
+import { useWallidBadgeIds } from '@/lib/wallid-badge-store';
 
 interface WallidTrustElementsProps {
   className?: string;
   /** When false, hide the trust-badges row (kept for admin A/B preview). */
   showBadges?: boolean;
+  /** Override the live Firestore selection (used by admin simulator). */
+  badgeIdsOverride?: string[];
 }
 
-const TRUST_BADGES = [
-  { icon: ShieldCheck,    label: 'Secure Open Banking' },
-  { icon: Landmark,       label: 'FCA Regulated' },
-  { icon: Zap,            label: 'Instant Confirmation' },
-  { icon: CreditCard,     label: 'No Card Details Stored' },
-] as const;
+function resolveIcon(name: string) {
+  const Comp = (LucideIcons as unknown as Record<string, React.ComponentType<{ className?: string }>>)[name];
+  return Comp ?? ShieldCheck;
+}
+
 
 // Inline SVG bank marks — no external requests, brand colours per spec.
 function LloydsMark() {
@@ -113,7 +117,14 @@ const BANKS = [
 export default function WallidTrustElements({
   className = '',
   showBadges = true,
+  badgeIdsOverride,
 }: WallidTrustElementsProps) {
+  const { ids: liveIds } = useWallidBadgeIds();
+  const selectedIds = badgeIdsOverride ?? liveIds;
+  const badges = selectedIds
+    .map((id) => WALLID_BADGE_CATALOG.find((b) => b.id === id))
+    .filter((b): b is NonNullable<typeof b> => Boolean(b));
+
   return (
     <div
       data-testid="wallid-trust-elements"
@@ -131,22 +142,26 @@ export default function WallidTrustElements({
         }
       `}</style>
 
-      {showBadges && (
+      {showBadges && badges.length > 0 && (
         <div
           className="flex flex-wrap gap-1.5"
           style={{ animation: 'wallidFadeIn 200ms ease-out both' }}
         >
-          {TRUST_BADGES.map(({ icon: Icon, label }) => (
-            <span
-              key={label}
-              className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-300 bg-[#060f1e] border border-white/10 rounded-full px-2.5 py-1"
-            >
-              <Icon className="w-3.5 h-3.5 text-emerald-400" />
-              {label}
-            </span>
-          ))}
+          {badges.map((b) => {
+            const Icon = resolveIcon(b.icon);
+            return (
+              <span
+                key={b.id}
+                className="inline-flex items-center gap-1.5 text-[11px] font-medium text-gray-300 bg-[#060f1e] border border-white/10 rounded-full px-2.5 py-1"
+              >
+                <Icon className="w-3.5 h-3.5 text-emerald-400" />
+                {b.label}
+              </span>
+            );
+          })}
         </div>
       )}
+
 
       <div style={{ animation: 'wallidFadeInSlow 300ms ease-out 100ms both' }}>
         <p className="text-xs font-semibold text-gray-200 mb-2">Choose your bank</p>
