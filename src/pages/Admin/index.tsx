@@ -434,6 +434,7 @@ export default function AdminPage() {
         case 'semrush': return <SemrushTab />;
         case 'royalmail': return <RoyalMailTab />;
         case 'webhooktest': return <WebhookTestTab />;
+        case 'wallidpreview': return <WallidPreviewTab />;
         default: return <DashboardTab />;
       }
     })();
