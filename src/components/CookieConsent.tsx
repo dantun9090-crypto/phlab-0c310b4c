@@ -229,10 +229,10 @@ export function CookieConsent() {
             Accept All
           </button>
           <button
-            onClick={essentialOnly}
-            className="w-full sm:flex-1 min-h-[44px] text-[#9cb8d9] hover:text-[#f0f6ff] text-sm font-medium border border-white/[0.1] hover:border-white/[0.2] rounded-xl transition-colors"
+            onClick={rejectAll}
+            className="w-full sm:flex-1 min-h-[44px] text-[#9cb8d9] hover:text-[#f0f6ff] text-sm font-semibold border border-white/[0.12] hover:border-white/[0.25] rounded-xl transition-colors"
           >
-            Essential Only
+            Reject All
           </button>
           {showDetails ? (
             <button
