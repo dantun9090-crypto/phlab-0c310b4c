@@ -21,7 +21,7 @@ const TRUST_BADGES = [
   { icon: ShieldCheck,    label: 'Secure Open Banking' },
   { icon: Landmark,       label: 'FCA Regulated' },
   { icon: Zap,            label: 'Instant Confirmation' },
-  { icon: CreditCardOff,  label: 'No Card Details Stored' },
+  { icon: CreditCard,     label: 'No Card Details Stored' },
 ] as const;
 
 // Inline SVG bank marks — no external requests, brand colours per spec.
