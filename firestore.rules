@@ -74,6 +74,22 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
+    // GDPR Data Subject Requests (DSR) — anyone can create with a locked
+    // shape; only admins can read / update / delete. Identity verification
+    // happens out-of-band via email reply before the request is fulfilled.
+    match /dsrRequests/{docId} {
+      allow create: if request.resource.data.keys().hasAll(['type','email','fullName','status','createdAt','source'])
+                    && request.resource.data.type in ['access','rectification','deletion','portability','objection','restriction']
+                    && request.resource.data.email is string
+                    && request.resource.data.email.size() < 320
+                    && request.resource.data.fullName is string
+                    && request.resource.data.fullName.size() < 200
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.source is string
+                    && (!('details' in request.resource.data) || (request.resource.data.details is string && request.resource.data.details.size() < 4000));
+      allow read, update, delete: if isAdmin();
+    }
+
     // ---------- public-read, admin-write collections ----------
     match /products/{id}        { allow read: if true; allow write: if isAdmin(); }
     match /product_stock/{id}   { allow read: if true; allow write: if isAdmin(); }

@@ -40,6 +40,7 @@ const LabReports = lazy(() => import('@/pages/LabReports'));
 const Research = lazy(() => import('@/pages/Research'));
 const Install = lazy(() => import('@/pages/Install'));
 const CategoryPage = lazy(() => import('@/pages/CategoryPage'));
+const PrivacyRequests = lazy(() => import('@/pages/PrivacyRequests'));
 
 // Minimal spinner shown while lazy chunks load
 function PageLoader() {
@@ -125,6 +126,7 @@ const routes = [
       { path: 'terms-and-conditions', element: <Terms /> },
       { path: 'privacy-policy',    element: <PrivacyPolicy /> },
       { path: 'cookies',           element: <CookiePolicy /> },
+      { path: 'privacy-requests',  element: <PrivacyRequests /> },
       { path: 'payment',           element: <Payment /> },
       { path: 'checkout',           element: <Checkout /> },
       { path: 'landing/peptides',  element: <Navigate to="/products" replace /> },

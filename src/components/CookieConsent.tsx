@@ -3,6 +3,7 @@ import { Cookie, ShieldCheck, BarChart2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const STORAGE_KEY = 'php_cookie_consent';
+const OPEN_EVENT = 'php:open-cookie-settings';
 
 export type CookiePreferences = {
   essential: true;
@@ -17,6 +18,15 @@ export function getCookiePreferences(): CookiePreferences | null {
     return JSON.parse(raw);
   } catch {
     return null;
+  }
+}
+
+/** Re-open the consent banner from anywhere (e.g. footer "Cookie Settings"). */
+export function openCookieSettings() {
+  try {
+    window.dispatchEvent(new CustomEvent(OPEN_EVENT));
+  } catch {
+    /* noop */
   }
 }
 
@@ -38,7 +48,19 @@ export function CookieConsent() {
   const [marketing, setMarketing] = useState(false);
 
   useEffect(() => {
-    if (getCookiePreferences()) return;
+    // Allow re-opening the banner from anywhere (footer link, account page).
+    const onOpen = () => {
+      const existing = getCookiePreferences();
+      if (existing) {
+        setAnalytics(!!existing.analytics);
+        setMarketing(!!existing.marketing);
+      }
+      setShowDetails(true);
+      setVisible(true);
+    };
+    window.addEventListener(OPEN_EVENT, onOpen as EventListener);
+
+    if (getCookiePreferences()) return () => window.removeEventListener(OPEN_EVENT, onOpen as EventListener);
 
     // Wait until the Research Gate is confirmed/dismissed before showing
     // the cookie banner — otherwise on small viewports the banner overlaps
@@ -60,7 +82,10 @@ export function CookieConsent() {
 
     if (!isGateBlocking()) {
       show();
-      return () => { if (timer) clearTimeout(timer); };
+      return () => {
+        if (timer) clearTimeout(timer);
+        window.removeEventListener(OPEN_EVENT, onOpen as EventListener);
+      };
     }
 
     // Wait for the gate to clear (covers both confirm and dismiss), with polling as fallback.
@@ -79,6 +104,7 @@ export function CookieConsent() {
     return () => {
       clearInterval(poll);
       window.removeEventListener('php:research-gate-cleared', onGateCleared);
+      window.removeEventListener(OPEN_EVENT, onOpen as EventListener);
       if (timer) clearTimeout(timer);
     };
   }, []);
@@ -88,8 +114,10 @@ export function CookieConsent() {
     setVisible(false);
   };
 
-  const essentialOnly = () => {
+  const rejectAll = () => {
     savePreferences({ essential: true, analytics: false, marketing: false });
+    setAnalytics(false);
+    setMarketing(false);
     setVisible(false);
   };
 
@@ -201,10 +229,10 @@ export function CookieConsent() {
             Accept All
           </button>
           <button
-            onClick={essentialOnly}
-            className="w-full sm:flex-1 min-h-[44px] text-[#9cb8d9] hover:text-[#f0f6ff] text-sm font-medium border border-white/[0.1] hover:border-white/[0.2] rounded-xl transition-colors"
+            onClick={rejectAll}
+            className="w-full sm:flex-1 min-h-[44px] text-[#9cb8d9] hover:text-[#f0f6ff] text-sm font-semibold border border-white/[0.12] hover:border-white/[0.25] rounded-xl transition-colors"
           >
-            Essential Only
+            Reject All
           </button>
           {showDetails ? (
             <button
