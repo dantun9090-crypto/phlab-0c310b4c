@@ -68,9 +68,16 @@ service cloud.firestore {
 
 
     // ---------- email subscribers (newsletter) ----------
+    // Locked shape: valid email regex, server-set timestamp, optional source.
     match /emailSubscribers/{docId} {
-      allow create: if request.resource.data.email is string
-                    && request.resource.data.email.size() < 320;
+      allow create: if request.resource.data.keys().hasOnly(['email','subscribedAt','source'])
+                    && request.resource.data.email is string
+                    && request.resource.data.email.size() < 320
+                    && request.resource.data.email.matches('^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+[.][A-Za-z]{2,}$')
+                    && request.resource.data.subscribedAt == request.time
+                    && (!('source' in request.resource.data)
+                        || (request.resource.data.source is string
+                            && request.resource.data.source.size() < 100));
       allow read, update, delete: if isAdmin();
     }
 
