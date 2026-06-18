@@ -1399,6 +1399,7 @@ export default function CheckoutPage() {
                     {/* Payment method selector — Pay-by-Bank only when an Open Banking gateway is enabled */}
                     <PaymentMethodOptions
                       options={paymentOptions}
+                      wallidEnabled={wallidEnabled}
                       value={form.paymentMethod}
                       onChange={(v) => setField('paymentMethod', v)}
                     />
