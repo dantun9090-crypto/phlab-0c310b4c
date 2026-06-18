@@ -32,20 +32,13 @@ export default function WallidTrustElements({
   className = '',
   showBadges = true,
   badgeIdsOverride,
-  bankIdsOverride,
 }: WallidTrustElementsProps) {
   const { ids: liveBadgeIds } = useWallidBadgeIds();
-  const { ids: liveBankIds } = useWallidBankIds();
 
   const badgeIds = badgeIdsOverride ?? liveBadgeIds;
-  const bankIds = bankIdsOverride ?? liveBankIds;
 
   const badges = badgeIds
     .map((id) => WALLID_BADGE_CATALOG.find((b) => b.id === id))
-    .filter((b): b is NonNullable<typeof b> => Boolean(b));
-
-  const banks = bankIds
-    .map((id) => WALLID_BANK_CATALOG.find((b) => b.id === id))
     .filter((b): b is NonNullable<typeof b> => Boolean(b));
 
   return (
