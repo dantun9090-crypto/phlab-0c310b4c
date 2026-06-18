@@ -109,6 +109,10 @@ const PRERENDER_BYPASS_PREFIXES = [
   "/.well-known/",
   "/cdn-cgi/",
   "/_img",
+  // Firebase Auth helper iframe + reserved Firebase Hosting paths.
+  // These are RPC/iframe endpoints (gapi-loaded), not crawlable HTML.
+  // Headless Chrome times out trying to render them → 504 in Prerender.io.
+  "/__/",
 ];
 const PRERENDER_BYPASS_EXACT = new Set([
   "/site.webmanifest",
