@@ -1,22 +1,19 @@
 /**
- * Trust badges + UK bank tile grid shown on checkout ONLY when the
+ * Trust badges + Pay by Bank badge shown on checkout ONLY when the
  * customer has selected the Wallid "Pay by Bank" option.
  *
- * Both the badge selection and the bank-tile selection are admin-curated
- * and persisted in Firestore (see wallid-badge-store / wallid-bank-store).
+ * The badge selection is admin-curated and persisted in Firestore
+ * (see wallid-badge-store).
  *
  * Used by:
  *   - src/components/PaymentMethodOptions.tsx (live checkout)
  *   - src/pages/Admin/tabs/WallidPreviewTab.tsx (admin simulator)
  *   - src/pages/Admin/tabs/WallidBadgesTab.tsx (live preview)
- *   - src/pages/Admin/tabs/WallidBanksTab.tsx  (live preview)
  */
 import * as LucideIcons from 'lucide-react';
 import { ShieldCheck } from 'lucide-react';
 import { WALLID_BADGE_CATALOG } from '@/lib/wallid-badge-catalog';
 import { useWallidBadgeIds } from '@/lib/wallid-badge-store';
-import { WALLID_BANK_CATALOG, BankMark } from '@/lib/wallid-bank-catalog';
-import { useWallidBankIds } from '@/lib/wallid-bank-store';
 
 interface WallidTrustElementsProps {
   className?: string;
