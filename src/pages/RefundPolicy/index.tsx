@@ -60,7 +60,7 @@ export default function RefundPolicy() {
           <h1 className="text-3xl md:text-4xl font-bold text-[#f0f6ff] mb-3">Return &amp; Refund Policy</h1>
           <p className="text-[#9cb8d9] text-sm">Last updated: May 2026 &mdash; PH Labs Ltd</p>
           <p className="text-[#8caad4] mt-4 max-w-xl mx-auto text-sm leading-relaxed">
-            We stand behind every batch we dispatch. Returns are accepted for defective items within 14 days of delivery.
+            Consumers have a 14-day statutory right to cancel under UK Consumer Contracts Regulations 2013, plus our quality guarantee on defective items.
           </p>
         </div>
 
