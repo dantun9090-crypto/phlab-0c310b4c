@@ -285,14 +285,44 @@ export default function CheckoutPage() {
       const before = localStorage.getItem('php_cart');
       const migrated = migrateStoredCart<CartItem>();
       const after = localStorage.getItem('php_cart');
+      let loadedCount = 0;
       if (migrated && migrated.length > 0) {
         setCart(migrated);
+        loadedCount = migrated.length;
         if (before && after && before !== after) setCartStale(true);
       } else {
         const stored = localStorage.getItem('php_cart');
-        if (stored) setCart(JSON.parse(stored));
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            setCart(parsed);
+            loadedCount = parsed.length;
+          }
+        }
       }
-    } catch { /* ignore */ }
+      // Detect hydration drift: header was showing items but checkout read empty.
+      if (loadedCount === 0 && (before === '[]' || !before)) {
+        // ok — really empty
+      } else if (loadedCount === 0) {
+        logCartEvent({
+          type: 'hydration_drift',
+          memoryCount: 0,
+          storedCount: 0,
+          source: '/checkout',
+          message: 'Checkout loaded with empty cart but raw localStorage had data',
+          extra: { rawBefore: (before || '').slice(0, 200) },
+        });
+      }
+    } catch (e) {
+      const err = e as { name?: string; message?: string };
+      logCartEvent({
+        type: 'storage_read_failure',
+        key: 'php_cart',
+        code: err?.name || 'checkout_load',
+        message: err?.message || 'checkout cart load failed',
+        source: '/checkout',
+      });
+    }
   }, []);
 
   // Listen for cart updates
