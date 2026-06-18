@@ -34,10 +34,18 @@ export interface WallidBankDef {
   keywords?: string[];
 }
 
-/** Resolve the real logo URL for a bank via Google's high-res favicon service. */
-export function bankLogoUrl(bank: WallidBankDef, size = 128): string | null {
-  if (!bank.domain) return null;
-  return `https://www.google.com/s2/favicons?domain=${bank.domain}&sz=${size}`;
+/** Map of bank id → local logo filename slug under /public/bank-logos/. */
+const LOGO_SLUG: Record<string, string> = {
+  'cooperative-bank': 'cumberland',
+  'yorkshire-bs': 'ybs',
+  'coventry-bs': 'coventry',
+  'skipton-bs': 'skipton',
+};
+
+/** Resolve the local high-quality wordmark SVG for a bank. */
+export function bankLogoUrl(bank: WallidBankDef, _size = 128): string | null {
+  const slug = LOGO_SLUG[bank.id] ?? bank.id;
+  return `/bank-logos/${slug}.svg`;
 }
 
 export const WALLID_BANK_CATALOG: WallidBankDef[] = [
