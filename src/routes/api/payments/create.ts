@@ -69,7 +69,7 @@ export const Route = createFileRoute("/api/payments/create")({
             currency,
             status: String(wallid.status || "pending"),
             customer_email: customerEmail,
-            metadata: { items, raw: wallid },
+            metadata: { items, raw: wallid } as never,
           });
           if (dbErr) {
             console.error("[Wallid] DB insert failed:", dbErr.message);

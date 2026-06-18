@@ -18,10 +18,15 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsSlugRouteImport } from './routes/products_.$slug'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentCancelRouteImport } from './routes/payment.cancel'
+import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
+import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
+import { Route as ApiPaymentsStatusRouteImport } from './routes/api/payments/status'
+import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/create'
+import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/cancel'
 import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public/hooks/truelayer'
 import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/public/hooks/security-cleanup'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
@@ -75,6 +80,16 @@ const PaymentCancelRoute = PaymentCancelRouteImport.update({
   path: '/payment/cancel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
+  id: '/checkout/success',
+  path: '/checkout/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutCancelRoute = CheckoutCancelRouteImport.update({
+  id: '/checkout/cancel',
+  path: '/checkout/cancel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminMerchantFeedPreviewRoute =
   AdminMerchantFeedPreviewRouteImport.update({
     id: '/admin/merchant-feed-preview',
@@ -95,6 +110,21 @@ const ApiPublicPostPublishCheckRoute =
 const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
   id: '/api/public/csp-report',
   path: '/api/public/csp-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPaymentsStatusRoute = ApiPaymentsStatusRouteImport.update({
+  id: '/api/payments/status',
+  path: '/api/payments/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPaymentsCreateRoute = ApiPaymentsCreateRouteImport.update({
+  id: '/api/payments/create',
+  path: '/api/payments/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPaymentsCancelRoute = ApiPaymentsCancelRouteImport.update({
+  id: '/api/payments/cancel',
+  path: '/api/payments/cancel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksTruelayerRoute = ApiPublicHooksTruelayerRouteImport.update({
@@ -140,9 +170,14 @@ export interface FileRoutesByFullPath {
   '/products': typeof ProductsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/checkout/cancel': typeof CheckoutCancelRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/api/payments/cancel': typeof ApiPaymentsCancelRoute
+  '/api/payments/create': typeof ApiPaymentsCreateRoute
+  '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -161,9 +196,14 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/checkout/cancel': typeof CheckoutCancelRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/api/payments/cancel': typeof ApiPaymentsCancelRoute
+  '/api/payments/create': typeof ApiPaymentsCreateRoute
+  '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -183,9 +223,14 @@ export interface FileRoutesById {
   '/products': typeof ProductsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/checkout/cancel': typeof CheckoutCancelRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products_/$slug': typeof ProductsSlugRoute
+  '/api/payments/cancel': typeof ApiPaymentsCancelRoute
+  '/api/payments/create': typeof ApiPaymentsCreateRoute
+  '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -206,9 +251,14 @@ export interface FileRouteTypes {
     | '/products'
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
+    | '/checkout/cancel'
+    | '/checkout/success'
     | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
+    | '/api/payments/cancel'
+    | '/api/payments/create'
+    | '/api/payments/status'
     | '/api/public/csp-report'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
@@ -227,9 +277,14 @@ export interface FileRouteTypes {
     | '/products'
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
+    | '/checkout/cancel'
+    | '/checkout/success'
     | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
+    | '/api/payments/cancel'
+    | '/api/payments/create'
+    | '/api/payments/status'
     | '/api/public/csp-report'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
@@ -248,9 +303,14 @@ export interface FileRouteTypes {
     | '/products'
     | '/sitemap.xml'
     | '/admin/merchant-feed-preview'
+    | '/checkout/cancel'
+    | '/checkout/success'
     | '/payment/cancel'
     | '/payment/success'
     | '/products_/$slug'
+    | '/api/payments/cancel'
+    | '/api/payments/create'
+    | '/api/payments/status'
     | '/api/public/csp-report'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
@@ -270,9 +330,14 @@ export interface RootRouteChildren {
   ProductsRoute: typeof ProductsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
+  CheckoutCancelRoute: typeof CheckoutCancelRoute
+  CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   PaymentCancelRoute: typeof PaymentCancelRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
+  ApiPaymentsCancelRoute: typeof ApiPaymentsCancelRoute
+  ApiPaymentsCreateRoute: typeof ApiPaymentsCreateRoute
+  ApiPaymentsStatusRoute: typeof ApiPaymentsStatusRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
@@ -349,6 +414,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PaymentCancelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/checkout/success': {
+      id: '/checkout/success'
+      path: '/checkout/success'
+      fullPath: '/checkout/success'
+      preLoaderRoute: typeof CheckoutSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout/cancel': {
+      id: '/checkout/cancel'
+      path: '/checkout/cancel'
+      fullPath: '/checkout/cancel'
+      preLoaderRoute: typeof CheckoutCancelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/merchant-feed-preview': {
       id: '/admin/merchant-feed-preview'
       path: '/admin/merchant-feed-preview'
@@ -375,6 +454,27 @@ declare module '@tanstack/react-router' {
       path: '/api/public/csp-report'
       fullPath: '/api/public/csp-report'
       preLoaderRoute: typeof ApiPublicCspReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments/status': {
+      id: '/api/payments/status'
+      path: '/api/payments/status'
+      fullPath: '/api/payments/status'
+      preLoaderRoute: typeof ApiPaymentsStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments/create': {
+      id: '/api/payments/create'
+      path: '/api/payments/create'
+      fullPath: '/api/payments/create'
+      preLoaderRoute: typeof ApiPaymentsCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/payments/cancel': {
+      id: '/api/payments/cancel'
+      path: '/api/payments/cancel'
+      fullPath: '/api/payments/cancel'
+      preLoaderRoute: typeof ApiPaymentsCancelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/truelayer': {
@@ -430,9 +530,14 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsRoute: ProductsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
+  CheckoutCancelRoute: CheckoutCancelRoute,
+  CheckoutSuccessRoute: CheckoutSuccessRoute,
   PaymentCancelRoute: PaymentCancelRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ProductsSlugRoute: ProductsSlugRoute,
+  ApiPaymentsCancelRoute: ApiPaymentsCancelRoute,
+  ApiPaymentsCreateRoute: ApiPaymentsCreateRoute,
+  ApiPaymentsStatusRoute: ApiPaymentsStatusRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
