@@ -52,8 +52,9 @@ import SemrushTab from './tabs/SemrushTab';
 import CacheRecacheTab from './tabs/CacheRecacheTab';
 import UrlMonitorTab from './tabs/UrlMonitorTab';
 import RoyalMailTab from './tabs/RoyalMailTab';
+import WebhookTestTab from './tabs/WebhookTestTab';
 
-type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'securityaudit' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'royalmail';
+type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'securityaudit' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'royalmail' | 'webhooktest';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -431,6 +432,7 @@ export default function AdminPage() {
         case 'shopify': return <ShopifyTab />;
         case 'semrush': return <SemrushTab />;
         case 'royalmail': return <RoyalMailTab />;
+        case 'webhooktest': return <WebhookTestTab />;
         default: return <DashboardTab />;
       }
     })();
@@ -451,7 +453,7 @@ export default function AdminPage() {
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', diagnostics: 'Diagnostics',
     prerenderstatus: 'Prerender Status', cacherecache: 'Cache & Recache', gscmonitor: 'GSC Monitor', urlmonitor: 'URL Monitor', merchantfeed: 'Merchant Feed', bingfeed: 'Bing Shopping',
     securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', shopify: 'Shopify', semrush: 'Semrush',
-    royalmail: 'Royal Mail Labels',
+    royalmail: 'Royal Mail Labels', webhooktest: 'Webhook Test',
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
 
