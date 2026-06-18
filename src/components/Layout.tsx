@@ -174,9 +174,18 @@ export function Layout({ children }: LayoutProps) {
           setCart(migrated);
           return;
         }
-        const saved = localStorage.getItem('php_cart');
-        if (saved) setCart(JSON.parse(saved));
-      } catch { /* ignore */ }
+        const saved = safeCartRead<CartItem[] | null>('php_cart', null, 'layout:hydrate');
+        if (saved && Array.isArray(saved)) setCart(saved);
+      } catch (e) {
+        const err = e as { name?: string; message?: string };
+        logCartEvent({
+          type: 'storage_read_failure',
+          key: 'php_cart',
+          code: err?.name || 'hydrate_error',
+          message: err?.message || 'cart hydration failed',
+          source: 'layout:hydrate',
+        });
+      }
       finally { cartHydratedRef.current = true; }
     };
     if (typeof requestIdleCallback !== 'undefined') {
