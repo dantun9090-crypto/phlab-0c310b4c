@@ -90,7 +90,7 @@ const initAppCheck = () => {
   if (appCheckInitialised) return;
   try {
     appCheckInstance = initializeAppCheck(app, {
-      provider: new ReCaptchaEnterpriseProvider('6LfOsvksAAAAAHfxMJ_DFedEq55DjUafI2w-Urq0'),
+      provider: new ReCaptchaEnterpriseProvider('6LfsNictAAAAAP7R0Whd51frVgUToe9G1RaQ4h84'),
       isTokenAutoRefreshEnabled: true,
     });
     appCheckInitialised = true;
