@@ -13,7 +13,6 @@ import {
   type WallidBankCategory,
 } from '@/lib/wallid-bank-catalog';
 import { loadWallidBankIds, saveWallidBankIds } from '@/lib/wallid-bank-store';
-import WallidTrustElements from '@/components/WallidTrustElements';
 
 const CATEGORIES: ('all' | WallidBankCategory)[] = [
   'all', 'high-street', 'digital', 'building-society', 'business',
