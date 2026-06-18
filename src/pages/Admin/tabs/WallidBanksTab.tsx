@@ -5,6 +5,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { Search, Save, RotateCcw, Check, X, ArrowUp, ArrowDown } from 'lucide-react';
+import payByBankBadge from '@/assets/pay-by-bank-badge.png.asset.json';
 import {
   WALLID_BANK_CATALOG,
   WALLID_BANK_CATEGORY_LABELS,
@@ -223,10 +224,10 @@ export default function WallidBanksTab() {
       <div className="bg-[#0a1424] border-2 border-slate-700 rounded-lg p-4">
         <p className="text-sm font-semibold text-white mb-3">Live preview (checkout)</p>
         <img
-          src="/pay-by-bank-badge.png"
+          src={payByBankBadge.url}
           alt="Pay by Bank"
           loading="lazy"
-          className="w-full max-w-[420px] h-auto rounded-xl"
+          className="w-full max-w-[210px] h-auto rounded-xl"
           style={{ display: 'block' }}
         />
         <p className="text-[11px] text-gray-400 mt-2 leading-snug">
