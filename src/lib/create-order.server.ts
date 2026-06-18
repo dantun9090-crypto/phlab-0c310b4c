@@ -49,7 +49,7 @@ export const createOrderInputSchema = z.object({
     country:   z.string().min(1).max(80),
   }),
   shippingMethod: z.enum(['standard', 'next_day_12']),
-  paymentMethod: z.enum(['bank_transfer', 'pay_by_bank']),
+  paymentMethod: z.enum(['bank_transfer', 'pay_by_bank', 'wallid']),
   ageVerified: z.literal(true),
   termsAccepted: z.literal(true),
   couponCode: z.string().trim().min(1).max(64).regex(/^[A-Za-z0-9_-]+$/).optional().nullable(),
