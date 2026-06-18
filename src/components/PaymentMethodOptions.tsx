@@ -11,6 +11,7 @@
  */
 import { Landmark } from "lucide-react";
 import UkBankBadges from "@/components/UkBankBadges";
+import WallidTrustElements from "@/components/WallidTrustElements";
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
 
 export interface PaymentMethodOptionsProps {
