@@ -177,6 +177,49 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ---------- cart events (append-only cart/checkout telemetry) ----------
+    // Anyone (including unauthenticated shoppers) may CREATE a cart event so
+    // localStorage failures + state drift are still captured. Shape is locked.
+    // Admin-only read. No updates / deletes.
+    match /cart_events/{id} {
+      allow read: if isAdmin();
+      allow create: if request.resource.data.type is string
+                    && request.resource.data.type.size() > 0
+                    && request.resource.data.type.size() < 64
+                    && request.resource.data.createdAt == request.time
+                    && (!('memoryCount' in request.resource.data)
+                        || request.resource.data.memoryCount == null
+                        || request.resource.data.memoryCount is int)
+                    && (!('storedCount' in request.resource.data)
+                        || request.resource.data.storedCount == null
+                        || request.resource.data.storedCount is int)
+                    && (!('source' in request.resource.data)
+                        || request.resource.data.source == null
+                        || (request.resource.data.source is string
+                            && request.resource.data.source.size() < 200))
+                    && (!('code' in request.resource.data)
+                        || request.resource.data.code == null
+                        || (request.resource.data.code is string
+                            && request.resource.data.code.size() < 100))
+                    && (!('message' in request.resource.data)
+                        || request.resource.data.message == null
+                        || (request.resource.data.message is string
+                            && request.resource.data.message.size() < 300))
+                    && (!('key' in request.resource.data)
+                        || request.resource.data.key == null
+                        || (request.resource.data.key is string
+                            && request.resource.data.key.size() < 100))
+                    && (!('userAgent' in request.resource.data)
+                        || request.resource.data.userAgent == null
+                        || (request.resource.data.userAgent is string
+                            && request.resource.data.userAgent.size() < 300))
+                    && (!('extra' in request.resource.data)
+                        || request.resource.data.extra == null
+                        || (request.resource.data.extra is string
+                            && request.resource.data.extra.size() < 500));
+      allow update, delete: if false;
+    }
+
     // ---------- loginAttempts (brute-force lockout tracker) ----------
     // Written by the client BEFORE auth completes — must allow unauthenticated
     // create/update with a tightly locked schema. Doc id is a hashed email

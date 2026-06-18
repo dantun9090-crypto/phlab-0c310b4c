@@ -40,6 +40,7 @@ import GSCMonitorTab from './tabs/GSCMonitorTab';
 import MerchantFeedTab from './tabs/MerchantFeedTab';
 import BingFeedTab from './tabs/BingFeedTab';
 import AuthEventsTab from './tabs/AuthEventsTab';
+import CartEventsTab from './tabs/CartEventsTab';
 import MailHealthTab from './tabs/MailHealthTab';
 import SecurityAuditTab from './tabs/SecurityAuditTab';
 import SecurityEventsTab from './tabs/SecurityEventsTab';
@@ -52,7 +53,7 @@ import CacheRecacheTab from './tabs/CacheRecacheTab';
 import UrlMonitorTab from './tabs/UrlMonitorTab';
 import RoyalMailTab from './tabs/RoyalMailTab';
 
-type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'securityaudit' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'royalmail';
+type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'securityaudit' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'royalmail';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -404,6 +405,7 @@ export default function AdminPage() {
         case 'compliance': return <ComplianceTab />;
         case 'auditlog': return <AuditLogTab />;
         case 'authevents': return <AuthEventsTab />;
+        case 'cartevents': return <CartEventsTab />;
         case 'mailhealth': return <MailHealthTab />;
         case 'fena': return <FenaTab />;
         case 'payments': return <PaymentsTab />;
@@ -441,7 +443,7 @@ export default function AdminPage() {
   const TAB_LABELS: Record<string, string> = {
     dashboard: 'Dashboard', ai: 'AI Assistant', inventory: 'Inventory', featured: 'Featured',
     qc: 'QC Dashboard', orders: 'Orders', customers: 'Customers',
-    compliance: 'Compliance', auditlog: 'Audit Log', authevents: 'Auth Events', mailhealth: 'Mail Health', invoices: 'Invoices', banner: 'Promo Banner',
+    compliance: 'Compliance', auditlog: 'Audit Log', authevents: 'Auth Events', cartevents: 'Cart Events', mailhealth: 'Mail Health', invoices: 'Invoices', banner: 'Promo Banner',
     adverts: 'Adverts', landing: 'Landing Pages', policies: 'Policies',
     marketing: 'Marketing', emailmarketing: 'Email Campaigns', emailpreview: 'Email Preview',
     seo: 'SEO Settings', sitemap: 'Sitemap Manager', settings: 'Site Settings',
