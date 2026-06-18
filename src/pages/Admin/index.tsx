@@ -40,6 +40,7 @@ import GSCMonitorTab from './tabs/GSCMonitorTab';
 import MerchantFeedTab from './tabs/MerchantFeedTab';
 import BingFeedTab from './tabs/BingFeedTab';
 import AuthEventsTab from './tabs/AuthEventsTab';
+import CartEventsTab from './tabs/CartEventsTab';
 import MailHealthTab from './tabs/MailHealthTab';
 import SecurityAuditTab from './tabs/SecurityAuditTab';
 import SecurityEventsTab from './tabs/SecurityEventsTab';
