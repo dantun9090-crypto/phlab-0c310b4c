@@ -1580,7 +1580,7 @@ export default function CheckoutPage() {
                         </>
                       ) : (
                         <>
-                          <Lock className="w-4 h-4" /> {form.paymentMethod === 'pay_by_bank' ? `Pay by Bank — £${total}` : `Place Order — £${total}`}
+                          <Lock className="w-4 h-4" /> {form.paymentMethod === 'pay_by_bank' || form.paymentMethod === 'wallid' ? `Pay by Bank — £${total}` : `Place Order — £${total}`}
                         </>
                       )}
                     </button>
