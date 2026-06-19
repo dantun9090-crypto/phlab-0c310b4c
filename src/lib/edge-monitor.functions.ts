@@ -157,7 +157,7 @@ export const probeEdgeMonitor = createServerFn({ method: 'POST' })
       if (data.persist) {
         try {
           await addDocAdmin('edgeMonitorSamples', sample as unknown as Record<string, unknown>);
-          const meta = { ...sample, updatedAt: new Date().toISOString() };
+          const meta: Record<string, unknown> = { ...sample, updatedAt: new Date().toISOString() };
           const existing = await getDocAdmin('_meta', 'edge_monitor_latest').catch(() => null);
           if (existing) await updateDocAdmin('_meta', 'edge_monitor_latest', meta);
           else await addDocAdmin('_meta', meta, 'edge_monitor_latest');
