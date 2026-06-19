@@ -649,7 +649,7 @@ if (typeof window !== 'undefined') {
 
 export const logoutUser = async () => {
   const current = auth.currentUser;
-  
+  try { window.localStorage.removeItem(REMEMBER_KEY); } catch { /* ignore */ }
   logAuthEvent({ type: 'logout', email: current?.email ?? null, uid: current?.uid ?? null });
   return signOut(auth);
 };
