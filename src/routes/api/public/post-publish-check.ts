@@ -86,6 +86,23 @@ async function recachePrerender(): Promise<{ desktop: number; mobile: number; ur
 async function runInvalidation(buildId: string): Promise<void> {
   const started = Date.now();
   const [cf, pr] = await Promise.all([purgeEverything(), recachePrerender()]);
+
+  // Also run the security regression probe so each deploy is verified.
+  let regression: { ok: boolean; failed: number } | null = null;
+  try {
+    const { runSecurityRegression } = await import('@/lib/security-regression.functions');
+    const { addDocAdmin, updateDocAdmin, getDocAdmin } = await import('@/lib/server/firestore-admin');
+    const report = await runSecurityRegression();
+    regression = { ok: report.ok, failed: report.failed };
+    const meta = { ...report, buildId, updatedAt: new Date().toISOString() };
+    const existing = await getDocAdmin('_meta', 'security_regression').catch(() => null);
+    if (existing) await updateDocAdmin('_meta', 'security_regression', meta);
+    else await addDocAdmin('_meta', meta, 'security_regression');
+    await addDocAdmin('securityRegressions', { ...report, buildId, createdAt: new Date().toISOString() });
+  } catch (e) {
+    console.warn('[post-publish-check] security regression failed:', e);
+  }
+
   // Best-effort audit log entry — never throws.
   try {
     await addDocAdmin('auditLogs', {
@@ -93,6 +110,7 @@ async function runInvalidation(buildId: string): Promise<void> {
       buildId,
       cloudflare: cf,
       prerender: pr,
+      regression,
       durationMs: Date.now() - started,
       createdAt: new Date().toISOString(),
     });
