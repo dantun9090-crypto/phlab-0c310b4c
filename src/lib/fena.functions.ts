@@ -148,20 +148,27 @@ export const getOrderPaymentStatus = createServerFn({ method: "POST" })
         const liveStatus = String(live.status ?? "").toLowerCase();
         if (liveStatus) fenaStatus = liveStatus;
         if (liveStatus === "paid" && status !== "paid") {
-          await updateDocAdmin("orders", orderId, {
-            status: "paid",
-            paidAt: new Date(),
-            fenaStatus: liveStatus,
-            paymentProvider: "fena",
-            fenaSelfHealedAt: new Date(),
+          // ATOMIC: poller races the Fena webhook. Only one writer flips
+          // the order to paid; the loser keeps the existing paid doc.
+          const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+          const { transitioned } = await transitionDocStatusAdmin("orders", orderId, {
+            allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+            updates: {
+              status: "paid",
+              paidAt: new Date(),
+              fenaStatus: liveStatus,
+              paymentProvider: "fena",
+              fenaSelfHealedAt: new Date(),
+            },
           });
-          status = "paid";
+          if (transitioned) status = "paid";
         } else if ((liveStatus === "cancelled" || liveStatus === "expired") && status === "pending") {
-          await updateDocAdmin("orders", orderId, {
-            status: "cancelled",
-            fenaStatus: liveStatus,
+          const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+          const { transitioned } = await transitionDocStatusAdmin("orders", orderId, {
+            allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+            updates: { status: "cancelled", fenaStatus: liveStatus },
           });
-          status = "cancelled";
+          if (transitioned) status = "cancelled";
         } else if (liveStatus && liveStatus !== order.fenaStatus) {
           await updateDocAdmin("orders", orderId, { fenaStatus: liveStatus });
         }
@@ -178,20 +185,25 @@ export const getOrderPaymentStatus = createServerFn({ method: "POST" })
         const liveStatus = String(live.status ?? "").toLowerCase();
         const mapped = mapTrueLayerStatus(liveStatus);
         if (mapped === "paid" && status !== "paid") {
-          await updateDocAdmin("orders", orderId, {
-            status: "paid",
-            paidAt: new Date(),
-            truelayerStatus: liveStatus,
-            paymentProvider: "truelayer",
-            truelayerSelfHealedAt: new Date(),
+          const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+          const { transitioned } = await transitionDocStatusAdmin("orders", orderId, {
+            allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+            updates: {
+              status: "paid",
+              paidAt: new Date(),
+              truelayerStatus: liveStatus,
+              paymentProvider: "truelayer",
+              truelayerSelfHealedAt: new Date(),
+            },
           });
-          status = "paid";
+          if (transitioned) status = "paid";
         } else if (mapped === "cancelled" && status === "pending") {
-          await updateDocAdmin("orders", orderId, {
-            status: "cancelled",
-            truelayerStatus: liveStatus,
+          const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+          const { transitioned } = await transitionDocStatusAdmin("orders", orderId, {
+            allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+            updates: { status: "cancelled", truelayerStatus: liveStatus },
           });
-          status = "cancelled";
+          if (transitioned) status = "cancelled";
         } else if (liveStatus && liveStatus !== order.truelayerStatus) {
           await updateDocAdmin("orders", orderId, { truelayerStatus: liveStatus });
         }
@@ -406,23 +418,35 @@ export const reconcileFenaOrphans = createServerFn({ method: "POST" })
         const isPaid = fenaStatus === "paid";
         const isCancelled = fenaStatus === "cancelled" || fenaStatus === "expired";
 
-        const updates: Record<string, unknown> = {
+        // Always-safe trail fields (idempotent to overwrite).
+        const trailUpdates: Record<string, unknown> = {
           fenaStatus,
           fenaPaymentId,
           fenaReconciledAt: new Date(),
           paymentProvider: "fena",
         };
+        await updateDocAdmin("orders", orderId, trailUpdates);
+
+        // Status mutation goes through an atomic transition so a
+        // simultaneous webhook delivery can't double-confirm.
+        let didTransitionToPaid = false;
         if (isPaid && currentStatus !== "paid") {
-          updates.status = "paid";
-          updates.paidAt = new Date();
+          const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+          const { transitioned } = await transitionDocStatusAdmin("orders", orderId, {
+            allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+            updates: { status: "paid", paidAt: new Date() },
+          });
+          didTransitionToPaid = transitioned;
         } else if (isCancelled && currentStatus === "pending") {
-          updates.status = "cancelled";
+          const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+          await transitionDocStatusAdmin("orders", orderId, {
+            allowFrom: ["pending"],
+            updates: { status: "cancelled" },
+          });
         }
 
-        await updateDocAdmin("orders", orderId, updates);
-
-        // Confirmation mail on first paid transition during reconciliation.
-        if (isPaid && currentStatus !== "paid") {
+        // Confirmation mail ONLY when we won the paid-transition race.
+        if (didTransitionToPaid) {
           const to = String(orderRow.customerEmail ?? orderRow.email ?? "");
           if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
             try {
@@ -450,7 +474,7 @@ export const reconcileFenaOrphans = createServerFn({ method: "POST" })
           resolved: true,
           resolvedAt: new Date(),
           resolvedOrderId: orderId,
-          resolvedStatus: updates.status ?? currentStatus,
+          resolvedStatus: didTransitionToPaid ? "paid" : (isCancelled && currentStatus === "pending" ? "cancelled" : currentStatus),
         });
 
         // Sanity: make sure the order doc actually exists post-update.
@@ -461,7 +485,7 @@ export const reconcileFenaOrphans = createServerFn({ method: "POST" })
           fenaPaymentId,
           outcome: "resolved",
           orderId,
-          newStatus: String(updates.status ?? currentStatus),
+          newStatus: didTransitionToPaid ? "paid" : (isCancelled && currentStatus === "pending" ? "cancelled" : currentStatus),
         });
       } catch (err) {
         result.unresolved += 1;
