@@ -94,6 +94,8 @@ export default function BannerTab() {
     setMsg(null);
     try {
       await setDoc(doc(db, 'settings', 'promoBanner'), { ...banner, updatedAt: Timestamp.now() });
+      // Banner appears on every page — purge homepage + sitemap.
+      triggerContentCdnInvalidation(['/']);
       window.dispatchEvent(new CustomEvent('admin:save'));
       setOriginal(banner);
       setMsg({ type: 'success', text: 'Banner saved successfully!' });
