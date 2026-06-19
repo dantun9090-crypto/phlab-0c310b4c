@@ -72,7 +72,7 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
         let updated = 0;
         const results: Array<{ orderId: string; from: string; to: string }> = [];
 
-        const { updateDocAdmin, getDocAdmin, addDocAdmin } = await import("@/lib/server/firestore-admin");
+        const { updateDocAdmin, getDocAdmin } = await import("@/lib/server/firestore-admin");
 
         for (const row of rows) {
           if (!row.api_payment_id || !row.order_id) continue;
