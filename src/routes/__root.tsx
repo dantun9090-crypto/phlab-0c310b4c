@@ -9,6 +9,7 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
+import { PageTransition } from "@/components/PageTransition";
 import appCss from "../styles.css?url";
 import "@/lib/chunk-reload";
 import {
@@ -578,7 +579,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <PageviewBeacon />
-      <Outlet />
+      <PageTransition />
     </QueryClientProvider>
   );
 }
