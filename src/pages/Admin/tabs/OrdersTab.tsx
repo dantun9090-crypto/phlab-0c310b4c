@@ -974,6 +974,7 @@ export default function OrdersTab() {
                       )}
                       {isFenaOrder(selected) && <FenaStatusBadge order={selected} />}
                       <ProviderBadge order={selected} />
+                      <ReconciledCronBadge order={selected} />
                       {(selected as any).fenaPaymentId && (
                         <button
                           type="button"
