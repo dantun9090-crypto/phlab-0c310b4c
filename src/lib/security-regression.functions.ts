@@ -191,11 +191,14 @@ export const probeSecurityRegression = createServerFn({ method: 'POST' })
     const report = await runSecurityRegression();
     if (data.persist) {
       try {
-        const { addDocAdmin, setDocAdmin } = await import('./server/firestore-admin');
-        await setDocAdmin('_meta', 'security_regression', {
-          ...report,
-          updatedAt: new Date().toISOString(),
-        });
+        const { addDocAdmin, updateDocAdmin, getDocAdmin } = await import('./server/firestore-admin');
+        const meta = { ...report, updatedAt: new Date().toISOString() };
+        const existing = await getDocAdmin('_meta', 'security_regression').catch(() => null);
+        if (existing) {
+          await updateDocAdmin('_meta', 'security_regression', meta);
+        } else {
+          await addDocAdmin('_meta', meta, 'security_regression');
+        }
         await addDocAdmin('securityRegressions', {
           ...report,
           createdAt: new Date().toISOString(),
