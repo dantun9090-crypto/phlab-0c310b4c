@@ -203,6 +203,16 @@ function ProviderBadge({ order }: { order: any }) {
   return null;
 }
 
+// ── Wallid cron reconciliation badge ──
+function ReconciledCronBadge({ order }: { order: any }) {
+  if (!order?.reconciledViaCron) return null;
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium border bg-violet-500/15 text-violet-300 border-violet-500/30" title="Status updated automatically by Wallid reconciliation cron">
+      <RefreshCw className="w-3 h-3" />Cron Reconciled
+    </span>
+  );
+}
+
 export default function OrdersTab() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -841,6 +851,7 @@ export default function OrdersTab() {
                     )}
                     {isFenaOrder(order) && <FenaStatusBadge order={order} />}
                     <ProviderBadge order={order} />
+                    <ReconciledCronBadge order={order} />
                     {order.trackingNumber && (
                       <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-400 font-mono">
                         <Hash className="w-3 h-3" />{order.trackingNumber}
@@ -963,6 +974,7 @@ export default function OrdersTab() {
                       )}
                       {isFenaOrder(selected) && <FenaStatusBadge order={selected} />}
                       <ProviderBadge order={selected} />
+                      <ReconciledCronBadge order={selected} />
                       {(selected as any).fenaPaymentId && (
                         <button
                           type="button"
