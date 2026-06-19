@@ -390,7 +390,7 @@ function isCacheableHtmlPath(pathname: string): boolean {
   return true;
 }
 
-function applySecurityHeaders(response: Response, nonce: string, hostname?: string, pathname?: string): Response {
+function applySecurityHeaders(response: Response, nonce: string, hostname?: string, pathname?: string, htmlTtl: number = 60): Response {
   const stripped = stripInternalHeaders(response);
   const contentType = stripped.headers.get("content-type") ?? "";
   // Only decorate HTML — leaving JSON/XML/asset responses untouched avoids
@@ -399,19 +399,21 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
 
   const htmlHeaders = new Headers(stripped.headers);
   const cacheable = pathname ? isCacheableHtmlPath(pathname) : false;
-  if (cacheable && stripped.status === 200) {
+  // htmlTtl is admin-controlled via /admin → Cache & Recache. 0 disables the
+  // edge cache entirely (no-store everywhere) so blank-page risk after a
+  // publish is zero. >0 sets max-age + stale-while-revalidate.
+  if (cacheable && stripped.status === 200 && htmlTtl > 0) {
     // Browsers must always revalidate (max-age=0) so a publish is visible
-    // immediately on next nav. CF edge holds the response for 60s + can serve
-    // stale up to 24h while revalidating. After a publish, purge CF cache
-    // or wait <=60s for fresh HTML to propagate.
+    // immediately on next nav. CF edge holds the response for htmlTtl + can
+    // serve stale up to 24h while revalidating.
     htmlHeaders.set("cache-control", "public, max-age=0, must-revalidate");
-    htmlHeaders.set("cdn-cache-control", "public, max-age=60, stale-while-revalidate=86400");
-    htmlHeaders.set("cloudflare-cdn-cache-control", "public, max-age=60, stale-while-revalidate=86400");
+    htmlHeaders.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
+    htmlHeaders.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
     htmlHeaders.delete("surrogate-control");
     htmlHeaders.delete("pragma");
     htmlHeaders.delete("expires");
   } else {
-    // Sensitive routes — never cache.
+    // Sensitive routes OR caching disabled by admin — never cache.
     htmlHeaders.set("cache-control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0");
     htmlHeaders.set("cdn-cache-control", "no-store");
     htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
