@@ -66,9 +66,9 @@ export default function CacheRecacheTab() {
   }, []);
 
   const saveTtl = async () => {
-    if (ttl !== 0 && ttl > 86400) {
+    if (ttl !== 0) {
       if (!confirm(
-        'Long cache TTLs (>24h) mean returning visitors may see stale HTML referencing old /assets/*.js after a publish — which causes blank pages. The post-publish hook will purge automatically, but if the purge fails users could be stuck on a stale shell. Continue?',
+        'Enabling the HTML edge cache means returning visitors may see stale HTML referencing old /assets/*.js after a publish — which causes blank pages. The post-publish hook will purge automatically, but if the purge fails users could be stuck on a stale shell. Continue?',
       )) return;
     }
     setSavingTtl(true);
