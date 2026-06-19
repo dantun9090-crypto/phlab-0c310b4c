@@ -67,7 +67,7 @@ export default function WallidKillSwitchCard() {
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Master kill switch. When OFF the Wallid tile is hidden at checkout and the create-payment API returns 403.
-            Existing pending payments still accept webhooks.
+            Guest checkout now uses a one-time server-minted payment token if anonymous sign-in is unavailable; existing pending payments still accept webhooks.
           </p>
         </div>
         <span
