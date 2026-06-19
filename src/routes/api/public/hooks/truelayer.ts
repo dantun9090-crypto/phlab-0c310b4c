@@ -193,38 +193,60 @@ export const Route = createFileRoute("/api/public/hooks/truelayer")({
         const liveStatus = String(authoritative.status ?? "").toLowerCase();
         const mapped = mapTrueLayerStatus(liveStatus);
         const currentStatus = String(orderRow.status ?? "pending").toLowerCase();
-        const wasPaid = currentStatus === "paid";
 
-        const updates: Record<string, unknown> = {
+        // Updates that always land (event id trail + provider status) —
+        // safe to write outside the transition because they're idempotent.
+        const trailUpdates: Record<string, unknown> = {
           truelayerStatus: liveStatus,
           truelayerEventIds: [...seen, eventId].slice(-20),
         };
-        if (mapped === "paid" && !wasPaid) {
-          updates.status = "paid";
-          updates.paidAt = new Date();
-          updates.paymentProvider = "truelayer";
+        await updateDocAdmin("orders", orderId, trailUpdates);
+
+        // Status mutation goes through an atomic transition so concurrent
+        // TrueLayer redeliveries can't double-flip the order or fire two
+        // confirmation emails.
+        let didTransitionToPaid = false;
+        let priorForEmail: Record<string, unknown> = orderRow;
+        if (mapped === "paid") {
+          const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+          const { transitioned, prior } = await transitionDocStatusAdmin(
+            "orders",
+            orderId,
+            {
+              allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+              updates: {
+                status: "paid",
+                paidAt: new Date(),
+                paymentProvider: "truelayer",
+              },
+            },
+          );
+          didTransitionToPaid = transitioned;
+          if (prior) priorForEmail = prior;
         } else if (mapped === "cancelled" && currentStatus === "pending") {
-          updates.status = "cancelled";
+          const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+          await transitionDocStatusAdmin("orders", orderId, {
+            allowFrom: ["pending"],
+            updates: { status: "cancelled" },
+          });
         }
 
-        await updateDocAdmin("orders", orderId, updates);
-
-        if (mapped === "paid" && !wasPaid) {
-          const customerObj = (orderRow.customer as Record<string, unknown> | undefined) || {};
-          const to = String(orderRow.customerEmail ?? orderRow.email ?? customerObj.email ?? "");
-          const ref = String(orderRow.orderNumber ?? orderId);
+        if (didTransitionToPaid) {
+          const customerObj = (priorForEmail.customer as Record<string, unknown> | undefined) || {};
+          const to = String(priorForEmail.customerEmail ?? priorForEmail.email ?? customerObj.email ?? "");
+          const ref = String(priorForEmail.orderNumber ?? orderId);
           if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
             try {
               const firstName =
                 String(
-                  (orderRow.firstName as string) ||
+                  (priorForEmail.firstName as string) ||
                     (customerObj.firstName as string) ||
-                    (orderRow.customerName as string) ||
+                    (priorForEmail.customerName as string) ||
                     "",
                 ).split(" ")[0] || "there";
               const amount = Number(
-                (orderRow.totalAmount as number) ??
-                  (orderRow.total as number) ??
+                (priorForEmail.totalAmount as number) ??
+                  (priorForEmail.total as number) ??
                   0,
               );
               const { subject, html, text } = paymentConfirmedEmail({
