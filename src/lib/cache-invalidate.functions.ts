@@ -57,6 +57,10 @@ function productUrls(slugs?: string[], category?: string): string[] {
   const urls = new Set<string>([
     `${ORIGIN}/products`,
     `${ORIGIN}/`,
+    // Sitemap + robots regenerate dynamically from Firestore — must purge
+    // on every product change so crawlers see new lastmod/URL list.
+    `${ORIGIN}/sitemap.xml`,
+    `${ORIGIN}/robots.txt`,
   ]);
 
   // Category landing pages — purge all to be safe (cheap).
