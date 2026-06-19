@@ -132,14 +132,14 @@ export async function createPaymentLinkForOrder(ctx: OrderCtx): Promise<Dispatch
 /** Verify the order exists, is unsettled, and return a normalised ctx. */
 export async function buildOrderCtxForPayment(
   orderId: string,
-  userUid: string,
+  userUid: string | null,
   userEmail: string | null,
   paymentToken?: string | null,
 ): Promise<OrderCtx> {
   const order = await getDocAdmin("orders", orderId);
   if (!order) throw new Error("Order not found");
   const tokenMatches = verifyPaymentToken(paymentToken, order.paymentTokenHash);
-  if (order.userId && order.userId !== userUid && !tokenMatches) {
+  if (order.userId && (!userUid || order.userId !== userUid) && !tokenMatches) {
     throw new Error("Forbidden: order belongs to another account");
   }
   if (!order.userId && order.paymentTokenHash && !tokenMatches) {
@@ -169,7 +169,7 @@ export async function buildOrderCtxForPayment(
     reference,
     customerName,
     customerEmail,
-    customerUid: userUid,
+    customerUid: userUid || String(order.userId ?? orderId),
   };
 }
 
