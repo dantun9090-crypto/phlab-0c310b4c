@@ -198,6 +198,7 @@ export default function LandingPageTab() {
     try {
       const docRef = doc(db, 'siteSettings', 'landingPage');
       await setDoc(docRef, { ...data, updatedAt: Date.now() });
+      triggerContentCdnInvalidation(['/']);
       addToast('Landing page saved successfully!', 'success');
     } catch (error) {
       console.error('Error saving:', error);
