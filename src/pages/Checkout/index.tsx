@@ -102,7 +102,7 @@ export default function CheckoutPage() {
     city: '',
     postcode: '',
     country: 'United Kingdom',
-    paymentMethod: 'bank_transfer',
+    paymentMethod: 'pay_by_bank',
     acceptedTerms: false,
     ageVerified: false,
     createAccount: false,
