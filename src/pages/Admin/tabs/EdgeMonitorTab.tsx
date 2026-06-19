@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Activity, AlertTriangle, CheckCircle2, Loader2, RefreshCw, Pause, Play } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle2, Loader2, RefreshCw, Pause, Play, Shield, XCircle } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { probeEdgeMonitor, type MonitorSample, type Probe } from '@/lib/edge-monitor.functions';
+import { getCloudflareBotStatus, type CloudflareBotStatus } from '@/lib/cloudflare-bot.functions';
 
 /**
  * Real-time monitor for Cloudflare HTML edge cache, Prerender.io Googlebot
@@ -22,6 +23,24 @@ export default function EdgeMonitorTab() {
   const [paused, setPaused] = useState(false);
   const [lastRun, setLastRun] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
+  const [botStatus, setBotStatus] = useState<CloudflareBotStatus | null>(null);
+  const [botLoading, setBotLoading] = useState(false);
+  const [botError, setBotError] = useState<string | null>(null);
+
+  const fetchBotStatus = async () => {
+    setBotLoading(true);
+    setBotError(null);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Sign in as admin first');
+      const res = await getCloudflareBotStatus({ data: { idToken } });
+      setBotStatus(res);
+    } catch (e) {
+      setBotError(e instanceof Error ? e.message : 'bot status failed');
+    } finally {
+      setBotLoading(false);
+    }
+  };
 
   const probe = async () => {
     setLoading(true);
@@ -47,6 +66,7 @@ export default function EdgeMonitorTab() {
 
   useEffect(() => {
     void probe();
+    void fetchBotStatus();
   }, []);
 
   useEffect(() => {
@@ -125,6 +145,19 @@ export default function EdgeMonitorTab() {
         </div>
       ))}
 
+      {/* Cloudflare Bot Management status */}
+      <section>
+        <h2 className="text-xs font-bold tracking-widest uppercase text-slate-400 mb-2">
+          Cloudflare Bot Management
+        </h2>
+        <BotStatusCard
+          status={botStatus}
+          loading={botLoading}
+          error={botError}
+          onRefresh={() => void fetchBotStatus()}
+        />
+      </section>
+
       {/* Current probes */}
       {sample && (
         <section>
@@ -163,6 +196,109 @@ export default function EdgeMonitorTab() {
             </div>
           </div>
         </section>
+      )}
+    </div>
+  );
+}
+
+function BotStatusCard({
+  status,
+  loading,
+  error,
+  onRefresh,
+}: {
+  status: CloudflareBotStatus | null;
+  loading: boolean;
+  error: string | null;
+  onRefresh: () => void;
+}) {
+  const cfg = status?.config;
+  const sbfmDisabled =
+    cfg?.fight_mode === false &&
+    cfg?.sbfm_definitely_automated === 'allow' &&
+    cfg?.sbfm_verified_bots === 'allow';
+
+  return (
+    <div className="rounded-xl border border-slate-800 bg-slate-900 p-4 space-y-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Shield className="w-5 h-5 text-slate-400" />
+          <span className="text-sm font-semibold text-white">Super Bot Fight Mode</span>
+        </div>
+        <button
+          onClick={onRefresh}
+          disabled={loading}
+          className="text-xs inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 disabled:opacity-60"
+        >
+          {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+          Refresh
+        </button>
+      </div>
+
+      {error && <div className="text-sm text-red-400">{error}</div>}
+      {!status && !loading && !error && <div className="text-sm text-slate-400">No status loaded.</div>}
+
+      {status && (
+        <>
+          <div className="flex items-center gap-2">
+            {sbfmDisabled ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            ) : (
+              <XCircle className="w-5 h-5 text-amber-400" />
+            )}
+            <span className={`text-sm font-medium ${sbfmDisabled ? 'text-emerald-300' : 'text-amber-300'}`}>
+              {sbfmDisabled ? 'Disabled (actions set to allow)' : 'Enabled or partially active'}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+            <div className="bg-slate-950 border border-slate-800 rounded p-2">
+              <span className="text-slate-500">fight_mode</span>
+              <span className="text-slate-200 block">{String(cfg?.fight_mode ?? '—')}</span>
+            </div>
+            <div className="bg-slate-950 border border-slate-800 rounded p-2">
+              <span className="text-slate-500">definitely_automated</span>
+              <span className="text-slate-200 block">{cfg?.sbfm_definitely_automated ?? '—'}</span>
+            </div>
+            <div className="bg-slate-950 border border-slate-800 rounded p-2">
+              <span className="text-slate-500">verified_bots</span>
+              <span className="text-slate-200 block">{cfg?.sbfm_verified_bots ?? '—'}</span>
+            </div>
+            <div className="bg-slate-950 border border-slate-800 rounded p-2">
+              <span className="text-slate-500">ai_bots</span>
+              <span className="text-slate-200 block">{cfg?.ai_bots_protection ?? '—'}</span>
+            </div>
+            <div className="bg-slate-950 border border-slate-800 rounded p-2">
+              <span className="text-slate-500">content_bots</span>
+              <span className="text-slate-200 block">{cfg?.content_bots_protection ?? '—'}</span>
+            </div>
+            <div className="bg-slate-950 border border-slate-800 rounded p-2">
+              <span className="text-slate-500">crawler</span>
+              <span className="text-slate-200 block">{cfg?.crawler_protection ?? '—'}</span>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-800 pt-3">
+            <div className="text-xs font-semibold text-slate-400 mb-2">Live probe</div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-slate-950 border border-slate-800 rounded p-2">
+                <span className="text-slate-500">cf-cache-status</span>
+                <span className="text-slate-200 block">{status.probe.cfCache ?? '—'}</span>
+              </div>
+              <div className="bg-slate-950 border border-slate-800 rounded p-2">
+                <span className="text-slate-500">__cf_bm cookie</span>
+                <span className={`block ${status.probe.hasCfBm ? 'text-amber-400' : 'text-emerald-400'}`}>
+                  {status.probe.hasCfBm ? 'Present' : 'Absent'}
+                </span>
+              </div>
+            </div>
+            {status.probe.hasCfBm && (
+              <p className="text-xs text-slate-400 mt-2">
+                Cloudflare Pro still injects the <code className="text-slate-300">__cf_bm</code> session cookie even when SBFM actions are set to allow. Full cookie removal requires Enterprise <code className="text-slate-300">bm_cookie_enabled</code> or a plan downgrade.
+              </p>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
