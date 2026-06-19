@@ -21,6 +21,7 @@ import { Route as PaymentCancelRouteImport } from './routes/payment.cancel'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
+import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wallid'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
@@ -99,6 +100,11 @@ const AdminMerchantFeedPreviewRoute =
     path: '/admin/merchant-feed-preview',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiWebhooksWallidRoute = ApiWebhooksWallidRouteImport.update({
+  id: '/api/webhooks/wallid',
+  path: '/api/webhooks/wallid',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSendMailRoute = ApiPublicSendMailRouteImport.update({
   id: '/api/public/send-mail',
   path: '/api/public/send-mail',
@@ -201,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
@@ -230,6 +237,7 @@ export interface FileRoutesByTo {
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
@@ -260,6 +268,7 @@ export interface FileRoutesById {
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
@@ -291,6 +300,7 @@ export interface FileRouteTypes {
     | '/api/public/csp-report'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
+    | '/api/webhooks/wallid'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
     | '/api/public/hooks/monitor-product-urls'
@@ -320,6 +330,7 @@ export interface FileRouteTypes {
     | '/api/public/csp-report'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
+    | '/api/webhooks/wallid'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
     | '/api/public/hooks/monitor-product-urls'
@@ -349,6 +360,7 @@ export interface FileRouteTypes {
     | '/api/public/csp-report'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
+    | '/api/webhooks/wallid'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
     | '/api/public/hooks/monitor-product-urls'
@@ -379,6 +391,7 @@ export interface RootRouteChildren {
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
+  ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
   ApiPublicHooksFenaRoute: typeof ApiPublicHooksFenaRoute
   ApiPublicHooksFenaProcessRetriesRoute: typeof ApiPublicHooksFenaProcessRetriesRoute
   ApiPublicHooksMonitorProductUrlsRoute: typeof ApiPublicHooksMonitorProductUrlsRoute
@@ -472,6 +485,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/merchant-feed-preview'
       fullPath: '/admin/merchant-feed-preview'
       preLoaderRoute: typeof AdminMerchantFeedPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/webhooks/wallid': {
+      id: '/api/webhooks/wallid'
+      path: '/api/webhooks/wallid'
+      fullPath: '/api/webhooks/wallid'
+      preLoaderRoute: typeof ApiWebhooksWallidRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/send-mail': {
@@ -603,6 +623,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
+  ApiWebhooksWallidRoute: ApiWebhooksWallidRoute,
   ApiPublicHooksFenaRoute: ApiPublicHooksFenaRoute,
   ApiPublicHooksFenaProcessRetriesRoute: ApiPublicHooksFenaProcessRetriesRoute,
   ApiPublicHooksMonitorProductUrlsRoute: ApiPublicHooksMonitorProductUrlsRoute,
@@ -614,13 +635,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
