@@ -216,13 +216,15 @@ export const Route = createFileRoute("/api/public/hooks/wallid")({
 
                   // Send branded payment-received email on first paid transition.
                   if (firestoreStatus === "paid" && priorStatus !== "paid" && priorDoc) {
-                    const to = String(priorDoc.customerEmail ?? priorDoc.email ?? "");
+                    const customerObj = (priorDoc.customer as Record<string, unknown> | undefined) || {};
+                    const to = String(priorDoc.customerEmail ?? priorDoc.email ?? customerObj.email ?? "");
                     if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
                       try {
                         const { paymentConfirmedEmail } = await import("@/templates/paymentConfirmedEmail");
                         const firstName =
                           String(
                             (priorDoc.firstName as string) ||
+                              (customerObj.firstName as string) ||
                               (priorDoc.customerName as string) ||
                               "",
                           ).split(" ")[0] || "there";
