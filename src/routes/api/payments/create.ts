@@ -29,6 +29,7 @@ const ItemSchema = z.object({
 const BodySchema = z.object({
   idToken: z.string().min(10).max(4096),
   orderId: z.string().min(3).max(128).regex(/^[A-Za-z0-9_-]+$/),
+  paymentToken: z.string().min(32).max(256).optional().nullable(),
   amount: z.number().positive().max(100000),
   currency: z.literal("GBP"),
   items: z.array(ItemSchema).min(1).max(50),
@@ -65,7 +66,7 @@ export const Route = createFileRoute("/api/payments/create")({
         if (!parsed.success) {
           return json({ error: "Invalid payment details", details: parsed.error.flatten() }, 400);
         }
-        const { idToken, orderId, amount: clientAmount, currency, items, customerEmail } = parsed.data;
+        const { idToken, orderId, paymentToken, amount: clientAmount, currency, items, customerEmail } = parsed.data;
 
         // 1) Authenticate caller
         let user;
@@ -78,7 +79,7 @@ export const Route = createFileRoute("/api/payments/create")({
         // 2) Load order, verify ownership + unsettled status, derive trusted amount
         let ctx;
         try {
-          ctx = await buildOrderCtxForPayment(orderId, user.uid, user.email);
+          ctx = await buildOrderCtxForPayment(orderId, user.uid, user.email, paymentToken);
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           if (/forbidden/i.test(msg)) return json({ error: "Forbidden" }, 403);
