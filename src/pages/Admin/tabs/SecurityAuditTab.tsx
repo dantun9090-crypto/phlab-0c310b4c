@@ -186,14 +186,45 @@ const BASELINE: Check[] = [
 export default function SecurityAuditTab() {
   const [checks, setChecks] = useState<Check[]>(BASELINE);
   const [loading, setLoading] = useState(false);
+  const [probing, setProbing] = useState(false);
+  const [probeAt, setProbeAt] = useState<string | null>(null);
+  const [probeError, setProbeError] = useState<string | null>(null);
 
   const refresh = () => {
     setLoading(true);
-    // Placeholder for future live-probe server fn. For now just bounce state.
     setTimeout(() => {
-      setChecks([...BASELINE]);
+      setChecks((current) => [...current]);
       setLoading(false);
-    }, 400);
+    }, 200);
+  };
+
+  const runProbe = async () => {
+    setProbing(true);
+    setProbeError(null);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Sign in as admin first');
+      const res = await probeSecurityRegression({ data: { idToken, persist: true } });
+      if (!res.ok || !('report' in res)) {
+        throw new Error(('reason' in res && res.reason) || 'probe_failed');
+      }
+      // Merge live results: each probe check becomes a Check row in the "Live probe" category.
+      const liveChecks: Check[] = res.report.checks.map((c) => ({
+        id: `probe-${c.id}`,
+        category: 'Live probe',
+        title: c.title,
+        description: c.detail,
+        severity: c.status === 'fail' ? 'critical' : c.status === 'warn' ? 'medium' : 'low',
+        status: c.status as Status,
+      }));
+      // Keep baseline rows, drop any prior probe rows, append fresh ones.
+      setChecks([...BASELINE.filter((b) => !b.id.startsWith('probe-')), ...liveChecks]);
+      setProbeAt(new Date(res.report.timestamp).toLocaleString('en-GB'));
+    } catch (e) {
+      setProbeError(e instanceof Error ? e.message : 'probe failed');
+    } finally {
+      setProbing(false);
+    }
   };
 
   useEffect(() => { refresh(); }, []);
@@ -211,7 +242,7 @@ export default function SecurityAuditTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <ShieldCheck className="w-6 h-6 text-emerald-400" />
@@ -219,16 +250,28 @@ export default function SecurityAuditTab() {
           </h1>
           <p className="text-sm text-slate-400 mt-1">
             Live snapshot of hardening status across Firebase, Cloudflare, headers and auth.
+            {probeAt && <span className="ml-2 text-emerald-400">Last live probe: {probeAt}</span>}
           </p>
+          {probeError && <p className="text-sm text-red-400 mt-1">Probe error: {probeError}</p>}
         </div>
-        <button
-          onClick={refresh}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 text-sm"
-        >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={runProbe}
+            disabled={probing}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm disabled:opacity-60"
+          >
+            {probing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Activity className="w-4 h-4" />}
+            Run live probe
+          </button>
+          <button
+            onClick={refresh}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 text-sm"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Summary */}
