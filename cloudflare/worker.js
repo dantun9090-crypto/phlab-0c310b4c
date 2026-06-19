@@ -302,12 +302,19 @@ function isHtmlCacheable(url) {
 }
 
 function proxyToOrigin(request, _origin, cacheOpts) {
-  // Pass-through via Cloudflare's DNS-based routing. Without the `cf`
-  // option Worker subrequests bypass the edge cache entirely — so we
-  // pass cacheEverything/cacheTtl explicitly for safe HTML routes,
-  // which restores the 5-min edge cache that the Rulesets describe.
+  // For cacheable HTML, fetch with a SANITIZED request (no cookies, no auth,
+  // no CF-* request headers) so CF's tier cache can treat the subrequest as
+  // anonymous and actually store the result. Cookies on the request bypass
+  // the edge HTTP cache silently. We preserve cookies only on uncacheable
+  // routes (admin/account/checkout/etc.) so login flows still work.
   const init = { redirect: "manual" };
-  if (cacheOpts) init.cf = cacheOpts;
+  if (cacheOpts) {
+    init.cf = cacheOpts;
+    const sanitized = new Headers(request.headers);
+    sanitized.delete("cookie");
+    sanitized.delete("authorization");
+    return fetch(request.url, { method: request.method, headers: sanitized, redirect: "manual", cf: cacheOpts });
+  }
   return fetch(request, init);
 }
 
