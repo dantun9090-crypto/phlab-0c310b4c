@@ -182,7 +182,7 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
 
             if (orderId) {
               try {
-                const { updateDocAdmin, getDocAdmin, addDocAdmin } = await import("@/lib/server/firestore-admin");
+                const { updateDocAdmin, getDocAdmin } = await import("@/lib/server/firestore-admin");
                 const firestoreStatus =
                   status === "SUCCESS" ? "paid"
                   : status === "FAILED" ? "failed"
