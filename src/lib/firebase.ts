@@ -1047,7 +1047,27 @@ export const updateProduct = async (id: string, updates: Partial<Product>) => {
   }
 
 
-  await updateDoc(doc(db, PRODUCTS_COL, id), data);
+  // Firestore rejects `undefined` field values — strip them recursively so
+  // partial updates (e.g. editing a single field) never explode.
+  const stripUndefined = (val: any): any => {
+    if (val === undefined) return undefined;
+    if (val === null) return null;
+    if (Array.isArray(val)) {
+      return val.map(stripUndefined).filter((v) => v !== undefined);
+    }
+    if (val && typeof val === 'object' && !(val instanceof Date) && typeof (val as any).toDate !== 'function') {
+      const out: Record<string, any> = {};
+      for (const [k, v] of Object.entries(val)) {
+        const cleaned = stripUndefined(v);
+        if (cleaned !== undefined) out[k] = cleaned;
+      }
+      return out;
+    }
+    return val;
+  };
+  const cleanData = stripUndefined(data) ?? {};
+
+  await updateDoc(doc(db, PRODUCTS_COL, id), cleanData);
   invalidateProductsCache();
   const nextSlug = (updates as any).slug || existing?.slug || (updates.name ? productNameToSlug(updates.name) : undefined);
   const nextCategory = (updates as any).category || existing?.category;
