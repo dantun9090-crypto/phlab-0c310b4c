@@ -694,13 +694,10 @@ export default {
       if (htmlCacheable && cacheKey && res.status === 200 && isHtml) {
         try {
           const buf = await res.arrayBuffer();
-          // Cached copy — strip per-visitor cookies, force public TTL.
-          const cacheHeaders = new Headers(h);
-          cacheHeaders.delete("set-cookie");
-          cacheHeaders.delete("x-phl-via");
-          cacheHeaders.delete("vary");
-          // Workers Cache API REQUIRES s-maxage (or max-age) and no Set-Cookie.
-          // Also drop any no-store/private hints from upstream.
+          // Build minimal cache headers from scratch so no upstream directive
+          // (Set-Cookie, Vary, private, no-store) can block caches.default.put.
+          const cacheHeaders = new Headers();
+          cacheHeaders.set("content-type", h.get("content-type") || "text/html; charset=utf-8");
           cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);
           cacheHeaders.set("x-phl-cached-at", new Date().toISOString());
           let putErr = "ok";
