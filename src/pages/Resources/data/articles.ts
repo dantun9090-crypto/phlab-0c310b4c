@@ -2140,7 +2140,6 @@ Identity should be confirmed by mass spectrometry before any assay programme beg
       { id: 5, authors: 'Sanyal AJ, Kaplan LM, Frias JP, et al.', year: 2024, title: 'Triple hormone receptor agonist retatrutide for metabolic dysfunction-associated steatotic liver disease: a randomized phase 2a trial', journal: 'Nat Med', doi: '10.1038/s41591-024-03018-2' },
     ]
   },
-  },
 
   // ---------------------------------------------
   // Peptide Safety and UK Legality Guide
