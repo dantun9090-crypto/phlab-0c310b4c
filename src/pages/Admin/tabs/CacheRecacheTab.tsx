@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
-import { Loader2, Trash2, Zap, AlertTriangle, CheckCircle2, XCircle, Cloud, RefreshCw } from 'lucide-react';
+import { Loader2, Trash2, Zap, AlertTriangle, CheckCircle2, XCircle, Cloud, RefreshCw, Clock, Save } from 'lucide-react';
 import {
   purgeCloudflareCache,
   recacheSitemapPrerender,
 } from '@/lib/cache-admin.functions';
+import { getCacheConfig, setCacheConfig } from '@/lib/cache-config.functions';
+import { CACHE_TTL_OPTIONS, DEFAULT_HTML_TTL_SECONDS } from '@/lib/cache-config-shared';
 import { auth } from '@/lib/firebase';
 
 import { getAdminIdToken } from '@/lib/auth-ready';
 interface OpResult {
-  kind: 'purge' | 'recache';
+  kind: 'purge' | 'recache' | 'config';
   ok: boolean;
   detail: string;
   at: string;
@@ -18,6 +20,8 @@ interface OpResult {
 export default function CacheRecacheTab() {
   const purgeFn = useServerFn(purgeCloudflareCache);
   const recacheFn = useServerFn(recacheSitemapPrerender);
+  const getCfg = useServerFn(getCacheConfig);
+  const setCfg = useServerFn(setCacheConfig);
 
   const [purging, setPurging] = useState(false);
   const [recaching, setRecaching] = useState(false);
@@ -25,8 +29,77 @@ export default function CacheRecacheTab() {
   const [includeMobile, setIncludeMobile] = useState(true);
   const [log, setLog] = useState<OpResult[]>([]);
 
+  // HTML edge-cache TTL state
+  const [ttl, setTtl] = useState<number>(DEFAULT_HTML_TTL_SECONDS);
+  const [savedTtl, setSavedTtl] = useState<number>(DEFAULT_HTML_TTL_SECONDS);
+  const [ttlUpdatedAt, setTtlUpdatedAt] = useState<string | null>(null);
+  const [ttlUpdatedBy, setTtlUpdatedBy] = useState<string | null>(null);
+  const [loadingTtl, setLoadingTtl] = useState(true);
+  const [savingTtl, setSavingTtl] = useState(false);
+
   const pushLog = (entry: OpResult) =>
     setLog((prev) => [entry, ...prev].slice(0, 20));
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const idToken = await getAdminIdToken();
+        const res = await getCfg({ data: { idToken } });
+        if (res.ok) {
+          setTtl(res.htmlTtlSeconds);
+          setSavedTtl(res.htmlTtlSeconds);
+          setTtlUpdatedAt(res.updatedAt);
+          setTtlUpdatedBy(res.updatedBy);
+        }
+      } catch (e) {
+        pushLog({
+          kind: 'config',
+          ok: false,
+          detail: e instanceof Error ? e.message : String(e),
+          at: new Date().toISOString(),
+        });
+      } finally {
+        setLoadingTtl(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const saveTtl = async () => {
+    if (ttl !== 0 && ttl > 86400) {
+      if (!confirm(
+        'Long cache TTLs (>24h) mean returning visitors may see stale HTML referencing old /assets/*.js after a publish — which causes blank pages. The post-publish hook will purge automatically, but if the purge fails users could be stuck on a stale shell. Continue?',
+      )) return;
+    }
+    setSavingTtl(true);
+    try {
+      const idToken = await getAdminIdToken();
+      const res = await setCfg({ data: { idToken, htmlTtlSeconds: ttl } });
+      setSavedTtl(res.htmlTtlSeconds);
+      setTtlUpdatedAt(res.updatedAt);
+      setTtlUpdatedBy(res.updatedBy);
+      pushLog({
+        kind: 'config',
+        ok: true,
+        detail: `TTL set to ${labelForTtl(res.htmlTtlSeconds)} — purge ${res.purge.ok ? 'OK' : 'FAILED'} (HTTP ${res.purge.status})`,
+        at: new Date().toISOString(),
+      });
+    } catch (e) {
+      pushLog({
+        kind: 'config',
+        ok: false,
+        detail: e instanceof Error ? e.message : String(e),
+        at: new Date().toISOString(),
+      });
+    } finally {
+      setSavingTtl(false);
+    }
+  };
+
+  function labelForTtl(v: number): string {
+    return CACHE_TTL_OPTIONS.find((o) => o.value === v)?.label ?? `${v}s`;
+  }
+
 
   const runPurgeEverything = async () => {
     if (!confirm('Purge the ENTIRE Cloudflare cache for phlabs.co.uk? Returning visitors will get a cache MISS on the next request.')) {
