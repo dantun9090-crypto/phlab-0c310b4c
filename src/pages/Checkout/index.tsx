@@ -4,7 +4,7 @@ import {
   User as UserIcon, Mail, Phone, MapPin,
   Lock, AlertTriangle, Check, ChevronLeft, Truck,
   Landmark, BadgeCheck, ShoppingCart, Trash2, Plus, Minus,
-  CheckCircle2, ChevronRight, Tag, X
+  CheckCircle2, ChevronRight, Tag, X, Package
 } from 'lucide-react';
 import {
   auth, signInAnonymously, doc, getDoc,
