@@ -617,19 +617,34 @@ export const loginUser = async (email: string, password: string) => {
  * `remember=true` → browserLocalPersistence (survives tab close).
  * `remember=false` → browserSessionPersistence (cleared on tab close — default).
  * Call BEFORE signInWithEmailAndPassword / signInWithPopup / createUserWithEmailAndPassword.
+ *
+ * The user's choice is persisted in localStorage under `php_auth_remember`
+ * so it survives full page reloads — otherwise the app-init default below
+ * would silently downgrade a "Remember me" session back to session-only on
+ * the next refresh, signing the user out as soon as they closed the tab.
  */
+const REMEMBER_KEY = 'php_auth_remember';
 export const setAuthPersistence = async (remember: boolean) => {
   try {
+    if (typeof window !== 'undefined') {
+      if (remember) window.localStorage.setItem(REMEMBER_KEY, '1');
+      else window.localStorage.removeItem(REMEMBER_KEY);
+    }
     await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
   } catch (e) {
     console.warn('[auth] setPersistence failed:', e);
   }
 };
 
-// Default to session-only persistence on app init (item E).
-// "Remember me" toggles to browserLocalPersistence at submit time.
+// Apply the user's last "Remember me" choice on app init. Default is
+// session-only when no prior choice exists. Without this, every page load
+// would reset persistence to session-only and override a prior opt-in.
 if (typeof window !== 'undefined') {
-  setPersistence(auth, browserSessionPersistence).catch(() => {});
+  const remembered = (() => {
+    try { return window.localStorage.getItem(REMEMBER_KEY) === '1'; }
+    catch { return false; }
+  })();
+  setPersistence(auth, remembered ? browserLocalPersistence : browserSessionPersistence).catch(() => {});
 }
 
 export const logoutUser = async () => {
