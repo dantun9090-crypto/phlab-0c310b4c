@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ShieldCheck, ShieldAlert, Loader2, RefreshCw } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Loader2, RefreshCw, Activity } from 'lucide-react';
+import { auth } from '@/lib/firebase';
+import { probeSecurityRegression } from '@/lib/security-regression.functions';
 
 type Status = 'pass' | 'fail' | 'warn' | 'unknown';
 
