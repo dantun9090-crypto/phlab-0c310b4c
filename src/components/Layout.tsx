@@ -333,6 +333,38 @@ export function Layout({ children }: LayoutProps) {
     return () => unsub();
   }, []);
 
+  // Idle auto-logout — sign user out after 60s of inactivity (not on every page load).
+  // Only runs when a user is signed in. Admin pages have their own 15-min idle handler.
+  useEffect(() => {
+    if (!firebaseUser) return;
+    if (location.pathname.startsWith('/admin')) return; // admin owns its own idle flow
+
+    const IDLE_MS = 60 * 1000;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const doLogout = () => {
+      import('@/lib/firebase').then(m => m.logoutUser?.()).catch(() => { /* ignore */ });
+    };
+
+    const reset = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(doLogout, IDLE_MS);
+    };
+
+    const events: (keyof WindowEventMap)[] = [
+      'mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'wheel', 'visibilitychange',
+    ];
+    events.forEach(ev => window.addEventListener(ev, reset, { passive: true }));
+    reset();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      events.forEach(ev => window.removeEventListener(ev, reset));
+    };
+  }, [firebaseUser, location.pathname]);
+
+
+
 
   // Listen for add-to-cart events
   useEffect(() => {
