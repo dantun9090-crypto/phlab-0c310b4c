@@ -6,9 +6,11 @@
  * out to Firestore + supabase exactly like the webhook does. Covers cases
  * where the webhook is missed or never delivered.
  *
- * Security: /api/public/* prefix bypasses Lovable edge auth; we require an
- * `apikey` header matching the Supabase anon key so only the configured
- * pg_cron job (and admins testing) can trigger it.
+ * Security: /api/public/* prefix bypasses Lovable edge auth; we require a
+ * server-only shared secret (`CLEANUP_SECRET`) passed via
+ * `Authorization: Bearer <secret>` or `x-cron-secret`. The Supabase
+ * publishable/anon key is intentionally public and MUST NOT gate this
+ * endpoint — anyone could otherwise trigger reconciliation runs.
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { getWallidStatus, WallidError } from "@/lib/wallid.server";
@@ -35,18 +37,23 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // Per-IP rate limit BEFORE auth — defeats key-guessing scans even
-        // if the anon key ever leaks (it's a publishable key, so we treat
-        // it as a moderate-secret here, not a hard secret).
+        // Per-IP rate limit BEFORE auth — defeats secret-guessing scans.
         const ip = getClientIp(request);
         const rl = checkRateLimit(ip, "wallid:reconcile", 6, 60_000);
         if (!rl.allowed) return rateLimitedResponse(rl.retryAfterSec);
 
-        // Auth: anon key in apikey header, compared in constant time so the
-        // response time doesn't leak the matched prefix length.
-        const apiKey = request.headers.get("apikey") || request.headers.get("x-api-key") || "";
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || "";
-        if (!expected || !timingSafeEqualStr(apiKey, expected)) {
+        // Auth: server-only shared secret. Accept either
+        // `Authorization: Bearer <secret>` or `x-cron-secret`. Compared in
+        // constant time so response time doesn't leak prefix length.
+        // NOTE: the Supabase publishable/anon key is intentionally public
+        // and is NOT accepted here.
+        const authHeader = request.headers.get("authorization") || "";
+        const bearer = authHeader.toLowerCase().startsWith("bearer ")
+          ? authHeader.slice(7).trim()
+          : "";
+        const provided = bearer || request.headers.get("x-cron-secret") || "";
+        const expected = process.env.CLEANUP_SECRET || "";
+        if (!expected || !provided || !timingSafeEqualStr(provided, expected)) {
           return json({ error: "Unauthorized" }, 401);
         }
 
