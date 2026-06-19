@@ -566,17 +566,53 @@ export default function CheckoutPage() {
   };
 
   const handleSubmit = async () => {
-    const step3Errors = validateStep(3);
-    if (Object.keys(step3Errors).length > 0) {
-      setErrors(step3Errors);
+    // Run ALL step validations so the user is told exactly which field is missing.
+    // Previously we only ran step 3 and returned silently — on small viewports
+    // the error rendered far above the button so the Pay click looked like a no-op.
+    const allErrors = {
+      ...validateStep(1),
+      ...validateStep(2),
+      ...validateStep(3),
+    };
+    if (Object.keys(allErrors).length > 0) {
+      setErrors(allErrors);
+      const firstKey = Object.keys(allErrors)[0];
+      const friendly: Record<string, string> = {
+        age: 'Please confirm you are 18 or older.',
+        terms: 'Please accept the Research Use Only & Terms.',
+        firstName: 'Please enter your first name.',
+        lastName: 'Please enter your last name.',
+        email: 'Please enter a valid email address.',
+        phone: 'Please enter a valid UK phone number.',
+        password: 'Please set a password (min 8 characters).',
+        address: 'Please enter your street address.',
+        city: 'Please enter your city.',
+        postcode: 'Please enter a valid UK postcode.',
+        country: 'Please choose your country.',
+        shippingMethod: 'Please choose a shipping method.',
+      };
+      setLoginError(friendly[firstKey] || 'Please complete the highlighted fields before paying.');
+      // Jump back to the step containing the first error and scroll it into view.
+      const stepForKey: Record<string, Step> = {
+        firstName: 1, lastName: 1, email: 1, phone: 1, password: 1,
+        address: 2, city: 2, postcode: 2, country: 2, shippingMethod: 2,
+        age: 3, terms: 3,
+      };
+      const targetStep = stepForKey[firstKey] ?? currentStep;
+      setCurrentStep(targetStep);
+      setTimeout(() => {
+        stepRefs.current[targetStep]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
       return;
     }
     if (hasItemsWithoutVariant) {
       setErrors(prev => ({ ...prev, stock: 'Please select a variant for all items in your cart' }));
+      setLoginError('Please select a variant for every item in your cart.');
       return;
     }
     if (cart.length === 0) {
       setErrors(prev => ({ ...prev, stock: 'Your cart is empty' }));
+      setLoginError('Your cart is empty.');
       return;
     }
 
