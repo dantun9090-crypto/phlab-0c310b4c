@@ -621,9 +621,9 @@ export default {
     //     explicitly hit caches.default. Use a normalized cache key (no
     //     cookies, GET) so __cf_bm and per-visitor headers can't bust it.
     let cacheKey = null;
-    let cacheDbg = htmlCacheable ? "miss" : "skip";
     if (htmlCacheable) {
-      cacheKey = new Request(normalizePublicUrl(url), { method: "GET" });
+      // Use the request URL directly (canonical via redirects upstream).
+      cacheKey = new Request(request.url, { method: "GET" });
       try {
         const hit = await caches.default.match(cacheKey);
         if (hit) {
@@ -633,7 +633,7 @@ export default {
           h.set("x-phl-cache", "hit");
           return rewriteCspNonce(new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers: h }));
         }
-      } catch (e) { cacheDbg = "err:" + ((e && e.message) || "x").slice(0, 30); }
+      } catch (_) { /* fall through */ }
     }
 
     try {
