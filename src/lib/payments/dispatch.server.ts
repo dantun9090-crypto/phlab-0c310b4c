@@ -11,6 +11,7 @@
  */
 import { getDocAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
 import { fenaCreateAndProcess } from "@/lib/fena.server";
+import { createHash, timingSafeEqual } from "crypto";
 import { truelayerCreatePayment } from "./truelayer.server";
 
 import {
@@ -46,6 +47,14 @@ function sanitizeRef(raw: string, max: number): string {
       .replace(/^-+|-+$/g, "")
       .slice(0, max) || raw.slice(0, max)
   );
+}
+
+function verifyPaymentToken(rawToken: string | null | undefined, storedHash: unknown): boolean {
+  if (!rawToken || typeof storedHash !== "string" || !storedHash) return false;
+  const candidate = createHash("sha256").update(rawToken).digest("hex");
+  const a = Buffer.from(candidate, "utf8");
+  const b = Buffer.from(storedHash, "utf8");
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 async function runAdapter(gateway: GatewayId, ctx: OrderCtx, sandbox: boolean): Promise<DispatchResult> {
@@ -125,10 +134,11 @@ export async function buildOrderCtxForPayment(
   orderId: string,
   userUid: string,
   userEmail: string | null,
+  paymentToken?: string | null,
 ): Promise<OrderCtx> {
   const order = await getDocAdmin("orders", orderId);
   if (!order) throw new Error("Order not found");
-  if (order.userId && order.userId !== userUid) {
+  if (order.userId && order.userId !== userUid && !verifyPaymentToken(paymentToken, order.paymentTokenHash)) {
     throw new Error("Forbidden: order belongs to another account");
   }
   const status = String(order.status ?? "").toLowerCase();
