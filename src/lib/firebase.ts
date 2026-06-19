@@ -994,6 +994,24 @@ function triggerCdnInvalidation(opts: { slug?: string; slugs?: string[]; categor
   })();
 }
 
+/**
+ * Fire-and-forget content cache invalidation (banners, articles, policies,
+ * landing pages, sitemap, robots). Always safe to call after any content
+ * write — never throws. Pass site-relative paths affected by the change.
+ */
+export function triggerContentCdnInvalidation(paths: string[] = []) {
+  if (typeof window === 'undefined') return;
+  void (async () => {
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) return;
+      const { invalidateContentCache } = await import('./cache-invalidate.functions');
+      await invalidateContentCache({ data: { paths, idToken } }).catch((e) => {
+        console.warn('[cache-invalidate content] failed:', e);
+      });
+    } catch { /* ignore */ }
+  })();
+
 
 export const updateProduct = async (id: string, updates: Partial<Product>) => {
   let existing: Product | null = null;
