@@ -44,6 +44,7 @@ import PrivacyRequestsTab from './tabs/PrivacyRequestsTab';
 import CartEventsTab from './tabs/CartEventsTab';
 import MailHealthTab from './tabs/MailHealthTab';
 import SecurityAuditTab from './tabs/SecurityAuditTab';
+import EdgeMonitorTab from './tabs/EdgeMonitorTab';
 import SecurityEventsTab from './tabs/SecurityEventsTab';
 import FenaTab from './tabs/FenaTab';
 import PaymentsTab from './tabs/PaymentsTab';
