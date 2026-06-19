@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
-import { Loader2, Trash2, Zap, AlertTriangle, CheckCircle2, XCircle, Cloud, RefreshCw } from 'lucide-react';
+import { Loader2, Trash2, Zap, AlertTriangle, CheckCircle2, XCircle, Cloud, RefreshCw, Clock, Save } from 'lucide-react';
 import {
   purgeCloudflareCache,
   recacheSitemapPrerender,
 } from '@/lib/cache-admin.functions';
+import { getCacheConfig, setCacheConfig } from '@/lib/cache-config.functions';
+import { CACHE_TTL_OPTIONS, DEFAULT_HTML_TTL_SECONDS } from '@/lib/cache-config-shared';
 import { auth } from '@/lib/firebase';
 
 import { getAdminIdToken } from '@/lib/auth-ready';
 interface OpResult {
-  kind: 'purge' | 'recache';
+  kind: 'purge' | 'recache' | 'config';
   ok: boolean;
   detail: string;
   at: string;
@@ -18,6 +20,8 @@ interface OpResult {
 export default function CacheRecacheTab() {
   const purgeFn = useServerFn(purgeCloudflareCache);
   const recacheFn = useServerFn(recacheSitemapPrerender);
+  const getCfg = useServerFn(getCacheConfig);
+  const setCfg = useServerFn(setCacheConfig);
 
   const [purging, setPurging] = useState(false);
   const [recaching, setRecaching] = useState(false);
@@ -25,8 +29,77 @@ export default function CacheRecacheTab() {
   const [includeMobile, setIncludeMobile] = useState(true);
   const [log, setLog] = useState<OpResult[]>([]);
 
+  // HTML edge-cache TTL state
+  const [ttl, setTtl] = useState<number>(DEFAULT_HTML_TTL_SECONDS);
+  const [savedTtl, setSavedTtl] = useState<number>(DEFAULT_HTML_TTL_SECONDS);
+  const [ttlUpdatedAt, setTtlUpdatedAt] = useState<string | null>(null);
+  const [ttlUpdatedBy, setTtlUpdatedBy] = useState<string | null>(null);
+  const [loadingTtl, setLoadingTtl] = useState(true);
+  const [savingTtl, setSavingTtl] = useState(false);
+
   const pushLog = (entry: OpResult) =>
     setLog((prev) => [entry, ...prev].slice(0, 20));
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const idToken = await getAdminIdToken();
+        const res = await getCfg({ data: { idToken } });
+        if (res.ok) {
+          setTtl(res.htmlTtlSeconds);
+          setSavedTtl(res.htmlTtlSeconds);
+          setTtlUpdatedAt(res.updatedAt);
+          setTtlUpdatedBy(res.updatedBy);
+        }
+      } catch (e) {
+        pushLog({
+          kind: 'config',
+          ok: false,
+          detail: e instanceof Error ? e.message : String(e),
+          at: new Date().toISOString(),
+        });
+      } finally {
+        setLoadingTtl(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const saveTtl = async () => {
+    if (ttl !== 0 && ttl > 86400) {
+      if (!confirm(
+        'Long cache TTLs (>24h) mean returning visitors may see stale HTML referencing old /assets/*.js after a publish — which causes blank pages. The post-publish hook will purge automatically, but if the purge fails users could be stuck on a stale shell. Continue?',
+      )) return;
+    }
+    setSavingTtl(true);
+    try {
+      const idToken = await getAdminIdToken();
+      const res = await setCfg({ data: { idToken, htmlTtlSeconds: ttl } });
+      setSavedTtl(res.htmlTtlSeconds);
+      setTtlUpdatedAt(res.updatedAt);
+      setTtlUpdatedBy(res.updatedBy);
+      pushLog({
+        kind: 'config',
+        ok: true,
+        detail: `TTL set to ${labelForTtl(res.htmlTtlSeconds)} — purge ${res.purge.ok ? 'OK' : 'FAILED'} (HTTP ${res.purge.status})`,
+        at: new Date().toISOString(),
+      });
+    } catch (e) {
+      pushLog({
+        kind: 'config',
+        ok: false,
+        detail: e instanceof Error ? e.message : String(e),
+        at: new Date().toISOString(),
+      });
+    } finally {
+      setSavingTtl(false);
+    }
+  };
+
+  function labelForTtl(v: number): string {
+    return CACHE_TTL_OPTIONS.find((o) => o.value === v)?.label ?? `${v}s`;
+  }
+
 
   const runPurgeEverything = async () => {
     if (!confirm('Purge the ENTIRE Cloudflare cache for phlabs.co.uk? Returning visitors will get a cache MISS on the next request.')) {
@@ -130,6 +203,68 @@ export default function CacheRecacheTab() {
           Use the buttons below for ad-hoc purges or to re-trigger manually.
         </p>
       </div>
+
+      {/* HTML edge-cache TTL */}
+      <div className="bg-[#0b1a30]/70 border border-white/[0.07] rounded-xl p-4 space-y-3">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+            <Clock className="w-4 h-4 text-emerald-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-white">HTML edge-cache TTL</h3>
+            <p className="text-xs text-[#9cb8d9] mt-1">
+              Controls how long Cloudflare keeps each cacheable HTML page on the edge before re-fetching the origin.
+              The setting is read by both the origin (<code className="text-emerald-400">src/server.ts</code>) and the{' '}
+              <code className="text-emerald-400">phlabs-prerender</code> Worker (60s in-memory cache per cold start).
+              Saving the TTL also fires a full Cloudflare cache purge so the new value takes effect immediately.
+            </p>
+            <p className="text-xs text-amber-300/90 mt-2 flex items-start gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+              <span>Long TTLs (7d+) speed up returning visitors but increase the risk of stale HTML after a publish (blank pages + MIME-type errors on old <code>/assets/*.js</code>). Use <strong>Off</strong> if you are actively debugging publishes.</span>
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-end">
+          <label className="flex-1">
+            <span className="block text-xs text-[#9cb8d9] mb-1">Current setting</span>
+            <select
+              value={ttl}
+              onChange={(e) => setTtl(parseInt(e.target.value, 10))}
+              disabled={loadingTtl || savingTtl}
+              className="w-full min-h-[48px] px-3 py-2 bg-slate-800 border-2 border-slate-600 rounded-lg text-white text-sm focus:border-emerald-500 outline-none disabled:opacity-50"
+            >
+              {CACHE_TTL_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </label>
+          <button
+            onClick={saveTtl}
+            disabled={loadingTtl || savingTtl || ttl === savedTtl}
+            className="sm:w-auto min-h-[48px] px-4 py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+          >
+            {savingTtl ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Save &amp; purge
+          </button>
+        </div>
+        <div className="text-xs text-[#9cb8d9]">
+          {loadingTtl ? (
+            <span className="text-slate-500">Loading current setting…</span>
+          ) : (
+            <>
+              Active: <span className="text-emerald-400 font-semibold">{labelForTtl(savedTtl)}</span>
+              {ttlUpdatedAt && (
+                <>
+                  {' '}— last changed {new Date(ttlUpdatedAt).toLocaleString('en-GB')}
+                  {ttlUpdatedBy ? ` by ${ttlUpdatedBy}` : ''}
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+
 
       {/* Cloudflare full purge */}
       <div className="bg-[#0b1a30]/70 border border-white/[0.07] rounded-xl p-4 space-y-3">

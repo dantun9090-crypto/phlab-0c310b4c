@@ -367,7 +367,42 @@ function stripLovableInjectedScripts(response) {
     .transform(response);
 }
 
+// ---------- admin-controlled cache TTL ----------
+// The admin panel writes `siteSettings/cacheConfig.htmlTtlSeconds` in
+// Firestore; origin exposes it at /api/public/cache-config. We fetch it
+// once per cold start (60s in-memory cache) so per-request overhead is 0.
+let _ttlCache = { value: 60, expiresAt: 0 };
+const TTL_CACHE_MS = 60_000;
+const TTL_DEFAULT = 60;
+const TTL_ALLOWED = new Set([0, 60, 604800, 1209600, 2592000, 31536000]);
+
+async function getHtmlTtlSeconds() {
+  const now = Date.now();
+  if (_ttlCache.expiresAt > now) return _ttlCache.value;
+  let value = TTL_DEFAULT;
+  try {
+    const r = await fetch(`https://${CANONICAL_HOST}/api/public/cache-config`, {
+      headers: { accept: "application/json" },
+      cf: { cacheTtl: 30, cacheEverything: true },
+      signal: AbortSignal.timeout(2_000),
+    });
+    if (r.ok) {
+      const j = await r.json();
+      if (typeof j.htmlTtlSeconds === "number" && TTL_ALLOWED.has(j.htmlTtlSeconds)) {
+        value = j.htmlTtlSeconds;
+      }
+    }
+  } catch {
+    // keep default
+  }
+  _ttlCache = { value, expiresAt: now + TTL_CACHE_MS };
+  return value;
+}
+
 // ---------- main ----------
+
+
+
 
 
 export default {
@@ -605,13 +640,15 @@ export default {
     //    and sitemap crawlers always see fresh backend data.
     const normalProxyVia = `normal-proxy;bot=${isBot ? 1 : 0};tok=${token ? 1 : 0};loop=${isLoop ? 1 : 0};gb=${isGooglebot ? 1 : 0}`;
     const isXmlFeed = XML_FEED_PATHS.has(url.pathname);
-    // SAFETY: HTML edge TTL is capped at 60s for every cacheable route
-    // (including "/"). Anything longer means returning users see stale
-    // HTML referencing the previous deploy's hashed chunks → blank pages
-    // + "MIME type text/html" module errors after a publish. See
-    // .lovable/memory/ssr-blank-page-fix.md.
-    const htmlTtl = 60;
-    const htmlCacheable = isGet && !isXmlFeed && isHtmlCacheable(url);
+    // HTML edge TTL is admin-controlled (see getHtmlTtlSeconds above).
+    // 0 ⇒ caching disabled (no Cache API, no cdn-cache-control, no-store
+    //     on every HTML response).
+    // >0 ⇒ store HTML on the CF edge for that many seconds. Reminder:
+    //     longer TTLs increase the chance returning users see a stale
+    //     HTML shell with non-existent /assets/*.js after a publish, so
+    //     the post-publish hook auto-purges the zone.
+    const htmlTtl = await getHtmlTtlSeconds();
+    const htmlCacheable = isGet && !isXmlFeed && isHtmlCacheable(url) && htmlTtl > 0;
     const cacheOpts = htmlCacheable
       ? {
           cacheEverything: true,
@@ -682,11 +719,18 @@ export default {
         h.set("cloudflare-cdn-cache-control", "no-store");
         h.set("content-type", "application/xml; charset=utf-8");
       } else if ((h.get("content-type") || "").includes("text/html")) {
-        // Browser must revalidate every nav so a publish is visible
-        // immediately; edge holds it for 60s + can serve stale 24h.
-        h.set("cache-control", "public, max-age=0, must-revalidate");
-        h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
-        h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
+        if (htmlTtl > 0) {
+          // Browser must revalidate every nav so a publish is visible
+          // immediately; edge holds it for htmlTtl + can serve stale 24h.
+          h.set("cache-control", "public, max-age=0, must-revalidate");
+          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
+          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
+        } else {
+          // Admin disabled the HTML edge cache → force no-store everywhere.
+          h.set("cache-control", "no-store, no-cache, must-revalidate, max-age=0");
+          h.set("cdn-cache-control", "no-store");
+          h.set("cloudflare-cdn-cache-control", "no-store");
+        }
       }
 
 
