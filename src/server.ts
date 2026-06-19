@@ -389,7 +389,7 @@ function isCacheableHtmlPath(pathname: string): boolean {
   return true;
 }
 
-function applySecurityHeaders(response: Response, nonce: string, hostname?: string, pathname?: string, htmlTtl: number = 60): Response {
+function applySecurityHeaders(response: Response, nonce: string, hostname?: string, pathname?: string, htmlTtl: number = 0): Response {
   const stripped = stripInternalHeaders(response);
   const contentType = stripped.headers.get("content-type") ?? "";
   // Only decorate HTML — leaving JSON/XML/asset responses untouched avoids
@@ -895,7 +895,7 @@ export default {
       // 4. Normal SSR path
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      const htmlTtl = await getHtmlTtlSeconds().catch(() => 60);
+      const htmlTtl = await getHtmlTtlSeconds().catch(() => 0);
       let normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response, nonce, url.hostname), nonce, url.hostname, url.pathname, htmlTtl);
 
       // Fix asset content-types that the static handler mis-detects.
