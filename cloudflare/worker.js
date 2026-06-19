@@ -698,18 +698,24 @@ export default {
       //     client (which still passes through HTMLRewriter + security
       //     headers and keeps the visitor's Set-Cookie intact).
       const isHtml = (h.get("content-type") || "").includes("text/html");
-      h.set("x-phl-debug", JSON.stringify({ htmlCacheable, isHtml, status: res.status, hasCacheKey: !!cacheKey, path: url.pathname, isGet, isXmlFeed, isHtmlCacheable: isHtmlCacheable(url) }));
-      if (htmlCacheable && cacheKey && res.status === 200 && isHtml) {
+      h.set("x-phl-debug", JSON.stringify({ htmlCacheable, isHtml, status: res.status, hasCacheKey: !!cacheKey, hasHtmlCache: !!htmlCache, path: url.pathname, isGet, isXmlFeed, isHtmlCacheable: isHtmlCacheable(url) }));
+      // 6b. Edge-cache HTML via Cache API so the NEXT visitor HITs at ~50ms.
+      //     HTMLRewriter/finalRes streams aren't reliably teeable, so we
+      //     buffer the upstream HTML into an ArrayBuffer once and build two
+      //     independent Responses from it: one for the cache, one for the
+      //     client (which still passes through HTMLRewriter + security
+      //     headers and keeps the visitor's Set-Cookie intact).
+      if (htmlCacheable && cacheKey && htmlCache && res.status === 200 && isHtml) {
         try {
           const buf = await res.arrayBuffer();
           // Build minimal cache headers from scratch so no upstream directive
-          // (Set-Cookie, Vary, private, no-store) can block caches.default.put.
+          // (Set-Cookie, Vary, private, no-store) can block cache.put.
           const cacheHeaders = new Headers();
           cacheHeaders.set("content-type", h.get("content-type") || "text/html; charset=utf-8");
           cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);
           cacheHeaders.set("x-phl-cached-at", new Date().toISOString());
           let putErr = "ok";
-          const putPromise = caches.default.put(
+          const putPromise = htmlCache.put(
             cacheKey,
             new Response(buf, { status: 200, headers: cacheHeaders }),
           ).catch((e) => { putErr = (e && e.message || "err").slice(0, 40); });
@@ -721,7 +727,7 @@ export default {
           h.set("x-phl-cache", "buf-err:" + ((e && e.message) || "x").slice(0, 30));
         }
       } else if (htmlCacheable) {
-        h.set("x-phl-cache", `skip;status=${res.status};html=${isHtml ? 1 : 0}`);
+        h.set("x-phl-cache", `skip;status=${res.status};html=${isHtml ? 1 : 0};cache=${!!htmlCache}`);
       }
 
       const out = new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
