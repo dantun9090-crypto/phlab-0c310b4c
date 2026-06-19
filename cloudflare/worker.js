@@ -367,7 +367,42 @@ function stripLovableInjectedScripts(response) {
     .transform(response);
 }
 
+// ---------- admin-controlled cache TTL ----------
+// The admin panel writes `siteSettings/cacheConfig.htmlTtlSeconds` in
+// Firestore; origin exposes it at /api/public/cache-config. We fetch it
+// once per cold start (60s in-memory cache) so per-request overhead is 0.
+let _ttlCache = { value: 60, expiresAt: 0 };
+const TTL_CACHE_MS = 60_000;
+const TTL_DEFAULT = 60;
+const TTL_ALLOWED = new Set([0, 60, 604800, 1209600, 2592000, 31536000]);
+
+async function getHtmlTtlSeconds() {
+  const now = Date.now();
+  if (_ttlCache.expiresAt > now) return _ttlCache.value;
+  let value = TTL_DEFAULT;
+  try {
+    const r = await fetch(`https://${CANONICAL_HOST}/api/public/cache-config`, {
+      headers: { accept: "application/json" },
+      cf: { cacheTtl: 30, cacheEverything: true },
+      signal: AbortSignal.timeout(2_000),
+    });
+    if (r.ok) {
+      const j = await r.json();
+      if (typeof j.htmlTtlSeconds === "number" && TTL_ALLOWED.has(j.htmlTtlSeconds)) {
+        value = j.htmlTtlSeconds;
+      }
+    }
+  } catch {
+    // keep default
+  }
+  _ttlCache = { value, expiresAt: now + TTL_CACHE_MS };
+  return value;
+}
+
 // ---------- main ----------
+
+
+
 
 
 export default {
