@@ -275,7 +275,7 @@ export const Route = createFileRoute("/api/public/hooks/truelayer")({
           orderId,
           paymentId,
           truelayerStatus: liveStatus,
-          newStatus: updates.status ?? currentStatus,
+          newStatus: didTransitionToPaid ? "paid" : currentStatus,
         });
 
         return Response.json({ ok: true });
