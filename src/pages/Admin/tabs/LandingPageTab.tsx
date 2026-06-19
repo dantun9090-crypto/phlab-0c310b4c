@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Trash2, Plus, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { db, doc, getDoc, setDoc } from '@/lib/firebase';
+import { db, doc, getDoc, setDoc, triggerContentCdnInvalidation } from '@/lib/firebase';
 
 interface Stat {
   value: string;
