@@ -170,7 +170,7 @@ export const probeEdgeMonitor = createServerFn({ method: 'POST' })
         try {
           const docs = await listDocsAdmin('edgeMonitorSamples', {
             orderBy: 'timestamp',
-            orderDir: 'desc',
+            direction: 'DESCENDING',
             limit: 40,
           });
           history = docs.map((d) => d as unknown as MonitorSample);
