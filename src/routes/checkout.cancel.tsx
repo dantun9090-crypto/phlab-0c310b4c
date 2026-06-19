@@ -27,18 +27,25 @@ function CheckoutCancelPage() {
     setOrderId(oid);
     if (!oid) return;
     // Best-effort: mark the Wallid payment as cancelled in our DB.
-    // Requires a valid Firebase session — the server enforces order ownership.
+    // The server accepts either a Firebase ID token OR the guest
+    // paymentToken stored in localStorage, so logged-out guests can also
+    // cancel their own pending order.
     (async () => {
       try {
         const idToken = auth.currentUser
           ? await auth.currentUser.getIdToken().catch(() => null)
           : null;
-        if (!idToken) return;
+        let paymentToken: string | null = null;
+        try { paymentToken = localStorage.getItem(`php_pt_${oid}`); } catch { /* ignore */ }
+        if (!idToken && !paymentToken) return;
         await fetch("/api/payments/cancel", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ idToken, orderId: oid }),
+          body: JSON.stringify({ idToken, paymentToken, orderId: oid }),
         });
+        // The server burns the token after cancel; clear it locally too so
+        // a subsequent page load doesn't keep retrying.
+        try { localStorage.removeItem(`php_pt_${oid}`); } catch { /* ignore */ }
       } catch { /* ignore */ }
     })();
   }, []);
