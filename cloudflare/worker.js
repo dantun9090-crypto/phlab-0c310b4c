@@ -640,13 +640,15 @@ export default {
     //    and sitemap crawlers always see fresh backend data.
     const normalProxyVia = `normal-proxy;bot=${isBot ? 1 : 0};tok=${token ? 1 : 0};loop=${isLoop ? 1 : 0};gb=${isGooglebot ? 1 : 0}`;
     const isXmlFeed = XML_FEED_PATHS.has(url.pathname);
-    // SAFETY: HTML edge TTL is capped at 60s for every cacheable route
-    // (including "/"). Anything longer means returning users see stale
-    // HTML referencing the previous deploy's hashed chunks → blank pages
-    // + "MIME type text/html" module errors after a publish. See
-    // .lovable/memory/ssr-blank-page-fix.md.
-    const htmlTtl = 60;
-    const htmlCacheable = isGet && !isXmlFeed && isHtmlCacheable(url);
+    // HTML edge TTL is admin-controlled (see getHtmlTtlSeconds above).
+    // 0 ⇒ caching disabled (no Cache API, no cdn-cache-control, no-store
+    //     on every HTML response).
+    // >0 ⇒ store HTML on the CF edge for that many seconds. Reminder:
+    //     longer TTLs increase the chance returning users see a stale
+    //     HTML shell with non-existent /assets/*.js after a publish, so
+    //     the post-publish hook auto-purges the zone.
+    const htmlTtl = await getHtmlTtlSeconds();
+    const htmlCacheable = isGet && !isXmlFeed && isHtmlCacheable(url) && htmlTtl > 0;
     const cacheOpts = htmlCacheable
       ? {
           cacheEverything: true,
