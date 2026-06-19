@@ -371,10 +371,10 @@ function stripLovableInjectedScripts(response) {
 // The admin panel writes `siteSettings/cacheConfig.htmlTtlSeconds` in
 // Firestore; origin exposes it at /api/public/cache-config. We fetch it
 // once per cold start (60s in-memory cache) so per-request overhead is 0.
-let _ttlCache = { value: 60, expiresAt: 0 };
+let _ttlCache = { value: 0, expiresAt: 0 };
 const TTL_CACHE_MS = 60_000;
-const TTL_DEFAULT = 60;
-const TTL_ALLOWED = new Set([0, 60, 604800, 1209600, 2592000, 31536000]);
+const TTL_DEFAULT = 0;
+const TTL_ALLOWED = new Set([0, 86400, 604800, 1209600, 2592000]);
 
 async function getHtmlTtlSeconds() {
   const now = Date.now();
