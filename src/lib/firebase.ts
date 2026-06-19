@@ -1011,6 +1011,9 @@ export function triggerContentCdnInvalidation(paths: string[] = []) {
       });
     } catch { /* ignore */ }
   })();
+}
+
+
 
 
 export const updateProduct = async (id: string, updates: Partial<Product>) => {
