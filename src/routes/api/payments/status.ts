@@ -44,6 +44,31 @@ export const Route = createFileRoute("/api/payments/status")({
             .update({ status })
             .eq("api_payment_id", row.api_payment_id);
 
+          // Fan out terminal status to the Firestore order so the UI / admin
+          // panel don't keep showing "pending_payment" when Wallid never
+          // delivered a webhook (or delivered to a stale URL).
+          const firestoreStatus =
+            status === "SUCCESS" || status === "PAID" || status === "COMPLETED" ? "paid"
+            : status === "FAILED" || status === "DECLINED" || status === "CANCELLED" || status === "CANCELED" ? "failed"
+            : status === "EXPIRED" ? "expired"
+            : null;
+          if (firestoreStatus) {
+            try {
+              const { updateDocAdmin } = await import("@/lib/server/firestore-admin");
+              await updateDocAdmin("orders", orderId, {
+                status: firestoreStatus,
+                paymentProvider: "wallid",
+                paymentRef: row.api_payment_id,
+                paymentUpdatedAt: new Date(),
+              });
+            } catch (e) {
+              console.warn(
+                "[Wallid status] Firestore order update skipped:",
+                e instanceof Error ? e.message : e,
+              );
+            }
+          }
+
           return json({
             status,
             order_id: orderId,
