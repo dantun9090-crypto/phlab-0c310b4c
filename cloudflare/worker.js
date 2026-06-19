@@ -48,7 +48,7 @@ const BOT_UA_RX = new RegExp(
     "storebot-google", "googleother",
     "bingbot", "bingpreview", "msnbot", "slurp",
     "duckduckbot", "baiduspider", "yandexbot", "yandeximages",
-    "facebookexternalhit", "meta-externalagent", "twitterbot", "linkedinbot",
+    "facebookexternalhit", "twitterbot", "linkedinbot",
     "pinterestbot", "whatsapp", "telegrambot", "discordbot", "slackbot",
     "prerender", "lighthouse", "headlesschrome",
     // generic catch-alls — last so specific matches log usefully
@@ -113,6 +113,11 @@ const PRERENDER_BYPASS_PREFIXES = [
   // These are RPC/iframe endpoints (gapi-loaded), not crawlable HTML.
   // Headless Chrome times out trying to render them → 504 in Prerender.io.
   "/__/",
+  // Personalised / non-indexable pages — already blocked in robots.txt.
+  // Sending bot UAs through Prerender for these wastes quota and may cache
+  // unwanted redirects to /login.
+  "/admin", "/account", "/cart", "/checkout", "/payment",
+  "/login", "/register", "/search", "/vip-store", "/webhook",
 ];
 const PRERENDER_BYPASS_EXACT = new Set([
   "/site.webmanifest",
@@ -602,6 +607,21 @@ export default {
     }
 
     if (isBot && isGet && !isStatic && token && !isLoop && !PRERENDER_RENDERER_RX.test(ua)) {
+      // Prerender cache key — independent of bot UA so all bots share the
+      // same cached snapshot.
+      const prerenderCacheKey = new Request(
+        `https://${CANONICAL_HOST}${url.pathname}${url.search}#prerender`,
+        { method: "GET" },
+      );
+      try {
+        const cached = await caches.default.match(prerenderCacheKey);
+        if (cached) {
+          const h = new Headers(cached.headers);
+          h.set("x-prerender-cache", "HIT");
+          h.set("x-phl-via", "prerender-cache-hit");
+          return applySecurityHeaders(new Response(cached.body, { status: cached.status, headers: h }), url);
+        }
+      } catch (_) { /* fall through */ }
 
       let preStatus = "skipped";
       let preErr = "";
@@ -609,6 +629,7 @@ export default {
         const pre = await fetchPrerender(request, token);
         preStatus = pre ? String(pre.status) : "null";
         if (pre && pre.status < 500 && pre.status !== 429) {
+          const buf = await pre.arrayBuffer();
           const h = new Headers(pre.headers);
           h.set("x-prerendered", "true");
           h.set("x-prerender-cache", "MISS");
@@ -616,7 +637,22 @@ export default {
           h.delete("x-robots-tag");
           h.set("cache-control", `public, max-age=${PRERENDER_CACHE_TTL}, s-maxage=${PRERENDER_CACHE_TTL}, stale-while-revalidate=${PRERENDER_SWR_TTL}`);
           h.delete("set-cookie");
-          const out = applySecurityHeaders(new Response(pre.body, { status: pre.status, statusText: pre.statusText, headers: h }), url);
+          // Store in caches.default so the next bot hit HITs at the edge.
+          if (pre.status === 200) {
+            try {
+              const cacheHeaders = new Headers();
+              cacheHeaders.set("content-type", h.get("content-type") || "text/html; charset=utf-8");
+              cacheHeaders.set("cache-control", `public, max-age=${PRERENDER_CACHE_TTL}, s-maxage=${PRERENDER_CACHE_TTL}`);
+              cacheHeaders.set("x-prerendered", "true");
+              ctx.waitUntil(
+                caches.default.put(
+                  prerenderCacheKey,
+                  new Response(buf, { status: 200, headers: cacheHeaders }),
+                ).catch(() => {}),
+              );
+            } catch (_) {}
+          }
+          const out = applySecurityHeaders(new Response(buf, { status: pre.status, statusText: pre.statusText, headers: h }), url);
           return out;
         }
       } catch (e) {
