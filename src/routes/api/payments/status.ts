@@ -63,10 +63,6 @@ export const Route = createFileRoute("/api/payments/status")({
         const parsed = BodySchema.safeParse(raw);
         if (!parsed.success) return json({ error: "Invalid request" }, 400);
         const { orderId, idToken, paymentToken } = parsed.data;
-        if (!idToken && !paymentToken) {
-          return json({ error: "Authentication required" }, 401);
-        }
-
         // 1) Authenticate caller (idToken preferred; fall back to paymentToken).
         let userUid: string | null = null;
         if (idToken) {
@@ -87,7 +83,37 @@ export const Route = createFileRoute("/api/payments/status")({
         const ownsByToken = paymentToken
           ? await verifyPaymentTokenHash(paymentToken, (order as { paymentTokenHash?: unknown }).paymentTokenHash)
           : false;
+
+        // Fallback: if the Firestore order is already in a terminal state
+        // (paid/failed/expired) — confirmed by webhook or reconcile cron —
+        // allow an unauthenticated read of *just the status*. The success
+        // page often loses its Firebase session after the bank webview
+        // redirect, and the one-shot paymentToken in localStorage may have
+        // been wiped on a prior successful poll. Without this short-circuit
+        // a logged-out user sees an infinite spinner even though the order
+        // is fully paid. The response intentionally omits amount/currency
+        // so it does not leak order details on a guessed orderId.
+        const firestoreStatusLower = String((order as { status?: unknown }).status ?? "").toLowerCase();
+        const terminalMap: Record<string, string> = {
+          paid: "SUCCESS",
+          processing: "SUCCESS",
+          shipped: "SUCCESS",
+          delivered: "SUCCESS",
+          failed: "FAILED",
+          cancelled: "CANCELLED",
+          expired: "EXPIRED",
+        };
         if (!ownsByUid && !ownsByToken) {
+          if (terminalMap[firestoreStatusLower]) {
+            return json({
+              status: terminalMap[firestoreStatusLower],
+              order_id: orderId,
+              found: true,
+            });
+          }
+          if (!idToken && !paymentToken) {
+            return json({ error: "Authentication required" }, 401);
+          }
           return json({ error: "Forbidden" }, 403);
         }
 
