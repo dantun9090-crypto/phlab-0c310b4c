@@ -621,6 +621,7 @@ export default {
     //     explicitly hit caches.default. Use a normalized cache key (no
     //     cookies, GET) so __cf_bm and per-visitor headers can't bust it.
     let cacheKey = null;
+    let cacheDbg = htmlCacheable ? "miss" : "skip";
     if (htmlCacheable) {
       cacheKey = new Request(normalizePublicUrl(url), { method: "GET" });
       try {
@@ -629,12 +630,10 @@ export default {
           const h = new Headers(hit.headers);
           h.set("x-phl-via", "edge-cache-hit");
           h.set("cf-cache-status", "HIT");
-          // Cached body contains the `__CSP_NONCE__` placeholder. Swap in a
-          // fresh per-request nonce before serving so every visitor gets a
-          // unique nonce in both the HTML and the CSP header.
+          h.set("x-phl-cache", "hit");
           return rewriteCspNonce(new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers: h }));
         }
-      } catch (_) { /* cache miss / unsupported — fall through */ }
+      } catch (e) { cacheDbg = "err:" + ((e && e.message) || "x").slice(0, 30); }
     }
 
     try {
