@@ -351,10 +351,8 @@ export function Layout({ children }: LayoutProps) {
       timer = setTimeout(doLogout, IDLE_MS);
     };
 
-    const events: (keyof WindowEventMap)[] = [
-      'mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'wheel', 'visibilitychange',
-    ];
-    events.forEach(ev => window.addEventListener(ev, reset, { passive: true }));
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'wheel', 'visibilitychange'] as const;
+    events.forEach(ev => window.addEventListener(ev, reset, { passive: true } as AddEventListenerOptions));
     reset();
 
     return () => {
