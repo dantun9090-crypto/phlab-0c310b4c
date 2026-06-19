@@ -634,6 +634,11 @@ export default {
         const hit = await caches.default.match(cacheKey);
         if (hit) {
           const h = new Headers(hit.headers);
+          const cachedCsp = h.get("content-security-policy") || "";
+          if (!cachedCsp.includes(NONCE_PLACEHOLDER)) {
+            ctx.waitUntil(caches.default.delete(cacheKey).catch(() => {}));
+            throw new Error("stale-html-cache-missing-csp");
+          }
           h.set("cache-control", "public, max-age=0, must-revalidate");
           h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
           h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
