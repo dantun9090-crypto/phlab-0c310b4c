@@ -175,22 +175,62 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
 
             if (orderId) {
               try {
-                const { updateDocAdmin } = await import("@/lib/server/firestore-admin");
+                const { updateDocAdmin, getDocAdmin, addDocAdmin } = await import("@/lib/server/firestore-admin");
                 const firestoreStatus =
                   status === "SUCCESS" ? "paid"
                   : status === "FAILED" ? "failed"
                   : status === "EXPIRED" ? "expired"
                   : null;
                 if (firestoreStatus) {
+                  const priorDoc = (await getDocAdmin("orders", orderId)) as Record<string, unknown> | null;
+                  const priorStatus = String(priorDoc?.status ?? "").toLowerCase();
+
                   await updateDocAdmin("orders", orderId, {
                     status: firestoreStatus,
                     paymentProvider: "wallid",
                     paymentRef: ev.payment_ref || ev.paymentRef || apiPaymentId || null,
                     paymentUpdatedAt: new Date(),
+                    ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
                     ...(status === "FAILED" || status === "EXPIRED"
                       ? { paymentFailureReason: ev.reason || status }
                       : {}),
                   });
+
+                  if (firestoreStatus === "paid" && priorStatus !== "paid" && priorDoc) {
+                    const to = String(priorDoc.customerEmail ?? priorDoc.email ?? "");
+                    if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+                      try {
+                        const { paymentConfirmedEmail } = await import("@/templates/paymentConfirmedEmail");
+                        const firstName =
+                          String(
+                            (priorDoc.firstName as string) ||
+                              (priorDoc.customerName as string) ||
+                              "",
+                          ).split(" ")[0] || "there";
+                        const amount = Number(
+                          (priorDoc.totalAmount as number) ??
+                            (priorDoc.total as number) ??
+                            0,
+                        );
+                        const reference = String(priorDoc.orderNumber ?? orderId);
+                        const { subject, html, text } = paymentConfirmedEmail({
+                          firstName,
+                          orderNumber: reference,
+                          amount,
+                          paymentMethod: "Open Banking (Wallid)",
+                          paidAt: new Date(),
+                        });
+                        await addDocAdmin("mail", {
+                          to,
+                          message: { subject, html, text },
+                          createdAt: new Date(),
+                          source: "wallid:webhook",
+                        });
+                      } catch (mailErr) {
+                        console.warn("[Wallid webhook] Mail enqueue failed:", mailErr instanceof Error ? mailErr.message : mailErr);
+                      }
+                    }
+                  }
                 }
               } catch (e) {
                 console.warn("[Wallid webhook] Firestore order update skipped:", e instanceof Error ? e.message : e);
