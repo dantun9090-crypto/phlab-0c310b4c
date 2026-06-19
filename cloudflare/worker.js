@@ -605,15 +605,13 @@ export default {
     //    and sitemap crawlers always see fresh backend data.
     const normalProxyVia = `normal-proxy;bot=${isBot ? 1 : 0};tok=${token ? 1 : 0};loop=${isLoop ? 1 : 0};gb=${isGooglebot ? 1 : 0}`;
     const isXmlFeed = XML_FEED_PATHS.has(url.pathname);
-    // Home page is stable enough to cache for 1h at the edge (banner + product
-    // grid only change on admin writes, which already trigger purges).
-    // All other safe HTML routes stay at the 5-min default.
-    const htmlTtl = url.pathname === "/" ? 3600 : 300;
+    // SAFETY: HTML edge TTL is capped at 60s for every cacheable route
+    // (including "/"). Anything longer means returning users see stale
+    // HTML referencing the previous deploy's hashed chunks → blank pages
+    // + "MIME type text/html" module errors after a publish. See
+    // .lovable/memory/ssr-blank-page-fix.md.
+    const htmlTtl = 60;
     const htmlCacheable = isGet && !isXmlFeed && isHtmlCacheable(url);
-    // `cacheEverything` + `cacheTtl` forces CF's tiered HTTP cache to store
-    // the subrequest response regardless of the origin's `max-age=0`, so the
-    // next visitor in any colo hits the tier cache (~10-30ms) instead of the
-    // origin. `cacheTtlByStatus` makes sure transient 5xx never poisons it.
     const cacheOpts = htmlCacheable
       ? {
           cacheEverything: true,
@@ -621,6 +619,7 @@ export default {
           cacheTtlByStatus: { "200-299": htmlTtl, "301-302": 600, "404": 30, "500-599": 0 },
         }
       : undefined;
+
 
     // 6a. Cache API lookup for HTML pages. With a Worker bound to the route,
     //     `cf.cacheEverything` only caches the inner subrequest — the *outer*
@@ -673,11 +672,13 @@ export default {
         h.set("cloudflare-cdn-cache-control", "no-store");
         h.set("content-type", "application/xml; charset=utf-8");
       } else if ((h.get("content-type") || "").includes("text/html")) {
+        // Browser must revalidate every nav so a publish is visible
+        // immediately; edge holds it for 60s + can serve stale 24h.
         if (!h.has("cache-control") || /no-cache|no-store|max-age=0/i.test(h.get("cache-control") || "")) {
-          const browserMax = url.pathname === "/" ? 3600 : 300;
-          h.set("cache-control", `public, max-age=${browserMax}, stale-while-revalidate=86400`);
+          h.set("cache-control", "public, max-age=0, must-revalidate");
         }
       }
+
 
       // 5xx → branded HTML + try stale cache.
       if (res.status >= 500) {
