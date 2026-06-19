@@ -87,6 +87,7 @@ const navGroups = [
       { id: 'cacherecache', label: 'Cache & Recache', icon: Cloud },
       { id: 'gscmonitor', label: 'GSC Monitor', icon: Search },
       { id: 'urlmonitor', label: 'URL Monitor', icon: Activity },
+      { id: 'edgemonitor', label: 'Edge Monitor', icon: Activity },
       { id: 'semrush', label: 'Semrush', icon: TrendingUp },
     ],
   },

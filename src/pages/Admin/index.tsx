@@ -44,6 +44,7 @@ import PrivacyRequestsTab from './tabs/PrivacyRequestsTab';
 import CartEventsTab from './tabs/CartEventsTab';
 import MailHealthTab from './tabs/MailHealthTab';
 import SecurityAuditTab from './tabs/SecurityAuditTab';
+import EdgeMonitorTab from './tabs/EdgeMonitorTab';
 import SecurityEventsTab from './tabs/SecurityEventsTab';
 import FenaTab from './tabs/FenaTab';
 import PaymentsTab from './tabs/PaymentsTab';
@@ -58,7 +59,7 @@ import WallidPreviewTab from './tabs/WallidPreviewTab';
 import WallidBadgesTab from './tabs/WallidBadgesTab';
 import WallidBanksTab from './tabs/WallidBanksTab';
 
-type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'securityaudit' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks';
+type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -433,6 +434,7 @@ export default function AdminPage() {
         case 'merchantfeed': return <MerchantFeedTab />;
         case 'bingfeed': return <BingFeedTab />;
         case 'securityaudit': return <SecurityAuditTab />;
+        case 'edgemonitor': return <EdgeMonitorTab />;
         case 'securityevents': return <SecurityEventsTab />;
         case 'shopify': return <ShopifyTab />;
         case 'semrush': return <SemrushTab />;
