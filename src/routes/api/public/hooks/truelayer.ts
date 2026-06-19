@@ -25,7 +25,7 @@ import {
 } from "@/lib/payments/truelayer.server";
 import { getGatewayConfig } from "@/lib/payments/gateway-config.server";
 import { enforceRateLimit } from "@/lib/rate-limit";
-import { escapeHtml } from "@/templates/emailBase";
+import { paymentConfirmedEmail } from "@/templates/paymentConfirmedEmail";
 import { verifyHmacSignature } from "@/lib/webhook-signature";
 
 interface TLWebhookBody {
