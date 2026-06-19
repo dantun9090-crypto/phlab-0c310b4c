@@ -853,11 +853,11 @@ export function Layout({ children }: LayoutProps) {
                       return (
                         <div key={cartKey} className="flex gap-3 bg-gray-800/50 rounded-xl p-3 border border-white/10">
                           {/* Product Image */}
-                          <div className="w-16 h-16 bg-gray-900 rounded-lg overflow-hidden flex-shrink-0">
+                          <div className="w-16 h-16 bg-white rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center p-1">
                             {item.image ? (
-                              <img src={item.image} alt={item.name} width="64" height="64" className="w-full h-full object-cover" loading="lazy" />
+                              <img src={item.image} alt={item.name} width="64" height="64" className="w-full h-full object-contain" loading="lazy" />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center">
+                              <div className="w-full h-full flex items-center justify-center bg-gray-900">
                                 <Package className="w-6 h-6 text-gray-600" />
                               </div>
                             )}
