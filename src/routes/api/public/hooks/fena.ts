@@ -413,12 +413,14 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
 
         // Enqueue branded payment-received confirmation on first paid transition.
         if (isPaid && currentStatus !== "paid") {
-          const to = String(orderRow.customerEmail ?? orderRow.email ?? "");
+          const customerObj = (orderRow.customer as Record<string, unknown> | undefined) || {};
+          const to = String(orderRow.customerEmail ?? orderRow.email ?? customerObj.email ?? "");
           if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
             try {
               const firstName =
                 String(
                   (orderRow.firstName as string) ||
+                    (customerObj.firstName as string) ||
                     (orderRow.customerName as string) ||
                     "",
                 ).split(" ")[0] || "there";
