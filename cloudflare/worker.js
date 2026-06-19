@@ -48,7 +48,7 @@ const BOT_UA_RX = new RegExp(
     "storebot-google", "googleother",
     "bingbot", "bingpreview", "msnbot", "slurp",
     "duckduckbot", "baiduspider", "yandexbot", "yandeximages",
-    "facebookexternalhit", "meta-externalagent", "twitterbot", "linkedinbot",
+    "facebookexternalhit", "twitterbot", "linkedinbot",
     "pinterestbot", "whatsapp", "telegrambot", "discordbot", "slackbot",
     "prerender", "lighthouse", "headlesschrome",
     // generic catch-alls — last so specific matches log usefully
