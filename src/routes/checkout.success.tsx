@@ -40,10 +40,10 @@ function CheckoutSuccessPage() {
     const tick = async () => {
       if (stopRef.current) return;
       try {
-        // Authenticate the status check: prefer the live Firebase session
-        // (logged-in or anonymous) and fall back to the one-time guest
-        // paymentToken stored at checkout. Without one of these the server
-        // returns 401 — by design, to stop order-id enumeration.
+        // Wait for Firebase to restore the session before reading currentUser
+        // — without this, the first poll fires before auth hydration completes
+        // and the server rejects the call (401), leaving the spinner stuck.
+        try { await auth.authStateReady(); } catch { /* ignore */ }
         const idToken = auth.currentUser
           ? await auth.currentUser.getIdToken().catch(() => null)
           : null;
@@ -56,6 +56,16 @@ function CheckoutSuccessPage() {
           body: JSON.stringify({ orderId: oid, idToken, paymentToken }),
         });
         const data = await res.json().catch(() => ({}));
+
+        // Auth not ready yet (e.g. mobile bank webview lost localStorage and
+        // Firebase session is still restoring) — keep polling instead of
+        // bailing out, the next tick may succeed.
+        if (res.status === 401 || res.status === 403) {
+          if (Date.now() > deadline) { setPhase("pending"); return; }
+          setTimeout(tick, 2500);
+          return;
+        }
+
         const status = String(data.status || "").toUpperCase();
         if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
           setPhase("paid");
