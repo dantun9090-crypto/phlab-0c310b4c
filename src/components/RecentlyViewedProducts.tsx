@@ -33,14 +33,14 @@ export default function RecentlyViewedProducts({ items, currentProductId, varian
                 to={`/products/${item.slug}`}
                 className="flex items-center gap-3 p-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.05] hover:border-white/[0.12] transition-all duration-200 group"
               >
-                <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-[#0b1a30]">
+                <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-white flex items-center justify-center p-1">
                   <img
                     src={getProductImage(item.name, item.imageUrl)}
                     alt={item.name}
                     loading="lazy"
                     decoding="async"
-                    width="40"
-                    height="40"
+                    width="48"
+                    height="48"
                     className="w-full h-full object-contain"
                   />
                 </div>
