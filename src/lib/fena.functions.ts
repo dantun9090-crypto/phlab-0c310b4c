@@ -418,23 +418,35 @@ export const reconcileFenaOrphans = createServerFn({ method: "POST" })
         const isPaid = fenaStatus === "paid";
         const isCancelled = fenaStatus === "cancelled" || fenaStatus === "expired";
 
-        const updates: Record<string, unknown> = {
+        // Always-safe trail fields (idempotent to overwrite).
+        const trailUpdates: Record<string, unknown> = {
           fenaStatus,
           fenaPaymentId,
           fenaReconciledAt: new Date(),
           paymentProvider: "fena",
         };
+        await updateDocAdmin("orders", orderId, trailUpdates);
+
+        // Status mutation goes through an atomic transition so a
+        // simultaneous webhook delivery can't double-confirm.
+        let didTransitionToPaid = false;
         if (isPaid && currentStatus !== "paid") {
-          updates.status = "paid";
-          updates.paidAt = new Date();
+          const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+          const { transitioned } = await transitionDocStatusAdmin("orders", orderId, {
+            allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+            updates: { status: "paid", paidAt: new Date() },
+          });
+          didTransitionToPaid = transitioned;
         } else if (isCancelled && currentStatus === "pending") {
-          updates.status = "cancelled";
+          const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+          await transitionDocStatusAdmin("orders", orderId, {
+            allowFrom: ["pending"],
+            updates: { status: "cancelled" },
+          });
         }
 
-        await updateDocAdmin("orders", orderId, updates);
-
-        // Confirmation mail on first paid transition during reconciliation.
-        if (isPaid && currentStatus !== "paid") {
+        // Confirmation mail ONLY when we won the paid-transition race.
+        if (didTransitionToPaid) {
           const to = String(orderRow.customerEmail ?? orderRow.email ?? "");
           if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
             try {
