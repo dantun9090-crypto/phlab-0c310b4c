@@ -113,6 +113,11 @@ const PRERENDER_BYPASS_PREFIXES = [
   // These are RPC/iframe endpoints (gapi-loaded), not crawlable HTML.
   // Headless Chrome times out trying to render them → 504 in Prerender.io.
   "/__/",
+  // Personalised / non-indexable pages — already blocked in robots.txt.
+  // Sending bot UAs through Prerender for these wastes quota and may cache
+  // unwanted redirects to /login.
+  "/admin", "/account", "/cart", "/checkout", "/payment",
+  "/login", "/register", "/search", "/vip-store", "/webhook",
 ];
 const PRERENDER_BYPASS_EXACT = new Set([
   "/site.webmanifest",
