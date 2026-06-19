@@ -579,7 +579,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <PageviewBeacon />
-      <Outlet />
+      <PageTransition />
     </QueryClientProvider>
   );
 }
