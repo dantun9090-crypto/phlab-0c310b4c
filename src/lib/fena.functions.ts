@@ -485,7 +485,7 @@ export const reconcileFenaOrphans = createServerFn({ method: "POST" })
           fenaPaymentId,
           outcome: "resolved",
           orderId,
-          newStatus: String(updates.status ?? currentStatus),
+          newStatus: didTransitionToPaid ? "paid" : (isCancelled && currentStatus === "pending" ? "cancelled" : currentStatus),
         });
       } catch (err) {
         result.unresolved += 1;
