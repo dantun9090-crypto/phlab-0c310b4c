@@ -148,20 +148,27 @@ export const getOrderPaymentStatus = createServerFn({ method: "POST" })
         const liveStatus = String(live.status ?? "").toLowerCase();
         if (liveStatus) fenaStatus = liveStatus;
         if (liveStatus === "paid" && status !== "paid") {
-          await updateDocAdmin("orders", orderId, {
-            status: "paid",
-            paidAt: new Date(),
-            fenaStatus: liveStatus,
-            paymentProvider: "fena",
-            fenaSelfHealedAt: new Date(),
+          // ATOMIC: poller races the Fena webhook. Only one writer flips
+          // the order to paid; the loser keeps the existing paid doc.
+          const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+          const { transitioned } = await transitionDocStatusAdmin("orders", orderId, {
+            allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+            updates: {
+              status: "paid",
+              paidAt: new Date(),
+              fenaStatus: liveStatus,
+              paymentProvider: "fena",
+              fenaSelfHealedAt: new Date(),
+            },
           });
-          status = "paid";
+          if (transitioned) status = "paid";
         } else if ((liveStatus === "cancelled" || liveStatus === "expired") && status === "pending") {
-          await updateDocAdmin("orders", orderId, {
-            status: "cancelled",
-            fenaStatus: liveStatus,
+          const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+          const { transitioned } = await transitionDocStatusAdmin("orders", orderId, {
+            allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+            updates: { status: "cancelled", fenaStatus: liveStatus },
           });
-          status = "cancelled";
+          if (transitioned) status = "cancelled";
         } else if (liveStatus && liveStatus !== order.fenaStatus) {
           await updateDocAdmin("orders", orderId, { fenaStatus: liveStatus });
         }
@@ -178,20 +185,25 @@ export const getOrderPaymentStatus = createServerFn({ method: "POST" })
         const liveStatus = String(live.status ?? "").toLowerCase();
         const mapped = mapTrueLayerStatus(liveStatus);
         if (mapped === "paid" && status !== "paid") {
-          await updateDocAdmin("orders", orderId, {
-            status: "paid",
-            paidAt: new Date(),
-            truelayerStatus: liveStatus,
-            paymentProvider: "truelayer",
-            truelayerSelfHealedAt: new Date(),
+          const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+          const { transitioned } = await transitionDocStatusAdmin("orders", orderId, {
+            allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+            updates: {
+              status: "paid",
+              paidAt: new Date(),
+              truelayerStatus: liveStatus,
+              paymentProvider: "truelayer",
+              truelayerSelfHealedAt: new Date(),
+            },
           });
-          status = "paid";
+          if (transitioned) status = "paid";
         } else if (mapped === "cancelled" && status === "pending") {
-          await updateDocAdmin("orders", orderId, {
-            status: "cancelled",
-            truelayerStatus: liveStatus,
+          const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+          const { transitioned } = await transitionDocStatusAdmin("orders", orderId, {
+            allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+            updates: { status: "cancelled", truelayerStatus: liveStatus },
           });
-          status = "cancelled";
+          if (transitioned) status = "cancelled";
         } else if (liveStatus && liveStatus !== order.truelayerStatus) {
           await updateDocAdmin("orders", orderId, { truelayerStatus: liveStatus });
         }
