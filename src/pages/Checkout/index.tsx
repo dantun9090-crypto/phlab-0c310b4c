@@ -764,7 +764,11 @@ export default function CheckoutPage() {
           let parsed: URL;
           try { parsed = new URL(data.payment_link); } catch { throw new Error('Invalid payment redirect URL.'); }
           if (parsed.protocol !== 'https:') throw new Error('Unexpected payment redirect.');
-          try { localStorage.setItem('php_pending_order', orderId); } catch { /* ignore */ }
+          try {
+            localStorage.setItem('php_pending_order', orderId);
+            if (paymentToken) localStorage.setItem(`php_pt_${orderId}`, paymentToken);
+          } catch { /* ignore */ }
+
           setFenaStep('redirecting');
           setTimeout(() => { window.location.href = parsed.toString(); }, 250);
           return;
