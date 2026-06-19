@@ -12,6 +12,8 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { getWallidStatus, WallidError } from "@/lib/wallid.server";
+import { timingSafeEqualStr } from "@/lib/timing-safe-equal";
+import { checkRateLimit, getClientIp, rateLimitedResponse } from "@/lib/rate-limit";
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -33,10 +35,18 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // Lightweight auth — anon key in header.
-        const apiKey = request.headers.get("apikey") || request.headers.get("x-api-key");
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
-        if (!expected || apiKey !== expected) {
+        // Per-IP rate limit BEFORE auth — defeats key-guessing scans even
+        // if the anon key ever leaks (it's a publishable key, so we treat
+        // it as a moderate-secret here, not a hard secret).
+        const ip = getClientIp(request);
+        const rl = checkRateLimit(ip, "wallid:reconcile", 6, 60_000);
+        if (!rl.allowed) return rateLimitedResponse(rl.retryAfterSec);
+
+        // Auth: anon key in apikey header, compared in constant time so the
+        // response time doesn't leak the matched prefix length.
+        const apiKey = request.headers.get("apikey") || request.headers.get("x-api-key") || "";
+        const expected = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || "";
+        if (!expected || !timingSafeEqualStr(apiKey, expected)) {
           return json({ error: "Unauthorized" }, 401);
         }
 
@@ -62,7 +72,7 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
         let updated = 0;
         const results: Array<{ orderId: string; from: string; to: string }> = [];
 
-        const { updateDocAdmin, getDocAdmin, addDocAdmin } = await import("@/lib/server/firestore-admin");
+        const { updateDocAdmin, getDocAdmin } = await import("@/lib/server/firestore-admin");
 
         for (const row of rows) {
           if (!row.api_payment_id || !row.order_id) continue;
@@ -148,10 +158,10 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
                     paymentMethod: "Open Banking (Wallid)",
                     paidAt: new Date(),
                   });
-                  await addDocAdmin("mail", {
+                  const { enqueueMailOnce } = await import("@/lib/server/enqueue-mail");
+                  await enqueueMailOnce(`payment-confirmed:${row.order_id}`, {
                     to,
                     message: { subject, html, text },
-                    createdAt: new Date(),
                     source: "wallid:reconcile-cron",
                   });
                 } catch (mailErr) {

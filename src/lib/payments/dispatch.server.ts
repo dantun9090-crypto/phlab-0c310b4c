@@ -152,6 +152,16 @@ export async function buildOrderCtxForPayment(
   if (["paid", "completed", "shipped", "fulfilled", "cancelled", "refunded"].includes(status)) {
     throw new Error("Order already settled");
   }
+  // Server-enforced age + terms gate. Client UI sets these; an order created
+  // without them is rejected at /api/payments/create (and any other
+  // payment-init route that uses this helper) — defence in depth for the
+  // 18+ research-use-only compliance requirement.
+  if (order.ageVerified !== true) {
+    throw new Error("Forbidden: age verification required (18+)");
+  }
+  if (order.termsAccepted !== true && order.tcAccepted !== true) {
+    throw new Error("Forbidden: terms acceptance required");
+  }
   const rawAmount = Number(order.totalAmount ?? order.total ?? 0);
   if (!Number.isFinite(rawAmount) || rawAmount <= 0) {
     throw new Error("Order has no payable amount");

@@ -234,10 +234,10 @@ export const Route = createFileRoute("/api/public/hooks/truelayer")({
                 paymentMethod: "Open Banking (TrueLayer)",
                 paidAt: new Date(),
               });
-              await addDocAdmin("mail", {
+              const { enqueueMailOnce } = await import("@/lib/server/enqueue-mail");
+              await enqueueMailOnce(`payment-confirmed:${orderId}`, {
                 to,
                 message: { subject, html, text },
-                createdAt: new Date(),
                 source: "truelayer:webhook",
               });
             } catch (err) {

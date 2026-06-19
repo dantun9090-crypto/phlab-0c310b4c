@@ -182,7 +182,7 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
 
             if (orderId) {
               try {
-                const { updateDocAdmin, getDocAdmin, addDocAdmin } = await import("@/lib/server/firestore-admin");
+                const { updateDocAdmin, getDocAdmin } = await import("@/lib/server/firestore-admin");
                 const firestoreStatus =
                   status === "SUCCESS" ? "paid"
                   : status === "FAILED" ? "failed"
@@ -229,10 +229,10 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
                           paymentMethod: "Open Banking (Wallid)",
                           paidAt: new Date(),
                         });
-                        await addDocAdmin("mail", {
+                        const { enqueueMailOnce } = await import("@/lib/server/enqueue-mail");
+                        await enqueueMailOnce(`payment-confirmed:${orderId}`, {
                           to,
                           message: { subject, html, text },
-                          createdAt: new Date(),
                           source: "wallid:webhook",
                         });
                       } catch (mailErr) {
