@@ -164,13 +164,20 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
           }
 
           try {
-            const query = supabaseAdmin
-              .from("wallid_payments")
-              .update({ status, metadata: { lastEvent: ev } as never });
+            // CRITICAL: must have at least one identifier or we'd UPDATE the
+            // entire wallid_payments table.
             if (apiPaymentId) {
-              await query.eq("api_payment_id", apiPaymentId);
+              await supabaseAdmin
+                .from("wallid_payments")
+                .update({ status, metadata: { lastEvent: ev } as never })
+                .eq("api_payment_id", apiPaymentId);
             } else if (orderId) {
-              await query.eq("order_id", orderId);
+              await supabaseAdmin
+                .from("wallid_payments")
+                .update({ status, metadata: { lastEvent: ev } as never })
+                .eq("order_id", orderId);
+            } else {
+              console.error("[Wallid webhook] Refusing UPDATE — no api_payment_id or order_id", eventId);
             }
 
             if (orderId) {
