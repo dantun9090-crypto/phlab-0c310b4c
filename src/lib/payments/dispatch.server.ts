@@ -11,7 +11,6 @@
  */
 import { getDocAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
 import { fenaCreateAndProcess } from "@/lib/fena.server";
-import { createHash, timingSafeEqual } from "crypto";
 import { truelayerCreatePayment } from "./truelayer.server";
 
 import {
@@ -49,12 +48,16 @@ function sanitizeRef(raw: string, max: number): string {
   );
 }
 
-function verifyPaymentToken(rawToken: string | null | undefined, storedHash: unknown): boolean {
+async function verifyPaymentToken(rawToken: string | null | undefined, storedHash: unknown): Promise<boolean> {
   if (!rawToken || typeof storedHash !== "string" || !storedHash) return false;
-  const candidate = createHash("sha256").update(rawToken).digest("hex");
-  const a = Buffer.from(candidate, "utf8");
-  const b = Buffer.from(storedHash, "utf8");
-  return a.length === b.length && timingSafeEqual(a, b);
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(rawToken));
+  const candidate = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
+  if (candidate.length !== storedHash.length) return false;
+  let diff = 0;
+  for (let i = 0; i < candidate.length; i += 1) {
+    diff |= candidate.charCodeAt(i) ^ storedHash.charCodeAt(i);
+  }
+  return diff === 0;
 }
 
 async function runAdapter(gateway: GatewayId, ctx: OrderCtx, sandbox: boolean): Promise<DispatchResult> {
@@ -138,7 +141,7 @@ export async function buildOrderCtxForPayment(
 ): Promise<OrderCtx> {
   const order = await getDocAdmin("orders", orderId);
   if (!order) throw new Error("Order not found");
-  const tokenMatches = verifyPaymentToken(paymentToken, order.paymentTokenHash);
+  const tokenMatches = await verifyPaymentToken(paymentToken, order.paymentTokenHash);
   if (order.userId && (!userUid || order.userId !== userUid) && !tokenMatches) {
     throw new Error("Forbidden: order belongs to another account");
   }
