@@ -698,6 +698,12 @@ export default {
       //     client (which still passes through HTMLRewriter + security
       //     headers and keeps the visitor's Set-Cookie intact).
       const isHtml = (h.get("content-type") || "").includes("text/html");
+      // 6b. Edge-cache HTML via Cache API so the NEXT visitor HITs at ~50ms.
+      //     HTMLRewriter/finalRes streams aren't reliably teeable, so we
+      //     buffer the upstream HTML into an ArrayBuffer once and build two
+      //     independent Responses from it: one for the cache, one for the
+      //     client (which still passes through HTMLRewriter + security
+      //     headers and keeps the visitor's Set-Cookie intact).
       if (htmlCacheable && cacheKey && res.status === 200 && isHtml) {
         try {
           const buf = await res.arrayBuffer();
