@@ -359,10 +359,9 @@ function applyCacheRecoveryHeaders(response: Response, url: URL): Response {
 }
 
 // HTML routes that must NEVER be edge-cached (sensitive / dynamic per user).
-// Anything not matching these gets a short 60s CF edge cache so returning
-// users see ~50ms TTFB instead of 500-800ms origin renders.
-// SAFETY: TTL is short (60s) so the window for stale-HTML-vs-new-chunks after
-// a publish is bounded. sw.js + service-worker.js are still hard no-store
+// Anything not matching these gets the admin-controlled TTL (default Off/0).
+// SAFETY: TTL is short (Off/24h/7d/14d/30d) so the window for stale-HTML-vs-new-chunks
+// after a publish is bounded. sw.js + service-worker.js are still hard no-store
 // via applyCacheRecoveryHeaders. Hashed JS/CSS assets are immutable.
 const NO_CACHE_HTML_PREFIXES = [
   "/admin",
