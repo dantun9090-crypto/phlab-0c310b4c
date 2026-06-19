@@ -698,19 +698,25 @@ export default {
           const cacheHeaders = new Headers(h);
           cacheHeaders.delete("set-cookie");
           cacheHeaders.delete("x-phl-via");
-          // Origin returns `vary: accept-encoding`; our cache lookup Request
-          // doesn't include that header, so Vary causes match() to miss.
           cacheHeaders.delete("vary");
+          // Workers Cache API REQUIRES s-maxage (or max-age) and no Set-Cookie.
+          // Also drop any no-store/private hints from upstream.
           cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);
           cacheHeaders.set("x-phl-cached-at", new Date().toISOString());
-          ctx.waitUntil(
-            caches.default.put(cacheKey, new Response(buf, { status: 200, headers: cacheHeaders })),
-          );
-          // Live response — full headers (incl. cookies), then nonce rewrite
-          // + security header pass.
+          let putErr = "ok";
+          const putPromise = caches.default.put(
+            cacheKey,
+            new Response(buf, { status: 200, headers: cacheHeaders }),
+          ).catch((e) => { putErr = (e && e.message || "err").slice(0, 40); });
+          ctx.waitUntil(putPromise);
+          h.set("x-phl-cache", `miss;put=${putErr}`);
           const liveOut = new Response(buf, { status: res.status, statusText: res.statusText, headers: h });
           return rewriteCspNonce(applySecurityHeaders(stripLovableInjectedScripts(liveOut), url));
-        } catch (_) { /* fall through to streaming path */ }
+        } catch (e) {
+          h.set("x-phl-cache", "buf-err:" + ((e && e.message) || "x").slice(0, 30));
+        }
+      } else if (htmlCacheable) {
+        h.set("x-phl-cache", `skip;status=${res.status};html=${isHtml ? 1 : 0}`);
       }
 
       const out = new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
