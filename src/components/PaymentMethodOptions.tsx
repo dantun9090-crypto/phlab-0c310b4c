@@ -32,7 +32,7 @@ export default function PaymentMethodOptions({
     options && (options.primary || options.backups.length > 0),
   );
   const noOnline = Boolean(
-    options && !options.primary && options.backups.length === 0,
+    !wallidEnabled && options && !options.primary && options.backups.length === 0,
   );
 
   return (

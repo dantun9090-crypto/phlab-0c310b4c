@@ -68,6 +68,18 @@ export interface CreateOrderResult {
   shippingCost: number;
   totalAmount: number;
   couponCode: string | null;
+  paymentToken: string | null;
+}
+
+function createPaymentToken(): string {
+  const bytes = new Uint8Array(32);
+  globalThis.crypto.getRandomValues(bytes);
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+async function hashPaymentToken(token: string): Promise<string> {
+  const digest = await globalThis.crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  return Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
@@ -120,6 +132,10 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   const orderId = 'PHP-' + Date.now().toString(36).toUpperCase();
   const btRef = `PHP-${orderId.slice(4)}-BT`;
   const nowIso = new Date();
+  const paymentToken = input.paymentMethod === 'wallid' && !userId
+    ? createPaymentToken()
+    : null;
+  const paymentTokenHash = paymentToken ? await hashPaymentToken(paymentToken) : null;
 
   // Rebuild items using server-validated unit prices.
   const validatedByKey = new Map<string, ValidateCartResult['items'][number]>();
@@ -192,6 +208,10 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     termsVersion: '1.0',
     createdAt: nowIso,
     orderDate: nowIso,
+    ...(paymentToken ? {
+      paymentTokenHash,
+      paymentTokenCreatedAt: nowIso,
+    } : {}),
   };
 
   await addDocAdmin('orders', orderData, orderId);
@@ -231,5 +251,6 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     shippingCost,
     totalAmount,
     couponCode: validation.coupon?.code ?? null,
+    paymentToken,
   };
 }

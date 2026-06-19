@@ -732,8 +732,9 @@ export default function CheckoutPage() {
           const wallidIdToken = auth.currentUser
             ? await auth.currentUser.getIdToken().catch(() => null)
             : null;
-          if (!wallidIdToken) {
-            throw new Error('Could not authenticate your session. Please refresh and try again.');
+          const paymentToken = serverResult.paymentToken ?? null;
+          if (!wallidIdToken && !paymentToken) {
+            throw new Error('Could not secure your payment session. Please refresh and try again.');
           }
           const res = await fetch('/api/payments/create', {
             method: 'POST',
@@ -741,6 +742,7 @@ export default function CheckoutPage() {
             body: JSON.stringify({
               idToken: wallidIdToken,
               orderId,
+              paymentToken,
               amount: Number(totalAmount),
               currency: 'GBP',
               customerEmail: form.email,

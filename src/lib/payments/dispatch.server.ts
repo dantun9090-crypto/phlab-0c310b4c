@@ -48,6 +48,18 @@ function sanitizeRef(raw: string, max: number): string {
   );
 }
 
+async function verifyPaymentToken(rawToken: string | null | undefined, storedHash: unknown): Promise<boolean> {
+  if (!rawToken || typeof storedHash !== "string" || !storedHash) return false;
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(rawToken));
+  const candidate = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
+  if (candidate.length !== storedHash.length) return false;
+  let diff = 0;
+  for (let i = 0; i < candidate.length; i += 1) {
+    diff |= candidate.charCodeAt(i) ^ storedHash.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 async function runAdapter(gateway: GatewayId, ctx: OrderCtx, sandbox: boolean): Promise<DispatchResult> {
   if (gateway === "fena") {
     const reference = sanitizeRef(ctx.reference, 12);
@@ -123,13 +135,18 @@ export async function createPaymentLinkForOrder(ctx: OrderCtx): Promise<Dispatch
 /** Verify the order exists, is unsettled, and return a normalised ctx. */
 export async function buildOrderCtxForPayment(
   orderId: string,
-  userUid: string,
+  userUid: string | null,
   userEmail: string | null,
+  paymentToken?: string | null,
 ): Promise<OrderCtx> {
   const order = await getDocAdmin("orders", orderId);
   if (!order) throw new Error("Order not found");
-  if (order.userId && order.userId !== userUid) {
+  const tokenMatches = await verifyPaymentToken(paymentToken, order.paymentTokenHash);
+  if (order.userId && (!userUid || order.userId !== userUid) && !tokenMatches) {
     throw new Error("Forbidden: order belongs to another account");
+  }
+  if (!order.userId && order.paymentTokenHash && !tokenMatches) {
+    throw new Error("Forbidden: payment token required");
   }
   const status = String(order.status ?? "").toLowerCase();
   if (["paid", "completed", "shipped", "fulfilled", "cancelled", "refunded"].includes(status)) {
@@ -155,7 +172,7 @@ export async function buildOrderCtxForPayment(
     reference,
     customerName,
     customerEmail,
-    customerUid: userUid,
+    customerUid: userUid || String(order.userId ?? orderId),
   };
 }
 
