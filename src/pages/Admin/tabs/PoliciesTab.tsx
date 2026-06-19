@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { FileText, Save, AlertCircle, CheckCircle2, Loader2, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { db, doc, getDoc, setDoc } from '@/lib/firebase';
+import { db, doc, getDoc, setDoc, triggerContentCdnInvalidation } from '@/lib/firebase';
 
 // ── Default content pulled from the static pages ──────────────────────────────
 const DEFAULT_TERMS = `TERMS & CONDITIONS — PH Labs UK
