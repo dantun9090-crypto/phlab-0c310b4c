@@ -368,3 +368,116 @@ export async function findDocByFieldAdmin(
   return out;
 }
 
+
+/**
+ * Atomically transition a document's `status` field using a Firestore
+ * read-write transaction. Use this for webhook handlers where two concurrent
+ * deliveries (provider retry storm, dashboard "Resend", race between webhook
+ * + status poll + reconcile cron) would otherwise both observe the same
+ * "pending" status, both fire the update, and both trigger side effects.
+ *
+ * Semantics:
+ *   - Begin a readWrite transaction.
+ *   - Read the doc inside the transaction (snapshot-isolated).
+ *   - If the doc is missing → rollback, return { transitioned:false, prior:null }.
+ *   - If current lowercased `status` ∉ allowFrom → rollback, return
+ *     { transitioned:false, prior } (caller can decide to no-op).
+ *   - Otherwise commit the `updates` patch with the transaction id —
+ *     Firestore guarantees no other commit landed on this doc between read
+ *     and commit; concurrent transitions get ABORTED and fall through to
+ *     the not-transitioned branch.
+ *
+ * Returns the PRIOR document (pre-update) so callers can read customer
+ * fields for email fan-out without a second round trip.
+ */
+export async function transitionDocStatusAdmin(
+  collection: string,
+  id: string,
+  opts: {
+    allowFrom: string[]; // lowercased statuses that may be transitioned
+    updates: Record<string, unknown>; // must include `status` if changing
+  },
+): Promise<{ transitioned: boolean; prior: Record<string, unknown> | null }> {
+  const acct = getServiceAccount();
+  const token = await getAccessToken();
+  const base = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents`;
+  const docPath = `${base}/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`;
+  const fullName = `projects/${acct.project_id}/databases/(default)/documents/${collection}/${id}`;
+
+  // 1) Begin transaction.
+  const beginRes = await fetch(`${base}:beginTransaction`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+    body: JSON.stringify({ options: { readWrite: {} } }),
+  });
+  if (!beginRes.ok) {
+    throw new Error(`Firestore beginTransaction failed: ${beginRes.status} ${await beginRes.text()}`);
+  }
+  const { transaction } = (await beginRes.json()) as { transaction: string };
+
+  const rollback = async () => {
+    try {
+      await fetch(`${base}:rollback`, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+        body: JSON.stringify({ transaction }),
+      });
+    } catch { /* best effort */ }
+  };
+
+  // 2) Read doc inside the transaction.
+  const readRes = await fetch(`${docPath}?transaction=${encodeURIComponent(transaction)}`, {
+    headers: { authorization: `Bearer ${token}` },
+  });
+  if (readRes.status === 404) {
+    await rollback();
+    return { transitioned: false, prior: null };
+  }
+  if (!readRes.ok) {
+    await rollback();
+    throw new Error(`Firestore tx read failed: ${readRes.status} ${await readRes.text()}`);
+  }
+  const docJson = (await readRes.json()) as { fields?: Record<string, any> };
+  const prior: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(docJson.fields || {})) prior[k] = fromFirestoreValue(v);
+
+  const priorStatus = String(prior.status ?? "").toLowerCase();
+  const allow = opts.allowFrom.map((s) => s.toLowerCase());
+  if (!allow.includes(priorStatus)) {
+    await rollback();
+    return { transitioned: false, prior };
+  }
+
+  // 3) Commit the patch atomically. We use `update` + `updateMask` so other
+  //    fields stay intact — same semantics as updateDocAdmin.
+  const fieldPaths = Object.keys(opts.updates);
+  if (fieldPaths.length === 0) {
+    await rollback();
+    return { transitioned: false, prior };
+  }
+  const commitBody = {
+    transaction,
+    writes: [
+      {
+        update: { name: fullName, fields: objectToFields(opts.updates) },
+        updateMask: { fieldPaths },
+        currentDocument: { exists: true },
+      },
+    ],
+  };
+  const commitRes = await fetch(`${base}:commit`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${token}` },
+    body: JSON.stringify(commitBody),
+  });
+  if (!commitRes.ok) {
+    // Aborted (concurrent commit) → another writer won the race. That's the
+    // desired behaviour — caller treats this as not-transitioned.
+    const text = await commitRes.text();
+    if (commitRes.status === 409 || /ABORTED|FAILED_PRECONDITION/i.test(text)) {
+      return { transitioned: false, prior };
+    }
+    throw new Error(`Firestore tx commit failed: ${commitRes.status} ${text}`);
+  }
+  return { transitioned: true, prior };
+}

@@ -72,7 +72,8 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
         let updated = 0;
         const results: Array<{ orderId: string; from: string; to: string }> = [];
 
-        const { updateDocAdmin, getDocAdmin } = await import("@/lib/server/firestore-admin");
+        // Atomic transition helper is loaded per-iteration above; nothing
+        // more needed at this scope.
 
         for (const row of rows) {
           if (!row.api_payment_id || !row.order_id) continue;
@@ -107,50 +108,55 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
             : "expired";
 
           try {
-            const priorDoc = (await getDocAdmin("orders", row.order_id)) as Record<string, unknown> | null;
-            if (!priorDoc) continue;
-            const priorStatus = String(priorDoc.status ?? "").toLowerCase();
-
-            // Skip orders already in a terminal state — webhook beat us.
-            if (["paid", "processing", "shipped", "delivered", "failed", "expired", "cancelled"].includes(priorStatus)) {
-              continue;
-            }
-
-            await updateDocAdmin("orders", row.order_id, {
-              status: firestoreStatus,
-              paymentProvider: "wallid",
-              paymentRef: row.api_payment_id,
-              paymentUpdatedAt: new Date(),
-              paymentTokenHash: null,
-              reconciledViaCron: true,
-              ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
-              ...(firestoreStatus !== "paid"
-                ? { paymentFailureReason: remoteStatus }
-                : {}),
-            });
+            const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+            // ATOMIC: cron is racing the webhook + status poll. If either
+            // already moved this order to a terminal state we get
+            // transitioned:false and skip the duplicate write + email.
+            const { transitioned, prior } = await transitionDocStatusAdmin(
+              "orders",
+              row.order_id,
+              {
+                allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+                updates: {
+                  status: firestoreStatus,
+                  paymentProvider: "wallid",
+                  paymentRef: row.api_payment_id,
+                  paymentUpdatedAt: new Date(),
+                  paymentTokenHash: null,
+                  reconciledViaCron: true,
+                  ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
+                  ...(firestoreStatus !== "paid"
+                    ? { paymentFailureReason: remoteStatus }
+                    : {}),
+                },
+              },
+            );
+            if (!transitioned) continue;
+            if (!prior) continue;
+            const priorStatus = String(prior.status ?? "").toLowerCase();
             updated += 1;
             results.push({ orderId: row.order_id, from: priorStatus, to: firestoreStatus });
 
             // First paid transition → enqueue confirmation email.
-            if (firestoreStatus === "paid" && priorStatus !== "paid") {
-              const customerObj = (priorDoc.customer as Record<string, unknown> | undefined) || {};
-              const to = String(priorDoc.customerEmail ?? priorDoc.email ?? customerObj.email ?? "");
+            if (firestoreStatus === "paid") {
+              const customerObj = (prior.customer as Record<string, unknown> | undefined) || {};
+              const to = String(prior.customerEmail ?? prior.email ?? customerObj.email ?? "");
               if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
                 try {
                   const { paymentConfirmedEmail } = await import("@/templates/paymentConfirmedEmail");
                   const firstName =
                     String(
-                      (priorDoc.firstName as string) ||
+                      (prior.firstName as string) ||
                         (customerObj.firstName as string) ||
-                        (priorDoc.customerName as string) ||
+                        (prior.customerName as string) ||
                         "",
                     ).split(" ")[0] || "there";
                   const amount = Number(
-                    (priorDoc.totalAmount as number) ??
-                      (priorDoc.total as number) ??
+                    (prior.totalAmount as number) ??
+                      (prior.total as number) ??
                       0,
                   );
-                  const reference = String(priorDoc.orderNumber ?? row.order_id);
+                  const reference = String(prior.orderNumber ?? row.order_id);
                   const { subject, html, text } = paymentConfirmedEmail({
                     firstName,
                     orderNumber: reference,

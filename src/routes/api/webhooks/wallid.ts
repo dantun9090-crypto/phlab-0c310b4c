@@ -182,46 +182,53 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
 
             if (orderId) {
               try {
-                const { updateDocAdmin, getDocAdmin } = await import("@/lib/server/firestore-admin");
+                const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
                 const firestoreStatus =
                   status === "SUCCESS" ? "paid"
                   : status === "FAILED" ? "failed"
                   : status === "EXPIRED" ? "expired"
                   : null;
                 if (firestoreStatus) {
-                  const priorDoc = (await getDocAdmin("orders", orderId)) as Record<string, unknown> | null;
-                  const priorStatus = String(priorDoc?.status ?? "").toLowerCase();
+                  // ATOMIC: snapshot-isolated transition. Concurrent retries /
+                  // poller / reconcile cron all see transitioned:false and
+                  // skip the duplicate write + email.
+                  const { transitioned, prior } = await transitionDocStatusAdmin(
+                    "orders",
+                    orderId,
+                    {
+                      allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+                      updates: {
+                        status: firestoreStatus,
+                        paymentProvider: "wallid",
+                        paymentRef: ev.payment_ref || ev.paymentRef || apiPaymentId || null,
+                        paymentUpdatedAt: new Date(),
+                        ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
+                        ...(status === "FAILED" || status === "EXPIRED"
+                          ? { paymentFailureReason: ev.reason || status }
+                          : {}),
+                      },
+                    },
+                  );
 
-                  await updateDocAdmin("orders", orderId, {
-                    status: firestoreStatus,
-                    paymentProvider: "wallid",
-                    paymentRef: ev.payment_ref || ev.paymentRef || apiPaymentId || null,
-                    paymentUpdatedAt: new Date(),
-                    ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
-                    ...(status === "FAILED" || status === "EXPIRED"
-                      ? { paymentFailureReason: ev.reason || status }
-                      : {}),
-                  });
-
-                  if (firestoreStatus === "paid" && priorStatus !== "paid" && priorDoc) {
-                    const customerObj = (priorDoc.customer as Record<string, unknown> | undefined) || {};
-                    const to = String(priorDoc.customerEmail ?? priorDoc.email ?? customerObj.email ?? "");
+                  if (transitioned && firestoreStatus === "paid" && prior) {
+                    const customerObj = (prior.customer as Record<string, unknown> | undefined) || {};
+                    const to = String(prior.customerEmail ?? prior.email ?? customerObj.email ?? "");
                     if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
                       try {
                         const { paymentConfirmedEmail } = await import("@/templates/paymentConfirmedEmail");
                         const firstName =
                           String(
-                            (priorDoc.firstName as string) ||
+                            (prior.firstName as string) ||
                               (customerObj.firstName as string) ||
-                              (priorDoc.customerName as string) ||
+                              (prior.customerName as string) ||
                               "",
                           ).split(" ")[0] || "there";
                         const amount = Number(
-                          (priorDoc.totalAmount as number) ??
-                            (priorDoc.total as number) ??
+                          (prior.totalAmount as number) ??
+                            (prior.total as number) ??
                             0,
                         );
-                        const reference = String(priorDoc.orderNumber ?? orderId);
+                        const reference = String(prior.orderNumber ?? orderId);
                         const { subject, html, text } = paymentConfirmedEmail({
                           firstName,
                           orderNumber: reference,

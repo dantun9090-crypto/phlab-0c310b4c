@@ -412,41 +412,71 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
         }
 
         // Enqueue branded payment-received confirmation on first paid transition.
+        // ATOMIC GUARD: even though `enqueueMailOnce` dedupes the email itself,
+        // we still want only one webhook delivery to win the "first paid"
+        // race so logs/analytics aren't double-counted. We claim the
+        // transition with a no-op atomic write on `paidEmailDispatched`.
         if (isPaid && currentStatus !== "paid") {
-          const customerObj = (orderRow.customer as Record<string, unknown> | undefined) || {};
-          const to = String(orderRow.customerEmail ?? orderRow.email ?? customerObj.email ?? "");
-          if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
-            try {
-              const firstName =
-                String(
-                  (orderRow.firstName as string) ||
-                    (customerObj.firstName as string) ||
-                    (orderRow.customerName as string) ||
-                    "",
-                ).split(" ")[0] || "there";
-              const amount = Number(
-                (orderRow.totalAmount as number) ??
-                  (orderRow.total as number) ??
-                  Number(authoritative.amount ?? 0),
-              );
-              const { subject, html, text } = paymentConfirmedEmail({
-                firstName,
-                orderNumber: reference || orderId,
-                amount,
-                paymentMethod: "Open Banking (Fena)",
-                paidAt: new Date(),
-              });
-              const { enqueueMailOnce } = await import("@/lib/server/enqueue-mail");
-              await enqueueMailOnce(`payment-confirmed:${orderId}`, {
-                to,
-                message: { subject, html, text },
-                source: "fena:webhook",
-              });
-            } catch (err) {
-              await logEvent("error", "mail enqueue failed", {
-                orderId,
-                error: err instanceof Error ? err.message : String(err),
-              });
+          let claimed = false;
+          try {
+            const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+            const res = await transitionDocStatusAdmin("orders", orderId, {
+              allowFrom: ["paid"], // status was just set to paid above; only one writer can flip the flag from undefined→true
+              updates: { paidEmailDispatched: true },
+            });
+            // `transitioned:true` means we successfully flipped the marker.
+            // A concurrent webhook would race and one of us gets ABORTED.
+            // (If the doc was already marked, prior.paidEmailDispatched===true
+            // and the call still returns transitioned:true because the
+            // helper doesn't compare against the target — so additionally
+            // skip when prior already had it set.)
+            const alreadyDispatched =
+              res.prior && (res.prior as { paidEmailDispatched?: unknown }).paidEmailDispatched === true;
+            claimed = res.transitioned && !alreadyDispatched;
+          } catch (claimErr) {
+            // If the claim fails (e.g. transaction abort), fall back to the
+            // idempotent enqueueMailOnce dedup — worst case a duplicate
+            // claim attempt, never a duplicate email.
+            console.warn("[Fena] paid-email claim failed:", claimErr instanceof Error ? claimErr.message : claimErr);
+            claimed = true;
+          }
+
+          if (claimed) {
+            const customerObj = (orderRow.customer as Record<string, unknown> | undefined) || {};
+            const to = String(orderRow.customerEmail ?? orderRow.email ?? customerObj.email ?? "");
+            if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+              try {
+                const firstName =
+                  String(
+                    (orderRow.firstName as string) ||
+                      (customerObj.firstName as string) ||
+                      (orderRow.customerName as string) ||
+                      "",
+                  ).split(" ")[0] || "there";
+                const amount = Number(
+                  (orderRow.totalAmount as number) ??
+                    (orderRow.total as number) ??
+                    Number(authoritative.amount ?? 0),
+                );
+                const { subject, html, text } = paymentConfirmedEmail({
+                  firstName,
+                  orderNumber: reference || orderId,
+                  amount,
+                  paymentMethod: "Open Banking (Fena)",
+                  paidAt: new Date(),
+                });
+                const { enqueueMailOnce } = await import("@/lib/server/enqueue-mail");
+                await enqueueMailOnce(`payment-confirmed:${orderId}`, {
+                  to,
+                  message: { subject, html, text },
+                  source: "fena:webhook",
+                });
+              } catch (err) {
+                await logEvent("error", "mail enqueue failed", {
+                  orderId,
+                  error: err instanceof Error ? err.message : String(err),
+                });
+              }
             }
           }
         }

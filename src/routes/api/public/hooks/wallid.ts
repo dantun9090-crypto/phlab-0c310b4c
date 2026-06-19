@@ -199,48 +199,56 @@ export const Route = createFileRoute("/api/public/hooks/wallid")({
             // Fan-out to Firestore order doc — best-effort, never block ack.
             if (orderId) {
               try {
-                const { updateDocAdmin, getDocAdmin } = await import("@/lib/server/firestore-admin");
+                const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
                 const firestoreStatus =
                   status === "SUCCESS" ? "paid"
                   : status === "FAILED" ? "failed"
                   : status === "EXPIRED" ? "expired"
                   : null;
                 if (firestoreStatus) {
-                  // Read prior status FIRST so we can detect the first paid transition.
-                  const priorDoc = (await getDocAdmin("orders", orderId)) as Record<string, unknown> | null;
-                  const priorStatus = String(priorDoc?.status ?? "").toLowerCase();
+                  // ATOMIC: only transition out of non-terminal states. If a
+                  // concurrent webhook delivery / status poll / reconcile cron
+                  // already moved the order, this returns transitioned:false
+                  // and we skip both the duplicate paidAt write and the email.
+                  const { transitioned, prior } = await transitionDocStatusAdmin(
+                    "orders",
+                    orderId,
+                    {
+                      allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+                      updates: {
+                        status: firestoreStatus,
+                        paymentProvider: "wallid",
+                        paymentRef: ev.payment_ref || ev.paymentRef || apiPaymentId || null,
+                        paymentUpdatedAt: new Date(),
+                        ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
+                        ...(status === "FAILED" || status === "EXPIRED"
+                          ? { paymentFailureReason: ev.reason || status }
+                          : {}),
+                      },
+                    },
+                  );
 
-                  await updateDocAdmin("orders", orderId, {
-                    status: firestoreStatus,
-                    paymentProvider: "wallid",
-                    paymentRef: ev.payment_ref || ev.paymentRef || apiPaymentId || null,
-                    paymentUpdatedAt: new Date(),
-                    ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
-                    ...(status === "FAILED" || status === "EXPIRED"
-                      ? { paymentFailureReason: ev.reason || status }
-                      : {}),
-                  });
-
-                  // Send branded payment-received email on first paid transition.
-                  if (firestoreStatus === "paid" && priorStatus !== "paid" && priorDoc) {
-                    const customerObj = (priorDoc.customer as Record<string, unknown> | undefined) || {};
-                    const to = String(priorDoc.customerEmail ?? priorDoc.email ?? customerObj.email ?? "");
+                  // Send branded payment-received email ONLY when this delivery
+                  // is the one that flipped the order to paid.
+                  if (transitioned && firestoreStatus === "paid" && prior) {
+                    const customerObj = (prior.customer as Record<string, unknown> | undefined) || {};
+                    const to = String(prior.customerEmail ?? prior.email ?? customerObj.email ?? "");
                     if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
                       try {
                         const { paymentConfirmedEmail } = await import("@/templates/paymentConfirmedEmail");
                         const firstName =
                           String(
-                            (priorDoc.firstName as string) ||
+                            (prior.firstName as string) ||
                               (customerObj.firstName as string) ||
-                              (priorDoc.customerName as string) ||
+                              (prior.customerName as string) ||
                               "",
                           ).split(" ")[0] || "there";
                         const amount = Number(
-                          (priorDoc.totalAmount as number) ??
-                            (priorDoc.total as number) ??
+                          (prior.totalAmount as number) ??
+                            (prior.total as number) ??
                             0,
                         );
-                        const reference = String(priorDoc.orderNumber ?? orderId);
+                        const reference = String(prior.orderNumber ?? orderId);
                         const { subject, html, text } = paymentConfirmedEmail({
                           firstName,
                           orderNumber: reference,
