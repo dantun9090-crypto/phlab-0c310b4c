@@ -302,12 +302,19 @@ function isHtmlCacheable(url) {
 }
 
 function proxyToOrigin(request, _origin, cacheOpts) {
-  // Pass-through via Cloudflare's DNS-based routing. Without the `cf`
-  // option Worker subrequests bypass the edge cache entirely — so we
-  // pass cacheEverything/cacheTtl explicitly for safe HTML routes,
-  // which restores the 5-min edge cache that the Rulesets describe.
+  // For cacheable HTML, fetch with a SANITIZED request (no cookies, no auth,
+  // no CF-* request headers) so CF's tier cache can treat the subrequest as
+  // anonymous and actually store the result. Cookies on the request bypass
+  // the edge HTTP cache silently. We preserve cookies only on uncacheable
+  // routes (admin/account/checkout/etc.) so login flows still work.
   const init = { redirect: "manual" };
-  if (cacheOpts) init.cf = cacheOpts;
+  if (cacheOpts) {
+    init.cf = cacheOpts;
+    const sanitized = new Headers(request.headers);
+    sanitized.delete("cookie");
+    sanitized.delete("authorization");
+    return fetch(request.url, { method: request.method, headers: sanitized, redirect: "manual", cf: cacheOpts });
+  }
   return fetch(request, init);
 }
 
@@ -622,19 +629,18 @@ export default {
     //     cookies, GET) so __cf_bm and per-visitor headers can't bust it.
     let cacheKey = null;
     if (htmlCacheable) {
-      cacheKey = new Request(normalizePublicUrl(url), { method: "GET" });
+      // Use the request URL directly (canonical via redirects upstream).
+      cacheKey = new Request(request.url, { method: "GET" });
       try {
         const hit = await caches.default.match(cacheKey);
         if (hit) {
           const h = new Headers(hit.headers);
           h.set("x-phl-via", "edge-cache-hit");
           h.set("cf-cache-status", "HIT");
-          // Cached body contains the `__CSP_NONCE__` placeholder. Swap in a
-          // fresh per-request nonce before serving so every visitor gets a
-          // unique nonce in both the HTML and the CSP header.
+          h.set("x-phl-cache", "hit");
           return rewriteCspNonce(new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers: h }));
         }
-      } catch (_) { /* cache miss / unsupported — fall through */ }
+      } catch (_) { /* fall through */ }
     }
 
     try {
@@ -695,23 +701,26 @@ export default {
       if (htmlCacheable && cacheKey && res.status === 200 && isHtml) {
         try {
           const buf = await res.arrayBuffer();
-          // Cached copy — strip per-visitor cookies, force public TTL.
-          const cacheHeaders = new Headers(h);
-          cacheHeaders.delete("set-cookie");
-          cacheHeaders.delete("x-phl-via");
-          // Origin returns `vary: accept-encoding`; our cache lookup Request
-          // doesn't include that header, so Vary causes match() to miss.
-          cacheHeaders.delete("vary");
+          // Build minimal cache headers from scratch so no upstream directive
+          // (Set-Cookie, Vary, private, no-store) can block caches.default.put.
+          const cacheHeaders = new Headers();
+          cacheHeaders.set("content-type", h.get("content-type") || "text/html; charset=utf-8");
           cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);
           cacheHeaders.set("x-phl-cached-at", new Date().toISOString());
-          ctx.waitUntil(
-            caches.default.put(cacheKey, new Response(buf, { status: 200, headers: cacheHeaders })),
-          );
-          // Live response — full headers (incl. cookies), then nonce rewrite
-          // + security header pass.
+          let putErr = "ok";
+          const putPromise = caches.default.put(
+            cacheKey,
+            new Response(buf, { status: 200, headers: cacheHeaders }),
+          ).catch((e) => { putErr = (e && e.message || "err").slice(0, 40); });
+          ctx.waitUntil(putPromise);
+          h.set("x-phl-cache", `miss;put=${putErr}`);
           const liveOut = new Response(buf, { status: res.status, statusText: res.statusText, headers: h });
           return rewriteCspNonce(applySecurityHeaders(stripLovableInjectedScripts(liveOut), url));
-        } catch (_) { /* fall through to streaming path */ }
+        } catch (e) {
+          h.set("x-phl-cache", "buf-err:" + ((e && e.message) || "x").slice(0, 30));
+        }
+      } else if (htmlCacheable) {
+        h.set("x-phl-cache", `skip;status=${res.status};html=${isHtml ? 1 : 0}`);
       }
 
       const out = new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
