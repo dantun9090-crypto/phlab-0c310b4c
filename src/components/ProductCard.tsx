@@ -111,7 +111,7 @@ export function ProductCard({
       <Link to={`/products/${slug}`} className="relative block overflow-hidden" style={{ aspectRatio: '4/3', background: '#030a14' }}>
         {imgUrl ? (
           <img
-            {...cfImgProps(imgUrl, { widths: [200, 300, 400, 600, 800], sizes: '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 288px' })}
+            {...cfImgProps(imgUrl, { widths: [400, 600, 800, 1200, 1600], sizes: '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 400px', quality: 92 })}
             alt={getProductAlt(name, product.category)}
             loading={isAboveFold ? "eager" : "lazy"}
             fetchPriority={isAboveFold ? "high" : "auto"}
