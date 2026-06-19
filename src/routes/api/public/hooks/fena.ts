@@ -27,6 +27,7 @@ import { enforceRateLimit } from "@/lib/rate-limit";
 import { raiseFenaAlert } from "@/lib/fena-alerts.server";
 import { enqueueFenaUpdateRetry } from "@/lib/fena-retry-queue.server";
 import { escapeHtml } from "@/templates/emailBase";
+import { paymentConfirmedEmail } from "@/templates/paymentConfirmedEmail";
 import { verifyHmacSignature } from "@/lib/webhook-signature";
 
 interface FenaWebhookBody {
