@@ -153,17 +153,65 @@ export const Route = createFileRoute("/api/payments/status")({
             : null;
           if (firestoreStatus) {
             try {
-              const { updateDocAdmin } = await import("@/lib/server/firestore-admin");
+              const { updateDocAdmin, addDocAdmin } = await import("@/lib/server/firestore-admin");
+              const priorStatus = String((order as { status?: unknown }).status ?? "").toLowerCase();
               await updateDocAdmin("orders", orderId, {
                 status: firestoreStatus,
                 paymentProvider: "wallid",
                 paymentRef: row.api_payment_id,
                 paymentUpdatedAt: new Date(),
+                ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
                 // Burn the guest paymentToken once the order is terminal so it
                 // can't be reused. Kept alive during polling so the success
                 // page can authenticate the status check.
                 paymentTokenHash: null,
               });
+
+              // Send branded payment-received email on first paid transition.
+              // Webhooks usually do this — but when Wallid never delivers
+              // (or the webhook is rejected), this poll is the only place
+              // the transition is detected.
+              if (firestoreStatus === "paid" && priorStatus !== "paid") {
+                const priorDoc = order as Record<string, unknown>;
+                const customerObj = (priorDoc.customer as Record<string, unknown> | undefined) || {};
+                const to = String(priorDoc.customerEmail ?? priorDoc.email ?? customerObj.email ?? "");
+                if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+                  try {
+                    const { paymentConfirmedEmail } = await import("@/templates/paymentConfirmedEmail");
+                    const firstName =
+                      String(
+                        (priorDoc.firstName as string) ||
+                          (customerObj.firstName as string) ||
+                          (priorDoc.customerName as string) ||
+                          "",
+                      ).split(" ")[0] || "there";
+                    const amount = Number(
+                      (priorDoc.totalAmount as number) ??
+                        (priorDoc.total as number) ??
+                        0,
+                    );
+                    const reference = String(priorDoc.orderNumber ?? orderId);
+                    const { subject, html, text } = paymentConfirmedEmail({
+                      firstName,
+                      orderNumber: reference,
+                      amount,
+                      paymentMethod: "Open Banking (Wallid)",
+                      paidAt: new Date(),
+                    });
+                    await addDocAdmin("mail", {
+                      to,
+                      message: { subject, html, text },
+                      createdAt: new Date(),
+                      source: "wallid:status-poll",
+                    });
+                  } catch (mailErr) {
+                    console.warn(
+                      "[Wallid status] paymentConfirmedEmail enqueue failed:",
+                      mailErr instanceof Error ? mailErr.message : mailErr,
+                    );
+                  }
+                }
+              }
             } catch (e) {
               console.warn(
                 "[Wallid status] Firestore order update skipped:",
