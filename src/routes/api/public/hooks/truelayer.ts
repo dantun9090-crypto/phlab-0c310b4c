@@ -214,17 +214,27 @@ export const Route = createFileRoute("/api/public/hooks/truelayer")({
           const ref = String(orderRow.orderNumber ?? orderId);
           if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
             try {
+              const firstName =
+                String(
+                  (orderRow.firstName as string) ||
+                    (orderRow.customerName as string) ||
+                    "",
+                ).split(" ")[0] || "there";
+              const amount = Number(
+                (orderRow.totalAmount as number) ??
+                  (orderRow.total as number) ??
+                  0,
+              );
+              const { subject, html, text } = paymentConfirmedEmail({
+                firstName,
+                orderNumber: ref,
+                amount,
+                paymentMethod: "Open Banking (TrueLayer)",
+                paidAt: new Date(),
+              });
               await addDocAdmin("mail", {
                 to,
-                message: {
-                  subject: `PH Labs — payment received for ${ref}`,
-                  html: `<!doctype html><html><body style="font-family:Arial,sans-serif;padding:24px;color:#0f172a">
-                    <h2 style="color:#10b981">Payment received</h2>
-                    <p>Thank you — we've received your payment for order
-                    <strong>${escapeHtml(ref)}</strong> via TrueLayer Open Banking.</p>
-                  </body></html>`,
-                  text: `Payment received for order ${ref}. Thank you.`,
-                },
+                message: { subject, html, text },
                 createdAt: new Date(),
                 source: "truelayer:webhook",
               });
