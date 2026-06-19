@@ -36,13 +36,17 @@ function CheckoutSuccessPage() {
       return;
     }
 
-    const deadline = Date.now() + 180_000;
+    // Keep polling indefinitely until the order reaches a terminal state.
+    // After 3 min we additionally surface the "Still processing" message so
+    // the user knows they can safely close the page — but the poller keeps
+    // running in the background so the screen updates to "paid" the moment
+    // the bank confirms, even if it takes 10+ minutes.
+    const softDeadline = Date.now() + 180_000;
+    let attempt = 0;
     const tick = async () => {
       if (stopRef.current) return;
+      attempt += 1;
       try {
-        // Wait for Firebase to restore the session before reading currentUser
-        // — without this, the first poll fires before auth hydration completes
-        // and the server rejects the call (401), leaving the spinner stuck.
         try { await auth.authStateReady(); } catch { /* ignore */ }
         const idToken = auth.currentUser
           ? await auth.currentUser.getIdToken().catch(() => null)
@@ -57,15 +61,6 @@ function CheckoutSuccessPage() {
         });
         const data = await res.json().catch(() => ({}));
 
-        // Auth not ready yet (e.g. mobile bank webview lost localStorage and
-        // Firebase session is still restoring) — keep polling instead of
-        // bailing out, the next tick may succeed.
-        if (res.status === 401 || res.status === 403) {
-          if (Date.now() > deadline) { setPhase("pending"); return; }
-          setTimeout(tick, 2500);
-          return;
-        }
-
         const status = String(data.status || "").toUpperCase();
         if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
           setPhase("paid");
@@ -75,26 +70,37 @@ function CheckoutSuccessPage() {
             localStorage.removeItem(`php_pt_${oid}`);
             window.dispatchEvent(new StorageEvent("storage", { key: "php_cart" }));
           } catch { /* ignore */ }
-          return;
+          return; // terminal — stop polling
         }
         if (status === "FAILED" || status === "CANCELLED" || status === "EXPIRED") {
           setPhase("error");
           setError("Payment was not completed. Please try again.");
-          return;
+          return; // terminal — stop polling
         }
-        if (Date.now() > deadline) {
+
+        // Non-terminal (PENDING / 401 / 403 / 404 / 5xx / unknown).
+        // After the soft deadline, flip the UI to "Still processing" while
+        // the poller continues in the background.
+        if (Date.now() > softDeadline && phase !== "pending") {
           setPhase("pending");
-          return;
         }
-        setTimeout(tick, 2500);
-      } catch (e) {
-        setPhase("error");
-        setError(e instanceof Error ? e.message : "Could not check payment status.");
+      } catch {
+        // Network blip — keep polling.
+        if (Date.now() > softDeadline && phase !== "pending") {
+          setPhase("pending");
+        }
       }
+
+      // Gentle exponential backoff capped at 15s so we don't hammer the
+      // endpoint forever: 2.5s, 2.5s, 3s, 4s, 5s … 15s.
+      const delay = Math.min(15_000, 2_500 + Math.max(0, attempt - 2) * 1_000);
+      setTimeout(tick, delay);
     };
     tick();
     return () => { stopRef.current = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
 
 
 
