@@ -2140,6 +2140,105 @@ Identity should be confirmed by mass spectrometry before any assay programme beg
       { id: 5, authors: 'Sanyal AJ, Kaplan LM, Frias JP, et al.', year: 2024, title: 'Triple hormone receptor agonist retatrutide for metabolic dysfunction-associated steatotic liver disease: a randomized phase 2a trial', journal: 'Nat Med', doi: '10.1038/s41591-024-03018-2' },
     ]
   },
+
+  // ---------------------------------------------
+  // Peptide Safety and UK Legality Guide
+  // ---------------------------------------------
+  {
+    slug: 'peptide-safety-legality-uk',
+    title: 'The Safety and Legality of Buying Research Peptides in the UK',
+    subtitle: 'A compliance-first guide to UK research peptide regulations, quality verification, and responsible laboratory sourcing',
+    category: 'Peptide Science',
+    readTime: 10,
+    publishDate: '2026-06-19',
+    excerpt: 'Are peptides safe and legal in the UK? A compliance guide to research-use peptides, HPLC verification, and responsible sourcing for laboratories.',
+    keywords: ['are peptides safe', 'research peptides uk', 'peptide legality UK', 'HPLC verified peptides', 'laboratory research use', 'peptide safety', 'UK peptide regulations', 'research grade peptides'],
+    relatedSlugs: ['hplc-testing-explained', 'how-to-read-hplc-certificate-of-analysis', 'research-peptides-uk'],
+    content: [
+      {
+        body: `Peptides are widely used in laboratory research across the UK, but their legal status and safety profile depend entirely on how they are sourced, labelled, and intended to be used. The question <strong>“are peptides safe?”</strong> has no universal answer: safety in a research context is a function of compound identity, purity, handling practices, and the purpose for which the material is acquired. This guide explains the UK regulatory framework for research peptides, what <strong>For Research Use Only. Not for Human Consumption.</strong> means in practice, and how laboratories can verify quality before placing an order.`
+      },
+      {
+        heading: 'Are Research Peptides Legal in the UK?',
+        body: `In the United Kingdom, the possession and supply of peptides for genuine scientific or laboratory research is not prohibited under general medicines law, provided the material is not presented, marketed, or supplied as a medicinal product. The Medicines and Healthcare products Regulatory Agency (MHRA) regulates products that are represented for human medicinal use — for example, by making health claims, providing administration guidance, or implying they are intended for human use. A peptide sold explicitly as a research chemical, with no medical claims and no instructions for human use, falls outside the scope of medicines licensing.
+
+This distinction is why responsible UK suppliers label every vial and product page with <strong>For Research Use Only. Not for Human Consumption.</strong> The buyer must be a bona fide research entity or an individual aged 18+ acquiring the material for legitimate laboratory research. Any attempt to repurpose research peptides for personal use, human application, or administration to humans or animals misrepresents the legal basis of the sale and may breach UK law.`,
+        callout: {
+          type: 'warning',
+          text: 'Research peptides are not medicines. They are not approved for human or veterinary use, and any health or administration claim made by a seller is a regulatory red flag.'
+        }
+      },
+      {
+        heading: 'What “For Research Use Only” Means in Practice',
+        body: `The phrase “for research use only” is not merely a disclaimer — it defines the lawful boundary of the transaction. It means the supplier has not tested, validated, or authorised the compound for human or veterinary use, and the buyer agrees to use it only in controlled research settings such as in-vitro assays, analytical method development, or biochemical characterisation.
+
+For UK buyers, this also means the product cannot be advertised with language that implies health benefit. Compliant listings avoid medical claims, administration instructions, or any language that suggests human use. At PH Labs, every peptide description is reviewed against a compliance guard before publication, and product pages repeat the research-use statement clearly. If you see a UK peptide site making health claims or offering administration advice, that is a compliance warning, not a selling point.`
+      },
+      {
+        heading: 'Are Peptides Safe for Laboratory Work?',
+        body: `In a controlled laboratory setting, synthetic peptides are handled and studied safely every day. The primary risks are not pharmacological but operational: receiving the wrong compound, a contaminated batch, or a mislabelled vial. These risks are controlled through supplier verification, analytical testing, and standard laboratory hygiene.
+
+Peptides themselves are biological molecules that may be active at very low concentrations. Researchers should follow institutional biosafety protocols, use appropriate personal protective equipment, and store lyophilised material under the conditions specified on the certificate of analysis. Reconstituted solutions should be prepared with sterile, endotoxin-free diluents and stored in aliquots to avoid repeated freeze-thaw cycles. Our <a href="/resources/peptide-storage-lyophilisation-science" style="color: #10b981; text-decoration: underline;">peptide storage guide</a> covers the underlying stability science in detail.`,
+        callout: {
+          type: 'note',
+          text: 'Peptide “safety” refers to laboratory handling, identity verification, and batch purity. It does not imply safety for human consumption or administration.'
+        }
+      },
+      {
+        heading: 'HPLC Verification: The Quality Control You Should Demand',
+        body: `The most important safety step a buyer can take is to confirm that the peptide has been tested by high-performance liquid chromatography (HPLC) and mass spectrometry. HPLC shows the purity profile of the batch: the main peak should represent the target compound, with impurity peaks kept within the supplier’s stated specification. Mass spectrometry confirms the molecular identity by matching the observed mass to the theoretical monoisotopic or average mass of the sequence.
+
+A trustworthy supplier provides a batch-specific certificate of analysis (CoA) that includes the chromatogram, method parameters, lot number, and test date. If you are comparing UK peptide suppliers, ask for the CoA before ordering. Do not rely on a generic percentage claim without supporting data. Our <a href="/resources/hplc-testing-explained" style="color: #10b981; text-decoration: underline;">HPLC testing guide</a> and <a href="/resources/how-to-read-hplc-certificate-of-analysis" style="color: #10b981; text-decoration: underline;">CoA reading guide</a> explain exactly what to look for.`,
+        callout: {
+          type: 'info',
+          text: 'PH Labs publishes batch-specific HPLC and ESI-MS data for every research peptide. See our quality control page for the full testing protocol.'
+        }
+      },
+      {
+        heading: 'Red Flags When Sourcing Peptides in the UK',
+        body: `Not every vendor operates to the same standard. Laboratories should treat the following as warning signs:`,
+        table: {
+          headers: ['Red flag', 'Why it matters'],
+          rows: [
+            ['No batch-specific CoA available', 'Cannot verify identity or purity'],
+            ['Medical or health claims in the description', 'May breach MHRA regulations'],
+            ['Administration instructions or quantity guidance provided', 'Implies human use, not research use'],
+            ['Price far below market rate', 'Higher risk of impurity, mislabelling, or counterfeit'],
+            ['No UK dispatch or contact details', 'Harder to resolve quality issues'],
+            ['Payment-only via untraceable methods', 'No recourse if product is wrong'],
+          ]
+        }
+      },
+      {
+        heading: 'Who Can Buy Research Peptides?',
+        body: `Research peptides in the UK are sold to adults aged 18 and over for legitimate research purposes. You do not need a licence to possess a peptide for research, but you do need a lawful basis for the purchase. The supplier’s responsibility is to ensure the product is labelled and marketed for research only; the buyer’s responsibility is to use it accordingly.
+
+PH Labs requires age verification at checkout and records the intended research context. We do not supply peptides for human consumption, medicinal use, or any purpose outside bona fide laboratory research. If you are unsure whether your intended use qualifies, contact us before ordering.`,
+        callout: {
+          type: 'warning',
+          text: 'Buyers must be 18 or older. Orders are accepted only for bona fide laboratory research and are subject to age and use verification.'
+        }
+      },
+      {
+        heading: 'Responsible Storage and Handling',
+        body: `Safe handling of research peptides extends from delivery to disposal. Lyophilised peptides should be stored in a freezer at −20°C, protected from light and moisture. Once reconstituted, solutions should be kept at 4°C for short-term use or frozen in aliquots for longer-term storage. Always record the reconstitution date, solvent lot, and storage location in your laboratory notebook.
+
+Dispose of expired or unused material according to your institution’s chemical and biological waste policy. Do not pour peptide solutions down domestic drains or place vials in general waste.`
+      },
+      {
+        heading: 'Sourcing Research-Grade Peptides in the UK',
+        body: `When you source peptides for laboratory work, the checklist is simple: verify the supplier’s testing standards, confirm the batch-specific CoA, check that the listing is free of medical or administration claims, and ensure the product is clearly labelled <strong>For Research Use Only. Not for Human Consumption.</strong>
+
+PH Labs supplies HPLC-verified research peptides including <a href="/products/bpc-157" style="color: #10b981; text-decoration: underline;">BPC-157</a>, <a href="/products/tb-500" style="color: #10b981; text-decoration: underline;">TB-500</a>, and <a href="/products/ghk-cu" style="color: #10b981; text-decoration: underline;">GHK-Cu</a>, each with a batch-specific CoA covering purity and identity. View the full catalogue on our <a href="/products" style="color: #10b981; text-decoration: underline;">research peptides page</a> or read more about our <a href="/quality-control" style="color: #10b981; text-decoration: underline;">quality control process</a>.`
+      }
+    ],
+    references: [
+      { id: 1, authors: 'Medicines and Healthcare products Regulatory Agency (MHRA)', year: 2024, title: 'What is a medicine?', journal: 'MHRA Guidance' },
+      { id: 2, authors: 'Human Medicines Regulations 2012', year: 2012, title: 'UK Statutory Instruments 2012 No. 1916', journal: 'Legislation.gov.uk' },
+      { id: 3, authors: 'Snyder LR, Kirkland JJ, Dolan JW.', year: 2010, title: 'Introduction to Modern Liquid Chromatography, 3rd edition', journal: 'Wiley-Interscience' },
+      { id: 4, authors: 'Mant CT, Hodges RS.', year: 2008, title: 'HPLC of Peptides and Proteins: Methods and Protocols', journal: 'Humana Press', doi: '10.1007/978-1-59745-430-4' },
+    ]
+  },
 ];
 
 export function getArticle(slug: string): Article | undefined {

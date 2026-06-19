@@ -44,4 +44,5 @@ export const ARTICLE_INDEX: ArticleIndexEntry[] = [
   { slug: 'research-peptides-uk', title: 'Research Peptides UK: The 2026 Sourcing Guide for British Laboratories' },
   { slug: 'bpc-157-vs-tb-500', title: 'BPC-157 vs TB-500: Mechanisms, Pathways and Research Comparison' },
   { slug: 'retatrutide-research-guide', title: 'Retatrutide Research Peptide: An Analytical Profile for UK Laboratories' },
+  { slug: 'peptide-safety-legality-uk', title: 'The Safety and Legality of Buying Research Peptides in the UK' },
 ];
