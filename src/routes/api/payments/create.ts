@@ -141,8 +141,12 @@ export const Route = createFileRoute("/api/payments/create")({
             console.error("[Wallid] DB insert failed:", dbErr.message);
           }
           if (paymentToken) {
+            // Mark the token as "used to create payment" but DO NOT clear the
+            // hash — the same token authenticates the /api/payments/status
+            // polling on the success page while the bank confirms. The hash
+            // is cleared on terminal status (paid/failed/expired) inside
+            // /api/payments/status.
             await updateDocAdmin("orders", orderId, {
-              paymentTokenHash: null,
               paymentTokenUsedAt: new Date(),
             }).catch((err) => console.error("[Wallid] token cleanup failed:", err));
           }
