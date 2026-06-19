@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Loader, CheckCircle2, AlertCircle } from "lucide-react";
+import { auth } from "@/lib/firebase";
 
 export const Route = createFileRoute("/checkout/success")({
   head: () => ({
@@ -39,8 +40,20 @@ function CheckoutSuccessPage() {
     const tick = async () => {
       if (stopRef.current) return;
       try {
-        const res = await fetch(`/api/payments/status?orderId=${encodeURIComponent(oid)}`, {
-          headers: { accept: "application/json" },
+        // Authenticate the status check: prefer the live Firebase session
+        // (logged-in or anonymous) and fall back to the one-time guest
+        // paymentToken stored at checkout. Without one of these the server
+        // returns 401 — by design, to stop order-id enumeration.
+        const idToken = auth.currentUser
+          ? await auth.currentUser.getIdToken().catch(() => null)
+          : null;
+        let paymentToken: string | null = null;
+        try { paymentToken = localStorage.getItem(`php_pt_${oid}`); } catch { /* ignore */ }
+
+        const res = await fetch(`/api/payments/status`, {
+          method: "POST",
+          headers: { "content-type": "application/json", accept: "application/json" },
+          body: JSON.stringify({ orderId: oid, idToken, paymentToken }),
         });
         const data = await res.json().catch(() => ({}));
         const status = String(data.status || "").toUpperCase();
@@ -49,6 +62,7 @@ function CheckoutSuccessPage() {
           try {
             localStorage.removeItem("php_cart");
             localStorage.removeItem("php_pending_order");
+            localStorage.removeItem(`php_pt_${oid}`);
             window.dispatchEvent(new StorageEvent("storage", { key: "php_cart" }));
           } catch { /* ignore */ }
           return;
@@ -71,6 +85,8 @@ function CheckoutSuccessPage() {
     tick();
     return () => { stopRef.current = true; };
   }, []);
+
+
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-950">

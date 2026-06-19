@@ -1,5 +1,31 @@
+/**
+ * POST /api/payments/status — return the current Wallid payment status for an order.
+ *
+ * Security model:
+ *   - Caller MUST authenticate as either:
+ *       a) the logged-in owner (Firebase ID token, verified server-side and
+ *          matched against `orders/{orderId}.userId`), or
+ *       b) the guest who placed the order (one-time high-entropy
+ *          `paymentToken` whose SHA-256 hash matches `orders/{orderId}.paymentTokenHash`).
+ *   - Per-IP rate limit (20 req/min) to defeat order-id enumeration scans
+ *     (the `PHP-{base36 timestamp}` format is guessable).
+ *   - The response NEVER exposes the internal Wallid `api_payment_id`.
+ *
+ * GET is intentionally rejected (405) — credentials must come in the body,
+ * not in URL query strings that can leak via logs / referrers.
+ */
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
 import { getWallidStatus, WallidError } from "@/lib/wallid.server";
+import { enforceRateLimit } from "@/lib/rate-limit";
+import { verifyFirebaseIdToken } from "@/lib/server/firebase-auth-admin";
+import { getDocAdmin } from "@/lib/server/firestore-admin";
+
+const BodySchema = z.object({
+  orderId: z.string().min(3).max(128).regex(/^[A-Za-z0-9_-]+$/),
+  idToken: z.string().min(10).max(4096).optional().nullable(),
+  paymentToken: z.string().min(32).max(256).optional().nullable(),
+});
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -8,20 +34,67 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
+async function verifyPaymentTokenHash(rawToken: string, storedHash: unknown): Promise<boolean> {
+  if (typeof storedHash !== "string" || !storedHash) return false;
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(rawToken));
+  const candidate = Array.from(new Uint8Array(digest), b => b.toString(16).padStart(2, "0")).join("");
+  if (candidate.length !== storedHash.length) return false;
+  let diff = 0;
+  for (let i = 0; i < candidate.length; i += 1) {
+    diff |= candidate.charCodeAt(i) ^ storedHash.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 export const Route = createFileRoute("/api/payments/status")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
-        const url = new URL(request.url);
-        const orderId = url.searchParams.get("orderId") || url.searchParams.get("order_id");
-        if (!orderId || !/^[A-Za-z0-9_-]{3,128}$/.test(orderId)) {
-          return json({ error: "Invalid orderId" }, 400);
+      GET: async () => json({ error: "Method Not Allowed — use POST" }, 405),
+      POST: async ({ request }) => {
+        const limited = await enforceRateLimit(request, "wallid:status", {
+          limit: 20,
+          windowMs: 60_000,
+          retryAfterSec: 30,
+        });
+        if (limited) return limited;
+
+        let raw: unknown;
+        try { raw = await request.json(); } catch { return json({ error: "Invalid JSON body" }, 400); }
+        const parsed = BodySchema.safeParse(raw);
+        if (!parsed.success) return json({ error: "Invalid request" }, 400);
+        const { orderId, idToken, paymentToken } = parsed.data;
+        if (!idToken && !paymentToken) {
+          return json({ error: "Authentication required" }, 401);
+        }
+
+        // 1) Authenticate caller (idToken preferred; fall back to paymentToken).
+        let userUid: string | null = null;
+        if (idToken) {
+          try {
+            const user = await verifyFirebaseIdToken(idToken);
+            userUid = user.uid;
+          } catch {
+            // fall through to paymentToken
+          }
+        }
+
+        // 2) Verify order ownership via Firestore.
+        const order = await getDocAdmin("orders", orderId).catch(() => null);
+        if (!order) return json({ error: "Order not found" }, 404);
+
+        const ownerUid = typeof order.userId === "string" ? order.userId : null;
+        const ownsByUid = userUid !== null && ownerUid !== null && ownerUid === userUid;
+        const ownsByToken = paymentToken
+          ? await verifyPaymentTokenHash(paymentToken, (order as { paymentTokenHash?: unknown }).paymentTokenHash)
+          : false;
+        if (!ownsByUid && !ownsByToken) {
+          return json({ error: "Forbidden" }, 403);
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: rows, error } = await supabaseAdmin
           .from("wallid_payments")
-          .select("api_payment_id, status, amount, currency, payment_link")
+          .select("api_payment_id, status, amount, currency")
           .eq("order_id", orderId)
           .order("created_at", { ascending: false })
           .limit(1);
@@ -69,10 +142,12 @@ export const Route = createFileRoute("/api/payments/status")({
             }
           }
 
+          // NOTE: api_payment_id is an internal Wallid reference — never
+          // expose it to the client. Amount/currency are echoed because the
+          // caller is already proven to own the order.
           return json({
             status,
             order_id: orderId,
-            api_payment_id: row.api_payment_id,
             amount: row.amount,
             currency: row.currency,
           });
