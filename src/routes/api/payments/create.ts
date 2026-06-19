@@ -2,7 +2,8 @@
  * POST /api/payments/create — Wallid Pay-by-Bank session creator.
  *
  * Security model:
- *   - Caller MUST provide a Firebase ID token (verified server-side).
+ *   - Caller provides a Firebase ID token, or a one-time high-entropy
+ *     paymentToken minted when guest order creation cannot attach a UID.
  *   - The order is loaded from Firestore via `buildOrderCtxForPayment`,
  *     which enforces ownership and unsettled status.
  *   - The amount sent to Wallid comes from the DB order, NEVER from the
@@ -27,7 +28,7 @@ const ItemSchema = z.object({
 });
 
 const BodySchema = z.object({
-  idToken: z.string().min(10).max(4096),
+  idToken: z.string().min(10).max(4096).optional().nullable(),
   orderId: z.string().min(3).max(128).regex(/^[A-Za-z0-9_-]+$/),
   paymentToken: z.string().min(32).max(256).optional().nullable(),
   amount: z.number().positive().max(100000),
@@ -67,19 +68,27 @@ export const Route = createFileRoute("/api/payments/create")({
           return json({ error: "Invalid payment details", details: parsed.error.flatten() }, 400);
         }
         const { idToken, orderId, paymentToken, amount: clientAmount, currency, items, customerEmail } = parsed.data;
+        if (!idToken && !paymentToken) {
+          return json({ error: "Authentication required" }, 401);
+        }
 
         // 1) Authenticate caller
-        let user;
-        try {
-          user = await verifyFirebaseIdToken(idToken);
-        } catch {
+        let user: { uid: string; email?: string | null } | null = null;
+        if (idToken) {
+          try {
+            user = await verifyFirebaseIdToken(idToken);
+          } catch {
+            if (!paymentToken) return json({ error: "Authentication required" }, 401);
+          }
+        }
+        if (!user && !paymentToken) {
           return json({ error: "Authentication required" }, 401);
         }
 
         // 2) Load order, verify ownership + unsettled status, derive trusted amount
         let ctx;
         try {
-          ctx = await buildOrderCtxForPayment(orderId, user.uid, user.email, paymentToken);
+          ctx = await buildOrderCtxForPayment(orderId, user?.uid ?? null, user?.email ?? null, paymentToken);
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           if (/forbidden/i.test(msg)) return json({ error: "Forbidden" }, 403);
@@ -93,7 +102,7 @@ export const Route = createFileRoute("/api/payments/create")({
         const clientMinor = Math.round(clientAmount * 100);
         if (dbMinor !== clientMinor) {
           console.warn(
-            `[Wallid] amount mismatch: order=${orderId} db=${dbMinor} client=${clientMinor} uid=${user.uid}`,
+             `[Wallid] amount mismatch: order=${orderId} db=${dbMinor} client=${clientMinor} uid=${user?.uid ?? "guest-token"}`,
           );
           return json({ error: "Amount does not match order total" }, 400);
         }
@@ -125,7 +134,7 @@ export const Route = createFileRoute("/api/payments/create")({
             currency,
             status: String(wallid.status || "pending"),
             customer_email: trustedEmail,
-            metadata: { items, user_uid: user.uid, raw: wallid } as never,
+            metadata: { items, user_uid: user?.uid ?? null, guest_payment_token: Boolean(paymentToken), raw: wallid } as never,
           });
           if (dbErr) {
             console.error("[Wallid] DB insert failed:", dbErr.message);
