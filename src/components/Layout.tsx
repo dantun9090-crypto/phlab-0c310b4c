@@ -86,6 +86,42 @@ export function Layout({ children }: LayoutProps) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
+  // Body scroll lock + scroll-to-top while cart/mobile-menu overlay is open,
+  // so the fixed drawer is always anchored to the top of the viewport on
+  // mobile/tablet/desktop (otherwise users land mid-page and have to scroll
+  // up manually to see the drawer contents).
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return;
+    const open = isCartOpen || isMobileMenuOpen;
+    if (!open) return;
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const prev = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    };
+    body.style.position = 'fixed';
+    body.style.top = `-${scrollY}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+    body.style.overflow = 'hidden';
+    return () => {
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.left = prev.left;
+      body.style.right = prev.right;
+      body.style.width = prev.width;
+      body.style.overflow = prev.overflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, [isCartOpen, isMobileMenuOpen]);
+
+
   // Google Analytics 4 — load once on mount, then fire page_view on every SPA route change
   useEffect(() => {
     let id: string | undefined;
