@@ -57,6 +57,10 @@ function productUrls(slugs?: string[], category?: string): string[] {
   const urls = new Set<string>([
     `${ORIGIN}/products`,
     `${ORIGIN}/`,
+    // Sitemap + robots regenerate dynamically from Firestore — must purge
+    // on every product change so crawlers see new lastmod/URL list.
+    `${ORIGIN}/sitemap.xml`,
+    `${ORIGIN}/robots.txt`,
   ]);
 
   // Category landing pages — purge all to be safe (cheap).
@@ -160,4 +164,55 @@ export const invalidateProductCache = createServerFn({ method: 'POST' })
       timestamp: new Date().toISOString(),
     } as const;
   });
+
+/**
+ * Generic content-cache invalidator — banners, articles, policies,
+ * landing pages. Caller passes site-relative paths (e.g. ['/about']).
+ * Always also purges /, /sitemap.xml, /robots.txt.
+ */
+const ContentInputSchema = z.object({
+  paths: z
+    .array(
+      z
+        .string()
+        .min(1)
+        .max(200)
+        .regex(/^\/[A-Za-z0-9/_\-.?=&]*$/, 'invalid path'),
+    )
+    .max(50),
+  idToken: z.string().min(20).max(4096),
+});
+
+export const invalidateContentCache = createServerFn({ method: 'POST' })
+  .inputValidator((input: unknown) => ContentInputSchema.parse(input))
+  .handler(async ({ data }) => {
+    try {
+      await requireFirebaseAdmin(data.idToken);
+    } catch (e) {
+      return {
+        ok: false,
+        error: 'unauthorized',
+        reason: e instanceof Error ? e.message : 'auth_failed',
+      } as const;
+    }
+    const set = new Set<string>([
+      `${ORIGIN}/`,
+      `${ORIGIN}/sitemap.xml`,
+      `${ORIGIN}/robots.txt`,
+    ]);
+    for (const p of data.paths) set.add(`${ORIGIN}${p}`);
+    const urls = [...set];
+    const [cf, pr] = await Promise.all([
+      purgeCloudflare(urls),
+      recachePrerender(urls),
+    ]);
+    return {
+      ok: cf.ok && pr.ok,
+      urls: urls.length,
+      cloudflare: cf,
+      prerender: pr,
+      timestamp: new Date().toISOString(),
+    } as const;
+  });
+
 
