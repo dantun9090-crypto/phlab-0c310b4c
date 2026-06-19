@@ -133,6 +133,10 @@ export const Route = createFileRoute("/api/payments/status")({
                 paymentProvider: "wallid",
                 paymentRef: row.api_payment_id,
                 paymentUpdatedAt: new Date(),
+                // Burn the guest paymentToken once the order is terminal so it
+                // can't be reused. Kept alive during polling so the success
+                // page can authenticate the status check.
+                paymentTokenHash: null,
               });
             } catch (e) {
               console.warn(
