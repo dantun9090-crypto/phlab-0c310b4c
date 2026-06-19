@@ -42,7 +42,7 @@ export function cfImg(src: string | undefined | null, opts: CfImageOpts = {}): s
   params.set("u", src);
   if (opts.width) params.set("w", String(Math.round(opts.width)));
   params.set("f", opts.format || "auto");
-  params.set("q", String(opts.quality ?? 80));
+  params.set("q", String(opts.quality ?? 90));
   if (opts.fit) params.set("fit", opts.fit);
   return `/_img/?${params.toString()}`;
 }
