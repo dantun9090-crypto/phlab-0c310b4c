@@ -41,7 +41,7 @@ export default function RecentlyViewedProducts({ items, currentProductId, varian
                     decoding="async"
                     width="40"
                     height="40"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -87,7 +87,7 @@ export default function RecentlyViewedProducts({ items, currentProductId, varian
                   decoding="async"
                   width="300"
                   height="300"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
               <div className="p-3">

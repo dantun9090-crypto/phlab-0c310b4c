@@ -1166,7 +1166,7 @@ export default function ProductDetail() {
                         >
                           <img src={cfImg(thumbSrc, { width: 128, quality: 75 }) || thumbSrc} alt={`${product.name}${product.variants?.[idx]?.name ? ` ${product.variants[idx].name}` : ''} HPLC-verified research peptide vial UK — view ${idx + 1}`}
                             width="64" height="64"
-                            className="w-full h-full object-cover" loading="lazy" />
+                            className="w-full h-full object-contain" loading="lazy" />
 
                         </button>
                       ))}
