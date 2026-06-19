@@ -64,9 +64,14 @@ async function wallidFetch(
   init: RequestInit,
   attempt = 0,
 ): Promise<Response> {
+  // 8s hard timeout — Wallid p99 is well under 2s; anything longer is a hang.
+  // Prevents Worker invocations from sitting on a dead socket and blowing the
+  // CPU budget while customers wait at checkout.
+  const TIMEOUT_MS = 8000;
   try {
     const res = await fetch(`${WALLID_BASE}${path}`, {
       ...init,
+      signal: init.signal ?? AbortSignal.timeout(TIMEOUT_MS),
       headers: {
         "content-type": "application/json",
         accept: "application/json",
@@ -76,10 +81,17 @@ async function wallidFetch(
     });
     return res;
   } catch (err) {
-    // Network error — retry once.
+    const isTimeout =
+      err instanceof Error &&
+      (err.name === "TimeoutError" || err.name === "AbortError");
+    // Retry once on transient network blip OR timeout, then fail fast so the
+    // order can transition out of pending_payment instead of hanging forever.
     if (attempt < 1) {
       await new Promise((r) => setTimeout(r, 400));
       return wallidFetch(path, init, attempt + 1);
+    }
+    if (isTimeout) {
+      throw new WallidError(504, "wallid_timeout", "Payment service timed out");
     }
     throw err;
   }
