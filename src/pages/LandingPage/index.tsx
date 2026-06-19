@@ -241,7 +241,7 @@ export default function LandingPage() {
                       {/* Image */}
                       <div className="aspect-square overflow-hidden relative" style={{ backgroundColor: 'var(--theme-bg)' }}>
                         {imgSrc ? (
-                          <img src={imgSrc} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                          <img src={imgSrc} alt={p.name} className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" loading="lazy" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <FlaskConical className="w-10 h-10 text-[#1a3a6a]" />
