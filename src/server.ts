@@ -716,6 +716,32 @@ export default {
         return Response.redirect(dest.toString(), 301);
       }
 
+      // 1a-pre. Stale hashed-asset guard. If a request for /assets/* or
+      // /_build/* reaches the Worker, the static-asset binding already
+      // missed (the hashed file isn't in this deployment). Returning the
+      // SPA HTML shell with 200 here would be cached as `immutable` by
+      // browsers and surfaced as a MIME-type error:
+      //   "Loading module from … was blocked because of a disallowed
+      //   MIME type ('text/html')."
+      // Always answer with a real 404 + no-store so the browser refetches
+      // the current index.html on next nav and picks up fresh hashes.
+      if (
+        (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/_build/")) &&
+        /\.[a-z0-9]+$/i.test(url.pathname)
+      ) {
+        log.info({ event: "worker.asset.404", status: 404, ...baseFields });
+        return new Response("Not Found", {
+          status: 404,
+          headers: {
+            "content-type": "text/plain; charset=utf-8",
+            "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+            "cdn-cache-control": "no-store",
+            "x-robots-tag": "noindex, nofollow",
+          },
+        });
+      }
+
+
       // 1a. Sandbox/mobile recovery: /index is not a real PH Labs route.
       // Redirect it to the home page before the SPA/catch-all can render a
       // blank/blocked preview shell.
