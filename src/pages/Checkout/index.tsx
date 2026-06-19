@@ -206,18 +206,25 @@ export default function CheckoutPage() {
               : undefined);
 
           if (!serverFallback) {
+            // Prefer the server's actual reason (VIP-only, out of stock,
+            // price missing, etc.) over a synthetic "variant not found".
+            const serverReason = (result.errors || []).find((e) =>
+              e.includes(item.name) || e.includes(sId) || (sVid ? e.includes(sVid) : false),
+            );
             issues.push({
               productId: sId,
               variantId: sVid,
               cartPrice: item.priceNum,
               serverPrice: null,
               kind: sVid ? 'variant_missing' : 'not_found',
-              message: sVid
-                ? `Variant "${sVid}" of "${item.name}" could not be found. Please re-select the size.`
-                : `"${item.name}" is no longer available.`,
+              message: serverReason
+                ?? (sVid
+                  ? `Variant "${sVid}" of "${item.name}" could not be found. Please re-select the size.`
+                  : `"${item.name}" is no longer available.`),
             });
             continue;
           }
+
 
           if (!serverFallback.inStock) {
             issues.push({
