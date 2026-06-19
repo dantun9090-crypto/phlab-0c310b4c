@@ -72,7 +72,8 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
         let updated = 0;
         const results: Array<{ orderId: string; from: string; to: string }> = [];
 
-        const { updateDocAdmin, getDocAdmin } = await import("@/lib/server/firestore-admin");
+        // Atomic transition helper is loaded per-iteration above; nothing
+        // more needed at this scope.
 
         for (const row of rows) {
           if (!row.api_payment_id || !row.order_id) continue;
