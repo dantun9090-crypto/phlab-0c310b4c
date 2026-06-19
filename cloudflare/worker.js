@@ -715,11 +715,14 @@ export default {
           cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);
           cacheHeaders.set("x-phl-cached-at", new Date().toISOString());
           let putErr = "ok";
-          const putPromise = htmlCache.put(
-            cacheKey,
-            new Response(buf, { status: 200, headers: cacheHeaders }),
-          ).catch((e) => { putErr = (e && e.message || "err").slice(0, 40); });
-          ctx.waitUntil(putPromise);
+          try {
+            await htmlCache.put(
+              cacheKey,
+              new Response(buf, { status: 200, headers: cacheHeaders }),
+            );
+          } catch (e) {
+            putErr = (e && e.message || "err").slice(0, 40);
+          }
           h.set("x-phl-cache", `miss;put=${putErr}`);
           const liveOut = new Response(buf, { status: res.status, statusText: res.statusText, headers: h });
           return rewriteCspNonce(applySecurityHeaders(stripLovableInjectedScripts(liveOut), url));
