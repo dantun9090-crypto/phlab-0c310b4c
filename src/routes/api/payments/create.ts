@@ -18,6 +18,7 @@ import { checkRateLimit, getClientIp, rateLimitedResponse } from "@/lib/rate-lim
 import { readWallidEnabled } from "@/lib/wallid-config.server";
 import { verifyFirebaseIdToken } from "@/lib/server/firebase-auth-admin";
 import { buildOrderCtxForPayment } from "@/lib/payments/dispatch.server";
+import { updateDocAdmin } from "@/lib/server/firestore-admin";
 
 const ItemSchema = z.object({
   name: z.string().min(1).max(200),
@@ -138,6 +139,12 @@ export const Route = createFileRoute("/api/payments/create")({
           });
           if (dbErr) {
             console.error("[Wallid] DB insert failed:", dbErr.message);
+          }
+          if (paymentToken) {
+            await updateDocAdmin("orders", orderId, {
+              paymentTokenHash: null,
+              paymentTokenUsedAt: new Date(),
+            }).catch((err) => console.error("[Wallid] token cleanup failed:", err));
           }
 
           return json({
