@@ -474,7 +474,7 @@ export const reconcileFenaOrphans = createServerFn({ method: "POST" })
           resolved: true,
           resolvedAt: new Date(),
           resolvedOrderId: orderId,
-          resolvedStatus: updates.status ?? currentStatus,
+          resolvedStatus: didTransitionToPaid ? "paid" : (isCancelled && currentStatus === "pending" ? "cancelled" : currentStatus),
         });
 
         // Sanity: make sure the order doc actually exists post-update.
