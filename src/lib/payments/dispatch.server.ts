@@ -138,8 +138,12 @@ export async function buildOrderCtxForPayment(
 ): Promise<OrderCtx> {
   const order = await getDocAdmin("orders", orderId);
   if (!order) throw new Error("Order not found");
-  if (order.userId && order.userId !== userUid && !verifyPaymentToken(paymentToken, order.paymentTokenHash)) {
+  const tokenMatches = verifyPaymentToken(paymentToken, order.paymentTokenHash);
+  if (order.userId && order.userId !== userUid && !tokenMatches) {
     throw new Error("Forbidden: order belongs to another account");
+  }
+  if (!order.userId && order.paymentTokenHash && !tokenMatches) {
+    throw new Error("Forbidden: payment token required");
   }
   const status = String(order.status ?? "").toLowerCase();
   if (["paid", "completed", "shipped", "fulfilled", "cancelled", "refunded"].includes(status)) {
