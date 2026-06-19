@@ -7,7 +7,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db, storage, doc, getDoc, setDoc, Timestamp, storageRef, uploadBytesResumable, getDownloadURL } from '@/lib/firebase';
+import { db, storage, doc, getDoc, setDoc, Timestamp, storageRef, uploadBytesResumable, getDownloadURL, triggerContentCdnInvalidation } from '@/lib/firebase';
 
 interface BannerConfig {
   active: boolean;
