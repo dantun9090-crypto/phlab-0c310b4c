@@ -434,6 +434,7 @@ export default function AdminPage() {
         case 'merchantfeed': return <MerchantFeedTab />;
         case 'bingfeed': return <BingFeedTab />;
         case 'securityaudit': return <SecurityAuditTab />;
+        case 'edgemonitor': return <EdgeMonitorTab />;
         case 'securityevents': return <SecurityEventsTab />;
         case 'shopify': return <ShopifyTab />;
         case 'semrush': return <SemrushTab />;
