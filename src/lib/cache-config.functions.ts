@@ -67,13 +67,11 @@ const SetSchema = z.object({
 export const setCacheConfig = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => SetSchema.parse(input))
   .handler(async ({ data }) => {
-    const claims = await requireFirebaseAdmin(data.idToken);
+    const user = await requireFirebaseAdmin(data.idToken);
     const payload = {
       htmlTtlSeconds: data.htmlTtlSeconds,
       updatedAt: new Date().toISOString(),
-      updatedBy: (claims as { uid?: string; email?: string })?.email
-        ?? (claims as { uid?: string })?.uid
-        ?? 'admin',
+      updatedBy: user.email ?? user.uid ?? 'admin',
     };
     // Upsert: try PATCH first, fall back to create on 404 (first time).
     try {
