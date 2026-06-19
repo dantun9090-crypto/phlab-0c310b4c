@@ -210,13 +210,15 @@ export const Route = createFileRoute("/api/public/hooks/truelayer")({
         await updateDocAdmin("orders", orderId, updates);
 
         if (mapped === "paid" && !wasPaid) {
-          const to = String(orderRow.customerEmail ?? orderRow.email ?? "");
+          const customerObj = (orderRow.customer as Record<string, unknown> | undefined) || {};
+          const to = String(orderRow.customerEmail ?? orderRow.email ?? customerObj.email ?? "");
           const ref = String(orderRow.orderNumber ?? orderId);
           if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
             try {
               const firstName =
                 String(
                   (orderRow.firstName as string) ||
+                    (customerObj.firstName as string) ||
                     (orderRow.customerName as string) ||
                     "",
                 ).split(" ")[0] || "there";
