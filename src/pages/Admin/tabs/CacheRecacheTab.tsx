@@ -126,7 +126,7 @@ export default function CacheRecacheTab() {
           <code className="text-emerald-400">/sitemap.xml</code>. Every Lovable Publish auto-fires
           a full Cloudflare purge + Prerender desktop/mobile recache on first visitor request
           (build-id compared server-side via <code className="text-emerald-400">/api/public/post-publish-check</code>).
-          Public HTML uses a short 60-second edge cache; private routes, service workers, recovery URLs, and 404 HTML stay no-store so bad publishes and stale product URLs do not stick.
+          Public HTML uses a 60-second edge cache but browser cache is forced to revalidate on every navigation; cached HTML is re-nonced and Lovable editor scripts are stripped at the edge. Private routes, service workers, recovery URLs, and 404 HTML stay no-store so bad publishes and stale product URLs do not stick.
           Use the buttons below for ad-hoc purges or to re-trigger manually.
         </p>
       </div>
