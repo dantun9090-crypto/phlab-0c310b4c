@@ -684,7 +684,7 @@ export default function AccountPage() {
               <div className="mt-5 grid grid-cols-2 gap-2">
                 {[
                   { label: 'Orders', value: profile?.totalOrders || orders.length || 0 },
-                  { label: 'Spent', value: `£${(profile?.totalSpend || 0).toFixed(0)}` },
+                  { label: 'Spent', value: `£${Math.max(profile?.totalSpend || 0, orders.filter(o => (o as any).status !== 'cancelled').reduce((s, o) => s + ((o as any).totalAmount || 0), 0)).toFixed(0)}` },
                 ].map(s => (
                   <div key={s.label} className="bg-white/[0.03] rounded-xl p-3 text-center border border-white/[0.05]">
                     <p className="text-white font-bold text-lg leading-none">{s.value}</p>
@@ -762,7 +762,7 @@ export default function AccountPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {[
                       { label: 'Total Orders', value: profile?.totalOrders || orders.length || 0, icon: ShoppingBag, color: 'blue' },
-                      { label: 'Total Spend', value: `£${(profile?.totalSpend || 0).toFixed(2)}`, icon: TrendingUp, color: 'violet' },
+                      { label: 'Total Spend', value: `£${Math.max(profile?.totalSpend || 0, orders.filter(o => (o as any).status !== 'cancelled').reduce((s, o) => s + ((o as any).totalAmount || 0), 0)).toFixed(2)}`, icon: TrendingUp, color: 'violet' },
                       { label: 'Referral Balance', value: `£${(profile?.referralBalance || 0).toFixed(2)}`, icon: Gift, color: 'emerald' },
                     ].map(stat => {
                       const Icon = stat.icon;
