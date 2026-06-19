@@ -153,7 +153,7 @@ export const Route = createFileRoute("/api/payments/status")({
             : null;
           if (firestoreStatus) {
             try {
-              const { updateDocAdmin, addDocAdmin } = await import("@/lib/server/firestore-admin");
+              const { updateDocAdmin } = await import("@/lib/server/firestore-admin");
               const priorStatus = String((order as { status?: unknown }).status ?? "").toLowerCase();
               await updateDocAdmin("orders", orderId, {
                 status: firestoreStatus,
