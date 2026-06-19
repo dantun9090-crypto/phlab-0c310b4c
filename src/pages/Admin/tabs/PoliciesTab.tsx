@@ -188,6 +188,9 @@ export default function PoliciesTab() {
         ...policies,
         updatedAt: new Date().toISOString(),
       });
+      triggerContentCdnInvalidation([
+        '/terms', '/privacy', '/cookies', '/returns', '/shipping', '/research-use-only',
+      ]);
       showToast('Policies saved successfully!');
     } catch (e: any) {
       showToast(e?.message || 'Save failed', false);
