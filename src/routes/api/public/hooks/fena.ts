@@ -410,26 +410,32 @@ export const Route = createFileRoute("/api/public/hooks/fena")({
           return new Response("Order update failed", { status: 500 });
         }
 
-        // Enqueue confirmation mail on first paid transition.
+        // Enqueue branded payment-received confirmation on first paid transition.
         if (isPaid && currentStatus !== "paid") {
           const to = String(orderRow.customerEmail ?? orderRow.email ?? "");
           if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
             try {
+              const firstName =
+                String(
+                  (orderRow.firstName as string) ||
+                    (orderRow.customerName as string) ||
+                    "",
+                ).split(" ")[0] || "there";
+              const amount = Number(
+                (orderRow.totalAmount as number) ??
+                  (orderRow.total as number) ??
+                  Number(authoritative.amount ?? 0),
+              );
+              const { subject, html, text } = paymentConfirmedEmail({
+                firstName,
+                orderNumber: reference || orderId,
+                amount,
+                paymentMethod: "Open Banking (Fena)",
+                paidAt: new Date(),
+              });
               await addDocAdmin("mail", {
                 to,
-                message: {
-                  subject: `PH Labs — payment received for ${reference}`,
-                  html: `<!doctype html><html><body style="font-family:Arial,sans-serif;padding:24px;color:#0f172a">
-                    <h2 style="color:#10b981">Payment received</h2>
-                    <p>Thank you — we've received your payment for order
-                    <strong>${escapeHtml(reference)}</strong>.</p>
-                    <p>We'll send dispatch details shortly. Reply to this email
-                    if you need help.</p>
-                    <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0">
-                    <p style="color:#64748b;font-size:12px">All products sold for laboratory research purposes only.</p>
-                  </body></html>`,
-                  text: `Payment received for order ${reference}. Thank you.`,
-                },
+                message: { subject, html, text },
                 createdAt: new Date(),
                 source: "fena:webhook",
               });
