@@ -634,10 +634,20 @@ export default {
         const hit = await caches.default.match(cacheKey);
         if (hit) {
           const h = new Headers(hit.headers);
+          const cachedCsp = h.get("content-security-policy") || "";
+          if (!cachedCsp.includes(NONCE_PLACEHOLDER)) {
+            ctx.waitUntil(caches.default.delete(cacheKey).catch(() => {}));
+            throw new Error("stale-html-cache-missing-csp");
+          }
+          h.set("cache-control", "public, max-age=0, must-revalidate");
+          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
+          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
           h.set("x-phl-via", "edge-cache-hit");
           h.set("cf-cache-status", "HIT");
           h.set("x-phl-cache", "hit");
-          return rewriteCspNonce(new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers: h }));
+          h.delete("age");
+          const cachedOut = new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers: h });
+          return rewriteCspNonce(applySecurityHeaders(stripLovableInjectedScripts(cachedOut), url));
         }
       } catch (_) { /* fall through */ }
     }
@@ -674,9 +684,9 @@ export default {
       } else if ((h.get("content-type") || "").includes("text/html")) {
         // Browser must revalidate every nav so a publish is visible
         // immediately; edge holds it for 60s + can serve stale 24h.
-        if (!h.has("cache-control") || /no-cache|no-store|max-age=0/i.test(h.get("cache-control") || "")) {
-          h.set("cache-control", "public, max-age=0, must-revalidate");
-        }
+        h.set("cache-control", "public, max-age=0, must-revalidate");
+        h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
+        h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
       }
 
 
@@ -705,13 +715,20 @@ export default {
       //     independent Responses from it: one for the cache, one for the
       //     client (which still passes through HTMLRewriter + security
       //     headers and keeps the visitor's Set-Cookie intact).
-      if (htmlCacheable && cacheKey && res.status === 200 && isHtml) {
+      const cspForCache = h.get("content-security-policy") || "";
+      if (htmlCacheable && cacheKey && res.status === 200 && isHtml && cspForCache.includes(NONCE_PLACEHOLDER)) {
         try {
-          const buf = await res.arrayBuffer();
+          const strippedForCache = stripLovableInjectedScripts(
+            new Response(res.body, { status: res.status, statusText: res.statusText, headers: h }),
+          );
+          const buf = await strippedForCache.arrayBuffer();
           // Build minimal cache headers from scratch so no upstream directive
           // (Set-Cookie, Vary, private, no-store) can block caches.default.put.
           const cacheHeaders = new Headers();
           cacheHeaders.set("content-type", h.get("content-type") || "text/html; charset=utf-8");
+          cacheHeaders.set("content-security-policy", cspForCache);
+          const reportingEndpoints = h.get("reporting-endpoints");
+          if (reportingEndpoints) cacheHeaders.set("reporting-endpoints", reportingEndpoints);
           cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);
           cacheHeaders.set("x-phl-cached-at", new Date().toISOString());
           let putErr = "ok";
@@ -722,7 +739,7 @@ export default {
           ctx.waitUntil(putPromise);
           h.set("x-phl-cache", `miss;put=${putErr}`);
           const liveOut = new Response(buf, { status: res.status, statusText: res.statusText, headers: h });
-          return rewriteCspNonce(applySecurityHeaders(stripLovableInjectedScripts(liveOut), url));
+          return rewriteCspNonce(applySecurityHeaders(liveOut, url));
         } catch (e) {
           h.set("x-phl-cache", "buf-err:" + ((e && e.message) || "x").slice(0, 30));
         }

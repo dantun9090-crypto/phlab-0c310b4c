@@ -78,7 +78,7 @@ const BASELINE: Check[] = [
     id: 'csp-script-nonce',
     category: 'Headers',
     title: "CSP script-src nonce + 'strict-dynamic'",
-    description: "'unsafe-inline' removed. Per-request nonce generated in Worker and injected into every <script> via HTMLRewriter; 'strict-dynamic' covers Firebase/GTM dynamic loads.",
+    description: "'unsafe-inline' removed. Per-request nonce generated in Worker and injected into every <script> via HTMLRewriter; cached HTML is re-nonced at the edge before delivery.",
     severity: 'medium',
     status: 'pass',
   },
