@@ -622,17 +622,17 @@ export default {
         }
       : undefined;
 
-    // 6a. Cache API lookup for HTML pages. Use a separate cache namespace
-    //     (not caches.default) so the __cf_bm cookie injected by Cloudflare
-    //     Bot Management does not block storage of the sanitized HTML snapshot.
+    // 6a. Cache API lookup for HTML pages. With a Worker bound to the route,
+    //     `cf.cacheEverything` only caches the inner subrequest — the *outer*
+    //     client response always says `cf-cache-status: DYNAMIC` unless we
+    //     explicitly hit caches.default. Use a normalized cache key (no
+    //     cookies, GET) so __cf_bm and per-visitor headers can't bust it.
     let cacheKey = null;
-    let htmlCache = null;
     if (htmlCacheable) {
       // Use the request URL directly (canonical via redirects upstream).
       cacheKey = new Request(request.url, { method: "GET" });
       try {
-        htmlCache = await caches.open("phlabs-html-cache");
-        const hit = await htmlCache.match(cacheKey);
+        const hit = await caches.default.match(cacheKey);
         if (hit) {
           const h = new Headers(hit.headers);
           h.set("x-phl-via", "edge-cache-hit");
