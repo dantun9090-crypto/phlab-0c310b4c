@@ -698,6 +698,7 @@ export default {
       //     client (which still passes through HTMLRewriter + security
       //     headers and keeps the visitor's Set-Cookie intact).
       const isHtml = (h.get("content-type") || "").includes("text/html");
+      h.set("x-phl-debug", JSON.stringify({ htmlCacheable, isHtml, status: res.status, hasCacheKey: !!cacheKey, path: url.pathname, isGet, isXmlFeed, isHtmlCacheable: isHtmlCacheable(url) }));
       if (htmlCacheable && cacheKey && res.status === 200 && isHtml) {
         try {
           const buf = await res.arrayBuffer();
