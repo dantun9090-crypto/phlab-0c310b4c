@@ -682,7 +682,6 @@ export default function AccountPage() {
 
               {/* Mini stats */}
               <div className="mt-5 grid grid-cols-2 gap-2">
-                {(() => null)()}
                 {[
                   { label: 'Orders', value: profile?.totalOrders || orders.length || 0 },
                   { label: 'Spent', value: `£${Math.max(profile?.totalSpend || 0, orders.filter(o => (o as any).status !== 'cancelled').reduce((s, o) => s + ((o as any).totalAmount || 0), 0)).toFixed(0)}` },
