@@ -1690,9 +1690,9 @@ export default function CheckoutPage() {
                       const key = item.variantId ? `${item.id}-${item.variantId}` : String(item.id);
                       return (
                         <div key={key} className="flex gap-3">
-                          <div className="w-12 h-12 bg-white rounded-lg overflow-hidden flex items-center justify-center p-1 shrink-0 border border-white/10">
+                          <div className="w-14 h-14 rounded-lg overflow-hidden flex items-center justify-center bg-[#030a14] shrink-0 border border-white/5">
                             {item.image ? (
-                              <img src={item.image} alt={item.name} loading="lazy" className="w-full h-full object-contain" />
+                              <img src={item.image} alt={item.name} loading="lazy" width="56" height="56" className="w-full h-full object-contain" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center bg-gray-900">
                                 <Package className="w-5 h-5 text-gray-600" />
