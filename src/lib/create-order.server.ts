@@ -11,6 +11,7 @@
  * NEVER import this file from client code.
  */
 import { z } from 'zod';
+import { createHash, randomBytes } from 'crypto';
 import { runValidateCart, type ValidateCartResult } from './cart-validation.server';
 import { addDocAdmin, getDocAdmin, updateDocAdmin } from './server/firestore-admin';
 import { verifyFirebaseIdToken } from './server/firebase-auth-admin';
@@ -68,6 +69,11 @@ export interface CreateOrderResult {
   shippingCost: number;
   totalAmount: number;
   couponCode: string | null;
+  paymentToken: string | null;
+}
+
+function hashPaymentToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
 }
 
 export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
@@ -120,6 +126,9 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   const orderId = 'PHP-' + Date.now().toString(36).toUpperCase();
   const btRef = `PHP-${orderId.slice(4)}-BT`;
   const nowIso = new Date();
+  const paymentToken = input.paymentMethod === 'wallid' && !userId
+    ? randomBytes(32).toString('base64url')
+    : null;
 
   // Rebuild items using server-validated unit prices.
   const validatedByKey = new Map<string, ValidateCartResult['items'][number]>();
@@ -192,6 +201,10 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     termsVersion: '1.0',
     createdAt: nowIso,
     orderDate: nowIso,
+    ...(paymentToken ? {
+      paymentTokenHash: hashPaymentToken(paymentToken),
+      paymentTokenCreatedAt: nowIso,
+    } : {}),
   };
 
   await addDocAdmin('orders', orderData, orderId);
@@ -231,5 +244,6 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     shippingCost,
     totalAmount,
     couponCode: validation.coupon?.code ?? null,
+    paymentToken,
   };
 }
