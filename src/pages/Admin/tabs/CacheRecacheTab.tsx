@@ -66,9 +66,9 @@ export default function CacheRecacheTab() {
   }, []);
 
   const saveTtl = async () => {
-    if (ttl !== 0 && ttl > 86400) {
+    if (ttl !== 0) {
       if (!confirm(
-        'Long cache TTLs (>24h) mean returning visitors may see stale HTML referencing old /assets/*.js after a publish — which causes blank pages. The post-publish hook will purge automatically, but if the purge fails users could be stuck on a stale shell. Continue?',
+        'Enabling the HTML edge cache means returning visitors may see stale HTML referencing old /assets/*.js after a publish — which causes blank pages. The post-publish hook will purge automatically, but if the purge fails users could be stuck on a stale shell. Continue?',
       )) return;
     }
     setSavingTtl(true);
@@ -199,7 +199,9 @@ export default function CacheRecacheTab() {
           <code className="text-emerald-400">/sitemap.xml</code>. Every Lovable Publish auto-fires
           a full Cloudflare purge + Prerender desktop/mobile recache on first visitor request
           (build-id compared server-side via <code className="text-emerald-400">/api/public/post-publish-check</code>).
-          Public HTML uses a 60-second edge cache but browser cache is forced to revalidate on every navigation; cached HTML is re-nonced and Lovable editor scripts are stripped at the edge. Private routes, service workers, recovery URLs, and 404 HTML stay no-store so bad publishes and stale product URLs do not stick.
+          Public HTML cache is admin-controlled: <strong>Off</strong> (default), 24h, 7d, 14d or 30d.
+          When Off, every HTML response is served with <code>no-store</code> so stale shells cannot stick.
+          Private routes, service workers, recovery URLs, and 404 HTML stay no-store regardless of the setting.
           Use the buttons below for ad-hoc purges or to re-trigger manually.
         </p>
       </div>
@@ -215,12 +217,12 @@ export default function CacheRecacheTab() {
             <p className="text-xs text-[#9cb8d9] mt-1">
               Controls how long Cloudflare keeps each cacheable HTML page on the edge before re-fetching the origin.
               The setting is read by both the origin (<code className="text-emerald-400">src/server.ts</code>) and the{' '}
-              <code className="text-emerald-400">phlabs-prerender</code> Worker (60s in-memory cache per cold start).
+              <code className="text-emerald-400">phlabs-prerender</code> Worker (60s in-memory config cache per cold start).
               Saving the TTL also fires a full Cloudflare cache purge so the new value takes effect immediately.
             </p>
             <p className="text-xs text-amber-300/90 mt-2 flex items-start gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              <span>Long TTLs (7d+) speed up returning visitors but increase the risk of stale HTML after a publish (blank pages + MIME-type errors on old <code>/assets/*.js</code>). Use <strong>Off</strong> if you are actively debugging publishes.</span>
+              <span><strong>Default is Off</strong> (24/7 no cache). Any TTL above 24h speeds up returning visitors but increases the risk of stale HTML after a publish (blank pages + MIME-type errors on old <code>/assets/*.js</code>). Use <strong>Off</strong> while debugging publishes.</span>
             </p>
           </div>
         </div>

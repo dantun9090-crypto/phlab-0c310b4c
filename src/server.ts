@@ -359,10 +359,9 @@ function applyCacheRecoveryHeaders(response: Response, url: URL): Response {
 }
 
 // HTML routes that must NEVER be edge-cached (sensitive / dynamic per user).
-// Anything not matching these gets a short 60s CF edge cache so returning
-// users see ~50ms TTFB instead of 500-800ms origin renders.
-// SAFETY: TTL is short (60s) so the window for stale-HTML-vs-new-chunks after
-// a publish is bounded. sw.js + service-worker.js are still hard no-store
+// Anything not matching these gets the admin-controlled TTL (default Off/0).
+// SAFETY: TTL is short (Off/24h/7d/14d/30d) so the window for stale-HTML-vs-new-chunks
+// after a publish is bounded. sw.js + service-worker.js are still hard no-store
 // via applyCacheRecoveryHeaders. Hashed JS/CSS assets are immutable.
 const NO_CACHE_HTML_PREFIXES = [
   "/admin",
@@ -390,7 +389,7 @@ function isCacheableHtmlPath(pathname: string): boolean {
   return true;
 }
 
-function applySecurityHeaders(response: Response, nonce: string, hostname?: string, pathname?: string, htmlTtl: number = 60): Response {
+function applySecurityHeaders(response: Response, nonce: string, hostname?: string, pathname?: string, htmlTtl: number = 0): Response {
   const stripped = stripInternalHeaders(response);
   const contentType = stripped.headers.get("content-type") ?? "";
   // Only decorate HTML — leaving JSON/XML/asset responses untouched avoids
@@ -896,7 +895,7 @@ export default {
       // 4. Normal SSR path
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      const htmlTtl = await getHtmlTtlSeconds().catch(() => 60);
+      const htmlTtl = await getHtmlTtlSeconds().catch(() => 0);
       let normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response, nonce, url.hostname), nonce, url.hostname, url.pathname, htmlTtl);
 
       // Fix asset content-types that the static handler mis-detects.
