@@ -1088,7 +1088,7 @@ export default function ProductDetail() {
                           alt={`${product.name}${product.variants?.[selectedVariantIdx]?.name ? ` ${product.variants[selectedVariantIdx].name}` : ''} HPLC-verified research peptide vial UK`}
                           width="400"
                           height="400"
-                          className="w-full h-full object-cover pointer-events-none"
+                          className="w-full h-full object-contain pointer-events-none"
                           loading="eager"
                           fetchPriority="high"
                           decoding="async"
