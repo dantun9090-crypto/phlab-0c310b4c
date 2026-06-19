@@ -690,6 +690,7 @@ export default {
       const innerCf = res.headers.get("cf-cache-status");
       if (innerCf) h.set("cf-cache-status", innerCf);
       h.set("x-phl-via", `${normalProxyVia};inner=${innerCf || "n/a"}`);
+      h.set("x-phl-debug", JSON.stringify({ htmlCacheable, isHtml, status: res.status, hasCacheKey: !!cacheKey, path: url.pathname, isGet, isXmlFeed, isHtmlCacheable: isHtmlCacheable(url) }));
 
       // 6b. Edge-cache HTML via Cache API so the NEXT visitor HITs at ~50ms.
       //     HTMLRewriter/finalRes streams aren't reliably teeable, so we
