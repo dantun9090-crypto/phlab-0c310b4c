@@ -6,9 +6,11 @@
  * out to Firestore + supabase exactly like the webhook does. Covers cases
  * where the webhook is missed or never delivered.
  *
- * Security: /api/public/* prefix bypasses Lovable edge auth; we require an
- * `apikey` header matching the Supabase anon key so only the configured
- * pg_cron job (and admins testing) can trigger it.
+ * Security: /api/public/* prefix bypasses Lovable edge auth; we require a
+ * server-only shared secret (`CLEANUP_SECRET`) passed via
+ * `Authorization: Bearer <secret>` or `x-cron-secret`. The Supabase
+ * publishable/anon key is intentionally public and MUST NOT gate this
+ * endpoint — anyone could otherwise trigger reconciliation runs.
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { getWallidStatus, WallidError } from "@/lib/wallid.server";
