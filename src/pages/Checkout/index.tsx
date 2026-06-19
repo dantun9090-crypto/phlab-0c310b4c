@@ -381,20 +381,11 @@ export default function CheckoutPage() {
       .then((opts) => {
         if (cancelled) return;
         setPaymentOptions(opts);
-        // If no online gateway is active, force manual bank transfer.
-        if (!opts.primary && opts.backups.length === 0) {
-          setForm((prev) => prev.paymentMethod === 'pay_by_bank'
-            ? { ...prev, paymentMethod: 'bank_transfer' }
-            : prev);
-        }
       })
       .catch(() => {
         if (cancelled) return;
         // Fail safe: hide Pay-by-Bank, only manual fallback.
         setPaymentOptions({ primary: null, backups: [], manualFallback: true });
-        setForm((prev) => prev.paymentMethod === 'pay_by_bank'
-          ? { ...prev, paymentMethod: 'bank_transfer' }
-          : prev);
       });
     return () => { cancelled = true; };
   }, []);
@@ -406,23 +397,27 @@ export default function CheckoutPage() {
       .then((r) => r.ok ? r.json() : { wallid_enabled: false })
       .then((cfg: { wallid_enabled?: boolean }) => {
         if (cancelled) return;
-        const on = Boolean(cfg?.wallid_enabled);
-        setWallidEnabled(on);
-        if (!on) {
-          setForm((prev) => prev.paymentMethod === 'wallid'
-            ? { ...prev, paymentMethod: 'bank_transfer' }
-            : prev);
-        }
+        setWallidEnabled(Boolean(cfg?.wallid_enabled));
       })
       .catch(() => {
         if (cancelled) return;
         setWallidEnabled(false);
-        setForm((prev) => prev.paymentMethod === 'wallid'
-          ? { ...prev, paymentMethod: 'bank_transfer' }
-          : prev);
       });
     return () => { cancelled = true; };
   }, []);
+
+  // Default payment method: Wallid first, then dynamic Pay by Bank, then manual fallback.
+  useEffect(() => {
+    if (wallidEnabled) {
+      setForm((prev) => ({ ...prev, paymentMethod: 'wallid' }));
+      return;
+    }
+    if (paymentOptions && (paymentOptions.primary || paymentOptions.backups.length > 0)) {
+      setForm((prev) => ({ ...prev, paymentMethod: 'pay_by_bank' }));
+      return;
+    }
+    setForm((prev) => ({ ...prev, paymentMethod: 'bank_transfer' }));
+  }, [paymentOptions, wallidEnabled]);
 
   // Calculations
   const subtotal = cart.reduce((s, i) => s + i.priceNum * i.quantity, 0);
