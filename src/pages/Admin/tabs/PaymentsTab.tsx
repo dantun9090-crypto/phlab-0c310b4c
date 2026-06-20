@@ -13,6 +13,7 @@ import {
 } from '@/lib/payment-gateways.functions';
 import type { PaymentGatewayConfig } from '@/lib/payments/types';
 import WallidKillSwitchCard from '../components/WallidKillSwitchCard';
+import WallidTestPaymentCard from '../components/WallidTestPaymentCard';
 
 import { getAdminIdToken } from '@/lib/auth-ready';
 type TestResult = { ok: boolean; durationMs: number; message: string; at: number };
@@ -125,6 +126,7 @@ export default function PaymentsTab() {
       </div>
 
       <WallidKillSwitchCard />
+      <WallidTestPaymentCard />
 
       {err && (
         <div className="rounded-lg border-2 border-red-700 bg-red-950/40 p-3 text-red-200 text-sm flex items-start gap-2">
