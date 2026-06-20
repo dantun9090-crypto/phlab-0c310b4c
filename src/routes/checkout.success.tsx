@@ -25,24 +25,29 @@ function CheckoutSuccessPage() {
   const [orderId, setOrderId] = useState("");
   const [error, setError] = useState("");
   const stopRef = useRef(false);
+  const phaseRef = useRef<Phase>("checking");
+  const setPhaseSafe = (p: Phase) => { phaseRef.current = p; setPhase(p); };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const oid = params.get("order_id") || params.get("orderId") || "";
     setOrderId(oid);
     if (!oid) {
-      setPhase("error");
+      setPhaseSafe("error");
       setError("Missing order reference.");
       return;
     }
 
-    // Keep polling indefinitely until the order reaches a terminal state.
-    // After 3 min we additionally surface the "Still processing" message so
-    // the user knows they can safely close the page — but the poller keeps
-    // running in the background so the screen updates to "paid" the moment
-    // the bank confirms, even if it takes 10+ minutes.
-    const softDeadline = Date.now() + 180_000;
+    // Soft deadline (8s): flip spinner → "Still processing" with a clear
+    // exit (View my orders). Hard deadline (90s): stop polling entirely so
+    // we never sit on a spinning loader if the Wallid webhook never lands
+    // or the status API keeps erroring. Previous code compared a stale
+    // `phase` closure and polled forever — that's the infinite-spinner bug.
+    const softDeadline = Date.now() + 8_000;
+    const hardDeadline = Date.now() + 90_000;
     let attempt = 0;
+    let consecutiveErrors = 0;
+
     const tick = async () => {
       if (stopRef.current) return;
       attempt += 1;
@@ -59,46 +64,55 @@ function CheckoutSuccessPage() {
           headers: { "content-type": "application/json", accept: "application/json" },
           body: JSON.stringify({ orderId: oid, idToken, paymentToken }),
         });
-        const data = await res.json().catch(() => ({}));
+        const data = await res.json().catch(() => ({} as Record<string, unknown>));
 
-        const status = String(data.status || "").toUpperCase();
-        if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
-          setPhase("paid");
-          try {
-            localStorage.removeItem("php_cart");
-            localStorage.removeItem("php_pending_order");
-            localStorage.removeItem(`php_pt_${oid}`);
-            window.dispatchEvent(new StorageEvent("storage", { key: "php_cart" }));
-          } catch { /* ignore */ }
-          return; // terminal — stop polling
-        }
-        if (status === "FAILED" || status === "CANCELLED" || status === "EXPIRED") {
-          setPhase("error");
-          setError("Payment was not completed. Please try again.");
-          return; // terminal — stop polling
+        if (!res.ok) {
+          consecutiveErrors += 1;
+        } else {
+          consecutiveErrors = 0;
+          const status = String((data as { status?: unknown }).status || "").toUpperCase();
+          if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
+            setPhaseSafe("paid");
+            try {
+              localStorage.removeItem("php_cart");
+              localStorage.removeItem("php_pending_order");
+              localStorage.removeItem(`php_pt_${oid}`);
+              window.dispatchEvent(new StorageEvent("storage", { key: "php_cart" }));
+            } catch { /* ignore */ }
+            return; // terminal — stop polling
+          }
+          if (status === "FAILED" || status === "CANCELLED" || status === "EXPIRED") {
+            setPhaseSafe("error");
+            setError("Payment was not completed. Please try again.");
+            return; // terminal — stop polling
+          }
         }
 
-        // Non-terminal (PENDING / 401 / 403 / 404 / 5xx / unknown).
-        // After the soft deadline, flip the UI to "Still processing" while
-        // the poller continues in the background.
-        if (Date.now() > softDeadline && phase !== "pending") {
-          setPhase("pending");
+        // Non-terminal: surface "Still processing" once the soft deadline
+        // hits OR after 3 consecutive errors so the user is never stuck on
+        // a spinner with no way out.
+        if (phaseRef.current === "checking" && (Date.now() > softDeadline || consecutiveErrors >= 3)) {
+          setPhaseSafe("pending");
         }
       } catch {
-        // Network blip — keep polling.
-        if (Date.now() > softDeadline && phase !== "pending") {
-          setPhase("pending");
+        consecutiveErrors += 1;
+        if (phaseRef.current === "checking" && (Date.now() > softDeadline || consecutiveErrors >= 3)) {
+          setPhaseSafe("pending");
         }
       }
 
-      // Gentle exponential backoff capped at 15s so we don't hammer the
-      // endpoint forever: 2.5s, 2.5s, 3s, 4s, 5s … 15s.
-      const delay = Math.min(15_000, 2_500 + Math.max(0, attempt - 2) * 1_000);
+      // Hard stop after 90s — don't poll forever.
+      if (Date.now() > hardDeadline) {
+        if (phaseRef.current === "checking") setPhaseSafe("pending");
+        return;
+      }
+
+      // Backoff capped at 10s: 2.5, 2.5, 3, 4, 5 … 10s
+      const delay = Math.min(10_000, 2_500 + Math.max(0, attempt - 2) * 1_000);
       setTimeout(tick, delay);
     };
     tick();
     return () => { stopRef.current = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
 
@@ -126,9 +140,12 @@ function CheckoutSuccessPage() {
         )}
         {phase === "pending" && (
           <>
-            <Loader className="w-10 h-10 mx-auto text-amber-400" />
-            <h1 className="mt-4 text-xl font-bold text-white">Still processing</h1>
-            <p className="mt-2 text-sm text-slate-300">Your bank hasn't confirmed yet. You can safely close this page — we'll email you as soon as it lands. Order <span className="font-mono text-emerald-400">{orderId}</span>.</p>
+            <CheckCircle2 className="w-10 h-10 mx-auto text-amber-400" />
+            <h1 className="mt-4 text-xl font-bold text-white">Payment received — confirming with your bank</h1>
+            <p className="mt-2 text-sm text-slate-300">
+              Your bank hasn't sent the final confirmation yet. You can safely close this page — we'll email you as soon as it lands. Order <span className="font-mono text-emerald-400">{orderId}</span>.
+            </p>
+            <a href="/account" className="mt-6 inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">View my orders</a>
           </>
         )}
         {phase === "error" && (
