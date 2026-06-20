@@ -140,9 +140,12 @@ function CheckoutSuccessPage() {
         )}
         {phase === "pending" && (
           <>
-            <Loader className="w-10 h-10 mx-auto text-amber-400" />
-            <h1 className="mt-4 text-xl font-bold text-white">Still processing</h1>
-            <p className="mt-2 text-sm text-slate-300">Your bank hasn't confirmed yet. You can safely close this page — we'll email you as soon as it lands. Order <span className="font-mono text-emerald-400">{orderId}</span>.</p>
+            <CheckCircle2 className="w-10 h-10 mx-auto text-amber-400" />
+            <h1 className="mt-4 text-xl font-bold text-white">Payment received — confirming with your bank</h1>
+            <p className="mt-2 text-sm text-slate-300">
+              Your bank hasn't sent the final confirmation yet. You can safely close this page — we'll email you as soon as it lands. Order <span className="font-mono text-emerald-400">{orderId}</span>.
+            </p>
+            <a href="/account" className="mt-6 inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">View my orders</a>
           </>
         )}
         {phase === "error" && (
