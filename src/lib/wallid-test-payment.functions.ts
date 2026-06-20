@@ -46,9 +46,10 @@ export const createWallidTestPayment = createServerFn({ method: "POST" })
           items: [
             {
               name: "PH LABS — Admin test payment (£1)",
-              category: "Test",
+              category: "Research Peptides",
               price: amountGbp,
-              product_url: "https://phlabs.co.uk/admin",
+              product_url: "https://phlabs.co.uk/",
+              image_url: "https://phlabs.co.uk/icons/icon-512.png",
             },
           ],
           successUrl,
