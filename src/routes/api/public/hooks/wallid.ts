@@ -204,17 +204,34 @@ export const Route = createFileRoute("/api/public/hooks/wallid")({
                   status === "SUCCESS" ? "paid"
                   : status === "FAILED" ? "failed"
                   : status === "EXPIRED" ? "expired"
+                  : status === "OTHER" ? "needs_review"
                   : null;
+
+                if (status === "OTHER") {
+                  // Item 2: log the unknown raw status loudly so we can
+                  // extend the mapper later. We still flag the order for
+                  // human review rather than leaving it silently pending.
+                  console.error("[Wallid webhook] UNKNOWN status received — flagging for review:", {
+                    eventId,
+                    orderId,
+                    apiPaymentId,
+                    rawStatus: ev.status || ev.type,
+                  });
+                }
+
                 if (firestoreStatus) {
                   // ATOMIC: only transition out of non-terminal states. If a
                   // concurrent webhook delivery / status poll / reconcile cron
                   // already moved the order, this returns transitioned:false
                   // and we skip both the duplicate paidAt write and the email.
+                  //
+                  // `needs_review` is included in allowFrom so a later SUCCESS
+                  // webhook still flips the order to paid.
                   const { transitioned, prior } = await transitionDocStatusAdmin(
                     "orders",
                     orderId,
                     {
-                      allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+                      allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", "needs_review", ""],
                       updates: {
                         status: firestoreStatus,
                         paymentProvider: "wallid",
@@ -223,6 +240,9 @@ export const Route = createFileRoute("/api/public/hooks/wallid")({
                         ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
                         ...(status === "FAILED" || status === "EXPIRED"
                           ? { paymentFailureReason: ev.reason || status }
+                          : {}),
+                        ...(firestoreStatus === "needs_review"
+                          ? { paymentFailureReason: `Unknown Wallid status: ${ev.status || ev.type || "n/a"}` }
                           : {}),
                       },
                     },
