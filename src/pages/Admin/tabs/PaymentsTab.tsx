@@ -14,6 +14,7 @@ import {
 import type { PaymentGatewayConfig } from '@/lib/payments/types';
 import WallidKillSwitchCard from '../components/WallidKillSwitchCard';
 import WallidTestPaymentCard from '../components/WallidTestPaymentCard';
+import WallidSyncCard from '../components/WallidSyncCard';
 
 import { getAdminIdToken } from '@/lib/auth-ready';
 type TestResult = { ok: boolean; durationMs: number; message: string; at: number };
