@@ -22,6 +22,7 @@ declare global {
 }
 
 const DEFAULT_MEASUREMENT_ID = 'G-5HM4YT7HDW';
+const GOOGLE_TAG_ID = 'GT-P3HVF8R5'; // Google Tag container ("phlabs") — pulls in linked destinations
 const STORAGE_KEY = 'php_cookie_consent';
 const DEBUG_FLAG_KEY = 'php_ga_debug';
 
