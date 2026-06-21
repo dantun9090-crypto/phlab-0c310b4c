@@ -123,12 +123,23 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
   useEffect(() => {
     if (!isOnline()) return;
+    // Retry up to 3 times before giving up and showing the error screen.
+    // Each attempt escalates: 1st = soft reload, 2nd = clean reload, 3rd = clean + home.
+    let attempt = 0;
     try {
-      if (sessionStorage.getItem(AUTO_RECOVERY_DONE_KEY) === "1") return;
-      sessionStorage.setItem(AUTO_RECOVERY_DONE_KEY, "1");
+      attempt = Number(sessionStorage.getItem(AUTO_RECOVERY_DONE_KEY) || "0");
+      if (attempt >= 3) return;
+      sessionStorage.setItem(AUTO_RECOVERY_DONE_KEY, String(attempt + 1));
       sessionStorage.removeItem(HARD_RELOAD_FLAG);
     } catch { /* ignore */ }
-    const t = setTimeout(() => { void hardReload({ clean: true, home: true }); }, 250);
+    const delay = 250 + attempt * 400;
+    const t = setTimeout(() => {
+      const opts =
+        attempt === 0 ? { clean: false, home: false } :
+        attempt === 1 ? { clean: true, home: false } :
+                        { clean: true, home: true };
+      void hardReload(opts);
+    }, delay);
     return () => clearTimeout(t);
   }, []);
 
