@@ -254,6 +254,7 @@ function CheckoutSuccessPage() {
         const status = String((data as { status?: unknown }).status || "").toUpperCase();
         if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
           setPhaseSafe("paid");
+          void fireGaPurchaseOnce(orderId);
         } else if (status === "FAILED" || status === "CANCELLED" || status === "EXPIRED") {
           setPhaseSafe("error");
           setError("Payment was not completed. Please try again.");
