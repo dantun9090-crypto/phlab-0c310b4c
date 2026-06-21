@@ -33,6 +33,7 @@ import { Route as ApiDsrProcessRouteImport } from './routes/api/dsr/process'
 import { Route as ApiConfigPaymentsRouteImport } from './routes/api/config/payments'
 import { Route as ApiPublicHooksWallidReconcileRouteImport } from './routes/api/public/hooks/wallid-reconcile'
 import { Route as ApiPublicHooksWallidMonitorRouteImport } from './routes/api/public/hooks/wallid-monitor'
+import { Route as ApiPublicHooksWallidAlertsRouteImport } from './routes/api/public/hooks/wallid-alerts'
 import { Route as ApiPublicHooksWallidRouteImport } from './routes/api/public/hooks/wallid'
 import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public/hooks/truelayer'
 import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/public/hooks/security-cleanup'
@@ -166,6 +167,12 @@ const ApiPublicHooksWallidMonitorRoute =
     path: '/api/public/hooks/wallid-monitor',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksWallidAlertsRoute =
+  ApiPublicHooksWallidAlertsRouteImport.update({
+    id: '/api/public/hooks/wallid-alerts',
+    path: '/api/public/hooks/wallid-alerts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksWallidRoute = ApiPublicHooksWallidRouteImport.update({
   id: '/api/public/hooks/wallid',
   path: '/api/public/hooks/wallid',
@@ -236,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
   '/api/public/hooks/wallid': typeof ApiPublicHooksWallidRoute
+  '/api/public/hooks/wallid-alerts': typeof ApiPublicHooksWallidAlertsRoute
   '/api/public/hooks/wallid-monitor': typeof ApiPublicHooksWallidMonitorRoute
   '/api/public/hooks/wallid-reconcile': typeof ApiPublicHooksWallidReconcileRoute
 }
@@ -269,6 +277,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
   '/api/public/hooks/wallid': typeof ApiPublicHooksWallidRoute
+  '/api/public/hooks/wallid-alerts': typeof ApiPublicHooksWallidAlertsRoute
   '/api/public/hooks/wallid-monitor': typeof ApiPublicHooksWallidMonitorRoute
   '/api/public/hooks/wallid-reconcile': typeof ApiPublicHooksWallidReconcileRoute
 }
@@ -303,6 +312,7 @@ export interface FileRoutesById {
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
   '/api/public/hooks/wallid': typeof ApiPublicHooksWallidRoute
+  '/api/public/hooks/wallid-alerts': typeof ApiPublicHooksWallidAlertsRoute
   '/api/public/hooks/wallid-monitor': typeof ApiPublicHooksWallidMonitorRoute
   '/api/public/hooks/wallid-reconcile': typeof ApiPublicHooksWallidReconcileRoute
 }
@@ -338,6 +348,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
     | '/api/public/hooks/wallid'
+    | '/api/public/hooks/wallid-alerts'
     | '/api/public/hooks/wallid-monitor'
     | '/api/public/hooks/wallid-reconcile'
   fileRoutesByTo: FileRoutesByTo
@@ -371,6 +382,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
     | '/api/public/hooks/wallid'
+    | '/api/public/hooks/wallid-alerts'
     | '/api/public/hooks/wallid-monitor'
     | '/api/public/hooks/wallid-reconcile'
   id:
@@ -404,6 +416,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
     | '/api/public/hooks/wallid'
+    | '/api/public/hooks/wallid-alerts'
     | '/api/public/hooks/wallid-monitor'
     | '/api/public/hooks/wallid-reconcile'
   fileRoutesById: FileRoutesById
@@ -438,6 +451,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSecurityCleanupRoute: typeof ApiPublicHooksSecurityCleanupRoute
   ApiPublicHooksTruelayerRoute: typeof ApiPublicHooksTruelayerRoute
   ApiPublicHooksWallidRoute: typeof ApiPublicHooksWallidRoute
+  ApiPublicHooksWallidAlertsRoute: typeof ApiPublicHooksWallidAlertsRoute
   ApiPublicHooksWallidMonitorRoute: typeof ApiPublicHooksWallidMonitorRoute
   ApiPublicHooksWallidReconcileRoute: typeof ApiPublicHooksWallidReconcileRoute
 }
@@ -612,6 +626,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksWallidMonitorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/wallid-alerts': {
+      id: '/api/public/hooks/wallid-alerts'
+      path: '/api/public/hooks/wallid-alerts'
+      fullPath: '/api/public/hooks/wallid-alerts'
+      preLoaderRoute: typeof ApiPublicHooksWallidAlertsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/wallid': {
       id: '/api/public/hooks/wallid'
       path: '/api/public/hooks/wallid'
@@ -694,6 +715,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSecurityCleanupRoute: ApiPublicHooksSecurityCleanupRoute,
   ApiPublicHooksTruelayerRoute: ApiPublicHooksTruelayerRoute,
   ApiPublicHooksWallidRoute: ApiPublicHooksWallidRoute,
+  ApiPublicHooksWallidAlertsRoute: ApiPublicHooksWallidAlertsRoute,
   ApiPublicHooksWallidMonitorRoute: ApiPublicHooksWallidMonitorRoute,
   ApiPublicHooksWallidReconcileRoute: ApiPublicHooksWallidReconcileRoute,
 }

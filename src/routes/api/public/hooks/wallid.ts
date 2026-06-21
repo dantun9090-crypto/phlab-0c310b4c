@@ -172,7 +172,25 @@ export const Route = createFileRoute("/api/public/hooks/wallid")({
 
           if (insertErr) {
             // 23505 = unique_violation → already processed, treat as success.
-            if ((insertErr as { code?: string }).code === "23505") continue;
+            if ((insertErr as { code?: string }).code === "23505") {
+              // Audit log every duplicate for forensic analysis.
+              try {
+                const { data: orig } = await supabaseAdmin
+                  .from("wallid_webhook_events")
+                  .select("processed_at")
+                  .eq("event_id", eventId)
+                  .maybeSingle();
+                await supabaseAdmin.from("wallid_webhook_duplicates").insert({
+                  event_id: eventId,
+                  api_payment_id: apiPaymentId,
+                  order_id: orderId,
+                  original_processed_at: (orig?.processed_at as string | undefined) ?? null,
+                  ip,
+                  payload_summary: { status, occurredAt } as never,
+                });
+              } catch { /* non-blocking */ }
+              continue;
+            }
             console.error("[Wallid webhook] Insert failed", insertErr.message);
             // Surface a 500 so Wallid retries the batch.
             return json({ error: "Processing error" }, 500);

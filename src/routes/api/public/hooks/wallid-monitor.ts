@@ -308,6 +308,30 @@ export const Route = createFileRoute("/api/public/hooks/wallid-monitor")({
           }
         }
 
+        // Persist last-run summary so /wallid-alerts can read rescue load.
+        try {
+          await supabaseAdmin
+            .from("app_config")
+            .upsert(
+              {
+                key: "wallid:last-monitor-run",
+                value: JSON.stringify({
+                  at: new Date(nowMs).toISOString(),
+                  checked,
+                  reconciled,
+                  flaggedReview,
+                  webhookMissing,
+                  windowHours,
+                  transitions: transitions.slice(0, 50),
+                }),
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "key" },
+            );
+        } catch (e) {
+          console.warn("[Wallid monitor] last-run persist failed:", e instanceof Error ? e.message : e);
+        }
+
         return json({
           checked,
           reconciled,

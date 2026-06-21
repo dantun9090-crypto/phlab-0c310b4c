@@ -113,6 +113,39 @@ export type Database = {
         }
         Relationships: []
       }
+      wallid_alert_state: {
+        Row: {
+          active: boolean
+          alert_type: string
+          first_alert_at: string | null
+          last_alert_at: string | null
+          last_count: number
+          last_digest_at: string | null
+          last_resolved_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          alert_type: string
+          first_alert_at?: string | null
+          last_alert_at?: string | null
+          last_count?: number
+          last_digest_at?: string | null
+          last_resolved_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          alert_type?: string
+          first_alert_at?: string | null
+          last_alert_at?: string | null
+          last_count?: number
+          last_digest_at?: string | null
+          last_resolved_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       wallid_payments: {
         Row: {
           amount: number
@@ -170,6 +203,42 @@ export type Database = {
           created_at?: string
           id?: number
           ip?: string
+        }
+        Relationships: []
+      }
+      wallid_webhook_duplicates: {
+        Row: {
+          api_payment_id: string | null
+          created_at: string
+          duplicate_received_at: string
+          event_id: string
+          id: string
+          ip: string | null
+          order_id: string | null
+          original_processed_at: string | null
+          payload_summary: Json | null
+        }
+        Insert: {
+          api_payment_id?: string | null
+          created_at?: string
+          duplicate_received_at?: string
+          event_id: string
+          id?: string
+          ip?: string | null
+          order_id?: string | null
+          original_processed_at?: string | null
+          payload_summary?: Json | null
+        }
+        Update: {
+          api_payment_id?: string | null
+          created_at?: string
+          duplicate_received_at?: string
+          event_id?: string
+          id?: string
+          ip?: string | null
+          order_id?: string | null
+          original_processed_at?: string | null
+          payload_summary?: Json | null
         }
         Relationships: []
       }
