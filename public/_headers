@@ -22,3 +22,33 @@
 /site.webmanifest
   Content-Type: application/manifest+json; charset=utf-8
   Cache-Control: public, max-age=3600
+
+# Payment/webhook/cron endpoints must never be cached anywhere — stale
+# order/payment status would be impossible to recover from.
+/api/payments/*
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0
+  CDN-Cache-Control: no-store
+  Cloudflare-CDN-Cache-Control: no-store
+  Surrogate-Control: no-store
+  Pragma: no-cache
+  Expires: 0
+  Vary: *
+
+/api/webhooks/*
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0
+  CDN-Cache-Control: no-store
+  Cloudflare-CDN-Cache-Control: no-store
+  Surrogate-Control: no-store
+  Pragma: no-cache
+  Expires: 0
+  Vary: *
+
+/api/public/hooks/*
+  Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0
+  CDN-Cache-Control: no-store
+  Cloudflare-CDN-Cache-Control: no-store
+  Surrogate-Control: no-store
+  Pragma: no-cache
+  Expires: 0
+  Vary: *
+
