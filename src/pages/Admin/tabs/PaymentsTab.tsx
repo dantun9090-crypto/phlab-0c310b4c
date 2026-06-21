@@ -128,6 +128,7 @@ export default function PaymentsTab() {
 
       <WallidKillSwitchCard />
       <WallidTestPaymentCard />
+      <WallidSyncCard />
 
       {err && (
         <div className="rounded-lg border-2 border-red-700 bg-red-950/40 p-3 text-red-200 text-sm flex items-start gap-2">
