@@ -111,6 +111,7 @@ function CheckoutSuccessPage() {
             const s = String((snap.data() as { status?: unknown }).status ?? "").toLowerCase();
             if (s === "paid" || s === "processing" || s === "shipped" || s === "delivered") {
               setPhaseSafe("paid");
+              void fireGaPurchaseOnce(oid, snap.data() as Record<string, unknown>);
               try {
                 localStorage.removeItem("php_cart");
                 localStorage.removeItem("php_pending_order");
