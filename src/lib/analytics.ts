@@ -140,6 +140,8 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
     allow_ad_personalization_signals: consent.marketing,
     debug_mode: debugMode, // surfaces in GA4 DebugView
   });
+  // Google Tag container — activates any GTM-linked destinations (Ads, conversions, etc.)
+  gtag('config', GOOGLE_TAG_ID, { send_page_view: false });
 
   // Fire initial page view
   trackPageView(window.location.pathname + window.location.search);
