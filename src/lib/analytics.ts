@@ -22,7 +22,13 @@ declare global {
 }
 
 const DEFAULT_MEASUREMENT_ID = 'G-5HM4YT7HDW';
-const GOOGLE_TAG_ID = 'GT-P3HVF8R5'; // Google Tag container ("phlabs") — pulls in linked destinations
+const GOOGLE_TAG_ID = 'GT-P3HVF8R5'; // Google Tag container ("phlabs") — pulls in linked destinations (Google Ads conversions etc.)
+// First-party Cloudflare "Google Tag Gateway" endpoint. Loading gtag.js from our
+// own origin (instead of www.googletagmanager.com) bypasses most ad-blockers and
+// keeps the visitor IP off Google's edge (hideOriginalIp=true on the CF side).
+// Cloudflare auto-injection is disabled (setUpTag=false) so the app is the SOLE
+// loader of the tag — prevents double-tagging.
+const GTAG_GATEWAY_BASE = 'https://phlabs.co.uk/60z6';
 const STORAGE_KEY = 'php_cookie_consent';
 const DEBUG_FLAG_KEY = 'php_ga_debug';
 
@@ -84,7 +90,8 @@ function injectScript(id: string): Promise<void> {
     }
     const s = document.createElement('script');
     s.async = true;
-    s.src = `https://www.googletagmanager.com/gtag/js?id=${id}`;
+    // Load via Cloudflare first-party Google Tag Gateway (ad-blocker bypass).
+    s.src = `${GTAG_GATEWAY_BASE}/gtag/js?id=${id}`;
     s.dataset.gaId = id;
     s.onload = () => resolve();
     s.onerror = () => reject(new Error('Failed to load gtag.js'));
