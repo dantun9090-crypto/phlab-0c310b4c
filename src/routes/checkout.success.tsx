@@ -182,6 +182,7 @@ function CheckoutSuccessPage() {
           const status = String((data as { status?: unknown }).status || "").toUpperCase();
           if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
             setPhaseSafe("paid");
+            void fireGaPurchaseOnce(oid);
             try {
               localStorage.removeItem("php_cart");
               localStorage.removeItem("php_pending_order");
