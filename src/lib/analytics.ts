@@ -22,6 +22,7 @@ declare global {
 }
 
 const DEFAULT_MEASUREMENT_ID = 'G-5HM4YT7HDW';
+const GOOGLE_TAG_ID = 'GT-P3HVF8R5'; // Google Tag container ("phlabs") — pulls in linked destinations
 const STORAGE_KEY = 'php_cookie_consent';
 const DEBUG_FLAG_KEY = 'php_ga_debug';
 
@@ -139,6 +140,8 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
     allow_ad_personalization_signals: consent.marketing,
     debug_mode: debugMode, // surfaces in GA4 DebugView
   });
+  // Google Tag container — activates any GTM-linked destinations (Ads, conversions, etc.)
+  gtag('config', GOOGLE_TAG_ID, { send_page_view: false });
 
   // Fire initial page view
   trackPageView(window.location.pathname + window.location.search);
