@@ -187,16 +187,21 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
                   status === "SUCCESS" ? "paid"
                   : status === "FAILED" ? "failed"
                   : status === "EXPIRED" ? "expired"
+                  : status === "OTHER" ? "needs_review"
                   : null;
+                if (status === "OTHER") {
+                  console.error("[Wallid webhook /api/webhooks/wallid] UNKNOWN status — flagging for review:", {
+                    eventId, orderId, apiPaymentId, rawStatus: ev.status || ev.type,
+                  });
+                }
                 if (firestoreStatus) {
-                  // ATOMIC: snapshot-isolated transition. Concurrent retries /
-                  // poller / reconcile cron all see transitioned:false and
-                  // skip the duplicate write + email.
+                  // ATOMIC: snapshot-isolated transition. needs_review is
+                  // included in allowFrom so a later SUCCESS still flips it.
                   const { transitioned, prior } = await transitionDocStatusAdmin(
                     "orders",
                     orderId,
                     {
-                      allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
+                      allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", "needs_review", ""],
                       updates: {
                         status: firestoreStatus,
                         paymentProvider: "wallid",
@@ -205,6 +210,9 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
                         ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
                         ...(status === "FAILED" || status === "EXPIRED"
                           ? { paymentFailureReason: ev.reason || status }
+                          : {}),
+                        ...(firestoreStatus === "needs_review"
+                          ? { paymentFailureReason: `Unknown Wallid status: ${ev.status || ev.type || "n/a"}` }
                           : {}),
                       },
                     },

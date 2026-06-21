@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Loader, CheckCircle2, AlertCircle } from "lucide-react";
-import { auth } from "@/lib/firebase";
+import { Loader, CheckCircle2, AlertCircle, RefreshCw, LifeBuoy } from "lucide-react";
+import { doc, onSnapshot } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 
 export const Route = createFileRoute("/checkout/success")({
   head: () => ({
@@ -20,12 +21,22 @@ export const Route = createFileRoute("/checkout/success")({
 
 type Phase = "checking" | "paid" | "pending" | "error";
 
+// Escalation tiers shown while the order stays non-terminal:
+//   pending  → standard "we're confirming" copy (after 8s soft deadline)
+//   waiting  → "your bank is taking longer than usual" + manual refresh (after 60s)
+//   support  → "if payment was deducted, contact support" + order id (after 5min)
+//   alert    → "your payment may have been processed, check your bank" (after 10min)
+type Escalation = "none" | "waiting" | "support" | "alert";
+
 function CheckoutSuccessPage() {
   const [phase, setPhase] = useState<Phase>("checking");
+  const [escalation, setEscalation] = useState<Escalation>("none");
   const [orderId, setOrderId] = useState("");
   const [error, setError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
   const stopRef = useRef(false);
   const phaseRef = useRef<Phase>("checking");
+  const startedAtRef = useRef<number>(Date.now());
   const setPhaseSafe = (p: Phase) => { phaseRef.current = p; setPhase(p); };
 
   useEffect(() => {
@@ -38,15 +49,72 @@ function CheckoutSuccessPage() {
       return;
     }
 
+    startedAtRef.current = Date.now();
+
     // Soft deadline (8s): flip spinner → "Still processing" with a clear
     // exit (View my orders). Hard deadline (90s): stop polling entirely so
     // we never sit on a spinning loader if the Wallid webhook never lands
-    // or the status API keeps erroring. Previous code compared a stale
-    // `phase` closure and polled forever — that's the infinite-spinner bug.
+    // or the status API keeps erroring.
     const softDeadline = Date.now() + 8_000;
     const hardDeadline = Date.now() + 90_000;
     let attempt = 0;
     let consecutiveErrors = 0;
+
+    // Real-time Firestore listener (Item 1): for authed users only, since
+    // orders RLS requires `resource.data.userId == request.auth.uid`. If
+    // the webhook lands first while the user is on the page, this fires
+    // immediately — no polling lag.
+    let unsubSnap: (() => void) | null = null;
+    const attachSnapshot = async () => {
+      try { await auth.authStateReady(); } catch { /* ignore */ }
+      if (stopRef.current || !auth.currentUser) return;
+      try {
+        unsubSnap = onSnapshot(
+          doc(db, "orders", oid),
+          (snap) => {
+            if (stopRef.current || !snap.exists()) return;
+            const s = String((snap.data() as { status?: unknown }).status ?? "").toLowerCase();
+            if (s === "paid" || s === "processing" || s === "shipped" || s === "delivered") {
+              setPhaseSafe("paid");
+              try {
+                localStorage.removeItem("php_cart");
+                localStorage.removeItem("php_pending_order");
+                localStorage.removeItem(`php_pt_${oid}`);
+                window.dispatchEvent(new StorageEvent("storage", { key: "php_cart" }));
+              } catch { /* ignore */ }
+              stopRef.current = true;
+            } else if (s === "failed" || s === "expired") {
+              setPhaseSafe("error");
+              setError("Payment was not completed. Please try again.");
+              stopRef.current = true;
+            } else if (s === "cancelled") {
+              setPhaseSafe("error");
+              setError("Payment was cancelled at the bank. You can retry from your account.");
+              stopRef.current = true;
+            } else if (s === "needs_review") {
+              // Surface support escalation immediately on needs_review.
+              setEscalation("support");
+            }
+          },
+          () => { /* permission denied / offline — polling continues */ },
+        );
+      } catch { /* ignore */ }
+    };
+    void attachSnapshot();
+
+    // Escalation timers — independent of polling so they always fire.
+    const waitingTimer = setTimeout(() => {
+      if (stopRef.current) return;
+      if (phaseRef.current !== "paid") setEscalation((cur) => (cur === "none" ? "waiting" : cur));
+    }, 60_000);
+    const supportTimer = setTimeout(() => {
+      if (stopRef.current) return;
+      if (phaseRef.current !== "paid") setEscalation((cur) => (cur === "alert" ? cur : "support"));
+    }, 5 * 60_000);
+    const alertTimer = setTimeout(() => {
+      if (stopRef.current) return;
+      if (phaseRef.current !== "paid") setEscalation("alert");
+    }, 10 * 60_000);
 
     const tick = async () => {
       if (stopRef.current) return;
@@ -59,6 +127,10 @@ function CheckoutSuccessPage() {
         let paymentToken: string | null = null;
         try { paymentToken = localStorage.getItem(`php_pt_${oid}`); } catch { /* ignore */ }
 
+        // /api/payments/status already polls Wallid AND atomically transitions
+        // the Firestore order on a terminal remote status — this *is* our
+        // fallback poll (Item 3). The very first tick (attempt=1) acts as the
+        // one-time on-load reconcile call.
         const res = await fetch(`/api/payments/status`, {
           method: "POST",
           headers: { "content-type": "application/json", accept: "application/json" },
@@ -101,7 +173,8 @@ function CheckoutSuccessPage() {
         }
       }
 
-      // Hard stop after 90s — don't poll forever.
+      // Hard stop after 90s — don't poll forever. After that we rely on the
+      // onSnapshot listener (for authed users) and the manual Refresh button.
       if (Date.now() > hardDeadline) {
         if (phaseRef.current === "checking") setPhaseSafe("pending");
         return;
@@ -112,11 +185,45 @@ function CheckoutSuccessPage() {
       setTimeout(tick, delay);
     };
     tick();
-    return () => { stopRef.current = true; };
+    return () => {
+      stopRef.current = true;
+      clearTimeout(waitingTimer);
+      clearTimeout(supportTimer);
+      clearTimeout(alertTimer);
+      if (unsubSnap) try { unsubSnap(); } catch { /* ignore */ }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-
-
+  async function manualRefresh() {
+    if (!orderId || refreshing) return;
+    setRefreshing(true);
+    try {
+      try { await auth.authStateReady(); } catch { /* ignore */ }
+      const idToken = auth.currentUser
+        ? await auth.currentUser.getIdToken().catch(() => null)
+        : null;
+      let paymentToken: string | null = null;
+      try { paymentToken = localStorage.getItem(`php_pt_${orderId}`); } catch { /* ignore */ }
+      const res = await fetch(`/api/payments/status`, {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify({ orderId, idToken, paymentToken }),
+      });
+      const data = await res.json().catch(() => ({} as Record<string, unknown>));
+      if (res.ok) {
+        const status = String((data as { status?: unknown }).status || "").toUpperCase();
+        if (status === "SUCCESS" || status === "PAID" || status === "COMPLETED") {
+          setPhaseSafe("paid");
+        } else if (status === "FAILED" || status === "CANCELLED" || status === "EXPIRED") {
+          setPhaseSafe("error");
+          setError("Payment was not completed. Please try again.");
+        }
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-slate-950">
@@ -141,11 +248,94 @@ function CheckoutSuccessPage() {
         {phase === "pending" && (
           <>
             <CheckCircle2 className="w-10 h-10 mx-auto text-amber-400" />
-            <h1 className="mt-4 text-xl font-bold text-white">Payment received — confirming with your bank</h1>
-            <p className="mt-2 text-sm text-slate-300">
-              Your bank hasn't sent the final confirmation yet. You can safely close this page — we'll email you as soon as it lands. Order <span className="font-mono text-emerald-400">{orderId}</span>.
-            </p>
-            <a href="/account" className="mt-6 inline-block rounded-lg bg-emerald-500 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-400">View my orders</a>
+            <h1 className="mt-4 text-xl font-bold text-white">
+              {escalation === "alert"
+                ? "Still no confirmation from your bank"
+                : "Payment received — confirming with your bank"}
+            </h1>
+
+            {escalation === "none" && (
+              <p className="mt-2 text-sm text-slate-300">
+                Your bank hasn't sent the final confirmation yet. You can safely close this page — we'll email you as soon as it lands. Order <span className="font-mono text-emerald-400">{orderId}</span>.
+              </p>
+            )}
+
+            {escalation === "waiting" && (
+              <>
+                <p className="mt-2 text-sm text-slate-300">
+                  We're still confirming your payment. Your bank is taking longer than usual. Order <span className="font-mono text-emerald-400">{orderId}</span>.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => void manualRefresh()}
+                  disabled={refreshing}
+                  className="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm text-white hover:bg-slate-800 disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+                  {refreshing ? "Checking…" : "Refresh status"}
+                </button>
+              </>
+            )}
+
+            {escalation === "support" && (
+              <>
+                <p className="mt-2 text-sm text-slate-300">
+                  If payment was deducted from your account, contact support and quote your order ID. We'll reconcile it for you.
+                </p>
+                <div className="mt-3 rounded-lg bg-slate-800 px-3 py-2 text-xs text-slate-300">
+                  Order ID: <span className="font-mono text-emerald-400 select-all">{orderId}</span>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void manualRefresh()}
+                    disabled={refreshing}
+                    className="inline-flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm text-white hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+                    {refreshing ? "Checking…" : "Refresh status"}
+                  </button>
+                  <a
+                    href={`/contact?subject=${encodeURIComponent(`Stuck payment — order ${orderId}`)}`}
+                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-400"
+                  >
+                    <LifeBuoy className="w-4 h-4" />
+                    Contact support
+                  </a>
+                </div>
+              </>
+            )}
+
+            {escalation === "alert" && (
+              <>
+                <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-left text-sm text-amber-100">
+                  Your payment <span className="font-semibold">may have been processed</span>. Please check your bank statement before paying again. We're still waiting on the bank's confirmation on our side.
+                </div>
+                <div className="mt-3 rounded-lg bg-slate-800 px-3 py-2 text-xs text-slate-300">
+                  Order ID: <span className="font-mono text-emerald-400 select-all">{orderId}</span>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void manualRefresh()}
+                    disabled={refreshing}
+                    className="inline-flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm text-white hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+                    {refreshing ? "Checking…" : "Refresh status"}
+                  </button>
+                  <a
+                    href={`/contact?subject=${encodeURIComponent(`Stuck payment — order ${orderId}`)}`}
+                    className="inline-flex items-center gap-2 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-400"
+                  >
+                    <LifeBuoy className="w-4 h-4" />
+                    Contact support
+                  </a>
+                </div>
+              </>
+            )}
+
+            <a href="/account" className="mt-6 inline-block text-xs text-slate-400 underline hover:text-slate-200">View my orders</a>
           </>
         )}
         {phase === "error" && (
