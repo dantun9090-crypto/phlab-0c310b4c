@@ -19,6 +19,7 @@ import { readWallidEnabled } from "@/lib/wallid-config.server";
 import { verifyFirebaseIdToken } from "@/lib/server/firebase-auth-admin";
 import { buildOrderCtxForPayment } from "@/lib/payments/dispatch.server";
 import { updateDocAdmin } from "@/lib/server/firestore-admin";
+import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
 
 const ItemSchema = z.object({
   name: z.string().min(1).max(200),
@@ -41,7 +42,7 @@ const BodySchema = z.object({
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...NO_STORE_HEADERS },
   });
 }
 

@@ -17,6 +17,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
 import { verifyHmacSignature } from "@/lib/webhook-signature";
+import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
 
 interface WallidEvent {
   event_id?: string;
@@ -42,14 +43,14 @@ interface WallidWebhookBody {
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json", "cache-control": "no-store" },
+    headers: { "content-type": "application/json", ...NO_STORE_HEADERS },
   });
 }
 
 function textResp(body: string, status: number): Response {
   return new Response(body, {
     status,
-    headers: { "content-type": "text/plain", "cache-control": "no-store" },
+    headers: { "content-type": "text/plain", ...NO_STORE_HEADERS },
   });
 }
 

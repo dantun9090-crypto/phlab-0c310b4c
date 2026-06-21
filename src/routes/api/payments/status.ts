@@ -20,6 +20,7 @@ import { getWallidStatus, WallidError } from "@/lib/wallid.server";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { verifyFirebaseIdToken } from "@/lib/server/firebase-auth-admin";
 import { getDocAdmin } from "@/lib/server/firestore-admin";
+import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
 
 const BodySchema = z.object({
   orderId: z.string().min(3).max(128).regex(/^[A-Za-z0-9_-]+$/),
@@ -30,7 +31,7 @@ const BodySchema = z.object({
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json", "cache-control": "no-store" },
+    headers: { "content-type": "application/json", ...NO_STORE_HEADERS },
   });
 }
 

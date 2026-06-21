@@ -16,11 +16,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { getWallidStatus, WallidError } from "@/lib/wallid.server";
 import { timingSafeEqualStr } from "@/lib/timing-safe-equal";
 import { checkRateLimit, getClientIp, rateLimitedResponse } from "@/lib/rate-limit";
+import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json", "cache-control": "no-store" },
+    headers: { "content-type": "application/json", ...NO_STORE_HEADERS },
   });
 }
 
