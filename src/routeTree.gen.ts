@@ -32,6 +32,7 @@ import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/can
 import { Route as ApiDsrProcessRouteImport } from './routes/api/dsr/process'
 import { Route as ApiConfigPaymentsRouteImport } from './routes/api/config/payments'
 import { Route as ApiPublicHooksWallidReconcileRouteImport } from './routes/api/public/hooks/wallid-reconcile'
+import { Route as ApiPublicHooksWallidMonitorRouteImport } from './routes/api/public/hooks/wallid-monitor'
 import { Route as ApiPublicHooksWallidRouteImport } from './routes/api/public/hooks/wallid'
 import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public/hooks/truelayer'
 import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/public/hooks/security-cleanup'
@@ -159,6 +160,12 @@ const ApiPublicHooksWallidReconcileRoute =
     path: '/api/public/hooks/wallid-reconcile',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksWallidMonitorRoute =
+  ApiPublicHooksWallidMonitorRouteImport.update({
+    id: '/api/public/hooks/wallid-monitor',
+    path: '/api/public/hooks/wallid-monitor',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksWallidRoute = ApiPublicHooksWallidRouteImport.update({
   id: '/api/public/hooks/wallid',
   path: '/api/public/hooks/wallid',
@@ -229,6 +236,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
   '/api/public/hooks/wallid': typeof ApiPublicHooksWallidRoute
+  '/api/public/hooks/wallid-monitor': typeof ApiPublicHooksWallidMonitorRoute
   '/api/public/hooks/wallid-reconcile': typeof ApiPublicHooksWallidReconcileRoute
 }
 export interface FileRoutesByTo {
@@ -261,6 +269,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
   '/api/public/hooks/wallid': typeof ApiPublicHooksWallidRoute
+  '/api/public/hooks/wallid-monitor': typeof ApiPublicHooksWallidMonitorRoute
   '/api/public/hooks/wallid-reconcile': typeof ApiPublicHooksWallidReconcileRoute
 }
 export interface FileRoutesById {
@@ -294,6 +303,7 @@ export interface FileRoutesById {
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
   '/api/public/hooks/wallid': typeof ApiPublicHooksWallidRoute
+  '/api/public/hooks/wallid-monitor': typeof ApiPublicHooksWallidMonitorRoute
   '/api/public/hooks/wallid-reconcile': typeof ApiPublicHooksWallidReconcileRoute
 }
 export interface FileRouteTypes {
@@ -328,6 +338,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
     | '/api/public/hooks/wallid'
+    | '/api/public/hooks/wallid-monitor'
     | '/api/public/hooks/wallid-reconcile'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -360,6 +371,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
     | '/api/public/hooks/wallid'
+    | '/api/public/hooks/wallid-monitor'
     | '/api/public/hooks/wallid-reconcile'
   id:
     | '__root__'
@@ -392,6 +404,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/truelayer'
     | '/api/public/hooks/wallid'
+    | '/api/public/hooks/wallid-monitor'
     | '/api/public/hooks/wallid-reconcile'
   fileRoutesById: FileRoutesById
 }
@@ -425,6 +438,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSecurityCleanupRoute: typeof ApiPublicHooksSecurityCleanupRoute
   ApiPublicHooksTruelayerRoute: typeof ApiPublicHooksTruelayerRoute
   ApiPublicHooksWallidRoute: typeof ApiPublicHooksWallidRoute
+  ApiPublicHooksWallidMonitorRoute: typeof ApiPublicHooksWallidMonitorRoute
   ApiPublicHooksWallidReconcileRoute: typeof ApiPublicHooksWallidReconcileRoute
 }
 
@@ -591,6 +605,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksWallidReconcileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/wallid-monitor': {
+      id: '/api/public/hooks/wallid-monitor'
+      path: '/api/public/hooks/wallid-monitor'
+      fullPath: '/api/public/hooks/wallid-monitor'
+      preLoaderRoute: typeof ApiPublicHooksWallidMonitorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/wallid': {
       id: '/api/public/hooks/wallid'
       path: '/api/public/hooks/wallid'
@@ -673,6 +694,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSecurityCleanupRoute: ApiPublicHooksSecurityCleanupRoute,
   ApiPublicHooksTruelayerRoute: ApiPublicHooksTruelayerRoute,
   ApiPublicHooksWallidRoute: ApiPublicHooksWallidRoute,
+  ApiPublicHooksWallidMonitorRoute: ApiPublicHooksWallidMonitorRoute,
   ApiPublicHooksWallidReconcileRoute: ApiPublicHooksWallidReconcileRoute,
 }
 export const routeTree = rootRouteImport
