@@ -1,8 +1,43 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Loader, CheckCircle2, AlertCircle, RefreshCw, LifeBuoy } from "lucide-react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { trackPurchase, type GaItem } from "@/lib/analytics";
+
+/**
+ * Fire GA4 `purchase` event exactly once per order. Reads the order doc
+ * (preferring snapshot data if provided) and converts items → GaItem[].
+ * Idempotency: localStorage flag `php_ga_purchase_<orderId>` prevents
+ * duplicate events on refresh or when both the snapshot and the polling
+ * path resolve simultaneously.
+ */
+async function fireGaPurchaseOnce(orderId: string, snapData?: Record<string, unknown>) {
+  if (!orderId || typeof window === "undefined") return;
+  const key = `php_ga_purchase_${orderId}`;
+  try { if (localStorage.getItem(key) === "1") return; } catch { /* ignore */ }
+  try {
+    let data = snapData;
+    if (!data) {
+      const snap = await getDoc(doc(db, "orders", orderId));
+      if (!snap.exists()) return;
+      data = snap.data() as Record<string, unknown>;
+    }
+    const totalRaw = (data.total ?? data.totalPrice ?? data.amount ?? 0) as number | string;
+    const value = typeof totalRaw === "string" ? parseFloat(totalRaw) : Number(totalRaw);
+    const rawItems = Array.isArray(data.items) ? (data.items as Array<Record<string, unknown>>) : [];
+    const items: GaItem[] = rawItems.map((it) => ({
+      item_id: String(it.id ?? it.productId ?? it.sku ?? it.slug ?? ""),
+      item_name: String(it.name ?? it.title ?? "Item"),
+      item_variant: it.variantName ? String(it.variantName) : (it.variant ? String(it.variant) : undefined),
+      price: Number(it.priceNum ?? it.price ?? 0),
+      quantity: Number(it.quantity ?? 1),
+      currency: "GBP",
+    }));
+    trackPurchase(orderId, Number.isFinite(value) ? value : 0, items);
+    try { localStorage.setItem(key, "1"); } catch { /* ignore */ }
+  } catch { /* ignore — analytics must never break the success page */ }
+}
 
 export const Route = createFileRoute("/checkout/success")({
   head: () => ({
