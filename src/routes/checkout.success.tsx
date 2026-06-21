@@ -135,6 +135,7 @@ function CheckoutSuccessPage() {
           method: "POST",
           headers: { "content-type": "application/json", accept: "application/json" },
           body: JSON.stringify({ orderId: oid, idToken, paymentToken }),
+          cache: "no-store",
         });
         const data = await res.json().catch(() => ({} as Record<string, unknown>));
 
