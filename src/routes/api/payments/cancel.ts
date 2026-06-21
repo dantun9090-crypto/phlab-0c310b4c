@@ -38,10 +38,12 @@ const FINAL_STATES = new Set([
   "refunded",
 ]);
 
+import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
+
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json", "cache-control": "no-store" },
+    headers: { "content-type": "application/json", ...NO_STORE_HEADERS },
   });
 }
 
