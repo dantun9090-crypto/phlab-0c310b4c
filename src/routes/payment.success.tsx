@@ -6,14 +6,15 @@ import { auth, db, onAuthStateChanged } from "@/lib/firebase";
 import { getOrderPaymentStatus } from "@/lib/fena.functions";
 import { Loader, CheckCircle2, AlertCircle } from "lucide-react";
 import SourceSurveyCard from "@/components/SourceSurveyCard";
-import { trackPurchase, type GaItem } from "@/lib/analytics";
+import { trackPurchase, renderGoogleCustomerReviewsOptIn, type GaItem } from "@/lib/analytics";
 
 /**
- * Fire GA4 `purchase` event exactly once per order. Idempotency via
- * localStorage flag `php_ga_purchase_<orderId>` so refresh / dual code
- * paths (snapshot + poll) never double-count.
+ * Fire GA4 `purchase` event AND trigger Google Customer Reviews opt-in
+ * exactly once per order. Idempotency via localStorage flag
+ * `php_ga_purchase_<orderId>` so refresh / dual code paths
+ * (snapshot + poll) never double-count.
  */
-async function fireGaPurchaseOnce(orderId: string) {
+async function firePostPurchaseTrackingOnce(orderId: string) {
   if (!orderId || typeof window === "undefined") return;
   const key = `php_ga_purchase_${orderId}`;
   try { if (localStorage.getItem(key) === "1") return; } catch { /* ignore */ }
@@ -33,6 +34,28 @@ async function fireGaPurchaseOnce(orderId: string) {
       currency: "GBP",
     }));
     trackPurchase(orderId, Number.isFinite(value) ? value : 0, items);
+
+    // Google Customer Reviews opt-in — no-op if VITE_GCR_MERCHANT_ID
+    // is not configured. Email and country pulled from order shipping data.
+    const shipping = (data.shipping ?? data.shippingAddress ?? {}) as Record<string, unknown>;
+    const customerEmail = String(
+      data.email ?? data.customerEmail ?? shipping.email ?? "",
+    );
+    const deliveryCountry = String(
+      shipping.country ?? shipping.countryCode ?? data.country ?? "GB",
+    ).toUpperCase().slice(0, 2) || "GB";
+    const productGtins = rawItems
+      .map((it) => String(it.gtin ?? it.mpn ?? it.sku ?? it.id ?? "").trim())
+      .filter(Boolean);
+    if (customerEmail) {
+      renderGoogleCustomerReviewsOptIn({
+        orderId,
+        email: customerEmail,
+        deliveryCountry,
+        productGtins,
+      });
+    }
+
     try { localStorage.setItem(key, "1"); } catch { /* ignore */ }
   } catch { /* analytics must never break the success page */ }
 }
