@@ -290,11 +290,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         // browser finishes downloading it. Pairs with the `media="print"`
         // hint on the <link> above so fonts never block first paint.
         children:
-          "(function(){var l=document.getElementById('gfonts');if(!l)return;function s(){l.media='all'}if(l.sheet){s()}else{l.addEventListener('load',s,{once:true})}})();",
+          "(function(){var l=document.getElementById('gfonts');if(l){function s(){l.media='all'}if(l.sheet){s()}else{l.addEventListener('load',s,{once:true})}}var a=document.getElementById('appcss');if(a){function t(){a.media='all'}if(a.sheet){t()}else{a.addEventListener('load',t,{once:true})}}})();",
       },
     ],
     links: [
-      { rel: "stylesheet", href: appCss },
+      // Main Tailwind/app stylesheet — deferred to non-blocking via the
+      // media=print swap pattern. A small block of critical CSS is inlined
+      // in RootShell's <head> so first paint isn't unstyled while this
+      // downloads. Inline script in `scripts` above swaps media back to
+      // "all" the moment the sheet has parsed.
+      { rel: "preload", as: "style", href: appCss },
+      { rel: "stylesheet", href: appCss, media: "print", id: "appcss" },
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", type: "image/png", sizes: "16x16", href: "/icon-16.png" },
       { rel: "icon", type: "image/png", sizes: "32x32", href: "/icon-32.png" },
@@ -324,6 +330,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
     ],
   }),
+
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
@@ -536,11 +543,38 @@ function installCanonicalEnforcer() {
   };
 }
 
+// Critical above-the-fold CSS — inlined so first paint doesn't wait on the
+// main stylesheet (which is now loaded non-blocking via media=print swap).
+// Keep this small (<3 KB): boot bg/fg, header skeleton, banner stack
+// reserved heights (CLS), and the LoadingFallback. Full Tailwind layer
+// applies as soon as appCss loads (~100ms typical).
+const CRITICAL_CSS = `
+*,*::before,*::after{box-sizing:border-box;border-width:0;border-style:solid;min-width:0}
+html,body,#root{max-width:100%;overflow-x:hidden;margin:0;background:#060f1e;color:#f0f6ff}
+body{font-family:'Inter Tight',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3{font-family:'Cormorant Garamond',Georgia,serif;margin:0;line-height:1.08;letter-spacing:-.015em}
+img,svg,video{display:block;max-width:100%;height:auto}
+header{position:sticky;top:0;z-index:50;min-height:56px;background:rgba(6,15,30,.92);backdrop-filter:saturate(140%) blur(10px);-webkit-backdrop-filter:saturate(140%) blur(10px);border-bottom:1px solid rgba(255,255,255,.06)}
+@media(min-width:768px){header{min-height:64px}}
+[data-phl-banner]{min-height:32px}
+[data-phl-research-banner]{min-height:34px}
+.phl-boot{display:flex;align-items:center;justify-content:center;min-height:60vh;color:#9fb0c8;font-size:14px}
+`;
+
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-GB" style={{ backgroundColor: "#060f1e" }}>
       <head>
         <HeadContent />
+        {/* Inline critical CSS — covers boot bg, header skeleton + banner
+            reserved heights so the page paints styled before the deferred
+            appCss arrives. Keep this synchronous and BEFORE any scripts. */}
+        <style dangerouslySetInnerHTML={{ __html: CRITICAL_CSS }} />
+        {/* No-JS fallback: if scripts are disabled the media=print swap
+            never fires, so reload the main sheet as a blocking stylesheet. */}
+        <noscript>
+          <link rel="stylesheet" href={appCss} />
+        </noscript>
         {/* MUST be first inline script — installs nonce propagator before
             anything else runs, so subsequent injected scripts inherit nonce. */}
         <script dangerouslySetInnerHTML={{ __html: NONCE_PROPAGATOR }} />
@@ -554,6 +588,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
     </html>
   );
 }
+
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
