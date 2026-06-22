@@ -1388,7 +1388,7 @@ export default function ProductDetail() {
                     <div>
                       <p className="text-[10px] font-bold text-[#5a80a6] uppercase tracking-[0.18em] mb-1.5">Research Context</p>
                       <p className="text-[#9cb8d9] leading-relaxed text-[14.5px]">{sanitizeLab(seoData?.uniqueContent || product.description)}</p>
-                    </div>}
+                    </div>
                     {/* Part 2: Key details */}
                     <div>
                       <p className="text-[10px] font-bold text-[#5a80a6] uppercase tracking-[0.18em] mb-2">Key Details</p>
