@@ -284,6 +284,9 @@ export interface ProductVariant {
   stock: number;
   price?: number;
   imageIndex?: number; // 0-based index into product.images[] — which photo this variant shows
+  hplcTested?: boolean; // ≥99% HPLC test confirmed for this batch
+  hplcImageUrl?: string; // Public URL of HPLC chromatogram image (Firebase Storage)
+  hplcTestedAt?: string; // ISO date string when the HPLC test was last recorded
 }
 
 export interface Coupon {
