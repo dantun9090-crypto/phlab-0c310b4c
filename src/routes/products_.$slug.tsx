@@ -129,13 +129,10 @@ export const Route = createFileRoute("/products_/$slug")({
       brand: { "@type": "Brand", name: "PH Labs", url: SITE_URL },
       manufacturer: { "@type": "Organization", name: "PH Labs UK", url: SITE_URL },
       category: product?.category,
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: "4.9",
-        reviewCount: "127",
-        bestRating: "5",
-        worstRating: "1",
-      },
+      // AggregateRating intentionally omitted — Google penalises self-published
+      // ratings without verified third-party source. Stars will be sourced from
+      // Google Customer Reviews (renderGoogleCustomerReviewsOptIn on
+      // /payment/success) and re-introduced here once we have a verified feed.
     };
     if (measure) {
       // Google Merchant unit-of-measure signals (size + weight + property).
