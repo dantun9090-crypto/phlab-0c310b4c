@@ -66,6 +66,7 @@ const navGroups = [
     items: [
       { id: 'marketing', label: 'Marketing', icon: Megaphone },
       { id: 'promocodes', label: 'Promo Codes', icon: Tag },
+      { id: 'freegift', label: 'Free Gift Promo', icon: Gift },
       { id: 'emailmarketing', label: 'Email Campaigns', icon: Mail },
       { id: 'emailpreview', label: 'Email Preview', icon: Eye },
     ],
