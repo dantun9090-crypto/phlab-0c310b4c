@@ -327,10 +327,73 @@ export function trackAdsPurchaseConversion(transactionId: string, value: number)
 }
 
 
-export function getAnalyticsStatus() {
-  return {
-    loaded,
-    measurementId: currentId,
-    consent: readStoredConsent(),
-  };
+/* ─────────────────────────────────────────────────────────────────────────
+ * Google Customer Reviews opt-in (free, official Google programme).
+ *
+ * After payment success we show the buyer a small "would you review this
+ * purchase?" survey from Google. Reviews go straight to Google, count
+ * toward seller ratings in Shopping/Search, and (after 100 reviews in 12
+ * months) unlock star ratings on the merchant.
+ *
+ * Requires VITE_GCR_MERCHANT_ID (numeric Merchant Center ID) at build
+ * time. No-op otherwise.
+ * Docs: https://support.google.com/merchants/answer/7106244
+ * ─────────────────────────────────────────────────────────────────────── */
+
+const GCR_MERCHANT_ID = (import.meta.env.VITE_GCR_MERCHANT_ID as string | undefined)?.trim() || '';
+
+export interface GcrOptInOptions {
+  orderId: string;
+  email: string;
+  /** ISO 3166-1 alpha-2 country code. Defaults to "GB". */
+  deliveryCountry?: string;
+  /** YYYY-MM-DD. Defaults to today + 3 working days. */
+  estimatedDeliveryDate?: string;
+  /** Optional GTIN per item — improves product-level review attribution. */
+  productGtins?: string[];
 }
+
+function isoPlusDays(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Render the Google Customer Reviews opt-in dialog. Call once on the
+ * payment success page after the order is confirmed paid.
+ * Idempotent — safe to call multiple times.
+ */
+export function renderGoogleCustomerReviewsOptIn(opts: GcrOptInOptions): void {
+  if (typeof window === 'undefined') return;
+  if (!GCR_MERCHANT_ID) return;
+  if (!opts.orderId || !opts.email) return;
+  const w = window as unknown as { __phlabs_gcr_loaded?: boolean; renderOptIn?: () => void; gapi?: { load: (m: string, cb: () => void) => void; surveyoptin: { render: (cfg: Record<string, unknown>) => void } } };
+  if (w.__phlabs_gcr_loaded) return;
+  w.__phlabs_gcr_loaded = true;
+
+  w.renderOptIn = function () {
+    if (!w.gapi) return;
+    w.gapi.load('surveyoptin', function () {
+      w.gapi!.surveyoptin.render({
+        merchant_id: GCR_MERCHANT_ID,
+        order_id: opts.orderId,
+        email: opts.email,
+        delivery_country: opts.deliveryCountry || 'GB',
+        estimated_delivery_date: opts.estimatedDeliveryDate || isoPlusDays(3),
+        ...(opts.productGtins && opts.productGtins.length
+          ? { products: opts.productGtins.map((gtin) => ({ gtin })) }
+          : {}),
+        opt_in_style: 'CENTER_DIALOG',
+      });
+    });
+  };
+
+  const s = document.createElement('script');
+  s.src = 'https://apis.google.com/js/platform.js?onload=renderOptIn';
+  s.async = true;
+  s.defer = true;
+  document.head.appendChild(s);
+  log('GCR opt-in scheduled', { orderId: opts.orderId });
+}
+
