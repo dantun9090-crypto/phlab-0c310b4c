@@ -627,8 +627,8 @@ const REMEMBER_KEY = 'php_auth_remember';
 export const setAuthPersistence = async (remember: boolean) => {
   try {
     if (typeof window !== 'undefined') {
-      if (remember) window.localStorage.setItem(REMEMBER_KEY, '1');
-      else window.localStorage.removeItem(REMEMBER_KEY);
+      // '1' = explicit opt-in, '0' = explicit opt-out. Absence = default (remembered).
+      window.localStorage.setItem(REMEMBER_KEY, remember ? '1' : '0');
     }
     await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
   } catch (e) {
@@ -636,16 +636,9 @@ export const setAuthPersistence = async (remember: boolean) => {
   }
 };
 
-// Apply the user's last "Remember me" choice on app init. Default is
-// session-only when no prior choice exists. Without this, every page load
-// would reset persistence to session-only and override a prior opt-in.
-if (typeof window !== 'undefined') {
-  const remembered = (() => {
-    try { return window.localStorage.getItem(REMEMBER_KEY) === '1'; }
-    catch { return false; }
-  })();
-  setPersistence(auth, remembered ? browserLocalPersistence : browserSessionPersistence).catch(() => {});
-}
+// Persistence at module init is handled in src/lib/firebase-auth.ts (the lean
+// shim that always loads first on the auth-guard path). Re-applying it here
+// would race with the user's signed-in state if firebase.ts loads later.
 
 export const logoutUser = async () => {
   const current = auth.currentUser;
