@@ -107,6 +107,7 @@ export default function ResearchGate() {
     saveConfirmation();
     setConfirmed(true);
     setShowModal(false);
+    setBannerVisible(false); // H2: collapse banner stack after acknowledgement
     notifyGateCleared();
   };
 
