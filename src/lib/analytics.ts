@@ -353,6 +353,44 @@ export interface GcrOptInOptions {
   productGtins?: string[];
 }
 
+
+/* ─────────────────────────────────────────────────────────────────────────
+ * Google Customer Reviews badge widget (sitewide).
+ * Renders the floating "Google Customer Reviews" trust badge using the
+ * official gstatic merchant widget. Idempotent.
+ * Docs: https://support.google.com/merchants/answer/7106244
+ * ─────────────────────────────────────────────────────────────────────── */
+
+export function renderGoogleMerchantBadge(opts?: { position?: 'BOTTOM_LEFT' | 'BOTTOM_RIGHT' | 'TOP_LEFT' | 'TOP_RIGHT'; region?: string }): void {
+  if (typeof window === 'undefined') return;
+  if (!GCR_MERCHANT_ID) return;
+  if (isBot()) return;
+  const w = window as unknown as { __phlabs_gcr_badge_loaded?: boolean; merchantwidget?: { start: (cfg: Record<string, unknown>) => void } };
+  if (w.__phlabs_gcr_badge_loaded) return;
+  w.__phlabs_gcr_badge_loaded = true;
+
+  const start = () => {
+    if (!w.merchantwidget) return;
+    try {
+      w.merchantwidget.start({
+        merchant_id: Number(GCR_MERCHANT_ID),
+        position: opts?.position || 'BOTTOM_RIGHT',
+        region: opts?.region || 'GB',
+      });
+    } catch (e) {
+      log('merchant badge start failed', e);
+    }
+  };
+
+  const s = document.createElement('script');
+  s.src = 'https://www.gstatic.com/shopping/merchant/merchantwidget.js';
+  s.defer = true;
+  s.id = 'merchantWidgetScript';
+  s.onload = start;
+  document.head.appendChild(s);
+  log('GCR badge scheduled');
+}
+
 function isoPlusDays(days: number): string {
   const d = new Date();
   d.setDate(d.getDate() + days);
