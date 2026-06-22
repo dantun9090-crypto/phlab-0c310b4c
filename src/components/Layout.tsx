@@ -132,11 +132,13 @@ export function Layout({ children }: LayoutProps) {
     initAnalytics(id);
     // Google Customer Reviews floating badge (sitewide trust signal).
     // Skips admin/auth pages where the badge would obscure UI.
-    if (!isCleanPage) {
+    const path = window.location.pathname;
+    const skip = path.startsWith('/admin') || path === '/login' || path === '/register';
+    if (!skip) {
       const t = setTimeout(() => renderGoogleMerchantBadge({ position: 'BOTTOM_RIGHT', region: 'GB' }), 2500);
       return () => clearTimeout(t);
     }
-  }, [isCleanPage]);
+  }, []);
   useEffect(() => {
     trackPageView(location.pathname + location.search);
   }, [location.pathname, location.search]);
