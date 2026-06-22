@@ -304,6 +304,26 @@ export function trackCtaClick(label: string, location?: string): void {
 
 export function trackPurchase(transactionId: string, value: number, items: GaItem[]): void {
   trackEvent('purchase', { transaction_id: transactionId, currency: 'GBP', value, items });
+  trackAdsPurchaseConversion(transactionId, value);
+}
+
+/**
+ * Fire a Google Ads `conversion` event for a purchase. Requires both
+ * VITE_GOOGLE_ADS_CONVERSION_ID (AW-XXXXXXXXXX) and
+ * VITE_GOOGLE_ADS_PURCHASE_LABEL to be set at build time. No-op otherwise.
+ */
+export function trackAdsPurchaseConversion(transactionId: string, value: number): void {
+  if (!GOOGLE_ADS_CONVERSION_ID || !GOOGLE_ADS_PURCHASE_LABEL) return;
+  if (!ensureAnalyticsReady()) return;
+  const ga = window.gtag;
+  if (!ga) return;
+  log('ads conversion', { transactionId, value });
+  ga('event', 'conversion', {
+    send_to: `${GOOGLE_ADS_CONVERSION_ID}/${GOOGLE_ADS_PURCHASE_LABEL}`,
+    value,
+    currency: 'GBP',
+    transaction_id: transactionId,
+  });
 }
 
 
