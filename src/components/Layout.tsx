@@ -85,6 +85,8 @@ export function Layout({ children }: LayoutProps) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [addToast, setAddToast] = useState<string | null>(null);
+  const addToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Body scroll lock + scroll-to-top while cart/mobile-menu overlay is open,
   // so the fixed drawer is always anchored to the top of the viewport on
