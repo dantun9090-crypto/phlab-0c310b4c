@@ -20,6 +20,7 @@ import { migrateStoredCart } from '@/lib/cart-migration';
 import { logCartEvent, safeCartWrite } from '@/lib/cart-telemetry';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
+import { useFreeGiftConfig, freeGiftApplies } from '@/lib/free-gift-config';
 import UkBankBadges from '@/components/UkBankBadges';
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
 
@@ -83,6 +84,7 @@ const iconInputStyle = (hasError?: boolean): React.CSSProperties => ({
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const [cart, setCart] = useState<CartItem[]>([]);
+  const freeGiftCfg = useFreeGiftConfig();
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [siteSettings, setSiteSettings] = useState<any>({
     bankTransferEnabled: true,
@@ -469,6 +471,7 @@ export default function CheckoutPage() {
   const total = Math.max(0, subtotal - discount + shippingCost).toFixed(2);
   const hasDiscount = discount > 0 || couponFreeShipping;
   const totalItems = cart.reduce((s, i) => s + i.quantity, 0);
+  const showFreeGift = cart.length > 0 && freeGiftApplies(freeGiftCfg, subtotal);
   const hasItemsWithoutVariant = cart.some(item => !item.dosage || item.dosage === '');
   const activePayByBankName = paymentOptions?.primary?.name ?? 'Open Banking';
 
@@ -698,7 +701,12 @@ export default function CheckoutPage() {
             ageVerified: true,
             termsAccepted: true,
             couponCode: appliedCoupon?.code ?? null,
-            customerNote: form.customerNote.trim() || null,
+            customerNote: (() => {
+              const base = form.customerNote.trim();
+              if (!showFreeGift) return base || null;
+              const giftLine = `[FREE GIFT] ${freeGiftCfg.title}`;
+              return base ? `${giftLine}\n${base}` : giftLine;
+            })(),
             idToken,
           },
         });
@@ -1544,6 +1552,20 @@ export default function CheckoutPage() {
                           {shippingCost === 0 ? 'FREE' : `£${shippingCost.toFixed(2)}`}
                         </span>
                       </div>
+                      {showFreeGift && (
+                        <div className="flex justify-between items-start gap-2 bg-emerald-500/10 border border-emerald-500/25 rounded-lg px-2.5 py-2">
+                          <span className="text-emerald-300 text-[11px] font-semibold flex items-start gap-1.5">
+                            <Tag className="w-3 h-3 mt-0.5 shrink-0" />
+                            <span>
+                              Free Gift: {freeGiftCfg.title}
+                              {freeGiftCfg.description && (
+                                <span className="block text-emerald-300/70 font-normal mt-0.5">{freeGiftCfg.description}</span>
+                              )}
+                            </span>
+                          </span>
+                          <span className="text-emerald-300 text-[11px] font-semibold shrink-0">FREE</span>
+                        </div>
+                      )}
                       {discount > 0 && (
                         <div className="flex justify-between text-emerald-400">
                           <span>Discount ({appliedCoupon?.code})</span>
@@ -1783,6 +1805,20 @@ export default function CheckoutPage() {
                         {isFreeShipping ? 'FREE' : `£${shippingCost.toFixed(2)}`}
                       </span>
                     </div>
+                    {showFreeGift && (
+                      <div className="flex justify-between items-start gap-2 bg-emerald-500/10 border border-emerald-500/25 rounded-lg px-2.5 py-2">
+                        <span className="text-emerald-300 text-[11px] font-semibold flex items-start gap-1.5">
+                          <Tag className="w-3 h-3 mt-0.5 shrink-0" />
+                          <span>
+                            Free Gift: {freeGiftCfg.title}
+                            {freeGiftCfg.description && (
+                              <span className="block text-emerald-300/70 font-normal mt-0.5">{freeGiftCfg.description}</span>
+                            )}
+                          </span>
+                        </span>
+                        <span className="text-emerald-300 text-[11px] font-semibold shrink-0">FREE</span>
+                      </div>
+                    )}
                     <div className="flex justify-between font-bold text-sm border-t border-white/10 pt-2 mt-1">
                       <span className="text-white">Total</span>
                       <span className="text-white">£{total}</span>
