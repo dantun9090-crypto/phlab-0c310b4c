@@ -20,6 +20,7 @@ import { migrateStoredCart } from '@/lib/cart-migration';
 import { logCartEvent, safeCartWrite } from '@/lib/cart-telemetry';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
+import { useFreeGiftConfig, freeGiftApplies } from '@/lib/free-gift-config';
 import UkBankBadges from '@/components/UkBankBadges';
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
 
