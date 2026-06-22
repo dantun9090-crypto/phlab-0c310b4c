@@ -1070,6 +1070,7 @@ export default function OrdersTab() {
                   );
                 })()}
 
+                <div className="lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
                 {/* Bank Transfer Payment Panel — only for bank transfer orders */}
                 {(selected as any).paymentMethod === 'bank_transfer' && (
                   <div className="bg-[#0b1a30]/60 rounded-xl p-4 mb-4 border border-amber-500/20">
