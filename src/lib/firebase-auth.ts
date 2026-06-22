@@ -6,7 +6,14 @@
  * The full firebase.ts is dynamically imported by Layout and pages as needed.
  */
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import {
+  getAuth,
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  indexedDBLocalPersistence,
+} from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 
 const firebaseConfig = {
@@ -29,5 +36,27 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 export const auth = getAuth(app);
+
+// ── Persistence bootstrap ────────────────────────────────────────────────
+// Apply the user's "Keep me signed in" preference IMMEDIATELY when the lean
+// shim loads (this runs before firebase.ts on the auth-guard path).
+// Default = persistent (indexedDB / localStorage) so a refresh OR a full
+// browser restart keeps the user signed in. Only when the user explicitly
+// opted out (`php_auth_remember === '0'`) do we downgrade to session-only.
+const REMEMBER_KEY = 'php_auth_remember';
+if (typeof window !== 'undefined') {
+  let remembered = true;
+  try {
+    if (window.localStorage.getItem(REMEMBER_KEY) === '0') remembered = false;
+  } catch { /* storage blocked → assume remembered */ }
+
+  const chain = remembered
+    ? [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
+    : [browserSessionPersistence];
+  setPersistence(auth, chain).catch((e) => {
+    console.warn('[auth] initial setPersistence failed:', e);
+  });
+}
+
 export { onAuthStateChanged };
 export type { FirebaseUser };
