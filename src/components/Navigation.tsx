@@ -89,7 +89,7 @@ function MobileNavItem({
   const [expanded, setExpanded] = useState(false);
   const hasDropdown = !!(link.dropdown?.length);
   const navigate = useNavigate();
-  const itemStyle: React.CSSProperties = { animationDelay: `${index * 50}ms`, animationFillMode: 'both' };
+  const itemStyle: React.CSSProperties = { opacity: 1 };
 
   if (hasDropdown) {
     return (
