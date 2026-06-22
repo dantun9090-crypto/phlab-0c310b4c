@@ -155,8 +155,14 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
   // Google Tag container — activates any GTM-linked destinations (Ads, conversions, etc.)
   gtag('config', GOOGLE_TAG_ID, { send_page_view: false });
 
-  // Fire initial page view
-  trackPageView(window.location.pathname + window.location.search);
+  // Fire initial page view (skip if the hardcoded <head> script already
+  // triggered an auto-config page_view — deduplicate via lastTrackedPath).
+  const hardcodedPresent = !!document.querySelector('script[src*="gtag/js"]');
+  if (hardcodedPresent) {
+    lastTrackedPath = window.location.pathname + window.location.search;
+  } else {
+    trackPageView(window.location.pathname + window.location.search);
+  }
 
   // Listen for consent changes from the cookie banner
   window.addEventListener('php:cookie-consent-changed', ((e: Event) => {
