@@ -24,6 +24,25 @@ export const FORBIDDEN_CLAIMS: { pattern: RegExp; reason: string }[] = [
   { pattern: /\bdiabetes\b/i, reason: 'Disease reference' },
   { pattern: /\bcancer\b/i, reason: 'Disease reference' },
   { pattern: /\bclinical\b/i, reason: 'Implies clinical use' },
+  // Extended for MHRA / FDA / Google & Bing Ads peptide policy
+  { pattern: /\bwound[- ]?healing\b/i, reason: 'Therapeutic claim: wound healing' },
+  { pattern: /\bhealing\b/i, reason: 'Therapeutic claim: healing' },
+  { pattern: /\banti[- ]?inflammatory\b/i, reason: 'Therapeutic claim: anti-inflammatory' },
+  { pattern: /\binflammatory bowel\b/i, reason: 'Disease reference: IBD' },
+  { pattern: /\blipolysis\b/i, reason: 'Weight-loss adjacent claim' },
+  { pattern: /\badipocyte\b/i, reason: 'Weight-loss adjacent claim' },
+  { pattern: /\bfat (loss|burning|reduction)\b/i, reason: 'Weight-loss claim' },
+  { pattern: /\befficacy\b/i, reason: 'Drug-style efficacy claim' },
+  { pattern: /\bphotoaging\b/i, reason: 'Cosmetic/health claim' },
+  { pattern: /\baged skin\b/i, reason: 'Cosmetic claim' },
+  { pattern: /\bbarrier protection\b/i, reason: 'Therapeutic claim' },
+  { pattern: /\b(collagen|protein) synthesis stimulation\b/i, reason: 'Functional/therapeutic claim' },
+  { pattern: /\b(increases?|reduces?|enhances?|boosts?|improves?)\b[^.]{0,40}\b\d{1,3}\s?%/i, reason: 'Quantified efficacy claim' },
+  { pattern: /\btherapeutic\b/i, reason: 'Implies therapeutic use' },
+  { pattern: /\bsupplement\b/i, reason: 'Implies dietary supplement' },
+  { pattern: /\bcosmetic\b(?!\s+(use|product|claim|claims|category))/i, reason: 'Implies cosmetic product' },
+  { pattern: /\bfor (human|personal|self|home) use\b/i, reason: 'Implies human use' },
+  { pattern: /\bsafe (for|to)\b/i, reason: 'Safety claim' },
 ];
 
 export interface ComplianceResult {
