@@ -1399,6 +1399,30 @@ export default function ProductDetail() {
                         <div className="flex items-start gap-2"><span className="text-[#5a80a6] text-xs shrink-0">Batch ref.:</span><span className="text-[#8caad4] text-xs font-medium">{skuStr}</span></div>
                       </div>
                     </div>
+                    {/* HPLC test evidence — per-selected-variant */}
+                    {(variant?.hplcImageUrl || variant?.hplcTested) && (
+                      <div className="rounded-xl bg-emerald-500/[0.05] border border-emerald-500/20 p-3.5">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FlaskConical className="w-3.5 h-3.5 text-emerald-400" />
+                          <p className="text-[10px] font-bold text-emerald-300 uppercase tracking-[0.18em]">HPLC Test {variant?.name ? `· ${variant.name}` : ''}</p>
+                          {variant?.hplcTested && (
+                            <span className="ml-auto text-[10px] font-semibold text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                              ≥99% verified
+                            </span>
+                          )}
+                        </div>
+                        {variant?.hplcImageUrl && (
+                          <a href={variant.hplcImageUrl} target="_blank" rel="noopener noreferrer" className="block">
+                            <img
+                              src={variant.hplcImageUrl}
+                              alt={`${product.name} ${variant.name || ''} HPLC chromatogram — ≥99% purity`}
+                              loading="lazy"
+                              className="w-full max-h-72 object-contain rounded-lg bg-white/5 border border-emerald-500/15 hover:border-emerald-400/40 transition-colors"
+                            />
+                          </a>
+                        )}
+                      </div>
+                    )}
                     {/* Part 3: Why buy here */}
                     <div className="flex items-start gap-3 p-3.5 rounded-xl bg-blue-600/[0.06] border border-blue-500/15">
                       <ShieldCheck className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
