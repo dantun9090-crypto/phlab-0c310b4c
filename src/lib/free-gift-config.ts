@@ -15,7 +15,7 @@ export const FREE_GIFT_DEFAULTS: FreeGiftConfig = {
   minSubtotal: 0,
 };
 
-const DOC_PATH = ['siteConfig', 'freeGift'] as const;
+const DOC_PATH = ['site_config', 'freeGift'] as const;
 
 export async function loadFreeGiftConfig(): Promise<FreeGiftConfig> {
   try {
