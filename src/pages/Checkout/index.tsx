@@ -701,7 +701,12 @@ export default function CheckoutPage() {
             ageVerified: true,
             termsAccepted: true,
             couponCode: appliedCoupon?.code ?? null,
-            customerNote: form.customerNote.trim() || null,
+            customerNote: (() => {
+              const base = form.customerNote.trim();
+              if (!showFreeGift) return base || null;
+              const giftLine = `[FREE GIFT] ${freeGiftCfg.title}`;
+              return base ? `${giftLine}\n${base}` : giftLine;
+            })(),
             idToken,
           },
         });
