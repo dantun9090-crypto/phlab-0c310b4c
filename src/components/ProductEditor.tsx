@@ -881,12 +881,15 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                     <motion.div
                       key={variant.id}
                       layout
-                      draggable
-                      onDragStart={() => handleDragStart(idx)}
-                      onDragOver={(e) => handleDragOver(e, idx)}
-                      onDragEnd={handleDragEnd}
-                      className={`flex items-center gap-2 p-3 bg-white border border-gray-300 rounded-lg cursor-move transition-opacity ${draggedVariantIdx === idx ? 'opacity-40' : ''}`}
+                      className={`p-3 bg-white border border-gray-300 rounded-lg transition-opacity ${draggedVariantIdx === idx ? 'opacity-40' : ''}`}
                     >
+                      <div
+                        draggable
+                        onDragStart={() => handleDragStart(idx)}
+                        onDragOver={(e) => handleDragOver(e, idx)}
+                        onDragEnd={handleDragEnd}
+                        className="flex items-center gap-2 cursor-move"
+                      >
                       <MoveVertical className="w-4 h-4 text-gray-500 shrink-0" />
                       <div className="flex items-center gap-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-md px-1.5 py-0.5 shrink-0 min-w-[20px] justify-center">
                         {idx + 1}
@@ -927,6 +930,50 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                         className="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
+                      </div>
+
+                      {/* HPLC test row — per-variant chromatogram + tested toggle */}
+                      <div className="mt-2 pt-2 border-t border-gray-200 flex flex-wrap items-center gap-3">
+                        <label className="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={!!variant.hplcTested}
+                            onChange={e => updateVariant(idx, 'hplcTested', e.target.checked)}
+                            className="rounded"
+                          />
+                          HPLC tested ≥99%
+                        </label>
+                        <label className="text-xs text-blue-700 hover:text-blue-900 cursor-pointer underline">
+                          {variant.hplcImageUrl ? 'Replace HPLC photo' : 'Upload HPLC photo'}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) uploadHplcImage(idx, f);
+                            }}
+                          />
+                        </label>
+                        {variant.hplcImageUrl && (
+                          <>
+                            <a href={variant.hplcImageUrl} target="_blank" rel="noopener noreferrer">
+                              <img src={variant.hplcImageUrl} alt="HPLC chromatogram" className="h-10 w-auto rounded border border-gray-300" />
+                            </a>
+                            <button
+                              onClick={() => { updateVariant(idx, 'hplcImageUrl', ''); }}
+                              className="text-xs text-red-600 hover:underline"
+                            >
+                              Remove
+                            </button>
+                          </>
+                        )}
+                        {variant.hplcTestedAt && (
+                          <span className="text-[10px] text-gray-500 ml-auto">
+                            Tested {new Date(variant.hplcTestedAt).toLocaleDateString('en-GB')}
+                          </span>
+                        )}
+                      </div>
                     </motion.div>
                   ))}
                 </div>
