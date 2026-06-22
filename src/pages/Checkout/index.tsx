@@ -471,6 +471,7 @@ export default function CheckoutPage() {
   const total = Math.max(0, subtotal - discount + shippingCost).toFixed(2);
   const hasDiscount = discount > 0 || couponFreeShipping;
   const totalItems = cart.reduce((s, i) => s + i.quantity, 0);
+  const showFreeGift = cart.length > 0 && freeGiftApplies(freeGiftCfg, subtotal);
   const hasItemsWithoutVariant = cart.some(item => !item.dosage || item.dosage === '');
   const activePayByBankName = paymentOptions?.primary?.name ?? 'Open Banking';
 
