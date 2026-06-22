@@ -22,7 +22,12 @@ declare global {
 }
 
 const DEFAULT_MEASUREMENT_ID = 'G-5HM4YT7HDW';
-const GOOGLE_TAG_ID = 'GT-P3HVF8R5'; // Google Tag container ("phlabs") — pulls in linked destinations (Google Ads conversions etc.)
+const GOOGLE_DESTINATION_IDS = [
+  DEFAULT_MEASUREMENT_ID,
+  'GT-P3HVF8R5',
+  'GT-WRHD4Q69',
+  'MC-KJMB7MKB29',
+];
 // First-party Cloudflare "Google Tag Gateway" endpoint. Loading gtag.js from our
 // own origin (instead of www.googletagmanager.com) bypasses most ad-blockers and
 // keeps the visitor IP off Google's edge (hideOriginalIp=true on the CF side).
@@ -52,6 +57,35 @@ function log(...args: unknown[]) {
   if (debugMode) console.log('%c[GA4]', 'color:#f9a825;font-weight:bold', ...args);
 }
 
+function uniqueDestinations(): string[] {
+  const ids = [currentId || DEFAULT_MEASUREMENT_ID, ...GOOGLE_DESTINATION_IDS];
+  return Array.from(new Set(ids.filter(Boolean)));
+}
+
+function ensureAnalyticsReady(): boolean {
+  if (typeof window === 'undefined' || !window.gtag) return false;
+  if (!currentId) currentId = DEFAULT_MEASUREMENT_ID;
+  if (!debugMode) debugMode = isDebug();
+  return true;
+}
+
+function ecommerceFingerprint(items: GaItem[], value: number, extra = ''): string {
+  return [
+    value.toFixed(2),
+    extra,
+    ...items.map((item) => `${item.item_id}:${item.item_variant || ''}:${item.quantity || 1}:${item.price || 0}`),
+  ].join('|').slice(0, 500);
+}
+
+function oncePerSession(eventName: string, fingerprint: string): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    const key = `php_ga_${eventName}_${fingerprint}`;
+    if (sessionStorage.getItem(key) === '1') return false;
+    sessionStorage.setItem(key, '1');
+  } catch { /* ignore */ }
+  return true;
+}
 
 function isBot(): boolean {
   if (typeof navigator === 'undefined') return true;
@@ -158,8 +192,10 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
       debug_mode: debugMode,
     });
   }
-  // Google Tag container — activates any GTM-linked destinations (Ads, conversions, etc.)
-  gtag('config', GOOGLE_TAG_ID, { send_page_view: false });
+  // Google destinations — activates linked GA4, Google Ads and Merchant Center destinations.
+  for (const destinationId of GOOGLE_DESTINATION_IDS) {
+    if (destinationId !== id) gtag('config', destinationId, { send_page_view: false });
+  }
 
   // Fire initial page view (skip if the hardcoded <head> script already
   // triggered an auto-config page_view — deduplicate via lastTrackedPath).
@@ -183,11 +219,13 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
 }
 
 export function trackPageView(path: string): void {
-  if (!loaded || !currentId || typeof window === 'undefined' || !window.gtag) return;
+  if (!ensureAnalyticsReady() || !currentId) return;
+  const ga = window.gtag;
+  if (!ga) return;
   if (path === lastTrackedPath) return;
   lastTrackedPath = path;
   log('page_view', path);
-  window.gtag('event', 'page_view', {
+  ga('event', 'page_view', {
     page_path: path,
     page_location: window.location.href,
     page_title: document.title,
@@ -197,9 +235,16 @@ export function trackPageView(path: string): void {
 }
 
 export function trackEvent(name: string, params?: Record<string, unknown>): void {
-  if (!loaded || !currentId || typeof window === 'undefined' || !window.gtag) return;
+  if (!ensureAnalyticsReady()) return;
+  const ga = window.gtag;
+  if (!ga) return;
   log(name, params);
-  window.gtag('event', name, { ...(params || {}), send_to: currentId, debug_mode: debugMode });
+  const destinations = uniqueDestinations();
+  ga('event', name, {
+    ...(params || {}),
+    send_to: destinations.length === 1 ? destinations[0] : destinations,
+    debug_mode: debugMode,
+  });
 }
 
 // ============= GA4 Ecommerce helpers =============
@@ -222,10 +267,30 @@ export function trackAddToCart(item: GaItem, value?: number): void {
   });
 }
 
+export function trackViewCart(items: GaItem[], value: number): void {
+  if (!oncePerSession('view_cart', ecommerceFingerprint(items, value))) return;
+  trackEvent('view_cart', {
+    currency: 'GBP',
+    value,
+    items,
+  });
+}
+
 export function trackBeginCheckout(items: GaItem[], value: number): void {
+  if (!oncePerSession('begin_checkout', ecommerceFingerprint(items, value))) return;
   trackEvent('begin_checkout', {
     currency: 'GBP',
     value,
+    items,
+  });
+}
+
+export function trackAddPaymentInfo(items: GaItem[], value: number, paymentType: string): void {
+  if (!oncePerSession('add_payment_info', ecommerceFingerprint(items, value, paymentType))) return;
+  trackEvent('add_payment_info', {
+    currency: 'GBP',
+    value,
+    payment_type: paymentType,
     items,
   });
 }

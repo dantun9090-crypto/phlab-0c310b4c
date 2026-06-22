@@ -21,6 +21,7 @@ import { logCartEvent, safeCartWrite } from '@/lib/cart-telemetry';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import type { CartItem } from '@/components/Layout';
 import { useFreeGiftConfig, freeGiftApplies } from '@/lib/free-gift-config';
+import { trackAddPaymentInfo, trackBeginCheckout, trackViewCart, type GaItem } from '@/lib/analytics';
 import UkBankBadges from '@/components/UkBankBadges';
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
 
@@ -474,6 +475,25 @@ export default function CheckoutPage() {
   const showFreeGift = cart.length > 0 && freeGiftApplies(freeGiftCfg, subtotal);
   const hasItemsWithoutVariant = cart.some(item => !item.dosage || item.dosage === '');
   const activePayByBankName = paymentOptions?.primary?.name ?? 'Open Banking';
+  const cartToGaItems = useCallback((): GaItem[] => cart.map(item => ({
+    item_id: String(item.id),
+    item_name: item.name,
+    item_variant: item.variantName || item.dosage || item.variantId,
+    item_category: 'Research Peptides',
+    price: Number(item.priceNum) || Number(item.price) || 0,
+    quantity: item.quantity,
+    currency: 'GBP',
+  })), [cart]);
+
+  useEffect(() => {
+    if (cart.length === 0) return;
+    const value = Number(total) || 0;
+    const items = cartToGaItems();
+    try {
+      trackViewCart(items, value);
+      trackBeginCheckout(items, value);
+    } catch { /* analytics never blocks checkout */ }
+  }, [cart.length, cartToGaItems, total]);
 
   const updateQty = (key: string, delta: number) => {
     setCart(prev => {
@@ -625,6 +645,14 @@ export default function CheckoutPage() {
       setLoginError('Your cart is empty.');
       return;
     }
+
+    try {
+      trackAddPaymentInfo(
+        cartToGaItems(),
+        Number(total) || 0,
+        form.paymentMethod === 'wallid' ? 'Wallid Pay by Bank' : form.paymentMethod === 'pay_by_bank' ? 'Open Banking' : 'Bank Transfer',
+      );
+    } catch { /* analytics never blocks payment */ }
 
     setIsPlacing(true);
     setLoginError('');
