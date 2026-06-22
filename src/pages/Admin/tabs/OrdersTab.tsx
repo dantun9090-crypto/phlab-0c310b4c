@@ -953,7 +953,7 @@ export default function OrdersTab() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#04101f] border border-white/[0.08] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+              className="bg-[#04101f] border border-white/[0.08] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto"
             >
               <div className="p-4">
                 {/* Header — compact so customer + items are visible without scrolling */}
@@ -1070,6 +1070,7 @@ export default function OrdersTab() {
                   );
                 })()}
 
+                <div className="lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
                 {/* Bank Transfer Payment Panel — only for bank transfer orders */}
                 {(selected as any).paymentMethod === 'bank_transfer' && (
                   <div className="bg-[#0b1a30]/60 rounded-xl p-4 mb-4 border border-amber-500/20">
@@ -1378,6 +1379,7 @@ export default function OrdersTab() {
                     </button>
                   </div>
                 )}
+                </div>
 
                 {/* Actions */}
                 <div className="flex gap-3">
