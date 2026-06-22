@@ -955,9 +955,9 @@ export default function OrdersTab() {
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-[#04101f] border border-white/[0.08] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto"
             >
-              <div className="p-4">
-                {/* Header — compact so customer + items are visible without scrolling */}
-                <div className="flex items-start justify-between mb-3 gap-2">
+              <div>
+                {/* Sticky header — key info + actions always visible */}
+                <div className="sticky top-0 z-20 bg-[#04101f]/95 backdrop-blur supports-[backdrop-filter]:bg-[#04101f]/80 border-b border-white/[0.08] px-4 py-3 flex items-start justify-between gap-2">
                   <div>
                     <h3 className="text-white font-bold text-lg font-mono">
                       {(selected as any).bankTransferRef || `#${selected.id?.slice(-8).toUpperCase()}`}
@@ -1011,6 +1011,7 @@ export default function OrdersTab() {
                   </div>
                 </div>
 
+                <div className="px-4 pt-4 pb-2">
                 {/* Customer */}
                 {(() => {
                   const c = (selected as any).customer;
@@ -1380,9 +1381,10 @@ export default function OrdersTab() {
                   </div>
                 )}
                 </div>
+                </div>
 
-                {/* Actions */}
-                <div className="flex gap-3">
+                {/* Sticky action bar — always reachable without scrolling */}
+                <div className="sticky bottom-0 z-20 bg-[#04101f]/95 backdrop-blur supports-[backdrop-filter]:bg-[#04101f]/80 border-t border-white/[0.08] px-4 py-3 flex gap-3">
                   <button
                     onClick={() => generateShippingLabelPDF(selected)}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#0f2640] hover:bg-[#1a3a5c] text-white rounded-xl text-sm font-medium transition-colors"
