@@ -328,7 +328,7 @@ const INITIAL_PRODUCTS = [
       shelfLife: '24 months',
       solvent: 'Bacteriostatic water',
     },
-    research: `Research blend - combined peptide metabolic signalling and lipolysis pathway studies. Laboratory use only.`,
+    research: `Multi-component peptide reference reagent for parallel in-vitro endpoint evaluation in laboratory cell-culture assay panels. Laboratory use only.`,
   },
 
   // ─── MT-2 (Melanotan II) ───────────────────────────────────────
