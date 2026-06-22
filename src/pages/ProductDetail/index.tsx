@@ -15,6 +15,7 @@ import { nameToSlug } from '@/lib/seedProducts';
 import { PRODUCT_SEO_CONTENT } from '@/lib/productSEO';
 import { SEO_LIMITS, clamp } from '@/lib/seo-meta';
 import { markPrerenderPending, flipPrerenderReadyWhen } from '@/lib/prerender-ready';
+import { sanitizeLab, sanitizeLabClamp } from '@/lib/lab-sanitize';
 
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
@@ -357,7 +358,7 @@ export default function ProductDetail() {
             ...data,
             id: productDoc.id,
             name: toText(data.name, 'Research Product'),
-            description: toText(data.description),
+            description: sanitizeLab(toText(data.description)),
             category: toText(data.category),
             sku: toText(data.sku),
             purity: toText(data.purity, '99%+'),
@@ -501,7 +502,7 @@ export default function ProductDetail() {
 
     // Dynamic Meta Description — 150–158 chars, keyword-rich
     const cat = product.category ? ` ${product.category} research` : ' laboratory research';
-    const metaDesc = `Buy ${product.name}${titleDosage} for${cat}. ≥99% purity HPLC-verified, batch CoA included. Fast UK dispatch, free shipping over £50.`.slice(0, 158);
+    const metaDesc = sanitizeLabClamp(`Buy ${product.name}${titleDosage} for${cat}. ≥99% purity HPLC-verified, batch CoA included. Fast UK dispatch, free shipping over £50.`, 158);
 
     const setMeta = (name: string, content: string, prop = false) => {
       const sel = prop ? `meta[property="${name}"]` : `meta[name="${name}"]`;
@@ -543,7 +544,7 @@ export default function ProductDetail() {
       '@context': 'https://schema.org',
       '@type': 'Product',
       name: product.name,
-      description: product.description?.slice(0, 300) || `Research-grade ${product.name}. HPLC purity tested. For laboratory use only.`,
+      description: sanitizeLabClamp(product.description || `Research-grade ${product.name}. HPLC purity tested. For laboratory use only.`, 300),
       image: productImage ? (Array.isArray(product.images) && product.images.length > 0 
         ? product.images.slice(0, 5).map(img => img) 
         : [productImage]) : undefined,
@@ -1384,17 +1385,10 @@ export default function ProductDetail() {
                 return (
                   <div className="space-y-4 mt-1">
                     {/* Part 1: What it does (research context) */}
-                    {seoData?.uniqueContent ? (
-                      <div>
-                        <p className="text-[10px] font-bold text-[#5a80a6] uppercase tracking-[0.18em] mb-1.5">Research Context</p>
-                        <p className="text-[#9cb8d9] leading-relaxed text-[14.5px]">{seoData.uniqueContent}</p>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-[10px] font-bold text-[#5a80a6] uppercase tracking-[0.18em] mb-1.5">Research Context</p>
-                        <p className="text-[#9cb8d9] leading-relaxed text-[14.5px]">{product.description}</p>
-                      </div>
-                    )}
+                    <div>
+                      <p className="text-[10px] font-bold text-[#5a80a6] uppercase tracking-[0.18em] mb-1.5">Research Context</p>
+                      <p className="text-[#9cb8d9] leading-relaxed text-[14.5px]">{sanitizeLab(seoData?.uniqueContent || product.description)}</p>
+                    </div>}
                     {/* Part 2: Key details */}
                     <div>
                       <p className="text-[10px] font-bold text-[#5a80a6] uppercase tracking-[0.18em] mb-2">Key Details</p>
