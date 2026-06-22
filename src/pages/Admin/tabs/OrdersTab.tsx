@@ -955,9 +955,9 @@ export default function OrdersTab() {
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-[#04101f] border border-white/[0.08] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
             >
-              <div className="p-6">
-                {/* Header */}
-                <div className="flex items-start justify-between mb-5">
+              <div className="p-4">
+                {/* Header — compact so customer + items are visible without scrolling */}
+                <div className="flex items-start justify-between mb-3 gap-2">
                   <div>
                     <h3 className="text-white font-bold text-lg font-mono">
                       {(selected as any).bankTransferRef || `#${selected.id?.slice(-8).toUpperCase()}`}
