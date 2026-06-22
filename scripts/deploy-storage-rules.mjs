@@ -65,6 +65,10 @@ for (const bucketId of bucketIds) {
 
   const data = await response.json();
   if (!response.ok) {
+    if (response.status === 404 && bucketId.endsWith('.appspot.com')) {
+      console.log('Legacy storage bucket not present, skipped:', bucketId);
+      continue;
+    }
     console.error(`Storage release update failed for ${bucketId}:`, data);
     process.exit(1);
   }
