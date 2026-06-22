@@ -290,11 +290,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         // browser finishes downloading it. Pairs with the `media="print"`
         // hint on the <link> above so fonts never block first paint.
         children:
-          "(function(){var l=document.getElementById('gfonts');if(!l)return;function s(){l.media='all'}if(l.sheet){s()}else{l.addEventListener('load',s,{once:true})}})();",
+          "(function(){var l=document.getElementById('gfonts');if(l){function s(){l.media='all'}if(l.sheet){s()}else{l.addEventListener('load',s,{once:true})}}var a=document.getElementById('appcss');if(a){function t(){a.media='all'}if(a.sheet){t()}else{a.addEventListener('load',t,{once:true})}}})();",
       },
     ],
     links: [
-      { rel: "stylesheet", href: appCss },
+      // Main Tailwind/app stylesheet — deferred to non-blocking via the
+      // media=print swap pattern. A small block of critical CSS is inlined
+      // in RootShell's <head> so first paint isn't unstyled while this
+      // downloads. Inline script in `scripts` above swaps media back to
+      // "all" the moment the sheet has parsed.
+      { rel: "preload", as: "style", href: appCss },
+      { rel: "stylesheet", href: appCss, media: "print", id: "appcss" },
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", type: "image/png", sizes: "16x16", href: "/icon-16.png" },
       { rel: "icon", type: "image/png", sizes: "32x32", href: "/icon-32.png" },
@@ -324,6 +330,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
     ],
   }),
+
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
