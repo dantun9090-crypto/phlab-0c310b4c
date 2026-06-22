@@ -1379,6 +1379,7 @@ export default function OrdersTab() {
                     </button>
                   </div>
                 )}
+                </div>
 
                 {/* Actions */}
                 <div className="flex gap-3">
