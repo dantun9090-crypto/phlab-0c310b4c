@@ -1055,15 +1055,16 @@ export function Layout({ children }: LayoutProps) {
                         </div>
                       ))}
                     </div>
-                    {/* Return to Catalogue */}
-                    <Link
-                      to="/products"
+                    {/* Continue Shopping — closes drawer and keeps your scroll position */}
+                    <button
+                      type="button"
                       onClick={closeCart}
-                      className="w-full py-2.5 rounded-xl border border-white/[0.08] hover:border-white/20 bg-white/[0.03] hover:bg-white/[0.06] text-[#9cb8d9] hover:text-white text-sm font-medium transition-all flex items-center justify-center gap-2"
+                      className="w-full py-2.5 rounded-xl border border-emerald-500/30 hover:border-emerald-400/60 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 hover:text-emerald-200 text-sm font-semibold transition-all flex items-center justify-center gap-2"
                     >
                       <ChevronLeft className="w-4 h-4" />
-                      Return to Catalogue
-                    </Link>
+                      Continue Shopping — add more products
+                    </button>
+                    <p className="text-[10px] text-[#7895bd] text-center">Your cart stays saved while you keep browsing.</p>
                   </>
                 ) : null}
               </div>
