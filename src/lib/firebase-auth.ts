@@ -50,12 +50,18 @@ if (typeof window !== 'undefined') {
     if (window.localStorage.getItem(REMEMBER_KEY) === '0') remembered = false;
   } catch { /* storage blocked → assume remembered */ }
 
-  const chain = remembered
-    ? [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
-    : [browserSessionPersistence];
-  setPersistence(auth, chain).catch((e) => {
-    console.warn('[auth] initial setPersistence failed:', e);
-  });
+  if (remembered) {
+    // Try indexedDB first (survives browser restart), fall back to localStorage.
+    setPersistence(auth, indexedDBLocalPersistence).catch(() =>
+      setPersistence(auth, browserLocalPersistence).catch((e) => {
+        console.warn('[auth] persistent setPersistence failed:', e);
+      }),
+    );
+  } else {
+    setPersistence(auth, browserSessionPersistence).catch((e) => {
+      console.warn('[auth] session setPersistence failed:', e);
+    });
+  }
 }
 
 export { onAuthStateChanged };
