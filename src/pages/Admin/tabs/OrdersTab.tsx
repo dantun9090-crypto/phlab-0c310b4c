@@ -1011,6 +1011,7 @@ export default function OrdersTab() {
                   </div>
                 </div>
 
+                <div className="px-4 pt-4 pb-2">
                 {/* Customer */}
                 {(() => {
                   const c = (selected as any).customer;
