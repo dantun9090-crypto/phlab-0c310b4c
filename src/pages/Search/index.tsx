@@ -5,7 +5,8 @@ import { subscribeToProducts } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
 // Articles bundle (~291KB) is dynamically imported inside the component below
 // to keep it off the critical path when /search is prefetched.
-import type { articles as ArticlesType } from '@/pages/Resources/data/articles';
+import type { articles as ArticlesValue } from '@/pages/Resources/data/articles';
+type Article = (typeof ArticlesValue)[number];
 import { nameToSlug } from '@/lib/seedProducts';
 import { getProductImage } from '@/lib/productImages';
 import { dispatchAddToCart } from '@/components/Layout';
@@ -60,7 +61,7 @@ function SkeletonCard() {
 }
 
 // ── Article result card ───────────────────────────────────────────────────────
-function ArticleCard({ article, query }: { article: ArticlesType[0]; query: string }) {
+function ArticleCard({ article, query }: { article: Article; query: string }) {
   return (
     <Link
       to={`/resources/${article.slug}`}
@@ -287,7 +288,7 @@ export default function SearchPage() {
 
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
-  const [articles, setArticles] = useState<ArticlesType>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
 
   // Subscribe to products
   useEffect(() => {
