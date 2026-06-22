@@ -84,6 +84,7 @@ const iconInputStyle = (hasError?: boolean): React.CSSProperties => ({
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const [cart, setCart] = useState<CartItem[]>([]);
+  const freeGiftCfg = useFreeGiftConfig();
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [siteSettings, setSiteSettings] = useState<any>({
     bankTransferEnabled: true,
