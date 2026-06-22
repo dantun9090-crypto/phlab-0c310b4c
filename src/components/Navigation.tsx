@@ -284,10 +284,11 @@ export function Navigation({
         onClick={onMobileMenuToggle} aria-hidden="true" />
 
       <aside role="dialog" aria-modal="true" aria-label="Navigation menu"
-        className="fixed inset-y-0 right-0 z-[99] md:hidden flex flex-col"
+        className="fixed right-0 z-[99] md:hidden flex flex-col"
         style={{
           width: 'min(320px, 90vw)',
           top: 'calc(32px + 56px + var(--rg-banner-h, 0px))',
+          bottom: 0,
           background: '#040d1a',
           borderLeft: '1px solid rgba(255,255,255,0.06)',
           boxShadow: '-24px 0 80px rgba(0,0,0,0.6)',
