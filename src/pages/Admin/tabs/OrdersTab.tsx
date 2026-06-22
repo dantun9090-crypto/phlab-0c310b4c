@@ -953,7 +953,7 @@ export default function OrdersTab() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#04101f] border border-white/[0.08] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+              className="bg-[#04101f] border border-white/[0.08] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto"
             >
               <div className="p-4">
                 {/* Header — compact so customer + items are visible without scrolling */}
