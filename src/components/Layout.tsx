@@ -483,7 +483,11 @@ export function Layout({ children }: LayoutProps) {
       }
       return [...prev, { ...item, quantity: 1 }];
     });
-    setIsCartOpen(true);
+    // Show a small toast instead of auto-opening the drawer so the page
+    // doesn't jump and the researcher can keep adding more blends in one go.
+    setAddToast(`Added ${item.name}${item.dosage ? ` · ${item.dosage}` : ''} — keep adding or open cart`);
+    if (addToastTimer.current) clearTimeout(addToastTimer.current);
+    addToastTimer.current = setTimeout(() => setAddToast(null), 2800);
     try {
       trackAddToCart({
         item_id: String(item.id),
