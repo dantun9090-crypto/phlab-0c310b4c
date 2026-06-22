@@ -3,7 +3,9 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Search, FlaskConical, BookOpen, X, ChevronRight, ShoppingCart } from 'lucide-react';
 import { subscribeToProducts } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
-import { articles } from '@/pages/Resources/data/articles';
+// Articles bundle (~291KB) is dynamically imported inside the component below
+// to keep it off the critical path when /search is prefetched.
+import type { articles as ArticlesType } from '@/pages/Resources/data/articles';
 import { nameToSlug } from '@/lib/seedProducts';
 import { getProductImage } from '@/lib/productImages';
 import { dispatchAddToCart } from '@/components/Layout';
@@ -58,7 +60,7 @@ function SkeletonCard() {
 }
 
 // ── Article result card ───────────────────────────────────────────────────────
-function ArticleCard({ article, query }: { article: typeof articles[0]; query: string }) {
+function ArticleCard({ article, query }: { article: ArticlesType[0]; query: string }) {
   return (
     <Link
       to={`/resources/${article.slug}`}
@@ -285,6 +287,7 @@ export default function SearchPage() {
 
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(true);
+  const [articles, setArticles] = useState<ArticlesType>([]);
 
   // Subscribe to products
   useEffect(() => {
@@ -293,6 +296,15 @@ export default function SearchPage() {
       setLoadingProducts(false);
     });
     return () => unsub();
+  }, []);
+
+  // Lazy-load the 291KB articles bundle only when the Search page actually mounts
+  useEffect(() => {
+    let cancelled = false;
+    import('@/pages/Resources/data/articles').then(m => {
+      if (!cancelled) setArticles(m.articles);
+    }).catch(() => { /* ignore */ });
+    return () => { cancelled = true; };
   }, []);
 
   // Sync query from URL
