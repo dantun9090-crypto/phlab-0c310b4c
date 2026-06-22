@@ -52,7 +52,9 @@ async function fetchProductRequiresGate(slug: string): Promise<boolean | null> {
 
 export default function ResearchGate() {
   const [showModal, setShowModal]         = useState(false);
-  const [bannerVisible, setBannerVisible] = useState(true);
+  // H2: auto-hide the sticky banner once the user has acknowledged research-use
+  // so mobile no longer carries a 34px + 32px banner stack on every page.
+  const [bannerVisible, setBannerVisible] = useState(() => !isConfirmed());
   const [confirmed, setConfirmed]         = useState(false);
   const [btnHover, setBtnHover]           = useState(false);
   const [btnActive, setBtnActive]         = useState(false);
@@ -105,6 +107,7 @@ export default function ResearchGate() {
     saveConfirmation();
     setConfirmed(true);
     setShowModal(false);
+    setBannerVisible(false); // H2: collapse banner stack after acknowledgement
     notifyGateCleared();
   };
 
