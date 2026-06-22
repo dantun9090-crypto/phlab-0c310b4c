@@ -45,7 +45,9 @@ function uploadToStorage(file: File, path: string, onProgress?: (p: number) => v
       return;
     }
     const ref = storageRef(storage, path);
-    const task = uploadBytesResumable(ref, file);
+    const task = uploadBytesResumable(ref, file, {
+      contentType: file.type || 'image/webp',
+    });
     task.on('state_changed',
       (s) => onProgress?.(Math.round((s.bytesTransferred / s.totalBytes) * 100)),
       reject,
@@ -407,13 +409,16 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
   const uploadHplcImage = async (idx: number, file: File) => {
     try {
       const compressed = await compressImage(file, 1400, 0.85);
-      const path = `products/${formData.slug || formData.id || 'tmp'}/hplc-${idx}-${Date.now()}.webp`;
+      const pid = pendingId.current;
+      const path = `products/${pid}/images/hplc-${idx}-${Date.now()}.webp`;
       const url = await uploadToStorage(compressed, path);
       updateVariant(idx, 'hplcImageUrl', url);
       updateVariant(idx, 'hplcTested', true);
       updateVariant(idx, 'hplcTestedAt', new Date().toISOString());
     } catch (e: any) {
-      setSaveMsg({ type: 'error', text: e?.message || 'HPLC upload failed' });
+      const msg = String(e?.message || e?.code || '');
+      const isPermission = e?.code === 'storage/unauthorized' || msg.includes('permission') || msg.includes('unauthorized') || msg.includes('403');
+      setSaveMsg({ type: 'error', text: isPermission ? 'HPLC upload blocked by Storage permissions. Try again after the rules update finishes.' : (e?.message || 'HPLC upload failed') });
     }
   };
 
