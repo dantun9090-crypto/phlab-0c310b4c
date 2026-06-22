@@ -1495,6 +1495,30 @@ export function Layout({ children }: LayoutProps) {
         </a>
       )}
 
+      {/* ── Add-to-cart toast (replaces auto-opening drawer so page doesn't jump) ── */}
+      {addToast && (
+        <div
+          className="fixed left-1/2 -translate-x-1/2 z-[10002] pointer-events-auto"
+          style={{ bottom: 'calc(72px + env(safe-area-inset-bottom))' }}
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-emerald-500/40 bg-[#0b1a30]/95 backdrop-blur shadow-2xl shadow-emerald-500/10 max-w-[92vw]">
+            <div className="w-7 h-7 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+              <ShoppingCart className="w-4 h-4 text-emerald-300" />
+            </div>
+            <p className="text-white text-xs font-medium flex-1 min-w-0 truncate">{addToast}</p>
+            <button
+              type="button"
+              onClick={() => { setAddToast(null); setIsCartOpen(true); }}
+              className="shrink-0 px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-[#04101f] text-xs font-bold transition-colors"
+            >
+              View cart
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Sticky MHRA Disclaimer Bar — hidden on auth/admin pages ── */}
       {!isCleanPage && <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
         <div
