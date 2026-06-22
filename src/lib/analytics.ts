@@ -22,11 +22,14 @@ declare global {
 }
 
 const DEFAULT_MEASUREMENT_ID = 'G-5HM4YT7HDW';
+const GOOGLE_ADS_CONVERSION_ID = (import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID as string | undefined)?.trim() || '';
+const GOOGLE_ADS_PURCHASE_LABEL = (import.meta.env.VITE_GOOGLE_ADS_PURCHASE_LABEL as string | undefined)?.trim() || '';
 const GOOGLE_DESTINATION_IDS = [
   DEFAULT_MEASUREMENT_ID,
   'GT-P3HVF8R5',
   'GT-WRHD4Q69',
   'MC-KJMB7MKB29',
+  ...(GOOGLE_ADS_CONVERSION_ID ? [GOOGLE_ADS_CONVERSION_ID] : []),
 ];
 // First-party Cloudflare "Google Tag Gateway" endpoint. Loading gtag.js from our
 // own origin (instead of www.googletagmanager.com) bypasses most ad-blockers and
@@ -301,6 +304,26 @@ export function trackCtaClick(label: string, location?: string): void {
 
 export function trackPurchase(transactionId: string, value: number, items: GaItem[]): void {
   trackEvent('purchase', { transaction_id: transactionId, currency: 'GBP', value, items });
+  trackAdsPurchaseConversion(transactionId, value);
+}
+
+/**
+ * Fire a Google Ads `conversion` event for a purchase. Requires both
+ * VITE_GOOGLE_ADS_CONVERSION_ID (AW-XXXXXXXXXX) and
+ * VITE_GOOGLE_ADS_PURCHASE_LABEL to be set at build time. No-op otherwise.
+ */
+export function trackAdsPurchaseConversion(transactionId: string, value: number): void {
+  if (!GOOGLE_ADS_CONVERSION_ID || !GOOGLE_ADS_PURCHASE_LABEL) return;
+  if (!ensureAnalyticsReady()) return;
+  const ga = window.gtag;
+  if (!ga) return;
+  log('ads conversion', { transactionId, value });
+  ga('event', 'conversion', {
+    send_to: `${GOOGLE_ADS_CONVERSION_ID}/${GOOGLE_ADS_PURCHASE_LABEL}`,
+    value,
+    currency: 'GBP',
+    transaction_id: transactionId,
+  });
 }
 
 
