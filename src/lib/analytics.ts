@@ -84,6 +84,11 @@ function gtag(...args: unknown[]) {
 
 function injectScript(id: string): Promise<void> {
   return new Promise((resolve, reject) => {
+    // Already present from hardcoded <script> in <head> (Google wizard visible).
+    if (document.querySelector('script[src*="gtag/js"]')) {
+      resolve();
+      return;
+    }
     if (document.querySelector(`script[data-ga-id="${id}"]`)) {
       resolve();
       return;
