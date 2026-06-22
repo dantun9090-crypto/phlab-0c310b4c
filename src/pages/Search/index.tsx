@@ -3,9 +3,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Search, FlaskConical, BookOpen, X, ChevronRight, ShoppingCart } from 'lucide-react';
 import { subscribeToProducts } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
-// Use the 5KB index instead of the 291KB full articles bundle — search only
-// needs title/subtitle/slug. Saves ~228KB on every route that prefetches /search.
-import { ARTICLE_INDEX as articles } from '@/pages/Resources/data/articles-index';
+import { articles } from '@/pages/Resources/data/articles';
 import { nameToSlug } from '@/lib/seedProducts';
 import { getProductImage } from '@/lib/productImages';
 import { dispatchAddToCart } from '@/components/Layout';
