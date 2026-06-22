@@ -1381,9 +1381,10 @@ export default function OrdersTab() {
                   </div>
                 )}
                 </div>
+                </div>
 
-                {/* Actions */}
-                <div className="flex gap-3">
+                {/* Sticky action bar — always reachable without scrolling */}
+                <div className="sticky bottom-0 z-20 bg-[#04101f]/95 backdrop-blur supports-[backdrop-filter]:bg-[#04101f]/80 border-t border-white/[0.08] px-4 py-3 flex gap-3">
                   <button
                     onClick={() => generateShippingLabelPDF(selected)}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-[#0f2640] hover:bg-[#1a3a5c] text-white rounded-xl text-sm font-medium transition-colors"
