@@ -247,6 +247,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: "https://phlabs.co.uk/og-image.jpg" },
     ],
     scripts: [
+      // Google Analytics 4 — consent defaults BEFORE the external tag loads
+      // so the initial auto-config respects GDPR. Inline script gets nonce
+      // from HTMLRewriter, so CSP strict-dynamic allows it.
+      {
+        children:
+          "(function(){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}var c={a:false,m:false};try{var r=localStorage.getItem('php_cookie_consent');if(r){var p=JSON.parse(r);c.a=!!p.analytics;c.m=!!p.marketing;}}catch(e){}gtag('consent','default',{ad_storage:c.m?'granted':'denied',ad_user_data:c.m?'granted':'denied',ad_personalization:c.m?'granted':'denied',analytics_storage:c.a?'granted':'denied',functionality_storage:'granted',security_storage:'granted',wait_for_update:500});})();",
+      },
+      {
+        async: true,
+        src: "https://www.googletagmanager.com/gtag/js?id=G-5HM4YT7HDW",
+      },
       {
         type: "application/ld+json",
         children: JSON.stringify({
