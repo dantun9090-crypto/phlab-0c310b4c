@@ -955,9 +955,9 @@ export default function OrdersTab() {
               exit={{ scale: 0.95, opacity: 0 }}
               className="bg-[#04101f] border border-white/[0.08] rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
             >
-              <div className="p-6">
-                {/* Header */}
-                <div className="flex items-start justify-between mb-5">
+              <div className="p-4">
+                {/* Header — compact so customer + items are visible without scrolling */}
+                <div className="flex items-start justify-between mb-3 gap-2">
                   <div>
                     <h3 className="text-white font-bold text-lg font-mono">
                       {(selected as any).bankTransferRef || `#${selected.id?.slice(-8).toUpperCase()}`}
@@ -1020,8 +1020,11 @@ export default function OrdersTab() {
                   const address = c ? [c.address, c.city, c.postcode, c.country].filter(Boolean).join(', ') : (selected.shippingAddress || '');
                   const shipping = (selected as any).shippingLabel || '';
                   return (
-                    <div className="bg-[#0b1a30]/60 rounded-xl p-4 mb-4 space-y-1">
-                      <p className="text-[#9cb8d9] text-xs font-medium uppercase tracking-wide mb-2">Customer</p>
+                    <div className="bg-[#0b1a30]/60 rounded-xl p-3 mb-3 space-y-1">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <p className="text-[#9cb8d9] text-[10px] font-medium uppercase tracking-wide">Customer</p>
+                        <span className="text-green-400 font-bold text-base">£{(((selected as any).total || selected.totalAmount || 0)).toFixed(2)} · {selected.items?.length || 0} item{(selected.items?.length || 0) === 1 ? '' : 's'}</span>
+                      </div>
                       <p className="text-white text-sm font-medium">{name}</p>
                       {email && <p className="text-[#9cb8d9] text-sm">{email}</p>}
                       {phone && <p className="text-[#9cb8d9] text-sm">{phone}</p>}

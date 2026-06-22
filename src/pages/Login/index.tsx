@@ -315,10 +315,27 @@ export default function Login() {
                     </div>
                   </div>
 
-                  <label className="flex items-center gap-2 text-[#9cb8d9] text-xs mt-1 select-none cursor-pointer">
-                    <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)}
-                      className="w-4 h-4 rounded border-white/20 bg-[#0d1f38] accent-emerald-500" />
-                    Remember me on this device
+                  <label
+                    htmlFor="rememberMe"
+                    className="flex items-center gap-3 text-[#9cb8d9] text-sm mt-1 select-none cursor-pointer py-2 -my-1 active:opacity-80"
+                    onClick={(e) => {
+                      // Belt-and-suspenders: some mobile browsers swallow the
+                      // native input click when an ancestor handler runs first.
+                      const target = e.target as HTMLElement;
+                      if (target.tagName !== 'INPUT') {
+                        e.preventDefault();
+                        setRememberMe(v => !v);
+                      }
+                    }}
+                  >
+                    <input
+                      id="rememberMe"
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={e => setRememberMe(e.target.checked)}
+                      className="w-5 h-5 rounded border-white/30 bg-[#0d1f38] accent-emerald-500 cursor-pointer"
+                    />
+                    <span>Keep me signed in on this device</span>
                   </label>
 
                   {lockoutMs > 0 && (
