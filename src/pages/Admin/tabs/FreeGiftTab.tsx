@@ -64,13 +64,28 @@ export default function FreeGiftTab() {
           <input
             type="checkbox"
             checked={cfg.enabled}
-            onChange={(e) => setCfg({ ...cfg, enabled: e.target.checked })}
+            onChange={async (e) => {
+              const next = { ...cfg, enabled: e.target.checked };
+              setCfg(next);
+              setSaving(true);
+              setErr(null);
+              try {
+                await saveFreeGiftConfig(next);
+                setSaved(true);
+                setTimeout(() => setSaved(false), 2000);
+              } catch (err: any) {
+                setErr(err?.message || 'Could not save toggle');
+                setCfg({ ...next, enabled: !e.target.checked });
+              } finally {
+                setSaving(false);
+              }
+            }}
             className="mt-1 w-5 h-5 accent-emerald-500"
           />
           <span>
             <span className="block text-white font-semibold">Enable free gift at checkout</span>
             <span className="block text-xs text-slate-400">
-              When ON, every qualifying order shows the gift in the cart summary and the warehouse note.
+              Auto-saves when toggled. Currently: <strong className={cfg.enabled ? 'text-emerald-400' : 'text-slate-400'}>{cfg.enabled ? 'ON' : 'OFF'}</strong>
             </span>
           </span>
         </label>
