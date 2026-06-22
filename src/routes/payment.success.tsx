@@ -106,6 +106,8 @@ function PaymentSuccessPage() {
           console.log("Order found:", true, "status:", res.status, "paid:", res.paid);
           if (res.paid) {
             setPhase("paid");
+            // Fire GA4 purchase conversion (idempotent — once per order).
+            void fireGaPurchaseOnce(res.orderId || orderId);
             // Clear the cart only AFTER the bank confirms — keeps the
             // basket intact if the user cancels at the bank's HPP.
             try {
