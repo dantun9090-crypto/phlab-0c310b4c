@@ -22,11 +22,14 @@ declare global {
 }
 
 const DEFAULT_MEASUREMENT_ID = 'G-5HM4YT7HDW';
+const GOOGLE_ADS_CONVERSION_ID = (import.meta.env.VITE_GOOGLE_ADS_CONVERSION_ID as string | undefined)?.trim() || '';
+const GOOGLE_ADS_PURCHASE_LABEL = (import.meta.env.VITE_GOOGLE_ADS_PURCHASE_LABEL as string | undefined)?.trim() || '';
 const GOOGLE_DESTINATION_IDS = [
   DEFAULT_MEASUREMENT_ID,
   'GT-P3HVF8R5',
   'GT-WRHD4Q69',
   'MC-KJMB7MKB29',
+  ...(GOOGLE_ADS_CONVERSION_ID ? [GOOGLE_ADS_CONVERSION_ID] : []),
 ];
 // First-party Cloudflare "Google Tag Gateway" endpoint. Loading gtag.js from our
 // own origin (instead of www.googletagmanager.com) bypasses most ad-blockers and
