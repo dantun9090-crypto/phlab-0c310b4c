@@ -395,12 +395,26 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
     setFormData(prev => ({ ...prev, variants: [...(prev.variants || []), newVariant] }));
   };
 
-  const updateVariant = (idx: number, field: keyof ProductVariant, value: string | number) => {
+  const updateVariant = (idx: number, field: keyof ProductVariant, value: string | number | boolean) => {
     setFormData(prev => {
       const variants = [...(prev.variants || [])];
       variants[idx] = { ...variants[idx], [field]: value };
       return { ...prev, variants };
     });
+  };
+
+  // HPLC chromatogram upload (per variant) — uses same Firebase Storage path.
+  const uploadHplcImage = async (idx: number, file: File) => {
+    try {
+      const compressed = await compressImage(file, 1400, 0.85);
+      const path = `products/${formData.slug || formData.id || 'tmp'}/hplc-${idx}-${Date.now()}.webp`;
+      const url = await uploadToStorage(compressed, path);
+      updateVariant(idx, 'hplcImageUrl', url);
+      updateVariant(idx, 'hplcTested', true);
+      updateVariant(idx, 'hplcTestedAt', new Date().toISOString());
+    } catch (e: any) {
+      setSaveMsg({ type: 'error', text: e?.message || 'HPLC upload failed' });
+    }
   };
 
   const removeVariant = (idx: number) => {
