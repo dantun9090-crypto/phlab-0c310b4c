@@ -136,6 +136,7 @@ const ITEM_ACCENTS: Record<string, string> = {
   featured: 'from-amber-400 to-yellow-500',
   qc: 'from-emerald-400 to-teal-500',
   promocodes: 'from-emerald-500 to-green-600',
+  freegift: 'from-emerald-400 to-teal-500',
 };
 
 export default function AdminSidebar({ activeTab, setActiveTab, collapsed, setCollapsed, isMobileOpen, onMobileClose }: SidebarProps) {
