@@ -1552,6 +1552,20 @@ export default function CheckoutPage() {
                           {shippingCost === 0 ? 'FREE' : `£${shippingCost.toFixed(2)}`}
                         </span>
                       </div>
+                      {showFreeGift && (
+                        <div className="flex justify-between items-start gap-2 bg-emerald-500/10 border border-emerald-500/25 rounded-lg px-2.5 py-2">
+                          <span className="text-emerald-300 text-[11px] font-semibold flex items-start gap-1.5">
+                            <Tag className="w-3 h-3 mt-0.5 shrink-0" />
+                            <span>
+                              Free Gift: {freeGiftCfg.title}
+                              {freeGiftCfg.description && (
+                                <span className="block text-emerald-300/70 font-normal mt-0.5">{freeGiftCfg.description}</span>
+                              )}
+                            </span>
+                          </span>
+                          <span className="text-emerald-300 text-[11px] font-semibold shrink-0">FREE</span>
+                        </div>
+                      )}
                       {discount > 0 && (
                         <div className="flex justify-between text-emerald-400">
                           <span>Discount ({appliedCoupon?.code})</span>
