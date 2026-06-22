@@ -543,11 +543,38 @@ function installCanonicalEnforcer() {
   };
 }
 
+// Critical above-the-fold CSS — inlined so first paint doesn't wait on the
+// main stylesheet (which is now loaded non-blocking via media=print swap).
+// Keep this small (<3 KB): boot bg/fg, header skeleton, banner stack
+// reserved heights (CLS), and the LoadingFallback. Full Tailwind layer
+// applies as soon as appCss loads (~100ms typical).
+const CRITICAL_CSS = `
+*,*::before,*::after{box-sizing:border-box;border-width:0;border-style:solid;min-width:0}
+html,body,#root{max-width:100%;overflow-x:hidden;margin:0;background:#060f1e;color:#f0f6ff}
+body{font-family:'Inter Tight',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3{font-family:'Cormorant Garamond',Georgia,serif;margin:0;line-height:1.08;letter-spacing:-.015em}
+img,svg,video{display:block;max-width:100%;height:auto}
+header{position:sticky;top:0;z-index:50;min-height:56px;background:rgba(6,15,30,.92);backdrop-filter:saturate(140%) blur(10px);-webkit-backdrop-filter:saturate(140%) blur(10px);border-bottom:1px solid rgba(255,255,255,.06)}
+@media(min-width:768px){header{min-height:64px}}
+[data-phl-banner]{min-height:32px}
+[data-phl-research-banner]{min-height:34px}
+.phl-boot{display:flex;align-items:center;justify-content:center;min-height:60vh;color:#9fb0c8;font-size:14px}
+`;
+
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-GB" style={{ backgroundColor: "#060f1e" }}>
       <head>
         <HeadContent />
+        {/* Inline critical CSS — covers boot bg, header skeleton + banner
+            reserved heights so the page paints styled before the deferred
+            appCss arrives. Keep this synchronous and BEFORE any scripts. */}
+        <style dangerouslySetInnerHTML={{ __html: CRITICAL_CSS }} />
+        {/* No-JS fallback: if scripts are disabled the media=print swap
+            never fires, so reload the main sheet as a blocking stylesheet. */}
+        <noscript>
+          <link rel="stylesheet" href={appCss} />
+        </noscript>
         {/* MUST be first inline script — installs nonce propagator before
             anything else runs, so subsequent injected scripts inherit nonce. */}
         <script dangerouslySetInnerHTML={{ __html: NONCE_PROPAGATOR }} />
@@ -561,6 +588,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
     </html>
   );
 }
+
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
