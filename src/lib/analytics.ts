@@ -144,21 +144,26 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
     return;
   }
 
-  gtag('js', new Date());
-  gtag('config', id, {
-    send_page_view: false, // we fire manually on route changes
-    anonymize_ip: true,
-    allow_google_signals: consent.marketing,
-    allow_ad_personalization_signals: consent.marketing,
-    debug_mode: debugMode, // surfaces in GA4 DebugView
-  });
+  // If the hardcoded <head> bootstrap already ran (window.__phlGaBootstrapped),
+  // it called gtag('config', id) which fired the initial page_view. Skip our
+  // own config to avoid a duplicate hit, and just register the GT- container.
+  const bootstrapped = (window as unknown as { __phlGaBootstrapped?: boolean }).__phlGaBootstrapped === true;
+  if (!bootstrapped) {
+    gtag('js', new Date());
+    gtag('config', id, {
+      send_page_view: false, // we fire manually on route changes
+      anonymize_ip: true,
+      allow_google_signals: consent.marketing,
+      allow_ad_personalization_signals: consent.marketing,
+      debug_mode: debugMode,
+    });
+  }
   // Google Tag container — activates any GTM-linked destinations (Ads, conversions, etc.)
   gtag('config', GOOGLE_TAG_ID, { send_page_view: false });
 
   // Fire initial page view (skip if the hardcoded <head> script already
   // triggered an auto-config page_view — deduplicate via lastTrackedPath).
-  const hardcodedPresent = !!document.querySelector('script[src*="gtag/js"]');
-  if (hardcodedPresent) {
+  if (bootstrapped) {
     lastTrackedPath = window.location.pathname + window.location.search;
   } else {
     trackPageView(window.location.pathname + window.location.search);
