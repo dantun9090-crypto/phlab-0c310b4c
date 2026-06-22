@@ -287,7 +287,7 @@ export function Navigation({
         className="fixed inset-y-0 right-0 z-[99] md:hidden flex flex-col"
         style={{
           width: 'min(320px, 90vw)',
-          top: 'calc(32px + var(--rg-banner-h, 0px))',
+          top: 'calc(32px + 56px + var(--rg-banner-h, 0px))',
           background: '#040d1a',
           borderLeft: '1px solid rgba(255,255,255,0.06)',
           boxShadow: '-24px 0 80px rgba(0,0,0,0.6)',
@@ -295,16 +295,16 @@ export function Navigation({
           transition: 'transform 0.32s cubic-bezier(0.4,0,0.2,1)',
         }}>
         {/* Drawer header: MENU label + close X */}
-        <div className="flex items-center justify-between px-5 shrink-0"
+        <div className="flex items-center justify-between px-5 shrink-0 gap-3"
           style={{ height: '64px', paddingTop: 'env(safe-area-inset-top)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#10b981' }} />
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-2 h-2 rounded-full animate-pulse shrink-0" style={{ background: '#10b981' }} />
             <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#3a6a5a', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
               Menu
             </span>
           </div>
           <button onClick={onMobileMenuToggle} aria-label="Close menu"
-            className="w-10 h-10 rounded-xl flex items-center justify-center"
+            className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
             style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: '#8db4d8' }}>
             <X className="w-4 h-4" />
           </button>
