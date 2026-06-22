@@ -397,3 +397,11 @@ export function renderGoogleCustomerReviewsOptIn(opts: GcrOptInOptions): void {
   log('GCR opt-in scheduled', { orderId: opts.orderId });
 }
 
+
+export function getAnalyticsStatus() {
+  return {
+    loaded,
+    measurementId: currentId,
+    consent: readStoredConsent(),
+  };
+}
