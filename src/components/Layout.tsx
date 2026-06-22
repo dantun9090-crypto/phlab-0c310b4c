@@ -18,7 +18,7 @@ import { CookieConsent } from '@/components/CookieConsent';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
 import { getRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { migrateStoredCart } from '@/lib/cart-migration';
-import { initAnalytics, trackPageView, trackAddToCart, trackBeginCheckout } from '@/lib/analytics';
+import { initAnalytics, trackPageView, trackAddToCart, trackBeginCheckout, renderGoogleMerchantBadge } from '@/lib/analytics';
 import { logCartEvent, safeCartWrite, safeCartRead } from '@/lib/cart-telemetry';
 
 import { Logo } from './Logo';
@@ -130,6 +130,14 @@ export function Layout({ children }: LayoutProps) {
       if (cached) id = (JSON.parse(cached) as { googleAnalyticsId?: string }).googleAnalyticsId?.trim() || undefined;
     } catch { /* ignore */ }
     initAnalytics(id);
+    // Google Customer Reviews floating badge (sitewide trust signal).
+    // Skips admin/auth pages where the badge would obscure UI.
+    const path = window.location.pathname;
+    const skip = path.startsWith('/admin') || path === '/login' || path === '/register';
+    if (!skip) {
+      const t = setTimeout(() => renderGoogleMerchantBadge({ position: 'BOTTOM_RIGHT', region: 'GB' }), 2500);
+      return () => clearTimeout(t);
+    }
   }, []);
   useEffect(() => {
     trackPageView(location.pathname + location.search);
