@@ -175,6 +175,7 @@ function DesktopNavItem({ link, isActive }: { link: NavLink; isActive: (href: st
       onMouseEnter={hasDrop ? openDrop : undefined}
       onMouseLeave={hasDrop ? closeDrop : undefined}>
       <Link to={link.href}
+        aria-current={active ? 'page' : undefined}
         className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-semibold transition-all duration-150"
         style={
           link.highlight
