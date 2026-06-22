@@ -333,13 +333,14 @@ export function Layout({ children }: LayoutProps) {
     return () => unsub();
   }, []);
 
-  // Idle auto-logout — sign user out after 60s of inactivity (not on every page load).
-  // Only runs when a user is signed in. Admin pages have their own 15-min idle handler.
+  // Idle auto-logout — sign user out after 30 minutes of inactivity.
+  // Previously 60 seconds, which logged users out mid-read and broke
+  // checkout flows. Admin has its own stricter 15-min handler.
   useEffect(() => {
     if (!firebaseUser) return;
     if (location.pathname.startsWith('/admin')) return; // admin owns its own idle flow
 
-    const IDLE_MS = 60 * 1000;
+    const IDLE_MS = 30 * 60 * 1000;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     const doLogout = () => {
