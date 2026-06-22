@@ -279,7 +279,7 @@ const INITIAL_PRODUCTS = [
   {
     name: 'GLOW Blend',
     slug: 'glow-blend',
-    description: `GLOW is a proprietary research blend formulated for studies examining combined peptide interactions on cellular senescence, antioxidant defence pathways, and extracellular matrix maintenance. This combination reagent provides a streamlined research model for investigating synergistic effects of multiple bioactive peptides in a single assay system. Supplied as lyophilised powder at 70 mg total weight. For in-vitro research use only — not for human administration or therapeutic application.`,
+    description: `GLOW Blend is a lyophilised research-grade peptide reference reagent supplied for in-vitro laboratory use only. The unit contains two independently characterised peptide constituents co-formulated at a fixed mass ratio for parallel endpoint evaluation in cell-culture assay panels. Each constituent's identity, mass and lot-specific HPLC purity are documented on the released Certificate of Analysis. Supplied as lyophilised powder, 70 mg total mass per vial. Reconstitute in laboratory-grade bacteriostatic or sterile water. Light-sensitive — store at 2–8 °C protected from light prior to reconstitution. Strictly for in-vitro laboratory research by qualified personnel. Not a medicinal product. Not a cosmetic. Not a dietary supplement. Not for human consumption. Not for veterinary use.`,
     category: 'blends',
     sku: 'GLOW-001',
     price: 56.99,
@@ -300,14 +300,14 @@ const INITIAL_PRODUCTS = [
       shelfLife: '24 months',
       solvent: 'Bacteriostatic water',
     },
-    research: `Research blend - combined peptide synergy studies for cellular ageing and antioxidant pathway research. Laboratory use only.`,
+    research: `Multi-component peptide reference reagent for parallel in-vitro endpoint evaluation in laboratory cell-culture assay panels. Laboratory use only.`,
   },
 
   // ─── KLOW blend ────────────────────────────────────────────────
   {
     name: 'KLOW Blend',
     slug: 'klow-blend',
-    description: `KLOW is a proprietary research blend formulated for studies examining combined peptide modulation of metabolic signalling, lipolysis regulation, and adipocyte biology. This combination reagent enables multi-target pathway analysis in a single experimental system, reducing assay complexity while maintaining research rigour. Supplied as lyophilised powder at 80 mg total weight. For in-vitro research use only — not for human administration or therapeutic application.`,
+    description: `KLOW Blend is a lyophilised research-grade four-peptide reference reagent supplied for in-vitro laboratory use only. The unit contains four independently characterised peptide constituents co-formulated in a single reconstitution unit for parallel endpoint evaluation in cell-culture assay panels. Each constituent's identity, mass and lot-specific HPLC purity are documented on the released Certificate of Analysis. Supplied as lyophilised powder, 80 mg total mass per vial. Reconstitute in laboratory-grade bacteriostatic or sterile water. Store at 2–8 °C prior to reconstitution. Strictly for in-vitro laboratory research by qualified personnel. Not a medicinal product. Not a cosmetic. Not a dietary supplement. Not for human consumption. Not for veterinary use.`,
     category: 'blends',
     sku: 'KLOW-001',
     price: 63.99,
