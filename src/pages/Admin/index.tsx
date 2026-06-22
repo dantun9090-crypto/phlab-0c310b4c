@@ -427,6 +427,7 @@ export default function AdminPage() {
         case 'sitemapaudit': return <SitemapAuditTab />;
         case 'qc': return <QCDashboardTab />;
         case 'promocodes': return <PromoCodesTab />;
+        case 'freegift': return <FreeGiftTab />;
         case 'diagnostics': return <DiagnosticsTab />;
         case 'prerenderstatus': return <PrerenderStatusTab />;
         case 'cacherecache': return <CacheRecacheTab />;
