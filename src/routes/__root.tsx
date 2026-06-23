@@ -362,13 +362,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           ],
         }),
       },
-      {
-        // Swap the Google Fonts stylesheet back to media="all" after the
-        // browser finishes downloading it. Pairs with the `media="print"`
-        // hint on the <link> above so fonts never block first paint.
-        children:
-          "(function(){var l=document.getElementById('gfonts');if(l){function s(){l.media='all'}if(l.sheet){s()}else{l.addEventListener('load',s,{once:true})}}var a=document.getElementById('appcss');if(a){function t(){a.media='all'}if(a.sheet){t()}else{a.addEventListener('load',t,{once:true})}}})();",
-      },
     ],
     links: [
       // Main Tailwind/app stylesheet — deferred to non-blocking via the
