@@ -239,6 +239,17 @@ export default function ProductDetail() {
   const [editing, setEditing] = useState(false);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [hplcLightboxSrc, setHplcLightboxSrc] = useState<string | null>(null);
+
+  // Lock background scroll while any lightbox / overlay is open
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const anyOpen = lightboxOpen || !!hplcLightboxSrc;
+    if (!anyOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [lightboxOpen, hplcLightboxSrc]);
   const [stickyVisible, setStickyVisible] = useState(false);
   const ctaRef = useRef<HTMLDivElement>(null);
 
@@ -1323,6 +1334,43 @@ export default function ProductDetail() {
               );
             })()}
           </AnimatePresence>
+
+          {/* ── HPLC Lightbox ── */}
+          <AnimatePresence>
+            {hplcLightboxSrc && (
+              <motion.div
+                key="hplc-lightbox"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4"
+                onClick={() => setHplcLightboxSrc(null)}
+                onKeyDown={(e) => { if (e.key === 'Escape') setHplcLightboxSrc(null); }}
+                tabIndex={0}
+              >
+                <button
+                  className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white transition-all z-10"
+                  onClick={() => setHplcLightboxSrc(null)}
+                  aria-label="Close HPLC view"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                <motion.img
+                  src={hplcLightboxSrc}
+                  alt={`${product.name} HPLC chromatogram — ≥99% purity`}
+                  className="max-w-[96vw] max-h-[92vh] object-contain rounded-xl select-none"
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.02 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  draggable={false}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/60 text-xs">Tap outside or press Esc to close</div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           {/* ── Right: Product Info ── */}
           <motion.div
             initial={{ opacity: 0, x: 24 }}
@@ -1412,14 +1460,19 @@ export default function ProductDetail() {
                           )}
                         </div>
                         {variant?.hplcImageUrl && (
-                          <a href={variant.hplcImageUrl} target="_blank" rel="noopener noreferrer" className="block">
+                          <button
+                            type="button"
+                            onClick={() => setHplcLightboxSrc(variant.hplcImageUrl!)}
+                            className="block w-full text-left"
+                            aria-label="View HPLC chromatogram full size"
+                          >
                             <img
                               src={variant.hplcImageUrl}
                               alt={`${product.name} ${variant.name || ''} HPLC chromatogram — ≥99% purity`}
                               loading="lazy"
-                              className="w-full max-h-72 object-contain rounded-lg bg-white/5 border border-emerald-500/15 hover:border-emerald-400/40 transition-colors"
+                              className="w-full max-h-72 object-contain rounded-lg bg-white/5 border border-emerald-500/15 hover:border-emerald-400/40 transition-colors cursor-zoom-in"
                             />
-                          </a>
+                          </button>
                         )}
                       </div>
                     )}
