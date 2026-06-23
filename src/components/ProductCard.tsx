@@ -294,6 +294,39 @@ export function ProductCard({
           </button>
         </div>
 
+        {/* COA button — visible when product has a Certificate of Analysis PDF */}
+        {hasCoa && (
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); setCoaOpen(true); }}
+            aria-label={`View Certificate of Analysis for ${name}`}
+            aria-haspopup="dialog"
+            className="mt-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold transition-all duration-200"
+            style={{
+              background: 'rgba(37,99,235,0.10)',
+              border: '1px solid rgba(59,130,246,0.30)',
+              color: '#60a5fa',
+            }}
+            onMouseEnter={(e) => (e.currentTarget as HTMLElement).style.background = 'rgba(37,99,235,0.18)'}
+            onMouseLeave={(e) => (e.currentTarget as HTMLElement).style.background = 'rgba(37,99,235,0.10)'}
+          >
+            <FileText style={{ width: 12, height: 12 }} />
+            View COA HPLC Certificate
+          </button>
+        )}
+
+        {hasCoa && product.coaPdfUrl && (
+          <CoaModal
+            open={coaOpen}
+            onClose={() => setCoaOpen(false)}
+            pdfUrl={product.coaPdfUrl}
+            productName={name}
+            filename={product.coaPdfName}
+            batch={product.coaBatch}
+            uploadedAt={product.coaUploadedAt}
+          />
+        )}
+
         {/* Admin quick edit */}
         {isAdmin && onEdit && (
           <button
