@@ -449,6 +449,51 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
     }
   };
 
+  // COA PDF upload (product-level Certificate of Analysis)
+  const uploadCoaFile = async (file: File) => {
+    setCoaError('');
+    if (file.type !== 'application/pdf') {
+      setCoaError('Only PDF files are accepted.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setCoaError('PDF must be 10 MB or smaller.');
+      return;
+    }
+    setCoaUploading(true);
+    try {
+      const idToken = await getAdminIdToken();
+      const base64 = await fileToBase64(file);
+      const uploaded = await uploadCoaPdf({
+        data: {
+          idToken,
+          productId: pendingId.current,
+          filename: file.name,
+          contentType: 'application/pdf',
+          base64,
+        },
+      });
+      setFormData(p => ({
+        ...p,
+        coaPdfUrl: uploaded.url,
+        coaPdfName: file.name,
+        coaUploadedAt: new Date().toISOString(),
+      } as any));
+    } catch (e: any) {
+      const msg = String(e?.message || e?.code || '');
+      const isPermission = msg.includes('permission') || msg.includes('unauthorized') || msg.includes('403');
+      setCoaError(isPermission ? 'Upload blocked: admin permission could not be verified. Sign in again.' : (e?.message || 'COA upload failed'));
+    } finally {
+      setCoaUploading(false);
+    }
+  };
+
+  const removeCoa = () => {
+    setFormData(p => ({ ...p, coaPdfUrl: '', coaPdfName: '', coaBatch: '', coaUploadedAt: '' } as any));
+    if (coaInputRef.current) coaInputRef.current.value = '';
+  };
+
+
   const removeVariant = (idx: number) => {
     setFormData(prev => ({ ...prev, variants: (prev.variants || []).filter((_, i) => i !== idx) }));
   };
