@@ -296,6 +296,11 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
 
   const [saveMsg, setSaveMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // COA (Certificate of Analysis) PDF upload state
+  const [coaUploading, setCoaUploading] = useState(false);
+  const [coaError, setCoaError] = useState('');
+  const coaInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (product) {
       pendingId.current = product.id;
