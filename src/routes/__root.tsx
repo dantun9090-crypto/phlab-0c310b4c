@@ -186,6 +186,15 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
       return;
     }
     if (!isOnline()) return;
+    // Never auto-reload on critical user flows — destroys form/auth/cart state.
+    try {
+      const path = window.location.pathname.toLowerCase();
+      const NEVER = ["/login", "/auth", "/account", "/checkout", "/cart", "/register"];
+      if (NEVER.some((p) => path.startsWith(p))) {
+        console.warn("[RELOAD BLOCKED] Critical route:", path);
+        return;
+      }
+    } catch { /* ignore */ }
     // Retry once for true stale-route errors, then stop and show this screen.
     let attempt = 0;
     try {
