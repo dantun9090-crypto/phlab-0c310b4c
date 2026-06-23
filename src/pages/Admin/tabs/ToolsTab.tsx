@@ -25,36 +25,54 @@ const STATIC_PAGES = [
   '/quality-control',
 ];
 
-// Firebase storage rules template
+// Firebase storage rules template — keep in sync with /storage.rules.
 // SECURITY: Writes/deletes are restricted to admin accounts only.
-// `request.auth != null` would allow ANY signed-in customer to overwrite or delete
-// product images, banners, adverts and manuals — we gate on the `customers/{uid}.isAdmin`
-// flag in Firestore instead.
 const STORAGE_RULES = `rules_version = '2';
+
+// PH Labs — hardened Firebase Storage rules
+// Default deny. Public read only for product/marketing assets. Writes admin-only.
 service firebase.storage {
   match /b/{bucket}/o {
+    function isAuthed() { return request.auth != null; }
+
     function isAdmin() {
-      return request.auth != null
+      return isAuthed()
         && firestore.exists(/databases/(default)/documents/customers/$(request.auth.uid))
         && firestore.get(/databases/(default)/documents/customers/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    match /banners/{fileName} {
-      allow read: if true;
-      allow write, delete: if isAdmin();
-    }
+    function isImage()    { return request.resource.contentType.matches('image/.*'); }
+    function isUnder10MB(){ return request.resource.size < 10 * 1024 * 1024; }
+
+    // Public, read-only product / marketing imagery
     match /products/{allPaths=**} {
       allow read: if true;
-      allow write, delete: if isAdmin();
+      allow write: if isAdmin() && isImage() && isUnder10MB();
     }
-    match /adverts/{fileName} {
+    match /banners/{allPaths=**} {
       allow read: if true;
-      allow write, delete: if isAdmin();
+      allow write: if isAdmin() && isImage() && isUnder10MB();
     }
-    match /manuals/{fileName} {
+    match /articles/{allPaths=**} {
       allow read: if true;
-      allow write, delete: if isAdmin();
+      allow write: if isAdmin() && isImage() && isUnder10MB();
     }
+    match /public/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && isUnder10MB();
+    }
+
+    // Per-user private uploads (avatars / order docs). Only owner reads/writes.
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if isAuthed() && request.auth.uid == userId && isUnder10MB();
+    }
+
+    // Admin-only ops storage
+    match /admin/{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // Default deny everything else
     match /{allPaths=**} {
       allow read, write: if false;
     }
