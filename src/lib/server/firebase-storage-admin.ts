@@ -111,9 +111,13 @@ function extFromContentType(contentType: string): string {
   return "webp";
 }
 
+function isAllowedImageType(contentType: string): boolean {
+  return ["image/webp", "image/jpeg", "image/png", "image/gif", "image/avif"].includes(contentType);
+}
+
 export async function uploadHplcStorageImage(input: UploadStorageImageInput): Promise<UploadStorageImageResult> {
   const contentType = input.contentType || "image/webp";
-  if (!contentType.startsWith("image/")) throw new Error("invalid_image_type");
+  if (!isAllowedImageType(contentType)) throw new Error("invalid_image_type");
 
   const bytes = base64ToBytes(input.base64);
   if (bytes.byteLength === 0 || bytes.byteLength > 5 * 1024 * 1024) throw new Error("invalid_image_size");
