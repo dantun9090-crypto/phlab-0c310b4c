@@ -114,22 +114,173 @@ async function listRecentProducts(acct: SA, token: string, limit: number): Promi
   }).filter((p) => p.imageUrl);
 }
 
+// ── Firestore value (de)serialisation (shared) ───────────────────────────
+function toFsValue(v: any): any {
+  if (v === null || v === undefined) return { nullValue: null };
+  if (typeof v === 'boolean') return { booleanValue: v };
+  if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
+  if (typeof v === 'string') return { stringValue: v };
+  if (Array.isArray(v)) return { arrayValue: { values: v.map(toFsValue) } };
+  if (typeof v === 'object') return { mapValue: { fields: Object.fromEntries(Object.entries(v).map(([k, val]) => [k, toFsValue(val)])) } };
+  return { stringValue: String(v) };
+}
+function fromFsFields(fields: Record<string, any> | undefined): Record<string, any> {
+  const out: Record<string, any> = {};
+  for (const [k, v] of Object.entries(fields || {})) {
+    if ('stringValue' in v) out[k] = v.stringValue;
+    else if ('integerValue' in v) out[k] = Number(v.integerValue);
+    else if ('booleanValue' in v) out[k] = v.booleanValue;
+    else if ('nullValue' in v) out[k] = null;
+    else if ('timestampValue' in v) out[k] = v.timestampValue;
+  }
+  return out;
+}
+
 async function writeRun(acct: SA, token: string, doc: Record<string, unknown>): Promise<void> {
   const url = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents/watchdog_runs`;
-  const toFields = (v: any): any => {
-    if (v === null || v === undefined) return { nullValue: null };
-    if (typeof v === 'boolean') return { booleanValue: v };
-    if (typeof v === 'number') return Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v };
-    if (typeof v === 'string') return { stringValue: v };
-    if (Array.isArray(v)) return { arrayValue: { values: v.map(toFields) } };
-    if (typeof v === 'object') return { mapValue: { fields: Object.fromEntries(Object.entries(v).map(([k, val]) => [k, toFields(val)])) } };
-    return { stringValue: String(v) };
-  };
   await fetch(url, {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
-    body: JSON.stringify({ fields: Object.fromEntries(Object.entries(doc).map(([k, v]) => [k, toFields(v)])) }),
+    body: JSON.stringify({ fields: Object.fromEntries(Object.entries(doc).map(([k, v]) => [k, toFsValue(v)])) }),
   });
+}
+
+// ── Cloudflare Dev Mode watchdog ─────────────────────────────────────────
+const CF_ZONE_ID = 'ed093ef4578e8e3568e26c3e979558c6';
+const DEVMODE_DOC_PATH = 'watchdog/devmode_alerts';
+const TELEGRAM_GATEWAY = 'https://connector-gateway.lovable.dev/telegram';
+
+async function getDevmodeDoc(acct: SA, token: string): Promise<Record<string, any> | null> {
+  const url = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents/${DEVMODE_DOC_PATH}`;
+  const res = await fetch(url, { headers: { authorization: `Bearer ${token}` } });
+  if (!res.ok) return null;
+  const j = (await res.json()) as { fields?: Record<string, any> };
+  return fromFsFields(j.fields);
+}
+
+async function setDevmodeDoc(acct: SA, token: string, patch: Record<string, any>): Promise<void> {
+  const mask = Object.keys(patch).map((f) => `updateMask.fieldPaths=${encodeURIComponent(f)}`).join('&');
+  const url = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents/${DEVMODE_DOC_PATH}?${mask}`;
+  await fetch(url, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    body: JSON.stringify({ fields: Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, toFsValue(v)])) }),
+  });
+}
+
+async function writeAuditLog(acct: SA, token: string, doc: Record<string, unknown>): Promise<void> {
+  const url = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents/auditLogs`;
+  try {
+    await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+      body: JSON.stringify({ fields: Object.fromEntries(Object.entries(doc).map(([k, v]) => [k, toFsValue(v)])) }),
+    });
+  } catch { /* best-effort */ }
+}
+
+async function sendTelegramAlert(text: string): Promise<{ ok: boolean; detail: string }> {
+  const lovableKey = process.env.LOVABLE_API_KEY;
+  const tgKey = process.env.TELEGRAM_API_KEY;
+  const chatId = process.env.TELEGRAM_ALERT_CHAT_ID || '7971499178';
+  if (!lovableKey || !tgKey) {
+    console.warn('[watchdog:devmode] Telegram alerting not configured — skipping');
+    return { ok: false, detail: 'telegram credentials missing (degraded)' };
+  }
+  try {
+    const res = await fetch(`${TELEGRAM_GATEWAY}/sendMessage`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableKey}`,
+        'X-Connection-Api-Key': tgKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML', disable_web_page_preview: true }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    return { ok: res.ok, detail: `telegram ${res.status}` };
+  } catch (e: any) {
+    return { ok: false, detail: e?.message || 'telegram send failed' };
+  }
+}
+
+async function checkCloudflareDevMode(acct: SA, token: string): Promise<CheckResult> {
+  const t0 = Date.now();
+  const nowIso = new Date().toISOString();
+  try {
+    const cfToken = process.env.CLOUDFLARE_API_TOKEN;
+    if (!cfToken) {
+      await writeAuditLog(acct, token, { kind: 'watchdog_devmode_check', at: nowIso, ok: false, detail: 'CLOUDFLARE_API_TOKEN missing' });
+      return { name: 'cloudflare-devmode', ok: false, detail: 'CLOUDFLARE_API_TOKEN missing (degraded)', durationMs: Date.now() - t0 };
+    }
+    const cfRes = await fetch(
+      `https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/settings/development_mode`,
+      { headers: { Authorization: `Bearer ${cfToken}` }, signal: AbortSignal.timeout(15_000) },
+    );
+    const cfJson = (await cfRes.json()) as {
+      success: boolean;
+      result?: { value: 'on' | 'off'; time_remaining?: number; modified_on?: string | null };
+    };
+    if (!cfRes.ok || !cfJson.success || !cfJson.result) {
+      await writeAuditLog(acct, token, { kind: 'watchdog_devmode_check', at: nowIso, ok: false, detail: `cf api ${cfRes.status}` });
+      return { name: 'cloudflare-devmode', ok: false, detail: `cf api ${cfRes.status}`, durationMs: Date.now() - t0 };
+    }
+
+    const value = cfJson.result.value;
+    const modifiedOn = cfJson.result.modified_on || null;
+    const doc = (await getDevmodeDoc(acct, token)) || {};
+    const patch: Record<string, any> = { lastCheckAt: nowIso };
+    let detail = `dev_mode=${value}`;
+    let alertOk = false;
+
+    if (value === 'on') {
+      const prevStart = doc.sessionStartedAt as string | undefined;
+      const isNewSession = !prevStart || (modifiedOn && modifiedOn !== prevStart) || !!doc.turnedOffAt;
+      const sessionStart = modifiedOn || prevStart || nowIso;
+      if (isNewSession) {
+        patch.sessionStartedAt = sessionStart;
+        patch.alertSentAt = null;
+        patch.escalationSentAt = null;
+        patch.turnedOffAt = null;
+      }
+      const startMs = Date.parse(sessionStart);
+      const ageMin = Number.isFinite(startMs) ? Math.round((Date.now() - startMs) / 60_000) : 0;
+      detail += ` for ${ageMin}min`;
+
+      const alreadyAlerted = !isNewSession && !!doc.alertSentAt;
+      const alreadyEscalated = !isNewSession && !!doc.escalationSentAt;
+
+      if (ageMin > 120 && !alreadyEscalated) {
+        const r = await sendTelegramAlert(
+          `🆘 <b>PHLabs Watchdog ESCALATION</b>\nCloudflare Dev Mode still <b>ON</b> after ${ageMin} min on phlabs.co.uk.\nAuto-expires in ~${Math.max(0, 180 - ageMin)} min → expect blank pages!\n<b>Turn off NOW</b> in Admin → Cloudflare.`,
+        );
+        if (r.ok) { patch.escalationSentAt = nowIso; alertOk = true; }
+        detail += ` | escalation ${r.ok ? 'sent' : 'FAILED:' + r.detail}`;
+      } else if (ageMin > 30 && !alreadyAlerted) {
+        const r = await sendTelegramAlert(
+          `🚨 <b>PHLabs Watchdog</b>\nCloudflare Dev Mode <b>ON</b> for &gt;30 min on phlabs.co.uk.\nBlank page risk after 3h auto-expiry!\nTurn off in Admin → Cloudflare panel.\n\n<i>Session started: ${sessionStart}</i>`,
+        );
+        if (r.ok) { patch.alertSentAt = nowIso; alertOk = true; }
+        detail += ` | alert ${r.ok ? 'sent' : 'FAILED:' + r.detail}`;
+      }
+    } else {
+      if (doc.sessionStartedAt && !doc.turnedOffAt) {
+        patch.turnedOffAt = nowIso;
+        detail += ' | session closed';
+      }
+    }
+
+    await setDevmodeDoc(acct, token, patch);
+    await writeAuditLog(acct, token, {
+      kind: 'watchdog_devmode_check', at: nowIso, ok: true, value, modifiedOn, detail, alertSent: alertOk,
+    });
+
+    const ok = value === 'off' || !detail.includes('FAILED');
+    return { name: 'cloudflare-devmode', ok, detail, durationMs: Date.now() - t0 };
+  } catch (e: any) {
+    await writeAuditLog(acct, token, { kind: 'watchdog_devmode_check', at: nowIso, ok: false, detail: e?.message || 'check threw' });
+    return { name: 'cloudflare-devmode', ok: false, detail: e?.message || 'check threw', durationMs: Date.now() - t0 };
+  }
 }
 
 export const Route = createFileRoute('/api/public/hooks/watchdog')({
@@ -333,6 +484,8 @@ export const Route = createFileRoute('/api/public/hooks/watchdog')({
             heals.push({ name: 'wallid-alert-email', ok: false, detail: e?.message || 'enqueue failed' });
           }
         }
+        // ── Cloudflare Dev Mode watchdog (every run; alert dedup via Firestore) ──
+        checks.push(await checkCloudflareDevMode(acct, token));
 
         // ── Summary ──────────────────────────────────────────────────
         const failures = checks.filter((c) => !c.ok);
