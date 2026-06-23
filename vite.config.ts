@@ -15,6 +15,7 @@ const BUILD_ID = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
 export default defineConfig({
   tanstackStart: {
+    client: { entry: "client" },
     server: { entry: "server" },
   },
   vite: {
