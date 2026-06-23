@@ -188,7 +188,11 @@ export default function WatchdogTab() {
       setRunsErr(e?.message || 'Failed to load runs');
     } finally { setRunsLoading(false); }
   }, []);
-  useEffect(() => { loadRuns(); }, [loadRuns]);
+  useEffect(() => {
+    loadRuns();
+    const id = setInterval(loadRuns, 30_000);
+    return () => clearInterval(id);
+  }, [loadRuns]);
 
   const turnOff = async () => {
     setTurningOff(true); setCfErr('');
