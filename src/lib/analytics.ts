@@ -382,12 +382,27 @@ export function renderGoogleMerchantBadge(opts?: { position?: 'BOTTOM_LEFT' | 'B
     }
   };
 
-  const s = document.createElement('script');
-  s.src = 'https://www.gstatic.com/shopping/merchant/merchantwidget.js';
-  s.defer = true;
-  s.id = 'merchantWidgetScript';
-  s.onload = start;
-  document.head.appendChild(s);
+  // Inject MerchantVerse script ONLY after the window has fully loaded and the
+  // browser is idle. This guarantees React hydration is finished before the
+  // third-party script (which has been observed to throw a parse error in
+  // m=_b and trigger React error #418 if it runs during hydration) is parsed.
+  const inject = () => {
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, o?: { timeout: number }) => void }).requestIdleCallback;
+    const run = () => {
+      if (document.getElementById('merchantWidgetScript')) return;
+      const s = document.createElement('script');
+      s.src = 'https://www.gstatic.com/shopping/merchant/merchantwidget.js';
+      s.defer = true;
+      s.id = 'merchantWidgetScript';
+      s.onload = start;
+      document.head.appendChild(s);
+      log('GCR badge injected');
+    };
+    if (ric) ric(run, { timeout: 3000 });
+    else setTimeout(run, 1500);
+  };
+  if (document.readyState === 'complete') inject();
+  else window.addEventListener('load', inject, { once: true });
   log('GCR badge scheduled');
 }
 
