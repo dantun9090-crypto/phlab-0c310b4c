@@ -1,5 +1,6 @@
 import { RouterProvider } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
+import { useEffect, useState } from "react";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { createLegacyRouter } from "./AppRouter";
 import { SSRDataProvider, type SSRBanner } from "./SSRDataContext";
@@ -21,6 +22,20 @@ export default function LegacyApp({
   initialPath?: string;
   initialBanner?: SSRBanner | null;
 }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="phl-boot" aria-live="polite">
+        Loading PH Labs…
+      </div>
+    );
+  }
+
   const router = getLegacyRouter(initialPath);
 
   return (
