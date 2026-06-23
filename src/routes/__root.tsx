@@ -548,7 +548,7 @@ const STALE_ASSET_RECOVERY = `
 (function(){
   try{
     var KEY='__phl_stale_asset_reload_at';
-    var ASSET_RE=/\/(assets|_build)\/[^?#]+\.(?:js|mjs|css)(?:[?#]|$)/i;
+    var ASSET_RE=new RegExp('/(assets|_build)/[^?#]+\\.(?:js|mjs|css)(?:[?#]|$)','i');
     var clean=function(){
       try{
         var qs=new URLSearchParams(location.search);
