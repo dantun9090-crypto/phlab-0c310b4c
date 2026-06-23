@@ -74,9 +74,10 @@ export function ProductCard({
   const slug = nameToSlug(name);
   const imgUrl = getProductImage(name, imageUrl, images);
   const categoryColor = CATEGORY_COLORS[category || ''] || '#3b82f6';
-  const revealRef = useScrollReveal(index * 60);
   // First 3 cards are likely above-fold — reveal immediately to avoid LCP/CLS penalty
   const isAboveFold = (index ?? 0) < 3;
+  const [coaOpen, setCoaOpen] = useState(false);
+  const hasCoa = !!product.coaPdfUrl;
 
   const getProductAlt = (n: string, cat?: string) => {
     const c = cat?.replace(/-/g, ' ') || 'research peptide';
