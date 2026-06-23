@@ -193,7 +193,7 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
       allow_google_signals: consent.marketing,
       allow_ad_personalization_signals: consent.marketing,
       debug_mode: debugMode,
-      cookie_domain: 'phlabs.co.uk',
+      cookie_domain: 'auto',
       cookie_flags: 'SameSite=None;Secure',
       cookie_expires: 63072000,
       cookie_update: true,
@@ -201,7 +201,7 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
   }
   // Google destinations — activates linked GA4, Google Ads and Merchant Center destinations.
   for (const destinationId of GOOGLE_DESTINATION_IDS) {
-    if (destinationId !== id) gtag('config', destinationId, { send_page_view: false });
+    if (destinationId !== id) gtag('config', destinationId, { send_page_view: false, cookie_domain: 'auto' });
   }
 
   // Fire initial page view (skip if the hardcoded <head> script already
