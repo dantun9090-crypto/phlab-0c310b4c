@@ -115,6 +115,67 @@ function isAllowedImageType(contentType: string): boolean {
   return ["image/webp", "image/jpeg", "image/png", "image/gif", "image/avif"].includes(contentType);
 }
 
+interface UploadStoragePdfInput {
+  base64: string;
+  contentType: string;
+  productId: string;
+  filename?: string;
+}
+
+export async function uploadCoaPdfAdmin(input: UploadStoragePdfInput): Promise<UploadStorageImageResult> {
+  const contentType = input.contentType || "application/pdf";
+  if (contentType !== "application/pdf") throw new Error("invalid_pdf_type");
+
+  const bytes = base64ToBytes(input.base64);
+  if (bytes.byteLength === 0 || bytes.byteLength > 10 * 1024 * 1024) throw new Error("invalid_pdf_size");
+  // PDF magic header
+  if (!(bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46)) {
+    throw new Error("invalid_pdf_signature");
+  }
+
+  const acct = getServiceAccount();
+  const token = await getAccessToken();
+  const bucket = `${acct.project_id}.firebasestorage.app`;
+  const downloadToken = crypto.randomUUID();
+  const path = `products/${safeId(input.productId)}/coa/coa-${Date.now()}.pdf`;
+
+  const boundary = `phlabs-${crypto.randomUUID()}`;
+  const metadata = {
+    name: path,
+    contentType,
+    cacheControl: "public, max-age=31536000, immutable",
+    contentDisposition: `inline; filename="${(input.filename || "certificate-of-analysis.pdf").replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 100)}"`,
+    metadata: { firebaseStorageDownloadTokens: downloadToken },
+  };
+  const fileBytes = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(fileBytes).set(bytes);
+  const body = new Blob([
+    `--${boundary}\r\ncontent-type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`,
+    `--${boundary}\r\ncontent-type: ${contentType}\r\n\r\n`,
+    fileBytes,
+    `\r\n--${boundary}--`,
+  ]);
+
+  const res = await fetch(
+    `https://storage.googleapis.com/upload/storage/v1/b/${encodeURIComponent(bucket)}/o?uploadType=multipart`,
+    {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${token}`,
+        "content-type": `multipart/related; boundary=${boundary}`,
+      },
+      body,
+    },
+  );
+  if (!res.ok) throw new Error(`COA upload failed: ${res.status} ${await res.text()}`);
+
+  return {
+    url: `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media&token=${downloadToken}`,
+    path,
+    size: bytes.byteLength,
+  };
+}
+
 export async function uploadHplcStorageImage(input: UploadStorageImageInput): Promise<UploadStorageImageResult> {
   const contentType = input.contentType || "image/webp";
   if (!isAllowedImageType(contentType)) throw new Error("invalid_image_type");
