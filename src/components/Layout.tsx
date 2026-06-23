@@ -137,7 +137,7 @@ export function Layout({ children }: LayoutProps) {
     const path = window.location.pathname;
     const skip = path.startsWith('/admin') || path === '/login' || path === '/register';
     if (!skip) {
-      const t = setTimeout(() => renderGoogleMerchantBadge({ position: 'BOTTOM_RIGHT', region: 'GB' }), 2500);
+      const t = setTimeout(() => renderGoogleMerchantBadge({ position: 'BOTTOM_RIGHT', region: 'GB' }), 5000);
       return () => clearTimeout(t);
     }
   }, []);
