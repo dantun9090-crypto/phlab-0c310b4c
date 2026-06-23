@@ -31,6 +31,7 @@ import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/cre
 import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/cancel'
 import { Route as ApiDsrProcessRouteImport } from './routes/api/dsr/process'
 import { Route as ApiConfigPaymentsRouteImport } from './routes/api/config/payments'
+import { Route as ApiPublicHooksWatchdogRouteImport } from './routes/api/public/hooks/watchdog'
 import { Route as ApiPublicHooksWallidReconcileRouteImport } from './routes/api/public/hooks/wallid-reconcile'
 import { Route as ApiPublicHooksWallidMonitorRouteImport } from './routes/api/public/hooks/wallid-monitor'
 import { Route as ApiPublicHooksWallidAlertsRouteImport } from './routes/api/public/hooks/wallid-alerts'
@@ -155,6 +156,11 @@ const ApiConfigPaymentsRoute = ApiConfigPaymentsRouteImport.update({
   path: '/api/config/payments',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksWatchdogRoute = ApiPublicHooksWatchdogRouteImport.update({
+  id: '/api/public/hooks/watchdog',
+  path: '/api/public/hooks/watchdog',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksWallidReconcileRoute =
   ApiPublicHooksWallidReconcileRouteImport.update({
     id: '/api/public/hooks/wallid-reconcile',
@@ -246,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/wallid-alerts': typeof ApiPublicHooksWallidAlertsRoute
   '/api/public/hooks/wallid-monitor': typeof ApiPublicHooksWallidMonitorRoute
   '/api/public/hooks/wallid-reconcile': typeof ApiPublicHooksWallidReconcileRoute
+  '/api/public/hooks/watchdog': typeof ApiPublicHooksWatchdogRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -280,6 +287,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/wallid-alerts': typeof ApiPublicHooksWallidAlertsRoute
   '/api/public/hooks/wallid-monitor': typeof ApiPublicHooksWallidMonitorRoute
   '/api/public/hooks/wallid-reconcile': typeof ApiPublicHooksWallidReconcileRoute
+  '/api/public/hooks/watchdog': typeof ApiPublicHooksWatchdogRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -315,6 +323,7 @@ export interface FileRoutesById {
   '/api/public/hooks/wallid-alerts': typeof ApiPublicHooksWallidAlertsRoute
   '/api/public/hooks/wallid-monitor': typeof ApiPublicHooksWallidMonitorRoute
   '/api/public/hooks/wallid-reconcile': typeof ApiPublicHooksWallidReconcileRoute
+  '/api/public/hooks/watchdog': typeof ApiPublicHooksWatchdogRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -351,6 +360,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/wallid-alerts'
     | '/api/public/hooks/wallid-monitor'
     | '/api/public/hooks/wallid-reconcile'
+    | '/api/public/hooks/watchdog'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -385,6 +395,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/wallid-alerts'
     | '/api/public/hooks/wallid-monitor'
     | '/api/public/hooks/wallid-reconcile'
+    | '/api/public/hooks/watchdog'
   id:
     | '__root__'
     | '/'
@@ -419,6 +430,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/wallid-alerts'
     | '/api/public/hooks/wallid-monitor'
     | '/api/public/hooks/wallid-reconcile'
+    | '/api/public/hooks/watchdog'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -454,6 +466,7 @@ export interface RootRouteChildren {
   ApiPublicHooksWallidAlertsRoute: typeof ApiPublicHooksWallidAlertsRoute
   ApiPublicHooksWallidMonitorRoute: typeof ApiPublicHooksWallidMonitorRoute
   ApiPublicHooksWallidReconcileRoute: typeof ApiPublicHooksWallidReconcileRoute
+  ApiPublicHooksWatchdogRoute: typeof ApiPublicHooksWatchdogRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -612,6 +625,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConfigPaymentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/watchdog': {
+      id: '/api/public/hooks/watchdog'
+      path: '/api/public/hooks/watchdog'
+      fullPath: '/api/public/hooks/watchdog'
+      preLoaderRoute: typeof ApiPublicHooksWatchdogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/wallid-reconcile': {
       id: '/api/public/hooks/wallid-reconcile'
       path: '/api/public/hooks/wallid-reconcile'
@@ -718,6 +738,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksWallidAlertsRoute: ApiPublicHooksWallidAlertsRoute,
   ApiPublicHooksWallidMonitorRoute: ApiPublicHooksWallidMonitorRoute,
   ApiPublicHooksWallidReconcileRoute: ApiPublicHooksWallidReconcileRoute,
+  ApiPublicHooksWatchdogRoute: ApiPublicHooksWatchdogRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -173,6 +173,17 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // ---------- watchdog runs (append-only by server) ----------
+    // Written by /api/public/hooks/watchdog via firebase-admin (bypasses
+    // rules). Admins read the run history in the Watchdog / Auto-Heal tab.
+    // Clients never write.
+    match /watchdog_runs/{id} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+
+
     // ---------- auth events (append-only diagnostic log) ----------
     // Anyone (including unauthenticated visitors) may CREATE an auth event so
     // failed logins are still captured. The shape is locked down to prevent

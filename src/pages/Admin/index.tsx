@@ -59,8 +59,9 @@ import WebhookTestTab from './tabs/WebhookTestTab';
 import WallidPreviewTab from './tabs/WallidPreviewTab';
 import WallidBadgesTab from './tabs/WallidBadgesTab';
 import WallidBanksTab from './tabs/WallidBanksTab';
+import WatchdogTab from './tabs/WatchdogTab';
 
-type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks';
+type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -444,7 +445,8 @@ export default function AdminPage() {
         case 'webhooktest': return <WebhookTestTab />;
         case 'wallidpreview': return <WallidPreviewTab />;
         case 'wallidbadges': return <WallidBadgesTab />;
-        case 'wallidbanks': return <WallidBanksTab />;
+       case 'wallidbanks': return <WallidBanksTab />;
+       case 'watchdog': return <WatchdogTab />;
         default: return <DashboardTab />;
       }
     })();
