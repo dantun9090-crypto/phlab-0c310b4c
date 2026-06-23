@@ -19,6 +19,11 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    build: {
+      // Hidden source maps: emit .map files for error tracking without
+      // exposing a sourceMappingURL in the shipped JS.
+      sourcemap: "hidden",
+    },
     define: {
       __BUILD_ID__: JSON.stringify(BUILD_ID),
     },
