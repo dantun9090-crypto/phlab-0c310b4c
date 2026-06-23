@@ -286,13 +286,51 @@ export const Route = createFileRoute('/api/public/hooks/watchdog')({
           }
         }
 
-        const fenaCheck = checks.find((c) => c.name === 'fena-retry-queue');
-        if (fenaCheck && !fenaCheck.ok) {
+        // Auto-heal: if Wallid monitor data is stale, trigger it now.
+        const monitorCheck = checks.find((c) => c.name === 'wallid-monitor-freshness');
+        if (monitorCheck && !monitorCheck.ok) {
           try {
-            const fenaRes = await fetch(`${BASE}/api/public/hooks/fena-process-retries`, { method: 'POST' });
-            heals.push({ name: 'fena-process-retries', ok: fenaRes.ok, detail: `status ${fenaRes.status}` });
+            const r = await fetch(`${BASE}/api/public/hooks/wallid-monitor`, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', authorization: `Bearer ${expected}` },
+            });
+            heals.push({ name: 'wallid-monitor', ok: r.ok, detail: `status ${r.status}` });
           } catch (e: any) {
-            heals.push({ name: 'fena-process-retries', ok: false, detail: e?.message || 'failed' });
+            heals.push({ name: 'wallid-monitor', ok: false, detail: e?.message || 'failed' });
+          }
+        }
+
+        // Alert when Wallid errors are rising or rate is high — enqueue one email per hour.
+        const errorRateCheck = checks.find((c) => c.name === 'wallid-error-rate');
+        if (errorRateCheck && !errorRateCheck.ok) {
+          try {
+            const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+            const { enqueueMailOnce } = await import('@/lib/server/enqueue-mail');
+            const bucketHour = new Date().toISOString().slice(0, 13);
+            const subject = `[PH Labs] Wallid errors rising — ${wallidErrorsLastHour} failures last hour (${wallidErrorRate}%)`;
+            const text =
+              `Wallid integration alert from watchdog.\n\n` +
+              `Failed payments last hour: ${wallidErrorsLastHour}\n` +
+              `Failed payments previous hour: ${wallidErrorsPrevHour}\n` +
+              `Failure rate (last hour): ${wallidErrorRate}%\n\n` +
+              `Check Admin → Wallid tabs + provider status page.`;
+            await enqueueMailOnce(`watchdog-wallid-alert:${bucketHour}`, {
+              to: 'orders@phlabs.co.uk',
+              message: { subject, html: `<p>${text.replace(/\n/g, '<br/>')}</p>`, text },
+              source: 'watchdog:wallid-alert',
+            });
+            heals.push({ name: 'wallid-alert-email', ok: true, detail: `enqueued for hour bucket ${bucketHour}` });
+            // Best-effort: log into supabase for audit visibility.
+            await supabaseAdmin.from('app_config').upsert(
+              {
+                key: 'watchdog:last-wallid-alert',
+                value: JSON.stringify({ at: new Date().toISOString(), wallidErrorsLastHour, wallidErrorsPrevHour, wallidErrorRate }),
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'key' },
+            );
+          } catch (e: any) {
+            heals.push({ name: 'wallid-alert-email', ok: false, detail: e?.message || 'enqueue failed' });
           }
         }
 
