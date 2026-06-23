@@ -561,10 +561,24 @@ const STALE_ASSET_RECOVERY = `
       try{
         var last=Number(sessionStorage.getItem(KEY)||'0');
         if(last&&Date.now()-last<30000) return;
-        sessionStorage.setItem(KEY,String(Date.now()));
       }catch(e){}
-      try{ console.warn('[phlabs] stale build asset failed, forcing clean reload:', src); }catch(e){}
-      location.replace(clean());
+      // Verify the asset is actually missing before forcing a reload.
+      // A parse/syntax/CSP error fires the same 'error' event but the asset is fine —
+      // reloading would loop. Only reload when the server confirms 404/410.
+      try{
+        fetch(src,{method:'HEAD',cache:'no-store',credentials:'omit'}).then(function(res){
+          if(res && (res.status===404||res.status===410)){
+            try{ sessionStorage.setItem(KEY,String(Date.now())); }catch(e){}
+            try{ console.warn('[phlabs] stale build asset 404, forcing clean reload:', src); }catch(e){}
+            var qs;
+            try{
+              qs=new URLSearchParams(location.search);
+              qs.set('sw','off'); qs.set('_r','stale-asset');
+              location.replace(location.pathname+'?'+qs.toString()+location.hash);
+            }catch(e){ location.replace('/?sw=off&_r=stale-asset'); }
+          }
+        }).catch(function(){});
+      }catch(e){}
     };
     addEventListener('error',function(ev){
       var t=ev&&ev.target;
@@ -574,6 +588,7 @@ const STALE_ASSET_RECOVERY = `
       try{ var u=new URL(src,location.href); if(u.origin!==location.origin) return; src=u.pathname+u.search; }catch(e){}
       if(ASSET_RE.test(src)) recover(src);
     },true);
+
   }catch(e){}
 })();
 `;
