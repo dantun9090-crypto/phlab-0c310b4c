@@ -464,19 +464,42 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
   // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     if (!formData.name?.trim()) { setSaveMsg({ type: 'error', text: 'Product name is required' }); return; }
-    // Compliance guard — block forbidden medical claims and log to securityEvents.
+    // Auto-sanitize admin copy into laboratory RUO-safe language, then run the
+    // compliance guard. Lets editors paste freely while keeping Firestore
+    // content compliant (e.g. "therapeutic" → "in-vitro endpoint").
+    const { sanitizeLab } = await import('@/lib/lab-sanitize');
     const { checkComplianceAndLog } = await import('@/lib/compliance-guard');
+    const sanitizedName = sanitizeLab((formData as any).name) || formData.name;
+    const sanitizedDescription = sanitizeLab((formData as any).description);
+    const sanitizedShort = sanitizeLab((formData as any).shortDescription);
+    if (sanitizedName !== formData.name
+      || sanitizedDescription !== (formData as any).description
+      || sanitizedShort !== (formData as any).shortDescription) {
+      setFormData(prev => ({
+        ...prev,
+        name: sanitizedName,
+        description: sanitizedDescription,
+        shortDescription: sanitizedShort,
+      } as any));
+    }
     for (const [field, value] of [
-      ['name', formData.name],
-      ['description', (formData as any).description],
-      ['shortDescription', (formData as any).shortDescription],
+      ['name', sanitizedName],
+      ['description', sanitizedDescription],
+      ['shortDescription', sanitizedShort],
     ] as const) {
       const c = checkComplianceAndLog(field, value as string | null | undefined, {
         collection: 'products',
         docId: product?.id ?? null,
       });
-      if (!c.ok) { setSaveMsg({ type: 'error', text: c.message }); return; }
+      if (!c.ok) {
+        setSaveMsg({ type: 'error', text: `${c.message}. Auto-rewrite couldn't fully clean this — edit the highlighted word and try again.` });
+        return;
+      }
     }
+    // Persist the sanitized values
+    (formData as any).name = sanitizedName;
+    (formData as any).description = sanitizedDescription;
+    (formData as any).shortDescription = sanitizedShort;
     setSaving(true); setSaveMsg(null);
     try {
       const cleanImages = (formData.images || []).filter(Boolean);
