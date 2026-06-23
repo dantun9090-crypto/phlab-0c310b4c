@@ -509,6 +509,116 @@ function brandedErrorResponse(nonce: string, hostname?: string): Response {
   );
 }
 
+const COA_STORAGE_HOST = "firebasestorage.googleapis.com";
+const COA_ALLOWED_BUCKETS = new Set([
+  "prohealthpeptides-a0808.firebasestorage.app",
+  "prohealthpeptides-a0808.appspot.com",
+]);
+
+function sanitizeCoaFilename(value: string | null): string {
+  const cleaned = (value || "certificate-of-analysis.pdf")
+    .replace(/[\r\n\x00]/g, "")
+    .replace(/[^a-zA-Z0-9._-]+/g, "_")
+    .replace(/^[._-]+/, "")
+    .slice(0, 120);
+  return cleaned.toLowerCase().endsWith(".pdf") ? cleaned : `${cleaned || "certificate-of-analysis"}.pdf`;
+}
+
+function getAllowedCoaSource(raw: string | null): URL | null {
+  if (!raw || raw.length > 2500) return null;
+  let source: URL;
+  try {
+    source = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (source.protocol !== "https:" || source.hostname.toLowerCase() !== COA_STORAGE_HOST) return null;
+
+  const parts = source.pathname.split("/");
+  if (parts[1] !== "v0" || parts[2] !== "b" || parts[4] !== "o") return null;
+  const bucket = decodeURIComponent(parts[3] || "");
+  if (!COA_ALLOWED_BUCKETS.has(bucket)) return null;
+
+  const objectName = decodeURIComponent(parts.slice(5).join("/"));
+  const objectParts = objectName.split("/");
+  if (
+    objectParts.some((part) => part === "" || part === "..") ||
+    !objectName.startsWith("products/") ||
+    !objectName.includes("/coa/") ||
+    !objectName.toLowerCase().endsWith(".pdf")
+  ) {
+    return null;
+  }
+
+  source.searchParams.set("alt", "media");
+  return source;
+}
+
+function coaPdfError(message: string, status: number): Response {
+  return new Response(message, {
+    status,
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+      "x-robots-tag": "noindex, nofollow",
+    },
+  });
+}
+
+function coaPdfHeaders(upstream: Response, filename: string, download: boolean): Headers {
+  const headers = new Headers({
+    "content-type": "application/pdf",
+    "content-disposition": `${download ? "attachment" : "inline"}; filename="${filename}"`,
+    "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+    "pragma": "no-cache",
+    "expires": "0",
+    "x-content-type-options": "nosniff",
+    "x-robots-tag": "noindex, nofollow",
+  });
+  for (const name of ["accept-ranges", "content-range", "content-length", "last-modified", "etag"]) {
+    const value = upstream.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  return headers;
+}
+
+async function handleCoaPdfProxy(request: Request, url: URL): Promise<Response> {
+  const source = getAllowedCoaSource(url.searchParams.get("url"));
+  if (!source) return coaPdfError("Invalid certificate URL", 400);
+
+  const upstreamHeaders = new Headers({ accept: "application/pdf" });
+  const range = request.headers.get("range");
+  if (range) upstreamHeaders.set("range", range);
+
+  let upstream: Response;
+  try {
+    upstream = await fetch(source.toString(), {
+      method: "GET",
+      headers: upstreamHeaders,
+      signal: AbortSignal.timeout(20_000),
+    });
+  } catch {
+    return coaPdfError("Certificate temporarily unavailable", 502);
+  }
+
+  if (!upstream.ok && upstream.status !== 206) {
+    return coaPdfError("Certificate unavailable", upstream.status === 404 ? 404 : 502);
+  }
+
+  const contentType = (upstream.headers.get("content-type") || "").toLowerCase();
+  if (contentType && !contentType.includes("application/pdf") && !contentType.includes("application/octet-stream")) {
+    return coaPdfError("Certificate is not a PDF", 415);
+  }
+
+  const filename = sanitizeCoaFilename(url.searchParams.get("filename"));
+  const download = url.searchParams.get("download") === "1";
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: coaPdfHeaders(upstream, filename, download),
+  });
+}
+
 
 function isCatastrophicSsrErrorBody(body: string, responseStatus: number): boolean {
   let payload: unknown;
@@ -591,6 +701,26 @@ export default {
             "x-robots-tag": "noindex, nofollow",
           },
         });
+      }
+
+      // 0a. COA PDF proxy — load Firebase Storage PDFs from the same origin so
+      // Android Chrome does not block the embedded certificate viewer.
+      if (url.pathname === "/api/public/coa-pdf") {
+        if (request.method !== "GET" && request.method !== "HEAD") {
+          return new Response("Method Not Allowed", {
+            status: 405,
+            headers: { allow: "GET, HEAD", "cache-control": "no-store" },
+          });
+        }
+        const response = await handleCoaPdfProxy(request, url);
+        if (request.method === "HEAD") {
+          return new Response(null, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+          });
+        }
+        return response;
       }
 
       // 0b. Firebase Auth proxy — custom auth domain phlabs.co.uk
