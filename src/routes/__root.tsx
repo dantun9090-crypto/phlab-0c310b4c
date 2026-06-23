@@ -15,6 +15,7 @@ import "@/lib/chunk-reload";
 import "@/lib/sw-register";
 import {
   clearClientCaches as _clearClientCaches, // re-exported for tests if needed
+  clearHydrationError,
   findCachedLastKnownUrl,
   HARD_RELOAD_FLAG,
   hardReload,
@@ -131,7 +132,10 @@ function HydrationRecoveryScreen() {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              clearHydrationError();
+              window.location.reload();
+            }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Refresh page
@@ -234,6 +238,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
                 sessionStorage.removeItem(AUTO_RELOAD_COUNT_KEY);
                 sessionStorage.removeItem(AUTO_RECOVERY_DONE_KEY);
                 sessionStorage.removeItem(HARD_RELOAD_FLAG);
+                clearHydrationError();
               } catch { /* ignore */ }
               if (!isOnline()) { setOffline(true); return; }
               if (import.meta.env.PROD) {
