@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, ExternalLink, FileText } from 'lucide-react';
 
@@ -15,6 +15,14 @@ interface CoaModalProps {
 export function CoaModal({ open, onClose, pdfUrl, productName, filename, batch, uploadedAt }: CoaModalProps) {
   const closeBtnRef = useRef<HTMLButtonElement>(null);
   const previouslyFocused = useRef<Element | null>(null);
+
+  const proxiedPdfUrl = useMemo(() => {
+    const params = new URLSearchParams({ url: pdfUrl });
+    if (filename) params.set('filename', filename);
+    return `/api/public/coa-pdf?${params.toString()}`;
+  }, [pdfUrl, filename]);
+
+  const downloadUrl = `${proxiedPdfUrl}&download=1`;
 
   useEffect(() => {
     if (!open) return;
@@ -93,7 +101,7 @@ export function CoaModal({ open, onClose, pdfUrl, productName, filename, batch, 
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <a
-                  href={pdfUrl}
+                  href={proxiedPdfUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Open certificate in new tab"
@@ -102,7 +110,7 @@ export function CoaModal({ open, onClose, pdfUrl, productName, filename, batch, 
                   <ExternalLink className="w-3.5 h-3.5" /> Open
                 </a>
                 <a
-                  href={pdfUrl}
+                  href={downloadUrl}
                   download={filename || `${productName.replace(/[^a-zA-Z0-9-]/g, '_')}-COA.pdf`}
                   aria-label="Download certificate PDF"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors"
@@ -124,7 +132,7 @@ export function CoaModal({ open, onClose, pdfUrl, productName, filename, batch, 
             {/* PDF viewer */}
             <div className="flex-1 bg-[#1a1a2e]">
               <iframe
-                src={`${pdfUrl}#view=FitH&toolbar=1`}
+                src={`${proxiedPdfUrl}#view=FitH&toolbar=1`}
                 title={`Certificate of Analysis — ${productName}`}
                 className="w-full h-full border-0"
               />

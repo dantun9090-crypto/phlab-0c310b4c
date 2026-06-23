@@ -106,6 +106,15 @@ const BASELINE: Check[] = [
     severity: 'low',
     status: 'pass',
   },
+  {
+    id: 'coa-pdf-proxy',
+    category: 'Headers',
+    title: 'COA PDF viewer same-origin proxy',
+    description: 'Certificate PDFs load through /api/public/coa-pdf with strict Firebase Storage allowlisting, inline PDF headers, and no-store cache headers to prevent mobile browser frame blocking.',
+    severity: 'medium',
+    status: 'pass',
+    detail: 'src/server.ts + src/components/CoaModal.tsx',
+  },
 
 
   {
