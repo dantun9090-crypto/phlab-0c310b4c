@@ -211,16 +211,15 @@ export default function WatchdogTab() {
   const triggerRun = async () => {
     setRunning(true); setRunResult('');
     try {
-      const res = await fetch('/api/public/hooks/watchdog', { method: 'POST', headers: { 'content-type': 'application/json' } });
-      if (res.status === 401) setRunResult('Manual trigger needs the shared secret. The bot runs automatically every 5 min via cron — refresh below to see results.');
-      else if (!res.ok) setRunResult(`Failed: ${res.status}`);
-      else {
-        const data = await res.json();
-        setRunResult(`OK — status: ${data.status}, ${data.failed}/${data.totalChecks} failed`);
-        await loadRuns();
-      }
-    } catch (e: any) { setRunResult(e?.message || 'Run failed'); }
-    finally { setRunning(false); }
+      const u = auth.currentUser;
+      if (!u) throw new Error('Not signed in');
+      const idToken = await u.getIdToken();
+      const r = await triggerWatchdogRun({ data: { idToken } });
+      setRunResult(`OK — status: ${r.status}, ${r.failed}/${r.totalChecks} failed`);
+      await loadRuns();
+    } catch (e: any) {
+      setRunResult(e?.message || 'Run failed');
+    } finally { setRunning(false); }
   };
 
   // ── Derived ────────────────────────────────────────────────────────
