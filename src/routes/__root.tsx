@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { Component, useEffect, useState, type ReactNode } from "react";
 
 import { PageTransition } from "@/components/PageTransition";
 import appCss from "../styles.css?url";
@@ -18,7 +18,9 @@ import {
   findCachedLastKnownUrl,
   HARD_RELOAD_FLAG,
   hardReload,
+  isHydrationMismatchError,
   isOnline,
+  markHydrationError,
 } from "@/lib/recovery";
 import { schedulePrecacheCurrentPage } from "@/lib/lkg-cache";
 import { clearStoreCachesForNewBuild } from "@/lib/build-cache";
