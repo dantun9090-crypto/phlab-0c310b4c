@@ -790,6 +790,15 @@ function RootComponent() {
   useEffect(() => {
     clearStoreCachesForNewBuild();
     initWebVitals();
+    const activateStylesheet = (id: string) => {
+      const link = document.getElementById(id) as HTMLLinkElement | null;
+      if (!link) return;
+      const apply = () => { link.media = "all"; };
+      if (link.sheet) apply();
+      else link.addEventListener("load", apply, { once: true });
+    };
+    activateStylesheet("gfonts");
+    activateStylesheet("appcss");
   }, []);
 
   // Load GA4/GTM AFTER React hydration completes — keeps GTM from mutating
