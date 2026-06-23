@@ -262,7 +262,7 @@ export default function CategoryPage() {
               >
                 {config?.label} Peptides
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed" style={{ color: '#4a6e8a' }}>
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed" style={{ color: '#7a98b8' }}>
                 {config?.description}
               </p>
               <p className="mt-2 text-xs" style={{ color: '#1e3a2a' }}>

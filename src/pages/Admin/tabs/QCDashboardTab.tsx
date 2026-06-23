@@ -23,7 +23,7 @@ function parsePurity(raw: string | undefined): number {
 }
 
 function getPurityStatus(purity: number): { label: string; color: string; bg: string } {
-  if (purity === 0)    return { label: 'No data',   color: '#4a6e8a', bg: 'rgba(74,110,138,0.12)' };
+  if (purity === 0)    return { label: 'No data',   color: '#7a98b8', bg: 'rgba(74,110,138,0.12)' };
   if (purity >= 99.5)  return { label: 'Excellent',  color: '#10b981', bg: 'rgba(16,185,129,0.12)' };
   if (purity >= 99.0)  return { label: 'Good',       color: '#3b82f6', bg: 'rgba(59,130,246,0.12)' };
   if (purity >= 98.0)  return { label: 'Acceptable', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' };
@@ -285,7 +285,7 @@ export default function QCDashboardTab() {
                         {catLabel}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-bold" style={{ color: pur > 0 ? color : '#4a6e8a' }}>
+                    <td className="px-4 py-3 font-bold" style={{ color: pur > 0 ? color : '#7a98b8' }}>
                       {pur > 0 ? `${pur}%` : '—'}
                     </td>
                     <td className="px-4 py-3 w-32">

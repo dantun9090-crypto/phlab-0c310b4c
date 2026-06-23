@@ -184,7 +184,7 @@ export function ProductCard({
           </h3>
         </Link>
 
-        <p className="text-xs leading-relaxed" style={{ color: '#4a6e8a' }}>
+        <p className="text-xs leading-relaxed" style={{ color: '#7a98b8' }}>
           HPLC-verified research compound · Certificate of Analysis included
         </p>
 

@@ -611,7 +611,7 @@ export default function HomePage() {
                 <Icon style={{ width: 16, height: 16, color: '#10b981', flexShrink: 0 }} />
                 <div>
                   <span style={{ color: '#c8dff5', fontSize: '0.78rem', fontWeight: 700 }}>{title}</span>
-                  <span style={{ color: '#4a6e8a', fontSize: '0.72rem' }} className="ml-1.5">{desc}</span>
+                  <span style={{ color: '#7a98b8', fontSize: '0.72rem' }} className="ml-1.5">{desc}</span>
                 </div>
               </div>
             ))}
@@ -705,7 +705,7 @@ export default function HomePage() {
                 <h2 style={{ fontSize: 'clamp(1.7rem, 3vw, 2.4rem)', fontWeight: 800, color: '#f0f8ff', letterSpacing: '-0.025em', lineHeight: 1.15 }}>
                   Featured Compounds
                 </h2>
-                <p className="mt-2 text-sm" style={{ color: '#4a6e8a' }}>Analytically verified · Batch documented · CoA included</p>
+                <p className="mt-2 text-sm" style={{ color: '#7a98b8' }}>Analytically verified · Batch documented · CoA included</p>
               </div>
               <Link to="/products"
                 className="inline-flex items-center gap-2 text-sm font-semibold transition-colors"
@@ -756,7 +756,7 @@ export default function HomePage() {
                   <div className="p-5 flex flex-col gap-3 flex-1">
                     <div>
                       <h3 className="font-bold text-base leading-snug mb-1" style={{ color: '#e4f0ff' }}>{p.name}</h3>
-                      <p className="text-xs" style={{ color: '#4a6e8a' }}>HPLC-verified research compound</p>
+                      <p className="text-xs" style={{ color: '#7a98b8' }}>HPLC-verified research compound</p>
                     </div>
                     <div className="flex items-center justify-between mt-auto pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                       <span style={{ color: '#f0f8ff', fontSize: '1.15rem', fontWeight: 800 }}>{p.price}</span>
@@ -802,7 +802,7 @@ export default function HomePage() {
             <h2 style={{ fontSize: 'clamp(1.7rem, 3vw, 2.4rem)', fontWeight: 800, color: '#f0f8ff', letterSpacing: '-0.025em', lineHeight: 1.15 }}>
               What "≥99% Purity" Actually Means
             </h2>
-            <p className="mt-4 text-base leading-relaxed" style={{ color: '#4a6e8a' }}>
+            <p className="mt-4 text-base leading-relaxed" style={{ color: '#7a98b8' }}>
               Every compound is analytically tested before dispatch. We document methodology, instrument parameters, and batch results — not just a number.
             </p>
           </div>
@@ -826,7 +826,7 @@ export default function HomePage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm mb-2" style={{ color: '#d8ecff' }}>{title}</h3>
-                  <p className="text-xs leading-relaxed" style={{ color: '#4a6e8a' }}>{desc}</p>
+                  <p className="text-xs leading-relaxed" style={{ color: '#7a98b8' }}>{desc}</p>
                 </div>
               </div>
             ))}
@@ -843,7 +843,7 @@ export default function HomePage() {
               </div>
               <div>
                 <div className="font-bold text-sm mb-0.5" style={{ color: '#e4f0ff' }}>Full Certificate of Analysis — Included With Every Order</div>
-                <p className="text-xs" style={{ color: '#4a6e8a' }}>HPLC trace + mass spectrometry data. Request prior to purchase via our contact page.</p>
+                <p className="text-xs" style={{ color: '#7a98b8' }}>HPLC trace + mass spectrometry data. Request prior to purchase via our contact page.</p>
               </div>
             </div>
             <Link to="/lab-reports"
@@ -888,7 +888,7 @@ export default function HomePage() {
                 <div>
                   <p className="text-xs font-semibold mb-1 uppercase tracking-wider" style={{ color: `${color}90` }}>{label}</p>
                   <h3 className="font-bold text-base mb-2" style={{ color: '#d8ecff' }}>{title}</h3>
-                  <p className="text-xs leading-relaxed" style={{ color: '#4a6e8a' }}>{desc}</p>
+                  <p className="text-xs leading-relaxed" style={{ color: '#7a98b8' }}>{desc}</p>
                 </div>
                 <div className="flex items-center gap-1.5 text-xs font-semibold mt-auto" style={{ color }}>
                   Explore compounds <ArrowRight style={{ width: 13, height: 13 }} className="transition-transform duration-300 group-hover:translate-x-1" />
@@ -983,7 +983,7 @@ export default function HomePage() {
                 <h2 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)', fontWeight: 800, color: '#f0f8ff', letterSpacing: '-0.025em', lineHeight: 1.2, marginBottom: '16px' }}>
                   Research Protocol Library
                 </h2>
-                <p className="text-sm leading-relaxed mb-6" style={{ color: '#4a6e8a' }}>
+                <p className="text-sm leading-relaxed mb-6" style={{ color: '#7a98b8' }}>
                   Comprehensive reconstitution protocols, dosing references, and storage guides for 14 research compounds. Compiled from peer-reviewed preclinical literature.
                 </p>
                 <div className="flex flex-col gap-2">
@@ -1004,7 +1004,7 @@ export default function HomePage() {
                     <p className="font-bold text-base mb-1" style={{ color: '#e4f0ff' }}>
                       {emailStatus === 'sent' ? 'Protocol Library sent!' : 'You\u2019ve already claimed this'}
                     </p>
-                    <p className="text-sm mb-5" style={{ color: '#4a6e8a' }}>
+                    <p className="text-sm mb-5" style={{ color: '#7a98b8' }}>
                       {emailStatus === 'sent'
                         ? 'Check your inbox for the PDF download link.'
                         : 'Your discount code is still valid \u2014 use it at checkout.'}
@@ -1126,7 +1126,7 @@ export default function HomePage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm mb-1.5" style={{ color: '#d8ecff' }}>{title}</h3>
-                  <p className="text-xs leading-relaxed" style={{ color: '#4a6e8a' }}>{desc}</p>
+                  <p className="text-xs leading-relaxed" style={{ color: '#7a98b8' }}>{desc}</p>
                 </div>
               </div>
             ))}
@@ -1161,11 +1161,11 @@ export default function HomePage() {
                   aria-expanded={openFaq === i}
                 >
                   <span className="font-semibold text-sm" style={{ color: '#d8ecff' }}>{faq.q}</span>
-                  <ChevronDown style={{ width: 16, height: 16, color: '#4a6e8a', flexShrink: 0, transform: openFaq === i ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />
+                  <ChevronDown style={{ width: 16, height: 16, color: '#7a98b8', flexShrink: 0, transform: openFaq === i ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s ease' }} />
                 </button>
                 {openFaq === i && (
                   <div className="px-6 pb-5">
-                    <p className="text-sm leading-relaxed" style={{ color: '#4a6e8a' }}>{faq.a}</p>
+                    <p className="text-sm leading-relaxed" style={{ color: '#7a98b8' }}>{faq.a}</p>
                   </div>
                 )}
               </div>
@@ -1184,7 +1184,7 @@ export default function HomePage() {
             <h2 style={{ fontSize: 'clamp(1.9rem, 4vw, 3rem)', fontWeight: 900, color: '#f0f8ff', letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: '16px' }}>
               Analytically verified.<br />UK-dispatched. Documented.
             </h2>
-            <p className="text-base leading-relaxed mb-10" style={{ color: '#4a6e8a' }}>
+            <p className="text-base leading-relaxed mb-10" style={{ color: '#7a98b8' }}>
               14+ HPLC-tested research compounds. Free shipping over £50. Certificate of Analysis with every order.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">

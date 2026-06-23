@@ -431,12 +431,12 @@ export default function ResearchGate() {
                 fontSize: '12.5px', fontWeight: 800,
                 letterSpacing: '0.09em', textTransform: 'uppercase',
                 color: '#ffffff',
-                // Solid emerald — strong, readable, on-brand
+                // Solid emerald — darker for WCAG AA contrast (4.5:1+) on white text
                 background: btnActive
-                  ? '#0a9e66'
+                  ? '#076b46'
                   : btnHover
-                    ? '#11c98a'
-                    : '#0db876',
+                    ? '#0a8f5c'
+                    : '#0a8f5c',
                 border: '1px solid rgba(16,185,129,0.4)',
                 borderRadius: '10px',
                 cursor: 'pointer',

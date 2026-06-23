@@ -287,8 +287,12 @@ export interface PromoBannerLite {
 
 export async function fetchPromoBanner(): Promise<PromoBannerLite | null> {
   try {
-    const url = `${BASE}/settings/promoBanner?key=${API_KEY}&_cb=${buildCacheBust()}`;
-    const res = await fetch(url, { headers: { accept: "application/json" } });
+    // NOTE: do not append unknown query params (e.g. `_cb`) — Firestore REST
+    // rejects them with 400. Use a no-cache header for freshness instead.
+    const url = `${BASE}/settings/promoBanner?key=${API_KEY}`;
+    const res = await fetch(url, {
+      headers: { accept: "application/json", "cache-control": "no-cache" },
+    });
     if (!res.ok) return null;
     const json: any = await res.json();
     const f = unwrapFields(json.fields ?? {});
