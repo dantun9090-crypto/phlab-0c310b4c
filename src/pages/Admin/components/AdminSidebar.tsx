@@ -44,7 +44,7 @@ const navGroups = [
       { id: 'wallidpreview', label: 'Wallid Preview', icon: Eye },
       { id: 'wallidbadges', label: 'Wallid Badges', icon: Eye },
       { id: 'wallidbanks', label: 'Wallid Banks', icon: Package2 },
-      { id: 'fena', label: 'Fena Payments', icon: CreditCard },
+      
       { id: 'shopify', label: 'Shopify', icon: ShoppingBag },
       { id: 'royalmail', label: 'Royal Mail Labels', icon: Package2 },
 

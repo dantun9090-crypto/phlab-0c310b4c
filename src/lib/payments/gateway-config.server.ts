@@ -63,8 +63,9 @@ interface RawGatewayDoc {
 
 function defaultConfig(id: GatewayId): PaymentGatewayConfig {
   const creds = gatewayCredentialsStatus(id);
-  const enabled = id === "fena" && creds.configured;
-  const priority: GatewayPriority = id === "fena" ? "primary" : "disabled";
+  // Wallid is the only active gateway; Fena and TrueLayer are disabled.
+  const enabled = false;
+  const priority: GatewayPriority = "disabled";
   return {
     id,
     name: GATEWAY_DISPLAY[id].name,
