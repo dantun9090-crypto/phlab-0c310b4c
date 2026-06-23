@@ -389,12 +389,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://identitytoolkit.googleapis.com", crossOrigin: "" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
-      // Non-blocking font load (media=print swap pattern). The stylesheet
-      // downloads in the background without delaying first paint; the
-      // inline script in `scripts` below swaps media back to "all" once
-      // it's loaded, so the fonts apply as soon as they're ready. FOUT is
-      // accepted in exchange for a faster FCP/LCP.
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700&display=swap", media: "print", id: "gfonts" },
+      // NOTE: Google Fonts stylesheet (#gfonts) is intentionally NOT injected
+      // in SSR HTML. It is appended to <head> after React hydration via a
+      // useEffect in RootComponent (see loadGoogleFontsAfterHydration below)
+      // to prevent the third-party stylesheet from mutating <head> before
+      // hydration completes, which was triggering React error #418
+      // (hydration mismatch) in Chrome/Firefox/Edge.
       { rel: "dns-prefetch", href: "https://firestore.googleapis.com" },
       { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
 
@@ -836,8 +836,17 @@ function RootComponent() {
       if (link.sheet) apply();
       else link.addEventListener("load", apply, { once: true });
     };
-    activateStylesheet("gfonts");
     activateStylesheet("appcss");
+    // Inject Google Fonts AFTER hydration so the third-party <link> doesn't
+    // mutate <head> mid-hydration (React error #418).
+    if (!document.getElementById("gfonts")) {
+      const fontLink = document.createElement("link");
+      fontLink.id = "gfonts";
+      fontLink.rel = "stylesheet";
+      fontLink.href =
+        "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700&display=swap";
+      document.head.appendChild(fontLink);
+    }
     return () => window.clearTimeout(stableLoadTimer);
   }, []);
 
