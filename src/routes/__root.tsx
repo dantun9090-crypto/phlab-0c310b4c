@@ -119,32 +119,83 @@ function OfflineScreen() {
   );
 }
 
+function HydrationRecoveryScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="max-w-md text-center">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          Refresh needed
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          The page did not initialise cleanly. Automatic reloads have been stopped so your browser does not loop.
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          <button
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Refresh page
+          </button>
+          <a
+            href="/"
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            Go home
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+class RootHydrationBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  state = { hasError: false, error: undefined };
+
+  static getDerivedStateFromError(error: Error) {
+    if (isHydrationMismatchError(error)) markHydrationError();
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error) {
+    if (isHydrationMismatchError(error)) markHydrationError();
+    console.error(error);
+  }
+
+  render() {
+    if (this.state.hasError) return <HydrationRecoveryScreen />;
+    return this.props.children;
+  }
+}
+
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   const [offline, setOffline] = useState<boolean>(() => !isOnline());
+  const isHydrationError = isHydrationMismatchError(error);
 
   useEffect(() => {
+    if (isHydrationError) {
+      markHydrationError();
+      return;
+    }
     if (!isOnline()) return;
-    // Retry up to 3 times before giving up and showing the error screen.
-    // Each attempt escalates: 1st = soft reload, 2nd = clean reload, 3rd = clean + home.
+    // Retry once for true stale-route errors, then stop and show this screen.
     let attempt = 0;
     try {
       attempt = Number(sessionStorage.getItem(AUTO_RECOVERY_DONE_KEY) || "0");
-      if (attempt >= 3) return;
+      if (attempt >= 1) return;
       sessionStorage.setItem(AUTO_RECOVERY_DONE_KEY, String(attempt + 1));
       sessionStorage.removeItem(HARD_RELOAD_FLAG);
     } catch { /* ignore */ }
     const delay = 250 + attempt * 400;
     const t = setTimeout(() => {
-      const opts =
-        attempt === 0 ? { clean: false, home: false } :
-        attempt === 1 ? { clean: true, home: false } :
-                        { clean: true, home: true };
-      void hardReload(opts);
+      void hardReload({ clean: true });
     }, delay);
     return () => clearTimeout(t);
-  }, []);
+  }, [isHydrationError]);
 
   // Track connectivity in real time so the screen can flip without a reload
   // (e.g. user toggles wifi while staring at the error).
@@ -160,6 +211,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
   // Offline path: don't show the generic "didn't load" copy; we know why.
   if (offline) return <OfflineScreen />;
+
+  if (isHydrationError) return <HydrationRecoveryScreen />;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
