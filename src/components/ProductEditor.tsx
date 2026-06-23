@@ -774,6 +774,89 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                   </button>
                 </div>
 
+                {/* Certificate of Analysis (COA) — Product-level PDF */}
+                <div className="p-4 bg-blue-500/[0.04] border border-blue-500/20 rounded-xl space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                      <FileText className="w-3.5 h-3.5 text-blue-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-white text-sm font-medium">Certificate of Analysis (COA)</p>
+                      <p className="text-[#9cb8d9] text-xs">HPLC test certificate PDF · max 10 MB · shown on product page</p>
+                    </div>
+                  </div>
+                  {(formData as any).coaPdfUrl ? (
+                    <div className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg">
+                      <FileText className="w-5 h-5 text-blue-600 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <a
+                          href={(formData as any).coaPdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-gray-900 hover:text-blue-600 truncate block"
+                        >
+                          {(formData as any).coaPdfName || 'View current PDF'}
+                        </a>
+                        {(formData as any).coaUploadedAt && (
+                          <p className="text-[11px] text-gray-500">
+                            Uploaded {new Date((formData as any).coaUploadedAt).toLocaleDateString('en-GB')}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => coaInputRef.current?.click()}
+                        className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-xs font-medium"
+                      >Replace</button>
+                      <button
+                        type="button"
+                        onClick={removeCoa}
+                        aria-label="Remove certificate"
+                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-md"
+                      ><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => coaInputRef.current?.click()}
+                      disabled={coaUploading}
+                      className="w-full min-h-[48px] px-4 py-3 border-2 border-dashed border-blue-500/40 hover:border-blue-500 bg-white/[0.02] hover:bg-blue-500/[0.06] text-blue-300 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                    >
+                      {coaUploading ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Uploading…</>
+                      ) : (
+                        <><Upload className="w-4 h-4" /> Upload COA PDF</>
+                      )}
+                    </button>
+                  )}
+                  <input
+                    ref={coaInputRef}
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="hidden"
+                    onChange={e => {
+                      const f = e.target.files?.[0];
+                      if (f) uploadCoaFile(f);
+                      e.target.value = '';
+                    }}
+                  />
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Batch / Lot number (optional)</label>
+                    <input
+                      type="text"
+                      value={(formData as any).coaBatch || ''}
+                      onChange={e => setFormData(p => ({ ...p, coaBatch: e.target.value } as any))}
+                      placeholder="e.g. PHL-2026-0612"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                    />
+                  </div>
+                  {coaError && (
+                    <p className="text-red-400 text-xs flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5" /> {coaError}
+                    </p>
+                  )}
+                </div>
+
                 {/* URL Slug */}
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1.5 flex items-center gap-1.5">
