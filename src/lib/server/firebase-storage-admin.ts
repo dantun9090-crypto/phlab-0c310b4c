@@ -132,7 +132,8 @@ export async function uploadHplcStorageImage(input: UploadStorageImageInput): Pr
     cacheControl: "public, max-age=31536000, immutable",
     metadata: { firebaseStorageDownloadTokens: downloadToken },
   };
-  const fileBytes = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  const fileBytes = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(fileBytes).set(bytes);
   const body = new Blob([
     `--${boundary}\r\ncontent-type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`,
     `--${boundary}\r\ncontent-type: ${contentType}\r\n\r\n`,
