@@ -454,7 +454,7 @@ export default function WatchdogTab() {
         <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
           <div>
             <h3 className="text-lg font-bold text-white">Watchdog Bot Runs</h3>
-            <p className="text-[#9cb8d9] text-xs mt-1">Background bot — runs every 5 min, checks site reachability, sitemap, orders, Wallid, images.</p>
+            <p className="text-[#9cb8d9] text-xs mt-1">Background bot — runs every 5 min, checks site reachability, sitemap, orders, Wallid, images. Admin-only manual trigger (no secret needed). History auto-refreshes every 30s.</p>
           </div>
           <div className="flex gap-2">
             <button onClick={triggerRun} disabled={running} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold">
