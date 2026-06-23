@@ -98,6 +98,8 @@ function capturePreHydrationDom(): void {
 }
 
 function installPreReactMutationLogger(): () => void {
+  let mutationCount = 0;
+  const mutatedNames: string[] = [];
   try {
     const observer = new MutationObserver((records) => {
       if (window.__PHL_REACT_READY__) return;
@@ -111,11 +113,22 @@ function installPreReactMutationLogger(): () => void {
             return node.nodeName;
           })
           .filter(Boolean);
-        if (added.length) console.warn("[HYDRATION DIAG] DOM mutated before React ready", added);
+        if (added.length) {
+          mutationCount += added.length;
+          mutatedNames.push(...added);
+          console.warn(`[HYDRATION DIAG] mutation #${mutationCount}`, added);
+        }
       }
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (mutationCount > 0) {
+        console.warn(`[HYDRATION DIAG] FINAL pre-React mutation count = ${mutationCount}`, mutatedNames);
+      } else {
+        console.info("[HYDRATION DIAG] FINAL pre-React mutation count = 0 ✓");
+      }
+    };
   } catch {
     return () => undefined;
   }
