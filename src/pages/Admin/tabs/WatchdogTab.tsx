@@ -12,6 +12,7 @@ import {
   auth, db, collection, getDocs, getDoc, query, orderBy, where, limit as fbLimit, doc, onSnapshot,
 } from '@/lib/firebase';
 import { getDevModeStatus, setDevMode } from '@/lib/cloudflare-devmode.functions';
+import { triggerWatchdogRun } from '@/lib/watchdog-admin.functions';
 import {
   Bot, Activity, CheckCircle2, XCircle, AlertTriangle, RefreshCw, Loader2, Play,
   ChevronDown, ChevronRight, Cloud, ShieldAlert, Send, Power,
