@@ -11,7 +11,27 @@ declare global {
 }
 
 const HYDRATION_ERROR_FLAG = "__phl_hydration_error_seen";
-const FORCE_CSR_FALLBACK = true;
+
+// ============================================================
+// SSR HYDRATION FLAGS (P0 RECOVERY)
+// ENABLE_SSR_HYDRATION: master flag. false = CSR for everyone.
+// SSR_HYDRATION_ROUTES: when ENABLE_SSR_HYDRATION = true,
+//   only these paths hydrate via SSR. Empty array = ALL routes.
+// Flip ENABLE_SSR_HYDRATION ONLY after user confirms
+// "mutations = 0" on Chrome + Firefox over 10 hard reloads.
+// ============================================================
+const ENABLE_SSR_HYDRATION = false;
+const SSR_HYDRATION_ROUTES: string[] = ["/"];
+
+function shouldHydrateCurrentRoute(): boolean {
+  if (!ENABLE_SSR_HYDRATION) return false;
+  if (SSR_HYDRATION_ROUTES.length === 0) return true;
+  try {
+    return SSR_HYDRATION_ROUTES.includes(location.pathname);
+  } catch {
+    return false;
+  }
+}
 
 function errorText(error: unknown): string {
   if (!error) return "";
@@ -78,6 +98,8 @@ function capturePreHydrationDom(): void {
 }
 
 function installPreReactMutationLogger(): () => void {
+  let mutationCount = 0;
+  const mutatedNames: string[] = [];
   try {
     const observer = new MutationObserver((records) => {
       if (window.__PHL_REACT_READY__) return;
@@ -91,11 +113,22 @@ function installPreReactMutationLogger(): () => void {
             return node.nodeName;
           })
           .filter(Boolean);
-        if (added.length) console.warn("[HYDRATION DIAG] DOM mutated before React ready", added);
+        if (added.length) {
+          mutationCount += added.length;
+          mutatedNames.push(...added);
+          console.warn(`[HYDRATION DIAG] mutation #${mutationCount}`, added);
+        }
       }
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (mutationCount > 0) {
+        console.warn(`[HYDRATION DIAG] FINAL pre-React mutation count = ${mutationCount}`, mutatedNames);
+      } else {
+        console.info("[HYDRATION DIAG] FINAL pre-React mutation count = 0 ✓");
+      }
+    };
   } catch {
     return () => undefined;
   }
@@ -226,10 +259,14 @@ window.addEventListener("unhandledrejection", (event) => {
   if (isHydrationCrash(event.reason)) renderCsr(event.reason);
 }, true);
 
-if (FORCE_CSR_FALLBACK) {
-  renderCsr(new Error("SSR hydration temporarily disabled for P0 recovery"));
-} else {
+if (shouldHydrateCurrentRoute()) {
+  console.info(`[HYDRATION] SSR active on ${location.pathname}`);
   startTransition(hydrateOrFallback);
+} else {
+  console.info(
+    `[HYDRATION] CSR mode on ${location.pathname} (ENABLE_SSR_HYDRATION=${ENABLE_SSR_HYDRATION}, allowed=${JSON.stringify(SSR_HYDRATION_ROUTES)})`,
+  );
+  renderCsr(new Error("SSR hydration disabled by flag"));
 }
 
 window.setTimeout(() => {
