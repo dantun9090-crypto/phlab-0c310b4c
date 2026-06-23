@@ -362,6 +362,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 const NONCE_PROPAGATOR = `
 (function(){
   try{
+    try{
+      var KEY='__phl_stale_asset_reload_at';
+      var ASSET_RE=/\/(assets|_build)\/[^?#]+\.(?:js|mjs|css)(?:[?#]|$)/i;
+      addEventListener('error',function(ev){
+        var t=ev&&ev.target;
+        if(!t||t===window) return;
+        var src=(t.src||t.href||'')+'';
+        if(!src) return;
+        try{ var u=new URL(src,location.href); if(u.origin!==location.origin) return; src=u.pathname+u.search; }catch(e){}
+        if(!ASSET_RE.test(src)) return;
+        try{ var last=Number(sessionStorage.getItem(KEY)||'0'); if(last&&Date.now()-last<30000) return; sessionStorage.setItem(KEY,String(Date.now())); }catch(e){}
+        try{ console.warn('[phlabs] stale build asset failed, forcing clean reload:', src); }catch(e){}
+        try{ var qs=new URLSearchParams(location.search); qs.set('sw','off'); qs.set('_r','stale-asset'); location.replace(location.pathname+'?'+qs.toString()+location.hash); }catch(e){ location.replace('/?sw=off&_r=stale-asset'); }
+      },true);
+    }catch(e){}
     var cs = document.currentScript;
     var n = (cs && cs.nonce) || (cs && cs.getAttribute && cs.getAttribute('nonce')) || '';
     if(!n) return;
@@ -384,6 +399,14 @@ const NONCE_PROPAGATOR = `
 
 const FORCE_SW_CLEANUP = `
 (function(){
+  var recoveryUrl=function(reason){
+    try{
+      var qs=new URLSearchParams(location.search);
+      qs.set('sw','off');
+      qs.set('_r',reason||'sw');
+      return location.pathname+'?'+qs.toString()+location.hash;
+    }catch(e){ return '/?sw=off&_r=sw'; }
+  };
   var clearAllCaches=function(){
     try{
       if('caches' in window && caches.keys){
@@ -398,6 +421,20 @@ const FORCE_SW_CLEANUP = `
   };
   try{
     if('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations){
+      if(navigator.serviceWorker.controller){
+        try{
+          var KEY='__phl_controlled_sw_reload_at';
+          var last=Number(sessionStorage.getItem(KEY)||'0');
+          if(!last||Date.now()-last>30000){
+            sessionStorage.setItem(KEY,String(Date.now()));
+            navigator.serviceWorker.getRegistrations().then(function(registrations){
+              return Promise.all(registrations.map(function(registration){ return registration.unregister().catch(function(){}); }));
+            }).then(clearAllCaches, clearAllCaches).finally(function(){ location.replace(recoveryUrl('controlled-sw')); });
+            if(document.documentElement) document.documentElement.style.visibility='hidden';
+            return;
+          }
+        }catch(e){}
+      }
       navigator.serviceWorker.getRegistrations().then(function(registrations){
         return Promise.all(registrations.map(function(registration){
           try{ console.info('SW unregistered:', registration.scope); }catch(e){}
@@ -522,6 +559,40 @@ const BOOT_WATCHDOG = `
 })();
 `;
 
+const STALE_ASSET_RECOVERY = `
+(function(){
+  try{
+    var KEY='__phl_stale_asset_reload_at';
+    var ASSET_RE=/\/(assets|_build)\/[^?#]+\.(?:js|mjs|css)(?:[?#]|$)/i;
+    var clean=function(){
+      try{
+        var qs=new URLSearchParams(location.search);
+        qs.set('sw','off');
+        qs.set('_r','stale-asset');
+        return location.pathname+'?'+qs.toString()+location.hash;
+      }catch(e){ return '/?sw=off&_r=stale-asset'; }
+    };
+    var recover=function(src){
+      try{
+        var last=Number(sessionStorage.getItem(KEY)||'0');
+        if(last&&Date.now()-last<30000) return;
+        sessionStorage.setItem(KEY,String(Date.now()));
+      }catch(e){}
+      try{ console.warn('[phlabs] stale build asset failed, forcing clean reload:', src); }catch(e){}
+      location.replace(clean());
+    };
+    addEventListener('error',function(ev){
+      var t=ev&&ev.target;
+      if(!t||t===window) return;
+      var src=(t.src||t.href||'')+'';
+      if(!src) return;
+      try{ var u=new URL(src,location.href); if(u.origin!==location.origin) return; src=u.pathname+u.search; }catch(e){}
+      if(ASSET_RE.test(src)) recover(src);
+    },true);
+  }catch(e){}
+})();
+`;
+
 function installCanonicalEnforcer() {
   const ORIGIN = "https://phlabs.co.uk";
   let running = false;
@@ -610,6 +681,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-GB" style={{ backgroundColor: "#060f1e" }}>
       <head>
+        {/* These must run before HeadContent, because HeadContent emits
+            modulepreload links for hashed bundles. Old service workers can
+            otherwise intercept those requests before cleanup starts. */}
+        <script dangerouslySetInnerHTML={{ __html: NONCE_PROPAGATOR }} />
+        <script dangerouslySetInnerHTML={{ __html: FORCE_SW_CLEANUP }} />
+        <script dangerouslySetInnerHTML={{ __html: STALE_ASSET_RECOVERY }} />
+        <script dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
         <HeadContent />
         {/* Inline critical CSS — covers boot bg, header skeleton + banner
             reserved heights so the page paints styled before the deferred
@@ -620,11 +698,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <noscript>
           <link rel="stylesheet" href={appCss} />
         </noscript>
-        {/* MUST be first inline script — installs nonce propagator before
-            anything else runs, so subsequent injected scripts inherit nonce. */}
-        <script dangerouslySetInnerHTML={{ __html: NONCE_PROPAGATOR }} />
-        <script dangerouslySetInnerHTML={{ __html: FORCE_SW_CLEANUP }} />
-        <script dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
       </head>
 
       <body suppressHydrationWarning style={{ backgroundColor: "#060f1e", color: "#f0f6ff", margin: 0 }}>
@@ -654,7 +727,7 @@ function RootComponent() {
     if ((window as unknown as { __phlGaBootstrapped?: boolean }).__phlGaBootstrapped) return;
     const inline = document.createElement('script');
     inline.text =
-      "(function(){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;var c={a:false,m:false};try{var r=localStorage.getItem('php_cookie_consent');if(r){var p=JSON.parse(r);c.a=!!p.analytics;c.m=!!p.marketing;}}catch(e){}gtag('consent','default',{ad_storage:c.m?'granted':'denied',ad_user_data:c.m?'granted':'denied',ad_personalization:c.m?'granted':'denied',analytics_storage:c.a?'granted':'denied',functionality_storage:'granted',security_storage:'granted',wait_for_update:500});gtag('js',new Date());gtag('config','G-5HM4YT7HDW',{anonymize_ip:true});gtag('config','GT-P3HVF8R5',{send_page_view:false});gtag('config','GT-WRHD4Q69',{send_page_view:false});gtag('config','MC-KJMB7MKB29',{send_page_view:false});window.__phlGaBootstrapped=true;})();";
+      "(function(){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;var c={a:false,m:false};try{var r=localStorage.getItem('php_cookie_consent');if(r){var p=JSON.parse(r);c.a=!!p.analytics;c.m=!!p.marketing;}}catch(e){}gtag('consent','default',{ad_storage:c.m?'granted':'denied',ad_user_data:c.m?'granted':'denied',ad_personalization:c.m?'granted':'denied',analytics_storage:c.a?'granted':'denied',functionality_storage:'granted',security_storage:'granted',wait_for_update:500});gtag('js',new Date());gtag('config','G-5HM4YT7HDW',{cookie_domain:'phlabs.co.uk',cookie_flags:'SameSite=None;Secure',cookie_expires:63072000,cookie_update:true,send_page_view:true,anonymize_ip:true,allow_google_signals:c.m,allow_ad_personalization_signals:c.m});gtag('config','GT-P3HVF8R5',{send_page_view:false});gtag('config','GT-WRHD4Q69',{send_page_view:false});gtag('config','MC-KJMB7MKB29',{send_page_view:false});window.__phlGaBootstrapped=true;})();";
     document.body.appendChild(inline);
     const ext = document.createElement('script');
     ext.async = true;

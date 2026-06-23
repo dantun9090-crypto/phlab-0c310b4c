@@ -358,6 +358,34 @@ function applyCacheRecoveryHeaders(response: Response, url: URL): Response {
   });
 }
 
+function isBuildAssetPath(pathname: string): boolean {
+  return /^\/(assets|_build)\/[^?#]+\.(js|mjs|css)$/i.test(pathname);
+}
+
+function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
+  if (!isBuildAssetPath(pathname)) return null;
+  const isScript = /\.(js|mjs)$/i.test(pathname);
+  const headers = new Headers({
+    "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+    "cdn-cache-control": "no-store",
+    "cloudflare-cdn-cache-control": "no-store",
+    "surrogate-control": "no-store",
+    "pragma": "no-cache",
+    "expires": "0",
+    "x-robots-tag": "noindex, nofollow",
+    "vary": "*",
+  });
+  if (!isScript) {
+    headers.set("content-type", "text/css; charset=utf-8");
+    return new Response("/* missing stale PH Labs build stylesheet */\n", { status: 200, headers });
+  }
+  headers.set("content-type", "text/javascript; charset=utf-8");
+  return new Response(
+    "try{var q=new URLSearchParams(location.search);q.set('sw','off');q.set('_r','missing-asset');location.replace(location.pathname+'?'+q.toString()+location.hash)}catch(e){location.replace('/?sw=off&_r=missing-asset')}\n",
+    { status: 200, headers },
+  );
+}
+
 // HTML routes that must NEVER be edge-cached (sensitive / dynamic per user).
 // Anything not matching these gets the admin-controlled TTL (default Off/0).
 // SAFETY: TTL is short (Off/24h/7d/14d/30d) so the window for stale-HTML-vs-new-chunks
@@ -940,6 +968,11 @@ export default {
       }
 
       normalized = applyCacheRecoveryHeaders(normalized, url);
+
+      if (normalized.status === 404) {
+        const recovery = missingBuildAssetRecoveryResponse(url.pathname);
+        if (recovery) normalized = recovery;
+      }
 
       const ms = Date.now() - start;
       log.info({
