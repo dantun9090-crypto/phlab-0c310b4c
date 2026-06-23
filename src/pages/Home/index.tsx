@@ -182,7 +182,7 @@ export default function HomePage() {
     // Defer cached product load past LCP window — avoids TBT and a permanent live stream
     let cancelled = false;
     const loadProducts = () => {
-      getAllProducts().then((prods: Product[]) => {
+      loadFirebase().then(({ getAllProducts }) => getAllProducts()).then((prods: Product[]) => {
         if (!cancelled) setProducts(prods);
       }).catch(() => {
         if (!cancelled) setProducts([]);
@@ -209,9 +209,11 @@ export default function HomePage() {
 
     // LCP-critical: adverts contain the hero banner image. Fire immediately,
     // outside requestIdleCallback, so the network request is not delayed.
-    getDocs(query(collection(db, 'adverts'), where('active', '==', true))).then(snap => {
+    loadFirebase().then(({ getDocs, query, collection, db, where }) =>
+      getDocs(query(collection(db, 'adverts'), where('active', '==', true)))
+    ).then((snap: any) => {
       try {
-        const allAdverts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const allAdverts = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
         if (!cancelled) setAdverts(allAdverts);
         const heroCount = allAdverts.filter((a: any) => a.placement === 'homepage_hero').length;
         localStorage.setItem('php_adverts_hero_count', heroCount > 0 ? '1' : '0');
@@ -220,18 +222,20 @@ export default function HomePage() {
     }).catch(() => {});
 
     const deferredLoad = () => {
-      getDoc(doc(db, 'settings', 'promoBanner')).then(snap => {
-        if (snap.exists()) setBanner(snap.data());
-        setBannerResolved(true);
+      loadFirebase().then(({ getDoc, doc, db }) => {
+        getDoc(doc(db, 'settings', 'promoBanner')).then(snap => {
+          if (snap.exists()) setBanner(snap.data());
+          setBannerResolved(true);
+        }).catch(() => setBannerResolved(true));
+
+        getDoc(doc(db, 'siteSettings', 'featured-products')).then(snap => {
+          if (snap.exists() && (snap.data() as any).products) setFeaturedProducts((snap.data() as any).products);
+        }).catch(() => {});
+
+        getDoc(doc(db, 'settings', 'site')).then(snap => {
+          if (snap.exists()) setSiteSettings(snap.data() as Record<string, string>);
+        }).catch(() => {});
       }).catch(() => setBannerResolved(true));
-
-      getDoc(doc(db, 'siteSettings', 'featured-products')).then(snap => {
-        if (snap.exists() && snap.data().products) setFeaturedProducts(snap.data().products);
-      }).catch(() => {});
-
-      getDoc(doc(db, 'settings', 'site')).then(snap => {
-        if (snap.exists()) setSiteSettings(snap.data() as Record<string, string>);
-      }).catch(() => {});
     };
 
     if (typeof requestIdleCallback !== 'undefined') {
