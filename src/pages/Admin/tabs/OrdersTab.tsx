@@ -249,6 +249,15 @@ export default function OrdersTab() {
     loadOrders();
   }, []);
 
+  // Lock background scroll while the order detail modal is open (prevents
+  // the page behind from scrolling on mobile when reviewing an order).
+  useEffect(() => {
+    if (typeof document === 'undefined' || !selected) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [selected]);
+
   // Sync inputs when selected order changes
   useEffect(() => {
     setTrackingInput(selected?.trackingNumber || '');
