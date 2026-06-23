@@ -1166,6 +1166,9 @@ export default function ProductDetail() {
                     )}
                   </div>
 
+                  {/* ── COA / HPLC Certificate button (directly below main image) ── */}
+                  <CoaButton product={product} />
+
                   {/* ── Thumbnails ── */}
                   {count > 1 && (
                     <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none snap-x snap-mandatory">
