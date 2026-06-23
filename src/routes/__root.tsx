@@ -627,10 +627,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
       </head>
 
-      <body style={{ backgroundColor: "#060f1e", color: "#f0f6ff", margin: 0 }}>
+      <body suppressHydrationWarning style={{ backgroundColor: "#060f1e", color: "#f0f6ff", margin: 0 }}>
         {children}
         <Scripts />
       </body>
+
     </html>
   );
 }
