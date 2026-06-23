@@ -208,6 +208,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      // Belt-and-braces: even when an intermediary ignores response headers,
+      // these <meta http-equiv> tags signal the HTML document itself must
+      // never be cached. Prevents stale shells loading new hashed asset
+      // chunks (which would surface as React hydration error #418).
+      { httpEquiv: "Cache-Control", content: "no-cache, no-store, must-revalidate" },
+      { httpEquiv: "Pragma", content: "no-cache" },
+      { httpEquiv: "Expires", content: "0" },
+      // Build marker — helps confirm which build a stale tab is running.
+      { name: "x-build-id", content: typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev" },
       { name: "author", content: "PH Labs UK" },
       { property: "og:site_name", content: "PH Labs UK" },
       { property: "og:locale", content: "en_GB" },
