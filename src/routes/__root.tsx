@@ -627,6 +627,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
         {/* MUST be first inline script — installs nonce propagator before
             anything else runs, so subsequent injected scripts inherit nonce. */}
         <script dangerouslySetInnerHTML={{ __html: NONCE_PROPAGATOR }} />
+        <script dangerouslySetInnerHTML={{ __html: FORCE_SW_CLEANUP }} />
         <script dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
       </head>
 
