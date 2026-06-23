@@ -656,6 +656,11 @@ const STALE_ASSET_RECOVERY = `
     var recover=function(src){
       if(hasHydration()) return;
       try{
+        var p=(location.pathname||'').toLowerCase();
+        var NEVER=['/login','/auth','/account','/checkout','/cart','/register'];
+        for(var i=0;i<NEVER.length;i++){ if(p.indexOf(NEVER[i])===0){ try{ console.warn('[RELOAD BLOCKED] Critical route:',p); }catch(e){} return; } }
+      }catch(e){}
+      try{
         var last=Number(sessionStorage.getItem(KEY)||'0');
         var count=readCount();
         if(count>=2||onRecoveryUrl()){ showLimit(); return; }
