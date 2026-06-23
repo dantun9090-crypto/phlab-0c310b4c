@@ -1334,6 +1334,43 @@ export default function ProductDetail() {
               );
             })()}
           </AnimatePresence>
+
+          {/* ── HPLC Lightbox ── */}
+          <AnimatePresence>
+            {hplcLightboxSrc && (
+              <motion.div
+                key="hplc-lightbox"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4"
+                onClick={() => setHplcLightboxSrc(null)}
+                onKeyDown={(e) => { if (e.key === 'Escape') setHplcLightboxSrc(null); }}
+                tabIndex={0}
+              >
+                <button
+                  className="absolute top-4 right-4 w-11 h-11 rounded-full bg-white/10 hover:bg-white/25 flex items-center justify-center text-white transition-all z-10"
+                  onClick={() => setHplcLightboxSrc(null)}
+                  aria-label="Close HPLC view"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                <motion.img
+                  src={hplcLightboxSrc}
+                  alt={`${product.name} HPLC chromatogram — ≥99% purity`}
+                  className="max-w-[96vw] max-h-[92vh] object-contain rounded-xl select-none"
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.02 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  draggable={false}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/60 text-xs">Tap outside or press Esc to close</div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           {/* ── Right: Product Info ── */}
           <motion.div
             initial={{ opacity: 0, x: 24 }}
