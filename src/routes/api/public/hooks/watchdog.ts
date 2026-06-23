@@ -2,11 +2,11 @@
  * Watchdog Bot — runs every 5 minutes (pg_cron).
  *
  * Performs a battery of health checks against the live site, Firestore data,
- * payments queues and product images. Writes a summary document to
- * `watchdog_runs` (admin-read only) and attempts a small set of safe
- * auto-heal actions (no client-visible side effects beyond what the existing
- * hooks already do — sitemap rebuild, Fena retry queue drain, Prerender
- * recache for failing URLs).
+ * the Wallid payments integration and product images. Writes a summary
+ * document to `watchdog_runs` (admin-read only) and attempts a small set
+ * of safe auto-heal actions (Prerender recache for failing sitemap, kicks
+ * the Wallid monitor when stale, and enqueues an admin email when Wallid
+ * failure counts rise — one alert per hour, deduped).
  *
  * Auth: `x-watchdog-secret` header must equal CLEANUP_SECRET env (reused
  * shared secret — no new secret needed).
