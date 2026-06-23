@@ -153,14 +153,17 @@ export default function WatchdogTab() {
   const loadAudits = useCallback(async () => {
     setAuditsLoading(true); setAuditsErr('');
     try {
+      // No orderBy → avoids needing a composite index on (kind, at).
+      // Fetch up to 200, sort client-side, slice to 50.
       const q = query(
         collection(db, 'auditLogs'),
         where('kind', '==', 'watchdog_devmode_check'),
-        orderBy('at', 'desc'),
-        fbLimit(50),
+        fbLimit(200),
       );
       const snap = await getDocs(q);
-      setAudits(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
+      const rows = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as AuditCheck[];
+      rows.sort((a, b) => (b.at || '').localeCompare(a.at || ''));
+      setAudits(rows.slice(0, 50));
     } catch (e: any) {
       setAuditsErr(e?.message || 'Failed to load audit history');
     } finally {
