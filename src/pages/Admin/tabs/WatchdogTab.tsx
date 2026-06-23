@@ -12,6 +12,7 @@ import {
   auth, db, collection, getDocs, getDoc, query, orderBy, where, limit as fbLimit, doc, onSnapshot,
 } from '@/lib/firebase';
 import { getDevModeStatus, setDevMode } from '@/lib/cloudflare-devmode.functions';
+import { triggerWatchdogRun } from '@/lib/watchdog-admin.functions';
 import {
   Bot, Activity, CheckCircle2, XCircle, AlertTriangle, RefreshCw, Loader2, Play,
   ChevronDown, ChevronRight, Cloud, ShieldAlert, Send, Power,
@@ -187,7 +188,11 @@ export default function WatchdogTab() {
       setRunsErr(e?.message || 'Failed to load runs');
     } finally { setRunsLoading(false); }
   }, []);
-  useEffect(() => { loadRuns(); }, [loadRuns]);
+  useEffect(() => {
+    loadRuns();
+    const id = setInterval(loadRuns, 30_000);
+    return () => clearInterval(id);
+  }, [loadRuns]);
 
   const turnOff = async () => {
     setTurningOff(true); setCfErr('');
@@ -206,16 +211,15 @@ export default function WatchdogTab() {
   const triggerRun = async () => {
     setRunning(true); setRunResult('');
     try {
-      const res = await fetch('/api/public/hooks/watchdog', { method: 'POST', headers: { 'content-type': 'application/json' } });
-      if (res.status === 401) setRunResult('Manual trigger needs the shared secret. The bot runs automatically every 5 min via cron — refresh below to see results.');
-      else if (!res.ok) setRunResult(`Failed: ${res.status}`);
-      else {
-        const data = await res.json();
-        setRunResult(`OK — status: ${data.status}, ${data.failed}/${data.totalChecks} failed`);
-        await loadRuns();
-      }
-    } catch (e: any) { setRunResult(e?.message || 'Run failed'); }
-    finally { setRunning(false); }
+      const u = auth.currentUser;
+      if (!u) throw new Error('Not signed in');
+      const idToken = await u.getIdToken();
+      const r = await triggerWatchdogRun({ data: { idToken } });
+      setRunResult(`OK — status: ${r.status}, ${r.failed}/${r.totalChecks} failed`);
+      await loadRuns();
+    } catch (e: any) {
+      setRunResult(e?.message || 'Run failed');
+    } finally { setRunning(false); }
   };
 
   // ── Derived ────────────────────────────────────────────────────────
@@ -450,7 +454,7 @@ export default function WatchdogTab() {
         <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
           <div>
             <h3 className="text-lg font-bold text-white">Watchdog Bot Runs</h3>
-            <p className="text-[#9cb8d9] text-xs mt-1">Background bot — runs every 5 min, checks site reachability, sitemap, orders, Wallid, images.</p>
+            <p className="text-[#9cb8d9] text-xs mt-1">Background bot — runs every 5 min, checks site reachability, sitemap, orders, Wallid, images. Admin-only manual trigger (no secret needed). History auto-refreshes every 30s.</p>
           </div>
           <div className="flex gap-2">
             <button onClick={triggerRun} disabled={running} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold">
