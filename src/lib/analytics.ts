@@ -193,6 +193,10 @@ export async function initAnalytics(measurementId?: string): Promise<void> {
       allow_google_signals: consent.marketing,
       allow_ad_personalization_signals: consent.marketing,
       debug_mode: debugMode,
+      cookie_domain: 'phlabs.co.uk',
+      cookie_flags: 'SameSite=None;Secure',
+      cookie_expires: 63072000,
+      cookie_update: true,
     });
   }
   // Google destinations — activates linked GA4, Google Ads and Merchant Center destinations.
