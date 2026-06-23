@@ -56,9 +56,25 @@ function stopForHydrationError(err: unknown): boolean {
   return true;
 }
 
+const NEVER_RELOAD_PATHS = ["/login", "/auth", "/account", "/checkout", "/cart", "/register"];
+
+function isCriticalRoute(): boolean {
+  try {
+    const path = window.location.pathname.toLowerCase();
+    return NEVER_RELOAD_PATHS.some((p) => path.startsWith(p));
+  } catch {
+    return false;
+  }
+}
+
 function doReload(reason: string) {
   if (!isOnline()) return;
   if (hasHydrationErrorState()) return;
+  if (isCriticalRoute()) {
+    // eslint-disable-next-line no-console
+    console.warn("[RELOAD BLOCKED] Critical route:", window.location.pathname, "reason:", reason);
+    return;
+  }
   try {
     const last = Number(sessionStorage.getItem(RELOAD_KEY) ?? "0");
     const count = Number(sessionStorage.getItem(RELOAD_COUNT_KEY) ?? "0");
