@@ -608,7 +608,22 @@ const STALE_ASSET_RECOVERY = `
 (function(){
   try{
     var KEY='__phl_stale_asset_reload_at';
+    var COUNT='__phl_stale_asset_reload_count';
+    var HYDRATION='__phl_hydration_error_seen';
     var ASSET_RE=new RegExp('/(assets|_build)/[^?#]+\\.(?:js|mjs|css)(?:[?#]|$)','i');
+    var isHydration=function(x){
+      var msg='';
+      try{ msg=String((x&&(x.message||x.name||x.stack))||x||''); }catch(e){}
+      return /Minified React error #418\\b|react\\.dev\\/errors\\/418\\b|Hydration failed|hydration mismatch|server rendered HTML didn't match|server-rendered HTML.+client-side React/i.test(msg);
+    };
+    var showHydration=function(){
+      try{
+        sessionStorage.setItem(HYDRATION,String(Date.now()));
+        if(!document.body) return;
+        document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:440px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Refresh needed</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">The page did not initialise cleanly. Automatic reloads have been stopped so your browser does not loop.</p><button onclick="try{sessionStorage.removeItem(\\'__phl_hydration_error_seen\\')}catch(e){};location.reload()" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer">Refresh page</button><a href="/" style="display:inline-block;margin-left:10px;color:#9fb0c8;text-decoration:underline">Go home</a></div></div>';
+      }catch(e){}
+    };
+    var hasHydration=function(){ try{ return !!sessionStorage.getItem(HYDRATION); }catch(e){ return false; } };
     var clean=function(){
       try{
         var qs=new URLSearchParams(location.search);
@@ -618,8 +633,11 @@ const STALE_ASSET_RECOVERY = `
       }catch(e){ return '/?sw=off&_r=stale-asset'; }
     };
     var recover=function(src){
+      if(hasHydration()) return;
       try{
         var last=Number(sessionStorage.getItem(KEY)||'0');
+        var count=Number(sessionStorage.getItem(COUNT)||'0');
+        if(count>=1) return;
         if(last&&Date.now()-last<30000) return;
       }catch(e){}
       // Verify the asset is actually missing before forcing a reload.
@@ -627,8 +645,9 @@ const STALE_ASSET_RECOVERY = `
       // reloading would loop. Only reload when the server confirms 404/410.
       try{
         fetch(src,{method:'HEAD',cache:'no-store',credentials:'omit'}).then(function(res){
+          if(hasHydration()) return;
           if(res && (res.status===404||res.status===410)){
-            try{ sessionStorage.setItem(KEY,String(Date.now())); }catch(e){}
+            try{ sessionStorage.setItem(KEY,String(Date.now())); sessionStorage.setItem(COUNT,'1'); }catch(e){}
             try{ console.warn('[phlabs] stale build asset 404, forcing clean reload:', src); }catch(e){}
             var qs;
             try{
@@ -640,6 +659,8 @@ const STALE_ASSET_RECOVERY = `
         }).catch(function(){});
       }catch(e){}
     };
+    addEventListener('error',function(ev){ if(isHydration(ev&&(ev.error||ev.message))) showHydration(); },true);
+    addEventListener('unhandledrejection',function(ev){ if(isHydration(ev&&ev.reason)) showHydration(); },true);
     addEventListener('error',function(ev){
       var t=ev&&ev.target;
       if(!t||t===window) return;
