@@ -1,10 +1,12 @@
-import { CheckCircle2, ShoppingCart, Edit2, FlaskConical, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, ShoppingCart, Edit2, FlaskConical, ShieldCheck, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getProductImage } from '@/lib/productImages';
 import type { Product } from '@/lib/firebase';
 import { nameToSlug } from '@/lib/seedProducts';
 import { useScrollReveal } from '@/hooks/useScrollReveal';
 import { cfImgProps } from '@/lib/cf-image';
+import { CoaModal } from './CoaModal';
 
 
 interface ProductCardProps {
