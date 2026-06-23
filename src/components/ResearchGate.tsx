@@ -52,15 +52,22 @@ async function fetchProductRequiresGate(slug: string): Promise<boolean | null> {
 
 export default function ResearchGate() {
   const [showModal, setShowModal]         = useState(false);
-  // H2: auto-hide the sticky banner once the user has acknowledged research-use
-  // so mobile no longer carries a 34px + 32px banner stack on every page.
-  const [bannerVisible, setBannerVisible] = useState(() => !isConfirmed());
+  // Start hidden on first render to match SSR (where isConfirmed() returns true).
+  // After hydration the effect below flips it based on actual localStorage.
+  const [bannerVisible, setBannerVisible] = useState(false);
   const [confirmed, setConfirmed]         = useState(false);
   const [btnHover, setBtnHover]           = useState(false);
   const [btnActive, setBtnActive]         = useState(false);
   const location = useLocation();
   // Route param is :id on /products/:id
   const params = useParams<{ id?: string }>();
+
+  // Hydration-safe: read localStorage only after mount so SSR HTML and the
+  // first client render match.
+  useEffect(() => {
+    if (!isConfirmed()) setBannerVisible(true);
+  }, []);
+
 
   const isExempt = MODAL_EXEMPT_PATHS.some(p => location.pathname.startsWith(p));
   const hideGateCompletely = location.pathname.startsWith('/landing');

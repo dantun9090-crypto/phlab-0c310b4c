@@ -1,10 +1,23 @@
+import { useEffect, useState } from 'react';
+
 /**
  * MolecularBackground — subtle animated SVG molecular bonds + nodes.
  * Pure CSS animation, zero JS, GPU-composited via `will-change: transform`.
  * On mobile (<768px) renders only the top tier to reduce paint cost.
+ *
+ * Hydration-safe: starts in the desktop (full) variant on both server and
+ * client so the first render matches SSR HTML, then collapses to the mobile
+ * variant after mount if the viewport is narrow.
  */
 export function MolecularBackground({ opacity = 1 }: { opacity?: number }) {
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 768);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
 
   return (
     <div className="molecular-bg" style={{ opacity }}>
