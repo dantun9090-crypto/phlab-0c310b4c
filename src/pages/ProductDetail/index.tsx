@@ -1423,14 +1423,19 @@ export default function ProductDetail() {
                           )}
                         </div>
                         {variant?.hplcImageUrl && (
-                          <a href={variant.hplcImageUrl} target="_blank" rel="noopener noreferrer" className="block">
+                          <button
+                            type="button"
+                            onClick={() => setHplcLightboxSrc(variant.hplcImageUrl!)}
+                            className="block w-full text-left"
+                            aria-label="View HPLC chromatogram full size"
+                          >
                             <img
                               src={variant.hplcImageUrl}
                               alt={`${product.name} ${variant.name || ''} HPLC chromatogram — ≥99% purity`}
                               loading="lazy"
-                              className="w-full max-h-72 object-contain rounded-lg bg-white/5 border border-emerald-500/15 hover:border-emerald-400/40 transition-colors"
+                              className="w-full max-h-72 object-contain rounded-lg bg-white/5 border border-emerald-500/15 hover:border-emerald-400/40 transition-colors cursor-zoom-in"
                             />
-                          </a>
+                          </button>
                         )}
                       </div>
                     )}
