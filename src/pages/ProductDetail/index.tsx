@@ -376,6 +376,10 @@ export default function ProductDetail() {
             bannerImageUrl: toText(data.bannerImageUrl),
             productManualUrl: toText(data.productManualUrl),
             productManualName: toText(data.productManualName),
+            coaPdfUrl: toText(data.coaPdfUrl),
+            coaPdfName: toText(data.coaPdfName),
+            coaBatch: toText(data.coaBatch),
+            coaUploadedAt: toText(data.coaUploadedAt),
             specs: data.specs && typeof data.specs === 'object'
               ? {
                   casNumber: toText(data.specs.casNumber, 'N/A'),
