@@ -25,6 +25,7 @@ import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wal
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
+import { Route as ApiPublicCoaPdfRouteImport } from './routes/api/public/coa-pdf'
 import { Route as ApiPublicCacheConfigRouteImport } from './routes/api/public/cache-config'
 import { Route as ApiPaymentsStatusRouteImport } from './routes/api/payments/status'
 import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/create'
@@ -125,6 +126,11 @@ const ApiPublicPostPublishCheckRoute =
 const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
   id: '/api/public/csp-report',
   path: '/api/public/csp-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCoaPdfRoute = ApiPublicCoaPdfRouteImport.update({
+  id: '/api/public/coa-pdf',
+  path: '/api/public/coa-pdf',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicCacheConfigRoute = ApiPublicCacheConfigRouteImport.update({
@@ -245,6 +251,7 @@ export interface FileRoutesByFullPath {
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
+  '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -281,6 +288,7 @@ export interface FileRoutesByTo {
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
+  '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -318,6 +326,7 @@ export interface FileRoutesById {
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
+  '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -356,6 +365,7 @@ export interface FileRouteTypes {
     | '/api/payments/create'
     | '/api/payments/status'
     | '/api/public/cache-config'
+    | '/api/public/coa-pdf'
     | '/api/public/csp-report'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
@@ -392,6 +402,7 @@ export interface FileRouteTypes {
     | '/api/payments/create'
     | '/api/payments/status'
     | '/api/public/cache-config'
+    | '/api/public/coa-pdf'
     | '/api/public/csp-report'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
@@ -428,6 +439,7 @@ export interface FileRouteTypes {
     | '/api/payments/create'
     | '/api/payments/status'
     | '/api/public/cache-config'
+    | '/api/public/coa-pdf'
     | '/api/public/csp-report'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
@@ -465,6 +477,7 @@ export interface RootRouteChildren {
   ApiPaymentsCreateRoute: typeof ApiPaymentsCreateRoute
   ApiPaymentsStatusRoute: typeof ApiPaymentsStatusRoute
   ApiPublicCacheConfigRoute: typeof ApiPublicCacheConfigRoute
+  ApiPublicCoaPdfRoute: typeof ApiPublicCoaPdfRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
@@ -595,6 +608,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/csp-report'
       fullPath: '/api/public/csp-report'
       preLoaderRoute: typeof ApiPublicCspReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/coa-pdf': {
+      id: '/api/public/coa-pdf'
+      path: '/api/public/coa-pdf'
+      fullPath: '/api/public/coa-pdf'
+      preLoaderRoute: typeof ApiPublicCoaPdfRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/cache-config': {
@@ -745,6 +765,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPaymentsCreateRoute: ApiPaymentsCreateRoute,
   ApiPaymentsStatusRoute: ApiPaymentsStatusRoute,
   ApiPublicCacheConfigRoute: ApiPublicCacheConfigRoute,
+  ApiPublicCoaPdfRoute: ApiPublicCoaPdfRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
@@ -765,13 +786,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
