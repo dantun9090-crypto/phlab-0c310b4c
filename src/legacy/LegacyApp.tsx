@@ -26,6 +26,7 @@ export default function LegacyApp({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    if (!browserRouter) browserRouter = createLegacyRouter("/");
     setMounted(true);
   }, []);
 
