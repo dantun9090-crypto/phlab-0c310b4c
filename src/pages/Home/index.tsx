@@ -6,8 +6,9 @@ import { Link } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import HomeSeoIndex from '@/components/HomeSeoIndex';
 import { getProductImage } from '@/lib/productImages';
-import { getAllProducts, db, doc, getDoc, getDocs, collection, query, where, addDoc, Timestamp } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
+// Firebase is dynamically imported below to keep it off the home-route critical chunk.
+const loadFirebase = () => import('@/lib/firebase');
 import { nameToSlug } from '@/lib/seedProducts';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import { cfImgProps } from '@/lib/cf-image';
