@@ -31,6 +31,7 @@ import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/cre
 import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/cancel'
 import { Route as ApiDsrProcessRouteImport } from './routes/api/dsr/process'
 import { Route as ApiConfigPaymentsRouteImport } from './routes/api/config/payments'
+import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicHooksWatchdogRouteImport } from './routes/api/public/hooks/watchdog'
 import { Route as ApiPublicHooksWallidReconcileRouteImport } from './routes/api/public/hooks/wallid-reconcile'
 import { Route as ApiPublicHooksWallidMonitorRouteImport } from './routes/api/public/hooks/wallid-monitor'
@@ -156,6 +157,12 @@ const ApiConfigPaymentsRoute = ApiConfigPaymentsRouteImport.update({
   path: '/api/config/payments',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTelegramWebhookRoute =
+  ApiPublicTelegramWebhookRouteImport.update({
+    id: '/api/public/telegram/webhook',
+    path: '/api/public/telegram/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksWatchdogRoute = ApiPublicHooksWatchdogRouteImport.update({
   id: '/api/public/hooks/watchdog',
   path: '/api/public/hooks/watchdog',
@@ -253,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/wallid-monitor': typeof ApiPublicHooksWallidMonitorRoute
   '/api/public/hooks/wallid-reconcile': typeof ApiPublicHooksWallidReconcileRoute
   '/api/public/hooks/watchdog': typeof ApiPublicHooksWatchdogRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -288,6 +296,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/wallid-monitor': typeof ApiPublicHooksWallidMonitorRoute
   '/api/public/hooks/wallid-reconcile': typeof ApiPublicHooksWallidReconcileRoute
   '/api/public/hooks/watchdog': typeof ApiPublicHooksWatchdogRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -324,6 +333,7 @@ export interface FileRoutesById {
   '/api/public/hooks/wallid-monitor': typeof ApiPublicHooksWallidMonitorRoute
   '/api/public/hooks/wallid-reconcile': typeof ApiPublicHooksWallidReconcileRoute
   '/api/public/hooks/watchdog': typeof ApiPublicHooksWatchdogRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -361,6 +371,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/wallid-monitor'
     | '/api/public/hooks/wallid-reconcile'
     | '/api/public/hooks/watchdog'
+    | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -396,6 +407,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/wallid-monitor'
     | '/api/public/hooks/wallid-reconcile'
     | '/api/public/hooks/watchdog'
+    | '/api/public/telegram/webhook'
   id:
     | '__root__'
     | '/'
@@ -431,6 +443,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/wallid-monitor'
     | '/api/public/hooks/wallid-reconcile'
     | '/api/public/hooks/watchdog'
+    | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -467,6 +480,7 @@ export interface RootRouteChildren {
   ApiPublicHooksWallidMonitorRoute: typeof ApiPublicHooksWallidMonitorRoute
   ApiPublicHooksWallidReconcileRoute: typeof ApiPublicHooksWallidReconcileRoute
   ApiPublicHooksWatchdogRoute: typeof ApiPublicHooksWatchdogRoute
+  ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -625,6 +639,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConfigPaymentsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/telegram/webhook': {
+      id: '/api/public/telegram/webhook'
+      path: '/api/public/telegram/webhook'
+      fullPath: '/api/public/telegram/webhook'
+      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/watchdog': {
       id: '/api/public/hooks/watchdog'
       path: '/api/public/hooks/watchdog'
@@ -739,17 +760,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksWallidMonitorRoute: ApiPublicHooksWallidMonitorRoute,
   ApiPublicHooksWallidReconcileRoute: ApiPublicHooksWallidReconcileRoute,
   ApiPublicHooksWatchdogRoute: ApiPublicHooksWatchdogRoute,
+  ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
