@@ -259,10 +259,14 @@ window.addEventListener("unhandledrejection", (event) => {
   if (isHydrationCrash(event.reason)) renderCsr(event.reason);
 }, true);
 
-if (FORCE_CSR_FALLBACK) {
-  renderCsr(new Error("SSR hydration temporarily disabled for P0 recovery"));
-} else {
+if (shouldHydrateCurrentRoute()) {
+  console.info(`[HYDRATION] SSR active on ${location.pathname}`);
   startTransition(hydrateOrFallback);
+} else {
+  console.info(
+    `[HYDRATION] CSR mode on ${location.pathname} (ENABLE_SSR_HYDRATION=${ENABLE_SSR_HYDRATION}, allowed=${JSON.stringify(SSR_HYDRATION_ROUTES)})`,
+  );
+  renderCsr(new Error("SSR hydration disabled by flag"));
 }
 
 window.setTimeout(() => {
