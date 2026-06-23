@@ -264,6 +264,11 @@ export interface Product {
   // Product manual PDF (uploaded to Firebase Storage)
   productManualUrl?: string;
   productManualName?: string;
+  // Certificate of Analysis PDF (HPLC test certificate, uploaded to Firebase Storage)
+  coaPdfUrl?: string;
+  coaPdfName?: string;
+  coaBatch?: string;
+  coaUploadedAt?: string; // ISO date
   // Product promo banner image (uploaded to Firebase Storage)
   bannerImageUrl?: string;
   // Mark product as popular — shows badge on product cards

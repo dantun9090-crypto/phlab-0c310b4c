@@ -5,6 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { dispatchAddToCart } from '@/components/Layout';
 import NextDayCountdown from '@/components/NextDayCountdown';
 import { ProductEditor } from '@/components/ProductEditor';
+import { CoaButton } from '@/components/CoaButton';
 import { auth, db, doc, getDoc, getDocFromServer, collection, query, where, getDocsFromServer, limit, orderBy, onAuthStateChanged } from '@/lib/firebase';
 
 import type { Product } from '@/lib/firebase';
@@ -376,6 +377,10 @@ export default function ProductDetail() {
             bannerImageUrl: toText(data.bannerImageUrl),
             productManualUrl: toText(data.productManualUrl),
             productManualName: toText(data.productManualName),
+            coaPdfUrl: toText(data.coaPdfUrl),
+            coaPdfName: toText(data.coaPdfName),
+            coaBatch: toText(data.coaBatch),
+            coaUploadedAt: toText(data.coaUploadedAt),
             specs: data.specs && typeof data.specs === 'object'
               ? {
                   casNumber: toText(data.specs.casNumber, 'N/A'),
@@ -1160,6 +1165,9 @@ export default function ProductDetail() {
                       </>
                     )}
                   </div>
+
+                  {/* ── COA / HPLC Certificate button (directly below main image) ── */}
+                  <CoaButton product={product} />
 
                   {/* ── Thumbnails ── */}
                   {count > 1 && (

@@ -2,13 +2,14 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   X, Save, Plus, Trash2, Upload, Eye, Image as ImageIcon,
   Loader2, MoveVertical, Star, ImagePlus, AlertCircle, CheckCircle2,
-  ChevronLeft, ChevronRight, Crown, Link2, FlaskConical
+  ChevronLeft, ChevronRight, Crown, Link2, FlaskConical, FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { updateProduct, addProduct, storage, storageRef, uploadBytesResumable, getDownloadURL } from '@/lib/firebase';
 import type { Product, ProductVariant } from '@/lib/firebase';
 import { getAdminIdToken } from '@/lib/auth-ready';
 import { uploadHplcImageAdmin } from '@/lib/hplc-upload.functions';
+import { uploadCoaPdf } from '@/lib/coa-upload.functions';
 import { MerchantFeedPreview } from './MerchantFeedPreview';
 
 interface ProductEditorProps {
@@ -295,6 +296,11 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
 
   const [saveMsg, setSaveMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // COA (Certificate of Analysis) PDF upload state
+  const [coaUploading, setCoaUploading] = useState(false);
+  const [coaError, setCoaError] = useState('');
+  const coaInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     if (product) {
       pendingId.current = product.id;
@@ -442,6 +448,51 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
       setSaveMsg({ type: 'error', text: isPermission ? 'HPLC upload blocked: admin permission could not be verified. Sign in again and retry.' : (e?.message || 'HPLC upload failed') });
     }
   };
+
+  // COA PDF upload (product-level Certificate of Analysis)
+  const uploadCoaFile = async (file: File) => {
+    setCoaError('');
+    if (file.type !== 'application/pdf') {
+      setCoaError('Only PDF files are accepted.');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setCoaError('PDF must be 10 MB or smaller.');
+      return;
+    }
+    setCoaUploading(true);
+    try {
+      const idToken = await getAdminIdToken();
+      const base64 = await fileToBase64(file);
+      const uploaded = await uploadCoaPdf({
+        data: {
+          idToken,
+          productId: pendingId.current,
+          filename: file.name,
+          contentType: 'application/pdf',
+          base64,
+        },
+      });
+      setFormData(p => ({
+        ...p,
+        coaPdfUrl: uploaded.url,
+        coaPdfName: file.name,
+        coaUploadedAt: new Date().toISOString(),
+      } as any));
+    } catch (e: any) {
+      const msg = String(e?.message || e?.code || '');
+      const isPermission = msg.includes('permission') || msg.includes('unauthorized') || msg.includes('403');
+      setCoaError(isPermission ? 'Upload blocked: admin permission could not be verified. Sign in again.' : (e?.message || 'COA upload failed'));
+    } finally {
+      setCoaUploading(false);
+    }
+  };
+
+  const removeCoa = () => {
+    setFormData(p => ({ ...p, coaPdfUrl: '', coaPdfName: '', coaBatch: '', coaUploadedAt: '' } as any));
+    if (coaInputRef.current) coaInputRef.current.value = '';
+  };
+
 
   const removeVariant = (idx: number) => {
     setFormData(prev => ({ ...prev, variants: (prev.variants || []).filter((_, i) => i !== idx) }));
@@ -721,6 +772,89 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                   >
                     <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${(formData as any).requiresResearchGate ? 'translate-x-5' : ''}`} />
                   </button>
+                </div>
+
+                {/* Certificate of Analysis (COA) — Product-level PDF */}
+                <div className="p-4 bg-blue-500/[0.04] border border-blue-500/20 rounded-xl space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                      <FileText className="w-3.5 h-3.5 text-blue-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-white text-sm font-medium">Certificate of Analysis (COA)</p>
+                      <p className="text-[#9cb8d9] text-xs">HPLC test certificate PDF · max 10 MB · shown on product page</p>
+                    </div>
+                  </div>
+                  {(formData as any).coaPdfUrl ? (
+                    <div className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg">
+                      <FileText className="w-5 h-5 text-blue-600 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <a
+                          href={(formData as any).coaPdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-gray-900 hover:text-blue-600 truncate block"
+                        >
+                          {(formData as any).coaPdfName || 'View current PDF'}
+                        </a>
+                        {(formData as any).coaUploadedAt && (
+                          <p className="text-[11px] text-gray-500">
+                            Uploaded {new Date((formData as any).coaUploadedAt).toLocaleDateString('en-GB')}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => coaInputRef.current?.click()}
+                        className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md text-xs font-medium"
+                      >Replace</button>
+                      <button
+                        type="button"
+                        onClick={removeCoa}
+                        aria-label="Remove certificate"
+                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-md"
+                      ><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => coaInputRef.current?.click()}
+                      disabled={coaUploading}
+                      className="w-full min-h-[48px] px-4 py-3 border-2 border-dashed border-blue-500/40 hover:border-blue-500 bg-white/[0.02] hover:bg-blue-500/[0.06] text-blue-300 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                    >
+                      {coaUploading ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Uploading…</>
+                      ) : (
+                        <><Upload className="w-4 h-4" /> Upload COA PDF</>
+                      )}
+                    </button>
+                  )}
+                  <input
+                    ref={coaInputRef}
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    className="hidden"
+                    onChange={e => {
+                      const f = e.target.files?.[0];
+                      if (f) uploadCoaFile(f);
+                      e.target.value = '';
+                    }}
+                  />
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Batch / Lot number (optional)</label>
+                    <input
+                      type="text"
+                      value={(formData as any).coaBatch || ''}
+                      onChange={e => setFormData(p => ({ ...p, coaBatch: e.target.value } as any))}
+                      placeholder="e.g. PHL-2026-0612"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                    />
+                  </div>
+                  {coaError && (
+                    <p className="text-red-400 text-xs flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5" /> {coaError}
+                    </p>
+                  )}
                 </div>
 
                 {/* URL Slug */}
