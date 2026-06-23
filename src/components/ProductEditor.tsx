@@ -7,6 +7,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { updateProduct, addProduct, storage, storageRef, uploadBytesResumable, getDownloadURL } from '@/lib/firebase';
 import type { Product, ProductVariant } from '@/lib/firebase';
+import { getAdminIdToken } from '@/lib/auth-ready';
+import { uploadHplcImageAdmin } from '@/lib/hplc-upload.functions';
 import { MerchantFeedPreview } from './MerchantFeedPreview';
 
 interface ProductEditorProps {
@@ -53,6 +55,15 @@ function uploadToStorage(file: File, path: string, onProgress?: (p: number) => v
       reject,
       async () => resolve(await getDownloadURL(task.snapshot.ref))
     );
+  });
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error('Failed to read image'));
+    reader.onload = () => resolve(String(reader.result || '').split(',').pop() || '');
+    reader.readAsDataURL(file);
   });
 }
 
@@ -410,15 +421,25 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
     try {
       const compressed = await compressImage(file, 1400, 0.85);
       const pid = pendingId.current;
-      const path = `products/${pid}/images/hplc-${idx}-${Date.now()}.webp`;
-      const url = await uploadToStorage(compressed, path);
+      const idToken = await getAdminIdToken();
+      const base64 = await fileToBase64(compressed);
+      const uploaded = await uploadHplcImageAdmin({
+        data: {
+          idToken,
+          productId: pid,
+          variantIndex: idx,
+          contentType: compressed.type || 'image/webp',
+          base64,
+        },
+      });
+      const url = uploaded.url;
       updateVariant(idx, 'hplcImageUrl', url);
       updateVariant(idx, 'hplcTested', true);
       updateVariant(idx, 'hplcTestedAt', new Date().toISOString());
     } catch (e: any) {
       const msg = String(e?.message || e?.code || '');
       const isPermission = e?.code === 'storage/unauthorized' || msg.includes('permission') || msg.includes('unauthorized') || msg.includes('403');
-      setSaveMsg({ type: 'error', text: isPermission ? 'HPLC upload blocked by Storage permissions. Try again after the rules update finishes.' : (e?.message || 'HPLC upload failed') });
+      setSaveMsg({ type: 'error', text: isPermission ? 'HPLC upload blocked: admin permission could not be verified. Sign in again and retry.' : (e?.message || 'HPLC upload failed') });
     }
   };
 
