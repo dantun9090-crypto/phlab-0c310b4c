@@ -34,16 +34,27 @@ function isOwnRegistration(r: ServiceWorkerRegistration): boolean {
   }
 }
 
-async function unregisterOwnSW() {
+async function unregisterServiceWorkersAndCaches() {
   try {
     const regs = await navigator.serviceWorker.getRegistrations();
     await Promise.all(
       regs.map(async (r) => {
-        if (isOwnRegistration(r)) {
-          try { await r.unregister(); } catch (_) {}
-        }
+        try { console.info('SW unregistered:', r.scope); } catch (_) {}
+        try { await r.unregister(); } catch (_) {}
       })
     );
+  } catch (_) {}
+
+  try {
+    if ('caches' in window) {
+      const names = await caches.keys();
+      await Promise.all(
+        names.map(async (name) => {
+          try { console.info('Cache deleted:', name); } catch (_) {}
+          try { await caches.delete(name); } catch (_) {}
+        })
+      );
+    }
   } catch (_) {}
 }
 
@@ -56,11 +67,9 @@ export function registerOfflineSW() {
   // chunk-reload safety net (src/lib/chunk-reload.ts) handles recovery on
   // the rare lazy-import failure without holding stale HTML.
   //
-  // We still proactively unregister our own SW on every load so any browser
-  // that still has the legacy caching worker installed gets cleaned up.
-  // Touches only sw.js / service-worker.js on this origin — Firebase
-  // Messaging and any third-party worker are left alone.
-  void unregisterOwnSW();
+  // Emergency cleanup: unregister every old service worker and clear every
+  // Cache Storage bucket so stale workers cannot serve JS with a bad MIME type.
+  void unregisterServiceWorkersAndCaches();
   // Reference SW_URL so the export stays meaningful and the variable is not
   // dropped by tree-shaking lints.
   void SW_URL;

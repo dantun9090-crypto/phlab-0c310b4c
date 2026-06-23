@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { PageTransition } from "@/components/PageTransition";
 import appCss from "../styles.css?url";
 import "@/lib/chunk-reload";
+import "@/lib/sw-register";
 import {
   clearClientCaches as _clearClientCaches, // re-exported for tests if needed
   findCachedLastKnownUrl,
@@ -385,6 +386,36 @@ const NONCE_PROPAGATOR = `
 `;
 
 
+const FORCE_SW_CLEANUP = `
+(function(){
+  var clearAllCaches=function(){
+    try{
+      if('caches' in window && caches.keys){
+        caches.keys().then(function(names){
+          return Promise.all(names.map(function(name){
+            try{ console.info('Cache deleted:', name); }catch(e){}
+            return caches.delete(name).catch(function(){});
+          }));
+        }).catch(function(){});
+      }
+    }catch(e){}
+  };
+  try{
+    if('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations){
+      navigator.serviceWorker.getRegistrations().then(function(registrations){
+        return Promise.all(registrations.map(function(registration){
+          try{ console.info('SW unregistered:', registration.scope); }catch(e){}
+          return registration.unregister().catch(function(){});
+        }));
+      }).then(clearAllCaches, clearAllCaches);
+    } else {
+      clearAllCaches();
+    }
+  }catch(e){ clearAllCaches(); }
+})();
+`;
+
+
 const BOOT_WATCHDOG = `
 (function(){
   try{
@@ -397,15 +428,13 @@ const BOOT_WATCHDOG = `
       }catch(e){}
     }
     var settle=function(p){ return Promise.resolve(p).catch(function(){}); };
-    var ownCache=function(k){ return /^phlabs-offline-/.test(k)||/^phlabs-(?!lkg-)/.test(k)||/^workbox-/.test(k)||/^precache-/.test(k)||/^runtime-/.test(k)||/(^|-)precache-v\\d+-|(^|-)runtime-|(^|-)googleAnalytics-/.test(k); };
+    var ownCache=function(k){ return true; };
     var ownReg=function(r){
       try{
         var s=(r.active&&r.active.scriptURL)||(r.installing&&r.installing.scriptURL)||(r.waiting&&r.waiting.scriptURL)||'';
         if(!s) return false;
         var u=new URL(s);
-        if(u.origin!==location.origin) return false;
-        var b=u.pathname.split('/').pop();
-        return b==='sw.js'||b==='service-worker.js';
+        return u.origin===location.origin;
       }catch(e){ return false; }
     };
     if(qs.get('sw')==='off'){
@@ -422,7 +451,7 @@ const BOOT_WATCHDOG = `
         }catch(e){}
       } else {
         var jobs=[];
-        // 1. Delete only app-shell cache buckets. Keep last-known-good HTML.
+        // 1. Emergency cleanup: delete every Cache Storage bucket on this origin.
         try{
           if('caches' in window){
             jobs.push(settle(caches.keys().then(function(ks){
@@ -430,7 +459,7 @@ const BOOT_WATCHDOG = `
             })));
           }
         }catch(e){}
-        // 2. Unregister only PH Labs app-shell service workers on this origin.
+        // 2. Emergency cleanup: unregister every service worker on this origin.
         try{
           if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){
             jobs.push(settle(navigator.serviceWorker.getRegistrations().then(function(rs){
@@ -598,6 +627,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
         {/* MUST be first inline script — installs nonce propagator before
             anything else runs, so subsequent injected scripts inherit nonce. */}
         <script dangerouslySetInnerHTML={{ __html: NONCE_PROPAGATOR }} />
+        <script dangerouslySetInnerHTML={{ __html: FORCE_SW_CLEANUP }} />
         <script dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
       </head>
 
