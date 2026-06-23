@@ -29,7 +29,7 @@ function reloadOnce(reason: string) {
   }
   // eslint-disable-next-line no-console
   console.warn("[chunk-reload] reloading:", reason);
-  void hardReload();
+  void hardReload({ clean: true });
 }
 
 if (typeof window !== "undefined") {
