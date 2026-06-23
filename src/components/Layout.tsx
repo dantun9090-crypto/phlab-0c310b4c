@@ -134,11 +134,26 @@ export function Layout({ children }: LayoutProps) {
     initAnalytics(id);
     // Google Customer Reviews floating badge (sitewide trust signal).
     // Skips admin/auth pages where the badge would obscure UI.
+    // Deferred until first user interaction OR 10s — whichever comes first.
+    // Keeps the third-party widget script off LCP/TBT path on home.
     const path = window.location.pathname;
     const skip = path.startsWith('/admin') || path === '/login' || path === '/register';
     if (!skip) {
-      const t = setTimeout(() => renderGoogleMerchantBadge({ position: 'BOTTOM_RIGHT', region: 'GB' }), 5000);
-      return () => clearTimeout(t);
+      let fired = false;
+      const fire = () => {
+        if (fired) return;
+        fired = true;
+        cleanup();
+        renderGoogleMerchantBadge({ position: 'BOTTOM_RIGHT', region: 'GB' });
+      };
+      const events: Array<keyof WindowEventMap> = ['scroll', 'pointerdown', 'keydown', 'touchstart'];
+      const cleanup = () => {
+        events.forEach(ev => window.removeEventListener(ev, fire));
+        clearTimeout(t);
+      };
+      events.forEach(ev => window.addEventListener(ev, fire, { once: true, passive: true } as AddEventListenerOptions));
+      const t = setTimeout(fire, 10000);
+      return cleanup;
     }
   }, []);
   useEffect(() => {

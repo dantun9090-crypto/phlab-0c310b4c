@@ -6,8 +6,9 @@ import { Link } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import HomeSeoIndex from '@/components/HomeSeoIndex';
 import { getProductImage } from '@/lib/productImages';
-import { getAllProducts, db, doc, getDoc, getDocs, collection, query, where, addDoc, Timestamp } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
+// Firebase is dynamically imported below to keep it off the home-route critical chunk.
+const loadFirebase = () => import('@/lib/firebase');
 import { nameToSlug } from '@/lib/seedProducts';
 import { sendPublicMail } from '@/lib/sendPublicMail';
 import { cfImgProps } from '@/lib/cf-image';
@@ -181,7 +182,7 @@ export default function HomePage() {
     // Defer cached product load past LCP window — avoids TBT and a permanent live stream
     let cancelled = false;
     const loadProducts = () => {
-      getAllProducts().then((prods: Product[]) => {
+      loadFirebase().then(({ getAllProducts }) => getAllProducts()).then((prods: Product[]) => {
         if (!cancelled) setProducts(prods);
       }).catch(() => {
         if (!cancelled) setProducts([]);
@@ -208,9 +209,11 @@ export default function HomePage() {
 
     // LCP-critical: adverts contain the hero banner image. Fire immediately,
     // outside requestIdleCallback, so the network request is not delayed.
-    getDocs(query(collection(db, 'adverts'), where('active', '==', true))).then(snap => {
+    loadFirebase().then(({ getDocs, query, collection, db, where }) =>
+      getDocs(query(collection(db, 'adverts'), where('active', '==', true)))
+    ).then((snap: any) => {
       try {
-        const allAdverts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const allAdverts = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
         if (!cancelled) setAdverts(allAdverts);
         const heroCount = allAdverts.filter((a: any) => a.placement === 'homepage_hero').length;
         localStorage.setItem('php_adverts_hero_count', heroCount > 0 ? '1' : '0');
@@ -219,18 +222,20 @@ export default function HomePage() {
     }).catch(() => {});
 
     const deferredLoad = () => {
-      getDoc(doc(db, 'settings', 'promoBanner')).then(snap => {
-        if (snap.exists()) setBanner(snap.data());
-        setBannerResolved(true);
+      loadFirebase().then(({ getDoc, doc, db }) => {
+        getDoc(doc(db, 'settings', 'promoBanner')).then(snap => {
+          if (snap.exists()) setBanner(snap.data());
+          setBannerResolved(true);
+        }).catch(() => setBannerResolved(true));
+
+        getDoc(doc(db, 'siteSettings', 'featured-products')).then(snap => {
+          if (snap.exists() && (snap.data() as any).products) setFeaturedProducts((snap.data() as any).products);
+        }).catch(() => {});
+
+        getDoc(doc(db, 'settings', 'site')).then(snap => {
+          if (snap.exists()) setSiteSettings(snap.data() as Record<string, string>);
+        }).catch(() => {});
       }).catch(() => setBannerResolved(true));
-
-      getDoc(doc(db, 'siteSettings', 'featured-products')).then(snap => {
-        if (snap.exists() && snap.data().products) setFeaturedProducts(snap.data().products);
-      }).catch(() => {});
-
-      getDoc(doc(db, 'settings', 'site')).then(snap => {
-        if (snap.exists()) setSiteSettings(snap.data() as Record<string, string>);
-      }).catch(() => {});
     };
 
     if (typeof requestIdleCallback !== 'undefined') {
@@ -299,6 +304,8 @@ export default function HomePage() {
     setEmailStatus('sending');
     setRetryAttempt(0);
     const discountCode = 'PROTOCOL10';
+    const fb = await loadFirebase();
+    const { Timestamp, getDocs, query, collection, db, where, addDoc } = fb;
     const now = Timestamp.now();
 
     // Transient Firestore / network error codes worth retrying
@@ -342,7 +349,7 @@ export default function HomePage() {
         where('email', '==', email),
         where('source', '==', 'homepage_protocol_library'),
       )));
-      if (!existingSnap.empty) {
+      if (!(existingSnap as any).empty) {
         setRevealedCode(discountCode);
         setEmailStatus('already_claimed');
         return;
