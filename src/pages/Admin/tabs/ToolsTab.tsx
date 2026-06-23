@@ -414,12 +414,12 @@ export default function ToolsTab() {
           <div>
             <h3 className="text-[#f0f6ff] font-semibold">Browser Cache Safety</h3>
             <p className="text-[#9cb8d9] text-xs mt-0.5">
-              Offline app-shell service worker is disabled. Returning browsers receive scoped cache cleanup, while last-known page fallback remains available if the network drops.
+              Offline app-shell service worker is disabled. Returning browsers now receive emergency service-worker removal and full Cache Storage cleanup to prevent stale JS MIME responses.
             </p>
           </div>
         </div>
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-900/10 p-4 text-sm text-emerald-300">
-          Human HTML pages are no-store at the browser and CDN layers, so every publish serves the latest route document instead of a stale shell with old hashed chunks. If a browser opens an old or blank app shell, the boot watchdog automatically runs the same <code className="text-emerald-200">?sw=off</code> cleanup, removes PH Labs app-shell service workers/cache buckets, then strips recovery-only query parameters and reloads the same clean page URL. Manual recovery remains <code className="text-emerald-200">https://phlabs.co.uk/?sw=off</code>; <code className="text-emerald-200">/index</code> redirects to <code className="text-emerald-200">/</code>; <code className="text-emerald-200">/sw.js</code> and <code className="text-emerald-200">/service-worker.js</code> stay no-store.
+          Human HTML pages are no-store at the browser and CDN layers, so every publish serves the latest route document instead of a stale shell with old hashed chunks. On load, PH Labs unregisters old service workers and clears Cache Storage before stale workers can keep serving JavaScript as <code className="text-emerald-200">text/plain</code>. Manual recovery remains <code className="text-emerald-200">https://phlabs.co.uk/?sw=off</code>; <code className="text-emerald-200">/index</code> redirects to <code className="text-emerald-200">/</code>; <code className="text-emerald-200">/sw.js</code> and <code className="text-emerald-200">/service-worker.js</code> stay no-store.
         </div>
       </motion.div>
 
