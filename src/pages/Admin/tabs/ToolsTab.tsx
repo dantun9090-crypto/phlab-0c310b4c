@@ -414,12 +414,12 @@ export default function ToolsTab() {
           <div>
             <h3 className="text-[#f0f6ff] font-semibold">Browser Cache Safety</h3>
             <p className="text-[#9cb8d9] text-xs mt-0.5">
-              Offline app-shell service worker is disabled. Returning browsers now receive emergency service-worker removal, full Cache Storage cleanup, and stale hashed-asset 404 recovery.
+              Offline app-shell service worker is disabled. Returning browsers now receive emergency service-worker removal, full Cache Storage cleanup, stale hashed-asset recovery, and hydration-safe head scripts.
             </p>
           </div>
         </div>
         <div className="rounded-xl border border-emerald-500/20 bg-emerald-900/10 p-4 text-sm text-emerald-300">
-          Human HTML pages are no-store at the browser and CDN layers, so every publish serves the latest route document instead of a stale shell with old hashed chunks. On load, PH Labs unregisters old service workers and clears Cache Storage before stale workers can keep serving JavaScript as <code className="text-emerald-200">text/plain</code>. A head-level guard catches failed <code className="text-emerald-200">/assets/*.js</code> and <code className="text-emerald-200">/_build/*.js</code> loads before hydration, and missing stale JS assets return a no-store recovery script instead of a dead 404. Manual recovery remains <code className="text-emerald-200">https://phlabs.co.uk/?sw=off</code>; <code className="text-emerald-200">/index</code> redirects to <code className="text-emerald-200">/</code>; <code className="text-emerald-200">/sw.js</code> and <code className="text-emerald-200">/service-worker.js</code> stay no-store.
+          Human HTML pages are no-store at the browser and CDN layers, so every publish serves the latest route document instead of a stale shell with old hashed chunks. On load, PH Labs unregisters old service workers and clears Cache Storage before stale workers can keep serving JavaScript as <code className="text-emerald-200">text/plain</code>. A head-level guard catches failed <code className="text-emerald-200">/assets/*.js</code> and <code className="text-emerald-200">/_build/*.js</code> loads before hydration, while nonce-bearing head scripts are marked hydration-safe so CSP injection does not trigger React #418. GA4 now uses <code className="text-emerald-200">cookie_domain: auto</code> to avoid Firefox rejecting cookies on the apex domain, and the Google Merchant badge is delayed until after hydration settles. Manual recovery remains <code className="text-emerald-200">https://phlabs.co.uk/?sw=off</code>; <code className="text-emerald-200">/index</code> redirects to <code className="text-emerald-200">/</code>; <code className="text-emerald-200">/sw.js</code> and <code className="text-emerald-200">/service-worker.js</code> stay no-store.
         </div>
       </motion.div>
 
