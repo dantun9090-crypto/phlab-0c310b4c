@@ -2,6 +2,7 @@ import { Component, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { logSecurityEvent } from '@/lib/security-events';
+import { isHydrationMismatchError, markHydrationError } from '@/lib/recovery';
 
 interface Props {
   children: ReactNode;
@@ -20,6 +21,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error) {
+    if (isHydrationMismatchError(error)) markHydrationError();
     // Detailed logging to Firestore securityEvents (fire-and-forget).
     try {
       logSecurityEvent({
@@ -39,6 +41,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render() {
     if (this.state.hasError) {
+      const isHydrationError = isHydrationMismatchError(this.state.error);
       return (
         <div className="min-h-screen bg-gray-900 flex items-center justify-center px-6">
           <div className="max-w-md w-full text-center">
@@ -47,11 +50,13 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
 
             <h1 className="text-2xl font-bold text-white mb-4">
-              Something went wrong
+              {isHydrationError ? 'Refresh needed' : 'Something went wrong'}
             </h1>
 
             <p className="text-gray-400 mb-8">
-              Something went wrong. Please try again.
+              {isHydrationError
+                ? 'The page did not initialise cleanly. Auto-reload has been stopped; please refresh manually.'
+                : 'Something went wrong. Please try again.'}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">

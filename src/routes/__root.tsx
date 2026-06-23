@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { Component, useEffect, useState, type ReactNode } from "react";
 
 import { PageTransition } from "@/components/PageTransition";
 import appCss from "../styles.css?url";
@@ -15,10 +15,13 @@ import "@/lib/chunk-reload";
 import "@/lib/sw-register";
 import {
   clearClientCaches as _clearClientCaches, // re-exported for tests if needed
+  clearHydrationError,
   findCachedLastKnownUrl,
   HARD_RELOAD_FLAG,
   hardReload,
+  isHydrationMismatchError,
   isOnline,
+  markHydrationError,
 } from "@/lib/recovery";
 import { schedulePrecacheCurrentPage } from "@/lib/lkg-cache";
 import { clearStoreCachesForNewBuild } from "@/lib/build-cache";
@@ -117,32 +120,86 @@ function OfflineScreen() {
   );
 }
 
+function HydrationRecoveryScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="max-w-md text-center">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          Refresh needed
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          The page did not initialise cleanly. Automatic reloads have been stopped so your browser does not loop.
+        </p>
+        <div className="mt-6 flex flex-wrap justify-center gap-2">
+          <button
+            onClick={() => {
+              clearHydrationError();
+              window.location.reload();
+            }}
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          >
+            Refresh page
+          </button>
+          <a
+            href="/"
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            Go home
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+class RootHydrationBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  state: { hasError: boolean; error?: Error } = { hasError: false };
+
+  static getDerivedStateFromError(error: Error) {
+    if (isHydrationMismatchError(error)) markHydrationError();
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error) {
+    if (isHydrationMismatchError(error)) markHydrationError();
+    console.error(error);
+  }
+
+  render() {
+    if (this.state.hasError) return <HydrationRecoveryScreen />;
+    return this.props.children;
+  }
+}
+
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   const [offline, setOffline] = useState<boolean>(() => !isOnline());
+  const isHydrationError = isHydrationMismatchError(error);
 
   useEffect(() => {
+    if (isHydrationError) {
+      markHydrationError();
+      return;
+    }
     if (!isOnline()) return;
-    // Retry up to 3 times before giving up and showing the error screen.
-    // Each attempt escalates: 1st = soft reload, 2nd = clean reload, 3rd = clean + home.
+    // Retry once for true stale-route errors, then stop and show this screen.
     let attempt = 0;
     try {
       attempt = Number(sessionStorage.getItem(AUTO_RECOVERY_DONE_KEY) || "0");
-      if (attempt >= 3) return;
+      if (attempt >= 1) return;
       sessionStorage.setItem(AUTO_RECOVERY_DONE_KEY, String(attempt + 1));
       sessionStorage.removeItem(HARD_RELOAD_FLAG);
     } catch { /* ignore */ }
     const delay = 250 + attempt * 400;
     const t = setTimeout(() => {
-      const opts =
-        attempt === 0 ? { clean: false, home: false } :
-        attempt === 1 ? { clean: true, home: false } :
-                        { clean: true, home: true };
-      void hardReload(opts);
+      void hardReload({ clean: true });
     }, delay);
     return () => clearTimeout(t);
-  }, []);
+  }, [isHydrationError]);
 
   // Track connectivity in real time so the screen can flip without a reload
   // (e.g. user toggles wifi while staring at the error).
@@ -158,6 +215,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 
   // Offline path: don't show the generic "didn't load" copy; we know why.
   if (offline) return <OfflineScreen />;
+
+  if (isHydrationError) return <HydrationRecoveryScreen />;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -179,6 +238,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
                 sessionStorage.removeItem(AUTO_RELOAD_COUNT_KEY);
                 sessionStorage.removeItem(AUTO_RECOVERY_DONE_KEY);
                 sessionStorage.removeItem(HARD_RELOAD_FLAG);
+                clearHydrationError();
               } catch { /* ignore */ }
               if (!isOnline()) { setOffline(true); return; }
               if (import.meta.env.PROD) {
@@ -301,13 +361,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             // diluted entity signals (Google prefers single canonical home).
           ],
         }),
-      },
-      {
-        // Swap the Google Fonts stylesheet back to media="all" after the
-        // browser finishes downloading it. Pairs with the `media="print"`
-        // hint on the <link> above so fonts never block first paint.
-        children:
-          "(function(){var l=document.getElementById('gfonts');if(l){function s(){l.media='all'}if(l.sheet){s()}else{l.addEventListener('load',s,{once:true})}}var a=document.getElementById('appcss');if(a){function t(){a.media='all'}if(a.sheet){t()}else{a.addEventListener('load',t,{once:true})}}})();",
       },
     ],
     links: [
@@ -548,7 +601,24 @@ const STALE_ASSET_RECOVERY = `
 (function(){
   try{
     var KEY='__phl_stale_asset_reload_at';
-    var ASSET_RE=new RegExp('/(assets|_build)/[^?#]+\\.(?:js|mjs|css)(?:[?#]|$)','i');
+    var COUNT='__phl_stale_asset_reload_count';
+    var HYDRATION='__phl_hydration_error_seen';
+    var ASSET_RE=new RegExp('/(assets|_build)/[^?#]+\\\\.(?:js|mjs|css)(?:[?#]|$)','i');
+    var isHydration=function(x){
+      var msg='';
+      try{ msg=String((x&&(x.message||x.name||x.stack))||x||''); }catch(e){}
+      return /Minified React error #418\\b|react\\.dev\\/errors\\/418\\b|Hydration failed|hydration mismatch|server rendered HTML didn't match|server-rendered HTML.+client-side React/i.test(msg);
+    };
+    var showHydration=function(){
+      try{
+        sessionStorage.setItem(HYDRATION,String(Date.now()));
+        if(!document.body) return;
+        document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:440px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Refresh needed</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">The page did not initialise cleanly. Automatic reloads have been stopped so your browser does not loop.</p><button id="phl-hydration-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer">Refresh page</button><a href="/" style="display:inline-block;margin-left:10px;color:#9fb0c8;text-decoration:underline">Go home</a></div></div>';
+        var btn=document.getElementById('phl-hydration-refresh');
+        if(btn) btn.addEventListener('click',function(){ try{ sessionStorage.removeItem(HYDRATION); }catch(e){} location.reload(); });
+      }catch(e){}
+    };
+    var hasHydration=function(){ try{ return !!sessionStorage.getItem(HYDRATION); }catch(e){ return false; } };
     var clean=function(){
       try{
         var qs=new URLSearchParams(location.search);
@@ -558,8 +628,11 @@ const STALE_ASSET_RECOVERY = `
       }catch(e){ return '/?sw=off&_r=stale-asset'; }
     };
     var recover=function(src){
+      if(hasHydration()) return;
       try{
         var last=Number(sessionStorage.getItem(KEY)||'0');
+        var count=Number(sessionStorage.getItem(COUNT)||'0');
+        if(count>=1) return;
         if(last&&Date.now()-last<30000) return;
       }catch(e){}
       // Verify the asset is actually missing before forcing a reload.
@@ -567,8 +640,9 @@ const STALE_ASSET_RECOVERY = `
       // reloading would loop. Only reload when the server confirms 404/410.
       try{
         fetch(src,{method:'HEAD',cache:'no-store',credentials:'omit'}).then(function(res){
+          if(hasHydration()) return;
           if(res && (res.status===404||res.status===410)){
-            try{ sessionStorage.setItem(KEY,String(Date.now())); }catch(e){}
+            try{ sessionStorage.setItem(KEY,String(Date.now())); sessionStorage.setItem(COUNT,'1'); }catch(e){}
             try{ console.warn('[phlabs] stale build asset 404, forcing clean reload:', src); }catch(e){}
             var qs;
             try{
@@ -580,6 +654,8 @@ const STALE_ASSET_RECOVERY = `
         }).catch(function(){});
       }catch(e){}
     };
+    addEventListener('error',function(ev){ if(isHydration(ev&&(ev.error||ev.message))) showHydration(); },true);
+    addEventListener('unhandledrejection',function(ev){ if(isHydration(ev&&ev.reason)) showHydration(); },true);
     addEventListener('error',function(ev){
       var t=ev&&ev.target;
       if(!t||t===window) return;
@@ -716,6 +792,15 @@ function RootComponent() {
   useEffect(() => {
     clearStoreCachesForNewBuild();
     initWebVitals();
+    const activateStylesheet = (id: string) => {
+      const link = document.getElementById(id) as HTMLLinkElement | null;
+      if (!link) return;
+      const apply = () => { link.media = "all"; };
+      if (link.sheet) apply();
+      else link.addEventListener("load", apply, { once: true });
+    };
+    activateStylesheet("gfonts");
+    activateStylesheet("appcss");
   }, []);
 
   // Load GA4/GTM AFTER React hydration completes — keeps GTM from mutating
@@ -762,9 +847,11 @@ function RootComponent() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <PageviewBeacon />
-      <PageTransition />
-    </QueryClientProvider>
+    <RootHydrationBoundary>
+      <QueryClientProvider client={queryClient}>
+        <PageviewBeacon />
+        <PageTransition />
+      </QueryClientProvider>
+    </RootHydrationBoundary>
   );
 }

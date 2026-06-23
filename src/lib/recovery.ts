@@ -21,6 +21,41 @@ export function isStaleChunkError(err: unknown): boolean {
   );
 }
 
+export const HYDRATION_ERROR_FLAG = "__phl_hydration_error_seen";
+
+export function isHydrationMismatchError(err: unknown): boolean {
+  if (!err) return false;
+  const anyErr = err as { message?: unknown; name?: unknown; stack?: unknown };
+  const msg = String(
+    [anyErr?.message, anyErr?.name, anyErr?.stack, err]
+      .filter(Boolean)
+      .join(" "),
+  );
+  return (
+    /Minified React error #418\b/i.test(msg) ||
+    /react\.dev\/errors\/418\b/i.test(msg) ||
+    /Hydration failed/i.test(msg) ||
+    /hydration mismatch/i.test(msg) ||
+    /server rendered HTML didn't match/i.test(msg) ||
+    /server-rendered HTML.+client-side React/i.test(msg)
+  );
+}
+
+export function markHydrationError(): void {
+  try { sessionStorage.setItem(HYDRATION_ERROR_FLAG, String(Date.now())); }
+  catch { /* ignore */ }
+}
+
+export function clearHydrationError(): void {
+  try { sessionStorage.removeItem(HYDRATION_ERROR_FLAG); }
+  catch { /* ignore */ }
+}
+
+export function hasHydrationErrorState(): boolean {
+  try { return sessionStorage.getItem(HYDRATION_ERROR_FLAG) === "1" || !!sessionStorage.getItem(HYDRATION_ERROR_FLAG); }
+  catch { return false; }
+}
+
 // Caches owned by THIS app's service worker (see public/sw.js) and runtime
 // LKG (last-known-good) cache (see src/lib/lkg-cache.ts). Anything else on
 // the origin — notably `firebase-messaging-*` for FCM push and any future

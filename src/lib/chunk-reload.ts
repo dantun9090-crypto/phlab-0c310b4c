@@ -1,4 +1,11 @@
-import { hardReload, isOnline, isStaleChunkError } from "@/lib/recovery";
+import {
+  hardReload,
+  hasHydrationErrorState,
+  isHydrationMismatchError,
+  isOnline,
+  isStaleChunkError,
+  markHydrationError,
+} from "@/lib/recovery";
 
 // Robust auto-recovery for a frozen / stuck page.
 //
@@ -13,17 +20,30 @@ import { hardReload, isOnline, isStaleChunkError } from "@/lib/recovery";
 //    or the page has been hidden > 30 min, soft reload.
 
 const RELOAD_KEY = "__phl_reloaded_at";
+const RELOAD_COUNT_KEY = "__phl_reloaded_count";
 const COOLDOWN_MS = 15_000;
 const REVISIT_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
 const ERROR_BURST_WINDOW_MS = 4_000;
 const ERROR_BURST_LIMIT = 6;
 
+function stopForHydrationError(err: unknown): boolean {
+  if (!isHydrationMismatchError(err)) return false;
+  markHydrationError();
+  // eslint-disable-next-line no-console
+  console.warn("[chunk-reload] hydration mismatch detected; auto-reload disabled");
+  return true;
+}
+
 function reloadOnce(reason: string) {
   if (!isOnline()) return;
+  if (hasHydrationErrorState()) return;
   try {
     const last = Number(sessionStorage.getItem(RELOAD_KEY) ?? "0");
+    const count = Number(sessionStorage.getItem(RELOAD_COUNT_KEY) ?? "0");
+    if (count >= 1) return;
     if (Date.now() - last < COOLDOWN_MS) return; // avoid loops
     sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+    sessionStorage.setItem(RELOAD_COUNT_KEY, String(count + 1));
   } catch {
     /* ignore */
   }
@@ -35,11 +55,13 @@ function reloadOnce(reason: string) {
 if (typeof window !== "undefined") {
   // --- Layer 1: chunk errors ---
   window.addEventListener("error", (event) => {
+    if (stopForHydrationError(event.error ?? event.message)) return;
     if (isStaleChunkError(event.error ?? event.message)) {
       reloadOnce("chunk error");
     }
   });
   window.addEventListener("unhandledrejection", (event) => {
+    if (stopForHydrationError(event.reason)) return;
     if (isStaleChunkError(event.reason)) {
       reloadOnce("chunk rejection");
     }
@@ -47,7 +69,9 @@ if (typeof window !== "undefined") {
 
   // --- Layer 2: error-burst detection (app stuck in a render loop) ---
   let burst: number[] = [];
-  const recordError = () => {
+  const recordError = (event: ErrorEvent | PromiseRejectionEvent) => {
+    const source = "reason" in event ? event.reason : event.error ?? event.message;
+    if (stopForHydrationError(source) || hasHydrationErrorState()) return;
     const now = Date.now();
     burst = burst.filter((t) => now - t < ERROR_BURST_WINDOW_MS);
     burst.push(now);

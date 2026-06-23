@@ -6,13 +6,14 @@ import { createLegacyRouter } from "./AppRouter";
 import { SSRDataProvider, type SSRBanner } from "./SSRDataContext";
 import "@/legacy-styles.css";
 
-const browserRouter = typeof document !== "undefined" ? createLegacyRouter("/") : null;
+let browserRouter: ReturnType<typeof createLegacyRouter> | null = null;
 
 function getLegacyRouter(initialPath: string) {
   if (typeof document === "undefined") {
     return createLegacyRouter(initialPath);
   }
-  return browserRouter as ReturnType<typeof createLegacyRouter>;
+  if (!browserRouter) browserRouter = createLegacyRouter("/");
+  return browserRouter;
 }
 
 export default function LegacyApp({
@@ -25,6 +26,7 @@ export default function LegacyApp({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    if (!browserRouter) browserRouter = createLegacyRouter("/");
     setMounted(true);
   }, []);
 
