@@ -304,6 +304,8 @@ export default function HomePage() {
     setEmailStatus('sending');
     setRetryAttempt(0);
     const discountCode = 'PROTOCOL10';
+    const fb = await loadFirebase();
+    const { Timestamp, getDocs, query, collection, db, where, addDoc } = fb;
     const now = Timestamp.now();
 
     // Transient Firestore / network error codes worth retrying
@@ -347,7 +349,7 @@ export default function HomePage() {
         where('email', '==', email),
         where('source', '==', 'homepage_protocol_library'),
       )));
-      if (!existingSnap.empty) {
+      if (!(existingSnap as any).empty) {
         setRevealedCode(discountCode);
         setEmailStatus('already_claimed');
         return;
