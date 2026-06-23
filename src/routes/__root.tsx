@@ -152,7 +152,7 @@ class RootHydrationBoundary extends Component<
   { children: ReactNode },
   { hasError: boolean; error?: Error }
 > {
-  state = { hasError: false, error: undefined };
+  state: { hasError: boolean; error?: Error } = { hasError: false };
 
   static getDerivedStateFromError(error: Error) {
     if (isHydrationMismatchError(error)) markHydrationError();
@@ -817,9 +817,11 @@ function RootComponent() {
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <PageviewBeacon />
-      <PageTransition />
-    </QueryClientProvider>
+    <RootHydrationBoundary>
+      <QueryClientProvider client={queryClient}>
+        <PageviewBeacon />
+        <PageTransition />
+      </QueryClientProvider>
+    </RootHydrationBoundary>
   );
 }
