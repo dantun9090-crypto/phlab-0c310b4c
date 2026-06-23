@@ -9,6 +9,7 @@
 
 export function isStaleChunkError(err: unknown): boolean {
   if (!err) return false;
+  if (isHydrationMismatchError(err)) return false;
   const anyErr = err as { message?: unknown; name?: unknown };
   const msg = String(anyErr?.message ?? anyErr?.name ?? err);
   return (
@@ -34,6 +35,9 @@ export function isHydrationMismatchError(err: unknown): boolean {
   return (
     /Minified React error #418\b/i.test(msg) ||
     /react\.dev\/errors\/418\b/i.test(msg) ||
+    /NotFoundError.+removeChild/i.test(msg) ||
+    /removeChild.+not a child of this node/i.test(msg) ||
+    /Node\.removeChild/i.test(msg) ||
     /Hydration failed/i.test(msg) ||
     /hydration mismatch/i.test(msg) ||
     /server rendered HTML didn't match/i.test(msg) ||

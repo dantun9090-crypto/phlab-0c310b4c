@@ -163,9 +163,9 @@ class RootHydrationBoundary extends Component<
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error) {
+  componentDidCatch(error: Error, info: { componentStack?: string }) {
     if (isHydrationMismatchError(error)) markHydrationError();
-    console.error(error);
+    console.error("[ROOT HYDRATION BOUNDARY]", error, info?.componentStack || "");
   }
 
   render() {
@@ -269,6 +269,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { name: "google", content: "notranslate" },
       // Belt-and-braces: even when an intermediary ignores response headers,
       // these <meta http-equiv> tags signal the HTML document itself must
       // never be cached. Prevents stale shells loading new hashed asset
@@ -608,11 +609,12 @@ const STALE_ASSET_RECOVERY = `
     var isHydration=function(x){
       var msg='';
       try{ msg=String((x&&(x.message||x.name||x.stack))||x||''); }catch(e){}
-      return /Minified React error #418\\b|react\\.dev\\/errors\\/418\\b|Hydration failed|hydration mismatch|server rendered HTML didn't match|server-rendered HTML.+client-side React/i.test(msg);
+      return /Minified React error #418\\b|react\\.dev\\/errors\\/418\\b|Hydration failed|hydration mismatch|server rendered HTML didn't match|server-rendered HTML.+client-side React|NotFoundError.+removeChild|removeChild.+not a child of this node|Node\\.removeChild/i.test(msg);
     };
     var showHydration=function(){
       try{
         sessionStorage.setItem(HYDRATION,String(Date.now()));
+        try{ if(window.__phlHydrationFallback){ window.__phlHydrationFallback(new Error('Hydration mismatch detected by stale asset guard')); return; } }catch(e){}
         if(!document.body) return;
         document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:440px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Refresh needed</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">The page did not initialise cleanly. Automatic reloads have been stopped so your browser does not loop.</p><button id="phl-hydration-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer">Refresh page</button><a href="/" style="display:inline-block;margin-left:10px;color:#9fb0c8;text-decoration:underline">Go home</a></div></div>';
         var btn=document.getElementById('phl-hydration-refresh');
@@ -814,6 +816,7 @@ function RootComponent() {
 
   useEffect(() => {
     clearStoreCachesForNewBuild();
+    (window as unknown as { __PHL_REACT_READY__?: boolean }).__PHL_REACT_READY__ = true;
     initWebVitals();
     const stableLoadTimer = window.setTimeout(() => {
       try {
