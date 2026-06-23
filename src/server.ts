@@ -144,6 +144,9 @@ function generateNonce(): string {
 function isLovableHost(hostname: string): boolean {
   const h = hostname.toLowerCase();
   return (
+    h === "localhost" ||
+    h === "127.0.0.1" ||
+    h === "0.0.0.0" ||
     h.endsWith(".lovable.app") ||
     h.endsWith(".lovableproject.com") ||
     h.endsWith(".lovable.dev") ||
@@ -450,16 +453,12 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   }
   htmlHeaders.delete("age");
 
-  // For cacheable HTML, emit a fixed placeholder nonce in both the body and
-  // the CSP header. The body becomes byte-identical across requests, so the
-  // edge cache and downstream Worker (phlabs-prerender) can store and serve
-  // it. The Worker then rewrites `__CSP_NONCE__` to a fresh per-request
-  // nonce in the HTML and CSP header before sending to the visitor — so
-  // each user still gets a unique, unpredictable nonce.
-  //
-  // For non-cacheable HTML (admin, account, checkout, etc.) we keep the
-  // per-request real nonce baked at the origin.
-  const effectiveNonce = (cacheable && stripped.status === 200) ? "__CSP_NONCE__" : nonce;
+  // Always emit a real per-request nonce. The previous placeholder path
+  // required an additional edge rewrite; when a request bypassed that rewrite,
+  // browsers rejected every inline boot script and the app got stuck on the
+  // recovery screen. Keeping the nonce real here makes the origin response
+  // self-contained and safe for previews, direct origin hits, and production.
+  const effectiveNonce = nonce;
 
   const htmlResponse = new Response(stripped.body, {
     status: stripped.status,

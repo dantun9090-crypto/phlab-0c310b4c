@@ -821,6 +821,7 @@ function RootComponent() {
         sessionStorage.removeItem('phl_reload_count');
         sessionStorage.removeItem('__phl_stale_asset_reload_count');
         sessionStorage.removeItem('__phl_stale_asset_reload_at');
+        clearHydrationError();
       } catch {
         /* ignore */
       }

@@ -170,6 +170,7 @@ type HardReloadOptions = {
 function stripRecoveryParams(url: URL): void {
   url.searchParams.delete("_r");
   url.searchParams.delete("sw");
+  url.searchParams.delete("stale_recovery");
 }
 
 export function isOnline(): boolean {
