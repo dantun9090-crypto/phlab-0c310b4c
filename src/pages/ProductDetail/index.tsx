@@ -239,6 +239,17 @@ export default function ProductDetail() {
   const [editing, setEditing] = useState(false);
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [hplcLightboxSrc, setHplcLightboxSrc] = useState<string | null>(null);
+
+  // Lock background scroll while any lightbox / overlay is open
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const anyOpen = lightboxOpen || !!hplcLightboxSrc;
+    if (!anyOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [lightboxOpen, hplcLightboxSrc]);
   const [stickyVisible, setStickyVisible] = useState(false);
   const ctaRef = useRef<HTMLDivElement>(null);
 
