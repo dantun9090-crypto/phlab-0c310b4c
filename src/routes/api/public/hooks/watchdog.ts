@@ -484,6 +484,8 @@ export const Route = createFileRoute('/api/public/hooks/watchdog')({
             heals.push({ name: 'wallid-alert-email', ok: false, detail: e?.message || 'enqueue failed' });
           }
         }
+        // ── Cloudflare Dev Mode watchdog (every run; alert dedup via Firestore) ──
+        checks.push(await checkCloudflareDevMode(acct, token));
 
         // ── Summary ──────────────────────────────────────────────────
         const failures = checks.filter((c) => !c.ok);
