@@ -107,6 +107,7 @@ const navGroups = [
       { id: 'securityaudit', label: 'Security Audit', icon: ShieldCheck },
       { id: 'securityevents', label: 'Security Events', icon: Activity },
       { id: 'webhooktest', label: 'Webhook Test', icon: Zap },
+      { id: 'watchdog', label: 'Watchdog / Auto-Heal', icon: Activity },
     ],
   },
 ];
