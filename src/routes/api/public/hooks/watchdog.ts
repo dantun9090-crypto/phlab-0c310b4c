@@ -2,11 +2,11 @@
  * Watchdog Bot — runs every 5 minutes (pg_cron).
  *
  * Performs a battery of health checks against the live site, Firestore data,
- * payments queues and product images. Writes a summary document to
- * `watchdog_runs` (admin-read only) and attempts a small set of safe
- * auto-heal actions (no client-visible side effects beyond what the existing
- * hooks already do — sitemap rebuild, Fena retry queue drain, Prerender
- * recache for failing URLs).
+ * the Wallid payments integration and product images. Writes a summary
+ * document to `watchdog_runs` (admin-read only) and attempts a small set
+ * of safe auto-heal actions (Prerender recache for failing sitemap, kicks
+ * the Wallid monitor when stale, and enqueues an admin email when Wallid
+ * failure counts rise — one alert per hour, deduped).
  *
  * Auth: `x-watchdog-secret` header must equal CLEANUP_SECRET env (reused
  * shared secret — no new secret needed).
@@ -173,13 +173,92 @@ export const Route = createFileRoute('/api/public/hooks/watchdog')({
           return { ok: true, detail: `${n} orders older than 1h (informational)` };
         }));
 
-        // ── Fena retry queue depth ───────────────────────────────────
-        checks.push(await timed('fena-retry-queue', async () => {
+        // ── Wallid integration health ────────────────────────────────
+        let wallidErrorRate = 0;
+        let wallidErrorsLastHour = 0;
+        let wallidErrorsPrevHour = 0;
+
+        checks.push(await timed('wallid-config', async () => {
+          const r = await fetch(`${BASE}/api/config/payments`, { headers: { accept: 'application/json' } });
+          if (!r.ok) return { ok: false, detail: `config ${r.status}` };
+          const j = (await r.json().catch(() => ({}))) as any;
+          const methods: string[] = Array.isArray(j?.methods) ? j.methods : Array.isArray(j?.enabled) ? j.enabled : [];
+          const flat = JSON.stringify(j).toLowerCase();
+          const present = methods.some((m) => String(m).toLowerCase().includes('wallid')) || flat.includes('wallid');
+          return { ok: present, detail: present ? 'wallid enabled in payments config' : 'wallid MISSING from payments config' };
+        }));
+
+        checks.push(await timed('wallid-monitor-freshness', async () => {
           try {
-            const n = await countCollection(acct, token, 'fena_retry_queue');
-            return { ok: n < 50, detail: `${n} pending retries${n >= 50 ? ' (HIGH — investigate Fena)' : ''}` };
-          } catch {
-            return { ok: true, detail: 'queue empty / not created' };
+            const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+            const { data } = await supabaseAdmin
+              .from('app_config')
+              .select('value, updated_at')
+              .eq('key', 'wallid:last-monitor-run')
+              .maybeSingle();
+            if (!data) return { ok: false, detail: 'no wallid monitor run recorded yet' };
+            const ts = Date.parse(String(data.updated_at || ''));
+            const ageMin = ts ? Math.round((Date.now() - ts) / 60_000) : 9999;
+            return { ok: ageMin <= 30, detail: `last monitor run ${ageMin} min ago${ageMin > 30 ? ' (STALE)' : ''}` };
+          } catch (e: any) {
+            return { ok: false, detail: e?.message || 'app_config read failed' };
+          }
+        }));
+
+        checks.push(await timed('wallid-error-rate', async () => {
+          try {
+            const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+            const nowMs = Date.now();
+            const h1 = new Date(nowMs - 60 * 60_000).toISOString();
+            const h2 = new Date(nowMs - 120 * 60_000).toISOString();
+            const failedStatuses = ['FAILED', 'DECLINED', 'CANCELLED', 'EXPIRED', 'ERROR'];
+            const { count: lastHour } = await supabaseAdmin
+              .from('wallid_payments')
+              .select('*', { count: 'exact', head: true })
+              .gte('created_at', h1)
+              .in('status', failedStatuses);
+            const { count: prevHour } = await supabaseAdmin
+              .from('wallid_payments')
+              .select('*', { count: 'exact', head: true })
+              .gte('created_at', h2)
+              .lt('created_at', h1)
+              .in('status', failedStatuses);
+            wallidErrorsLastHour = Number(lastHour || 0);
+            wallidErrorsPrevHour = Number(prevHour || 0);
+            const { count: totalLastHour } = await supabaseAdmin
+              .from('wallid_payments')
+              .select('*', { count: 'exact', head: true })
+              .gte('created_at', h1);
+            const total = Number(totalLastHour || 0);
+            wallidErrorRate = total > 0 ? Math.round((wallidErrorsLastHour / total) * 100) : 0;
+            const rising = wallidErrorsLastHour > wallidErrorsPrevHour && wallidErrorsLastHour >= 3;
+            const tooHigh = wallidErrorRate >= 40 && total >= 5;
+            const ok = !rising && !tooHigh;
+            const flags = [
+              rising ? `RISING (${wallidErrorsPrevHour}→${wallidErrorsLastHour})` : '',
+              tooHigh ? `RATE ${wallidErrorRate}%` : '',
+            ].filter(Boolean).join(' ');
+            return {
+              ok,
+              detail: `${wallidErrorsLastHour} failed / ${total} total last hour (${wallidErrorRate}%)${flags ? ' — ' + flags : ''}`,
+            };
+          } catch (e: any) {
+            return { ok: false, detail: e?.message || 'wallid_payments read failed' };
+          }
+        }));
+
+        checks.push(await timed('wallid-webhook-events', async () => {
+          try {
+            const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+            const since = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
+            const { count } = await supabaseAdmin
+              .from('wallid_webhook_events')
+              .select('*', { count: 'exact', head: true })
+              .gte('received_at', since);
+            const n = Number(count || 0);
+            return { ok: true, detail: `${n} webhook events in last 24h (informational)` };
+          } catch (e: any) {
+            return { ok: true, detail: e?.message || 'events table not readable' };
           }
         }));
 
@@ -207,13 +286,51 @@ export const Route = createFileRoute('/api/public/hooks/watchdog')({
           }
         }
 
-        const fenaCheck = checks.find((c) => c.name === 'fena-retry-queue');
-        if (fenaCheck && !fenaCheck.ok) {
+        // Auto-heal: if Wallid monitor data is stale, trigger it now.
+        const monitorCheck = checks.find((c) => c.name === 'wallid-monitor-freshness');
+        if (monitorCheck && !monitorCheck.ok) {
           try {
-            const fenaRes = await fetch(`${BASE}/api/public/hooks/fena-process-retries`, { method: 'POST' });
-            heals.push({ name: 'fena-process-retries', ok: fenaRes.ok, detail: `status ${fenaRes.status}` });
+            const r = await fetch(`${BASE}/api/public/hooks/wallid-monitor`, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json', authorization: `Bearer ${expected}` },
+            });
+            heals.push({ name: 'wallid-monitor', ok: r.ok, detail: `status ${r.status}` });
           } catch (e: any) {
-            heals.push({ name: 'fena-process-retries', ok: false, detail: e?.message || 'failed' });
+            heals.push({ name: 'wallid-monitor', ok: false, detail: e?.message || 'failed' });
+          }
+        }
+
+        // Alert when Wallid errors are rising or rate is high — enqueue one email per hour.
+        const errorRateCheck = checks.find((c) => c.name === 'wallid-error-rate');
+        if (errorRateCheck && !errorRateCheck.ok) {
+          try {
+            const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+            const { enqueueMailOnce } = await import('@/lib/server/enqueue-mail');
+            const bucketHour = new Date().toISOString().slice(0, 13);
+            const subject = `[PH Labs] Wallid errors rising — ${wallidErrorsLastHour} failures last hour (${wallidErrorRate}%)`;
+            const text =
+              `Wallid integration alert from watchdog.\n\n` +
+              `Failed payments last hour: ${wallidErrorsLastHour}\n` +
+              `Failed payments previous hour: ${wallidErrorsPrevHour}\n` +
+              `Failure rate (last hour): ${wallidErrorRate}%\n\n` +
+              `Check Admin → Wallid tabs + provider status page.`;
+            await enqueueMailOnce(`watchdog-wallid-alert:${bucketHour}`, {
+              to: 'orders@phlabs.co.uk',
+              message: { subject, html: `<p>${text.replace(/\n/g, '<br/>')}</p>`, text },
+              source: 'watchdog:wallid-alert',
+            });
+            heals.push({ name: 'wallid-alert-email', ok: true, detail: `enqueued for hour bucket ${bucketHour}` });
+            // Best-effort: log into supabase for audit visibility.
+            await supabaseAdmin.from('app_config').upsert(
+              {
+                key: 'watchdog:last-wallid-alert',
+                value: JSON.stringify({ at: new Date().toISOString(), wallidErrorsLastHour, wallidErrorsPrevHour, wallidErrorRate }),
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'key' },
+            );
+          } catch (e: any) {
+            heals.push({ name: 'wallid-alert-email', ok: false, detail: e?.message || 'enqueue failed' });
           }
         }
 
@@ -225,6 +342,9 @@ export const Route = createFileRoute('/api/public/hooks/watchdog')({
           totalChecks: checks.length,
           failed: failures.length,
           brokenImages,
+          wallidErrorsLastHour,
+          wallidErrorsPrevHour,
+          wallidErrorRate,
           status: failures.length === 0 ? 'healthy' : failures.length <= 2 ? 'degraded' : 'critical',
           checks,
           heals,
