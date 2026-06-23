@@ -46,6 +46,11 @@ export function markHydrationError(): void {
   catch { /* ignore */ }
 }
 
+export function clearHydrationError(): void {
+  try { sessionStorage.removeItem(HYDRATION_ERROR_FLAG); }
+  catch { /* ignore */ }
+}
+
 export function hasHydrationErrorState(): boolean {
   try { return sessionStorage.getItem(HYDRATION_ERROR_FLAG) === "1" || !!sessionStorage.getItem(HYDRATION_ERROR_FLAG); }
   catch { return false; }
