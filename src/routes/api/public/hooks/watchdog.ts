@@ -173,13 +173,92 @@ export const Route = createFileRoute('/api/public/hooks/watchdog')({
           return { ok: true, detail: `${n} orders older than 1h (informational)` };
         }));
 
-        // ── Fena retry queue depth ───────────────────────────────────
-        checks.push(await timed('fena-retry-queue', async () => {
+        // ── Wallid integration health ────────────────────────────────
+        let wallidErrorRate = 0;
+        let wallidErrorsLastHour = 0;
+        let wallidErrorsPrevHour = 0;
+
+        checks.push(await timed('wallid-config', async () => {
+          const r = await fetch(`${BASE}/api/config/payments`, { headers: { accept: 'application/json' } });
+          if (!r.ok) return { ok: false, detail: `config ${r.status}` };
+          const j = (await r.json().catch(() => ({}))) as any;
+          const methods: string[] = Array.isArray(j?.methods) ? j.methods : Array.isArray(j?.enabled) ? j.enabled : [];
+          const flat = JSON.stringify(j).toLowerCase();
+          const present = methods.some((m) => String(m).toLowerCase().includes('wallid')) || flat.includes('wallid');
+          return { ok: present, detail: present ? 'wallid enabled in payments config' : 'wallid MISSING from payments config' };
+        }));
+
+        checks.push(await timed('wallid-monitor-freshness', async () => {
           try {
-            const n = await countCollection(acct, token, 'fena_retry_queue');
-            return { ok: n < 50, detail: `${n} pending retries${n >= 50 ? ' (HIGH — investigate Fena)' : ''}` };
-          } catch {
-            return { ok: true, detail: 'queue empty / not created' };
+            const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+            const { data } = await supabaseAdmin
+              .from('app_config')
+              .select('value, updated_at')
+              .eq('key', 'wallid:last-monitor-run')
+              .maybeSingle();
+            if (!data) return { ok: false, detail: 'no wallid monitor run recorded yet' };
+            const ts = Date.parse(String(data.updated_at || ''));
+            const ageMin = ts ? Math.round((Date.now() - ts) / 60_000) : 9999;
+            return { ok: ageMin <= 30, detail: `last monitor run ${ageMin} min ago${ageMin > 30 ? ' (STALE)' : ''}` };
+          } catch (e: any) {
+            return { ok: false, detail: e?.message || 'app_config read failed' };
+          }
+        }));
+
+        checks.push(await timed('wallid-error-rate', async () => {
+          try {
+            const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+            const nowMs = Date.now();
+            const h1 = new Date(nowMs - 60 * 60_000).toISOString();
+            const h2 = new Date(nowMs - 120 * 60_000).toISOString();
+            const failedStatuses = ['FAILED', 'DECLINED', 'CANCELLED', 'EXPIRED', 'ERROR'];
+            const { count: lastHour } = await supabaseAdmin
+              .from('wallid_payments')
+              .select('*', { count: 'exact', head: true })
+              .gte('created_at', h1)
+              .in('status', failedStatuses);
+            const { count: prevHour } = await supabaseAdmin
+              .from('wallid_payments')
+              .select('*', { count: 'exact', head: true })
+              .gte('created_at', h2)
+              .lt('created_at', h1)
+              .in('status', failedStatuses);
+            wallidErrorsLastHour = Number(lastHour || 0);
+            wallidErrorsPrevHour = Number(prevHour || 0);
+            const { count: totalLastHour } = await supabaseAdmin
+              .from('wallid_payments')
+              .select('*', { count: 'exact', head: true })
+              .gte('created_at', h1);
+            const total = Number(totalLastHour || 0);
+            wallidErrorRate = total > 0 ? Math.round((wallidErrorsLastHour / total) * 100) : 0;
+            const rising = wallidErrorsLastHour > wallidErrorsPrevHour && wallidErrorsLastHour >= 3;
+            const tooHigh = wallidErrorRate >= 40 && total >= 5;
+            const ok = !rising && !tooHigh;
+            const flags = [
+              rising ? `RISING (${wallidErrorsPrevHour}→${wallidErrorsLastHour})` : '',
+              tooHigh ? `RATE ${wallidErrorRate}%` : '',
+            ].filter(Boolean).join(' ');
+            return {
+              ok,
+              detail: `${wallidErrorsLastHour} failed / ${total} total last hour (${wallidErrorRate}%)${flags ? ' — ' + flags : ''}`,
+            };
+          } catch (e: any) {
+            return { ok: false, detail: e?.message || 'wallid_payments read failed' };
+          }
+        }));
+
+        checks.push(await timed('wallid-webhook-events', async () => {
+          try {
+            const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
+            const since = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
+            const { count } = await supabaseAdmin
+              .from('wallid_webhook_events')
+              .select('*', { count: 'exact', head: true })
+              .gte('received_at', since);
+            const n = Number(count || 0);
+            return { ok: true, detail: `${n} webhook events in last 24h (informational)` };
+          } catch (e: any) {
+            return { ok: true, detail: e?.message || 'events table not readable' };
           }
         }));
 
