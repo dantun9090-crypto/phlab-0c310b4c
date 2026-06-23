@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { PageTransition } from "@/components/PageTransition";
 import appCss from "../styles.css?url";
 import "@/lib/chunk-reload";
+import "@/lib/sw-register";
 import {
   clearClientCaches as _clearClientCaches, // re-exported for tests if needed
   findCachedLastKnownUrl,
@@ -381,6 +382,36 @@ const NONCE_PROPAGATOR = `
       return el;
     };
   }catch(e){}
+})();
+`;
+
+
+const FORCE_SW_CLEANUP = `
+(function(){
+  var clearAllCaches=function(){
+    try{
+      if('caches' in window && caches.keys){
+        caches.keys().then(function(names){
+          return Promise.all(names.map(function(name){
+            try{ console.info('Cache deleted:', name); }catch(e){}
+            return caches.delete(name).catch(function(){});
+          }));
+        }).catch(function(){});
+      }
+    }catch(e){}
+  };
+  try{
+    if('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations){
+      navigator.serviceWorker.getRegistrations().then(function(registrations){
+        return Promise.all(registrations.map(function(registration){
+          try{ console.info('SW unregistered:', registration.scope); }catch(e){}
+          return registration.unregister().catch(function(){});
+        }));
+      }).then(clearAllCaches, clearAllCaches);
+    } else {
+      clearAllCaches();
+    }
+  }catch(e){ clearAllCaches(); }
 })();
 `;
 
