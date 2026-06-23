@@ -445,7 +445,8 @@ export default function AdminPage() {
         case 'webhooktest': return <WebhookTestTab />;
         case 'wallidpreview': return <WallidPreviewTab />;
         case 'wallidbadges': return <WallidBadgesTab />;
-        case 'wallidbanks': return <WallidBanksTab />;
+       case 'wallidbanks': return <WallidBanksTab />;
+       case 'watchdog': return <WatchdogTab />;
         default: return <DashboardTab />;
       }
     })();
