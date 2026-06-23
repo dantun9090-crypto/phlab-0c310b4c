@@ -11,7 +11,27 @@ declare global {
 }
 
 const HYDRATION_ERROR_FLAG = "__phl_hydration_error_seen";
-const FORCE_CSR_FALLBACK = true;
+
+// ============================================================
+// SSR HYDRATION FLAGS (P0 RECOVERY)
+// ENABLE_SSR_HYDRATION: master flag. false = CSR for everyone.
+// SSR_HYDRATION_ROUTES: when ENABLE_SSR_HYDRATION = true,
+//   only these paths hydrate via SSR. Empty array = ALL routes.
+// Flip ENABLE_SSR_HYDRATION ONLY after user confirms
+// "mutations = 0" on Chrome + Firefox over 10 hard reloads.
+// ============================================================
+const ENABLE_SSR_HYDRATION = false;
+const SSR_HYDRATION_ROUTES: string[] = ["/"];
+
+function shouldHydrateCurrentRoute(): boolean {
+  if (!ENABLE_SSR_HYDRATION) return false;
+  if (SSR_HYDRATION_ROUTES.length === 0) return true;
+  try {
+    return SSR_HYDRATION_ROUTES.includes(location.pathname);
+  } catch {
+    return false;
+  }
+}
 
 function errorText(error: unknown): string {
   if (!error) return "";
