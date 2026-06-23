@@ -257,18 +257,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: "https://phlabs.co.uk/og-image.jpg" },
     ],
     scripts: [
-      // Google Analytics 4 — consent defaults BEFORE the external tag loads
-      // so the initial auto-config respects GDPR. Inline script gets nonce
-      // from HTMLRewriter, so CSP strict-dynamic allows it.
+      // NOTE: GA4/GTM scripts are intentionally NOT injected in <head>.
+      // They are loaded after React hydration via a useEffect in
+      // RootComponent (see loadGtagAfterHydration below) to prevent
+      // GTM from mutating the DOM before hydration completes, which
+      // was triggering React error #418 (hydration mismatch) in
+      // Chrome/Firefox/Edge after the GA dynamic-config swap.
       {
-        children:
-          "(function(){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;var c={a:false,m:false};try{var r=localStorage.getItem('php_cookie_consent');if(r){var p=JSON.parse(r);c.a=!!p.analytics;c.m=!!p.marketing;}}catch(e){}gtag('consent','default',{ad_storage:c.m?'granted':'denied',ad_user_data:c.m?'granted':'denied',ad_personalization:c.m?'granted':'denied',analytics_storage:c.a?'granted':'denied',functionality_storage:'granted',security_storage:'granted',wait_for_update:500});gtag('js',new Date());gtag('config','G-5HM4YT7HDW',{anonymize_ip:true});gtag('config','GT-P3HVF8R5',{send_page_view:false});gtag('config','GT-WRHD4Q69',{send_page_view:false});gtag('config','MC-KJMB7MKB29',{send_page_view:false});window.__phlGaBootstrapped=true;})();",
-      },
-      {
-        async: true,
-        src: "https://www.googletagmanager.com/gtag/js?id=G-5HM4YT7HDW",
-      },
-      {
+
         type: "application/ld+json",
         children: JSON.stringify({
           "@context": "https://schema.org",
@@ -631,10 +627,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
       </head>
 
-      <body style={{ backgroundColor: "#060f1e", color: "#f0f6ff", margin: 0 }}>
+      <body suppressHydrationWarning style={{ backgroundColor: "#060f1e", color: "#f0f6ff", margin: 0 }}>
         {children}
         <Scripts />
       </body>
+
     </html>
   );
 }
@@ -647,6 +644,25 @@ function RootComponent() {
     clearStoreCachesForNewBuild();
     initWebVitals();
   }, []);
+
+  // Load GA4/GTM AFTER React hydration completes — keeps GTM from mutating
+  // the DOM mid-hydration (React error #418). The bootstrap inline script
+  // installs window.gtag + consent defaults, then the async gtag.js loader
+  // is appended. Both inherit the page nonce via the NONCE_PROPAGATOR.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if ((window as unknown as { __phlGaBootstrapped?: boolean }).__phlGaBootstrapped) return;
+    const inline = document.createElement('script');
+    inline.text =
+      "(function(){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;var c={a:false,m:false};try{var r=localStorage.getItem('php_cookie_consent');if(r){var p=JSON.parse(r);c.a=!!p.analytics;c.m=!!p.marketing;}}catch(e){}gtag('consent','default',{ad_storage:c.m?'granted':'denied',ad_user_data:c.m?'granted':'denied',ad_personalization:c.m?'granted':'denied',analytics_storage:c.a?'granted':'denied',functionality_storage:'granted',security_storage:'granted',wait_for_update:500});gtag('js',new Date());gtag('config','G-5HM4YT7HDW',{anonymize_ip:true});gtag('config','GT-P3HVF8R5',{send_page_view:false});gtag('config','GT-WRHD4Q69',{send_page_view:false});gtag('config','MC-KJMB7MKB29',{send_page_view:false});window.__phlGaBootstrapped=true;})();";
+    document.body.appendChild(inline);
+    const ext = document.createElement('script');
+    ext.async = true;
+    ext.src = 'https://www.googletagmanager.com/gtag/js?id=G-5HM4YT7HDW';
+    document.body.appendChild(ext);
+  }, []);
+
+
 
   useEffect(() => {
     return installCanonicalEnforcer();
