@@ -567,6 +567,78 @@ async function run() {
   ].join('\n');
   writeFileSync(join(REPORT_DIR, 'junit.xml'), xml);
 
+  // ---------- self-contained HTML report ----------
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const dbHighlights = (() => {
+    if (!dbBefore && !dbAfter) return '<p class="muted">No Firestore DB diff captured (FIREBASE_SERVICE_ACCOUNT_JSON not set).</p>';
+    const keys = new Set([...Object.keys(dbBefore || {}), ...Object.keys(dbAfter || {})]);
+    const rows = [...keys].sort().map((k) => {
+      const a = JSON.stringify((dbBefore || {})[k] ?? null);
+      const b = JSON.stringify((dbAfter || {})[k] ?? null);
+      const changed = a !== b;
+      const lock = LOCK_FIELDS.includes(k);
+      return `<tr class="${changed ? 'diff' : ''}"><td>${esc(k)}${lock ? ' <span class="pill">lock</span>' : ''}</td><td><code>${esc(a)}</code></td><td><code>${esc(b)}</code></td></tr>`;
+    }).join('');
+    return `<table class="tbl"><thead><tr><th>field</th><th>before</th><th>after</th></tr></thead><tbody>${rows}</tbody></table>`;
+  })();
+  const scCards = perScenarioSummary.map((s) => {
+    const meta = perScenario.get(s.scenario) || {};
+    const attempts = meta.attempts || 1;
+    const transient = (meta.transientErrors || []).length;
+    const asserts = results.filter((r) => r.scenario === s.scenario);
+    const purgeRes = (meta.purgeCalls || []).slice(0, 5).map((c) => `<li><code>${esc(new Date(c.at).toISOString())}</code> → <code>${esc(c.url)}</code></li>`).join('');
+    const reloadList = (meta.reloads || []).map((r) => `<li><code>${esc(new Date(r.at).toISOString())}</code> → ${esc(r.url)}</li>`).join('');
+    const uniqueJs = s.uniqueHashedJsUrls.map((u) => `<li><code>${esc(u)}</code></li>`).join('');
+    const assertRows = asserts.map((r) => `<tr class="${r.ok ? 'pass' : 'fail'}"><td>${r.ok ? '✅' : '❌'}</td><td>${esc(r.stage)}</td><td>${esc(r.extra || '')}</td></tr>`).join('');
+    const failBadge = s.failures > 0 ? `<span class="badge bad">${s.failures} FAIL</span>` : '<span class="badge ok">PASS</span>';
+    return `<section class="card"><header><h3>${esc(s.scenario)} ${failBadge}</h3>
+      <div class="kv">attempts=${attempts} · transient=${transient} · purge=${s.purgeCallCount} · navs=${s.navigations} · uniqueJs=${s.uniqueHashedJsUrls.length} · builds=${s.buildIds.join(', ') || '—'}</div></header>
+      <details open><summary>Assertions (${asserts.length})</summary><table class="tbl"><thead><tr><th></th><th>stage</th><th>detail</th></tr></thead><tbody>${assertRows}</tbody></table></details>
+      <details><summary>Purge calls (${(meta.purgeCalls || []).length})</summary><ul>${purgeRes || '<li class="muted">none</li>'}</ul></details>
+      <details><summary>Navigations / no-loop evidence (${(meta.reloads || []).length})</summary><ul>${reloadList || '<li class="muted">none</li>'}</ul>
+        <p>Unique hashed JS URLs: ${s.uniqueHashedJsUrls.length}</p><ul>${uniqueJs}</ul></details>
+      <details><summary>HAR trace</summary><p><a href="har-${esc(s.scenario)}.json">har-${esc(s.scenario)}.json</a> · ${(meta.har || []).length} entries</p></details>
+      <details><summary>Screenshot</summary><p><a href="screenshots/${esc(s.scenario)}.png"><img src="screenshots/${esc(s.scenario)}.png" alt="${esc(s.scenario)}" loading="lazy" style="max-width:100%;border:1px solid #444"/></a></p></details>
+    </section>`;
+  }).join('\n');
+  const overall = failed.length ? 'FAILED' : 'PASSED';
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>E2E stale-assets — ${esc(overall)}</title>
+<style>
+:root{color-scheme:dark light;font-family:ui-sans-serif,system-ui,sans-serif}
+body{margin:0;padding:24px;background:#0f172a;color:#e2e8f0;line-height:1.45}
+h1,h2,h3{margin:.4em 0}.muted{color:#94a3b8}
+header.top{display:flex;flex-wrap:wrap;gap:12px;align-items:baseline;border-bottom:1px solid #334155;padding-bottom:12px;margin-bottom:16px}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600}
+.badge.ok{background:#065f46;color:#a7f3d0}.badge.bad{background:#7f1d1d;color:#fecaca}
+.pill{background:#1e293b;color:#fbbf24;padding:1px 6px;border-radius:6px;font-size:11px;margin-left:4px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:14px 16px;margin-bottom:14px}
+.card header h3{display:flex;gap:10px;align-items:center}
+.kv{color:#94a3b8;font-size:13px;margin-top:4px}
+details{margin-top:8px}summary{cursor:pointer;color:#cbd5e1;font-weight:600}
+table.tbl{border-collapse:collapse;width:100%;margin-top:6px;font-size:13px}
+.tbl th,.tbl td{border:1px solid #334155;padding:4px 8px;text-align:left;vertical-align:top}
+.tbl tr.pass td:first-child{color:#34d399}.tbl tr.fail td{background:#3f1d1d}
+.tbl tr.diff td{background:#3b2a16}
+code{background:#0f172a;padding:1px 4px;border-radius:4px;font-size:12px;word-break:break-all}
+a{color:#7dd3fc}
+</style></head><body>
+<header class="top">
+  <h1>E2E stale-assets <span class="badge ${failed.length ? 'bad' : 'ok'}">${esc(overall)}</span></h1>
+  <div class="muted">target <code>${esc(TARGET)}</code> · finished ${esc(summary.finishedAt)} · ${summary.passed}/${summary.total} passed${ONLY ? ` · filter <code>${esc(ONLY)}</code>` : ''}${REPLAY ? ' · <b>REPLAY</b>' : (RECORD ? ' · <b>RECORD</b>' : '')} · retries=${RETRIES}</div>
+</header>
+<section class="card"><h2>Per-scenario summary</h2>${scCards || '<p class="muted">No scenarios ran.</p>'}</section>
+<section class="card"><h2>DB diff (Firestore <code>_meta/build_state</code>) — lock fields highlighted</h2>${dbHighlights}</section>
+<section class="card"><h2>Artifacts</h2><ul>
+  <li><a href="report.json">report.json</a></li><li><a href="report.txt">report.txt</a></li>
+  <li><a href="junit.xml">junit.xml</a></li><li><a href="db-diff.json">db-diff.json</a></li>
+  <li><a href="requests.ndjson">requests.ndjson</a></li><li><a href="responses.ndjson">responses.ndjson</a></li>
+  <li><a href="console.ndjson">console.ndjson</a></li>
+</ul></section>
+</body></html>`;
+  writeFileSync(join(REPORT_DIR, 'report.html'), html);
+
+
+
   console.log(`\nReport written to ${REPORT_DIR}`);
   console.log(process.exitCode
     ? `\n❌ e2e-stale-assets FAILED (${failed.length}/${results.length})`
