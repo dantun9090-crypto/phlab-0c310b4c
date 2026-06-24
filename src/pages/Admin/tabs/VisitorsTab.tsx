@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Users, Eye, Clock, Activity, RefreshCw, CalendarIcon, Download, X, AlertTriangle, Repeat, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfDay, endOfDay, subDays, differenceInDays } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
