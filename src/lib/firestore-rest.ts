@@ -42,12 +42,17 @@ export interface SeoProduct {
   gtin?: string;
   stock?: number;
   coaUrl?: string;
+  coaPdfUrl?: string;
+  coaPdfName?: string;
+  coaBatch?: string;
+  coaUploadedAt?: string;
   updatedAt?: string;
   includeInMerchantFeed?: boolean;
   excludeFromMerchantFeed?: boolean;
   isVip?: boolean;
   popular?: boolean;
   requiresResearchGate?: boolean;
+
   /** Parsed from variant name/dosage, e.g. "10 mg" → { value: 10, unit: "mg" }. */
   unitPricingMeasure?: UnitPricingMeasure;
   /** Net weight in grams (for shipping_weight). */
@@ -179,6 +184,10 @@ function toProduct(doc: any): SeoProduct | null {
     gtin: typeof f.gtin === "string" && f.gtin.trim() ? f.gtin : undefined,
     stock: totalStock,
     coaUrl: typeof f.coaUrl === "string" && f.coaUrl.trim() ? f.coaUrl : undefined,
+    coaPdfUrl: typeof f.coaPdfUrl === "string" && f.coaPdfUrl.trim() ? f.coaPdfUrl : undefined,
+    coaPdfName: typeof f.coaPdfName === "string" && f.coaPdfName.trim() ? f.coaPdfName : undefined,
+    coaBatch: typeof f.coaBatch === "string" && f.coaBatch.trim() ? f.coaBatch : undefined,
+    coaUploadedAt: typeof f.coaUploadedAt === "string" && f.coaUploadedAt.trim() ? f.coaUploadedAt : undefined,
     updatedAt: typeof f.updatedAt === "string" ? f.updatedAt : undefined,
     includeInMerchantFeed: f.includeInMerchantFeed === true,
     excludeFromMerchantFeed: f.excludeFromMerchantFeed === true,
