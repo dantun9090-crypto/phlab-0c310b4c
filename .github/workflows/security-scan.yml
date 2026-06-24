@@ -49,6 +49,7 @@ jobs:
       # because `bun install --frozen-lockfile` is the only writer and
       # bun.lock pins every transitive version — results stay deterministic.
       - name: Cache Bun install store
+        id: bun_cache
         uses: actions/cache@v4
         with:
           path: |
