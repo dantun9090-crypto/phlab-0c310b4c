@@ -2239,6 +2239,102 @@ PH Labs supplies HPLC-verified research peptides including <a href="/products/bp
       { id: 4, authors: 'Mant CT, Hodges RS.', year: 2008, title: 'HPLC of Peptides and Proteins: Methods and Protocols', journal: 'Humana Press', doi: '10.1007/978-1-59745-430-4' },
     ]
   },
+
+  // ---------------------------------------------
+  // What Are Peptides? — UK researcher primer
+  // ---------------------------------------------
+  {
+    slug: 'what-are-peptides',
+    title: 'What Are Peptides? A Comprehensive Guide for UK Researchers',
+    subtitle: 'A scientific overview of peptide chemistry, synthesis, stability, and laboratory research applications in the United Kingdom',
+    category: 'Foundational Science',
+    readTime: 13,
+    publishDate: '2026-06-24',
+    excerpt: 'Peptides are short chains of amino acids that sit between single amino acids and full-length proteins. This guide explains what peptides are at a molecular level, how they are synthesised, why stability and storage matter, and how UK laboratories use them in receptor, signalling, and analytical research — strictly for in-vitro and preclinical work.',
+    keywords: ['what are peptides', 'peptides uk', 'research peptides', 'peptide chemistry', 'peptide synthesis', 'SPPS', 'UK laboratory research', 'amino acids'],
+    relatedSlugs: ['hplc-testing-explained', 'peptide-storage-lyophilisation-science', 'peptide-safety-legality-uk', 'research-peptides-uk'],
+    content: [
+      {
+        body: `A peptide is a short chain of amino acids linked by amide (peptide) bonds. Where a single amino acid is the building block and a full-length protein typically contains hundreds or thousands of residues, peptides occupy the middle ground — most research-grade peptides range from 2 to 50 residues. That size makes them small enough to synthesise chemically with high purity, yet large enough to fold into defined motifs that bind receptors, enzymes, and structural proteins with high specificity. This guide is written for UK researchers and laboratory staff and covers what peptides are at a molecular level, how they are made, how they are characterised, and how they are used strictly for in-vitro and preclinical work. <strong>All products discussed are For Research Use Only. Not for Human Consumption.</strong> Browse the full <a href="/products" style="color: #10b981; text-decoration: underline;">research peptide catalogue</a> for HPLC-verified compounds available to UK laboratories.`
+      },
+      {
+        heading: 'Peptide Chemistry: Amino Acids, Peptide Bonds, and Sequence',
+        body: `Each amino acid carries an amine group (–NH2), a carboxyl group (–COOH), a hydrogen, and a variable side chain (R group) attached to a central alpha-carbon. A peptide bond forms when the carboxyl of one residue condenses with the amine of the next, releasing a molecule of water. By convention, sequences are written from the N-terminus (free amine) to the C-terminus (free carboxyl) — so the tripeptide GHK is glycine–histidine–lysine in that order.
+
+The 20 proteinogenic amino acids encode an enormous combinatorial space: even a 10-residue peptide has 20^10 (over 10 trillion) possible sequences. The side chains carry the chemistry — hydrophobic, polar, acidic, basic, aromatic, sulphur-containing — and dictate solubility, folding, and receptor recognition. Many research peptides also incorporate non-canonical residues (D-amino acids, N-methylated residues, fatty-acid acylation) to extend half-life, resist proteolysis, or tune receptor selectivity.`
+      },
+      {
+        heading: 'Peptides vs Proteins: Where the Line Sits',
+        body: `There is no rigid IUPAC cut-off between a peptide and a protein, but working definitions are widely used in the literature.`,
+        table: {
+          headers: ['Class', 'Typical length', 'Examples', 'Defining features'],
+          rows: [
+            ['Oligopeptide', '2–20 residues', 'GHK, TRH, oxytocin', 'Linear, often no stable secondary structure in solution'],
+            ['Polypeptide', '20–50 residues', 'BPC-157, thymosin beta-4 fragments', 'May adopt transient helical or beta-turn motifs'],
+            ['Small protein', '50–100 residues', 'Insulin (A+B chain), ubiquitin', 'Defined tertiary fold; usually disulphide-stabilised'],
+            ['Protein', '>100 residues', 'Albumin, antibodies', 'Multi-domain fold, post-translational modifications'],
+          ]
+        }
+      },
+      {
+        heading: 'How Research Peptides Are Synthesised',
+        body: `The dominant manufacturing route for research-grade peptides is solid-phase peptide synthesis (SPPS), introduced by Bruce Merrifield (Nobel Prize in Chemistry, 1984). SPPS builds the chain one residue at a time on an insoluble polymer resin, allowing excess reagents and by-products to be washed away at every step.
+
+The two prevailing chemistries are Fmoc (9-fluorenylmethoxycarbonyl) and Boc (tert-butoxycarbonyl), named after the temporary protecting group on the alpha-amine. Modern facilities almost exclusively use Fmoc/tBu chemistry because deprotection uses a mild base (piperidine) rather than the strong acids required by Boc. After the full sequence is assembled, the peptide is cleaved from the resin with trifluoroacetic acid (TFA), which also removes the permanent side-chain protecting groups. The crude peptide is then purified — typically by preparative reversed-phase HPLC — to remove deletion sequences, oxidised by-products, and residual scavengers. The resulting material is lyophilised (freeze-dried) into a stable solid for shipment and storage.
+
+Longer peptides (>50 residues) and any peptide carrying complex post-translational modifications are often produced by recombinant expression in E. coli or yeast, but the vast majority of research peptides in the 5–40 residue range are SPPS products. For a deeper look at how purity is verified after synthesis, see <a href="/resources/hplc-testing-explained" style="color: #10b981; text-decoration: underline;">HPLC Testing Explained</a>.`,
+        callout: {
+          type: 'info',
+          text: 'Crude SPPS material before purification is typically only 60–80% target peptide. Research-grade product should be specified at ≥99% by HPLC with a batch-specific Certificate of Analysis.'
+        }
+      },
+      {
+        heading: 'Endogenous vs Synthetic Peptides',
+        body: `Many of the peptides studied in laboratories are direct sequences of endogenous human peptides — molecules the body already produces. Oxytocin, vasopressin, glucagon, GLP-1, and the melanocortins are all naturally occurring signalling peptides. Research compounds in this category are simply synthetic copies, manufactured to defined purity so that pharmacology can be studied with consistent material.
+
+A second category consists of engineered analogues: sequences in which selected residues have been swapped, deleted, or chemically modified to alter half-life, receptor selectivity, or oral bioavailability. <a href="/resources/cjc-1295-mod-grf-ghrh-research" style="color: #10b981; text-decoration: underline;">CJC-1295</a>, <a href="/products/tirzepatide" style="color: #10b981; text-decoration: underline;">tirzepatide</a>, and <a href="/products/retatrutide" style="color: #10b981; text-decoration: underline;">retatrutide</a> are examples of engineered analogues — they exploit the same receptors as endogenous incretins but have been redesigned for greater stability and balanced multi-receptor pharmacology. A third category is purely investigational sequences that have no natural counterpart but were identified through phage display, rational design, or fragment libraries.`
+      },
+      {
+        heading: 'Stability, Storage, and Reconstitution',
+        body: `Lyophilised research peptides are generally stable for 24 months or longer when stored sealed at -20°C and protected from light and humidity. Once reconstituted in aqueous buffer they become much more vulnerable — to hydrolysis of the peptide backbone, oxidation of methionine and cysteine residues, deamidation of asparagine and glutamine, and adsorption to glass and plastic surfaces. As a rule of thumb, reconstituted solutions are stored at 4°C for short-term use (≤2 weeks) or aliquoted and frozen at -20°C (or -80°C for long-term storage) to avoid repeated freeze–thaw cycles.
+
+Bacteriostatic water (sterile water containing 0.9% benzyl alcohol) is the standard reconstitution solvent for laboratory work because the preservative suppresses microbial growth in multi-use vials. For peptides with hydrophobic residues or aggregation tendencies, a small percentage of acetic acid, mannitol, or carrier protein (BSA) is often added to maintain solubility. A complete protocol is set out in <a href="/resources/peptide-storage-lyophilisation-science" style="color: #10b981; text-decoration: underline;">Peptide Storage Science: Lyophilisation, Reconstitution, and Stability Maximisation</a>.`,
+        callout: {
+          type: 'warning',
+          text: 'Reconstituted peptide concentrations and volumes are recorded for laboratory traceability only. They are not dosing instructions and do not imply suitability for human or veterinary administration.'
+        }
+      },
+      {
+        heading: 'How UK Laboratories Use Research Peptides',
+        body: `In a UK research setting, peptides are used overwhelmingly for in-vitro assays and preclinical mechanism work — never for human or veterinary administration outside of an authorised clinical trial. Typical applications include:
+
+• Receptor binding and functional assays in transfected cell lines (HEK293, CHO) using cAMP, calcium flux, or beta-arrestin recruitment as readouts.
+• Cell-based signalling studies in primary cells or organoids — for example, GHK-Cu in dermal fibroblast collagen synthesis assays, or BPC-157 in endothelial tube formation models.
+• Enzyme kinetics where the peptide is a substrate or competitive inhibitor.
+• Analytical method development — HPLC and mass spectrometry method validation, stability-indicating assay design, and reference standard preparation.
+• Preclinical in-vivo work in licensed animal facilities, conducted under Home Office project and personal licences in accordance with the Animals (Scientific Procedures) Act 1986.
+
+Materials sold For Research Use Only are intended for these laboratory contexts. They are not licensed medicines under the Human Medicines Regulations 2012 and must not be marketed, supplied, or used as such. The regulatory position is set out in detail in <a href="/resources/peptide-safety-legality-uk" style="color: #10b981; text-decoration: underline;">The Safety and Legality of Buying Research Peptides in the UK</a>.`
+      },
+      {
+        heading: 'How to Evaluate a Research Peptide Supplier in the UK',
+        body: `Sourcing decisions matter because peptide identity and purity directly determine whether your data is reproducible. A defensible UK supplier should provide, at minimum: a batch-specific HPLC chromatogram showing the main peak and integration, a mass spectrometry report confirming the expected monoisotopic mass, a clear lot number tying the documentation to the vial in your freezer, and product listings that are free of medical, dosing, or administration claims.
+
+PH Labs supplies HPLC-verified research peptides to UK laboratories, with batch-specific Certificates of Analysis covering identity and purity for every product. The full process is documented on the <a href="/quality-control" style="color: #10b981; text-decoration: underline;">quality control</a> page, and the <a href="/lab-reports" style="color: #10b981; text-decoration: underline;">lab reports library</a> hosts the underlying chromatograms. Common starting points for new laboratory work include <a href="/products/bpc-157" style="color: #10b981; text-decoration: underline;">BPC-157</a>, <a href="/products/tb-500" style="color: #10b981; text-decoration: underline;">TB-500</a>, <a href="/products/ghk-cu" style="color: #10b981; text-decoration: underline;">GHK-Cu</a>, and <a href="/products/bacteriostatic-water" style="color: #10b981; text-decoration: underline;">bacteriostatic water</a> for reconstitution.`
+      },
+      {
+        heading: 'Summary',
+        body: `Peptides are short chains of amino acids — small enough to synthesise with high purity by SPPS, large enough to engage receptors with the specificity normally associated with proteins. Their value to UK research lies in that combination: chemically defined material with protein-like pharmacology, available as reference standards for receptor, signalling, analytical, and preclinical studies. Stability is the practical constraint: store dry and cold, reconstitute in bacteriostatic water, aliquot before freezing, and verify every batch against an HPLC chromatogram and mass spec report. Used within those constraints, peptides remain one of the most productive tool classes in modern biomedical research — and one that UK laboratories can source domestically with full documentation. <strong>For Research Use Only. Not for Human Consumption.</strong>`
+      }
+    ],
+    references: [
+      { id: 1, authors: 'Merrifield RB.', year: 1963, title: 'Solid Phase Peptide Synthesis. I. The Synthesis of a Tetrapeptide', journal: 'J Am Chem Soc', doi: '10.1021/ja00897a025' },
+      { id: 2, authors: 'Lau JL, Dunn MK.', year: 2018, title: 'Therapeutic peptides: Historical perspectives, current development trends, and future directions', journal: 'Bioorg Med Chem', doi: '10.1016/j.bmc.2017.06.052' },
+      { id: 3, authors: 'Henninot A, Collins JC, Nuss JM.', year: 2018, title: 'The Current State of Peptide Drug Discovery: Back to the Future?', journal: 'J Med Chem', doi: '10.1021/acs.jmedchem.7b00318' },
+      { id: 4, authors: 'Medicines and Healthcare products Regulatory Agency (MHRA)', year: 2024, title: 'What is a medicine?', journal: 'MHRA Guidance' },
+      { id: 5, authors: 'Human Medicines Regulations 2012', year: 2012, title: 'UK Statutory Instruments 2012 No. 1916', journal: 'Legislation.gov.uk' },
+    ]
+  },
 ];
 
 export function getArticle(slug: string): Article | undefined {
