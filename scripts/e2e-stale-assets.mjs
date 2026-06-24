@@ -781,7 +781,8 @@ a{color:#7dd3fc}
   <div class="muted">target <code>${esc(TARGET)}</code> · finished ${esc(summary.finishedAt)} · ${summary.passed}/${summary.total} passed${ONLY ? ` · filter <code>${esc(ONLY)}</code>` : ''}${REPLAY ? ' · <b>REPLAY</b>' : (RECORD ? ' · <b>RECORD</b>' : '')} · retries=${RETRIES}</div>
 </header>
 <section class="card"><h2>Per-scenario summary</h2>${scCards || '<p class="muted">No scenarios ran.</p>'}</section>
-<section class="card"><h2>DB diff (Firestore <code>_meta/build_state</code>) — lock fields highlighted</h2>${dbHighlights}</section>
+<section class="card"><h2>DB lock timeline (Firestore <code>_meta/build_state</code>)</h2>${lockTimelineHtml}</section>
+<section class="card"><h2>DB diff (before vs after) — lock fields highlighted</h2>${dbHighlights}</section>
 <section class="card"><h2>Artifacts</h2><ul>
   <li><a href="report.json">report.json</a></li><li><a href="report.txt">report.txt</a></li>
   <li><a href="junit.xml">junit.xml</a></li><li><a href="db-diff.json">db-diff.json</a></li>
