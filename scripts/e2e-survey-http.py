@@ -433,16 +433,19 @@ async def run_trials_in_browser(
         await page.goto(f"{BASE_URL}/", wait_until="domcontentloaded")
         result = await page.evaluate(EVAL_SCRIPT, {"trials": trials})
 
-        outcomes = [
-            TrialOutcome(
+        # Build outcomes and zip request metadata back in by index.
+        outcomes = []
+        for src, t in zip(trials, result["trials"]):
+            outcomes.append(TrialOutcome(
                 name=t["name"],
                 http_status=t.get("http_status"),
                 ok=bool(t.get("ok")),
                 msg=str(t.get("msg") or ""),
                 raw_body=str(t.get("raw_body") or ""),
-            )
-            for t in result["trials"]
-        ]
+                fn=src.get("fn"),
+                request_args=src.get("args"),
+            ))
+
         await browser.close()
         return outcomes, result["submitUrl"], result["skipUrl"]
 
