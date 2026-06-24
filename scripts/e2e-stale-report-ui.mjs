@@ -165,16 +165,118 @@ async function captureDownload(page, trigger) {
   assert(restoredKind === 'status', `filter "kind" restored from localStorage (got "${restoredKind}")`);
 
   // 3) ZIP download: PK magic + non-empty.
-  const zip = await captureDownload(page, () => page.click('button[data-global-zip]'));
+  const zip = await captureDownload(page, () => page.click('button[data-global-zip]:not([data-mismatch-only])'));
   const bytes = readFileSync(zip.path);
   assert(bytes.length > 22, `ZIP non-trivial size (${bytes.length}B)`);
   assert(bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04, 'ZIP starts with PK\\x03\\x04 local-file magic');
-  // EOCD signature must appear in last 22 bytes (no comment).
   const eocd = bytes.slice(bytes.length - 22);
   assert(eocd[0] === 0x50 && eocd[1] === 0x4b && eocd[2] === 0x05 && eocd[3] === 0x06, 'ZIP ends with EOCD record');
+
+  // 3b) Parse ZIP STORE entries and verify manifest references every scenario file.
+  const zipEntries = parseZipStore(bytes);
+  const names = new Set(zipEntries.map((e) => e.name));
+  assert(names.has('manifest.json'), 'ZIP contains manifest.json');
+  const manifest = JSON.parse(zipEntries.find((e) => e.name === 'manifest.json').text);
+  assert(Array.isArray(manifest.scenarios) && manifest.scenarios.length === scenarios.length,
+    `manifest lists ${scenarios.length} scenarios (got ${manifest.scenarios?.length})`);
+  for (const m of manifest.scenarios) {
+    assert(typeof m.file === 'string' && names.has(m.file), `manifest scenario "${m.scenario}" references existing file "${m.file}"`);
+    const entry = zipEntries.find((e) => e.name === m.file);
+    const sc = JSON.parse(entry.text);
+    const sv = validateMismatchBundle(sc);
+    assert(sv.ok, `ZIP scenario "${m.scenario}" validates (${sv.errors.join('; ') || 'no errors'})`);
+    assert(sc.schemaVersion === BUNDLE_SCHEMA_VERSION, `ZIP scenario "${m.scenario}" carries current schemaVersion`);
+  }
+
+  // 4) Mismatch-only JSON: assert only items with match===false survive, redirectChain+timing intact.
+  const mmJson = await captureDownload(page, () => page.click('button[data-global-bundle][data-mismatch-only]'));
+  const mm = JSON.parse(readFileSync(mmJson.path, 'utf8'));
+  assert(mm.mismatchOnly === true, 'mismatch-only JSON stamped with mismatchOnly:true');
+  const mmv = validateGlobalMismatchBundle(mm);
+  assert(mmv.ok, `mismatch-only JSON validates (${mmv.errors.join('; ') || 'no errors'})`);
+  let totalKept = 0;
+  for (const sc of mm.scenarios) {
+    for (const it of sc.items) {
+      assert(it.match === false, `mismatch-only items are all mismatches (saw match=${it.match})`);
+      assert(Array.isArray(it.redirectChain), 'mismatch-only item keeps redirectChain');
+      assert(it.timing && it.timing.fixture && it.timing.live, 'mismatch-only item keeps timing.{fixture,live}');
+      totalKept++;
+    }
+  }
+  assert(totalKept >= 1, `mismatch-only bundle is non-empty (kept ${totalKept})`);
+
+  // 4b) Mismatch-only ZIP: parse + assert per-scenario items are mismatch-only.
+  const mmZip = await captureDownload(page, () => page.click('button[data-global-zip][data-mismatch-only]'));
+  const mmZipBytes = readFileSync(mmZip.path);
+  const mmZipEntries = parseZipStore(mmZipBytes);
+  const mmManifest = JSON.parse(mmZipEntries.find((e) => e.name === 'manifest.json').text);
+  assert(mmManifest.mismatchOnly === true, 'mismatch-only ZIP manifest carries mismatchOnly:true');
+  for (const m of mmManifest.scenarios) {
+    const sc = JSON.parse(mmZipEntries.find((e) => e.name === m.file).text);
+    for (const it of sc.items) {
+      assert(it.match === false, `ZIP mismatch-only scenario "${m.scenario}" item is mismatch`);
+    }
+  }
+
+  // 5) Progress indicator: click button, immediately assert aria-busy + disabled before completion.
+  const [, busyState] = await Promise.all([
+    captureDownload(page, () => page.click('button[data-global-zip]:not([data-mismatch-only])')),
+    page.evaluate(() => {
+      const btn = document.querySelector('button[data-global-zip]:not([data-mismatch-only])');
+      btn.click();
+      return { busy: btn.getAttribute('aria-busy'), disabled: btn.disabled, text: btn.textContent };
+    }),
+  ]);
+  assert(busyState.busy === 'true', `progress: button has aria-busy="true" during work (got "${busyState.busy}")`);
+  assert(busyState.disabled === true, 'progress: button is disabled during work');
+  assert(/⏳/.test(busyState.text || ''), `progress: button shows spinner glyph (text="${busyState.text}")`);
+  // Wait briefly, then confirm button restored.
+  await page.waitForTimeout(100);
+  const restored = await page.evaluate(() => {
+    const btn = document.querySelector('button[data-global-zip]:not([data-mismatch-only])');
+    return { busy: btn.getAttribute('aria-busy'), disabled: btn.disabled };
+  });
+  assert(restored.busy === null && restored.disabled === false, 'progress: button restored after work completes');
+
+  // 6) Backward-compat schemaVersion: older bundle validates with warnings (not errors).
+  // Simulate an older schemaVersion bundle by patching a known-good one.
+  const older = JSON.parse(JSON.stringify(parsed));
+  older.schemaVersion = MIN_SUPPORTED_SCHEMA_VERSION; // == current today, but exercise path
+  const ov = validateGlobalMismatchBundle(older);
+  assert(ov.ok, 'min-supported schemaVersion validates ok');
+  // Newer-than-supported must fail with a clear error.
+  const newer = JSON.parse(JSON.stringify(parsed));
+  newer.schemaVersion = BUNDLE_SCHEMA_VERSION + 99;
+  const nv = validateGlobalMismatchBundle(newer);
+  assert(!nv.ok, 'schemaVersion above current is rejected');
+  assert(nv.errors.join(' ').match(/newer than supported/), 'rejection message names the version drift');
 
   await browser.close();
   console.log(`\nWork dir: ${WORK}`);
   if (failures) { console.log(`\n❌ ${failures} assertion(s) failed`); process.exit(1); }
   console.log(`\n✅ all UI assertions passed`);
 })().catch((e) => { console.error(e); process.exit(1); });
+
+// ── Minimal STORE-only ZIP reader (no deps) ──────────────────────────────────
+// Parses Local File Headers sequentially. Only supports STORE (method 0),
+// which matches what scripts/lib/e2e-report-client.mjs writes.
+function parseZipStore(buf) {
+  const entries = [];
+  const dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  let i = 0;
+  while (i + 4 <= buf.length) {
+    const sig = dv.getUint32(i, true);
+    if (sig !== 0x04034b50) break; // hit central dir or EOCD
+    const method = dv.getUint16(i + 8, true);
+    const compSize = dv.getUint32(i + 18, true);
+    const nameLen = dv.getUint16(i + 26, true);
+    const extraLen = dv.getUint16(i + 28, true);
+    const name = buf.slice(i + 30, i + 30 + nameLen).toString('utf8');
+    const dataStart = i + 30 + nameLen + extraLen;
+    const data = buf.slice(dataStart, dataStart + compSize);
+    if (method !== 0) throw new Error(`unexpected compression method ${method} for ${name}`);
+    entries.push({ name, data, text: data.toString('utf8') });
+    i = dataStart + compSize;
+  }
+  return entries;
+}
