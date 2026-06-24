@@ -89,6 +89,16 @@ export function Layout({ children }: LayoutProps) {
   const [addToast, setAddToast] = useState<string | null>(null);
   const addToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Global marketing revalidation subscription. Lives in Layout so EVERY
+  // storefront route (current and future) automatically clears its banner /
+  // advert localStorage caches and receives a `marketing:revalidate` window
+  // event the moment an admin saves in BannerTab / AdvertsTab. Per-page
+  // refetch logic (Home / Products / ProductDetail) also calls the hook
+  // directly for explicit refetch; this guarantees future pages that mount
+  // MarketingAdvertSlot or read settings/promoBanner are covered too.
+  useMarketingRevalidate(() => { /* cache clear + event dispatch handled in hook */ });
+
+
   // Body scroll lock + scroll-to-top while cart/mobile-menu overlay is open,
   // so the fixed drawer is always anchored to the top of the viewport on
   // mobile/tablet/desktop (otherwise users land mid-page and have to scroll
