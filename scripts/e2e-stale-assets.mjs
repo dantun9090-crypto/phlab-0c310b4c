@@ -766,6 +766,17 @@ async function run() {
     sc.dbSnapshots.push(entry);
     // Build live-vs-replay diff once per scenario (REPLAY only).
     sc.replayDiff = diffLiveVsReplay(name);
+    // Threshold-based assertion: fail only on meaningful regressions.
+    if (REPLAY && sc.replayDiff) {
+      const t = sc.replayDiff.thresholds;
+      const ok = t.breached.length === 0;
+      currentScenario = name;
+      record('live-vs-replay within configured thresholds', ok,
+        ok ? `mismatches=${t.observed.mismatchCount} statusΔ=${t.observed.statusMismatchCount} maxBodyΔ=${t.observed.maxBodyDelta}B`
+           : t.breached.join('; '),
+        ok ? null : { thresholds: t, sample: sc.replayDiff.mismatches.slice(0, 10) });
+    }
+
   }
   await browser.close();
   const dbAfter = await readBuildState();
