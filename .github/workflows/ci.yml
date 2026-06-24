@@ -235,6 +235,39 @@ jobs:
           FENA_TERMINAL_SECRET: ${{ secrets.FENA_TERMINAL_SECRET }}
         run: bun run test:fena
 
+  # Required-for-merge GitHub Check. Downloads the SBOM bundle uploaded
+  # by `worker-build-and-check` and re-runs all three cosign
+  # verifications (detached sig + SLSA Provenance + CycloneDX). The job
+  # name "Attestation verify (SLSA + CycloneDX)" is the literal status
+  # context to add under Settings -> Rules -> Branch protection ->
+  # Require status checks -> "Attestation verify (SLSA + CycloneDX)",
+  # so any signature/attestation regression blocks merge with the
+  # failing cosign output rendered on the Check page.
+  attestation-verify:
+    name: Attestation verify (SLSA + CycloneDX)
+    runs-on: ubuntu-latest
+    needs: worker-build-and-check
+    if: always() && needs.worker-build-and-check.result == 'success'
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: v2.4.1
+
+      - name: Download SBOM bundle artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: sbom-bundle
+
+      - name: Verify SBOM signature + SLSA Provenance + CycloneDX attestations
+        run: bash scripts/verify-attestations.sh sbom-bundle ci
+
   # Fast, path-filtered regression — runs in parallel with the main build
   # only when Checkout, Admin Orders, or the order/cart server code changes.
   # Keeps PR feedback under a minute for touch-and-go UI tweaks.
@@ -275,6 +308,7 @@ jobs:
       - name: Run checkout + admin orders regression
         if: steps.changes.outputs.checkout == 'true'
         run: bun run test:checkout
+
 
 
 
