@@ -23,16 +23,37 @@
  *   0  no medium+ findings
  *   1  one or more medium+ findings (or audit failed to run)
  */
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 
 const SEVERITY_ORDER = ["info", "low", "medium", "high", "critical"] as const;
 type Severity = (typeof SEVERITY_ORDER)[number];
 
-const MIN_BLOCKING: Severity = (process.env.SECURITY_MIN_SEVERITY as Severity) ?? "medium";
+// Resolve the minimum-blocking severity from (in order of precedence):
+//   1. SECURITY_MIN_SEVERITY env var (workflow-level / one-off override)
+//   2. .security-config.json `minSeverity` field (committed repo policy)
+//   3. hard-coded default of "medium"
+// This means CI can flip the gate via a workflow_dispatch input or a
+// repo config bump — no scanner code edits required.
+const CONFIG_PATH = join(process.cwd(), ".security-config.json");
+let configMin: Severity | undefined;
+if (existsSync(CONFIG_PATH)) {
+  try {
+    const cfg = JSON.parse(readFileSync(CONFIG_PATH, "utf8")) as { minSeverity?: string };
+    if (cfg.minSeverity && (SEVERITY_ORDER as readonly string[]).includes(cfg.minSeverity)) {
+      configMin = cfg.minSeverity as Severity;
+    }
+  } catch {
+    /* ignore malformed config — fall back to default */
+  }
+}
+const MIN_BLOCKING: Severity =
+  (process.env.SECURITY_MIN_SEVERITY as Severity) ?? configMin ?? "medium";
 const minIdx = SEVERITY_ORDER.indexOf(MIN_BLOCKING);
 const SBOM_PATH = join(process.cwd(), "dist", "sbom.cdx.json");
+const REPORT_PATH =
+  process.env.SECURITY_REPORT_PATH ?? join(process.cwd(), "dist", "security-audit.json");
 
 function normalise(sev: string): Severity {
   const s = sev.toLowerCase();
