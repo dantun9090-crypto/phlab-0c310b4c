@@ -41,7 +41,14 @@ function isExternalHref(href: string): boolean {
   return /^https?:\/\//i.test(href);
 }
 
-export default function MarketingAdvertSlot({ adverts, placement, variant = 'banner', className = '', eagerFirstImage = false }: Props) {
+export default function MarketingAdvertSlot({ adverts, placement, variant = 'banner', className = '', eagerFirstImage = false, onRevalidate }: Props) {
+  useEffect(() => {
+    if (!onRevalidate || typeof window === 'undefined') return;
+    const handler = () => { try { onRevalidate(); } catch { /* ignore */ } };
+    window.addEventListener('marketing:revalidate', handler);
+    return () => window.removeEventListener('marketing:revalidate', handler);
+  }, [onRevalidate]);
+
   const visible = activeForPlacement(adverts, placement);
   if (visible.length === 0) return null;
 
