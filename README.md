@@ -139,11 +139,11 @@ cosign verify-blob-attestation \
 
 Expected: `Verified OK`.
 
-#### One-shot helper
+#### One-shot helper (already-downloaded bundle)
 
 `scripts/verify-attestations.sh` runs the signature check **and** both
-attestation checks, writing a Markdown report and emitting GitHub
-annotations on failure:
+attestation checks against a directory of files you already have, writing
+a Markdown report and emitting GitHub annotations on failure:
 
 ```bash
 bash scripts/verify-attestations.sh ./sbom ci
@@ -153,14 +153,99 @@ bash scripts/verify-attestations.sh ./sbom ci
 Exit code `0` = all three checks passed. Non-zero = the script tells
 you exactly which check failed and why.
 
+#### End-to-end helper (download + verify from a Release, no CI access)
+
+`scripts/verify-release-sbom.sh` is the offline-friendly path: it does
+the `gh release download`, SHA-256 check, all three cosign verifications,
+**and** prints the SLSA Provenance fields so you can confirm the SBOM
+was built by the commit you expect. **You do not need access to the CI
+runs** — only to the GitHub Release.
+
+```bash
+# Requires: cosign v2+, gh (authenticated), jq, sha256sum
+scripts/verify-release-sbom.sh v1.2.3
+# or against a different repo:
+scripts/verify-release-sbom.sh v1.2.3 phlabs-uk/phlabs
+```
+
+The script downloads into a temp dir, verifies, then prints something
+like:
+
+```
+→ SLSA Provenance — bound build metadata
+  subject sha256:        [the SBOM's hash]
+  actual SBOM sha256:    [must match — checked]
+  builder:               https://github.com/phlabs-uk/phlabs/actions/runs/12345/attempts/1
+  invocation:            https://github.com/phlabs-uk/phlabs/actions/runs/12345/attempts/1
+  repository:            https://github.com/phlabs-uk/phlabs
+  ref:                   refs/tags/v1.2.3
+  workflow:              .github/workflows/release.yml
+  commit SHA:            abc1234...
+  event:                 release
+  buildId:               abc1234...
+```
+
+### Inspecting SLSA Provenance fields manually
+
+If you want to read the provenance yourself without running the helper,
+each `.provenance.intoto.jsonl` file is a DSSE envelope. The `payload`
+field is base64-encoded JSON containing the in-toto statement. Decode
+once, then read fields with `jq`:
+
+```bash
+PROV=$(jq -r '.payload' sbom.cdx.json.provenance.intoto.jsonl | base64 -d)
+
+# Repo + ref + workflow file that produced this SBOM:
+echo "$PROV" | jq '.predicate.buildDefinition.externalParameters.workflow'
+
+# Git commit SHA the build was cut from:
+echo "$PROV" | jq -r '.predicate.buildDefinition.resolvedDependencies[0].digest.gitCommit'
+
+# Builder identity (full GitHub Actions run URL — repo + run ID + attempt):
+echo "$PROV" | jq -r '.predicate.runDetails.builder.id'
+
+# BUILD_ID that the SBOM generator recorded:
+echo "$PROV" | jq -r '.predicate.runDetails.byproducts[0].annotations.buildId'
+
+# Subject hash (must equal sha256sum of the SBOM file you have):
+echo "$PROV" | jq -r '.subject[0].digest.sha256'
+sha256sum sbom.cdx.json
+```
+
+What each field tells you:
+
+| Field | Where it lives | What it proves |
+| --- | --- | --- |
+| `subject[0].digest.sha256` | top of statement | Which exact SBOM file this attestation is for. Must equal `sha256sum sbom.cdx.json`. |
+| `predicate.buildDefinition.externalParameters.workflow.repository` | provenance | The GitHub repo that ran the build. |
+| `…workflow.ref` | provenance | The git ref (branch or tag) at build time. |
+| `…workflow.path` | provenance | The workflow file (`ci.yml`, `release.yml`, etc.). |
+| `predicate.buildDefinition.resolvedDependencies[0].digest.gitCommit` | provenance | The commit SHA the build was cut from. |
+| `predicate.runDetails.builder.id` | provenance | Full URL of the specific Actions run + attempt that produced the SBOM. Click it to view the run. |
+| `predicate.runDetails.byproducts[0].annotations.buildId` | provenance | Our `BUILD_ID` (usually the same commit SHA). |
+
+If any of those don't match the release you think you have, **do not
+trust the SBOM** — open a security issue.
+
 ### Required PR checks
 
 The CI pipeline runs a dedicated **`Attestation verify (SLSA +
 CycloneDX)`** job that downloads the freshly-built SBOM and re-runs all
-three cosign verifications. Branch protection on `main` requires this
-check to pass before any PR can merge, so a broken signing chain blocks
-merge with the failing cosign output surfaced as a red check.
+three cosign verifications. The `release.yml` workflow runs a sibling
+**`Attestation verify (release)`** job that re-downloads the bundle
+*from the published GitHub Release itself* and re-verifies — so the
+release run only goes green if the assets attached to the release are
+actually verifiable end-to-end.
 
-To enable on a new branch protection ruleset:
-*Settings → Rules → Branch protection → Require status checks → add*
-`Attestation verify (SLSA + CycloneDX)`.
+Branch protection on `main` requires the PR check to pass before any PR
+can merge, so a broken signing chain blocks merge with the failing
+cosign output surfaced as a red check. To enable on a new branch
+protection ruleset: *Settings → Rules → Branch protection → Require
+status checks → add* `Attestation verify (SLSA + CycloneDX)`.
+
+On any verification failure the workflow uploads an
+`attestation-debug-<workflow>-<sha>` artifact containing the SBOM
+bundle and a sanitised `verify-attestations.log` — Rekor UUIDs, log
+indices and internal IDs are redacted — so a reviewer can reproduce
+the failure locally without needing access to the workflow run logs.
+
