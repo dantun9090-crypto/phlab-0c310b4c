@@ -45,13 +45,75 @@ import os
 import shutil
 import subprocess
 import sys
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from playwright.async_api import async_playwright
 
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:8080").rstrip("/")
+REPORT_DIR = Path(os.environ.get("E2E_REPORT_DIR", "/tmp/e2e-survey-report"))
+REPORT_DIR.mkdir(parents=True, exist_ok=True)
+FAILURES: list[dict[str, Any]] = []
+
+
+def record_failure(category: str, outcome: "TrialOutcome", reason: str,
+                   extra: dict[str, Any] | None = None) -> None:
+    """Capture a detailed failure record for later artifact upload."""
+    rec: dict[str, Any] = {
+        "category": category,
+        "name": outcome.name,
+        "reason": reason,
+        "http_status": outcome.http_status,
+        "ok": outcome.ok,
+        "client_msg": outcome.msg,
+        "raw_body": (outcome.raw_body or "")[:4000],
+        "db_pre": outcome.db_pre,
+        "db_post": outcome.db_post,
+        "request_args": getattr(outcome, "request_args", None),
+        "fn": getattr(outcome, "fn", None),
+    }
+    if outcome.db_pre is not None and outcome.db_post is not None:
+        rec["db_diff"] = diff_state(outcome.db_pre, outcome.db_post)
+    if extra:
+        rec.update(extra)
+    FAILURES.append(rec)
+
+
+def diff_state(pre: dict[str, Any], post: dict[str, Any]) -> dict[str, Any]:
+    """Compact key-wise diff between two snapshot dicts."""
+    diff: dict[str, Any] = {}
+    for key in set(pre) | set(post):
+        a, b = pre.get(key), post.get(key)
+        if json.dumps(a, sort_keys=True, default=str) != json.dumps(b, sort_keys=True, default=str):
+            diff[key] = {"pre": a, "post": b}
+    return diff
+
+
+def write_report(summary: dict[str, Any]) -> Path:
+    path = REPORT_DIR / "report.json"
+    payload = {
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "base_url": BASE_URL,
+        "summary": summary,
+        "failures": FAILURES,
+    }
+    path.write_text(json.dumps(payload, indent=2, default=str))
+    # Also drop a human-readable txt summary.
+    txt = REPORT_DIR / "report.txt"
+    lines = [f"E2E source-survey report ({payload['generated_at']})",
+             f"target: {BASE_URL}",
+             f"summary: {summary}",
+             f"failures: {len(FAILURES)}", ""]
+    for f in FAILURES:
+        lines.append(f"- [{f['category']}] {f['name']}: {f['reason']}")
+        lines.append(f"    http={f['http_status']} ok={f['ok']} msg={f['client_msg']!r}")
+        if f.get("db_diff"):
+            lines.append(f"    db_diff={json.dumps(f['db_diff'], default=str)[:500]}")
+    txt.write_text("\n".join(lines))
+    return path
+
 UA = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
