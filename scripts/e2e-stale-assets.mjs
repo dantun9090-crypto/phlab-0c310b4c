@@ -40,6 +40,13 @@
  *   --artifacts-on-failure-only / --skip-artifacts-on-success
  *                                             only persist HAR, fixtures (non-RECORD), HTML report, ndjson logs, and screenshots when
  *                                             an assertion fails or a live-vs-replay threshold is breached. report.{json,txt} + junit.xml + db-diff.json always written.
+ *   --prune-dry-run / --dry-run               log which artifact paths WOULD be kept vs deleted for the current outcome without touching the filesystem.
+ *
+ * HTML report features (rendered into report.html):
+ *   - Global "Download mismatch bundle (all scenarios)" button in the header (respects each scenario's current filter).
+ *   - Per-scenario filter selections persist in localStorage so refreshing the report restores the same view.
+
+
 
  *
  * Outputs in $E2E_REPORT_DIR (default ./e2e-stale-report/):
@@ -60,7 +67,14 @@
 import { chromium } from 'playwright';
 import { mkdirSync, writeFileSync, appendFileSync, existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { createHash } from 'node:crypto';
+import {
+  sha256,
+  normalizeHeadersForDiff as _normalizeHeadersForDiff,
+  headersEqualNormalized as _headersEqualNormalized,
+  redactBody as _redactBody,
+} from './lib/e2e-diff-helpers.mjs';
+
+
 
 
 // ---------- CLI parsing ----------
@@ -124,8 +138,9 @@ const NORMALIZE_IGNORE_HEADERS = new Set(
 // (assertion failure or threshold breach). Successful runs leave only report.{json,txt} + junit.xml.
 const ARTIFACTS_ON_FAILURE_ONLY = !!flag('artifacts-on-failure-only', false)
   || !!flag('skip-artifacts-on-success', false);
-
-function sha256(s) { return createHash('sha256').update(String(s)).digest('hex'); }
+// Dry-run for the pruning step: report which paths WOULD be kept/deleted
+// for the current run outcome, without actually touching the filesystem.
+const PRUNE_DRY_RUN = !!flag('prune-dry-run', false) || !!flag('dry-run', false);
 
 function redactHeaders(h) {
   if (!h || typeof h !== 'object') return h;
@@ -146,35 +161,21 @@ function redactUrl(u) {
     return touched ? url.toString() : u;
   } catch { return u; }
 }
+// Bind the pure helper to this run's CLI-driven redaction config.
 function redactBody(body) {
-  if (body == null) return body;
-  const s = String(body);
-  if (REDACT_BODIES) return HASH_BODIES ? `sha256:${sha256(s)}` : REDACTED;
-  if (MAX_BODY_BYTES > 0 && s.length > MAX_BODY_BYTES) {
-    return HASH_BODIES
-      ? `sha256:${sha256(s)} (orig ${s.length}B)`
-      : s.slice(0, MAX_BODY_BYTES) + `…[truncated ${s.length - MAX_BODY_BYTES}B]`;
-  }
-  return s;
+  return _redactBody(body, {
+    redactBodies: REDACT_BODIES,
+    hashBodies: HASH_BODIES,
+    maxBodyBytes: MAX_BODY_BYTES,
+    redactedMarker: REDACTED,
+  });
 }
 
-// Normalize a headers object for diffing: lowercase keys, drop ignore-list, stable sort.
-function normalizeHeadersForDiff(h) {
-  if (!h || typeof h !== 'object') return h;
-  const lower = {};
-  for (const [k, v] of Object.entries(h)) {
-    const lk = k.toLowerCase();
-    if (NORMALIZE_IGNORE_HEADERS.has(lk)) continue;
-    lower[lk] = v;
-  }
-  // Return a new object with keys inserted in sorted order — stringifying gives stable output.
-  const out = {};
-  for (const k of Object.keys(lower).sort()) out[k] = lower[k];
-  return out;
-}
-function headersEqualNormalized(a, b) {
-  return JSON.stringify(normalizeHeadersForDiff(a || {})) === JSON.stringify(normalizeHeadersForDiff(b || {}));
-}
+// Bind the pure helpers to this run's normalize-ignore set.
+function normalizeHeadersForDiff(h) { return _normalizeHeadersForDiff(h, NORMALIZE_IGNORE_HEADERS); }
+function headersEqualNormalized(a, b) { return _headersEqualNormalized(a, b, NORMALIZE_IGNORE_HEADERS); }
+
+
 
 
 // Transient errors we retry; assertion failures (record()) NEVER trigger retry.
@@ -934,7 +935,11 @@ async function run() {
     }).join('');
     return `<table class="tbl"><thead><tr><th>field</th><th>before</th><th>after</th></tr></thead><tbody>${rows}</tbody></table>`;
   })();
+  // Collected as we render each scenario so the global "all bundles" button
+  // can export every matched/mismatched pair across scenarios in one click.
+  const allBundles = [];
   const scCards = perScenarioSummary.map((s) => {
+
     const meta = perScenario.get(s.scenario) || {};
     const attempts = meta.attempts || 1;
     const transient = (meta.transientErrors || []).length;
@@ -999,6 +1004,8 @@ async function run() {
           items,
         });
         const bundleB64 = Buffer.from(bundle, 'utf8').toString('base64');
+        allBundles.push(JSON.parse(bundle));
+
         return `<details ${d.summary.mismatchCount ? 'open' : ''}><summary>Live vs replay (matches=${d.summary.matchCount}, mismatches=${d.summary.mismatchCount}, statusΔ=${d.summary.statusMismatchCount}, maxBodyΔ=${d.summary.maxBodyDelta}B)</summary>
           <p>${tBadge}</p>
           <h4>Purge call timing (relative to first purge per side)</h4>
@@ -1059,6 +1066,10 @@ a{color:#7dd3fc}
 </style>
 <script>
 (function(){
+  // Persist HTML report filter selections across reloads (per-scenario, scoped to this report path).
+  var LS_KEY='phlabs.e2eStaleReport.filters@'+location.pathname;
+  function loadAll(){try{return JSON.parse(localStorage.getItem(LS_KEY)||'{}')||{};}catch(e){return {};}}
+  function saveAll(state){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){/* quota / disabled */}}
   function apply(scope){
     var root=document.querySelector('[data-drilldown="'+scope+'"]');if(!root)return;
     var ctrls=document.querySelector('.filters[data-scope="'+scope+'"]');if(!ctrls)return;
@@ -1074,31 +1085,77 @@ a{color:#7dd3fc}
       el.style.display=ok?'':'none';if(ok)n++;
     });
     var c=ctrls.querySelector('[data-visible-count]');if(c)c.textContent='('+n+' visible)';
+    var all=loadAll();all[scope]=f;saveAll(all);
+  }
+  function restore(){
+    var all=loadAll();
+    document.querySelectorAll('.filters[data-scope]').forEach(function(ctrls){
+      var scope=ctrls.dataset.scope;var saved=all[scope];if(!saved)return;
+      ctrls.querySelectorAll('select[data-filter]').forEach(function(s){
+        var v=saved[s.dataset.filter];if(v!=null){
+          // Only restore if option exists, else leave default.
+          if([].some.call(s.options,function(o){return o.value===v;}))s.value=v;
+        }
+      });
+    });
+  }
+  function visibleKeys(scope){
+    var root=document.querySelector('[data-drilldown="'+scope+'"]');
+    var allowed=new Set();
+    if(!root)return allowed;
+    root.querySelectorAll('details.drill').forEach(function(el){
+      if(el.style.display!=='none'){
+        var m=el.querySelector('summary').textContent.match(/#(\\d+)/);
+        var url=el.querySelector('code').textContent;
+        allowed.add(url+'#'+(m?m[1]:''));
+      }
+    });
+    return allowed;
+  }
+  function currentFilters(ctrls){
+    var f={};ctrls.querySelectorAll('select[data-filter]').forEach(function(s){f[s.dataset.filter]=s.value;});return f;
+  }
+  function download(name,obj){
+    var blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download=name;document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},0);
   }
   document.addEventListener('change',function(e){
     var s=e.target.closest('.filters');if(!s||!s.dataset.scope)return;apply(s.dataset.scope);
   });
   document.addEventListener('click',function(e){
-    var b=e.target.closest('button[data-bundle]');if(!b)return;
-    var scope=b.dataset.bundle;
-    var ctrls=document.querySelector('.filters[data-scope="'+scope+'"]');
-    var root=document.querySelector('[data-drilldown="'+scope+'"]');
-    var allowed=new Set();
-    root.querySelectorAll('details.drill').forEach(function(el){
-      if(el.style.display!=='none')allowed.add(el.querySelector('code').textContent+'#'+el.querySelector('summary').textContent.match(/#(\\d+)/)?.[1]);
-    });
-    var raw=atob(b.dataset.bundleB64);
-    var data=JSON.parse(raw);
-    // Filter items to currently-visible ones.
-    data.items=data.items.filter(function(it){return allowed.has(it.url+'#'+it.index);});
-    data.exportedAt=new Date().toISOString();
-    data.filterApplied={};ctrls.querySelectorAll('select[data-filter]').forEach(function(s){data.filterApplied[s.dataset.filter]=s.value;});
-    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
-    a.download='mismatch-bundle-'+scope+'.json';document.body.appendChild(a);a.click();
-    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},0);
+    var b=e.target.closest('button[data-bundle]');
+    if(b){
+      var scope=b.dataset.bundle;
+      var ctrls=document.querySelector('.filters[data-scope="'+scope+'"]');
+      var allowed=visibleKeys(scope);
+      var data=JSON.parse(atob(b.dataset.bundleB64));
+      data.items=data.items.filter(function(it){return allowed.has(it.url+'#'+it.index);});
+      data.exportedAt=new Date().toISOString();
+      data.filterApplied=currentFilters(ctrls);
+      return download('mismatch-bundle-'+scope+'.json',data);
+    }
+    var g=e.target.closest('button[data-global-bundle]');
+    if(g){
+      // Export every matched/mismatched pair across all scenarios, respecting each
+      // scenario's currently-applied filter (resource/kind/match/redacted state).
+      var all=JSON.parse(atob(g.dataset.globalBundleB64));
+      var perScenarioFilters={};
+      all.scenarios=all.scenarios.map(function(sc){
+        var ctrls=document.querySelector('.filters[data-scope="'+sc.scenario+'"]');
+        var allowed=visibleKeys(sc.scenario);
+        perScenarioFilters[sc.scenario]=ctrls?currentFilters(ctrls):null;
+        sc.items=sc.items.filter(function(it){return allowed.has(it.url+'#'+it.index);});
+        return sc;
+      });
+      all.exportedAt=new Date().toISOString();
+      all.filtersApplied=perScenarioFilters;
+      return download('mismatch-bundle-all-scenarios.json',all);
+    }
   });
   document.addEventListener('DOMContentLoaded',function(){
+    restore();
     document.querySelectorAll('.filters[data-scope]').forEach(function(s){apply(s.dataset.scope);});
   });
 })();
@@ -1107,7 +1164,9 @@ a{color:#7dd3fc}
 <header class="top">
   <h1>E2E stale-assets <span class="badge ${failed.length ? 'bad' : 'ok'}">${esc(overall)}</span></h1>
   <div class="muted">target <code>${esc(TARGET)}</code> · finished ${esc(summary.finishedAt)} · ${summary.passed}/${summary.total} passed${ONLY ? ` · filter <code>${esc(ONLY)}</code>` : ''}${REPLAY ? ' · <b>REPLAY</b>' : (RECORD ? ' · <b>RECORD</b>' : '')} · retries=${RETRIES}</div>
+  ${allBundles.length ? `<button type="button" data-global-bundle="1" data-global-bundle-b64="${Buffer.from(JSON.stringify({ generatedAt: new Date().toISOString(), redaction: { redactBodies: REDACT_BODIES, hashBodies: HASH_BODIES, maxBodyBytes: MAX_BODY_BYTES, redactHeaders: [...REDACT_HEADERS], redactUrlParams: [...REDACT_URL_PARAMS] }, scenarios: allBundles }), 'utf8').toString('base64')}" style="margin-left:auto;background:#0b1220;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:13px">⬇ Download mismatch bundle (all scenarios)</button>` : ''}
 </header>
+
 <section class="card"><h2>Per-scenario summary</h2>${scCards || '<p class="muted">No scenarios ran.</p>'}</section>
 <section class="card"><h2>DB lock timeline (Firestore <code>_meta/build_state</code>)</h2>${lockTimelineHtml}</section>
 <section class="card"><h2>DB diff (before vs after) — lock fields highlighted</h2>${dbHighlights}</section>
@@ -1121,32 +1180,44 @@ a{color:#7dd3fc}
   writeFileSync(join(REPORT_DIR, 'report.html'), html);
 
   // --artifacts-on-failure-only: prune optional artifacts when the run is fully clean.
-  // We always keep report.json, report.txt, junit.xml, db-diff.json (small, CI-friendly).
+  // Always-kept: report.json, report.txt, junit.xml, db-diff.json (small, CI-friendly).
+  // --prune-dry-run / --dry-run: log decisions without touching the filesystem.
   const meaningfulFailure = failed.length > 0
     || perScenarioSummary.some((s) => s.replayDiff && s.replayDiff.thresholds && s.replayDiff.thresholds.breached.length > 0);
-  if (ARTIFACTS_ON_FAILURE_ONLY && !meaningfulFailure) {
-    const prune = [
-      join(REPORT_DIR, 'report.html'),
-      join(REPORT_DIR, 'requests.ndjson'),
-      join(REPORT_DIR, 'responses.ndjson'),
-      join(REPORT_DIR, 'console.ndjson'),
-      join(REPORT_DIR, 'screenshots'),
-    ];
-    for (const name of perScenarioSummary.map((s) => s.scenario)) {
-      prune.push(join(REPORT_DIR, `har-${name}.json`));
-    }
-    // In RECORD mode, fixtures are the point of the run — keep them even on success.
-    if (!RECORD) {
-      for (const name of perScenarioSummary.map((s) => s.scenario)) {
-        prune.push(join(FIXTURE_DIR, name));
+  const alwaysKept = ['report.json', 'report.txt', 'junit.xml', 'db-diff.json'].map((n) => join(REPORT_DIR, n));
+  const optional = [
+    join(REPORT_DIR, 'report.html'),
+    join(REPORT_DIR, 'requests.ndjson'),
+    join(REPORT_DIR, 'responses.ndjson'),
+    join(REPORT_DIR, 'console.ndjson'),
+    join(REPORT_DIR, 'screenshots'),
+    ...perScenarioSummary.map((s) => join(REPORT_DIR, `har-${s.scenario}.json`)),
+    // Fixtures are only "optional" in non-RECORD mode (RECORD writes them as the point of the run).
+    ...(RECORD ? [] : perScenarioSummary.map((s) => join(FIXTURE_DIR, s.scenario))),
+  ];
+  const outcome = meaningfulFailure ? 'failure' : 'success';
+  if (ARTIFACTS_ON_FAILURE_ONLY || PRUNE_DRY_RUN) {
+    const wouldDelete = (ARTIFACTS_ON_FAILURE_ONLY && !meaningfulFailure)
+      ? optional.filter((p) => existsSync(p))
+      : [];
+    const wouldKeep = [...alwaysKept, ...optional.filter((p) => existsSync(p) && !wouldDelete.includes(p))];
+    const tag = PRUNE_DRY_RUN ? '[artifacts-prune][dry-run]' : '[artifacts-on-failure-only]';
+    console.log(`${tag} outcome=${outcome} artifacts-on-failure-only=${ARTIFACTS_ON_FAILURE_ONLY} dry-run=${PRUNE_DRY_RUN}`);
+    for (const p of wouldKeep) console.log(`${tag}   keep:   ${p}`);
+    for (const p of wouldDelete) console.log(`${tag}   delete: ${p}`);
+    if (!PRUNE_DRY_RUN && wouldDelete.length) {
+      let pruned = 0;
+      for (const p of wouldDelete) {
+        try { rmSync(p, { recursive: true, force: true }); pruned++; } catch { /* ignore */ }
       }
+      console.log(`${tag} pruned ${pruned}/${wouldDelete.length} optional artifact path(s)`);
+    } else if (PRUNE_DRY_RUN) {
+      console.log(`${tag} no filesystem changes made (dry-run); would delete ${wouldDelete.length} path(s), keep ${wouldKeep.length}`);
+    } else {
+      console.log(`[artifacts-on-failure-only] outcome=${outcome} → nothing to prune`);
     }
-    let pruned = 0;
-    for (const p of prune) {
-      try { if (existsSync(p)) { rmSync(p, { recursive: true, force: true }); pruned++; } } catch { /* ignore */ }
-    }
-    console.log(`[artifacts-on-failure-only] success → pruned ${pruned} optional artifact path(s)`);
   }
+
 
 
 
