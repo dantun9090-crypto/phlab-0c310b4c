@@ -345,6 +345,7 @@ async function withContext(browser, name, fn) {
     const entry = { scenario: name, at: startedAt, method: req.method(), url, headers: req.headers(), postData: req.postData() || null };
     appendNd(reqLog, entry);
     if (RECORD) requestRecording.push(entry);
+    sc.liveRequests.push(entry);
     if (HASHED_JS_RE.test(url)) { assetReqs.push(url); sc.hashedJsUrls.add(url.split('?')[0]); }
     if (sc.topRequests.length < 25) sc.topRequests.push({ method: req.method(), url });
     const redirectFrom = req.redirectedFrom();
