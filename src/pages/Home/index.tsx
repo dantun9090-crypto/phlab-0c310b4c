@@ -300,7 +300,16 @@ export default function HomePage() {
 
   const heroAdverts = adverts.filter((a: any) => a.placement === 'homepage_hero');
   const bannerVisible = bannerResolved && banner?.active !== false && banner?.isActive !== false && banner?.imageUrl;
-  const bannerHref = banner?.ctaUrl || banner?.linkUrl || '';
+  const bannerHrefRaw = banner?.ctaUrl || banner?.linkUrl || '';
+  // Tolerate admin typos like "https//phlabs..." (missing colon) or bare hosts.
+  const bannerHref = (() => {
+    const v = String(bannerHrefRaw || '').trim();
+    if (!v) return '';
+    if (v.startsWith('/')) return v;
+    const fixed = v.replace(/^https\/\//i, 'https://').replace(/^http\/\//i, 'http://');
+    if (/^https?:\/\//i.test(fixed)) return fixed;
+    return `https://${fixed}`;
+  })();
   const bannerOverlayHeading = banner?.overlayText || (banner?.textOverlayEnabled ? banner?.textOverlayHeading : '');
   const bannerOverlaySubtext = banner?.overlaySubtext || (banner?.textOverlayEnabled ? banner?.textOverlaySubtext : '');
   const bannerOverlayAlign = banner?.textOverlayAlign === 'left'
