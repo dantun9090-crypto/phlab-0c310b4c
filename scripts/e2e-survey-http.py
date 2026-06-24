@@ -42,9 +42,11 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import random
 import shutil
 import subprocess
 import sys
+
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -355,11 +357,80 @@ def db_unchanged(pre: dict[str, Any] | None, post: dict[str, Any] | None) -> boo
     )
 
 
+# Fields whose byte-for-byte value MUST NOT change on a rejected request.
+# Snapshot shape (from e2e-survey-fixture.mjs `snapshot`):
+#   { order: {...}, save10_claims: {...} | null }
+IMMUTABLE_ORDER_FIELDS = (
+    "surveySkipped",
+    "sourceSurvey",
+    "sourceSurveyAt",
+    "sourceSurveySubmittedAt",
+    "save10CouponCode",
+    "save10ClaimedAt",
+    "updatedAt",
+)
+
+
+def assert_fields_immutable(
+    pre: dict[str, Any] | None,
+    post: dict[str, Any] | None,
+) -> tuple[bool, str]:
+    """Strict per-field check: each tracked field must be byte-identical."""
+    if pre is None or post is None:
+        return True, "no snapshot"
+    pre_order = (pre.get("order") or {}) if isinstance(pre.get("order"), dict) else {}
+    post_order = (post.get("order") or {}) if isinstance(post.get("order"), dict) else {}
+    for f in IMMUTABLE_ORDER_FIELDS:
+        a = json.dumps(pre_order.get(f), sort_keys=True, default=str)
+        b = json.dumps(post_order.get(f), sort_keys=True, default=str)
+        if a != b:
+            return False, f"order.{f} mutated: {a} -> {b}"
+    a = json.dumps(pre.get("save10_claims"), sort_keys=True, default=str)
+    b = json.dumps(post.get("save10_claims"), sort_keys=True, default=str)
+    if a != b:
+        return False, f"save10_claims mutated: {a[:120]} -> {b[:120]}"
+    return True, "fields immutable"
+
+
+# Randomised malformed shape generator for the burst phase. Categories:
+#   empty, oversize, unicode/control chars, JSON-encoded, hex, path-ish,
+#   sql-ish, null-bytes, just-under-min, way-oversize.
+def random_bad_token(rnd: "random.Random") -> tuple[str, str]:
+    import string
+    category = rnd.choice([
+        "empty", "one-char", "just-under-min", "oversize", "way-oversize",
+        "unicode-emoji", "unicode-rtl", "control-chars", "null-bytes",
+        "json-encoded", "hex-zeros", "sql-ish", "path-ish", "url-ish",
+        "all-spaces", "newlines",
+    ])
+    if category == "empty":          return category, ""
+    if category == "one-char":       return category, rnd.choice(string.ascii_letters)
+    if category == "just-under-min": return category, rnd.choice(string.ascii_letters) * 31
+    if category == "oversize":       return category, "x" * rnd.randint(257, 1024)
+    if category == "way-oversize":   return category, "x" * rnd.randint(4096, 16384)
+    if category == "unicode-emoji":  return category, "🚀" * rnd.randint(8, 64)
+    if category == "unicode-rtl":    return category, "\u202e" * rnd.randint(8, 64)
+    if category == "control-chars":
+        return category, "".join(chr(rnd.randint(1, 31)) for _ in range(rnd.randint(32, 128)))
+    if category == "null-bytes":     return category, "\x00" * rnd.randint(32, 128)
+    if category == "json-encoded":
+        return category, json.dumps({"token": "x" * rnd.randint(16, 96), "u": rnd.random()})
+    if category == "hex-zeros":      return category, "0" * rnd.choice([32, 64, 128, 256])
+    if category == "sql-ish":        return category, "' OR 1=1 --" + "x" * rnd.randint(20, 200)
+    if category == "path-ish":       return category, "../" * rnd.randint(4, 32) + "x" * 16
+    if category == "url-ish":        return category, "https://evil.example/" + "x" * rnd.randint(20, 200)
+    if category == "all-spaces":     return category, " " * rnd.randint(32, 200)
+    if category == "newlines":       return category, "\n" * rnd.randint(32, 200)
+    return category, "?"
+
+
+
+
 # ---------------------------------------------------------------------------
 # Playwright driver
 # ---------------------------------------------------------------------------
 
-EVAL_SCRIPT = """async ({ trials }) => {
+EVAL_SCRIPT = """async ({ trials, mode, headersByName }) => {
   // The TanStack Start Vite plugin inlines `process.env.TSS_SERVER_FN_BASE`
   // into the bundled client entry, but the on-demand `.functions.ts`
   // module we import from page.evaluate is not run through that
@@ -367,20 +438,34 @@ EVAL_SCRIPT = """async ({ trials }) => {
   // can resolve its target URL.
   window.process = window.process || { env: { TSS_SERVER_FN_BASE: '/_serverFn/' } };
 
-  // Wrap fetch BEFORE importing the module so the client RPC stub's
-  // fetch goes through our recorder. This is the only race-free way to
-  // pair an RPC call with its HTTP response — the `page.on('response')`
-  // event fires asynchronously on the Python side and can be reordered
-  // relative to the JS RPC resolution.
+  // Per-trial header overrides — set just before invoking the fn so the
+  // wrapped fetch can splice them onto the outgoing request, then cleared.
+  let pendingHeaders = null;
   const origFetch = window.fetch.bind(window);
   const responsesByUrl = new Map();
   window.fetch = async (...args) => {
-    const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '';
+    let req = args[0];
+    let init = args[1] || {};
+    const url = typeof req === 'string' ? req : (req && req.url) || '';
+    if (url.includes('/_serverFn/') && pendingHeaders) {
+      const hdrs = new Headers(init.headers || (typeof req !== 'string' ? req.headers : undefined) || {});
+      for (const [k, v] of Object.entries(pendingHeaders)) {
+        if (v === null) hdrs.delete(k); else hdrs.set(k, v);
+      }
+      init = { ...init, headers: hdrs };
+      if (typeof req !== 'string') {
+        // Rebuild request with merged headers but preserve method/body.
+        const body = await req.clone().text().catch(() => undefined);
+        req = new Request(url, { method: req.method, body, headers: hdrs });
+        args = [req];
+      } else {
+        args = [req, init];
+      }
+    }
     const res = await origFetch(...args);
     if (url.includes('/_serverFn/')) {
       try {
         const body = await res.clone().text();
-        // Stack responses per URL — pop the oldest when the trial reads it.
         const list = responsesByUrl.get(url) || [];
         list.push({ status: res.status, body });
         responsesByUrl.set(url, list);
@@ -393,10 +478,10 @@ EVAL_SCRIPT = """async ({ trials }) => {
   const submitUrl = mod.submitSourceSurvey.url;
   const skipUrl   = mod.skipSourceSurvey.url;
 
-  const out = [];
-  for (const t of trials) {
+  async function runOne(t) {
     const fn = t.fn === 'submit' ? mod.submitSourceSurvey : mod.skipSourceSurvey;
     const targetUrl = t.fn === 'submit' ? submitUrl : skipUrl;
+    pendingHeaders = (headersByName && headersByName[t.name]) || null;
     let ok = false, msg = '', resultJson = null;
     try {
       const r = await fn({ data: t.args });
@@ -405,17 +490,24 @@ EVAL_SCRIPT = """async ({ trials }) => {
     } catch (e) {
       msg = String(e?.message || e);
     }
+    pendingHeaders = null;
     const list = responsesByUrl.get(targetUrl) || [];
     const resp = list.shift() || {};
     responsesByUrl.set(targetUrl, list);
-    out.push({
-      name: t.name,
-      ok,
-      msg,
-      result: resultJson,
-      http_status: resp.status ?? null,
-      raw_body: resp.body ?? '',
-    });
+    return { name: t.name, ok, msg, result: resultJson,
+             http_status: resp.status ?? null, raw_body: resp.body ?? '' };
+  }
+
+  let out;
+  if (mode === 'concurrent') {
+    // Fire all at once via Promise.all. Per-trial header overrides are
+    // disabled in concurrent mode (would race) — the auth matrix runs
+    // sequentially. Concurrent mode is only used for race-condition tests
+    // against a single seeded order with the same valid credentials.
+    out = await Promise.all(trials.map(runOne));
+  } else {
+    out = [];
+    for (const t of trials) out.push(await runOne(t));
   }
   return { trials: out, submitUrl, skipUrl };
 }"""
@@ -423,6 +515,9 @@ EVAL_SCRIPT = """async ({ trials }) => {
 
 async def run_trials_in_browser(
     trials: list[dict[str, Any]],
+    *,
+    mode: str = "sequential",
+    headers_by_name: dict[str, dict[str, str | None]] | None = None,
 ) -> tuple[list[TrialOutcome], str, str]:
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -431,9 +526,12 @@ async def run_trials_in_browser(
         )
         page = await ctx.new_page()
         await page.goto(f"{BASE_URL}/", wait_until="domcontentloaded")
-        result = await page.evaluate(EVAL_SCRIPT, {"trials": trials})
+        result = await page.evaluate(EVAL_SCRIPT, {
+            "trials": trials,
+            "mode": mode,
+            "headersByName": headers_by_name or {},
+        })
 
-        # Build outcomes and zip request metadata back in by index.
         outcomes = []
         for src, t in zip(trials, result["trials"]):
             outcomes.append(TrialOutcome(
@@ -448,6 +546,7 @@ async def run_trials_in_browser(
 
         await browser.close()
         return outcomes, result["submitUrl"], result["skipUrl"]
+
 
 
 # Variant that runs trials one-by-one and snapshots Firestore around each.
@@ -542,19 +641,30 @@ async def main() -> int:
         # that valid happy-path requests still succeed in the same burst.
         burst_fails = 0
         burst_pass = 0
+        auth_fails = auth_pass = 0
+        conc_fails = conc_pass = 0
+
         if seed:
             print("[e2e] running malformed→valid burst …")
             oid = seed.order_id
             tok_ok = seed.payment_token
             burst: list[dict[str, Any]] = []
-            for i in range(8):
-                bad_tok = ("x" * 64) if i % 2 == 0 else ("' OR 1=1 --" + "x" * 60)
-                burst.append(submit_trial(f"burst-bad-{i}", {
+            # Randomised malformed shapes — every category enumerated by
+            # `random_bad_token` must be rejected with the generic contract.
+            rnd = random.Random(0xC0FFEE)  # deterministic for CI replay
+            for i in range(24):
+                cat_pt, bad_pt = random_bad_token(rnd)
+                cat_id, bad_id = random_bad_token(rnd)
+                burst.append(submit_trial(f"burst-pt-{cat_pt}-{i}", {
                     "orderId": oid, "source": "google_search",
-                    "otherText": None, "paymentToken": bad_tok,
+                    "otherText": None, "paymentToken": bad_pt,
                 }))
-                burst.append(skip_trial(f"burst-bad-skip-{i}", {
-                    "orderId": oid, "paymentToken": bad_tok,
+                burst.append(skip_trial(f"burst-pt-skip-{cat_pt}-{i}", {
+                    "orderId": oid, "paymentToken": bad_pt,
+                }))
+                burst.append(submit_trial(f"burst-idt-{cat_id}-{i}", {
+                    "orderId": oid, "source": "google_search",
+                    "otherText": None, "idToken": bad_id,
                 }))
             # One genuine valid call at the end to confirm the system still
             # accepts good traffic after a burst of rejections.
@@ -576,13 +686,121 @@ async def main() -> int:
                         burst_pass += 1
                 else:
                     ok, info = assert_rejection_contract(o)
-                    if ok:
+                    imm_ok, imm_why = assert_fields_immutable(baseline, post_state)
+                    if ok and imm_ok:
                         burst_pass += 1
                     else:
                         burst_fails += 1
-                        print(f"  ✗ {o.name:<40} {info}")
-                        record_failure("burst", o, info)
+                        why = info if not ok else imm_why
+                        print(f"  ✗ {o.name:<40} {why}")
+                        record_failure("burst", o, why)
             print(f"[e2e] burst: {burst_pass} passed, {burst_fails} failed")
+
+        # --- Auth-header matrix --------------------------------------------
+        # Survey functions do NOT consume the Authorization header (auth is
+        # carried in-payload via idToken/paymentToken), but the system MUST
+        # tolerate any shape of Authorization header without leaking detail.
+        # All combinations must end with the generic rejection contract.
+        if seed:
+            print("[e2e] running Authorization header matrix …")
+            oid = seed.order_id
+            tok_bogus = "x" * 64  # passes Zod, never matches the order hash
+            auth_headers_cases: dict[str, dict[str, str | None]] = {
+                "auth-missing":            {"Authorization": None},
+                "auth-empty":              {"Authorization": ""},
+                "auth-wrong-scheme":       {"Authorization": "Basic dXNlcjpwYXNz"},
+                "auth-bearer-empty":       {"Authorization": "Bearer "},
+                "auth-bearer-short":       {"Authorization": "Bearer abc"},
+                "auth-bearer-oversize":    {"Authorization": "Bearer " + ("a" * 8192)},
+                "auth-bearer-malformed":   {"Authorization": "Bearer not.a.jwt"},
+                "auth-bearer-unicode":     {"Authorization": "Bearer " + ("🚀" * 32)},
+                "auth-bearer-control":     {"Authorization": "Bearer " + "\x00\x01\x02" * 16},
+                "auth-double-bearer":      {"Authorization": "Bearer Bearer x.y.z"},
+                "auth-lowercase":          {"Authorization": "bearer x.y.z"},
+            }
+            auth_trials: list[dict[str, Any]] = []
+            for name in auth_headers_cases:
+                auth_trials.append(submit_trial(name, {
+                    "orderId": oid, "source": "google_search",
+                    "otherText": None, "paymentToken": tok_bogus,
+                }))
+            pre_auth = snapshot_state(seed.order_id, seed.email)
+            auth_outcomes, _, _ = await run_trials_in_browser(
+                auth_trials,
+                headers_by_name={f"submit:{n}": h for n, h in auth_headers_cases.items()},
+            )
+            post_auth = snapshot_state(seed.order_id, seed.email)
+            for o in auth_outcomes:
+                o.db_pre = pre_auth
+                o.db_post = post_auth
+                # STRICTER than the burst contract: every auth-matrix
+                # rejection MUST be the generic "Order not found" — Zod
+                # boundary failures are not acceptable here because the
+                # payload itself is well-formed; only the header varies.
+                generic = (
+                    not o.ok
+                    and (o.msg == "Order not found"
+                         or '"Order not found"' in (o.raw_body or ""))
+                )
+                imm_ok, imm_why = assert_fields_immutable(pre_auth, post_auth)
+                if generic and imm_ok:
+                    auth_pass += 1
+                else:
+                    auth_fails += 1
+                    why = ("non-generic response: " + (o.msg[:120] or "ok=True")) if not generic else imm_why
+                    print(f"  ✗ {o.name:<40} {why}")
+                    record_failure("auth-matrix", o, why)
+            print(f"[e2e] auth-matrix: {auth_pass} passed, {auth_fails} failed")
+
+        # --- Concurrency: parallel submit/skip on same order ---------------
+        # Race-condition probe: fire N submits + N skips simultaneously with
+        # the valid credentials. All must succeed, the final state must be
+        # internally consistent (single record, no duplicate claim), and no
+        # extra documents may have appeared.
+        if seed:
+            print("[e2e] running concurrency probe …")
+            pre_conc = snapshot_state(seed.order_id, seed.email)
+            conc_trials: list[dict[str, Any]] = []
+            for i in range(6):
+                conc_trials.append(submit_trial(f"conc-submit-{i}", {
+                    "orderId": seed.order_id, "source": "google_search",
+                    "otherText": None, "paymentToken": seed.payment_token,
+                }))
+                conc_trials.append(skip_trial(f"conc-skip-{i}", {
+                    "orderId": seed.order_id, "paymentToken": seed.payment_token,
+                }))
+            conc_outcomes, _, _ = await run_trials_in_browser(conc_trials, mode="concurrent")
+            post_conc = snapshot_state(seed.order_id, seed.email)
+            for o in conc_outcomes:
+                o.db_pre = pre_conc
+                o.db_post = post_conc
+                if not o.ok:
+                    conc_fails += 1
+                    print(f"  ✗ {o.name:<40} blocked in race: {o.msg!r}")
+                    record_failure("concurrency", o, "valid concurrent call rejected")
+                else:
+                    conc_pass += 1
+            order_state = (post_conc.get("order") or {})
+            claims_state = post_conc.get("save10_claims")
+            # The final state must be ONE of the two valid terminal shapes
+            # ({surveySkipped:true} or {surveySkipped:false, sourceSurvey:obj})
+            # — never a torn mix (skipped + sourceSurvey present).
+            ss = order_state.get("surveySkipped")
+            src = order_state.get("sourceSurvey")
+            if ss is True and src not in (None, {}, ""):
+                conc_fails += 1
+                record_failure("concurrency", TrialOutcome(
+                    name="conc-torn-state", http_status=None, ok=False,
+                    msg="", raw_body="", db_pre=pre_conc, db_post=post_conc,
+                ), f"torn state: surveySkipped=True AND sourceSurvey={src}")
+            if isinstance(claims_state, list) and len(claims_state) > 1:
+                conc_fails += 1
+                record_failure("concurrency", TrialOutcome(
+                    name="conc-duplicate-claims", http_status=None, ok=False,
+                    msg="", raw_body="", db_pre=pre_conc, db_post=post_conc,
+                ), f"duplicate save10 claims under race: {len(claims_state)}")
+            print(f"[e2e] concurrency: {conc_pass} passed, {conc_fails} failed")
+
 
         # --- Idempotency: replay submit + skip many times ------------------
         idem_fails = 0
@@ -677,14 +895,17 @@ async def main() -> int:
         else:
             print("[e2e] happy-path: SKIPPED (no service account)")
 
-        total_fail = fails + happy_fails + burst_fails + idem_fails
+        total_fail = fails + happy_fails + burst_fails + idem_fails + auth_fails + conc_fails
         summary = {
             "fuzz": {"pass": passes, "fail": fails},
             "burst": {"pass": burst_pass, "fail": burst_fails},
+            "auth_matrix": {"pass": auth_pass, "fail": auth_fails},
+            "concurrency": {"pass": conc_pass, "fail": conc_fails},
             "idempotency": {"pass": idem_pass, "fail": idem_fails},
             "happy": {"fail": happy_fails},
             "total_fail": total_fail,
         }
+
         report_path = write_report(summary)
         print(f"[e2e] report: {report_path}")
         print(f"\n[e2e] OVERALL: {'PASS' if total_fail == 0 else 'FAIL'} ({total_fail} failures)")
