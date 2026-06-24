@@ -195,15 +195,20 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number, body });
             }
 
-      # Surface cache hit/miss for both the Bun install store and the
-      # SBOM cache in the Actions job summary so reviewers can see at a
-      # glance whether this run reused cached artifacts (fast/repeatable)
-      # or rebuilt from scratch (slow but baseline-deterministic).
+      # Surface cache hit/miss + the exact reproducible keys (and the
+      # per-file SHAs that compose them) in the Actions job summary so
+      # reviewers can confirm a HIT actually corresponds to the inputs
+      # they expect — not a stale or partially-keyed entry.
       - name: Cache status → job summary
         if: always()
         env:
           BUN_CACHE_HIT: ${{ steps.bun_cache.outputs.cache-hit }}
           SBOM_CACHE_HIT: ${{ steps.sbom_cache.outputs.cache-hit }}
+          BUN_KEY: ${{ steps.keys.outputs.bun_key }}
+          SBOM_KEY: ${{ steps.keys.outputs.sbom_key }}
+          BUN_LOCK_SHA: ${{ steps.keys.outputs.bun_lock_sha }}
+          PKG_JSON_SHA: ${{ steps.keys.outputs.pkg_json_sha }}
+          SBOM_GEN_SHA: ${{ steps.keys.outputs.sbom_gen_sha }}
         run: |
           icon() { case "$1" in true) echo "✅ HIT";; false) echo "❌ MISS";; *) echo "⚠️ n/a";; esac; }
           {
@@ -211,10 +216,19 @@ jobs:
             echo ""
             echo "| Cache | Key | Status |"
             echo "|---|---|---|"
-            echo "| Bun install store | \`bun-store-${{ runner.os }}-${{ hashFiles('bun.lock') }}\` | $(icon "$BUN_CACHE_HIT") |"
-            echo "| SBOM (CycloneDX) | \`sbom-${{ runner.os }}-${{ hashFiles('bun.lock', 'scripts/generate-sbom.ts') }}\` | $(icon "$SBOM_CACHE_HIT") |"
+            echo "| Bun install store | \`$BUN_KEY\` | $(icon "$BUN_CACHE_HIT") |"
+            echo "| SBOM (CycloneDX)  | \`$SBOM_KEY\` | $(icon "$SBOM_CACHE_HIT") |"
+            echo ""
+            echo "#### 🔑 Reproducible key inputs (SHA-256)"
+            echo ""
+            echo "| File | SHA-256 | Used by |"
+            echo "|---|---|---|"
+            echo "| \`bun.lock\` | \`$BUN_LOCK_SHA\` | bun-store, sbom |"
+            echo "| \`package.json\` | \`$PKG_JSON_SHA\` | bun-store, sbom |"
+            echo "| \`scripts/generate-sbom.ts\` | \`$SBOM_GEN_SHA\` | sbom |"
             echo ""
           } >> "$GITHUB_STEP_SUMMARY"
+
 
 
       # Re-raise the scan failure so the job (and merge gate) fails
