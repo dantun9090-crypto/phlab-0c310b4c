@@ -79,11 +79,14 @@ export default function SourceSurveyCard({ orderId }: Props) {
     setPhase("submitting");
     setError("");
     try {
+      const creds = await getOwnershipCreds(orderId);
       const res = await submit({
         data: {
           orderId,
           source: selected,
           otherText: selected === "other" ? otherText : null,
+          idToken: creds.idToken,
+          paymentToken: creds.paymentToken,
         },
       });
       if (res.rewardCode) {
@@ -103,7 +106,12 @@ export default function SourceSurveyCard({ orderId }: Props) {
       sessionStorage.setItem(SESSION_KEY_PREFIX + orderId, "1");
     } catch { /* ignore */ }
     // Fire and forget — survey is optional.
-    skip({ data: { orderId } }).catch(() => { /* ignore */ });
+    void (async () => {
+      try {
+        const creds = await getOwnershipCreds(orderId);
+        await skip({ data: { orderId, idToken: creds.idToken, paymentToken: creds.paymentToken } });
+      } catch { /* ignore */ }
+    })();
     setPhase("skipped");
   }
 
