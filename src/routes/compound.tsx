@@ -4,6 +4,34 @@ const TITLE = "Premium Research Compounds UK | PH Labs";
 const DESCRIPTION =
   "High-purity research compounds for in-vitro laboratory use. HPLC-tested, UK-dispatched, batch-traceable. Strictly for research — not for human consumption.";
 const URL = "https://phlabs.co.uk/compound";
+const OG_IMAGE = "https://phlabs.co.uk/og/compound.jpg";
+
+const FAQS: { q: string; a: string }[] = [
+  {
+    q: "Are PH Labs compounds intended for human use?",
+    a: "No. All materials supplied by PH Labs are strictly for in-vitro laboratory research by qualified professionals. They are not medicines, supplements, food or cosmetics, and must not be administered to humans or animals.",
+  },
+  {
+    q: "How do you verify purity and quality?",
+    a: "Every batch is tested by High-Performance Liquid Chromatography (HPLC). A Certificate of Analysis is available on request and each unit carries a batch identifier so researchers can trace material back to its analytical record.",
+  },
+  {
+    q: "Where are the compounds sourced and dispatched from?",
+    a: "Materials are stocked and dispatched from the United Kingdom. We work with established suppliers and maintain batch records for every item that leaves our facility.",
+  },
+  {
+    q: "How are orders shipped?",
+    a: "UK orders are sent via tracked delivery in secure, temperature-aware packaging suitable for laboratory delivery. Standard dispatch is on the next working day after order confirmation, subject to stock and verification.",
+  },
+  {
+    q: "Who is allowed to purchase?",
+    a: "Purchases are restricted to qualified researchers, scientific professionals and academic or commercial laboratories. By placing an order you confirm you are 18 or over and acquiring materials solely for legitimate research within an appropriately equipped laboratory environment.",
+  },
+  {
+    q: "Do you provide usage, dosage or clinical guidance?",
+    a: "No. PH Labs does not provide any medical, clinical, dosage or administration guidance. Our materials are research reagents only and are not intended to diagnose, treat, cure or prevent any condition.",
+  },
+];
 
 export const Route = createFileRoute("/compound")({
   head: () => ({
@@ -14,9 +42,15 @@ export const Route = createFileRoute("/compound")({
       { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },
       { property: "og:url", content: URL },
+      { property: "og:image", content: OG_IMAGE },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "640" },
+      { property: "og:image:alt", content: "PH Labs — Premium Research Compounds UK" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: TITLE },
       { name: "twitter:description", content: DESCRIPTION },
+      { name: "twitter:image", content: OG_IMAGE },
+      { name: "twitter:image:alt", content: "PH Labs — Premium Research Compounds UK" },
     ],
     links: [{ rel: "canonical", href: URL }],
     scripts: [
@@ -30,6 +64,18 @@ export const Route = createFileRoute("/compound")({
           url: URL,
           inLanguage: "en-GB",
           isFamilyFriendly: true,
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: FAQS.map((f) => ({
+            "@type": "Question",
+            name: f.q,
+            acceptedAnswer: { "@type": "Answer", text: f.a },
+          })),
         }),
       },
     ],
@@ -169,6 +215,39 @@ function CompoundLandingPage() {
               scientific investigation within an appropriately equipped
               laboratory environment.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section id="faq" className="py-20 border-t border-slate-800">
+        <div className="max-w-3xl mx-auto px-6">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 text-center">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-slate-400 text-center mb-12">
+            Research use, sourcing and shipping — at a glance.
+          </p>
+          <div className="space-y-4">
+            {FAQS.map((faq) => (
+              <details
+                key={faq.q}
+                className="group rounded-xl bg-slate-900 border border-slate-800 hover:border-emerald-500/40 transition-colors"
+              >
+                <summary className="cursor-pointer list-none flex items-center justify-between gap-4 px-6 py-5 text-white font-semibold text-base sm:text-lg">
+                  <span>{faq.q}</span>
+                  <span
+                    aria-hidden="true"
+                    className="text-emerald-400 text-xl leading-none transition-transform group-open:rotate-45"
+                  >
+                    +
+                  </span>
+                </summary>
+                <div className="px-6 pb-6 -mt-1 text-slate-300 text-sm sm:text-base leading-relaxed">
+                  {faq.a}
+                </div>
+              </details>
+            ))}
           </div>
         </div>
       </section>
