@@ -959,25 +959,50 @@ async function run() {
             ${chain}</div>`;
         };
         const items = d.items || [];
-        const itemRows = items.map((it, idx) => {
+        const itemRows = items.map((it) => {
           const cls = it.match ? 'pass' : 'fail';
           const tag = it.match ? '✅ match' : `❌ ${esc(it.reasons.join(', '))}`;
-          return `<details class="drill ${cls}"><summary>${tag} · <code>${esc(it.url)}</code> [#${it.index}]</summary>
+          const dataKinds = esc((it.kinds && it.kinds.length ? it.kinds : ['match']).join(' '));
+          return `<details class="drill ${cls}" data-match="${it.match ? '1' : '0'}" data-rtype="${esc(it.resourceType || 'other')}" data-kinds="${dataKinds}" data-redacted="${it.bodyRedacted ? '1' : '0'}"><summary>${tag} · <code>${esc(it.url)}</code> [#${it.index}] <span class="pill">${esc(it.resourceType || 'other')}</span>${it.bodyRedacted ? ' <span class="pill">redacted</span>' : ''}</summary>
             <div class="pair">${renderSide('fixture', it.fixture)}${renderSide('live', it.live)}</div>
           </details>`;
         }).join('') || '<p class="muted">no items captured</p>';
         const tBadge = d.thresholds.breached.length
           ? `<span class="badge bad">thresholds breached: ${esc(d.thresholds.breached.join('; '))}</span>`
           : `<span class="badge ok">within thresholds (max ${d.thresholds.maxMismatches}/${d.thresholds.maxStatusMismatches}/${d.thresholds.maxBodyByteDelta}B)</span>`;
+        // Resource-type options for the filter dropdown.
+        const rtypes = [...new Set(items.map((it) => it.resourceType || 'other'))].sort();
+        const rtypeOpts = ['<option value="">all resource types</option>',
+          ...rtypes.map((r) => `<option value="${esc(r)}">${esc(r)}</option>`)].join('');
+        const scId = esc(s.scenario);
+        // Embed mismatch-bundle data so the in-page button can export without round-tripping.
+        const bundle = JSON.stringify({
+          scenario: s.scenario,
+          generatedAt: new Date().toISOString(),
+          redaction: { redactBodies: REDACT_BODIES, hashBodies: HASH_BODIES, maxBodyBytes: MAX_BODY_BYTES, redactHeaders: [...REDACT_HEADERS], redactUrlParams: [...REDACT_URL_PARAMS] },
+          thresholds: d.thresholds,
+          summary: d.summary,
+          items,
+        });
+        const bundleB64 = Buffer.from(bundle, 'utf8').toString('base64');
         return `<details ${d.summary.mismatchCount ? 'open' : ''}><summary>Live vs replay (matches=${d.summary.matchCount}, mismatches=${d.summary.mismatchCount}, statusΔ=${d.summary.statusMismatchCount}, maxBodyΔ=${d.summary.maxBodyDelta}B)</summary>
           <p>${tBadge}</p>
           <h4>Purge call timing (relative to first purge per side)</h4>
           <table class="tbl"><thead><tr><th>#</th><th>fixture</th><th>live</th><th>Δ</th></tr></thead><tbody>${ptRows}</tbody></table>
           <h4>Per-request drilldown (${items.length})</h4>
-          <div class="drilldown">${itemRows}</div>
+          <div class="filters" data-scope="${scId}">
+            <label>match: <select data-filter="match"><option value="">all</option><option value="0">mismatches only</option><option value="1">matches only</option></select></label>
+            <label>resource: <select data-filter="rtype">${rtypeOpts}</select></label>
+            <label>kind: <select data-filter="kind"><option value="">all kinds</option><option value="status">status</option><option value="body">body bytes</option><option value="headers">headers</option><option value="only-live">only-live</option><option value="only-fixture">only-fixture</option></select></label>
+            <label>redacted: <select data-filter="redacted"><option value="">any</option><option value="1">redacted only</option><option value="0">non-redacted only</option></select></label>
+            <button type="button" data-bundle="${scId}" data-bundle-b64="${bundleB64}">⬇ Download mismatch bundle</button>
+            <span class="muted" data-visible-count></span>
+          </div>
+          <div class="drilldown" data-drilldown="${scId}">${itemRows}</div>
           ${d.truncated ? '<p class="muted">(mismatch summary truncated to first 40)</p>' : ''}
         </details>`;
       })()}
+
 
       <details><summary>Screenshot</summary><p><a href="screenshots/${esc(s.scenario)}.png"><img src="screenshots/${esc(s.scenario)}.png" alt="${esc(s.scenario)}" loading="lazy" style="max-width:100%;border:1px solid #444"/></a></p></details>
     </section>`;
