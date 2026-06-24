@@ -91,7 +91,7 @@ export default function AdvertsTab() {
         await updateDoc(doc(db, 'adverts', editing.id!), data);
         showToast('Advert saved!');
       }
-      triggerContentCdnInvalidation(['/', '/products']);
+      triggerContentCdnInvalidation(['/', '/products']); bumpMarketingVersion();
       setEditing(null);
       setIsNew(false);
       await load();
@@ -105,14 +105,14 @@ export default function AdvertsTab() {
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this advert?')) return;
     await deleteDoc(doc(db, 'adverts', id));
-    triggerContentCdnInvalidation(['/', '/products']);
+    triggerContentCdnInvalidation(['/', '/products']); bumpMarketingVersion();
     showToast('Deleted');
     await load();
   };
 
   const handleToggle = async (advert: Advert) => {
     await updateDoc(doc(db, 'adverts', advert.id!), { isActive: !advert.isActive });
-    triggerContentCdnInvalidation(['/', '/products']);
+    triggerContentCdnInvalidation(['/', '/products']); bumpMarketingVersion();
     await load();
   };
 
