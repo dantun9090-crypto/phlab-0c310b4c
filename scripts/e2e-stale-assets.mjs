@@ -806,7 +806,9 @@ async function run() {
     scenarios: [...new Set(results.map((r) => r.scenario))],
     perScenario: perScenarioSummary,
     lockTimeline,
-    cli: { ONLY, RECORD, REPLAY, FIXTURE_DIR, RETRIES, RETRY_DELAY_MS, DETERMINISTIC },
+    cli: { ONLY, RECORD, REPLAY, FIXTURE_DIR, RETRIES, RETRY_DELAY_MS, DETERMINISTIC,
+      MAX_MISMATCHES, MAX_STATUS_MISMATCHES, MAX_BODY_BYTE_DELTA,
+      REDACT_BODIES, MAX_BODY_BYTES, REDACT_HEADERS: [...REDACT_HEADERS], REDACT_URL_PARAMS: [...REDACT_URL_PARAMS] },
     results,
   };
   writeFileSync(join(REPORT_DIR, 'report.json'), JSON.stringify(summary, null, 2));
