@@ -5,6 +5,18 @@ import {
   submitSourceSurvey,
   skipSourceSurvey,
 } from "@/lib/source-survey.functions";
+import { auth } from "@/lib/firebase";
+
+async function getOwnershipCreds(orderId: string): Promise<{
+  idToken: string | null;
+  paymentToken: string | null;
+}> {
+  let idToken: string | null = null;
+  let paymentToken: string | null = null;
+  try { idToken = (await auth.currentUser?.getIdToken()) ?? null; } catch { /* ignore */ }
+  try { paymentToken = localStorage.getItem(`php_pt_${orderId}`); } catch { /* ignore */ }
+  return { idToken, paymentToken };
+}
 
 /**
  * Inline post-purchase survey card shown at the bottom of the order
@@ -67,11 +79,14 @@ export default function SourceSurveyCard({ orderId }: Props) {
     setPhase("submitting");
     setError("");
     try {
+      const creds = await getOwnershipCreds(orderId);
       const res = await submit({
         data: {
           orderId,
           source: selected,
           otherText: selected === "other" ? otherText : null,
+          idToken: creds.idToken,
+          paymentToken: creds.paymentToken,
         },
       });
       if (res.rewardCode) {
@@ -91,7 +106,12 @@ export default function SourceSurveyCard({ orderId }: Props) {
       sessionStorage.setItem(SESSION_KEY_PREFIX + orderId, "1");
     } catch { /* ignore */ }
     // Fire and forget — survey is optional.
-    skip({ data: { orderId } }).catch(() => { /* ignore */ });
+    void (async () => {
+      try {
+        const creds = await getOwnershipCreds(orderId);
+        await skip({ data: { orderId, idToken: creds.idToken, paymentToken: creds.paymentToken } });
+      } catch { /* ignore */ }
+    })();
     setPhase("skipped");
   }
 
