@@ -34,8 +34,8 @@ export const PRODUCT_ID_TO_SLUG: Record<string, string> = {
   // Google Merchant anonymised research codes — mirror canonical slugs so
   // /products/<code> renders the real product in place (matchedBy: "id").
   // Keep in sync with MERCHANT_CODE_OVERRIDES in google-merchant-feed[.]xml.ts.
-  "PHL-RT8": "retatrutide-research-peptide",
-  "PHL-BP15": "bpc-157",
+  "Reta-PHL": "retatrutide-research-peptide",
+  "BPC-PHL": "bpc-157",
   "PHL-PT41": "pt-141-research-peptide",
   "PHL-TB54": "tb-500-thymosin-beta-4",
   "PHL-MC16": "mots-c-research-peptide",
