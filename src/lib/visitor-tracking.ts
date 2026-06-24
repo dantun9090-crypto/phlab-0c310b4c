@@ -55,13 +55,13 @@ function isExcludedPath(path: string): boolean {
 
 async function logEvent(type: 'pageview' | 'heartbeat', path: string): Promise<void> {
   try {
-    const { db, collection, addDoc, serverTimestamp } = await import('@/lib/firebase');
+    const { db, collection, addDoc, Timestamp } = await import('@/lib/firebase');
     const sid = getSessionId();
     await addDoc(collection(db, 'visitor_events'), {
       type,
       sessionId: sid,
       path: path.slice(0, 300),
-      createdAt: serverTimestamp(),
+      createdAt: Timestamp.now(),
       userAgent: (typeof navigator !== 'undefined' ? navigator.userAgent : '').slice(0, 300),
       referrer: (typeof document !== 'undefined' ? document.referrer : '').slice(0, 300),
     });
