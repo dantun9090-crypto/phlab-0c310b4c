@@ -146,8 +146,21 @@ async function main() {
     summary: string;
     url: string;
   };
+  // Triaged false-positives / accepted risks are listed in
+  // .security-ignore.json at the repo root. Each entry MUST include a
+  // reason. Add via PR — never silence advisories inline.
+  const ignorePath = join(process.cwd(), ".security-ignore.json");
+  const ignoreSet = new Set<string>();
+  if (existsSync(ignorePath)) {
+    const cfg = JSON.parse(readFileSync(ignorePath, "utf8")) as {
+      ignore?: Array<{ id: string; reason: string }>;
+    };
+    cfg.ignore?.forEach((e) => ignoreSet.add(e.id));
+  }
+
   const blocking: Blocking[] = [];
   const informational: Array<{ pkg: string; id: string; severity: Severity }> = [];
+  const ignored: Array<{ pkg: string; id: string; severity: Severity }> = [];
 
   for (const v of vulnByQuery) {
     for (const id of v.ids) {
@@ -161,14 +174,22 @@ async function main() {
         summary: d?.summary ?? "(no summary)",
         url: d?.references?.[0]?.url ?? `https://osv.dev/vulnerability/${id}`,
       };
+      if (ignoreSet.has(id)) {
+        ignored.push({ pkg: v.pkg, id, severity: sev });
+        continue;
+      }
       if (severityRank(sev) >= minIdx) blocking.push(item);
       else informational.push({ pkg: v.pkg, id, severity: sev });
     }
   }
 
-  if (informational.length > 0) {
-    console.log(`\nℹ ${informational.length} sub-threshold advisories (info/low) — not blocking.`);
+  if (ignored.length > 0) {
+    console.log(`\nℹ ${ignored.length} advisories suppressed via .security-ignore.json.`);
   }
+  if (informational.length > 0) {
+    console.log(`ℹ ${informational.length} sub-threshold advisories (info/low) — not blocking.`);
+  }
+
 
   if (blocking.length === 0) {
     console.log("\n✔ No medium+ vulnerabilities. Safe to merge / deploy.");
