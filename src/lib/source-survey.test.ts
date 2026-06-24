@@ -20,7 +20,12 @@ vi.mock('./server/firebase-auth-admin', () => ({
   verifyFirebaseIdToken: vi.fn(),
 }));
 
-import { runSubmitSurvey, runSkipSurvey } from './source-survey.server';
+import {
+  runSubmitSurvey,
+  runSkipSurvey,
+  submitSurveySchema,
+  skipSurveySchema,
+} from './source-survey.server';
 import {
   getDocAdmin,
   updateDocAdmin,
