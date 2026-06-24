@@ -7,7 +7,8 @@
  *   - All CSS animations / transitions / caret killed via injected stylesheet
  *   - Web fonts blocked at the route level — only system fonts render
  *   - All <details> collapsed
- *   - networkidle wait + h1 visibility gate before snapping
+ *   - DOMContentLoaded + h1 visibility gate before snapping (not networkidle:
+ *     live third-party beacons can keep the page busy indefinitely)
  *
  * Run with `bunx playwright test e2e/compound-visual.spec.ts --update-snapshots`
  * to refresh the baseline after an intentional design change.
@@ -52,9 +53,11 @@ test.describe("/compound visual regression", () => {
       else document.addEventListener("DOMContentLoaded", apply);
     }, KILL_MOTION_CSS);
 
-    await page.goto(`${BASE}/compound`, { waitUntil: "networkidle" });
+    await page.goto(`${BASE}/compound`, { waitUntil: "domcontentloaded" });
 
     await expect(page.locator("h1")).toBeVisible();
+    await page.waitForLoadState("load", { timeout: 10_000 }).catch(() => undefined);
+    await page.waitForTimeout(500);
 
     // Collapse any open <details> for determinism
     await page.evaluate(() => {

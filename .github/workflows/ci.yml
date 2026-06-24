@@ -39,7 +39,6 @@ jobs:
       # reference restricted peptides. Self-skips if origin unreachable.
       - name: /compound prohibited-substance scan
         run: bun run compliance:scan-compound
-        continue-on-error: true
 
       # /compound + /research HTTP test suite:
       #   - OG/Twitter meta + absolute image URLs (HEAD-probed for 200)
