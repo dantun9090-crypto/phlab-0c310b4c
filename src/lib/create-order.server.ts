@@ -216,6 +216,22 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
 
   await addDocAdmin('orders', orderData, orderId);
 
+  // Server-side coupon redemption. The /coupons collection is admin-only, so
+  // the previous client transaction could not increment usedCount for normal
+  // shoppers. This runs after the order write and is best-effort; the coupon
+  // was already re-validated above by runValidateCart.
+  if (validation.coupon?.id) {
+    try {
+      const couponDoc = await getDocAdmin('coupons', validation.coupon.id);
+      const used = Number(couponDoc?.usedCount ?? couponDoc?.usageCount ?? 0);
+      await updateDocAdmin('coupons', validation.coupon.id, {
+        usedCount: Number.isFinite(used) ? used + 1 : 1,
+      });
+    } catch {
+      // Do not fail a paid/placed order solely because usage accounting failed.
+    }
+  }
+
   // Server-side stock decrement. Runs AFTER the order is written so an
   // accounting trail exists. Best-effort per item — a stock-update failure
   // does NOT fail the order (admins can reconcile via /admin/inventory).

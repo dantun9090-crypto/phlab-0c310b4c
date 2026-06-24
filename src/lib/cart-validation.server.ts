@@ -6,7 +6,7 @@
  */
 import { z } from 'zod';
 import { verifyFirebaseIdToken } from './server/firebase-auth-admin';
-import { getDocAdmin } from './server/firestore-admin';
+import { findDocByFieldAdmin, getDocAdmin } from './server/firestore-admin';
 
 const FIREBASE_PROJECT_ID = 'prohealthpeptides-a0808';
 const FIRESTORE_BASE = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents`;
@@ -105,43 +105,39 @@ export interface ValidateCartResult {
 export async function lookupCoupon(code: string, subtotal: number): Promise<{ coupon: ValidatedCoupon | null; error: string | null }> {
   const upper = code.toUpperCase();
   try {
-    const res = await fetch(`${FIRESTORE_BASE}:runQuery`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({
-        structuredQuery: {
-          from: [{ collectionId: 'coupons' }],
-          where: {
-            compositeFilter: {
-              op: 'AND',
-              filters: [
-                { fieldFilter: { field: { fieldPath: 'code' }, op: 'EQUAL', value: { stringValue: upper } } },
-                { fieldFilter: { field: { fieldPath: 'isActive' }, op: 'EQUAL', value: { booleanValue: true } } },
-              ],
-            },
-          },
-          limit: 1,
-        },
-      }),
-    });
-    if (!res.ok) return { coupon: null, error: 'Could not validate coupon.' };
-    const rows = (await res.json()) as Array<{ document?: { name: string; fields?: Record<string, FsValue> } }>;
-    const docRow = rows.find((r) => r.document)?.document;
+    // /coupons is intentionally admin-only in firestore.rules. Public checkout
+    // validation must therefore run through the server/service-account helper;
+    // direct Firestore REST without an admin token returns 403 in production.
+    const docRow = await findDocByFieldAdmin('coupons', 'code', upper);
     if (!docRow) return { coupon: null, error: 'Invalid or expired coupon code.' };
-    const fields = docRow.fields ?? {};
-    const id = docRow.name.split('/').pop() ?? '';
-    const type = decode(fields.type) as CouponType | undefined;
-    const value = parsePrice(decode(fields.value));
-    const expiryRaw = fields.expiryDate as { timestampValue?: string } | undefined;
-    if (expiryRaw?.timestampValue && new Date(expiryRaw.timestampValue) < new Date()) {
+    if (docRow.isActive !== true) return { coupon: null, error: 'Invalid or expired coupon code.' };
+
+    const id = String(docRow.__id ?? '');
+    const type = docRow.type as CouponType | undefined;
+    const value = parsePrice(docRow.value);
+    const expiryRaw = docRow.expiryDate;
+    const expiryDate = typeof expiryRaw === 'string'
+      ? new Date(expiryRaw)
+      : expiryRaw instanceof Date
+        ? expiryRaw
+        : null;
+    if (expiryDate && Number.isFinite(expiryDate.getTime()) && expiryDate < new Date()) {
       return { coupon: null, error: 'Coupon has expired.' };
     }
-    const maxUses = (decode(fields.maxUses) ?? decode(fields.maxUsage)) as number | undefined;
-    const usedCount = (decode(fields.usedCount) ?? decode(fields.usageCount) ?? 0) as number;
+    const maxUses = typeof docRow.maxUses === 'number'
+      ? docRow.maxUses
+      : typeof docRow.maxUsage === 'number'
+        ? docRow.maxUsage
+        : undefined;
+    const usedCount = typeof docRow.usedCount === 'number'
+      ? docRow.usedCount
+      : typeof docRow.usageCount === 'number'
+        ? docRow.usageCount
+        : 0;
     if (typeof maxUses === 'number' && maxUses > 0 && usedCount >= maxUses) {
       return { coupon: null, error: 'Coupon usage limit reached.' };
     }
-    const minOrderValue = (decode(fields.minOrderValue) as number | undefined) ?? 0;
+    const minOrderValue = typeof docRow.minOrderValue === 'number' ? docRow.minOrderValue : 0;
     if (minOrderValue && subtotal < minOrderValue) {
       return { coupon: null, error: `Order must be at least £${minOrderValue.toFixed(2)} to use this coupon.` };
     }

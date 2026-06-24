@@ -5,6 +5,7 @@ import { useSSRBanner } from '@/legacy/SSRDataContext';
 import { Link } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import HomeSeoIndex from '@/components/HomeSeoIndex';
+import MarketingAdvertSlot from '@/components/MarketingAdvertSlot';
 import { getProductImage } from '@/lib/productImages';
 import type { Product } from '@/lib/firebase';
 // Firebase is dynamically imported below to keep it off the home-route critical chunk.
@@ -298,7 +299,20 @@ export default function HomePage() {
   }, [siteSettings]);
 
   const heroAdverts = adverts.filter((a: any) => a.placement === 'homepage_hero');
-  const bannerVisible = bannerResolved && banner?.active !== false && banner?.imageUrl;
+  const bannerVisible = bannerResolved && banner?.active !== false && banner?.isActive !== false && banner?.imageUrl;
+  const bannerHref = banner?.ctaUrl || banner?.linkUrl || '';
+  const bannerOverlayHeading = banner?.overlayText || (banner?.textOverlayEnabled ? banner?.textOverlayHeading : '');
+  const bannerOverlaySubtext = banner?.overlaySubtext || (banner?.textOverlayEnabled ? banner?.textOverlaySubtext : '');
+  const bannerOverlayAlign = banner?.textOverlayAlign === 'left'
+    ? 'items-start text-left'
+    : banner?.textOverlayAlign === 'right'
+      ? 'items-end text-right'
+      : 'items-center text-center';
+  const bannerOverlayPosition = banner?.textOverlayPosition === 'top'
+    ? 'justify-start pt-10'
+    : banner?.textOverlayPosition === 'bottom'
+      ? 'justify-end pb-10'
+      : 'justify-center';
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -653,8 +667,8 @@ export default function HomePage() {
             };
             return <div className="absolute inset-0 pointer-events-none z-[7]" style={{ background: gradMap[dir] }} />;
           })()}
-          {banner.ctaUrl ? (
-            <a href={banner.ctaUrl} className="block">
+          {bannerHref ? (
+            <a href={bannerHref} className="block">
               <img {...cfImgProps(banner.imageUrl, { widths: [640, 960, 1280, 1600, 1920], sizes: '100vw' })} alt={banner.altText || 'PH Labs research peptides promotional banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
                 style={{ height: banner.heightPx ? `${banner.heightPx}px` : '320px', objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
             </a>
@@ -664,11 +678,11 @@ export default function HomePage() {
 
           )}
 
-          {banner.overlayText && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-[10] pointer-events-none text-center px-6">
-              <p className="font-black text-white max-w-2xl" style={{ fontSize: 'clamp(1.5rem,4vw,3rem)', textShadow: '0 2px 24px rgba(0,0,0,0.7)' }}>{banner.overlayText}</p>
-              {banner.overlaySubtext && (
-                <p className="mt-3 text-white/80 text-sm font-medium max-w-xl" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}>{banner.overlaySubtext}</p>
+          {bannerOverlayHeading && (
+            <div className={`absolute inset-0 flex flex-col z-[10] pointer-events-none px-6 ${bannerOverlayAlign} ${bannerOverlayPosition}`}>
+              <p className="font-black text-white max-w-2xl" style={{ fontSize: 'clamp(1.5rem,4vw,3rem)', textShadow: '0 2px 24px rgba(0,0,0,0.7)' }}>{bannerOverlayHeading}</p>
+              {bannerOverlaySubtext && (
+                <p className="mt-3 text-white/80 text-sm font-medium max-w-xl" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}>{bannerOverlaySubtext}</p>
               )}
             </div>
           )}
@@ -679,29 +693,10 @@ export default function HomePage() {
           ADVERTS — HERO SLOT
       ════════════════════════════════ */}
       {heroAdverts.length > 0 && (
-        <div className="container mx-auto px-6 py-6">
-          {heroAdverts.map((ad: any, idx: number) => {
-            // First hero advert is the LCP candidate — eager-load with high
-            // fetch priority. Subsequent ones can lazy-load below the fold.
-            const isLcp = idx === 0;
-            const imgProps = isLcp
-              ? { loading: "eager" as const, fetchPriority: "high" as const, decoding: "async" as const }
-              : { loading: "lazy" as const, decoding: "async" as const };
-            return (
-              <div key={ad.id} className="relative rounded-2xl overflow-hidden" style={{ minHeight: '160px' }}>
-                {ad.ctaUrl ? (
-                  <a href={ad.ctaUrl} target="_blank" rel="noopener noreferrer">
-                    <img {...cfImgProps(ad.imageUrl, { widths: [640, 960, 1280, 1600], sizes: '100vw' })} alt={ad.altText || 'PH Labs featured peptide product offer'} width={1600} height={280} className="w-full object-cover" style={{ maxHeight: '280px' }} {...imgProps} />
-                  </a>
-                ) : (
-                  <img {...cfImgProps(ad.imageUrl, { widths: [640, 960, 1280, 1600], sizes: '100vw' })} alt={ad.altText || 'PH Labs featured peptide product offer'} width={1600} height={280} className="w-full object-cover" style={{ maxHeight: '280px' }} {...imgProps} />
-                )}
-
-              </div>
-            );
-          })}
-        </div>
+        <MarketingAdvertSlot adverts={heroAdverts} placement="homepage_hero" className="container mx-auto px-6 py-6" eagerFirstImage />
       )}
+
+      <MarketingAdvertSlot adverts={adverts} placement="homepage_mid" className="container mx-auto px-6 py-6" variant="card" />
 
 
       {/* ════════════════════════════════

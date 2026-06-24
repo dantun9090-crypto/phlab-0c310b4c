@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { dispatchAddToCart, CartItem } from '@/components/Layout';
-import { auth, db, getAllProducts, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
+import { auth, db, getAllProducts, doc, getDoc, getDocs, collection, query, onAuthStateChanged } from '@/lib/firebase';
 import {
   markPrerenderPending,
   markPrerenderReady,
@@ -15,6 +15,7 @@ import {
 } from '@/lib/prerender-ready';
 import { ProductEditor } from '@/components/ProductEditor';
 import { ProductCard } from '@/components/ProductCard';
+import MarketingAdvertSlot from '@/components/MarketingAdvertSlot';
 import type { Product } from '@/lib/firebase';
 import { nameToSlug } from '@/lib/seedProducts';
 
@@ -124,6 +125,7 @@ export default function Products() {
   const [_cartCounts, _setCartCounts]         = useState<Record<string, number>>({});
   const [isAdmin, setIsAdmin]                 = useState(false);
   const [editingProduct, setEditingProduct]   = useState<Product | null>(null);
+  const [adverts, setAdverts]                 = useState<any[]>([]);
   const [sidebarOpen, setSidebarOpen]         = useState(false);
   const [sortOpen, setSortOpen]               = useState(false);
   const [viewMode, setViewMode]               = useState<'grid' | 'list'>('grid');
@@ -141,6 +143,18 @@ export default function Products() {
     }
     document.addEventListener('mousedown', handle);
     return () => document.removeEventListener('mousedown', handle);
+  }, []);
+
+  // Public adverts — admin saves products_top / products_sidebar placements here.
+  useEffect(() => {
+    let cancelled = false;
+    getDocs(query(collection(db, 'adverts')))
+      .then((snap: any) => {
+        if (cancelled) return;
+        setAdverts(snap.docs.map((d: any) => ({ id: d.id, ...d.data() })));
+      })
+      .catch(() => { if (!cancelled) setAdverts([]); });
+    return () => { cancelled = true; };
   }, []);
 
   // SEO
@@ -526,11 +540,15 @@ export default function Products() {
                   </Link>
                 </div>
 
+                <MarketingAdvertSlot adverts={adverts} placement="products_sidebar" variant="compact" />
+
               </div>
             </aside>
 
             {/* ── CONTENT ──────────────────────────────────────────────────── */}
             <div className="flex-1 min-w-0">
+
+              <MarketingAdvertSlot adverts={adverts} placement="products_top" className="mb-6" />
 
               {/* Toolbar */}
               <div className="flex flex-wrap items-center gap-3 mb-6">
