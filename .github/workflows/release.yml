@@ -219,4 +219,3 @@ jobs:
             release-bundle/verify-attestations.log
           retention-days: 30
 
-          } >> "$GITHUB_STEP_SUMMARY"
