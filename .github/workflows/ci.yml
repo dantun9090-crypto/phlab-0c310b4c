@@ -88,6 +88,20 @@ jobs:
             test-results
           retention-days: 14
 
+      # Dedicated artifact: structured cache-invalidation diagnostics
+      # written by e2e/cache-stability.spec.ts (per-route JSON with
+      # requestId, cacheControl header, repeated GET log, console
+      # errors). Uploaded on ANY job failure so refresh-loop regressions
+      # are diagnosable from the CI run alone.
+      - name: Upload cache-stability diagnostics (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cache-stability-diag-${{ github.sha }}
+          path: test-results/cache-stability/**/*.json
+          if-no-files-found: ignore
+          retention-days: 30
+
       # Guards canonical host: fails if any source references the wrong
       # domain (typo of brand, legacy domain, preview hosts). check-domains-allow-line
       - name: Domain consistency guard
