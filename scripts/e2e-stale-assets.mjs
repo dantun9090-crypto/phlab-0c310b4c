@@ -47,8 +47,10 @@
  * closed browser); assertion failures are deterministic and never retried.
  */
 import { chromium } from 'playwright';
-import { mkdirSync, writeFileSync, appendFileSync, existsSync, readFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, appendFileSync, existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
+
 
 // ---------- CLI parsing ----------
 const argv = process.argv.slice(2);
