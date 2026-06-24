@@ -26,6 +26,7 @@ import { tmpdir } from 'node:os';
 import { REPORT_CLIENT_SCRIPT } from './lib/e2e-report-client.mjs';
 import {
   BUNDLE_SCHEMA_VERSION,
+  MIN_SUPPORTED_SCHEMA_VERSION,
   validateMismatchBundle,
   validateGlobalMismatchBundle,
 } from './lib/e2e-diff-helpers.mjs';
