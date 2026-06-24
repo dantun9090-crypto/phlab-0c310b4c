@@ -218,20 +218,20 @@ async function captureDownload(page, trigger) {
     }
   }
 
-  // 5) Progress indicator: click button, immediately assert aria-busy + disabled before completion.
-  const [, busyState] = await Promise.all([
-    captureDownload(page, () => page.click('button[data-global-zip]:not([data-mismatch-only])')),
-    page.evaluate(() => {
-      const btn = document.querySelector('button[data-global-zip]:not([data-mismatch-only])');
-      btn.click();
-      return { busy: btn.getAttribute('aria-busy'), disabled: btn.disabled, text: btn.textContent };
-    }),
-  ]);
+  // 5) Progress indicator: click button, synchronously read aria-busy + disabled
+  // before the setTimeout-deferred work runs.
+  const dlPromise = page.waitForEvent('download');
+  const busyState = await page.evaluate(() => {
+    const btn = document.querySelector('button[data-global-zip]:not([data-mismatch-only])');
+    btn.click();
+    return { busy: btn.getAttribute('aria-busy'), disabled: btn.disabled, text: btn.textContent };
+  });
   assert(busyState.busy === 'true', `progress: button has aria-busy="true" during work (got "${busyState.busy}")`);
   assert(busyState.disabled === true, 'progress: button is disabled during work');
   assert(/⏳/.test(busyState.text || ''), `progress: button shows spinner glyph (text="${busyState.text}")`);
-  // Wait briefly, then confirm button restored.
-  await page.waitForTimeout(100);
+  const dl5 = await dlPromise;
+  await dl5.saveAs(join(WORK, 'progress-' + dl5.suggestedFilename()));
+  await page.waitForTimeout(50);
   const restored = await page.evaluate(() => {
     const btn = document.querySelector('button[data-global-zip]:not([data-mismatch-only])');
     return { busy: btn.getAttribute('aria-busy'), disabled: btn.disabled };
