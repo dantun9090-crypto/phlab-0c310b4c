@@ -17,6 +17,7 @@
  *   --fixture-dir=./fixtures/stale-assets                   # fixture root
  *   --retries=N           (env E2E_RETRIES, default 1)      # retry transient browser/network errors only
  *   --retry-delay=MS      (default 1500)                    # backoff between retries
+ *   --deterministic       (env E2E_DETERMINISTIC=1)         # stable scenario order + fixed retry timing for comparable CI runs
  *   --list                                                  # list scenario names and exit
  *
  * Outputs in $E2E_REPORT_DIR (default ./e2e-stale-report/):
