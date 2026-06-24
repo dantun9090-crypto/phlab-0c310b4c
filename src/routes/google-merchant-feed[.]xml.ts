@@ -80,8 +80,8 @@ const HARD_BLOCKED_SLUGS = new Set<string>([
  */
 type MerchantOverride = { code: string; displayName: string; cas: string };
 const MERCHANT_CODE_OVERRIDES: Record<string, MerchantOverride> = {
-  "retatrutide-research-peptide": { code: "PHL-RT8", displayName: "PHL-RT8", cas: "2381089-83-2" },
-  "bpc-157": { code: "PHL-BP15", displayName: "PHL-BP15", cas: "137525-51-0" },
+  "retatrutide-research-peptide": { code: "Reta-PHL", displayName: "Reta-PHL", cas: "2381089-83-2" },
+  "bpc-157": { code: "BPC-PHL", displayName: "BPC-PHL", cas: "137525-51-0" },
   "pt-141-research-peptide": { code: "PHL-PT41", displayName: "PHL-PT41", cas: "189691-06-3" },
   "tb-500-thymosin-beta-4": { code: "PHL-TB54", displayName: "PHL-TB54", cas: "77591-33-4" },
   "mots-c-research-peptide": { code: "PHL-MC16", displayName: "PHL-MC16", cas: "1627580-64-6" },
