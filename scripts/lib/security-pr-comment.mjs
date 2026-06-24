@@ -109,10 +109,11 @@ export function buildSecurityComment(opts) {
         ...topPkgs.map((p, i) => {
           const idsList = p.advisories
             .slice(0, 3)
-            .map((a) => `[${a.id}](${a.url}) (${a.severity})`)
+            .map((a) => `[${a.id}](${a.url}) (${a.severity}, [${sourceLabelFor(a.url)} details](${a.url}))`)
             .join(", ");
           const moreIds = p.advisories.length > 3 ? `, +${p.advisories.length - 3}` : "";
-          return `| ${i + 1} | \`${p.pkg}\` | \`${p.version}\` | **${p.worst.toUpperCase()}** | [${p.worstId}](${p.worstUrl}) | ${p.count} — ${idsList}${moreIds} |`;
+          const worstSrc = sourceLabelFor(p.worstUrl);
+          return `| ${i + 1} | \`${p.pkg}\` | \`${p.version}\` | **${p.worst.toUpperCase()}** | [${p.worstId}](${p.worstUrl}) · [${worstSrc} details](${p.worstUrl}) | ${p.count} — ${idsList}${moreIds} |`;
         }),
       ].join("\n")
     : "";
@@ -121,7 +122,7 @@ export function buildSecurityComment(opts) {
     .slice(0, 10)
     .map(
       (b) =>
-        `- [${b.severity.toUpperCase()}] \`${b.pkg}@${b.version}\` — [${b.id}](${b.url})  \n  ${b.summary}`,
+        `- [${b.severity.toUpperCase()}] \`${b.pkg}@${b.version}\` — [${b.id}](${b.url}) · [${sourceLabelFor(b.url)} advisory details](${b.url})  \n  ${b.summary}`,
     )
     .join("\n");
   const more =
