@@ -83,7 +83,7 @@ describe("workflow_dispatch min_severity override → PR comment", () => {
     expect(body).toContain("**Active `minSeverity` gate:** `high`");
     expect(body).toContain("(overridden for this run via `workflow_dispatch` input)");
     expect(body).toContain("❌");
-    expect(body).toContain("2 blocking `high`+ vulnerabilities");
+    expect(body).toContain("2 blocking high+ vulnerabilities");
     expect(body).toContain("Scan exit: `1`");
   });
 
