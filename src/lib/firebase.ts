@@ -977,6 +977,7 @@ export const addProduct = async (product: Omit<Product, 'id'>) => {
     excludeFromMerchantFeed: product.excludeFromMerchantFeed === true,
     isVip: (product as any).isVip === true,
     popular: (product as any).popular === true,
+    requiresResearchGate: (product as any).requiresResearchGate === true,
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   };
