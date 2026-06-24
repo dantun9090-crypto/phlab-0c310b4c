@@ -72,7 +72,12 @@ import {
   normalizeHeadersForDiff as _normalizeHeadersForDiff,
   headersEqualNormalized as _headersEqualNormalized,
   redactBody as _redactBody,
+  BUNDLE_SCHEMA_VERSION,
+  validateMismatchBundle,
+  validateGlobalMismatchBundle,
 } from './lib/e2e-diff-helpers.mjs';
+import { REPORT_CLIENT_SCRIPT } from './lib/e2e-report-client.mjs';
+
 
 
 
