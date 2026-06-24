@@ -49,3 +49,29 @@ cosign verify-blob \
   "$SBOM"
 
 echo "✔ SBOM signature valid (cosign keyless, Rekor-logged)"
+
+# Optional: verify SLSA Provenance + CycloneDX attestations if present.
+# These bind the SBOM blob to the exact GitHub Actions build + commit
+# that produced it (DSSE in-toto attestations, Rekor-logged).
+PROV="$SBOM.provenance.intoto.jsonl"
+CYDX="$SBOM.cyclonedx.intoto.jsonl"
+
+if [ -f "$PROV" ]; then
+  cosign verify-blob-attestation \
+    --signature "$PROV" \
+    --type slsaprovenance1 \
+    --certificate-identity-regexp "$IDENTITY_REGEX" \
+    --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+    "$SBOM"
+  echo "✔ SLSA Provenance attestation valid (subject = this SBOM, builder = GitHub Actions)"
+fi
+
+if [ -f "$CYDX" ]; then
+  cosign verify-blob-attestation \
+    --signature "$CYDX" \
+    --type cyclonedx \
+    --certificate-identity-regexp "$IDENTITY_REGEX" \
+    --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+    "$SBOM"
+  echo "✔ CycloneDX SBOM attestation valid"
+fi

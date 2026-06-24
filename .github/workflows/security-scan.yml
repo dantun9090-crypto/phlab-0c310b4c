@@ -83,7 +83,53 @@ jobs:
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             dist/sbom.cdx.json
 
-      - name: Upload SBOM + signature artifact
+      # Bind the SBOM blob to this exact build + commit via a SLSA v1.0
+      # Provenance attestation (DSSE in-toto, cosign keyless, Rekor-logged).
+      # Plus a CycloneDX SBOM attestation that wraps the SBOM itself as
+      # its own predicate for tooling that consumes attested SBOMs.
+      - name: Generate SLSA provenance predicate
+        if: always()
+        env:
+          BUILD_ID: ${{ github.sha }}
+        run: bun run sbom:provenance
+
+      - name: Attest SBOM (SLSA provenance, cosign keyless)
+        if: always()
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign attest-blob \
+            --yes \
+            --predicate dist/sbom.cdx.json.provenance.json \
+            --type slsaprovenance1 \
+            --output-attestation dist/sbom.cdx.json.provenance.intoto.jsonl \
+            --output-certificate dist/sbom.cdx.json.provenance.pem \
+            dist/sbom.cdx.json
+
+      - name: Attest SBOM (CycloneDX predicate, cosign keyless)
+        if: always()
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign attest-blob \
+            --yes \
+            --predicate dist/sbom.cdx.json \
+            --type cyclonedx \
+            --output-attestation dist/sbom.cdx.json.cyclonedx.intoto.jsonl \
+            --output-certificate dist/sbom.cdx.json.cyclonedx.pem \
+            dist/sbom.cdx.json
+
+      - name: Verify SLSA provenance attestation (self-check)
+        if: always()
+        run: |
+          cosign verify-blob-attestation \
+            --signature dist/sbom.cdx.json.provenance.intoto.jsonl \
+            --type slsaprovenance1 \
+            --certificate-identity-regexp "^https://github\.com/${GITHUB_REPOSITORY}/\.github/workflows/security-scan\.yml@" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            dist/sbom.cdx.json
+
+      - name: Upload SBOM + signature + attestations artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -93,5 +139,10 @@ jobs:
             dist/sbom.cdx.json.sha256
             dist/sbom.cdx.json.sig
             dist/sbom.cdx.json.pem
+            dist/sbom.cdx.json.provenance.json
+            dist/sbom.cdx.json.provenance.intoto.jsonl
+            dist/sbom.cdx.json.provenance.pem
+            dist/sbom.cdx.json.cyclonedx.intoto.jsonl
+            dist/sbom.cdx.json.cyclonedx.pem
           retention-days: 90
 

@@ -28,6 +28,7 @@
     "test:fena": "vitest run tests/fena-integration.test.ts",
     "test:checkout": "vitest run src/lib/customer-note.test.tsx src/lib/cart-validation.test.ts src/lib/order-tracking.test.ts src/lib/order-payment-retry.test.ts src/lib/recovery.test.ts",
     "sbom": "bun scripts/generate-sbom.ts",
+    "sbom:provenance": "bun scripts/build-provenance.ts",
     "security:scan": "bun scripts/security-audit.ts",
     "postbuild": "bun scripts/generate-sbom.ts"
   },

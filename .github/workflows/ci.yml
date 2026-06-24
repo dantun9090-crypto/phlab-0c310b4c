@@ -128,10 +128,69 @@ jobs:
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             dist/sbom.cdx.json
 
-      # Upload the CycloneDX SBOM + cosign signature + cert so every
-      # CI run leaves an immutable, verifiable audit trail of what
-      # packages would have shipped on this build.
-      - name: Upload SBOM + signature
+      # Generate a SLSA v1.0 Provenance predicate that binds the SBOM
+      # digest to: repo, commit SHA, ref, workflow file, run ID + attempt,
+      # and BUILD_ID. This is the JSON we attest below.
+      - name: Generate SLSA provenance predicate
+        if: always()
+        env:
+          BUILD_ID: ${{ github.sha }}
+        run: bun run sbom:provenance
+
+      # Attest the SBOM with cosign keyless (OIDC -> Fulcio -> Rekor),
+      # producing DSSE in-toto attestations that cryptographically bind
+      # the SBOM blob to this exact GitHub Actions build + commit.
+      # Two attestations are emitted:
+      #   1. SLSA Provenance v1.0  (predicateType: https://slsa.dev/provenance/v1)
+      #   2. CycloneDX SBOM        (predicateType: https://cyclonedx.org/bom)
+      # Verify later with:
+      #   cosign verify-blob-attestation \
+      #     --signature dist/sbom.cdx.json.provenance.intoto.jsonl \
+      #     --type slsaprovenance1 \
+      #     --certificate-identity-regexp '^https://github\.com/.*/\.github/workflows/ci\.yml@' \
+      #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+      #     dist/sbom.cdx.json
+      - name: Attest SBOM (SLSA provenance, cosign keyless)
+        if: always()
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign attest-blob \
+            --yes \
+            --predicate dist/sbom.cdx.json.provenance.json \
+            --type slsaprovenance1 \
+            --output-attestation dist/sbom.cdx.json.provenance.intoto.jsonl \
+            --output-certificate dist/sbom.cdx.json.provenance.pem \
+            dist/sbom.cdx.json
+
+      - name: Attest SBOM (CycloneDX predicate, cosign keyless)
+        if: always()
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign attest-blob \
+            --yes \
+            --predicate dist/sbom.cdx.json \
+            --type cyclonedx \
+            --output-attestation dist/sbom.cdx.json.cyclonedx.intoto.jsonl \
+            --output-certificate dist/sbom.cdx.json.cyclonedx.pem \
+            dist/sbom.cdx.json
+
+      - name: Verify SLSA provenance attestation (self-check)
+        if: always()
+        run: |
+          cosign verify-blob-attestation \
+            --signature dist/sbom.cdx.json.provenance.intoto.jsonl \
+            --type slsaprovenance1 \
+            --certificate-identity-regexp "^https://github\.com/${GITHUB_REPOSITORY}/\.github/workflows/ci\.yml@" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            dist/sbom.cdx.json
+
+      # Upload the CycloneDX SBOM + cosign signature + cert + SLSA
+      # provenance + CycloneDX attestations so every CI run leaves an
+      # immutable, verifiable audit trail of what packages would have
+      # shipped on this build AND which commit produced them.
+      - name: Upload SBOM + signature + attestations
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -141,6 +200,11 @@ jobs:
             dist/sbom.cdx.json.sha256
             dist/sbom.cdx.json.sig
             dist/sbom.cdx.json.pem
+            dist/sbom.cdx.json.provenance.json
+            dist/sbom.cdx.json.provenance.intoto.jsonl
+            dist/sbom.cdx.json.provenance.pem
+            dist/sbom.cdx.json.cyclonedx.intoto.jsonl
+            dist/sbom.cdx.json.cyclonedx.pem
           retention-days: 90
 
 
