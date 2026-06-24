@@ -46,6 +46,8 @@ export interface SeoProduct {
   includeInMerchantFeed?: boolean;
   excludeFromMerchantFeed?: boolean;
   isVip?: boolean;
+  popular?: boolean;
+  requiresResearchGate?: boolean;
   /** Parsed from variant name/dosage, e.g. "10 mg" → { value: 10, unit: "mg" }. */
   unitPricingMeasure?: UnitPricingMeasure;
   /** Net weight in grams (for shipping_weight). */
@@ -181,6 +183,8 @@ function toProduct(doc: any): SeoProduct | null {
     includeInMerchantFeed: f.includeInMerchantFeed === true,
     excludeFromMerchantFeed: f.excludeFromMerchantFeed === true,
     isVip: f.isVip === true,
+    popular: f.popular === true,
+    requiresResearchGate: f.requiresResearchGate === true,
     unitPricingMeasure,
     weightGrams,
   };

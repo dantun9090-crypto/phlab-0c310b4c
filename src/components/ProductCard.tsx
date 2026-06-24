@@ -170,6 +170,19 @@ export function ProductCard({
           </div>
         )}
 
+        {/* Popular badge (admin toggle) */}
+        {(product as any).popular && !isBestSeller && (
+          <div className="absolute bottom-3 left-3">
+            <span className="px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1" style={{
+              background: 'rgba(0,0,0,0.7)',
+              border: '1px solid rgba(249,115,22,0.45)',
+              color: '#fb923c',
+            }}>
+              🔥 Popular
+            </span>
+          </div>
+        )}
+
         {/* Out of stock overlay */}
         {isOutOfStock && (
           <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.72)' }}>
