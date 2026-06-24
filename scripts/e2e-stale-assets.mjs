@@ -72,7 +72,12 @@ import {
   normalizeHeadersForDiff as _normalizeHeadersForDiff,
   headersEqualNormalized as _headersEqualNormalized,
   redactBody as _redactBody,
+  BUNDLE_SCHEMA_VERSION,
+  validateMismatchBundle,
+  validateGlobalMismatchBundle,
 } from './lib/e2e-diff-helpers.mjs';
+import { REPORT_CLIENT_SCRIPT } from './lib/e2e-report-client.mjs';
+
 
 
 
@@ -363,11 +368,38 @@ function diffLiveVsReplay(scenarioName) {
         || (HASH_BODIES && (typeof fr?.body === 'string' && fr.body.startsWith('sha256:')
           || typeof lr?.body === 'string' && lr.body.startsWith('sha256:')));
       const isMatch = reasons.length === 0;
+      // Always-present fixture-side enrichment (fixtures may not capture redirects/timing —
+      // we still expose stable shapes so consumers never have to null-check the schema).
+      const fixtureRedirect = Array.isArray(fr?.redirectChain) ? fr.redirectChain : [];
+      const fixtureTiming = {
+        startedAt: fr?.startedAt ?? fr?.at ?? null,
+        durationMs: fr?.durationMs ?? null,
+        recordedAt: fr?.at ?? null,
+      };
+      const liveRedirect = Array.isArray(liveHar?.redirectChain) ? liveHar.redirectChain
+        : (Array.isArray(lr?.redirectChain) ? lr.redirectChain : []);
+      const liveTiming = {
+        startedAt: liveHar?.startedAt ?? lr?.startedAt ?? null,
+        durationMs: liveHar?.durationMs ?? lr?.durationMs ?? null,
+        recordedAt: lr?.at ?? null,
+      };
       const item = {
         match: isMatch, url: u, index: i, reasons, kinds, resourceType, bodyRedacted,
-        fixture: fr ? { status: fr.status, headers: fr.headers || null, body: fr.body ?? null, bodyBytes: fr.bodyBytes ?? (fr.body ? String(fr.body).length : null) } : null,
-        live: lr ? { status: lr.status, headers: lr.headers || null, body: lr.body ?? null, bodyBytes: lr.bodyBytes ?? (lr.body ? String(lr.body).length : null), har: liveHar } : null,
+        // Top-level convenience: union of both sides' redirect chains (live preferred when both present).
+        redirectChain: liveRedirect.length ? liveRedirect : fixtureRedirect,
+        timing: { fixture: fixtureTiming, live: liveTiming },
+        fixture: fr ? {
+          status: fr.status, headers: fr.headers || null, body: fr.body ?? null,
+          bodyBytes: fr.bodyBytes ?? (fr.body ? String(fr.body).length : null),
+          redirectChain: fixtureRedirect, timing: fixtureTiming,
+        } : null,
+        live: lr ? {
+          status: lr.status, headers: lr.headers || null, body: lr.body ?? null,
+          bodyBytes: lr.bodyBytes ?? (lr.body ? String(lr.body).length : null),
+          har: liveHar, redirectChain: liveRedirect, timing: liveTiming,
+        } : null,
       };
+
 
       items.push(item);
       if (!isMatch) {
@@ -526,16 +558,16 @@ async function withContext(browser, name, fn) {
     const startedAt = Date.now();
     const reqHeaders = redactHeaders(req.headers());
     const postData = redactBody(req.postData() || null);
-    const entry = { scenario: name, at: startedAt, method: req.method(), url, headers: reqHeaders, postData };
+    // Walk redirect chain back to origin (also used for the HAR entry below).
+    const redirectChain = [];
+    let rPrev = req.redirectedFrom();
+    while (rPrev) { redirectChain.push(redactUrl(rPrev.url())); rPrev = rPrev.redirectedFrom(); }
+    const entry = { scenario: name, at: startedAt, startedAt, method: req.method(), url, headers: reqHeaders, postData, redirectChain };
     appendNd(reqLog, entry);
     if (RECORD) requestRecording.push(entry);
     sc.liveRequests.push(entry);
     if (HASHED_JS_RE.test(url)) { assetReqs.push(url); sc.hashedJsUrls.add(url.split('?')[0]); }
     if (sc.topRequests.length < 25) sc.topRequests.push({ method: req.method(), url });
-    // Walk redirect chain back to origin.
-    const redirectChain = [];
-    let r = req.redirectedFrom();
-    while (r) { redirectChain.push(redactUrl(r.url())); r = r.redirectedFrom(); }
     const har = {
       startedAt,
       method: req.method(),
@@ -557,6 +589,7 @@ async function withContext(browser, name, fn) {
     harByReq.set(req, har);
     sc.har.push(har);
   });
+
   context.on('response', async (res) => {
     const u = redactUrl(res.url());
     const har = harByReq.get(res.request());
@@ -579,7 +612,13 @@ async function withContext(browser, name, fn) {
       headers: redactHeaders(res.headers()),
       body: redacted,
       bodyBytes,
+      // Always-present timing + redirect fields so the live-vs-replay items
+      // and downloadable bundles never need to null-check the schema.
+      startedAt: har?.startedAt ?? null,
+      durationMs: har?.durationMs ?? null,
+      redirectChain: har?.redirectChain || [],
     };
+
     appendNd(resLog, entry);
     if (RECORD) responseRecording.push(entry);
     sc.liveResponses.push(entry);
@@ -995,16 +1034,25 @@ async function run() {
           ...rtypes.map((r) => `<option value="${esc(r)}">${esc(r)}</option>`)].join('');
         const scId = esc(s.scenario);
         // Embed mismatch-bundle data so the in-page button can export without round-tripping.
-        const bundle = JSON.stringify({
+        // Validate the shape BEFORE embedding so a regression in item enrichment fails the run
+        // instead of producing a malformed download.
+        const bundleObj = {
+          schemaVersion: BUNDLE_SCHEMA_VERSION,
           scenario: s.scenario,
           generatedAt: new Date().toISOString(),
           redaction: { redactBodies: REDACT_BODIES, hashBodies: HASH_BODIES, maxBodyBytes: MAX_BODY_BYTES, redactHeaders: [...REDACT_HEADERS], redactUrlParams: [...REDACT_URL_PARAMS] },
           thresholds: d.thresholds,
           summary: d.summary,
           items,
-        });
+        };
+        const bv = validateMismatchBundle(bundleObj);
+        if (!bv.ok) {
+          throw new Error(`per-scenario bundle schema validation failed for "${s.scenario}":\n  - ${bv.errors.slice(0, 8).join('\n  - ')}`);
+        }
+        const bundle = JSON.stringify(bundleObj);
         const bundleB64 = Buffer.from(bundle, 'utf8').toString('base64');
-        allBundles.push(JSON.parse(bundle));
+        allBundles.push(bundleObj);
+
 
         return `<details ${d.summary.mismatchCount ? 'open' : ''}><summary>Live vs replay (matches=${d.summary.matchCount}, mismatches=${d.summary.mismatchCount}, statusΔ=${d.summary.statusMismatchCount}, maxBodyΔ=${d.summary.maxBodyDelta}B)</summary>
           <p>${tBadge}</p>
@@ -1064,108 +1112,31 @@ pre{background:#0b1220;border:1px solid #334155;padding:8px;border-radius:6px;fo
 .filters button{cursor:pointer}.filters button:hover{background:#1e293b}
 a{color:#7dd3fc}
 </style>
-<script>
-(function(){
-  // Persist HTML report filter selections across reloads (per-scenario, scoped to this report path).
-  var LS_KEY='phlabs.e2eStaleReport.filters@'+location.pathname;
-  function loadAll(){try{return JSON.parse(localStorage.getItem(LS_KEY)||'{}')||{};}catch(e){return {};}}
-  function saveAll(state){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){/* quota / disabled */}}
-  function apply(scope){
-    var root=document.querySelector('[data-drilldown="'+scope+'"]');if(!root)return;
-    var ctrls=document.querySelector('.filters[data-scope="'+scope+'"]');if(!ctrls)return;
-    var f={match:'',rtype:'',kind:'',redacted:''};
-    ctrls.querySelectorAll('select[data-filter]').forEach(function(s){f[s.dataset.filter]=s.value;});
-    var n=0;
-    root.querySelectorAll('details.drill').forEach(function(el){
-      var ok=true;
-      if(f.match!==''&&el.dataset.match!==f.match)ok=false;
-      if(f.rtype&&el.dataset.rtype!==f.rtype)ok=false;
-      if(f.kind&&(' '+el.dataset.kinds+' ').indexOf(' '+f.kind+' ')===-1)ok=false;
-      if(f.redacted!==''&&el.dataset.redacted!==f.redacted)ok=false;
-      el.style.display=ok?'':'none';if(ok)n++;
-    });
-    var c=ctrls.querySelector('[data-visible-count]');if(c)c.textContent='('+n+' visible)';
-    var all=loadAll();all[scope]=f;saveAll(all);
-  }
-  function restore(){
-    var all=loadAll();
-    document.querySelectorAll('.filters[data-scope]').forEach(function(ctrls){
-      var scope=ctrls.dataset.scope;var saved=all[scope];if(!saved)return;
-      ctrls.querySelectorAll('select[data-filter]').forEach(function(s){
-        var v=saved[s.dataset.filter];if(v!=null){
-          // Only restore if option exists, else leave default.
-          if([].some.call(s.options,function(o){return o.value===v;}))s.value=v;
-        }
-      });
-    });
-  }
-  function visibleKeys(scope){
-    var root=document.querySelector('[data-drilldown="'+scope+'"]');
-    var allowed=new Set();
-    if(!root)return allowed;
-    root.querySelectorAll('details.drill').forEach(function(el){
-      if(el.style.display!=='none'){
-        var m=el.querySelector('summary').textContent.match(/#(\\d+)/);
-        var url=el.querySelector('code').textContent;
-        allowed.add(url+'#'+(m?m[1]:''));
-      }
-    });
-    return allowed;
-  }
-  function currentFilters(ctrls){
-    var f={};ctrls.querySelectorAll('select[data-filter]').forEach(function(s){f[s.dataset.filter]=s.value;});return f;
-  }
-  function download(name,obj){
-    var blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
-    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
-    a.download=name;document.body.appendChild(a);a.click();
-    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},0);
-  }
-  document.addEventListener('change',function(e){
-    var s=e.target.closest('.filters');if(!s||!s.dataset.scope)return;apply(s.dataset.scope);
-  });
-  document.addEventListener('click',function(e){
-    var b=e.target.closest('button[data-bundle]');
-    if(b){
-      var scope=b.dataset.bundle;
-      var ctrls=document.querySelector('.filters[data-scope="'+scope+'"]');
-      var allowed=visibleKeys(scope);
-      var data=JSON.parse(atob(b.dataset.bundleB64));
-      data.items=data.items.filter(function(it){return allowed.has(it.url+'#'+it.index);});
-      data.exportedAt=new Date().toISOString();
-      data.filterApplied=currentFilters(ctrls);
-      return download('mismatch-bundle-'+scope+'.json',data);
-    }
-    var g=e.target.closest('button[data-global-bundle]');
-    if(g){
-      // Export every matched/mismatched pair across all scenarios, respecting each
-      // scenario's currently-applied filter (resource/kind/match/redacted state).
-      var all=JSON.parse(atob(g.dataset.globalBundleB64));
-      var perScenarioFilters={};
-      all.scenarios=all.scenarios.map(function(sc){
-        var ctrls=document.querySelector('.filters[data-scope="'+sc.scenario+'"]');
-        var allowed=visibleKeys(sc.scenario);
-        perScenarioFilters[sc.scenario]=ctrls?currentFilters(ctrls):null;
-        sc.items=sc.items.filter(function(it){return allowed.has(it.url+'#'+it.index);});
-        return sc;
-      });
-      all.exportedAt=new Date().toISOString();
-      all.filtersApplied=perScenarioFilters;
-      return download('mismatch-bundle-all-scenarios.json',all);
-    }
-  });
-  document.addEventListener('DOMContentLoaded',function(){
-    restore();
-    document.querySelectorAll('.filters[data-scope]').forEach(function(s){apply(s.dataset.scope);});
-  });
-})();
-</script></head><body>
+<script>${REPORT_CLIENT_SCRIPT}</script></head><body>
+
 
 <header class="top">
   <h1>E2E stale-assets <span class="badge ${failed.length ? 'bad' : 'ok'}">${esc(overall)}</span></h1>
   <div class="muted">target <code>${esc(TARGET)}</code> · finished ${esc(summary.finishedAt)} · ${summary.passed}/${summary.total} passed${ONLY ? ` · filter <code>${esc(ONLY)}</code>` : ''}${REPLAY ? ' · <b>REPLAY</b>' : (RECORD ? ' · <b>RECORD</b>' : '')} · retries=${RETRIES}</div>
-  ${allBundles.length ? `<button type="button" data-global-bundle="1" data-global-bundle-b64="${Buffer.from(JSON.stringify({ generatedAt: new Date().toISOString(), redaction: { redactBodies: REDACT_BODIES, hashBodies: HASH_BODIES, maxBodyBytes: MAX_BODY_BYTES, redactHeaders: [...REDACT_HEADERS], redactUrlParams: [...REDACT_URL_PARAMS] }, scenarios: allBundles }), 'utf8').toString('base64')}" style="margin-left:auto;background:#0b1220;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:13px">⬇ Download mismatch bundle (all scenarios)</button>` : ''}
+  ${(() => {
+    if (!allBundles.length) return '';
+    const globalBundle = {
+      schemaVersion: BUNDLE_SCHEMA_VERSION,
+      generatedAt: new Date().toISOString(),
+      redaction: { redactBodies: REDACT_BODIES, hashBodies: HASH_BODIES, maxBodyBytes: MAX_BODY_BYTES, redactHeaders: [...REDACT_HEADERS], redactUrlParams: [...REDACT_URL_PARAMS] },
+      scenarios: allBundles,
+    };
+    const gv = validateGlobalMismatchBundle(globalBundle);
+    if (!gv.ok) throw new Error(`global bundle schema validation failed:\n  - ${gv.errors.slice(0, 8).join('\n  - ')}`);
+    const b64 = Buffer.from(JSON.stringify(globalBundle), 'utf8').toString('base64');
+    const btnStyle = 'background:#0b1220;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:13px;margin-left:8px';
+    return `<div style="margin-left:auto;display:flex;gap:6px">
+      <button type="button" data-global-bundle="1" data-global-bundle-b64="${b64}" style="${btnStyle}">⬇ Download mismatch bundle (all scenarios)</button>
+      <button type="button" data-global-zip="1" data-global-bundle-b64="${b64}" style="${btnStyle}">⬇ Download as ZIP</button>
+    </div>`;
+  })()}
 </header>
+
 
 <section class="card"><h2>Per-scenario summary</h2>${scCards || '<p class="muted">No scenarios ran.</p>'}</section>
 <section class="card"><h2>DB lock timeline (Firestore <code>_meta/build_state</code>)</h2>${lockTimelineHtml}</section>
