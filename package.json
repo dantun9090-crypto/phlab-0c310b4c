@@ -129,10 +129,20 @@
   },
   "overrides": {
     "undici": "^7.16.0",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "js-yaml": "^4.1.1",
+    "protobufjs": "^7.5.4",
+    "brace-expansion": "^2.0.2",
+    "uuid": "^11.1.0",
+    "dompurify": "^3.2.7"
   },
   "resolutions": {
     "undici": "^7.16.0",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "js-yaml": "^4.1.1",
+    "protobufjs": "^7.5.4",
+    "brace-expansion": "^2.0.2",
+    "uuid": "^11.1.0",
+    "dompurify": "^3.2.7"
   }
 }
