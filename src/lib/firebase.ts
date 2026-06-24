@@ -1029,6 +1029,27 @@ export function triggerContentCdnInvalidation(paths: string[] = []) {
   })();
 }
 
+/**
+ * Bump the global marketing version stamp so every open storefront tab
+ * invalidates its cached banner/advert state via `useMarketingRevalidate`.
+ * Called from BannerTab + AdvertsTab after any save/delete/toggle.
+ * Fire-and-forget — never throws.
+ */
+export function bumpMarketingVersion() {
+  if (typeof window === 'undefined') return;
+  void (async () => {
+    try {
+      await setDoc(
+        doc(db, 'settings', 'marketingVersion'),
+        { version: Date.now(), updatedAt: Timestamp.now() },
+        { merge: true },
+      );
+    } catch (e) {
+      console.warn('[marketing-version] bump failed:', e);
+    }
+  })();
+}
+
 
 
 
