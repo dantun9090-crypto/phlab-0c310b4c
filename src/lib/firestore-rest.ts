@@ -179,6 +179,7 @@ function toProduct(doc: any): SeoProduct | null {
     updatedAt: typeof f.updatedAt === "string" ? f.updatedAt : undefined,
     includeInMerchantFeed: f.includeInMerchantFeed === true,
     excludeFromMerchantFeed: f.excludeFromMerchantFeed === true,
+    isVip: f.isVip === true,
     unitPricingMeasure,
     weightGrams,
   };
