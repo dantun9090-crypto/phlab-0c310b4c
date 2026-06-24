@@ -303,6 +303,21 @@ jobs:
             dist/sbom.cdx.json.cyclonedx.pem
           retention-days: 90
 
+      # Snapshot the *cached-run* SBOM + audit JSON so the determinism
+      # job can compare byte-for-byte against a clean rebuild. Kept as
+      # its own small artifact (not bundled with the signed SBOM) so
+      # downstream verification keys stay scoped.
+      - name: Upload cached-run determinism inputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: determinism-cached-${{ github.sha }}
+          path: |
+            dist/sbom.cdx.json
+            dist/security-audit.json
+          retention-days: 7
+          if-no-files-found: warn
+
   # Required-for-merge GitHub Check (paired with the same job in ci.yml).
   # Downloads the SBOM bundle this workflow just uploaded and re-runs the
   # signature + SLSA Provenance + CycloneDX cosign verifications. The job
