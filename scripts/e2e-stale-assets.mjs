@@ -141,6 +141,34 @@ function assertLockStateUnchanged(before, after) {
     const bv = JSON.stringify(b[k] ?? null);
     const av = JSON.stringify(a[k] ?? null);
     if (bv !== av) diffs.push({ field: k, before: b[k] ?? null, after: a[k] ?? null });
+  }
+  return diffs;
+}
+
+// Build a chronological lock-field timeline across all snapshots taken during the run.
+function buildLockTimeline(snapshots) {
+  // snapshots: [{ at, label, data }]
+  const events = []; // { at, label, field, from, to }
+  let prev = null;
+  for (const snap of snapshots) {
+    const d = snap.data || {};
+    if (prev) {
+      for (const f of LOCK_FIELDS) {
+        const a = JSON.stringify((prev.data || {})[f] ?? null);
+        const b = JSON.stringify(d[f] ?? null);
+        if (a !== b) {
+          events.push({ at: snap.at, label: snap.label, field: f, from: (prev.data || {})[f] ?? null, to: d[f] ?? null });
+        }
+      }
+    } else {
+      // initial state
+      for (const f of LOCK_FIELDS) {
+        if (d[f] != null) events.push({ at: snap.at, label: snap.label + ' (initial)', field: f, from: null, to: d[f] });
+      }
+    }
+    prev = snap;
+  }
+  return events;
 }
 
 // ---------- live vs replay diff ----------
@@ -186,7 +214,7 @@ function diffLiveVsReplay(scenarioName) {
       }
     }
   }
-  // Purge call timing comparison.
+  // Purge call timing comparison (relative to first purge per side).
   const fPurge = fixtureResp.filter((r) => /post-publish-check/.test(r.url || ''));
   const lPurge = liveResp.filter((r) => /post-publish-check/.test(r.url || ''));
   const relTimes = (arr) => {
@@ -214,8 +242,6 @@ function diffLiveVsReplay(scenarioName) {
     mismatches: mismatches.slice(0, 40),
     truncated: mismatches.length > 40,
   };
-}
-  return diffs;
 }
 
 // ---------- fixture helpers ----------
