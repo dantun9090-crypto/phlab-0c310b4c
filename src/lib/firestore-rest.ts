@@ -226,7 +226,7 @@ export async function fetchAllProducts(): Promise<SeoProduct[]> {
   const products = mapped
     .filter(
       (p): p is SeoProduct =>
-        p != null && p.isActive && p.visibility !== "hidden" && !isHidden(p),
+        p != null && p.isActive && p.visibility !== "hidden" && !(p as any).isVip && !isHidden(p),
     )
     .sort((a, b) => a.displayOrder - b.displayOrder);
   if (docs.length > 0 && products.length === 0) {
