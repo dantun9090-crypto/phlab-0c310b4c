@@ -650,6 +650,7 @@ async function run() {
     uniqueHashedJsUrls: [...s.hashedJsUrls],
     navigations: s.reloads.length,
     topRequests: s.topRequests,
+    replayDiff: s.replayDiff,
   }));
 
   const summary = {
@@ -658,7 +659,8 @@ async function run() {
     total: results.length, failed: failed.length, passed: results.length - failed.length,
     scenarios: [...new Set(results.map((r) => r.scenario))],
     perScenario: perScenarioSummary,
-    cli: { ONLY, RECORD, REPLAY, FIXTURE_DIR },
+    lockTimeline,
+    cli: { ONLY, RECORD, REPLAY, FIXTURE_DIR, RETRIES, RETRY_DELAY_MS, DETERMINISTIC },
     results,
   };
   writeFileSync(join(REPORT_DIR, 'report.json'), JSON.stringify(summary, null, 2));
