@@ -77,10 +77,58 @@ if (RECORD && REPLAY) {
   process.exit(2);
 }
 
+// ---------- mismatch thresholds (REPLAY) ----------
+const MAX_MISMATCHES = Math.max(0, parseInt(flag('max-mismatches', '0'), 10) || 0);
+const MAX_STATUS_MISMATCHES = Math.max(0, parseInt(flag('max-status-mismatches', '0'), 10) || 0);
+const MAX_BODY_BYTE_DELTA = Math.max(0, parseInt(flag('max-body-byte-delta', '0'), 10) || 0);
+
+// ---------- redaction config ----------
+const REDACT_BODIES = !!flag('redact-bodies', false);
+const MAX_BODY_BYTES = Math.max(0, parseInt(flag('max-body-bytes', '4000'), 10) || 0);
+const REDACT_HEADERS = new Set(
+  String(flag('redact-headers', 'authorization,cookie,set-cookie,x-api-key,x-auth-token'))
+    .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+);
+const REDACT_URL_PARAMS = new Set(
+  String(flag('redact-url-params', 'token,key,api_key,access_token,id_token'))
+    .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+);
+const REDACTED = '[REDACTED]';
+
+function redactHeaders(h) {
+  if (!h || typeof h !== 'object') return h;
+  const out = {};
+  for (const [k, v] of Object.entries(h)) {
+    out[k] = REDACT_HEADERS.has(k.toLowerCase()) ? REDACTED : v;
+  }
+  return out;
+}
+function redactUrl(u) {
+  if (!u || REDACT_URL_PARAMS.size === 0) return u;
+  try {
+    const url = new URL(u);
+    let touched = false;
+    for (const key of [...url.searchParams.keys()]) {
+      if (REDACT_URL_PARAMS.has(key.toLowerCase())) { url.searchParams.set(key, REDACTED); touched = true; }
+    }
+    return touched ? url.toString() : u;
+  } catch { return u; }
+}
+function redactBody(body) {
+  if (body == null) return body;
+  if (REDACT_BODIES) return REDACTED;
+  const s = String(body);
+  if (MAX_BODY_BYTES > 0 && s.length > MAX_BODY_BYTES) {
+    return s.slice(0, MAX_BODY_BYTES) + `…[truncated ${s.length - MAX_BODY_BYTES}B]`;
+  }
+  return s;
+}
+
 // Transient errors we retry; assertion failures (record()) NEVER trigger retry.
 const TRANSIENT_RE = /(net::ERR_|ECONNRESET|ECONNREFUSED|ETIMEDOUT|Target page, context or browser has been closed|Navigation timeout|browserContext\.|Protocol error|Connection closed|socket hang up|EAI_AGAIN)/i;
 function isTransient(err) { return !!err && TRANSIENT_RE.test(String(err?.message || err)); }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 
 const TARGET = process.env.TARGET_URL || 'http://localhost:8080';
 const REPORT_DIR = process.env.E2E_REPORT_DIR || join(process.cwd(), 'e2e-stale-report');
