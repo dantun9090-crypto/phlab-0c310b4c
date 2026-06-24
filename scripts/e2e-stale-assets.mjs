@@ -928,7 +928,11 @@ async function run() {
     }).join('');
     return `<table class="tbl"><thead><tr><th>field</th><th>before</th><th>after</th></tr></thead><tbody>${rows}</tbody></table>`;
   })();
+  // Collected as we render each scenario so the global "all bundles" button
+  // can export every matched/mismatched pair across scenarios in one click.
+  const allBundles = [];
   const scCards = perScenarioSummary.map((s) => {
+
     const meta = perScenario.get(s.scenario) || {};
     const attempts = meta.attempts || 1;
     const transient = (meta.transientErrors || []).length;
