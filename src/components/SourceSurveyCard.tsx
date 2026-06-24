@@ -5,6 +5,18 @@ import {
   submitSourceSurvey,
   skipSourceSurvey,
 } from "@/lib/source-survey.functions";
+import { auth } from "@/lib/firebase";
+
+async function getOwnershipCreds(orderId: string): Promise<{
+  idToken: string | null;
+  paymentToken: string | null;
+}> {
+  let idToken: string | null = null;
+  let paymentToken: string | null = null;
+  try { idToken = (await auth.currentUser?.getIdToken()) ?? null; } catch { /* ignore */ }
+  try { paymentToken = localStorage.getItem(`php_pt_${orderId}`); } catch { /* ignore */ }
+  return { idToken, paymentToken };
+}
 
 /**
  * Inline post-purchase survey card shown at the bottom of the order
