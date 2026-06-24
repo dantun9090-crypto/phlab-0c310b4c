@@ -178,4 +178,22 @@ jobs:
       - name: Verify SBOM signature + SLSA Provenance + CycloneDX attestations
         run: bash scripts/verify-attestations.sh sbom-bundle security-scan
 
+      - name: Upload attestation debug bundle (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: attestation-debug-security-scan-${{ github.sha }}
+          path: |
+            sbom-bundle/sbom.cdx.json
+            sbom-bundle/sbom.cdx.json.sha256
+            sbom-bundle/sbom.cdx.json.sig
+            sbom-bundle/sbom.cdx.json.pem
+            sbom-bundle/sbom.cdx.json.provenance.intoto.jsonl
+            sbom-bundle/sbom.cdx.json.provenance.pem
+            sbom-bundle/sbom.cdx.json.cyclonedx.intoto.jsonl
+            sbom-bundle/sbom.cdx.json.cyclonedx.pem
+            sbom-bundle/verify-attestations.log
+          retention-days: 30
+
+
 
