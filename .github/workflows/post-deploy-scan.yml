@@ -45,11 +45,39 @@ jobs:
         env:
           BUILD_ID: ${{ github.sha }}
 
+      # Cosign keyless signing of the deployed SBOM. The .sig + .pem
+      # bind this exact SBOM (and therefore the dependency set that
+      # just shipped to phlabs.co.uk) to this workflow's GitHub OIDC
+      # identity, with a Rekor transparency-log entry as proof.
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: v2.4.1
+
+      - name: Sign SBOM (cosign keyless)
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign sign-blob \
+            --yes \
+            --output-signature dist/sbom.cdx.json.sig \
+            --output-certificate dist/sbom.cdx.json.pem \
+            dist/sbom.cdx.json
+
+      - name: Verify SBOM signature (self-check)
+        run: |
+          cosign verify-blob \
+            --certificate dist/sbom.cdx.json.pem \
+            --signature dist/sbom.cdx.json.sig \
+            --certificate-identity-regexp "^https://github\.com/${GITHUB_REPOSITORY}/\.github/workflows/post-deploy-scan\.yml@" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            dist/sbom.cdx.json | tee -a security-scan.log
+
       - name: Re-run dependency vulnerability scan
         id: scan
         run: |
           set +e
-          bun run security:scan | tee security-scan.log
+          bun run security:scan | tee -a security-scan.log
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
         continue-on-error: true
 
@@ -60,12 +88,13 @@ jobs:
           echo "- Build: \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- Domain: https://phlabs.co.uk" >> "$GITHUB_STEP_SUMMARY"
           echo "- Scan exit: \`${{ steps.scan.outputs.exit_code }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- SBOM signed: ✅ cosign keyless (Rekor logged)" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          tail -n 50 security-scan.log >> "$GITHUB_STEP_SUMMARY"
+          tail -n 60 security-scan.log >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload SBOM + scan log
+      - name: Upload SBOM + signature + scan log
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -73,8 +102,11 @@ jobs:
           path: |
             dist/sbom.cdx.json
             dist/sbom.cdx.json.sha256
+            dist/sbom.cdx.json.sig
+            dist/sbom.cdx.json.pem
             security-scan.log
           retention-days: 180
+
 
       - name: Open issue if regression
         if: steps.scan.outputs.exit_code != '0'
