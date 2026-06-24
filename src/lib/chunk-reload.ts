@@ -90,6 +90,34 @@ function doReload(reason: string) {
   void hardReload({ clean: true });
 }
 
+// Self-heal: when a stale chunk is confirmed missing, fire the public
+// post-publish-check endpoint. That endpoint detects the new __BUILD_ID__
+// and triggers a full Cloudflare purge + Prerender.io recache for EVERY
+// visitor in one shot, so the next reload (and other users' navigations)
+// get fresh HTML pointing at chunks that still exist. Fire-and-forget;
+// never block the reload on it.
+const SELF_HEAL_KEY = "__phl_self_heal_at";
+const SELF_HEAL_COOLDOWN_MS = 5 * 60 * 1000;
+function triggerSelfHealPurge(): void {
+  try {
+    const last = Number(sessionStorage.getItem(SELF_HEAL_KEY) ?? "0");
+    if (Date.now() - last < SELF_HEAL_COOLDOWN_MS) return;
+    sessionStorage.setItem(SELF_HEAL_KEY, String(Date.now()));
+  } catch {
+    /* ignore */
+  }
+  try {
+    void fetch("/api/public/post-publish-check", {
+      method: "GET",
+      cache: "no-store",
+      credentials: "omit",
+      keepalive: true,
+    }).catch(() => undefined);
+  } catch {
+    /* ignore */
+  }
+}
+
 function reloadOnce(reason: string, err?: unknown, requireMissingAsset = true) {
   if (requireMissingAsset) {
     const assetUrl = extractAssetUrl(err);
@@ -101,8 +129,10 @@ function reloadOnce(reason: string, err?: unknown, requireMissingAsset = true) {
     try {
       fetch(assetUrl, { method: "HEAD", cache: "no-store", credentials: "omit" })
         .then((res) => {
-          if (res.status === 404 || res.status === 410) doReload(reason);
-          else console.warn("[chunk-reload] skipped reload; asset is not missing:", assetUrl, res.status);
+          if (res.status === 404 || res.status === 410) {
+            triggerSelfHealPurge();
+            doReload(reason);
+          } else console.warn("[chunk-reload] skipped reload; asset is not missing:", assetUrl, res.status);
         })
         .catch(() => undefined);
     } catch {
