@@ -1034,16 +1034,25 @@ async function run() {
           ...rtypes.map((r) => `<option value="${esc(r)}">${esc(r)}</option>`)].join('');
         const scId = esc(s.scenario);
         // Embed mismatch-bundle data so the in-page button can export without round-tripping.
-        const bundle = JSON.stringify({
+        // Validate the shape BEFORE embedding so a regression in item enrichment fails the run
+        // instead of producing a malformed download.
+        const bundleObj = {
+          schemaVersion: BUNDLE_SCHEMA_VERSION,
           scenario: s.scenario,
           generatedAt: new Date().toISOString(),
           redaction: { redactBodies: REDACT_BODIES, hashBodies: HASH_BODIES, maxBodyBytes: MAX_BODY_BYTES, redactHeaders: [...REDACT_HEADERS], redactUrlParams: [...REDACT_URL_PARAMS] },
           thresholds: d.thresholds,
           summary: d.summary,
           items,
-        });
+        };
+        const bv = validateMismatchBundle(bundleObj);
+        if (!bv.ok) {
+          throw new Error(`per-scenario bundle schema validation failed for "${s.scenario}":\n  - ${bv.errors.slice(0, 8).join('\n  - ')}`);
+        }
+        const bundle = JSON.stringify(bundleObj);
         const bundleB64 = Buffer.from(bundle, 'utf8').toString('base64');
-        allBundles.push(JSON.parse(bundle));
+        allBundles.push(bundleObj);
+
 
         return `<details ${d.summary.mismatchCount ? 'open' : ''}><summary>Live vs replay (matches=${d.summary.matchCount}, mismatches=${d.summary.mismatchCount}, statusΔ=${d.summary.statusMismatchCount}, maxBodyΔ=${d.summary.maxBodyDelta}B)</summary>
           <p>${tBadge}</p>
