@@ -77,6 +77,9 @@ function ensureScenario(name) {
     perScenario.set(name, {
       failures: [], purgeCalls: [], buildIds: new Set(), topRequests: [],
       reloads: [], hashedJsUrls: new Set(),
+      har: [], // compact HAR-like entries
+      attempts: 0,
+      transientErrors: [],
     });
   }
   return perScenario.get(name);
