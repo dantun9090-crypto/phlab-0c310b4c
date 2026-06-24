@@ -76,6 +76,10 @@ export function redactBody(body, opts = {}) {
 // ──────────────────────────────────────────────────────────────────────────
 
 export const BUNDLE_SCHEMA_VERSION = 1;
+// Oldest schemaVersion this validator can still parse. Bundles in
+// [MIN_SUPPORTED_SCHEMA_VERSION .. BUNDLE_SCHEMA_VERSION-1] validate with a
+// warning instead of a hard error so older artifacts remain inspectable.
+export const MIN_SUPPORTED_SCHEMA_VERSION = 1;
 
 export const BUNDLE_SCHEMA = {
   perScenario: {
