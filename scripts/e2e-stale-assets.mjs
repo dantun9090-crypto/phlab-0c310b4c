@@ -1038,8 +1038,58 @@ pre{background:#0b1220;border:1px solid #334155;padding:8px;border-radius:6px;fo
 .drill.pass{border-left:3px solid #10b981}.drill.fail{border-left:3px solid #ef4444}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
 .pair .side{background:#111827;border:1px solid #334155;border-radius:6px;padding:8px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0;font-size:13px}
+.filters select,.filters button{background:#0b1220;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:4px 8px;font-size:13px}
+.filters button{cursor:pointer}.filters button:hover{background:#1e293b}
 a{color:#7dd3fc}
-</style></head><body>
+</style>
+<script>
+(function(){
+  function apply(scope){
+    var root=document.querySelector('[data-drilldown="'+scope+'"]');if(!root)return;
+    var ctrls=document.querySelector('.filters[data-scope="'+scope+'"]');if(!ctrls)return;
+    var f={match:'',rtype:'',kind:'',redacted:''};
+    ctrls.querySelectorAll('select[data-filter]').forEach(function(s){f[s.dataset.filter]=s.value;});
+    var n=0;
+    root.querySelectorAll('details.drill').forEach(function(el){
+      var ok=true;
+      if(f.match!==''&&el.dataset.match!==f.match)ok=false;
+      if(f.rtype&&el.dataset.rtype!==f.rtype)ok=false;
+      if(f.kind&&(' '+el.dataset.kinds+' ').indexOf(' '+f.kind+' ')===-1)ok=false;
+      if(f.redacted!==''&&el.dataset.redacted!==f.redacted)ok=false;
+      el.style.display=ok?'':'none';if(ok)n++;
+    });
+    var c=ctrls.querySelector('[data-visible-count]');if(c)c.textContent='('+n+' visible)';
+  }
+  document.addEventListener('change',function(e){
+    var s=e.target.closest('.filters');if(!s||!s.dataset.scope)return;apply(s.dataset.scope);
+  });
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('button[data-bundle]');if(!b)return;
+    var scope=b.dataset.bundle;
+    var ctrls=document.querySelector('.filters[data-scope="'+scope+'"]');
+    var root=document.querySelector('[data-drilldown="'+scope+'"]');
+    var allowed=new Set();
+    root.querySelectorAll('details.drill').forEach(function(el){
+      if(el.style.display!=='none')allowed.add(el.querySelector('code').textContent+'#'+el.querySelector('summary').textContent.match(/#(\\d+)/)?.[1]);
+    });
+    var raw=atob(b.dataset.bundleB64);
+    var data=JSON.parse(raw);
+    // Filter items to currently-visible ones.
+    data.items=data.items.filter(function(it){return allowed.has(it.url+'#'+it.index);});
+    data.exportedAt=new Date().toISOString();
+    data.filterApplied={};ctrls.querySelectorAll('select[data-filter]').forEach(function(s){data.filterApplied[s.dataset.filter]=s.value;});
+    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='mismatch-bundle-'+scope+'.json';document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},0);
+  });
+  document.addEventListener('DOMContentLoaded',function(){
+    document.querySelectorAll('.filters[data-scope]').forEach(function(s){apply(s.dataset.scope);});
+  });
+})();
+</script></head><body>
+
 <header class="top">
   <h1>E2E stale-assets <span class="badge ${failed.length ? 'bad' : 'ok'}">${esc(overall)}</span></h1>
   <div class="muted">target <code>${esc(TARGET)}</code> · finished ${esc(summary.finishedAt)} · ${summary.passed}/${summary.total} passed${ONLY ? ` · filter <code>${esc(ONLY)}</code>` : ''}${REPLAY ? ' · <b>REPLAY</b>' : (RECORD ? ' · <b>RECORD</b>' : '')} · retries=${RETRIES}</div>
