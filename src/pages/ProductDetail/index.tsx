@@ -263,16 +263,21 @@ export default function ProductDetail() {
     touchStartX.current = e.touches[0].clientX;
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
+  const refetchAdverts = useCallback(() => {
     getDocsFromServer(query(collection(db, 'adverts')))
       .then((snap: any) => {
-        if (cancelled) return;
         setAdverts(snap.docs.map((d: any) => ({ id: d.id, ...d.data() })));
       })
-      .catch(() => { if (!cancelled) setAdverts([]); });
-    return () => { cancelled = true; };
+      .catch(() => setAdverts([]));
   }, []);
+
+  useEffect(() => {
+    refetchAdverts();
+  }, [refetchAdverts]);
+
+  useMarketingRevalidate(refetchAdverts);
+
+
   const handleTouchEnd = useCallback((e: React.TouchEvent, imgCount: number) => {
     if (touchStartX.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
