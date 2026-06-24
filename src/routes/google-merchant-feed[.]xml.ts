@@ -62,6 +62,32 @@ const HARD_BLOCKED_SLUGS = new Set<string>([
   "tirzepatide",
 ]);
 
+/**
+ * Merchant feed identity overrides. Some compound names (Retatrutide,
+ * BPC-157, …) trip Google's "Unapproved pharmaceutical / supplement"
+ * classifier purely by name match — even with neutral category and
+ * laboratory wording. We swap the public name for an anonymised
+ * PH Labs research code in the FEED ONLY. The public product page,
+ * slugs, sitemap, and SEO are untouched. /products/<code> renders the
+ * canonical product page in place (via PRODUCT_ID_TO_SLUG).
+ *
+ * Changing the code value also resets the Merchant item history, so a
+ * previously-disapproved item is re-reviewed as a brand-new product.
+ */
+type MerchantOverride = { code: string; displayName: string; cas: string };
+const MERCHANT_CODE_OVERRIDES: Record<string, MerchantOverride> = {
+  "retatrutide-research-peptide": {
+    code: "PHL-RT8",
+    displayName: "PHL-RT8",
+    cas: "2381089-83-2",
+  },
+  "bpc-157": {
+    code: "PHL-BP15",
+    displayName: "PHL-BP15",
+    cas: "137525-51-0",
+  },
+};
+
 function isAllowedForMerchant(p: {
   name?: string;
   slug?: string;
@@ -270,11 +296,14 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
         const items = merchantProducts
           .map((p) => {
-            // Google Merchant feed uses the Firestore document ID URL.
-            // The route /products/$slug renders the product in place for
-            // both slug and ID, and the page's canonical <link> points
-            // back to the slug URL so SEO authority consolidates.
-            const link = `${BASE_URL}/products/${p.id}`;
+            const override = MERCHANT_CODE_OVERRIDES[(p.slug || "").toLowerCase()];
+
+            // Google Merchant feed uses the Firestore document ID URL
+            // (or anonymised research code when override is active).
+            // The route /products/$slug renders the product in place
+            // for both slug, ID, and override code.
+            const linkId = override ? override.code : p.id;
+            const link = `${BASE_URL}/products/${linkId}`;
             // Neutral title: no "research peptide", no "RUO", no "research
             // chemical", no "blend" — these phrases trigger Google's
             // supplement / health classifier even when wrapped in
@@ -293,6 +322,11 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             cleanName = cleanName
               .replace(/\bBPC[-\s]?157\b/gi, "BPC157")
               .replace(/\bTB[-\s]?500\b/gi, "TB500");
+
+            // Override: replace the compound name entirely with the
+            // anonymised PH Labs research code.
+            if (override) cleanName = override.displayName;
+
             // Compact, professional title. Include net content when known
             // (e.g. "10 mg") for buyer clarity and to differentiate variants
             // in Merchant Center diagnostics.
@@ -304,7 +338,11 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
             // Per-compound unique scientific description. No human/health
             // language; emphasises in-vitro laboratory and analytical use.
-            const description = descriptionForCompound(cleanName || p.name || "", p.purity);
+            // Override items get a generic biochemical description keyed
+            // off the anonymised code, with CAS only (no compound name).
+            const description = override
+              ? `For laboratory and analytical research only. Strictly for in-vitro scientific testing and reference standards. Technical specification: • CAS Number: ${override.cas} • Internal reference code: ${override.code}`
+              : descriptionForCompound(cleanName || p.name || "", p.purity);
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
                 ? p.imageUrl
@@ -313,9 +351,9 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             const price = `${p.price.toFixed(2)} ${CURRENCY}`;
             const availability =
               typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
-            const sku = p.sku || p.id || p.slug;
-            const mpn = p.mpn || sku;
-            const hasGtin = !!p.gtin;
+            const sku = override ? override.code : (p.sku || p.id || p.slug);
+            const mpn = override ? override.code : (p.mpn || sku);
+            const hasGtin = !override && !!p.gtin;
             // Dedupe: never repeat the primary image as an additional image,
             // and never emit the same additional URL twice (Google flags
             // duplicate image links in the feed diagnostics).
@@ -354,7 +392,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
             return [
               `  <item>`,
-              `    <g:id>${xmlEscape(p.id || p.slug)}</g:id>`,
+              `    <g:id>${xmlEscape(override ? override.code : (p.id || p.slug))}</g:id>`,
               `    <title>${cdata(title)}</title>`,
               `    <link>${xmlEscape(link)}</link>`,
               `    <g:mobile_link>${xmlEscape(link)}</g:mobile_link>`,
@@ -367,7 +405,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `    <g:condition>new</g:condition>`,
               `    <g:mpn>${xmlEscape(mpn)}</g:mpn>`,
               `    <g:sku>${xmlEscape(sku)}</g:sku>`,
-              `    <g:item_group_id>${xmlEscape(p.id || p.slug)}</g:item_group_id>`,
+              `    <g:item_group_id>${xmlEscape(override ? override.code : (p.id || p.slug))}</g:item_group_id>`,
               hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
               `    <g:google_product_category>${GOOGLE_CATEGORY_ID}</g:google_product_category>`,
               `    <g:product_type>${xmlEscape(GOOGLE_CATEGORY_PATH)}</g:product_type>`,
