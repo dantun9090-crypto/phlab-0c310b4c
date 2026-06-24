@@ -296,11 +296,14 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
         const items = merchantProducts
           .map((p) => {
-            // Google Merchant feed uses the Firestore document ID URL.
-            // The route /products/$slug renders the product in place for
-            // both slug and ID, and the page's canonical <link> points
-            // back to the slug URL so SEO authority consolidates.
-            const link = `${BASE_URL}/products/${p.id}`;
+            const override = MERCHANT_CODE_OVERRIDES[(p.slug || "").toLowerCase()];
+
+            // Google Merchant feed uses the Firestore document ID URL
+            // (or anonymised research code when override is active).
+            // The route /products/$slug renders the product in place
+            // for both slug, ID, and override code.
+            const linkId = override ? override.code : p.id;
+            const link = `${BASE_URL}/products/${linkId}`;
             // Neutral title: no "research peptide", no "RUO", no "research
             // chemical", no "blend" — these phrases trigger Google's
             // supplement / health classifier even when wrapped in
@@ -319,6 +322,11 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             cleanName = cleanName
               .replace(/\bBPC[-\s]?157\b/gi, "BPC157")
               .replace(/\bTB[-\s]?500\b/gi, "TB500");
+
+            // Override: replace the compound name entirely with the
+            // anonymised PH Labs research code.
+            if (override) cleanName = override.displayName;
+
             // Compact, professional title. Include net content when known
             // (e.g. "10 mg") for buyer clarity and to differentiate variants
             // in Merchant Center diagnostics.
@@ -330,7 +338,11 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
             // Per-compound unique scientific description. No human/health
             // language; emphasises in-vitro laboratory and analytical use.
-            const description = descriptionForCompound(cleanName || p.name || "", p.purity);
+            // Override items get a generic biochemical description keyed
+            // off the anonymised code, with CAS only (no compound name).
+            const description = override
+              ? `For laboratory and analytical research only. Strictly for in-vitro scientific testing and reference standards. Technical specification: • CAS Number: ${override.cas} • Internal reference code: ${override.code}`
+              : descriptionForCompound(cleanName || p.name || "", p.purity);
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
                 ? p.imageUrl
@@ -339,9 +351,9 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             const price = `${p.price.toFixed(2)} ${CURRENCY}`;
             const availability =
               typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
-            const sku = p.sku || p.id || p.slug;
-            const mpn = p.mpn || sku;
-            const hasGtin = !!p.gtin;
+            const sku = override ? override.code : (p.sku || p.id || p.slug);
+            const mpn = override ? override.code : (p.mpn || sku);
+            const hasGtin = !override && !!p.gtin;
             // Dedupe: never repeat the primary image as an additional image,
             // and never emit the same additional URL twice (Google flags
             // duplicate image links in the feed diagnostics).
