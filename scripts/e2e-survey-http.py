@@ -646,14 +646,22 @@ async def main() -> int:
             oid = seed.order_id
             tok_ok = seed.payment_token
             burst: list[dict[str, Any]] = []
-            for i in range(8):
-                bad_tok = ("x" * 64) if i % 2 == 0 else ("' OR 1=1 --" + "x" * 60)
-                burst.append(submit_trial(f"burst-bad-{i}", {
+            # Randomised malformed shapes — every category enumerated by
+            # `random_bad_token` must be rejected with the generic contract.
+            rnd = random.Random(0xC0FFEE)  # deterministic for CI replay
+            for i in range(24):
+                cat_pt, bad_pt = random_bad_token(rnd)
+                cat_id, bad_id = random_bad_token(rnd)
+                burst.append(submit_trial(f"burst-pt-{cat_pt}-{i}", {
                     "orderId": oid, "source": "google_search",
-                    "otherText": None, "paymentToken": bad_tok,
+                    "otherText": None, "paymentToken": bad_pt,
                 }))
-                burst.append(skip_trial(f"burst-bad-skip-{i}", {
-                    "orderId": oid, "paymentToken": bad_tok,
+                burst.append(skip_trial(f"burst-pt-skip-{cat_pt}-{i}", {
+                    "orderId": oid, "paymentToken": bad_pt,
+                }))
+                burst.append(submit_trial(f"burst-idt-{cat_id}-{i}", {
+                    "orderId": oid, "source": "google_search",
+                    "otherText": None, "idToken": bad_id,
                 }))
             # One genuine valid call at the end to confirm the system still
             # accepts good traffic after a burst of rejections.
@@ -675,13 +683,125 @@ async def main() -> int:
                         burst_pass += 1
                 else:
                     ok, info = assert_rejection_contract(o)
-                    if ok:
+                    imm_ok, imm_why = assert_fields_immutable(baseline, post_state)
+                    if ok and imm_ok:
                         burst_pass += 1
                     else:
                         burst_fails += 1
-                        print(f"  ✗ {o.name:<40} {info}")
-                        record_failure("burst", o, info)
+                        why = info if not ok else imm_why
+                        print(f"  ✗ {o.name:<40} {why}")
+                        record_failure("burst", o, why)
             print(f"[e2e] burst: {burst_pass} passed, {burst_fails} failed")
+
+        # --- Auth-header matrix --------------------------------------------
+        # Survey functions do NOT consume the Authorization header (auth is
+        # carried in-payload via idToken/paymentToken), but the system MUST
+        # tolerate any shape of Authorization header without leaking detail.
+        # All combinations must end with the generic rejection contract.
+        auth_fails = 0
+        auth_pass = 0
+        if seed:
+            print("[e2e] running Authorization header matrix …")
+            oid = seed.order_id
+            tok_bogus = "x" * 64  # passes Zod, never matches the order hash
+            auth_headers_cases: dict[str, dict[str, str | None]] = {
+                "auth-missing":            {"Authorization": None},
+                "auth-empty":              {"Authorization": ""},
+                "auth-wrong-scheme":       {"Authorization": "Basic dXNlcjpwYXNz"},
+                "auth-bearer-empty":       {"Authorization": "Bearer "},
+                "auth-bearer-short":       {"Authorization": "Bearer abc"},
+                "auth-bearer-oversize":    {"Authorization": "Bearer " + ("a" * 8192)},
+                "auth-bearer-malformed":   {"Authorization": "Bearer not.a.jwt"},
+                "auth-bearer-unicode":     {"Authorization": "Bearer " + ("🚀" * 32)},
+                "auth-bearer-control":     {"Authorization": "Bearer " + "\x00\x01\x02" * 16},
+                "auth-double-bearer":      {"Authorization": "Bearer Bearer x.y.z"},
+                "auth-lowercase":          {"Authorization": "bearer x.y.z"},
+            }
+            auth_trials: list[dict[str, Any]] = []
+            for name in auth_headers_cases:
+                auth_trials.append(submit_trial(name, {
+                    "orderId": oid, "source": "google_search",
+                    "otherText": None, "paymentToken": tok_bogus,
+                }))
+            pre_auth = snapshot_state(seed.order_id, seed.email)
+            auth_outcomes, _, _ = await run_trials_in_browser(
+                auth_trials,
+                headers_by_name={f"submit:{n}": h for n, h in auth_headers_cases.items()},
+            )
+            post_auth = snapshot_state(seed.order_id, seed.email)
+            for o in auth_outcomes:
+                o.db_pre = pre_auth
+                o.db_post = post_auth
+                # STRICTER than the burst contract: every auth-matrix
+                # rejection MUST be the generic "Order not found" — Zod
+                # boundary failures are not acceptable here because the
+                # payload itself is well-formed; only the header varies.
+                generic = (
+                    not o.ok
+                    and (o.msg == "Order not found"
+                         or '"Order not found"' in (o.raw_body or ""))
+                )
+                imm_ok, imm_why = assert_fields_immutable(pre_auth, post_auth)
+                if generic and imm_ok:
+                    auth_pass += 1
+                else:
+                    auth_fails += 1
+                    why = ("non-generic response: " + (o.msg[:120] or "ok=True")) if not generic else imm_why
+                    print(f"  ✗ {o.name:<40} {why}")
+                    record_failure("auth-matrix", o, why)
+            print(f"[e2e] auth-matrix: {auth_pass} passed, {auth_fails} failed")
+
+        # --- Concurrency: parallel submit/skip on same order ---------------
+        # Race-condition probe: fire N submits + N skips simultaneously with
+        # the valid credentials. All must succeed, the final state must be
+        # internally consistent (single record, no duplicate claim), and no
+        # extra documents may have appeared.
+        conc_fails = 0
+        conc_pass = 0
+        if seed:
+            print("[e2e] running concurrency probe …")
+            pre_conc = snapshot_state(seed.order_id, seed.email)
+            conc_trials: list[dict[str, Any]] = []
+            for i in range(6):
+                conc_trials.append(submit_trial(f"conc-submit-{i}", {
+                    "orderId": seed.order_id, "source": "google_search",
+                    "otherText": None, "paymentToken": seed.payment_token,
+                }))
+                conc_trials.append(skip_trial(f"conc-skip-{i}", {
+                    "orderId": seed.order_id, "paymentToken": seed.payment_token,
+                }))
+            conc_outcomes, _, _ = await run_trials_in_browser(conc_trials, mode="concurrent")
+            post_conc = snapshot_state(seed.order_id, seed.email)
+            for o in conc_outcomes:
+                o.db_pre = pre_conc
+                o.db_post = post_conc
+                if not o.ok:
+                    conc_fails += 1
+                    print(f"  ✗ {o.name:<40} blocked in race: {o.msg!r}")
+                    record_failure("concurrency", o, "valid concurrent call rejected")
+                else:
+                    conc_pass += 1
+            order_state = (post_conc.get("order") or {})
+            claims_state = post_conc.get("save10_claims")
+            # The final state must be ONE of the two valid terminal shapes
+            # ({surveySkipped:true} or {surveySkipped:false, sourceSurvey:obj})
+            # — never a torn mix (skipped + sourceSurvey present).
+            ss = order_state.get("surveySkipped")
+            src = order_state.get("sourceSurvey")
+            if ss is True and src not in (None, {}, ""):
+                conc_fails += 1
+                record_failure("concurrency", TrialOutcome(
+                    name="conc-torn-state", http_status=None, ok=False,
+                    msg="", raw_body="", db_pre=pre_conc, db_post=post_conc,
+                ), f"torn state: surveySkipped=True AND sourceSurvey={src}")
+            if isinstance(claims_state, list) and len(claims_state) > 1:
+                conc_fails += 1
+                record_failure("concurrency", TrialOutcome(
+                    name="conc-duplicate-claims", http_status=None, ok=False,
+                    msg="", raw_body="", db_pre=pre_conc, db_post=post_conc,
+                ), f"duplicate save10 claims under race: {len(claims_state)}")
+            print(f"[e2e] concurrency: {conc_pass} passed, {conc_fails} failed")
+
 
         # --- Idempotency: replay submit + skip many times ------------------
         idem_fails = 0
