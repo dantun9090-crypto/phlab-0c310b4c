@@ -950,6 +950,12 @@ table.tbl{border-collapse:collapse;width:100%;margin-top:6px;font-size:13px}
 .tbl tr.pass td:first-child{color:#34d399}.tbl tr.fail td{background:#3f1d1d}
 .tbl tr.diff td{background:#3b2a16}
 code{background:#0f172a;padding:1px 4px;border-radius:4px;font-size:12px;word-break:break-all}
+pre{background:#0b1220;border:1px solid #334155;padding:8px;border-radius:6px;font-size:12px;max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.drilldown{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.drill{border:1px solid #334155;border-radius:6px;padding:6px 10px;background:#0b1220}
+.drill.pass{border-left:3px solid #10b981}.drill.fail{border-left:3px solid #ef4444}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.pair .side{background:#111827;border:1px solid #334155;border-radius:6px;padding:8px}
 a{color:#7dd3fc}
 </style></head><body>
 <header class="top">
