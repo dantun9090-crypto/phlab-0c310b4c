@@ -131,8 +131,9 @@ const NORMALIZE_IGNORE_HEADERS = new Set(
 // (assertion failure or threshold breach). Successful runs leave only report.{json,txt} + junit.xml.
 const ARTIFACTS_ON_FAILURE_ONLY = !!flag('artifacts-on-failure-only', false)
   || !!flag('skip-artifacts-on-success', false);
-
-function sha256(s) { return createHash('sha256').update(String(s)).digest('hex'); }
+// Dry-run for the pruning step: report which paths WOULD be kept/deleted
+// for the current run outcome, without actually touching the filesystem.
+const PRUNE_DRY_RUN = !!flag('prune-dry-run', false) || !!flag('dry-run', false);
 
 function redactHeaders(h) {
   if (!h || typeof h !== 'object') return h;
@@ -153,35 +154,21 @@ function redactUrl(u) {
     return touched ? url.toString() : u;
   } catch { return u; }
 }
+// Bind the pure helper to this run's CLI-driven redaction config.
 function redactBody(body) {
-  if (body == null) return body;
-  const s = String(body);
-  if (REDACT_BODIES) return HASH_BODIES ? `sha256:${sha256(s)}` : REDACTED;
-  if (MAX_BODY_BYTES > 0 && s.length > MAX_BODY_BYTES) {
-    return HASH_BODIES
-      ? `sha256:${sha256(s)} (orig ${s.length}B)`
-      : s.slice(0, MAX_BODY_BYTES) + `…[truncated ${s.length - MAX_BODY_BYTES}B]`;
-  }
-  return s;
+  return _redactBody(body, {
+    redactBodies: REDACT_BODIES,
+    hashBodies: HASH_BODIES,
+    maxBodyBytes: MAX_BODY_BYTES,
+    redactedMarker: REDACTED,
+  });
 }
 
-// Normalize a headers object for diffing: lowercase keys, drop ignore-list, stable sort.
-function normalizeHeadersForDiff(h) {
-  if (!h || typeof h !== 'object') return h;
-  const lower = {};
-  for (const [k, v] of Object.entries(h)) {
-    const lk = k.toLowerCase();
-    if (NORMALIZE_IGNORE_HEADERS.has(lk)) continue;
-    lower[lk] = v;
-  }
-  // Return a new object with keys inserted in sorted order — stringifying gives stable output.
-  const out = {};
-  for (const k of Object.keys(lower).sort()) out[k] = lower[k];
-  return out;
-}
-function headersEqualNormalized(a, b) {
-  return JSON.stringify(normalizeHeadersForDiff(a || {})) === JSON.stringify(normalizeHeadersForDiff(b || {}));
-}
+// Bind the pure helpers to this run's normalize-ignore set.
+function normalizeHeadersForDiff(h) { return _normalizeHeadersForDiff(h, NORMALIZE_IGNORE_HEADERS); }
+function headersEqualNormalized(a, b) { return _headersEqualNormalized(a, b, NORMALIZE_IGNORE_HEADERS); }
+
+
 
 
 // Transient errors we retry; assertion failures (record()) NEVER trigger retry.
