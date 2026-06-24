@@ -1106,6 +1106,36 @@ a{color:#7dd3fc}
 </body></html>`;
   writeFileSync(join(REPORT_DIR, 'report.html'), html);
 
+  // --artifacts-on-failure-only: prune optional artifacts when the run is fully clean.
+  // We always keep report.json, report.txt, junit.xml, db-diff.json (small, CI-friendly).
+  const meaningfulFailure = failed.length > 0
+    || perScenarioSummary.some((s) => s.replayDiff && s.replayDiff.thresholds && s.replayDiff.thresholds.breached.length > 0);
+  if (ARTIFACTS_ON_FAILURE_ONLY && !meaningfulFailure) {
+    const prune = [
+      join(REPORT_DIR, 'report.html'),
+      join(REPORT_DIR, 'requests.ndjson'),
+      join(REPORT_DIR, 'responses.ndjson'),
+      join(REPORT_DIR, 'console.ndjson'),
+      join(REPORT_DIR, 'screenshots'),
+    ];
+    for (const name of perScenarioSummary.map((s) => s.scenario)) {
+      prune.push(join(REPORT_DIR, `har-${name}.json`));
+    }
+    // In RECORD mode, fixtures are the point of the run — keep them even on success.
+    if (!RECORD) {
+      for (const name of perScenarioSummary.map((s) => s.scenario)) {
+        prune.push(join(FIXTURE_DIR, name));
+      }
+    }
+    let pruned = 0;
+    for (const p of prune) {
+      try { if (existsSync(p)) { rmSync(p, { recursive: true, force: true }); pruned++; } } catch { /* ignore */ }
+    }
+    console.log(`[artifacts-on-failure-only] success → pruned ${pruned} optional artifact path(s)`);
+  }
+
+
+
 
 
   console.log(`\nReport written to ${REPORT_DIR}`);
