@@ -1,15 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Users, Eye, Clock, Activity, RefreshCw, CalendarIcon, Download, X, AlertTriangle, Repeat } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Users, Eye, Clock, Activity, RefreshCw, CalendarIcon, Download, X, AlertTriangle, Repeat, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfDay, endOfDay, subDays, differenceInDays } from 'date-fns';
 import type { DateRange } from 'react-day-picker';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from 'recharts';
-import { db, collection, query, where, getDocs, Timestamp, orderBy, limit } from '@/lib/firebase';
+import { db, auth, collection, query, where, getDocs, Timestamp, orderBy, limit } from '@/lib/firebase';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { listVisitorSessions, type VisitorSessionRow } from '@/lib/visitor-sessions.functions';
+
 
 type VisitorEvent = {
   id: string;
