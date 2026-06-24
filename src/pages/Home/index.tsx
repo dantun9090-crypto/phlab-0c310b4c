@@ -303,6 +303,16 @@ export default function HomePage() {
   const bannerHref = banner?.ctaUrl || banner?.linkUrl || '';
   const bannerOverlayHeading = banner?.overlayText || (banner?.textOverlayEnabled ? banner?.textOverlayHeading : '');
   const bannerOverlaySubtext = banner?.overlaySubtext || (banner?.textOverlayEnabled ? banner?.textOverlaySubtext : '');
+  const bannerOverlayAlign = banner?.textOverlayAlign === 'left'
+    ? 'items-start text-left'
+    : banner?.textOverlayAlign === 'right'
+      ? 'items-end text-right'
+      : 'items-center text-center';
+  const bannerOverlayPosition = banner?.textOverlayPosition === 'top'
+    ? 'justify-start pt-10'
+    : banner?.textOverlayPosition === 'bottom'
+      ? 'justify-end pb-10'
+      : 'justify-center';
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -669,7 +679,7 @@ export default function HomePage() {
           )}
 
           {bannerOverlayHeading && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center z-[10] pointer-events-none text-center px-6">
+            <div className={`absolute inset-0 flex flex-col z-[10] pointer-events-none px-6 ${bannerOverlayAlign} ${bannerOverlayPosition}`}>
               <p className="font-black text-white max-w-2xl" style={{ fontSize: 'clamp(1.5rem,4vw,3rem)', textShadow: '0 2px 24px rgba(0,0,0,0.7)' }}>{bannerOverlayHeading}</p>
               {bannerOverlaySubtext && (
                 <p className="mt-3 text-white/80 text-sm font-medium max-w-xl" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}>{bannerOverlaySubtext}</p>

@@ -301,6 +301,8 @@ export interface PromoBannerLite {
   textOverlayEnabled?: boolean;
   textOverlayHeading?: string;
   textOverlaySubtext?: string;
+  textOverlayAlign?: string;
+  textOverlayPosition?: string;
 }
 
 export async function fetchPromoBanner(): Promise<PromoBannerLite | null> {
@@ -339,6 +341,8 @@ export async function fetchPromoBanner(): Promise<PromoBannerLite | null> {
       textOverlayEnabled: typeof f.textOverlayEnabled === "boolean" ? f.textOverlayEnabled : undefined,
       textOverlayHeading: typeof f.textOverlayHeading === "string" ? f.textOverlayHeading : undefined,
       textOverlaySubtext: typeof f.textOverlaySubtext === "string" ? f.textOverlaySubtext : undefined,
+      textOverlayAlign: typeof f.textOverlayAlign === "string" ? f.textOverlayAlign : undefined,
+      textOverlayPosition: typeof f.textOverlayPosition === "string" ? f.textOverlayPosition : undefined,
     };
   } catch {
     return null;
