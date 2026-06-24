@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, it, expect } from "vitest";
 import { buildSecurityComment, MARKER } from "../scripts/lib/security-pr-comment.mjs";
 
