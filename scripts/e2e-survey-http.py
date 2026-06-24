@@ -701,8 +701,6 @@ async def main() -> int:
         # carried in-payload via idToken/paymentToken), but the system MUST
         # tolerate any shape of Authorization header without leaking detail.
         # All combinations must end with the generic rejection contract.
-        auth_fails = 0
-        auth_pass = 0
         if seed:
             print("[e2e] running Authorization header matrix …")
             oid = seed.order_id
