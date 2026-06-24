@@ -253,20 +253,25 @@ class TrialOutcome:
 
 
 def assert_rejection_contract(outcome: TrialOutcome) -> tuple[bool, str]:
-    """Validate that a blocked request meets the rejection contract:
+    """Validate that a blocked request meets the rejection contract.
 
-    * MUST NOT report success.
-    * HTTP status MUST be non-2xx (we never want a 200 + error-shaped body).
-    * Body MUST be either the generic ``Order not found`` string or a Zod
-      validation failure (handler never reached). No other error text is
-      acceptable — anything else risks leaking ownership / DB state.
+    TanStack Start's server-fn RPC convention serialises thrown errors as
+    HTTP 200 + a JSON envelope containing the message — the HTTP layer
+    only fails on transport-level problems, not on application errors.
+    So the contract for a blocked request is:
+
+    * Client RPC stub MUST NOT report success (no ``{ ok: true }``).
+    * HTTP response MUST have been captured (the request actually hit
+      the server — not blocked by middleware/CSP/etc.).
+    * Message reaching the client MUST be either ``Order not found``
+      (generic ownership-guard rejection) or a Zod validation failure
+      (handler never reached). No other text is acceptable — anything
+      else risks leaking ownership / DB state.
     """
     if outcome.ok:
         return False, "request succeeded — should have been rejected"
     if outcome.http_status is None:
         return False, "no HTTP response captured"
-    if 200 <= outcome.http_status < 300:
-        return False, f"HTTP {outcome.http_status} with error body — must be non-2xx"
     msg = outcome.msg or ""
     is_zod = msg.startswith("[") and '"code"' in msg
     is_generic = msg == "Order not found" or '"Order not found"' in outcome.raw_body
