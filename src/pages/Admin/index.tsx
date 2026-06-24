@@ -448,7 +448,8 @@ export default function AdminPage() {
         case 'wallidpreview': return <WallidPreviewTab />;
         case 'wallidbadges': return <WallidBadgesTab />;
        case 'wallidbanks': return <WallidBanksTab />;
-       case 'watchdog': return <WatchdogTab />;
+        case 'watchdog': return <WatchdogTab />;
+        case 'healthmonitor': return <HealthMonitorTab />;
         default: return <DashboardTab />;
       }
     })();
