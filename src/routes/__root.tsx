@@ -614,7 +614,26 @@ const STALE_ASSET_RECOVERY = `
     var COUNT='phl_reload_count';
     var LEGACY_COUNT='__phl_stale_asset_reload_count';
     var HYDRATION='__phl_hydration_error_seen';
+    var PURGE_FIRED='__phl_preemptive_purge_at';
     var ASSET_RE=new RegExp('/(assets|_build)/[^?#]+\\\\.(?:js|mjs|css)(?:[?#]|$)','i');
+    // Preemptive post-publish auto-purge: fire BEFORE any chunks load. The
+    // server compares __BUILD_ID__ vs the last value in Firestore — only the
+    // first request after a Lovable Publish triggers Cloudflare purge +
+    // Prerender recache, everything else is a 200ms no-op. Running this
+    // inline (not in a React useEffect) means chunks 404'ing can't block it,
+    // so stale-HTML loops self-heal on the very first visitor instead of
+    // requiring a manual admin purge. Throttled to once per 5 min per tab.
+    try{
+      var h=(location.hostname||'');
+      if(/(^|\\.)phlabs\\.co\\.uk$/i.test(h)){
+        var last=Number(sessionStorage.getItem(PURGE_FIRED)||'0');
+        if(!last || Date.now()-last > 5*60*1000){
+          sessionStorage.setItem(PURGE_FIRED,String(Date.now()));
+          fetch('/api/public/post-publish-check',{method:'GET',cache:'no-store',credentials:'omit',keepalive:true}).catch(function(){});
+        }
+      }
+    }catch(e){}
+
     var isHydration=function(x){
       var msg='';
       try{ msg=String((x&&(x.message||x.name||x.stack))||x||''); }catch(e){}
@@ -683,6 +702,14 @@ const STALE_ASSET_RECOVERY = `
               sessionStorage.setItem(LEGACY_COUNT,String(count));
             }catch(e){ showLimit(); return; }
             try{ console.warn('[phlabs] stale build asset 404, forcing clean reload:', src); }catch(e){}
+            // Force-fire the auto-purge again (bypass throttle) — this visitor
+            // is provably on a stale build, so we want CF + Prerender purged
+            // before the reload navigates back to a freshly cached HTML.
+            try{
+              sessionStorage.removeItem(PURGE_FIRED);
+              fetch('/api/public/post-publish-check',{method:'GET',cache:'no-store',credentials:'omit',keepalive:true}).catch(function(){});
+            }catch(e){}
+
             var qs;
             try{
               qs=new URLSearchParams(location.search);
