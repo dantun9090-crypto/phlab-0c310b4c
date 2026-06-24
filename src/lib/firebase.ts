@@ -875,7 +875,8 @@ function normaliseProduct(id: string, data: any): Product {
     updatedAt: data.updatedAt,
     includeInMerchantFeed: data.includeInMerchantFeed === true,
     excludeFromMerchantFeed: data.excludeFromMerchantFeed === true,
-    
+    isVip: data.isVip === true,
+    popular: data.popular === true,
     bannerImageUrl: data.bannerImageUrl || '',
   };
 }
