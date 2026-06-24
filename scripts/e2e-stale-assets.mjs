@@ -997,6 +997,8 @@ async function run() {
           items,
         });
         const bundleB64 = Buffer.from(bundle, 'utf8').toString('base64');
+        allBundles.push(JSON.parse(bundle));
+
         return `<details ${d.summary.mismatchCount ? 'open' : ''}><summary>Live vs replay (matches=${d.summary.matchCount}, mismatches=${d.summary.mismatchCount}, statusΔ=${d.summary.statusMismatchCount}, maxBodyΔ=${d.summary.maxBodyDelta}B)</summary>
           <p>${tBadge}</p>
           <h4>Purge call timing (relative to first purge per side)</h4>
