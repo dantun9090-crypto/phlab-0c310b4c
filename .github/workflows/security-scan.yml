@@ -8,15 +8,29 @@ on:
     # Daily 06:30 Europe/London — catches newly-published advisories
     # against already-merged code (no PR needed to surface).
     - cron: "30 5 * * *"
+  workflow_dispatch:
+    inputs:
+      min_severity:
+        description: "Minimum severity that fails the build (overrides .security-config.json for this run only)"
+        required: false
+        default: ""
+        type: choice
+        options:
+          - ""
+          - "low"
+          - "medium"
+          - "high"
+          - "critical"
 
 jobs:
   security-scan:
-    name: Dependency vulnerability scan (blocks medium+)
+    name: Dependency vulnerability scan
     runs-on: ubuntu-latest
     timeout-minutes: 8
     permissions:
       contents: read
       security-events: write
+      pull-requests: write
       # Required for cosign keyless signing via GitHub OIDC.
       # The ephemeral signing certificate is bound to this workflow's
       # identity (repo + ref + job) and logged to the Sigstore Rekor
@@ -33,11 +47,14 @@ jobs:
       - name: Install deps (frozen)
         run: bun install --frozen-lockfile
 
-      # Blocks the PR if any advisory >= medium is present in the
-      # resolved dependency graph (direct OR transitive).
-      # Tunable via SECURITY_MIN_SEVERITY env if a finding needs a
-      # one-off bypass — DO NOT set lower than 'medium' on main.
-      - name: Run dependency audit (fail on medium+)
+      # Blocking threshold resolved by scripts/security-audit.ts:
+      #   SECURITY_MIN_SEVERITY env  >  .security-config.json  >  "medium"
+      # Set the env from the workflow_dispatch input so a maintainer can
+      # tighten/loosen the gate for a one-off run without editing code.
+      - name: Run dependency audit
+        env:
+          SECURITY_MIN_SEVERITY: ${{ github.event.inputs.min_severity }}
+        run: bun run security:scan
         run: bun run security:scan
 
       # Generate CycloneDX SBOM for the PR for review / artifact diff.
