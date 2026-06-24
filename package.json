@@ -126,5 +126,13 @@
     "typescript-eslint": "^8.56.1",
     "vite": "^7.3.1",
     "vitest": "^4.1.7"
+  },
+  "overrides": {
+    "undici": "^7.16.0",
+    "ws": "^8.18.0"
+  },
+  "resolutions": {
+    "undici": "^7.16.0",
+    "ws": "^8.18.0"
   }
 }
