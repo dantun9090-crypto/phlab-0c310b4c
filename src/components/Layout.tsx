@@ -99,6 +99,16 @@ export function Layout({ children }: LayoutProps) {
   // MarketingAdvertSlot or read settings/promoBanner are covered too.
   useMarketingRevalidate(() => { /* cache clear + event dispatch handled in hook */ });
 
+  // First-party visitor analytics — feeds the Admin → Visitors tab so we can
+  // see how many people visited and how long they stayed without depending
+  // on GA4. Skips /admin routes internally.
+  useEffect(() => { initVisitorTracking(); }, []);
+  useEffect(() => {
+    trackVisitorPageView(location.pathname + location.search);
+  }, [location.pathname, location.search]);
+
+
+
 
   // Body scroll lock + scroll-to-top while cart/mobile-menu overlay is open,
   // so the fixed drawer is always anchored to the top of the viewport on
