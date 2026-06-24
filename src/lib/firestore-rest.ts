@@ -281,8 +281,26 @@ export { slugify };
  */
 export interface PromoBannerLite {
   imageUrl: string;
+  active?: boolean;
   altText?: string;
+  ctaUrl?: string;
+  linkUrl?: string;
   heightPx?: number;
+  objectFit?: string;
+  objectPositionX?: number;
+  objectPositionY?: number;
+  overlayEnabled?: boolean;
+  overlayColor?: string;
+  overlayOpacity?: number;
+  gradientEnabled?: boolean;
+  gradientDirection?: string;
+  gradientColor?: string;
+  gradientIntensity?: number;
+  overlayText?: string;
+  overlaySubtext?: string;
+  textOverlayEnabled?: boolean;
+  textOverlayHeading?: string;
+  textOverlaySubtext?: string;
 }
 
 export async function fetchPromoBanner(): Promise<PromoBannerLite | null> {
@@ -296,12 +314,31 @@ export async function fetchPromoBanner(): Promise<PromoBannerLite | null> {
     if (!res.ok) return null;
     const json: any = await res.json();
     const f = unwrapFields(json.fields ?? {});
+    if (f.active === false) return null;
     const imageUrl = typeof f.imageUrl === "string" ? f.imageUrl : "";
     if (!imageUrl) return null;
     return {
       imageUrl,
+      active: typeof f.active === "boolean" ? f.active : undefined,
       altText: typeof f.altText === "string" ? f.altText : undefined,
+      ctaUrl: typeof f.ctaUrl === "string" ? f.ctaUrl : undefined,
+      linkUrl: typeof f.linkUrl === "string" ? f.linkUrl : undefined,
       heightPx: typeof f.heightPx === "number" ? f.heightPx : undefined,
+      objectFit: typeof f.objectFit === "string" ? f.objectFit : undefined,
+      objectPositionX: typeof f.objectPositionX === "number" ? f.objectPositionX : undefined,
+      objectPositionY: typeof f.objectPositionY === "number" ? f.objectPositionY : undefined,
+      overlayEnabled: typeof f.overlayEnabled === "boolean" ? f.overlayEnabled : undefined,
+      overlayColor: typeof f.overlayColor === "string" ? f.overlayColor : undefined,
+      overlayOpacity: typeof f.overlayOpacity === "number" ? f.overlayOpacity : undefined,
+      gradientEnabled: typeof f.gradientEnabled === "boolean" ? f.gradientEnabled : undefined,
+      gradientDirection: typeof f.gradientDirection === "string" ? f.gradientDirection : undefined,
+      gradientColor: typeof f.gradientColor === "string" ? f.gradientColor : undefined,
+      gradientIntensity: typeof f.gradientIntensity === "number" ? f.gradientIntensity : undefined,
+      overlayText: typeof f.overlayText === "string" ? f.overlayText : undefined,
+      overlaySubtext: typeof f.overlaySubtext === "string" ? f.overlaySubtext : undefined,
+      textOverlayEnabled: typeof f.textOverlayEnabled === "boolean" ? f.textOverlayEnabled : undefined,
+      textOverlayHeading: typeof f.textOverlayHeading === "string" ? f.textOverlayHeading : undefined,
+      textOverlaySubtext: typeof f.textOverlaySubtext === "string" ? f.textOverlaySubtext : undefined,
     };
   } catch {
     return null;
