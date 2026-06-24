@@ -558,12 +558,17 @@ async function withContext(browser, name, fn) {
     const startedAt = Date.now();
     const reqHeaders = redactHeaders(req.headers());
     const postData = redactBody(req.postData() || null);
-    const entry = { scenario: name, at: startedAt, method: req.method(), url, headers: reqHeaders, postData };
+    // Walk redirect chain back to origin (also used for the HAR entry below).
+    const redirectChain = [];
+    let rPrev = req.redirectedFrom();
+    while (rPrev) { redirectChain.push(redactUrl(rPrev.url())); rPrev = rPrev.redirectedFrom(); }
+    const entry = { scenario: name, at: startedAt, startedAt, method: req.method(), url, headers: reqHeaders, postData, redirectChain };
     appendNd(reqLog, entry);
     if (RECORD) requestRecording.push(entry);
     sc.liveRequests.push(entry);
     if (HASHED_JS_RE.test(url)) { assetReqs.push(url); sc.hashedJsUrls.add(url.split('?')[0]); }
     if (sc.topRequests.length < 25) sc.topRequests.push({ method: req.method(), url });
+
     // Walk redirect chain back to origin.
     const redirectChain = [];
     let r = req.redirectedFrom();
