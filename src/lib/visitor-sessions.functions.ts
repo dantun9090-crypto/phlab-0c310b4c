@@ -3,9 +3,17 @@
  *
  * Aggregates `visitor_events` server-side using Firebase Admin so large date
  * ranges don't pull tens of thousands of docs into the browser.
+ *
+ * Pagination is cursor-based on (end, sid) DESC — stable ordering even when
+ * new events arrive between requests.
  */
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+
+const CursorSchema = z.object({
+  end: z.number().int().nonnegative(),
+  sid: z.string().min(1).max(200),
+});
 
 const Input = z.object({
   idToken: z.string().min(10).max(4096),
@@ -13,7 +21,7 @@ const Input = z.object({
   toMs: z.number().int().nonnegative(),
   pathFilter: z.string().max(500).optional().nullable(),
   search: z.string().max(200).optional().nullable(),
-  page: z.number().int().min(0).max(10_000).default(0),
+  cursor: CursorSchema.nullable().optional(),
   pageSize: z.number().int().min(5).max(200).default(50),
   /** Hard cap on events scanned per request. */
   maxEvents: z.number().int().min(500).max(50_000).default(20_000),
@@ -31,13 +39,26 @@ export interface VisitorSessionRow {
   returning: boolean;
 }
 
+export interface SessionCursor {
+  end: number;
+  sid: string;
+}
+
 export interface ListVisitorSessionsResult {
   sessions: VisitorSessionRow[];
   total: number;
-  page: number;
   pageSize: number;
+  nextCursor: SessionCursor | null;
   eventsScanned: number;
   truncated: boolean;
+  /** Effective limits applied — surfaced to the UI for the cap explainer. */
+  limits: {
+    maxEvents: number;
+    fromMs: number;
+    toMs: number;
+    pathFilter: string | null;
+    search: string | null;
+  };
 }
 
 function tsMs(v: unknown): number {
@@ -139,18 +160,39 @@ export const listVisitorSessions = createServerFn({ method: 'POST' })
       );
     }
 
-    rows.sort((a, b) => b.end - a.end);
+    // Stable order: end DESC, sid DESC as tiebreaker.
+    rows.sort((a, b) => (b.end - a.end) || (a.sid < b.sid ? 1 : a.sid > b.sid ? -1 : 0));
 
     const total = rows.length;
-    const start = data.page * data.pageSize;
-    const paged = rows.slice(start, start + data.pageSize);
+
+    // Apply cursor (strictly after the cursor position in the sorted order).
+    if (data.cursor) {
+      const { end: cEnd, sid: cSid } = data.cursor;
+      rows = rows.filter((r) =>
+        r.end < cEnd || (r.end === cEnd && r.sid < cSid),
+      );
+    }
+
+    const paged = rows.slice(0, data.pageSize);
+    const last = paged[paged.length - 1];
+    const nextCursor: SessionCursor | null =
+      paged.length === data.pageSize && rows.length > data.pageSize && last
+        ? { end: last.end, sid: last.sid }
+        : null;
 
     return {
       sessions: paged,
       total,
-      page: data.page,
       pageSize: data.pageSize,
+      nextCursor,
       eventsScanned: events.length,
       truncated: events.length >= data.maxEvents,
+      limits: {
+        maxEvents: data.maxEvents,
+        fromMs: data.fromMs,
+        toMs: data.toMs,
+        pathFilter: pathOnly,
+        search: needle || null,
+      },
     };
   });
