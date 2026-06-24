@@ -141,61 +141,134 @@ export function productCacheUrls(input: ProductCacheInvalidationInput = {}): str
 
 async function timed<T extends { ok: boolean; status: number; error?: string }>(
   fn: () => Promise<T>,
-): Promise<T & { durationMs: number }> {
+): Promise<T & { durationMs: number; attempts: number }> {
   const t0 = Date.now();
   try {
     const r = await fn();
-    return { ...r, durationMs: Date.now() - t0 };
+    return { ...r, durationMs: Date.now() - t0, attempts: (r as { attempts?: number }).attempts ?? 1 };
   } catch (e) {
     return {
       ok: false,
       status: 0,
       error: e instanceof Error ? e.message : String(e),
       durationMs: Date.now() - t0,
-    } as T & { durationMs: number };
+      attempts: 1,
+    } as T & { durationMs: number; attempts: number };
   }
 }
 
+/**
+ * Exponential backoff with bounded retries for transient upstream failures.
+ *
+ * A "transient" failure is a network error, an HTTP 5xx, or a 429. 4xx
+ * responses (except 429) are caller errors — retrying just burns quota and
+ * keeps the page in its current refresh attempt longer, so we stop early.
+ *
+ * MAX_ATTEMPTS = 3 → delays roughly 200ms, 400ms (+jitter). Total worst-
+ * case latency stays well under the 10s per-upstream AbortSignal so a
+ * single invalidation call never blocks a request thread for more than
+ * ~21s in the absolute worst case. The idempotency cache ensures a burst
+ * of retried webhooks does NOT amplify this — they all coalesce onto the
+ * one in-flight promise.
+ */
+const MAX_ATTEMPTS = 3;
+const BASE_DELAY_MS = 200;
+
+function isTransientStatus(status: number): boolean {
+  return status === 0 || status === 429 || (status >= 500 && status < 600);
+}
+
+async function withRetry<T extends { ok: boolean; status: number; error?: string }>(
+  label: string,
+  fn: () => Promise<T>,
+): Promise<T & { attempts: number }> {
+  let last: (T & { attempts: number }) | null = null;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let result: T;
+    try {
+      result = await fn();
+    } catch (e) {
+      result = {
+        ok: false,
+        status: 0,
+        error: e instanceof Error ? e.message : String(e),
+      } as T;
+    }
+    last = { ...result, attempts: attempt };
+    if (result.ok || !isTransientStatus(result.status) || attempt === MAX_ATTEMPTS) {
+      if (attempt > 1) {
+        logInvalidate({
+          level: result.ok ? 'info' : 'warn',
+          stage: 'retry-final',
+          upstream: label,
+          attempt,
+          ok: result.ok,
+          status: result.status,
+        });
+      }
+      return last;
+    }
+    // Exponential backoff with full jitter: delay ∈ [0, BASE * 2^(n-1)].
+    const cap = BASE_DELAY_MS * 2 ** (attempt - 1);
+    const delay = Math.floor(Math.random() * cap);
+    logInvalidate({
+      level: 'warn',
+      stage: 'retry',
+      upstream: label,
+      attempt,
+      nextDelayMs: delay,
+      status: result.status,
+      error: result.error,
+    });
+    await new Promise((r) => setTimeout(r, delay));
+  }
+  return last as T & { attempts: number };
+}
+
 async function purgeCloudflare(urls: string[]) {
-  return timed(async () => {
-    const token = process.env.CLOUDFLARE_API_TOKEN;
-    if (!token) return { ok: false, status: 0, error: 'CLOUDFLARE_API_TOKEN missing' };
-    const res = await fetch(
-      `https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache`,
-      {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+  return timed(async () =>
+    withRetry('cloudflare', async () => {
+      const token = process.env.CLOUDFLARE_API_TOKEN;
+      if (!token) return { ok: false, status: 0, error: 'CLOUDFLARE_API_TOKEN missing' };
+      const res = await fetch(
+        `https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ files: urls }),
+          signal: AbortSignal.timeout(10_000),
         },
-        body: JSON.stringify({ files: urls }),
-        signal: AbortSignal.timeout(10_000),
-      },
-    );
-    return { ok: res.ok, status: res.status };
-  });
+      );
+      return { ok: res.ok, status: res.status };
+    }),
+  );
 }
 
 async function recachePrerender(urls: string[]) {
   const token = process.env.PRERENDER_TOKEN;
   if (!token) {
-    const missing = { ok: false, status: 0, error: 'PRERENDER_TOKEN missing', durationMs: 0 };
+    const missing = { ok: false, status: 0, error: 'PRERENDER_TOKEN missing', durationMs: 0, attempts: 0 };
     return { ok: false, desktop: missing, mobile: missing };
   }
 
   const post = (adaptiveType: 'desktop' | 'mobile') =>
-    timed(async () => {
-      const res = await fetch('https://api.prerender.io/recache', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Prerender-Token': token,
-        },
-        body: JSON.stringify({ prerenderToken: token, urls, adaptiveType }),
-        signal: AbortSignal.timeout(10_000),
-      });
-      return { ok: res.ok, status: res.status };
-    });
+    timed(async () =>
+      withRetry(`prerender-${adaptiveType}`, async () => {
+        const res = await fetch('https://api.prerender.io/recache', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Prerender-Token': token,
+          },
+          body: JSON.stringify({ prerenderToken: token, urls, adaptiveType }),
+          signal: AbortSignal.timeout(10_000),
+        });
+        return { ok: res.ok, status: res.status };
+      }),
+    );
 
   const [desktop, mobile] = await Promise.all([post('desktop'), post('mobile')]);
   return { ok: desktop.ok && mobile.ok, desktop, mobile };
