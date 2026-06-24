@@ -405,7 +405,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `    <g:condition>new</g:condition>`,
               `    <g:mpn>${xmlEscape(mpn)}</g:mpn>`,
               `    <g:sku>${xmlEscape(sku)}</g:sku>`,
-              `    <g:item_group_id>${xmlEscape(p.id || p.slug)}</g:item_group_id>`,
+              `    <g:item_group_id>${xmlEscape(override ? override.code : (p.id || p.slug))}</g:item_group_id>`,
               hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
               `    <g:google_product_category>${GOOGLE_CATEGORY_ID}</g:google_product_category>`,
               `    <g:product_type>${xmlEscape(GOOGLE_CATEGORY_PATH)}</g:product_type>`,
