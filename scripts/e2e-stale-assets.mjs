@@ -1173,32 +1173,44 @@ a{color:#7dd3fc}
   writeFileSync(join(REPORT_DIR, 'report.html'), html);
 
   // --artifacts-on-failure-only: prune optional artifacts when the run is fully clean.
-  // We always keep report.json, report.txt, junit.xml, db-diff.json (small, CI-friendly).
+  // Always-kept: report.json, report.txt, junit.xml, db-diff.json (small, CI-friendly).
+  // --prune-dry-run / --dry-run: log decisions without touching the filesystem.
   const meaningfulFailure = failed.length > 0
     || perScenarioSummary.some((s) => s.replayDiff && s.replayDiff.thresholds && s.replayDiff.thresholds.breached.length > 0);
-  if (ARTIFACTS_ON_FAILURE_ONLY && !meaningfulFailure) {
-    const prune = [
-      join(REPORT_DIR, 'report.html'),
-      join(REPORT_DIR, 'requests.ndjson'),
-      join(REPORT_DIR, 'responses.ndjson'),
-      join(REPORT_DIR, 'console.ndjson'),
-      join(REPORT_DIR, 'screenshots'),
-    ];
-    for (const name of perScenarioSummary.map((s) => s.scenario)) {
-      prune.push(join(REPORT_DIR, `har-${name}.json`));
-    }
-    // In RECORD mode, fixtures are the point of the run — keep them even on success.
-    if (!RECORD) {
-      for (const name of perScenarioSummary.map((s) => s.scenario)) {
-        prune.push(join(FIXTURE_DIR, name));
+  const alwaysKept = ['report.json', 'report.txt', 'junit.xml', 'db-diff.json'].map((n) => join(REPORT_DIR, n));
+  const optional = [
+    join(REPORT_DIR, 'report.html'),
+    join(REPORT_DIR, 'requests.ndjson'),
+    join(REPORT_DIR, 'responses.ndjson'),
+    join(REPORT_DIR, 'console.ndjson'),
+    join(REPORT_DIR, 'screenshots'),
+    ...perScenarioSummary.map((s) => join(REPORT_DIR, `har-${s.scenario}.json`)),
+    // Fixtures are only "optional" in non-RECORD mode (RECORD writes them as the point of the run).
+    ...(RECORD ? [] : perScenarioSummary.map((s) => join(FIXTURE_DIR, s.scenario))),
+  ];
+  const outcome = meaningfulFailure ? 'failure' : 'success';
+  if (ARTIFACTS_ON_FAILURE_ONLY || PRUNE_DRY_RUN) {
+    const wouldDelete = (ARTIFACTS_ON_FAILURE_ONLY && !meaningfulFailure)
+      ? optional.filter((p) => existsSync(p))
+      : [];
+    const wouldKeep = [...alwaysKept, ...optional.filter((p) => existsSync(p) && !wouldDelete.includes(p))];
+    const tag = PRUNE_DRY_RUN ? '[artifacts-prune][dry-run]' : '[artifacts-on-failure-only]';
+    console.log(`${tag} outcome=${outcome} artifacts-on-failure-only=${ARTIFACTS_ON_FAILURE_ONLY} dry-run=${PRUNE_DRY_RUN}`);
+    for (const p of wouldKeep) console.log(`${tag}   keep:   ${p}`);
+    for (const p of wouldDelete) console.log(`${tag}   delete: ${p}`);
+    if (!PRUNE_DRY_RUN && wouldDelete.length) {
+      let pruned = 0;
+      for (const p of wouldDelete) {
+        try { rmSync(p, { recursive: true, force: true }); pruned++; } catch { /* ignore */ }
       }
+      console.log(`${tag} pruned ${pruned}/${wouldDelete.length} optional artifact path(s)`);
+    } else if (PRUNE_DRY_RUN) {
+      console.log(`${tag} no filesystem changes made (dry-run); would delete ${wouldDelete.length} path(s), keep ${wouldKeep.length}`);
+    } else {
+      console.log(`[artifacts-on-failure-only] outcome=${outcome} → nothing to prune`);
     }
-    let pruned = 0;
-    for (const p of prune) {
-      try { if (existsSync(p)) { rmSync(p, { recursive: true, force: true }); pruned++; } } catch { /* ignore */ }
-    }
-    console.log(`[artifacts-on-failure-only] success → pruned ${pruned} optional artifact path(s)`);
   }
+
 
 
 
