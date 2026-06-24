@@ -66,7 +66,7 @@ const HYDRATION_ERROR_FLAG = "__phl_hydration_error_seen";
 // Flip ENABLE_SSR_HYDRATION ONLY after user confirms
 // "mutations = 0" on Chrome + Firefox over 10 hard reloads.
 // ============================================================
-const ENABLE_SSR_HYDRATION = true;
+const ENABLE_SSR_HYDRATION = false;
 const SSR_HYDRATION_ROUTES: string[] = ["/"];
 
 function shouldHydrateCurrentRoute(): boolean {
