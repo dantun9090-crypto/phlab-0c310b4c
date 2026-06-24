@@ -392,7 +392,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
             return [
               `  <item>`,
-              `    <g:id>${xmlEscape(p.id || p.slug)}</g:id>`,
+              `    <g:id>${xmlEscape(override ? override.code : (p.id || p.slug))}</g:id>`,
               `    <title>${cdata(title)}</title>`,
               `    <link>${xmlEscape(link)}</link>`,
               `    <g:mobile_link>${xmlEscape(link)}</g:mobile_link>`,
