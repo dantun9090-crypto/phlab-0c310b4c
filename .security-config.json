@@ -1,0 +1,4 @@
+{
+  "_comment": "Repo-level security gate policy. Change `minSeverity` to flip the CI blocking threshold without editing scripts/security-audit.ts. Accepted values: info | low | medium | high | critical. The SECURITY_MIN_SEVERITY env var (set on a workflow_dispatch run) overrides this file for a single run.",
+  "minSeverity": "medium"
+}
