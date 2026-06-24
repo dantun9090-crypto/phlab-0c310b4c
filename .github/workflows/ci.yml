@@ -10,6 +10,11 @@ jobs:
     name: Production build + Worker import guard
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      # Needed for cosign keyless SBOM signing (OIDC -> Fulcio -> Rekor).
+      id-token: write
+
     steps:
       - uses: actions/checkout@v4
 
