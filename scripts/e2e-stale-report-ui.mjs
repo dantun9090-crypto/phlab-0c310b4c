@@ -104,7 +104,9 @@ function renderHtml() {
     <script>${REPORT_CLIENT_SCRIPT}</script></head><body>
     <header><h1>ui-test</h1>
       <button type="button" data-global-bundle="1" data-global-bundle-b64="${gb64}">⬇ Download mismatch bundle (all scenarios)</button>
+      <button type="button" data-global-bundle="1" data-global-bundle-b64="${gb64}" data-mismatch-only="1">⬇ Download mismatches only (JSON)</button>
       <button type="button" data-global-zip="1" data-global-bundle-b64="${gb64}">⬇ Download as ZIP</button>
+      <button type="button" data-global-zip="1" data-global-bundle-b64="${gb64}" data-mismatch-only="1">⬇ Download mismatches only (ZIP)</button>
     </header>
     ${scenarios.map(renderScenario).join('')}
   </body></html>`;
