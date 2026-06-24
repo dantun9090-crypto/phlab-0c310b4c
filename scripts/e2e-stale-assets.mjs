@@ -397,26 +397,37 @@ async function withContext(browser, name, fn) {
     replayResponses = raw;
   }
 
-  // HAR-like trace: keep per-request timing/redirect chain.
+  // HAR-like trace: keep per-request timing/redirect chain + (redacted) headers/body.
   const harByReq = new WeakMap();
   context.on('request', (req) => {
-    const url = req.url();
+    const url = redactUrl(req.url());
     const startedAt = Date.now();
-    const entry = { scenario: name, at: startedAt, method: req.method(), url, headers: req.headers(), postData: req.postData() || null };
+    const reqHeaders = redactHeaders(req.headers());
+    const postData = redactBody(req.postData() || null);
+    const entry = { scenario: name, at: startedAt, method: req.method(), url, headers: reqHeaders, postData };
     appendNd(reqLog, entry);
     if (RECORD) requestRecording.push(entry);
     sc.liveRequests.push(entry);
     if (HASHED_JS_RE.test(url)) { assetReqs.push(url); sc.hashedJsUrls.add(url.split('?')[0]); }
     if (sc.topRequests.length < 25) sc.topRequests.push({ method: req.method(), url });
-    const redirectFrom = req.redirectedFrom();
+    // Walk redirect chain back to origin.
+    const redirectChain = [];
+    let r = req.redirectedFrom();
+    while (r) { redirectChain.push(redactUrl(r.url())); r = r.redirectedFrom(); }
     const har = {
       startedAt,
       method: req.method(),
       url,
       resourceType: req.resourceType(),
-      redirectedFrom: redirectFrom ? redirectFrom.url() : null,
+      redirectedFrom: redirectChain[0] || null,
+      redirectChain,
+      requestHeaders: reqHeaders,
+      requestBody: postData,
       status: null,
       mimeType: null,
+      responseHeaders: null,
+      responseBody: null,
+      responseBodyBytes: null,
       durationMs: null,
       fromCache: false,
       failed: null,
@@ -425,25 +436,35 @@ async function withContext(browser, name, fn) {
     sc.har.push(har);
   });
   context.on('response', async (res) => {
-    const u = res.url();
+    const u = redactUrl(res.url());
     const har = harByReq.get(res.request());
+    let rawBody = null;
+    try { rawBody = await res.text(); } catch { /* ignore */ }
+    const bodyBytes = rawBody == null ? null : rawBody.length;
+    const redacted = redactBody(rawBody);
     if (har) {
       har.status = res.status();
       har.mimeType = res.headers()['content-type'] || null;
+      har.responseHeaders = redactHeaders(res.headers());
+      har.responseBody = redacted;
+      har.responseBodyBytes = bodyBytes;
       har.durationMs = Date.now() - har.startedAt;
       har.fromCache = !!res.fromServiceWorker?.();
     }
     if (!/\/api\/public\//.test(u)) return;
-    let body = null;
-    try { body = (await res.text()).slice(0, 4000); } catch { /* ignore */ }
-    const entry = { scenario: name, at: Date.now(), url: u, status: res.status(), body };
+    const entry = {
+      scenario: name, at: Date.now(), url: u, status: res.status(),
+      headers: redactHeaders(res.headers()),
+      body: redacted,
+      bodyBytes,
+    };
     appendNd(resLog, entry);
     if (RECORD) responseRecording.push(entry);
     sc.liveResponses.push(entry);
     if (/post-publish-check/.test(u)) {
       purgeResponses.push(entry);
       try {
-        const j = JSON.parse(body || '{}');
+        const j = JSON.parse((REDACT_BODIES ? rawBody : redacted) || '{}');
         if (j.buildId) sc.buildIds.add(j.buildId);
         if (j.previous) sc.buildIds.add(j.previous);
       } catch { /* ignore */ }
@@ -453,6 +474,7 @@ async function withContext(browser, name, fn) {
     const har = harByReq.get(req);
     if (har) { har.failed = req.failure()?.errorText || 'failed'; har.durationMs = Date.now() - har.startedAt; }
   });
+
 
   // Stub purge endpoint (or replay).
   await context.route('**/api/public/post-publish-check*', async (route) => {
