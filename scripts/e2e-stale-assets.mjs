@@ -51,8 +51,15 @@ const RECORD = !!flag('record', false);
 const REPLAY = !!flag('replay', false);
 const LIST = !!flag('list', false);
 const FIXTURE_DIR = flag('fixture-dir', join(process.cwd(), 'fixtures', 'stale-assets'));
-const RETRIES = Math.max(0, parseInt(flag('retries', process.env.E2E_RETRIES ?? '1'), 10) || 0);
-const RETRY_DELAY_MS = Math.max(0, parseInt(flag('retry-delay', '1500'), 10) || 0);
+const DETERMINISTIC = !!flag('deterministic', process.env.E2E_DETERMINISTIC === '1');
+// Deterministic mode forces stable retry timing AND removes RNG jitter so two CI runs
+// produce byte-comparable summaries (modulo wall-clock timestamps, which we normalize in the diff).
+const RETRIES = DETERMINISTIC
+  ? Math.max(0, parseInt(flag('retries', process.env.E2E_RETRIES ?? '0'), 10) || 0)
+  : Math.max(0, parseInt(flag('retries', process.env.E2E_RETRIES ?? '1'), 10) || 0);
+const RETRY_DELAY_MS = DETERMINISTIC
+  ? 1000 // fixed backoff, no jitter
+  : Math.max(0, parseInt(flag('retry-delay', '1500'), 10) || 0);
 if (RECORD && REPLAY) {
   console.error('--record and --replay are mutually exclusive');
   process.exit(2);
