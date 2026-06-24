@@ -367,5 +367,53 @@ jobs:
             sbom-bundle/verify-attestations.log
           retention-days: 30
 
+  # Determinism check: rebuild the SBOM + audit JSON from a clean cache
+  # and compare SHA-256 hashes against the cached-run artifacts. Catches
+  # incomplete cache keys (e.g. generator picks up a file that isn't in
+  # `hashFiles(...)`) and non-deterministic generator output (timestamps,
+  # unstable map ordering, network response ordering).
+  determinism-check:
+    name: Determinism check (cached vs fresh)
+    runs-on: ubuntu-latest
+    needs: security-scan
+    if: always() && needs.security-scan.result == 'success'
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # Intentionally NO actions/cache steps — this job must rebuild
+      # everything from scratch so the resulting hashes represent a
+      # true baseline rather than restored bytes.
+      - name: Install deps (fresh, no cache)
+        run: bun install --frozen-lockfile
+
+      - name: Rebuild SBOM + audit (fresh)
+        env:
+          # Match the gate used by the cached run so the audit JSON
+          # `minSeverity` field matches and only generator-level
+          # nondeterminism can cause a hash mismatch.
+          SECURITY_MIN_SEVERITY: ${{ github.event.inputs.min_severity }}
+        run: |
+          mkdir -p dist fresh
+          bun run sbom
+          bun run security:scan
+          cp dist/sbom.cdx.json dist/security-audit.json fresh/
+
+      - name: Download cached-run determinism inputs
+        uses: actions/download-artifact@v4
+        with:
+          name: determinism-cached-${{ github.sha }}
+          path: cached
+
+      - name: Compare hashes (cached vs fresh)
+        run: bun scripts/check-determinism.ts cached fresh
+
+
 
 
