@@ -312,6 +312,9 @@ class TrialOutcome:
     raw_body: str     # raw response body captured by the page listener
     db_pre: dict[str, Any] | None = field(default=None)
     db_post: dict[str, Any] | None = field(default=None)
+    fn: str | None = field(default=None)
+    request_args: dict[str, Any] | None = field(default=None)
+
 
 
 def assert_rejection_contract(outcome: TrialOutcome) -> tuple[bool, str]:
