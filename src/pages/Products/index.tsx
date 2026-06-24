@@ -3,7 +3,8 @@ import {
   X, ChevronDown, Package, WifiOff, RefreshCw, Microscope,
   CheckCircle2, LayoutGrid, List, Filter,
 } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { useLocation, Link } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { dispatchAddToCart, CartItem } from '@/components/Layout';
