@@ -355,6 +355,75 @@ def db_unchanged(pre: dict[str, Any] | None, post: dict[str, Any] | None) -> boo
     )
 
 
+# Fields whose byte-for-byte value MUST NOT change on a rejected request.
+# Snapshot shape (from e2e-survey-fixture.mjs `snapshot`):
+#   { order: {...}, save10_claims: {...} | null }
+IMMUTABLE_ORDER_FIELDS = (
+    "surveySkipped",
+    "sourceSurvey",
+    "sourceSurveyAt",
+    "sourceSurveySubmittedAt",
+    "save10CouponCode",
+    "save10ClaimedAt",
+    "updatedAt",
+)
+
+
+def assert_fields_immutable(
+    pre: dict[str, Any] | None,
+    post: dict[str, Any] | None,
+) -> tuple[bool, str]:
+    """Strict per-field check: each tracked field must be byte-identical."""
+    if pre is None or post is None:
+        return True, "no snapshot"
+    pre_order = (pre.get("order") or {}) if isinstance(pre.get("order"), dict) else {}
+    post_order = (post.get("order") or {}) if isinstance(post.get("order"), dict) else {}
+    for f in IMMUTABLE_ORDER_FIELDS:
+        a = json.dumps(pre_order.get(f), sort_keys=True, default=str)
+        b = json.dumps(post_order.get(f), sort_keys=True, default=str)
+        if a != b:
+            return False, f"order.{f} mutated: {a} -> {b}"
+    a = json.dumps(pre.get("save10_claims"), sort_keys=True, default=str)
+    b = json.dumps(post.get("save10_claims"), sort_keys=True, default=str)
+    if a != b:
+        return False, f"save10_claims mutated: {a[:120]} -> {b[:120]}"
+    return True, "fields immutable"
+
+
+# Randomised malformed shape generator for the burst phase. Categories:
+#   empty, oversize, unicode/control chars, JSON-encoded, hex, path-ish,
+#   sql-ish, null-bytes, just-under-min, way-oversize.
+def random_bad_token(rnd: "random.Random") -> tuple[str, str]:
+    import string
+    category = rnd.choice([
+        "empty", "one-char", "just-under-min", "oversize", "way-oversize",
+        "unicode-emoji", "unicode-rtl", "control-chars", "null-bytes",
+        "json-encoded", "hex-zeros", "sql-ish", "path-ish", "url-ish",
+        "all-spaces", "newlines",
+    ])
+    if category == "empty":          return category, ""
+    if category == "one-char":       return category, rnd.choice(string.ascii_letters)
+    if category == "just-under-min": return category, rnd.choice(string.ascii_letters) * 31
+    if category == "oversize":       return category, "x" * rnd.randint(257, 1024)
+    if category == "way-oversize":   return category, "x" * rnd.randint(4096, 16384)
+    if category == "unicode-emoji":  return category, "🚀" * rnd.randint(8, 64)
+    if category == "unicode-rtl":    return category, "\u202e" * rnd.randint(8, 64)
+    if category == "control-chars":
+        return category, "".join(chr(rnd.randint(1, 31)) for _ in range(rnd.randint(32, 128)))
+    if category == "null-bytes":     return category, "\x00" * rnd.randint(32, 128)
+    if category == "json-encoded":
+        return category, json.dumps({"token": "x" * rnd.randint(16, 96), "u": rnd.random()})
+    if category == "hex-zeros":      return category, "0" * rnd.choice([32, 64, 128, 256])
+    if category == "sql-ish":        return category, "' OR 1=1 --" + "x" * rnd.randint(20, 200)
+    if category == "path-ish":       return category, "../" * rnd.randint(4, 32) + "x" * 16
+    if category == "url-ish":        return category, "https://evil.example/" + "x" * rnd.randint(20, 200)
+    if category == "all-spaces":     return category, " " * rnd.randint(32, 200)
+    if category == "newlines":       return category, "\n" * rnd.randint(32, 200)
+    return category, "?"
+
+
+
+
 # ---------------------------------------------------------------------------
 # Playwright driver
 # ---------------------------------------------------------------------------
