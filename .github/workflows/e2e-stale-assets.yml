@@ -1,0 +1,88 @@
+name: E2E — stale-asset recovery
+
+# Verifies the post-publish auto-purge + stale-chunk self-heal flow:
+#   * JS chunk 404, CSS link error, sourcemap 404
+#   * cross-tab and network-failure locks
+# Runs nightly + on PRs that touch the affected client/server code.
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/chunk-reload.ts"
+      - "src/routes/__root.tsx"
+      - "src/routes/api/public/post-publish-check.ts"
+      - "scripts/e2e-stale-assets.mjs"
+      - ".github/workflows/e2e-stale-assets.yml"
+  schedule:
+    # Nightly at 04:07 UTC — offset from the survey suite to spread load.
+    - cron: "7 4 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-stale-assets-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Optional — when set, the report includes before/after DB diffs of
+      # _meta/build_state. Without it the rest of the suite still runs.
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+      TARGET_URL: http://localhost:8080
+      E2E_REPORT_DIR: ${{ github.workspace }}/e2e-stale-report
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright (Node + Chromium)
+        run: bunx playwright install --with-deps chromium
+
+      - name: Build app
+        run: bun run build
+
+      - name: Start preview server
+        run: |
+          (bun run start &) > server.log 2>&1
+          for i in $(seq 1 60); do
+            if curl -fsS -o /dev/null "http://localhost:8080/"; then
+              echo "server up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "server failed to start"; tail -n 200 server.log; exit 1
+
+      - name: Run E2E stale-assets probe
+        run: node scripts/e2e-stale-assets.mjs
+
+      - name: Upload E2E stale-assets report (HTML/JUnit/console)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-stale-assets-report
+          path: ${{ env.E2E_REPORT_DIR }}
+          if-no-files-found: ignore
+
+      - name: Publish JUnit results
+        if: always()
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: ${{ env.E2E_REPORT_DIR }}/junit.xml
+          check_name: e2e-stale-assets
+          fail_on_failure: true
+          require_tests: false
+
+      - name: Upload server log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-stale-assets-server-log
+          path: server.log
+          if-no-files-found: ignore
