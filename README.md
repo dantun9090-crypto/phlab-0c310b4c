@@ -1,5 +1,14 @@
 # PH Labs — phlabs.co.uk
 
+<!-- security-scan-status:start -->
+[![Security scan](https://github.com/phlabs-uk/phlabs/actions/workflows/security-scan.yml/badge.svg?branch=main)](https://github.com/phlabs-uk/phlabs/actions/workflows/security-scan.yml?query=branch%3Amain)
+
+Live pass/fail of the `Security scan (deps)` workflow on `main` —
+dependency audit (configurable `minSeverity` gate via
+`.security-config.json`), CycloneDX SBOM, cosign keyless signing,
+and SLSA v1.0 Provenance + CycloneDX attestations.
+<!-- security-scan-status:end -->
+
 <!-- sbom-status:start -->
 ![sbom: pending](https://img.shields.io/badge/SBOM-pending%20first%20verified%20release-lightgrey?logo=sigstore&logoColor=white)
 
