@@ -886,16 +886,42 @@ async function run() {
         const pt = d.purgeTiming;
         const ptRows = pt.liveRelMs.map((t, i) => `<tr><td>${i}</td><td><code>${pt.fixtureRelMs[i] ?? '—'}</code> ms</td><td><code>${t}</code> ms</td><td><code>${pt.deltaMs[i] ?? '—'}</code> ms</td></tr>`).join('')
           || '<tr><td colspan="4" class="muted">no purge calls observed</td></tr>';
-        const mmRows = d.mismatches.map((m) => `<tr class="diff"><td>${esc(m.kind)}</td><td><code>${esc(m.url)}</code></td><td><code>${esc(JSON.stringify(m).slice(0, 200))}</code></td></tr>`).join('')
-          || '<tr><td colspan="3" class="muted">no mismatches — live matches fixture ✅</td></tr>';
-        return `<details ${d.summary.mismatchCount ? 'open' : ''}><summary>Live vs replay (mismatches=${d.summary.mismatchCount}, fixture/live req=${d.summary.requestsFixture}/${d.summary.requestsLive}, resp=${d.summary.responsesFixture}/${d.summary.responsesLive})</summary>
+        const renderSide = (label, side) => {
+          if (!side) return `<div class="side"><b>${label}:</b> <span class="muted">— not present —</span></div>`;
+          const hdrs = side.headers ? Object.entries(side.headers).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join('\n') : '(none)';
+          const body = side.body == null ? '(none)' : esc(String(side.body));
+          const chain = side.har?.redirectChain?.length
+            ? `<div><b>Redirect chain (${side.har.redirectChain.length}):</b><ol>${side.har.redirectChain.map((u) => `<li><code>${esc(u)}</code></li>`).join('')}</ol></div>` : '';
+          const reqHdrs = side.har?.requestHeaders ? Object.entries(side.har.requestHeaders).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join('\n') : null;
+          const timing = side.har?.durationMs != null ? `<div class="muted">duration ${side.har.durationMs}ms · resourceType ${esc(side.har.resourceType || '')}${side.har.fromCache ? ' · from cache' : ''}${side.har.failed ? ' · failed ' + esc(side.har.failed) : ''}</div>` : '';
+          return `<div class="side"><b>${label}</b> · status <code>${esc(side.status)}</code> · ${side.bodyBytes ?? (side.body ? side.body.length : 0)}B
+            ${timing}
+            ${reqHdrs ? `<details><summary>request headers</summary><pre>${reqHdrs}</pre></details>` : ''}
+            <details><summary>response headers</summary><pre>${hdrs}</pre></details>
+            <details><summary>response body</summary><pre>${body}</pre></details>
+            ${chain}</div>`;
+        };
+        const items = d.items || [];
+        const itemRows = items.map((it, idx) => {
+          const cls = it.match ? 'pass' : 'fail';
+          const tag = it.match ? '✅ match' : `❌ ${esc(it.reasons.join(', '))}`;
+          return `<details class="drill ${cls}"><summary>${tag} · <code>${esc(it.url)}</code> [#${it.index}]</summary>
+            <div class="pair">${renderSide('fixture', it.fixture)}${renderSide('live', it.live)}</div>
+          </details>`;
+        }).join('') || '<p class="muted">no items captured</p>';
+        const tBadge = d.thresholds.breached.length
+          ? `<span class="badge bad">thresholds breached: ${esc(d.thresholds.breached.join('; '))}</span>`
+          : `<span class="badge ok">within thresholds (max ${d.thresholds.maxMismatches}/${d.thresholds.maxStatusMismatches}/${d.thresholds.maxBodyByteDelta}B)</span>`;
+        return `<details ${d.summary.mismatchCount ? 'open' : ''}><summary>Live vs replay (matches=${d.summary.matchCount}, mismatches=${d.summary.mismatchCount}, statusΔ=${d.summary.statusMismatchCount}, maxBodyΔ=${d.summary.maxBodyDelta}B)</summary>
+          <p>${tBadge}</p>
           <h4>Purge call timing (relative to first purge per side)</h4>
           <table class="tbl"><thead><tr><th>#</th><th>fixture</th><th>live</th><th>Δ</th></tr></thead><tbody>${ptRows}</tbody></table>
-          <h4>Mismatched requests / status / bodies</h4>
-          <table class="tbl"><thead><tr><th>kind</th><th>url</th><th>detail</th></tr></thead><tbody>${mmRows}</tbody></table>
-          ${d.truncated ? '<p class="muted">(truncated to first 40)</p>' : ''}
+          <h4>Per-request drilldown (${items.length})</h4>
+          <div class="drilldown">${itemRows}</div>
+          ${d.truncated ? '<p class="muted">(mismatch summary truncated to first 40)</p>' : ''}
         </details>`;
       })()}
+
       <details><summary>Screenshot</summary><p><a href="screenshots/${esc(s.scenario)}.png"><img src="screenshots/${esc(s.scenario)}.png" alt="${esc(s.scenario)}" loading="lazy" style="max-width:100%;border:1px solid #444"/></a></p></details>
     </section>`;
   }).join('\n');
