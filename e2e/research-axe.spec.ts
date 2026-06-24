@@ -12,8 +12,9 @@ const BASE =
 
 test.describe("/research axe-core a11y audit", () => {
   test("has no critical or serious WCAG violations", async ({ page }) => {
-    await page.goto(`${BASE}/research`, { waitUntil: "networkidle" });
+    await page.goto(`${BASE}/research`, { waitUntil: "domcontentloaded" });
     await expect(page.locator("h1")).toBeVisible();
+    await page.waitForLoadState("load", { timeout: 10_000 }).catch(() => undefined);
 
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"])

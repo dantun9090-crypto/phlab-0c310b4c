@@ -504,6 +504,7 @@ const BOOT_WATCHDOG = `
     if(qs.has('_r')){
       try{
         qs.delete('_r');
+        qs.delete('stale_recovery');
         var cleanRecoveryUrl=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
         history.replaceState(null,'',cleanRecoveryUrl);
       }catch(e){}
@@ -527,6 +528,7 @@ const BOOT_WATCHDOG = `
         try{
           qs.delete('sw');
           qs.delete('_r');
+            qs.delete('stale_recovery');
           var clean=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
           history.replaceState(null,'',clean);
         }catch(e){}
@@ -558,6 +560,7 @@ const BOOT_WATCHDOG = `
           try{
             qs.delete('sw');
             qs.delete('_r');
+            qs.delete('stale_recovery');
             var url=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
             location.replace(url);
           }catch(e){ location.reload(); }

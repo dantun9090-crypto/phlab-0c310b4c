@@ -51,6 +51,20 @@ function parseRobots(txt: string): Map<string, string[]> {
 describe("/compound — hardened robots + sitemap", () => {
   const crawlablePaths = ["/compound", "/research"] as const;
 
+  const disallowRules = (rules: string[]) =>
+    rules
+      .map((d) => d.match(/^disallow\s+([^\s]*)/)?.[1] ?? "")
+      .filter(Boolean);
+
+  const ruleBlocksPath = (rule: string, path: string) => {
+    if (rule === "/") return true;
+    const escaped = rule
+      .replace(/[.+?^${}()|[\]\\]/g, "\\$&")
+      .replace(/\*/g, ".*")
+      .replace(/\$$/, "$");
+    return new RegExp(`^${escaped}`).test(path);
+  };
+
   it("robots.txt does not block /compound or /research for general crawlers", async () => {
     const txt = await fetchText(`${ORIGIN}/robots.txt`);
     if (!txt) {
@@ -70,11 +84,7 @@ describe("/compound — hardened robots + sitemap", () => {
     ).toBe(false);
 
     const blocksPath = (rules: string[], path: string) =>
-      rules.some((d) => {
-        const m = d.match(/^disallow\s+([^\s]*)/);
-        const rule = m?.[1] ?? "";
-        return rule === path || (rule.endsWith("/") && path.startsWith(rule));
-      });
+      disallowRules(rules).some((rule) => ruleBlocksPath(rule, path));
 
     for (const path of crawlablePaths) {
       expect(blocksPath(universal, path), `User-agent: * blocks ${path}`).toBe(false);

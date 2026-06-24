@@ -42,7 +42,7 @@ jobs:
 
       # /compound + /research HTTP test suite:
       #   - OG/Twitter meta + absolute image URLs (HEAD-probed for 200)
-      #   - Hardened robots.txt + sitemap.xml (no Disallow of /compound)
+      #   - Hardened robots.txt + sitemap.xml (no Disallow of /compound or /research)
       #   - FAQPage JSON-LD shape, canonical, prerender HTML
       #   - /research prerender (headings, disclaimers, canonical, CTA)
       # Self-skips offline.
