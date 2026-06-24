@@ -612,7 +612,13 @@ async function withContext(browser, name, fn) {
       headers: redactHeaders(res.headers()),
       body: redacted,
       bodyBytes,
+      // Always-present timing + redirect fields so the live-vs-replay items
+      // and downloadable bundles never need to null-check the schema.
+      startedAt: har?.startedAt ?? null,
+      durationMs: har?.durationMs ?? null,
+      redirectChain: har?.redirectChain || [],
     };
+
     appendNd(resLog, entry);
     if (RECORD) responseRecording.push(entry);
     sc.liveResponses.push(entry);
