@@ -20,13 +20,24 @@
  *   --deterministic       (env E2E_DETERMINISTIC=1)         # stable scenario order + fixed retry timing for comparable CI runs
  *   --list                                                  # list scenario names and exit
  *
+ *   Live-vs-replay thresholds (REPLAY only — fail only on meaningful regressions):
+ *   --max-mismatches=N            (default 0)  total mismatch budget per scenario
+ *   --max-status-mismatches=N     (default 0)  HTTP status differences allowed
+ *   --max-body-byte-delta=N       (default 0)  per-response body byte delta allowed
+ *
+ *   Redaction (applies to fixtures, HAR trace, ndjson logs, and HTML report):
+ *   --redact-bodies                   strip all captured request/response bodies
+ *   --max-body-bytes=N (default 4000) truncate captured bodies to N bytes
+ *   --redact-headers=a,b,c            comma list of header NAMES to mask (default: authorization,cookie,set-cookie,x-api-key,x-auth-token)
+ *   --redact-url-params=a,b,c         comma list of query param NAMES to mask (default: token,key,api_key,access_token,id_token)
+ *
  * Outputs in $E2E_REPORT_DIR (default ./e2e-stale-report/):
- *   report.html   self-contained dashboard (per-scenario, DB diff, purges, no-loop evidence)
+ *   report.html   self-contained dashboard with clickable per-request drilldown
  *   report.json   machine-readable summary
  *   report.txt    plain-text CI log
  *   junit.xml     CI test reporter
  *   db-diff.json  Firestore _meta/build_state before/after (when admin SDK present)
- *   har-<scenario>.json  compact HAR-like trace (timings, redirect chain, resource type)
+ *   har-<scenario>.json  compact HAR-like trace (timings, redirect chain, headers, body)
  *   requests.ndjson / responses.ndjson / console.ndjson
  *   screenshots/<scenario>.png
  *
@@ -66,10 +77,58 @@ if (RECORD && REPLAY) {
   process.exit(2);
 }
 
+// ---------- mismatch thresholds (REPLAY) ----------
+const MAX_MISMATCHES = Math.max(0, parseInt(flag('max-mismatches', '0'), 10) || 0);
+const MAX_STATUS_MISMATCHES = Math.max(0, parseInt(flag('max-status-mismatches', '0'), 10) || 0);
+const MAX_BODY_BYTE_DELTA = Math.max(0, parseInt(flag('max-body-byte-delta', '0'), 10) || 0);
+
+// ---------- redaction config ----------
+const REDACT_BODIES = !!flag('redact-bodies', false);
+const MAX_BODY_BYTES = Math.max(0, parseInt(flag('max-body-bytes', '4000'), 10) || 0);
+const REDACT_HEADERS = new Set(
+  String(flag('redact-headers', 'authorization,cookie,set-cookie,x-api-key,x-auth-token'))
+    .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+);
+const REDACT_URL_PARAMS = new Set(
+  String(flag('redact-url-params', 'token,key,api_key,access_token,id_token'))
+    .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+);
+const REDACTED = '[REDACTED]';
+
+function redactHeaders(h) {
+  if (!h || typeof h !== 'object') return h;
+  const out = {};
+  for (const [k, v] of Object.entries(h)) {
+    out[k] = REDACT_HEADERS.has(k.toLowerCase()) ? REDACTED : v;
+  }
+  return out;
+}
+function redactUrl(u) {
+  if (!u || REDACT_URL_PARAMS.size === 0) return u;
+  try {
+    const url = new URL(u);
+    let touched = false;
+    for (const key of [...url.searchParams.keys()]) {
+      if (REDACT_URL_PARAMS.has(key.toLowerCase())) { url.searchParams.set(key, REDACTED); touched = true; }
+    }
+    return touched ? url.toString() : u;
+  } catch { return u; }
+}
+function redactBody(body) {
+  if (body == null) return body;
+  if (REDACT_BODIES) return REDACTED;
+  const s = String(body);
+  if (MAX_BODY_BYTES > 0 && s.length > MAX_BODY_BYTES) {
+    return s.slice(0, MAX_BODY_BYTES) + `…[truncated ${s.length - MAX_BODY_BYTES}B]`;
+  }
+  return s;
+}
+
 // Transient errors we retry; assertion failures (record()) NEVER trigger retry.
 const TRANSIENT_RE = /(net::ERR_|ECONNRESET|ECONNREFUSED|ETIMEDOUT|Target page, context or browser has been closed|Navigation timeout|browserContext\.|Protocol error|Connection closed|socket hang up|EAI_AGAIN)/i;
 function isTransient(err) { return !!err && TRANSIENT_RE.test(String(err?.message || err)); }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
 
 const TARGET = process.env.TARGET_URL || 'http://localhost:8080';
 const REPORT_DIR = process.env.E2E_REPORT_DIR || join(process.cwd(), 'e2e-stale-report');
@@ -192,26 +251,64 @@ function diffLiveVsReplay(scenarioName) {
   };
   const fMap = byUrl(fixtureResp), lMap = byUrl(liveResp);
   const allUrls = new Set([...fMap.keys(), ...lMap.keys()]);
+  // Build per-item pairs (both matched and mismatched) so the HTML report can drill down into every one.
+  const items = [];
   const mismatches = [];
+  let statusMismatchCount = 0;
+  let maxBodyDelta = 0;
+  // Use the matching scenario's HAR (when available) to enrich each item with headers/body/redirect chain.
+  const harByUrlStatus = (() => {
+    const m = new Map();
+    for (const h of sc.har || []) {
+      const k = (h.url || '').split('?')[0] + '|' + (h.status ?? '');
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push(h);
+    }
+    return m;
+  })();
+  const popHar = (url, status) => {
+    const k = (url || '').split('?')[0] + '|' + (status ?? '');
+    const arr = harByUrlStatus.get(k);
+    if (arr && arr.length) return arr.shift();
+    return null;
+  };
   for (const u of allUrls) {
     const f = fMap.get(u) || [];
     const l = lMap.get(u) || [];
     if (f.length !== l.length) {
-      mismatches.push({ url: u, kind: 'count', fixture: f.length, live: l.length });
+      const m = { url: u, kind: 'count', fixture: f.length, live: l.length };
+      mismatches.push(m); items.push({ match: false, ...m });
     }
     const n = Math.max(f.length, l.length);
     for (let i = 0; i < n; i++) {
       const fr = f[i], lr = l[i];
-      if (!fr) { mismatches.push({ url: u, kind: 'only-live', index: i, status: lr.status }); continue; }
-      if (!lr) { mismatches.push({ url: u, kind: 'only-fixture', index: i, status: fr.status }); continue; }
-      if (fr.status !== lr.status) {
-        mismatches.push({ url: u, kind: 'status', index: i, fixture: fr.status, live: lr.status });
+      const reasons = [];
+      if (!fr) reasons.push('only-live');
+      if (!lr) reasons.push('only-fixture');
+      if (fr && lr) {
+        if (fr.status !== lr.status) { reasons.push('status'); statusMismatchCount++; }
+        const fb = (fr.body || ''), lb = (lr.body || '');
+        if (fb !== lb) {
+          const delta = Math.abs(fb.length - lb.length);
+          if (delta > maxBodyDelta) maxBodyDelta = delta;
+          reasons.push(`body(Δ${delta}B)`);
+        }
       }
-      if ((fr.body || '') !== (lr.body || '')) {
-        mismatches.push({
-          url: u, kind: 'body', index: i,
-          fixtureBytes: (fr.body || '').length, liveBytes: (lr.body || '').length,
-        });
+      const isMatch = reasons.length === 0;
+      const item = {
+        match: isMatch, url: u, index: i, reasons,
+        fixture: fr ? { status: fr.status, headers: fr.headers || null, body: fr.body ?? null, bodyBytes: fr.bodyBytes ?? (fr.body ? String(fr.body).length : null) } : null,
+        live: lr ? { status: lr.status, headers: lr.headers || null, body: lr.body ?? null, bodyBytes: lr.bodyBytes ?? (lr.body ? String(lr.body).length : null), har: lr ? popHar(lr.url, lr.status) : null } : null,
+      };
+      items.push(item);
+      if (!isMatch) {
+        if (!fr) mismatches.push({ url: u, kind: 'only-live', index: i, status: lr.status });
+        else if (!lr) mismatches.push({ url: u, kind: 'only-fixture', index: i, status: fr.status });
+        else {
+          if (fr.status !== lr.status) mismatches.push({ url: u, kind: 'status', index: i, fixture: fr.status, live: lr.status });
+          const fb = (fr.body || ''), lb = (lr.body || '');
+          if (fb !== lb) mismatches.push({ url: u, kind: 'body', index: i, fixtureBytes: fb.length, liveBytes: lb.length });
+        }
       }
     }
   }
@@ -231,6 +328,15 @@ function diffLiveVsReplay(scenarioName) {
     liveRelMs: lRel,
     deltaMs: lRel.map((t, i) => (fRel[i] != null ? t - fRel[i] : null)),
   };
+  // Evaluate thresholds — exceedance is a meaningful regression.
+  const thresholds = {
+    maxMismatches: MAX_MISMATCHES, maxStatusMismatches: MAX_STATUS_MISMATCHES, maxBodyByteDelta: MAX_BODY_BYTE_DELTA,
+    observed: { mismatchCount: mismatches.length, statusMismatchCount, maxBodyDelta },
+    breached: [],
+  };
+  if (mismatches.length > MAX_MISMATCHES) thresholds.breached.push(`mismatches ${mismatches.length} > ${MAX_MISMATCHES}`);
+  if (statusMismatchCount > MAX_STATUS_MISMATCHES) thresholds.breached.push(`statusMismatches ${statusMismatchCount} > ${MAX_STATUS_MISMATCHES}`);
+  if (maxBodyDelta > MAX_BODY_BYTE_DELTA) thresholds.breached.push(`maxBodyDelta ${maxBodyDelta}B > ${MAX_BODY_BYTE_DELTA}B`);
   return {
     summary: {
       requestsFixture: fixtureReq.length,
@@ -238,12 +344,18 @@ function diffLiveVsReplay(scenarioName) {
       responsesFixture: fixtureResp.length,
       responsesLive: liveResp.length,
       mismatchCount: mismatches.length,
+      statusMismatchCount,
+      maxBodyDelta,
+      matchCount: items.filter((x) => x.match).length,
     },
     purgeTiming,
+    thresholds,
+    items, // full pair list — used by the HTML drilldown
     mismatches: mismatches.slice(0, 40),
     truncated: mismatches.length > 40,
   };
 }
+
 
 // ---------- fixture helpers ----------
 function fixturePath(scenario, kind) {
@@ -338,26 +450,37 @@ async function withContext(browser, name, fn) {
     replayResponses = raw;
   }
 
-  // HAR-like trace: keep per-request timing/redirect chain.
+  // HAR-like trace: keep per-request timing/redirect chain + (redacted) headers/body.
   const harByReq = new WeakMap();
   context.on('request', (req) => {
-    const url = req.url();
+    const url = redactUrl(req.url());
     const startedAt = Date.now();
-    const entry = { scenario: name, at: startedAt, method: req.method(), url, headers: req.headers(), postData: req.postData() || null };
+    const reqHeaders = redactHeaders(req.headers());
+    const postData = redactBody(req.postData() || null);
+    const entry = { scenario: name, at: startedAt, method: req.method(), url, headers: reqHeaders, postData };
     appendNd(reqLog, entry);
     if (RECORD) requestRecording.push(entry);
     sc.liveRequests.push(entry);
     if (HASHED_JS_RE.test(url)) { assetReqs.push(url); sc.hashedJsUrls.add(url.split('?')[0]); }
     if (sc.topRequests.length < 25) sc.topRequests.push({ method: req.method(), url });
-    const redirectFrom = req.redirectedFrom();
+    // Walk redirect chain back to origin.
+    const redirectChain = [];
+    let r = req.redirectedFrom();
+    while (r) { redirectChain.push(redactUrl(r.url())); r = r.redirectedFrom(); }
     const har = {
       startedAt,
       method: req.method(),
       url,
       resourceType: req.resourceType(),
-      redirectedFrom: redirectFrom ? redirectFrom.url() : null,
+      redirectedFrom: redirectChain[0] || null,
+      redirectChain,
+      requestHeaders: reqHeaders,
+      requestBody: postData,
       status: null,
       mimeType: null,
+      responseHeaders: null,
+      responseBody: null,
+      responseBodyBytes: null,
       durationMs: null,
       fromCache: false,
       failed: null,
@@ -366,25 +489,35 @@ async function withContext(browser, name, fn) {
     sc.har.push(har);
   });
   context.on('response', async (res) => {
-    const u = res.url();
+    const u = redactUrl(res.url());
     const har = harByReq.get(res.request());
+    let rawBody = null;
+    try { rawBody = await res.text(); } catch { /* ignore */ }
+    const bodyBytes = rawBody == null ? null : rawBody.length;
+    const redacted = redactBody(rawBody);
     if (har) {
       har.status = res.status();
       har.mimeType = res.headers()['content-type'] || null;
+      har.responseHeaders = redactHeaders(res.headers());
+      har.responseBody = redacted;
+      har.responseBodyBytes = bodyBytes;
       har.durationMs = Date.now() - har.startedAt;
       har.fromCache = !!res.fromServiceWorker?.();
     }
     if (!/\/api\/public\//.test(u)) return;
-    let body = null;
-    try { body = (await res.text()).slice(0, 4000); } catch { /* ignore */ }
-    const entry = { scenario: name, at: Date.now(), url: u, status: res.status(), body };
+    const entry = {
+      scenario: name, at: Date.now(), url: u, status: res.status(),
+      headers: redactHeaders(res.headers()),
+      body: redacted,
+      bodyBytes,
+    };
     appendNd(resLog, entry);
     if (RECORD) responseRecording.push(entry);
     sc.liveResponses.push(entry);
     if (/post-publish-check/.test(u)) {
       purgeResponses.push(entry);
       try {
-        const j = JSON.parse(body || '{}');
+        const j = JSON.parse((REDACT_BODIES ? rawBody : redacted) || '{}');
         if (j.buildId) sc.buildIds.add(j.buildId);
         if (j.previous) sc.buildIds.add(j.previous);
       } catch { /* ignore */ }
@@ -394,6 +527,7 @@ async function withContext(browser, name, fn) {
     const har = harByReq.get(req);
     if (har) { har.failed = req.failure()?.errorText || 'failed'; har.durationMs = Date.now() - har.startedAt; }
   });
+
 
   // Stub purge endpoint (or replay).
   await context.route('**/api/public/post-publish-check*', async (route) => {
@@ -632,6 +766,17 @@ async function run() {
     sc.dbSnapshots.push(entry);
     // Build live-vs-replay diff once per scenario (REPLAY only).
     sc.replayDiff = diffLiveVsReplay(name);
+    // Threshold-based assertion: fail only on meaningful regressions.
+    if (REPLAY && sc.replayDiff) {
+      const t = sc.replayDiff.thresholds;
+      const ok = t.breached.length === 0;
+      currentScenario = name;
+      record('live-vs-replay within configured thresholds', ok,
+        ok ? `mismatches=${t.observed.mismatchCount} statusΔ=${t.observed.statusMismatchCount} maxBodyΔ=${t.observed.maxBodyDelta}B`
+           : t.breached.join('; '),
+        ok ? null : { thresholds: t, sample: sc.replayDiff.mismatches.slice(0, 10) });
+    }
+
   }
   await browser.close();
   const dbAfter = await readBuildState();
@@ -661,7 +806,9 @@ async function run() {
     scenarios: [...new Set(results.map((r) => r.scenario))],
     perScenario: perScenarioSummary,
     lockTimeline,
-    cli: { ONLY, RECORD, REPLAY, FIXTURE_DIR, RETRIES, RETRY_DELAY_MS, DETERMINISTIC },
+    cli: { ONLY, RECORD, REPLAY, FIXTURE_DIR, RETRIES, RETRY_DELAY_MS, DETERMINISTIC,
+      MAX_MISMATCHES, MAX_STATUS_MISMATCHES, MAX_BODY_BYTE_DELTA,
+      REDACT_BODIES, MAX_BODY_BYTES, REDACT_HEADERS: [...REDACT_HEADERS], REDACT_URL_PARAMS: [...REDACT_URL_PARAMS] },
     results,
   };
   writeFileSync(join(REPORT_DIR, 'report.json'), JSON.stringify(summary, null, 2));
@@ -739,16 +886,42 @@ async function run() {
         const pt = d.purgeTiming;
         const ptRows = pt.liveRelMs.map((t, i) => `<tr><td>${i}</td><td><code>${pt.fixtureRelMs[i] ?? '—'}</code> ms</td><td><code>${t}</code> ms</td><td><code>${pt.deltaMs[i] ?? '—'}</code> ms</td></tr>`).join('')
           || '<tr><td colspan="4" class="muted">no purge calls observed</td></tr>';
-        const mmRows = d.mismatches.map((m) => `<tr class="diff"><td>${esc(m.kind)}</td><td><code>${esc(m.url)}</code></td><td><code>${esc(JSON.stringify(m).slice(0, 200))}</code></td></tr>`).join('')
-          || '<tr><td colspan="3" class="muted">no mismatches — live matches fixture ✅</td></tr>';
-        return `<details ${d.summary.mismatchCount ? 'open' : ''}><summary>Live vs replay (mismatches=${d.summary.mismatchCount}, fixture/live req=${d.summary.requestsFixture}/${d.summary.requestsLive}, resp=${d.summary.responsesFixture}/${d.summary.responsesLive})</summary>
+        const renderSide = (label, side) => {
+          if (!side) return `<div class="side"><b>${label}:</b> <span class="muted">— not present —</span></div>`;
+          const hdrs = side.headers ? Object.entries(side.headers).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join('\n') : '(none)';
+          const body = side.body == null ? '(none)' : esc(String(side.body));
+          const chain = side.har?.redirectChain?.length
+            ? `<div><b>Redirect chain (${side.har.redirectChain.length}):</b><ol>${side.har.redirectChain.map((u) => `<li><code>${esc(u)}</code></li>`).join('')}</ol></div>` : '';
+          const reqHdrs = side.har?.requestHeaders ? Object.entries(side.har.requestHeaders).map(([k, v]) => `${esc(k)}: ${esc(v)}`).join('\n') : null;
+          const timing = side.har?.durationMs != null ? `<div class="muted">duration ${side.har.durationMs}ms · resourceType ${esc(side.har.resourceType || '')}${side.har.fromCache ? ' · from cache' : ''}${side.har.failed ? ' · failed ' + esc(side.har.failed) : ''}</div>` : '';
+          return `<div class="side"><b>${label}</b> · status <code>${esc(side.status)}</code> · ${side.bodyBytes ?? (side.body ? side.body.length : 0)}B
+            ${timing}
+            ${reqHdrs ? `<details><summary>request headers</summary><pre>${reqHdrs}</pre></details>` : ''}
+            <details><summary>response headers</summary><pre>${hdrs}</pre></details>
+            <details><summary>response body</summary><pre>${body}</pre></details>
+            ${chain}</div>`;
+        };
+        const items = d.items || [];
+        const itemRows = items.map((it, idx) => {
+          const cls = it.match ? 'pass' : 'fail';
+          const tag = it.match ? '✅ match' : `❌ ${esc(it.reasons.join(', '))}`;
+          return `<details class="drill ${cls}"><summary>${tag} · <code>${esc(it.url)}</code> [#${it.index}]</summary>
+            <div class="pair">${renderSide('fixture', it.fixture)}${renderSide('live', it.live)}</div>
+          </details>`;
+        }).join('') || '<p class="muted">no items captured</p>';
+        const tBadge = d.thresholds.breached.length
+          ? `<span class="badge bad">thresholds breached: ${esc(d.thresholds.breached.join('; '))}</span>`
+          : `<span class="badge ok">within thresholds (max ${d.thresholds.maxMismatches}/${d.thresholds.maxStatusMismatches}/${d.thresholds.maxBodyByteDelta}B)</span>`;
+        return `<details ${d.summary.mismatchCount ? 'open' : ''}><summary>Live vs replay (matches=${d.summary.matchCount}, mismatches=${d.summary.mismatchCount}, statusΔ=${d.summary.statusMismatchCount}, maxBodyΔ=${d.summary.maxBodyDelta}B)</summary>
+          <p>${tBadge}</p>
           <h4>Purge call timing (relative to first purge per side)</h4>
           <table class="tbl"><thead><tr><th>#</th><th>fixture</th><th>live</th><th>Δ</th></tr></thead><tbody>${ptRows}</tbody></table>
-          <h4>Mismatched requests / status / bodies</h4>
-          <table class="tbl"><thead><tr><th>kind</th><th>url</th><th>detail</th></tr></thead><tbody>${mmRows}</tbody></table>
-          ${d.truncated ? '<p class="muted">(truncated to first 40)</p>' : ''}
+          <h4>Per-request drilldown (${items.length})</h4>
+          <div class="drilldown">${itemRows}</div>
+          ${d.truncated ? '<p class="muted">(mismatch summary truncated to first 40)</p>' : ''}
         </details>`;
       })()}
+
       <details><summary>Screenshot</summary><p><a href="screenshots/${esc(s.scenario)}.png"><img src="screenshots/${esc(s.scenario)}.png" alt="${esc(s.scenario)}" loading="lazy" style="max-width:100%;border:1px solid #444"/></a></p></details>
     </section>`;
   }).join('\n');
@@ -777,6 +950,12 @@ table.tbl{border-collapse:collapse;width:100%;margin-top:6px;font-size:13px}
 .tbl tr.pass td:first-child{color:#34d399}.tbl tr.fail td{background:#3f1d1d}
 .tbl tr.diff td{background:#3b2a16}
 code{background:#0f172a;padding:1px 4px;border-radius:4px;font-size:12px;word-break:break-all}
+pre{background:#0b1220;border:1px solid #334155;padding:8px;border-radius:6px;font-size:12px;max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.drilldown{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.drill{border:1px solid #334155;border-radius:6px;padding:6px 10px;background:#0b1220}
+.drill.pass{border-left:3px solid #10b981}.drill.fail{border-left:3px solid #ef4444}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+.pair .side{background:#111827;border:1px solid #334155;border-radius:6px;padding:8px}
 a{color:#7dd3fc}
 </style></head><body>
 <header class="top">
