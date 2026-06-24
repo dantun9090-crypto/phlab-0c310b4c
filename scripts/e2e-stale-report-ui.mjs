@@ -121,7 +121,10 @@ async function captureDownload(page, trigger) {
 }
 
 (async () => {
-  const browser = await chromium.launch({ headless: true });
+  const launchOpts = { headless: true };
+  if (process.env.PLAYWRIGHT_EXECUTABLE_PATH) launchOpts.executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH;
+  const browser = await chromium.launch(launchOpts);
+
   const context = await browser.newContext({ acceptDownloads: true });
   const page = await context.newPage();
   await page.goto(fileUrl, { waitUntil: 'domcontentloaded' });
