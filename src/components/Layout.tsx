@@ -27,6 +27,7 @@ import ResearchGate from './ResearchGate';
 import { Navigation } from './Navigation';
 import { WhatsAppIcon, FacebookIcon, InstagramIcon, TwitterXIcon, YoutubeIcon } from './SocialIcons';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
+import { initVisitorTracking, trackVisitorPageView } from '@/lib/visitor-tracking';
 
 interface SiteSettings {
   whatsappNumber?: string;
