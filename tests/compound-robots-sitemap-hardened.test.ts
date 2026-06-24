@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Hardened robots.txt + sitemap.xml checks (prerendered/live origin):
  *   - /robots.txt does NOT Disallow /compound or /research under User-agent: * (or AdsBot)

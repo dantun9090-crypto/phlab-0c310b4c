@@ -224,7 +224,7 @@ function ResearchLandingPage() {
       </section>
 
       <footer className="py-10 border-t border-slate-800">
-        <div className="max-w-5xl mx-auto px-6 text-center text-xs sm:text-sm text-slate-500">
+        <div className="max-w-5xl mx-auto px-6 text-center text-xs sm:text-sm text-slate-400">
           © {new Date().getFullYear()} PH Labs · United Kingdom · For Research
           Use Only. Not for Human Consumption.
         </div>
