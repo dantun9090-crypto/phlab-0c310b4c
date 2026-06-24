@@ -239,6 +239,12 @@ export async function listDocsAdmin(
     startAfter?: string | number | boolean | Date;
     /** Optional single-field equality filter. */
     where?: { field: string; op?: "EQUAL"; value: string | number | boolean };
+    /** Optional range filter on a single field (e.g. a timestamp window). */
+    rangeFilter?: {
+      field: string;
+      gte?: string | number | boolean | Date;
+      lte?: string | number | boolean | Date;
+    };
   } = {},
 ): Promise<Array<Record<string, unknown> & { id: string }>> {
   const acct = getServiceAccount();
@@ -246,21 +252,48 @@ export async function listDocsAdmin(
   const url = `https://firestore.googleapis.com/v1/projects/${acct.project_id}/databases/(default)/documents:runQuery`;
   const structured: Record<string, unknown> = {
     from: [{ collectionId: collection }],
-    limit: Math.min(Math.max(options.limit ?? 50, 1), 200),
+    limit: Math.min(Math.max(options.limit ?? 50, 1), 50_000),
   };
   if (options.orderBy) {
     structured.orderBy = [
       { field: { fieldPath: options.orderBy }, direction: options.direction ?? "DESCENDING" },
     ];
   }
+  const filters: Array<Record<string, unknown>> = [];
   if (options.where) {
-    structured.where = {
+    filters.push({
       fieldFilter: {
         field: { fieldPath: options.where.field },
         op: options.where.op ?? "EQUAL",
         value: toFirestoreValue(options.where.value),
       },
-    };
+    });
+  }
+  if (options.rangeFilter) {
+    const f = options.rangeFilter;
+    if (f.gte !== undefined) {
+      filters.push({
+        fieldFilter: {
+          field: { fieldPath: f.field },
+          op: "GREATER_THAN_OR_EQUAL",
+          value: toFirestoreValue(f.gte),
+        },
+      });
+    }
+    if (f.lte !== undefined) {
+      filters.push({
+        fieldFilter: {
+          field: { fieldPath: f.field },
+          op: "LESS_THAN_OR_EQUAL",
+          value: toFirestoreValue(f.lte),
+        },
+      });
+    }
+  }
+  if (filters.length === 1) {
+    structured.where = filters[0];
+  } else if (filters.length > 1) {
+    structured.where = { compositeFilter: { op: "AND", filters } };
   }
   if (options.startAfter !== undefined && options.orderBy) {
     structured.startAt = {
