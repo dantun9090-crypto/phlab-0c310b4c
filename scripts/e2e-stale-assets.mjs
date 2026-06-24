@@ -141,7 +141,80 @@ function assertLockStateUnchanged(before, after) {
     const bv = JSON.stringify(b[k] ?? null);
     const av = JSON.stringify(a[k] ?? null);
     if (bv !== av) diffs.push({ field: k, before: b[k] ?? null, after: a[k] ?? null });
+}
+
+// ---------- live vs replay diff ----------
+function diffLiveVsReplay(scenarioName) {
+  if (!REPLAY) return null;
+  const sc = perScenario.get(scenarioName);
+  if (!sc) return null;
+  const fixtureResp = loadFixture(scenarioName, 'responses') || [];
+  const fixtureReq = loadFixture(scenarioName, 'requests') || [];
+  const liveResp = sc.liveResponses;
+  const liveReq = sc.liveRequests;
+  const byUrl = (arr) => {
+    const m = new Map();
+    for (const r of arr) {
+      const key = (r.url || '').split('?')[0];
+      if (!m.has(key)) m.set(key, []);
+      m.get(key).push(r);
+    }
+    return m;
+  };
+  const fMap = byUrl(fixtureResp), lMap = byUrl(liveResp);
+  const allUrls = new Set([...fMap.keys(), ...lMap.keys()]);
+  const mismatches = [];
+  for (const u of allUrls) {
+    const f = fMap.get(u) || [];
+    const l = lMap.get(u) || [];
+    if (f.length !== l.length) {
+      mismatches.push({ url: u, kind: 'count', fixture: f.length, live: l.length });
+    }
+    const n = Math.max(f.length, l.length);
+    for (let i = 0; i < n; i++) {
+      const fr = f[i], lr = l[i];
+      if (!fr) { mismatches.push({ url: u, kind: 'only-live', index: i, status: lr.status }); continue; }
+      if (!lr) { mismatches.push({ url: u, kind: 'only-fixture', index: i, status: fr.status }); continue; }
+      if (fr.status !== lr.status) {
+        mismatches.push({ url: u, kind: 'status', index: i, fixture: fr.status, live: lr.status });
+      }
+      if ((fr.body || '') !== (lr.body || '')) {
+        mismatches.push({
+          url: u, kind: 'body', index: i,
+          fixtureBytes: (fr.body || '').length, liveBytes: (lr.body || '').length,
+        });
+      }
+    }
   }
+  // Purge call timing comparison.
+  const fPurge = fixtureResp.filter((r) => /post-publish-check/.test(r.url || ''));
+  const lPurge = liveResp.filter((r) => /post-publish-check/.test(r.url || ''));
+  const relTimes = (arr) => {
+    if (!arr.length) return [];
+    const t0 = arr[0].at;
+    return arr.map((r) => r.at - t0);
+  };
+  const fRel = relTimes(fPurge), lRel = relTimes(lPurge);
+  const purgeTiming = {
+    fixtureCount: fPurge.length,
+    liveCount: lPurge.length,
+    fixtureRelMs: fRel,
+    liveRelMs: lRel,
+    deltaMs: lRel.map((t, i) => (fRel[i] != null ? t - fRel[i] : null)),
+  };
+  return {
+    summary: {
+      requestsFixture: fixtureReq.length,
+      requestsLive: liveReq.length,
+      responsesFixture: fixtureResp.length,
+      responsesLive: liveResp.length,
+      mismatchCount: mismatches.length,
+    },
+    purgeTiming,
+    mismatches: mismatches.slice(0, 40),
+    truncated: mismatches.length > 40,
+  };
+}
   return diffs;
 }
 
