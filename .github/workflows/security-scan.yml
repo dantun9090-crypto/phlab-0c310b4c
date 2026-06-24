@@ -1,0 +1,48 @@
+name: Security scan (deps)
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Daily 06:30 Europe/London — catches newly-published advisories
+    # against already-merged code (no PR needed to surface).
+    - cron: "30 5 * * *"
+
+jobs:
+  security-scan:
+    name: Dependency vulnerability scan (blocks medium+)
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps (frozen)
+        run: bun install --frozen-lockfile
+
+      # Blocks the PR if any advisory >= medium is present in the
+      # resolved dependency graph (direct OR transitive).
+      # Tunable via SECURITY_MIN_SEVERITY env if a finding needs a
+      # one-off bypass — DO NOT set lower than 'medium' on main.
+      - name: Run dependency audit (fail on medium+)
+        run: bun run security:scan
+
+      # Generate CycloneDX SBOM for the PR for review / artifact diff.
+      - name: Generate SBOM (CycloneDX)
+        if: always()
+        run: bun run sbom
+
+      - name: Upload SBOM artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ github.sha }}
+          path: dist/sbom.cdx.json
+          retention-days: 90

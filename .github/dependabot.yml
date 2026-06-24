@@ -1,0 +1,50 @@
+version: 2
+# Automatically opens PRs to update vulnerable / outdated dependencies.
+# PRs are gated by the existing CI (typecheck + build + security-scan)
+# defined in .github/workflows/ci.yml, so a vulnerable update can never
+# silently land on main.
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: daily
+      time: "06:00"
+      timezone: Europe/London
+    open-pull-requests-limit: 10
+    versioning-strategy: increase
+    labels:
+      - dependencies
+      - security
+    commit-message:
+      prefix: "deps"
+      include: scope
+    # Keep our hardened overrides (undici, ws, dompurify, etc.) bumped
+    # rather than ignored — Dependabot will retarget the override range
+    # as new patched versions ship.
+    allow:
+      - dependency-type: direct
+      - dependency-type: indirect
+    groups:
+      security-patches:
+        applies-to: security-updates
+        patterns:
+          - "*"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      radix:
+        patterns:
+          - "@radix-ui/*"
+      firebase:
+        patterns:
+          - "firebase"
+          - "firebase-admin"
+          - "@firebase/*"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels:
+      - ci
+      - dependencies

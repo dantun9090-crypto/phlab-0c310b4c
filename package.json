@@ -26,7 +26,10 @@
     "prepublish": "bun scripts/check-domains.ts && bun scripts/check-url-consistency.ts && bun scripts/seo-check.ts && bun scripts/compliance-scan.ts && bun run test:jsonld && bun run test:sitemap && bun run check:www-redirect",
     "ci": "bun run check:domains && bun run check:url-consistency && bun run typecheck && bun run compliance:scan && bun run seo:check && bun run test:jsonld && bun run test:sitemap && bun run build && bun run worker:check-imports && bun run check:www-redirect",
     "test:fena": "vitest run tests/fena-integration.test.ts",
-    "test:checkout": "vitest run src/lib/customer-note.test.tsx src/lib/cart-validation.test.ts src/lib/order-tracking.test.ts src/lib/order-payment-retry.test.ts src/lib/recovery.test.ts"
+    "test:checkout": "vitest run src/lib/customer-note.test.tsx src/lib/cart-validation.test.ts src/lib/order-tracking.test.ts src/lib/order-payment-retry.test.ts src/lib/recovery.test.ts",
+    "sbom": "bun scripts/generate-sbom.ts",
+    "security:scan": "bun scripts/security-audit.ts",
+    "postbuild": "bun scripts/generate-sbom.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.48",
@@ -63,7 +66,7 @@
     "@supabase/supabase-js": "^2.106.1",
     "@tailwindcss/vite": "^4.2.1",
     "@tanstack/react-query": "^5.83.0",
-    "@tanstack/react-router": "^1.168.25",
+    "@tanstack/react-router": "1.170.1",
     "@tanstack/react-start": "1.168.26",
     "@tanstack/router-plugin": "^1.167.28",
     "ai": "^6.0.197",
@@ -134,7 +137,9 @@
     "protobufjs": "^7.5.4",
     "brace-expansion": "^2.0.2",
     "uuid": "^11.1.0",
-    "dompurify": "^3.2.7"
+    "dompurify": "^3.2.7",
+    "@tanstack/router-core": "1.171.13",
+    "@tanstack/react-router": "1.170.16"
   },
   "resolutions": {
     "undici": "^7.16.0",
@@ -143,6 +148,8 @@
     "protobufjs": "^7.5.4",
     "brace-expansion": "^2.0.2",
     "uuid": "^11.1.0",
-    "dompurify": "^3.2.7"
+    "dompurify": "^3.2.7",
+    "@tanstack/router-core": "1.171.13",
+    "@tanstack/react-router": "1.170.16"
   }
 }

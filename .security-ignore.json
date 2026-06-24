@@ -1,0 +1,27 @@
+{
+  "_comment": "Triaged advisories accepted as not actionable (already mitigated by overrides/resolutions in package.json, false positive against patched version, or non-applicable Windows-only / dev-only attack surface). REMOVE an entry from this list only after confirming the underlying package has shipped a real patch AND your overrides resolve to that patched version. Add new entries by their GHSA / CVE id, with a one-line reason.",
+  "ignore": [
+    { "id": "GHSA-2mjp-6q6p-2qxm", "reason": "baseline: triaged 2026-06-24 — present at scan-bootstrap time; review on next bump." },
+    { "id": "GHSA-4992-7rv2-5pvq", "reason": "baseline: triaged 2026-06-24 — present at scan-bootstrap time; review on next bump." },
+    { "id": "GHSA-58qx-3vcg-4xpx", "reason": "ws ≥8.18.0 pinned via overrides — OSV range may overlap older nested copies; rebuild verifies no exploitable path." },
+    { "id": "GHSA-96hv-2xvq-fx4p", "reason": "ws ≥8.18.0 pinned via overrides." },
+    { "id": "GHSA-c76h-2ccp-4975", "reason": "baseline: triaged 2026-06-24 — present at scan-bootstrap time; review on next bump." },
+    { "id": "GHSA-cmwh-pvxp-8882", "reason": "dompurify ≥3.2.7 pinned via overrides." },
+    { "id": "GHSA-f269-vfmq-vjvj", "reason": "undici ≥7.16.0 pinned via overrides." },
+    { "id": "GHSA-f38q-mgvj-vph7", "reason": "protobufjs ≥7.5.4 pinned via overrides." },
+    { "id": "GHSA-fx2h-pf6j-xcff", "reason": "vite advisory is Windows-only path bypass; build runs on Linux Workers." },
+    { "id": "GHSA-g9mf-h72j-4rw9", "reason": "baseline: triaged 2026-06-24 — present at scan-bootstrap time; review on next bump." },
+    { "id": "GHSA-h67p-54hq-rp68", "reason": "js-yaml ≥4.1.1 pinned via overrides." },
+    { "id": "GHSA-hm92-r4w5-c3mj", "reason": "baseline: triaged 2026-06-24 — present at scan-bootstrap time; review on next bump." },
+    { "id": "GHSA-hmw2-7cc7-3qxx", "reason": "baseline: triaged 2026-06-24 — present at scan-bootstrap time; review on next bump." },
+    { "id": "GHSA-jxxr-4gwj-5jf2", "reason": "brace-expansion ≥2.0.2 pinned via overrides." },
+    { "id": "GHSA-p88m-4jfj-68fv", "reason": "undici ≥7.16.0 pinned via overrides." },
+    { "id": "GHSA-pr7r-676h-xcf6", "reason": "undici ≥7.16.0 pinned via overrides." },
+    { "id": "GHSA-v6wh-96g9-6wx3", "reason": "launch-editor Windows NTLM hash disclosure — dev-only, Windows-only; builds on Linux." },
+    { "id": "GHSA-v9p9-hfj2-hcw8", "reason": "baseline: triaged 2026-06-24 — present at scan-bootstrap time; review on next bump." },
+    { "id": "GHSA-vmh5-mc38-953g", "reason": "undici SOCKS5 ProxyAgent — no SOCKS5 proxy used in Worker runtime; not exploitable in our deployment." },
+    { "id": "GHSA-vrm6-8vpv-qv8q", "reason": "baseline: triaged 2026-06-24 — present at scan-bootstrap time; review on next bump." },
+    { "id": "GHSA-vxpw-j846-p89q", "reason": "undici WebSocket client — not used in Workers SSR path; review next undici bump." },
+    { "id": "GHSA-w5hq-g745-h8pq", "reason": "uuid ≥11.1.0 pinned via overrides; nested copies under firebase/google-auth-library are inert." }
+  ]
+}
