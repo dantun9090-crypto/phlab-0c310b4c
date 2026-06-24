@@ -78,17 +78,22 @@ export default function VisitorsTab() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pathFilter, setPathFilter] = useState<string | null>(null);
 
-  // Server-side paginated sessions for the drill-down table.
+  // Server-side cursor-paginated sessions for the drill-down table.
   const [sessionSearch, setSessionSearch] = useState('');
   const [sessionSearchInput, setSessionSearchInput] = useState('');
-  const [sessionPage, setSessionPage] = useState(0);
   const [sessionPageSize, setSessionPageSize] = useState(50);
+  // Cursor stack — index = page number; entry = cursor to fetch THAT page.
+  // page 0 always uses null cursor.
+  const [cursorStack, setCursorStack] = useState<Array<SessionCursor | null>>([null]);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [nextCursor, setNextCursor] = useState<SessionCursor | null>(null);
   const [serverSessions, setServerSessions] = useState<VisitorSessionRow[]>([]);
   const [serverTotal, setServerTotal] = useState(0);
   const [serverScanned, setServerScanned] = useState(0);
   const [serverTruncated, setServerTruncated] = useState(false);
   const [sessionsLoading, setSessionsLoading] = useState(false);
   const [sessionsErr, setSessionsErr] = useState<string | null>(null);
+  const lastErrToastRef = useRef<string | null>(null);
 
   const fromMs = range.from ? range.from.getTime() : Date.now() - 7 * 86_400_000;
   const toMs   = range.to   ? range.to.getTime()   : Date.now();
