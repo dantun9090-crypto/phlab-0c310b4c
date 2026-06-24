@@ -43,10 +43,17 @@ const RECORD = !!flag('record', false);
 const REPLAY = !!flag('replay', false);
 const LIST = !!flag('list', false);
 const FIXTURE_DIR = flag('fixture-dir', join(process.cwd(), 'fixtures', 'stale-assets'));
+const RETRIES = Math.max(0, parseInt(flag('retries', process.env.E2E_RETRIES ?? '1'), 10) || 0);
+const RETRY_DELAY_MS = Math.max(0, parseInt(flag('retry-delay', '1500'), 10) || 0);
 if (RECORD && REPLAY) {
   console.error('--record and --replay are mutually exclusive');
   process.exit(2);
 }
+
+// Transient errors we retry; assertion failures (record()) NEVER trigger retry.
+const TRANSIENT_RE = /(net::ERR_|ECONNRESET|ECONNREFUSED|ETIMEDOUT|Target page, context or browser has been closed|Navigation timeout|browserContext\.|Protocol error|Connection closed|socket hang up|EAI_AGAIN)/i;
+function isTransient(err) { return !!err && TRANSIENT_RE.test(String(err?.message || err)); }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const TARGET = process.env.TARGET_URL || 'http://localhost:8080';
 const REPORT_DIR = process.env.E2E_REPORT_DIR || join(process.cwd(), 'e2e-stale-report');
