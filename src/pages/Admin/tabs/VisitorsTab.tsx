@@ -124,19 +124,31 @@ export default function VisitorsTab() {
     return () => { cancelled = true; };
   }, [fromMs, toMs, refreshKey]);
 
+  // Reset paging when search/window/filters change.
+  const resetPaging = () => {
+    setCursorStack([null]);
+    setPageIndex(0);
+    setNextCursor(null);
+  };
+
   // Debounce the sessions search box (300ms).
   useEffect(() => {
     const id = setTimeout(() => {
       setSessionSearch(sessionSearchInput.trim());
-      setSessionPage(0);
+      resetPaging();
     }, 300);
     return () => clearTimeout(id);
   }, [sessionSearchInput]);
 
-  // Reset to page 0 when window / filters change.
-  useEffect(() => { setSessionPage(0); }, [fromMs, toMs, pathFilter, sessionPageSize]);
+  useEffect(() => { resetPaging(); }, [fromMs, toMs, pathFilter, sessionPageSize]);
+  useEffect(() => { resetPaging(); }, [refreshKey]);
 
-  // Server-side fetch for the paginated sessions table.
+  const currentCursor = cursorStack[pageIndex] ?? null;
+  const [serverLimits, setServerLimits] = useState<{
+    maxEvents: number; fromMs: number; toMs: number; pathFilter: string | null; search: string | null;
+  } | null>(null);
+
+  // Server-side fetch for the cursor-paginated sessions table.
   useEffect(() => {
     let cancelled = false;
     setSessionsLoading(true); setSessionsErr(null);
@@ -151,7 +163,7 @@ export default function VisitorsTab() {
             fromMs, toMs,
             pathFilter: pathFilter ?? null,
             search: sessionSearch || null,
-            page: sessionPage,
+            cursor: currentCursor,
             pageSize: sessionPageSize,
             maxEvents: 20_000,
           },
@@ -161,14 +173,24 @@ export default function VisitorsTab() {
         setServerTotal(res.total);
         setServerScanned(res.eventsScanned);
         setServerTruncated(res.truncated);
+        setNextCursor(res.nextCursor);
+        setServerLimits(res.limits);
       } catch (e) {
-        if (!cancelled) setSessionsErr(e instanceof Error ? e.message : String(e));
+        if (cancelled) return;
+        const msg = e instanceof Error ? e.message : String(e);
+        setSessionsErr(msg);
+        // De-duplicate noisy back-to-back toasts (same message).
+        if (lastErrToastRef.current !== msg) {
+          lastErrToastRef.current = msg;
+          toast.error('Failed to load sessions', { description: msg });
+          setTimeout(() => { lastErrToastRef.current = null; }, 3000);
+        }
       } finally {
         if (!cancelled) setSessionsLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, [fromMs, toMs, pathFilter, sessionSearch, sessionPage, sessionPageSize, refreshKey]);
+  }, [fromMs, toMs, pathFilter, sessionSearch, currentCursor, sessionPageSize, refreshKey]);
 
 
   // Events for drill-down (path filter applies to all per-page metrics).
