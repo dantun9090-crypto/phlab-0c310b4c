@@ -247,6 +247,30 @@ if (typeof window !== "undefined") {
     }
   });
 
+  // --- Layer 1b: CSS/script/sourcemap load failures (resource errors).
+  // Resource errors don't bubble, so use capture phase. A failed <link>,
+  // <script src>, or sourcemap fetch from /assets|/_build is a stale-build
+  // signal even when no JS Error fires.
+  const ASSET_PATH_RE = /\/(?:assets|_build)\/[^?#]+\.(?:js|mjs|css|map)(?:[?#]|$)/i;
+  window.addEventListener(
+    "error",
+    (event) => {
+      const target = (event as ErrorEvent).target as
+        | (HTMLLinkElement & { href?: string })
+        | (HTMLScriptElement & { src?: string })
+        | (HTMLImageElement & { src?: string })
+        | null;
+      if (!target || target === (window as unknown as EventTarget)) return;
+      const src = ((target as HTMLLinkElement).href || (target as HTMLScriptElement).src || "") + "";
+      if (!src || !ASSET_PATH_RE.test(src)) return;
+      const reason = (target as HTMLElement).tagName === "LINK" ? "css link error" : "asset load error";
+      // Fabricate an Error so reloadOnce's URL extractor works uniformly.
+      reloadOnce(reason, new Error(`Failed to load ${src}`));
+    },
+    true,
+  );
+
+
   // --- Layer 2: error-burst detection (app stuck in a render loop) ---
   let burst: number[] = [];
   const recordError = (event: ErrorEvent | PromiseRejectionEvent) => {
