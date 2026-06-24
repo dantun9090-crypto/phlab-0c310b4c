@@ -90,24 +90,37 @@ jobs:
             const marker = '<!-- security-scan-summary -->';
             const exitCode = process.env.AUDIT_EXIT || '0';
             let body;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const artifactsUrl = `${runUrl}#artifacts`;
+            const inputOverride = ${{ toJSON(github.event.inputs.min_severity) }} || '';
+            const overrideNote = inputOverride
+              ? ` (overridden for this run via \`workflow_dispatch\` input)`
+              : ` (from \`.security-config.json\`)`;
             if (!fs.existsSync(path)) {
-              body = `${marker}\n### 🔐 Security scan\n\nReport file missing — the scan likely crashed before writing JSON. Check the workflow logs.`;
+              body = `${marker}\n### 🔐 Security scan\n\nReport file missing — the scan likely crashed before writing JSON. Check the [workflow logs](${runUrl}).`;
             } else {
               const r = JSON.parse(fs.readFileSync(path, 'utf8'));
               const t = r.totals;
               const sev = (s) => `\`${s}\``;
+              const gateColor = r.blocking.length === 0 ? 'brightgreen' : 'red';
+              const gateBadge = `![min severity gate](https://img.shields.io/badge/min%20severity-${encodeURIComponent(r.minSeverity)}-${gateColor}?logo=npm)`;
               const status = r.blocking.length === 0
                 ? `✅ **No ${r.minSeverity}+ vulnerabilities** — safe to merge.`
                 : `❌ **${r.blocking.length} blocking ${r.minSeverity}+ vulnerabilities** — merge gate failed.`;
               const top = r.blocking.slice(0, 10).map(b =>
                 `- [${b.severity.toUpperCase()}] \`${b.pkg}@${b.version}\` — [${b.id}](${b.url})  \n  ${b.summary}`
               ).join('\n');
-              const more = r.blocking.length > 10 ? `\n\n_…and ${r.blocking.length - 10} more — see the \`security-audit-${{ github.sha }}\` artifact._` : '';
+              const more = r.blocking.length > 10 ? `\n\n_…and ${r.blocking.length - 10} more — see the [\`security-audit-${{ github.sha }}\`](${artifactsUrl}) artifact._` : '';
               body = [
                 marker,
                 `### 🔐 Security scan — gate: ${sev(r.minSeverity)}+`,
                 '',
+                gateBadge,
+                '',
                 status,
+                '',
+                `**Active \`minSeverity\` gate:** ${sev(r.minSeverity)}${overrideNote}.`,
+                `**JSON report:** [\`security-audit-${{ github.sha }}\`](${artifactsUrl}) (contains \`dist/security-audit.json\` + \`dist/security-audit.log\`).`,
                 '',
                 `| Blocking | Sub-threshold | Suppressed | Packages | Advisories |`,
                 `|---:|---:|---:|---:|---:|`,
@@ -115,7 +128,7 @@ jobs:
                 '',
                 r.blocking.length > 0 ? `<details><summary>Blocking findings</summary>\n\n${top}${more}\n\n</details>` : '',
                 '',
-                `_Artifact: \`security-audit-${{ github.sha }}\` · Scan exit: \`${exitCode}\` · Commit: \`${{ github.sha }}\`_`,
+                `_Artifact: [\`security-audit-${{ github.sha }}\`](${artifactsUrl}) · [Workflow run](${runUrl}) · Scan exit: \`${exitCode}\` · Commit: \`${{ github.sha }}\`_`,
               ].join('\n');
             }
             const { owner, repo } = context.repo;
