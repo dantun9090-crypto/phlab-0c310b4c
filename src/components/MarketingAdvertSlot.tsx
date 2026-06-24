@@ -22,6 +22,11 @@ type Props = {
   variant?: 'banner' | 'card' | 'compact';
   className?: string;
   eagerFirstImage?: boolean;
+  /** Optional refetch callback. Fires whenever admin saves a banner/advert
+   *  (via the global `marketing:revalidate` window event dispatched by the
+   *  useMarketingRevalidate hook mounted in Layout). Future routes can wire
+   *  it in with one line: `<MarketingAdvertSlot ... onRevalidate={refetch} />` */
+  onRevalidate?: () => void;
 };
 
 function activeForPlacement(adverts: MarketingAdvert[], placement: string): MarketingAdvert[] {
