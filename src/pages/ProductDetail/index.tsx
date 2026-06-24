@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, ShieldCheck, Download, Microscope, FileText, ShoppingCart, Package, Edit2, ZoomIn, X, ChevronLeft, ChevronRight, Truck, Lock, FlaskConical, Star, ChevronDown, ArrowRight } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { dispatchAddToCart } from '@/components/Layout';
 import NextDayCountdown from '@/components/NextDayCountdown';
 import { ProductEditor } from '@/components/ProductEditor';
