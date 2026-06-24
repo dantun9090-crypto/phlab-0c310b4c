@@ -51,14 +51,19 @@ export default function MarketingAdvertSlot({ adverts, placement, variant = 'ban
           const isCard = variant === 'card';
           const isCompact = variant === 'compact';
 
+          // Heights chosen so the slot still has visible bounds even when no
+          // image is uploaded (otherwise the absolutely-positioned overlay
+          // collapses to 0px and the advert renders invisibly).
+          const minH = isCompact ? 176 : isCard ? 256 : 192;
+          const hasImage = Boolean(ad.imageUrl);
           const body = (
             <div
               className={`relative overflow-hidden border border-white/[0.08] shadow-[0_10px_35px_rgba(0,0,0,0.32)] ${isCompact ? 'rounded-2xl' : 'rounded-3xl'}`}
-              style={{ background: ad.bgColor || '#0b1a30' }}
+              style={{ background: ad.bgColor || '#0b1a30', minHeight: hasImage ? undefined : minH }}
             >
-              {ad.imageUrl && (
+              {hasImage && (
                 <img
-                  {...cfImgProps(ad.imageUrl, {
+                  {...cfImgProps(ad.imageUrl as string, {
                     widths: isCompact ? [320, 480, 640] : [640, 960, 1280, 1600],
                     sizes: isCompact ? '(max-width: 1024px) 100vw, 320px' : '100vw',
                   })}
@@ -70,7 +75,10 @@ export default function MarketingAdvertSlot({ adverts, placement, variant = 'ban
                 />
               )}
               {(ad.title || ad.subtitle || ad.ctaText) && (
-                <div className={`absolute inset-0 flex ${isCompact ? 'items-end' : 'items-center'} bg-gradient-to-r from-black/72 via-black/35 to-transparent p-5 md:p-8`}>
+                <div
+                  className={`${hasImage ? 'absolute inset-0' : 'relative'} flex ${isCompact ? 'items-end' : 'items-center'} ${hasImage ? 'bg-gradient-to-r from-black/72 via-black/35 to-transparent' : ''} p-5 md:p-8`}
+                  style={hasImage ? undefined : { minHeight: minH }}
+                >
                   <div className={isCompact ? 'max-w-[95%]' : 'max-w-lg'}>
                     {ad.title && (
                       <p className={`${isCompact ? 'text-lg' : 'text-2xl md:text-4xl'} font-black leading-tight`} style={{ color: ad.textColor || '#e8f0fe', textShadow: '0 2px 18px rgba(0,0,0,0.55)' }}>
