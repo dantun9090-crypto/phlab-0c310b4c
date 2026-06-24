@@ -204,6 +204,31 @@ async function main() {
     }
   }
 
+  // Always write a machine-readable report so CI can upload it as an
+  // artifact and surface a PR comment summary from the same source.
+  const report = {
+    generatedAt: new Date().toISOString(),
+    minSeverity: MIN_BLOCKING,
+    totals: {
+      blocking: blocking.length,
+      informational: informational.length,
+      ignored: ignored.length,
+      packagesScanned: sbom.components.length,
+      affectedPackages: vulnByQuery.length,
+      uniqueAdvisories: vulnIds.size,
+    },
+    blocking,
+    informational,
+    ignored,
+  };
+  try {
+    mkdirSync(dirname(REPORT_PATH), { recursive: true });
+    writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2));
+    console.log(`▶ Report written: ${REPORT_PATH}`);
+  } catch (err) {
+    console.error(`⚠ Failed to write report at ${REPORT_PATH}: ${(err as Error).message}`);
+  }
+
   if (ignored.length > 0) {
     console.log(`\nℹ ${ignored.length} advisories suppressed via .security-ignore.json.`);
   }
@@ -213,7 +238,7 @@ async function main() {
 
 
   if (blocking.length === 0) {
-    console.log("\n✔ No medium+ vulnerabilities. Safe to merge / deploy.");
+    console.log(`\n✔ No ${MIN_BLOCKING}+ vulnerabilities. Safe to merge / deploy.`);
     return;
   }
 
