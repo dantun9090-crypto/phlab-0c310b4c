@@ -379,6 +379,7 @@ async function withContext(browser, name, fn) {
     const entry = { scenario: name, at: Date.now(), url: u, status: res.status(), body };
     appendNd(resLog, entry);
     if (RECORD) responseRecording.push(entry);
+    sc.liveResponses.push(entry);
     if (/post-publish-check/.test(u)) {
       purgeResponses.push(entry);
       try {
