@@ -757,8 +757,6 @@ async def main() -> int:
         # the valid credentials. All must succeed, the final state must be
         # internally consistent (single record, no duplicate claim), and no
         # extra documents may have appeared.
-        conc_fails = 0
-        conc_pass = 0
         if seed:
             print("[e2e] running concurrency probe …")
             pre_conc = snapshot_state(seed.order_id, seed.email)
