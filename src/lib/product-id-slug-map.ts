@@ -36,7 +36,18 @@ export const PRODUCT_ID_TO_SLUG: Record<string, string> = {
   // Keep in sync with MERCHANT_CODE_OVERRIDES in google-merchant-feed[.]xml.ts.
   "PHL-RT8": "retatrutide-research-peptide",
   "PHL-BP15": "bpc-157",
+  "PHL-PT41": "pt-141-research-peptide",
+  "PHL-TB54": "tb-500-thymosin-beta-4",
+  "PHL-MC16": "mots-c-research-peptide",
+  "PHL-KP3": "kpv-research-peptide",
+  "PHL-GW4": "glow-blend",
+  "PHL-MT2": "melanotan-ii-research-peptide",
+  "PHL-BW9": "bacteriostatic-water-research-compound",
+  "PHL-KW5": "klow-blend",
+  "PHL-GC3": "ghk-cu-research-peptide",
+  "PHL-ND7": "nad-research-compound",
 };
+
 
 export function resolveSlugFromId(id: string): string | null {
   return PRODUCT_ID_TO_SLUG[id] ?? null;
