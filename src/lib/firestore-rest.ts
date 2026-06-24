@@ -45,6 +45,7 @@ export interface SeoProduct {
   updatedAt?: string;
   includeInMerchantFeed?: boolean;
   excludeFromMerchantFeed?: boolean;
+  isVip?: boolean;
   /** Parsed from variant name/dosage, e.g. "10 mg" → { value: 10, unit: "mg" }. */
   unitPricingMeasure?: UnitPricingMeasure;
   /** Net weight in grams (for shipping_weight). */
