@@ -22,8 +22,11 @@ jobs:
     permissions:
       contents: read
       issues: write
+      # Required for cosign keyless signing (OIDC -> Fulcio -> Rekor).
+      id-token: write
     steps:
       - uses: actions/checkout@v4
+
 
       - uses: oven-sh/setup-bun@v2
         with:
