@@ -27,9 +27,20 @@
  *
  *   Redaction (applies to fixtures, HAR trace, ndjson logs, and HTML report):
  *   --redact-bodies                   strip all captured request/response bodies
- *   --max-body-bytes=N (default 4000) truncate captured bodies to N bytes
+ *   --hash-bodies                     replace redacted/truncated bodies with `sha256:<hex>` so equality is preserved without exposing data
+ *   --max-body-bytes=N (default 4000) truncate captured bodies to N bytes (replaced with hash when --hash-bodies)
  *   --redact-headers=a,b,c            comma list of header NAMES to mask (default: authorization,cookie,set-cookie,x-api-key,x-auth-token)
  *   --redact-url-params=a,b,c         comma list of query param NAMES to mask (default: token,key,api_key,access_token,id_token)
+ *
+ *   Header normalization for live-vs-replay diff:
+ *   --normalize-headers                       compare headers case-insensitively, order-independently (and surface as a "headers" mismatch kind)
+ *   --normalize-ignore-headers=a,b,c          comma list of header names to ignore in diffs (default volatile set: date,age,server-timing,x-request-id,cf-ray,...)
+ *
+ *   Artifact persistence:
+ *   --artifacts-on-failure-only / --skip-artifacts-on-success
+ *                                             only persist HAR, fixtures (non-RECORD), HTML report, ndjson logs, and screenshots when
+ *                                             an assertion fails or a live-vs-replay threshold is breached. report.{json,txt} + junit.xml + db-diff.json always written.
+
  *
  * Outputs in $E2E_REPORT_DIR (default ./e2e-stale-report/):
  *   report.html   self-contained dashboard with clickable per-request drilldown
@@ -47,8 +58,10 @@
  * closed browser); assertion failures are deterministic and never retried.
  */
 import { chromium } from 'playwright';
-import { mkdirSync, writeFileSync, appendFileSync, existsSync, readFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, appendFileSync, existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { createHash } from 'node:crypto';
+
 
 // ---------- CLI parsing ----------
 const argv = process.argv.slice(2);
@@ -85,6 +98,9 @@ const MAX_BODY_BYTE_DELTA = Math.max(0, parseInt(flag('max-body-byte-delta', '0'
 // ---------- redaction config ----------
 const REDACT_BODIES = !!flag('redact-bodies', false);
 const MAX_BODY_BYTES = Math.max(0, parseInt(flag('max-body-bytes', '4000'), 10) || 0);
+// When --hash-bodies is set, redacted/truncated bodies are replaced with a stable
+// sha256 hash of the ORIGINAL body so equality comparisons survive redaction.
+const HASH_BODIES = !!flag('hash-bodies', false);
 const REDACT_HEADERS = new Set(
   String(flag('redact-headers', 'authorization,cookie,set-cookie,x-api-key,x-auth-token'))
     .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
@@ -94,6 +110,22 @@ const REDACT_URL_PARAMS = new Set(
     .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
 );
 const REDACTED = '[REDACTED]';
+
+// ---------- header normalization for live-vs-replay diff ----------
+// Case-insensitive header names + order-independent comparison.
+const NORMALIZE_HEADERS = !!flag('normalize-headers', false);
+const NORMALIZE_IGNORE_HEADERS = new Set(
+  String(flag('normalize-ignore-headers', 'date,age,server-timing,x-request-id,cf-ray,x-amz-cf-id,x-served-by,etag,last-modified'))
+    .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+);
+
+// ---------- artifact persistence ----------
+// When set, fixtures/HAR/HTML/ndjson are ONLY persisted on a meaningful failure
+// (assertion failure or threshold breach). Successful runs leave only report.{json,txt} + junit.xml.
+const ARTIFACTS_ON_FAILURE_ONLY = !!flag('artifacts-on-failure-only', false)
+  || !!flag('skip-artifacts-on-success', false);
+
+function sha256(s) { return createHash('sha256').update(String(s)).digest('hex'); }
 
 function redactHeaders(h) {
   if (!h || typeof h !== 'object') return h;
@@ -116,13 +148,34 @@ function redactUrl(u) {
 }
 function redactBody(body) {
   if (body == null) return body;
-  if (REDACT_BODIES) return REDACTED;
   const s = String(body);
+  if (REDACT_BODIES) return HASH_BODIES ? `sha256:${sha256(s)}` : REDACTED;
   if (MAX_BODY_BYTES > 0 && s.length > MAX_BODY_BYTES) {
-    return s.slice(0, MAX_BODY_BYTES) + `…[truncated ${s.length - MAX_BODY_BYTES}B]`;
+    return HASH_BODIES
+      ? `sha256:${sha256(s)} (orig ${s.length}B)`
+      : s.slice(0, MAX_BODY_BYTES) + `…[truncated ${s.length - MAX_BODY_BYTES}B]`;
   }
   return s;
 }
+
+// Normalize a headers object for diffing: lowercase keys, drop ignore-list, stable sort.
+function normalizeHeadersForDiff(h) {
+  if (!h || typeof h !== 'object') return h;
+  const lower = {};
+  for (const [k, v] of Object.entries(h)) {
+    const lk = k.toLowerCase();
+    if (NORMALIZE_IGNORE_HEADERS.has(lk)) continue;
+    lower[lk] = v;
+  }
+  // Return a new object with keys inserted in sorted order — stringifying gives stable output.
+  const out = {};
+  for (const k of Object.keys(lower).sort()) out[k] = lower[k];
+  return out;
+}
+function headersEqualNormalized(a, b) {
+  return JSON.stringify(normalizeHeadersForDiff(a || {})) === JSON.stringify(normalizeHeadersForDiff(b || {}));
+}
+
 
 // Transient errors we retry; assertion failures (record()) NEVER trigger retry.
 const TRANSIENT_RE = /(net::ERR_|ECONNRESET|ECONNREFUSED|ETIMEDOUT|Target page, context or browser has been closed|Navigation timeout|browserContext\.|Protocol error|Connection closed|socket hang up|EAI_AGAIN)/i;
@@ -283,23 +336,38 @@ function diffLiveVsReplay(scenarioName) {
     for (let i = 0; i < n; i++) {
       const fr = f[i], lr = l[i];
       const reasons = [];
-      if (!fr) reasons.push('only-live');
-      if (!lr) reasons.push('only-fixture');
+      const kinds = []; // structured kinds for HTML filter: status | body | headers | only-live | only-fixture
+      if (!fr) { reasons.push('only-live'); kinds.push('only-live'); }
+      if (!lr) { reasons.push('only-fixture'); kinds.push('only-fixture'); }
       if (fr && lr) {
-        if (fr.status !== lr.status) { reasons.push('status'); statusMismatchCount++; }
+        if (fr.status !== lr.status) { reasons.push('status'); kinds.push('status'); statusMismatchCount++; }
         const fb = (fr.body || ''), lb = (lr.body || '');
         if (fb !== lb) {
           const delta = Math.abs(fb.length - lb.length);
           if (delta > maxBodyDelta) maxBodyDelta = delta;
-          reasons.push(`body(Δ${delta}B)`);
+          reasons.push(`body(Δ${delta}B)`); kinds.push('body');
+        }
+        if (NORMALIZE_HEADERS && !headersEqualNormalized(fr.headers, lr.headers)) {
+          reasons.push('headers'); kinds.push('headers');
         }
       }
+      const liveHar = lr ? popHar(lr.url, lr.status) : null;
+      const resourceType = liveHar?.resourceType
+        || (/\.(?:js|mjs)(?:[?#]|$)/.test(u) ? 'script'
+          : /\.css(?:[?#]|$)/.test(u) ? 'stylesheet'
+          : /\.map(?:[?#]|$)/.test(u) ? 'sourcemap'
+          : /post-publish-check/.test(u) ? 'fetch'
+          : 'other');
+      const bodyRedacted = REDACT_BODIES
+        || (HASH_BODIES && (typeof fr?.body === 'string' && fr.body.startsWith('sha256:')
+          || typeof lr?.body === 'string' && lr.body.startsWith('sha256:')));
       const isMatch = reasons.length === 0;
       const item = {
-        match: isMatch, url: u, index: i, reasons,
+        match: isMatch, url: u, index: i, reasons, kinds, resourceType, bodyRedacted,
         fixture: fr ? { status: fr.status, headers: fr.headers || null, body: fr.body ?? null, bodyBytes: fr.bodyBytes ?? (fr.body ? String(fr.body).length : null) } : null,
-        live: lr ? { status: lr.status, headers: lr.headers || null, body: lr.body ?? null, bodyBytes: lr.bodyBytes ?? (lr.body ? String(lr.body).length : null), har: lr ? popHar(lr.url, lr.status) : null } : null,
+        live: lr ? { status: lr.status, headers: lr.headers || null, body: lr.body ?? null, bodyBytes: lr.bodyBytes ?? (lr.body ? String(lr.body).length : null), har: liveHar } : null,
       };
+
       items.push(item);
       if (!isMatch) {
         if (!fr) mismatches.push({ url: u, kind: 'only-live', index: i, status: lr.status });
@@ -808,7 +876,10 @@ async function run() {
     lockTimeline,
     cli: { ONLY, RECORD, REPLAY, FIXTURE_DIR, RETRIES, RETRY_DELAY_MS, DETERMINISTIC,
       MAX_MISMATCHES, MAX_STATUS_MISMATCHES, MAX_BODY_BYTE_DELTA,
-      REDACT_BODIES, MAX_BODY_BYTES, REDACT_HEADERS: [...REDACT_HEADERS], REDACT_URL_PARAMS: [...REDACT_URL_PARAMS] },
+      REDACT_BODIES, HASH_BODIES, MAX_BODY_BYTES, REDACT_HEADERS: [...REDACT_HEADERS], REDACT_URL_PARAMS: [...REDACT_URL_PARAMS],
+      NORMALIZE_HEADERS, NORMALIZE_IGNORE_HEADERS: [...NORMALIZE_IGNORE_HEADERS],
+      ARTIFACTS_ON_FAILURE_ONLY },
+
     results,
   };
   writeFileSync(join(REPORT_DIR, 'report.json'), JSON.stringify(summary, null, 2));
@@ -902,25 +973,50 @@ async function run() {
             ${chain}</div>`;
         };
         const items = d.items || [];
-        const itemRows = items.map((it, idx) => {
+        const itemRows = items.map((it) => {
           const cls = it.match ? 'pass' : 'fail';
           const tag = it.match ? '✅ match' : `❌ ${esc(it.reasons.join(', '))}`;
-          return `<details class="drill ${cls}"><summary>${tag} · <code>${esc(it.url)}</code> [#${it.index}]</summary>
+          const dataKinds = esc((it.kinds && it.kinds.length ? it.kinds : ['match']).join(' '));
+          return `<details class="drill ${cls}" data-match="${it.match ? '1' : '0'}" data-rtype="${esc(it.resourceType || 'other')}" data-kinds="${dataKinds}" data-redacted="${it.bodyRedacted ? '1' : '0'}"><summary>${tag} · <code>${esc(it.url)}</code> [#${it.index}] <span class="pill">${esc(it.resourceType || 'other')}</span>${it.bodyRedacted ? ' <span class="pill">redacted</span>' : ''}</summary>
             <div class="pair">${renderSide('fixture', it.fixture)}${renderSide('live', it.live)}</div>
           </details>`;
         }).join('') || '<p class="muted">no items captured</p>';
         const tBadge = d.thresholds.breached.length
           ? `<span class="badge bad">thresholds breached: ${esc(d.thresholds.breached.join('; '))}</span>`
           : `<span class="badge ok">within thresholds (max ${d.thresholds.maxMismatches}/${d.thresholds.maxStatusMismatches}/${d.thresholds.maxBodyByteDelta}B)</span>`;
+        // Resource-type options for the filter dropdown.
+        const rtypes = [...new Set(items.map((it) => it.resourceType || 'other'))].sort();
+        const rtypeOpts = ['<option value="">all resource types</option>',
+          ...rtypes.map((r) => `<option value="${esc(r)}">${esc(r)}</option>`)].join('');
+        const scId = esc(s.scenario);
+        // Embed mismatch-bundle data so the in-page button can export without round-tripping.
+        const bundle = JSON.stringify({
+          scenario: s.scenario,
+          generatedAt: new Date().toISOString(),
+          redaction: { redactBodies: REDACT_BODIES, hashBodies: HASH_BODIES, maxBodyBytes: MAX_BODY_BYTES, redactHeaders: [...REDACT_HEADERS], redactUrlParams: [...REDACT_URL_PARAMS] },
+          thresholds: d.thresholds,
+          summary: d.summary,
+          items,
+        });
+        const bundleB64 = Buffer.from(bundle, 'utf8').toString('base64');
         return `<details ${d.summary.mismatchCount ? 'open' : ''}><summary>Live vs replay (matches=${d.summary.matchCount}, mismatches=${d.summary.mismatchCount}, statusΔ=${d.summary.statusMismatchCount}, maxBodyΔ=${d.summary.maxBodyDelta}B)</summary>
           <p>${tBadge}</p>
           <h4>Purge call timing (relative to first purge per side)</h4>
           <table class="tbl"><thead><tr><th>#</th><th>fixture</th><th>live</th><th>Δ</th></tr></thead><tbody>${ptRows}</tbody></table>
           <h4>Per-request drilldown (${items.length})</h4>
-          <div class="drilldown">${itemRows}</div>
+          <div class="filters" data-scope="${scId}">
+            <label>match: <select data-filter="match"><option value="">all</option><option value="0">mismatches only</option><option value="1">matches only</option></select></label>
+            <label>resource: <select data-filter="rtype">${rtypeOpts}</select></label>
+            <label>kind: <select data-filter="kind"><option value="">all kinds</option><option value="status">status</option><option value="body">body bytes</option><option value="headers">headers</option><option value="only-live">only-live</option><option value="only-fixture">only-fixture</option></select></label>
+            <label>redacted: <select data-filter="redacted"><option value="">any</option><option value="1">redacted only</option><option value="0">non-redacted only</option></select></label>
+            <button type="button" data-bundle="${scId}" data-bundle-b64="${bundleB64}">⬇ Download mismatch bundle</button>
+            <span class="muted" data-visible-count></span>
+          </div>
+          <div class="drilldown" data-drilldown="${scId}">${itemRows}</div>
           ${d.truncated ? '<p class="muted">(mismatch summary truncated to first 40)</p>' : ''}
         </details>`;
       })()}
+
 
       <details><summary>Screenshot</summary><p><a href="screenshots/${esc(s.scenario)}.png"><img src="screenshots/${esc(s.scenario)}.png" alt="${esc(s.scenario)}" loading="lazy" style="max-width:100%;border:1px solid #444"/></a></p></details>
     </section>`;
@@ -956,8 +1052,58 @@ pre{background:#0b1220;border:1px solid #334155;padding:8px;border-radius:6px;fo
 .drill.pass{border-left:3px solid #10b981}.drill.fail{border-left:3px solid #ef4444}
 .pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
 .pair .side{background:#111827;border:1px solid #334155;border-radius:6px;padding:8px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0;font-size:13px}
+.filters select,.filters button{background:#0b1220;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:4px 8px;font-size:13px}
+.filters button{cursor:pointer}.filters button:hover{background:#1e293b}
 a{color:#7dd3fc}
-</style></head><body>
+</style>
+<script>
+(function(){
+  function apply(scope){
+    var root=document.querySelector('[data-drilldown="'+scope+'"]');if(!root)return;
+    var ctrls=document.querySelector('.filters[data-scope="'+scope+'"]');if(!ctrls)return;
+    var f={match:'',rtype:'',kind:'',redacted:''};
+    ctrls.querySelectorAll('select[data-filter]').forEach(function(s){f[s.dataset.filter]=s.value;});
+    var n=0;
+    root.querySelectorAll('details.drill').forEach(function(el){
+      var ok=true;
+      if(f.match!==''&&el.dataset.match!==f.match)ok=false;
+      if(f.rtype&&el.dataset.rtype!==f.rtype)ok=false;
+      if(f.kind&&(' '+el.dataset.kinds+' ').indexOf(' '+f.kind+' ')===-1)ok=false;
+      if(f.redacted!==''&&el.dataset.redacted!==f.redacted)ok=false;
+      el.style.display=ok?'':'none';if(ok)n++;
+    });
+    var c=ctrls.querySelector('[data-visible-count]');if(c)c.textContent='('+n+' visible)';
+  }
+  document.addEventListener('change',function(e){
+    var s=e.target.closest('.filters');if(!s||!s.dataset.scope)return;apply(s.dataset.scope);
+  });
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('button[data-bundle]');if(!b)return;
+    var scope=b.dataset.bundle;
+    var ctrls=document.querySelector('.filters[data-scope="'+scope+'"]');
+    var root=document.querySelector('[data-drilldown="'+scope+'"]');
+    var allowed=new Set();
+    root.querySelectorAll('details.drill').forEach(function(el){
+      if(el.style.display!=='none')allowed.add(el.querySelector('code').textContent+'#'+el.querySelector('summary').textContent.match(/#(\\d+)/)?.[1]);
+    });
+    var raw=atob(b.dataset.bundleB64);
+    var data=JSON.parse(raw);
+    // Filter items to currently-visible ones.
+    data.items=data.items.filter(function(it){return allowed.has(it.url+'#'+it.index);});
+    data.exportedAt=new Date().toISOString();
+    data.filterApplied={};ctrls.querySelectorAll('select[data-filter]').forEach(function(s){data.filterApplied[s.dataset.filter]=s.value;});
+    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download='mismatch-bundle-'+scope+'.json';document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},0);
+  });
+  document.addEventListener('DOMContentLoaded',function(){
+    document.querySelectorAll('.filters[data-scope]').forEach(function(s){apply(s.dataset.scope);});
+  });
+})();
+</script></head><body>
+
 <header class="top">
   <h1>E2E stale-assets <span class="badge ${failed.length ? 'bad' : 'ok'}">${esc(overall)}</span></h1>
   <div class="muted">target <code>${esc(TARGET)}</code> · finished ${esc(summary.finishedAt)} · ${summary.passed}/${summary.total} passed${ONLY ? ` · filter <code>${esc(ONLY)}</code>` : ''}${REPLAY ? ' · <b>REPLAY</b>' : (RECORD ? ' · <b>RECORD</b>' : '')} · retries=${RETRIES}</div>
@@ -973,6 +1119,36 @@ a{color:#7dd3fc}
 </ul></section>
 </body></html>`;
   writeFileSync(join(REPORT_DIR, 'report.html'), html);
+
+  // --artifacts-on-failure-only: prune optional artifacts when the run is fully clean.
+  // We always keep report.json, report.txt, junit.xml, db-diff.json (small, CI-friendly).
+  const meaningfulFailure = failed.length > 0
+    || perScenarioSummary.some((s) => s.replayDiff && s.replayDiff.thresholds && s.replayDiff.thresholds.breached.length > 0);
+  if (ARTIFACTS_ON_FAILURE_ONLY && !meaningfulFailure) {
+    const prune = [
+      join(REPORT_DIR, 'report.html'),
+      join(REPORT_DIR, 'requests.ndjson'),
+      join(REPORT_DIR, 'responses.ndjson'),
+      join(REPORT_DIR, 'console.ndjson'),
+      join(REPORT_DIR, 'screenshots'),
+    ];
+    for (const name of perScenarioSummary.map((s) => s.scenario)) {
+      prune.push(join(REPORT_DIR, `har-${name}.json`));
+    }
+    // In RECORD mode, fixtures are the point of the run — keep them even on success.
+    if (!RECORD) {
+      for (const name of perScenarioSummary.map((s) => s.scenario)) {
+        prune.push(join(FIXTURE_DIR, name));
+      }
+    }
+    let pruned = 0;
+    for (const p of prune) {
+      try { if (existsSync(p)) { rmSync(p, { recursive: true, force: true }); pruned++; } } catch { /* ignore */ }
+    }
+    console.log(`[artifacts-on-failure-only] success → pruned ${pruned} optional artifact path(s)`);
+  }
+
+
 
 
 
