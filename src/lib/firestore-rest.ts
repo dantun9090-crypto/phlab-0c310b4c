@@ -282,6 +282,7 @@ export { slugify };
 export interface PromoBannerLite {
   imageUrl: string;
   active?: boolean;
+  isActive?: boolean;
   altText?: string;
   ctaUrl?: string;
   linkUrl?: string;
@@ -316,12 +317,13 @@ export async function fetchPromoBanner(): Promise<PromoBannerLite | null> {
     if (!res.ok) return null;
     const json: any = await res.json();
     const f = unwrapFields(json.fields ?? {});
-    if (f.active === false) return null;
+    if (f.active === false || f.isActive === false) return null;
     const imageUrl = typeof f.imageUrl === "string" ? f.imageUrl : "";
     if (!imageUrl) return null;
     return {
       imageUrl,
       active: typeof f.active === "boolean" ? f.active : undefined,
+      isActive: typeof f.isActive === "boolean" ? f.isActive : undefined,
       altText: typeof f.altText === "string" ? f.altText : undefined,
       ctaUrl: typeof f.ctaUrl === "string" ? f.ctaUrl : undefined,
       linkUrl: typeof f.linkUrl === "string" ? f.linkUrl : undefined,

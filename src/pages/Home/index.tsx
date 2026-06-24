@@ -299,7 +299,7 @@ export default function HomePage() {
   }, [siteSettings]);
 
   const heroAdverts = adverts.filter((a: any) => a.placement === 'homepage_hero');
-  const bannerVisible = bannerResolved && banner?.active !== false && banner?.imageUrl;
+  const bannerVisible = bannerResolved && banner?.active !== false && banner?.isActive !== false && banner?.imageUrl;
   const bannerHref = banner?.ctaUrl || banner?.linkUrl || '';
   const bannerOverlayHeading = banner?.overlayText || (banner?.textOverlayEnabled ? banner?.textOverlayHeading : '');
   const bannerOverlaySubtext = banner?.overlaySubtext || (banner?.textOverlayEnabled ? banner?.textOverlaySubtext : '');
