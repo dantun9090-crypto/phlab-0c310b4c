@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { db, storage, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, Timestamp, orderBy, query, storageRef, uploadBytesResumable, getDownloadURL, triggerContentCdnInvalidation } from '@/lib/firebase';
+import { db, storage, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, Timestamp, orderBy, query, storageRef, uploadBytesResumable, getDownloadURL, triggerContentCdnInvalidation, bumpMarketingVersion } from '@/lib/firebase';
 
 interface Advert {
   id?: string;
