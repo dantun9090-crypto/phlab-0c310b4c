@@ -13,6 +13,8 @@
     "format": "prettier --write .",
     "seo:check": "bun scripts/seo-check.ts",
     "compliance:scan": "bun scripts/compliance-scan.ts",
+    "compliance:scan-compound": "bun scripts/compound-compliance-scan.ts",
+    "test:compound": "vitest run tests/compound-prerender.test.ts tests/compound-robots-canonical.test.ts tests/compound-faq-jsonld.test.ts",
     "worker:smoke": "bun scripts/worker-smoke.ts",
     "worker:check-imports": "bun scripts/check-worker-imports.ts",
     "csp:e2e": "bun scripts/csp-e2e.ts",

@@ -34,6 +34,13 @@ jobs:
       - name: Resources content compliance scan
         run: bun run compliance:scan
 
+      # Scans the LIVE prerendered /compound HTML for prohibited substance
+      # names. /compound is a Google Ads landing page — it must never
+      # reference restricted peptides. Self-skips if origin unreachable.
+      - name: /compound prohibited-substance scan
+        run: bun run compliance:scan-compound
+        continue-on-error: true
+
       # Guards canonical host: fails if any source references the wrong
       # domain (typo of brand, legacy domain, preview hosts). check-domains-allow-line
       - name: Domain consistency guard

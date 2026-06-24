@@ -1,6 +1,9 @@
-# Lighthouse CI for /compound landing page.
-# Fails the build if Performance < 0.85 or SEO < 0.95.
-# Thresholds live in .lighthouserc.json.
+# Lighthouse CI for /compound — runs BOTH desktop and mobile (slow-4G CPU 4x)
+# audits. Either profile failing its thresholds fails the build.
+#
+# Thresholds:
+#   Desktop  — Performance ≥ 0.85, SEO ≥ 0.95
+#   Mobile   — Performance ≥ 0.75, SEO ≥ 0.95   (real-user slow-4G + CPU 4x)
 name: Lighthouse — /compound
 
 on:
@@ -9,24 +12,27 @@ on:
     paths:
       - "src/routes/compound.tsx"
       - "public/og/compound.jpg"
-      - ".lighthouserc.json"
+      - ".lighthouserc*.json"
       - ".github/workflows/lighthouse-compound.yml"
   pull_request:
     paths:
       - "src/routes/compound.tsx"
       - "public/og/compound.jpg"
-      - ".lighthouserc.json"
+      - ".lighthouserc*.json"
       - ".github/workflows/lighthouse-compound.yml"
   schedule:
-    # Daily regression check against the live origin.
     - cron: "17 6 * * *"
   workflow_dispatch:
 
 jobs:
   lighthouse:
-    name: Lighthouse audit (perf + SEO thresholds)
+    name: Lighthouse (${{ matrix.profile }})
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [desktop, mobile]
     steps:
       - uses: actions/checkout@v4
 
@@ -37,7 +43,7 @@ jobs:
       - name: Install Lighthouse CI
         run: npm i -g @lhci/cli@0.14.x
 
-      - name: Run Lighthouse CI against live /compound
-        run: lhci autorun --config=.lighthouserc.json
+      - name: Run Lighthouse CI (${{ matrix.profile }})
+        run: lhci autorun --config=.lighthouserc.${{ matrix.profile }}.json
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
