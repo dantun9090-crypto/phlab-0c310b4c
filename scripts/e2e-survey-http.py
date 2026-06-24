@@ -533,10 +533,119 @@ async def main() -> int:
                 fails += 1
                 why = info if not ok else "DB STATE CHANGED on blocked request"
                 print(f"  ✗ {o.name:<40} {why}")
-                if not db_ok:
-                    print(f"      pre={json.dumps(o.db_pre, default=str)}")
-                    print(f"      post={json.dumps(o.db_post, default=str)}")
+                record_failure("fuzz", o, why)
         print(f"[e2e] fuzz: {passes} passed, {fails} failed")
+
+        # --- Burst: alternating malformed + valid --------------------------
+        # Confirms that valid-looking-but-bogus requests stay blocked when
+        # interleaved at high frequency with happy-path-shaped traffic, and
+        # that valid happy-path requests still succeed in the same burst.
+        burst_fails = 0
+        burst_pass = 0
+        if seed:
+            print("[e2e] running malformed→valid burst …")
+            oid = seed.order_id
+            tok_ok = seed.payment_token
+            burst: list[dict[str, Any]] = []
+            for i in range(8):
+                bad_tok = ("x" * 64) if i % 2 == 0 else ("' OR 1=1 --" + "x" * 60)
+                burst.append(submit_trial(f"burst-bad-{i}", {
+                    "orderId": oid, "source": "google_search",
+                    "otherText": None, "paymentToken": bad_tok,
+                }))
+                burst.append(skip_trial(f"burst-bad-skip-{i}", {
+                    "orderId": oid, "paymentToken": bad_tok,
+                }))
+            # One genuine valid call at the end to confirm the system still
+            # accepts good traffic after a burst of rejections.
+            burst.append(skip_trial("burst-valid-final", {
+                "orderId": oid, "paymentToken": tok_ok,
+            }))
+            baseline = snapshot_state(seed.order_id, seed.email)
+            burst_outcomes, _, _ = await run_trials_in_browser(burst)
+            post_state = snapshot_state(seed.order_id, seed.email)
+            for o in burst_outcomes:
+                o.db_pre = baseline
+                o.db_post = post_state
+                if o.name.endswith("burst-valid-final"):
+                    if not o.ok or "Order not found" in (o.raw_body or ""):
+                        burst_fails += 1
+                        print(f"  ✗ {o.name:<40} valid request blocked")
+                        record_failure("burst", o, "valid call rejected after burst")
+                    else:
+                        burst_pass += 1
+                else:
+                    ok, info = assert_rejection_contract(o)
+                    if ok:
+                        burst_pass += 1
+                    else:
+                        burst_fails += 1
+                        print(f"  ✗ {o.name:<40} {info}")
+                        record_failure("burst", o, info)
+            print(f"[e2e] burst: {burst_pass} passed, {burst_fails} failed")
+
+        # --- Idempotency: replay submit + skip many times ------------------
+        idem_fails = 0
+        idem_pass = 0
+        idem_final: dict[str, Any] | None = None
+        if seed:
+            print("[e2e] running idempotency replay …")
+            pre = snapshot_state(seed.order_id, seed.email)
+            # Replay: submit×3 then skip×3 then submit×2 then skip×2.
+            sequence: list[dict[str, Any]] = []
+            for i in range(3):
+                sequence.append(submit_trial(f"idem-submit-{i}", {
+                    "orderId": seed.order_id, "source": "google_search",
+                    "otherText": None, "paymentToken": seed.payment_token,
+                }))
+            for i in range(3):
+                sequence.append(skip_trial(f"idem-skip-{i}", {
+                    "orderId": seed.order_id, "paymentToken": seed.payment_token,
+                }))
+            for i in range(2):
+                sequence.append(submit_trial(f"idem-submit2-{i}", {
+                    "orderId": seed.order_id, "source": "direct",
+                    "otherText": None, "paymentToken": seed.payment_token,
+                }))
+            for i in range(2):
+                sequence.append(skip_trial(f"idem-skip2-{i}", {
+                    "orderId": seed.order_id, "paymentToken": seed.payment_token,
+                }))
+            idem_outcomes, _, _ = await run_trials_in_browser(sequence)
+            post = snapshot_state(seed.order_id, seed.email)
+            idem_final = post
+            for o in idem_outcomes:
+                o.db_pre = pre
+                o.db_post = post
+                if not o.ok:
+                    idem_fails += 1
+                    print(f"  ✗ {o.name:<40} unexpected rejection: {o.msg!r}")
+                    record_failure("idempotency", o, "replay call rejected")
+                else:
+                    idem_pass += 1
+            # Order doc must still be a single document. The fixture's
+            # snapshot returns at most ONE order + ONE claim. Verify there
+            # is no claim duplication and that the final state matches the
+            # last call (skip → surveySkipped=True, sourceSurvey=None).
+            order_state = (post.get("order") or {})
+            claims_state = post.get("save10_claims")
+            if order_state.get("surveySkipped") is not True:
+                idem_fails += 1
+                print(f"  ✗ idempotent final state: {order_state}")
+                record_failure("idempotency", TrialOutcome(
+                    name="idem-final-state", http_status=None, ok=False, msg="",
+                    raw_body="", db_pre=pre, db_post=post,
+                ), "final state not surveySkipped=True after skip-last replay")
+            # Claim collection must hold at most a single entry per order —
+            # the fixture returns the doc keyed by orderId; if it became a
+            # list/multiple something is double-writing.
+            if isinstance(claims_state, list) and len(claims_state) > 1:
+                idem_fails += 1
+                record_failure("idempotency", TrialOutcome(
+                    name="idem-duplicate-claims", http_status=None, ok=False,
+                    msg="", raw_body="", db_pre=pre, db_post=post,
+                ), f"duplicate save10 claims: {len(claims_state)}")
+            print(f"[e2e] idempotency: {idem_pass} passed, {idem_fails} failed")
 
         # --- Happy path -----------------------------------------------------
         happy_fails = 0
@@ -547,16 +656,17 @@ async def main() -> int:
                 if not o.ok:
                     happy_fails += 1
                     print(f"  ✗ {o.name:<40} blocked: msg={o.msg!r} http={o.http_status}")
+                    record_failure("happy", o, "happy-path call rejected")
                 elif o.http_status is None or not (200 <= o.http_status < 300):
                     happy_fails += 1
                     print(f"  ✗ {o.name:<40} non-2xx success: http={o.http_status}")
+                    record_failure("happy", o, "non-2xx on success")
                 elif "Order not found" in (o.raw_body or "") or "Order not found" in (o.msg or ""):
                     happy_fails += 1
                     print(f"  ✗ {o.name:<40} response leaked generic error")
+                    record_failure("happy", o, "response leaked generic error")
                 else:
                     print(f"  ✓ {o.name:<40} HTTP {o.http_status}")
-            # Final DB state must reflect the skip (surveySkipped=True,
-            # sourceSurvey nulled) since skip ran last.
             order_state = final.get("order", {})
             if order_state.get("surveySkipped") is not True:
                 happy_fails += 1
@@ -567,13 +677,23 @@ async def main() -> int:
         else:
             print("[e2e] happy-path: SKIPPED (no service account)")
 
-        total_fail = fails + happy_fails
+        total_fail = fails + happy_fails + burst_fails + idem_fails
+        summary = {
+            "fuzz": {"pass": passes, "fail": fails},
+            "burst": {"pass": burst_pass, "fail": burst_fails},
+            "idempotency": {"pass": idem_pass, "fail": idem_fails},
+            "happy": {"fail": happy_fails},
+            "total_fail": total_fail,
+        }
+        report_path = write_report(summary)
+        print(f"[e2e] report: {report_path}")
         print(f"\n[e2e] OVERALL: {'PASS' if total_fail == 0 else 'FAIL'} ({total_fail} failures)")
         return 0 if total_fail == 0 else 1
     finally:
         if seed:
             cleanup_order(seed.order_id, seed.email)
             print(f"[e2e] cleaned up {seed.order_id}")
+
 
 
 if __name__ == "__main__":
