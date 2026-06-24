@@ -702,6 +702,14 @@ const STALE_ASSET_RECOVERY = `
               sessionStorage.setItem(LEGACY_COUNT,String(count));
             }catch(e){ showLimit(); return; }
             try{ console.warn('[phlabs] stale build asset 404, forcing clean reload:', src); }catch(e){}
+            // Force-fire the auto-purge again (bypass throttle) — this visitor
+            // is provably on a stale build, so we want CF + Prerender purged
+            // before the reload navigates back to a freshly cached HTML.
+            try{
+              sessionStorage.removeItem(PURGE_FIRED);
+              fetch('/api/public/post-publish-check',{method:'GET',cache:'no-store',credentials:'omit',keepalive:true}).catch(function(){});
+            }catch(e){}
+
             var qs;
             try{
               qs=new URLSearchParams(location.search);
