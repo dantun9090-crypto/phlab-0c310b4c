@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResearchRouteImport } from './routes/research'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as GoogleMerchantFeedDotxmlRouteImport } from './routes/google-merchant-feed[.]xml'
+import { Route as CompoundRouteImport } from './routes/compound'
 import { Route as BingFeedDotxmlRouteImport } from './routes/bing-feed[.]xml'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
@@ -68,6 +69,11 @@ const GoogleMerchantFeedDotxmlRoute =
     path: '/google-merchant-feed.xml',
     getParentRoute: () => rootRouteImport,
   } as any)
+const CompoundRoute = CompoundRouteImport.update({
+  id: '/compound',
+  path: '/compound',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BingFeedDotxmlRoute = BingFeedDotxmlRouteImport.update({
   id: '/bing-feed.xml',
   path: '/bing-feed.xml',
@@ -249,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
+  '/compound': typeof CompoundRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
   '/research': typeof ResearchRoute
@@ -288,6 +295,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
+  '/compound': typeof CompoundRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
   '/research': typeof ResearchRoute
@@ -328,6 +336,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
+  '/compound': typeof CompoundRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
   '/research': typeof ResearchRoute
@@ -369,6 +378,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/bing-feed.xml'
+    | '/compound'
     | '/google-merchant-feed.xml'
     | '/products'
     | '/research'
@@ -408,6 +418,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/bing-feed.xml'
+    | '/compound'
     | '/google-merchant-feed.xml'
     | '/products'
     | '/research'
@@ -447,6 +458,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/bing-feed.xml'
+    | '/compound'
     | '/google-merchant-feed.xml'
     | '/products'
     | '/research'
@@ -487,6 +499,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   BingFeedDotxmlRoute: typeof BingFeedDotxmlRoute
+  CompoundRoute: typeof CompoundRoute
   GoogleMerchantFeedDotxmlRoute: typeof GoogleMerchantFeedDotxmlRoute
   ProductsRoute: typeof ProductsRoute
   ResearchRoute: typeof ResearchRoute
@@ -551,6 +564,13 @@ declare module '@tanstack/react-router' {
       path: '/google-merchant-feed.xml'
       fullPath: '/google-merchant-feed.xml'
       preLoaderRoute: typeof GoogleMerchantFeedDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compound': {
+      id: '/compound'
+      path: '/compound'
+      fullPath: '/compound'
+      preLoaderRoute: typeof CompoundRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bing-feed.xml': {
@@ -791,6 +811,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   BingFeedDotxmlRoute: BingFeedDotxmlRoute,
+  CompoundRoute: CompoundRoute,
   GoogleMerchantFeedDotxmlRoute: GoogleMerchantFeedDotxmlRoute,
   ProductsRoute: ProductsRoute,
   ResearchRoute: ResearchRoute,
