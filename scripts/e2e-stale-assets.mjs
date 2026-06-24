@@ -17,6 +17,7 @@
  *   --fixture-dir=./fixtures/stale-assets                   # fixture root
  *   --retries=N           (env E2E_RETRIES, default 1)      # retry transient browser/network errors only
  *   --retry-delay=MS      (default 1500)                    # backoff between retries
+ *   --deterministic       (env E2E_DETERMINISTIC=1)         # stable scenario order + fixed retry timing for comparable CI runs
  *   --list                                                  # list scenario names and exit
  *
  * Outputs in $E2E_REPORT_DIR (default ./e2e-stale-report/):
@@ -51,8 +52,15 @@ const RECORD = !!flag('record', false);
 const REPLAY = !!flag('replay', false);
 const LIST = !!flag('list', false);
 const FIXTURE_DIR = flag('fixture-dir', join(process.cwd(), 'fixtures', 'stale-assets'));
-const RETRIES = Math.max(0, parseInt(flag('retries', process.env.E2E_RETRIES ?? '1'), 10) || 0);
-const RETRY_DELAY_MS = Math.max(0, parseInt(flag('retry-delay', '1500'), 10) || 0);
+const DETERMINISTIC = !!flag('deterministic', process.env.E2E_DETERMINISTIC === '1');
+// Deterministic mode forces stable retry timing AND removes RNG jitter so two CI runs
+// produce byte-comparable summaries (modulo wall-clock timestamps, which we normalize in the diff).
+const RETRIES = DETERMINISTIC
+  ? Math.max(0, parseInt(flag('retries', process.env.E2E_RETRIES ?? '0'), 10) || 0)
+  : Math.max(0, parseInt(flag('retries', process.env.E2E_RETRIES ?? '1'), 10) || 0);
+const RETRY_DELAY_MS = DETERMINISTIC
+  ? 1000 // fixed backoff, no jitter
+  : Math.max(0, parseInt(flag('retry-delay', '1500'), 10) || 0);
 if (RECORD && REPLAY) {
   console.error('--record and --replay are mutually exclusive');
   process.exit(2);
@@ -88,6 +96,10 @@ function ensureScenario(name) {
       har: [], // compact HAR-like entries
       attempts: 0,
       transientErrors: [],
+      dbSnapshots: [], // [{ at, label, data }]
+      replayDiff: null, // populated only in REPLAY mode
+      liveResponses: [], // captured this run (for replay diff)
+      liveRequests: [],
     });
   }
   return perScenario.get(name);
@@ -132,6 +144,105 @@ function assertLockStateUnchanged(before, after) {
     if (bv !== av) diffs.push({ field: k, before: b[k] ?? null, after: a[k] ?? null });
   }
   return diffs;
+}
+
+// Build a chronological lock-field timeline across all snapshots taken during the run.
+function buildLockTimeline(snapshots) {
+  // snapshots: [{ at, label, data }]
+  const events = []; // { at, label, field, from, to }
+  let prev = null;
+  for (const snap of snapshots) {
+    const d = snap.data || {};
+    if (prev) {
+      for (const f of LOCK_FIELDS) {
+        const a = JSON.stringify((prev.data || {})[f] ?? null);
+        const b = JSON.stringify(d[f] ?? null);
+        if (a !== b) {
+          events.push({ at: snap.at, label: snap.label, field: f, from: (prev.data || {})[f] ?? null, to: d[f] ?? null });
+        }
+      }
+    } else {
+      // initial state
+      for (const f of LOCK_FIELDS) {
+        if (d[f] != null) events.push({ at: snap.at, label: snap.label + ' (initial)', field: f, from: null, to: d[f] });
+      }
+    }
+    prev = snap;
+  }
+  return events;
+}
+
+// ---------- live vs replay diff ----------
+function diffLiveVsReplay(scenarioName) {
+  if (!REPLAY) return null;
+  const sc = perScenario.get(scenarioName);
+  if (!sc) return null;
+  const fixtureResp = loadFixture(scenarioName, 'responses') || [];
+  const fixtureReq = loadFixture(scenarioName, 'requests') || [];
+  const liveResp = sc.liveResponses;
+  const liveReq = sc.liveRequests;
+  const byUrl = (arr) => {
+    const m = new Map();
+    for (const r of arr) {
+      const key = (r.url || '').split('?')[0];
+      if (!m.has(key)) m.set(key, []);
+      m.get(key).push(r);
+    }
+    return m;
+  };
+  const fMap = byUrl(fixtureResp), lMap = byUrl(liveResp);
+  const allUrls = new Set([...fMap.keys(), ...lMap.keys()]);
+  const mismatches = [];
+  for (const u of allUrls) {
+    const f = fMap.get(u) || [];
+    const l = lMap.get(u) || [];
+    if (f.length !== l.length) {
+      mismatches.push({ url: u, kind: 'count', fixture: f.length, live: l.length });
+    }
+    const n = Math.max(f.length, l.length);
+    for (let i = 0; i < n; i++) {
+      const fr = f[i], lr = l[i];
+      if (!fr) { mismatches.push({ url: u, kind: 'only-live', index: i, status: lr.status }); continue; }
+      if (!lr) { mismatches.push({ url: u, kind: 'only-fixture', index: i, status: fr.status }); continue; }
+      if (fr.status !== lr.status) {
+        mismatches.push({ url: u, kind: 'status', index: i, fixture: fr.status, live: lr.status });
+      }
+      if ((fr.body || '') !== (lr.body || '')) {
+        mismatches.push({
+          url: u, kind: 'body', index: i,
+          fixtureBytes: (fr.body || '').length, liveBytes: (lr.body || '').length,
+        });
+      }
+    }
+  }
+  // Purge call timing comparison (relative to first purge per side).
+  const fPurge = fixtureResp.filter((r) => /post-publish-check/.test(r.url || ''));
+  const lPurge = liveResp.filter((r) => /post-publish-check/.test(r.url || ''));
+  const relTimes = (arr) => {
+    if (!arr.length) return [];
+    const t0 = arr[0].at;
+    return arr.map((r) => r.at - t0);
+  };
+  const fRel = relTimes(fPurge), lRel = relTimes(lPurge);
+  const purgeTiming = {
+    fixtureCount: fPurge.length,
+    liveCount: lPurge.length,
+    fixtureRelMs: fRel,
+    liveRelMs: lRel,
+    deltaMs: lRel.map((t, i) => (fRel[i] != null ? t - fRel[i] : null)),
+  };
+  return {
+    summary: {
+      requestsFixture: fixtureReq.length,
+      requestsLive: liveReq.length,
+      responsesFixture: fixtureResp.length,
+      responsesLive: liveResp.length,
+      mismatchCount: mismatches.length,
+    },
+    purgeTiming,
+    mismatches: mismatches.slice(0, 40),
+    truncated: mismatches.length > 40,
+  };
 }
 
 // ---------- fixture helpers ----------
@@ -235,6 +346,7 @@ async function withContext(browser, name, fn) {
     const entry = { scenario: name, at: startedAt, method: req.method(), url, headers: req.headers(), postData: req.postData() || null };
     appendNd(reqLog, entry);
     if (RECORD) requestRecording.push(entry);
+    sc.liveRequests.push(entry);
     if (HASHED_JS_RE.test(url)) { assetReqs.push(url); sc.hashedJsUrls.add(url.split('?')[0]); }
     if (sc.topRequests.length < 25) sc.topRequests.push({ method: req.method(), url });
     const redirectFrom = req.redirectedFrom();
@@ -268,6 +380,7 @@ async function withContext(browser, name, fn) {
     const entry = { scenario: name, at: Date.now(), url: u, status: res.status(), body };
     appendNd(resLog, entry);
     if (RECORD) responseRecording.push(entry);
+    sc.liveResponses.push(entry);
     if (/post-publish-check/.test(u)) {
       purgeResponses.push(entry);
       try {
@@ -472,8 +585,13 @@ async function run() {
     process.exit(2);
   }
   const dbBefore = await readBuildState();
+  const dbSnapshots = [{ at: Date.now(), label: 'run-start', data: dbBefore || {} }];
   const browser = await chromium.launch({ headless: true });
-  const toRun = ONLY ? [ONLY] : Object.keys(scenarios);
+  // Deterministic mode: stable scenario ordering so CI runs are comparable.
+  const toRun = ONLY
+    ? [ONLY]
+    : (DETERMINISTIC ? [...Object.keys(scenarios)].sort() : Object.keys(scenarios));
+  if (DETERMINISTIC) console.log(`[deterministic] scenario order: ${toRun.join(', ')}`);
   for (const name of toRun) {
     let lastErr = null;
     for (let attempt = 0; attempt <= RETRIES; attempt++) {
@@ -486,7 +604,6 @@ async function run() {
       try {
         await scenarios[name](browser);
         lastErr = null;
-        // If assertions failed deterministically, do NOT retry.
         const scNow = ensureScenario(name);
         if (scNow.failures.length > 0) {
           console.log(`[no-retry] [${name}] assertion failures present (${scNow.failures.length}) — deterministic, not retrying`);
@@ -504,15 +621,23 @@ async function run() {
         }
         console.warn(`[retry] [${name}] transient error on attempt ${attempt + 1}/${RETRIES + 1}: ${err?.message || err} — retrying in ${RETRY_DELAY_MS}ms`);
         await sleep(RETRY_DELAY_MS);
-        // restore prior exitCode if scenarios didn't add real assertion failures
         if (!hadAssertionFailureBefore) process.exitCode = 0;
       }
     }
+    // Per-scenario DB snapshot for the lock timeline.
+    const snap = await readBuildState();
+    const entry = { at: Date.now(), label: `after:${name}`, data: snap || {} };
+    dbSnapshots.push(entry);
+    const sc = ensureScenario(name);
+    sc.dbSnapshots.push(entry);
+    // Build live-vs-replay diff once per scenario (REPLAY only).
+    sc.replayDiff = diffLiveVsReplay(name);
   }
   await browser.close();
   const dbAfter = await readBuildState();
+  const lockTimeline = buildLockTimeline(dbSnapshots);
   writeFileSync(join(REPORT_DIR, 'db-diff.json'),
-    JSON.stringify({ before: dbBefore, after: dbAfter, lockFieldsTracked: LOCK_FIELDS }, null, 2));
+    JSON.stringify({ before: dbBefore, after: dbAfter, lockFieldsTracked: LOCK_FIELDS, snapshots: dbSnapshots, lockTimeline }, null, 2));
 
   const failed = results.filter((r) => !r.ok);
 
@@ -526,6 +651,7 @@ async function run() {
     uniqueHashedJsUrls: [...s.hashedJsUrls],
     navigations: s.reloads.length,
     topRequests: s.topRequests,
+    replayDiff: s.replayDiff,
   }));
 
   const summary = {
@@ -534,7 +660,8 @@ async function run() {
     total: results.length, failed: failed.length, passed: results.length - failed.length,
     scenarios: [...new Set(results.map((r) => r.scenario))],
     perScenario: perScenarioSummary,
-    cli: { ONLY, RECORD, REPLAY, FIXTURE_DIR },
+    lockTimeline,
+    cli: { ONLY, RECORD, REPLAY, FIXTURE_DIR, RETRIES, RETRY_DELAY_MS, DETERMINISTIC },
     results,
   };
   writeFileSync(join(REPORT_DIR, 'report.json'), JSON.stringify(summary, null, 2));
@@ -606,9 +733,31 @@ async function run() {
       <details><summary>Navigations / no-loop evidence (${(meta.reloads || []).length})</summary><ul>${reloadList || '<li class="muted">none</li>'}</ul>
         <p>Unique hashed JS URLs: ${s.uniqueHashedJsUrls.length}</p><ul>${uniqueJs}</ul></details>
       <details><summary>HAR trace</summary><p><a href="har-${esc(s.scenario)}.json">har-${esc(s.scenario)}.json</a> · ${(meta.har || []).length} entries</p></details>
+      ${(() => {
+        const d = meta.replayDiff;
+        if (!d) return REPLAY ? '<details><summary>Live vs replay</summary><p class="muted">no diff produced</p></details>' : '';
+        const pt = d.purgeTiming;
+        const ptRows = pt.liveRelMs.map((t, i) => `<tr><td>${i}</td><td><code>${pt.fixtureRelMs[i] ?? '—'}</code> ms</td><td><code>${t}</code> ms</td><td><code>${pt.deltaMs[i] ?? '—'}</code> ms</td></tr>`).join('')
+          || '<tr><td colspan="4" class="muted">no purge calls observed</td></tr>';
+        const mmRows = d.mismatches.map((m) => `<tr class="diff"><td>${esc(m.kind)}</td><td><code>${esc(m.url)}</code></td><td><code>${esc(JSON.stringify(m).slice(0, 200))}</code></td></tr>`).join('')
+          || '<tr><td colspan="3" class="muted">no mismatches — live matches fixture ✅</td></tr>';
+        return `<details ${d.summary.mismatchCount ? 'open' : ''}><summary>Live vs replay (mismatches=${d.summary.mismatchCount}, fixture/live req=${d.summary.requestsFixture}/${d.summary.requestsLive}, resp=${d.summary.responsesFixture}/${d.summary.responsesLive})</summary>
+          <h4>Purge call timing (relative to first purge per side)</h4>
+          <table class="tbl"><thead><tr><th>#</th><th>fixture</th><th>live</th><th>Δ</th></tr></thead><tbody>${ptRows}</tbody></table>
+          <h4>Mismatched requests / status / bodies</h4>
+          <table class="tbl"><thead><tr><th>kind</th><th>url</th><th>detail</th></tr></thead><tbody>${mmRows}</tbody></table>
+          ${d.truncated ? '<p class="muted">(truncated to first 40)</p>' : ''}
+        </details>`;
+      })()}
       <details><summary>Screenshot</summary><p><a href="screenshots/${esc(s.scenario)}.png"><img src="screenshots/${esc(s.scenario)}.png" alt="${esc(s.scenario)}" loading="lazy" style="max-width:100%;border:1px solid #444"/></a></p></details>
     </section>`;
   }).join('\n');
+  // Build DB lock timeline HTML.
+  const lockTimelineHtml = (() => {
+    if (!lockTimeline.length) return '<p class="muted">No lock-field transitions captured (Firebase admin not available or no changes).</p>';
+    const rows = lockTimeline.map((e) => `<tr><td><code>${esc(new Date(e.at).toISOString())}</code></td><td>${esc(e.label)}</td><td><span class="pill">${esc(e.field)}</span></td><td><code>${esc(JSON.stringify(e.from))}</code></td><td><code>${esc(JSON.stringify(e.to))}</code></td></tr>`).join('');
+    return `<table class="tbl"><thead><tr><th>timestamp</th><th>checkpoint</th><th>field</th><th>from</th><th>to</th></tr></thead><tbody>${rows}</tbody></table>`;
+  })();
   const overall = failed.length ? 'FAILED' : 'PASSED';
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>E2E stale-assets — ${esc(overall)}</title>
 <style>
@@ -635,7 +784,8 @@ a{color:#7dd3fc}
   <div class="muted">target <code>${esc(TARGET)}</code> · finished ${esc(summary.finishedAt)} · ${summary.passed}/${summary.total} passed${ONLY ? ` · filter <code>${esc(ONLY)}</code>` : ''}${REPLAY ? ' · <b>REPLAY</b>' : (RECORD ? ' · <b>RECORD</b>' : '')} · retries=${RETRIES}</div>
 </header>
 <section class="card"><h2>Per-scenario summary</h2>${scCards || '<p class="muted">No scenarios ran.</p>'}</section>
-<section class="card"><h2>DB diff (Firestore <code>_meta/build_state</code>) — lock fields highlighted</h2>${dbHighlights}</section>
+<section class="card"><h2>DB lock timeline (Firestore <code>_meta/build_state</code>)</h2>${lockTimelineHtml}</section>
+<section class="card"><h2>DB diff (before vs after) — lock fields highlighted</h2>${dbHighlights}</section>
 <section class="card"><h2>Artifacts</h2><ul>
   <li><a href="report.json">report.json</a></li><li><a href="report.txt">report.txt</a></li>
   <li><a href="junit.xml">junit.xml</a></li><li><a href="db-diff.json">db-diff.json</a></li>
