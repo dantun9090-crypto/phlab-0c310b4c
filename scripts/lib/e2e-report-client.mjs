@@ -105,9 +105,28 @@ export const REPORT_CLIENT_SCRIPT = `
   }
 
   // ── bundle builders ──────────────────────────────────────────────────────
-  function filterScenario(sc,allowed){
-    sc.items=sc.items.filter(function(it){return allowed.has(it.url+'#'+it.index);});
+  function filterScenario(sc,allowed,mismatchOnly){
+    sc.items=sc.items.filter(function(it){
+      if(!allowed.has(it.url+'#'+it.index))return false;
+      if(mismatchOnly && it.match)return false;
+      return true;
+    });
     return sc;
+  }
+
+  // ── visible progress / loading state on long-running buttons ─────────────
+  function withProgress(btn,label,fn){
+    var prev=btn.textContent;var prevDisabled=btn.disabled;
+    btn.disabled=true;btn.setAttribute('aria-busy','true');btn.dataset.busy='1';
+    btn.textContent='⏳ '+label+'…';
+    // Yield to the browser so the spinner paints before heavy sync work.
+    return new Promise(function(resolve){setTimeout(function(){
+      try{fn();}finally{
+        btn.textContent=prev;btn.disabled=prevDisabled;
+        btn.removeAttribute('aria-busy');delete btn.dataset.busy;
+        resolve();
+      }
+    },0);});
   }
 
   document.addEventListener('change',function(e){
@@ -119,54 +138,66 @@ export const REPORT_CLIENT_SCRIPT = `
     var b=e.target.closest('button[data-bundle]');
     if(b){
       var scope=b.dataset.bundle;
-      var ctrls=document.querySelector('.filters[data-scope="'+scope+'"]');
-      var allowed=visibleKeys(scope);
-      var data=JSON.parse(atob(b.dataset.bundleB64));
-      filterScenario(data,allowed);
-      data.exportedAt=new Date().toISOString();
-      data.filterApplied=ctrls?currentFilters(ctrls):null;
-      return downloadJson('mismatch-bundle-'+scope+'.json',data);
+      var mismatchOnly=b.dataset.mismatchOnly==='1';
+      return withProgress(b,'building bundle',function(){
+        var ctrls=document.querySelector('.filters[data-scope="'+scope+'"]');
+        var allowed=visibleKeys(scope);
+        var data=JSON.parse(atob(b.dataset.bundleB64));
+        filterScenario(data,allowed,mismatchOnly);
+        data.exportedAt=new Date().toISOString();
+        data.filterApplied=ctrls?currentFilters(ctrls):null;
+        data.mismatchOnly=mismatchOnly;
+        downloadJson('mismatch-bundle-'+scope+(mismatchOnly?'-mismatches':'')+'.json',data);
+      });
     }
     // Global JSON bundle
     var g=e.target.closest('button[data-global-bundle]');
     if(g){
-      var all=JSON.parse(atob(g.dataset.globalBundleB64));
-      var perScenarioFilters={};
-      all.scenarios=all.scenarios.map(function(sc){
-        var ctrls=document.querySelector('.filters[data-scope="'+sc.scenario+'"]');
-        var allowed=visibleKeys(sc.scenario);
-        perScenarioFilters[sc.scenario]=ctrls?currentFilters(ctrls):null;
-        return filterScenario(sc,allowed);
+      var mismatchOnlyG=g.dataset.mismatchOnly==='1';
+      return withProgress(g,'building global JSON',function(){
+        var all=JSON.parse(atob(g.dataset.globalBundleB64));
+        var perScenarioFilters={};
+        all.scenarios=all.scenarios.map(function(sc){
+          var ctrls=document.querySelector('.filters[data-scope="'+sc.scenario+'"]');
+          var allowed=visibleKeys(sc.scenario);
+          perScenarioFilters[sc.scenario]=ctrls?currentFilters(ctrls):null;
+          return filterScenario(sc,allowed,mismatchOnlyG);
+        });
+        all.exportedAt=new Date().toISOString();
+        all.filtersApplied=perScenarioFilters;
+        all.mismatchOnly=mismatchOnlyG;
+        downloadJson('mismatch-bundle-all-scenarios'+(mismatchOnlyG?'-mismatches':'')+'.json',all);
       });
-      all.exportedAt=new Date().toISOString();
-      all.filtersApplied=perScenarioFilters;
-      return downloadJson('mismatch-bundle-all-scenarios.json',all);
     }
     // Global ZIP bundle (manifest + per-scenario JSON files)
     var z=e.target.closest('button[data-global-zip]');
     if(z){
-      var all2=JSON.parse(atob(z.dataset.globalBundleB64));
-      var perScenarioFilters2={};
-      var files=[];
-      all2.scenarios=all2.scenarios.map(function(sc){
-        var ctrls=document.querySelector('.filters[data-scope="'+sc.scenario+'"]');
-        var allowed=visibleKeys(sc.scenario);
-        perScenarioFilters2[sc.scenario]=ctrls?currentFilters(ctrls):null;
-        var filtered=filterScenario(JSON.parse(JSON.stringify(sc)),allowed);
-        files.push({name:'scenarios/'+sc.scenario+'.json',data:JSON.stringify(filtered,null,2)});
-        return filtered;
+      var mismatchOnlyZ=z.dataset.mismatchOnly==='1';
+      return withProgress(z,'building ZIP',function(){
+        var all2=JSON.parse(atob(z.dataset.globalBundleB64));
+        var perScenarioFilters2={};
+        var files=[];
+        all2.scenarios=all2.scenarios.map(function(sc){
+          var ctrls=document.querySelector('.filters[data-scope="'+sc.scenario+'"]');
+          var allowed=visibleKeys(sc.scenario);
+          perScenarioFilters2[sc.scenario]=ctrls?currentFilters(ctrls):null;
+          var filtered=filterScenario(JSON.parse(JSON.stringify(sc)),allowed,mismatchOnlyZ);
+          files.push({name:'scenarios/'+sc.scenario+'.json',data:JSON.stringify(filtered,null,2)});
+          return filtered;
+        });
+        var manifest={
+          schemaVersion:all2.schemaVersion,
+          generatedAt:all2.generatedAt,
+          exportedAt:new Date().toISOString(),
+          redaction:all2.redaction,
+          filtersApplied:perScenarioFilters2,
+          mismatchOnly:mismatchOnlyZ,
+          scenarios:all2.scenarios.map(function(s){return {scenario:s.scenario,file:'scenarios/'+s.scenario+'.json',items:s.items.length};}),
+        };
+        files.unshift({name:'manifest.json',data:JSON.stringify(manifest,null,2)});
+        var bytes=zipStore(files);
+        downloadBlob('mismatch-bundle-all-scenarios'+(mismatchOnlyZ?'-mismatches':'')+'.zip',new Blob([bytes],{type:'application/zip'}));
       });
-      var manifest={
-        schemaVersion:all2.schemaVersion,
-        generatedAt:all2.generatedAt,
-        exportedAt:new Date().toISOString(),
-        redaction:all2.redaction,
-        filtersApplied:perScenarioFilters2,
-        scenarios:all2.scenarios.map(function(s){return {scenario:s.scenario,items:s.items.length};}),
-      };
-      files.unshift({name:'manifest.json',data:JSON.stringify(manifest,null,2)});
-      var bytes=zipStore(files);
-      return downloadBlob('mismatch-bundle-all-scenarios.zip',new Blob([bytes],{type:'application/zip'}));
     }
   });
 
