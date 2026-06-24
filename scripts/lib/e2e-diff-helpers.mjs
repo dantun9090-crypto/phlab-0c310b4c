@@ -76,6 +76,10 @@ export function redactBody(body, opts = {}) {
 // ──────────────────────────────────────────────────────────────────────────
 
 export const BUNDLE_SCHEMA_VERSION = 1;
+// Oldest schemaVersion this validator can still parse. Bundles in
+// [MIN_SUPPORTED_SCHEMA_VERSION .. BUNDLE_SCHEMA_VERSION-1] validate with a
+// warning instead of a hard error so older artifacts remain inspectable.
+export const MIN_SUPPORTED_SCHEMA_VERSION = 1;
 
 export const BUNDLE_SCHEMA = {
   perScenario: {
@@ -96,12 +100,19 @@ function _isObject(o) { return o != null && typeof o === 'object' && !Array.isAr
 
 export function validateMismatchBundle(b) {
   const errors = [];
-  if (!_isObject(b)) return { ok: false, errors: ['bundle is not a JSON object'] };
+  const warnings = [];
+  if (!_isObject(b)) return { ok: false, errors: ['bundle is not a JSON object'], warnings };
   for (const k of BUNDLE_SCHEMA.perScenario.required) {
     if (!(k in b)) errors.push(`missing required field "${k}"`);
   }
-  if (b.schemaVersion !== BUNDLE_SCHEMA_VERSION) {
-    errors.push(`schemaVersion expected ${BUNDLE_SCHEMA_VERSION}, got ${JSON.stringify(b.schemaVersion)}`);
+  if (typeof b.schemaVersion !== 'number') {
+    errors.push(`schemaVersion expected number, got ${JSON.stringify(b.schemaVersion)}`);
+  } else if (b.schemaVersion > BUNDLE_SCHEMA_VERSION) {
+    errors.push(`schemaVersion ${b.schemaVersion} is newer than supported (${BUNDLE_SCHEMA_VERSION}); upgrade tools to inspect`);
+  } else if (b.schemaVersion < MIN_SUPPORTED_SCHEMA_VERSION) {
+    errors.push(`schemaVersion ${b.schemaVersion} is older than min supported (${MIN_SUPPORTED_SCHEMA_VERSION})`);
+  } else if (b.schemaVersion !== BUNDLE_SCHEMA_VERSION) {
+    warnings.push(`schemaVersion ${b.schemaVersion} is older than current (${BUNDLE_SCHEMA_VERSION}); validated in backward-compat mode`);
   }
   if (b.scenario != null && typeof b.scenario !== 'string') errors.push('scenario must be a string');
   if (b.generatedAt != null && typeof b.generatedAt !== 'string') errors.push('generatedAt must be an ISO string');
@@ -137,7 +148,7 @@ export function validateMismatchBundle(b) {
 
       for (const side of ['fixture', 'live']) {
         const s = it[side];
-        if (s == null) continue; // null is permitted (only-live / only-fixture)
+        if (s == null) continue;
         if (!_isObject(s)) { errors.push(`items[${i}].${side} must be an object or null`); continue; }
         for (const k of BUNDLE_SCHEMA.perScenario.item.sideRequired) {
           if (!(k in s)) errors.push(`items[${i}].${side} missing "${k}"`);
@@ -151,24 +162,32 @@ export function validateMismatchBundle(b) {
       }
     });
   }
-  return { ok: errors.length === 0, errors };
+  return { ok: errors.length === 0, errors, warnings };
 }
 
 export function validateGlobalMismatchBundle(b) {
   const errors = [];
-  if (!_isObject(b)) return { ok: false, errors: ['global bundle is not a JSON object'] };
+  const warnings = [];
+  if (!_isObject(b)) return { ok: false, errors: ['global bundle is not a JSON object'], warnings };
   for (const k of BUNDLE_SCHEMA.global.required) {
     if (!(k in b)) errors.push(`missing required field "${k}"`);
   }
-  if (b.schemaVersion !== BUNDLE_SCHEMA_VERSION) {
-    errors.push(`schemaVersion expected ${BUNDLE_SCHEMA_VERSION}, got ${JSON.stringify(b.schemaVersion)}`);
+  if (typeof b.schemaVersion !== 'number') {
+    errors.push(`schemaVersion expected number, got ${JSON.stringify(b.schemaVersion)}`);
+  } else if (b.schemaVersion > BUNDLE_SCHEMA_VERSION) {
+    errors.push(`schemaVersion ${b.schemaVersion} is newer than supported (${BUNDLE_SCHEMA_VERSION})`);
+  } else if (b.schemaVersion < MIN_SUPPORTED_SCHEMA_VERSION) {
+    errors.push(`schemaVersion ${b.schemaVersion} is older than min supported (${MIN_SUPPORTED_SCHEMA_VERSION})`);
+  } else if (b.schemaVersion !== BUNDLE_SCHEMA_VERSION) {
+    warnings.push(`global schemaVersion ${b.schemaVersion} older than current (${BUNDLE_SCHEMA_VERSION}); backward-compat mode`);
   }
   if (b.scenarios != null) {
     if (!Array.isArray(b.scenarios)) errors.push('scenarios must be an array');
     else b.scenarios.forEach((sc, i) => {
       const sub = validateMismatchBundle(sc);
       if (!sub.ok) for (const e of sub.errors) errors.push(`scenarios[${i}]: ${e}`);
+      for (const w of (sub.warnings || [])) warnings.push(`scenarios[${i}]: ${w}`);
     });
   }
-  return { ok: errors.length === 0, errors };
+  return { ok: errors.length === 0, errors, warnings };
 }
