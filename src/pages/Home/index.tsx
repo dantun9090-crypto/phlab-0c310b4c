@@ -1,6 +1,7 @@
 import { ArrowRight, CheckCircle2, ShieldCheck, Zap, Mail, Microscope, CreditCard, Truck, Flame, Star, Dna, Activity, Brain, RefreshCw, Shield, Snowflake, FileCheck, FlaskConical, ChevronDown, Lock, Loader2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSSRBanner } from '@/legacy/SSRDataContext';
+import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 
 import { Link } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
@@ -208,50 +209,58 @@ export default function HomePage() {
       }
     } catch { /* ignore */ }
 
-    // LCP-critical: adverts contain the hero banner image. Fire immediately,
-    // outside requestIdleCallback, so the network request is not delayed.
-    // Adverts are stored with `isActive` (admin writes that field). Older
-    // docs used `active`; tolerate both by filtering client-side.
-    loadFirebase().then(({ getDocs, query, collection, db }) =>
-      getDocs(query(collection(db, 'adverts')))
+    refetchAdverts();
+    refetchBannerAndSettings();
+
+    return () => { cancelled = true; };
+  }, []);
+
+  // Refetch helpers — also invoked by useMarketingRevalidate when the admin
+  // bumps settings/marketingVersion (banner/advert save).
+  const refetchAdverts = useCallback(() => {
+    loadFirebase().then(({ getDocsFromServer, query, collection, db }) =>
+      getDocsFromServer(query(collection(db, 'adverts')))
     ).then((snap: any) => {
       try {
         const allAdverts = snap.docs
           .map((d: any) => ({ id: d.id, ...d.data() }))
           .filter((a: any) => a.isActive === true || a.active === true);
-
-        if (!cancelled) setAdverts(allAdverts);
+        setAdverts(allAdverts);
         const heroCount = allAdverts.filter((a: any) => a.placement === 'homepage_hero').length;
         localStorage.setItem('php_adverts_hero_count', heroCount > 0 ? '1' : '0');
         localStorage.setItem('php_adverts_cache', JSON.stringify({ ts: Date.now(), data: allAdverts }));
       } catch { /* ignore */ }
     }).catch(() => {});
+  }, []);
 
-    const deferredLoad = () => {
-      loadFirebase().then(({ getDoc, doc, db }) => {
-        getDoc(doc(db, 'settings', 'promoBanner')).then(snap => {
+  const refetchBannerAndSettings = useCallback(() => {
+    const run = () => {
+      loadFirebase().then(({ getDocFromServer, doc, db }) => {
+        getDocFromServer(doc(db, 'settings', 'promoBanner')).then(snap => {
           if (snap.exists()) setBanner(snap.data());
           setBannerResolved(true);
         }).catch(() => setBannerResolved(true));
 
-        getDoc(doc(db, 'siteSettings', 'featured-products')).then(snap => {
+        getDocFromServer(doc(db, 'siteSettings', 'featured-products')).then(snap => {
           if (snap.exists() && (snap.data() as any).products) setFeaturedProducts((snap.data() as any).products);
         }).catch(() => {});
 
-        getDoc(doc(db, 'settings', 'site')).then(snap => {
+        getDocFromServer(doc(db, 'settings', 'site')).then(snap => {
           if (snap.exists()) setSiteSettings(snap.data() as Record<string, string>);
         }).catch(() => {});
       }).catch(() => setBannerResolved(true));
     };
-
     if (typeof requestIdleCallback !== 'undefined') {
-      requestIdleCallback(deferredLoad, { timeout: 1500 });
+      requestIdleCallback(run, { timeout: 1500 });
     } else {
-      setTimeout(deferredLoad, 30);
+      setTimeout(run, 30);
     }
-
-    return () => { cancelled = true; };
   }, []);
+
+  useMarketingRevalidate(() => {
+    refetchAdverts();
+    refetchBannerAndSettings();
+  });
 
   const enrichedFeatured = (featuredProducts.length > 0 ? featuredProducts : products
     .filter(p => p.isActive !== false && p.stock > 0)

@@ -7,7 +7,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db, storage, doc, getDoc, setDoc, Timestamp, storageRef, uploadBytesResumable, getDownloadURL, triggerContentCdnInvalidation } from '@/lib/firebase';
+import { db, storage, doc, getDoc, setDoc, Timestamp, storageRef, uploadBytesResumable, getDownloadURL, triggerContentCdnInvalidation, bumpMarketingVersion } from '@/lib/firebase';
 
 interface BannerConfig {
   active: boolean;
@@ -94,8 +94,10 @@ export default function BannerTab() {
     setMsg(null);
     try {
       await setDoc(doc(db, 'settings', 'promoBanner'), { ...banner, updatedAt: Timestamp.now() });
-      // Banner appears on every page — purge homepage + sitemap.
+      // Banner appears on every page — purge edge HTML cache + bump the
+      // marketing version stamp so every open tab refetches immediately.
       triggerContentCdnInvalidation(['/']);
+      bumpMarketingVersion();
       window.dispatchEvent(new CustomEvent('admin:save'));
       setOriginal(banner);
       setMsg({ type: 'success', text: 'Banner saved successfully!' });

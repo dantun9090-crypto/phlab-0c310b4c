@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, CheckCircle2, ShieldCheck, Download, Microscope, FileText, ShoppingCart, Package, Edit2, ZoomIn, X, ChevronLeft, ChevronRight, Truck, Lock, FlaskConical, Star, ChevronDown, ArrowRight } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { dispatchAddToCart } from '@/components/Layout';
 import NextDayCountdown from '@/components/NextDayCountdown';
 import { ProductEditor } from '@/components/ProductEditor';
@@ -262,16 +263,21 @@ export default function ProductDetail() {
     touchStartX.current = e.touches[0].clientX;
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
+  const refetchAdverts = useCallback(() => {
     getDocsFromServer(query(collection(db, 'adverts')))
       .then((snap: any) => {
-        if (cancelled) return;
         setAdverts(snap.docs.map((d: any) => ({ id: d.id, ...d.data() })));
       })
-      .catch(() => { if (!cancelled) setAdverts([]); });
-    return () => { cancelled = true; };
+      .catch(() => setAdverts([]));
   }, []);
+
+  useEffect(() => {
+    refetchAdverts();
+  }, [refetchAdverts]);
+
+  useMarketingRevalidate(refetchAdverts);
+
+
   const handleTouchEnd = useCallback((e: React.TouchEvent, imgCount: number) => {
     if (touchStartX.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStartX.current;
