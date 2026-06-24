@@ -165,6 +165,28 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number, body });
             }
 
+      # Surface cache hit/miss for both the Bun install store and the
+      # SBOM cache in the Actions job summary so reviewers can see at a
+      # glance whether this run reused cached artifacts (fast/repeatable)
+      # or rebuilt from scratch (slow but baseline-deterministic).
+      - name: Cache status → job summary
+        if: always()
+        env:
+          BUN_CACHE_HIT: ${{ steps.bun_cache.outputs.cache-hit }}
+          SBOM_CACHE_HIT: ${{ steps.sbom_cache.outputs.cache-hit }}
+        run: |
+          icon() { case "$1" in true) echo "✅ HIT";; false) echo "❌ MISS";; *) echo "⚠️ n/a";; esac; }
+          {
+            echo "### 🗄️ Cache status"
+            echo ""
+            echo "| Cache | Key | Status |"
+            echo "|---|---|---|"
+            echo "| Bun install store | \`bun-store-${{ runner.os }}-${{ hashFiles('bun.lock') }}\` | $(icon "$BUN_CACHE_HIT") |"
+            echo "| SBOM (CycloneDX) | \`sbom-${{ runner.os }}-${{ hashFiles('bun.lock', 'scripts/generate-sbom.ts') }}\` | $(icon "$SBOM_CACHE_HIT") |"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+
+
       # Re-raise the scan failure so the job (and merge gate) fails
       # *after* the artifact has been uploaded and the PR commented.
       - name: Enforce audit gate
