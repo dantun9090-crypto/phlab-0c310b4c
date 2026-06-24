@@ -974,6 +974,8 @@ export const addProduct = async (product: Omit<Product, 'id'>) => {
     tags: product.tags || [],
     includeInMerchantFeed: product.includeInMerchantFeed === true,
     excludeFromMerchantFeed: product.excludeFromMerchantFeed === true,
+    isVip: (product as any).isVip === true,
+    popular: (product as any).popular === true,
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   };
