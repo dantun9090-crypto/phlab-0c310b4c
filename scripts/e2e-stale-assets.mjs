@@ -20,13 +20,24 @@
  *   --deterministic       (env E2E_DETERMINISTIC=1)         # stable scenario order + fixed retry timing for comparable CI runs
  *   --list                                                  # list scenario names and exit
  *
+ *   Live-vs-replay thresholds (REPLAY only — fail only on meaningful regressions):
+ *   --max-mismatches=N            (default 0)  total mismatch budget per scenario
+ *   --max-status-mismatches=N     (default 0)  HTTP status differences allowed
+ *   --max-body-byte-delta=N       (default 0)  per-response body byte delta allowed
+ *
+ *   Redaction (applies to fixtures, HAR trace, ndjson logs, and HTML report):
+ *   --redact-bodies                   strip all captured request/response bodies
+ *   --max-body-bytes=N (default 4000) truncate captured bodies to N bytes
+ *   --redact-headers=a,b,c            comma list of header NAMES to mask (default: authorization,cookie,set-cookie,x-api-key,x-auth-token)
+ *   --redact-url-params=a,b,c         comma list of query param NAMES to mask (default: token,key,api_key,access_token,id_token)
+ *
  * Outputs in $E2E_REPORT_DIR (default ./e2e-stale-report/):
- *   report.html   self-contained dashboard (per-scenario, DB diff, purges, no-loop evidence)
+ *   report.html   self-contained dashboard with clickable per-request drilldown
  *   report.json   machine-readable summary
  *   report.txt    plain-text CI log
  *   junit.xml     CI test reporter
  *   db-diff.json  Firestore _meta/build_state before/after (when admin SDK present)
- *   har-<scenario>.json  compact HAR-like trace (timings, redirect chain, resource type)
+ *   har-<scenario>.json  compact HAR-like trace (timings, redirect chain, headers, body)
  *   requests.ndjson / responses.ndjson / console.ndjson
  *   screenshots/<scenario>.png
  *
