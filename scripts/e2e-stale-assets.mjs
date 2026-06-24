@@ -466,7 +466,41 @@ async function run() {
   const dbBefore = await readBuildState();
   const browser = await chromium.launch({ headless: true });
   const toRun = ONLY ? [ONLY] : Object.keys(scenarios);
-  for (const name of toRun) await scenarios[name](browser);
+  for (const name of toRun) {
+    let lastErr = null;
+    for (let attempt = 0; attempt <= RETRIES; attempt++) {
+      // Reset state for this scenario before each attempt so retries are clean.
+      perScenario.delete(name);
+      for (let i = results.length - 1; i >= 0; i--) if (results[i].scenario === name) results.splice(i, 1);
+      const sc = ensureScenario(name);
+      sc.attempts = attempt + 1;
+      const hadAssertionFailureBefore = (process.exitCode === 1);
+      try {
+        await scenarios[name](browser);
+        lastErr = null;
+        // If assertions failed deterministically, do NOT retry.
+        const scNow = ensureScenario(name);
+        if (scNow.failures.length > 0) {
+          console.log(`[no-retry] [${name}] assertion failures present (${scNow.failures.length}) — deterministic, not retrying`);
+          break;
+        }
+        break; // success
+      } catch (err) {
+        lastErr = err;
+        const transient = isTransient(err);
+        ensureScenario(name).transientErrors.push({ attempt: attempt + 1, transient, message: String(err?.message || err) });
+        if (!transient || attempt === RETRIES) {
+          console.error(`[${name}] failed${transient ? ' (transient, retries exhausted)' : ''}: ${err?.message || err}`);
+          record('scenario crashed', false, String(err?.message || err).slice(0, 200), { error: String(err?.stack || err), transient });
+          break;
+        }
+        console.warn(`[retry] [${name}] transient error on attempt ${attempt + 1}/${RETRIES + 1}: ${err?.message || err} — retrying in ${RETRY_DELAY_MS}ms`);
+        await sleep(RETRY_DELAY_MS);
+        // restore prior exitCode if scenarios didn't add real assertion failures
+        if (!hadAssertionFailureBefore) process.exitCode = 0;
+      }
+    }
+  }
   await browser.close();
   const dbAfter = await readBuildState();
   writeFileSync(join(REPORT_DIR, 'db-diff.json'),
