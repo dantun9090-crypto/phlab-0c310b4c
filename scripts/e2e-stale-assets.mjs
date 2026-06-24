@@ -95,6 +95,10 @@ function ensureScenario(name) {
       har: [], // compact HAR-like entries
       attempts: 0,
       transientErrors: [],
+      dbSnapshots: [], // [{ at, label, data }]
+      replayDiff: null, // populated only in REPLAY mode
+      liveResponses: [], // captured this run (for replay diff)
+      liveRequests: [],
     });
   }
   return perScenario.get(name);
