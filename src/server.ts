@@ -475,12 +475,18 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   const RewriterCtor = (globalThis as { HTMLRewriter?: new () => Rewriter }).HTMLRewriter;
 
   let rewritten = htmlResponse;
+  const buildId = (typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev') as string;
   if (RewriterCtor) {
     const rewriter: Rewriter = new RewriterCtor();
     rewritten = rewriter
       .on("script", {
         element(el) {
           el.setAttribute("nonce", effectiveNonce);
+        },
+      })
+      .on("head", {
+        element(el: { append: (html: string, opts?: { html: boolean }) => void }) {
+          el.append(`<meta name="build-id" content="${buildId}">`, { html: true });
         },
       })
       .transform(htmlResponse);
@@ -491,6 +497,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
     if (!headers.has(k)) headers.set(k, v);
   }
   headers.set("content-security-policy", buildCsp(effectiveNonce, hostname));
+  headers.set("x-build-id", buildId);
   return new Response(rewritten.body, {
     status: rewritten.status,
     statusText: rewritten.statusText,
