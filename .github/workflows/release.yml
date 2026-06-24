@@ -50,6 +50,11 @@ jobs:
         env:
           BUILD_ID: ${{ github.sha }}
 
+      # Reject a malformed CycloneDX SBOM BEFORE signing — once it's
+      # signed + attested + uploaded to the release we can't take it back.
+      - name: Validate CycloneDX SBOM structure (pre-sign)
+        run: bun run sbom:validate dist/sbom.cdx.json
+
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
         with:
