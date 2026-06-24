@@ -470,7 +470,7 @@ export default function AdminPage() {
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', freegift: 'Free Gift Promo', diagnostics: 'Diagnostics',
     prerenderstatus: 'Prerender Status', cacherecache: 'Cache & Recache', gscmonitor: 'GSC Monitor', urlmonitor: 'URL Monitor', merchantfeed: 'Merchant Feed', bingfeed: 'Bing Shopping',
     securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', shopify: 'Shopify', semrush: 'Semrush',
-    royalmail: 'Royal Mail Labels', webhooktest: 'Webhook Test', wallidpreview: 'Wallid Preview', wallidbadges: 'Wallid Badges', wallidbanks: 'Wallid Banks',
+    royalmail: 'Royal Mail Labels', webhooktest: 'Webhook Test', wallidpreview: 'Wallid Preview', wallidbadges: 'Wallid Badges', wallidbanks: 'Wallid Banks', watchdog: 'Watchdog', healthmonitor: 'Health Monitor',
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
 
