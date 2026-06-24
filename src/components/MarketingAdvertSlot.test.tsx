@@ -15,6 +15,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import MarketingAdvertSlot, { type MarketingAdvert } from './MarketingAdvertSlot';
+import { makeAdvert } from '@/test/fixtures/marketing';
 
 // Avoid pulling Cloudflare image transformation into the test path.
 vi.mock('@/lib/cf-image', () => ({
@@ -28,54 +29,52 @@ function renderSlot(adverts: MarketingAdvert[], placement = 'home-hero') {
 describe('MarketingAdvertSlot — placement + active filtering', () => {
   it('returns null when no adverts match the placement', () => {
     const { container } = renderSlot([
-      { id: '1', placement: 'sidebar', isActive: true, title: 'Hi' },
+      makeAdvert({ placement: 'sidebar', title: 'Hi' }),
     ], 'home-hero');
     expect(container.firstChild).toBeNull();
   });
 
   it('renders an active advert with the matching placement', () => {
-    const { container, getByText } = renderSlot([
-      { id: '1', placement: 'home-hero', isActive: true, title: 'Visible Ad' },
-    ], 'home-hero');
+    const { container, getByText } = renderSlot([makeAdvert()], 'home-hero');
     expect(container.firstChild).not.toBeNull();
     expect(getByText('Visible Ad')).toBeTruthy();
   });
 
   it('treats `active: true` as equivalent to `isActive: true`', () => {
     const { getByText } = renderSlot([
-      { id: '1', placement: 'home-hero', active: true, title: 'Legacy Field Ad' },
+      makeAdvert({ isActive: undefined, active: true, title: 'Legacy Field Ad' }),
     ], 'home-hero');
     expect(getByText('Legacy Field Ad')).toBeTruthy();
   });
 
   it('hides an advert when isActive=false even if active=true is missing', () => {
     const { container } = renderSlot([
-      { id: '1', placement: 'home-hero', isActive: false, title: 'Hidden' },
+      makeAdvert({ isActive: false, title: 'Hidden' }),
     ], 'home-hero');
     expect(container.firstChild).toBeNull();
   });
 
   it('hides an advert when neither isActive nor active is true', () => {
     const { container } = renderSlot([
-      { id: '1', placement: 'home-hero', title: 'Inactive by default' },
+      makeAdvert({ isActive: undefined, title: 'Inactive by default' }),
     ], 'home-hero');
     expect(container.firstChild).toBeNull();
   });
 
   it('hides an advert that has no image, title, or subtitle (empty guard)', () => {
     const { container } = renderSlot([
-      { id: '1', placement: 'home-hero', isActive: true },
+      makeAdvert({ title: undefined }),
     ], 'home-hero');
     expect(container.firstChild).toBeNull();
   });
 
   it('mixes correctly: renders only matching+active+non-empty adverts', () => {
     const adverts: MarketingAdvert[] = [
-      { id: 'a', placement: 'home-hero', isActive: true, title: 'YES-1' },
-      { id: 'b', placement: 'home-hero', isActive: false, title: 'NO-inactive' },
-      { id: 'c', placement: 'sidebar',   isActive: true, title: 'NO-placement' },
-      { id: 'd', placement: 'home-hero', active: true,  subtitle: 'YES-2' },
-      { id: 'e', placement: 'home-hero', isActive: true }, // empty
+      makeAdvert({ id: 'a', title: 'YES-1' }),
+      makeAdvert({ id: 'b', isActive: false, title: 'NO-inactive' }),
+      makeAdvert({ id: 'c', placement: 'sidebar', title: 'NO-placement' }),
+      makeAdvert({ id: 'd', isActive: undefined, active: true, title: undefined, subtitle: 'YES-2' }),
+      makeAdvert({ id: 'e', title: undefined }), // empty
     ];
     const { queryByText } = renderSlot(adverts, 'home-hero');
     expect(queryByText('YES-1')).toBeTruthy();
@@ -86,7 +85,7 @@ describe('MarketingAdvertSlot — placement + active filtering', () => {
 
   it('renders external ctaUrl with target=_blank and rel=noopener noreferrer', () => {
     const { container } = renderSlot([
-      { id: '1', placement: 'home-hero', isActive: true, title: 'X', ctaUrl: 'https://example.com' },
+      makeAdvert({ title: 'X', ctaUrl: 'https://example.com' }),
     ], 'home-hero');
     const a = container.querySelector('a');
     expect(a).not.toBeNull();
@@ -96,7 +95,7 @@ describe('MarketingAdvertSlot — placement + active filtering', () => {
 
   it('renders internal ctaUrl WITHOUT target=_blank', () => {
     const { container } = renderSlot([
-      { id: '1', placement: 'home-hero', isActive: true, title: 'X', ctaUrl: '/promo' },
+      makeAdvert({ title: 'X', ctaUrl: '/promo' }),
     ], 'home-hero');
     const a = container.querySelector('a');
     expect(a).not.toBeNull();
@@ -105,7 +104,7 @@ describe('MarketingAdvertSlot — placement + active filtering', () => {
 
   it('emits a data-advert-placement attribute matching the placement', () => {
     const { container } = renderSlot([
-      { id: '1', placement: 'product-top', isActive: true, title: 'X' },
+      makeAdvert({ placement: 'product-top', title: 'X' }),
     ], 'product-top');
     expect(container.querySelector('[data-advert-placement="product-top"]')).not.toBeNull();
   });
