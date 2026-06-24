@@ -124,8 +124,16 @@ export async function lookupCoupon(code: string, subtotal: number): Promise<{ co
     if (expiryDate && Number.isFinite(expiryDate.getTime()) && expiryDate < new Date()) {
       return { coupon: null, error: 'Coupon has expired.' };
     }
-    const maxUses = docRow.maxUses ?? docRow.maxUsage;
-    const usedCount = docRow.usedCount ?? docRow.usageCount ?? 0;
+    const maxUses = typeof docRow.maxUses === 'number'
+      ? docRow.maxUses
+      : typeof docRow.maxUsage === 'number'
+        ? docRow.maxUsage
+        : undefined;
+    const usedCount = typeof docRow.usedCount === 'number'
+      ? docRow.usedCount
+      : typeof docRow.usageCount === 'number'
+        ? docRow.usageCount
+        : 0;
     if (typeof maxUses === 'number' && maxUses > 0 && usedCount >= maxUses) {
       return { coupon: null, error: 'Coupon usage limit reached.' };
     }
