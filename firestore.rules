@@ -164,6 +164,28 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ---------- admin_health_logs (server-written, admin-read) ----------
+    // Written exclusively by the scheduled health-check hook via the
+    // Firebase service account. Clients (even admins) may NEVER mutate.
+    match /admin_health_logs/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ---------- admin_alerts (server-created, admin acknowledges) ----------
+    // Created by the health-check hook on critical conditions (e.g.
+    // Cloudflare Dev Mode ON). Admins may only flip `acknowledged` from
+    // false → true and stamp `acknowledgedAt` / `acknowledgedBy` — nothing
+    // else. Creates and deletes are server-only.
+    match /admin_alerts/{id} {
+      allow read: if isAdmin();
+      allow create, delete: if false;
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['acknowledged', 'acknowledgedAt', 'acknowledgedBy'])
+        && request.resource.data.acknowledged == true;
+    }
+
     // ---------- URL monitor scans (append-only by server) ----------
     // Written by /api/public/hooks/monitor-product-urls via firebase-admin
     // (bypasses rules). Admins read the history in the URL Monitor tab.

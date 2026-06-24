@@ -61,8 +61,9 @@ import WallidPreviewTab from './tabs/WallidPreviewTab';
 import WallidBadgesTab from './tabs/WallidBadgesTab';
 import WallidBanksTab from './tabs/WallidBanksTab';
 import WatchdogTab from './tabs/WatchdogTab';
+import HealthMonitorTab from './tabs/HealthMonitorTab';
 
-type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog';
+type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'healthmonitor';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -447,7 +448,8 @@ export default function AdminPage() {
         case 'wallidpreview': return <WallidPreviewTab />;
         case 'wallidbadges': return <WallidBadgesTab />;
        case 'wallidbanks': return <WallidBanksTab />;
-       case 'watchdog': return <WatchdogTab />;
+        case 'watchdog': return <WatchdogTab />;
+        case 'healthmonitor': return <HealthMonitorTab />;
         default: return <DashboardTab />;
       }
     })();
@@ -468,7 +470,7 @@ export default function AdminPage() {
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', freegift: 'Free Gift Promo', diagnostics: 'Diagnostics',
     prerenderstatus: 'Prerender Status', cacherecache: 'Cache & Recache', gscmonitor: 'GSC Monitor', urlmonitor: 'URL Monitor', merchantfeed: 'Merchant Feed', bingfeed: 'Bing Shopping',
     securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', shopify: 'Shopify', semrush: 'Semrush',
-    royalmail: 'Royal Mail Labels', webhooktest: 'Webhook Test', wallidpreview: 'Wallid Preview', wallidbadges: 'Wallid Badges', wallidbanks: 'Wallid Banks',
+    royalmail: 'Royal Mail Labels', webhooktest: 'Webhook Test', wallidpreview: 'Wallid Preview', wallidbadges: 'Wallid Badges', wallidbanks: 'Wallid Banks', watchdog: 'Watchdog', healthmonitor: 'Health Monitor',
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
 

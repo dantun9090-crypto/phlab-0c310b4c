@@ -468,19 +468,29 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
 
   // Inject the (placeholder or real) nonce into every <script> element via
   // workerd's built-in HTMLRewriter.
+  type RwElement = {
+    setAttribute: (k: string, v: string) => void;
+    append: (html: string, opts?: { html: boolean }) => void;
+  };
   type Rewriter = {
-    on: (selector: string, handlers: { element: (el: { setAttribute: (k: string, v: string) => void }) => void }) => Rewriter;
+    on: (selector: string, handlers: { element: (el: RwElement) => void }) => Rewriter;
     transform: (r: Response) => Response;
   };
   const RewriterCtor = (globalThis as { HTMLRewriter?: new () => Rewriter }).HTMLRewriter;
 
   let rewritten = htmlResponse;
+  const buildId = (typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev') as string;
   if (RewriterCtor) {
     const rewriter: Rewriter = new RewriterCtor();
     rewritten = rewriter
       .on("script", {
         element(el) {
           el.setAttribute("nonce", effectiveNonce);
+        },
+      })
+      .on("head", {
+        element(el) {
+          el.append(`<meta name="build-id" content="${buildId}">`, { html: true });
         },
       })
       .transform(htmlResponse);
@@ -491,6 +501,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
     if (!headers.has(k)) headers.set(k, v);
   }
   headers.set("content-security-policy", buildCsp(effectiveNonce, hostname));
+  headers.set("x-build-id", buildId);
   return new Response(rewritten.body, {
     status: rewritten.status,
     statusText: rewritten.statusText,

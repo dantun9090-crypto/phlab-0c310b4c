@@ -1,32 +1,52 @@
-# Performance & Audit Fixes — phlabs.co.uk
+## Admin Health Monitor + Auto Cache Recovery
 
-Scope is large (10 items). I'll tackle them in priority order across a few batches. This plan covers what I'll do now versus defer.
+Large multi-part feature. Plan below; will implement on approval.
 
-## Batch 1 — Quick wins (this turn)
+### Part 1 — Build ID injection
+- `vite.config.ts`: define `__BUILD_ID__` (already exists) + HTML transform plugin to inject `<meta name="build-id" content="…">` into `index.html` `<head>`.
+- `src/server.ts`: add `X-Build-Id: <BUILD_ID>` header to all HTML responses (alongside existing nonce rewriter).
 
-1. **Firestore 400 on `settings/promoBanner`** — locate the read, wrap in try/catch, return null on failure (no console noise).
-2. **Color contrast fixes** — `.rg-cta` background → `#0a8f5c`; trust-bar label color → `#7a98b8`.
-3. **Hidden source maps** — add `build.sourcemap: 'hidden'` to `vite.config.ts`.
-4. **Iframe titles** — add `title="Firebase Authentication"` / `title="Google Merchant Center"` where we mount them (only ones we control; the Firebase `__/auth/iframe` is injected by the SDK and not directly controllable).
-5. **BF-cache** — audit for `unload` / `beforeunload`, swap to `pagehide` where found.
+### Part 2 — Health check server function
+- New `src/lib/health-monitor.functions.ts`:
+  - `getCacheHealth` (createServerFn, admin-gated via `requireFirebaseAdmin`):
+    1. Fetch `https://phlabs.co.uk/` with Chrome UA; grab `cf-cache-status`, `age`, meta build-id.
+    2. Regex-extract first 5 `<script src=…>` chunk URLs; HEAD each; collect 404s.
+    3. Call CF API `zones/{id}/settings/development_mode`.
+    4. Return shape from spec.
+  - `purgeCacheNow` (admin-gated) → wraps existing `purgeCloudflareCache` purge_everything.
+  - `ackHealthAlert` (admin-gated) → marks `admin_alerts/{id}` acknowledged.
+- Secrets already present: `CLOUDFLARE_API_TOKEN`; zone ID hardcoded as elsewhere. No new secrets required.
 
-## Batch 2 — Medium effort (next turn, after Batch 1 verified)
+### Part 3 — Admin Health tab
+- New `src/pages/Admin/tabs/HealthMonitorTab.tsx`:
+  - Status cards (Cache / Assets / Dev Mode / Build ID / SSR flag) with 30s `useQuery` polling of `getCacheHealth`.
+  - Action buttons: Purge Cloudflare Cache, Refresh, Download Report (JSON of last 24h logs).
+  - History table reading `admin_health_logs` (latest 50) via Firestore client SDK.
+  - Unacknowledged `admin_alerts` list with Acknowledge button.
+- Register tab in existing Admin tabs registry (same pattern as `SecurityAuditTab`).
+- Sticky alert banner: lightweight component in Admin layout that subscribes to `admin_alerts` where `acknowledged == false`, shows top banner with Purge / Dismiss.
 
-6. **Lazy-load Merchant Center widget** — defer mount until `requestIdleCallback` + IntersectionObserver past fold.
-7. **Code-split Firebase off home route** — audit `src/routes/index.tsx` import chain, convert eager Firebase imports to dynamic on home; keep eager on auth/account/checkout.
+### Part 4 — Auto-monitoring & client loop breaker
+- TanStack server route `src/routes/api/public/hooks/health-check.ts` (cron-callable, shared-secret via apikey header pattern from existing hooks):
+  - Runs same logic as `getCacheHealth`.
+  - Writes doc to `admin_health_logs` (via firebase-admin).
+  - If `buildMismatch || staleChunksDetected` → call CF purge_everything; set `autoAction: 'PURGE_EXECUTED'`.
+  - If `devModeOn` → insert `admin_alerts` doc severity critical.
+- pg_cron job (every 5 min) calling the hook — documented in memory; user adds via Lovable Cloud SQL since this project is Firebase-only. **Note:** project uses Firebase not Supabase, so I'll instead add a Cloudflare Cron Trigger note OR use a Firebase Scheduled Function. Cleanest: add a new Firebase scheduled function `scheduledHealthCheck` in `functions/` if that folder exists; otherwise document calling the hook from existing Cloudflare worker cron. **Will check `functions/` folder existence first and choose.**
+- Client loop detector: edit `src/client.tsx` — before `hydrateRoot`, run sessionStorage reload counter; if ≥3 in 60s, render emergency HTML and skip mount.
 
-## Batch 3 — Infra / config (separate turn)
+### Part 5 — Firestore schema & rules
+- Add rules for `admin_health_logs` (admin read, server-only write) and `admin_alerts` (admin read+update-ack, server-only create) in `firestore.rules`.
 
-8. **Cloudflare HTML edge cache verify** — `curl -I` against prod, inspect `cf-cache-status`. If MISS on `/` and `/products`, adjust cache rules. Note: `/` is intentionally `no-store` per the SSR blank-page memory until SSR hydration is re-enabled — this is a known trade-off.
-9. **SSR hydration prep** — audit `src/client.tsx` for window/document at module scope; document mutation-count rollout gate. Do NOT flip the flag.
+### Constraints respected
+- Reuses `requireFirebaseAdmin` middleware.
+- No customer-facing surface affected (loop detector is universal but only triggers on 3 rapid reloads).
+- No new top-level routes — Health lives inside existing `/admin` tab system.
+- CSP/Wallid/GA4 untouched.
+- Mock-data fallback if `CLOUDFLARE_API_TOKEN` missing (it's set, but defensive).
 
-## Out of scope / no action
+### Files touched (estimate)
+- new: `src/lib/health-monitor.functions.ts`, `src/pages/Admin/tabs/HealthMonitorTab.tsx`, `src/components/admin/HealthAlertBanner.tsx`, `src/routes/api/public/hooks/health-check.ts`
+- edited: `vite.config.ts`, `src/server.ts`, `src/client.tsx`, `firestore.rules`, Admin tabs registry, Admin layout (banner mount)
 
-10. `/login` SEO 66 — intentional noindex, robots.txt already disallows.
-
-## Constraints honored
-
-- No CSP changes, no Wallid flow changes, no GA4 changes, no www redirect changes.
-- Build must pass before commit.
-
-Confirm and I'll start with Batch 1.
+Approve and I'll build it in one pass.
