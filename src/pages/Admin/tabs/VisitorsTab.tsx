@@ -76,6 +76,18 @@ export default function VisitorsTab() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pathFilter, setPathFilter] = useState<string | null>(null);
 
+  // Server-side paginated sessions for the drill-down table.
+  const [sessionSearch, setSessionSearch] = useState('');
+  const [sessionSearchInput, setSessionSearchInput] = useState('');
+  const [sessionPage, setSessionPage] = useState(0);
+  const [sessionPageSize, setSessionPageSize] = useState(50);
+  const [serverSessions, setServerSessions] = useState<VisitorSessionRow[]>([]);
+  const [serverTotal, setServerTotal] = useState(0);
+  const [serverScanned, setServerScanned] = useState(0);
+  const [serverTruncated, setServerTruncated] = useState(false);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [sessionsErr, setSessionsErr] = useState<string | null>(null);
+
   const fromMs = range.from ? range.from.getTime() : Date.now() - 7 * 86_400_000;
   const toMs   = range.to   ? range.to.getTime()   : Date.now();
   const spanDays = Math.max(1, differenceInDays(new Date(toMs), new Date(fromMs)) + 1);
