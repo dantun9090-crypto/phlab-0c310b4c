@@ -273,6 +273,8 @@ export interface Product {
   bannerImageUrl?: string;
   // Mark product as popular — shows badge on product cards
   popular?: boolean;
+  // VIP-exclusive — hidden from public catalogue, only visible in /vip
+  isVip?: boolean;
   // Research confirmation gate — show modal before add-to-cart on this product
   requiresResearchGate?: boolean;
   // SEO — exclude this product from sitemap.xml
