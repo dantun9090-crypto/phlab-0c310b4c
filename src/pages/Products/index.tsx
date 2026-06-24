@@ -147,16 +147,21 @@ export default function Products() {
   }, []);
 
   // Public adverts — admin saves products_top / products_sidebar placements here.
-  useEffect(() => {
-    let cancelled = false;
+  const refetchAdverts = useCallback(() => {
     getDocs(query(collection(db, 'adverts')))
       .then((snap: any) => {
-        if (cancelled) return;
         setAdverts(snap.docs.map((d: any) => ({ id: d.id, ...d.data() })));
       })
-      .catch(() => { if (!cancelled) setAdverts([]); });
-    return () => { cancelled = true; };
+      .catch(() => setAdverts([]));
   }, []);
+
+  useEffect(() => {
+    refetchAdverts();
+  }, [refetchAdverts]);
+
+  useMarketingRevalidate(refetchAdverts);
+
+
 
   // SEO
   useEffect(() => {
