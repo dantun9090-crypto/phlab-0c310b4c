@@ -22,7 +22,12 @@ on:
       - "scripts/e2e-survey-http.py"
       - "scripts/e2e-survey-fixture.mjs"
       - ".github/workflows/e2e-survey-http.yml"
+  schedule:
+    # Nightly regression run at 03:17 UTC — catches drift even when no
+    # PRs touch the survey code.
+    - cron: "17 3 * * *"
   workflow_dispatch:
+
 
 concurrency:
   group: e2e-survey-${{ github.ref }}
