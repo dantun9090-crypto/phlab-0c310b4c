@@ -6,6 +6,7 @@ import { dispatchAddToCart } from '@/components/Layout';
 import NextDayCountdown from '@/components/NextDayCountdown';
 import { ProductEditor } from '@/components/ProductEditor';
 import { CoaButton } from '@/components/CoaButton';
+import MarketingAdvertSlot from '@/components/MarketingAdvertSlot';
 import { auth, db, doc, getDoc, getDocFromServer, collection, query, where, getDocsFromServer, limit, orderBy, onAuthStateChanged } from '@/lib/firebase';
 
 import type { Product } from '@/lib/firebase';
@@ -231,6 +232,7 @@ export default function ProductDetail() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [adverts, setAdverts] = useState<any[]>([]);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const { items: recentlyViewed, addItem: addRecentlyViewed } = useRecentlyViewed();
 
@@ -258,6 +260,17 @@ export default function ProductDetail() {
   const touchStartX = useRef<number | null>(null);
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    getDocsFromServer(query(collection(db, 'adverts')))
+      .then((snap: any) => {
+        if (cancelled) return;
+        setAdverts(snap.docs.map((d: any) => ({ id: d.id, ...d.data() })));
+      })
+      .catch(() => { if (!cancelled) setAdverts([]); });
+    return () => { cancelled = true; };
   }, []);
   const handleTouchEnd = useCallback((e: React.TouchEvent, imgCount: number) => {
     if (touchStartX.current === null) return;
@@ -957,6 +970,8 @@ export default function ProductDetail() {
       )}
 
       <div className="container mx-auto px-4 md:px-6 relative z-10">
+
+        <MarketingAdvertSlot adverts={adverts} placement="products_top" className="mb-6" />
 
         {/* ── Breadcrumb bar ── */}
         <nav aria-label="Breadcrumb" className="mb-8">
