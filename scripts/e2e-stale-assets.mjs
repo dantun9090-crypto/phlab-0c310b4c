@@ -60,7 +60,14 @@
 import { chromium } from 'playwright';
 import { mkdirSync, writeFileSync, appendFileSync, existsSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { createHash } from 'node:crypto';
+import {
+  sha256,
+  normalizeHeadersForDiff as _normalizeHeadersForDiff,
+  headersEqualNormalized as _headersEqualNormalized,
+  redactBody as _redactBody,
+} from './lib/e2e-diff-helpers.mjs';
+
+
 
 
 // ---------- CLI parsing ----------
