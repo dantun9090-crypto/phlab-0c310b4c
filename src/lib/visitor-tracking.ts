@@ -81,10 +81,13 @@ function startHeartbeat(): void {
   }, HEARTBEAT_MS);
 }
 
-/** Record a page view. Safe to call on every route change. */
+/** Record a page view. Safe to call on every route change — dedupes
+ *  consecutive identical paths so React StrictMode / double effects don't
+ *  inflate the count. */
 export function trackVisitorPageView(path: string): void {
   if (typeof window === 'undefined') return;
   if (isExcludedPath(path)) return;
+  if (path === currentPath) return;
   currentPath = path;
   void logEvent('pageview', path);
 }
