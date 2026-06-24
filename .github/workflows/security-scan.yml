@@ -17,8 +17,14 @@ jobs:
     permissions:
       contents: read
       security-events: write
+      # Required for cosign keyless signing via GitHub OIDC.
+      # The ephemeral signing certificate is bound to this workflow's
+      # identity (repo + ref + job) and logged to the Sigstore Rekor
+      # transparency log so the SBOM signature is publicly auditable.
+      id-token: write
     steps:
       - uses: actions/checkout@v4
+
 
       - uses: oven-sh/setup-bun@v2
         with:
