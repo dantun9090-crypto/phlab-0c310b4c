@@ -23,16 +23,37 @@
  *   0  no medium+ findings
  *   1  one or more medium+ findings (or audit failed to run)
  */
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
 
 const SEVERITY_ORDER = ["info", "low", "medium", "high", "critical"] as const;
 type Severity = (typeof SEVERITY_ORDER)[number];
 
-const MIN_BLOCKING: Severity = (process.env.SECURITY_MIN_SEVERITY as Severity) ?? "medium";
+// Resolve the minimum-blocking severity from (in order of precedence):
+//   1. SECURITY_MIN_SEVERITY env var (workflow-level / one-off override)
+//   2. .security-config.json `minSeverity` field (committed repo policy)
+//   3. hard-coded default of "medium"
+// This means CI can flip the gate via a workflow_dispatch input or a
+// repo config bump — no scanner code edits required.
+const CONFIG_PATH = join(process.cwd(), ".security-config.json");
+let configMin: Severity | undefined;
+if (existsSync(CONFIG_PATH)) {
+  try {
+    const cfg = JSON.parse(readFileSync(CONFIG_PATH, "utf8")) as { minSeverity?: string };
+    if (cfg.minSeverity && (SEVERITY_ORDER as readonly string[]).includes(cfg.minSeverity)) {
+      configMin = cfg.minSeverity as Severity;
+    }
+  } catch {
+    /* ignore malformed config — fall back to default */
+  }
+}
+const MIN_BLOCKING: Severity =
+  (process.env.SECURITY_MIN_SEVERITY as Severity) ?? configMin ?? "medium";
 const minIdx = SEVERITY_ORDER.indexOf(MIN_BLOCKING);
 const SBOM_PATH = join(process.cwd(), "dist", "sbom.cdx.json");
+const REPORT_PATH =
+  process.env.SECURITY_REPORT_PATH ?? join(process.cwd(), "dist", "security-audit.json");
 
 function normalise(sev: string): Severity {
   const s = sev.toLowerCase();
@@ -183,6 +204,31 @@ async function main() {
     }
   }
 
+  // Always write a machine-readable report so CI can upload it as an
+  // artifact and surface a PR comment summary from the same source.
+  const report = {
+    generatedAt: new Date().toISOString(),
+    minSeverity: MIN_BLOCKING,
+    totals: {
+      blocking: blocking.length,
+      informational: informational.length,
+      ignored: ignored.length,
+      packagesScanned: sbom.components.length,
+      affectedPackages: vulnByQuery.length,
+      uniqueAdvisories: vulnIds.size,
+    },
+    blocking,
+    informational,
+    ignored,
+  };
+  try {
+    mkdirSync(dirname(REPORT_PATH), { recursive: true });
+    writeFileSync(REPORT_PATH, JSON.stringify(report, null, 2));
+    console.log(`▶ Report written: ${REPORT_PATH}`);
+  } catch (err) {
+    console.error(`⚠ Failed to write report at ${REPORT_PATH}: ${(err as Error).message}`);
+  }
+
   if (ignored.length > 0) {
     console.log(`\nℹ ${ignored.length} advisories suppressed via .security-ignore.json.`);
   }
@@ -192,7 +238,7 @@ async function main() {
 
 
   if (blocking.length === 0) {
-    console.log("\n✔ No medium+ vulnerabilities. Safe to merge / deploy.");
+    console.log(`\n✔ No ${MIN_BLOCKING}+ vulnerabilities. Safe to merge / deploy.`);
     return;
   }
 
