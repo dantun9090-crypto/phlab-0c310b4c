@@ -468,8 +468,12 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
 
   // Inject the (placeholder or real) nonce into every <script> element via
   // workerd's built-in HTMLRewriter.
+  type RwElement = {
+    setAttribute: (k: string, v: string) => void;
+    append: (html: string, opts?: { html: boolean }) => void;
+  };
   type Rewriter = {
-    on: (selector: string, handlers: { element: (el: { setAttribute: (k: string, v: string) => void }) => void }) => Rewriter;
+    on: (selector: string, handlers: { element: (el: RwElement) => void }) => Rewriter;
     transform: (r: Response) => Response;
   };
   const RewriterCtor = (globalThis as { HTMLRewriter?: new () => Rewriter }).HTMLRewriter;
