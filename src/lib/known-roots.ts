@@ -3,7 +3,7 @@
 // so that unknown URLs return a real HTTP 404 with x-robots-tag: noindex,
 // not just a meta tag (which Google ignores when the HTTP header says index).
 export const KNOWN_ROOTS: ReadonlySet<string> = new Set<string>([
-  "", "products", "product", "resources", "research", "search",
+  "", "products", "product", "resources", "research", "compound", "search",
   "about", "contact",
   "shipping-policy", "refund-policy", "terms-and-conditions",
   "privacy-policy", "cookies", "cookie-policy", "privacy-requests",
