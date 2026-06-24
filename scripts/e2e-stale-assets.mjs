@@ -584,8 +584,13 @@ async function run() {
     process.exit(2);
   }
   const dbBefore = await readBuildState();
+  const dbSnapshots = [{ at: Date.now(), label: 'run-start', data: dbBefore || {} }];
   const browser = await chromium.launch({ headless: true });
-  const toRun = ONLY ? [ONLY] : Object.keys(scenarios);
+  // Deterministic mode: stable scenario ordering so CI runs are comparable.
+  const toRun = ONLY
+    ? [ONLY]
+    : (DETERMINISTIC ? [...Object.keys(scenarios)].sort() : Object.keys(scenarios));
+  if (DETERMINISTIC) console.log(`[deterministic] scenario order: ${toRun.join(', ')}`);
   for (const name of toRun) {
     let lastErr = null;
     for (let attempt = 0; attempt <= RETRIES; attempt++) {
@@ -598,7 +603,6 @@ async function run() {
       try {
         await scenarios[name](browser);
         lastErr = null;
-        // If assertions failed deterministically, do NOT retry.
         const scNow = ensureScenario(name);
         if (scNow.failures.length > 0) {
           console.log(`[no-retry] [${name}] assertion failures present (${scNow.failures.length}) — deterministic, not retrying`);
@@ -616,15 +620,23 @@ async function run() {
         }
         console.warn(`[retry] [${name}] transient error on attempt ${attempt + 1}/${RETRIES + 1}: ${err?.message || err} — retrying in ${RETRY_DELAY_MS}ms`);
         await sleep(RETRY_DELAY_MS);
-        // restore prior exitCode if scenarios didn't add real assertion failures
         if (!hadAssertionFailureBefore) process.exitCode = 0;
       }
     }
+    // Per-scenario DB snapshot for the lock timeline.
+    const snap = await readBuildState();
+    const entry = { at: Date.now(), label: `after:${name}`, data: snap || {} };
+    dbSnapshots.push(entry);
+    const sc = ensureScenario(name);
+    sc.dbSnapshots.push(entry);
+    // Build live-vs-replay diff once per scenario (REPLAY only).
+    sc.replayDiff = diffLiveVsReplay(name);
   }
   await browser.close();
   const dbAfter = await readBuildState();
+  const lockTimeline = buildLockTimeline(dbSnapshots);
   writeFileSync(join(REPORT_DIR, 'db-diff.json'),
-    JSON.stringify({ before: dbBefore, after: dbAfter, lockFieldsTracked: LOCK_FIELDS }, null, 2));
+    JSON.stringify({ before: dbBefore, after: dbAfter, lockFieldsTracked: LOCK_FIELDS, snapshots: dbSnapshots, lockTimeline }, null, 2));
 
   const failed = results.filter((r) => !r.ok);
 
