@@ -42,6 +42,7 @@ import GSCMonitorTab from './tabs/GSCMonitorTab';
 import MerchantFeedTab from './tabs/MerchantFeedTab';
 import BingFeedTab from './tabs/BingFeedTab';
 import AuthEventsTab from './tabs/AuthEventsTab';
+import VisitorsTab from './tabs/VisitorsTab';
 import PrivacyRequestsTab from './tabs/PrivacyRequestsTab';
 import CartEventsTab from './tabs/CartEventsTab';
 import MailHealthTab from './tabs/MailHealthTab';
@@ -63,7 +64,7 @@ import WallidBanksTab from './tabs/WallidBanksTab';
 import WatchdogTab from './tabs/WatchdogTab';
 import HealthMonitorTab from './tabs/HealthMonitorTab';
 
-type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'healthmonitor';
+type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'healthmonitor';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -415,6 +416,7 @@ export default function AdminPage() {
         case 'compliance': return <ComplianceTab />;
         case 'auditlog': return <AuditLogTab />;
         case 'authevents': return <AuthEventsTab />;
+        case 'visitors': return <VisitorsTab />;
         case 'privacyrequests': return <PrivacyRequestsTab />;
         case 'cartevents': return <CartEventsTab />;
         case 'mailhealth': return <MailHealthTab />;
@@ -462,7 +464,7 @@ export default function AdminPage() {
   const TAB_LABELS: Record<string, string> = {
     dashboard: 'Dashboard', ai: 'AI Assistant', inventory: 'Inventory', featured: 'Featured',
     qc: 'QC Dashboard', orders: 'Orders', customers: 'Customers',
-    compliance: 'Compliance', auditlog: 'Audit Log', authevents: 'Auth Events', cartevents: 'Cart Events', mailhealth: 'Mail Health', invoices: 'Invoices', banner: 'Promo Banner',
+    compliance: 'Compliance', auditlog: 'Audit Log', authevents: 'Auth Events', visitors: 'Visitors', cartevents: 'Cart Events', mailhealth: 'Mail Health', invoices: 'Invoices', banner: 'Promo Banner',
     adverts: 'Adverts', landing: 'Landing Pages', policies: 'Policies',
     marketing: 'Marketing', emailmarketing: 'Email Campaigns', emailpreview: 'Email Preview',
     seo: 'SEO Settings', sitemap: 'Sitemap Manager', settings: 'Site Settings',

@@ -286,6 +286,36 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ---------- visitor events (anonymous first-party analytics) ----------
+    // Anyone (including unauthenticated visitors) may CREATE a visitor event
+    // so the Admin → Visitors tab can show how many people visited and how
+    // long they stayed. Shape is locked; admin-only read; no updates/deletes.
+    match /visitor_events/{id} {
+      allow read: if isAdmin();
+      allow create: if request.resource.data.type is string
+                    && (request.resource.data.type == 'pageview'
+                        || request.resource.data.type == 'heartbeat')
+                    && request.resource.data.sessionId is string
+                    && request.resource.data.sessionId.size() > 0
+                    && request.resource.data.sessionId.size() < 80
+                    && request.resource.data.createdAt is timestamp
+                    && (!('path' in request.resource.data)
+                        || request.resource.data.path == null
+                        || (request.resource.data.path is string
+                            && request.resource.data.path.size() < 320))
+                    && (!('userAgent' in request.resource.data)
+                        || request.resource.data.userAgent == null
+                        || (request.resource.data.userAgent is string
+                            && request.resource.data.userAgent.size() < 320))
+                    && (!('referrer' in request.resource.data)
+                        || request.resource.data.referrer == null
+                        || (request.resource.data.referrer is string
+                            && request.resource.data.referrer.size() < 320));
+      allow update, delete: if false;
+    }
+
+
+
     // ---------- loginAttempts (brute-force lockout tracker) ----------
     // Written by the client BEFORE auth completes — must allow unauthenticated
     // create/update with a tightly locked schema. Doc id is a hashed email
