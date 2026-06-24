@@ -41,6 +41,48 @@ jobs:
         run: bun run compliance:scan-compound
         continue-on-error: true
 
+      # /compound + /research HTTP test suite:
+      #   - OG/Twitter meta + absolute image URLs (HEAD-probed for 200)
+      #   - Hardened robots.txt + sitemap.xml (no Disallow of /compound)
+      #   - FAQPage JSON-LD shape, canonical, prerender HTML
+      #   - /research prerender (headings, disclaimers, canonical, CTA)
+      # Self-skips offline.
+      - name: /compound + /research HTTP test suite
+        run: bun run test:compound
+        continue-on-error: true
+
+      # /compound + /research Playwright suite:
+      #   - Smoke (hero, disclaimers, CTA)
+      #   - A11y outline + Legal Disclaimer reachability
+      #   - axe-core WCAG 2.1 AA audit (fails on critical/serious)
+      - name: Install Playwright browser
+        run: bunx playwright install --with-deps chromium
+
+      - name: /compound + /research Playwright suite
+        env:
+          TEST_BASE_URL: https://phlabs.co.uk
+        run: bun run test:compound:e2e
+
+      # Visual regression for /compound. Baseline lives in
+      # e2e/compound-visual.spec.ts-snapshots/. Run with
+      # `bun run test:compound:visual -- --update-snapshots` to refresh
+      # after an intentional design change.
+      - name: /compound visual regression
+        env:
+          TEST_BASE_URL: https://phlabs.co.uk
+        run: bun run test:compound:visual
+        continue-on-error: true
+
+      - name: Upload Playwright report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.sha }}
+          path: |
+            playwright-report
+            test-results
+          retention-days: 14
+
       # Guards canonical host: fails if any source references the wrong
       # domain (typo of brand, legacy domain, preview hosts). check-domains-allow-line
       - name: Domain consistency guard
