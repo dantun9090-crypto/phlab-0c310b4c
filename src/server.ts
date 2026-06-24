@@ -489,7 +489,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
         },
       })
       .on("head", {
-        element(el: { append: (html: string, opts?: { html: boolean }) => void }) {
+        element(el) {
           el.append(`<meta name="build-id" content="${buildId}">`, { html: true });
         },
       })
