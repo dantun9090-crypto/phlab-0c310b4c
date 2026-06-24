@@ -310,8 +310,16 @@ service cloud.firestore {
                     && (!('referrer' in request.resource.data)
                         || request.resource.data.referrer == null
                         || (request.resource.data.referrer is string
-                            && request.resource.data.referrer.size() < 320));
+                            && request.resource.data.referrer.size() < 320))
+                    && (!('visitorId' in request.resource.data)
+                        || request.resource.data.visitorId == null
+                        || (request.resource.data.visitorId is string
+                            && request.resource.data.visitorId.size() < 80))
+                    && (!('firstSeen' in request.resource.data)
+                        || request.resource.data.firstSeen == null
+                        || request.resource.data.firstSeen is timestamp);
       allow update, delete: if false;
+
     }
 
 
