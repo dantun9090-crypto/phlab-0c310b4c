@@ -268,6 +268,27 @@ jobs:
       - name: Verify SBOM signature + SLSA Provenance + CycloneDX attestations
         run: bash scripts/verify-attestations.sh sbom-bundle ci
 
+      # On verification failure, re-upload the bundle plus the sanitised
+      # verify-attestations.log so a reviewer can debug the PR Check
+      # without re-running the workflow. Named distinctly so it doesn't
+      # collide with the build-side `sbom-${{ github.sha }}` artifact.
+      - name: Upload attestation debug bundle (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: attestation-debug-ci-${{ github.sha }}
+          path: |
+            sbom-bundle/sbom.cdx.json
+            sbom-bundle/sbom.cdx.json.sha256
+            sbom-bundle/sbom.cdx.json.sig
+            sbom-bundle/sbom.cdx.json.pem
+            sbom-bundle/sbom.cdx.json.provenance.intoto.jsonl
+            sbom-bundle/sbom.cdx.json.provenance.pem
+            sbom-bundle/sbom.cdx.json.cyclonedx.intoto.jsonl
+            sbom-bundle/sbom.cdx.json.cyclonedx.pem
+            sbom-bundle/verify-attestations.log
+          retention-days: 30
+
   # Fast, path-filtered regression — runs in parallel with the main build
   # only when Checkout, Admin Orders, or the order/cart server code changes.
   # Keeps PR feedback under a minute for touch-and-go UI tweaks.
