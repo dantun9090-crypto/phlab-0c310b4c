@@ -301,15 +301,37 @@ EVAL_SCRIPT = """async ({ trials }) => {
   // define-replacement pass. Polyfill the variable so the client RPC stub
   // can resolve its target URL.
   window.process = window.process || { env: { TSS_SERVER_FN_BASE: '/_serverFn/' } };
-  const mod = await import('/src/lib/source-survey.functions.ts');
 
-  // Bridge between the RPC call and the response listener: each trial
-  // pushes the most recent /_serverFn response into `lastResponse` so we
-  // can correlate HTTP status + raw body with the client-side outcome.
+  // Wrap fetch BEFORE importing the module so the client RPC stub's
+  // fetch goes through our recorder. This is the only race-free way to
+  // pair an RPC call with its HTTP response — the `page.on('response')`
+  // event fires asynchronously on the Python side and can be reordered
+  // relative to the JS RPC resolution.
+  const origFetch = window.fetch.bind(window);
+  const responsesByUrl = new Map();
+  window.fetch = async (...args) => {
+    const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '';
+    const res = await origFetch(...args);
+    if (url.includes('/_serverFn/')) {
+      try {
+        const body = await res.clone().text();
+        // Stack responses per URL — pop the oldest when the trial reads it.
+        const list = responsesByUrl.get(url) || [];
+        list.push({ status: res.status, body });
+        responsesByUrl.set(url, list);
+      } catch (_) { /* ignore */ }
+    }
+    return res;
+  };
+
+  const mod = await import('/src/lib/source-survey.functions.ts');
+  const submitUrl = mod.submitSourceSurvey.url;
+  const skipUrl   = mod.skipSourceSurvey.url;
+
   const out = [];
   for (const t of trials) {
-    window.__lastSurveyResponse = null;
     const fn = t.fn === 'submit' ? mod.submitSourceSurvey : mod.skipSourceSurvey;
+    const targetUrl = t.fn === 'submit' ? submitUrl : skipUrl;
     let ok = false, msg = '', resultJson = null;
     try {
       const r = await fn({ data: t.args });
@@ -318,10 +340,9 @@ EVAL_SCRIPT = """async ({ trials }) => {
     } catch (e) {
       msg = String(e?.message || e);
     }
-    // Give the response listener a microtask to record the response if the
-    // client RPC stub returned before the resolver fired.
-    await new Promise((r) => setTimeout(r, 5));
-    const resp = window.__lastSurveyResponse || {};
+    const list = responsesByUrl.get(targetUrl) || [];
+    const resp = list.shift() || {};
+    responsesByUrl.set(targetUrl, list);
     out.push({
       name: t.name,
       ok,
@@ -331,7 +352,7 @@ EVAL_SCRIPT = """async ({ trials }) => {
       raw_body: resp.body ?? '',
     });
   }
-  return { trials: out, submitUrl: mod.submitSourceSurvey.url, skipUrl: mod.skipSourceSurvey.url };
+  return { trials: out, submitUrl, skipUrl };
 }"""
 
 
@@ -344,24 +365,6 @@ async def run_trials_in_browser(
             viewport={"width": 1280, "height": 900}, user_agent=UA
         )
         page = await ctx.new_page()
-
-        # Capture every /_serverFn response by URL/status/body so trials
-        # can read the actual HTTP status code, not just the deserialized
-        # client-side error.
-        async def on_response(resp):
-            try:
-                if "/_serverFn/" not in resp.url:
-                    return
-                body = await resp.text()
-                await page.evaluate(
-                    "(d) => { window.__lastSurveyResponse = d; }",
-                    {"status": resp.status, "url": resp.url, "body": body},
-                )
-            except Exception:
-                pass
-
-        page.on("response", lambda r: asyncio.create_task(on_response(r)))
-
         await page.goto(f"{BASE_URL}/", wait_until="domcontentloaded")
         result = await page.evaluate(EVAL_SCRIPT, {"trials": trials})
 
