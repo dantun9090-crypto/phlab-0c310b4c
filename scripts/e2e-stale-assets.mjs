@@ -11,21 +11,28 @@
  *
  * CLI:
  *   node scripts/e2e-stale-assets.mjs                       # run all
- *   node scripts/e2e-stale-assets.mjs --scenario=js-chunk-404
- *   node scripts/e2e-stale-assets.mjs --scenario=css-link-error --record
- *   node scripts/e2e-stale-assets.mjs --scenario=js-chunk-404 --replay
- *   --fixture-dir=./fixtures/stale-assets   (default)
- *   --list                                  # list scenario names and exit
+ *   --scenario=<name>                                       # run one
+ *   --record                                                # write fixtures
+ *   --replay                                                # fail-fast on missing/invalid fixtures
+ *   --fixture-dir=./fixtures/stale-assets                   # fixture root
+ *   --retries=N           (env E2E_RETRIES, default 1)      # retry transient browser/network errors only
+ *   --retry-delay=MS      (default 1500)                    # backoff between retries
+ *   --list                                                  # list scenario names and exit
  *
- * Env:
- *   TARGET_URL=https://phlabs.co.uk
- *   E2E_REPORT_DIR=./e2e-stale-report
- *   FIREBASE_SERVICE_ACCOUNT_JSON=...       # enables DB diff
+ * Outputs in $E2E_REPORT_DIR (default ./e2e-stale-report/):
+ *   report.html   self-contained dashboard (per-scenario, DB diff, purges, no-loop evidence)
+ *   report.json   machine-readable summary
+ *   report.txt    plain-text CI log
+ *   junit.xml     CI test reporter
+ *   db-diff.json  Firestore _meta/build_state before/after (when admin SDK present)
+ *   har-<scenario>.json  compact HAR-like trace (timings, redirect chain, resource type)
+ *   requests.ndjson / responses.ndjson / console.ndjson
+ *   screenshots/<scenario>.png
  *
- * Replay mode reuses previously captured fixtures
- * (fixtures/<scenario>/{requests,responses}.json) instead of hitting the
- * network: lets you iterate on assertions without re-running the live site.
- */
+ * Replay mode validates each fixture against a JSON schema (required fields +
+ * post-publish-check body contract) and aborts with a clear error on mismatch.
+ * Retries fire ONLY for transient errors (net::ERR_, navigation timeouts,
+ * closed browser); assertion failures are deterministic and never retried.
 import { chromium } from 'playwright';
 import { mkdirSync, writeFileSync, appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
