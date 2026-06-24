@@ -359,7 +359,7 @@ def db_unchanged(pre: dict[str, Any] | None, post: dict[str, Any] | None) -> boo
 # Playwright driver
 # ---------------------------------------------------------------------------
 
-EVAL_SCRIPT = """async ({ trials }) => {
+EVAL_SCRIPT = """async ({ trials, mode, headersByName }) => {
   // The TanStack Start Vite plugin inlines `process.env.TSS_SERVER_FN_BASE`
   // into the bundled client entry, but the on-demand `.functions.ts`
   // module we import from page.evaluate is not run through that
@@ -367,20 +367,34 @@ EVAL_SCRIPT = """async ({ trials }) => {
   // can resolve its target URL.
   window.process = window.process || { env: { TSS_SERVER_FN_BASE: '/_serverFn/' } };
 
-  // Wrap fetch BEFORE importing the module so the client RPC stub's
-  // fetch goes through our recorder. This is the only race-free way to
-  // pair an RPC call with its HTTP response — the `page.on('response')`
-  // event fires asynchronously on the Python side and can be reordered
-  // relative to the JS RPC resolution.
+  // Per-trial header overrides — set just before invoking the fn so the
+  // wrapped fetch can splice them onto the outgoing request, then cleared.
+  let pendingHeaders = null;
   const origFetch = window.fetch.bind(window);
   const responsesByUrl = new Map();
   window.fetch = async (...args) => {
-    const url = typeof args[0] === 'string' ? args[0] : (args[0] && args[0].url) || '';
+    let req = args[0];
+    let init = args[1] || {};
+    const url = typeof req === 'string' ? req : (req && req.url) || '';
+    if (url.includes('/_serverFn/') && pendingHeaders) {
+      const hdrs = new Headers(init.headers || (typeof req !== 'string' ? req.headers : undefined) || {});
+      for (const [k, v] of Object.entries(pendingHeaders)) {
+        if (v === null) hdrs.delete(k); else hdrs.set(k, v);
+      }
+      init = { ...init, headers: hdrs };
+      if (typeof req !== 'string') {
+        // Rebuild request with merged headers but preserve method/body.
+        const body = await req.clone().text().catch(() => undefined);
+        req = new Request(url, { method: req.method, body, headers: hdrs });
+        args = [req];
+      } else {
+        args = [req, init];
+      }
+    }
     const res = await origFetch(...args);
     if (url.includes('/_serverFn/')) {
       try {
         const body = await res.clone().text();
-        // Stack responses per URL — pop the oldest when the trial reads it.
         const list = responsesByUrl.get(url) || [];
         list.push({ status: res.status, body });
         responsesByUrl.set(url, list);
@@ -393,10 +407,10 @@ EVAL_SCRIPT = """async ({ trials }) => {
   const submitUrl = mod.submitSourceSurvey.url;
   const skipUrl   = mod.skipSourceSurvey.url;
 
-  const out = [];
-  for (const t of trials) {
+  async function runOne(t) {
     const fn = t.fn === 'submit' ? mod.submitSourceSurvey : mod.skipSourceSurvey;
     const targetUrl = t.fn === 'submit' ? submitUrl : skipUrl;
+    pendingHeaders = (headersByName && headersByName[t.name]) || null;
     let ok = false, msg = '', resultJson = null;
     try {
       const r = await fn({ data: t.args });
@@ -405,17 +419,24 @@ EVAL_SCRIPT = """async ({ trials }) => {
     } catch (e) {
       msg = String(e?.message || e);
     }
+    pendingHeaders = null;
     const list = responsesByUrl.get(targetUrl) || [];
     const resp = list.shift() || {};
     responsesByUrl.set(targetUrl, list);
-    out.push({
-      name: t.name,
-      ok,
-      msg,
-      result: resultJson,
-      http_status: resp.status ?? null,
-      raw_body: resp.body ?? '',
-    });
+    return { name: t.name, ok, msg, result: resultJson,
+             http_status: resp.status ?? null, raw_body: resp.body ?? '' };
+  }
+
+  let out;
+  if (mode === 'concurrent') {
+    // Fire all at once via Promise.all. Per-trial header overrides are
+    // disabled in concurrent mode (would race) — the auth matrix runs
+    // sequentially. Concurrent mode is only used for race-condition tests
+    // against a single seeded order with the same valid credentials.
+    out = await Promise.all(trials.map(runOne));
+  } else {
+    out = [];
+    for (const t of trials) out.push(await runOne(t));
   }
   return { trials: out, submitUrl, skipUrl };
 }"""
@@ -423,6 +444,9 @@ EVAL_SCRIPT = """async ({ trials }) => {
 
 async def run_trials_in_browser(
     trials: list[dict[str, Any]],
+    *,
+    mode: str = "sequential",
+    headers_by_name: dict[str, dict[str, str | None]] | None = None,
 ) -> tuple[list[TrialOutcome], str, str]:
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -431,9 +455,12 @@ async def run_trials_in_browser(
         )
         page = await ctx.new_page()
         await page.goto(f"{BASE_URL}/", wait_until="domcontentloaded")
-        result = await page.evaluate(EVAL_SCRIPT, {"trials": trials})
+        result = await page.evaluate(EVAL_SCRIPT, {
+            "trials": trials,
+            "mode": mode,
+            "headersByName": headers_by_name or {},
+        })
 
-        # Build outcomes and zip request metadata back in by index.
         outcomes = []
         for src, t in zip(trials, result["trials"]):
             outcomes.append(TrialOutcome(
@@ -448,6 +475,7 @@ async def run_trials_in_browser(
 
         await browser.close()
         return outcomes, result["submitUrl"], result["skipUrl"]
+
 
 
 # Variant that runs trials one-by-one and snapshots Firestore around each.
