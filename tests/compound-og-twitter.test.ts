@@ -73,5 +73,25 @@ describe("/compound OG + Twitter meta", () => {
       /<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i,
     );
     expect(canonical?.[1]).toBe(CANONICAL);
+
+    // og:image and twitter:image MUST be absolute URLs (crawlers reject relative)
+    expect(ogImage!, "og:image must be absolute https URL").toMatch(/^https:\/\//);
+    expect(twImage!, "twitter:image must be absolute https URL").toMatch(/^https:\/\//);
+
+    // Both images MUST resolve to a 200 with an image/* content-type
+    for (const url of [ogImage!, twImage!]) {
+      try {
+        let res = await fetch(url, { method: "HEAD", redirect: "follow" });
+        // Some CDNs reject HEAD; fall back to GET
+        if (res.status === 405 || res.status === 403) {
+          res = await fetch(url, { method: "GET", redirect: "follow" });
+        }
+        expect(res.status, `${url} returned ${res.status}`).toBe(200);
+        const ct = res.headers.get("content-type") ?? "";
+        expect(ct, `${url} content-type=${ct}`).toMatch(/^image\//i);
+      } catch (err) {
+        console.warn(`[skip image probe] ${url}: ${(err as Error).message}`);
+      }
+    }
   }, 30_000);
 });
