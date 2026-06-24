@@ -730,9 +730,31 @@ async function run() {
       <details><summary>Navigations / no-loop evidence (${(meta.reloads || []).length})</summary><ul>${reloadList || '<li class="muted">none</li>'}</ul>
         <p>Unique hashed JS URLs: ${s.uniqueHashedJsUrls.length}</p><ul>${uniqueJs}</ul></details>
       <details><summary>HAR trace</summary><p><a href="har-${esc(s.scenario)}.json">har-${esc(s.scenario)}.json</a> · ${(meta.har || []).length} entries</p></details>
+      ${(() => {
+        const d = meta.replayDiff;
+        if (!d) return REPLAY ? '<details><summary>Live vs replay</summary><p class="muted">no diff produced</p></details>' : '';
+        const pt = d.purgeTiming;
+        const ptRows = pt.liveRelMs.map((t, i) => `<tr><td>${i}</td><td><code>${pt.fixtureRelMs[i] ?? '—'}</code> ms</td><td><code>${t}</code> ms</td><td><code>${pt.deltaMs[i] ?? '—'}</code> ms</td></tr>`).join('')
+          || '<tr><td colspan="4" class="muted">no purge calls observed</td></tr>';
+        const mmRows = d.mismatches.map((m) => `<tr class="diff"><td>${esc(m.kind)}</td><td><code>${esc(m.url)}</code></td><td><code>${esc(JSON.stringify(m).slice(0, 200))}</code></td></tr>`).join('')
+          || '<tr><td colspan="3" class="muted">no mismatches — live matches fixture ✅</td></tr>';
+        return `<details ${d.summary.mismatchCount ? 'open' : ''}><summary>Live vs replay (mismatches=${d.summary.mismatchCount}, fixture/live req=${d.summary.requestsFixture}/${d.summary.requestsLive}, resp=${d.summary.responsesFixture}/${d.summary.responsesLive})</summary>
+          <h4>Purge call timing (relative to first purge per side)</h4>
+          <table class="tbl"><thead><tr><th>#</th><th>fixture</th><th>live</th><th>Δ</th></tr></thead><tbody>${ptRows}</tbody></table>
+          <h4>Mismatched requests / status / bodies</h4>
+          <table class="tbl"><thead><tr><th>kind</th><th>url</th><th>detail</th></tr></thead><tbody>${mmRows}</tbody></table>
+          ${d.truncated ? '<p class="muted">(truncated to first 40)</p>' : ''}
+        </details>`;
+      })()}
       <details><summary>Screenshot</summary><p><a href="screenshots/${esc(s.scenario)}.png"><img src="screenshots/${esc(s.scenario)}.png" alt="${esc(s.scenario)}" loading="lazy" style="max-width:100%;border:1px solid #444"/></a></p></details>
     </section>`;
   }).join('\n');
+  // Build DB lock timeline HTML.
+  const lockTimelineHtml = (() => {
+    if (!lockTimeline.length) return '<p class="muted">No lock-field transitions captured (Firebase admin not available or no changes).</p>';
+    const rows = lockTimeline.map((e) => `<tr><td><code>${esc(new Date(e.at).toISOString())}</code></td><td>${esc(e.label)}</td><td><span class="pill">${esc(e.field)}</span></td><td><code>${esc(JSON.stringify(e.from))}</code></td><td><code>${esc(JSON.stringify(e.to))}</code></td></tr>`).join('');
+    return `<table class="tbl"><thead><tr><th>timestamp</th><th>checkpoint</th><th>field</th><th>from</th><th>to</th></tr></thead><tbody>${rows}</tbody></table>`;
+  })();
   const overall = failed.length ? 'FAILED' : 'PASSED';
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>E2E stale-assets — ${esc(overall)}</title>
 <style>
