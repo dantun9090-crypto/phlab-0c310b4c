@@ -27,9 +27,20 @@
  *
  *   Redaction (applies to fixtures, HAR trace, ndjson logs, and HTML report):
  *   --redact-bodies                   strip all captured request/response bodies
- *   --max-body-bytes=N (default 4000) truncate captured bodies to N bytes
+ *   --hash-bodies                     replace redacted/truncated bodies with `sha256:<hex>` so equality is preserved without exposing data
+ *   --max-body-bytes=N (default 4000) truncate captured bodies to N bytes (replaced with hash when --hash-bodies)
  *   --redact-headers=a,b,c            comma list of header NAMES to mask (default: authorization,cookie,set-cookie,x-api-key,x-auth-token)
  *   --redact-url-params=a,b,c         comma list of query param NAMES to mask (default: token,key,api_key,access_token,id_token)
+ *
+ *   Header normalization for live-vs-replay diff:
+ *   --normalize-headers                       compare headers case-insensitively, order-independently (and surface as a "headers" mismatch kind)
+ *   --normalize-ignore-headers=a,b,c          comma list of header names to ignore in diffs (default volatile set: date,age,server-timing,x-request-id,cf-ray,...)
+ *
+ *   Artifact persistence:
+ *   --artifacts-on-failure-only / --skip-artifacts-on-success
+ *                                             only persist HAR, fixtures (non-RECORD), HTML report, ndjson logs, and screenshots when
+ *                                             an assertion fails or a live-vs-replay threshold is breached. report.{json,txt} + junit.xml + db-diff.json always written.
+
  *
  * Outputs in $E2E_REPORT_DIR (default ./e2e-stale-report/):
  *   report.html   self-contained dashboard with clickable per-request drilldown
