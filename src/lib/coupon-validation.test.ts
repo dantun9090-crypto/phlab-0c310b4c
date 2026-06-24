@@ -12,6 +12,7 @@
  * Run with: `bun test src/lib/coupon-validation.test.ts`
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { makeCoupon } from '@/test/fixtures/marketing';
 
 // Mock the admin Firestore helpers BEFORE importing the module under test.
 vi.mock('./server/firestore-admin', () => ({
@@ -40,9 +41,7 @@ describe('lookupCoupon — admin-only path & gating', () => {
   });
 
   it('returns coupon for an active percentage coupon', async () => {
-    mockFind.mockResolvedValue({
-      __id: 'c1', code: 'SAVE10', isActive: true, type: 'percentage', value: 10,
-    });
+    mockFind.mockResolvedValue(makeCoupon());
     const r = await lookupCoupon('save10', 100);
     expect(r.error).toBeNull();
     expect(r.coupon).toEqual({ id: 'c1', code: 'SAVE10', type: 'percentage', value: 10 });
@@ -56,23 +55,24 @@ describe('lookupCoupon — admin-only path & gating', () => {
   });
 
   it('rejects when isActive is false', async () => {
-    mockFind.mockResolvedValue({ __id: 'c1', code: 'X', isActive: false, type: 'fixed', value: 5 });
+    mockFind.mockResolvedValue(makeCoupon({ code: 'X', isActive: false, type: 'fixed', value: 5 }));
     const r = await lookupCoupon('x', 100);
     expect(r.coupon).toBeNull();
     expect(r.error).toMatch(/invalid or expired/i);
   });
 
   it('rejects when isActive is missing (must be explicitly true)', async () => {
-    mockFind.mockResolvedValue({ __id: 'c1', code: 'X', type: 'fixed', value: 5 });
+    const c = makeCoupon({ code: 'X', type: 'fixed', value: 5 });
+    delete (c as Partial<typeof c>).isActive;
+    mockFind.mockResolvedValue(c);
     const r = await lookupCoupon('x', 100);
     expect(r.coupon).toBeNull();
   });
 
   it('rejects an expired coupon', async () => {
-    mockFind.mockResolvedValue({
-      __id: 'c1', code: 'X', isActive: true, type: 'percentage', value: 10,
-      expiryDate: '2020-01-01T00:00:00.000Z',
-    });
+    mockFind.mockResolvedValue(makeCoupon({
+      code: 'X', expiryDate: '2020-01-01T00:00:00.000Z',
+    }));
     const r = await lookupCoupon('x', 100);
     expect(r.coupon).toBeNull();
     expect(r.error).toMatch(/expired/i);
@@ -80,58 +80,50 @@ describe('lookupCoupon — admin-only path & gating', () => {
 
   it('accepts a coupon with a future expiryDate', async () => {
     const future = new Date(Date.now() + 86_400_000).toISOString();
-    mockFind.mockResolvedValue({
-      __id: 'c1', code: 'X', isActive: true, type: 'percentage', value: 10,
-      expiryDate: future,
-    });
+    mockFind.mockResolvedValue(makeCoupon({ code: 'X', expiryDate: future }));
     const r = await lookupCoupon('x', 100);
     expect(r.error).toBeNull();
     expect(r.coupon?.id).toBe('c1');
   });
 
   it('rejects when usedCount has reached maxUses', async () => {
-    mockFind.mockResolvedValue({
-      __id: 'c1', code: 'X', isActive: true, type: 'fixed', value: 5,
-      maxUses: 10, usedCount: 10,
-    });
+    mockFind.mockResolvedValue(makeCoupon({
+      code: 'X', type: 'fixed', value: 5, maxUses: 10, usedCount: 10,
+    }));
     const r = await lookupCoupon('x', 100);
     expect(r.coupon).toBeNull();
     expect(r.error).toMatch(/limit reached/i);
   });
 
   it('honours legacy `maxUsage`/`usageCount` field names', async () => {
-    mockFind.mockResolvedValue({
-      __id: 'c1', code: 'X', isActive: true, type: 'fixed', value: 5,
-      maxUsage: 3, usageCount: 3,
-    });
+    mockFind.mockResolvedValue(makeCoupon({
+      code: 'X', type: 'fixed', value: 5, maxUsage: 3, usageCount: 3,
+    }));
     const r = await lookupCoupon('x', 100);
     expect(r.coupon).toBeNull();
     expect(r.error).toMatch(/limit reached/i);
   });
 
   it('rejects when subtotal is below minOrderValue', async () => {
-    mockFind.mockResolvedValue({
-      __id: 'c1', code: 'X', isActive: true, type: 'fixed', value: 5,
-      minOrderValue: 50,
-    });
+    mockFind.mockResolvedValue(makeCoupon({
+      code: 'X', type: 'fixed', value: 5, minOrderValue: 50,
+    }));
     const r = await lookupCoupon('x', 25);
     expect(r.coupon).toBeNull();
     expect(r.error).toMatch(/at least £50/i);
   });
 
   it('accepts a free_shipping coupon with value=0', async () => {
-    mockFind.mockResolvedValue({
-      __id: 'c1', code: 'SHIP', isActive: true, type: 'free_shipping',
-    });
+    mockFind.mockResolvedValue(makeCoupon({
+      code: 'SHIP', type: 'free_shipping', value: undefined,
+    }));
     const r = await lookupCoupon('ship', 100);
     expect(r.error).toBeNull();
     expect(r.coupon?.type).toBe('free_shipping');
   });
 
   it('rejects unknown coupon types', async () => {
-    mockFind.mockResolvedValue({
-      __id: 'c1', code: 'X', isActive: true, type: 'bogus', value: 10,
-    });
+    mockFind.mockResolvedValue(makeCoupon({ code: 'X', type: 'bogus', value: 10 }));
     const r = await lookupCoupon('x', 100);
     expect(r.coupon).toBeNull();
     expect(r.error).toMatch(/invalid coupon configuration/i);
