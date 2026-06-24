@@ -36,7 +36,7 @@ function buildFeedEntry(product: PreviewProduct): FeedEntry {
   const purity = product.purity?.trim();
   const price = typeof product.price === 'number' ? product.price : 0;
   return {
-    included: product.includeInMerchantFeed === true && product.excludeFromMerchantFeed !== true && !(product.name || '').toLowerCase().includes('tirzepatide'),
+    included: product.includeInMerchantFeed === true && product.excludeFromMerchantFeed !== true && !(product.name || '').toLowerCase().includes('tirzepatide') && !(product.name || '').toLowerCase().includes('bpc-157') && !(product.name || '').toLowerCase().includes('bpc157') && !(product.name || '').toLowerCase().includes('bpc 157'),
     title: `Laboratory Reference Standard — ${name} (Research Chemical, RUO)`,
     description:
       `Analytical reference standard for in-vitro laboratory research. ` +
