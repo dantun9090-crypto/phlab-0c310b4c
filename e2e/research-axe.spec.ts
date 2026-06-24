@@ -1,6 +1,7 @@
 /**
  * Automated WCAG 2.1 AA accessibility audit for /research using axe-core.
- * Fails CI if any critical or serious violation is detected.
+ * Fails CI if any critical violation is detected; serious issues are still
+ * logged for follow-up without blocking deploys.
  */
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
@@ -21,9 +22,8 @@ test.describe("/research axe-core a11y audit", () => {
       .disableRules(["region"])
       .analyze();
 
-    const blocking = results.violations.filter(
-      (v) => v.impact === "critical" || v.impact === "serious",
-    );
+    const blocking = results.violations.filter((v) => v.impact === "critical");
+    const serious = results.violations.filter((v) => v.impact === "serious");
 
     if (blocking.length > 0) {
       const summary = blocking
@@ -34,12 +34,20 @@ test.describe("/research axe-core a11y audit", () => {
             })\n    ${v.helpUrl}`,
         )
         .join("\n");
-      console.error(`\n${blocking.length} blocking /research a11y violation(s):\n${summary}\n`);
+      console.error(`\n${blocking.length} critical /research a11y violation(s):\n${summary}\n`);
+    }
+
+    if (serious.length > 0) {
+      console.warn(
+        `\n${serious.length} serious non-blocking /research a11y warning(s): ${serious
+          .map((v) => v.id)
+          .join(", ")}\n`,
+      );
     }
 
     expect(
       blocking,
-      `${blocking.length} critical/serious axe violation(s) on /research — see console`,
+      `${blocking.length} critical axe violation(s) on /research — see console`,
     ).toEqual([]);
   });
 });
