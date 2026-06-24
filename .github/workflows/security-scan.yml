@@ -44,8 +44,35 @@ jobs:
         with:
           bun-version: latest
 
+      # Cache Bun's global install store keyed on the lockfile so repeat
+      # CI runs skip the registry round-trip and resolve from disk. Safe
+      # because `bun install --frozen-lockfile` is the only writer and
+      # bun.lock pins every transitive version — results stay deterministic.
+      - name: Cache Bun install store
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+          key: bun-store-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-store-${{ runner.os }}-
+
       - name: Install deps (frozen)
         run: bun install --frozen-lockfile
+
+      # Cache the generated SBOM keyed on lockfile + generator source.
+      # The SBOM is a pure function of the resolved tree, so any bun.lock
+      # or generate-sbom.ts change busts the cache; otherwise we restore
+      # dist/sbom.cdx.json verbatim and skip the node_modules walk.
+      - name: Ensure dist/ exists
+        run: mkdir -p dist
+
+      - name: Cache SBOM (CycloneDX)
+        id: sbom_cache
+        uses: actions/cache@v4
+        with:
+          path: dist/sbom.cdx.json
+          key: sbom-${{ runner.os }}-${{ hashFiles('bun.lock', 'scripts/generate-sbom.ts') }}
 
       # Blocking threshold resolved by scripts/security-audit.ts:
       #   SECURITY_MIN_SEVERITY env  >  .security-config.json  >  "medium"
