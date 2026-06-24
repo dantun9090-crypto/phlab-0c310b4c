@@ -368,11 +368,38 @@ function diffLiveVsReplay(scenarioName) {
         || (HASH_BODIES && (typeof fr?.body === 'string' && fr.body.startsWith('sha256:')
           || typeof lr?.body === 'string' && lr.body.startsWith('sha256:')));
       const isMatch = reasons.length === 0;
+      // Always-present fixture-side enrichment (fixtures may not capture redirects/timing —
+      // we still expose stable shapes so consumers never have to null-check the schema).
+      const fixtureRedirect = Array.isArray(fr?.redirectChain) ? fr.redirectChain : [];
+      const fixtureTiming = {
+        startedAt: fr?.startedAt ?? fr?.at ?? null,
+        durationMs: fr?.durationMs ?? null,
+        recordedAt: fr?.at ?? null,
+      };
+      const liveRedirect = Array.isArray(liveHar?.redirectChain) ? liveHar.redirectChain
+        : (Array.isArray(lr?.redirectChain) ? lr.redirectChain : []);
+      const liveTiming = {
+        startedAt: liveHar?.startedAt ?? lr?.startedAt ?? null,
+        durationMs: liveHar?.durationMs ?? lr?.durationMs ?? null,
+        recordedAt: lr?.at ?? null,
+      };
       const item = {
         match: isMatch, url: u, index: i, reasons, kinds, resourceType, bodyRedacted,
-        fixture: fr ? { status: fr.status, headers: fr.headers || null, body: fr.body ?? null, bodyBytes: fr.bodyBytes ?? (fr.body ? String(fr.body).length : null) } : null,
-        live: lr ? { status: lr.status, headers: lr.headers || null, body: lr.body ?? null, bodyBytes: lr.bodyBytes ?? (lr.body ? String(lr.body).length : null), har: liveHar } : null,
+        // Top-level convenience: union of both sides' redirect chains (live preferred when both present).
+        redirectChain: liveRedirect.length ? liveRedirect : fixtureRedirect,
+        timing: { fixture: fixtureTiming, live: liveTiming },
+        fixture: fr ? {
+          status: fr.status, headers: fr.headers || null, body: fr.body ?? null,
+          bodyBytes: fr.bodyBytes ?? (fr.body ? String(fr.body).length : null),
+          redirectChain: fixtureRedirect, timing: fixtureTiming,
+        } : null,
+        live: lr ? {
+          status: lr.status, headers: lr.headers || null, body: lr.body ?? null,
+          bodyBytes: lr.bodyBytes ?? (lr.body ? String(lr.body).length : null),
+          har: liveHar, redirectChain: liveRedirect, timing: liveTiming,
+        } : null,
       };
+
 
       items.push(item);
       if (!isMatch) {
