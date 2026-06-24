@@ -17,8 +17,14 @@ jobs:
     permissions:
       contents: read
       security-events: write
+      # Required for cosign keyless signing via GitHub OIDC.
+      # The ephemeral signing certificate is bound to this workflow's
+      # identity (repo + ref + job) and logged to the Sigstore Rekor
+      # transparency log so the SBOM signature is publicly auditable.
+      id-token: write
     steps:
       - uses: actions/checkout@v4
+
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -39,10 +45,53 @@ jobs:
         if: always()
         run: bun run sbom
 
-      - name: Upload SBOM artifact
+      # Sign the SBOM with cosign in keyless mode (OIDC -> Fulcio ->
+      # Rekor transparency log). Produces:
+      #   - dist/sbom.cdx.json.sig  (detached signature, base64)
+      #   - dist/sbom.cdx.json.pem  (ephemeral signing certificate)
+      # Verifiable later with:
+      #   cosign verify-blob \
+      #     --certificate dist/sbom.cdx.json.pem \
+      #     --signature dist/sbom.cdx.json.sig \
+      #     --certificate-identity-regexp '^https://github\.com/.*/\.github/workflows/security-scan\.yml@' \
+      #     --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+      #     dist/sbom.cdx.json
+      - name: Install cosign
+        if: always()
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: v2.4.1
+
+      - name: Sign SBOM (cosign keyless)
+        if: always()
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign sign-blob \
+            --yes \
+            --output-signature dist/sbom.cdx.json.sig \
+            --output-certificate dist/sbom.cdx.json.pem \
+            dist/sbom.cdx.json
+
+      - name: Verify SBOM signature (self-check)
+        if: always()
+        run: |
+          cosign verify-blob \
+            --certificate dist/sbom.cdx.json.pem \
+            --signature dist/sbom.cdx.json.sig \
+            --certificate-identity-regexp "^https://github\.com/${GITHUB_REPOSITORY}/\.github/workflows/security-scan\.yml@" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            dist/sbom.cdx.json
+
+      - name: Upload SBOM + signature artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: sbom-${{ github.sha }}
-          path: dist/sbom.cdx.json
+          path: |
+            dist/sbom.cdx.json
+            dist/sbom.cdx.json.sha256
+            dist/sbom.cdx.json.sig
+            dist/sbom.cdx.json.pem
           retention-days: 90
+
