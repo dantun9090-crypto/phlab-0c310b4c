@@ -111,6 +111,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.12.1",
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "2.5.3",
     "@playwright/test": "^1.61.0",
@@ -121,6 +122,7 @@
     "@types/react-dom": "^19.2.0",
     "@types/three": "^0.184.1",
     "@vitejs/plugin-react": "^5.0.4",
+    "axe-core": "^4.12.1",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",
