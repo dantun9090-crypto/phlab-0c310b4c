@@ -444,6 +444,58 @@ export default function HomePage() {
       </div>
 
       {/* ════════════════════════════════
+          PROMO BANNER (admin-controlled) — moved to top
+      ════════════════════════════════ */}
+      {bannerVisible && (
+        <div className="relative w-full overflow-hidden" style={{ minHeight: banner.heightPx ? `${banner.heightPx}px` : '320px' }}>
+          {banner.overlayEnabled && (
+            <div className="absolute inset-0 pointer-events-none z-[6]"
+              style={{ backgroundColor: banner.overlayColor ?? '#000000', opacity: (banner.overlayOpacity ?? 30) / 100 }} />
+          )}
+          {(banner.gradientEnabled !== false) && (() => {
+            const gc = banner.gradientColor ?? '#040d1a';
+            const gi = (banner.gradientIntensity ?? 60) / 100;
+            const dir = banner.gradientDirection ?? 'bottom';
+            const gradMap: Record<string, string> = {
+              bottom: `linear-gradient(to top, ${gc} 0%, transparent ${Math.round(gi * 100)}%)`,
+              top: `linear-gradient(to bottom, ${gc} 0%, transparent ${Math.round(gi * 100)}%)`,
+              left: `linear-gradient(to right, ${gc} 0%, transparent ${Math.round(gi * 100)}%)`,
+              right: `linear-gradient(to left, ${gc} 0%, transparent ${Math.round(gi * 100)}%)`,
+              center: `radial-gradient(ellipse at center, transparent 30%, ${gc} ${Math.round(gi * 100)}%)`,
+            };
+            return <div className="absolute inset-0 pointer-events-none z-[7]" style={{ background: gradMap[dir] }} />;
+          })()}
+          {bannerHref ? (
+            <a href={bannerHref} className="block">
+              <img {...cfImgProps(banner.imageUrl, { widths: [640, 960, 1280, 1600, 1920], sizes: '100vw' })} alt={banner.altText || 'PH Labs research peptides promotional banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
+                style={{ height: banner.heightPx ? `${banner.heightPx}px` : '320px', objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
+            </a>
+          ) : (
+            <img {...cfImgProps(banner.imageUrl, { widths: [640, 960, 1280, 1600, 1920], sizes: '100vw' })} alt={banner.altText || 'PH Labs research peptides promotional banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
+              style={{ height: banner.heightPx ? `${banner.heightPx}px` : '320px', objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
+          )}
+
+          {bannerOverlayHeading && (
+            <div className={`absolute inset-0 flex flex-col z-[10] pointer-events-none px-6 ${bannerOverlayAlign} ${bannerOverlayPosition}`}>
+              <p className="font-black text-white max-w-2xl" style={{ fontSize: 'clamp(1.5rem,4vw,3rem)', textShadow: '0 2px 24px rgba(0,0,0,0.7)' }}>{bannerOverlayHeading}</p>
+              {bannerOverlaySubtext && (
+                <p className="mt-3 text-white/80 text-sm font-medium max-w-xl" style={{ textShadow: '0 1px 8px rgba(0,0,0,0.5)' }}>{bannerOverlaySubtext}</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ════════════════════════════════
+          ADVERTS — HERO SLOT (moved to top)
+      ════════════════════════════════ */}
+      {heroAdverts.length > 0 && (
+        <MarketingAdvertSlot adverts={heroAdverts} placement="homepage_hero" className="container mx-auto px-6 py-6" eagerFirstImage />
+      )}
+
+
+
+      {/* ════════════════════════════════
           HERO
       ════════════════════════════════ */}
       <section
