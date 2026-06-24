@@ -522,14 +522,40 @@ export default function VisitorsTab() {
 
         <div className="rounded-lg border-2 border-slate-700 bg-slate-900 p-4">
           <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-            <h3 className="text-white font-semibold">
-              Recent sessions{pathFilter ? ` — ${pathFilter}` : ''}
-              <span className="ml-2 text-xs text-slate-400 font-normal">
-                {sessionsLoading ? 'loading…' : `${serverTotal.toLocaleString()} match${serverTotal === 1 ? '' : 'es'}`}
-                {serverTruncated && (
-                  <span className="ml-2 text-amber-300" title={`Capped at ${serverScanned.toLocaleString()} events`}>
-                    · truncated
-                  </span>
+            <h3 className="text-white font-semibold flex items-center flex-wrap gap-x-2">
+              <span>Recent sessions{pathFilter ? ` — ${pathFilter}` : ''}</span>
+              <span className="text-xs text-slate-400 font-normal inline-flex items-center gap-1">
+                {sessionsLoading
+                  ? 'loading…'
+                  : `${serverTotal.toLocaleString()} match${serverTotal === 1 ? '' : 'es'}`}
+                {serverTruncated && serverLimits && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="ml-1 inline-flex items-center gap-1 text-amber-300 hover:text-amber-200 underline decoration-dotted"
+                        aria-label="Why is this truncated?"
+                      >
+                        <Info size={12} /> truncated
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-80 bg-slate-900 border-2 border-amber-700 text-slate-200 text-xs space-y-2">
+                      <div className="font-semibold text-amber-200">Scan cap reached</div>
+                      <p className="text-slate-300">
+                        This query hit the {serverLimits.maxEvents.toLocaleString()}-event scan cap.
+                        Sessions whose events fall outside the most recent scanned slice are not included — narrow the date range, add a page filter, or use a more specific search.
+                      </p>
+                      <div className="border-t border-slate-700 pt-2 space-y-1 font-mono">
+                        <div><span className="text-slate-400">Max events:</span> {serverLimits.maxEvents.toLocaleString()}</div>
+                        <div><span className="text-slate-400">Scanned:</span> {serverScanned.toLocaleString()}</div>
+                        <div><span className="text-slate-400">From:</span> {fmtDate(serverLimits.fromMs)}</div>
+                        <div><span className="text-slate-400">To:</span> {fmtDate(serverLimits.toMs)}</div>
+                        <div><span className="text-slate-400">Path:</span> {serverLimits.pathFilter ?? '(any)'}</div>
+                        <div><span className="text-slate-400">Search:</span> {serverLimits.search ?? '(none)'}</div>
+                        <div><span className="text-slate-400">Page size:</span> {sessionPageSize}</div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 )}
               </span>
             </h3>
@@ -555,12 +581,51 @@ export default function VisitorsTab() {
           </div>
 
           {sessionsErr && (
-            <div className="rounded-lg border-2 border-red-700 bg-red-950 p-3 text-red-200 text-xs mb-3">{sessionsErr}</div>
+            <div className="rounded-lg border-2 border-red-700 bg-red-950 p-3 text-red-200 text-xs mb-3 flex items-center justify-between gap-3">
+              <span className="truncate">{sessionsErr}</span>
+              <button
+                onClick={() => setRefreshKey(k => k + 1)}
+                className="shrink-0 px-2 min-h-[28px] rounded-md border border-red-600 bg-red-900 hover:bg-red-800 text-red-100 inline-flex items-center gap-1"
+              >
+                <RefreshCw size={12} /> Retry
+              </button>
+            </div>
           )}
 
           <div className="max-h-[420px] overflow-auto">
-            {!sessionsLoading && serverSessions.length === 0 ? (
-              <div className="text-slate-400 text-sm">No sessions match{sessionSearch ? ` "${sessionSearch}"` : ''} in this window.</div>
+            {sessionsLoading ? (
+              <div className="space-y-2 py-2" aria-busy="true" aria-label="Loading sessions">
+                {Array.from({ length: Math.min(8, sessionPageSize) }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Skeleton className="h-4 w-32 bg-slate-800" />
+                    <Skeleton className="h-4 w-14 bg-slate-800" />
+                    <Skeleton className="h-4 w-8 bg-slate-800" />
+                    <Skeleton className="h-4 w-16 bg-slate-800" />
+                    <Skeleton className="h-4 flex-1 bg-slate-800" />
+                  </div>
+                ))}
+              </div>
+            ) : serverSessions.length === 0 ? (
+              <div className="py-6 text-center text-slate-400 text-sm">
+                {sessionsErr ? (
+                  <>Couldn't load sessions. Try Retry.</>
+                ) : sessionSearch || pathFilter ? (
+                  <>
+                    No sessions match
+                    {sessionSearch ? <> &ldquo;<span className="font-mono text-slate-300">{sessionSearch}</span>&rdquo;</> : null}
+                    {pathFilter ? <> for <span className="font-mono text-slate-300">{pathFilter}</span></> : null}
+                    {' '}in this window.
+                    <div className="mt-2">
+                      <button
+                        onClick={() => { setSessionSearchInput(''); setPathFilter(null); }}
+                        className="underline text-emerald-300 hover:text-emerald-200"
+                      >Clear search and filter</button>
+                    </div>
+                  </>
+                ) : (
+                  <>No sessions recorded in this window yet.</>
+                )}
+              </div>
             ) : (
               <table className="w-full text-sm">
                 <thead className="text-left text-xs text-slate-400 uppercase sticky top-0 bg-slate-900">
@@ -585,22 +650,32 @@ export default function VisitorsTab() {
             )}
           </div>
 
-          {serverTotal > sessionPageSize && (
+          {(pageIndex > 0 || nextCursor) && (
             <div className="flex items-center justify-between mt-3 text-xs text-slate-300">
               <div>
-                Page {sessionPage + 1} of {Math.max(1, Math.ceil(serverTotal / sessionPageSize))}
+                Page {pageIndex + 1}
+                {serverSessions.length > 0 && (
+                  <span className="text-slate-500"> · showing {serverSessions.length} of {serverTotal.toLocaleString()}</span>
+                )}
               </div>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => setSessionPage(p => Math.max(0, p - 1))}
-                  disabled={sessionPage === 0 || sessionsLoading}
+                  onClick={() => {
+                    setCursorStack(stk => stk.slice(0, -1));
+                    setPageIndex(i => Math.max(0, i - 1));
+                  }}
+                  disabled={pageIndex === 0 || sessionsLoading}
                   className="px-2 min-h-[32px] rounded-md border-2 border-slate-600 bg-slate-800 text-white disabled:opacity-40 inline-flex items-center gap-1"
                 >
                   <ChevronLeft size={14} /> Prev
                 </button>
                 <button
-                  onClick={() => setSessionPage(p => p + 1)}
-                  disabled={(sessionPage + 1) * sessionPageSize >= serverTotal || sessionsLoading}
+                  onClick={() => {
+                    if (!nextCursor) return;
+                    setCursorStack(stk => [...stk, nextCursor]);
+                    setPageIndex(i => i + 1);
+                  }}
+                  disabled={!nextCursor || sessionsLoading}
                   className="px-2 min-h-[32px] rounded-md border-2 border-slate-600 bg-slate-800 text-white disabled:opacity-40 inline-flex items-center gap-1"
                 >
                   Next <ChevronRight size={14} />
@@ -610,6 +685,7 @@ export default function VisitorsTab() {
           )}
         </div>
       </div>
+
 
 
       <p className="text-xs text-slate-500">
