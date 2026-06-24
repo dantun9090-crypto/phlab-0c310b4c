@@ -22,7 +22,12 @@ on:
       - "scripts/e2e-survey-http.py"
       - "scripts/e2e-survey-fixture.mjs"
       - ".github/workflows/e2e-survey-http.yml"
+  schedule:
+    # Nightly regression run at 03:17 UTC — catches drift even when no
+    # PRs touch the survey code.
+    - cron: "17 3 * * *"
   workflow_dispatch:
+
 
 concurrency:
   group: e2e-survey-${{ github.ref }}
@@ -77,7 +82,17 @@ jobs:
           echo "server failed to start"; tail -n 200 server.log; exit 1
 
       - name: Run E2E source-survey HTTP probe
+        env:
+          E2E_REPORT_DIR: ${{ github.workspace }}/e2e-report
         run: python scripts/e2e-survey-http.py
+
+      - name: Upload E2E failure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-survey-report
+          path: ${{ github.workspace }}/e2e-report
+          if-no-files-found: ignore
 
       - name: Upload server log on failure
         if: failure()
@@ -86,3 +101,4 @@ jobs:
           name: server-log
           path: server.log
           if-no-files-found: ignore
+
