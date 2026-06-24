@@ -492,17 +492,53 @@ export default function VisitorsTab() {
         </div>
 
         <div className="rounded-lg border-2 border-slate-700 bg-slate-900 p-4">
-          <h3 className="text-white font-semibold mb-3">Recent sessions{pathFilter ? ` — ${pathFilter}` : ''}</h3>
+          <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+            <h3 className="text-white font-semibold">
+              Recent sessions{pathFilter ? ` — ${pathFilter}` : ''}
+              <span className="ml-2 text-xs text-slate-400 font-normal">
+                {sessionsLoading ? 'loading…' : `${serverTotal.toLocaleString()} match${serverTotal === 1 ? '' : 'es'}`}
+                {serverTruncated && (
+                  <span className="ml-2 text-amber-300" title={`Capped at ${serverScanned.toLocaleString()} events`}>
+                    · truncated
+                  </span>
+                )}
+              </span>
+            </h3>
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                <input
+                  value={sessionSearchInput}
+                  onChange={(e) => setSessionSearchInput(e.target.value)}
+                  placeholder="Search id / path / UA"
+                  className="pl-7 pr-2 min-h-[36px] text-sm rounded-lg border-2 border-slate-600 bg-slate-800 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 w-56"
+                />
+              </div>
+              <select
+                value={sessionPageSize}
+                onChange={(e) => setSessionPageSize(Number(e.target.value))}
+                className="min-h-[36px] text-sm rounded-lg border-2 border-slate-600 bg-slate-800 text-white px-2"
+                aria-label="Rows per page"
+              >
+                {[25, 50, 100, 200].map(n => <option key={n} value={n}>{n}/page</option>)}
+              </select>
+            </div>
+          </div>
+
+          {sessionsErr && (
+            <div className="rounded-lg border-2 border-red-700 bg-red-950 p-3 text-red-200 text-xs mb-3">{sessionsErr}</div>
+          )}
+
           <div className="max-h-[420px] overflow-auto">
-            {stats.sessionList.length === 0 ? (
-              <div className="text-slate-400 text-sm">No sessions in this window.</div>
+            {!sessionsLoading && serverSessions.length === 0 ? (
+              <div className="text-slate-400 text-sm">No sessions match{sessionSearch ? ` "${sessionSearch}"` : ''} in this window.</div>
             ) : (
               <table className="w-full text-sm">
-                <thead className="text-left text-xs text-slate-400 uppercase">
+                <thead className="text-left text-xs text-slate-400 uppercase sticky top-0 bg-slate-900">
                   <tr><th className="py-1">Last seen</th><th>Duration</th><th>Views</th><th>Type</th><th>Last path</th></tr>
                 </thead>
                 <tbody>
-                  {stats.sessionList.slice(0, 100).map(s => (
+                  {serverSessions.map(s => (
                     <tr key={s.sid} className="border-t border-slate-800">
                       <td className="py-1 text-slate-200 whitespace-nowrap pr-3">{fmtDate(s.end)}</td>
                       <td className="text-slate-200 tabular-nums pr-3">{fmtDuration(s.durationMs)}</td>
@@ -512,15 +548,40 @@ export default function VisitorsTab() {
                           {s.returning ? 'Returning' : 'New'}
                         </span>
                       </td>
-                      <td className="text-slate-300 truncate max-w-[180px]" title={s.lastPath}>{s.lastPath ?? '—'}</td>
+                      <td className="text-slate-300 truncate max-w-[180px]" title={s.lastPath ?? undefined}>{s.lastPath ?? '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
           </div>
+
+          {serverTotal > sessionPageSize && (
+            <div className="flex items-center justify-between mt-3 text-xs text-slate-300">
+              <div>
+                Page {sessionPage + 1} of {Math.max(1, Math.ceil(serverTotal / sessionPageSize))}
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setSessionPage(p => Math.max(0, p - 1))}
+                  disabled={sessionPage === 0 || sessionsLoading}
+                  className="px-2 min-h-[32px] rounded-md border-2 border-slate-600 bg-slate-800 text-white disabled:opacity-40 inline-flex items-center gap-1"
+                >
+                  <ChevronLeft size={14} /> Prev
+                </button>
+                <button
+                  onClick={() => setSessionPage(p => p + 1)}
+                  disabled={(sessionPage + 1) * sessionPageSize >= serverTotal || sessionsLoading}
+                  className="px-2 min-h-[32px] rounded-md border-2 border-slate-600 bg-slate-800 text-white disabled:opacity-40 inline-flex items-center gap-1"
+                >
+                  Next <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
 
       <p className="text-xs text-slate-500">
         Anonymous, first-party. Heartbeats pause when the tab is hidden or idle (5 min no activity), with duplicate-suppression on wake.
