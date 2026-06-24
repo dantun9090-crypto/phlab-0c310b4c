@@ -1118,8 +1118,25 @@ a{color:#7dd3fc}
 <header class="top">
   <h1>E2E stale-assets <span class="badge ${failed.length ? 'bad' : 'ok'}">${esc(overall)}</span></h1>
   <div class="muted">target <code>${esc(TARGET)}</code> · finished ${esc(summary.finishedAt)} · ${summary.passed}/${summary.total} passed${ONLY ? ` · filter <code>${esc(ONLY)}</code>` : ''}${REPLAY ? ' · <b>REPLAY</b>' : (RECORD ? ' · <b>RECORD</b>' : '')} · retries=${RETRIES}</div>
-  ${allBundles.length ? `<button type="button" data-global-bundle="1" data-global-bundle-b64="${Buffer.from(JSON.stringify({ generatedAt: new Date().toISOString(), redaction: { redactBodies: REDACT_BODIES, hashBodies: HASH_BODIES, maxBodyBytes: MAX_BODY_BYTES, redactHeaders: [...REDACT_HEADERS], redactUrlParams: [...REDACT_URL_PARAMS] }, scenarios: allBundles }), 'utf8').toString('base64')}" style="margin-left:auto;background:#0b1220;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:13px">⬇ Download mismatch bundle (all scenarios)</button>` : ''}
+  ${(() => {
+    if (!allBundles.length) return '';
+    const globalBundle = {
+      schemaVersion: BUNDLE_SCHEMA_VERSION,
+      generatedAt: new Date().toISOString(),
+      redaction: { redactBodies: REDACT_BODIES, hashBodies: HASH_BODIES, maxBodyBytes: MAX_BODY_BYTES, redactHeaders: [...REDACT_HEADERS], redactUrlParams: [...REDACT_URL_PARAMS] },
+      scenarios: allBundles,
+    };
+    const gv = validateGlobalMismatchBundle(globalBundle);
+    if (!gv.ok) throw new Error(`global bundle schema validation failed:\n  - ${gv.errors.slice(0, 8).join('\n  - ')}`);
+    const b64 = Buffer.from(JSON.stringify(globalBundle), 'utf8').toString('base64');
+    const btnStyle = 'background:#0b1220;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:13px;margin-left:8px';
+    return `<div style="margin-left:auto;display:flex;gap:6px">
+      <button type="button" data-global-bundle="1" data-global-bundle-b64="${b64}" style="${btnStyle}">⬇ Download mismatch bundle (all scenarios)</button>
+      <button type="button" data-global-zip="1" data-global-bundle-b64="${b64}" style="${btnStyle}">⬇ Download as ZIP</button>
+    </div>`;
+  })()}
 </header>
+
 
 <section class="card"><h2>Per-scenario summary</h2>${scCards || '<p class="muted">No scenarios ran.</p>'}</section>
 <section class="card"><h2>DB lock timeline (Firestore <code>_meta/build_state</code>)</h2>${lockTimelineHtml}</section>
