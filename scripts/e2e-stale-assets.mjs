@@ -251,26 +251,64 @@ function diffLiveVsReplay(scenarioName) {
   };
   const fMap = byUrl(fixtureResp), lMap = byUrl(liveResp);
   const allUrls = new Set([...fMap.keys(), ...lMap.keys()]);
+  // Build per-item pairs (both matched and mismatched) so the HTML report can drill down into every one.
+  const items = [];
   const mismatches = [];
+  let statusMismatchCount = 0;
+  let maxBodyDelta = 0;
+  // Use the matching scenario's HAR (when available) to enrich each item with headers/body/redirect chain.
+  const harByUrlStatus = (() => {
+    const m = new Map();
+    for (const h of sc.har || []) {
+      const k = (h.url || '').split('?')[0] + '|' + (h.status ?? '');
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push(h);
+    }
+    return m;
+  })();
+  const popHar = (url, status) => {
+    const k = (url || '').split('?')[0] + '|' + (status ?? '');
+    const arr = harByUrlStatus.get(k);
+    if (arr && arr.length) return arr.shift();
+    return null;
+  };
   for (const u of allUrls) {
     const f = fMap.get(u) || [];
     const l = lMap.get(u) || [];
     if (f.length !== l.length) {
-      mismatches.push({ url: u, kind: 'count', fixture: f.length, live: l.length });
+      const m = { url: u, kind: 'count', fixture: f.length, live: l.length };
+      mismatches.push(m); items.push({ match: false, ...m });
     }
     const n = Math.max(f.length, l.length);
     for (let i = 0; i < n; i++) {
       const fr = f[i], lr = l[i];
-      if (!fr) { mismatches.push({ url: u, kind: 'only-live', index: i, status: lr.status }); continue; }
-      if (!lr) { mismatches.push({ url: u, kind: 'only-fixture', index: i, status: fr.status }); continue; }
-      if (fr.status !== lr.status) {
-        mismatches.push({ url: u, kind: 'status', index: i, fixture: fr.status, live: lr.status });
+      const reasons = [];
+      if (!fr) reasons.push('only-live');
+      if (!lr) reasons.push('only-fixture');
+      if (fr && lr) {
+        if (fr.status !== lr.status) { reasons.push('status'); statusMismatchCount++; }
+        const fb = (fr.body || ''), lb = (lr.body || '');
+        if (fb !== lb) {
+          const delta = Math.abs(fb.length - lb.length);
+          if (delta > maxBodyDelta) maxBodyDelta = delta;
+          reasons.push(`body(Δ${delta}B)`);
+        }
       }
-      if ((fr.body || '') !== (lr.body || '')) {
-        mismatches.push({
-          url: u, kind: 'body', index: i,
-          fixtureBytes: (fr.body || '').length, liveBytes: (lr.body || '').length,
-        });
+      const isMatch = reasons.length === 0;
+      const item = {
+        match: isMatch, url: u, index: i, reasons,
+        fixture: fr ? { status: fr.status, headers: fr.headers || null, body: fr.body ?? null, bodyBytes: fr.bodyBytes ?? (fr.body ? String(fr.body).length : null) } : null,
+        live: lr ? { status: lr.status, headers: lr.headers || null, body: lr.body ?? null, bodyBytes: lr.bodyBytes ?? (lr.body ? String(lr.body).length : null), har: lr ? popHar(lr.url, lr.status) : null } : null,
+      };
+      items.push(item);
+      if (!isMatch) {
+        if (!fr) mismatches.push({ url: u, kind: 'only-live', index: i, status: lr.status });
+        else if (!lr) mismatches.push({ url: u, kind: 'only-fixture', index: i, status: fr.status });
+        else {
+          if (fr.status !== lr.status) mismatches.push({ url: u, kind: 'status', index: i, fixture: fr.status, live: lr.status });
+          const fb = (fr.body || ''), lb = (lr.body || '');
+          if (fb !== lb) mismatches.push({ url: u, kind: 'body', index: i, fixtureBytes: fb.length, liveBytes: lb.length });
+        }
       }
     }
   }
@@ -290,6 +328,15 @@ function diffLiveVsReplay(scenarioName) {
     liveRelMs: lRel,
     deltaMs: lRel.map((t, i) => (fRel[i] != null ? t - fRel[i] : null)),
   };
+  // Evaluate thresholds — exceedance is a meaningful regression.
+  const thresholds = {
+    maxMismatches: MAX_MISMATCHES, maxStatusMismatches: MAX_STATUS_MISMATCHES, maxBodyByteDelta: MAX_BODY_BYTE_DELTA,
+    observed: { mismatchCount: mismatches.length, statusMismatchCount, maxBodyDelta },
+    breached: [],
+  };
+  if (mismatches.length > MAX_MISMATCHES) thresholds.breached.push(`mismatches ${mismatches.length} > ${MAX_MISMATCHES}`);
+  if (statusMismatchCount > MAX_STATUS_MISMATCHES) thresholds.breached.push(`statusMismatches ${statusMismatchCount} > ${MAX_STATUS_MISMATCHES}`);
+  if (maxBodyDelta > MAX_BODY_BYTE_DELTA) thresholds.breached.push(`maxBodyDelta ${maxBodyDelta}B > ${MAX_BODY_BYTE_DELTA}B`);
   return {
     summary: {
       requestsFixture: fixtureReq.length,
@@ -297,12 +344,18 @@ function diffLiveVsReplay(scenarioName) {
       responsesFixture: fixtureResp.length,
       responsesLive: liveResp.length,
       mismatchCount: mismatches.length,
+      statusMismatchCount,
+      maxBodyDelta,
+      matchCount: items.filter((x) => x.match).length,
     },
     purgeTiming,
+    thresholds,
+    items, // full pair list — used by the HTML drilldown
     mismatches: mismatches.slice(0, 40),
     truncated: mismatches.length > 40,
   };
 }
+
 
 // ---------- fixture helpers ----------
 function fixturePath(scenario, kind) {
