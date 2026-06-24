@@ -119,6 +119,12 @@ async function runInvalidation(buildId: string): Promise<void> {
   }
 }
 
+// Module-level in-flight lock — dedupes concurrent first-requests in the
+// same Worker isolate. A given buildId can only fire invalidation once;
+// subsequent concurrent calls observe the in-flight promise and return
+// `locked: true` so the caller doesn't double-purge or loop.
+const inFlight = new Map<string, Promise<void>>();
+
 export const Route = createFileRoute('/api/public/post-publish-check')({
   server: {
     handlers: {
@@ -132,6 +138,11 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
         });
         if (limited) return limited;
         const currentBuildId = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'unknown';
+
+        // Cross-request lock inside this isolate.
+        if (inFlight.has(currentBuildId)) {
+          return Response.json({ ok: true, locked: true, changed: false, buildId: currentBuildId });
+        }
 
         let stored: string | null = null;
         try {
@@ -170,7 +181,10 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
         // Fire-and-forget — don't block the HTTP response on Cloudflare /
         // Prerender round-trips. Worker keeps the promise alive via waitUntil
         // when available; otherwise we still await briefly so logs surface.
-        const work = runInvalidation(currentBuildId);
+        const work = runInvalidation(currentBuildId).finally(() => {
+          inFlight.delete(currentBuildId);
+        });
+        inFlight.set(currentBuildId, work);
         // Best-effort: if Cloudflare exposes waitUntil via globalThis, use it.
         // Otherwise let the runtime keep the task alive.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
