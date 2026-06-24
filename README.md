@@ -9,6 +9,20 @@ dependency audit (configurable `minSeverity` gate via
 and SLSA v1.0 Provenance + CycloneDX attestations.
 <!-- security-scan-status:end -->
 
+> **Branch protection (required):** the
+> `Dependency vulnerability scan` job from `security-scan.yml` MUST
+> be listed as a required status check on the `main` branch so PRs
+> can't merge when the audit gate fails. Apply once with `gh`:
+>
+> ```bash
+> gh api -X PUT repos/phlabs-uk/phlabs/branches/main/protection \
+>   --input scripts/branch-protection.json
+> ```
+>
+> The ruleset is checked in at `scripts/branch-protection.json` and
+> already requires `Dependency vulnerability scan` +
+> `Attestation verify (SLSA + CycloneDX)`.
+
 <!-- sbom-status:start -->
 ![sbom: pending](https://img.shields.io/badge/SBOM-pending%20first%20verified%20release-lightgrey?logo=sigstore&logoColor=white)
 

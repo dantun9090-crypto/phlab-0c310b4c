@@ -64,6 +64,7 @@ jobs:
       # artifact, even when the gate fails — reviewers can download
       # it to triage findings without re-running the scan locally.
       - name: Upload security-scan JSON + log artifact
+        id: upload_audit
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -78,24 +79,34 @@ jobs:
       # summary. Same hidden marker each run so we edit the existing
       # comment instead of spamming new ones. Skipped on push / cron /
       # workflow_dispatch where there is no PR context.
-      - name: Post vulnerability summary to PR
-        if: always() && github.event_name == 'pull_request'
+      - name: Post vulnerability summary to PR + job summary
+        if: always()
         uses: actions/github-script@v7
         env:
           AUDIT_EXIT: ${{ steps.audit.outputs.exit_code }}
+          ARTIFACT_ID: ${{ steps.upload_audit.outputs.artifact-id }}
+          ARTIFACT_URL: ${{ steps.upload_audit.outputs.artifact-url }}
+          INPUT_OVERRIDE: ${{ github.event.inputs.min_severity }}
         with:
           script: |
             const fs = require('fs');
             const path = 'dist/security-audit.json';
             const marker = '<!-- security-scan-summary -->';
             const exitCode = process.env.AUDIT_EXIT || '0';
-            let body;
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-            const artifactsUrl = `${runUrl}#artifacts`;
-            const inputOverride = ${{ toJSON(github.event.inputs.min_severity) }} || '';
+            // One-click download link for the artifact zip (requires GitHub
+            // login; the upload-artifact@v4 `artifact-url` output is the
+            // canonical, sha-pinned URL the Actions UI itself links to).
+            const artifactDownloadUrl =
+              process.env.ARTIFACT_URL
+              || (process.env.ARTIFACT_ID
+                ? `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/artifacts/${process.env.ARTIFACT_ID}`
+                : `${runUrl}#artifacts`);
+            const inputOverride = process.env.INPUT_OVERRIDE || '';
             const overrideNote = inputOverride
               ? ` (overridden for this run via \`workflow_dispatch\` input)`
               : ` (from \`.security-config.json\`)`;
+            let body;
             if (!fs.existsSync(path)) {
               body = `${marker}\n### 🔐 Security scan\n\nReport file missing — the scan likely crashed before writing JSON. Check the [workflow logs](${runUrl}).`;
             } else {
@@ -107,10 +118,40 @@ jobs:
               const status = r.blocking.length === 0
                 ? `✅ **No ${r.minSeverity}+ vulnerabilities** — safe to merge.`
                 : `❌ **${r.blocking.length} blocking ${r.minSeverity}+ vulnerabilities** — merge gate failed.`;
+
+              // Top vulnerable packages: group blocking findings by package,
+              // pick the worst severity per package, count advisories, and
+              // sort by severity rank then advisory count.
+              const sevRank = { critical: 4, high: 3, moderate: 2, medium: 2, low: 1, info: 0 };
+              const byPkg = new Map();
+              for (const b of r.blocking) {
+                const key = `${b.pkg}@${b.version}`;
+                const prev = byPkg.get(key) || { pkg: b.pkg, version: b.version, worst: b.severity, count: 0, ids: [] };
+                prev.count += 1;
+                prev.ids.push(`[${b.id}](${b.url})`);
+                if ((sevRank[b.severity] || 0) > (sevRank[prev.worst] || 0)) prev.worst = b.severity;
+                byPkg.set(key, prev);
+              }
+              const topPkgs = [...byPkg.values()]
+                .sort((a, b) => (sevRank[b.worst] || 0) - (sevRank[a.worst] || 0) || b.count - a.count)
+                .slice(0, 10);
+              const topPkgsTable = topPkgs.length
+                ? [
+                    '',
+                    '**Top vulnerable packages**',
+                    '',
+                    '| # | Package | Version | Worst severity | Advisories |',
+                    '|---:|---|---|---|---|',
+                    ...topPkgs.map((p, i) =>
+                      `| ${i + 1} | \`${p.pkg}\` | \`${p.version}\` | **${p.worst.toUpperCase()}** | ${p.count} — ${p.ids.slice(0, 3).join(', ')}${p.ids.length > 3 ? `, +${p.ids.length - 3}` : ''} |`
+                    ),
+                  ].join('\n')
+                : '';
+
               const top = r.blocking.slice(0, 10).map(b =>
                 `- [${b.severity.toUpperCase()}] \`${b.pkg}@${b.version}\` — [${b.id}](${b.url})  \n  ${b.summary}`
               ).join('\n');
-              const more = r.blocking.length > 10 ? `\n\n_…and ${r.blocking.length - 10} more — see the [\`security-audit-${{ github.sha }}\`](${artifactsUrl}) artifact._` : '';
+              const more = r.blocking.length > 10 ? `\n\n_…and ${r.blocking.length - 10} more — see the [\`security-audit-${{ github.sha }}\`](${artifactDownloadUrl}) artifact._` : '';
               body = [
                 marker,
                 `### 🔐 Security scan — gate: ${sev(r.minSeverity)}+`,
@@ -120,17 +161,28 @@ jobs:
                 status,
                 '',
                 `**Active \`minSeverity\` gate:** ${sev(r.minSeverity)}${overrideNote}.`,
-                `**JSON report:** [\`security-audit-${{ github.sha }}\`](${artifactsUrl}) (contains \`dist/security-audit.json\` + \`dist/security-audit.log\`).`,
+                `**JSON report:** ⬇️ [Download \`security-audit-${{ github.sha }}.zip\`](${artifactDownloadUrl}) (contains \`dist/security-audit.json\` + \`dist/security-audit.log\`).`,
                 '',
                 `| Blocking | Sub-threshold | Suppressed | Packages | Advisories |`,
                 `|---:|---:|---:|---:|---:|`,
                 `| ${t.blocking} | ${t.informational} | ${t.ignored} | ${t.packagesScanned} | ${t.uniqueAdvisories} |`,
+                topPkgsTable,
                 '',
-                r.blocking.length > 0 ? `<details><summary>Blocking findings</summary>\n\n${top}${more}\n\n</details>` : '',
+                r.blocking.length > 0 ? `<details><summary>Blocking findings (raw advisory list)</summary>\n\n${top}${more}\n\n</details>` : '',
                 '',
-                `_Artifact: [\`security-audit-${{ github.sha }}\`](${artifactsUrl}) · [Workflow run](${runUrl}) · Scan exit: \`${exitCode}\` · Commit: \`${{ github.sha }}\`_`,
+                `_Artifact: [⬇️ download](${artifactDownloadUrl}) · [Workflow run](${runUrl}) · Scan exit: \`${exitCode}\` · Commit: \`${{ github.sha }}\`_`,
               ].join('\n');
             }
+
+            // Mirror the same body into the Actions Job Summary so push /
+            // cron / workflow_dispatch runs (which have no PR context) also
+            // surface the gate status + minSeverity + JSON artifact link.
+            await core.summary
+              .addRaw(body.replace(marker, '').trimStart())
+              .write();
+
+            // PR comment: only on pull_request events.
+            if (context.eventName !== 'pull_request' || !context.issue.number) return;
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
             const existing = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
