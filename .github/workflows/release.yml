@@ -159,3 +159,64 @@ jobs:
             echo "bash scripts/verify-attestations.sh ./sbom release"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+
+  # Confirms the release is *actually* verifiable end-to-end by
+  # downloading the SBOM bundle from the published GitHub Release (NOT
+  # from the previous job's artifacts) and re-running every cosign
+  # check. This is the gate that decides whether the release counts
+  # as "successful": if any attestation does not verify against the
+  # signed-and-published bundle, this job fails red and the release run
+  # is marked failed, surfacing the cosign error on the Check page.
+  attestation-verify-release:
+    name: Attestation verify (release)
+    runs-on: ubuntu-latest
+    needs: release-sbom
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: v2.4.1
+
+      - name: Download SBOM bundle from the published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-sbom.outputs.tag }}
+        run: |
+          mkdir -p release-bundle
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern 'sbom.cdx.json*' \
+            --dir release-bundle
+          ls -la release-bundle
+
+      - name: Verify SBOM signature + SLSA Provenance + CycloneDX attestations
+        run: bash scripts/verify-attestations.sh release-bundle release
+
+      # If verification failed, surface the sanitised cosign log and the
+      # exact bundle that was downloaded from the release, so a human can
+      # reproduce the failure without re-running the workflow.
+      - name: Upload verification debug bundle (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: attestation-debug-release-${{ github.sha }}
+          path: |
+            release-bundle/sbom.cdx.json
+            release-bundle/sbom.cdx.json.sha256
+            release-bundle/sbom.cdx.json.sig
+            release-bundle/sbom.cdx.json.pem
+            release-bundle/sbom.cdx.json.provenance.intoto.jsonl
+            release-bundle/sbom.cdx.json.provenance.pem
+            release-bundle/sbom.cdx.json.cyclonedx.intoto.jsonl
+            release-bundle/sbom.cdx.json.cyclonedx.pem
+            release-bundle/verify-attestations.log
+          retention-days: 30
+
+          } >> "$GITHUB_STEP_SUMMARY"
