@@ -895,14 +895,17 @@ async def main() -> int:
         else:
             print("[e2e] happy-path: SKIPPED (no service account)")
 
-        total_fail = fails + happy_fails + burst_fails + idem_fails
+        total_fail = fails + happy_fails + burst_fails + idem_fails + auth_fails + conc_fails
         summary = {
             "fuzz": {"pass": passes, "fail": fails},
             "burst": {"pass": burst_pass, "fail": burst_fails},
+            "auth_matrix": {"pass": auth_pass, "fail": auth_fails},
+            "concurrency": {"pass": conc_pass, "fail": conc_fails},
             "idempotency": {"pass": idem_pass, "fail": idem_fails},
             "happy": {"fail": happy_fails},
             "total_fail": total_fail,
         }
+
         report_path = write_report(summary)
         print(f"[e2e] report: {report_path}")
         print(f"\n[e2e] OVERALL: {'PASS' if total_fail == 0 else 'FAIL'} ({total_fail} failures)")
