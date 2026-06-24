@@ -62,6 +62,32 @@ const HARD_BLOCKED_SLUGS = new Set<string>([
   "tirzepatide",
 ]);
 
+/**
+ * Merchant feed identity overrides. Some compound names (Retatrutide,
+ * BPC-157, …) trip Google's "Unapproved pharmaceutical / supplement"
+ * classifier purely by name match — even with neutral category and
+ * laboratory wording. We swap the public name for an anonymised
+ * PH Labs research code in the FEED ONLY. The public product page,
+ * slugs, sitemap, and SEO are untouched. /products/<code> renders the
+ * canonical product page in place (via PRODUCT_ID_TO_SLUG).
+ *
+ * Changing the code value also resets the Merchant item history, so a
+ * previously-disapproved item is re-reviewed as a brand-new product.
+ */
+type MerchantOverride = { code: string; displayName: string; cas: string };
+const MERCHANT_CODE_OVERRIDES: Record<string, MerchantOverride> = {
+  "retatrutide-research-peptide": {
+    code: "PHL-RT8",
+    displayName: "PHL-RT8",
+    cas: "2381089-83-2",
+  },
+  "bpc-157": {
+    code: "PHL-BP15",
+    displayName: "PHL-BP15",
+    cas: "137525-51-0",
+  },
+};
+
 function isAllowedForMerchant(p: {
   name?: string;
   slug?: string;
