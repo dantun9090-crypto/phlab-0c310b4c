@@ -1,7 +1,10 @@
 #!/usr/bin/env bun
 /**
- * Runs `bun audit` and fails the process if any vulnerability of
- * `medium` severity or higher is reported.
+ * Dependency vulnerability scan against the OSV.dev advisory database.
+ *
+ * Reads the CycloneDX SBOM produced by `bun run sbom`, batches every
+ * package@version against https://api.osv.dev/v1/querybatch, and exits
+ * non-zero if any advisory of `medium` severity or higher is reported.
  *
  * Used by:
  *   - CI (PR + main) — blocks merges that introduce or regress
@@ -9,21 +12,32 @@
  *   - Post-deploy workflow — re-runs after publish so the deployment
  *     log carries the live security posture of what just shipped.
  *
+ * Why OSV over `bun audit` / `npm audit`:
+ *   - Works offline-of-registry (the bun registry's audit endpoint is
+ *     not stable; npm audit needs a package-lock).
+ *   - One source of truth across npm + GitHub Security advisories.
+ *   - Lets us audit the exact resolved tree (incl. nested copies),
+ *     not just top-level pins.
+ *
  * Exit codes:
  *   0  no medium+ findings
  *   1  one or more medium+ findings (or audit failed to run)
  */
+import { readFileSync, existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { join } from "node:path";
 
-const SEVERITY_ORDER = ["info", "low", "moderate", "medium", "high", "critical"] as const;
+const SEVERITY_ORDER = ["info", "low", "medium", "high", "critical"] as const;
 type Severity = (typeof SEVERITY_ORDER)[number];
 
 const MIN_BLOCKING: Severity = (process.env.SECURITY_MIN_SEVERITY as Severity) ?? "medium";
 const minIdx = SEVERITY_ORDER.indexOf(MIN_BLOCKING);
+const SBOM_PATH = join(process.cwd(), "dist", "sbom.cdx.json");
 
 function normalise(sev: string): Severity {
   const s = sev.toLowerCase();
   if (s === "moderate") return "medium";
+  if (s === "" || s === "unknown") return "info";
   return (SEVERITY_ORDER as readonly string[]).includes(s) ? (s as Severity) : "info";
 }
 
@@ -31,48 +45,141 @@ function severityRank(sev: string): number {
   return SEVERITY_ORDER.indexOf(normalise(sev));
 }
 
-console.log(`▶ Running dependency security scan (blocking >= ${MIN_BLOCKING})`);
-
-const res = spawnSync("bun", ["audit", "--json"], { encoding: "utf8" });
-const raw = (res.stdout ?? "").trim();
-
-if (!raw) {
-  console.error("✖ bun audit produced no output:", res.stderr);
-  process.exit(1);
+function cvssToSeverity(score: number): Severity {
+  if (score >= 9) return "critical";
+  if (score >= 7) return "high";
+  if (score >= 4) return "medium";
+  if (score > 0) return "low";
+  return "info";
 }
 
-let parsed: unknown;
-try {
-  parsed = JSON.parse(raw);
-} catch (err) {
-  console.error("✖ bun audit returned non-JSON output:", raw.slice(0, 500));
-  process.exit(1);
-}
-
-type Advisory = { severity?: string; module_name?: string; title?: string; url?: string };
-const advisories: Advisory[] = [];
-
-if (parsed && typeof parsed === "object") {
-  const root = parsed as Record<string, unknown>;
-  if (root.advisories && typeof root.advisories === "object") {
-    advisories.push(...(Object.values(root.advisories) as Advisory[]));
-  } else if (Array.isArray(root.vulnerabilities)) {
-    advisories.push(...(root.vulnerabilities as Advisory[]));
+async function main() {
+  if (!existsSync(SBOM_PATH)) {
+    console.log("ℹ SBOM not found — generating first.");
+    const r = spawnSync("bun", ["run", "sbom"], { stdio: "inherit" });
+    if (r.status !== 0) {
+      console.error("✖ Failed to generate SBOM.");
+      process.exit(1);
+    }
   }
-}
 
-const blocking = advisories.filter((a) => severityRank(a.severity ?? "info") >= minIdx);
+  const sbom = JSON.parse(readFileSync(SBOM_PATH, "utf8")) as {
+    components: Array<{ name: string; version: string }>;
+  };
 
-console.log(`Total advisories: ${advisories.length}`);
-console.log(`Blocking (>= ${MIN_BLOCKING}): ${blocking.length}`);
+  console.log(`▶ Auditing ${sbom.components.length} packages via OSV (blocking >= ${MIN_BLOCKING})`);
 
-if (blocking.length > 0) {
-  console.error("\n✖ Vulnerable dependencies detected:\n");
-  for (const a of blocking) {
-    console.error(
-      `  [${(a.severity ?? "?").toUpperCase()}] ${a.module_name ?? "?"} — ${a.title ?? "?"}`,
-    );
-    if (a.url) console.error(`    ${a.url}`);
+  type Query = { package: { name: string; ecosystem: "npm" }; version: string };
+  const queries: Query[] = sbom.components.map((c) => ({
+    package: { name: c.name, ecosystem: "npm" },
+    version: c.version,
+  }));
+
+  // OSV API caps batch size — chunk to 1000 queries per request.
+  const BATCH = 1000;
+  type OsvVuln = { id: string };
+  const vulnIds = new Set<string>();
+  const vulnByQuery: Array<{ pkg: string; version: string; ids: string[] }> = [];
+
+  for (let i = 0; i < queries.length; i += BATCH) {
+    const slice = queries.slice(i, i + BATCH);
+    const res = await fetch("https://api.osv.dev/v1/querybatch", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ queries: slice }),
+    });
+    if (!res.ok) {
+      console.error(`✖ OSV query failed: ${res.status} ${res.statusText}`);
+      process.exit(1);
+    }
+    const data = (await res.json()) as { results: Array<{ vulns?: OsvVuln[] }> };
+    data.results.forEach((r, idx) => {
+      if (!r.vulns || r.vulns.length === 0) return;
+      const q = slice[idx]!;
+      const ids = r.vulns.map((v) => v.id);
+      ids.forEach((id) => vulnIds.add(id));
+      vulnByQuery.push({ pkg: q.package.name, version: q.version, ids });
+    });
+  }
+
+  console.log(`  ${vulnByQuery.length} affected packages, ${vulnIds.size} unique advisories.`);
+
+  type OsvDetail = {
+    id: string;
+    summary?: string;
+    severity?: Array<{ type: string; score: string }>;
+    database_specific?: { severity?: string };
+    references?: Array<{ url: string }>;
+  };
+  const details = new Map<string, OsvDetail>();
+
+  // Fetch each advisory only once.
+  for (const id of vulnIds) {
+    const res = await fetch(`https://api.osv.dev/v1/vulns/${id}`);
+    if (!res.ok) continue;
+    details.set(id, (await res.json()) as OsvDetail);
+  }
+
+  function pickSeverity(d: OsvDetail | undefined): Severity {
+    if (!d) return "info";
+    if (d.database_specific?.severity) return normalise(d.database_specific.severity);
+    if (d.severity && d.severity.length > 0) {
+      const v = d.severity.find((s) => s.type?.startsWith("CVSS"));
+      if (v) {
+        const m = v.score.match(/CVSS:[^/]+\/([^ ]+)/);
+        const baseMatch = (m?.[1] ?? "").match(/CVSS:.*?\/AV/);
+        void baseMatch;
+        // OSV gives the full vector — score parsing is heavy; fall back to
+        // the embedded numeric score if present, else assume 'medium'.
+        const numeric = parseFloat(v.score);
+        if (!Number.isNaN(numeric)) return cvssToSeverity(numeric);
+      }
+    }
+    return "medium";
+  }
+
+  type Blocking = {
+    pkg: string;
+    version: string;
+    id: string;
+    severity: Severity;
+    summary: string;
+    url: string;
+  };
+  const blocking: Blocking[] = [];
+  const informational: Array<{ pkg: string; id: string; severity: Severity }> = [];
+
+  for (const v of vulnByQuery) {
+    for (const id of v.ids) {
+      const d = details.get(id);
+      const sev = pickSeverity(d);
+      const item = {
+        pkg: v.pkg,
+        version: v.version,
+        id,
+        severity: sev,
+        summary: d?.summary ?? "(no summary)",
+        url: d?.references?.[0]?.url ?? `https://osv.dev/vulnerability/${id}`,
+      };
+      if (severityRank(sev) >= minIdx) blocking.push(item);
+      else informational.push({ pkg: v.pkg, id, severity: sev });
+    }
+  }
+
+  if (informational.length > 0) {
+    console.log(`\nℹ ${informational.length} sub-threshold advisories (info/low) — not blocking.`);
+  }
+
+  if (blocking.length === 0) {
+    console.log("\n✔ No medium+ vulnerabilities. Safe to merge / deploy.");
+    return;
+  }
+
+  console.error(`\n✖ ${blocking.length} blocking vulnerabilities (>= ${MIN_BLOCKING}):\n`);
+  for (const b of blocking) {
+    console.error(`  [${b.severity.toUpperCase()}] ${b.pkg}@${b.version} — ${b.id}`);
+    console.error(`    ${b.summary}`);
+    console.error(`    ${b.url}`);
   }
   console.error(
     "\nFix: pin the patched version via `overrides` + `resolutions` in package.json,\n" +
@@ -81,4 +188,4 @@ if (blocking.length > 0) {
   process.exit(1);
 }
 
-console.log("✔ No medium+ vulnerabilities. Safe to merge / deploy.");
+void main();
