@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { dispatchAddToCart, CartItem } from '@/components/Layout';
-import { auth, db, getAllProducts, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
+import { auth, db, getAllProducts, doc, getDoc, getDocs, collection, query, onAuthStateChanged } from '@/lib/firebase';
 import {
   markPrerenderPending,
   markPrerenderReady,
