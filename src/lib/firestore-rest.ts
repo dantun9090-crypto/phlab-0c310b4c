@@ -183,6 +183,8 @@ function toProduct(doc: any): SeoProduct | null {
     includeInMerchantFeed: f.includeInMerchantFeed === true,
     excludeFromMerchantFeed: f.excludeFromMerchantFeed === true,
     isVip: f.isVip === true,
+    popular: f.popular === true,
+    requiresResearchGate: f.requiresResearchGate === true,
     unitPricingMeasure,
     weightGrams,
   };
