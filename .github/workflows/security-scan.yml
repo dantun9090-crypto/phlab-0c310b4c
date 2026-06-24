@@ -44,27 +44,56 @@ jobs:
         with:
           bun-version: latest
 
-      # Cache Bun's global install store keyed on the lockfile so repeat
-      # CI runs skip the registry round-trip and resolve from disk. Safe
-      # because `bun install --frozen-lockfile` is the only writer and
-      # bun.lock pins every transitive version — results stay deterministic.
+      # Resolve fully-reproducible cache keys from the exact files that
+      # affect each cached output. We hash files explicitly (not via
+      # hashFiles globs) and emit the per-file SHAs as step outputs so
+      # the same digests show up in the job summary — reviewers can
+      # confirm a HIT corresponds to the inputs they expect.
+      #
+      # Bun store key inputs:
+      #   - bun.lock                (pins every transitive version)
+      #   - package.json            (overrides/resolutions can swap versions
+      #                              without changing bun.lock entries)
+      #
+      # SBOM cache key inputs:
+      #   - bun.lock                (resolved tree the SBOM walks)
+      #   - package.json            (root metadata embedded in SBOM)
+      #   - scripts/generate-sbom.ts (the generator itself)
+      - name: Compute reproducible cache keys
+        id: keys
+        run: |
+          set -euo pipefail
+          sha() { sha256sum "$1" | awk '{print $1}'; }
+          BUN_LOCK_SHA=$(sha bun.lock)
+          PKG_JSON_SHA=$(sha package.json)
+          SBOM_GEN_SHA=$(sha scripts/generate-sbom.ts)
+          # Composite hashes: hash-of-hashes so order is fixed and any
+          # input change flips the key deterministically.
+          BUN_KEY_HASH=$(printf '%s\n%s\n' "$BUN_LOCK_SHA" "$PKG_JSON_SHA" | sha256sum | awk '{print $1}')
+          SBOM_KEY_HASH=$(printf '%s\n%s\n%s\n' "$BUN_LOCK_SHA" "$PKG_JSON_SHA" "$SBOM_GEN_SHA" | sha256sum | awk '{print $1}')
+          BUN_KEY="bun-store-${{ runner.os }}-${BUN_KEY_HASH}"
+          SBOM_KEY="sbom-${{ runner.os }}-${SBOM_KEY_HASH}"
+          {
+            echo "bun_lock_sha=$BUN_LOCK_SHA"
+            echo "pkg_json_sha=$PKG_JSON_SHA"
+            echo "sbom_gen_sha=$SBOM_GEN_SHA"
+            echo "bun_key=$BUN_KEY"
+            echo "sbom_key=$SBOM_KEY"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Cache Bun install store
         id: bun_cache
         uses: actions/cache@v4
         with:
           path: |
             ~/.bun/install/cache
-          key: bun-store-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          key: ${{ steps.keys.outputs.bun_key }}
           restore-keys: |
             bun-store-${{ runner.os }}-
 
       - name: Install deps (frozen)
         run: bun install --frozen-lockfile
 
-      # Cache the generated SBOM keyed on lockfile + generator source.
-      # The SBOM is a pure function of the resolved tree, so any bun.lock
-      # or generate-sbom.ts change busts the cache; otherwise we restore
-      # dist/sbom.cdx.json verbatim and skip the node_modules walk.
       - name: Ensure dist/ exists
         run: mkdir -p dist
 
@@ -73,7 +102,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: dist/sbom.cdx.json
-          key: sbom-${{ runner.os }}-${{ hashFiles('bun.lock', 'scripts/generate-sbom.ts') }}
+          key: ${{ steps.keys.outputs.sbom_key }}
+
 
       # Blocking threshold resolved by scripts/security-audit.ts:
       #   SECURITY_MIN_SEVERITY env  >  .security-config.json  >  "medium"
