@@ -31,6 +31,11 @@ export const PRODUCT_ID_TO_SLUG: Record<string, string> = {
   maibTaw5CXVkw1aDgvHd: "klow-blend",
   qRuXaxlV0T9VpS12vZcn: "ghk-cu-research-peptide",
   wbOYNDdxzzFWdj5qAwrS: "nad-research-compound",
+  // Google Merchant anonymised research codes — mirror canonical slugs so
+  // /products/<code> renders the real product in place (matchedBy: "id").
+  // Keep in sync with MERCHANT_CODE_OVERRIDES in google-merchant-feed[.]xml.ts.
+  "PHL-RT8": "retatrutide-research-peptide",
+  "PHL-BP15": "bpc-157",
 };
 
 export function resolveSlugFromId(id: string): string | null {
