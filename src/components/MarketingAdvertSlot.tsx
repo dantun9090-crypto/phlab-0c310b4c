@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { cfImgProps } from '@/lib/cf-image';
 
 export type MarketingAdvert = {
@@ -21,6 +22,11 @@ type Props = {
   variant?: 'banner' | 'card' | 'compact';
   className?: string;
   eagerFirstImage?: boolean;
+  /** Optional refetch callback. Fires whenever admin saves a banner/advert
+   *  (via the global `marketing:revalidate` window event dispatched by the
+   *  useMarketingRevalidate hook mounted in Layout). Future routes can wire
+   *  it in with one line: `<MarketingAdvertSlot ... onRevalidate={refetch} />` */
+  onRevalidate?: () => void;
 };
 
 function activeForPlacement(adverts: MarketingAdvert[], placement: string): MarketingAdvert[] {
@@ -35,7 +41,14 @@ function isExternalHref(href: string): boolean {
   return /^https?:\/\//i.test(href);
 }
 
-export default function MarketingAdvertSlot({ adverts, placement, variant = 'banner', className = '', eagerFirstImage = false }: Props) {
+export default function MarketingAdvertSlot({ adverts, placement, variant = 'banner', className = '', eagerFirstImage = false, onRevalidate }: Props) {
+  useEffect(() => {
+    if (!onRevalidate || typeof window === 'undefined') return;
+    const handler = () => { try { onRevalidate(); } catch { /* ignore */ } };
+    window.addEventListener('marketing:revalidate', handler);
+    return () => window.removeEventListener('marketing:revalidate', handler);
+  }, [onRevalidate]);
+
   const visible = activeForPlacement(adverts, placement);
   if (visible.length === 0) return null;
 
