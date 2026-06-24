@@ -52,10 +52,91 @@ jobs:
       # Set the env from the workflow_dispatch input so a maintainer can
       # tighten/loosen the gate for a one-off run without editing code.
       - name: Run dependency audit
+        id: audit
         env:
           SECURITY_MIN_SEVERITY: ${{ github.event.inputs.min_severity }}
-        run: bun run security:scan
-        run: bun run security:scan
+        run: |
+          set +e
+          bun run security:scan | tee dist/security-audit.log
+          echo "exit_code=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+
+      # Always upload the JSON audit report + the human log as a CI
+      # artifact, even when the gate fails — reviewers can download
+      # it to triage findings without re-running the scan locally.
+      - name: Upload security-scan JSON + log artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-${{ github.sha }}
+          path: |
+            dist/security-audit.json
+            dist/security-audit.log
+          retention-days: 90
+          if-no-files-found: warn
+
+      # Post (or update) a PR comment with the post-fix vulnerability
+      # summary. Same hidden marker each run so we edit the existing
+      # comment instead of spamming new ones. Skipped on push / cron /
+      # workflow_dispatch where there is no PR context.
+      - name: Post vulnerability summary to PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          AUDIT_EXIT: ${{ steps.audit.outputs.exit_code }}
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'dist/security-audit.json';
+            const marker = '<!-- security-scan-summary -->';
+            const exitCode = process.env.AUDIT_EXIT || '0';
+            let body;
+            if (!fs.existsSync(path)) {
+              body = `${marker}\n### 🔐 Security scan\n\nReport file missing — the scan likely crashed before writing JSON. Check the workflow logs.`;
+            } else {
+              const r = JSON.parse(fs.readFileSync(path, 'utf8'));
+              const t = r.totals;
+              const sev = (s) => `\`${s}\``;
+              const status = r.blocking.length === 0
+                ? `✅ **No ${r.minSeverity}+ vulnerabilities** — safe to merge.`
+                : `❌ **${r.blocking.length} blocking ${r.minSeverity}+ vulnerabilities** — merge gate failed.`;
+              const top = r.blocking.slice(0, 10).map(b =>
+                `- [${b.severity.toUpperCase()}] \`${b.pkg}@${b.version}\` — [${b.id}](${b.url})  \n  ${b.summary}`
+              ).join('\n');
+              const more = r.blocking.length > 10 ? `\n\n_…and ${r.blocking.length - 10} more — see the \`security-audit-${{ github.sha }}\` artifact._` : '';
+              body = [
+                marker,
+                `### 🔐 Security scan — gate: ${sev(r.minSeverity)}+`,
+                '',
+                status,
+                '',
+                `| Blocking | Sub-threshold | Suppressed | Packages | Advisories |`,
+                `|---:|---:|---:|---:|---:|`,
+                `| ${t.blocking} | ${t.informational} | ${t.ignored} | ${t.packagesScanned} | ${t.uniqueAdvisories} |`,
+                '',
+                r.blocking.length > 0 ? `<details><summary>Blocking findings</summary>\n\n${top}${more}\n\n</details>` : '',
+                '',
+                `_Artifact: \`security-audit-${{ github.sha }}\` · Scan exit: \`${exitCode}\` · Commit: \`${{ github.sha }}\`_`,
+              ].join('\n');
+            }
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const existing = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const prev = existing.find(c => c.body && c.body.includes(marker));
+            if (prev) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: prev.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      # Re-raise the scan failure so the job (and merge gate) fails
+      # *after* the artifact has been uploaded and the PR commented.
+      - name: Enforce audit gate
+        if: always()
+        run: |
+          if [ "${{ steps.audit.outputs.exit_code }}" != "0" ]; then
+            echo "Security audit failed (exit ${{ steps.audit.outputs.exit_code }})."
+            exit 1
+          fi
 
       # Generate CycloneDX SBOM for the PR for review / artifact diff.
       - name: Generate SBOM (CycloneDX)
