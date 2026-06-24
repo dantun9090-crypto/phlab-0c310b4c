@@ -134,7 +134,9 @@
     "protobufjs": "^7.5.4",
     "brace-expansion": "^2.0.2",
     "uuid": "^11.1.0",
-    "dompurify": "^3.2.7"
+    "dompurify": "^3.2.7",
+    "@tanstack/router-core": "1.170.16",
+    "@tanstack/react-router": "1.170.16"
   },
   "resolutions": {
     "undici": "^7.16.0",
@@ -143,6 +145,8 @@
     "protobufjs": "^7.5.4",
     "brace-expansion": "^2.0.2",
     "uuid": "^11.1.0",
-    "dompurify": "^3.2.7"
+    "dompurify": "^3.2.7",
+    "@tanstack/router-core": "1.170.16",
+    "@tanstack/react-router": "1.170.16"
   }
 }
