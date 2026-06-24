@@ -73,6 +73,48 @@ jobs:
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             dist/sbom.cdx.json | tee -a security-scan.log
 
+      # SLSA v1.0 Provenance + CycloneDX attestations: bind the deployed
+      # SBOM to this exact post-deploy run + commit, signed keyless and
+      # logged to Rekor. Lets us prove later "this set of dependencies
+      # was the one that shipped to phlabs.co.uk at commit X".
+      - name: Generate SLSA provenance predicate
+        env:
+          BUILD_ID: ${{ github.sha }}
+        run: bun run sbom:provenance
+
+      - name: Attest SBOM (SLSA provenance, cosign keyless)
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign attest-blob \
+            --yes \
+            --predicate dist/sbom.cdx.json.provenance.json \
+            --type slsaprovenance1 \
+            --output-attestation dist/sbom.cdx.json.provenance.intoto.jsonl \
+            --output-certificate dist/sbom.cdx.json.provenance.pem \
+            dist/sbom.cdx.json
+
+      - name: Attest SBOM (CycloneDX predicate, cosign keyless)
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign attest-blob \
+            --yes \
+            --predicate dist/sbom.cdx.json \
+            --type cyclonedx \
+            --output-attestation dist/sbom.cdx.json.cyclonedx.intoto.jsonl \
+            --output-certificate dist/sbom.cdx.json.cyclonedx.pem \
+            dist/sbom.cdx.json
+
+      - name: Verify SLSA provenance attestation (self-check)
+        run: |
+          cosign verify-blob-attestation \
+            --signature dist/sbom.cdx.json.provenance.intoto.jsonl \
+            --type slsaprovenance1 \
+            --certificate-identity-regexp "^https://github\.com/${GITHUB_REPOSITORY}/\.github/workflows/post-deploy-scan\.yml@" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            dist/sbom.cdx.json | tee -a security-scan.log
+
       - name: Re-run dependency vulnerability scan
         id: scan
         run: |
@@ -89,12 +131,13 @@ jobs:
           echo "- Domain: https://phlabs.co.uk" >> "$GITHUB_STEP_SUMMARY"
           echo "- Scan exit: \`${{ steps.scan.outputs.exit_code }}\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- SBOM signed: ✅ cosign keyless (Rekor logged)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- SBOM attested: ✅ SLSA v1.0 Provenance + CycloneDX (in-toto DSSE, commit \`${{ github.sha }}\`)" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          tail -n 60 security-scan.log >> "$GITHUB_STEP_SUMMARY"
+          tail -n 80 security-scan.log >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload SBOM + signature + scan log
+      - name: Upload SBOM + signature + attestations + scan log
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -104,6 +147,11 @@ jobs:
             dist/sbom.cdx.json.sha256
             dist/sbom.cdx.json.sig
             dist/sbom.cdx.json.pem
+            dist/sbom.cdx.json.provenance.json
+            dist/sbom.cdx.json.provenance.intoto.jsonl
+            dist/sbom.cdx.json.provenance.pem
+            dist/sbom.cdx.json.cyclonedx.intoto.jsonl
+            dist/sbom.cdx.json.cyclonedx.pem
             security-scan.log
           retention-days: 180
 
