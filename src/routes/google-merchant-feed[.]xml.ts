@@ -60,9 +60,6 @@ function toDisplayCategory(slug?: string | null): string | null {
 const HARD_BLOCKED_SLUGS = new Set<string>([
   "tirzepatide-research-peptide",
   "tirzepatide",
-  "bpc-157-research-peptide",
-  "bpc-157",
-  "bpc157",
 ]);
 
 function isAllowedForMerchant(p: {
@@ -76,7 +73,6 @@ function isAllowedForMerchant(p: {
   const name = (p.name || "").toLowerCase();
   if (HARD_BLOCKED_SLUGS.has(slug)) return false;
   if (name.includes("tirzepatide")) return false;
-  if (name.includes("bpc-157") || name.includes("bpc157") || name.includes("bpc 157")) return false;
   return p.includeInMerchantFeed === true;
 }
 
