@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { cfImgProps } from '@/lib/cf-image';
 
 export type MarketingAdvert = {
