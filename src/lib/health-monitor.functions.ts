@@ -238,13 +238,39 @@ export const purgeCacheNow = createServerFn({ method: 'POST' })
     return { ...r, at: new Date().toISOString() };
   });
 
+type Scalar = string | number | boolean | null;
+type SerializableRow = Record<string, Scalar> & { id: string };
+
+function toScalar(v: unknown): Scalar {
+  if (v === null || v === undefined) return null;
+  if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') return v;
+  try {
+    return JSON.stringify(v);
+  } catch {
+    return String(v);
+  }
+}
+
+function sanitizeRows(
+  rows: Array<Record<string, unknown> & { id: string }>,
+): SerializableRow[] {
+  return rows.map((r) => {
+    const out: Record<string, Scalar> = { id: r.id };
+    for (const [k, v] of Object.entries(r)) {
+      if (k === 'id') continue;
+      out[k] = toScalar(v);
+    }
+    return out as SerializableRow;
+  });
+}
+
 export const listHealthLogs = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) =>
     TokenSchema.extend({ limit: z.number().int().min(1).max(200).default(50) }).parse(
       input,
     ),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<{ ok: boolean; rows: SerializableRow[]; error?: string }> => {
     await requireFirebaseAdmin(data.idToken);
     try {
       const rows = await listDocsAdmin('admin_health_logs', {
@@ -252,11 +278,11 @@ export const listHealthLogs = createServerFn({ method: 'POST' })
         direction: 'DESCENDING',
         limit: data.limit,
       });
-      return { ok: true as const, rows };
+      return { ok: true, rows: sanitizeRows(rows) };
     } catch (e) {
       return {
-        ok: false as const,
-        rows: [] as Array<Record<string, unknown> & { id: string }>,
+        ok: false,
+        rows: [],
         error: e instanceof Error ? e.message : String(e),
       };
     }
@@ -264,7 +290,7 @@ export const listHealthLogs = createServerFn({ method: 'POST' })
 
 export const listHealthAlerts = createServerFn({ method: 'POST' })
   .inputValidator((input: unknown) => TokenSchema.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<{ ok: boolean; rows: SerializableRow[]; error?: string }> => {
     await requireFirebaseAdmin(data.idToken);
     try {
       const rows = await listDocsAdmin('admin_alerts', {
@@ -273,13 +299,13 @@ export const listHealthAlerts = createServerFn({ method: 'POST' })
         limit: 50,
       });
       return {
-        ok: true as const,
-        rows: rows.filter((r) => r.acknowledged !== true),
+        ok: true,
+        rows: sanitizeRows(rows.filter((r) => r.acknowledged !== true)),
       };
     } catch (e) {
       return {
-        ok: false as const,
-        rows: [] as Array<Record<string, unknown> & { id: string }>,
+        ok: false,
+        rows: [],
         error: e instanceof Error ? e.message : String(e),
       };
     }

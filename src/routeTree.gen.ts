@@ -42,6 +42,7 @@ import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public
 import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/public/hooks/security-cleanup'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
 import { Route as ApiPublicHooksMonitorProductUrlsRouteImport } from './routes/api/public/hooks/monitor-product-urls'
+import { Route as ApiPublicHooksHealthCheckRouteImport } from './routes/api/public/hooks/health-check'
 import { Route as ApiPublicHooksFenaProcessRetriesRouteImport } from './routes/api/public/hooks/fena-process-retries'
 import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hooks/fena'
 
@@ -220,6 +221,12 @@ const ApiPublicHooksMonitorProductUrlsRoute =
     path: '/api/public/hooks/monitor-product-urls',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksHealthCheckRoute =
+  ApiPublicHooksHealthCheckRouteImport.update({
+    id: '/api/public/hooks/health-check',
+    path: '/api/public/hooks/health-check',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksFenaProcessRetriesRoute =
   ApiPublicHooksFenaProcessRetriesRouteImport.update({
     id: '/api/public/hooks/fena-process-retries',
@@ -258,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
+  '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
@@ -295,6 +303,7 @@ export interface FileRoutesByTo {
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
+  '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
@@ -333,6 +342,7 @@ export interface FileRoutesById {
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
+  '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
@@ -372,6 +382,7 @@ export interface FileRouteTypes {
     | '/api/webhooks/wallid'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
+    | '/api/public/hooks/health-check'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/api/webhooks/wallid'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
+    | '/api/public/hooks/health-check'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
@@ -446,6 +458,7 @@ export interface FileRouteTypes {
     | '/api/webhooks/wallid'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
+    | '/api/public/hooks/health-check'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
@@ -484,6 +497,7 @@ export interface RootRouteChildren {
   ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
   ApiPublicHooksFenaRoute: typeof ApiPublicHooksFenaRoute
   ApiPublicHooksFenaProcessRetriesRoute: typeof ApiPublicHooksFenaProcessRetriesRoute
+  ApiPublicHooksHealthCheckRoute: typeof ApiPublicHooksHealthCheckRoute
   ApiPublicHooksMonitorProductUrlsRoute: typeof ApiPublicHooksMonitorProductUrlsRoute
   ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
   ApiPublicHooksSecurityCleanupRoute: typeof ApiPublicHooksSecurityCleanupRoute
@@ -729,6 +743,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksMonitorProductUrlsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/health-check': {
+      id: '/api/public/hooks/health-check'
+      path: '/api/public/hooks/health-check'
+      fullPath: '/api/public/hooks/health-check'
+      preLoaderRoute: typeof ApiPublicHooksHealthCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/fena-process-retries': {
       id: '/api/public/hooks/fena-process-retries'
       path: '/api/public/hooks/fena-process-retries'
@@ -772,6 +793,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWebhooksWallidRoute: ApiWebhooksWallidRoute,
   ApiPublicHooksFenaRoute: ApiPublicHooksFenaRoute,
   ApiPublicHooksFenaProcessRetriesRoute: ApiPublicHooksFenaProcessRetriesRoute,
+  ApiPublicHooksHealthCheckRoute: ApiPublicHooksHealthCheckRoute,
   ApiPublicHooksMonitorProductUrlsRoute: ApiPublicHooksMonitorProductUrlsRoute,
   ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
   ApiPublicHooksSecurityCleanupRoute: ApiPublicHooksSecurityCleanupRoute,
