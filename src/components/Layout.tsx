@@ -26,6 +26,7 @@ import { UnderConstruction } from './UnderConstruction';
 import ResearchGate from './ResearchGate';
 import { Navigation } from './Navigation';
 import { WhatsAppIcon, FacebookIcon, InstagramIcon, TwitterXIcon, YoutubeIcon } from './SocialIcons';
+import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 
 interface SiteSettings {
   whatsappNumber?: string;
