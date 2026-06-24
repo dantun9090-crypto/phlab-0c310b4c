@@ -33,6 +33,7 @@
  * post-publish-check body contract) and aborts with a clear error on mismatch.
  * Retries fire ONLY for transient errors (net::ERR_, navigation timeouts,
  * closed browser); assertion failures are deterministic and never retried.
+ */
 import { chromium } from 'playwright';
 import { mkdirSync, writeFileSync, appendFileSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
