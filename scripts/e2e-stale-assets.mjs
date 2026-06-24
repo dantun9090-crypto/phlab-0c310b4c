@@ -139,6 +139,56 @@ function saveFixture(scenario, kind, data) {
   writeFileSync(fixturePath(scenario, kind), JSON.stringify(data, null, 2));
 }
 
+// ---------- fixture schema validation (replay-mode fail-fast) ----------
+const FIXTURE_SCHEMAS = {
+  requests: {
+    arrayOf: { required: ['scenario', 'at', 'method', 'url', 'headers'], optional: ['postData'] },
+  },
+  responses: {
+    arrayOf: { required: ['scenario', 'at', 'url', 'status', 'body'] },
+    // Replay rewrites /api/public/post-publish-check; body MUST be JSON describing a purge result.
+    bodyContract: {
+      match: /post-publish-check/,
+      contentType: 'application/json',
+      requiredJsonKeys: ['ok', 'buildId'],
+    },
+  },
+};
+function validateFixture(scenario, kind, data) {
+  const schema = FIXTURE_SCHEMAS[kind];
+  if (!schema) return { ok: true };
+  if (!Array.isArray(data)) {
+    return { ok: false, error: `${kind} fixture must be a JSON array, got ${typeof data}` };
+  }
+  const missing = [];
+  data.forEach((row, i) => {
+    if (!row || typeof row !== 'object') {
+      missing.push(`row[${i}] is not an object`); return;
+    }
+    for (const k of schema.arrayOf.required) {
+      if (!(k in row)) missing.push(`row[${i}] missing required field "${k}"`);
+    }
+  });
+  if (schema.bodyContract) {
+    const matches = data.filter((r) => r && schema.bodyContract.match.test(r.url || ''));
+    if (matches.length === 0) {
+      missing.push(`no response matched ${schema.bodyContract.match} — replay would have nothing to serve`);
+    }
+    for (const r of matches) {
+      let parsed;
+      try { parsed = JSON.parse(r.body ?? ''); }
+      catch { missing.push(`response ${r.url} body is not JSON (expected ${schema.bodyContract.contentType})`); continue; }
+      for (const k of schema.bodyContract.requiredJsonKeys) {
+        if (!(k in parsed)) missing.push(`response ${r.url} JSON missing key "${k}"`);
+      }
+    }
+  }
+  if (missing.length) {
+    return { ok: false, error: `fixture validation failed for ${scenario}/${kind}.json:\n  - ${missing.slice(0, 12).join('\n  - ')}${missing.length > 12 ? `\n  - …and ${missing.length - 12} more` : ''}` };
+  }
+  return { ok: true };
+}
+
 // ---------- one scenario harness ----------
 async function withContext(browser, name, fn) {
   currentScenario = name;
