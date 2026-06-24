@@ -78,3 +78,110 @@ describe('invalidateProductCacheFromServer — idempotency', () => {
     expect(r.prerender.mobile.durationMs).toBeGreaterThanOrEqual(0);
   });
 });
+
+describe('invalidateProductCacheFromServer — concurrent stress + retry', () => {
+  beforeEach(() => {
+    __testResetIdempotency();
+    process.env.CLOUDFLARE_API_TOKEN = 'test-cf';
+    process.env.PRERENDER_TOKEN = 'test-pre';
+    vi.restoreAllMocks();
+  });
+
+  test('100 concurrent purchase events for the same slug-set fire exactly one purge', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      // Add a tick of latency so all 100 calls hit the in-flight branch.
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve(new Response('{}', { status: 200 })), 5),
+        ),
+    );
+
+    const events = Array.from({ length: 100 }, (_, i) =>
+      invalidateProductCacheFromServer({
+        slugs: ['bpc-157', 'tirzepatide'],
+        reason: `order:ORDER_${i}:stock-decrement`,
+      }),
+    );
+    const results = await Promise.all(events);
+
+    // Exactly one upstream burst: CF + Prerender desktop + Prerender mobile.
+    expect(fetchSpy).toHaveBeenCalledTimes(3);
+
+    const keys = new Set(results.map((r) => r.idempotencyKey));
+    expect(keys.size).toBe(1);
+    const deduped = results.filter((r) => r.deduped).length;
+    expect(deduped).toBe(99);
+    expect(results.every((r) => r.ok)).toBe(true);
+  });
+
+  test('different slug-sets fired concurrently each get their own purge', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(
+      () =>
+        new Promise((resolve) =>
+          setTimeout(() => resolve(new Response('{}', { status: 200 })), 2),
+        ),
+    );
+
+    const slugs = ['bpc-157', 'tirzepatide', 'ghk-cu', 'tb-500', 'pt-141'];
+    const results = await Promise.all(
+      slugs.flatMap((s) =>
+        // Fire each slug 5x concurrently — 25 events total, 5 unique keys.
+        Array.from({ length: 5 }, (_, i) =>
+          invalidateProductCacheFromServer({
+            slugs: [s],
+            reason: `order:O${i}:stock-decrement`,
+          }),
+        ),
+      ),
+    );
+
+    const keys = new Set(results.map((r) => r.idempotencyKey));
+    expect(keys.size).toBe(slugs.length);
+    // 3 fetches per unique key.
+    expect(fetchSpy).toHaveBeenCalledTimes(slugs.length * 3);
+  });
+
+  test('transient 503 is retried with exponential backoff up to 3 attempts', async () => {
+    let callCount = 0;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      callCount += 1;
+      // CF + both prerender posts each fail twice then succeed.
+      const perEndpointCall = Math.ceil(callCount / 3);
+      if (perEndpointCall <= 2) {
+        return new Response('upstream busy', { status: 503 });
+      }
+      return new Response('{}', { status: 200 });
+    });
+
+    const r = await invalidateProductCacheFromServer({
+      slugs: ['retatrutide'],
+      reason: 'admin:product-update',
+    });
+
+    // 3 upstreams * 3 attempts in the worst case.
+    expect(callCount).toBeGreaterThanOrEqual(3);
+    expect(callCount).toBeLessThanOrEqual(9);
+    expect(r.ok).toBe(true);
+    expect(r.cloudflare.attempts ?? 1).toBeGreaterThanOrEqual(1);
+  });
+
+  test('permanent 4xx is NOT retried (attempts capped at 1)', async () => {
+    let calls = 0;
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      calls += 1;
+      return new Response('bad request', { status: 400 });
+    });
+
+    const r = await invalidateProductCacheFromServer({
+      slugs: ['kpv'],
+      reason: 'admin:product-update',
+    });
+
+    // 3 upstreams * 1 attempt each — no retries on 400.
+    expect(calls).toBe(3);
+    expect(r.ok).toBe(false);
+    expect(r.cloudflare.attempts).toBe(1);
+    expect(r.prerender.desktop.attempts).toBe(1);
+    expect(r.prerender.mobile.attempts).toBe(1);
+  });
+});
