@@ -102,7 +102,7 @@ export interface ValidateCartResult {
   errors: string[];
 }
 
-async function lookupCoupon(code: string, subtotal: number): Promise<{ coupon: ValidatedCoupon | null; error: string | null }> {
+export async function lookupCoupon(code: string, subtotal: number): Promise<{ coupon: ValidatedCoupon | null; error: string | null }> {
   const upper = code.toUpperCase();
   try {
     const res = await fetch(`${FIRESTORE_BASE}:runQuery`, {

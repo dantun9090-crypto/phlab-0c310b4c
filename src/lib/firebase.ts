@@ -1373,23 +1373,29 @@ export const deleteCoupon = async (id: string) => {
 };
 
 export const validateCoupon = async (code: string, orderValue: number): Promise<Coupon | null> => {
+  // Client cannot read /coupons directly (rules: admin-only read). Delegate
+  // to server fn which uses Firestore REST with admin-equivalent access.
   try {
-    const q = query(collection(db, 'coupons'), where('code', '==', code.toUpperCase()), where('isActive', '==', true));
-    const snap = await getDocs(q);
-    if (snap.empty) return null;
-    const coupon = { id: snap.docs[0].id, ...snap.docs[0].data() } as Coupon;
-    if (coupon.expiryDate?.toDate() < new Date()) return null;
-    // Support both maxUses/usedCount AND maxUsage/usageCount naming
-    const maxUses = coupon.maxUses ?? coupon.maxUsage;
-    const usedCount = coupon.usedCount ?? coupon.usageCount ?? 0;
-    if (maxUses && usedCount >= maxUses) return null;
-    if (coupon.minOrderValue && orderValue < coupon.minOrderValue) return null;
-    return coupon;
+    const { validateCouponFn } = await import('./coupon-validate.functions');
+    const res = await validateCouponFn({ data: { code: code.toUpperCase(), subtotal: orderValue } });
+    if (!res.ok) return null;
+    // Return shape compatible with existing checkout usage (id/code/type/value).
+    return {
+      id: res.coupon.id,
+      code: res.coupon.code,
+      type: res.coupon.type,
+      value: res.coupon.value,
+      isActive: true,
+      // Required by interface but unused by checkout flow at this point.
+      expiryDate: undefined as unknown as Timestamp,
+      createdAt: undefined as unknown as Timestamp,
+    } as Coupon;
   } catch (e) {
     console.error('validateCoupon error:', e);
     return null;
   }
 };
+
 
 /**
  * Atomically increments the coupon usedCount inside a Firestore transaction.

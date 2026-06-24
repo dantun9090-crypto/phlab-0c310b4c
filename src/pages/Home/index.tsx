@@ -209,11 +209,16 @@ export default function HomePage() {
 
     // LCP-critical: adverts contain the hero banner image. Fire immediately,
     // outside requestIdleCallback, so the network request is not delayed.
-    loadFirebase().then(({ getDocs, query, collection, db, where }) =>
-      getDocs(query(collection(db, 'adverts'), where('active', '==', true)))
+    // Adverts are stored with `isActive` (admin writes that field). Older
+    // docs used `active`; tolerate both by filtering client-side.
+    loadFirebase().then(({ getDocs, query, collection, db }) =>
+      getDocs(query(collection(db, 'adverts')))
     ).then((snap: any) => {
       try {
-        const allAdverts = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+        const allAdverts = snap.docs
+          .map((d: any) => ({ id: d.id, ...d.data() }))
+          .filter((a: any) => a.isActive === true || a.active === true);
+
         if (!cancelled) setAdverts(allAdverts);
         const heroCount = allAdverts.filter((a: any) => a.placement === 'homepage_hero').length;
         localStorage.setItem('php_adverts_hero_count', heroCount > 0 ? '1' : '0');
@@ -293,7 +298,7 @@ export default function HomePage() {
   }, [siteSettings]);
 
   const heroAdverts = adverts.filter((a: any) => a.placement === 'homepage_hero');
-  const bannerVisible = bannerResolved && banner?.imageUrl;
+  const bannerVisible = bannerResolved && banner?.active !== false && banner?.imageUrl;
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
