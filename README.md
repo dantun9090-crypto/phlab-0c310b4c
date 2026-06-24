@@ -1,10 +1,21 @@
 # PH Labs — phlabs.co.uk
 
+<!-- sbom-status:start -->
+![sbom: pending](https://img.shields.io/badge/SBOM-pending%20first%20verified%20release-lightgrey?logo=sigstore&logoColor=white)
+
+The SBOM status badge above is rewritten on every release by
+`scripts/update-release-badge.sh`, driven by the
+`Attestation verify (release)` job. Green = signature + SLSA
+Provenance + CycloneDX attestation all verified for the latest tag.
+<!-- sbom-status:end -->
+
 UK research-use-only peptide e-commerce, built on TanStack Start +
 Cloudflare Workers + Firebase. Canonical host: <https://phlabs.co.uk>
 (apex, no www).
 
 ---
+
+
 
 ## Supply-chain transparency: SBOM + cosign attestations
 
@@ -168,8 +179,58 @@ scripts/verify-release-sbom.sh v1.2.3
 scripts/verify-release-sbom.sh v1.2.3 phlabs-uk/phlabs
 ```
 
-The script downloads into a temp dir, verifies, then prints something
-like:
+#### Fully offline verification (no `gh`, no network to GitHub)
+
+If you already have the release assets on disk (e.g. someone emailed
+you a zip, or you mirrored the release), use `--offline <dir>`:
+
+```bash
+# Only needs: cosign v2+, jq, sha256sum, bun (for SBOM schema check)
+scripts/verify-release-sbom.sh --offline ./downloaded-sbom phlabs-uk/phlabs v1.2.3
+```
+
+This path performs zero GitHub API calls — it just inspects the files
+in the directory you point it at. Identical checks: CycloneDX schema
+validation, SHA-256, cosign signature, SLSA Provenance v1, CycloneDX
+attestation, subject-digest binding, **strict phlab identity pinning**
+(issuer = GitHub Actions OIDC, builder = `https://github.com/<repo>/actions/runs/…`,
+workflow path ∈ `{ci, security-scan, post-deploy-scan, release}.yml`).
+
+#### `sbom-verification-report.json`
+
+Every run of `verify-release-sbom.sh` (online or offline) writes a
+machine-readable report next to the bundle:
+
+```json
+{
+  "tag": "v1.2.3",
+  "repo": "phlabs-uk/phlabs",
+  "mode": "offline",
+  "verifiedAt": "2026-06-24T11:22:33Z",
+  "summary": { "pass": 11, "fail": 0, "status": "green" },
+  "subjectDigest": "…sha256 of sbom.cdx.json…",
+  "attestedSubjectDigest": "…must equal subjectDigest…",
+  "cyclonedxSubjectDigest": "…must equal subjectDigest…",
+  "slsaProvenance": {
+    "repository": "https://github.com/phlabs-uk/phlabs",
+    "ref": "refs/tags/v1.2.3",
+    "workflow": ".github/workflows/release.yml",
+    "builder":  "https://github.com/phlabs-uk/phlabs/actions/runs/…",
+    "commitSha": "…40-hex…",
+    "event": "release",
+    "buildId": "…"
+  },
+  "checks": { "cosign-signature": { "status": "pass", "detail": "Verified OK" }, "…": {} }
+}
+```
+
+The release workflow uploads this file as a release asset
+(`sbom-verification-report.json`), so a reviewer can confirm the
+green/red status without re-running anything. The same file is appended
+verbatim to the GitHub Step Summary on the release run.
+
+The script prints something like:
+
 
 ```
 → SLSA Provenance — bound build metadata

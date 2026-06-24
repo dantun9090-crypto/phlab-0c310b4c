@@ -144,3 +144,17 @@ writeFileSync(`${OUT}.sha256`, `${hash}  sbom.cdx.json\n`);
 console.log(
   `✔ SBOM written: ${OUT} (${componentList.length} components, sha256=${hash.slice(0, 12)}…)`,
 );
+
+// Self-validate the SBOM we just wrote. If it doesn't match the
+// CycloneDX schema we expect, refuse — a broken SBOM must never be
+// signed, attested or shipped.
+import("node:child_process").then(({ spawnSync }) => {
+  const here = new URL(".", import.meta.url).pathname;
+  const r = spawnSync("bun", [join(here, "validate-sbom.ts"), OUT], {
+    stdio: "inherit",
+  });
+  if (r.status !== 0) {
+    console.error("✗ SBOM failed CycloneDX validation — refusing to ship.");
+    process.exit(r.status ?? 1);
+  }
+});

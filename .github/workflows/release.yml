@@ -50,6 +50,11 @@ jobs:
         env:
           BUILD_ID: ${{ github.sha }}
 
+      # Reject a malformed CycloneDX SBOM BEFORE signing — once it's
+      # signed + attested + uploaded to the release we can't take it back.
+      - name: Validate CycloneDX SBOM structure (pre-sign)
+        run: bun run sbom:validate dist/sbom.cdx.json
+
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
         with:
@@ -176,9 +181,14 @@ jobs:
     needs: release-sbom
     timeout-minutes: 5
     permissions:
-      contents: read
+      contents: write   # update README badge + re-upload report
+      id-token: read
     steps:
       - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
@@ -196,12 +206,49 @@ jobs:
             --dir release-bundle
           ls -la release-bundle
 
+      # Re-run CycloneDX structural validation against the asset we
+      # actually pulled from the release — catches tampering or upload
+      # corruption that would slip past a cosign signature on stale bytes.
+      - name: Validate CycloneDX SBOM (post-download)
+        run: bun run sbom:validate release-bundle/sbom.cdx.json
+
       - name: Verify SBOM signature + SLSA Provenance + CycloneDX attestations
         run: bash scripts/verify-attestations.sh release-bundle release
 
-      # If verification failed, surface the sanitised cosign log and the
-      # exact bundle that was downloaded from the release, so a human can
-      # reproduce the failure without re-running the workflow.
+      # End-to-end OFFLINE verifier — produces the JSON verification
+      # report, pins strict phlab identity, and appends a rich summary
+      # to the Check page via $GITHUB_STEP_SUMMARY.
+      - name: End-to-end offline verification + JSON report
+        id: verify
+        env:
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.release-sbom.outputs.tag }}
+        run: |
+          bash scripts/verify-release-sbom.sh --offline release-bundle "$GH_REPO" "$TAG"
+          cp release-bundle/sbom-verification-report.json sbom-verification-report.json
+
+      - name: Update README + Release notes with verification badge
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-sbom.outputs.tag }}
+        run: |
+          bash scripts/update-release-badge.sh \
+            sbom-verification-report.json \
+            "$TAG" \
+            --update-release-notes "$GITHUB_REPOSITORY"
+
+      - name: Attach verification report to the release
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-sbom.outputs.tag }}
+        run: |
+          gh release upload "$TAG" sbom-verification-report.json --clobber
+
+      # If verification failed, surface the sanitised cosign log, the
+      # JSON report and the exact bundle that was downloaded from the
+      # release, so a human can reproduce the failure without re-running.
       - name: Upload verification debug bundle (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
@@ -217,5 +264,7 @@ jobs:
             release-bundle/sbom.cdx.json.cyclonedx.intoto.jsonl
             release-bundle/sbom.cdx.json.cyclonedx.pem
             release-bundle/verify-attestations.log
+            release-bundle/sbom-verification-report.json
           retention-days: 30
+
 
