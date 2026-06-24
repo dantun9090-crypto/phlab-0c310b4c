@@ -117,103 +117,47 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const path = 'dist/security-audit.json';
-            const marker = '<!-- security-scan-summary -->';
+            const path = require('path');
+            // Load the shared builder (unit-tested in
+            // tests/security-pr-comment.test.ts) via dynamic import so the
+            // markdown layout stays in lock-step with the tests.
+            const { buildSecurityComment, MARKER } = await import(
+              path.resolve(process.env.GITHUB_WORKSPACE, 'scripts/lib/security-pr-comment.mjs')
+            );
+            const reportPath = 'dist/security-audit.json';
             const exitCode = process.env.AUDIT_EXIT || '0';
             const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             // One-click download link for the artifact zip (requires GitHub
-            // login; the upload-artifact@v4 `artifact-url` output is the
-            // canonical, sha-pinned URL the Actions UI itself links to).
-            const artifactDownloadUrl =
+            // login; upload-artifact@v4's `artifact-url` is the canonical,
+            // sha-pinned URL the Actions UI itself links to).
+            const artifactUrl =
               process.env.ARTIFACT_URL
               || (process.env.ARTIFACT_ID
                 ? `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/artifacts/${process.env.ARTIFACT_ID}`
                 : `${runUrl}#artifacts`);
-            const inputOverride = process.env.INPUT_OVERRIDE || '';
-            const overrideNote = inputOverride
-              ? ` (overridden for this run via \`workflow_dispatch\` input)`
-              : ` (from \`.security-config.json\`)`;
-            let body;
-            if (!fs.existsSync(path)) {
-              body = `${marker}\n### 🔐 Security scan\n\nReport file missing — the scan likely crashed before writing JSON. Check the [workflow logs](${runUrl}).`;
-            } else {
-              const r = JSON.parse(fs.readFileSync(path, 'utf8'));
-              const t = r.totals;
-              const sev = (s) => `\`${s}\``;
-              const gateColor = r.blocking.length === 0 ? 'brightgreen' : 'red';
-              const gateBadge = `![min severity gate](https://img.shields.io/badge/min%20severity-${encodeURIComponent(r.minSeverity)}-${gateColor}?logo=npm)`;
-              const status = r.blocking.length === 0
-                ? `✅ **No ${r.minSeverity}+ vulnerabilities** — safe to merge.`
-                : `❌ **${r.blocking.length} blocking ${r.minSeverity}+ vulnerabilities** — merge gate failed.`;
-
-              // Top vulnerable packages: group blocking findings by package,
-              // pick the worst severity per package, count advisories, and
-              // sort by severity rank then advisory count.
-              const sevRank = { critical: 4, high: 3, moderate: 2, medium: 2, low: 1, info: 0 };
-              const byPkg = new Map();
-              for (const b of r.blocking) {
-                const key = `${b.pkg}@${b.version}`;
-                const prev = byPkg.get(key) || { pkg: b.pkg, version: b.version, worst: b.severity, count: 0, ids: [] };
-                prev.count += 1;
-                prev.ids.push(`[${b.id}](${b.url})`);
-                if ((sevRank[b.severity] || 0) > (sevRank[prev.worst] || 0)) prev.worst = b.severity;
-                byPkg.set(key, prev);
-              }
-              const topPkgs = [...byPkg.values()]
-                .sort((a, b) => (sevRank[b.worst] || 0) - (sevRank[a.worst] || 0) || b.count - a.count)
-                .slice(0, 10);
-              const topPkgsTable = topPkgs.length
-                ? [
-                    '',
-                    '**Top vulnerable packages**',
-                    '',
-                    '| # | Package | Version | Worst severity | Advisories |',
-                    '|---:|---|---|---|---|',
-                    ...topPkgs.map((p, i) =>
-                      `| ${i + 1} | \`${p.pkg}\` | \`${p.version}\` | **${p.worst.toUpperCase()}** | ${p.count} — ${p.ids.slice(0, 3).join(', ')}${p.ids.length > 3 ? `, +${p.ids.length - 3}` : ''} |`
-                    ),
-                  ].join('\n')
-                : '';
-
-              const top = r.blocking.slice(0, 10).map(b =>
-                `- [${b.severity.toUpperCase()}] \`${b.pkg}@${b.version}\` — [${b.id}](${b.url})  \n  ${b.summary}`
-              ).join('\n');
-              const more = r.blocking.length > 10 ? `\n\n_…and ${r.blocking.length - 10} more — see the [\`security-audit-${{ github.sha }}\`](${artifactDownloadUrl}) artifact._` : '';
-              body = [
-                marker,
-                `### 🔐 Security scan — gate: ${sev(r.minSeverity)}+`,
-                '',
-                gateBadge,
-                '',
-                status,
-                '',
-                `**Active \`minSeverity\` gate:** ${sev(r.minSeverity)}${overrideNote}.`,
-                `**JSON report:** ⬇️ [Download \`security-audit-${{ github.sha }}.zip\`](${artifactDownloadUrl}) (contains \`dist/security-audit.json\` + \`dist/security-audit.log\`).`,
-                '',
-                `| Blocking | Sub-threshold | Suppressed | Packages | Advisories |`,
-                `|---:|---:|---:|---:|---:|`,
-                `| ${t.blocking} | ${t.informational} | ${t.ignored} | ${t.packagesScanned} | ${t.uniqueAdvisories} |`,
-                topPkgsTable,
-                '',
-                r.blocking.length > 0 ? `<details><summary>Blocking findings (raw advisory list)</summary>\n\n${top}${more}\n\n</details>` : '',
-                '',
-                `_Artifact: [⬇️ download](${artifactDownloadUrl}) · [Workflow run](${runUrl}) · Scan exit: \`${exitCode}\` · Commit: \`${{ github.sha }}\`_`,
-              ].join('\n');
-            }
+            const report = fs.existsSync(reportPath)
+              ? JSON.parse(fs.readFileSync(reportPath, 'utf8'))
+              : null;
+            const { body } = buildSecurityComment({
+              report,
+              runUrl,
+              artifactUrl,
+              sha: context.sha,
+              exitCode,
+              inputOverride: process.env.INPUT_OVERRIDE || '',
+            });
 
             // Mirror the same body into the Actions Job Summary so push /
             // cron / workflow_dispatch runs (which have no PR context) also
             // surface the gate status + minSeverity + JSON artifact link.
-            await core.summary
-              .addRaw(body.replace(marker, '').trimStart())
-              .write();
+            await core.summary.addRaw(body.replace(MARKER, '').trimStart()).write();
 
             // PR comment: only on pull_request events.
             if (context.eventName !== 'pull_request' || !context.issue.number) return;
             const { owner, repo } = context.repo;
             const issue_number = context.issue.number;
             const existing = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
-            const prev = existing.find(c => c.body && c.body.includes(marker));
+            const prev = existing.find(c => c.body && c.body.includes(MARKER));
             if (prev) {
               await github.rest.issues.updateComment({ owner, repo, comment_id: prev.id, body });
             } else {
