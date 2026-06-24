@@ -75,8 +75,8 @@ export default function HealthMonitorTab() {
         listHealthAlerts({ data: { idToken } }),
       ]);
       setData(health);
-      setLogs(log.ok ? log.rows : []);
-      setAlerts(alert.ok ? alert.rows : []);
+      setLogs((log as { ok: boolean; rows: LogRow[] }).ok ? (log as { rows: LogRow[] }).rows : []);
+      setAlerts((alert as { ok: boolean; rows: LogRow[] }).ok ? (alert as { rows: LogRow[] }).rows : []);
       setLastRun(Date.now());
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
