@@ -1,0 +1,88 @@
+name: E2E — source-survey HTTP
+
+# Runs the end-to-end probe against the source-survey server functions on
+# every pull request that touches the survey code or the test harness.
+# The job:
+#   1. Installs deps + Playwright Chromium
+#   2. Builds and starts the TanStack Start preview server
+#   3. Runs scripts/e2e-survey-http.py against http://localhost:8080
+# The script exits non-zero if any edge-case payload is NOT rejected
+# end-to-end (HTTP status + generic error contract), which fails the build.
+#
+# The Firebase-backed steps (seed/snapshot/cleanup, happy-path) only run
+# when FIREBASE_SERVICE_ACCOUNT_JSON is configured as a repo secret. Without
+# it the harness still asserts the HTTP rejection layer, which is enough to
+# catch regressions in input validation and ownership guards.
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/source-survey.*"
+      - "src/components/SourceSurveyCard.tsx"
+      - "scripts/e2e-survey-http.py"
+      - "scripts/e2e-survey-fixture.mjs"
+      - ".github/workflows/e2e-survey-http.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-survey-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Server-side secrets the running preview reads via process.env at
+      # request time. Optional — when absent, the Firebase-dependent parts
+      # of the suite are skipped (HTTP-rejection assertions still run).
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+      BASE_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright (Python + Chromium)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Build app
+        run: bun run build
+
+      - name: Start preview server
+        run: |
+          # Boot the production preview in the background. The harness only
+          # needs HTTP endpoints to be reachable; the dev module-graph
+          # fallback is exercised only when you run locally with `bun dev`.
+          (bun run start &) > server.log 2>&1
+          # Wait for readiness — up to 60s.
+          for i in $(seq 1 60); do
+            if curl -fsS -o /dev/null "http://localhost:8080/"; then
+              echo "server up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "server failed to start"; tail -n 200 server.log; exit 1
+
+      - name: Run E2E source-survey HTTP probe
+        run: python scripts/e2e-survey-http.py
+
+      - name: Upload server log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-log
+          path: server.log
+          if-no-files-found: ignore

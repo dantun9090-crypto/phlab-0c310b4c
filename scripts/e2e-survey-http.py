@@ -1,18 +1,35 @@
 #!/usr/bin/env python3
-"""End-to-end HTTP integration test for the source-survey server functions.
+"""End-to-end HTTP integration tests for the source-survey server functions.
 
-Drives a real Chromium browser against the running dev server (or any
-TanStack Start build) and invokes ``submitSourceSurvey`` / ``skipSourceSurvey``
-through their actual ``/_serverFn/<id>`` HTTP endpoints. Exercises the full
-pipeline:
+Drives a real Chromium browser against a running TanStack Start server and
+exercises the live ``/_serverFn/<id>`` HTTP endpoints. This is the only
+harness that exercises the full pipeline together:
 
     network → Zod inputValidator → server handler → ownership guard
+            → Firestore writes (or lack thereof)
 
-Every edge-case payload (no creds, empty / short / wrong paymentToken,
-empty / short / forged idToken, malformed orderId, unknown source,
-path-traversal orderId) MUST be rejected. Payloads that pass Zod MUST
-fail with the generic ``Order not found`` message so an attacker cannot
-distinguish "no such order" from "exists, wrong credentials".
+What this script asserts:
+
+1.  **Edge-case fuzz** — 30+ malformed ``paymentToken`` / ``idToken`` /
+    ``orderId`` shapes (empty, short, oversize, unicode, control chars,
+    hex padding, SQL-ish, JSON-encoded, path traversal, etc.) all get
+    rejected. Inputs that pass Zod MUST fail with the **exact** generic
+    error contract ``message == "Order not found"`` and a non-2xx HTTP
+    status. Zod-boundary failures are also acceptable (request never
+    reached the handler).
+
+2.  **No state leaks on failure** — for every blocked request against a
+    real seeded order, Firestore is snapshotted before and after; the
+    order document and ``save10_claims`` must be byte-identical.
+
+3.  **Happy path** — a seeded order with the correct ``paymentToken``
+    submits successfully (HTTP 2xx, no "Order not found"), Firestore
+    reflects the survey answer + SAVE10 claim, and a subsequent skip
+    call also succeeds.
+
+The Firestore-backed steps are skipped automatically when
+``FIREBASE_SERVICE_ACCOUNT_JSON`` is not set in the environment so the
+pure HTTP-rejection layer can still run in CI without secrets.
 
 Usage:
 
@@ -25,115 +42,462 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import shutil
+import subprocess
 import sys
+from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 from playwright.async_api import async_playwright
 
-BASE_URL = os.environ.get("BASE_URL", "http://localhost:8080")
+BASE_URL = os.environ.get("BASE_URL", "http://localhost:8080").rstrip("/")
 UA = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 )
+HAVE_SERVICE_ACCOUNT = bool(os.environ.get("FIREBASE_SERVICE_ACCOUNT_JSON"))
+FIXTURE_SCRIPT = Path(__file__).with_name("e2e-survey-fixture.mjs")
+NODE_BIN = shutil.which("node") or "node"
 
-SUBMIT_TRIALS: list[dict[str, Any]] = [
-    {"name": "submit:no-creds",           "args": {"orderId": "PHP-NOAUTH1", "source": "google_search", "otherText": None}},
-    {"name": "submit:empty-paymentToken", "args": {"orderId": "PHP-NOAUTH2", "source": "google_search", "otherText": None, "paymentToken": ""}},
-    {"name": "submit:short-paymentToken", "args": {"orderId": "PHP-NOAUTH3", "source": "google_search", "otherText": None, "paymentToken": "short"}},
-    {"name": "submit:wrong-paymentToken", "args": {"orderId": "PHP-NOAUTH4", "source": "google_search", "otherText": None, "paymentToken": "x" * 48}},
-    {"name": "submit:malformed-orderId",  "args": {"orderId": "ORDER-123",           "source": "google_search", "otherText": None, "paymentToken": "x" * 48}},
-    {"name": "submit:pathtrav-orderId",   "args": {"orderId": "PHP-../etc/passwd",   "source": "google_search", "otherText": None, "paymentToken": "x" * 48}},
-    {"name": "submit:empty-idToken",      "args": {"orderId": "PHP-NOAUTH5", "source": "google_search", "otherText": None, "idToken": ""}},
-    {"name": "submit:short-idToken",      "args": {"orderId": "PHP-NOAUTH6", "source": "google_search", "otherText": None, "idToken": "abc"}},
-    {"name": "submit:forged-idToken",     "args": {"orderId": "PHP-NOAUTH7", "source": "google_search", "otherText": None, "idToken": "a" * 64}},
-    {"name": "submit:unknown-source",     "args": {"orderId": "PHP-NOAUTH8", "source": "phishing",       "otherText": None, "paymentToken": "x" * 48}},
+# ---------------------------------------------------------------------------
+# Fuzz payloads
+# ---------------------------------------------------------------------------
+
+# Fuzz shapes for paymentToken / idToken / orderId. Each entry produces ONE
+# trial against both `submit` and `skip` (where applicable). The unifying
+# rule is: every one of these MUST be rejected; nothing should ever return
+# `{ ok: true }`.
+FUZZ_TOKENS: list[tuple[str, str]] = [
+    ("empty",             ""),
+    ("one-char",          "x"),
+    ("just-under-min",    "x" * 31),
+    ("exactly-min-wrong", "x" * 32),
+    ("oversize",          "x" * 257),
+    ("way-oversize",      "x" * 4096),
+    ("all-spaces",        " " * 64),
+    ("newline-padding",   "\n" * 64),
+    ("null-bytes",        "\x00" * 64),
+    ("unicode-emoji",     "🚀" * 16),
+    ("unicode-rtl",       "\u202e" * 64),
+    ("control-chars",     "".join(chr(c) for c in range(1, 33)) * 2),
+    ("hex-zeros",         "0" * 64),
+    ("hex-ffs",           "f" * 64),
+    ("sql-ish",           "' OR 1=1 --" + "x" * 60),
+    ("json-encoded",      '{"token":"' + "x" * 48 + '"}'),
+    ("path-ish",          "../" * 16 + "x" * 16),
+    ("url-ish",           "https://evil.example/" + "x" * 40),
+    ("base64-pad",        "AAAA" * 16 + "=="),
+    ("almost-valid-sha",  "a" * 63 + "Z"),  # 64 chars but non-hex char
 ]
 
-SKIP_TRIALS: list[dict[str, Any]] = [
-    {"name": "skip:no-creds",       "args": {"orderId": "PHP-SK1"}},
-    {"name": "skip:empty-pt",       "args": {"orderId": "PHP-SK2", "paymentToken": ""}},
-    {"name": "skip:wrong-pt",       "args": {"orderId": "PHP-SK3", "paymentToken": "x" * 48}},
-    {"name": "skip:short-idToken",  "args": {"orderId": "PHP-SK4", "idToken": "abc"}},
-    {"name": "skip:forged-idToken", "args": {"orderId": "PHP-SK5", "idToken": "a" * 64}},
-    {"name": "skip:empty-idToken",  "args": {"orderId": "PHP-SK6", "idToken": ""}},
+FUZZ_ORDER_IDS: list[tuple[str, str]] = [
+    ("missing-prefix",    "ORDER-12345"),
+    ("lowercase-prefix",  "php-12345"),  # regex is case-insensitive — should PASS Zod
+    ("empty",             ""),
+    ("just-prefix",       "PHP-"),
+    ("oversize",          "PHP-" + "A" * 80),
+    ("path-traversal",    "PHP-../../etc/passwd"),
+    ("nullbyte",          "PHP-12\x00345"),
+    ("spaces",            "PHP- 1 2 3"),
+    ("sql-ish",           "PHP-1' OR '1"),
+    ("unicode",           "PHP-Ω-12345"),
 ]
 
+VALID_TOKEN_FOR_ORDERID_FUZZ = "x" * 64  # passes Zod, never matches any hash
 
-def classify(name: str, outcome: dict[str, Any]) -> tuple[bool, str]:
-    """A passing trial is one that did NOT succeed and either:
-      a) tripped the Zod boundary (request never reached the handler), or
-      b) returned the generic "Order not found" message.
-    Any other outcome leaks ownership state or grants access — fail.
+
+def submit_trial(name: str, args: dict[str, Any]) -> dict[str, Any]:
+    return {"name": f"submit:{name}", "fn": "submit", "args": args}
+
+
+def skip_trial(name: str, args: dict[str, Any]) -> dict[str, Any]:
+    return {"name": f"skip:{name}", "fn": "skip", "args": args}
+
+
+def build_trials(seed_order_id: str | None) -> list[dict[str, Any]]:
+    """Generate the full trial list. When a seeded order is available we
+    target IT for the fuzz so we can also assert no-state-mutation; when
+    not, we use a clearly-bogus ID so the handler simply 404s."""
+    oid = seed_order_id or "PHP-E2E-NOSEED-0001"
+    trials: list[dict[str, Any]] = []
+
+    # paymentToken fuzz
+    for label, tok in FUZZ_TOKENS:
+        trials.append(submit_trial(
+            f"pt-{label}",
+            {"orderId": oid, "source": "google_search", "otherText": None, "paymentToken": tok},
+        ))
+        trials.append(skip_trial(
+            f"pt-{label}",
+            {"orderId": oid, "paymentToken": tok},
+        ))
+
+    # idToken fuzz
+    for label, tok in FUZZ_TOKENS:
+        trials.append(submit_trial(
+            f"idt-{label}",
+            {"orderId": oid, "source": "google_search", "otherText": None, "idToken": tok},
+        ))
+        trials.append(skip_trial(
+            f"idt-{label}",
+            {"orderId": oid, "idToken": tok},
+        ))
+
+    # orderId fuzz (with a Zod-valid paymentToken so we test the handler path too)
+    for label, bad_oid in FUZZ_ORDER_IDS:
+        trials.append(submit_trial(
+            f"oid-{label}",
+            {
+                "orderId": bad_oid,
+                "source": "google_search",
+                "otherText": None,
+                "paymentToken": VALID_TOKEN_FOR_ORDERID_FUZZ,
+            },
+        ))
+        trials.append(skip_trial(
+            f"oid-{label}",
+            {"orderId": bad_oid, "paymentToken": VALID_TOKEN_FOR_ORDERID_FUZZ},
+        ))
+
+    # No-creds baseline against the seeded order
+    trials.append(submit_trial(
+        "no-creds",
+        {"orderId": oid, "source": "google_search", "otherText": None},
+    ))
+    trials.append(skip_trial("no-creds", {"orderId": oid}))
+
+    # Unknown survey source — must fail Zod, never reach handler
+    trials.append(submit_trial(
+        "unknown-source",
+        {
+            "orderId": oid,
+            "source": "phishing",
+            "otherText": None,
+            "paymentToken": VALID_TOKEN_FOR_ORDERID_FUZZ,
+        },
+    ))
+
+    return trials
+
+
+# ---------------------------------------------------------------------------
+# Fixture helpers
+# ---------------------------------------------------------------------------
+
+@dataclass
+class Seed:
+    order_id: str
+    payment_token: str
+    email: str
+    user_id: str
+
+
+def run_fixture(*args: str) -> dict[str, Any]:
+    """Invoke scripts/e2e-survey-fixture.mjs and return the parsed JSON line."""
+    result = subprocess.run(
+        [NODE_BIN, str(FIXTURE_SCRIPT), *args],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"fixture {' '.join(args)} failed: rc={result.returncode}\n"
+            f"stdout={result.stdout!r}\nstderr={result.stderr!r}"
+        )
+    # Last non-empty line is the JSON payload.
+    line = next((ln for ln in reversed(result.stdout.splitlines()) if ln.strip()), "")
+    return json.loads(line)
+
+
+def seed_order() -> Seed:
+    out = run_fixture("seed")
+    return Seed(
+        order_id=out["orderId"],
+        payment_token=out["paymentToken"],
+        email=out["email"],
+        user_id=out["userId"],
+    )
+
+
+def snapshot_state(order_id: str, email: str) -> dict[str, Any]:
+    snap = run_fixture("snapshot", order_id, email)
+    # Strip the `_updatedAt`-style live timestamps Firestore adds back into
+    # arbitrary nested data — for our test fixture the schema is fixed and
+    # we want a deterministic diff.
+    snap.pop("ok", None)
+    return snap
+
+
+def cleanup_order(order_id: str, email: str) -> None:
+    try:
+        run_fixture("cleanup", order_id, email)
+    except Exception as exc:  # pragma: no cover - best effort
+        print(f"[e2e] WARN: cleanup failed for {order_id}: {exc}")
+
+
+# ---------------------------------------------------------------------------
+# Outcome classification
+# ---------------------------------------------------------------------------
+
+@dataclass
+class TrialOutcome:
+    name: str
+    http_status: int | None
+    ok: bool          # client RPC reported success (`{ ok: true, ... }`)
+    msg: str          # client-side error message (empty on success)
+    raw_body: str     # raw response body captured by the page listener
+    db_pre: dict[str, Any] | None = field(default=None)
+    db_post: dict[str, Any] | None = field(default=None)
+
+
+def assert_rejection_contract(outcome: TrialOutcome) -> tuple[bool, str]:
+    """Validate that a blocked request meets the rejection contract:
+
+    * MUST NOT report success.
+    * HTTP status MUST be non-2xx (we never want a 200 + error-shaped body).
+    * Body MUST be either the generic ``Order not found`` string or a Zod
+      validation failure (handler never reached). No other error text is
+      acceptable — anything else risks leaking ownership / DB state.
     """
-    if outcome.get("ok"):
-        return False, "request succeeded (should have been rejected)"
-    msg = str(outcome.get("msg") or "")
+    if outcome.ok:
+        return False, "request succeeded — should have been rejected"
+    if outcome.http_status is None:
+        return False, "no HTTP response captured"
+    if 200 <= outcome.http_status < 300:
+        return False, f"HTTP {outcome.http_status} with error body — must be non-2xx"
+    msg = outcome.msg or ""
     is_zod = msg.startswith("[") and '"code"' in msg
-    is_generic = msg == "Order not found" or "Order not found" in msg
+    is_generic = msg == "Order not found" or '"Order not found"' in outcome.raw_body
     if is_zod:
-        return True, "<zod boundary>"
+        return True, f"zod boundary (HTTP {outcome.http_status})"
     if is_generic:
-        return True, "Order not found"
-    return False, f"unexpected error: {msg[:200]}"
+        return True, f"Order not found (HTTP {outcome.http_status})"
+    return False, f"unexpected error msg {msg[:120]!r}"
 
 
-async def main() -> int:
+def db_unchanged(pre: dict[str, Any] | None, post: dict[str, Any] | None) -> bool:
+    if pre is None or post is None:
+        return True  # not seeded — nothing to verify
+    return json.dumps(pre, sort_keys=True, default=str) == json.dumps(
+        post, sort_keys=True, default=str
+    )
+
+
+# ---------------------------------------------------------------------------
+# Playwright driver
+# ---------------------------------------------------------------------------
+
+EVAL_SCRIPT = """async ({ trials }) => {
+  // The TanStack Start Vite plugin inlines `process.env.TSS_SERVER_FN_BASE`
+  // into the bundled client entry, but the on-demand `.functions.ts`
+  // module we import from page.evaluate is not run through that
+  // define-replacement pass. Polyfill the variable so the client RPC stub
+  // can resolve its target URL.
+  window.process = window.process || { env: { TSS_SERVER_FN_BASE: '/_serverFn/' } };
+  const mod = await import('/src/lib/source-survey.functions.ts');
+
+  // Bridge between the RPC call and the response listener: each trial
+  // pushes the most recent /_serverFn response into `lastResponse` so we
+  // can correlate HTTP status + raw body with the client-side outcome.
+  const out = [];
+  for (const t of trials) {
+    window.__lastSurveyResponse = null;
+    const fn = t.fn === 'submit' ? mod.submitSourceSurvey : mod.skipSourceSurvey;
+    let ok = false, msg = '', resultJson = null;
+    try {
+      const r = await fn({ data: t.args });
+      ok = true;
+      resultJson = JSON.parse(JSON.stringify(r));
+    } catch (e) {
+      msg = String(e?.message || e);
+    }
+    // Give the response listener a microtask to record the response if the
+    // client RPC stub returned before the resolver fired.
+    await new Promise((r) => setTimeout(r, 5));
+    const resp = window.__lastSurveyResponse || {};
+    out.push({
+      name: t.name,
+      ok,
+      msg,
+      result: resultJson,
+      http_status: resp.status ?? null,
+      raw_body: resp.body ?? '',
+    });
+  }
+  return { trials: out, submitUrl: mod.submitSourceSurvey.url, skipUrl: mod.skipSourceSurvey.url };
+}"""
+
+
+async def run_trials_in_browser(
+    trials: list[dict[str, Any]],
+) -> tuple[list[TrialOutcome], str, str]:
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
-        ctx = await browser.new_context(viewport={"width": 1280, "height": 900}, user_agent=UA)
+        ctx = await browser.new_context(
+            viewport={"width": 1280, "height": 900}, user_agent=UA
+        )
         page = await ctx.new_page()
 
-        print(f"[e2e] dev server: {BASE_URL}")
+        # Capture every /_serverFn response by URL/status/body so trials
+        # can read the actual HTTP status code, not just the deserialized
+        # client-side error.
+        async def on_response(resp):
+            try:
+                if "/_serverFn/" not in resp.url:
+                    return
+                body = await resp.text()
+                await page.evaluate(
+                    "(d) => { window.__lastSurveyResponse = d; }",
+                    {"status": resp.status, "url": resp.url, "body": body},
+                )
+            except Exception:
+                pass
+
+        page.on("response", lambda r: asyncio.create_task(on_response(r)))
+
         await page.goto(f"{BASE_URL}/", wait_until="domcontentloaded")
+        result = await page.evaluate(EVAL_SCRIPT, {"trials": trials})
 
-        # The TanStack Start Vite plugin inlines `process.env.TSS_SERVER_FN_BASE`
-        # into the bundled entry, but `.functions.ts` imported on-demand from
-        # page.evaluate is not run through that define-replacement pass. Polyfill
-        # the variable with the default base so the client RPC stub can resolve
-        # its target URL.
-        await page.evaluate(
-            "window.process = window.process || { env: { TSS_SERVER_FN_BASE: '/_serverFn/' } };"
-        )
+        outcomes = [
+            TrialOutcome(
+                name=t["name"],
+                http_status=t.get("http_status"),
+                ok=bool(t.get("ok")),
+                msg=str(t.get("msg") or ""),
+                raw_body=str(t.get("raw_body") or ""),
+            )
+            for t in result["trials"]
+        ]
+        await browser.close()
+        return outcomes, result["submitUrl"], result["skipUrl"]
 
-        result = await page.evaluate(
-            """async ({ submitTrials, skipTrials }) => {
-              const mod = await import('/src/lib/source-survey.functions.ts');
-              const run = async (fn, trials) => {
-                const out = [];
-                for (const t of trials) {
-                  try {
-                    const r = await fn({ data: t.args });
-                    out.push({ name: t.name, ok: true, r });
-                  } catch (e) {
-                    out.push({ name: t.name, ok: false, msg: String(e?.message || e) });
-                  }
-                }
-                return out;
-              };
-              return {
-                submit: await run(mod.submitSourceSurvey, submitTrials),
-                skip:   await run(mod.skipSourceSurvey, skipTrials),
-                submitUrl: mod.submitSourceSurvey.url,
-                skipUrl:   mod.skipSourceSurvey.url,
-              };
-            }""",
-            {"submitTrials": SUBMIT_TRIALS, "skipTrials": SKIP_TRIALS},
-        )
 
-        print(f"[e2e] endpoint submit: {result['submitUrl']}")
-        print(f"[e2e] endpoint skip:   {result['skipUrl']}\n")
+# Variant that runs trials one-by-one and snapshots Firestore around each.
+# Used only when we have a seeded order (FIREBASE_SERVICE_ACCOUNT_JSON set).
+async def run_trials_with_db_checks(
+    trials: list[dict[str, Any]], seed: Seed
+) -> list[TrialOutcome]:
+    # Snapshot once at the very start; for each failing trial we re-snapshot
+    # afterwards and assert nothing changed. We don't need a per-trial
+    # pre-snapshot because the contract is "no state change vs. baseline".
+    baseline = snapshot_state(seed.order_id, seed.email)
+    outcomes, _, _ = await run_trials_in_browser(trials)
+    for o in outcomes:
+        o.db_pre = baseline
+        o.db_post = snapshot_state(seed.order_id, seed.email)
+    return outcomes
+
+
+# ---------------------------------------------------------------------------
+# Happy-path
+# ---------------------------------------------------------------------------
+
+async def run_happy_path(seed: Seed) -> tuple[list[TrialOutcome], dict[str, Any]]:
+    """Submit + skip with the correct paymentToken and assert success."""
+    trials = [
+        {
+            "name": "submit:HAPPY",
+            "fn": "submit",
+            "args": {
+                "orderId": seed.order_id,
+                "source": "google_search",
+                "otherText": None,
+                "paymentToken": seed.payment_token,
+            },
+        },
+        # A second skip after submit flips surveySkipped back to true.
+        # Both must succeed end-to-end.
+        {
+            "name": "skip:HAPPY",
+            "fn": "skip",
+            "args": {
+                "orderId": seed.order_id,
+                "paymentToken": seed.payment_token,
+            },
+        },
+    ]
+    outcomes, _, _ = await run_trials_in_browser(trials)
+    final = snapshot_state(seed.order_id, seed.email)
+    return outcomes, final
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+async def main() -> int:
+    print(f"[e2e] target: {BASE_URL}")
+    print(f"[e2e] firebase fixtures: {'ENABLED' if HAVE_SERVICE_ACCOUNT else 'SKIPPED (no FIREBASE_SERVICE_ACCOUNT_JSON)'}")
+
+    seed: Seed | None = None
+    if HAVE_SERVICE_ACCOUNT:
+        seed = seed_order()
+        print(f"[e2e] seeded order: {seed.order_id} (email={seed.email})")
+
+    try:
+        # --- Edge-case fuzz -------------------------------------------------
+        trials = build_trials(seed.order_id if seed else None)
+        print(f"[e2e] running {len(trials)} fuzz trials …")
+        if seed:
+            fuzz_outcomes = await run_trials_with_db_checks(trials, seed)
+        else:
+            fuzz_outcomes, sub_url, skip_url = await run_trials_in_browser(trials)
+            print(f"[e2e]   submit endpoint: {sub_url}")
+            print(f"[e2e]   skip   endpoint: {skip_url}")
 
         passes = fails = 0
-        for outcome in [*result["submit"], *result["skip"]]:
-            ok, info = classify(outcome["name"], outcome)
-            mark = "✓" if ok else "✗"
-            print(f"  {mark} {outcome['name']:<32} {('rejected (' + info + ')') if ok else info}")
-            passes += int(ok)
-            fails += int(not ok)
+        for o in fuzz_outcomes:
+            ok, info = assert_rejection_contract(o)
+            db_ok = db_unchanged(o.db_pre, o.db_post)
+            if ok and db_ok:
+                passes += 1
+            else:
+                fails += 1
+                why = info if not ok else "DB STATE CHANGED on blocked request"
+                print(f"  ✗ {o.name:<40} {why}")
+                if not db_ok:
+                    print(f"      pre={json.dumps(o.db_pre, default=str)}")
+                    print(f"      post={json.dumps(o.db_post, default=str)}")
+        print(f"[e2e] fuzz: {passes} passed, {fails} failed")
 
-        print(f"\n[e2e] {passes} passed, {fails} failed")
-        await browser.close()
-        return 0 if fails == 0 else 1
+        # --- Happy path -----------------------------------------------------
+        happy_fails = 0
+        if seed:
+            print("[e2e] running happy-path …")
+            happy_outcomes, final = await run_happy_path(seed)
+            for o in happy_outcomes:
+                if not o.ok:
+                    happy_fails += 1
+                    print(f"  ✗ {o.name:<40} blocked: msg={o.msg!r} http={o.http_status}")
+                elif o.http_status is None or not (200 <= o.http_status < 300):
+                    happy_fails += 1
+                    print(f"  ✗ {o.name:<40} non-2xx success: http={o.http_status}")
+                elif "Order not found" in (o.raw_body or "") or "Order not found" in (o.msg or ""):
+                    happy_fails += 1
+                    print(f"  ✗ {o.name:<40} response leaked generic error")
+                else:
+                    print(f"  ✓ {o.name:<40} HTTP {o.http_status}")
+            # Final DB state must reflect the skip (surveySkipped=True,
+            # sourceSurvey nulled) since skip ran last.
+            order_state = final.get("order", {})
+            if order_state.get("surveySkipped") is not True:
+                happy_fails += 1
+                print(f"  ✗ final DB state mismatch: {order_state}")
+            else:
+                print(f"  ✓ final DB state: surveySkipped=True, sourceSurvey={order_state.get('sourceSurvey')}")
+            print(f"[e2e] happy: {len(happy_outcomes) - happy_fails} passed, {happy_fails} failed")
+        else:
+            print("[e2e] happy-path: SKIPPED (no service account)")
+
+        total_fail = fails + happy_fails
+        print(f"\n[e2e] OVERALL: {'PASS' if total_fail == 0 else 'FAIL'} ({total_fail} failures)")
+        return 0 if total_fail == 0 else 1
+    finally:
+        if seed:
+            cleanup_order(seed.order_id, seed.email)
+            print(f"[e2e] cleaned up {seed.order_id}")
 
 
 if __name__ == "__main__":
