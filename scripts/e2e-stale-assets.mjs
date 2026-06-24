@@ -203,21 +203,57 @@ async function withContext(browser, name, fn) {
   const requestRecording = [];
   const responseRecording = [];
 
-  const replayResponses = REPLAY ? loadFixture(name, 'responses') : null;
-  if (REPLAY && !replayResponses) {
-    console.warn(`[replay] no fixture for ${name} at ${fixturePath(name, 'responses')} — running live`);
+  let replayResponses = null;
+  if (REPLAY) {
+    const raw = loadFixture(name, 'responses');
+    if (!raw) {
+      throw new Error(`[replay] missing fixture ${fixturePath(name, 'responses')} — run with --record first`);
+    }
+    const v = validateFixture(name, 'responses', raw);
+    if (!v.ok) throw new Error(`[replay] ${v.error}`);
+    const reqRaw = loadFixture(name, 'requests');
+    if (reqRaw) {
+      const vr = validateFixture(name, 'requests', reqRaw);
+      if (!vr.ok) throw new Error(`[replay] ${vr.error}`);
+    }
+    replayResponses = raw;
   }
 
+  // HAR-like trace: keep per-request timing/redirect chain.
+  const harByReq = new WeakMap();
   context.on('request', (req) => {
     const url = req.url();
-    const entry = { scenario: name, at: Date.now(), method: req.method(), url, headers: req.headers(), postData: req.postData() || null };
+    const startedAt = Date.now();
+    const entry = { scenario: name, at: startedAt, method: req.method(), url, headers: req.headers(), postData: req.postData() || null };
     appendNd(reqLog, entry);
     if (RECORD) requestRecording.push(entry);
     if (HASHED_JS_RE.test(url)) { assetReqs.push(url); sc.hashedJsUrls.add(url.split('?')[0]); }
     if (sc.topRequests.length < 25) sc.topRequests.push({ method: req.method(), url });
+    const redirectFrom = req.redirectedFrom();
+    const har = {
+      startedAt,
+      method: req.method(),
+      url,
+      resourceType: req.resourceType(),
+      redirectedFrom: redirectFrom ? redirectFrom.url() : null,
+      status: null,
+      mimeType: null,
+      durationMs: null,
+      fromCache: false,
+      failed: null,
+    };
+    harByReq.set(req, har);
+    sc.har.push(har);
   });
   context.on('response', async (res) => {
     const u = res.url();
+    const har = harByReq.get(res.request());
+    if (har) {
+      har.status = res.status();
+      har.mimeType = res.headers()['content-type'] || null;
+      har.durationMs = Date.now() - har.startedAt;
+      har.fromCache = !!res.fromServiceWorker?.();
+    }
     if (!/\/api\/public\//.test(u)) return;
     let body = null;
     try { body = (await res.text()).slice(0, 4000); } catch { /* ignore */ }
@@ -232,6 +268,10 @@ async function withContext(browser, name, fn) {
         if (j.previous) sc.buildIds.add(j.previous);
       } catch { /* ignore */ }
     }
+  });
+  context.on('requestfailed', (req) => {
+    const har = harByReq.get(req);
+    if (har) { har.failed = req.failure()?.errorText || 'failed'; har.durationMs = Date.now() - har.startedAt; }
   });
 
   // Stub purge endpoint (or replay).
@@ -266,6 +306,13 @@ async function withContext(browser, name, fn) {
     await fn({ context, page, purgeCalls, purgeResponses, autoPurgeLogs, reloads, allConsole, assetReqs, sc });
   } finally {
     try { await page.screenshot({ path: join(SHOTS, `${name}.png`) }); } catch { /* ignore */ }
+    // Write compact HAR-like trace for this scenario (overwritten on retry — only final attempt kept).
+    try {
+      writeFileSync(join(REPORT_DIR, `har-${name}.json`), JSON.stringify({
+        scenario: name, target: TARGET, mode: REPLAY ? 'replay' : (RECORD ? 'record' : 'live'),
+        capturedAt: new Date().toISOString(), entryCount: sc.har.length, entries: sc.har,
+      }, null, 2));
+    } catch { /* ignore */ }
     if (RECORD) {
       saveFixture(name, 'requests', requestRecording);
       saveFixture(name, 'responses', responseRecording);
