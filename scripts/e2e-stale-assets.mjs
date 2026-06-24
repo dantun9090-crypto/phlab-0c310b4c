@@ -325,23 +325,38 @@ function diffLiveVsReplay(scenarioName) {
     for (let i = 0; i < n; i++) {
       const fr = f[i], lr = l[i];
       const reasons = [];
-      if (!fr) reasons.push('only-live');
-      if (!lr) reasons.push('only-fixture');
+      const kinds = []; // structured kinds for HTML filter: status | body | headers | only-live | only-fixture
+      if (!fr) { reasons.push('only-live'); kinds.push('only-live'); }
+      if (!lr) { reasons.push('only-fixture'); kinds.push('only-fixture'); }
       if (fr && lr) {
-        if (fr.status !== lr.status) { reasons.push('status'); statusMismatchCount++; }
+        if (fr.status !== lr.status) { reasons.push('status'); kinds.push('status'); statusMismatchCount++; }
         const fb = (fr.body || ''), lb = (lr.body || '');
         if (fb !== lb) {
           const delta = Math.abs(fb.length - lb.length);
           if (delta > maxBodyDelta) maxBodyDelta = delta;
-          reasons.push(`body(Δ${delta}B)`);
+          reasons.push(`body(Δ${delta}B)`); kinds.push('body');
+        }
+        if (NORMALIZE_HEADERS && !headersEqualNormalized(fr.headers, lr.headers)) {
+          reasons.push('headers'); kinds.push('headers');
         }
       }
+      const liveHar = lr ? popHar(lr.url, lr.status) : null;
+      const resourceType = liveHar?.resourceType
+        || (/\.(?:js|mjs)(?:[?#]|$)/.test(u) ? 'script'
+          : /\.css(?:[?#]|$)/.test(u) ? 'stylesheet'
+          : /\.map(?:[?#]|$)/.test(u) ? 'sourcemap'
+          : /post-publish-check/.test(u) ? 'fetch'
+          : 'other');
+      const bodyRedacted = REDACT_BODIES
+        || (HASH_BODIES && (typeof fr?.body === 'string' && fr.body.startsWith('sha256:')
+          || typeof lr?.body === 'string' && lr.body.startsWith('sha256:')));
       const isMatch = reasons.length === 0;
       const item = {
-        match: isMatch, url: u, index: i, reasons,
+        match: isMatch, url: u, index: i, reasons, kinds, resourceType, bodyRedacted,
         fixture: fr ? { status: fr.status, headers: fr.headers || null, body: fr.body ?? null, bodyBytes: fr.bodyBytes ?? (fr.body ? String(fr.body).length : null) } : null,
-        live: lr ? { status: lr.status, headers: lr.headers || null, body: lr.body ?? null, bodyBytes: lr.bodyBytes ?? (lr.body ? String(lr.body).length : null), har: lr ? popHar(lr.url, lr.status) : null } : null,
+        live: lr ? { status: lr.status, headers: lr.headers || null, body: lr.body ?? null, bodyBytes: lr.bodyBytes ?? (lr.body ? String(lr.body).length : null), har: liveHar } : null,
       };
+
       items.push(item);
       if (!isMatch) {
         if (!fr) mismatches.push({ url: u, kind: 'only-live', index: i, status: lr.status });
