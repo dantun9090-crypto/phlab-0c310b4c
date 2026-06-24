@@ -40,6 +40,13 @@
  *   --artifacts-on-failure-only / --skip-artifacts-on-success
  *                                             only persist HAR, fixtures (non-RECORD), HTML report, ndjson logs, and screenshots when
  *                                             an assertion fails or a live-vs-replay threshold is breached. report.{json,txt} + junit.xml + db-diff.json always written.
+ *   --prune-dry-run / --dry-run               log which artifact paths WOULD be kept vs deleted for the current outcome without touching the filesystem.
+ *
+ * HTML report features (rendered into report.html):
+ *   - Global "Download mismatch bundle (all scenarios)" button in the header (respects each scenario's current filter).
+ *   - Per-scenario filter selections persist in localStorage so refreshing the report restores the same view.
+
+
 
  *
  * Outputs in $E2E_REPORT_DIR (default ./e2e-stale-report/):
