@@ -273,6 +273,8 @@ export interface Product {
   bannerImageUrl?: string;
   // Mark product as popular — shows badge on product cards
   popular?: boolean;
+  // VIP-exclusive — hidden from public catalogue, only visible in /vip
+  isVip?: boolean;
   // Research confirmation gate — show modal before add-to-cart on this product
   requiresResearchGate?: boolean;
   // SEO — exclude this product from sitemap.xml
@@ -873,7 +875,8 @@ function normaliseProduct(id: string, data: any): Product {
     updatedAt: data.updatedAt,
     includeInMerchantFeed: data.includeInMerchantFeed === true,
     excludeFromMerchantFeed: data.excludeFromMerchantFeed === true,
-    
+    isVip: data.isVip === true,
+    popular: data.popular === true,
     bannerImageUrl: data.bannerImageUrl || '',
   };
 }
@@ -971,6 +974,8 @@ export const addProduct = async (product: Omit<Product, 'id'>) => {
     tags: product.tags || [],
     includeInMerchantFeed: product.includeInMerchantFeed === true,
     excludeFromMerchantFeed: product.excludeFromMerchantFeed === true,
+    isVip: (product as any).isVip === true,
+    popular: (product as any).popular === true,
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   };
