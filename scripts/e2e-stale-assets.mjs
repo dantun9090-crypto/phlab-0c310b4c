@@ -568,11 +568,6 @@ async function withContext(browser, name, fn) {
     sc.liveRequests.push(entry);
     if (HASHED_JS_RE.test(url)) { assetReqs.push(url); sc.hashedJsUrls.add(url.split('?')[0]); }
     if (sc.topRequests.length < 25) sc.topRequests.push({ method: req.method(), url });
-
-    // Walk redirect chain back to origin.
-    const redirectChain = [];
-    let r = req.redirectedFrom();
-    while (r) { redirectChain.push(redactUrl(r.url())); r = r.redirectedFrom(); }
     const har = {
       startedAt,
       method: req.method(),
@@ -594,6 +589,7 @@ async function withContext(browser, name, fn) {
     harByReq.set(req, har);
     sc.har.push(har);
   });
+
   context.on('response', async (res) => {
     const u = redactUrl(res.url());
     const har = harByReq.get(res.request());
