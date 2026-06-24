@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import {
   auth, signInAnonymously, doc, getDoc,
-  updateDoc, db, validateCoupon, redeemCoupon,
+  db, validateCoupon,
   onAuthStateChanged, FirebaseUser, registerUser
 } from '@/lib/firebase';
 import type { Coupon } from '@/lib/firebase';
@@ -753,11 +753,7 @@ export default function CheckoutPage() {
       const btRef = serverResult.bankTransferReference;
       const totalAmount = serverResult.totalAmount;
 
-      if (serverResult.couponCode && appliedCoupon) {
-        try { await redeemCoupon(appliedCoupon.id); } catch { /* ignore */ }
-      }
-
-      // Stock decrement is now performed server-side inside runCreateOrder
+      // Coupon redemption and stock decrement are now performed server-side inside runCreateOrder
       // (Firebase Admin transaction) so it cannot be skipped if the client
       // disconnects between order creation and the stock update.
 
