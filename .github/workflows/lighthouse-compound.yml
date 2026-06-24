@@ -1,22 +1,24 @@
-# Lighthouse CI for /compound — runs BOTH desktop and mobile (slow-4G CPU 4x)
+# Lighthouse CI for /compound + /research — runs BOTH desktop and mobile (slow-4G CPU 4x)
 # audits. Either profile failing its thresholds fails the build.
 #
 # Thresholds:
 #   Desktop  — Performance ≥ 0.85, SEO ≥ 0.95
 #   Mobile   — Performance ≥ 0.75, SEO ≥ 0.95   (real-user slow-4G + CPU 4x)
-name: Lighthouse — /compound
+name: Lighthouse — /compound + /research
 
 on:
   push:
     branches: [main]
     paths:
       - "src/routes/compound.tsx"
+      - "src/routes/research.tsx"
       - "public/og/compound.jpg"
       - ".lighthouserc*.json"
       - ".github/workflows/lighthouse-compound.yml"
   pull_request:
     paths:
       - "src/routes/compound.tsx"
+      - "src/routes/research.tsx"
       - "public/og/compound.jpg"
       - ".lighthouserc*.json"
       - ".github/workflows/lighthouse-compound.yml"

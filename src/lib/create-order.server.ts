@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { runValidateCart, type ValidateCartResult } from './cart-validation.server';
 import { addDocAdmin, getDocAdmin, updateDocAdmin } from './server/firestore-admin';
 import { verifyFirebaseIdToken } from './server/firebase-auth-admin';
+import { invalidateProductCacheFromServer } from './server/cache-invalidation';
 import {
   SHIPPING_CONFIG,
   checkNextDayEligibility,
@@ -235,11 +236,11 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   // Server-side stock decrement. Runs AFTER the order is written so an
   // accounting trail exists. Best-effort per item — a stock-update failure
   // does NOT fail the order (admins can reconcile via /admin/inventory).
-  await Promise.all(
+  const touchedProducts = await Promise.all(
     input.items.map(async (item) => {
       try {
         const doc = await getDocAdmin('products', item.productId);
-        if (!doc) return;
+        if (!doc) return null;
         if (Array.isArray(doc.variants) && doc.variants.length > 0 && item.variantId) {
           const variants = (doc.variants as Array<Record<string, any>>).map((v) =>
             v?.id === item.variantId
@@ -252,11 +253,29 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
             stock: Math.max(0, doc.stock - item.quantity),
           });
         }
+        return {
+          slug: typeof doc.slug === 'string' ? doc.slug : null,
+          category: typeof doc.category === 'string' ? doc.category : null,
+        };
       } catch {
         // Swallow — order is already placed, manual reconciliation possible.
+        return null;
       }
     }),
   );
+
+  // A purchase changes stock-visible product HTML. Purge the affected pages
+  // immediately, but never fail/hold the order for slow upstream cache APIs.
+  const slugs = Array.from(new Set(touchedProducts.map((p) => p?.slug).filter((v): v is string => !!v)));
+  const categories = Array.from(new Set(touchedProducts.map((p) => p?.category).filter((v): v is string => !!v)));
+  try {
+    await Promise.race([
+      invalidateProductCacheFromServer({ slugs, categories, reason: `order:${orderId}:stock-decrement` }),
+      new Promise((resolve) => setTimeout(resolve, 4000)),
+    ]);
+  } catch {
+    // Cache invalidation is best-effort; order placement has already succeeded.
+  }
 
   return {
     ok: true,

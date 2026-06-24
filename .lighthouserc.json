@@ -1,7 +1,7 @@
 {
   "ci": {
     "collect": {
-      "url": ["https://phlabs.co.uk/compound"],
+      "url": ["https://phlabs.co.uk/compound", "https://phlabs.co.uk/research"],
       "numberOfRuns": 3,
       "settings": {
         "preset": "desktop",

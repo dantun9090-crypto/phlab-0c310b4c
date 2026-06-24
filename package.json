@@ -15,7 +15,7 @@
     "compliance:scan": "bun scripts/compliance-scan.ts",
     "compliance:scan-compound": "bun scripts/compound-compliance-scan.ts",
     "test:compound": "vitest run tests/compound-prerender.test.ts tests/compound-robots-canonical.test.ts tests/compound-faq-jsonld.test.ts tests/compound-og-twitter.test.ts tests/compound-robots-sitemap-hardened.test.ts tests/research-prerender.test.ts",
-    "test:compound:e2e": "playwright test e2e/compound-smoke.spec.ts e2e/compound-a11y.spec.ts e2e/compound-axe.spec.ts e2e/research-smoke.spec.ts",
+    "test:compound:e2e": "playwright test e2e/compound-smoke.spec.ts e2e/compound-a11y.spec.ts e2e/compound-axe.spec.ts e2e/research-smoke.spec.ts e2e/research-axe.spec.ts",
     "test:compound:visual": "playwright test e2e/compound-visual.spec.ts",
     "worker:smoke": "bun scripts/worker-smoke.ts",
     "worker:check-imports": "bun scripts/check-worker-imports.ts",

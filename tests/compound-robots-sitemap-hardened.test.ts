@@ -1,9 +1,9 @@
 /**
  * Hardened robots.txt + sitemap.xml checks (prerendered/live origin):
- *   - /robots.txt does NOT Disallow /compound under User-agent: * (or AdsBot)
+ *   - /robots.txt does NOT Disallow /compound or /research under User-agent: * (or AdsBot)
  *   - /robots.txt does NOT block the whole site (Disallow: /) for User-agent: *
  *   - /robots.txt advertises the sitemap
- *   - /sitemap.xml lists https://phlabs.co.uk/compound
+ *   - /sitemap.xml lists https://phlabs.co.uk/compound and https://phlabs.co.uk/research
  *
  * Self-skips offline so local/CI without network egress doesn't false-fail.
  */
@@ -49,7 +49,9 @@ function parseRobots(txt: string): Map<string, string[]> {
 }
 
 describe("/compound — hardened robots + sitemap", () => {
-  it("robots.txt does not block /compound for general crawlers", async () => {
+  const crawlablePaths = ["/compound", "/research"] as const;
+
+  it("robots.txt does not block /compound or /research for general crawlers", async () => {
     const txt = await fetchText(`${ORIGIN}/robots.txt`);
     if (!txt) {
       console.warn(`[skip] ${ORIGIN}/robots.txt unreachable`);
@@ -67,21 +69,28 @@ describe("/compound — hardened robots + sitemap", () => {
       "robots.txt has Disallow: / for User-agent: *",
     ).toBe(false);
 
-    // Must not explicitly disallow /compound (exact or prefix)
-    const blocksCompound = (rules: string[]) =>
-      rules.some((d) => /^disallow\s+\/compound(\/|$)/.test(d));
+    const blocksPath = (rules: string[], path: string) =>
+      rules.some((d) => {
+        const m = d.match(/^disallow\s+([^\s]*)/);
+        const rule = m?.[1] ?? "";
+        return rule === path || (rule.endsWith("/") && path.startsWith(rule));
+      });
 
-    expect(blocksCompound(universal), "User-agent: * blocks /compound").toBe(false);
+    for (const path of crawlablePaths) {
+      expect(blocksPath(universal, path), `User-agent: * blocks ${path}`).toBe(false);
+    }
 
-    for (const ua of ["adsbot-google", "adsbot-google-mobile", "googlebot-image"]) {
+    for (const ua of ["googlebot", "adsbot-google", "adsbot-google-mobile", "googlebot-image"]) {
       const rules = groups.get(ua);
       if (rules) {
-        expect(blocksCompound(rules), `${ua} blocks /compound`).toBe(false);
+        for (const path of crawlablePaths) {
+          expect(blocksPath(rules, path), `${ua} blocks ${path}`).toBe(false);
+        }
       }
     }
   }, 30_000);
 
-  it("sitemap.xml lists /compound and is well-formed", async () => {
+  it("sitemap.xml lists /compound and /research and is well-formed", async () => {
     const xml = await fetchText(`${ORIGIN}/sitemap.xml`);
     if (!xml) {
       console.warn(`[skip] ${ORIGIN}/sitemap.xml unreachable`);
@@ -89,10 +98,12 @@ describe("/compound — hardened robots + sitemap", () => {
     }
 
     expect(xml).toMatch(/<urlset[^>]+xmlns=/i);
-    expect(xml).toMatch(
-      /<loc>\s*https:\/\/phlabs\.co\.uk\/compound\s*<\/loc>/i,
-    );
+    for (const path of crawlablePaths) {
+      expect(xml).toMatch(
+        new RegExp(`<loc>\\s*https:\\/\\/phlabs\\.co\\.uk${path}\\s*<\\/loc>`, "i"),
+      );
+    }
     // No restrictive directive snuck into a sitemap entry
-    expect(xml).not.toMatch(/<loc>[^<]*noindex/i);
+    expect(xml).not.toMatch(/noindex|nofollow|disallow/i);
   }, 30_000);
 });

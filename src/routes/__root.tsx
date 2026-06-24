@@ -710,12 +710,14 @@ const STALE_ASSET_RECOVERY = `
               fetch('/api/public/post-publish-check',{method:'GET',cache:'no-store',credentials:'omit',keepalive:true}).catch(function(){});
             }catch(e){}
 
-            var qs;
-            try{
-              qs=new URLSearchParams(location.search);
-              qs.set('sw','off'); qs.set('_r','stale-asset'); qs.set('stale_recovery','1');
-              location.replace(location.pathname+'?'+qs.toString()+location.hash);
-            }catch(e){ location.replace('/?sw=off&_r=stale-asset&stale_recovery=1'); }
+            setTimeout(function(){
+              var qs;
+              try{
+                qs=new URLSearchParams(location.search);
+                qs.set('sw','off'); qs.set('_r','stale-asset'); qs.set('stale_recovery','1');
+                location.replace(location.pathname+'?'+qs.toString()+location.hash);
+              }catch(e){ location.replace('/?sw=off&_r=stale-asset&stale_recovery=1'); }
+            }, 2500);
           }
         }).catch(function(){});
       }catch(e){}
