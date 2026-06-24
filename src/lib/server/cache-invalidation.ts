@@ -64,13 +64,28 @@ function makeRequestId(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+import { validateInvalidationLog } from './cache-invalidation-log-schema';
+
 function logInvalidate(fields: Record<string, unknown>) {
   try {
+    const entry = { event: 'cache-invalidate', ts: new Date().toISOString(), ...fields };
+    // Opt-in strict validation: in test runs or when CACHE_LOG_VALIDATE=1,
+    // throw on schema drift so CI fails loudly instead of silently shipping
+    // diagnostics that are missing requestId / idempotencyKey / attempt / stage.
+    if (process.env.CACHE_LOG_VALIDATE === '1' || process.env.NODE_ENV === 'test') {
+      const r = validateInvalidationLog(entry);
+      if (!r.ok) {
+        throw new Error(`cache-invalidate log schema violation: ${r.errors.join('; ')}`);
+      }
+    }
     // Single-line structured log — easy to parse in CF/Worker logs.
     // eslint-disable-next-line no-console
-    console.log(JSON.stringify({ event: 'cache-invalidate', ts: new Date().toISOString(), ...fields }));
-  } catch {
-    /* ignore */
+    console.log(JSON.stringify(entry));
+  } catch (e) {
+    if (process.env.CACHE_LOG_VALIDATE === '1' || process.env.NODE_ENV === 'test') {
+      throw e;
+    }
+    /* ignore in prod */
   }
 }
 
