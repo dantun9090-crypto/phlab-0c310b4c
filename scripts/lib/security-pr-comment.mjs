@@ -18,6 +18,26 @@ function rankOf(sev) {
 }
 
 /**
+ * Derive a human-readable advisory source label from the advisory URL so
+ * each per-advisory link in the PR comment names the database the
+ * reviewer is being sent to (OSV, GitHub, Snyk, NVD, npm, ...).
+ */
+export function sourceLabelFor(url) {
+  if (!url) return "advisory";
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    if (host.includes("osv.dev")) return "OSV";
+    if (host.includes("github.com")) return "GitHub";
+    if (host.includes("snyk.io")) return "Snyk";
+    if (host.includes("nvd.nist.gov")) return "NVD";
+    if (host.includes("npmjs.com")) return "npm";
+    return host;
+  } catch {
+    return "advisory";
+  }
+}
+
+/**
  * @param {object} opts
  * @param {object|null} opts.report     Parsed security-audit.json, or null if missing.
  * @param {string} opts.runUrl          Link to the workflow run.
@@ -89,10 +109,11 @@ export function buildSecurityComment(opts) {
         ...topPkgs.map((p, i) => {
           const idsList = p.advisories
             .slice(0, 3)
-            .map((a) => `[${a.id}](${a.url}) (${a.severity})`)
+            .map((a) => `[${a.id}](${a.url}) (${a.severity}, [${sourceLabelFor(a.url)} details](${a.url}))`)
             .join(", ");
           const moreIds = p.advisories.length > 3 ? `, +${p.advisories.length - 3}` : "";
-          return `| ${i + 1} | \`${p.pkg}\` | \`${p.version}\` | **${p.worst.toUpperCase()}** | [${p.worstId}](${p.worstUrl}) | ${p.count} — ${idsList}${moreIds} |`;
+          const worstSrc = sourceLabelFor(p.worstUrl);
+          return `| ${i + 1} | \`${p.pkg}\` | \`${p.version}\` | **${p.worst.toUpperCase()}** | [${p.worstId}](${p.worstUrl}) · [${worstSrc} details](${p.worstUrl}) | ${p.count} — ${idsList}${moreIds} |`;
         }),
       ].join("\n")
     : "";
@@ -101,7 +122,7 @@ export function buildSecurityComment(opts) {
     .slice(0, 10)
     .map(
       (b) =>
-        `- [${b.severity.toUpperCase()}] \`${b.pkg}@${b.version}\` — [${b.id}](${b.url})  \n  ${b.summary}`,
+        `- [${b.severity.toUpperCase()}] \`${b.pkg}@${b.version}\` — [${b.id}](${b.url}) · [${sourceLabelFor(b.url)} advisory details](${b.url})  \n  ${b.summary}`,
     )
     .join("\n");
   const more =
