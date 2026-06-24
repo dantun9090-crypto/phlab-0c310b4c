@@ -1059,6 +1059,10 @@ a{color:#7dd3fc}
 </style>
 <script>
 (function(){
+  // Persist HTML report filter selections across reloads (per-scenario, scoped to this report path).
+  var LS_KEY='phlabs.e2eStaleReport.filters@'+location.pathname;
+  function loadAll(){try{return JSON.parse(localStorage.getItem(LS_KEY)||'{}')||{};}catch(e){return {};}}
+  function saveAll(state){try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){/* quota / disabled */}}
   function apply(scope){
     var root=document.querySelector('[data-drilldown="'+scope+'"]');if(!root)return;
     var ctrls=document.querySelector('.filters[data-scope="'+scope+'"]');if(!ctrls)return;
@@ -1074,31 +1078,77 @@ a{color:#7dd3fc}
       el.style.display=ok?'':'none';if(ok)n++;
     });
     var c=ctrls.querySelector('[data-visible-count]');if(c)c.textContent='('+n+' visible)';
+    var all=loadAll();all[scope]=f;saveAll(all);
+  }
+  function restore(){
+    var all=loadAll();
+    document.querySelectorAll('.filters[data-scope]').forEach(function(ctrls){
+      var scope=ctrls.dataset.scope;var saved=all[scope];if(!saved)return;
+      ctrls.querySelectorAll('select[data-filter]').forEach(function(s){
+        var v=saved[s.dataset.filter];if(v!=null){
+          // Only restore if option exists, else leave default.
+          if([].some.call(s.options,function(o){return o.value===v;}))s.value=v;
+        }
+      });
+    });
+  }
+  function visibleKeys(scope){
+    var root=document.querySelector('[data-drilldown="'+scope+'"]');
+    var allowed=new Set();
+    if(!root)return allowed;
+    root.querySelectorAll('details.drill').forEach(function(el){
+      if(el.style.display!=='none'){
+        var m=el.querySelector('summary').textContent.match(/#(\\d+)/);
+        var url=el.querySelector('code').textContent;
+        allowed.add(url+'#'+(m?m[1]:''));
+      }
+    });
+    return allowed;
+  }
+  function currentFilters(ctrls){
+    var f={};ctrls.querySelectorAll('select[data-filter]').forEach(function(s){f[s.dataset.filter]=s.value;});return f;
+  }
+  function download(name,obj){
+    var blob=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download=name;document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},0);
   }
   document.addEventListener('change',function(e){
     var s=e.target.closest('.filters');if(!s||!s.dataset.scope)return;apply(s.dataset.scope);
   });
   document.addEventListener('click',function(e){
-    var b=e.target.closest('button[data-bundle]');if(!b)return;
-    var scope=b.dataset.bundle;
-    var ctrls=document.querySelector('.filters[data-scope="'+scope+'"]');
-    var root=document.querySelector('[data-drilldown="'+scope+'"]');
-    var allowed=new Set();
-    root.querySelectorAll('details.drill').forEach(function(el){
-      if(el.style.display!=='none')allowed.add(el.querySelector('code').textContent+'#'+el.querySelector('summary').textContent.match(/#(\\d+)/)?.[1]);
-    });
-    var raw=atob(b.dataset.bundleB64);
-    var data=JSON.parse(raw);
-    // Filter items to currently-visible ones.
-    data.items=data.items.filter(function(it){return allowed.has(it.url+'#'+it.index);});
-    data.exportedAt=new Date().toISOString();
-    data.filterApplied={};ctrls.querySelectorAll('select[data-filter]').forEach(function(s){data.filterApplied[s.dataset.filter]=s.value;});
-    var blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-    var a=document.createElement('a');a.href=URL.createObjectURL(blob);
-    a.download='mismatch-bundle-'+scope+'.json';document.body.appendChild(a);a.click();
-    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},0);
+    var b=e.target.closest('button[data-bundle]');
+    if(b){
+      var scope=b.dataset.bundle;
+      var ctrls=document.querySelector('.filters[data-scope="'+scope+'"]');
+      var allowed=visibleKeys(scope);
+      var data=JSON.parse(atob(b.dataset.bundleB64));
+      data.items=data.items.filter(function(it){return allowed.has(it.url+'#'+it.index);});
+      data.exportedAt=new Date().toISOString();
+      data.filterApplied=currentFilters(ctrls);
+      return download('mismatch-bundle-'+scope+'.json',data);
+    }
+    var g=e.target.closest('button[data-global-bundle]');
+    if(g){
+      // Export every matched/mismatched pair across all scenarios, respecting each
+      // scenario's currently-applied filter (resource/kind/match/redacted state).
+      var all=JSON.parse(atob(g.dataset.globalBundleB64));
+      var perScenarioFilters={};
+      all.scenarios=all.scenarios.map(function(sc){
+        var ctrls=document.querySelector('.filters[data-scope="'+sc.scenario+'"]');
+        var allowed=visibleKeys(sc.scenario);
+        perScenarioFilters[sc.scenario]=ctrls?currentFilters(ctrls):null;
+        sc.items=sc.items.filter(function(it){return allowed.has(it.url+'#'+it.index);});
+        return sc;
+      });
+      all.exportedAt=new Date().toISOString();
+      all.filtersApplied=perScenarioFilters;
+      return download('mismatch-bundle-all-scenarios.json',all);
+    }
   });
   document.addEventListener('DOMContentLoaded',function(){
+    restore();
     document.querySelectorAll('.filters[data-scope]').forEach(function(s){apply(s.dataset.scope);});
   });
 })();
@@ -1107,7 +1157,9 @@ a{color:#7dd3fc}
 <header class="top">
   <h1>E2E stale-assets <span class="badge ${failed.length ? 'bad' : 'ok'}">${esc(overall)}</span></h1>
   <div class="muted">target <code>${esc(TARGET)}</code> · finished ${esc(summary.finishedAt)} · ${summary.passed}/${summary.total} passed${ONLY ? ` · filter <code>${esc(ONLY)}</code>` : ''}${REPLAY ? ' · <b>REPLAY</b>' : (RECORD ? ' · <b>RECORD</b>' : '')} · retries=${RETRIES}</div>
+  ${allBundles.length ? `<button type="button" data-global-bundle="1" data-global-bundle-b64="${Buffer.from(JSON.stringify({ generatedAt: new Date().toISOString(), redaction: { redactBodies: REDACT_BODIES, hashBodies: HASH_BODIES, maxBodyBytes: MAX_BODY_BYTES, redactHeaders: [...REDACT_HEADERS], redactUrlParams: [...REDACT_URL_PARAMS] }, scenarios: allBundles }), 'utf8').toString('base64')}" style="margin-left:auto;background:#0b1220;color:#e2e8f0;border:1px solid #334155;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:13px">⬇ Download mismatch bundle (all scenarios)</button>` : ''}
 </header>
+
 <section class="card"><h2>Per-scenario summary</h2>${scCards || '<p class="muted">No scenarios ran.</p>'}</section>
 <section class="card"><h2>DB lock timeline (Firestore <code>_meta/build_state</code>)</h2>${lockTimelineHtml}</section>
 <section class="card"><h2>DB diff (before vs after) — lock fields highlighted</h2>${dbHighlights}</section>
