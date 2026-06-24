@@ -117,6 +117,53 @@ export default function VisitorsTab() {
     return () => { cancelled = true; };
   }, [fromMs, toMs, refreshKey]);
 
+  // Debounce the sessions search box (300ms).
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setSessionSearch(sessionSearchInput.trim());
+      setSessionPage(0);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [sessionSearchInput]);
+
+  // Reset to page 0 when window / filters change.
+  useEffect(() => { setSessionPage(0); }, [fromMs, toMs, pathFilter, sessionPageSize]);
+
+  // Server-side fetch for the paginated sessions table.
+  useEffect(() => {
+    let cancelled = false;
+    setSessionsLoading(true); setSessionsErr(null);
+    (async () => {
+      try {
+        const u = auth.currentUser;
+        if (!u) throw new Error('Not signed in');
+        const idToken = await u.getIdToken();
+        const res = await listVisitorSessions({
+          data: {
+            idToken,
+            fromMs, toMs,
+            pathFilter: pathFilter ?? null,
+            search: sessionSearch || null,
+            page: sessionPage,
+            pageSize: sessionPageSize,
+            maxEvents: 20_000,
+          },
+        });
+        if (cancelled) return;
+        setServerSessions(res.sessions);
+        setServerTotal(res.total);
+        setServerScanned(res.eventsScanned);
+        setServerTruncated(res.truncated);
+      } catch (e) {
+        if (!cancelled) setSessionsErr(e instanceof Error ? e.message : String(e));
+      } finally {
+        if (!cancelled) setSessionsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [fromMs, toMs, pathFilter, sessionSearch, sessionPage, sessionPageSize, refreshKey]);
+
+
   // Events for drill-down (path filter applies to all per-page metrics).
   const filteredEvents = useMemo(
     () => pathFilter ? events.filter(e => (e.path || '/') === pathFilter) : events,
