@@ -64,6 +64,7 @@ jobs:
       # artifact, even when the gate fails — reviewers can download
       # it to triage findings without re-running the scan locally.
       - name: Upload security-scan JSON + log artifact
+        id: upload_audit
         if: always()
         uses: actions/upload-artifact@v4
         with:
