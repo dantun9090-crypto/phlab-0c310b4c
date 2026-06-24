@@ -1,7 +1,20 @@
 /**
  * Server-only cache invalidation helpers used by trusted server mutations
- * (product edits, stock decrements after purchase). These functions do not
- * require an admin idToken because they are not exposed directly to clients.
+ * (product edits, stock decrements after purchase).
+ *
+ * Hardened with:
+ *   - **Idempotent keys** — repeated events for the same slugs/categories
+ *     within IDEMPOTENCY_WINDOW_MS collapse to a single purge so cache
+ *     converges deterministically (no thrash from retried webhooks or a
+ *     burst of orders touching the same SKU).
+ *   - **Structured logging** — every attempt emits a single JSON line with
+ *     requestId, idempotencyKey, slugs/categories, attempt count, and
+ *     per-upstream (Cloudflare / Prerender desktop / Prerender mobile)
+ *     latency + status so the refresh-loop diagnostics in production logs
+ *     have one stable shape to grep on (event=cache-invalidate).
+ *
+ * These functions do not require an admin idToken because they are not
+ * exposed directly to clients.
  */
 
 const CF_ZONE_ID = 'ed093ef4578e8e3568e26c3e979558c6';
@@ -17,10 +30,73 @@ const CATEGORIES = [
   'blends',
 ];
 
+const IDEMPOTENCY_WINDOW_MS = 30_000;
+
+type IdempotencyRecord = {
+  key: string;
+  firstSeen: number;
+  hits: number;
+  inflight?: Promise<InvalidationResult>;
+  result?: InvalidationResult;
+};
+
+const idempotencyCache = new Map<string, IdempotencyRecord>();
+
+function pruneIdempotency(now: number) {
+  for (const [k, v] of idempotencyCache) {
+    if (now - v.firstSeen > IDEMPOTENCY_WINDOW_MS) idempotencyCache.delete(k);
+  }
+}
+
+function buildIdempotencyKey(reason: string | undefined, urls: string[]): string {
+  const sorted = [...urls].sort().join('|');
+  // Strip volatile suffixes from reason (e.g. timestamps, orderIds with
+  // millisecond precision) so retries of the SAME event hash identically.
+  // Keep the high-level reason prefix (e.g. "order:*:stock-decrement") so
+  // semantically different events do not collide.
+  const reasonKey = (reason ?? 'unknown').replace(/:\w+:/, ':*:');
+  return `${reasonKey}::${sorted}`;
+}
+
+function makeRequestId(): string {
+  const bytes = new Uint8Array(8);
+  globalThis.crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function logInvalidate(fields: Record<string, unknown>) {
+  try {
+    // Single-line structured log — easy to parse in CF/Worker logs.
+    // eslint-disable-next-line no-console
+    console.log(JSON.stringify({ event: 'cache-invalidate', ts: new Date().toISOString(), ...fields }));
+  } catch {
+    /* ignore */
+  }
+}
+
 export type ProductCacheInvalidationInput = {
   slugs?: string[];
   categories?: string[];
   reason?: string;
+};
+
+type UpstreamResult = { ok: boolean; status: number; error?: string; durationMs: number };
+
+export type InvalidationResult = {
+  ok: boolean;
+  urls: number;
+  cloudflare: UpstreamResult;
+  prerender: {
+    ok: boolean;
+    desktop: UpstreamResult;
+    mobile: UpstreamResult;
+  };
+  reason: string;
+  requestId: string;
+  idempotencyKey: string;
+  attempt: number;
+  deduped: boolean;
+  timestamp: string;
 };
 
 function sanitizeSlug(value: unknown): string | null {
@@ -63,11 +139,27 @@ export function productCacheUrls(input: ProductCacheInvalidationInput = {}): str
   return [...urls];
 }
 
-async function purgeCloudflare(urls: string[]): Promise<{ ok: boolean; status: number; error?: string }> {
-  const token = process.env.CLOUDFLARE_API_TOKEN;
-  if (!token) return { ok: false, status: 0, error: 'CLOUDFLARE_API_TOKEN missing' };
-
+async function timed<T extends { ok: boolean; status: number; error?: string }>(
+  fn: () => Promise<T>,
+): Promise<T & { durationMs: number }> {
+  const t0 = Date.now();
   try {
+    const r = await fn();
+    return { ...r, durationMs: Date.now() - t0 };
+  } catch (e) {
+    return {
+      ok: false,
+      status: 0,
+      error: e instanceof Error ? e.message : String(e),
+      durationMs: Date.now() - t0,
+    } as T & { durationMs: number };
+  }
+}
+
+async function purgeCloudflare(urls: string[]) {
+  return timed(async () => {
+    const token = process.env.CLOUDFLARE_API_TOKEN;
+    if (!token) return { ok: false, status: 0, error: 'CLOUDFLARE_API_TOKEN missing' };
     const res = await fetch(
       `https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache`,
       {
@@ -81,57 +173,134 @@ async function purgeCloudflare(urls: string[]): Promise<{ ok: boolean; status: n
       },
     );
     return { ok: res.ok, status: res.status };
-  } catch (e) {
-    return { ok: false, status: 0, error: e instanceof Error ? e.message : String(e) };
-  }
+  });
 }
 
-async function recachePrerender(urls: string[]): Promise<{
-  ok: boolean;
-  desktop: { ok: boolean; status: number; error?: string };
-  mobile: { ok: boolean; status: number; error?: string };
-}> {
+async function recachePrerender(urls: string[]) {
   const token = process.env.PRERENDER_TOKEN;
   if (!token) {
-    const missing = { ok: false, status: 0, error: 'PRERENDER_TOKEN missing' };
+    const missing = { ok: false, status: 0, error: 'PRERENDER_TOKEN missing', durationMs: 0 };
     return { ok: false, desktop: missing, mobile: missing };
   }
 
-  const post = async (adaptiveType: 'desktop' | 'mobile') => {
-    const res = await fetch('https://api.prerender.io/recache', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Prerender-Token': token,
-      },
-      body: JSON.stringify({ prerenderToken: token, urls, adaptiveType }),
-      signal: AbortSignal.timeout(10_000),
+  const post = (adaptiveType: 'desktop' | 'mobile') =>
+    timed(async () => {
+      const res = await fetch('https://api.prerender.io/recache', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Prerender-Token': token,
+        },
+        body: JSON.stringify({ prerenderToken: token, urls, adaptiveType }),
+        signal: AbortSignal.timeout(10_000),
+      });
+      return { ok: res.ok, status: res.status };
     });
-    return { ok: res.ok, status: res.status };
-  };
 
+  const [desktop, mobile] = await Promise.all([post('desktop'), post('mobile')]);
+  return { ok: desktop.ok && mobile.ok, desktop, mobile };
+}
+
+export async function invalidateProductCacheFromServer(
+  input: ProductCacheInvalidationInput = {},
+): Promise<InvalidationResult> {
+  const urls = productCacheUrls(input);
+  const reason = input.reason ?? 'server-mutation';
+  const requestId = makeRequestId();
+  const now = Date.now();
+  pruneIdempotency(now);
+
+  const idempotencyKey = buildIdempotencyKey(reason, urls);
+  const existing = idempotencyCache.get(idempotencyKey);
+
+  if (existing) {
+    existing.hits += 1;
+    logInvalidate({
+      level: 'info',
+      stage: 'dedupe',
+      requestId,
+      idempotencyKey,
+      attempt: existing.hits,
+      reason,
+      ageMs: now - existing.firstSeen,
+    });
+    if (existing.result) {
+      return { ...existing.result, requestId, attempt: existing.hits, deduped: true };
+    }
+    if (existing.inflight) {
+      const r = await existing.inflight;
+      return { ...r, requestId, attempt: existing.hits, deduped: true };
+    }
+  }
+
+  const record: IdempotencyRecord = existing ?? { key: idempotencyKey, firstSeen: now, hits: 1 };
+  if (!existing) idempotencyCache.set(idempotencyKey, record);
+
+  logInvalidate({
+    level: 'info',
+    stage: 'start',
+    requestId,
+    idempotencyKey,
+    attempt: record.hits,
+    reason,
+    urlCount: urls.length,
+  });
+
+  const startedAt = Date.now();
+  const work = (async (): Promise<InvalidationResult> => {
+    const [cloudflare, prerender] = await Promise.all([
+      purgeCloudflare(urls),
+      recachePrerender(urls),
+    ]);
+    const result: InvalidationResult = {
+      ok: cloudflare.ok && prerender.ok,
+      urls: urls.length,
+      cloudflare,
+      prerender,
+      reason,
+      requestId,
+      idempotencyKey,
+      attempt: record.hits,
+      deduped: false,
+      timestamp: new Date().toISOString(),
+    };
+    logInvalidate({
+      level: result.ok ? 'info' : 'warn',
+      stage: 'complete',
+      requestId,
+      idempotencyKey,
+      attempt: record.hits,
+      reason,
+      durationMs: Date.now() - startedAt,
+      cloudflare: { ok: cloudflare.ok, status: cloudflare.status, durationMs: cloudflare.durationMs },
+      prerenderDesktop: {
+        ok: prerender.desktop.ok,
+        status: prerender.desktop.status,
+        durationMs: prerender.desktop.durationMs,
+      },
+      prerenderMobile: {
+        ok: prerender.mobile.ok,
+        status: prerender.mobile.status,
+        durationMs: prerender.mobile.durationMs,
+      },
+    });
+    return result;
+  })();
+
+  record.inflight = work;
   try {
-    const [desktop, mobile] = await Promise.all([post('desktop'), post('mobile')]);
-    return { ok: desktop.ok && mobile.ok, desktop, mobile };
-  } catch (e) {
-    const failed = { ok: false, status: 0, error: e instanceof Error ? e.message : String(e) };
-    return { ok: false, desktop: failed, mobile: failed };
+    const r = await work;
+    record.result = r;
+    return r;
+  } finally {
+    record.inflight = undefined;
   }
 }
 
-export async function invalidateProductCacheFromServer(input: ProductCacheInvalidationInput = {}) {
-  const urls = productCacheUrls(input);
-  const [cloudflare, prerender] = await Promise.all([
-    purgeCloudflare(urls),
-    recachePrerender(urls),
-  ]);
-
-  return {
-    ok: cloudflare.ok && prerender.ok,
-    urls: urls.length,
-    cloudflare,
-    prerender,
-    reason: input.reason ?? 'server-mutation',
-    timestamp: new Date().toISOString(),
-  } as const;
+/**
+ * Test-only: clear the in-process idempotency cache. Exported under a
+ * `__test` prefix to discourage non-test callers.
+ */
+export function __testResetIdempotency(): void {
+  idempotencyCache.clear();
 }

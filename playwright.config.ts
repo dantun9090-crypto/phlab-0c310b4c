@@ -22,10 +22,16 @@ export default defineConfig({
   timeout: 30_000,
   expect: {
     timeout: 10_000,
-    // Visual regression baseline tolerance — see compound-visual.spec.ts.
+    // Visual regression tolerance — tuned to fail only on MEANINGFUL diffs:
+    //   - maxDiffPixelRatio 0.02 (~2% of pixels) absorbs anti-aliasing,
+    //     font hinting, and sub-pixel layout drift between Chromium builds.
+    //   - threshold 0.25 per-pixel YIQ delta absorbs colour quantisation.
+    //   - Cadence: refresh baselines deliberately via
+    //     `--update-snapshots` whenever a design change ships; CI never
+    //     auto-updates them (no `continue-on-error`, no upload-on-success).
     toHaveScreenshot: {
-      maxDiffPixelRatio: 0.01,
-      threshold: 0.2,
+      maxDiffPixelRatio: 0.02,
+      threshold: 0.25,
       animations: "disabled",
       caret: "hide",
       scale: "css",

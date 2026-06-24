@@ -62,14 +62,21 @@ jobs:
           TEST_BASE_URL: https://phlabs.co.uk
         run: bun run test:compound:e2e
 
-      # Visual regression for /compound. Baseline lives in
-      # e2e/compound-visual.spec.ts-snapshots/. Run with
-      # `bun run test:compound:visual -- --update-snapshots` to refresh
-      # after an intentional design change.
-      - name: /compound visual regression
+      # Visual regression for /compound + /research. Baselines live in
+      # e2e/*-visual.spec.ts-snapshots/. Diff tolerance is tuned in
+      # playwright.config.ts to fail only on MEANINGFUL diffs
+      # (maxDiffPixelRatio 0.02, threshold 0.25). Refresh deliberately with
+      # `bun run test:compound:visual -- --update-snapshots` after an
+      # intentional design change — CI never auto-updates snapshots.
+      - name: /compound + /research visual regression
         env:
           TEST_BASE_URL: https://phlabs.co.uk
         run: bun run test:compound:visual
+
+      # Idempotent cache invalidation unit tests — guards the dedupe key
+      # so repeated purchase events do not thrash the edge.
+      - name: Cache invalidation idempotency tests
+        run: bun run test:cache-invalidation
 
       - name: Upload Playwright report (on failure)
         if: failure()
