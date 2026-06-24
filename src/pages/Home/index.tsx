@@ -298,7 +298,7 @@ export default function HomePage() {
   }, [siteSettings]);
 
   const heroAdverts = adverts.filter((a: any) => a.placement === 'homepage_hero');
-  const bannerVisible = bannerResolved && banner?.imageUrl;
+  const bannerVisible = bannerResolved && banner?.active !== false && banner?.imageUrl;
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
