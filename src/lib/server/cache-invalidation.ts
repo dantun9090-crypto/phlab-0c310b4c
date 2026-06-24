@@ -80,7 +80,7 @@ export type ProductCacheInvalidationInput = {
   reason?: string;
 };
 
-type UpstreamResult = { ok: boolean; status: number; error?: string; durationMs: number };
+type UpstreamResult = { ok: boolean; status: number; error?: string; durationMs: number; attempts?: number };
 
 export type InvalidationResult = {
   ok: boolean;
