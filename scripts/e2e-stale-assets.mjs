@@ -87,6 +87,9 @@ const MAX_BODY_BYTE_DELTA = Math.max(0, parseInt(flag('max-body-byte-delta', '0'
 // ---------- redaction config ----------
 const REDACT_BODIES = !!flag('redact-bodies', false);
 const MAX_BODY_BYTES = Math.max(0, parseInt(flag('max-body-bytes', '4000'), 10) || 0);
+// When --hash-bodies is set, redacted/truncated bodies are replaced with a stable
+// sha256 hash of the ORIGINAL body so equality comparisons survive redaction.
+const HASH_BODIES = !!flag('hash-bodies', false);
 const REDACT_HEADERS = new Set(
   String(flag('redact-headers', 'authorization,cookie,set-cookie,x-api-key,x-auth-token'))
     .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
@@ -96,6 +99,22 @@ const REDACT_URL_PARAMS = new Set(
     .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
 );
 const REDACTED = '[REDACTED]';
+
+// ---------- header normalization for live-vs-replay diff ----------
+// Case-insensitive header names + order-independent comparison.
+const NORMALIZE_HEADERS = !!flag('normalize-headers', false);
+const NORMALIZE_IGNORE_HEADERS = new Set(
+  String(flag('normalize-ignore-headers', 'date,age,server-timing,x-request-id,cf-ray,x-amz-cf-id,x-served-by,etag,last-modified'))
+    .split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)
+);
+
+// ---------- artifact persistence ----------
+// When set, fixtures/HAR/HTML/ndjson are ONLY persisted on a meaningful failure
+// (assertion failure or threshold breach). Successful runs leave only report.{json,txt} + junit.xml.
+const ARTIFACTS_ON_FAILURE_ONLY = !!flag('artifacts-on-failure-only', false)
+  || !!flag('skip-artifacts-on-success', false);
+
+function sha256(s) { return createHash('sha256').update(String(s)).digest('hex'); }
 
 function redactHeaders(h) {
   if (!h || typeof h !== 'object') return h;
@@ -118,13 +137,34 @@ function redactUrl(u) {
 }
 function redactBody(body) {
   if (body == null) return body;
-  if (REDACT_BODIES) return REDACTED;
   const s = String(body);
+  if (REDACT_BODIES) return HASH_BODIES ? `sha256:${sha256(s)}` : REDACTED;
   if (MAX_BODY_BYTES > 0 && s.length > MAX_BODY_BYTES) {
-    return s.slice(0, MAX_BODY_BYTES) + `…[truncated ${s.length - MAX_BODY_BYTES}B]`;
+    return HASH_BODIES
+      ? `sha256:${sha256(s)} (orig ${s.length}B)`
+      : s.slice(0, MAX_BODY_BYTES) + `…[truncated ${s.length - MAX_BODY_BYTES}B]`;
   }
   return s;
 }
+
+// Normalize a headers object for diffing: lowercase keys, drop ignore-list, stable sort.
+function normalizeHeadersForDiff(h) {
+  if (!h || typeof h !== 'object') return h;
+  const lower = {};
+  for (const [k, v] of Object.entries(h)) {
+    const lk = k.toLowerCase();
+    if (NORMALIZE_IGNORE_HEADERS.has(lk)) continue;
+    lower[lk] = v;
+  }
+  // Return a new object with keys inserted in sorted order — stringifying gives stable output.
+  const out = {};
+  for (const k of Object.keys(lower).sort()) out[k] = lower[k];
+  return out;
+}
+function headersEqualNormalized(a, b) {
+  return JSON.stringify(normalizeHeadersForDiff(a || {})) === JSON.stringify(normalizeHeadersForDiff(b || {}));
+}
+
 
 // Transient errors we retry; assertion failures (record()) NEVER trigger retry.
 const TRANSIENT_RE = /(net::ERR_|ECONNRESET|ECONNREFUSED|ETIMEDOUT|Target page, context or browser has been closed|Navigation timeout|browserContext\.|Protocol error|Connection closed|socket hang up|EAI_AGAIN)/i;
