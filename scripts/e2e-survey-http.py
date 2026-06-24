@@ -641,6 +641,9 @@ async def main() -> int:
         # that valid happy-path requests still succeed in the same burst.
         burst_fails = 0
         burst_pass = 0
+        auth_fails = auth_pass = 0
+        conc_fails = conc_pass = 0
+
         if seed:
             print("[e2e] running malformed→valid burst …")
             oid = seed.order_id
