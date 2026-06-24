@@ -123,10 +123,18 @@ export function validateMismatchBundle(b) {
       }
       if (it.timing != null) {
         if (!_isObject(it.timing)) errors.push(`items[${i}].timing must be an object`);
-        else for (const k of BUNDLE_SCHEMA.perScenario.item.timingRequired) {
-          if (!(k in it.timing)) errors.push(`items[${i}].timing missing "${k}"`);
+        else {
+          for (const side of ['fixture', 'live']) {
+            const t = it.timing[side];
+            if (t == null) continue;
+            if (!_isObject(t)) { errors.push(`items[${i}].timing.${side} must be an object`); continue; }
+            for (const k of BUNDLE_SCHEMA.perScenario.item.timingRequired) {
+              if (!(k in t)) errors.push(`items[${i}].timing.${side} missing "${k}"`);
+            }
+          }
         }
       }
+
       for (const side of ['fixture', 'live']) {
         const s = it[side];
         if (s == null) continue; // null is permitted (only-live / only-fixture)
