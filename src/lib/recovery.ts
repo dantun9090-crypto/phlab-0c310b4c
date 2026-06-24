@@ -166,6 +166,10 @@ export async function clearClientCaches(timeoutMs = 1500): Promise<void> {
 
 export const HARD_RELOAD_FLAG = "__phl_hard_reload_in_flight";
 
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 type HardReloadOptions = {
   clean?: boolean;
   home?: boolean;
@@ -197,6 +201,11 @@ export async function hardReload(options: HardReloadOptions = {}): Promise<void>
   } catch { /* ignore */ }
 
   await clearClientCaches(options.clean ? 4000 : 1500);
+
+  // Give Cloudflare/Prerender purges a short propagation window before the
+  // navigation. Without this, stale HTML can be re-fetched immediately after
+  // a deploy/purchase purge and the browser can appear to "spin refresh".
+  if (options.clean) await wait(2000);
 
   try {
     const url = new URL(window.location.href);
