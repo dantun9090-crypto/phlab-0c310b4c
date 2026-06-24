@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 #
 # Verifies the SBOM signature + SLSA Provenance attestation + CycloneDX
-# attestation produced by one of our signing workflows, and emits a
-# structured result to:
+# attestation produced by one of our signing workflows.
 #
-#   - stdout (human readable log)
-#   - $GITHUB_STEP_SUMMARY (Markdown table that becomes the Check page)
-#   - GitHub workflow annotations (::error / ::notice), so failures
-#     surface as red Check items with a clear cause
+# Output goes to:
+#   - stdout: human-readable log (sanitised — Rekor UUIDs, log indices,
+#     cert serial numbers, internal repo/owner IDs are redacted before
+#     they reach the Check page so the only things rendered are the
+#     pass/fail verdict and the workflow identity that signed)
+#   - $GITHUB_STEP_SUMMARY: sanitised Markdown table that becomes the
+#     GitHub Check page
+#   - workflow annotations (::error / ::notice): so failures surface as
+#     red Check items with a clear cause
 #
 # Designed to be the sole step of a dedicated "Attestation verify" job
 # so the job name itself becomes the GitHub required-check label that
@@ -41,8 +45,36 @@ LOG="$(mktemp)"
 PASS=0
 FAIL=0
 
+# Mask internal GitHub IDs in the live log so they never appear in
+# workflow annotations or the Check summary. They are not "secret" but
+# they are noise that leaks org topology — drop them at the source.
+if [ -n "${GITHUB_REPOSITORY_ID:-}" ]; then echo "::add-mask::${GITHUB_REPOSITORY_ID}"; fi
+if [ -n "${GITHUB_REPOSITORY_OWNER_ID:-}" ]; then echo "::add-mask::${GITHUB_REPOSITORY_OWNER_ID}"; fi
+if [ -n "${GITHUB_ACTOR_ID:-}" ]; then echo "::add-mask::${GITHUB_ACTOR_ID}"; fi
+if [ -n "${GITHUB_TRIGGERING_ACTOR:-}" ]; then echo "::add-mask::${GITHUB_TRIGGERING_ACTOR}"; fi
+
+# Strip noisy / leaky tokens out of cosign output before it enters the
+# summary or annotations:
+#   - Rekor UUIDs (64-hex)
+#   - Rekor log indices (Index: 12345678)
+#   - tlog entry UUIDs
+#   - any sha256:<64hex> not anchored to a recognised label
+#   - certificate serial numbers (Serial: <decimal>)
+#   - bearer-style tokens that should never be there but get masked
+#     anyway as a defence in depth
+sanitise() {
+  sed -E \
+    -e 's/[0-9a-f]{64}/[redacted-hash]/g' \
+    -e 's/(Index|index):[[:space:]]*[0-9]+/\1: [redacted]/g' \
+    -e 's/(uuid|UUID):[[:space:]]*[0-9a-fA-F-]+/\1: [redacted]/g' \
+    -e 's/(Serial|serial):[[:space:]]*[0-9]+/\1: [redacted]/g' \
+    -e 's/Bearer[[:space:]]+[A-Za-z0-9._-]+/Bearer [redacted]/g' \
+    -e 's/(ghp|github_pat|gho|ghu|ghs|ghr)_[A-Za-z0-9_]{20,}/[redacted-token]/g'
+}
+
 emit_check() {
   local name="$1" status="$2" detail="$3"
+  detail="$(printf '%s' "$detail" | sanitise)"
   if [ "$status" = "pass" ]; then
     PASS=$((PASS + 1))
     echo "::notice title=$name::PASS — $detail"
@@ -82,7 +114,7 @@ run_check() {
 
 for f in "$SBOM" "$SIG" "$CERT" "$PROV" "$CYDX"; do
   if [ ! -f "$f" ]; then
-    emit_check "artifact:${f##*/}" fail "missing artifact file: $f"
+    emit_check "artifact:${f##*/}" fail "missing artifact file: ${f##*/}"
   fi
 done
 
@@ -123,6 +155,19 @@ fi
 
 echo
 echo "Result: $PASS pass / $FAIL fail"
+
+# Also drop a sanitised copy of every cosign invocation to a debug file
+# in the same directory, so the CI job can upload it as a failure
+# artifact without leaking Rekor UUIDs or internal IDs.
+if [ -d "$DIR" ]; then
+  {
+    echo "# verify-attestations.sh log (sanitised)"
+    echo "# workflow=$WORKFLOW repo=$REPO sha=${GITHUB_SHA:-local}"
+    echo "# pass=$PASS fail=$FAIL"
+    sanitise < "$LOG" 2>/dev/null || true
+  } > "$DIR/verify-attestations.log" 2>/dev/null || true
+fi
+
 rm -f "$LOG"
 
 if [ "$FAIL" -gt 0 ]; then
