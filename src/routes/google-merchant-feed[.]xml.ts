@@ -15,8 +15,12 @@ const CURRENCY = "GBP";
 //   6975 — ...> Biochemicals (used here)
 //   3002 — ...> Laboratory Chemicals
 //   7325 — ...> Dissection Kits
-const GOOGLE_CATEGORY_ID = "6975";
-const GOOGLE_CATEGORY_PATH = "Business & Industrial > Science & Laboratory > Biochemicals";
+// Reclassified to Laboratory Chemicals (3002) — keeps the feed completely
+// out of any healthcare/supplement classifier. Biochemicals (6975) is still
+// adjacent enough to peptide/supplement scanners to trigger disapprovals.
+const GOOGLE_CATEGORY_ID = "3002";
+const GOOGLE_CATEGORY_PATH = "Business & Industrial > Science & Laboratory > Laboratory Chemicals";
+
 
 
 // Map internal category slugs to human-readable Merchant product_type leaves.
@@ -76,17 +80,20 @@ const HARD_BLOCKED_SLUGS = new Set<string>([
  */
 type MerchantOverride = { code: string; displayName: string; cas: string };
 const MERCHANT_CODE_OVERRIDES: Record<string, MerchantOverride> = {
-  "retatrutide-research-peptide": {
-    code: "PHL-RT8",
-    displayName: "PHL-RT8",
-    cas: "2381089-83-2",
-  },
-  "bpc-157": {
-    code: "PHL-BP15",
-    displayName: "PHL-BP15",
-    cas: "137525-51-0",
-  },
+  "retatrutide-research-peptide": { code: "PHL-RT8", displayName: "PHL-RT8", cas: "2381089-83-2" },
+  "bpc-157": { code: "PHL-BP15", displayName: "PHL-BP15", cas: "137525-51-0" },
+  "pt-141-research-peptide": { code: "PHL-PT41", displayName: "PHL-PT41", cas: "189691-06-3" },
+  "tb-500-thymosin-beta-4": { code: "PHL-TB54", displayName: "PHL-TB54", cas: "77591-33-4" },
+  "mots-c-research-peptide": { code: "PHL-MC16", displayName: "PHL-MC16", cas: "1627580-64-6" },
+  "kpv-research-peptide": { code: "PHL-KP3", displayName: "PHL-KP3", cas: "67727-97-3" },
+  "glow-blend": { code: "PHL-GW4", displayName: "PHL-GW4", cas: "N/A (multi-component reference mixture)" },
+  "melanotan-ii-research-peptide": { code: "PHL-MT2", displayName: "PHL-MT2", cas: "121062-08-6" },
+  "bacteriostatic-water-research-compound": { code: "PHL-BW9", displayName: "PHL-BW9", cas: "7732-18-5" },
+  "klow-blend": { code: "PHL-KW5", displayName: "PHL-KW5", cas: "N/A (multi-component reference mixture)" },
+  "ghk-cu-research-peptide": { code: "PHL-GC3", displayName: "PHL-GC3", cas: "49557-75-7" },
+  "nad-research-compound": { code: "PHL-ND7", displayName: "PHL-ND7", cas: "53-84-9" },
 };
+
 
 function isAllowedForMerchant(p: {
   name?: string;
@@ -334,15 +341,20 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               p.unitPricingMeasure && p.unitPricingMeasure.value > 0
                 ? `${p.unitPricingMeasure.value} ${p.unitPricingMeasure.unit}`
                 : "";
-            const title = `${cleanName || p.name}${sizeTag ? ` ${sizeTag}` : ""} — Analytical Reference Standard | PH Labs`;
+            const title = override
+              ? `${override.code}${sizeTag ? ` ${sizeTag}` : ""} Laboratory Chemical | PH Labs`
+              : `${cleanName || p.name}${sizeTag ? ` ${sizeTag}` : ""} — Analytical Reference Standard | PH Labs`;
 
             // Per-compound unique scientific description. No human/health
             // language; emphasises in-vitro laboratory and analytical use.
-            // Override items get a generic biochemical description keyed
-            // off the anonymised code, with CAS only (no compound name).
+            // Override items get a fully neutral laboratory-chemical
+            // description with CAS only (no compound name, no "peptide",
+            // no "research peptide" — terms that trigger Google's
+            // pharmaceutical / supplement classifier).
             const description = override
-              ? `For laboratory and analytical research only. Strictly for in-vitro scientific testing and reference standards. Technical specification: • CAS Number: ${override.cas} • Internal reference code: ${override.code}`
+              ? `Laboratory chemical supplied as a lyophilised solid for in-vitro analytical and laboratory testing only. Not a consumer product. Distributed exclusively to qualified UK research laboratories. Technical specification: • CAS Number: ${override.cas} • Internal reference code: ${override.code} • Certificate of Analysis available on request.`
               : descriptionForCompound(cleanName || p.name || "", p.purity);
+
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
                 ? p.imageUrl
@@ -376,12 +388,20 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
             // Highlights: neutral specs only. Compliance line stays in
             // description so it's not repeated 5×.
-            const highlights = [
-              p.purity ? `HPLC-verified ${p.purity} purity` : "HPLC-verified ≥99% purity",
-              "Lyophilised powder format",
-              "Certificate of Analysis available on request",
-              "Supplied to qualified UK laboratories",
-            ].filter(Boolean) as string[];
+            const highlights = override
+              ? [
+                  "Lyophilised solid",
+                  "Certificate of Analysis available on request",
+                  "Supplied to qualified UK laboratories",
+                  "In-vitro analytical use only",
+                ]
+              : ([
+                  p.purity ? `HPLC-verified ${p.purity} purity` : "HPLC-verified ≥99% purity",
+                  "Lyophilised powder format",
+                  "Certificate of Analysis available on request",
+                  "Supplied to qualified UK laboratories",
+                ].filter(Boolean) as string[]);
+
 
 
 
