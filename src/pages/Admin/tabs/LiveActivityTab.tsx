@@ -31,13 +31,20 @@ type WindowMin = 1 | 5 | 15 | 30 | 60;
 const WINDOW_OPTIONS: WindowMin[] = [1, 5, 15, 30, 60];
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
-const LS_KEY = 'phl_liveactivity_prefs_v1';
+const LS_KEY = 'phl_liveactivity_prefs_v2';
 interface Prefs {
   windowMin: WindowMin;
   userPageSize: number;
   sessionPageSize: number;
   notifySignups: boolean;
   notifyFirstSeen: boolean;
+  userSearch: string;
+  sessionSearch: string;
+  userPage: number;
+  sessionPage: number;
+  quietEnabled: boolean;
+  quietStart: string; // "HH:MM"
+  quietEnd: string;   // "HH:MM"
 }
 const DEFAULT_PREFS: Prefs = {
   windowMin: 5,
@@ -45,6 +52,13 @@ const DEFAULT_PREFS: Prefs = {
   sessionPageSize: 25,
   notifySignups: true,
   notifyFirstSeen: false,
+  userSearch: '',
+  sessionSearch: '',
+  userPage: 1,
+  sessionPage: 1,
+  quietEnabled: false,
+  quietStart: '22:00',
+  quietEnd: '08:00',
 };
 
 function loadPrefs(): Prefs {
@@ -58,6 +72,22 @@ function loadPrefs(): Prefs {
 }
 function savePrefs(p: Prefs) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(p)); } catch { /* noop */ }
+}
+
+/** Returns true if current local time falls within [start, end] quiet window. */
+function isQuietNow(start: string, end: string, now = new Date()): boolean {
+  const toMin = (s: string) => {
+    const [h, m] = s.split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
+  const cur = now.getHours() * 60 + now.getMinutes();
+  const s = toMin(start);
+  const e = toMin(end);
+  if (s === e) return false;
+  // Same-day window
+  if (s < e) return cur >= s && cur < e;
+  // Overnight window (e.g. 22:00 → 08:00)
+  return cur >= s || cur < e;
 }
 
 function timeAgo(d: Date): string {
