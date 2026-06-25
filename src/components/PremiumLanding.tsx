@@ -84,8 +84,9 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         .display{font-family:'Cormorant Garamond','Times New Roman',serif}
         section[id]{scroll-margin-top:80px}
         @media (max-width: 767px) {
-          .lux-ken, .lux-float { animation: none !important; }
-          .lux-marquee { animation-duration: 64s; }
+          .lux-ken, .lux-float, .lux-shimmer, .lux-marquee { animation: none !important; }
+          .lux-shimmer { display: none !important; }
+          .mobile-no-blur { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
         }
         @media (prefers-reduced-motion: reduce) {
           .lux-fade-up, .lux-line, .lux-fade, .lux-float, .lux-marquee, .lux-ken, .lux-shimmer { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
