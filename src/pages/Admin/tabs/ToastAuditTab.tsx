@@ -94,6 +94,7 @@ function outcomeColor(o: string): string {
   if (o === 'suppressed:quiet-hours') return 'text-amber-400 bg-amber-500/10 border-amber-500/30';
   if (o === 'suppressed:dedup') return 'text-blue-400 bg-blue-500/10 border-blue-500/30';
   if (o === 'suppressed:pref-off') return 'text-slate-400 bg-slate-500/10 border-slate-500/30';
+  if (o === 'suppressed:bot') return 'text-rose-300 bg-rose-500/10 border-rose-500/30';
   return 'text-slate-300 bg-slate-700/40 border-slate-600';
 }
 
@@ -124,6 +125,7 @@ export default function ToastAuditTab() {
             adminEmail: data.adminEmail ?? null,
             timestamp: data.timestamp?.toDate?.() || new Date(),
             tzLocal: data.tzLocal ?? null,
+            botReasons: Array.isArray(data.botReasons) ? data.botReasons : undefined,
             prefsSnapshot: data.prefsSnapshot,
           };
         });
@@ -151,8 +153,14 @@ export default function ToastAuditTab() {
         if (prefs.quiet === 'on' && !on) return false;
         if (prefs.quiet === 'off' && on) return false;
       }
+      if (prefs.bot !== 'any') {
+        const isBot = r.outcome === 'suppressed:bot';
+        if (prefs.bot === 'only' && !isBot) return false;
+        if (prefs.bot === 'exclude' && isBot) return false;
+        if (prefs.bot === 'force-hide-badge' && !(r.botReasons?.includes('force-hide-badge'))) return false;
+      }
       if (q) {
-        const hay = `${r.title || ''} ${r.description || ''} ${r.targetId || ''} ${r.adminUid || ''} ${r.adminEmail || ''}`.toLowerCase();
+        const hay = `${r.title || ''} ${r.description || ''} ${r.targetId || ''} ${r.adminUid || ''} ${r.adminEmail || ''} ${(r.botReasons || []).join(' ')}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -161,12 +169,16 @@ export default function ToastAuditTab() {
 
   const visible = filtered.slice(0, prefs.pageSize);
   const counts = useMemo(() => {
-    const c = { delivered: 0, quiet: 0, dedup: 0, prefOff: 0 };
+    const c = { delivered: 0, quiet: 0, dedup: 0, prefOff: 0, bot: 0, forceHideBadge: 0 };
     for (const r of filtered) {
       if (r.outcome === 'delivered') c.delivered++;
       else if (r.outcome === 'suppressed:quiet-hours') c.quiet++;
       else if (r.outcome === 'suppressed:dedup') c.dedup++;
       else if (r.outcome === 'suppressed:pref-off') c.prefOff++;
+      else if (r.outcome === 'suppressed:bot') {
+        c.bot++;
+        if (r.botReasons?.includes('force-hide-badge')) c.forceHideBadge++;
+      }
     }
     return c;
   }, [filtered]);
