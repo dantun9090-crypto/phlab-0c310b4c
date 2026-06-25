@@ -131,7 +131,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "bpc-157",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg",
-        titleA: "BPC157 10 mg",      linkA: "/products/BPC10A",
+        titleA: "BPC - 157 Research Compound 10mg - Laboratory Use", linkA: "/products/BPC10A",
         titleB: "BPC-PHL 10 mg",     linkB: "/products/bpcphl10" },
     ],
   },
