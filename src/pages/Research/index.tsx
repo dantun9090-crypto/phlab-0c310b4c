@@ -362,8 +362,52 @@ export default function Research() {
     };
   }, []);
 
+  // Overlay-regression detector: if anyone re-introduces the Google-Ads
+  // /research landing on top of this page (e.g. a stray src/routes/research.tsx
+  // overlay), warn loudly and ping the admin error monitor so it surfaces
+  // in Admin → Health Monitor instead of silently shipping a broken layout.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (window.location.pathname !== '/research') return;
+    const t = setTimeout(() => {
+      const root = document.querySelector('[data-source="legacy-research-page"]');
+      const overlay =
+        !!document.querySelector('[data-source="research-ads-landing"]') ||
+        Array.from(document.querySelectorAll('h1')).some((h) =>
+          /^\s*Research Compounds\b/i.test(h.textContent || ''),
+        );
+      if (!root || overlay) {
+        // eslint-disable-next-line no-console
+        console.warn('[research-route-guard] overlay or missing legacy marker at /research', { hasRoot: !!root, hasOverlay: overlay });
+        try {
+          const payload = JSON.stringify({
+            type: 'research-route-overlay',
+            path: '/research',
+            hasLegacyMarker: !!root,
+            hasOverlay: overlay,
+            ua: navigator.userAgent,
+            ts: Date.now(),
+          });
+          if (navigator.sendBeacon) {
+            navigator.sendBeacon('/api/public/error-monitor', new Blob([payload], { type: 'application/json' }));
+          } else {
+            fetch('/api/public/error-monitor', { method: 'POST', body: payload, keepalive: true }).catch(() => undefined);
+          }
+        } catch {
+          /* diagnostics must never break the page */
+        }
+      }
+    }, 600);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--theme-bg)' }}>
+    <div
+      data-source="legacy-research-page"
+      data-route="/research"
+      className="min-h-screen"
+      style={{ backgroundColor: 'var(--theme-bg)' }}
+    >
       {/* ── Hero ── */}
       <section className="page-hero relative border-b border-white/[0.07] overflow-hidden">
         {/* Animated background */}

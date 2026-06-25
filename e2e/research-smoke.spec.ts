@@ -1,34 +1,47 @@
 /**
- * Browser-level smoke for /research: confirms the prerendered page renders
- * the hero H1, both disclaimers, and a working Back-to-homepage CTA.
+ * Smoke test for /research.
+ *
+ * Asserts the route renders the canonical article-rich page from
+ * src/pages/Research/index.tsx (Peptide Research & Comparative Science)
+ * and that the previous Google-Ads landing overlay is NOT present.
+ * If this test fails, somebody re-introduced a src/routes/research.tsx
+ * (or similar) that hijacks the path.
  */
 import { test, expect } from "@playwright/test";
 
 const BASE =
-  process.env.COMPOUND_BASE_URL ||
+  process.env.RESEARCH_BASE_URL ||
   process.env.TEST_BASE_URL ||
   "https://phlabs.co.uk";
 
-test.describe("/research landing page", () => {
-  test("hero, disclaimers, and CTA are visible", async ({ page }) => {
+test.describe("/research = legacy article page only", () => {
+  test("renders Peptide Research page, no Ads overlay", async ({ page }) => {
     const res = await page.goto(`${BASE}/research`, {
       waitUntil: "domcontentloaded",
     });
     expect(res?.ok(), `GET /research returned ${res?.status()}`).toBeTruthy();
 
-    await expect(page.locator("h1")).toHaveCount(1);
-    await expect(page.locator("h1")).toContainText(/Research Compounds/i);
+    // Stable data marker emitted by src/pages/Research/index.tsx.
+    await expect(page.locator('[data-source="legacy-research-page"]')).toBeVisible();
 
-    const disclaimer = page.getByText(
-      /For Research Use Only\.\s*Not for Human Consumption\./i,
-    );
-    await expect
-      .poll(async () => await disclaimer.count(), { timeout: 10_000 })
-      .toBeGreaterThanOrEqual(2);
+    // Canonical H1 from the article page.
+    await expect(page.locator("h1")).toContainText(/Peptide Research/i);
+    await expect(page.locator("h1")).toContainText(/Comparative Science/i);
 
-    const cta = page.getByRole("link", { name: /Back to homepage/i });
-    await cta.scrollIntoViewIfNeeded();
-    await expect(cta).toBeVisible();
-    await expect(cta).toHaveAttribute("href", "/");
+    // Compound sections must be rendered (article-rich layout).
+    await expect(page.locator("#incretin")).toBeAttached();
+    await expect(page.locator("#peptides")).toBeAttached();
+    await expect(page.locator("#nad")).toBeAttached();
+
+    // Overlay must NOT be present.
+    await expect(
+      page.locator('[data-source="research-ads-landing"]'),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { level: 1, name: /^\s*Research Compounds\b/i }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: /^Back to homepage$/i }),
+    ).toHaveCount(0);
   });
 });
