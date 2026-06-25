@@ -1315,13 +1315,29 @@ function KeywordGeoPanel() {
             Audit log of every Semrush run · last {RUN_HISTORY_LIMIT} stored locally
           </span>
           {runHistory.length > 0 && (
-            <button
-              onClick={() => { clearRunHistory(); setRunHistory([]); }}
-              className="ml-auto text-xs text-slate-400 hover:text-red-300 inline-flex items-center gap-1"
-              title="Clear run history"
-            >
-              <Trash2 className="w-3.5 h-3.5" /> Clear history
-            </button>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={() => downloadRunHistory(runHistory, 'csv')}
+                className="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-white rounded inline-flex items-center gap-1"
+                title="Download run history as CSV"
+              >
+                <Download className="w-3.5 h-3.5" /> CSV
+              </button>
+              <button
+                onClick={() => downloadRunHistory(runHistory, 'json')}
+                className="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-white rounded inline-flex items-center gap-1"
+                title="Download run history as JSON (includes schema + metadata)"
+              >
+                <Download className="w-3.5 h-3.5" /> JSON
+              </button>
+              <button
+                onClick={() => { clearRunHistory(); setRunHistory([]); }}
+                className="text-xs text-slate-400 hover:text-red-300 inline-flex items-center gap-1"
+                title="Clear run history"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Clear history
+              </button>
+            </div>
           )}
         </div>
         {runHistory.length === 0 ? (
