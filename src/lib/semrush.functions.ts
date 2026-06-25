@@ -99,3 +99,112 @@ function rowsToObjects(data: any): Array<Record<string, any>> {
   });
 }
 
+// ---------------------------------------------
+// Keyword geo breakdown — per-country search volumes for a single phrase
+// ---------------------------------------------
+
+// Wide allowlist of Semrush regional databases for cross-country volume lookups.
+const GEO_DATABASES: Array<{ id: string; country: string }> = [
+  { id: 'uk', country: 'United Kingdom' },
+  { id: 'us', country: 'United States' },
+  { id: 'ca', country: 'Canada' },
+  { id: 'au', country: 'Australia' },
+  { id: 'ie', country: 'Ireland' },
+  { id: 'nz', country: 'New Zealand' },
+  { id: 'de', country: 'Germany' },
+  { id: 'fr', country: 'France' },
+  { id: 'es', country: 'Spain' },
+  { id: 'it', country: 'Italy' },
+  { id: 'nl', country: 'Netherlands' },
+  { id: 'be', country: 'Belgium' },
+  { id: 'ch', country: 'Switzerland' },
+  { id: 'at', country: 'Austria' },
+  { id: 'se', country: 'Sweden' },
+  { id: 'no', country: 'Norway' },
+  { id: 'dk', country: 'Denmark' },
+  { id: 'fi', country: 'Finland' },
+  { id: 'pl', country: 'Poland' },
+  { id: 'br', country: 'Brazil' },
+  { id: 'mx', country: 'Mexico' },
+  { id: 'in', country: 'India' },
+  { id: 'jp', country: 'Japan' },
+  { id: 'sg', country: 'Singapore' },
+  { id: 'za', country: 'South Africa' },
+];
+
+const KeywordGeoInput = z.object({
+  idToken: z.string().min(10).max(4096),
+  // Conservative phrase guard: 2-80 chars, printable, no control/HTML.
+  phrase: z.string().min(2).max(80).regex(/^[\p{L}\p{N} .,'+&/-]+$/u, 'phrase contains unsupported characters'),
+});
+
+export const getSemrushKeywordGeo = createServerFn({ method: 'POST' })
+  .inputValidator((data: unknown) => {
+    const parsed = KeywordGeoInput.parse(data);
+    return { idToken: parsed.idToken, phrase: parsed.phrase.trim() };
+  })
+  .handler(async ({ data }) => {
+    await requireFirebaseAdmin(data.idToken);
+
+    const settled = await Promise.allSettled(
+      GEO_DATABASES.map((db) =>
+        gwGet('/keywords/phrase_this', {
+          phrase: data.phrase,
+          database: db.id,
+          export_columns: 'Ph,Nq,Cp,Co,Nr,Td',
+        }),
+      ),
+    );
+
+    type Row = {
+      database: string;
+      country: string;
+      volume: number | null;
+      cpc: number | null;
+      competition: number | null;
+      results: number | null;
+      error: string | null;
+    };
+
+    const rows: Row[] = settled.map((s, i) => {
+      const meta = GEO_DATABASES[i];
+      if (s.status !== 'fulfilled') {
+        return {
+          database: meta.id,
+          country: meta.country,
+          volume: null, cpc: null, competition: null, results: null,
+          error: String((s as any).reason?.message ?? 'request failed').slice(0, 200),
+        };
+      }
+      const obj = rowsToObjects(s.value)[0] ?? {};
+      const num = (v: any) => (v == null || v === '' ? null : Number(v));
+      return {
+        database: meta.id,
+        country: meta.country,
+        volume: num(obj.Nq),
+        cpc: num(obj.Cp),
+        competition: num(obj.Co),
+        results: num(obj.Nr),
+        error: null,
+      };
+    });
+
+    const totalVolume = rows.reduce((sum, r) => sum + (r.volume ?? 0), 0);
+    const ukVolume = rows.find((r) => r.database === 'uk')?.volume ?? 0;
+    const ukSharePct = totalVolume > 0 ? (ukVolume / totalVolume) * 100 : 0;
+
+    return {
+      phrase: data.phrase,
+      fetchedAt: new Date().toISOString(),
+      rows,
+      totals: {
+        countries: rows.length,
+        withData: rows.filter((r) => r.volume != null && r.volume > 0).length,
+        totalVolume,
+        ukVolume,
+        ukSharePct: Math.round(ukSharePct * 100) / 100,
+      },
+    };
+  });
+
+
