@@ -1,5 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PremiumLanding } from "@/components/PremiumLanding";
+import { lazy, Suspense } from "react";
+
+// Code-split the heavy landing component (form, animations, picture
+// elements) so the LCP hero — already preloaded as an image via
+// head().links — paints before this chunk is parsed.
+const PremiumLanding = lazy(() =>
+  import("@/components/PremiumLanding").then((m) => ({ default: m.PremiumLanding })),
+);
 
 const TITLE = "Premium Research Compounds for Scientific Laboratories | PH Labs";
 const DESCRIPTION =
@@ -26,7 +33,7 @@ const FAQS = [
   },
 ];
 
-export const Route = createFileRoute("/compound")({
+export const Route = createFileRoute("/_marketing/compound")({
   head: () => ({
     meta: [
       { title: TITLE },
@@ -83,5 +90,21 @@ export const Route = createFileRoute("/compound")({
       },
     ],
   }),
-  component: () => <PremiumLanding eyebrow="UK Laboratory Supply" />,
+  component: CompoundPage,
 });
+
+function CompoundPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          aria-hidden="true"
+          className="min-h-screen w-full bg-[#0b1220]"
+          style={{ contain: "strict" }}
+        />
+      }
+    >
+      <PremiumLanding eyebrow="UK Laboratory Supply" />
+    </Suspense>
+  );
+}

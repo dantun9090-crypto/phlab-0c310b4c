@@ -58,9 +58,16 @@ async function unregisterServiceWorkersAndCaches() {
   } catch (_) {}
 }
 
+import { isMarketingRoute } from '@/lib/is-marketing-route';
+
 export function registerOfflineSW() {
   if (typeof window === 'undefined') return;
   if (!('serviceWorker' in navigator)) return;
+  // Marketing landings (e.g. /compound) skip the SW cleanup pass — they
+  // load no SW themselves and the cleanup work eats main-thread time
+  // during LCP. The cleanup will run on the user's next navigation into
+  // the main app.
+  if (isMarketingRoute()) return;
 
   // We do NOT register any service worker. Caching an app-shell SW caused
   // stale-chunk blank pages on mobile / installed PWAs after deploys; the

@@ -232,7 +232,13 @@ function reloadOnce(reason: string, err?: unknown, requireMissingAsset = true) {
   doReload(reason);
 }
 
-if (typeof window !== "undefined") {
+// Skip the entire auto-recovery install on /compound (and other marketing
+// landings). Those routes don't render the e-commerce app shell, so we
+// have no lazy chunks to police and no need to add listeners to the LCP
+// path. See src/lib/is-marketing-route.ts.
+import { isMarketingRoute as __phlIsMarketing } from "@/lib/is-marketing-route";
+
+if (typeof window !== "undefined" && !__phlIsMarketing()) {
   // --- Layer 1: chunk errors ---
   window.addEventListener("error", (event) => {
     if (stopForHydrationError(event.error ?? event.message)) return;
