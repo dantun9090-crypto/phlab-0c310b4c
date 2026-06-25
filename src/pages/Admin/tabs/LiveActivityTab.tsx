@@ -19,6 +19,14 @@ import {
   parseAndValidateList,
   type BotDetectionOptions,
 } from '@/lib/bot-detection';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
+/** Current schema version for exported allowlists. Bumping requires a migration. */
+const ALLOWLIST_EXPORT_VERSION = 1;
+const ALLOWLIST_SUPPORTED_VERSIONS = [1];
 
 interface RegisteredUser {
   uid: string;
@@ -193,6 +201,15 @@ export default function LiveActivityTab() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [confirmRestoreOpen, setConfirmRestoreOpen] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+
+  /** Announce changes to screen readers + show toast. */
+  const announce = (message: string) => {
+    setStatusMessage(message);
+    // Clear after announcement so the same message can be re-announced later.
+    setTimeout(() => setStatusMessage(''), 1500);
+  };
 
   // Persisted UI state
   const userSearch = prefs.userSearch;
@@ -257,19 +274,22 @@ export default function LiveActivityTab() {
     toast.success('Dedup cache reset', {
       description: 'First-seen toasts will fire again immediately.',
     });
+    announce('Dedup cache cleared. First-seen toasts will fire again.');
   };
 
   const applyAllowlist = (kind: 'ua' | 'ref', raw: string) => {
     const { valid, errors } = parseAndValidateList(raw, kind);
+    const label = kind === 'ua' ? 'UA' : 'referrer';
     if (errors.length) {
-      toast.error(`${errors.length} invalid ${kind === 'ua' ? 'UA' : 'referrer'} entr${errors.length === 1 ? 'y' : 'ies'} skipped`, {
-        description: errors.slice(0, 3).map(e => `“${e.entry}”: ${e.error}`).join(' · '),
+      toast.error(`${errors.length} invalid ${label} entr${errors.length === 1 ? 'y' : 'ies'} skipped`, {
+        description: errors.slice(0, 5).map(e => `“${e.entry}”: ${e.error}`).join(' · '),
       });
     }
     updatePrefs(kind === 'ua' ? { allowlistUAs: valid } : { allowlistReferrers: valid });
     if (valid.length || !errors.length) {
-      toast.success(`Saved ${valid.length} ${kind === 'ua' ? 'UA' : 'referrer'} pattern${valid.length === 1 ? '' : 's'}`);
+      toast.success(`Saved ${valid.length} ${label} pattern${valid.length === 1 ? '' : 's'}`);
     }
+    announce(`${label} allowlist saved: ${valid.length} valid, ${errors.length} rejected.`);
   };
 
   const restoreAllowlistDefaults = () => {
@@ -278,26 +298,27 @@ export default function LiveActivityTab() {
       allowlistReferrers: [...DEFAULT_ALLOWLIST_REFERRERS],
     });
     toast.success('Allowlists restored to defaults');
+    announce('Allowlists restored to defaults.');
   };
 
   const exportAllowlists = () => {
     try {
-      const blob = new Blob(
-        [JSON.stringify({
-          version: 1,
-          exportedAt: new Date().toISOString(),
-          allowlistUAs: prefs.allowlistUAs,
-          allowlistReferrers: prefs.allowlistReferrers,
-        }, null, 2)],
-        { type: 'application/json' },
-      );
+      const payload = {
+        version: ALLOWLIST_EXPORT_VERSION,
+        kind: 'phlabs-allowlists',
+        exportedAt: new Date().toISOString(),
+        allowlistUAs: prefs.allowlistUAs,
+        allowlistReferrers: prefs.allowlistReferrers,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `phlabs-allowlists-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `phlabs-allowlists-v${ALLOWLIST_EXPORT_VERSION}-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success('Allowlists exported');
+      announce(`Allowlists exported, ${prefs.allowlistUAs.length} UA and ${prefs.allowlistReferrers.length} referrer entries.`);
     } catch (e: any) {
       toast.error('Export failed', { description: e?.message });
     }
@@ -307,23 +328,64 @@ export default function LiveActivityTab() {
     const reader = new FileReader();
     reader.onerror = () => toast.error('Could not read file');
     reader.onload = () => {
+      let parsed: any;
       try {
-        const parsed = JSON.parse(String(reader.result || '{}'));
-        const uaRaw = Array.isArray(parsed.allowlistUAs) ? parsed.allowlistUAs.join(',') : '';
-        const refRaw = Array.isArray(parsed.allowlistReferrers) ? parsed.allowlistReferrers.join(',') : '';
-        const { valid: uaValid, errors: uaErr } = parseAndValidateList(uaRaw, 'ua');
-        const { valid: refValid, errors: refErr } = parseAndValidateList(refRaw, 'ref');
-        updatePrefs({ allowlistUAs: uaValid, allowlistReferrers: refValid });
-        const skipped = uaErr.length + refErr.length;
-        toast.success(`Imported ${uaValid.length} UA + ${refValid.length} ref patterns`, {
-          description: skipped ? `${skipped} invalid entries skipped` : undefined,
-        });
+        parsed = JSON.parse(String(reader.result || '{}'));
       } catch (e: any) {
-        toast.error('Invalid JSON', { description: e?.message });
+        toast.error('Invalid JSON file', { description: e?.message || 'Could not parse JSON' });
+        announce('Import failed: invalid JSON.');
+        return;
       }
+
+      // Shape + version checks
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        toast.error('Invalid file shape', { description: 'Expected an object with version, allowlistUAs, allowlistReferrers.' });
+        announce('Import failed: invalid shape.');
+        return;
+      }
+      const version = parsed.version;
+      if (typeof version !== 'number') {
+        toast.error('Missing version field', { description: 'Add `"version": 1` at the top level.' });
+        announce('Import failed: missing version.');
+        return;
+      }
+      if (!ALLOWLIST_SUPPORTED_VERSIONS.includes(version)) {
+        toast.error(`Unsupported allowlist version: ${version}`, {
+          description: `Supported: ${ALLOWLIST_SUPPORTED_VERSIONS.join(', ')}. Export from this admin again, or downgrade the file.`,
+        });
+        announce(`Import failed: unsupported version ${version}.`);
+        return;
+      }
+      if (parsed.allowlistUAs !== undefined && !Array.isArray(parsed.allowlistUAs)) {
+        toast.error('Invalid `allowlistUAs`', { description: 'Must be an array of strings.' });
+        return;
+      }
+      if (parsed.allowlistReferrers !== undefined && !Array.isArray(parsed.allowlistReferrers)) {
+        toast.error('Invalid `allowlistReferrers`', { description: 'Must be an array of strings.' });
+        return;
+      }
+
+      const uaRaw = Array.isArray(parsed.allowlistUAs) ? parsed.allowlistUAs.join(',') : '';
+      const refRaw = Array.isArray(parsed.allowlistReferrers) ? parsed.allowlistReferrers.join(',') : '';
+      const { valid: uaValid, errors: uaErr } = parseAndValidateList(uaRaw, 'ua');
+      const { valid: refValid, errors: refErr } = parseAndValidateList(refRaw, 'ref');
+      updatePrefs({ allowlistUAs: uaValid, allowlistReferrers: refValid });
+
+      const allErrs = [
+        ...uaErr.map(e => `UA “${e.entry}”: ${e.error}`),
+        ...refErr.map(e => `ref “${e.entry}”: ${e.error}`),
+      ];
+      const skipped = allErrs.length;
+      toast.success(`Imported v${version}: ${uaValid.length} UA + ${refValid.length} ref patterns`, {
+        description: skipped
+          ? `${skipped} invalid: ${allErrs.slice(0, 5).join(' · ')}${allErrs.length > 5 ? ` · +${allErrs.length - 5} more` : ''}`
+          : undefined,
+      });
+      announce(`Import complete. ${uaValid.length + refValid.length} accepted, ${skipped} rejected.`);
     };
     reader.readAsText(file);
   };
+
 
 
 
@@ -591,6 +653,28 @@ export default function LiveActivityTab() {
 
   return (
     <div className="space-y-6">
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {statusMessage}
+      </div>
+      <AlertDialog open={confirmRestoreOpen} onOpenChange={setConfirmRestoreOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restore default allowlists?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will overwrite your current allowlists ({prefs.allowlistUAs.length} UA, {prefs.allowlistReferrers.length} referrer{prefs.allowlistReferrers.length === 1 ? '' : 's'}) with the empty defaults. This cannot be undone — export first if you want a backup.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { restoreAllowlistDefaults(); setConfirmRestoreOpen(false); }}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              Restore defaults
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-white text-2xl font-bold flex items-center gap-2">
@@ -677,9 +761,15 @@ export default function LiveActivityTab() {
           >
             <input
               type="checkbox"
+              role="switch"
+              aria-checked={prefs.hideBots}
+              aria-label={`Humans only filter — ${prefs.hideBots ? 'on' : 'off'}${botCount > 0 ? `, ${botCount} bot${botCount === 1 ? '' : 's'} currently hidden` : ''}`}
               checked={prefs.hideBots}
-              onChange={e => updatePrefs({ hideBots: e.target.checked })}
-              className="accent-emerald-500"
+              onChange={e => {
+                updatePrefs({ hideBots: e.target.checked });
+                announce(`Humans only ${e.target.checked ? 'enabled' : 'disabled'}.`);
+              }}
+              className="accent-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             />
             Humans only
             {prefs.hideBots && botCount > 0 && (
@@ -692,9 +782,15 @@ export default function LiveActivityTab() {
           >
             <input
               type="checkbox"
+              role="switch"
+              aria-checked={prefs.treatForceHideBadgeAsBot}
+              aria-label={`Treat forceHideBadge as bot — ${prefs.treatForceHideBadgeAsBot ? 'on' : 'off'}`}
               checked={prefs.treatForceHideBadgeAsBot}
-              onChange={e => updatePrefs({ treatForceHideBadgeAsBot: e.target.checked })}
-              className="accent-amber-500"
+              onChange={e => {
+                updatePrefs({ treatForceHideBadgeAsBot: e.target.checked });
+                announce(`forceHideBadge classification ${e.target.checked ? 'on' : 'off'}.`);
+              }}
+              className="accent-amber-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
             />
             forceHideBadge = bot
           </label>
@@ -702,55 +798,80 @@ export default function LiveActivityTab() {
             className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]"
             title="Comma-separated UA substrings that always pass as human (your own monitoring/QA tools). Case-insensitive. Validated on blur."
           >
-            <span>Allow UAs</span>
+            <span id="allow-uas-label">Allow UAs</span>
             <input
               type="text"
               key={`ua-${prefs.allowlistUAs.join('|')}`}
               placeholder="phlabs-internal, my-qa-bot"
               defaultValue={prefs.allowlistUAs.join(', ')}
+              aria-labelledby="allow-uas-label"
+              aria-describedby="allow-uas-help"
               onBlur={e => applyAllowlist('ua', e.target.value)}
-              className="w-48 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono"
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  applyAllowlist('ua', (e.target as HTMLInputElement).value);
+                }
+              }}
+              className="w-48 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             />
+            <span id="allow-uas-help" className="sr-only">
+              Comma-separated UA substrings. Saved on blur or Enter.
+            </span>
           </label>
           <label
             className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]"
             title="Comma-separated referrer hostnames that always pass as human. Validated on blur."
           >
-            <span>Allow refs</span>
+            <span id="allow-refs-label">Allow refs</span>
             <input
               type="text"
               key={`ref-${prefs.allowlistReferrers.join('|')}`}
               placeholder="ops.phlabs.co.uk"
               defaultValue={prefs.allowlistReferrers.join(', ')}
+              aria-labelledby="allow-refs-label"
+              aria-describedby="allow-refs-help"
               onBlur={e => applyAllowlist('ref', e.target.value)}
-              className="w-44 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono"
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  applyAllowlist('ref', (e.target as HTMLInputElement).value);
+                }
+              }}
+              className="w-44 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             />
+            <span id="allow-refs-help" className="sr-only">
+              Comma-separated referrer hostnames. Saved on blur or Enter.
+            </span>
           </label>
           <button
             type="button"
-            onClick={restoreAllowlistDefaults}
+            onClick={() => setConfirmRestoreOpen(true)}
+            aria-label="Restore default allowlists (UA and referrers). Opens confirmation dialog."
             title="Restore default allowlists (UA + referrers)"
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white hover:border-emerald-500/50"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white hover:border-emerald-500/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
           >
-            <Undo2 className="w-3.5 h-3.5" /> Restore defaults
+            <Undo2 className="w-3.5 h-3.5" aria-hidden="true" /> Restore defaults
           </button>
           <button
             type="button"
             onClick={exportAllowlists}
+            aria-label={`Export allowlists to JSON (${prefs.allowlistUAs.length} UA, ${prefs.allowlistReferrers.length} referrer entries)`}
             title="Export allowlists to JSON"
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
           >
-            <Download className="w-3.5 h-3.5" /> Export
+            <Download className="w-3.5 h-3.5" aria-hidden="true" /> Export
           </button>
           <label
-            title="Import allowlists from a JSON file"
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white cursor-pointer"
+            title="Import allowlists from a JSON file (version 1)"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white cursor-pointer focus-within:ring-2 focus-within:ring-emerald-400"
           >
-            <Upload className="w-3.5 h-3.5" /> Import
+            <Upload className="w-3.5 h-3.5" aria-hidden="true" /> Import
             <input
               type="file"
               accept="application/json,.json"
-              className="hidden"
+              aria-label="Import allowlists from a JSON file (version 1 schema)"
+              className="sr-only"
               onChange={e => {
                 const f = e.target.files?.[0];
                 if (f) importAllowlistsFromFile(f);
@@ -890,18 +1011,22 @@ export default function LiveActivityTab() {
             <span>Page {safeUserPage} / {userTotalPages}</span>
             <div className="flex items-center gap-1">
               <button
+                type="button"
+                aria-label="Previous page of registered users"
                 onClick={() => setUserPage(Math.max(1, safeUserPage - 1))}
                 disabled={userPage <= 1}
-                className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40"
+                className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
               </button>
               <button
+                type="button"
+                aria-label="Next page of registered users"
                 onClick={() => setUserPage(Math.min(userTotalPages, safeUserPage + 1))}
                 disabled={userPage >= userTotalPages}
-                className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40"
+                className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -1019,18 +1144,22 @@ export default function LiveActivityTab() {
             <span>Page {safeSessionPage} / {sessionTotalPages}</span>
             <div className="flex items-center gap-1">
               <button
+                type="button"
+                aria-label="Previous page of visitor sessions"
                 onClick={() => setSessionPage(Math.max(1, safeSessionPage - 1))}
                 disabled={sessionPage <= 1}
-                className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40"
+                className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
               </button>
               <button
+                type="button"
+                aria-label="Next page of visitor sessions"
                 onClick={() => setSessionPage(Math.min(sessionTotalPages, safeSessionPage + 1))}
                 disabled={sessionPage >= sessionTotalPages}
-                className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40"
+                className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>

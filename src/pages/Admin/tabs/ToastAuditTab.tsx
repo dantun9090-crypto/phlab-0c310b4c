@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ScrollText, Search, Copy, Check, RefreshCw, Filter, BellOff, CheckCircle2, XCircle, ShieldOff,
+  ScrollText, Search, Copy, Check, RefreshCw, Filter, BellOff, CheckCircle2, XCircle, ShieldOff, Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   db, collection, query, orderBy, limit as fbLimit, onSnapshot,
 } from '@/lib/firebase';
+
+/** Escape a value for CSV (RFC 4180): wrap in quotes if it contains comma/quote/newline. */
+function csvCell(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  const s = String(value);
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
 
 type OutcomeFilter = 'all' | 'delivered' | 'suppressed' | 'suppressed:pref-off' | 'suppressed:quiet-hours' | 'suppressed:dedup' | 'suppressed:bot';
 type KindFilter = 'all' | 'signup' | 'visitor';
@@ -194,14 +202,65 @@ export default function ToastAuditTab() {
             Recent Live Activity toast attempts — delivered vs suppressed (pref-off, quiet hours, dedup).
           </p>
         </div>
-        <button
-          onClick={() => updatePrefs({ fetchLimit: prefs.fetchLimit })}
-          className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white"
-          title="Re-subscribe"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-amber-400' : ''}`} />
-          {loading ? 'Loading…' : 'Refresh'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              try {
+                const header = [
+                  'timestamp_iso', 'timezone', 'kind', 'outcome',
+                  'title', 'description', 'targetId',
+                  'adminUid', 'adminEmail',
+                  'botReasons',
+                  'pref_notifySignups', 'pref_notifyFirstSeen',
+                  'pref_quietEnabled', 'pref_quietStart', 'pref_quietEnd', 'pref_quietTimezone',
+                  'pref_hideBots', 'pref_treatForceHideBadgeAsBot',
+                ];
+                const lines = [header.join(',')];
+                for (const r of filtered) {
+                  const p = r.prefsSnapshot || {};
+                  lines.push([
+                    r.timestamp.toISOString(),
+                    p.quietTimezone || r.tzLocal || '',
+                    r.kind, r.outcome,
+                    r.title || '', r.description || '', r.targetId || '',
+                    r.adminUid || '', r.adminEmail || '',
+                    (r.botReasons || []).join('|'),
+                    p.notifySignups ?? '', p.notifyFirstSeen ?? '',
+                    p.quietEnabled ?? '', p.quietStart || '', p.quietEnd || '', p.quietTimezone || '',
+                    p.hideBots ?? '', p.treatForceHideBadgeAsBot ?? '',
+                  ].map(csvCell).join(','));
+                }
+                const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `toast-audit-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+                toast.success(`Exported ${filtered.length} audit entries`);
+              } catch (e: any) {
+                toast.error('Export failed', { description: e?.message });
+              }
+            }}
+            disabled={filtered.length === 0}
+            aria-label={`Export ${filtered.length} filtered audit entries as CSV (includes Hidden bots)`}
+            title="Export current filter results to CSV — includes Hidden bots, bot reasons, and prefs snapshot"
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+          >
+            <Download className="w-3.5 h-3.5" aria-hidden="true" />
+            Export CSV ({filtered.length})
+          </button>
+          <button
+            onClick={() => updatePrefs({ fetchLimit: prefs.fetchLimit })}
+            aria-label="Refresh audit log subscription"
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            title="Re-subscribe"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-amber-400' : ''}`} aria-hidden="true" />
+            {loading ? 'Loading…' : 'Refresh'}
+          </button>
+        </div>
       </div>
 
       {/* Summary cards */}
