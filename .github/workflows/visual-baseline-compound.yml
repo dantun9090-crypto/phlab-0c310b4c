@@ -1,0 +1,119 @@
+name: Visual baseline · /compound
+
+# Dedicated scheduled visual baseline check for /compound. Runs every
+# Monday at 06:30 UTC (offset from /research at 06:00) and on manual
+# dispatch. On a diff: uploads the Playwright report + actual/expected/
+# diff PNGs and opens/comments on a tracking issue.
+on:
+  schedule:
+    - cron: "30 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Override base URL (defaults to https://phlabs.co.uk)"
+        required: false
+        default: "https://phlabs.co.uk"
+      update_snapshots:
+        description: "Refresh baseline screenshots and commit them"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      COMPOUND_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+      ROUTE_POLICY_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Route policy (fast fail)
+        run: bunx playwright test e2e/route-policy.spec.ts --reporter=line
+
+      - name: /compound overlay + visual baseline
+        run: |
+          if [ "${{ github.event.inputs.update_snapshots }}" = "true" ]; then
+            bunx playwright test e2e/compound-overlay.spec.ts e2e/compound-visual.spec.ts --update-snapshots --reporter=line
+          else
+            bunx playwright test e2e/compound-overlay.spec.ts e2e/compound-visual.spec.ts --reporter=line,html
+          fi
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-compound
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Open / update issue on diff
+        if: failure() && github.event.inputs.update_snapshots != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "Visual baseline diff: /compound";
+            const body = [
+              "Scheduled visual baseline run detected a difference on /compound.",
+              "",
+              `- Workflow run: ${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+              `- Base URL: \`${process.env.COMPOUND_BASE_URL}\``,
+              "",
+              "Review the `playwright-report-compound` artifact for actual / expected / diff PNGs.",
+              "If the change is intentional, re-run this workflow with `update_snapshots = true`.",
+            ].join("\n");
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "visual-baseline",
+            });
+            const match = existing.find((i) => i.title === title);
+            if (match) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: match.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["visual-baseline", "regression", "compound"],
+              });
+            }
+
+      - name: Commit refreshed baselines
+        if: success() && github.event.inputs.update_snapshots == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A e2e
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(visual): refresh /compound baseline"
+            git push
+          else
+            echo "No baseline changes to commit."
+          fi
