@@ -7,7 +7,7 @@ const PremiumLanding = lazy(() =>
 
 const TITLE = "Premium Research Compounds for Scientific Laboratories | PH Labs";
 const DESCRIPTION =
-  "High-purity research materials developed for professional laboratory and scientific applications. Premium laboratory research compounds, supplied with detailed documentation. For research use only.";
+  "High-purity research compounds for professional UK laboratories. Detailed batch documentation supplied with every order. For research use only.";
 const URL = "https://phlabs.co.uk/compound";
 const OG_IMAGE = "https://phlabs.co.uk/og/compound.jpg";
 
