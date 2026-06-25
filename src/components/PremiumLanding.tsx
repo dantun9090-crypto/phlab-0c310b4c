@@ -152,38 +152,34 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         </div>
       </section>
 
-      {/* DOCUMENTATION CTA */}
+      {/* DOCUMENTATION CTA — centered */}
       <section
         id="documentation"
         className="relative border-b border-white/5 py-24 sm:py-32"
       >
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-end">
-            <div className="lg:col-span-7">
-              <p className="text-[11px] uppercase tracking-[0.4em] text-amber-200/70">§ 03</p>
-              <h2 className="mt-4 font-serif text-4xl md:text-5xl font-light text-white">
-                Request Research Documentation
-              </h2>
-              <p className="mt-6 max-w-xl text-base sm:text-lg font-light leading-relaxed text-slate-300/90">
-                Qualified researchers and institutions may request the detailed
-                documentation accompanying our premium laboratory research
-                materials.
-              </p>
-            </div>
-            <div className="lg:col-span-5 flex flex-col sm:flex-row lg:flex-col gap-3">
-              <Link
-                to="/contact"
-                className="inline-flex items-center justify-between px-7 py-4 rounded-sm bg-amber-300 text-[#0a0f1c] font-semibold text-[12px] tracking-[0.18em] uppercase transition-all hover:bg-amber-200"
-              >
-                Contact Our Team <span>→</span>
-              </Link>
-              <Link
-                to="/quality-control"
-                className="inline-flex items-center justify-between px-7 py-4 rounded-sm border border-white/15 text-slate-200 font-medium text-[12px] tracking-[0.18em] uppercase transition-all hover:border-white/40 hover:text-white"
-              >
-                Quality Standards <span>→</span>
-              </Link>
-            </div>
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <p className="text-[11px] uppercase tracking-[0.4em] text-amber-200/70">§ 03</p>
+          <h2 className="mt-4 font-serif text-4xl md:text-5xl font-light text-white">
+            Request Research Documentation
+          </h2>
+          <p className="mt-6 max-w-2xl mx-auto text-base sm:text-lg font-light leading-relaxed text-slate-300/90">
+            Qualified researchers and institutions may request the detailed
+            documentation accompanying our premium laboratory research
+            materials.
+          </p>
+          <div className="mt-10 flex flex-col sm:flex-row justify-center gap-3">
+            <Link
+              to="/contact"
+              className="inline-flex items-center justify-center px-7 py-4 rounded-sm bg-amber-300 text-[#0a0f1c] font-semibold text-[12px] tracking-[0.18em] uppercase transition-all hover:bg-amber-200"
+            >
+              Contact Our Team <span className="ml-2">→</span>
+            </Link>
+            <Link
+              to="/quality-control"
+              className="inline-flex items-center justify-center px-7 py-4 rounded-sm border border-white/15 text-slate-200 font-medium text-[12px] tracking-[0.18em] uppercase transition-all hover:border-white/40 hover:text-white"
+            >
+              Quality Standards <span className="ml-2">→</span>
+            </Link>
           </div>
         </div>
       </section>
