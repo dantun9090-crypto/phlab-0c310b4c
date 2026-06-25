@@ -7,6 +7,10 @@ import { toast } from 'sonner';
 import {
   db, collection, query, orderBy, limit, onSnapshot, where, Timestamp,
 } from '@/lib/firebase';
+import {
+  isQuietNow, shouldSuppressToast, COMMON_TIMEZONES, detectLocalTimezone,
+} from '@/lib/quiet-hours';
+import { logToastEvent, type ToastKind } from '@/lib/toast-audit';
 
 interface RegisteredUser {
   uid: string;
@@ -45,6 +49,8 @@ interface Prefs {
   quietEnabled: boolean;
   quietStart: string; // "HH:MM"
   quietEnd: string;   // "HH:MM"
+  quietTimezone: string; // IANA, e.g. "Europe/London"
+  toastDedupTtlH: number; // hours; entries older than this are forgotten
 }
 const DEFAULT_PREFS: Prefs = {
   windowMin: 5,
@@ -59,6 +65,8 @@ const DEFAULT_PREFS: Prefs = {
   quietEnabled: false,
   quietStart: '22:00',
   quietEnd: '08:00',
+  quietTimezone: typeof window !== 'undefined' ? detectLocalTimezone() : 'UTC',
+  toastDedupTtlH: 24,
 };
 
 function loadPrefs(): Prefs {
@@ -74,20 +82,26 @@ function savePrefs(p: Prefs) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(p)); } catch { /* noop */ }
 }
 
-/** Returns true if current local time falls within [start, end] quiet window. */
-function isQuietNow(start: string, end: string, now = new Date()): boolean {
-  const toMin = (s: string) => {
-    const [h, m] = s.split(':').map(Number);
-    return (h || 0) * 60 + (m || 0);
-  };
-  const cur = now.getHours() * 60 + now.getMinutes();
-  const s = toMin(start);
-  const e = toMin(end);
-  if (s === e) return false;
-  // Same-day window
-  if (s < e) return cur >= s && cur < e;
-  // Overnight window (e.g. 22:00 → 08:00)
-  return cur >= s || cur < e;
+// Persistent toast dedup — survives snapshot re-fires and remounts.
+const DEDUP_KEY = 'phl_liveactivity_toast_dedup_v1';
+type DedupMap = Record<string, number>; // key -> ms timestamp
+
+function loadDedup(): DedupMap {
+  try {
+    const raw = localStorage.getItem(DEDUP_KEY);
+    return raw ? (JSON.parse(raw) as DedupMap) : {};
+  } catch {
+    return {};
+  }
+}
+function saveDedup(map: DedupMap) {
+  try { localStorage.setItem(DEDUP_KEY, JSON.stringify(map)); } catch { /* noop */ }
+}
+function pruneDedup(map: DedupMap, ttlH: number): DedupMap {
+  const cutoff = Date.now() - ttlH * 3_600_000;
+  const out: DedupMap = {};
+  for (const [k, v] of Object.entries(map)) if (v >= cutoff) out[k] = v;
+  return out;
 }
 
 function timeAgo(d: Date): string {
@@ -98,10 +112,13 @@ function timeAgo(d: Date): string {
   return `${Math.floor(sec / 86400)}d ago`;
 }
 
-function fullTs(d: Date): string {
-  // ISO-style with local timezone abbrev
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  return `${d.toLocaleString('en-GB', { hour12: false })} (${tz})`;
+function fullTs(d: Date, tz?: string): string {
+  const zone = tz || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  try {
+    return `${d.toLocaleString('en-GB', { hour12: false, timeZone: zone })} (${zone})`;
+  } catch {
+    return `${d.toLocaleString('en-GB', { hour12: false })} (${zone})`;
+  }
 }
 
 function shortUA(ua?: string): string {
@@ -167,17 +184,73 @@ export default function LiveActivityTab() {
   const seenUserIdsRef = useRef<Set<string> | null>(null);
   const seenSessionIdsRef = useRef<Set<string> | null>(null);
 
+  // Persistent dedup map for first-seen toasts (survives remounts + snapshots).
+  const dedupRef = useRef<DedupMap>(loadDedup());
+
   // Keep latest prefs accessible in snapshot callbacks without resubscribing
   const prefsRef = useRef(prefs);
   useEffect(() => { prefsRef.current = prefs; }, [prefs]);
 
-  const maybeToast = (kind: 'signup' | 'visitor', title: string, description: string) => {
+  const maybeToast = (
+    kind: ToastKind,
+    title: string,
+    description: string,
+    targetId?: string,
+  ) => {
     const p = prefsRef.current;
-    if (kind === 'signup' && !p.notifySignups) return;
-    if (kind === 'visitor' && !p.notifyFirstSeen) return;
-    if (p.quietEnabled && isQuietNow(p.quietStart, p.quietEnd)) return;
+    const snapshot = {
+      notifySignups: p.notifySignups,
+      notifyFirstSeen: p.notifyFirstSeen,
+      quietEnabled: p.quietEnabled,
+      quietStart: p.quietStart,
+      quietEnd: p.quietEnd,
+      quietTimezone: p.quietTimezone,
+    };
+
+    // 1) dedup — once per targetId within TTL.
+    if (targetId) {
+      const ttlMs = p.toastDedupTtlH * 3_600_000;
+      const last = dedupRef.current[targetId];
+      if (last && Date.now() - last < ttlMs) {
+        logToastEvent({
+          kind, outcome: 'suppressed:dedup', title, description, targetId,
+          prefsSnapshot: snapshot,
+        });
+        return;
+      }
+    }
+
+    // 2) pref / quiet-hours suppression (shared logic).
+    const verdict = shouldSuppressToast(kind, {
+      notifySignups: p.notifySignups,
+      notifyFirstSeen: p.notifyFirstSeen,
+      quiet: {
+        enabled: p.quietEnabled, start: p.quietStart, end: p.quietEnd,
+        timezone: p.quietTimezone,
+      },
+    });
+    if (verdict.suppressed) {
+      logToastEvent({
+        kind,
+        outcome: verdict.reason === 'pref-off' ? 'suppressed:pref-off' : 'suppressed:quiet-hours',
+        title, description, targetId, prefsSnapshot: snapshot,
+      });
+      return;
+    }
+
+    // 3) deliver + remember.
     if (kind === 'signup') toast.success(title, { description });
     else toast(title, { description });
+
+    if (targetId) {
+      dedupRef.current[targetId] = Date.now();
+      dedupRef.current = pruneDedup(dedupRef.current, p.toastDedupTtlH);
+      saveDedup(dedupRef.current);
+    }
+    logToastEvent({
+      kind, outcome: 'delivered', title, description, targetId,
+      prefsSnapshot: snapshot,
+    });
   };
 
   // Realtime: customers
@@ -196,7 +269,7 @@ export default function LiveActivityTab() {
         if (seenUserIdsRef.current) {
           const fresh = docs.filter(u => !seenUserIdsRef.current!.has(u.uid));
           fresh.slice(0, 3).forEach(u => {
-            maybeToast('signup', 'New customer registered', u.email || u.uid);
+            maybeToast('signup', 'New customer registered', u.email || u.uid, u.uid);
           });
         }
         seenUserIdsRef.current = ids;
@@ -259,7 +332,12 @@ export default function LiveActivityTab() {
         if (seenSessionIdsRef.current) {
           const fresh = arr.filter(s => !seenSessionIdsRef.current!.has(s.sessionId));
           fresh.slice(0, 3).forEach(s => {
-            maybeToast('visitor', 'New visitor online', `${s.path || '/'} · ${shortUA(s.userAgent)}`);
+            maybeToast(
+              'visitor',
+              'New visitor online',
+              `${s.path || '/'} · ${shortUA(s.userAgent)}`,
+              s.visitorId || s.sessionId,
+            );
           });
         }
         seenSessionIdsRef.current = ids;
@@ -317,7 +395,7 @@ export default function LiveActivityTab() {
     safeSessionPage * prefs.sessionPageSize
   );
 
-  const quietActive = prefs.quietEnabled && isQuietNow(prefs.quietStart, prefs.quietEnd);
+  const quietActive = prefs.quietEnabled && isQuietNow(prefs.quietStart, prefs.quietEnd, new Date(), prefs.quietTimezone);
 
 
   return (
@@ -329,6 +407,13 @@ export default function LiveActivityTab() {
           </h2>
           <p className="text-[#9cb8d9] text-sm mt-1">
             Newest registered emails and the most recently online visitors.
+          </p>
+          <p className="text-[#3a5a82] text-[11px] mt-1 flex items-center gap-1.5 flex-wrap">
+            <Clock className="w-3 h-3" />
+            Timestamps & quiet hours in <span className="text-emerald-400 font-mono">{prefs.quietTimezone}</span>
+            {quietActive && (
+              <span className="ml-1 text-amber-400 uppercase tracking-wider">· quiet hours active</span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -370,6 +455,19 @@ export default function LiveActivityTab() {
               disabled={!prefs.quietEnabled}
               className="bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 disabled:opacity-50"
             />
+            <select
+              value={prefs.quietTimezone}
+              onChange={e => updatePrefs({ quietTimezone: e.target.value })}
+              disabled={!prefs.quietEnabled}
+              title="Quiet-hours timezone"
+              className="bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 disabled:opacity-50 max-w-[140px]"
+            >
+              {(COMMON_TIMEZONES.includes(prefs.quietTimezone)
+                ? COMMON_TIMEZONES
+                : [prefs.quietTimezone, ...COMMON_TIMEZONES]).map(tz => (
+                <option key={tz} value={tz}>{tz}</option>
+              ))}
+            </select>
             {quietActive && (
               <span className="text-amber-400 text-[10px] uppercase tracking-wider">muted</span>
             )}
@@ -476,7 +574,7 @@ export default function LiveActivityTab() {
                       </div>
                       {created && (
                         <div className="text-[#3a5a82] text-[10px] mt-0.5">
-                          {fullTs(created)}
+                          {fullTs(created, prefs.quietTimezone)}
                         </div>
                       )}
                     </div>
@@ -589,7 +687,7 @@ export default function LiveActivityTab() {
                         {timeAgo(s.lastSeen)}
                       </div>
                       <div className="text-[#3a5a82] text-[10px] mt-0.5 max-w-[180px]" title={s.lastSeen.toISOString()}>
-                        {fullTs(s.lastSeen)}
+                        {fullTs(s.lastSeen, prefs.quietTimezone)}
                       </div>
                     </div>
                   </div>
