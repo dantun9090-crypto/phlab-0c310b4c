@@ -80,13 +80,21 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         .phl-line { transform-origin:left; animation: phlLine 1.2s cubic-bezier(.7,.2,.2,1) forwards; }
         .phl-fade { opacity:0; animation: phlFade 1.4s ease forwards; }
         .phl-float { animation: phlFloat 6s ease-in-out infinite; }
-        .phl-marquee { animation: phlMarquee 42s linear infinite; }
+        .phl-marquee { animation: phlMarquee 42s linear infinite; will-change: transform; }
         .phl-ken { animation: phlKen 22s ease-in-out infinite alternate; }
         .d1{animation-delay:.1s} .d2{animation-delay:.25s} .d3{animation-delay:.4s}
         .d4{animation-delay:.55s} .d5{animation-delay:.7s} .d6{animation-delay:.9s}
         .gold{color:#c9a44c}.gold-bg{background-color:#c9a44c}.gold-border{border-color:#c9a44c}
         .serif{font-family:'Cormorant Garamond','Times New Roman',serif}
         section[id]{scroll-margin-top:80px}
+        /* Mobile + reduced-motion: drop heavy animations to protect INP/CLS/CPU */
+        @media (max-width: 767px) {
+          .phl-ken, .phl-float { animation: none !important; }
+          .phl-marquee { animation-duration: 60s; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .phl-reveal, .phl-line, .phl-fade, .phl-float, .phl-marquee, .phl-ken { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
+        }
       `}</style>
 
       {/* TOP BAR — strong disclaimer */}
