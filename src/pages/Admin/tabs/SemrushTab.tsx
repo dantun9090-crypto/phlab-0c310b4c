@@ -500,7 +500,7 @@ function KeywordGeoPanel() {
     const startedAt = new Date().toISOString();
     let aggRows: GeoRow[] = [];
     let trimmedAll: string[] = [];
-    let lastQuotaAfter: QuotaSnapshot | null = null;
+    const quotaRef: { current: QuotaSnapshot | null } = { current: null };
     let unitsUsedTotal = 0;
     let lastCatalog: CatalogEntry[] = catalog;
     let runErr: string | null = null;
