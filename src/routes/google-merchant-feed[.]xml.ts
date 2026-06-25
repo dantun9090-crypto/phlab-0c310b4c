@@ -387,7 +387,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               "In-vitro analytical use only",
             ];
 
-            const baseSkuRoot = (p.sku || p.id || p.slug || "").toString();
+
 
             type Side = "A" | "B";
             const buildEntry = (v: DualEntryVariant, side: Side): string => {
