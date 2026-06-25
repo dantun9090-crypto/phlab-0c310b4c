@@ -1,18 +1,22 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import {
   Loader2, RefreshCw, TrendingUp, Link2, Search, AlertTriangle,
   ExternalLink, Globe, Download, History, Trash2, BarChart3,
+  Timer, Zap, RotateCw, Database as DbIcon,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid,
 } from 'recharts';
 import { getAdminIdToken } from '@/lib/auth-ready';
-import { getSemrushOverview, getSemrushKeywordGeo } from '@/lib/semrush.functions';
+import {
+  getSemrushOverview, getSemrushKeywordGeo, getSemrushQuota,
+} from '@/lib/semrush.functions';
 
-const REPORT_SCHEMA_VERSION = '1.1.0';
-const HISTORY_KEY = 'phlabs.admin.semrushGeoHistory.v1';
-const HISTORY_LIMIT = 20;
+const REPORT_SCHEMA_VERSION = '1.2.0';
+const CACHE_KEY = 'phlabs.admin.semrushGeoCache.v2';
+const PENDING_KEY = 'phlabs.admin.semrushGeoPending.v1';
+const CACHE_LIMIT = 20;
 
 interface OverviewData {
   domain: string;
@@ -82,13 +86,11 @@ export default function SemrushTab() {
         </button>
       </div>
 
-      {/* Controls */}
       <div className="bg-slate-900 border-2 border-slate-700 rounded-xl p-4 grid grid-cols-1 md:grid-cols-3 gap-3">
         <div>
           <label className="block text-xs font-semibold text-slate-300 mb-1">Domain</label>
           <input
-            type="text"
-            value={domain}
+            type="text" value={domain}
             onChange={(e) => setDomain(e.target.value.trim())}
             className="w-full min-h-[48px] px-3 bg-slate-800 border-2 border-slate-600 text-white rounded-lg text-sm"
             placeholder="phlabs.co.uk"
@@ -121,16 +123,10 @@ export default function SemrushTab() {
           <div>
             <p className="text-red-300 font-semibold text-sm">Semrush request failed</p>
             <p className="text-red-200/80 text-xs font-mono break-all mt-1">{error}</p>
-            {error.includes('134') && (
-              <p className="text-red-200/80 text-xs mt-2">
-                Quota exhausted. Upgrade the Semrush plan or wait for the daily reset.
-              </p>
-            )}
           </div>
         </div>
       )}
 
-      {/* Domain summary */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard label="Organic keywords" value={ranks.Or} icon={<Search className="w-4 h-4" />} />
         <StatCard label="Est. organic traffic" value={ranks.Ot} suffix="/mo" icon={<TrendingUp className="w-4 h-4" />} />
@@ -142,7 +138,6 @@ export default function SemrushTab() {
         <StatCard label="Follow / Nofollow" value={bl.follows_num != null ? `${bl.follows_num} / ${bl.nofollows_num ?? 0}` : undefined} />
       </div>
 
-      {/* Top organic keywords */}
       <div className="bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden">
         <div className="px-4 py-3 border-b-2 border-slate-700 flex items-center justify-between">
           <h2 className="text-white font-semibold text-sm">Top organic keywords</h2>
@@ -192,10 +187,8 @@ export default function SemrushTab() {
         )}
       </div>
 
-      {/* Keyword geo breakdown */}
       <KeywordGeoPanel />
 
-      {/* Footer meta */}
       {data && (
         <p className="text-xs text-slate-500">
           {data.domain} · database: {data.database.toUpperCase()} · fetched {new Date(data.fetchedAt).toLocaleString()}
@@ -206,15 +199,12 @@ export default function SemrushTab() {
   );
 }
 
-
 function StatCard({ label, value, prefix, suffix, icon }: {
   label: string; value: any; prefix?: string; suffix?: string; icon?: React.ReactNode;
 }) {
   const display =
-    value == null || value === ''
-      ? '—'
-      : typeof value === 'number'
-        ? value.toLocaleString()
+    value == null || value === '' ? '—'
+      : typeof value === 'number' ? value.toLocaleString()
         : String(value);
   return (
     <div className="bg-slate-900 border-2 border-slate-700 rounded-xl p-3">
@@ -229,7 +219,7 @@ function StatCard({ label, value, prefix, suffix, icon }: {
 }
 
 // =========================================================
-// Keyword geo breakdown panel
+// Keyword geo breakdown panel — partial fetch, cache, resume, quota banner
 // =========================================================
 
 interface GeoRow {
@@ -240,115 +230,302 @@ interface GeoRow {
   competition: number | null;
   results: number | null;
   error: string | null;
+  fetchedAt?: string;
 }
-interface GeoResult {
+
+interface CatalogEntry { id: string; country: string; }
+
+interface QuotaSnapshot {
+  remaining: number | null;
+  total: number | null;
+  resetAt: string | null;
+  isPaid: boolean | null;
+}
+
+interface RunRecord {
+  at: string;
+  fetched: string[];
+  trimmed: string[];
+  unitsUsed: number;
+}
+
+interface CacheEntry {
+  phrase: string;
+  lastFetchedAt: string;
+  rows: GeoRow[]; // merged by database; latest fetch wins
+  runs: RunRecord[];
+  catalog: CatalogEntry[]; // snapshot of full catalog used
+}
+
+interface ServerGeoResponse {
   phrase: string;
   fetchedAt: string;
+  requestedDatabases: string[];
+  fetchedDatabases: string[];
+  trimmedByQuota: string[];
   rows: GeoRow[];
-  totals: {
-    countries: number;
-    withData: number;
-    totalVolume: number;
-    ukVolume: number;
-    ukSharePct: number;
-  };
+  quota: { before: QuotaSnapshot; after: QuotaSnapshot; unitsUsed: number };
+  catalog: CatalogEntry[];
 }
 
-interface HistoryItem {
-  phrase: string;
+interface QuotaResponse extends QuotaSnapshot {
   fetchedAt: string;
-  totalVolume: number;
-  ukVolume: number;
-  ukSharePct: number;
-  withData: number;
-  countries: number;
-  result: GeoResult;
+  fullRunCost: number;
+  databases: CatalogEntry[];
 }
 
-function loadHistory(): HistoryItem[] {
-  if (typeof window === 'undefined') return [];
+function loadCache(): Record<string, CacheEntry> {
+  if (typeof window === 'undefined') return {};
   try {
-    const raw = window.localStorage.getItem(HISTORY_KEY);
-    if (!raw) return [];
+    const raw = window.localStorage.getItem(CACHE_KEY);
+    if (!raw) return {};
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.slice(0, HISTORY_LIMIT) : [];
-  } catch { return []; }
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch { return {}; }
 }
-function saveHistory(items: HistoryItem[]) {
+function saveCache(cache: Record<string, CacheEntry>) {
   if (typeof window === 'undefined') return;
-  try { window.localStorage.setItem(HISTORY_KEY, JSON.stringify(items.slice(0, HISTORY_LIMIT))); } catch { /* quota */ }
+  // Trim to most-recent CACHE_LIMIT phrases
+  const entries = Object.values(cache).sort((a, b) =>
+    new Date(b.lastFetchedAt).getTime() - new Date(a.lastFetchedAt).getTime());
+  const trimmed: Record<string, CacheEntry> = {};
+  for (const e of entries.slice(0, CACHE_LIMIT)) trimmed[e.phrase.toLowerCase()] = e;
+  try { window.localStorage.setItem(CACHE_KEY, JSON.stringify(trimmed)); } catch { /* quota */ }
+}
+function mergeRows(existing: GeoRow[], incoming: GeoRow[]): GeoRow[] {
+  const map = new Map<string, GeoRow>();
+  for (const r of existing) map.set(r.database, r);
+  for (const r of incoming) map.set(r.database, r);
+  return Array.from(map.values());
 }
 
-function buildReportEnvelope(result: GeoResult) {
+function loadPending(): { phrase: string; resetAt: string } | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(PENDING_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+function savePending(p: { phrase: string; resetAt: string } | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (p) window.localStorage.setItem(PENDING_KEY, JSON.stringify(p));
+    else window.localStorage.removeItem(PENDING_KEY);
+  } catch { /* quota */ }
+}
+
+function totalsFor(rows: GeoRow[]) {
+  const withData = rows.filter((r) => r.volume != null && r.volume > 0).length;
+  const totalVolume = rows.reduce((s, r) => s + (r.volume ?? 0), 0);
+  const ukVolume = rows.find((r) => r.database === 'uk')?.volume ?? 0;
+  const ukSharePct = totalVolume > 0 ? Math.round((ukVolume / totalVolume) * 10000) / 100 : 0;
+  return { countries: rows.length, withData, totalVolume, ukVolume, ukSharePct };
+}
+
+function buildEnvelope(entry: CacheEntry) {
+  const covered = new Set(entry.rows.map((r) => r.database));
+  const missing = entry.catalog.filter((c) => !covered.has(c.id));
+  const errored = entry.rows.filter((r) => r.error != null).map((r) => ({ database: r.database, country: r.country, error: r.error }));
+  const unitsUsedTotal = entry.runs.reduce((s, r) => s + r.unitsUsed, 0);
+  const totals = totalsFor(entry.rows);
   return {
     schemaVersion: REPORT_SCHEMA_VERSION,
     reportType: 'semrush.keyword_geo_breakdown',
     generatedAt: new Date().toISOString(),
     source: {
-      provider: 'Semrush',
-      endpoint: '/keywords/phrase_this',
-      index: 'organic',
-      via: 'Lovable connector gateway',
+      provider: 'Semrush', endpoint: '/keywords/phrase_this',
+      index: 'organic', via: 'Lovable connector gateway',
     },
     parameters: {
-      phrase: result.phrase,
-      selectedTerm: result.phrase,
+      phrase: entry.phrase, selectedTerm: entry.phrase,
       exportColumns: ['Ph', 'Nq', 'Cp', 'Co', 'Nr', 'Td'],
-      databasesQueried: result.rows.map((r) => r.database),
+      catalogDatabases: entry.catalog.map((c) => c.id),
     },
-    fetchedAt: result.fetchedAt,
-    totals: result.totals,
-    rows: result.rows,
+    coverage: {
+      complete: missing.length === 0,
+      catalogSize: entry.catalog.length,
+      covered: entry.rows.map((r) => r.database),
+      missing: missing.map((m) => ({ database: m.id, country: m.country })),
+      errored,
+    },
+    quota: { unitsUsedTotal, runs: entry.runs },
+    fetchedAt: entry.lastFetchedAt,
+    totals,
+    rows: entry.rows,
   };
 }
 
 function KeywordGeoPanel() {
   const fetchGeo = useServerFn(getSemrushKeywordGeo);
+  const fetchQuota = useServerFn(getSemrushQuota);
+
   const [phrase, setPhrase] = useState('research peptides');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<GeoResult | null>(null);
-  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [cache, setCache] = useState<Record<string, CacheEntry>>({});
+  const [activeKey, setActiveKey] = useState<string | null>(null);
+  const [quota, setQuota] = useState<QuotaResponse | null>(null);
+  const [quotaLoading, setQuotaLoading] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  const [topN, setTopN] = useState<number | 'all'>('all');
+  const resumeTimerRef = useRef<number | null>(null);
+  const autoResumeFiredRef = useRef(false);
 
-  useEffect(() => { setHistory(loadHistory()); }, []);
+  // Load cache + pending + initial quota on mount
+  useEffect(() => {
+    const c = loadCache();
+    setCache(c);
+    const p = loadPending();
+    if (p && c[p.phrase.toLowerCase()]) setActiveKey(p.phrase.toLowerCase());
+    void refreshQuota();
+    // eslint-disable-next-line
+  }, []);
 
-  const persistHistory = (next: HistoryItem[]) => {
-    setHistory(next);
-    saveHistory(next);
+  // Live countdown ticker
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  // Periodic quota refresh (every 60s) so the banner stays current
+  useEffect(() => {
+    const t = window.setInterval(() => { void refreshQuota(); }, 60_000);
+    return () => window.clearInterval(t);
+    // eslint-disable-next-line
+  }, []);
+
+  const refreshQuota = useCallback(async () => {
+    setQuotaLoading(true);
+    try {
+      const idToken = await getAdminIdToken();
+      const q = (await fetchQuota({ data: { idToken } })) as QuotaResponse;
+      setQuota(q);
+    } catch { /* silent */ }
+    finally { setQuotaLoading(false); }
+  }, [fetchQuota]);
+
+  const persistCache = (next: Record<string, CacheEntry>) => {
+    setCache(next);
+    saveCache(next);
   };
 
-  const recordHistory = (res: GeoResult) => {
-    const item: HistoryItem = {
-      phrase: res.phrase,
-      fetchedAt: res.fetchedAt,
-      totalVolume: res.totals.totalVolume,
-      ukVolume: res.totals.ukVolume,
-      ukSharePct: res.totals.ukSharePct,
-      withData: res.totals.withData,
-      countries: res.totals.countries,
-      result: res,
-    };
-    const filtered = history.filter((h) => h.phrase.toLowerCase() !== res.phrase.toLowerCase());
-    persistHistory([item, ...filtered].slice(0, HISTORY_LIMIT));
-  };
+  const activeEntry: CacheEntry | null = activeKey ? cache[activeKey] ?? null : null;
 
-  const run = async (override?: string) => {
-    const term = (override ?? phrase).trim();
+  const sortedRows = useMemo(() => {
+    if (!activeEntry) return [];
+    return [...activeEntry.rows].sort((a, b) => (b.volume ?? -1) - (a.volume ?? -1));
+  }, [activeEntry]);
+
+  const totals = useMemo(() => activeEntry ? totalsFor(activeEntry.rows) : null, [activeEntry]);
+  const total = totals?.totalVolume ?? 0;
+
+  const catalog: CatalogEntry[] = quota?.databases ?? activeEntry?.catalog ?? [];
+  const coveredSet = useMemo(() => new Set((activeEntry?.rows ?? []).map((r) => r.database)), [activeEntry]);
+  const missing = useMemo(
+    () => catalog.filter((c) => !coveredSet.has(c.id)),
+    [catalog, coveredSet],
+  );
+
+  // Pick which databases to send to the server for a given action.
+  const buildDbList = useCallback((mode: 'all' | 'resume'): string[] => {
+    if (mode === 'resume') return missing.map((m) => m.id);
+    if (topN === 'all') return catalog.map((c) => c.id);
+    return catalog.slice(0, topN).map((c) => c.id);
+  }, [missing, catalog, topN]);
+
+  const runLookup = useCallback(async (mode: 'all' | 'resume', overridePhrase?: string) => {
+    const term = (overridePhrase ?? phrase).trim();
     if (!term) return;
-    if (override) setPhrase(override);
+    const dbList = mode === 'resume'
+      ? missing.map((m) => m.id)
+      : (topN === 'all' ? catalog.map((c) => c.id) : catalog.slice(0, topN).map((c) => c.id));
+    if (dbList.length === 0) {
+      setError(mode === 'resume' ? 'All countries already fetched.' : 'No countries to fetch.');
+      return;
+    }
+    if (overridePhrase) setPhrase(overridePhrase);
     setLoading(true);
     setError(null);
     try {
       const idToken = await getAdminIdToken();
-      const res = (await fetchGeo({ data: { idToken, phrase: term } })) as GeoResult;
-      setResult(res);
-      recordHistory(res);
+      const res = (await fetchGeo({ data: {
+        idToken, phrase: term, databases: dbList, autoLimit: true,
+      } })) as ServerGeoResponse;
+
+      const key = term.toLowerCase();
+      const stamped = res.rows.map((r) => ({ ...r, fetchedAt: res.fetchedAt }));
+      const prior = cache[key];
+      const mergedRows = mergeRows(prior?.rows ?? [], stamped);
+      const entry: CacheEntry = {
+        phrase: term,
+        lastFetchedAt: res.fetchedAt,
+        rows: mergedRows,
+        runs: [
+          ...(prior?.runs ?? []),
+          {
+            at: res.fetchedAt,
+            fetched: res.fetchedDatabases,
+            trimmed: res.trimmedByQuota,
+            unitsUsed: res.quota.unitsUsed,
+          },
+        ].slice(-25),
+        catalog: res.catalog.length ? res.catalog : (prior?.catalog ?? catalog),
+      };
+      const nextCache = { ...cache, [key]: entry };
+      persistCache(nextCache);
+      setActiveKey(key);
+      setQuota((q) => q ? { ...q, ...res.quota.after } : q);
+
+      // Pending background resume
+      const stillMissing = entry.catalog.filter((c) => !entry.rows.some((r) => r.database === c.id));
+      if (stillMissing.length > 0 && res.quota.after.resetAt && (res.quota.after.remaining ?? 0) < stillMissing.length) {
+        savePending({ phrase: term, resetAt: res.quota.after.resetAt });
+        autoResumeFiredRef.current = false;
+      } else {
+        savePending(null);
+      }
     } catch (e: any) {
       setError(e?.message ?? 'Lookup failed');
     } finally {
       setLoading(false);
     }
-  };
+  }, [phrase, missing, topN, catalog, cache, fetchGeo]);
+
+  // Auto-resume when the quota window resets
+  useEffect(() => {
+    if (resumeTimerRef.current) {
+      window.clearTimeout(resumeTimerRef.current);
+      resumeTimerRef.current = null;
+    }
+    const pending = loadPending();
+    if (!pending || !quota?.resetAt) return;
+    const resetMs = new Date(pending.resetAt).getTime();
+    const delay = resetMs - Date.now() + 5_000; // 5s buffer
+    if (delay <= 0) {
+      // Already past reset; check quota and resume immediately
+      void (async () => {
+        await refreshQuota();
+        if (!autoResumeFiredRef.current && pending) {
+          autoResumeFiredRef.current = true;
+          await runLookup('resume', pending.phrase);
+        }
+      })();
+      return;
+    }
+    resumeTimerRef.current = window.setTimeout(async () => {
+      await refreshQuota();
+      if (!autoResumeFiredRef.current) {
+        autoResumeFiredRef.current = true;
+        await runLookup('resume', pending.phrase);
+      }
+    }, Math.min(delay, 2_147_483_000));
+    return () => {
+      if (resumeTimerRef.current) {
+        window.clearTimeout(resumeTimerRef.current);
+        resumeTimerRef.current = null;
+      }
+    };
+  }, [quota?.resetAt, runLookup, refreshQuota]);
 
   const triggerDownload = (filename: string, mime: string, content: string) => {
     const blob = new Blob([content], { type: mime });
@@ -359,97 +536,138 @@ function KeywordGeoPanel() {
     URL.revokeObjectURL(url);
   };
 
-  const downloadJsonFor = (res: GeoResult) => {
-    const envelope = buildReportEnvelope(res);
+  const downloadJsonFor = (entry: CacheEntry) => {
+    const env = buildEnvelope(entry);
     triggerDownload(
-      `seo-geo-${slugify(res.phrase)}-${dateStamp()}.json`,
+      `seo-geo-${slugify(entry.phrase)}-${dateStamp()}${env.coverage.complete ? '' : '-partial'}.json`,
       'application/json',
-      JSON.stringify(envelope, null, 2),
+      JSON.stringify(env, null, 2),
     );
   };
 
-  const downloadCsvFor = (res: GeoResult) => {
-    const envelope = buildReportEnvelope(res);
-    const header = ['country', 'database', 'volume', 'cpc', 'competition', 'results', 'share_pct', 'error'];
-    const total = res.totals.totalVolume || 0;
-    const sorted = [...res.rows].sort((a, b) => (b.volume ?? -1) - (a.volume ?? -1));
+  const downloadCsvFor = (entry: CacheEntry) => {
+    const env = buildEnvelope(entry);
+    const header = ['country', 'database', 'volume', 'cpc', 'competition', 'results', 'share_pct', 'fetched_at', 'error'];
+    const totalVol = env.totals.totalVolume || 0;
+    const sorted = [...entry.rows].sort((a, b) => (b.volume ?? -1) - (a.volume ?? -1));
     const lines: string[] = [];
-    // Metadata header (commented) — consistent schema for downstream parsers
-    lines.push(`# schema_version,${envelope.schemaVersion}`);
-    lines.push(`# report_type,${envelope.reportType}`);
-    lines.push(`# generated_at,${envelope.generatedAt}`);
-    lines.push(`# fetched_at,${envelope.fetchedAt}`);
-    lines.push(`# source_provider,${envelope.source.provider}`);
-    lines.push(`# source_endpoint,${envelope.source.endpoint}`);
-    lines.push(`# source_index,${envelope.source.index}`);
-    lines.push(`# param_phrase,${csvCell(envelope.parameters.phrase)}`);
-    lines.push(`# param_selected_term,${csvCell(envelope.parameters.selectedTerm)}`);
-    lines.push(`# param_export_columns,${envelope.parameters.exportColumns.join('|')}`);
-    lines.push(`# param_databases,${envelope.parameters.databasesQueried.join('|')}`);
-    lines.push(`# totals_countries,${res.totals.countries}`);
-    lines.push(`# totals_with_data,${res.totals.withData}`);
-    lines.push(`# totals_total_volume,${res.totals.totalVolume}`);
-    lines.push(`# totals_uk_volume,${res.totals.ukVolume}`);
-    lines.push(`# totals_uk_share_pct,${res.totals.ukSharePct}`);
+    lines.push(`# schema_version,${env.schemaVersion}`);
+    lines.push(`# report_type,${env.reportType}`);
+    lines.push(`# generated_at,${env.generatedAt}`);
+    lines.push(`# fetched_at,${env.fetchedAt}`);
+    lines.push(`# source_provider,${env.source.provider}`);
+    lines.push(`# source_endpoint,${env.source.endpoint}`);
+    lines.push(`# param_phrase,${csvCell(env.parameters.phrase)}`);
+    lines.push(`# param_selected_term,${csvCell(env.parameters.selectedTerm)}`);
+    lines.push(`# param_export_columns,${env.parameters.exportColumns.join('|')}`);
+    lines.push(`# param_catalog,${env.parameters.catalogDatabases.join('|')}`);
+    lines.push(`# coverage_complete,${env.coverage.complete}`);
+    lines.push(`# coverage_catalog_size,${env.coverage.catalogSize}`);
+    lines.push(`# coverage_covered,${env.coverage.covered.join('|')}`);
+    lines.push(`# coverage_missing,${env.coverage.missing.map((m) => m.database).join('|')}`);
+    lines.push(`# coverage_errored,${env.coverage.errored.map((e) => e.database).join('|')}`);
+    lines.push(`# quota_units_used_total,${env.quota.unitsUsedTotal}`);
+    lines.push(`# quota_runs,${env.quota.runs.length}`);
+    lines.push(`# totals_countries,${env.totals.countries}`);
+    lines.push(`# totals_with_data,${env.totals.withData}`);
+    lines.push(`# totals_total_volume,${env.totals.totalVolume}`);
+    lines.push(`# totals_uk_volume,${env.totals.ukVolume}`);
+    lines.push(`# totals_uk_share_pct,${env.totals.ukSharePct}`);
     lines.push('');
     lines.push(header.join(','));
     for (const r of sorted) {
-      const share = total > 0 && r.volume != null ? ((r.volume / total) * 100).toFixed(2) : '';
-      const row = [
+      const share = totalVol > 0 && r.volume != null ? ((r.volume / totalVol) * 100).toFixed(2) : '';
+      lines.push([
         csvCell(r.country), csvCell(r.database),
         r.volume ?? '', r.cpc ?? '', r.competition ?? '', r.results ?? '',
-        share, csvCell(r.error ?? ''),
-      ];
-      lines.push(row.join(','));
+        share, csvCell(r.fetchedAt ?? ''), csvCell(r.error ?? ''),
+      ].join(','));
     }
     triggerDownload(
-      `seo-geo-${slugify(res.phrase)}-${dateStamp()}.csv`,
+      `seo-geo-${slugify(entry.phrase)}-${dateStamp()}${env.coverage.complete ? '' : '-partial'}.csv`,
       'text/csv',
       lines.join('\n'),
     );
   };
 
-  const sortedRows = useMemo(
-    () => (result ? [...result.rows].sort((a, b) => (b.volume ?? -1) - (a.volume ?? -1)) : []),
-    [result],
-  );
-  const total = result?.totals.totalVolume ?? 0;
-
   const chartData = useMemo(() => {
-    if (!result) return [];
     return sortedRows
       .filter((r) => r.volume != null && r.volume > 0)
       .map((r) => ({
-        country: r.country,
-        database: r.database,
-        volume: r.volume ?? 0,
-        isUk: r.database === 'uk',
+        country: r.country, database: r.database,
+        volume: r.volume ?? 0, isUk: r.database === 'uk',
       }));
-  }, [result, sortedRows]);
+  }, [sortedRows]);
+
+  const cacheList = useMemo(
+    () => Object.values(cache).sort((a, b) =>
+      new Date(b.lastFetchedAt).getTime() - new Date(a.lastFetchedAt).getTime()),
+    [cache],
+  );
+
+  // Quota banner derived values
+  const quotaRemaining = quota?.remaining ?? null;
+  const fullRunCost = quota?.fullRunCost ?? catalog.length;
+  const resetMs = quota?.resetAt ? new Date(quota.resetAt).getTime() : null;
+  const msUntilReset = resetMs != null ? resetMs - now : null;
+  const isReset = msUntilReset != null && msUntilReset <= 0;
+  const lowQuota = quotaRemaining != null && quotaRemaining < fullRunCost;
+  const exhausted = quotaRemaining === 0;
 
   return (
     <div className="bg-slate-900 border-2 border-slate-700 rounded-xl overflow-hidden">
       <div className="px-4 py-3 border-b-2 border-slate-700 flex items-center gap-2">
         <Globe className="w-4 h-4 text-emerald-400" />
         <h2 className="text-white font-semibold text-sm">Keyword geo breakdown</h2>
-        <span className="text-xs text-slate-400 ml-auto">Per-country monthly search volume + UK share of search</span>
+        <span className="text-xs text-slate-400 ml-auto">Per-country monthly volume · UK share of search</span>
       </div>
 
-      <div className="p-4 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto] gap-3 items-end">
+      {/* Quota banner */}
+      <QuotaBanner
+        quota={quota} quotaLoading={quotaLoading} msUntilReset={msUntilReset}
+        isReset={isReset} lowQuota={lowQuota} exhausted={exhausted}
+        fullRunCost={fullRunCost} missingCount={missing.length}
+        onRetry={async () => {
+          await refreshQuota();
+          const pending = loadPending();
+          if (pending) {
+            autoResumeFiredRef.current = true;
+            await runLookup('resume', pending.phrase);
+          } else if (activeEntry && missing.length > 0) {
+            await runLookup('resume', activeEntry.phrase);
+          }
+        }}
+      />
+
+      <div className="p-4 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-end">
         <div>
           <label className="block text-xs font-semibold text-slate-300 mb-1">Keyword / phrase</label>
           <input
-            type="text"
-            value={phrase}
+            type="text" value={phrase}
             onChange={(e) => setPhrase(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !loading) run(); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !loading) runLookup('all'); }}
             maxLength={80}
             className="w-full min-h-[48px] px-3 bg-slate-800 border-2 border-slate-600 text-white rounded-lg text-sm"
             placeholder="e.g. research peptides"
           />
         </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-300 mb-1">Top N</label>
+          <select
+            value={String(topN)}
+            onChange={(e) => setTopN(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+            className="min-h-[48px] px-3 bg-slate-800 border-2 border-slate-600 text-white rounded-lg text-sm"
+            title="Limit run to top N priority countries (auto-trimmed further if quota is low)"
+          >
+            <option value="all">All ({fullRunCost})</option>
+            <option value="5">Top 5</option>
+            <option value="10">Top 10</option>
+            <option value="15">Top 15</option>
+            <option value="20">Top 20</option>
+          </select>
+        </div>
         <button
-          onClick={() => run()}
+          onClick={() => runLookup('all')}
           disabled={loading || !phrase.trim()}
           className="min-h-[48px] px-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white rounded-lg text-sm font-semibold inline-flex items-center gap-2"
         >
@@ -457,22 +675,39 @@ function KeywordGeoPanel() {
           Lookup
         </button>
         <button
-          onClick={() => result && downloadCsvFor(result)}
-          disabled={!result}
-          className="min-h-[48px] px-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white rounded-lg text-sm font-medium border-2 border-slate-600 inline-flex items-center gap-2"
-          title="Download CSV"
+          onClick={() => runLookup('resume')}
+          disabled={loading || !activeEntry || missing.length === 0}
+          className="min-h-[48px] px-3 bg-blue-700 hover:bg-blue-600 disabled:opacity-40 text-white rounded-lg text-sm font-semibold inline-flex items-center gap-2"
+          title={missing.length > 0 ? `Fetch ${missing.length} missing countries` : 'All countries already fetched'}
         >
-          <Download className="w-4 h-4" /> CSV
+          <RotateCw className="w-4 h-4" /> Resume {missing.length > 0 ? `(${missing.length})` : ''}
         </button>
-        <button
-          onClick={() => result && downloadJsonFor(result)}
-          disabled={!result}
-          className="min-h-[48px] px-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white rounded-lg text-sm font-medium border-2 border-slate-600 inline-flex items-center gap-2"
-          title="Download JSON"
-        >
-          <Download className="w-4 h-4" /> JSON
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => activeEntry && downloadCsvFor(activeEntry)}
+            disabled={!activeEntry}
+            className="min-h-[48px] px-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white rounded-lg text-sm font-medium border-2 border-slate-600 inline-flex items-center gap-2"
+            title="Download CSV (includes partial-coverage metadata)"
+          >
+            <Download className="w-4 h-4" /> CSV
+          </button>
+          <button
+            onClick={() => activeEntry && downloadJsonFor(activeEntry)}
+            disabled={!activeEntry}
+            className="min-h-[48px] px-3 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white rounded-lg text-sm font-medium border-2 border-slate-600 inline-flex items-center gap-2"
+            title="Download JSON (includes partial-coverage metadata)"
+          >
+            <Download className="w-4 h-4" /> JSON
+          </button>
+        </div>
       </div>
+
+      {topN !== 'all' && quotaRemaining != null && quotaRemaining < (Number(topN) || 0) && (
+        <div className="mx-4 mb-2 bg-amber-950/30 border border-amber-700/40 rounded-lg p-2 text-xs text-amber-200 flex items-center gap-2">
+          <Zap className="w-3.5 h-3.5" />
+          Quota only allows {quotaRemaining} calls — top {quotaRemaining} of {topN} will be fetched. Use Resume after reset to fill the rest.
+        </div>
+      )}
 
       {error && (
         <div className="mx-4 mb-4 bg-red-950/40 border-2 border-red-700/60 rounded-lg p-3 flex items-start gap-2">
@@ -481,20 +716,25 @@ function KeywordGeoPanel() {
             <p className="text-red-200 font-mono break-all">{error}</p>
             {(error.includes('134') || /quota/i.test(error)) && (
               <p className="text-red-200/80 mt-2 font-sans">
-                The linked Semrush account is out of API units for today. The free plan allows 10 calls/day total — a geo lookup needs {25} (one per country). Upgrade the Semrush plan, or wait for the daily reset shown above, then re-run.
+                Out of Semrush API units. Free plan = 10 calls/day. Partial results below remain cached — use Resume after reset.
               </p>
             )}
           </div>
         </div>
       )}
 
-      {result && (
+      {activeEntry && totals && (
         <>
-          <div className="px-4 pb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard label="Total monthly volume" value={result.totals.totalVolume} suffix={`/${result.totals.countries} countries`} />
-            <StatCard label="Countries with data" value={result.totals.withData} />
-            <StatCard label="UK monthly volume" value={result.totals.ukVolume} />
-            <StatCard label="UK share of search" value={result.totals.ukSharePct} suffix="%" />
+          <div className="px-4 pb-4 grid grid-cols-2 md:grid-cols-5 gap-3">
+            <StatCard label="Total monthly volume" value={totals.totalVolume} suffix={`/${totals.countries} countries`} />
+            <StatCard label="Countries with data" value={totals.withData} />
+            <StatCard label="UK monthly volume" value={totals.ukVolume} />
+            <StatCard label="UK share of search" value={totals.ukSharePct} suffix="%" />
+            <StatCard
+              label="Coverage"
+              value={`${activeEntry.rows.length}/${activeEntry.catalog.length}`}
+              suffix={missing.length === 0 ? ' complete' : ` · ${missing.length} missing`}
+            />
           </div>
 
           {/* Chart */}
@@ -506,7 +746,7 @@ function KeywordGeoPanel() {
                   Per-country search volume
                 </h3>
                 <span className="ml-auto text-[11px] text-emerald-400 font-semibold">
-                  UK highlighted · {result.totals.ukSharePct}% share
+                  UK highlighted · {totals.ukSharePct}% share
                 </span>
               </div>
               {chartData.length === 0 ? (
@@ -517,13 +757,7 @@ function KeywordGeoPanel() {
                     <BarChart data={chartData} layout="vertical" margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
                       <CartesianGrid stroke="#1e293b" horizontal={false} />
                       <XAxis type="number" stroke="#94a3b8" tick={{ fontSize: 11 }} />
-                      <YAxis
-                        dataKey="country"
-                        type="category"
-                        stroke="#94a3b8"
-                        tick={{ fontSize: 11 }}
-                        width={120}
-                      />
+                      <YAxis dataKey="country" type="category" stroke="#94a3b8" tick={{ fontSize: 11 }} width={120} />
                       <Tooltip
                         cursor={{ fill: '#1e293b' }}
                         contentStyle={{ background: '#0f172a', border: '1px solid #334155', borderRadius: 8, fontSize: 12 }}
@@ -545,6 +779,27 @@ function KeywordGeoPanel() {
               )}
             </div>
           </div>
+
+          {/* Missing-countries chip strip */}
+          {missing.length > 0 && (
+            <div className="px-4 pb-3">
+              <div className="bg-slate-950/60 border border-slate-700 rounded-lg p-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <DbIcon className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-xs font-semibold text-amber-200 uppercase tracking-wide">
+                    Missing — not yet fetched
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {missing.map((m) => (
+                    <span key={m.id} className="text-[11px] bg-slate-800 border border-slate-600 text-slate-300 px-2 py-0.5 rounded">
+                      {m.country} <span className="text-slate-500">·</span> {m.id.toUpperCase()}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -568,7 +823,7 @@ function KeywordGeoPanel() {
                         {r.database === 'uk' && <span className="ml-2 text-[10px] uppercase font-semibold text-emerald-400">UK</span>}
                       </td>
                       <td className="px-4 py-2 text-slate-400 uppercase">{r.database}</td>
-                      <td className="px-4 py-2 text-right text-slate-200">{r.error ? <span className="text-red-400 text-xs">err</span> : r.volume != null ? r.volume.toLocaleString() : '—'}</td>
+                      <td className="px-4 py-2 text-right text-slate-200">{r.error ? <span className="text-red-400 text-xs" title={r.error}>err</span> : r.volume != null ? r.volume.toLocaleString() : '—'}</td>
                       <td className="px-4 py-2 text-right text-slate-200">{r.volume != null && total > 0 ? `${share.toFixed(2)}%` : '—'}</td>
                       <td className="px-4 py-2 text-right text-slate-200">{r.cpc != null ? r.cpc.toFixed(2) : '—'}</td>
                       <td className="px-4 py-2 text-right text-slate-200">{r.competition != null ? r.competition.toFixed(2) : '—'}</td>
@@ -579,92 +834,122 @@ function KeywordGeoPanel() {
             </table>
           </div>
           <p className="px-4 py-3 text-xs text-slate-500">
-            phrase: <span className="text-slate-300">{result.phrase}</span> · fetched {new Date(result.fetchedAt).toLocaleString()} · source: Semrush (organic, Google index) · schema v{REPORT_SCHEMA_VERSION}
+            phrase: <span className="text-slate-300">{activeEntry.phrase}</span> ·
+            last fetched {new Date(activeEntry.lastFetchedAt).toLocaleString()} ·
+            runs: {activeEntry.runs.length} ·
+            units used: {activeEntry.runs.reduce((s, r) => s + r.unitsUsed, 0)} ·
+            schema v{REPORT_SCHEMA_VERSION}
           </p>
         </>
       )}
 
-      {/* Saved history */}
+      {/* Saved searches / cache */}
       <div className="border-t-2 border-slate-700">
         <div className="px-4 py-3 flex items-center gap-2">
           <History className="w-4 h-4 text-emerald-400" />
-          <h3 className="text-white text-sm font-semibold">Saved searches</h3>
-          <span className="text-xs text-slate-500 ml-2">Stored locally · last {HISTORY_LIMIT}</span>
-          {history.length > 0 && (
+          <h3 className="text-white text-sm font-semibold">Cached searches</h3>
+          <span className="text-xs text-slate-500 ml-2">Stored locally · last {CACHE_LIMIT} · per-country cache reused on re-render & download</span>
+          {cacheList.length > 0 && (
             <button
-              onClick={() => persistHistory([])}
+              onClick={() => { persistCache({}); setActiveKey(null); savePending(null); }}
               className="ml-auto text-xs text-slate-400 hover:text-red-300 inline-flex items-center gap-1"
-              title="Clear history"
+              title="Clear cache"
             >
               <Trash2 className="w-3.5 h-3.5" /> Clear
             </button>
           )}
         </div>
-        {history.length === 0 ? (
-          <p className="px-4 pb-4 text-xs text-slate-500">No saved searches yet — run a lookup above to start a history.</p>
+        {cacheList.length === 0 ? (
+          <p className="px-4 pb-4 text-xs text-slate-500">No cached searches yet — run a lookup above to start.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-slate-800/40 text-slate-300 text-xs uppercase tracking-wide">
                 <tr>
                   <th className="text-left px-4 py-2">Phrase</th>
+                  <th className="text-right px-4 py-2">Coverage</th>
                   <th className="text-right px-4 py-2">Total vol</th>
-                  <th className="text-right px-4 py-2">UK vol</th>
                   <th className="text-right px-4 py-2">UK share</th>
-                  <th className="text-left px-4 py-2">When</th>
+                  <th className="text-right px-4 py-2">Units used</th>
+                  <th className="text-left px-4 py-2">Last fetched</th>
                   <th className="text-right px-4 py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {history.map((h, i) => (
-                  <tr key={`${h.phrase}-${i}`} className="border-t border-slate-800 hover:bg-slate-800/40">
-                    <td className="px-4 py-2 text-white">{h.phrase}</td>
-                    <td className="px-4 py-2 text-right text-slate-200">{h.totalVolume.toLocaleString()}</td>
-                    <td className="px-4 py-2 text-right text-slate-200">{h.ukVolume.toLocaleString()}</td>
-                    <td className="px-4 py-2 text-right text-emerald-300 font-semibold">{h.ukSharePct}%</td>
-                    <td className="px-4 py-2 text-slate-400 text-xs">{new Date(h.fetchedAt).toLocaleString()}</td>
-                    <td className="px-4 py-2 text-right">
-                      <div className="inline-flex items-center gap-1">
-                        <button
-                          onClick={() => { setResult(h.result); setPhrase(h.phrase); }}
-                          className="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-slate-600"
-                          title="Show cached result"
-                        >
-                          View
-                        </button>
-                        <button
-                          onClick={() => run(h.phrase)}
-                          disabled={loading}
-                          className="px-2 py-1 text-xs bg-blue-700 hover:bg-blue-600 disabled:opacity-50 text-white rounded"
-                          title="Re-run lookup"
-                        >
-                          Re-run
-                        </button>
-                        <button
-                          onClick={() => downloadCsvFor(h.result)}
-                          className="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-slate-600 inline-flex items-center gap-1"
-                          title="Download cached CSV"
-                        >
-                          <Download className="w-3 h-3" /> CSV
-                        </button>
-                        <button
-                          onClick={() => downloadJsonFor(h.result)}
-                          className="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-slate-600 inline-flex items-center gap-1"
-                          title="Download cached JSON"
-                        >
-                          <Download className="w-3 h-3" /> JSON
-                        </button>
-                        <button
-                          onClick={() => persistHistory(history.filter((_, idx) => idx !== i))}
-                          className="px-2 py-1 text-xs text-slate-400 hover:text-red-300"
-                          title="Remove"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {cacheList.map((e) => {
+                  const t = totalsFor(e.rows);
+                  const used = e.runs.reduce((s, r) => s + r.unitsUsed, 0);
+                  const complete = e.rows.length >= e.catalog.length;
+                  const key = e.phrase.toLowerCase();
+                  return (
+                    <tr key={key} className={`border-t border-slate-800 hover:bg-slate-800/40 ${activeKey === key ? 'bg-emerald-950/20' : ''}`}>
+                      <td className="px-4 py-2 text-white">{e.phrase}</td>
+                      <td className="px-4 py-2 text-right">
+                        <span className={complete ? 'text-emerald-300' : 'text-amber-300'}>
+                          {e.rows.length}/{e.catalog.length}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-right text-slate-200">{t.totalVolume.toLocaleString()}</td>
+                      <td className="px-4 py-2 text-right text-emerald-300 font-semibold">{t.ukSharePct}%</td>
+                      <td className="px-4 py-2 text-right text-slate-300">{used}</td>
+                      <td className="px-4 py-2 text-slate-400 text-xs">{new Date(e.lastFetchedAt).toLocaleString()}</td>
+                      <td className="px-4 py-2 text-right">
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            onClick={() => { setActiveKey(key); setPhrase(e.phrase); }}
+                            className="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-slate-600"
+                            title="Show cached result (no API call)"
+                          >
+                            View
+                          </button>
+                          <button
+                            onClick={() => runLookup('all', e.phrase)}
+                            disabled={loading}
+                            className="px-2 py-1 text-xs bg-blue-700 hover:bg-blue-600 disabled:opacity-50 text-white rounded"
+                            title="Re-run all countries (uses API quota)"
+                          >
+                            Re-run
+                          </button>
+                          {!complete && (
+                            <button
+                              onClick={() => runLookup('resume', e.phrase)}
+                              disabled={loading}
+                              className="px-2 py-1 text-xs bg-amber-700 hover:bg-amber-600 disabled:opacity-50 text-white rounded inline-flex items-center gap-1"
+                              title="Fetch only missing countries"
+                            >
+                              <RotateCw className="w-3 h-3" /> Resume
+                            </button>
+                          )}
+                          <button
+                            onClick={() => downloadCsvFor(e)}
+                            className="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-slate-600 inline-flex items-center gap-1"
+                            title="Download cached CSV (no API call)"
+                          >
+                            <Download className="w-3 h-3" /> CSV
+                          </button>
+                          <button
+                            onClick={() => downloadJsonFor(e)}
+                            className="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-white rounded border border-slate-600 inline-flex items-center gap-1"
+                            title="Download cached JSON (no API call)"
+                          >
+                            <Download className="w-3 h-3" /> JSON
+                          </button>
+                          <button
+                            onClick={() => {
+                              const next = { ...cache }; delete next[key];
+                              persistCache(next);
+                              if (activeKey === key) setActiveKey(null);
+                            }}
+                            className="px-2 py-1 text-xs text-slate-400 hover:text-red-300"
+                            title="Remove from cache"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -672,6 +957,83 @@ function KeywordGeoPanel() {
       </div>
     </div>
   );
+}
+
+function QuotaBanner({
+  quota, quotaLoading, msUntilReset, isReset, lowQuota, exhausted,
+  fullRunCost, missingCount, onRetry,
+}: {
+  quota: QuotaResponse | null;
+  quotaLoading: boolean;
+  msUntilReset: number | null;
+  isReset: boolean;
+  lowQuota: boolean;
+  exhausted: boolean;
+  fullRunCost: number;
+  missingCount: number;
+  onRetry: () => void;
+}) {
+  if (!quota) {
+    return (
+      <div className="mx-4 mt-4 mb-2 bg-slate-950/60 border border-slate-700 rounded-lg p-3 text-xs text-slate-400 flex items-center gap-2">
+        <Loader2 className={`w-3.5 h-3.5 ${quotaLoading ? 'animate-spin' : ''}`} />
+        Checking Semrush quota…
+      </div>
+    );
+  }
+  const tone = exhausted ? 'red' : lowQuota ? 'amber' : 'emerald';
+  const palette = {
+    red: { bg: 'bg-red-950/40', border: 'border-red-700/60', icon: 'text-red-300', text: 'text-red-100' },
+    amber: { bg: 'bg-amber-950/40', border: 'border-amber-700/60', icon: 'text-amber-300', text: 'text-amber-100' },
+    emerald: { bg: 'bg-emerald-950/30', border: 'border-emerald-700/50', icon: 'text-emerald-300', text: 'text-emerald-100' },
+  }[tone];
+
+  const resetLabel = quota.resetAt
+    ? `${new Date(quota.resetAt).toLocaleString()}`
+    : 'unknown';
+  const countdown = msUntilReset != null && msUntilReset > 0
+    ? formatDuration(msUntilReset)
+    : isReset ? 'reset available' : null;
+
+  return (
+    <div className={`mx-4 mt-4 mb-2 ${palette.bg} border-2 ${palette.border} rounded-lg p-3 flex items-start gap-3`}>
+      <Timer className={`w-5 h-5 shrink-0 mt-0.5 ${palette.icon}`} />
+      <div className="flex-1 text-xs">
+        <p className={`${palette.text} font-semibold`}>
+          Semrush quota: {quota.remaining ?? '?'} / {quota.total ?? '?'} units remaining
+          {quota.isPaid === false && <span className="ml-2 text-[10px] uppercase tracking-wide opacity-70">free plan</span>}
+        </p>
+        <p className={`${palette.text} opacity-80 mt-0.5`}>
+          A full {fullRunCost}-country geo run costs {fullRunCost} units.
+          {' '}Resets at <span className="font-mono">{resetLabel}</span>
+          {countdown && <> · <span className="font-mono">{countdown}</span></>}
+          {missingCount > 0 && <> · {missingCount} country/ies pending for current phrase.</>}
+        </p>
+      </div>
+      <button
+        onClick={onRetry}
+        disabled={quotaLoading}
+        className={`shrink-0 px-3 py-1.5 rounded text-xs font-semibold border-2 inline-flex items-center gap-1
+          ${isReset || !exhausted
+            ? 'bg-emerald-700 hover:bg-emerald-600 border-emerald-600 text-white'
+            : 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-200'}`}
+        title="Re-check quota and resume any pending fetch"
+      >
+        {quotaLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RotateCw className="w-3.5 h-3.5" />}
+        Retry now
+      </button>
+    </div>
+  );
+}
+
+function formatDuration(ms: number): string {
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}h ${m}m ${sec}s`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
 }
 
 function csvCell(v: string): string {
