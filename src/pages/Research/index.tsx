@@ -371,27 +371,56 @@ export default function Research() {
     if (window.location.pathname !== '/research') return;
     const t = setTimeout(() => {
       const root = document.querySelector('[data-source="legacy-research-page"]');
-      const overlay =
-        !!document.querySelector('[data-source="research-ads-landing"]') ||
-        Array.from(document.querySelectorAll('h1')).some((h) =>
-          /^\s*Research Compounds\b/i.test(h.textContent || ''),
-        );
-      if (!root || overlay) {
+
+      // Known overlay fingerprints from the deleted Google-Ads landing
+      // (src/routes/research.tsx). Any one match is enough to alert.
+      const overlayMarker = !!document.querySelector('[data-source="research-ads-landing"]');
+      const adsH1 = Array.from(document.querySelectorAll('h1')).some((h) =>
+        /^\s*Research Compounds\b/i.test(h.textContent || ''),
+      );
+      const backHomeLink = Array.from(document.querySelectorAll('a')).some(
+        (a) => /^\s*Back to homepage\s*$/i.test(a.textContent || ''),
+      );
+      const adsLandingClass = !!document.querySelector('[class*="research-ads"]');
+      const duplicateH1 = document.querySelectorAll('main h1, body > div h1').length > 4;
+      const missingArticles =
+        !document.getElementById('incretin') ||
+        !document.getElementById('peptides') ||
+        !document.getElementById('nad');
+
+      const overlay = overlayMarker || adsH1 || backHomeLink || adsLandingClass;
+      if (!root || overlay || missingArticles || duplicateH1) {
+        const details = {
+          hasLegacyMarker: !!root,
+          hasOverlayMarker: overlayMarker,
+          hasAdsH1: adsH1,
+          hasBackHomeLink: backHomeLink,
+          hasAdsLandingClass: adsLandingClass,
+          missingArticles,
+          duplicateH1,
+          h1Count: document.querySelectorAll('h1').length,
+        };
         // eslint-disable-next-line no-console
-        console.warn('[research-route-guard] overlay or missing legacy marker at /research', { hasRoot: !!root, hasOverlay: overlay });
+        console.warn('[research-route-guard] overlay/regression at /research', details);
         try {
           const payload = JSON.stringify({
-            type: 'research-route-overlay',
+            type: 'research_overlay',
             path: '/research',
-            hasLegacyMarker: !!root,
-            hasOverlay: overlay,
-            ua: navigator.userAgent,
-            ts: Date.now(),
+            referrer: document.referrer || undefined,
+            userAgent: navigator.userAgent,
+            message: overlay
+              ? 'Ads-landing overlay detected on /research'
+              : 'Legacy article markers missing on /research',
+            details,
           });
-          if (navigator.sendBeacon) {
-            navigator.sendBeacon('/api/public/error-monitor', new Blob([payload], { type: 'application/json' }));
-          } else {
-            fetch('/api/public/error-monitor', { method: 'POST', body: payload, keepalive: true }).catch(() => undefined);
+          const blob = new Blob([payload], { type: 'application/json' });
+          if (!navigator.sendBeacon?.('/api/public/error-monitor', blob)) {
+            fetch('/api/public/error-monitor', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: payload,
+              keepalive: true,
+            }).catch(() => undefined);
           }
         } catch {
           /* diagnostics must never break the page */
