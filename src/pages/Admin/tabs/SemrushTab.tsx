@@ -17,8 +17,13 @@ const REPORT_SCHEMA_VERSION = '1.2.0';
 const CACHE_KEY = 'phlabs.admin.semrushGeoCache.v2';
 const PENDING_KEY = 'phlabs.admin.semrushGeoPending.v1';
 const RUN_HISTORY_KEY = 'phlabs.admin.semrushRunHistory.v1';
+const IN_PROGRESS_KEY = 'phlabs.admin.semrushInProgress.v1';
+const CONCURRENCY_KEY = 'phlabs.admin.semrushConcurrency.v1';
 const CACHE_LIMIT = 20;
 const RUN_HISTORY_LIMIT = 100;
+const IN_PROGRESS_TTL_MS = 30 * 60 * 1000; // 30 min — stale runs after this
+const MAX_RETRIES = 3;
+const BACKOFF_BASE_MS = 600;
 
 interface RunHistoryEntry {
   id: string;
