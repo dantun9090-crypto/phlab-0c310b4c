@@ -137,6 +137,7 @@ export const Route = createFileRoute("/bing-feed.xml")({
             "Content-Type": "application/xml; charset=utf-8",
             // 1-hour cache as requested; Bing fetches at most a few times a day.
             "Cache-Control": "public, max-age=3600, s-maxage=3600",
+            "Surrogate-Control": "max-age=3600",
             "X-Feed-Items": String(
               products.filter((p) => isAllowed(p as any)).length,
             ),
