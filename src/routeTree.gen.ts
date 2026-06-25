@@ -13,7 +13,6 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResearchRouteImport } from './routes/research'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as GoogleMerchantFeedDotxmlRouteImport } from './routes/google-merchant-feed[.]xml'
-import { Route as CompoundRouteImport } from './routes/compound'
 import { Route as BingFeedDotxmlRouteImport } from './routes/bing-feed[.]xml'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
@@ -24,6 +23,7 @@ import { Route as LandingPhlabsRouteImport } from './routes/landing.phlabs'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
+import { Route as MarketingCompoundRouteImport } from './routes/_marketing.compound'
 import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wallid'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
@@ -71,11 +71,6 @@ const GoogleMerchantFeedDotxmlRoute =
     path: '/google-merchant-feed.xml',
     getParentRoute: () => rootRouteImport,
   } as any)
-const CompoundRoute = CompoundRouteImport.update({
-  id: '/compound',
-  path: '/compound',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const BingFeedDotxmlRoute = BingFeedDotxmlRouteImport.update({
   id: '/bing-feed.xml',
   path: '/bing-feed.xml',
@@ -127,6 +122,11 @@ const AdminMerchantFeedPreviewRoute =
     path: '/admin/merchant-feed-preview',
     getParentRoute: () => rootRouteImport,
   } as any)
+const MarketingCompoundRoute = MarketingCompoundRouteImport.update({
+  id: '/_marketing/compound',
+  path: '/compound',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWebhooksWallidRoute = ApiWebhooksWallidRouteImport.update({
   id: '/api/webhooks/wallid',
   path: '/api/webhooks/wallid',
@@ -267,11 +267,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
-  '/compound': typeof CompoundRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
   '/research': typeof ResearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/compound': typeof MarketingCompoundRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -309,11 +309,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
-  '/compound': typeof CompoundRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
   '/research': typeof ResearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/compound': typeof MarketingCompoundRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -352,11 +352,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
-  '/compound': typeof CompoundRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
   '/research': typeof ResearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/_marketing/compound': typeof MarketingCompoundRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -396,11 +396,11 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/bing-feed.xml'
-    | '/compound'
     | '/google-merchant-feed.xml'
     | '/products'
     | '/research'
     | '/sitemap.xml'
+    | '/compound'
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
     | '/checkout/success'
@@ -438,11 +438,11 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/bing-feed.xml'
-    | '/compound'
     | '/google-merchant-feed.xml'
     | '/products'
     | '/research'
     | '/sitemap.xml'
+    | '/compound'
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
     | '/checkout/success'
@@ -480,11 +480,11 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/bing-feed.xml'
-    | '/compound'
     | '/google-merchant-feed.xml'
     | '/products'
     | '/research'
     | '/sitemap.xml'
+    | '/_marketing/compound'
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
     | '/checkout/success'
@@ -523,11 +523,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   BingFeedDotxmlRoute: typeof BingFeedDotxmlRoute
-  CompoundRoute: typeof CompoundRoute
   GoogleMerchantFeedDotxmlRoute: typeof GoogleMerchantFeedDotxmlRoute
   ProductsRoute: typeof ProductsRoute
   ResearchRoute: typeof ResearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  MarketingCompoundRoute: typeof MarketingCompoundRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
   CheckoutCancelRoute: typeof CheckoutCancelRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
@@ -590,13 +590,6 @@ declare module '@tanstack/react-router' {
       path: '/google-merchant-feed.xml'
       fullPath: '/google-merchant-feed.xml'
       preLoaderRoute: typeof GoogleMerchantFeedDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/compound': {
-      id: '/compound'
-      path: '/compound'
-      fullPath: '/compound'
-      preLoaderRoute: typeof CompoundRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bing-feed.xml': {
@@ -667,6 +660,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/merchant-feed-preview'
       fullPath: '/admin/merchant-feed-preview'
       preLoaderRoute: typeof AdminMerchantFeedPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_marketing/compound': {
+      id: '/_marketing/compound'
+      path: '/compound'
+      fullPath: '/compound'
+      preLoaderRoute: typeof MarketingCompoundRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/webhooks/wallid': {
@@ -851,11 +851,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   BingFeedDotxmlRoute: BingFeedDotxmlRoute,
-  CompoundRoute: CompoundRoute,
   GoogleMerchantFeedDotxmlRoute: GoogleMerchantFeedDotxmlRoute,
   ProductsRoute: ProductsRoute,
   ResearchRoute: ResearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  MarketingCompoundRoute: MarketingCompoundRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
   CheckoutCancelRoute: CheckoutCancelRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
