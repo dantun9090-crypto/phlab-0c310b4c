@@ -199,7 +199,7 @@ export default function CacheRecacheTab() {
           <code className="text-emerald-400">/sitemap.xml</code>. Every Lovable Publish auto-fires
           a full Cloudflare purge + Prerender desktop/mobile recache on first visitor request
           (build-id compared server-side via <code className="text-emerald-400">/api/public/post-publish-check</code>).
-          Public HTML cache is admin-controlled: <strong>Off</strong> (default), 24h, 7d, 14d or 30d.
+          Public HTML cache is admin-controlled: <strong>Off</strong> (default), 30s, 1min, 5min or 15min.
           When Off, every HTML response is served with <code>no-store</code> so stale shells cannot stick.
           Private routes, service workers, recovery URLs, and 404 HTML stay no-store regardless of the setting.
           Use the buttons below for ad-hoc purges or to re-trigger manually.
@@ -222,7 +222,7 @@ export default function CacheRecacheTab() {
             </p>
             <p className="text-xs text-amber-300/90 mt-2 flex items-start gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              <span><strong>Default is Off</strong> (24/7 no cache). Any TTL above 24h speeds up returning visitors but increases the risk of stale HTML after a publish (blank pages + MIME-type errors on old <code>/assets/*.js</code>). Use <strong>Off</strong> while debugging publishes.</span>
+              <span><strong>Default is Off</strong> (no cache). A short TTL (e.g. 1 minute) gives fast TTFB (~50ms HIT) while bounding stale-asset risk after a publish. Longer than 15 minutes is not offered because cached HTML referencing old <code>/assets/*.js</code> causes blank pages. Use <strong>Off</strong> while debugging publishes.</span>
             </p>
           </div>
         </div>
