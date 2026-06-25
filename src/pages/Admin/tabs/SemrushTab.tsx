@@ -1150,9 +1150,24 @@ function QuotaBanner({
     <div className={`mx-4 mt-4 mb-2 ${palette.bg} border-2 ${palette.border} rounded-lg p-3 flex items-start gap-3`}>
       <Timer className={`w-5 h-5 shrink-0 mt-0.5 ${palette.icon}`} />
       <div className="flex-1 text-xs">
-        <p className={`${palette.text} font-semibold`}>
-          Semrush quota: {quota.remaining ?? '?'} / {quota.total ?? '?'} units remaining
-          {quota.isPaid === false && <span className="ml-2 text-[10px] uppercase tracking-wide opacity-70">free plan</span>}
+        <p className={`${palette.text} font-semibold flex items-center gap-2 flex-wrap`}>
+          <span>Semrush quota: {quota.remaining ?? '?'} / {quota.total ?? '?'} units remaining</span>
+          {(() => {
+            // Plan badge — Trial / Paid / Free. Trial inferred from is_paid=true + small total.
+            if (quota.isPaid === true) {
+              const isTrial = (quota.total ?? 0) > 0 && (quota.total ?? 0) <= 3000;
+              return (
+                <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded
+                  ${isTrial ? 'bg-blue-700 text-white' : 'bg-emerald-700 text-white'}`}>
+                  {isTrial ? '7-day Trial' : 'Paid'}
+                </span>
+              );
+            }
+            if (quota.isPaid === false) {
+              return <span className="text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded bg-slate-700 text-slate-200">Free plan</span>;
+            }
+            return null;
+          })()}
         </p>
         <p className={`${palette.text} opacity-80 mt-0.5`}>
           A full {fullRunCost}-country geo run costs {fullRunCost} units.
