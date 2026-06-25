@@ -1106,7 +1106,85 @@ function KeywordGeoPanel() {
           </div>
         )}
       </div>
+
+      {/* Run history audit log (cross-phrase) */}
+      <div className="border-t-2 border-slate-700">
+        <div className="px-4 py-3 flex items-center gap-2">
+          <Timer className="w-4 h-4 text-blue-400" />
+          <h3 className="text-white text-sm font-semibold">Run history</h3>
+          <span className="text-xs text-slate-500 ml-2">
+            Audit log of every Semrush run · last {RUN_HISTORY_LIMIT} stored locally
+          </span>
+          {runHistory.length > 0 && (
+            <button
+              onClick={() => { clearRunHistory(); setRunHistory([]); }}
+              className="ml-auto text-xs text-slate-400 hover:text-red-300 inline-flex items-center gap-1"
+              title="Clear run history"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Clear history
+            </button>
+          )}
+        </div>
+        {runHistory.length === 0 ? (
+          <p className="px-4 pb-4 text-xs text-slate-500">No runs logged yet.</p>
+        ) : (
+          <div className="overflow-x-auto max-h-72">
+            <table className="w-full text-xs">
+              <thead className="bg-slate-800/40 text-slate-300 uppercase tracking-wide sticky top-0">
+                <tr>
+                  <th className="text-left px-4 py-2">When</th>
+                  <th className="text-left px-4 py-2">Phrase</th>
+                  <th className="text-left px-4 py-2">Mode</th>
+                  <th className="text-right px-4 py-2">Req</th>
+                  <th className="text-right px-4 py-2">OK</th>
+                  <th className="text-right px-4 py-2">Fail</th>
+                  <th className="text-right px-4 py-2">Units</th>
+                  <th className="text-right px-4 py-2">Quota left</th>
+                  <th className="text-left px-4 py-2">Coverage</th>
+                  <th className="text-left px-4 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {runHistory.map((h) => (
+                  <tr key={h.id} className="border-t border-slate-800 hover:bg-slate-800/40">
+                    <td className="px-4 py-1.5 text-slate-400">{new Date(h.at).toLocaleString()}</td>
+                    <td className="px-4 py-1.5 text-white">{h.phrase}</td>
+                    <td className="px-4 py-1.5">
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-semibold ${
+                        h.mode === 'all' ? 'bg-emerald-900/50 text-emerald-200'
+                        : h.mode === 'resume' ? 'bg-blue-900/50 text-blue-200'
+                        : 'bg-amber-900/50 text-amber-200'
+                      }`}>{h.mode}</span>
+                    </td>
+                    <td className="px-4 py-1.5 text-right text-slate-300">{h.requested}</td>
+                    <td className="px-4 py-1.5 text-right text-emerald-300">{h.succeeded}</td>
+                    <td className={`px-4 py-1.5 text-right ${h.failed > 0 ? 'text-red-300' : 'text-slate-500'}`}>{h.failed}</td>
+                    <td className="px-4 py-1.5 text-right text-slate-200">{h.unitsUsed}</td>
+                    <td className="px-4 py-1.5 text-right text-slate-400">{h.quotaRemaining ?? '—'}</td>
+                    <td className="px-4 py-1.5">
+                      <span className={h.coverageAfter.complete ? 'text-emerald-300' : 'text-amber-300'}>
+                        {h.coverageAfter.covered}/{h.coverageAfter.catalog}
+                        {h.coverageAfter.complete ? ' ✓' : ''}
+                      </span>
+                    </td>
+                    <td className="px-4 py-1.5">
+                      {h.error
+                        ? <span className="text-red-300" title={h.error}>error</span>
+                        : h.failed > 0
+                          ? <span className="text-amber-300" title={h.failedDatabases.join(', ')}>
+                              partial · {h.failedDatabases.length} failed
+                            </span>
+                          : <span className="text-emerald-300">ok</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
+
   );
 }
 
