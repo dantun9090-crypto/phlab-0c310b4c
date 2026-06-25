@@ -1,0 +1,107 @@
+name: Post-deploy regression
+
+# Verifies after every publish that:
+#  - Public pages render the correct dark theme shell, reference
+#    content-hashed JS/CSS, and carry a finite cache TTL with build-id.
+#  - Sensitive paths (/admin /cart /checkout /account /login /register
+#    /payment /vip) stay strictly no-store.
+#
+# Runs on push to main (after Lovable publishes), on a 30-min schedule
+# as a heartbeat, and on demand via workflow_dispatch.
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Base URL to probe (default https://phlabs.co.uk)"
+        required: false
+        default: "https://phlabs.co.uk"
+
+jobs:
+  regression:
+    name: Cache + layout regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps (frozen)
+        run: bun install --frozen-lockfile
+
+      # Give a fresh push ~60s to propagate through Lovable + Cloudflare
+      # before we start probing the live edge.
+      - name: Wait for edge propagation
+        if: github.event_name == 'push'
+        run: sleep 60
+
+      - name: Run regression
+        id: regression
+        env:
+          TEST_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+        run: |
+          set +e
+          bunx vitest run tests/post-deploy-regression.test.ts \
+            --reporter=default --reporter=junit \
+            --outputFile.junit=regression-report.xml | tee regression.log
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Annotate summary
+        if: always()
+        run: |
+          echo "## Post-deploy regression" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Target: \`${TEST_BASE_URL:-https://phlabs.co.uk}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit: \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Result exit: \`${{ steps.regression.outputs.exit_code }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          tail -n 100 regression.log >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: post-deploy-regression-${{ github.sha }}
+          path: |
+            regression.log
+            regression-report.xml
+          retention-days: 30
+
+      - name: Open issue on regression
+        if: steps.regression.outputs.exit_code != '0' && github.event_name != 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.sha.slice(0, 7);
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Post-deploy regression on ${sha} (cache / layout)`,
+              labels: ['regression', 'post-deploy', 'cache'],
+              body: [
+                `Post-deploy regression test failed against https://phlabs.co.uk.`,
+                ``,
+                `Likely causes:`,
+                `- a sensitive path (/cart, /checkout, /login, /admin, …) started returning a cacheable response`,
+                `- a public page lost its dark-theme shell, build-id meta, or hashed asset references`,
+                `- HTML cache-control regressed to \`no-store\` or to an unbounded TTL`,
+                ``,
+                `**Commit:** \`${context.sha}\``,
+                `**Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              ].join('\n'),
+            });
+
+      - name: Fail job on regression
+        if: steps.regression.outputs.exit_code != '0'
+        run: exit 1
