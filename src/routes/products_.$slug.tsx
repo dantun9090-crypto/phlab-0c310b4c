@@ -35,6 +35,19 @@ const LEGACY_SLUG_ALIASES: Record<string, string> = {
 export const Route = createFileRoute("/products_/$slug")({
   loader: async ({ params }) => {
     const raw = params.slug;
+
+    // 0) Dual-entry GMC alias (Entry A uppercase alphanumeric like "RET10A"
+    //    or Entry B lowercase no-hyphen like "retaphl10") → 301 to canonical.
+    //    Checked case-insensitively before slug-shape branching.
+    const dualTarget = DUAL_ENTRY_ALIASES[raw.toLowerCase()];
+    if (dualTarget) {
+      throw redirect({
+        to: "/products/$slug",
+        params: { slug: dualTarget },
+        statusCode: 301,
+      });
+    }
+
     const looksLikeSlug = SLUG_RE.test(raw);
 
     // 1) Slug-shaped → existing behavior: slug lookup + canonical redirect.

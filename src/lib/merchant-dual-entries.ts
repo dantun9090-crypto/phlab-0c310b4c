@@ -2,7 +2,8 @@
  * Dual-title Google Merchant Center entries.
  *
  * For each physical article we publish TWO GMC offers:
- *   - Entry A ("mkt"): clean human title, URL = /products/{numeric-id}-{slug}
+ *   - Entry A ("mkt"): clean human title, URL = /products/{ALPHANUMERIC-CODE}
+ *                     (uppercase, no hyphens, no readable product name)
  *   - Entry B ("sku"): anonymised slug title, URL = /products/{slug-no-hyphens}
  *
  * Both URLs render the same canonical product page (via the alias map in
@@ -14,22 +15,19 @@
  * `variants` array.
  */
 export type DualEntryVariant = {
-  /** e.g. "100mg" — used to build IDs/links for variant rows */
   sizeKey: string;
-  /** Display tag, e.g. "100 mg" */
   sizeLabel: string;
-  /** Entry A title, e.g. "NAD+ 100 mg" */
+  /** Entry A title, e.g. "Retatrutide 10 mg" */
   titleA: string;
-  /** Entry A URL path, e.g. "/products/10004-nad-plus-100mg" */
+  /** Entry A URL path, e.g. "/products/RET10A" (alphanumeric SKU code) */
   linkA: string;
-  /** Entry B title, e.g. "ND7-PHL 100 mg" */
+  /** Entry B title, e.g. "Reta-PHL 10 mg" */
   titleB: string;
-  /** Entry B URL path, e.g. "/products/nd7phl100" */
+  /** Entry B URL path, e.g. "/products/retaphl10" (no-hyphen slug) */
   linkB: string;
 };
 
 export type DualEntry = {
-  /** Canonical product slug in Firestore */
   canonicalSlug: string;
   variants: DualEntryVariant[];
 };
@@ -39,7 +37,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "retatrutide-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg",
-        titleA: "Retatrutide 10 mg", linkA: "/products/10001-retatrutide-10mg",
+        titleA: "Retatrutide 10 mg", linkA: "/products/RET10A",
         titleB: "Reta-PHL 10 mg",    linkB: "/products/retaphl10" },
     ],
   },
@@ -47,7 +45,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "tb-500-thymosin-beta-4",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg",
-        titleA: "TB500 10 mg",       linkA: "/products/10002-tb500-10mg",
+        titleA: "TB500 10 mg",       linkA: "/products/TB510A",
         titleB: "TB54-PHL 10 mg",    linkB: "/products/tb54phl10" },
     ],
   },
@@ -55,7 +53,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "pt-141-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg",
-        titleA: "PT-141",            linkA: "/products/10003-pt-141",
+        titleA: "PT-141",            linkA: "/products/PT141A",
         titleB: "PT41-PHL",          linkB: "/products/pt41phl" },
     ],
   },
@@ -63,13 +61,13 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "nad-research-compound",
     variants: [
       { sizeKey: "100mg",  sizeLabel: "100 mg",
-        titleA: "NAD+ 100 mg",       linkA: "/products/10004-nad-plus-100mg",
+        titleA: "NAD+ 100 mg",       linkA: "/products/NAD100A",
         titleB: "ND7-PHL 100 mg",    linkB: "/products/nd7phl100" },
       { sizeKey: "500mg",  sizeLabel: "500 mg",
-        titleA: "NAD+ 500 mg",       linkA: "/products/10005-nad-plus-500mg",
+        titleA: "NAD+ 500 mg",       linkA: "/products/NAD500A",
         titleB: "ND7-PHL 500 mg",    linkB: "/products/nd7phl500" },
       { sizeKey: "1000mg", sizeLabel: "1000 mg",
-        titleA: "NAD+ 1000 mg",      linkA: "/products/10006-nad-plus-1000mg",
+        titleA: "NAD+ 1000 mg",      linkA: "/products/NAD1KA",
         titleB: "ND7-PHL 1000 mg",   linkB: "/products/nd7phl1000" },
     ],
   },
@@ -77,7 +75,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "melanotan-ii-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg",
-        titleA: "Melanotan-II 10 mg", linkA: "/products/10007-melanotan-ii-10mg",
+        titleA: "Melanotan-II 10 mg", linkA: "/products/MT210A",
         titleB: "MT2-PHL 10 mg",      linkB: "/products/mt2phl10" },
     ],
   },
@@ -85,7 +83,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "mots-c-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg",
-        titleA: "MOTS-c 10 mg",      linkA: "/products/10008-mots-c-10mg",
+        titleA: "MOTS-c 10 mg",      linkA: "/products/MTC10A",
         titleB: "MC16-PHL 10 mg",    linkB: "/products/mc16phl10" },
     ],
   },
@@ -93,7 +91,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "klow-blend",
     variants: [
       { sizeKey: "80mg", sizeLabel: "80 mg",
-        titleA: "KLOW 80 mg",        linkA: "/products/10009-klow-80mg",
+        titleA: "KLOW 80 mg",        linkA: "/products/KLW80A",
         titleB: "KW5-PHL 80 mg",     linkB: "/products/kw5phl80" },
     ],
   },
@@ -101,7 +99,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "kpv-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg",
-        titleA: "KPV 10 mg",         linkA: "/products/10010-kpv-10mg",
+        titleA: "KPV 10 mg",         linkA: "/products/KPV10A",
         titleB: "KP3-PHL 10 mg",     linkB: "/products/kp3phl10" },
     ],
   },
@@ -109,7 +107,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "glow-blend",
     variants: [
       { sizeKey: "70mg", sizeLabel: "70 mg",
-        titleA: "GLOW 70 mg",        linkA: "/products/10011-glow-70mg",
+        titleA: "GLOW 70 mg",        linkA: "/products/GLW70A",
         titleB: "GW4-PHL 70 mg",     linkB: "/products/gw4phl70" },
     ],
   },
@@ -117,7 +115,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "ghk-cu-research-peptide",
     variants: [
       { sizeKey: "50mg", sizeLabel: "50 mg",
-        titleA: "GHK-Cu 50 mg",      linkA: "/products/10012-ghk-cu-50mg",
+        titleA: "GHK-Cu 50 mg",      linkA: "/products/GHK50A",
         titleB: "GC3-PHL 50 mg",     linkB: "/products/gc3phl50" },
     ],
   },
@@ -125,7 +123,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "bacteriostatic-water-research-compound",
     variants: [
       { sizeKey: "10ml", sizeLabel: "10 ml",
-        titleA: "Bacteriostatic Water 10 ml", linkA: "/products/10013-bacteriostatic-water-10ml",
+        titleA: "Bacteriostatic Water 10 ml", linkA: "/products/BW10MLA",
         titleB: "BW9-PHL 10 ml",              linkB: "/products/bw9phl10ml" },
     ],
   },
@@ -133,28 +131,28 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "bpc-157",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg",
-        titleA: "BPC157 10 mg",      linkA: "/products/10014-bpc157-10mg",
+        titleA: "BPC157 10 mg",      linkA: "/products/BPC10A",
         titleB: "BPC-PHL 10 mg",     linkB: "/products/bpcphl10" },
     ],
   },
 ];
 
-/** Strip the leading "/products/" from a link path. */
+/** Strip the leading "/products/" from a link path. Case-preserving. */
 function slugFromLink(link: string): string {
-  return link.replace(/^\/products\//, "").toLowerCase();
+  return link.replace(/^\/products\//, "");
 }
 
 /**
  * Build alias map: every dual-entry URL slug → canonical product slug.
- * Consumed by the /products/$slug loader to render or 301 to the
- * canonical product page.
+ * Keys are stored lowercased so the loader can look up case-insensitively
+ * (Entry A uses uppercase alphanumeric codes like "RET10A").
  */
 export function buildDualEntryAliasMap(): Record<string, string> {
   const map: Record<string, string> = {};
   for (const entry of DUAL_ENTRIES) {
     for (const v of entry.variants) {
-      map[slugFromLink(v.linkA)] = entry.canonicalSlug;
-      map[slugFromLink(v.linkB)] = entry.canonicalSlug;
+      map[slugFromLink(v.linkA).toLowerCase()] = entry.canonicalSlug;
+      map[slugFromLink(v.linkB).toLowerCase()] = entry.canonicalSlug;
     }
   }
   return map;
