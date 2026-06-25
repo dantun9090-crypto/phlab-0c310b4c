@@ -14,7 +14,7 @@ import {
 import { logToastEvent, type ToastKind } from '@/lib/toast-audit';
 import {
   detectBotReasons, isBotSession, BOT_REASON_LABELS,
-  type BotDetectionOptions, type BotReason,
+  type BotDetectionOptions,
 } from '@/lib/bot-detection';
 
 interface RegisteredUser {
