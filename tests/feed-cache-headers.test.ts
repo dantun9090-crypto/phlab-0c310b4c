@@ -1,4 +1,6 @@
 /**
+ * @vitest-environment node
+ *
  * Regression: XML feeds must declare correct Cache-Control,
  * Surrogate-Control and TTL.
  *
