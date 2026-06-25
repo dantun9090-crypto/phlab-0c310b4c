@@ -423,9 +423,30 @@ Combined administration of ipamorelin with CJC-1295 (a long-acting GHRH analogue
       {
         heading: 'Downstream Effects on IGF-1 and Tissue Endpoints',
         body: `Sustained ipamorelin administration elevates hepatic IGF-1 synthesis through increased GH-stimulated JAK2/STAT5b signalling. In hypophysectomised or GH-deficient rodent models, ipamorelin normalises IGF-1 levels, lean body mass, and femoral bone mineral density within 3–4 weeks. Tibial epiphyseal width, used as a sensitive histomorphometric marker of somatotropic axis activity, is significantly increased versus vehicle controls at all doses above 25 µg/kg/day.`
+      },
+      {
+        heading: 'GHRP-2 vs Ipamorelin: Key Differences',
+        body: `Although both are gh secretagogues acting at GHS-R1a, ghrp-2 vs ipamorelin is the most common head-to-head comparison researchers run when selecting a tool compound. GHRP-2 drives a slightly larger acute GH spike but co-releases cortisol and prolactin in measurable amounts. Ipamorelin produces a cleaner, more selective pulse with minimal off-target endocrine noise — the property that makes it the default choice when receptor-isolated mechanistic work is the goal.`
+      },
+      {
+        heading: 'Growth Hormone Secretion Mechanisms',
+        body: `Both peptides bind GHS-R1a on anterior-pituitary somatotrophs and trigger growth hormone gh release via the phospholipase-C / IP3 / calcium pathway. Pulse onset is rapid: serum GH measurably rises inside 30 minutes after subcutaneous administration in rodent and human studies, then returns toward baseline as the receptor desensitises. The kinetics are why these gh secretagogues are paired with long-acting GHRH analogues in research chemicals protocols designed to interrogate pulse-amplitude vs pulse-frequency contributions to downstream IGF-1.`
+      },
+      {
+        heading: 'Body Composition & Lean Mass Effects',
+        body: `In chronic-dosing rodent body composition studies, GHRP-2 elevates appetite stimulation (a ghrelin-receptor effect) and produces moderate gains in lean mass alongside increased food intake. Ipamorelin, lacking strong orexigenic activity, shifts lean mass without the appetite-driven confounder — useful when researchers want to attribute composition changes to GH/IGF-1 signalling rather than caloric load. Both compounds increase femoral and tibial cortical thickness at multi-week timepoints in young-adult rodents.`
+      },
+      {
+        heading: 'Long-Term Safety & Side Effects',
+        body: `Reported side effects in the published literature are mild and dose-dependent: transient flushing, headache, and short-lived prolactin elevation with GHRP-2; minimal off-target signal with ipamorelin. Long term repeat-dose studies remain limited in scope; chronic GHS-R1a agonism is studied under the anti aging research umbrella precisely because the long-term endocrine consequences in humans are not fully mapped. Researchers should design protocols with explicit washout windows and IGF-1 monitoring.`
+      },
+      {
+        heading: 'Research Chemicals Context',
+        body: `Both peptides are supplied strictly as research chemicals for in-vitro and preclinical work — not for human use. Quality assurance hinges on HPLC purity ≥99% and mass-spectrometry identity confirmation per batch. Reconstitute in sterile bacteriostatic water, aliquot, and store at −20 °C for long-term stability. Cross-batch reproducibility is the most common failure mode in published ipamorelin work and is the reason every PHLabs vial ships with a batch-matched Certificate of Analysis.`
       }
     ],
     references: [
+
       { id: 1, authors: 'Raun K, Hansen BS, Johansen NL, et al.', year: 1998, title: 'Ipamorelin, the first selective growth hormone secretagogue', journal: 'Eur J Endocrinol', doi: '10.1530/eje.0.1390552' },
       { id: 2, authors: 'Bowers CY.', year: 1998, title: 'Growth hormone-releasing peptide (GHRP)', journal: 'Cell Mol Life Sci', doi: '10.1007/s000180050227' },
       { id: 3, authors: 'Smith RG, Pong SS, Hickey G, et al.', year: 1996, title: 'Modulation of pulsatile GH release through a novel receptor in hypothalamus and pituitary gland', journal: 'Recent Prog Horm Res' },
