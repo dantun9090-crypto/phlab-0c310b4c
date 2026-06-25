@@ -14,10 +14,15 @@ const SOURCE_PATH = resolve(
 const SOURCE = readFileSync(SOURCE_PATH, "utf8");
 
 function getMerchantPromoIds(): string[] {
-  return (process.env.MERCHANT_PROMO_IDS || "PHL_LAUNCH")
+  const raw = process.env.MERCHANT_PROMO_IDS;
+  if (!raw || typeof raw !== "string") {
+    return ["PHL_LAUNCH"];
+  }
+  const ids = raw
     .split(",")
     .map((s: string) => s.trim())
-    .filter(Boolean);
+    .filter((s: string) => s.length > 0);
+  return ids.length > 0 ? ids : ["PHL_LAUNCH"];
 }
 
 describe("merchant feed promo IDs", () => {
@@ -41,6 +46,21 @@ describe("merchant feed promo IDs", () => {
       "PHL_FREESHIP",
       "PHL_BUNDLE",
     ]);
+  });
+
+  it("falls back to PHL_LAUNCH when env is an empty string", () => {
+    process.env.MERCHANT_PROMO_IDS = "";
+    expect(getMerchantPromoIds()).toEqual(["PHL_LAUNCH"]);
+  });
+
+  it("falls back to PHL_LAUNCH when env contains only commas and spaces", () => {
+    process.env.MERCHANT_PROMO_IDS = ", , , ";
+    expect(getMerchantPromoIds()).toEqual(["PHL_LAUNCH"]);
+  });
+
+  it("falls back to PHL_LAUNCH when env contains only whitespace", () => {
+    process.env.MERCHANT_PROMO_IDS = "   ";
+    expect(getMerchantPromoIds()).toEqual(["PHL_LAUNCH"]);
   });
 
   it("source emits exactly one <g:promotion_id> template per promo ID inside the per-item builder", () => {
