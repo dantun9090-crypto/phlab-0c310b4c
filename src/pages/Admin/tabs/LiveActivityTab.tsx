@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   UserPlus, Activity, Mail, Clock, Globe, Search, Copy, Check,
-  ChevronLeft, ChevronRight, BellOff, Radio, RotateCcw, Trash2,
+  ChevronLeft, ChevronRight, BellOff, Radio, RotateCcw, Trash2, ShieldOff, Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -12,6 +12,10 @@ import {
   isQuietNow, shouldSuppressToast, COMMON_TIMEZONES, detectLocalTimezone,
 } from '@/lib/quiet-hours';
 import { logToastEvent, type ToastKind } from '@/lib/toast-audit';
+import {
+  detectBotReasons, isBotSession, BOT_REASON_LABELS,
+  type BotDetectionOptions, type BotReason,
+} from '@/lib/bot-detection';
 
 interface RegisteredUser {
   uid: string;
