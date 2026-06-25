@@ -75,55 +75,51 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         </div>
       </section>
 
-      {/* WHAT WE OFFER — horizontal numbered */}
+      {/* WHAT WE OFFER — centered */}
       <section className="border-b border-white/5 py-24 sm:py-32">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            <div className="lg:col-span-4">
-              <p className="text-[11px] uppercase tracking-[0.4em] text-amber-200/70">§ 01</p>
-              <h2 className="mt-4 font-serif text-4xl md:text-5xl font-light text-white">
-                What we offer
-              </h2>
-              <div className="mt-6 h-px w-12 bg-amber-300/60" />
-              <p className="mt-8 text-base font-light leading-relaxed text-slate-400">
-                We provide premium-grade research compounds intended strictly
-                for laboratory research, analytical studies, and scientific
-                applications. All materials are supplied with detailed
-                documentation and meet high standards of quality and purity.
-              </p>
-            </div>
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <p className="text-[11px] uppercase tracking-[0.4em] text-amber-200/70">§ 01</p>
+          <h2 className="mt-4 font-serif text-4xl md:text-5xl font-light text-white">
+            What we offer
+          </h2>
+          <div className="mx-auto mt-6 h-px w-12 bg-amber-300/60" />
+          <p className="mt-8 text-base font-light leading-relaxed text-slate-400">
+            We provide premium-grade research compounds intended strictly
+            for laboratory research, analytical studies, and scientific
+            applications. All materials are supplied with detailed
+            documentation and meet high standards of quality and purity.
+          </p>
 
-            <div className="lg:col-span-8 space-y-px bg-white/5 border border-white/10 rounded-sm overflow-hidden">
-              {[
-                {
-                  k: "01",
-                  title: "Analytical Documentation",
-                  body: "Each batch is accompanied by detailed analytical records supporting reproducible laboratory workflows.",
-                },
-                {
-                  k: "02",
-                  title: "Verified Purity Standards",
-                  body: "Materials are evaluated against rigorous quality benchmarks established for advanced scientific research compounds.",
-                },
-                {
-                  k: "03",
-                  title: "Laboratory-Grade Supply",
-                  body: "Premium laboratory research materials prepared, stored and dispatched under controlled conditions.",
-                },
-              ].map((c) => (
-                <article
-                  key={c.k}
-                  className="group grid grid-cols-[auto_1fr_auto] items-start gap-6 bg-[#070b14] px-6 sm:px-10 py-10 transition-colors hover:bg-[#0c1224]"
-                >
-                  <div className="font-mono text-xs text-amber-300/70 pt-1">{c.k}</div>
-                  <div>
-                    <h3 className="text-xl font-medium text-white">{c.title}</h3>
-                    <p className="mt-3 text-sm leading-relaxed text-slate-400 max-w-xl">{c.body}</p>
-                  </div>
-                  <span className="text-amber-300/40 pt-1 transition-transform group-hover:translate-x-1">→</span>
-                </article>
-              ))}
-            </div>
+          <div className="mt-16 space-y-px bg-white/5 border border-white/10 rounded-sm overflow-hidden text-left">
+            {[
+              {
+                k: "01",
+                title: "Analytical Documentation",
+                body: "Each batch is accompanied by detailed analytical records supporting reproducible laboratory workflows.",
+              },
+              {
+                k: "02",
+                title: "Verified Purity Standards",
+                body: "Materials are evaluated against rigorous quality benchmarks established for advanced scientific research compounds.",
+              },
+              {
+                k: "03",
+                title: "Laboratory-Grade Supply",
+                body: "Premium laboratory research materials prepared, stored and dispatched under controlled conditions.",
+              },
+            ].map((c) => (
+              <article
+                key={c.k}
+                className="group grid grid-cols-[auto_1fr_auto] items-start gap-6 bg-[#070b14] px-6 sm:px-10 py-10 transition-colors hover:bg-[#0c1224]"
+              >
+                <div className="font-mono text-xs text-amber-300/70 pt-1">{c.k}</div>
+                <div>
+                  <h3 className="text-xl font-medium text-white">{c.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-slate-400 max-w-xl">{c.body}</p>
+                </div>
+                <span className="text-amber-300/40 pt-1 transition-transform group-hover:translate-x-1">→</span>
+              </article>
+            ))}
           </div>
         </div>
       </section>
