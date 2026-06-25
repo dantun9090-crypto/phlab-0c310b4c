@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 /* ───── Luxury background assets ───── */
 const HERO_IMG = "/og/luxury/hero.jpg";
