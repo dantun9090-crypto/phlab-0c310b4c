@@ -118,6 +118,8 @@ async function loadSettings(): Promise<MonitorSettings> {
       page_not_found: Number(t.page_not_found ?? DEFAULT_THRESHOLDS.page_not_found),
       server_error: Number(t.server_error ?? DEFAULT_THRESHOLDS.server_error),
       rate_limited: Number(t.rate_limited ?? DEFAULT_THRESHOLDS.rate_limited),
+      research_overlay: Number(t.research_overlay ?? DEFAULT_THRESHOLDS.research_overlay),
+      compound_overlay: Number(t.compound_overlay ?? DEFAULT_THRESHOLDS.compound_overlay),
     },
     alertEmail: typeof doc?.alertEmail === "string" ? doc.alertEmail : DEFAULT_ALERT_EMAIL,
     slackWebhookUrl:
