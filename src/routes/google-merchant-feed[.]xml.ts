@@ -1,6 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { fetchAllProducts } from "@/lib/firestore-rest";
+import { getDualVariantsForSlug, type DualEntryVariant } from "@/lib/merchant-dual-entries";
+
+// Google product categories for dual-title feed.
+// Entry A (mkt): Laboratory Equipment (5604).
+// Entry B (sku): Laboratory Chemicals (5606).
+const CATEGORY_A_ID = "5604";
+const CATEGORY_A_PATH = "Business & Industrial > Science & Laboratory > Laboratory Equipment";
+const CATEGORY_B_ID = "5606";
+const CATEGORY_B_PATH = "Business & Industrial > Science & Laboratory > Laboratory Chemicals";
 
 const BASE_URL = "https://phlabs.co.uk";
 const BRAND = "PH Labs";
