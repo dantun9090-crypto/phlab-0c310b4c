@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import LegacyApp from "@/legacy/LegacyApp";
 import { fetchPromoBanner } from "@/lib/firestore-rest";
 
-const HOME_TITLE = "HPLC-Tested Research Peptides UK — Batch CoA | PH Labs";
+const HOME_TITLE = "Pro Peptide Research Lab UK — HPLC-Tested CoA | PH Labs";
 const HOME_DESCRIPTION =
   "Shop HPLC-tested research peptides in the UK with batch CoAs and tracked next-day dispatch. Strictly for in-vitro laboratory research use.";
 const HOME_URL = "https://phlabs.co.uk/";
