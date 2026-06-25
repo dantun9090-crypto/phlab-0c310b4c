@@ -386,12 +386,9 @@ export default function LiveActivityTab() {
         const allArr = Array.from(bySession.values()).sort(
           (a, b) => b.lastSeen.getTime() - a.lastSeen.getTime()
         );
-        const arr = prefsRef.current.hideBots
-          ? allArr.filter(s => !isBotUA(s.userAgent))
-          : allArr;
-        const ids = new Set(arr.map(s => s.sessionId));
+        const ids = new Set(allArr.map(s => s.sessionId));
         if (seenSessionIdsRef.current) {
-          const fresh = arr.filter(s => !seenSessionIdsRef.current!.has(s.sessionId));
+          const fresh = allArr.filter(s => !seenSessionIdsRef.current!.has(s.sessionId));
           fresh.slice(0, 3).forEach(s => {
             if (prefsRef.current.hideBots && isBotUA(s.userAgent)) return;
             maybeToast(
@@ -403,7 +400,7 @@ export default function LiveActivityTab() {
           });
         }
         seenSessionIdsRef.current = ids;
-        setSessions(arr);
+        setSessions(allArr);
       },
       (e) => {
         console.error('LiveActivity visitor_events snapshot error', e);
