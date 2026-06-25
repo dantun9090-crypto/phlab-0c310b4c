@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   UserPlus, Activity, Mail, Clock, Globe, Search, Copy, Check,
-  ChevronLeft, ChevronRight, BellOff, Radio,
+  ChevronLeft, ChevronRight, BellOff, Radio, RotateCcw, Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   db, collection, query, orderBy, limit, onSnapshot, where, Timestamp,
+  doc, getDoc, setDoc,
 } from '@/lib/firebase';
 import {
   isQuietNow, shouldSuppressToast, COMMON_TIMEZONES, detectLocalTimezone,
@@ -51,6 +52,7 @@ interface Prefs {
   quietEnd: string;   // "HH:MM"
   quietTimezone: string; // IANA, e.g. "Europe/London"
   toastDedupTtlH: number; // hours; entries older than this are forgotten
+  toastAuditRetentionDays: number; // retention for toastAuditLogs cleanup job
 }
 const DEFAULT_PREFS: Prefs = {
   windowMin: 5,
@@ -67,6 +69,7 @@ const DEFAULT_PREFS: Prefs = {
   quietEnd: '08:00',
   quietTimezone: typeof window !== 'undefined' ? detectLocalTimezone() : 'UTC',
   toastDedupTtlH: 24,
+  toastAuditRetentionDays: 30,
 };
 
 function loadPrefs(): Prefs {
@@ -190,6 +193,51 @@ export default function LiveActivityTab() {
   // Keep latest prefs accessible in snapshot callbacks without resubscribing
   const prefsRef = useRef(prefs);
   useEffect(() => { prefsRef.current = prefs; }, [prefs]);
+
+  // Load retention setting from Firestore (settings/toastAudit.retentionDays) once.
+  const retentionLoadedRef = useRef(false);
+  useEffect(() => {
+    if (retentionLoadedRef.current) return;
+    retentionLoadedRef.current = true;
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, 'settings', 'toastAudit'));
+        const v = snap.exists() ? (snap.data() as any).retentionDays : undefined;
+        if (typeof v === 'number' && Number.isFinite(v)) {
+          setPrefs(prev => {
+            const next = { ...prev, toastAuditRetentionDays: Math.max(1, Math.min(365, Math.floor(v))) };
+            savePrefs(next);
+            return next;
+          });
+        }
+      } catch (e) {
+        console.warn('[live-activity] load retention failed', e);
+      }
+    })();
+  }, []);
+
+  const saveRetention = async (days: number) => {
+    const clamped = Math.max(1, Math.min(365, Math.floor(days)));
+    updatePrefs({ toastAuditRetentionDays: clamped });
+    try {
+      await setDoc(doc(db, 'settings', 'toastAudit'), {
+        retentionDays: clamped,
+        updatedAt: Timestamp.now(),
+      }, { merge: true });
+      toast.success(`Audit retention saved (${clamped}d)`);
+    } catch (e: any) {
+      toast.error('Failed to save retention', { description: e?.message });
+    }
+  };
+
+  const resetDedup = () => {
+    dedupRef.current = {};
+    try { localStorage.removeItem(DEDUP_KEY); } catch { /* noop */ }
+    toast.success('Dedup cache reset', {
+      description: 'First-seen toasts will fire again immediately.',
+    });
+  };
+
 
   const maybeToast = (
     kind: ToastKind,
@@ -471,6 +519,27 @@ export default function LiveActivityTab() {
             {quietActive && (
               <span className="text-amber-400 text-[10px] uppercase tracking-wider">muted</span>
             )}
+          </label>
+          <button
+            type="button"
+            onClick={resetDedup}
+            title="Clear the first-seen toast dedup cache (re-fires toasts for already-seen visitors/sessions)"
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white hover:border-amber-500/50"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> Reset dedup
+          </button>
+          <label className="flex items-center gap-2 text-xs text-[#9cb8d9] bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2">
+            <Trash2 className="w-3.5 h-3.5" /> Audit retention
+            <input
+              type="number"
+              min={1}
+              max={365}
+              value={prefs.toastAuditRetentionDays}
+              onChange={e => updatePrefs({ toastAuditRetentionDays: Number(e.target.value) || 1 })}
+              onBlur={e => saveRetention(Number(e.target.value) || 30)}
+              className="w-16 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5"
+            />
+            <span>days</span>
           </label>
           <div className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]">
             <Radio className={`w-3.5 h-3.5 ${loading ? 'text-amber-400 animate-pulse' : 'text-emerald-400'}`} />

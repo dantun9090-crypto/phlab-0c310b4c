@@ -44,6 +44,7 @@ import { Route as ApiPublicHooksWallidMonitorRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksWallidAlertsRouteImport } from './routes/api/public/hooks/wallid-alerts'
 import { Route as ApiPublicHooksWallidRouteImport } from './routes/api/public/hooks/wallid'
 import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public/hooks/truelayer'
+import { Route as ApiPublicHooksToastAuditCleanupRouteImport } from './routes/api/public/hooks/toast-audit-cleanup'
 import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/public/hooks/security-cleanup'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
 import { Route as ApiPublicHooksMonitorProductUrlsRouteImport } from './routes/api/public/hooks/monitor-product-urls'
@@ -232,6 +233,12 @@ const ApiPublicHooksTruelayerRoute = ApiPublicHooksTruelayerRouteImport.update({
   path: '/api/public/hooks/truelayer',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksToastAuditCleanupRoute =
+  ApiPublicHooksToastAuditCleanupRouteImport.update({
+    id: '/api/public/hooks/toast-audit-cleanup',
+    path: '/api/public/hooks/toast-audit-cleanup',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSecurityCleanupRoute =
   ApiPublicHooksSecurityCleanupRouteImport.update({
     id: '/api/public/hooks/security-cleanup',
@@ -302,6 +309,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
+  '/api/public/hooks/toast-audit-cleanup': typeof ApiPublicHooksToastAuditCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
   '/api/public/hooks/wallid': typeof ApiPublicHooksWallidRoute
   '/api/public/hooks/wallid-alerts': typeof ApiPublicHooksWallidAlertsRoute
@@ -344,6 +352,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
+  '/api/public/hooks/toast-audit-cleanup': typeof ApiPublicHooksToastAuditCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
   '/api/public/hooks/wallid': typeof ApiPublicHooksWallidRoute
   '/api/public/hooks/wallid-alerts': typeof ApiPublicHooksWallidAlertsRoute
@@ -388,6 +397,7 @@ export interface FileRoutesById {
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
+  '/api/public/hooks/toast-audit-cleanup': typeof ApiPublicHooksToastAuditCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
   '/api/public/hooks/wallid': typeof ApiPublicHooksWallidRoute
   '/api/public/hooks/wallid-alerts': typeof ApiPublicHooksWallidAlertsRoute
@@ -432,6 +442,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
+    | '/api/public/hooks/toast-audit-cleanup'
     | '/api/public/hooks/truelayer'
     | '/api/public/hooks/wallid'
     | '/api/public/hooks/wallid-alerts'
@@ -474,6 +485,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
+    | '/api/public/hooks/toast-audit-cleanup'
     | '/api/public/hooks/truelayer'
     | '/api/public/hooks/wallid'
     | '/api/public/hooks/wallid-alerts'
@@ -517,6 +529,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
+    | '/api/public/hooks/toast-audit-cleanup'
     | '/api/public/hooks/truelayer'
     | '/api/public/hooks/wallid'
     | '/api/public/hooks/wallid-alerts'
@@ -560,6 +573,7 @@ export interface RootRouteChildren {
   ApiPublicHooksMonitorProductUrlsRoute: typeof ApiPublicHooksMonitorProductUrlsRoute
   ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
   ApiPublicHooksSecurityCleanupRoute: typeof ApiPublicHooksSecurityCleanupRoute
+  ApiPublicHooksToastAuditCleanupRoute: typeof ApiPublicHooksToastAuditCleanupRoute
   ApiPublicHooksTruelayerRoute: typeof ApiPublicHooksTruelayerRoute
   ApiPublicHooksWallidRoute: typeof ApiPublicHooksWallidRoute
   ApiPublicHooksWallidAlertsRoute: typeof ApiPublicHooksWallidAlertsRoute
@@ -816,6 +830,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksTruelayerRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/toast-audit-cleanup': {
+      id: '/api/public/hooks/toast-audit-cleanup'
+      path: '/api/public/hooks/toast-audit-cleanup'
+      fullPath: '/api/public/hooks/toast-audit-cleanup'
+      preLoaderRoute: typeof ApiPublicHooksToastAuditCleanupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/security-cleanup': {
       id: '/api/public/hooks/security-cleanup'
       path: '/api/public/hooks/security-cleanup'
@@ -907,6 +928,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksMonitorProductUrlsRoute: ApiPublicHooksMonitorProductUrlsRoute,
   ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
   ApiPublicHooksSecurityCleanupRoute: ApiPublicHooksSecurityCleanupRoute,
+  ApiPublicHooksToastAuditCleanupRoute: ApiPublicHooksToastAuditCleanupRoute,
   ApiPublicHooksTruelayerRoute: ApiPublicHooksTruelayerRoute,
   ApiPublicHooksWallidRoute: ApiPublicHooksWallidRoute,
   ApiPublicHooksWallidAlertsRoute: ApiPublicHooksWallidAlertsRoute,
