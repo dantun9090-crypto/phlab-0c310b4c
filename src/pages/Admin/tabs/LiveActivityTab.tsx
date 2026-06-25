@@ -14,7 +14,7 @@ import {
 } from '@/lib/quiet-hours';
 import { logToastEvent, type ToastKind } from '@/lib/toast-audit';
 import {
-  detectBotReasons, isBotSession, BOT_REASON_LABELS,
+  detectBotReasons, BOT_REASON_LABELS,
   DEFAULT_ALLOWLIST_UAS, DEFAULT_ALLOWLIST_REFERRERS,
   parseAndValidateList,
   type BotDetectionOptions,
