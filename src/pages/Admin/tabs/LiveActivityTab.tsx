@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   UserPlus, Activity, Mail, Clock, Globe, Search, Copy, Check,
   ChevronLeft, ChevronRight, BellOff, Radio, RotateCcw, Trash2, ShieldOff, Info,
+  Download, Upload, Undo2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -13,7 +14,9 @@ import {
 } from '@/lib/quiet-hours';
 import { logToastEvent, type ToastKind } from '@/lib/toast-audit';
 import {
-  detectBotReasons, isBotSession, BOT_REASON_LABELS,
+  detectBotReasons, BOT_REASON_LABELS,
+  DEFAULT_ALLOWLIST_UAS, DEFAULT_ALLOWLIST_REFERRERS,
+  parseAndValidateList,
   type BotDetectionOptions,
 } from '@/lib/bot-detection';
 
@@ -256,6 +259,73 @@ export default function LiveActivityTab() {
     });
   };
 
+  const applyAllowlist = (kind: 'ua' | 'ref', raw: string) => {
+    const { valid, errors } = parseAndValidateList(raw, kind);
+    if (errors.length) {
+      toast.error(`${errors.length} invalid ${kind === 'ua' ? 'UA' : 'referrer'} entr${errors.length === 1 ? 'y' : 'ies'} skipped`, {
+        description: errors.slice(0, 3).map(e => `“${e.entry}”: ${e.error}`).join(' · '),
+      });
+    }
+    updatePrefs(kind === 'ua' ? { allowlistUAs: valid } : { allowlistReferrers: valid });
+    if (valid.length || !errors.length) {
+      toast.success(`Saved ${valid.length} ${kind === 'ua' ? 'UA' : 'referrer'} pattern${valid.length === 1 ? '' : 's'}`);
+    }
+  };
+
+  const restoreAllowlistDefaults = () => {
+    updatePrefs({
+      allowlistUAs: [...DEFAULT_ALLOWLIST_UAS],
+      allowlistReferrers: [...DEFAULT_ALLOWLIST_REFERRERS],
+    });
+    toast.success('Allowlists restored to defaults');
+  };
+
+  const exportAllowlists = () => {
+    try {
+      const blob = new Blob(
+        [JSON.stringify({
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          allowlistUAs: prefs.allowlistUAs,
+          allowlistReferrers: prefs.allowlistReferrers,
+        }, null, 2)],
+        { type: 'application/json' },
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `phlabs-allowlists-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Allowlists exported');
+    } catch (e: any) {
+      toast.error('Export failed', { description: e?.message });
+    }
+  };
+
+  const importAllowlistsFromFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onerror = () => toast.error('Could not read file');
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result || '{}'));
+        const uaRaw = Array.isArray(parsed.allowlistUAs) ? parsed.allowlistUAs.join(',') : '';
+        const refRaw = Array.isArray(parsed.allowlistReferrers) ? parsed.allowlistReferrers.join(',') : '';
+        const { valid: uaValid, errors: uaErr } = parseAndValidateList(uaRaw, 'ua');
+        const { valid: refValid, errors: refErr } = parseAndValidateList(refRaw, 'ref');
+        updatePrefs({ allowlistUAs: uaValid, allowlistReferrers: refValid });
+        const skipped = uaErr.length + refErr.length;
+        toast.success(`Imported ${uaValid.length} UA + ${refValid.length} ref patterns`, {
+          description: skipped ? `${skipped} invalid entries skipped` : undefined,
+        });
+      } catch (e: any) {
+        toast.error('Invalid JSON', { description: e?.message });
+      }
+    };
+    reader.readAsText(file);
+  };
+
+
 
   const maybeToast = (
     kind: ToastKind,
@@ -271,6 +341,8 @@ export default function LiveActivityTab() {
       quietStart: p.quietStart,
       quietEnd: p.quietEnd,
       quietTimezone: p.quietTimezone,
+      hideBots: p.hideBots,
+      treatForceHideBadgeAsBot: p.treatForceHideBadgeAsBot,
     };
 
     // 1) dedup — once per targetId within TTL.
@@ -404,10 +476,32 @@ export default function LiveActivityTab() {
               allowlistUAs: p.allowlistUAs,
               allowlistReferrers: p.allowlistReferrers,
             };
-            // forceHideBadge toggle is independent of hideBots:
-            // when enabled it suppresses toasts even with humans-only OFF.
-            if (p.treatForceHideBadgeAsBot && detectBotReasons(s, botOpts).includes('force-hide-badge')) return;
-            if (p.hideBots && isBotSession(s, botOpts)) return;
+            const reasons = detectBotReasons(s, botOpts);
+            const hitsForceHide = reasons.includes('force-hide-badge');
+            const isBot = reasons.length > 0;
+            // forceHideBadge toggle is independent of hideBots: when enabled,
+            // suppress (and log) even with humans-only OFF.
+            if ((p.treatForceHideBadgeAsBot && hitsForceHide) || (p.hideBots && isBot)) {
+              logToastEvent({
+                kind: 'visitor',
+                outcome: 'suppressed:bot',
+                title: 'New visitor online',
+                description: `${s.path || '/'} · ${shortUA(s.userAgent)}`,
+                targetId: s.visitorId || s.sessionId,
+                prefsSnapshot: {
+                  notifySignups: p.notifySignups,
+                  notifyFirstSeen: p.notifyFirstSeen,
+                  quietEnabled: p.quietEnabled,
+                  quietStart: p.quietStart,
+                  quietEnd: p.quietEnd,
+                  quietTimezone: p.quietTimezone,
+                  hideBots: p.hideBots,
+                  treatForceHideBadgeAsBot: p.treatForceHideBadgeAsBot,
+                },
+                botReasons: reasons,
+              });
+              return;
+            }
             maybeToast(
               'visitor',
               'New visitor online',
@@ -606,34 +700,65 @@ export default function LiveActivityTab() {
           </label>
           <label
             className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]"
-            title="Comma-separated UA substrings that always pass as human (your own monitoring/QA tools). Case-insensitive."
+            title="Comma-separated UA substrings that always pass as human (your own monitoring/QA tools). Case-insensitive. Validated on blur."
           >
             <span>Allow UAs</span>
             <input
               type="text"
+              key={`ua-${prefs.allowlistUAs.join('|')}`}
               placeholder="phlabs-internal, my-qa-bot"
               defaultValue={prefs.allowlistUAs.join(', ')}
-              onBlur={e => updatePrefs({
-                allowlistUAs: e.target.value.split(',').map(s => s.trim()).filter(Boolean),
-              })}
+              onBlur={e => applyAllowlist('ua', e.target.value)}
               className="w-48 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono"
             />
           </label>
           <label
             className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]"
-            title="Comma-separated referrer hostnames that always pass as human."
+            title="Comma-separated referrer hostnames that always pass as human. Validated on blur."
           >
             <span>Allow refs</span>
             <input
               type="text"
+              key={`ref-${prefs.allowlistReferrers.join('|')}`}
               placeholder="ops.phlabs.co.uk"
               defaultValue={prefs.allowlistReferrers.join(', ')}
-              onBlur={e => updatePrefs({
-                allowlistReferrers: e.target.value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
-              })}
+              onBlur={e => applyAllowlist('ref', e.target.value)}
               className="w-44 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono"
             />
           </label>
+          <button
+            type="button"
+            onClick={restoreAllowlistDefaults}
+            title="Restore default allowlists (UA + referrers)"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white hover:border-emerald-500/50"
+          >
+            <Undo2 className="w-3.5 h-3.5" /> Restore defaults
+          </button>
+          <button
+            type="button"
+            onClick={exportAllowlists}
+            title="Export allowlists to JSON"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white"
+          >
+            <Download className="w-3.5 h-3.5" /> Export
+          </button>
+          <label
+            title="Import allowlists from a JSON file"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white cursor-pointer"
+          >
+            <Upload className="w-3.5 h-3.5" /> Import
+            <input
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={e => {
+                const f = e.target.files?.[0];
+                if (f) importAllowlistsFromFile(f);
+                e.target.value = '';
+              }}
+            />
+          </label>
+
           <label className="flex items-center gap-2 text-xs text-[#9cb8d9] bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2">
             <Trash2 className="w-3.5 h-3.5" /> Audit retention
             <input

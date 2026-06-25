@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ScrollText, Search, Copy, Check, RefreshCw, Filter, BellOff, CheckCircle2, XCircle,
+  ScrollText, Search, Copy, Check, RefreshCw, Filter, BellOff, CheckCircle2, XCircle, ShieldOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   db, collection, query, orderBy, limit as fbLimit, onSnapshot,
 } from '@/lib/firebase';
 
-type OutcomeFilter = 'all' | 'delivered' | 'suppressed' | 'suppressed:pref-off' | 'suppressed:quiet-hours' | 'suppressed:dedup';
+type OutcomeFilter = 'all' | 'delivered' | 'suppressed' | 'suppressed:pref-off' | 'suppressed:quiet-hours' | 'suppressed:dedup' | 'suppressed:bot';
 type KindFilter = 'all' | 'signup' | 'visitor';
 type QuietFilter = 'any' | 'on' | 'off';
+type BotFilter = 'any' | 'only' | 'exclude' | 'force-hide-badge';
 
 interface AuditRow {
   id: string;
@@ -22,6 +23,7 @@ interface AuditRow {
   adminEmail?: string | null;
   timestamp: Date;
   tzLocal?: string | null;
+  botReasons?: string[];
   prefsSnapshot?: {
     notifySignups?: boolean;
     notifyFirstSeen?: boolean;
@@ -29,16 +31,19 @@ interface AuditRow {
     quietStart?: string;
     quietEnd?: string;
     quietTimezone?: string;
+    hideBots?: boolean;
+    treatForceHideBadgeAsBot?: boolean;
   };
 }
 
 const PAGE_SIZES = [50, 100, 250, 500];
-const LS_KEY = 'phl_toastaudit_prefs_v1';
+const LS_KEY = 'phl_toastaudit_prefs_v2';
 
 interface Prefs {
   outcome: OutcomeFilter;
   kind: KindFilter;
   quiet: QuietFilter;
+  bot: BotFilter;
   search: string;
   pageSize: number;
   fetchLimit: number;
@@ -47,6 +52,7 @@ const DEFAULT_PREFS: Prefs = {
   outcome: 'all',
   kind: 'all',
   quiet: 'any',
+  bot: 'any',
   search: '',
   pageSize: 100,
   fetchLimit: 500,
@@ -88,6 +94,7 @@ function outcomeColor(o: string): string {
   if (o === 'suppressed:quiet-hours') return 'text-amber-400 bg-amber-500/10 border-amber-500/30';
   if (o === 'suppressed:dedup') return 'text-blue-400 bg-blue-500/10 border-blue-500/30';
   if (o === 'suppressed:pref-off') return 'text-slate-400 bg-slate-500/10 border-slate-500/30';
+  if (o === 'suppressed:bot') return 'text-rose-300 bg-rose-500/10 border-rose-500/30';
   return 'text-slate-300 bg-slate-700/40 border-slate-600';
 }
 
@@ -118,6 +125,7 @@ export default function ToastAuditTab() {
             adminEmail: data.adminEmail ?? null,
             timestamp: data.timestamp?.toDate?.() || new Date(),
             tzLocal: data.tzLocal ?? null,
+            botReasons: Array.isArray(data.botReasons) ? data.botReasons : undefined,
             prefsSnapshot: data.prefsSnapshot,
           };
         });
@@ -145,8 +153,14 @@ export default function ToastAuditTab() {
         if (prefs.quiet === 'on' && !on) return false;
         if (prefs.quiet === 'off' && on) return false;
       }
+      if (prefs.bot !== 'any') {
+        const isBot = r.outcome === 'suppressed:bot';
+        if (prefs.bot === 'only' && !isBot) return false;
+        if (prefs.bot === 'exclude' && isBot) return false;
+        if (prefs.bot === 'force-hide-badge' && !(r.botReasons?.includes('force-hide-badge'))) return false;
+      }
       if (q) {
-        const hay = `${r.title || ''} ${r.description || ''} ${r.targetId || ''} ${r.adminUid || ''} ${r.adminEmail || ''}`.toLowerCase();
+        const hay = `${r.title || ''} ${r.description || ''} ${r.targetId || ''} ${r.adminUid || ''} ${r.adminEmail || ''} ${(r.botReasons || []).join(' ')}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -155,12 +169,16 @@ export default function ToastAuditTab() {
 
   const visible = filtered.slice(0, prefs.pageSize);
   const counts = useMemo(() => {
-    const c = { delivered: 0, quiet: 0, dedup: 0, prefOff: 0 };
+    const c = { delivered: 0, quiet: 0, dedup: 0, prefOff: 0, bot: 0, forceHideBadge: 0 };
     for (const r of filtered) {
       if (r.outcome === 'delivered') c.delivered++;
       else if (r.outcome === 'suppressed:quiet-hours') c.quiet++;
       else if (r.outcome === 'suppressed:dedup') c.dedup++;
       else if (r.outcome === 'suppressed:pref-off') c.prefOff++;
+      else if (r.outcome === 'suppressed:bot') {
+        c.bot++;
+        if (r.botReasons?.includes('force-hide-badge')) c.forceHideBadge++;
+      }
     }
     return c;
   }, [filtered]);
@@ -187,7 +205,7 @@ export default function ToastAuditTab() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="bg-slate-900 border-2 border-slate-700 rounded-lg p-3">
           <div className="flex items-center gap-2 text-emerald-400 text-xs uppercase tracking-wider">
             <CheckCircle2 className="w-4 h-4" /> Delivered
@@ -212,6 +230,32 @@ export default function ToastAuditTab() {
           </div>
           <div className="text-white text-2xl font-bold mt-1">{counts.prefOff}</div>
         </div>
+        <button
+          type="button"
+          onClick={() => updatePrefs({ bot: prefs.bot === 'only' ? 'any' : 'only' })}
+          className={`bg-slate-900 border-2 rounded-lg p-3 text-left transition-colors ${
+            prefs.bot === 'only' ? 'border-rose-500/60' : 'border-slate-700 hover:border-rose-500/30'
+          }`}
+          title="Click to toggle: show only bot-suppressed entries"
+        >
+          <div className="flex items-center gap-2 text-rose-300 text-xs uppercase tracking-wider">
+            <ShieldOff className="w-4 h-4" /> Hidden bots
+          </div>
+          <div className="text-white text-2xl font-bold mt-1">{counts.bot}</div>
+        </button>
+        <button
+          type="button"
+          onClick={() => updatePrefs({ bot: prefs.bot === 'force-hide-badge' ? 'any' : 'force-hide-badge' })}
+          className={`bg-slate-900 border-2 rounded-lg p-3 text-left transition-colors ${
+            prefs.bot === 'force-hide-badge' ? 'border-amber-500/60' : 'border-slate-700 hover:border-amber-500/30'
+          }`}
+          title="Click to toggle: show only forceHideBadge=true suppressions"
+        >
+          <div className="flex items-center gap-2 text-amber-300 text-xs uppercase tracking-wider">
+            <ShieldOff className="w-4 h-4" /> forceHideBadge
+          </div>
+          <div className="text-white text-2xl font-bold mt-1">{counts.forceHideBadge}</div>
+        </button>
       </div>
 
       {/* Filters */}
@@ -222,7 +266,7 @@ export default function ToastAuditTab() {
           <input
             value={prefs.search}
             onChange={e => updatePrefs({ search: e.target.value })}
-            placeholder="Search title, description, targetId, adminEmail…"
+            placeholder="Search title, description, targetId, adminEmail, botReason…"
             className="w-full pl-8 pr-2 py-2 bg-slate-800 border-2 border-slate-600 text-white text-sm rounded-lg min-h-[40px]"
           />
         </div>
@@ -237,6 +281,7 @@ export default function ToastAuditTab() {
           <option value="suppressed:quiet-hours">— quiet hours</option>
           <option value="suppressed:dedup">— dedup</option>
           <option value="suppressed:pref-off">— pref off</option>
+          <option value="suppressed:bot">— bot (humans-only / forceHideBadge)</option>
         </select>
         <select
           value={prefs.kind}
@@ -255,6 +300,17 @@ export default function ToastAuditTab() {
           <option value="any">Quiet: any</option>
           <option value="on">Quiet: enabled</option>
           <option value="off">Quiet: disabled</option>
+        </select>
+        <select
+          value={prefs.bot}
+          onChange={e => updatePrefs({ bot: e.target.value as BotFilter })}
+          className="bg-slate-800 border-2 border-slate-600 text-white text-xs rounded-lg px-2 py-2 min-h-[40px]"
+          title="Filter by bot suppression — entries blocked by Humans only or forceHideBadge=true"
+        >
+          <option value="any">Hidden bots: any</option>
+          <option value="only">Hidden bots: only</option>
+          <option value="exclude">Hidden bots: exclude</option>
+          <option value="force-hide-badge">Only forceHideBadge=true</option>
         </select>
         <select
           value={prefs.pageSize}
@@ -307,6 +363,14 @@ export default function ToastAuditTab() {
                       {r.prefsSnapshot?.quietEnabled && (
                         <span className="text-[10px] uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded px-2 py-0.5 flex items-center gap-1">
                           <BellOff className="w-3 h-3" /> quiet {r.prefsSnapshot.quietStart}–{r.prefsSnapshot.quietEnd}
+                        </span>
+                      )}
+                      {r.outcome === 'suppressed:bot' && r.botReasons && r.botReasons.length > 0 && (
+                        <span
+                          className="text-[10px] uppercase tracking-wider text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded px-2 py-0.5 flex items-center gap-1"
+                          title={`Hidden by: ${r.botReasons.join(', ')}${r.prefsSnapshot?.hideBots ? ' · humans-only ON' : ''}${r.prefsSnapshot?.treatForceHideBadgeAsBot ? ' · forceHideBadge=bot ON' : ''}`}
+                        >
+                          <ShieldOff className="w-3 h-3" /> {r.botReasons.join(' + ')}
                         </span>
                       )}
                     </div>
