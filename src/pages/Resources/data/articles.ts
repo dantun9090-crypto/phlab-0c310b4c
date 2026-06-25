@@ -10,7 +10,14 @@ export interface Article {
   references: Reference[];
   relatedSlugs: string[];
   keywords: string[];
+  /** SEO override — used as <title>. Falls back to `title` when absent. */
+  seoTitle?: string;
+  /** SEO override — used as <meta name="description">. Falls back to `excerpt`. */
+  seoDescription?: string;
+  /** Optional extra schema objects appended to JSON-LD (e.g. Organization). */
+  extraSchema?: Record<string, unknown>[];
 }
+
 
 export interface Section {
   heading?: string;
