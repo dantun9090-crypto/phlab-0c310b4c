@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   UserPlus, Activity, Mail, Clock, Globe, Search, Copy, Check,
   ChevronLeft, ChevronRight, BellOff, Radio, RotateCcw, Trash2, ShieldOff, Info,
-  Download, Upload, Undo2,
+  Download, Upload, Undo2, Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -162,6 +162,12 @@ function shortUA(ua?: string): string {
   if (/Firefox/i.test(ua)) return 'Firefox';
   if (/Safari/i.test(ua)) return 'Safari';
   return 'Other';
+}
+
+function isPreviewSession(s: OnlineSession): boolean {
+  const ref = (s.referrer || '').toLowerCase();
+  const path = (s.path || '').toLowerCase();
+  return ref.includes('lovable.dev') || path.includes('__lovable_load_id');
 }
 
 function CopyBtn({ value, label }: { value: string; label?: string }) {
@@ -1066,6 +1072,7 @@ export default function LiveActivityTab() {
             {pagedAnnotated.map(({ session: s, reasons }) => {
               const live = now - s.lastSeen.getTime() < windowMs;
               const isBot = reasons.length > 0;
+              const isPreview = isPreviewSession(s);
               const reasonTitle = isBot
                 ? `Hidden bot — ${reasons.map(r => BOT_REASON_LABELS[r]).join('; ')}`
                 : '';
@@ -1084,6 +1091,15 @@ export default function LiveActivityTab() {
                         <span className="text-white text-sm font-mono truncate">
                           {s.path || '/'}
                         </span>
+                        {isPreview && (
+                          <span
+                            title="Internal / preview traffic (lovable.dev or __lovable_load_id)"
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/10 border border-purple-500/30 text-purple-300 text-[10px] uppercase tracking-wider"
+                          >
+                            <Eye className="w-3 h-3" />
+                            Preview / Internal
+                          </span>
+                        )}
                         {isBot && (
                           <span
                             title={reasonTitle}
