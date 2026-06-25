@@ -560,12 +560,13 @@ function KeywordGeoPanel() {
       const nextCache = { ...cache, [key]: entry };
       persistCache(nextCache);
       setActiveKey(key);
-      if (lastQuotaAfter) setQuota((q) => q ? { ...q, ...lastQuotaAfter! } : q);
+      const qa: QuotaSnapshot | null = lastQuotaAfter;
+      if (qa) setQuota((q) => q ? { ...q, ...qa } : q);
 
       // Pending background resume
       const stillMissing = entry.catalog.filter((c) => !entry.rows.some((r) => r.database === c.id));
-      if (stillMissing.length > 0 && lastQuotaAfter?.resetAt && (lastQuotaAfter.remaining ?? 0) < stillMissing.length) {
-        savePending({ phrase: term, resetAt: lastQuotaAfter.resetAt });
+      if (stillMissing.length > 0 && qa?.resetAt && (qa.remaining ?? 0) < stillMissing.length) {
+        savePending({ phrase: term, resetAt: qa.resetAt });
         autoResumeFiredRef.current = false;
       } else {
         savePending(null);
