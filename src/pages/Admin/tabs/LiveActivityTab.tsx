@@ -53,6 +53,8 @@ interface Prefs {
   quietTimezone: string; // IANA, e.g. "Europe/London"
   toastDedupTtlH: number; // hours; entries older than this are forgotten
   toastAuditRetentionDays: number; // retention for toastAuditLogs cleanup job
+  hideBots: boolean; // exclude bot/crawler user-agents from live visitors
+
 }
 const DEFAULT_PREFS: Prefs = {
   windowMin: 5,
