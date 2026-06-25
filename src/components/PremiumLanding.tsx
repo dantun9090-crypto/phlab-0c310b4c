@@ -110,16 +110,22 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
       </div>
 
       {/* HERO */}
-      <section className="relative overflow-hidden min-h-[94vh] flex items-center">
+      <section className="relative overflow-hidden min-h-[78vh] sm:min-h-[88vh] lg:min-h-[94vh] flex items-center">
         <div className="absolute inset-0 overflow-hidden">
-          <img
-            src={heroImg}
-            alt=""
-            aria-hidden="true"
-            width={1920}
-            height={1280}
-            className="phl-ken absolute inset-0 h-full w-full object-cover"
-          />
+          <picture>
+            <source type="image/avif" srcSet={HERO_AVIF} sizes="100vw" />
+            <source type="image/webp" srcSet={HERO_WEBP} sizes="100vw" />
+            <img
+              src={HERO_FALLBACK}
+              alt=""
+              aria-hidden="true"
+              width={1920}
+              height={1280}
+              fetchPriority="high"
+              decoding="async"
+              className="phl-ken absolute inset-0 h-full w-full object-cover"
+            />
+          </picture>
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#0a1530]/85 via-[#0a1530]/55 to-[#0a1530]" />
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-[#0a1530]/80 via-transparent to-[#0a1530]/60" />
         </div>
