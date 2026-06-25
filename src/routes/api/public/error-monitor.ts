@@ -181,13 +181,14 @@ async function bumpCounter(
 }
 
 function alertSubject(type: EventType, count: number, windowMin: number): string {
-  const label =
-    type === "page_not_found"
-      ? "404 spike"
-      : type === "server_error"
-      ? "5xx error spike"
-      : "429 rate-limit spike";
-  return `[PH Labs] ${label}: ${count} in ${windowMin}m`;
+  const labels: Record<EventType, string> = {
+    page_not_found: "404 spike",
+    server_error: "5xx error spike",
+    rate_limited: "429 rate-limit spike",
+    research_overlay: "/research overlay detected",
+    compound_overlay: "/compound overlay detected",
+  };
+  return `[PH Labs] ${labels[type]}: ${count} in ${windowMin}m`;
 }
 
 function alertHtml(
