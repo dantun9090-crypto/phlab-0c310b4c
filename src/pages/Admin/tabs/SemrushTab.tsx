@@ -560,7 +560,7 @@ function KeywordGeoPanel() {
       const nextCache = { ...cache, [key]: entry };
       persistCache(nextCache);
       setActiveKey(key);
-      const qa: QuotaSnapshot | null = lastQuotaAfter;
+      const qa: QuotaSnapshot | null = quotaRef.current;
       if (qa) setQuota((q) => q ? { ...q, ...qa } : q);
 
       // Pending background resume
@@ -583,7 +583,7 @@ function KeywordGeoPanel() {
         requested: dbList.length,
         succeeded, failed: failedCount,
         unitsUsed: unitsUsedTotal,
-        quotaRemaining: lastQuotaAfter?.remaining ?? null,
+        quotaRemaining: quotaRef.current?.remaining ?? null,
         coverageAfter: {
           covered: entry.rows.length,
           catalog: entry.catalog.length,
@@ -599,7 +599,7 @@ function KeywordGeoPanel() {
         id: `${startedAt}-${key}-${mode}-err`,
         at: startedAt, phrase: term, term, mode,
         requested: dbList.length, succeeded: 0, failed: dbList.length,
-        unitsUsed: unitsUsedTotal, quotaRemaining: lastQuotaAfter?.remaining ?? null,
+        unitsUsed: unitsUsedTotal, quotaRemaining: quotaRef.current?.remaining ?? null,
         coverageAfter: {
           covered: prior?.rows?.length ?? 0,
           catalog: prior?.catalog?.length ?? catalog.length,
