@@ -37,7 +37,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "retatrutide-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg",
-        titleA: "Retatrutide Research Compound 10mg - Laboratory Use", linkA: "/products/RET10A",
+        titleA: "Retatrutide-3G-Research Compound 10mg", linkA: "/products/RET10A",
         titleB: "Reta-PHL 10 mg",    linkB: "/products/retaphl10" },
     ],
   },
