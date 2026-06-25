@@ -833,6 +833,26 @@ function KeywordGeoPanel() {
         </div>
       </div>
 
+      {progress && (
+        <div className="mx-4 mb-2 bg-slate-950/60 border-2 border-emerald-700/40 rounded-lg p-3">
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="text-emerald-200 font-semibold inline-flex items-center gap-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Fetching {progress.done} / {progress.total} countries
+              {progress.current && <span className="text-slate-400 font-mono">· {progress.current.toUpperCase()}</span>}
+            </span>
+            <span className="text-slate-400">{Math.round((progress.done / Math.max(1, progress.total)) * 100)}%</span>
+          </div>
+          <div className="h-2 w-full rounded bg-slate-800 overflow-hidden">
+            <div
+              className="h-full bg-emerald-500 transition-all duration-200"
+              style={{ width: `${Math.min(100, (progress.done / Math.max(1, progress.total)) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+
       {topN !== 'all' && quotaRemaining != null && quotaRemaining < (Number(topN) || 0) && (
         <div className="mx-4 mb-2 bg-amber-950/30 border border-amber-700/40 rounded-lg p-2 text-xs text-amber-200 flex items-center gap-2">
           <Zap className="w-3.5 h-3.5" />
