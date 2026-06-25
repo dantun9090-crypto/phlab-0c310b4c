@@ -259,6 +259,73 @@ export default function LiveActivityTab() {
     });
   };
 
+  const applyAllowlist = (kind: 'ua' | 'ref', raw: string) => {
+    const { valid, errors } = parseAndValidateList(raw, kind);
+    if (errors.length) {
+      toast.error(`${errors.length} invalid ${kind === 'ua' ? 'UA' : 'referrer'} entr${errors.length === 1 ? 'y' : 'ies'} skipped`, {
+        description: errors.slice(0, 3).map(e => `“${e.entry}”: ${e.error}`).join(' · '),
+      });
+    }
+    updatePrefs(kind === 'ua' ? { allowlistUAs: valid } : { allowlistReferrers: valid });
+    if (valid.length || !errors.length) {
+      toast.success(`Saved ${valid.length} ${kind === 'ua' ? 'UA' : 'referrer'} pattern${valid.length === 1 ? '' : 's'}`);
+    }
+  };
+
+  const restoreAllowlistDefaults = () => {
+    updatePrefs({
+      allowlistUAs: [...DEFAULT_ALLOWLIST_UAS],
+      allowlistReferrers: [...DEFAULT_ALLOWLIST_REFERRERS],
+    });
+    toast.success('Allowlists restored to defaults');
+  };
+
+  const exportAllowlists = () => {
+    try {
+      const blob = new Blob(
+        [JSON.stringify({
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          allowlistUAs: prefs.allowlistUAs,
+          allowlistReferrers: prefs.allowlistReferrers,
+        }, null, 2)],
+        { type: 'application/json' },
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `phlabs-allowlists-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Allowlists exported');
+    } catch (e: any) {
+      toast.error('Export failed', { description: e?.message });
+    }
+  };
+
+  const importAllowlistsFromFile = (file: File) => {
+    const reader = new FileReader();
+    reader.onerror = () => toast.error('Could not read file');
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result || '{}'));
+        const uaRaw = Array.isArray(parsed.allowlistUAs) ? parsed.allowlistUAs.join(',') : '';
+        const refRaw = Array.isArray(parsed.allowlistReferrers) ? parsed.allowlistReferrers.join(',') : '';
+        const { valid: uaValid, errors: uaErr } = parseAndValidateList(uaRaw, 'ua');
+        const { valid: refValid, errors: refErr } = parseAndValidateList(refRaw, 'ref');
+        updatePrefs({ allowlistUAs: uaValid, allowlistReferrers: refValid });
+        const skipped = uaErr.length + refErr.length;
+        toast.success(`Imported ${uaValid.length} UA + ${refValid.length} ref patterns`, {
+          description: skipped ? `${skipped} invalid entries skipped` : undefined,
+        });
+      } catch (e: any) {
+        toast.error('Invalid JSON', { description: e?.message });
+      }
+    };
+    reader.readAsText(file);
+  };
+
+
 
   const maybeToast = (
     kind: ToastKind,
