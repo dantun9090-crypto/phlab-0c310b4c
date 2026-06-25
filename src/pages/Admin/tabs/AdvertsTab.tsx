@@ -1,11 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   Megaphone, Plus, Trash2, Edit2, CheckCircle2, AlertCircle,
-  Loader2, Eye, EyeOff, Link as LinkIcon, Image as ImageIcon, Save, X
+  Loader2, Eye, EyeOff, Link as LinkIcon, Image as ImageIcon, Save, X,
+  Sparkles, Home, ShoppingBag, PanelRight, MousePointerClick, Tag,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { db, storage, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, Timestamp, orderBy, query, storageRef, uploadBytesResumable, getDownloadURL, triggerContentCdnInvalidation, bumpMarketingVersion } from '@/lib/firebase';
+
+const PLACEMENT_ICONS: Record<string, typeof Home> = {
+  homepage_hero: Home,
+  homepage_mid: Sparkles,
+  products_top: ShoppingBag,
+  products_sidebar: PanelRight,
+  popup: MousePointerClick,
+};
 
 interface Advert {
   id?: string;
@@ -150,22 +159,142 @@ export default function AdvertsTab() {
   const placementLabel = (v: Advert['placement']) =>
     PLACEMENTS.find(p => p.value === v)?.label ?? v;
 
+  const liveAdverts = useMemo(() => adverts.filter(a => a.isActive), [adverts]);
+  const pausedAdverts = useMemo(() => adverts.filter(a => !a.isActive), [adverts]);
+
+  const renderCard = (advert: Advert) => {
+    const Icon = PLACEMENT_ICONS[advert.placement] ?? Tag;
+    return (
+      <motion.div
+        key={advert.id}
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="group relative bg-gradient-to-br from-[#0d1f35] to-[#07131f] border border-white/[0.08] hover:border-blue-500/40 rounded-2xl overflow-hidden transition-all hover:shadow-[0_8px_32px_-12px_rgba(59,130,246,0.45)]"
+      >
+        {/* Left accent bar */}
+        <span
+          aria-hidden
+          className={`absolute left-0 top-0 bottom-0 w-1 ${advert.isActive ? 'bg-gradient-to-b from-emerald-400 to-emerald-600' : 'bg-white/10'}`}
+        />
+
+        <div className="flex items-stretch gap-4 p-4 pl-5">
+          {/* Preview image / brand swatch */}
+          <div
+            className="relative w-32 h-20 sm:w-40 sm:h-24 rounded-xl overflow-hidden shrink-0 border border-white/[0.1] shadow-inner"
+            style={{ background: advert.imageUrl ? '#000' : advert.bgColor }}
+          >
+            {advert.imageUrl ? (
+              <img src={advert.imageUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center" style={{ color: advert.textColor }}>
+                <span className="font-bold tracking-[0.25em] text-[10px] uppercase opacity-90">PH Labs</span>
+              </div>
+            )}
+            <div className="absolute inset-0 bg-gradient-to-tr from-black/30 via-transparent to-transparent" />
+            <span className="absolute top-1.5 left-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/55 backdrop-blur text-white text-[10px] font-semibold">
+              <Icon className="w-3 h-3" />
+            </span>
+          </div>
+
+          {/* Info */}
+          <div className="flex-1 min-w-0 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                <p className="text-white font-semibold text-sm truncate">{advert.title || 'Untitled'}</p>
+                <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
+                  advert.isActive
+                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40'
+                    : 'bg-white/5 text-[#9cb8d9] border-white/[0.1]'
+                }`}>
+                  {advert.isActive ? '● Live' : 'Paused'}
+                </span>
+              </div>
+              {advert.subtitle ? (
+                <p className="text-[#9cb8d9] text-xs line-clamp-1">{advert.subtitle}</p>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-2 flex-wrap mt-2">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-300 border border-blue-500/25 text-[10px] font-semibold">
+                <Icon className="w-3 h-3" /> {placementLabel(advert.placement)}
+              </span>
+              {advert.ctaText ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/5 text-[#cfe2ff] border border-white/[0.08] text-[10px]">
+                  <LinkIcon className="w-3 h-3" /> {advert.ctaText}
+                </span>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-1 shrink-0 self-start">
+            <button
+              onClick={() => handleToggle(advert)}
+              title={advert.isActive ? 'Pause' : 'Go live'}
+              aria-label={advert.isActive ? 'Pause advert' : 'Go live with advert'}
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors ${
+                advert.isActive
+                  ? 'text-emerald-300 hover:bg-emerald-500/15'
+                  : 'text-[#9cb8d9] hover:bg-white/10'
+              }`}
+            >
+              {advert.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={() => { setEditing({ ...advert }); setIsNew(false); }}
+              aria-label="Edit advert"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-blue-300 hover:bg-blue-500/15 transition-colors"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => handleDelete(advert.id!)}
+              aria-label="Delete advert"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-red-400 hover:bg-red-500/15 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Megaphone className="w-6 h-6 text-blue-400" /> Adverts &amp; Promotions
-          </h1>
-          <p className="text-[#9cb8d9] text-sm mt-0.5">Manage on-site banners, strips and promotional blocks</p>
+      {/* Premium gradient header */}
+      <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-gradient-to-br from-[#0b1a30] via-[#10254a] to-[#0b1a30] p-6 sm:p-8">
+        <div aria-hidden className="absolute -top-24 -right-24 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl" />
+        <div aria-hidden className="absolute -bottom-24 -left-16 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl" />
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/[0.1] text-[10px] uppercase tracking-[0.3em] text-blue-200 font-semibold mb-3">
+              <Sparkles className="w-3 h-3" /> PH Labs · Promotions
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white flex items-center gap-3">
+              <Megaphone className="w-7 h-7 text-blue-300" /> Adverts &amp; Promotions
+            </h1>
+            <p className="text-[#9cb8d9] text-sm mt-1.5 max-w-xl">
+              Design on-site banners, hero strips, sidebars and pop-ups. Live changes invalidate the CDN automatically.
+            </p>
+            <div className="flex flex-wrap items-center gap-2 mt-4">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/[0.1] text-xs text-white">
+                <span className="text-[#9cb8d9]">Total</span> <strong>{adverts.length}</strong>
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live <strong>{liveAdverts.length}</strong>
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/[0.1] text-xs text-[#9cb8d9]">
+                Paused <strong>{pausedAdverts.length}</strong>
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={() => { setEditing({ ...EMPTY }); setIsNew(true); }}
+            className="self-start sm:self-auto inline-flex items-center gap-2 px-5 py-3 rounded-xl text-white text-sm font-semibold shadow-lg shadow-blue-900/40 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 transition-all"
+          >
+            <Plus className="w-4 h-4" /> New Advert
+          </button>
         </div>
-        <button
-          onClick={() => { setEditing({ ...EMPTY }); setIsNew(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold transition-colors"
-        >
-          <Plus className="w-4 h-4" /> New Advert
-        </button>
       </div>
 
       {/* Toast */}
@@ -203,71 +332,32 @@ export default function AdvertsTab() {
           </button>
         </div>
       ) : (
-        <div className="grid gap-3">
-          {adverts.map((advert) => (
-            <motion.div
-              key={advert.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-[#0b1a30]/80 border border-white/[0.07] rounded-2xl p-4 flex items-center gap-4 hover:border-white/[0.12] transition-colors"
-            >
-              {/* Preview image / color swatch */}
-              <div className="w-16 h-12 rounded-xl overflow-hidden shrink-0 border border-white/[0.08]"
-                style={{ background: advert.imageUrl ? undefined : advert.bgColor }}>
-                {advert.imageUrl && (
-                  <img src={advert.imageUrl} alt={advert.title} className="w-full h-full object-cover" />
-                )}
+        <div className="space-y-6">
+          {liveAdverts.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <h2 className="text-white font-semibold text-sm uppercase tracking-[0.2em]">Live</h2>
+                <span className="text-[#9cb8d9] text-xs">({liveAdverts.length})</span>
+                <div className="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent ml-2" />
               </div>
-
-              {/* Info */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <p className="text-[#e8f0fe] font-semibold text-sm truncate">{advert.title || 'Untitled'}</p>
-                  <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
-                    advert.isActive
-                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                      : 'bg-white/5 text-[#2a4a7a] border-white/[0.06]'
-                  }`}>
-                    {advert.isActive ? 'Live' : 'Paused'}
-                  </span>
-                </div>
-                <p className="text-[#9cb8d9] text-xs truncate">{advert.subtitle}</p>
-                <p className="text-[#2a4a7a] text-[10px] mt-0.5">{placementLabel(advert.placement)}</p>
+              <div className="grid gap-3">{liveAdverts.map(renderCard)}</div>
+            </section>
+          )}
+          {pausedAdverts.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 mb-3">
+                <EyeOff className="w-3.5 h-3.5 text-[#9cb8d9]" />
+                <h2 className="text-[#9cb8d9] font-semibold text-sm uppercase tracking-[0.2em]">Paused</h2>
+                <span className="text-[#9cb8d9] text-xs">({pausedAdverts.length})</span>
+                <div className="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent ml-2" />
               </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-1 shrink-0">
-                <button
-                  onClick={() => handleToggle(advert)}
-                  title={advert.isActive ? 'Pause' : 'Go live'}
-                  aria-label={advert.isActive ? 'Pause advert' : 'Go live with advert'}
-                  className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg transition-colors ${
-                    advert.isActive
-                      ? 'text-emerald-400 hover:bg-emerald-500/10'
-                      : 'text-[#2a4a7a] hover:bg-white/5'
-                  }`}
-                >
-                  {advert.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                </button>
-                <button
-                  onClick={() => { setEditing({ ...advert }); setIsNew(false); }}
-                  aria-label="Edit advert"
-                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-blue-400 hover:bg-blue-500/10 transition-colors"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => handleDelete(advert.id!)}
-                  aria-label="Delete advert"
-                  className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-red-400 hover:bg-red-500/10 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </motion.div>
-          ))}
+              <div className="grid gap-3">{pausedAdverts.map(renderCard)}</div>
+            </section>
+          )}
         </div>
       )}
+
 
       {/* ── Editor Drawer ── */}
       <AnimatePresence>

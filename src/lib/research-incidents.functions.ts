@@ -4,11 +4,16 @@
  * Reads the `error_events` Firestore collection for overlay/regression
  * incidents recorded by the in-page guards on /research and /compound
  * (see PremiumLandingGuard + Research page guard).
+ *
+ * Also exposes `resolveResearchIncident` for the Admin UI to mark an
+ * incident as resolved/dismissed with an audit trail and optional note.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireFirebaseAdmin } from "./server/firebase-auth-admin";
-import { listDocsAdmin } from "./server/firestore-admin";
+import { addDocAdmin, listDocsAdmin, updateDocAdmin } from "./server/firestore-admin";
+
+export type IncidentStatus = "open" | "resolved" | "dismissed";
 
 export interface IncidentRow {
   id: string;
@@ -21,6 +26,10 @@ export interface IncidentRow {
   /** JSON-encoded details payload (kept as string for serialization safety). */
   detailsJson?: string;
   ip?: string;
+  status: IncidentStatus;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  note?: string;
 }
 
 export interface IncidentsSummary {
@@ -31,6 +40,8 @@ export interface IncidentsSummary {
   pageNotFoundResearch: number;
   uniqueUserAgents: number;
   lastIncidentAt: string | null;
+  /** Open incidents in the last 24h — used for the alert banner. */
+  openLast24h: number;
 }
 
 const Input = z.object({
@@ -53,14 +64,17 @@ function toIsoString(v: unknown): string {
   }
 }
 
+function normalizeStatus(v: unknown): IncidentStatus {
+  if (v === "resolved" || v === "dismissed") return v;
+  return "open";
+}
+
 export const listResearchIncidents = createServerFn({ method: "POST" })
   .inputValidator((data) => Input.parse(data))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     const limit = data.limit ?? 100;
 
-    // Pull recent error_events; filter for research/compound incidents in JS
-    // (one or two type values, simpler than chained where()s here).
     const rows = await listDocsAdmin("error_events", {
       orderBy: "createdAt",
       direction: "DESCENDING",
@@ -87,6 +101,10 @@ export const listResearchIncidents = createServerFn({ method: "POST" })
         message: r.message ? String(r.message) : undefined,
         detailsJson: r.details ? JSON.stringify(r.details) : undefined,
         ip: r.ip ? String(r.ip) : undefined,
+        status: normalizeStatus(r.status),
+        resolvedBy: r.resolvedBy ? String(r.resolvedBy) : undefined,
+        resolvedAt: r.resolvedAt ? toIsoString(r.resolvedAt) : undefined,
+        note: r.note ? String(r.note) : undefined,
       });
     }
 
@@ -94,6 +112,7 @@ export const listResearchIncidents = createServerFn({ method: "POST" })
     const day = 86_400_000;
     let last24 = 0;
     let last7d = 0;
+    let openLast24h = 0;
     let researchOverlay = 0;
     let compoundOverlay = 0;
     let pageNotFoundResearch = 0;
@@ -102,10 +121,15 @@ export const listResearchIncidents = createServerFn({ method: "POST" })
     for (const i of incidents) {
       const ts = i.createdAt ? Date.parse(i.createdAt) : 0;
       if (ts && (!lastIncidentAt || ts > Date.parse(lastIncidentAt))) lastIncidentAt = i.createdAt;
-      if (ts && now - ts < day) last24++;
+      if (ts && now - ts < day) {
+        last24++;
+        if (i.status === "open") openLast24h++;
+      }
       if (ts && now - ts < 7 * day) last7d++;
-      if (i.type === "research_overlay") researchOverlay++;
-      if (i.type === "compound_overlay") compoundOverlay++;
+      if (i.status === "open") {
+        if (i.type === "research_overlay") researchOverlay++;
+        if (i.type === "compound_overlay") compoundOverlay++;
+      }
       if (i.type === "page_not_found" && (i.path === "/research" || i.path.startsWith("/research"))) {
         pageNotFoundResearch++;
       }
@@ -120,7 +144,51 @@ export const listResearchIncidents = createServerFn({ method: "POST" })
       pageNotFoundResearch,
       uniqueUserAgents: uas.size,
       lastIncidentAt,
+      openLast24h,
     };
 
     return { ok: true as const, incidents, summary };
+  });
+
+/* ─────────────────────────────────────────────────────────── */
+
+const ResolveInput = z.object({
+  idToken: z.string().min(10),
+  id: z.string().min(1).max(200),
+  action: z.enum(["resolved", "dismissed", "open"]),
+  note: z.string().max(2000).optional(),
+});
+
+/**
+ * Mark a single incident as resolved / dismissed (or re-open). Writes a
+ * status patch on `error_events/{id}` and appends an audit entry to
+ * `auditLogs` with adminUid, action, target, before/after, and timestamp.
+ */
+export const resolveResearchIncident = createServerFn({ method: "POST" })
+  .inputValidator((data) => ResolveInput.parse(data))
+  .handler(async ({ data }) => {
+    const user = await requireFirebaseAdmin(data.idToken);
+    const nowIso = new Date().toISOString();
+
+    const before: Record<string, unknown> = { status: "open" };
+    const after: Record<string, unknown> = {
+      status: data.action,
+      resolvedBy: data.action === "open" ? "" : user.uid,
+      resolvedAt: data.action === "open" ? "" : nowIso,
+      note: data.note ?? "",
+    };
+
+    await updateDocAdmin("error_events", data.id, after);
+
+    await addDocAdmin("auditLogs", {
+      adminUid: user.uid,
+      adminEmail: user.email ?? "",
+      action: data.action === "open" ? "incident.reopen" : `incident.${data.action}`,
+      target: `error_events/${data.id}`,
+      before,
+      after,
+      timestamp: nowIso,
+    });
+
+    return { ok: true as const, id: data.id, status: data.action, at: nowIso };
   });
