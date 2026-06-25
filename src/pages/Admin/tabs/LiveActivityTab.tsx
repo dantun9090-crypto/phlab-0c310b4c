@@ -841,14 +841,15 @@ export default function LiveActivityTab() {
             <Download className="w-3.5 h-3.5" aria-hidden="true" /> Export
           </button>
           <label
-            title="Import allowlists from a JSON file"
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white cursor-pointer"
+            title="Import allowlists from a JSON file (version 1)"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white cursor-pointer focus-within:ring-2 focus-within:ring-emerald-400"
           >
-            <Upload className="w-3.5 h-3.5" /> Import
+            <Upload className="w-3.5 h-3.5" aria-hidden="true" /> Import
             <input
               type="file"
               accept="application/json,.json"
-              className="hidden"
+              aria-label="Import allowlists from a JSON file (version 1 schema)"
+              className="sr-only"
               onChange={e => {
                 const f = e.target.files?.[0];
                 if (f) importAllowlistsFromFile(f);
