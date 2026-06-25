@@ -274,6 +274,79 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         </div>
       </section>
 
+      {/* ── WHY PH LABS — premium trust pillars ── */}
+      <section id="why-ph-labs" className="relative border-b border-white/10 py-28 sm:py-36 lg:py-44 overflow-hidden">
+        <div aria-hidden className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(201,164,76,0.10),transparent_55%),radial-gradient(circle_at_85%_85%,rgba(201,164,76,0.08),transparent_55%)]" />
+        <div className="relative mx-auto max-w-6xl px-6">
+          <div className="text-center">
+            <p className="text-[11px] uppercase tracking-[0.55em] gold-text">§ 02·B — Why PH Labs</p>
+            <h2 className="mt-6 display text-[2.4rem] sm:text-[3rem] md:text-[3.5rem] font-light text-white leading-[1.1]">
+              Four pillars that <span className="italic gold-text">define our work</span>
+            </h2>
+            <div className="mx-auto mt-8 h-px w-16 gold-bg" />
+          </div>
+
+          <div className="mt-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { n: '01', t: 'UK Laboratory', d: 'Controlled, temperature-monitored facility based in the United Kingdom.', sym: '⌬' },
+              { n: '02', t: 'Per-Batch COA', d: 'Independent HPLC analysis attached to every consignment we dispatch.', sym: '✓' },
+              { n: '03', t: 'Cold-Chain Logistics', d: 'Insulated, tracked dispatch designed for sensitive research materials.', sym: '❄' },
+              { n: '04', t: 'Discreet Handling', d: 'Confidential laboratory packaging — never branded externally.', sym: '◈' },
+            ].map((p) => (
+              <article
+                key={p.n}
+                className="relative rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-white/[0.01] p-7 transition-all hover:border-[#c9a44c]/40 hover:-translate-y-1 hover:shadow-[0_30px_60px_-30px_rgba(201,164,76,0.45)]"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[10px] tracking-[0.4em] gold-text opacity-80">{p.n}</span>
+                  <span aria-hidden className="text-2xl gold-text">{p.sym}</span>
+                </div>
+                <h3 className="mt-6 display text-[1.25rem] font-light text-white leading-snug">{p.t}</h3>
+                <p className="mt-3 text-sm leading-[1.7] text-white/65">{p.d}</p>
+                <div aria-hidden className="mt-6 h-px w-10 gold-bg opacity-70" />
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── QUALITY CONTROL TIMELINE ── */}
+      <section id="qc-timeline" className="relative border-b border-white/10 py-28 sm:py-36 lg:py-44 bg-[#070d1c] overflow-hidden">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="text-center">
+            <p className="text-[11px] uppercase tracking-[0.55em] gold-text">§ 02·C — Quality Control</p>
+            <h2 className="mt-6 display text-[2.4rem] sm:text-[3rem] md:text-[3.5rem] font-light text-white leading-[1.1]">
+              From synthesis to <span className="italic gold-text">your laboratory</span>
+            </h2>
+            <div className="mx-auto mt-8 h-px w-16 gold-bg" />
+            <p className="mx-auto mt-8 max-w-2xl text-sm sm:text-base text-white/65 font-light leading-[1.8]">
+              A five-stage workflow that every consignment passes through before it is released.
+            </p>
+          </div>
+
+          <ol className="mt-20 relative grid grid-cols-1 md:grid-cols-5 gap-8 md:gap-3">
+            <div aria-hidden className="hidden md:block absolute left-0 right-0 top-[26px] h-px bg-gradient-to-r from-transparent via-[#c9a44c]/40 to-transparent" />
+            {[
+              { k: '01', t: 'Synthesis', d: 'Reagent-grade precursors under controlled conditions.' },
+              { k: '02', t: 'Purification', d: 'Reverse-phase chromatography to research-grade purity.' },
+              { k: '03', t: 'HPLC Verification', d: 'Independent third-party analytical assay.' },
+              { k: '04', t: 'Lyophilisation', d: 'Sterile fill, freeze-dry & sealed under inert atmosphere.' },
+              { k: '05', t: 'Cold Dispatch', d: 'Insulated, tracked delivery with batch COA enclosed.' },
+            ].map((s) => (
+              <li key={s.k} className="relative flex flex-col items-center text-center">
+                <span className="relative z-10 inline-flex items-center justify-center w-13 h-13 min-w-[52px] min-h-[52px] rounded-full border gold-border bg-[#060b18] font-mono text-xs tracking-[0.2em] gold-text">
+                  {s.k}
+                </span>
+                <h3 className="mt-5 display text-[1.05rem] font-light text-white">{s.t}</h3>
+                <p className="mt-2 text-xs leading-[1.7] text-white/55 max-w-[180px]">{s.d}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+
+
       {/* ── INTENDED USE ── */}
       <section id="intended-use" className="relative overflow-hidden border-b border-white/10 py-32 sm:py-44 lg:py-52">
         <img
