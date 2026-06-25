@@ -653,6 +653,28 @@ export default function LiveActivityTab() {
 
   return (
     <div className="space-y-6">
+      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+        {statusMessage}
+      </div>
+      <AlertDialog open={confirmRestoreOpen} onOpenChange={setConfirmRestoreOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restore default allowlists?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will overwrite your current allowlists ({prefs.allowlistUAs.length} UA, {prefs.allowlistReferrers.length} referrer{prefs.allowlistReferrers.length === 1 ? '' : 's'}) with the empty defaults. This cannot be undone — export first if you want a backup.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => { restoreAllowlistDefaults(); setConfirmRestoreOpen(false); }}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              Restore defaults
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h2 className="text-white text-2xl font-bold flex items-center gap-2">
