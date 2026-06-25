@@ -178,16 +178,28 @@ For a peptide such as BPC-157 (sequence: GEPPPGKPADDAGLV, MW 1419.5 Da), the cor
   // ---------------------------------------------
   {
     slug: 'bpc-157-tissue-repair',
-    title: 'BPC-157 in Tissue Repair Studies: Mechanisms and Research Findings',
+    title: 'BPC-157 Research and Human Studies: Tissue Repair Mechanisms',
+    seoTitle: 'BPC-157 Research & Human Studies | Tissue Repair | PHLabs',
+    seoDescription: 'Explore BPC-157 research and human studies on tissue repair, knee pain recovery, blood vessel healing, and side effect profiles. Laboratory-grade compounds from PHLabs.',
     subtitle: 'An evidence-based review of the pentadecapeptide body-protective compound and its reported roles in angiogenesis, tendon repair, and gastrointestinal cytoprotection',
     category: 'Tissue Repair Research',
     readTime: 13,
     publishDate: '2026-02-20',
     excerpt: 'BPC-157 is a synthetic 15-amino-acid peptide derived from a partial sequence of human gastric juice protein BPC. Preclinical studies across multiple tissue types report accelerated healing timelines, enhanced angiogenesis, and modulation of growth factor expression, positioning it as a widely researched compound in regenerative biology.',
-    keywords: ['BPC-157', 'tissue repair', 'angiogenesis', 'tendon healing', 'gastrointestinal', 'VEGF', 'body protective compound'],
+    keywords: ['BPC-157', 'bpc 157 research', 'bpc 157 human studies', 'tissue repair', 'angiogenesis', 'tendon healing', 'knee pain research', 'body protective compound'],
+    extraSchema: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        '@id': 'https://phlabs.co.uk/#organization',
+        name: 'PHLabs',
+        url: 'https://phlabs.co.uk',
+        logo: 'https://phlabs.co.uk/logo.png',
+      },
+    ],
     relatedSlugs: ['hplc-testing-explained', 'tb-500-thymosin-beta-4', 'peptide-storage-reconstitution'],
     content: [
-      {
+
         body: `Body-protective compound 157 (BPC-157) is a synthetic pentadecapeptide comprising the sequence Gly-Glu-Pro-Pro-Pro-Gly-Lys-Pro-Ala-Asp-Asp-Ala-Gly-Leu-Val (GEPPPGKPADDAGLV). It is derived from a region of the human gastric juice protein BPC and was first described by Sikirić and colleagues at the University of Zagreb in the early 1990s. Despite its gastric origin, <a href="/products/bpc-157" style="color: #10b981; text-decoration: underline;">BPC-157</a> has since been investigated in preclinical models across a remarkably wide range of tissue types, including tendon, ligament, muscle, bone, vascular endothelium, and the central nervous system. <strong><a href="/products/bpc-157" style="color: #10b981; text-decoration: underline; font-weight: 700;">Buy research-grade BPC-157 (≥99% HPLC)</a></strong>.`
       },
       {
