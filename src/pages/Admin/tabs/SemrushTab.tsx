@@ -532,8 +532,11 @@ function KeywordGeoPanel() {
   const [topN, setTopN] = useState<number | 'all'>('all');
   const [progress, setProgress] = useState<{ done: number; total: number; current: string | null } | null>(null);
   const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>([]);
+  const [concurrency, setConcurrency] = useState<number>(() => loadConcurrency());
   const resumeTimerRef = useRef<number | null>(null);
   const autoResumeFiredRef = useRef(false);
+  const restoredRunRef = useRef(false);
+  useEffect(() => { saveConcurrency(concurrency); }, [concurrency]);
 
   // Load cache + pending + initial quota + run history on mount
   useEffect(() => {
