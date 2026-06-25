@@ -24,6 +24,7 @@ const navGroups = [
     items: [
       { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { id: 'visitors', label: 'Visitors', icon: Activity },
+      { id: 'liveactivity', label: 'Live Activity', icon: Activity },
       { id: 'ai', label: 'AI Assistant', icon: Sparkles },
     ],
   },
