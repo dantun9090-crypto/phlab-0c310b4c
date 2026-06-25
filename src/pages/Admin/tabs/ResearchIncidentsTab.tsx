@@ -204,11 +204,11 @@ export default function ResearchIncidentsTab() {
                   <td className="p-3 font-mono text-xs break-all">{i.path}</td>
                   <td className="p-3 text-xs">
                     {i.message || "—"}
-                    {i.details ? (
+                    {i.detailsJson ? (
                       <details className="mt-1">
                         <summary className="cursor-pointer text-slate-400 hover:text-white">details</summary>
                         <pre className="mt-1 text-[11px] whitespace-pre-wrap break-all">
-                          {JSON.stringify(i.details, null, 2)}
+                          {(() => { try { return JSON.stringify(JSON.parse(i.detailsJson), null, 2); } catch { return i.detailsJson; } })()}
                         </pre>
                       </details>
                     ) : null}
