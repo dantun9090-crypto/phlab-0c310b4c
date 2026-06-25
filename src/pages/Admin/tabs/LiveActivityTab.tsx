@@ -455,6 +455,19 @@ export default function LiveActivityTab() {
               disabled={!prefs.quietEnabled}
               className="bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 disabled:opacity-50"
             />
+            <select
+              value={prefs.quietTimezone}
+              onChange={e => updatePrefs({ quietTimezone: e.target.value })}
+              disabled={!prefs.quietEnabled}
+              title="Quiet-hours timezone"
+              className="bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 disabled:opacity-50 max-w-[140px]"
+            >
+              {(COMMON_TIMEZONES.includes(prefs.quietTimezone)
+                ? COMMON_TIMEZONES
+                : [prefs.quietTimezone, ...COMMON_TIMEZONES]).map(tz => (
+                <option key={tz} value={tz}>{tz}</option>
+              ))}
+            </select>
             {quietActive && (
               <span className="text-amber-400 text-[10px] uppercase tracking-wider">muted</span>
             )}
