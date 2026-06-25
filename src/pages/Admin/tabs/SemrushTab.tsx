@@ -767,8 +767,9 @@ function KeywordGeoPanel() {
     } finally {
       setLoading(false);
       setProgress(null);
+      saveInProgress(null);
     }
-  }, [phrase, topN, catalog, cache, fetchGeo]);
+  }, [phrase, topN, catalog, cache, fetchGeo, concurrency]);
 
   // Auto-resume when the quota window resets
   useEffect(() => {
