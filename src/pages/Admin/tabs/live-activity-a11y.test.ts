@@ -29,10 +29,12 @@ const auditSrc = readFileSync(
   'utf8',
 );
 
-/** Extract the JSX of an <input ... /> block whose aria-label starts with `prefix`. */
+/** Extract the JSX of an <input ... /> block whose aria-label starts with `prefix`.
+ *  Matches both template-literal (`aria-label={`...`}`) and string
+ *  (`aria-label="..."`) attribute forms. */
 function inputBlockByAriaLabel(src: string, prefix: string): string {
   const re = new RegExp(
-    `<input\\b[\\s\\S]*?aria-label=\\{\`${prefix}[\\s\\S]*?\\/>`,
+    `<input\\b[\\s\\S]*?aria-label=(?:\\{\`${prefix}|"${prefix})[\\s\\S]*?\\/>`,
     'm',
   );
   const m = src.match(re);
