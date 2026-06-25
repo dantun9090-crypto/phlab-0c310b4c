@@ -240,10 +240,27 @@ In colitis models induced by trinitrobenzenesulphonic acid (TNBS) or dextran sod
         }
       },
       {
+        heading: 'BPC-157 Human Studies Overview',
+        body: `Although the body of BPC-157 evidence remains overwhelmingly preclinical, several small-scale human studies have been described in the academic literature. The most frequently cited example involves 12 patients with knee pain associated with patellar tendinopathy, where investigators reported reduced pain scores and improved functional indices over a structured observation window. Additional pilot work with healthy volunteers has examined gastrointestinal tolerability and short-term safety signals. Researchers reviewing this segment of bpc 157 research should treat these human studies as exploratory: cohorts are small, blinding is inconsistent, and primary endpoints vary. Even so, they provide useful context when designing translational protocols.`
+      },
+      {
+        heading: 'Mechanism of Action',
+        body: `Across rodent and in-vitro models, BPC-157 appears to act on the vascular interface: it stabilises endothelial signalling, supports the formation of new blood vessels, and influences nitric-oxide tone in injured tissue. The same angiogenic machinery is what oncology researchers monitor when studying how cancer cells co-opt vasculature, which is why BPC-157 is sometimes used as a probe peptide in tumour-microenvironment assays rather than as a therapeutic candidate. Long term in-vitro exposure studies suggest the peptide does not accumulate intracellularly, but data on chronic systemic exposure in humans is absent — a gap any responsible review must acknowledge.`
+      },
+      {
+        heading: 'Safety & Side Effects Profile',
+        body: `Reported side effects in the published preclinical record are limited to mild, dose-dependent gastrointestinal changes at supraphysiological doses; serious adverse events have not been documented in the peer-reviewed literature available to date. BPC-157 is currently included on the World Anti Doping Agency Prohibited List under the S0 "non-approved substances" category, which means researchers handling samples in any context connected to elite sport must follow strict chain-of-custody procedures. This regulatory status does not reflect a confirmed safety concern; it reflects the absence of an approved medicinal indication.`
+      },
+      {
+        heading: 'Research Applications',
+        body: `Current bpc 157 research clusters around three application areas: musculoskeletal repair models (tendon, ligament, muscle), gastrointestinal protection assays, and vascular/angiogenesis studies. Investigators typically combine BPC-157 with companion compounds such as TB-500 or GHK-Cu when probing wound-healing pathways in vitro. All work should be conducted under institutional biosafety review and documented against batch-specific Certificates of Analysis.`
+      },
+      {
         heading: 'Stability and In-Vitro Research Use',
         body: `BPC-157 is a relatively stable peptide due to its lack of cysteine residues (which are prone to oxidation) and its resistance to gastric proteases — a property studied in the context of oral administration. For in-vitro research, the lyophilised peptide should be reconstituted in sterile bacteriostatic water and stored at 4°C for short-term use (up to 7 days) or -20°C for longer periods. Working concentrations in cell culture assays typically range from 1–100 µM depending on the endpoint; tenocyte migration assays, for example, commonly use 1–10 µM concentrations.`
       }
     ],
+
     references: [
       { id: 1, authors: 'Sikirić P, Seiwerth S, Rucman R, et al.', year: 2013, title: 'Stable gastric pentadecapeptide BPC 157: novel therapy in gastrointestinal tract', journal: 'Curr Pharm Des', doi: '10.2174/13816128113199990241' },
       { id: 2, authors: 'Chang CH, Tsai WC, Lin MS, Hsu YH, Pang JH.', year: 2011, title: 'The promoting effect of pentadecapeptide BPC 157 on tendon healing', journal: 'J Appl Physiol', doi: '10.1152/japplphysiol.00945.2010' },
