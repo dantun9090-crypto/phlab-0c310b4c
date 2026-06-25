@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Integration test: /research route source-of-truth guard.
  *
