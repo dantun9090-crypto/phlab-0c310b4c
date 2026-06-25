@@ -398,7 +398,16 @@ export default function LiveActivityTab() {
         if (seenSessionIdsRef.current) {
           const fresh = allArr.filter(s => !seenSessionIdsRef.current!.has(s.sessionId));
           fresh.slice(0, 3).forEach(s => {
-            if (prefsRef.current.hideBots && isBotSession(s)) return;
+            const p = prefsRef.current;
+            const botOpts: BotDetectionOptions = {
+              treatForceHideBadgeAsBot: p.treatForceHideBadgeAsBot,
+              allowlistUAs: p.allowlistUAs,
+              allowlistReferrers: p.allowlistReferrers,
+            };
+            // forceHideBadge toggle is independent of hideBots:
+            // when enabled it suppresses toasts even with humans-only OFF.
+            if (p.treatForceHideBadgeAsBot && detectBotReasons(s, botOpts).includes('force-hide-badge')) return;
+            if (p.hideBots && isBotSession(s, botOpts)) return;
             maybeToast(
               'visitor',
               'New visitor online',
