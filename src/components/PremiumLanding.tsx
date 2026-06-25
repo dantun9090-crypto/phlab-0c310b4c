@@ -249,15 +249,20 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
 
       {/* WHAT WE OFFER */}
       <section id="offer" className="relative border-b border-white/10 py-24 sm:py-32 overflow-hidden">
-        <img
-          src={molecularImg}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          width={1920}
-          height={1088}
-          className="absolute inset-0 h-full w-full object-cover opacity-30"
-        />
+        <picture>
+          <source type="image/avif" srcSet={MOLECULAR_AVIF} sizes="100vw" />
+          <source type="image/webp" srcSet={MOLECULAR_WEBP} sizes="100vw" />
+          <img
+            src="/og/lab/molecular-1440.webp"
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            width={1920}
+            height={1088}
+            className="absolute inset-0 h-full w-full object-cover opacity-30"
+          />
+        </picture>
         <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#0a1530] via-[#0a1530]/85 to-[#0a1530]" />
         <div className="relative mx-auto max-w-4xl px-6 text-center">
           <p className="text-[11px] uppercase tracking-[0.5em] gold">§ 02 — What We Offer</p>
