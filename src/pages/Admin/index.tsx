@@ -418,6 +418,7 @@ export default function AdminPage() {
         case 'auditlog': return <AuditLogTab />;
         case 'authevents': return <AuthEventsTab />;
         case 'visitors': return <VisitorsTab />;
+        case 'liveactivity': return <LiveActivityTab />;
         case 'privacyrequests': return <PrivacyRequestsTab />;
         case 'cartevents': return <CartEventsTab />;
         case 'mailhealth': return <MailHealthTab />;
