@@ -386,13 +386,16 @@ Cardiovascular outcome data are available only for semaglutide (SUSTAIN-6, SELEC
   // ---------------------------------------------
   {
     slug: 'ipamorelin-ghrp-research',
-    title: 'Ipamorelin and the GHRP Class: Growth Hormone Secretagogue Research',
+    title: 'GHRP-2 vs Ipamorelin: A Comparative Research Guide',
+    seoTitle: 'GHRP-2 vs Ipamorelin: Comparative Research Guide | PHLabs',
+    seoDescription: 'Compare GHRP-2 vs Ipamorelin in our research guide covering growth hormone secretion, body composition, side effects, and long-term safety data. Lab-grade peptides.',
     subtitle: 'A mechanistic review of ghrelin receptor agonists, comparing ipamorelin, GHRP-2, GHRP-6, and hexarelin across selectivity, pulsatility, and in-vivo GH release data',
     category: 'Endocrine Research',
     readTime: 11,
     publishDate: '2026-01-30',
     excerpt: 'Growth hormone-releasing peptides (GHRPs) are synthetic ghrelin receptor agonists that stimulate pulsatile GH secretion. Ipamorelin is distinguished by its high GHS-R1a selectivity and minimal cortisol/prolactin co-release, making it a preferred tool compound for somatotropic axis research.',
-    keywords: ['ipamorelin', 'GHRP', 'ghrelin receptor', 'growth hormone secretagogue', 'GHS-R1a', 'GHRP-2', 'GHRP-6', 'somatotropic axis'],
+    keywords: ['ipamorelin', 'ghrp 2 vs ipamorelin', 'ghrp-2 vs ipamorelin', 'GHRP', 'ghrelin receptor', 'growth hormone secretagogue', 'GHS-R1a', 'somatotropic axis'],
+
     relatedSlugs: ['what-is-retatrutide', 'hplc-testing-explained', 'bpc-157-tissue-repair'],
     content: [
       {
