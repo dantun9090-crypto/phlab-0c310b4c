@@ -1,0 +1,132 @@
+name: Visual baseline · /research
+
+# Scheduled visual baseline check for /research (and /compound for parity).
+#
+# Runs every Monday at 06:00 UTC against the live production URL plus on
+# manual dispatch. On any visual diff, the workflow uploads the Playwright
+# report + actual/expected/diff PNGs as artifacts and opens (or comments
+# on) an issue so we can review changes without digging through CI logs.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Override base URL (defaults to https://phlabs.co.uk)"
+        required: false
+        default: "https://phlabs.co.uk"
+      update_snapshots:
+        description: "Refresh baseline screenshots and commit them"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      RESEARCH_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+      COMPOUND_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+      ROUTE_POLICY_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run route policy (fast fail)
+        run: bunx playwright test e2e/route-policy.spec.ts --reporter=line
+
+      - name: Run /research visual baseline
+        id: research
+        run: |
+          if [ "${{ github.event.inputs.update_snapshots }}" = "true" ]; then
+            bunx playwright test e2e/research-visual.spec.ts --update-snapshots --reporter=line
+          else
+            bunx playwright test e2e/research-visual.spec.ts --reporter=line,html
+          fi
+
+      - name: Run /compound overlay + visual
+        if: always()
+        run: |
+          if [ "${{ github.event.inputs.update_snapshots }}" = "true" ]; then
+            bunx playwright test e2e/compound-overlay.spec.ts e2e/compound-visual.spec.ts --update-snapshots --reporter=line
+          else
+            bunx playwright test e2e/compound-overlay.spec.ts e2e/compound-visual.spec.ts --reporter=line,html
+          fi
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Open / update issue on diff
+        if: failure() && github.event.inputs.update_snapshots != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "Visual baseline diff: /research or /compound";
+            const body = [
+              "Scheduled visual baseline run detected a difference.",
+              "",
+              `- Workflow run: ${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+              `- Base URL: \`${process.env.RESEARCH_BASE_URL}\``,
+              "",
+              "Review the `playwright-report` artifact for actual / expected / diff PNGs.",
+              "If the change is intentional, re-run this workflow with `update_snapshots = true` to refresh the baseline.",
+            ].join("\n");
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "visual-baseline",
+            });
+            const match = existing.find((i) => i.title === title);
+            if (match) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: match.number,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["visual-baseline", "regression"],
+              });
+            }
+
+      - name: Commit refreshed baselines
+        if: success() && github.event.inputs.update_snapshots == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A e2e
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(visual): refresh /research + /compound baselines"
+            git push
+          else
+            echo "No baseline changes to commit."
+          fi

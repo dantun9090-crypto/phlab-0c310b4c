@@ -65,7 +65,13 @@ function rateLimited(ip: string): boolean {
   return cur.count > MAX_PER_WINDOW;
 }
 
-const EVENT_TYPES = ["page_not_found", "server_error", "rate_limited"] as const;
+const EVENT_TYPES = [
+  "page_not_found",
+  "server_error",
+  "rate_limited",
+  "research_overlay",
+  "compound_overlay",
+] as const;
 type EventType = (typeof EVENT_TYPES)[number];
 
 const Body = z.object({
@@ -75,12 +81,16 @@ const Body = z.object({
   referrer: z.string().trim().max(500).optional(),
   userAgent: z.string().trim().max(500).optional(),
   message: z.string().trim().max(500).optional(),
+  /** Optional detector metadata (e.g. which DOM markers matched). */
+  details: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
 });
 
 const DEFAULT_THRESHOLDS: Record<EventType, number> = {
   page_not_found: 25,
   server_error: 10,
   rate_limited: 10,
+  research_overlay: 1,
+  compound_overlay: 1,
 };
 const DEFAULT_WINDOW_MIN = 5;
 const DEFAULT_COOLDOWN_MIN = 30;
@@ -108,6 +118,8 @@ async function loadSettings(): Promise<MonitorSettings> {
       page_not_found: Number(t.page_not_found ?? DEFAULT_THRESHOLDS.page_not_found),
       server_error: Number(t.server_error ?? DEFAULT_THRESHOLDS.server_error),
       rate_limited: Number(t.rate_limited ?? DEFAULT_THRESHOLDS.rate_limited),
+      research_overlay: Number(t.research_overlay ?? DEFAULT_THRESHOLDS.research_overlay),
+      compound_overlay: Number(t.compound_overlay ?? DEFAULT_THRESHOLDS.compound_overlay),
     },
     alertEmail: typeof doc?.alertEmail === "string" ? doc.alertEmail : DEFAULT_ALERT_EMAIL,
     slackWebhookUrl:
@@ -169,13 +181,14 @@ async function bumpCounter(
 }
 
 function alertSubject(type: EventType, count: number, windowMin: number): string {
-  const label =
-    type === "page_not_found"
-      ? "404 spike"
-      : type === "server_error"
-      ? "5xx error spike"
-      : "429 rate-limit spike";
-  return `[PH Labs] ${label}: ${count} in ${windowMin}m`;
+  const labels: Record<EventType, string> = {
+    page_not_found: "404 spike",
+    server_error: "5xx error spike",
+    rate_limited: "429 rate-limit spike",
+    research_overlay: "/research overlay detected",
+    compound_overlay: "/compound overlay detected",
+  };
+  return `[PH Labs] ${labels[type]}: ${count} in ${windowMin}m`;
 }
 
 function alertHtml(
