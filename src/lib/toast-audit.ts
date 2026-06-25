@@ -11,7 +11,8 @@ export type ToastOutcome =
   | 'delivered'
   | 'suppressed:pref-off'
   | 'suppressed:quiet-hours'
-  | 'suppressed:dedup';
+  | 'suppressed:dedup'
+  | 'suppressed:bot';
 
 export interface ToastAuditEntry {
   kind: ToastKind;
@@ -28,7 +29,11 @@ export interface ToastAuditEntry {
     quietStart: string;
     quietEnd: string;
     quietTimezone: string;
+    hideBots?: boolean;
+    treatForceHideBadgeAsBot?: boolean;
   };
+  /** Why a session was classified as a bot (when outcome=suppressed:bot). */
+  botReasons?: string[];
 }
 
 export async function logToastEvent(entry: ToastAuditEntry): Promise<void> {
