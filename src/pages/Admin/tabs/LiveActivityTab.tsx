@@ -433,13 +433,25 @@ export default function LiveActivityTab() {
   }, []);
 
   const windowMs = prefs.windowMin * 60_000;
-  const visibleSessions = useMemo(
-    () => (prefs.hideBots ? sessions.filter(s => !isBotSession(s)) : sessions),
-    [sessions, prefs.hideBots]
+  const botOpts = useMemo<BotDetectionOptions>(() => ({
+    treatForceHideBadgeAsBot: prefs.treatForceHideBadgeAsBot,
+    allowlistUAs: prefs.allowlistUAs,
+    allowlistReferrers: prefs.allowlistReferrers,
+  }), [prefs.treatForceHideBadgeAsBot, prefs.allowlistUAs, prefs.allowlistReferrers]);
+
+  // Annotate every session once with its bot reasons — used by the row badge.
+  const annotated = useMemo(
+    () => sessions.map(s => ({ session: s, reasons: detectBotReasons(s, botOpts) })),
+    [sessions, botOpts]
   );
+  const visibleAnnotated = useMemo(
+    () => (prefs.hideBots ? annotated.filter(a => a.reasons.length === 0) : annotated),
+    [annotated, prefs.hideBots]
+  );
+  const visibleSessions = useMemo(() => visibleAnnotated.map(a => a.session), [visibleAnnotated]);
   const botCount = useMemo(
-    () => sessions.reduce((n, s) => n + (isBotSession(s) ? 1 : 0), 0),
-    [sessions]
+    () => annotated.reduce((n, a) => n + (a.reasons.length > 0 ? 1 : 0), 0),
+    [annotated]
   );
   const onlineNow = useMemo(
     () => visibleSessions.filter(s => now - s.lastSeen.getTime() < windowMs).length,
