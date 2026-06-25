@@ -69,8 +69,9 @@ describe("/research route source-of-truth", () => {
   it("legacy AppRouter still wires /research → src/pages/Research", () => {
     const p = join(process.cwd(), "src", "legacy", "AppRouter.tsx");
     const src = readFileSync(p, "utf8");
-    expect(src).toMatch(/from\s+['"]@\/pages\/Research['"]/);
+    expect(src).toMatch(/import\(\s*['"]@\/pages\/Research['"]\s*\)/);
     expect(src).toMatch(/path:\s*['"]research['"]/);
+
   });
 
   it("splat catch-all ($.tsx) mounts LegacyApp", () => {
