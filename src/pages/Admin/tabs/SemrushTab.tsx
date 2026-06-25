@@ -807,6 +807,30 @@ function KeywordGeoPanel() {
     };
   }, [quota?.resetAt, runLookup, refreshQuota]);
 
+  // Resume an in-progress run that was interrupted by a page refresh.
+  // Waits until catalog is hydrated (quota loaded) so we know the full DB list.
+  useEffect(() => {
+    if (restoredRunRef.current) return;
+    if (loading) return;
+    const ip = loadInProgress();
+    if (!ip) return;
+    const remaining = ip.dbList.filter((d) => !ip.completed.includes(d));
+    if (remaining.length === 0) {
+      saveInProgress(null);
+      restoredRunRef.current = true;
+      return;
+    }
+    // Surface progress immediately so the UI reflects the interrupted run.
+    setProgress({
+      done: ip.completed.length,
+      total: ip.dbList.length,
+      current: null,
+    });
+    restoredRunRef.current = true;
+    // Resume — runLookup('resume') will fetch any still-missing countries for this phrase.
+    void runLookup('resume', ip.phrase);
+  }, [runLookup, loading]);
+
   const triggerDownload = (filename: string, mime: string, content: string) => {
     const blob = new Blob([content], { type: mime });
     const url = URL.createObjectURL(blob);
