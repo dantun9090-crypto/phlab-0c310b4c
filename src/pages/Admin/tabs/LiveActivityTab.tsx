@@ -520,6 +520,27 @@ export default function LiveActivityTab() {
               <span className="text-amber-400 text-[10px] uppercase tracking-wider">muted</span>
             )}
           </label>
+          <button
+            type="button"
+            onClick={resetDedup}
+            title="Clear the first-seen toast dedup cache (re-fires toasts for already-seen visitors/sessions)"
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white hover:border-amber-500/50"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> Reset dedup
+          </button>
+          <label className="flex items-center gap-2 text-xs text-[#9cb8d9] bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2">
+            <Trash2 className="w-3.5 h-3.5" /> Audit retention
+            <input
+              type="number"
+              min={1}
+              max={365}
+              value={prefs.toastAuditRetentionDays}
+              onChange={e => updatePrefs({ toastAuditRetentionDays: Number(e.target.value) || 1 })}
+              onBlur={e => saveRetention(Number(e.target.value) || 30)}
+              className="w-16 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5"
+            />
+            <span>days</span>
+          </label>
           <div className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]">
             <Radio className={`w-3.5 h-3.5 ${loading ? 'text-amber-400 animate-pulse' : 'text-emerald-400'}`} />
             {loading ? 'Connecting…' : 'Live'}
