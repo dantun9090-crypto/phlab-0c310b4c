@@ -392,9 +392,9 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
               <span className="text-sm text-white/75 leading-relaxed">
                 I consent to PH Labs processing my details to respond to this
                 enquiry, in accordance with the{" "}
-                <Link to="/privacy-policy" className="gold underline underline-offset-4 hover:brightness-125">
+                <a href="/privacy-policy" className="gold underline underline-offset-4 hover:brightness-125">
                   Privacy Policy
-                </Link>
+                </a>
                 . I confirm I am a qualified researcher and understand these
                 materials are for research use only.
               </span>
