@@ -409,10 +409,32 @@ export default function LiveActivityTab() {
               allowlistUAs: p.allowlistUAs,
               allowlistReferrers: p.allowlistReferrers,
             };
-            // forceHideBadge toggle is independent of hideBots:
-            // when enabled it suppresses toasts even with humans-only OFF.
-            if (p.treatForceHideBadgeAsBot && detectBotReasons(s, botOpts).includes('force-hide-badge')) return;
-            if (p.hideBots && isBotSession(s, botOpts)) return;
+            const reasons = detectBotReasons(s, botOpts);
+            const hitsForceHide = reasons.includes('force-hide-badge');
+            const isBot = reasons.length > 0;
+            // forceHideBadge toggle is independent of hideBots: when enabled,
+            // suppress (and log) even with humans-only OFF.
+            if ((p.treatForceHideBadgeAsBot && hitsForceHide) || (p.hideBots && isBot)) {
+              logToastEvent({
+                kind: 'visitor',
+                outcome: 'suppressed:bot',
+                title: 'New visitor online',
+                description: `${s.path || '/'} · ${shortUA(s.userAgent)}`,
+                targetId: s.visitorId || s.sessionId,
+                prefsSnapshot: {
+                  notifySignups: p.notifySignups,
+                  notifyFirstSeen: p.notifyFirstSeen,
+                  quietEnabled: p.quietEnabled,
+                  quietStart: p.quietStart,
+                  quietEnd: p.quietEnd,
+                  quietTimezone: p.quietTimezone,
+                  hideBots: p.hideBots,
+                  treatForceHideBadgeAsBot: p.treatForceHideBadgeAsBot,
+                },
+                botReasons: reasons,
+              });
+              return;
+            }
             maybeToast(
               'visitor',
               'New visitor online',
