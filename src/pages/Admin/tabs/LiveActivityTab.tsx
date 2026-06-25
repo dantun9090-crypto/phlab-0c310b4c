@@ -153,129 +153,130 @@ export default function LiveActivityTab() {
   const [err, setErr] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
 
-  const [userSearch, setUserSearch] = useState('');
-  const [sessionSearch, setSessionSearch] = useState('');
-  const [userPage, setUserPage] = useState(1);
-  const [sessionPage, setSessionPage] = useState(1);
+  // Persisted UI state
+  const userSearch = prefs.userSearch;
+  const sessionSearch = prefs.sessionSearch;
+  const userPage = prefs.userPage;
+  const sessionPage = prefs.sessionPage;
+  const setUserSearch = (v: string) => updatePrefs({ userSearch: v, userPage: 1 });
+  const setSessionSearch = (v: string) => updatePrefs({ sessionSearch: v, sessionPage: 1 });
+  const setUserPage = (v: number) => updatePrefs({ userPage: v });
+  const setSessionPage = (v: number) => updatePrefs({ sessionPage: v });
 
-  // Track seen ids for notifications (avoid firing on initial load)
+  // Track seen ids + initial-load flag for notifications (avoid firing on first snapshot)
   const seenUserIdsRef = useRef<Set<string> | null>(null);
   const seenSessionIdsRef = useRef<Set<string> | null>(null);
 
-  const fetchAll = async (opts: { silent?: boolean } = {}) => {
-    if (!opts.silent) setLoading(true);
-    setErr(null);
-    try {
-      // Recently registered customers
-      let userDocs: any[] = [];
-      try {
-        const snap = await getDocs(
-          query(collection(db, 'customers'), orderBy('createdAt', 'desc'), limit(200))
-        );
-        userDocs = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
-      } catch {
-        const snap = await getDocs(collection(db, 'customers'));
-        userDocs = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
-        userDocs.sort((a, b) => {
-          const ta = a.createdAt?.toDate?.()?.getTime?.() || 0;
-          const tb = b.createdAt?.toDate?.()?.getTime?.() || 0;
-          return tb - ta;
-        });
-        userDocs = userDocs.slice(0, 200);
-      }
+  // Keep latest prefs accessible in snapshot callbacks without resubscribing
+  const prefsRef = useRef(prefs);
+  useEffect(() => { prefsRef.current = prefs; }, [prefs]);
 
-      // Notify new signups
-      const userIds = new Set(userDocs.map((u: any) => u.uid));
-      if (seenUserIdsRef.current && prefs.notifySignups) {
-        const fresh = userDocs.filter((u: any) => !seenUserIdsRef.current!.has(u.uid));
-        fresh.slice(0, 3).forEach((u: any) => {
-          toast.success('New customer registered', {
-            description: u.email || u.uid,
-          });
-        });
-      }
-      seenUserIdsRef.current = userIds;
-      setUsers(userDocs as RegisteredUser[]);
-
-      // Last online — visitor_events last 24h, group by session
-      const since = Timestamp.fromMillis(Date.now() - 24 * 60 * 60 * 1000);
-      let evSnap;
-      try {
-        evSnap = await getDocs(
-          query(
-            collection(db, 'visitor_events'),
-            where('createdAt', '>=', since),
-            orderBy('createdAt', 'desc'),
-            limit(3000)
-          )
-        );
-      } catch {
-        evSnap = await getDocs(
-          query(collection(db, 'visitor_events'), orderBy('createdAt', 'desc'), limit(3000))
-        );
-      }
-      const bySession = new Map<string, OnlineSession>();
-      evSnap.docs.forEach(doc => {
-        const d: any = doc.data();
-        const sid = d.sessionId || doc.id;
-        const ts: Date = d.createdAt?.toDate?.() || new Date();
-        const existing = bySession.get(sid);
-        if (!existing) {
-          bySession.set(sid, {
-            sessionId: sid,
-            visitorId: d.visitorId,
-            path: d.path,
-            userAgent: d.userAgent,
-            referrer: d.referrer,
-            lastSeen: ts,
-            firstSeen: d.firstSeen?.toDate?.() || ts,
-            eventCount: 1,
-          });
-        } else {
-          existing.eventCount += 1;
-          if (ts > existing.lastSeen) {
-            existing.lastSeen = ts;
-            existing.path = d.path || existing.path;
-          }
-          if (d.firstSeen?.toDate && (!existing.firstSeen || d.firstSeen.toDate() < existing.firstSeen)) {
-            existing.firstSeen = d.firstSeen.toDate();
-          }
-        }
-      });
-      const arr = Array.from(bySession.values()).sort(
-        (a, b) => b.lastSeen.getTime() - a.lastSeen.getTime()
-      );
-
-      // Notify newly first-seen sessions
-      const sessIds = new Set(arr.map(s => s.sessionId));
-      if (seenSessionIdsRef.current && prefs.notifyFirstSeen) {
-        const fresh = arr.filter(s => !seenSessionIdsRef.current!.has(s.sessionId));
-        fresh.slice(0, 3).forEach(s => {
-          toast('New visitor online', {
-            description: `${s.path || '/'} · ${shortUA(s.userAgent)}`,
-          });
-        });
-      }
-      seenSessionIdsRef.current = sessIds;
-      setSessions(arr);
-    } catch (e: any) {
-      console.error('LiveActivityTab error', e);
-      setErr(e?.message || 'Failed to load activity');
-    } finally {
-      setLoading(false);
-    }
+  const maybeToast = (kind: 'signup' | 'visitor', title: string, description: string) => {
+    const p = prefsRef.current;
+    if (kind === 'signup' && !p.notifySignups) return;
+    if (kind === 'visitor' && !p.notifyFirstSeen) return;
+    if (p.quietEnabled && isQuietNow(p.quietStart, p.quietEnd)) return;
+    if (kind === 'signup') toast.success(title, { description });
+    else toast(title, { description });
   };
 
+  // Realtime: customers
   useEffect(() => {
-    fetchAll();
-    const refresh = setInterval(() => fetchAll({ silent: true }), 30_000);
+    setLoading(true);
+    const qUsers = query(
+      collection(db, 'customers'),
+      orderBy('createdAt', 'desc'),
+      limit(200)
+    );
+    const unsub = onSnapshot(
+      qUsers,
+      (snap) => {
+        const docs = snap.docs.map(d => ({ uid: d.id, ...(d.data() as any) })) as RegisteredUser[];
+        const ids = new Set(docs.map(u => u.uid));
+        if (seenUserIdsRef.current) {
+          const fresh = docs.filter(u => !seenUserIdsRef.current!.has(u.uid));
+          fresh.slice(0, 3).forEach(u => {
+            maybeToast('signup', 'New customer registered', u.email || u.uid);
+          });
+        }
+        seenUserIdsRef.current = ids;
+        setUsers(docs);
+        setLoading(false);
+      },
+      (e) => {
+        console.error('LiveActivity customers snapshot error', e);
+        setErr(e?.message || 'Failed to load customers');
+        setLoading(false);
+      }
+    );
+    return () => unsub();
+  }, []);
+
+  // Realtime: visitor_events (last 24h)
+  useEffect(() => {
+    const since = Timestamp.fromMillis(Date.now() - 24 * 60 * 60 * 1000);
+    const qEvents = query(
+      collection(db, 'visitor_events'),
+      where('createdAt', '>=', since),
+      orderBy('createdAt', 'desc'),
+      limit(3000)
+    );
+    const unsub = onSnapshot(
+      qEvents,
+      (snap) => {
+        const bySession = new Map<string, OnlineSession>();
+        snap.docs.forEach(doc => {
+          const d: any = doc.data();
+          const sid = d.sessionId || doc.id;
+          const ts: Date = d.createdAt?.toDate?.() || new Date();
+          const existing = bySession.get(sid);
+          if (!existing) {
+            bySession.set(sid, {
+              sessionId: sid,
+              visitorId: d.visitorId,
+              path: d.path,
+              userAgent: d.userAgent,
+              referrer: d.referrer,
+              lastSeen: ts,
+              firstSeen: d.firstSeen?.toDate?.() || ts,
+              eventCount: 1,
+            });
+          } else {
+            existing.eventCount += 1;
+            if (ts > existing.lastSeen) {
+              existing.lastSeen = ts;
+              existing.path = d.path || existing.path;
+            }
+            if (d.firstSeen?.toDate && (!existing.firstSeen || d.firstSeen.toDate() < existing.firstSeen)) {
+              existing.firstSeen = d.firstSeen.toDate();
+            }
+          }
+        });
+        const arr = Array.from(bySession.values()).sort(
+          (a, b) => b.lastSeen.getTime() - a.lastSeen.getTime()
+        );
+        const ids = new Set(arr.map(s => s.sessionId));
+        if (seenSessionIdsRef.current) {
+          const fresh = arr.filter(s => !seenSessionIdsRef.current!.has(s.sessionId));
+          fresh.slice(0, 3).forEach(s => {
+            maybeToast('visitor', 'New visitor online', `${s.path || '/'} · ${shortUA(s.userAgent)}`);
+          });
+        }
+        seenSessionIdsRef.current = ids;
+        setSessions(arr);
+      },
+      (e) => {
+        console.error('LiveActivity visitor_events snapshot error', e);
+      }
+    );
+    return () => unsub();
+  }, []);
+
+  // Tick for relative timestamps + online window
+  useEffect(() => {
     const tick = setInterval(() => setNow(Date.now()), 15_000);
-    return () => {
-      clearInterval(refresh);
-      clearInterval(tick);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefs.notifySignups, prefs.notifyFirstSeen]);
+    return () => clearInterval(tick);
+  }, []);
 
   const windowMs = prefs.windowMin * 60_000;
   const onlineNow = useMemo(
@@ -303,20 +304,21 @@ export default function LiveActivityTab() {
     );
   }, [sessions, sessionSearch]);
 
-  // Reset to first page when search changes
-  useEffect(() => { setUserPage(1); }, [userSearch, prefs.userPageSize]);
-  useEffect(() => { setSessionPage(1); }, [sessionSearch, prefs.sessionPageSize]);
-
   const userTotalPages = Math.max(1, Math.ceil(filteredUsers.length / prefs.userPageSize));
   const sessionTotalPages = Math.max(1, Math.ceil(filteredSessions.length / prefs.sessionPageSize));
+  const safeUserPage = Math.min(userPage, userTotalPages);
+  const safeSessionPage = Math.min(sessionPage, sessionTotalPages);
   const pagedUsers = filteredUsers.slice(
-    (userPage - 1) * prefs.userPageSize,
-    userPage * prefs.userPageSize
+    (safeUserPage - 1) * prefs.userPageSize,
+    safeUserPage * prefs.userPageSize
   );
   const pagedSessions = filteredSessions.slice(
-    (sessionPage - 1) * prefs.sessionPageSize,
-    sessionPage * prefs.sessionPageSize
+    (safeSessionPage - 1) * prefs.sessionPageSize,
+    safeSessionPage * prefs.sessionPageSize
   );
+
+  const quietActive = prefs.quietEnabled && isQuietNow(prefs.quietStart, prefs.quietEnd);
+
 
   return (
     <div className="space-y-6">
