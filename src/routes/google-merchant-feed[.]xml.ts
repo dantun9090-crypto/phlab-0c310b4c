@@ -482,6 +482,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
             "CDN-Cache-Control": "no-store",
             "Cloudflare-CDN-Cache-Control": "no-store",
+            "Surrogate-Control": "no-store",
             "X-Feed-Items": String(merchantProducts.length),
             "X-Feed-Empty": emptyFeed ? "true" : "false",
             "X-Feed-Generated-At": generatedAt,
