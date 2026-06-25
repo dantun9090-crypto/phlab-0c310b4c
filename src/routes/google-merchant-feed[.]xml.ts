@@ -358,6 +358,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                       p.unitPricingMeasure && p.unitPricingMeasure.value > 0
                         ? `${p.unitPricingMeasure.value} ${p.unitPricingMeasure.unit}`
                         : "",
+                    phlCode: (p.sku || p.id || p.slug || "PHL").toString(),
                     titleA: p.name || p.slug || "",
                     linkA: `/products/${p.id || p.slug}`,
                     titleB: override?.displayName || (p.name || p.slug || ""),
