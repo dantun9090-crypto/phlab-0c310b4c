@@ -164,6 +164,12 @@ function shortUA(ua?: string): string {
   return 'Other';
 }
 
+function isPreviewSession(s: OnlineSession): boolean {
+  const ref = (s.referrer || '').toLowerCase();
+  const path = (s.path || '').toLowerCase();
+  return ref.includes('lovable.dev') || path.includes('__lovable_load_id');
+}
+
 function CopyBtn({ value, label }: { value: string; label?: string }) {
   const [copied, setCopied] = useState(false);
   return (
