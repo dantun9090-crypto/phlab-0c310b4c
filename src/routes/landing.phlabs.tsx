@@ -3,7 +3,7 @@ import { EditorialLanding } from "@/components/EditorialLanding";
 
 const TITLE = "PH Labs | Premium Research Compounds for Scientific Laboratories";
 const DESCRIPTION =
-  "PH Labs supplies high-purity research materials developed for professional laboratory and scientific applications. Premium laboratory research compounds with detailed documentation.";
+  "PH Labs supplies high-purity research compounds to UK laboratories, with detailed batch documentation for every order. For research use only.";
 const URL = "https://phlabs.co.uk/landing/phlabs";
 const OG_IMAGE = "https://phlabs.co.uk/og/compound.jpg";
 
