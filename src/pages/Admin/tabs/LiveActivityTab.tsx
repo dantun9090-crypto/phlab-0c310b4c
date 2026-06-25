@@ -348,13 +348,36 @@ export default function LiveActivityTab() {
             />
             Notify new visitors
           </label>
-          <button
-            onClick={() => fetchAll()}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white rounded-lg text-sm font-medium"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
-          </button>
+          <label className="flex items-center gap-2 text-xs text-[#9cb8d9] bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2">
+            <input
+              type="checkbox"
+              checked={prefs.quietEnabled}
+              onChange={e => updatePrefs({ quietEnabled: e.target.checked })}
+            />
+            <BellOff className="w-3.5 h-3.5" /> Quiet hours
+            <input
+              type="time"
+              value={prefs.quietStart}
+              onChange={e => updatePrefs({ quietStart: e.target.value })}
+              disabled={!prefs.quietEnabled}
+              className="bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 disabled:opacity-50"
+            />
+            <span>–</span>
+            <input
+              type="time"
+              value={prefs.quietEnd}
+              onChange={e => updatePrefs({ quietEnd: e.target.value })}
+              disabled={!prefs.quietEnabled}
+              className="bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 disabled:opacity-50"
+            />
+            {quietActive && (
+              <span className="text-amber-400 text-[10px] uppercase tracking-wider">muted</span>
+            )}
+          </label>
+          <div className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]">
+            <Radio className={`w-3.5 h-3.5 ${loading ? 'text-amber-400 animate-pulse' : 'text-emerald-400'}`} />
+            {loading ? 'Connecting…' : 'Live'}
+          </div>
         </div>
       </div>
 
