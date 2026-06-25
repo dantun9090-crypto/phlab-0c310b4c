@@ -1,16 +1,68 @@
 import { Link } from "@tanstack/react-router";
+import { useState, type FormEvent } from "react";
 import heroImg from "@/assets/lab-navy-hero.jpg";
 import molecularImg from "@/assets/lab-navy-molecular.jpg";
 import detailImg from "@/assets/lab-navy-detail.jpg";
 
 /**
  * /compound — premium navy + gold laboratory landing.
- * Deep navy, charcoal, white, subtle gold. Ads-policy compliant copy.
+ * Ads-policy compliant copy. Inline documentation-request form, smooth
+ * anchor scrolling, and prominent research-use-only disclaimer.
  */
 export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
+  const [form, setForm] = useState({
+    name: "",
+    institution: "",
+    email: "",
+    message: "",
+    consent: false,
+  });
+  const [status, setStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState<string>("");
+
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!form.consent) {
+      setStatus("error");
+      setErrorMsg("Please confirm the GDPR consent to proceed.");
+      return;
+    }
+    setStatus("sending");
+    setErrorMsg("");
+    try {
+      const res = await fetch("/api/public/send-mail", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          template: "contact",
+          name: form.name,
+          email: form.email,
+          subject: `Research Documentation Request — ${form.institution || "Independent Researcher"}`,
+          message:
+            `Institution: ${form.institution || "—"}\n\n` +
+            `${form.message || "(No additional message provided.)"}`,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
+      setStatus("ok");
+      setForm({ name: "", institution: "", email: "", message: "", consent: false });
+    } catch (err) {
+      setStatus("error");
+      setErrorMsg(
+        err instanceof Error
+          ? `We couldn't send your request: ${err.message}. Please email info@phlabs.co.uk directly.`
+          : "We couldn't send your request. Please email info@phlabs.co.uk directly.",
+      );
+    }
+  }
+
   return (
-    <main className="min-h-screen bg-[#0a1530] text-white antialiased selection:bg-[#c9a44c] selection:text-[#0a1530]">
+    <main className="min-h-screen bg-[#0a1530] text-white antialiased selection:bg-[#c9a44c] selection:text-[#0a1530] scroll-smooth">
       <style>{`
+        html { scroll-behavior: smooth; }
         @keyframes phlReveal { 0% { opacity:0; transform:translateY(28px); filter:blur(8px);} 100% { opacity:1; transform:translateY(0); filter:blur(0);} }
         @keyframes phlLine { 0% { transform:scaleX(0);} 100% { transform:scaleX(1);} }
         @keyframes phlFade { 0% { opacity:0;} 100% { opacity:1;} }
@@ -27,6 +79,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         .d4{animation-delay:.55s} .d5{animation-delay:.7s} .d6{animation-delay:.9s}
         .gold{color:#c9a44c}.gold-bg{background-color:#c9a44c}.gold-border{border-color:#c9a44c}
         .serif{font-family:'Cormorant Garamond','Times New Roman',serif}
+        section[id]{scroll-margin-top:80px}
       `}</style>
 
       {/* TOP BAR — strong disclaimer */}
@@ -78,7 +131,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
 
           <div className="phl-reveal d6 mt-12 flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
-              href="#documentation"
+              href="#request-form"
               className="group inline-flex items-center justify-center px-9 py-4 rounded-full gold-bg text-[#0a1530] text-[12px] tracking-[0.18em] uppercase font-semibold transition-all hover:brightness-110 shadow-[0_20px_50px_-20px_rgba(201,164,76,0.6)]"
             >
               Request Research Documentation
@@ -110,8 +163,28 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         </div>
       </section>
 
+      {/* PROMINENT NOTICE BANNER */}
+      <a
+        href="#disclaimer"
+        className="block border-y gold-border bg-[#c9a44c]/10 hover:bg-[#c9a44c]/15 transition-colors"
+      >
+        <div className="mx-auto max-w-7xl px-6 py-5 flex flex-col sm:flex-row items-center justify-center gap-3 text-center">
+          <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.35em] gold font-semibold">
+            <span className="inline-block h-1.5 w-1.5 rounded-full gold-bg" />
+            Important Notice
+          </span>
+          <span className="text-sm sm:text-[15px] text-white/90 font-light">
+            All products are for laboratory and scientific research use only.
+            <span className="gold font-medium"> Not for human consumption.</span>
+          </span>
+          <span className="text-[10px] uppercase tracking-[0.3em] text-white/60 underline-offset-4 underline">
+            Read full disclaimer →
+          </span>
+        </div>
+      </a>
+
       {/* MARQUEE */}
-      <section className="border-y border-white/10 bg-[#0c1a3a] overflow-hidden">
+      <section className="border-b border-white/10 bg-[#0c1a3a] overflow-hidden">
         <div className="phl-marquee flex whitespace-nowrap py-6 text-[11px] uppercase tracking-[0.5em] text-white/55">
           {Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="flex shrink-0 items-center gap-12 pr-12">
@@ -138,7 +211,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
 
           <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/10 border border-white/10 rounded-2xl overflow-hidden">
             {[
-              { k: "01", t: "United Kingdom Laboratory Supply", d: "Prepared, stored and dispatched from UK laboratory facilities." },
+              { k: "01", t: "United Kingdom Laboratory", d: "Prepared, stored and dispatched from UK laboratory facilities." },
               { k: "02", t: "Verified Purity Standards", d: "Evaluated against rigorous quality benchmarks for research compounds." },
               { k: "03", t: "Per-Batch Documentation", d: "Detailed analytical records accompany every batch shipped." },
               { k: "04", t: "Controlled Conditions", d: "Materials handled and stored under controlled laboratory conditions." },
@@ -153,8 +226,8 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         </div>
       </section>
 
-      {/* WHAT WE OFFER — molecular backdrop */}
-      <section className="relative border-b border-white/10 py-24 sm:py-32 overflow-hidden">
+      {/* WHAT WE OFFER */}
+      <section id="offer" className="relative border-b border-white/10 py-24 sm:py-32 overflow-hidden">
         <img
           src={molecularImg}
           alt=""
@@ -172,16 +245,16 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           </h2>
           <div className="mx-auto mt-6 h-px w-12 gold-bg" />
           <p className="mt-10 mx-auto max-w-2xl text-base sm:text-lg font-light leading-relaxed text-white/80">
-            We provide premium-grade research compounds intended strictly for
-            laboratory research, analytical studies, and scientific applications.
-            All materials are supplied with detailed analytical documentation to
+            Premium-grade research compounds intended strictly for laboratory
+            research, analytical studies, and scientific applications. All
+            materials are supplied with detailed analytical documentation to
             support high-quality and reproducible scientific work.
           </p>
         </div>
       </section>
 
-      {/* INTENDED USE — luxury vial photography */}
-      <section className="relative overflow-hidden border-b border-white/10 py-32 sm:py-44">
+      {/* INTENDED USE */}
+      <section id="intended-use" className="relative overflow-hidden border-b border-white/10 py-32 sm:py-44">
         <img
           src={detailImg}
           alt=""
@@ -206,51 +279,130 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         </div>
       </section>
 
-      {/* IMPORTANT NOTICE */}
-      <section className="border-b border-white/10 py-20 bg-[#0c1a3a]">
-        <div className="mx-auto max-w-4xl px-6">
-          <div className="rounded-2xl border gold-border bg-[#0a1530] p-10 sm:p-12 shadow-[0_30px_80px_-40px_rgba(201,164,76,0.3)]">
-            <p className="text-[11px] uppercase tracking-[0.5em] gold">Important Notice</p>
-            <h2 className="mt-4 serif text-2xl sm:text-3xl font-light text-white">For laboratory and scientific research use only</h2>
-            <p className="mt-6 text-sm sm:text-[15px] leading-relaxed text-white/75">
-              These research compounds are sold strictly for laboratory and
-              scientific research use only. They are not for human consumption
-              and have not been evaluated for safety or efficacy in humans.
+      {/* REQUEST DOCUMENTATION FORM */}
+      <section id="request-form" className="border-b border-white/10 py-24 sm:py-32 bg-[#0c1a3a]">
+        <div className="mx-auto max-w-3xl px-6">
+          <div className="text-center">
+            <p className="text-[11px] uppercase tracking-[0.5em] gold">§ 04 — Request Documentation</p>
+            <h2 className="mt-5 serif text-4xl md:text-5xl font-light text-white">
+              Documentation for qualified researchers
+            </h2>
+            <div className="mx-auto mt-6 h-px w-12 gold-bg" />
+            <p className="mt-8 mx-auto max-w-2xl text-base font-light leading-relaxed text-white/75">
+              Qualified researchers and institutions may request detailed
+              documentation for our premium laboratory research materials.
             </p>
           </div>
-        </div>
-      </section>
 
-      {/* REQUEST DOCUMENTATION */}
-      <section id="documentation" className="border-b border-white/10 py-24 sm:py-32">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <p className="text-[11px] uppercase tracking-[0.5em] gold">§ 04 — Request Documentation</p>
-          <h2 className="mt-5 serif text-4xl md:text-5xl font-light text-white">
-            Documentation for qualified researchers
-          </h2>
-          <p className="mt-8 mx-auto max-w-2xl text-base sm:text-lg font-light leading-relaxed text-white/75">
-            Qualified researchers and institutions may request detailed
-            documentation for our premium laboratory research materials.
-          </p>
-          <div className="mt-10 flex flex-col sm:flex-row justify-center gap-3">
-            <Link
-              to="/contact"
-              className="inline-flex items-center justify-center px-9 py-4 rounded-full gold-bg text-[#0a1530] text-[12px] tracking-[0.18em] uppercase font-semibold transition-all hover:brightness-110"
-            >
-              Request Research Documentation <span className="ml-2">→</span>
-            </Link>
-            <Link
-              to="/quality-control"
-              className="inline-flex items-center justify-center px-9 py-4 rounded-full border gold-border text-white text-[12px] tracking-[0.18em] uppercase font-medium transition-all hover:bg-white/5"
-            >
-              Learn More About Our Standards <span className="ml-2">→</span>
-            </Link>
-          </div>
+          <form
+            onSubmit={submit}
+            className="mt-12 rounded-2xl border border-white/10 bg-[#0a1530] p-8 sm:p-10 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.8)] space-y-6"
+            noValidate
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <label className="block">
+                <span className="block text-[11px] uppercase tracking-[0.25em] gold mb-2">Full Name *</span>
+                <input
+                  type="text"
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full min-h-[48px] rounded-lg border-2 border-slate-600 bg-slate-800 px-4 text-white placeholder-white/30 focus:border-[#c9a44c] focus:outline-none transition-colors"
+                  placeholder="Dr. Jane Smith"
+                  maxLength={120}
+                />
+              </label>
+              <label className="block">
+                <span className="block text-[11px] uppercase tracking-[0.25em] gold mb-2">Institution</span>
+                <input
+                  type="text"
+                  value={form.institution}
+                  onChange={(e) => setForm({ ...form, institution: e.target.value })}
+                  className="w-full min-h-[48px] rounded-lg border-2 border-slate-600 bg-slate-800 px-4 text-white placeholder-white/30 focus:border-[#c9a44c] focus:outline-none transition-colors"
+                  placeholder="University / Laboratory"
+                  maxLength={200}
+                />
+              </label>
+            </div>
+
+            <label className="block">
+              <span className="block text-[11px] uppercase tracking-[0.25em] gold mb-2">Email *</span>
+              <input
+                type="email"
+                required
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="w-full min-h-[48px] rounded-lg border-2 border-slate-600 bg-slate-800 px-4 text-white placeholder-white/30 focus:border-[#c9a44c] focus:outline-none transition-colors"
+                placeholder="researcher@institution.ac.uk"
+                maxLength={320}
+              />
+            </label>
+
+            <label className="block">
+              <span className="block text-[11px] uppercase tracking-[0.25em] gold mb-2">Message (optional)</span>
+              <textarea
+                value={form.message}
+                onChange={(e) => setForm({ ...form, message: e.target.value })}
+                rows={4}
+                className="w-full rounded-lg border-2 border-slate-600 bg-slate-800 px-4 py-3 text-white placeholder-white/30 focus:border-[#c9a44c] focus:outline-none transition-colors resize-y"
+                placeholder="Briefly describe your research enquiry."
+                maxLength={2000}
+              />
+            </label>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.consent}
+                onChange={(e) => setForm({ ...form, consent: e.target.checked })}
+                className="mt-1 h-5 w-5 rounded border-2 border-slate-600 bg-slate-800 accent-[#c9a44c] flex-shrink-0"
+                required
+              />
+              <span className="text-sm text-white/75 leading-relaxed">
+                I consent to PH Labs processing my details to respond to this
+                enquiry, in accordance with the{" "}
+                <Link to="/privacy-policy" className="gold underline underline-offset-4 hover:brightness-125">
+                  Privacy Policy
+                </Link>
+                . I confirm I am a qualified researcher and understand these
+                materials are for research use only.
+              </span>
+            </label>
+
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={status === "sending"}
+                className="w-full sm:w-auto inline-flex items-center justify-center px-10 py-4 rounded-full gold-bg text-[#0a1530] text-[12px] tracking-[0.18em] uppercase font-semibold transition-all hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed shadow-[0_20px_50px_-20px_rgba(201,164,76,0.6)]"
+              >
+                {status === "sending" ? "Sending…" : "Submit Request"}
+                {status !== "sending" && <span className="ml-3">→</span>}
+              </button>
+            </div>
+
+            {status === "ok" && (
+              <p
+                role="status"
+                className="text-sm text-emerald-300 border border-emerald-500/30 bg-emerald-500/10 rounded-lg px-4 py-3"
+              >
+                Thank you — your request has been received. Our team will
+                respond by email shortly.
+              </p>
+            )}
+            {status === "error" && (
+              <p
+                role="alert"
+                className="text-sm text-rose-200 border border-rose-500/40 bg-rose-500/10 rounded-lg px-4 py-3"
+              >
+                {errorMsg}
+              </p>
+            )}
+          </form>
         </div>
       </section>
 
       {/* LEGAL DISCLAIMER */}
-      <section className="py-20 bg-[#0a1530]">
+      <section id="disclaimer" className="py-20 bg-[#0a1530]">
         <div className="mx-auto max-w-3xl px-6 text-center">
           <div className="border-t gold-border pt-12">
             <p className="text-[11px] uppercase tracking-[0.5em] gold">Legal</p>
@@ -266,12 +418,26 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
               Misuse of these products may be dangerous and illegal. The company
               accepts no liability for any misuse of these products.
             </p>
-            <Link
-              to="/"
-              className="mt-10 inline-flex items-center justify-center px-8 py-3 rounded-full border border-white/20 text-white/80 text-[11px] tracking-[0.2em] uppercase hover:bg-white/5 transition-all"
-            >
-              ← Back to homepage
-            </Link>
+            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                to="/"
+                className="inline-flex items-center justify-center px-8 py-3 rounded-full border border-white/20 text-white/80 text-[11px] tracking-[0.2em] uppercase hover:bg-white/5 transition-all"
+              >
+                ← Back to homepage
+              </Link>
+              <Link
+                to="/terms-of-service"
+                className="inline-flex items-center justify-center px-8 py-3 rounded-full border border-white/20 text-white/80 text-[11px] tracking-[0.2em] uppercase hover:bg-white/5 transition-all"
+              >
+                Terms of Service
+              </Link>
+              <Link
+                to="/contact"
+                className="inline-flex items-center justify-center px-8 py-3 rounded-full border border-white/20 text-white/80 text-[11px] tracking-[0.2em] uppercase hover:bg-white/5 transition-all"
+              >
+                Contact
+              </Link>
+            </div>
           </div>
         </div>
       </section>
