@@ -274,6 +274,8 @@ export default function LiveActivityTab() {
       quietStart: p.quietStart,
       quietEnd: p.quietEnd,
       quietTimezone: p.quietTimezone,
+      hideBots: p.hideBots,
+      treatForceHideBadgeAsBot: p.treatForceHideBadgeAsBot,
     };
 
     // 1) dedup — once per targetId within TTL.
