@@ -408,6 +408,13 @@ export default function LiveActivityTab() {
           <p className="text-[#9cb8d9] text-sm mt-1">
             Newest registered emails and the most recently online visitors.
           </p>
+          <p className="text-[#3a5a82] text-[11px] mt-1 flex items-center gap-1.5 flex-wrap">
+            <Clock className="w-3 h-3" />
+            Timestamps & quiet hours in <span className="text-emerald-400 font-mono">{prefs.quietTimezone}</span>
+            {quietActive && (
+              <span className="ml-1 text-amber-400 uppercase tracking-wider">· quiet hours active</span>
+            )}
+          </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <label className="flex items-center gap-2 text-xs text-[#9cb8d9] bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2">
