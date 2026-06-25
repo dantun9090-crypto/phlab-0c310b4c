@@ -82,6 +82,20 @@ function isBotUA(ua?: string): boolean {
   return BOT_UA_RE.test(ua);
 }
 
+// Paths/query params that only synthetic probes hit:
+// - forceHideBadge=true → Google Customer Reviews / Merchant trust-badge iframe probe
+// - __prerender / _escaped_fragment_ → SSR prerender probes
+// - ?lighthouse / ?audit → automated audits
+const BOT_PATH_RE = /(^|[?&])(forceHideBadge|__prerender|_escaped_fragment_|lighthouse|audit|ping|healthcheck)(=|&|$)/i;
+function isBotPath(path?: string): boolean {
+  if (!path) return false;
+  return BOT_PATH_RE.test(path);
+}
+
+function isBotSession(s: { userAgent?: string; path?: string }): boolean {
+  return isBotUA(s.userAgent) || isBotPath(s.path);
+}
+
 function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(LS_KEY);
