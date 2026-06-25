@@ -44,7 +44,19 @@ export const Route = createFileRoute("/compound")({
       { name: "twitter:description", content: DESCRIPTION },
       { name: "twitter:image", content: OG_IMAGE },
     ],
-    links: [{ rel: "canonical", href: URL }],
+    links: [
+      { rel: "canonical", href: URL },
+      {
+        rel: "preload",
+        as: "image",
+        href: "/og/lab/hero-960.avif",
+        imageSrcSet:
+          "/og/lab/hero-640.avif 640w, /og/lab/hero-960.avif 960w, /og/lab/hero-1440.avif 1440w, /og/lab/hero-1920.avif 1920w",
+        imageSizes: "100vw",
+        type: "image/avif",
+        fetchpriority: "high",
+      },
+    ],
     scripts: [
       {
         type: "application/ld+json",
