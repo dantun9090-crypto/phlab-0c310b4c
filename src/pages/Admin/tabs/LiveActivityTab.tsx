@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   UserPlus, Activity, Mail, Clock, Globe, Search, Copy, Check,
   ChevronLeft, ChevronRight, BellOff, Radio, RotateCcw, Trash2, ShieldOff, Info,
-  Download, Upload, Undo2,
+  Download, Upload, Undo2, Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
