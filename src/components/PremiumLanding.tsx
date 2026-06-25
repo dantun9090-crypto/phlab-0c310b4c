@@ -84,8 +84,9 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         .display{font-family:'Cormorant Garamond','Times New Roman',serif}
         section[id]{scroll-margin-top:80px}
         @media (max-width: 767px) {
-          .lux-ken, .lux-float { animation: none !important; }
-          .lux-marquee { animation-duration: 64s; }
+          .lux-ken, .lux-float, .lux-shimmer, .lux-marquee { animation: none !important; }
+          .lux-shimmer { display: none !important; }
+          .mobile-no-blur { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
         }
         @media (prefers-reduced-motion: reduce) {
           .lux-fade-up, .lux-line, .lux-fade, .lux-float, .lux-marquee, .lux-ken, .lux-shimmer { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
@@ -93,7 +94,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
       `}</style>
 
       {/* ── TOP BAR ── */}
-      <div className="border-b border-white/10 bg-[#060b18]/95 backdrop-blur sticky top-0 z-30">
+      <div className="mobile-no-blur border-b border-white/10 bg-[#060b18]/95 backdrop-blur sticky top-0 z-30">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5 text-[10.5px] uppercase tracking-[0.35em] text-white/60">
           <span className="lux-fade d1 flex items-center gap-2.5">
             <span className="inline-block h-1.5 w-1.5 rounded-full gold-bg" />
@@ -163,7 +164,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           </div>
 
           {/* Spec card */}
-          <div className="lux-fade d6 lux-float mt-24 mx-auto max-w-lg rounded-2xl border border-white/[0.12] bg-white/[0.03] backdrop-blur-md px-10 py-7 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.7)]">
+          <div className="lux-fade d6 lux-float mt-24 mx-auto max-w-lg rounded-2xl border border-white/[0.12] bg-white/[0.03] mobile-no-blur backdrop-blur-md px-10 py-7 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.7)]">
             <dl className="grid grid-cols-3 gap-6 text-center">
               {[
                 { k: "UK", v: "Dispatched" },
