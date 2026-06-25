@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   UserPlus, Activity, Mail, Clock, Globe, Search, Copy, Check,
-  ChevronLeft, ChevronRight, BellOff, Radio,
+  ChevronLeft, ChevronRight, BellOff, Radio, RotateCcw, Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   db, collection, query, orderBy, limit, onSnapshot, where, Timestamp,
+  doc, getDoc, setDoc,
 } from '@/lib/firebase';
 import {
   isQuietNow, shouldSuppressToast, COMMON_TIMEZONES, detectLocalTimezone,
