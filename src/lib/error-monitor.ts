@@ -8,6 +8,8 @@
  * Safe to call multiple times — idempotent via a window flag.
  */
 
+import { isMarketingRoute } from "@/lib/is-marketing-route";
+
 type MonitorEventType = "page_not_found" | "server_error" | "rate_limited";
 
 interface ReportInput {
@@ -135,12 +137,8 @@ export function reportClientError(input: ReportInput): void {
  */
 export function installErrorMonitor(): void {
   if (typeof window === "undefined") return;
-  // Marketing landings skip the global fetch wrap to avoid TBT on LCP.
-  // Errors on /compound are still surfaced by the browser/GA via the
-  // separate onerror path, and there are no first-party fetches on this
-  // route worth monitoring.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const { isMarketingRoute } = require("@/lib/is-marketing-route") as typeof import("@/lib/is-marketing-route");
+  // Marketing landings skip the global fetch wrap — no first-party
+  // fetches on /compound and we want the main thread quiet for LCP.
   if (isMarketingRoute()) return;
   const w = window as unknown as Record<string, unknown>;
   if (w[FLAG]) return;
