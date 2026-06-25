@@ -1,35 +1,63 @@
 // === Reload-loop breaker (runs before React mounts) ========================
-// If the page reloads 3+ times within 60 s, render a static recovery screen
-// instead of mounting React. Usually means stale Cloudflare HTML referencing
-// missing JS chunks. Auto-purge in admin_health_logs handles the server side;
-// this protects end-users while the purge propagates.
+// Only arm this during an actual cache-recovery navigation. Previously this
+// counted every normal page load, so quick refreshes / preview reloads could
+// falsely show the stale-cache screen even when the app was healthy.
 (() => {
   if (typeof window === "undefined") return;
   try {
     const KEY = "__phl_reload_window";
+    const RECOVERY_KEYS = [
+      "__phl_hard_reload_in_flight",
+      "__phl_route_auto_recovery_done",
+      "__phl_reloaded_at",
+      "__phl_stale_asset_reload_at",
+    ];
+    const params = new URLSearchParams(window.location.search);
+    const isRecoveryNavigation =
+      params.has("sw") ||
+      params.has("_r") ||
+      params.has("stale_recovery") ||
+      params.has("cc") ||
+      RECOVERY_KEYS.some((k) => sessionStorage.getItem(k));
+
+    if (!isRecoveryNavigation) {
+      sessionStorage.removeItem(KEY);
+      return;
+    }
+
     const now = Date.now();
     const raw = sessionStorage.getItem(KEY);
     const arr = (raw ? (JSON.parse(raw) as number[]) : []).filter(
-      (t) => now - t < 60_000,
+      (t) => now - t < 90_000,
     );
     arr.push(now);
     sessionStorage.setItem(KEY, JSON.stringify(arr));
-    if (arr.length >= 3) {
+    if (arr.length >= 5) {
       sessionStorage.removeItem(KEY);
       document.documentElement.innerHTML =
         '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recovering — PH Labs</title><style>html,body{margin:0;min-height:100%;background:#060f1e;color:#f0f6ff;font-family:system-ui,sans-serif}.box{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}.card{max-width:440px;text-align:center}h1{margin:0 0 12px;font-size:22px}p{margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55}button{appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 18px;cursor:pointer;font-size:14px}</style></head><body><div class="box"><div class="card"><h1>⚠️ Loading issue detected</h1><p>This is usually a stale cache. Clearing it and reloading should fix it.</p><button id="phl-cc">Clear Cache &amp; Reload</button></div></div></body>';
       const btn = document.getElementById("phl-cc");
       btn?.addEventListener("click", async () => {
         try {
-          sessionStorage.clear();
-          localStorage.removeItem("__phl_reload_window");
+          for (const key of [KEY, ...RECOVERY_KEYS, "phl_reload_count", "__phl_stale_asset_reload_count"]) {
+            sessionStorage.removeItem(key);
+            localStorage.removeItem(key);
+          }
           if ("caches" in window) {
             const keys = await caches.keys();
-            await Promise.all(keys.map((k) => caches.delete(k)));
+            await Promise.all(
+              keys
+                .filter((k) => /^(phlabs-|workbox-|precache-|runtime-)/i.test(k))
+                .map((k) => caches.delete(k)),
+            );
           }
           if ("serviceWorker" in navigator) {
             const regs = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(regs.map((r) => r.unregister()));
+            await Promise.all(
+              regs
+                .filter((r) => /\/(?:sw|service-worker)\.js(?:$|[?#])/i.test(r.active?.scriptURL || r.installing?.scriptURL || r.waiting?.scriptURL || ""))
+                .map((r) => r.unregister()),
+            );
           }
         } catch {
           /* ignore */
@@ -318,4 +346,10 @@ if (shouldHydrateCurrentRoute()) {
 window.setTimeout(() => {
   window.__PHL_REACT_READY__ = true;
   stopMutationLogger();
+  try {
+    sessionStorage.removeItem("__phl_reload_window");
+    sessionStorage.removeItem("__phl_hard_reload_in_flight");
+  } catch {
+    /* ignore */
+  }
 }, 5000);
