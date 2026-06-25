@@ -700,34 +700,65 @@ export default function LiveActivityTab() {
           </label>
           <label
             className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]"
-            title="Comma-separated UA substrings that always pass as human (your own monitoring/QA tools). Case-insensitive."
+            title="Comma-separated UA substrings that always pass as human (your own monitoring/QA tools). Case-insensitive. Validated on blur."
           >
             <span>Allow UAs</span>
             <input
               type="text"
+              key={`ua-${prefs.allowlistUAs.join('|')}`}
               placeholder="phlabs-internal, my-qa-bot"
               defaultValue={prefs.allowlistUAs.join(', ')}
-              onBlur={e => updatePrefs({
-                allowlistUAs: e.target.value.split(',').map(s => s.trim()).filter(Boolean),
-              })}
+              onBlur={e => applyAllowlist('ua', e.target.value)}
               className="w-48 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono"
             />
           </label>
           <label
             className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]"
-            title="Comma-separated referrer hostnames that always pass as human."
+            title="Comma-separated referrer hostnames that always pass as human. Validated on blur."
           >
             <span>Allow refs</span>
             <input
               type="text"
+              key={`ref-${prefs.allowlistReferrers.join('|')}`}
               placeholder="ops.phlabs.co.uk"
               defaultValue={prefs.allowlistReferrers.join(', ')}
-              onBlur={e => updatePrefs({
-                allowlistReferrers: e.target.value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
-              })}
+              onBlur={e => applyAllowlist('ref', e.target.value)}
               className="w-44 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono"
             />
           </label>
+          <button
+            type="button"
+            onClick={restoreAllowlistDefaults}
+            title="Restore default allowlists (UA + referrers)"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white hover:border-emerald-500/50"
+          >
+            <Undo2 className="w-3.5 h-3.5" /> Restore defaults
+          </button>
+          <button
+            type="button"
+            onClick={exportAllowlists}
+            title="Export allowlists to JSON"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white"
+          >
+            <Download className="w-3.5 h-3.5" /> Export
+          </button>
+          <label
+            title="Import allowlists from a JSON file"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white cursor-pointer"
+          >
+            <Upload className="w-3.5 h-3.5" /> Import
+            <input
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={e => {
+                const f = e.target.files?.[0];
+                if (f) importAllowlistsFromFile(f);
+                e.target.value = '';
+              }}
+            />
+          </label>
+
           <label className="flex items-center gap-2 text-xs text-[#9cb8d9] bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2">
             <Trash2 className="w-3.5 h-3.5" /> Audit retention
             <input
