@@ -547,6 +547,21 @@ export default function LiveActivityTab() {
           >
             <RotateCcw className="w-3.5 h-3.5" /> Reset dedup
           </button>
+          <label
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] cursor-pointer hover:text-white"
+            title="Hide bots, crawlers, prerenderers and uptime monitors from the live visitors list"
+          >
+            <input
+              type="checkbox"
+              checked={prefs.hideBots}
+              onChange={e => updatePrefs({ hideBots: e.target.checked })}
+              className="accent-emerald-500"
+            />
+            Humans only
+            {prefs.hideBots && botCount > 0 && (
+              <span className="text-slate-500">({botCount} bot{botCount === 1 ? '' : 's'} hidden)</span>
+            )}
+          </label>
           <label className="flex items-center gap-2 text-xs text-[#9cb8d9] bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2">
             <Trash2 className="w-3.5 h-3.5" /> Audit retention
             <input
