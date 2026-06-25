@@ -2335,6 +2335,73 @@ PH Labs supplies HPLC-verified research peptides to UK laboratories, with batch-
       { id: 5, authors: 'Human Medicines Regulations 2012', year: 2012, title: 'UK Statutory Instruments 2012 No. 1916', journal: 'Legislation.gov.uk' },
     ]
   },
+  // ---------------------------------------------
+  // Comparison: Tirzepatide vs Retatrutide (mechanism focus)
+  // ---------------------------------------------
+  {
+    slug: 'tirzepatide-vs-retatrutide-mechanism',
+    title: 'Tirzepatide vs Retatrutide: Dual vs Triple Receptor Agonism in Research Models',
+    subtitle: 'A mechanistic comparison of GLP-1/GIP dual agonism (tirzepatide) against GLP-1/GIP/glucagon triple agonism (retatrutide) for UK laboratory research',
+    category: 'Metabolic Research',
+    readTime: 11,
+    publishDate: '2026-06-25',
+    excerpt: 'Tirzepatide engages two incretin receptors; retatrutide engages three. This research-focused comparison covers the molecular pharmacology, in-vitro potency profiles, and preclinical metabolic readouts that distinguish the two next-generation multi-agonist research compounds — written for UK laboratory teams characterising either peptide.',
+    keywords: [
+      'retatrutide research uk',
+      'tirzepatide vs retatrutide mechanism',
+      'dual agonist vs triple agonist peptide',
+      'GLP-1 GIP glucagon receptor research',
+      'multi-receptor incretin research',
+    ],
+    relatedSlugs: ['what-is-retatrutide', 'tirzepatide-dual-agonist-research', 'retatrutide-vs-tirzepatide-vs-semaglutide', 'retatrutide-research-guide'],
+    content: [
+      {
+        body: `Tirzepatide and retatrutide are the two most-studied next-generation multi-agonist research peptides currently characterised in UK laboratories. Both are long-acting acylated peptides engineered for once-weekly dosing in clinical investigation; both originated from Eli Lilly's incretin programme. The mechanistic distinction is simple to state and consequential in research models: <strong>tirzepatide is a dual GLP-1R / GIPR agonist</strong>, while <strong>retatrutide is a triple GLP-1R / GIPR / GCGR agonist</strong>. This article compares the two from a research-pharmacology perspective. <a href="/products/retatrutide" style="color: #10b981; text-decoration: underline;">Buy research-grade Retatrutide (≥99% HPLC)</a> or <a href="/products/tirzepatide" style="color: #10b981; text-decoration: underline;">Tirzepatide (≥99% HPLC)</a>. For research use only. Not for human consumption.`
+      },
+      {
+        heading: 'Receptor Engagement: Two Pathways vs Three',
+        body: `Tirzepatide (LY3298176) is a 39-amino-acid synthetic peptide with a C20 fatty-diacid side chain that binds and activates the glucose-dependent insulinotropic polypeptide receptor (GIPR) and the glucagon-like peptide-1 receptor (GLP-1R). Functional cAMP accumulation assays in transfected HEK293 cells indicate balanced agonism with a slight bias toward GIPR.
+
+Retatrutide (LY3437943) is a 36-amino-acid peptide with a C18 fatty-diacid moiety that simultaneously engages GIPR, GLP-1R, and the glucagon receptor (GCGR). The addition of GCGR activity is the defining mechanistic difference. GCGR engagement increases hepatic glucose output and — more importantly for metabolic research — drives a measurable increase in resting energy expenditure via hepatic and adipose thermogenic pathways. In a dual-agonist context this would be undesirable, but the concurrent GLP-1R/GIPR insulinotropic activity counterbalances the hyperglycaemic tendency in fed-state preclinical models.`
+      },
+      {
+        heading: 'In-Vitro Potency Profile',
+        body: `The relative receptor potencies are usually reported as EC50 values from cAMP accumulation assays. The published profiles for the two compounds are summarised below.`,
+        table: {
+          headers: ['Compound', 'GLP-1R', 'GIPR', 'GCGR', 'Functional Class'],
+          rows: [
+            ['Tirzepatide', 'Full agonist', 'Full agonist (slight bias)', 'No activity', 'Dual agonist'],
+            ['Retatrutide', 'Full agonist (slight bias)', 'Full agonist', 'Full agonist', 'Triple agonist'],
+          ],
+        },
+        callout: {
+          type: 'info',
+          text: 'Reported EC50 ranges vary between cell systems and assay conditions; always read potency values in the context of the specific reference paper.'
+        }
+      },
+      {
+        heading: 'Preclinical Metabolic Readouts (DIO Rodent Models)',
+        body: `In diet-induced obese (DIO) mouse models the dual-agonist tirzepatide cohorts have reported mean body weight changes in the range of −18% to −22% over comparable observation windows, attributable primarily to reduced caloric intake plus modest improvements in insulin sensitivity. Triple-agonist retatrutide cohorts have reported mean body weight changes up to −25% in the same model class; pair-feeding studies indicate that a meaningful fraction of the additional effect derives from increased energy expenditure rather than further caloric restriction. Hepatic triglyceride content changed by greater than −70% in ob/ob mouse cohorts treated with retatrutide, again exceeding the magnitude observed with dual-agonist comparators.`
+      },
+      {
+        heading: 'Practical Considerations for UK Research Laboratories',
+        body: `Both compounds are supplied as lyophilised powders and are stable for extended periods when stored at −20 °C in the original sealed vial. Once reconstituted in bacteriostatic water both compounds remain stable for up to 28 days at 2–8 °C; researchers characterising either peptide should align reconstitution and storage protocols with the procedures described in our <a href="/resources/peptide-storage-lyophilisation-science" style="color: #10b981; text-decoration: underline;">peptide storage and lyophilisation guide</a>. Identity and purity must be verified per batch by HPLC and mass spectrometry — see the <a href="/resources/how-to-read-hplc-certificate-of-analysis" style="color: #10b981; text-decoration: underline;">HPLC certificate of analysis guide</a>.
+
+For studies designed to dissect the contribution of GCGR-mediated thermogenesis, retatrutide is the more informative tool compound; for studies focused exclusively on incretin-mediated insulin secretion and satiety pathways, the dual-agonist tirzepatide is the simpler and more selective comparator. The choice should follow the research question, not the magnitude of weight-change effect reported in clinical trial literature.`,
+        callout: {
+          type: 'warning',
+          text: 'For Research Use Only. Not for Human Consumption. Both compounds are investigational research peptides; no clinical, therapeutic, or dosage claims are made for either substance.'
+        }
+      },
+    ],
+    references: [
+      { id: 1, authors: 'Coskun T, Sloop KW, Loghin C, et al.', year: 2018, title: 'LY3298176, a novel dual GIP and GLP-1 receptor agonist for the treatment of type 2 diabetes mellitus: From discovery to clinical proof of concept', journal: 'Mol Metab', doi: '10.1016/j.molmet.2018.09.009' },
+      { id: 2, authors: 'Jastreboff AM, Kaplan LM, Frias JP, et al.', year: 2023, title: 'Triple-hormone-receptor agonist retatrutide for obesity — a phase 2 trial', journal: 'N Engl J Med', doi: '10.1056/NEJMoa2301972' },
+      { id: 3, authors: 'Bossart M, Wagner M, Elvert R, et al.', year: 2022, title: 'Effects on weight loss and glycemic control with SAR441255, a potent unimolecular peptide GLP-1/GIP/GCG receptor triagonist', journal: 'Cell Metab', doi: '10.1016/j.cmet.2021.12.005' },
+      { id: 4, authors: 'Frias JP, Davies MJ, Rosenstock J, et al.', year: 2021, title: 'Tirzepatide versus semaglutide once weekly in patients with type 2 diabetes (SURPASS-2)', journal: 'N Engl J Med', doi: '10.1056/NEJMoa2107519' },
+      { id: 5, authors: 'Knerr PJ, Mowery SA, Douros JD, et al.', year: 2022, title: 'Next generation GLP-1/GIP/glucagon triple agonists normalize body weight in obese mice', journal: 'Mol Metab', doi: '10.1016/j.molmet.2022.101533' },
+    ]
+  },
 ];
 
 export function getArticle(slug: string): Article | undefined {
