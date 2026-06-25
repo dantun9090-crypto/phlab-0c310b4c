@@ -14,10 +14,15 @@ const SOURCE_PATH = resolve(
 const SOURCE = readFileSync(SOURCE_PATH, "utf8");
 
 function getMerchantPromoIds(): string[] {
-  return (process.env.MERCHANT_PROMO_IDS || "PHL_LAUNCH")
+  const raw = process.env.MERCHANT_PROMO_IDS;
+  if (!raw || typeof raw !== "string") {
+    return ["PHL_LAUNCH"];
+  }
+  const ids = raw
     .split(",")
     .map((s: string) => s.trim())
-    .filter(Boolean);
+    .filter((s: string) => s.length > 0);
+  return ids.length > 0 ? ids : ["PHL_LAUNCH"];
 }
 
 describe("merchant feed promo IDs", () => {
