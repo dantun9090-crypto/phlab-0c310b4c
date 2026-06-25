@@ -468,63 +468,150 @@ function KeywordGeoPanel() {
     [activeEntry],
   );
 
-  const runLookup = useCallback(async (mode: 'all' | 'resume', overridePhrase?: string) => {
+  const runLookup = useCallback(async (mode: 'all' | 'resume' | 'failed', overridePhrase?: string) => {
     const term = (overridePhrase ?? phrase).trim();
     if (!term) return;
+    const key = term.toLowerCase();
+    const prior = cache[key];
+    const priorFailed = (prior?.rows ?? []).filter((r) => r.error != null).map((r) => r.database);
+    const priorMissing = catalog
+      .filter((c) => !(prior?.rows ?? []).some((r) => r.database === c.id))
+      .map((c) => c.id);
+
     const dbList = mode === 'resume'
-      ? missing.map((m) => m.id)
-      : (topN === 'all' ? catalog.map((c) => c.id) : catalog.slice(0, topN).map((c) => c.id));
+      ? priorMissing
+      : mode === 'failed'
+        ? priorFailed
+        : (topN === 'all' ? catalog.map((c) => c.id) : catalog.slice(0, topN).map((c) => c.id));
+
     if (dbList.length === 0) {
-      setError(mode === 'resume' ? 'All countries already fetched.' : 'No countries to fetch.');
+      setError(
+        mode === 'resume' ? 'All countries already fetched.'
+        : mode === 'failed' ? 'No failed countries to retry.'
+        : 'No countries to fetch.',
+      );
       return;
     }
     if (overridePhrase) setPhrase(overridePhrase);
     setLoading(true);
     setError(null);
+    setProgress({ done: 0, total: dbList.length, current: null });
+
+    const startedAt = new Date().toISOString();
+    let aggRows: GeoRow[] = [];
+    let trimmedAll: string[] = [];
+    let lastQuotaAfter: QuotaSnapshot | null = null;
+    let unitsUsedTotal = 0;
+    let lastCatalog: CatalogEntry[] = catalog;
+    let runErr: string | null = null;
+
     try {
       const idToken = await getAdminIdToken();
-      const res = (await fetchGeo({ data: {
-        idToken, phrase: term, databases: dbList, autoLimit: true,
-      } })) as ServerGeoResponse;
 
-      const key = term.toLowerCase();
-      const stamped = res.rows.map((r) => ({ ...r, fetchedAt: res.fetchedAt }));
-      const prior = cache[key];
-      const mergedRows = mergeRows(prior?.rows ?? [], stamped);
+      // For mode='failed' we wipe the prior errored rows from cache first so
+      // mergeRows replaces them with whatever the retry returns.
+      if (mode === 'failed' && prior) {
+        const cleaned: CacheEntry = {
+          ...prior,
+          rows: prior.rows.filter((r) => r.error == null),
+        };
+        persistCache({ ...cache, [key]: cleaned });
+      }
+
+      // Dispatch one call per database in parallel; update progress as each
+      // resolves so the UI shows X / N completed live.
+      const tasks = dbList.map(async (db) => {
+        try {
+          const res = (await fetchGeo({ data: {
+            idToken, phrase: term, databases: [db], autoLimit: true,
+          } })) as ServerGeoResponse;
+          aggRows.push(...res.rows.map((r) => ({ ...r, fetchedAt: res.fetchedAt })));
+          trimmedAll.push(...res.trimmedByQuota);
+          lastQuotaAfter = res.quota.after;
+          unitsUsedTotal += res.quota.unitsUsed;
+          if (res.catalog.length) lastCatalog = res.catalog;
+        } catch (e: any) {
+          // Convert exception into an errored row so it shows up in cache + retry list.
+          aggRows.push({
+            database: db,
+            country: catalog.find((c) => c.id === db)?.country ?? db.toUpperCase(),
+            volume: null, cpc: null, competition: null, results: null,
+            error: String(e?.message ?? 'request failed').slice(0, 200),
+            fetchedAt: new Date().toISOString(),
+          });
+        } finally {
+          setProgress((p) => p ? { done: p.done + 1, total: p.total, current: db } : p);
+        }
+      });
+      await Promise.all(tasks);
+
+      const finishedAt = new Date().toISOString();
+      const mergedRows = mergeRows(prior?.rows ?? [], aggRows);
       const entry: CacheEntry = {
         phrase: term,
-        lastFetchedAt: res.fetchedAt,
+        lastFetchedAt: finishedAt,
         rows: mergedRows,
         runs: [
           ...(prior?.runs ?? []),
-          {
-            at: res.fetchedAt,
-            fetched: res.fetchedDatabases,
-            trimmed: res.trimmedByQuota,
-            unitsUsed: res.quota.unitsUsed,
-          },
+          { at: finishedAt, fetched: dbList, trimmed: trimmedAll, unitsUsed: unitsUsedTotal },
         ].slice(-25),
-        catalog: res.catalog.length ? res.catalog : (prior?.catalog ?? catalog),
+        catalog: lastCatalog,
       };
       const nextCache = { ...cache, [key]: entry };
       persistCache(nextCache);
       setActiveKey(key);
-      setQuota((q) => q ? { ...q, ...res.quota.after } : q);
+      if (lastQuotaAfter) setQuota((q) => q ? { ...q, ...lastQuotaAfter! } : q);
 
       // Pending background resume
       const stillMissing = entry.catalog.filter((c) => !entry.rows.some((r) => r.database === c.id));
-      if (stillMissing.length > 0 && res.quota.after.resetAt && (res.quota.after.remaining ?? 0) < stillMissing.length) {
-        savePending({ phrase: term, resetAt: res.quota.after.resetAt });
+      if (stillMissing.length > 0 && lastQuotaAfter?.resetAt && (lastQuotaAfter.remaining ?? 0) < stillMissing.length) {
+        savePending({ phrase: term, resetAt: lastQuotaAfter.resetAt });
         autoResumeFiredRef.current = false;
       } else {
         savePending(null);
       }
+
+      // Append cross-phrase audit log
+      const succeeded = aggRows.filter((r) => r.error == null).length;
+      const failedCount = aggRows.length - succeeded;
+      const failedList = aggRows.filter((r) => r.error != null).map((r) => r.database);
+      const history = pushRunHistory({
+        id: `${startedAt}-${key}-${mode}`,
+        at: startedAt,
+        phrase: term, term, mode,
+        requested: dbList.length,
+        succeeded, failed: failedCount,
+        unitsUsed: unitsUsedTotal,
+        quotaRemaining: lastQuotaAfter?.remaining ?? null,
+        coverageAfter: {
+          covered: entry.rows.length,
+          catalog: entry.catalog.length,
+          complete: stillMissing.length === 0,
+        },
+        failedDatabases: failedList,
+      });
+      setRunHistory(history);
     } catch (e: any) {
-      setError(e?.message ?? 'Lookup failed');
+      runErr = e?.message ?? 'Lookup failed';
+      setError(runErr);
+      const history = pushRunHistory({
+        id: `${startedAt}-${key}-${mode}-err`,
+        at: startedAt, phrase: term, term, mode,
+        requested: dbList.length, succeeded: 0, failed: dbList.length,
+        unitsUsed: unitsUsedTotal, quotaRemaining: lastQuotaAfter?.remaining ?? null,
+        coverageAfter: {
+          covered: prior?.rows?.length ?? 0,
+          catalog: prior?.catalog?.length ?? catalog.length,
+          complete: false,
+        },
+        failedDatabases: dbList, error: runErr,
+      });
+      setRunHistory(history);
     } finally {
       setLoading(false);
+      setProgress(null);
     }
-  }, [phrase, missing, topN, catalog, cache, fetchGeo]);
+  }, [phrase, topN, catalog, cache, fetchGeo]);
 
   // Auto-resume when the quota window resets
   useEffect(() => {
