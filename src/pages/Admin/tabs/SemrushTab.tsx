@@ -16,7 +16,42 @@ import {
 const REPORT_SCHEMA_VERSION = '1.2.0';
 const CACHE_KEY = 'phlabs.admin.semrushGeoCache.v2';
 const PENDING_KEY = 'phlabs.admin.semrushGeoPending.v1';
+const RUN_HISTORY_KEY = 'phlabs.admin.semrushRunHistory.v1';
 const CACHE_LIMIT = 20;
+const RUN_HISTORY_LIMIT = 100;
+
+interface RunHistoryEntry {
+  id: string;
+  at: string;
+  phrase: string;
+  term: string;
+  mode: 'all' | 'resume' | 'failed';
+  requested: number;
+  succeeded: number;
+  failed: number;
+  unitsUsed: number;
+  quotaRemaining: number | null;
+  coverageAfter: { covered: number; catalog: number; complete: boolean };
+  failedDatabases: string[];
+  error?: string | null;
+}
+
+function loadRunHistory(): RunHistoryEntry[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(RUN_HISTORY_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
+}
+function pushRunHistory(entry: RunHistoryEntry): RunHistoryEntry[] {
+  const all = [entry, ...loadRunHistory()].slice(0, RUN_HISTORY_LIMIT);
+  try { window.localStorage.setItem(RUN_HISTORY_KEY, JSON.stringify(all)); } catch { /* quota */ }
+  return all;
+}
+function clearRunHistory() {
+  try { window.localStorage.removeItem(RUN_HISTORY_KEY); } catch { /* */ }
+}
 
 interface OverviewData {
   domain: string;
