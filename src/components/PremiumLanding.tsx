@@ -205,7 +205,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
       </section>
 
       <footer className="border-t border-white/5 py-10">
-        <div className="mx-auto max-w-7xl px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] uppercase tracking-[0.25em] text-slate-500">
+        <div className="mx-auto max-w-7xl px-6 flex flex-col items-center justify-center gap-3 text-[11px] uppercase tracking-[0.25em] text-slate-500 text-center">
           <span>© {new Date().getFullYear()} PH Labs · United Kingdom</span>
           <span>For Research Use Only · Not for Human Consumption</span>
         </div>
