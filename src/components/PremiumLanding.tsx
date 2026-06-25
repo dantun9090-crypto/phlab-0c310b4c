@@ -115,8 +115,16 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
       <section className="relative overflow-hidden min-h-[78vh] sm:min-h-[88vh] lg:min-h-[94vh] flex items-center">
         <div className="absolute inset-0 overflow-hidden">
           <picture>
-            <source type="image/avif" srcSet={HERO_AVIF} sizes="100vw" />
-            <source type="image/webp" srcSet={HERO_WEBP} sizes="100vw" />
+            <source
+              type="image/avif"
+              srcSet={HERO_AVIF}
+              sizes="(max-width: 640px) 640px, (max-width: 1024px) 960px, (max-width: 1600px) 1440px, 1920px"
+            />
+            <source
+              type="image/webp"
+              srcSet={HERO_WEBP}
+              sizes="(max-width: 640px) 640px, (max-width: 1024px) 960px, (max-width: 1600px) 1440px, 1920px"
+            />
             <img
               src={HERO_FALLBACK}
               alt=""
@@ -252,8 +260,16 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
       {/* WHAT WE OFFER */}
       <section id="offer" className="relative border-b border-white/10 py-24 sm:py-32 overflow-hidden">
         <picture>
-          <source type="image/avif" srcSet={MOLECULAR_AVIF} sizes="100vw" />
-          <source type="image/webp" srcSet={MOLECULAR_WEBP} sizes="100vw" />
+          <source
+            type="image/avif"
+            srcSet={MOLECULAR_AVIF}
+            sizes="(max-width: 768px) 768px, 1440px"
+          />
+          <source
+            type="image/webp"
+            srcSet={MOLECULAR_WEBP}
+            sizes="(max-width: 768px) 768px, 1440px"
+          />
           <img
             src="/og/lab/molecular-1440.webp"
             alt=""
@@ -284,8 +300,16 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
       {/* INTENDED USE */}
       <section id="intended-use" className="relative overflow-hidden border-b border-white/10 py-32 sm:py-44">
         <picture>
-          <source type="image/avif" srcSet={DETAIL_AVIF} sizes="100vw" />
-          <source type="image/webp" srcSet={DETAIL_WEBP} sizes="100vw" />
+          <source
+            type="image/avif"
+            srcSet={DETAIL_AVIF}
+            sizes="(max-width: 768px) 768px, 1440px"
+          />
+          <source
+            type="image/webp"
+            srcSet={DETAIL_WEBP}
+            sizes="(max-width: 768px) 768px, 1440px"
+          />
           <img
             src="/og/lab/detail-1440.webp"
             alt=""
