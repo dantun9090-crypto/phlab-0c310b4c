@@ -403,15 +403,18 @@ function KeywordGeoPanel() {
   const [quotaLoading, setQuotaLoading] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [topN, setTopN] = useState<number | 'all'>('all');
+  const [progress, setProgress] = useState<{ done: number; total: number; current: string | null } | null>(null);
+  const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>([]);
   const resumeTimerRef = useRef<number | null>(null);
   const autoResumeFiredRef = useRef(false);
 
-  // Load cache + pending + initial quota on mount
+  // Load cache + pending + initial quota + run history on mount
   useEffect(() => {
     const c = loadCache();
     setCache(c);
     const p = loadPending();
     if (p && c[p.phrase.toLowerCase()]) setActiveKey(p.phrase.toLowerCase());
+    setRunHistory(loadRunHistory());
     void refreshQuota();
     // eslint-disable-next-line
   }, []);
@@ -460,13 +463,10 @@ function KeywordGeoPanel() {
     () => catalog.filter((c) => !coveredSet.has(c.id)),
     [catalog, coveredSet],
   );
-
-  // Pick which databases to send to the server for a given action.
-  const buildDbList = useCallback((mode: 'all' | 'resume'): string[] => {
-    if (mode === 'resume') return missing.map((m) => m.id);
-    if (topN === 'all') return catalog.map((c) => c.id);
-    return catalog.slice(0, topN).map((c) => c.id);
-  }, [missing, catalog, topN]);
+  const failedDbs = useMemo(
+    () => (activeEntry?.rows ?? []).filter((r) => r.error != null).map((r) => r.database),
+    [activeEntry],
+  );
 
   const runLookup = useCallback(async (mode: 'all' | 'resume', overridePhrase?: string) => {
     const term = (overridePhrase ?? phrase).trim();
