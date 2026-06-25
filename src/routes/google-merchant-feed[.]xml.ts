@@ -36,10 +36,15 @@ const CURRENCY = "GBP";
 export const DEFAULT_MERCHANT_PROMO_ID = "PHL_LAUNCH";
 
 export function getMerchantPromoIds(): string[] {
-  return (process.env.MERCHANT_PROMO_IDS || DEFAULT_MERCHANT_PROMO_ID)
+  const raw = process.env.MERCHANT_PROMO_IDS;
+  if (!raw || typeof raw !== "string") {
+    return [DEFAULT_MERCHANT_PROMO_ID];
+  }
+  const ids = raw
     .split(",")
     .map((s: string) => s.trim())
-    .filter(Boolean);
+    .filter((s: string) => s.length > 0);
+  return ids.length > 0 ? ids : [DEFAULT_MERCHANT_PROMO_ID];
 }
 
 const MERCHANT_PROMO_IDS: string[] = getMerchantPromoIds();
