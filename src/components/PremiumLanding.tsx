@@ -492,3 +492,63 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
     </main>
   );
 }
+
+/**
+ * Overlay/regression guard for /compound.
+ *
+ * The /compound URL must render ONLY <PremiumLanding>. If a future change
+ * accidentally re-mounts the legacy article page (data-source="legacy-research-page"),
+ * an Ads-landing variant, or a shop product card on top of it, beacon details
+ * to /api/public/error-monitor so it surfaces in Admin → Research Incidents.
+ */
+function PremiumLandingGuard() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.pathname !== "/compound") return;
+    const t = setTimeout(() => {
+      const root = document.querySelector('[data-source="premium-landing"]');
+      const legacyResearch = !!document.querySelector('[data-source="legacy-research-page"]');
+      const adsLanding = !!document.querySelector('[data-source="research-ads-landing"]');
+      const stuffedArticles =
+        !!document.getElementById("incretin") ||
+        !!document.getElementById("peptides") ||
+        !!document.getElementById("nad");
+      const overlay = legacyResearch || adsLanding || stuffedArticles;
+      if (!root || overlay) {
+        const details = {
+          hasPremiumMarker: !!root,
+          hasLegacyResearch: legacyResearch,
+          hasAdsLanding: adsLanding,
+          hasResearchArticles: stuffedArticles,
+        };
+        // eslint-disable-next-line no-console
+        console.warn("[compound-route-guard] overlay/regression at /compound", details);
+        try {
+          const payload = JSON.stringify({
+            type: "compound_overlay",
+            path: "/compound",
+            referrer: document.referrer || undefined,
+            userAgent: navigator.userAgent,
+            message: overlay
+              ? "Foreign content overlay detected on /compound"
+              : "PremiumLanding marker missing on /compound",
+            details,
+          });
+          const blob = new Blob([payload], { type: "application/json" });
+          if (!navigator.sendBeacon?.("/api/public/error-monitor", blob)) {
+            fetch("/api/public/error-monitor", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: payload,
+              keepalive: true,
+            }).catch(() => undefined);
+          }
+        } catch {
+          /* diagnostics must never break the page */
+        }
+      }
+    }, 600);
+    return () => clearTimeout(t);
+  }, []);
+  return null;
+}
