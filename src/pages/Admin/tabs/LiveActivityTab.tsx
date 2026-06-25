@@ -274,19 +274,22 @@ export default function LiveActivityTab() {
     toast.success('Dedup cache reset', {
       description: 'First-seen toasts will fire again immediately.',
     });
+    announce('Dedup cache cleared. First-seen toasts will fire again.');
   };
 
   const applyAllowlist = (kind: 'ua' | 'ref', raw: string) => {
     const { valid, errors } = parseAndValidateList(raw, kind);
+    const label = kind === 'ua' ? 'UA' : 'referrer';
     if (errors.length) {
-      toast.error(`${errors.length} invalid ${kind === 'ua' ? 'UA' : 'referrer'} entr${errors.length === 1 ? 'y' : 'ies'} skipped`, {
-        description: errors.slice(0, 3).map(e => `“${e.entry}”: ${e.error}`).join(' · '),
+      toast.error(`${errors.length} invalid ${label} entr${errors.length === 1 ? 'y' : 'ies'} skipped`, {
+        description: errors.slice(0, 5).map(e => `“${e.entry}”: ${e.error}`).join(' · '),
       });
     }
     updatePrefs(kind === 'ua' ? { allowlistUAs: valid } : { allowlistReferrers: valid });
     if (valid.length || !errors.length) {
-      toast.success(`Saved ${valid.length} ${kind === 'ua' ? 'UA' : 'referrer'} pattern${valid.length === 1 ? '' : 's'}`);
+      toast.success(`Saved ${valid.length} ${label} pattern${valid.length === 1 ? '' : 's'}`);
     }
+    announce(`${label} allowlist saved: ${valid.length} valid, ${errors.length} rejected.`);
   };
 
   const restoreAllowlistDefaults = () => {
@@ -295,26 +298,27 @@ export default function LiveActivityTab() {
       allowlistReferrers: [...DEFAULT_ALLOWLIST_REFERRERS],
     });
     toast.success('Allowlists restored to defaults');
+    announce('Allowlists restored to defaults.');
   };
 
   const exportAllowlists = () => {
     try {
-      const blob = new Blob(
-        [JSON.stringify({
-          version: 1,
-          exportedAt: new Date().toISOString(),
-          allowlistUAs: prefs.allowlistUAs,
-          allowlistReferrers: prefs.allowlistReferrers,
-        }, null, 2)],
-        { type: 'application/json' },
-      );
+      const payload = {
+        version: ALLOWLIST_EXPORT_VERSION,
+        kind: 'phlabs-allowlists',
+        exportedAt: new Date().toISOString(),
+        allowlistUAs: prefs.allowlistUAs,
+        allowlistReferrers: prefs.allowlistReferrers,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `phlabs-allowlists-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `phlabs-allowlists-v${ALLOWLIST_EXPORT_VERSION}-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
       toast.success('Allowlists exported');
+      announce(`Allowlists exported, ${prefs.allowlistUAs.length} UA and ${prefs.allowlistReferrers.length} referrer entries.`);
     } catch (e: any) {
       toast.error('Export failed', { description: e?.message });
     }
@@ -324,23 +328,64 @@ export default function LiveActivityTab() {
     const reader = new FileReader();
     reader.onerror = () => toast.error('Could not read file');
     reader.onload = () => {
+      let parsed: any;
       try {
-        const parsed = JSON.parse(String(reader.result || '{}'));
-        const uaRaw = Array.isArray(parsed.allowlistUAs) ? parsed.allowlistUAs.join(',') : '';
-        const refRaw = Array.isArray(parsed.allowlistReferrers) ? parsed.allowlistReferrers.join(',') : '';
-        const { valid: uaValid, errors: uaErr } = parseAndValidateList(uaRaw, 'ua');
-        const { valid: refValid, errors: refErr } = parseAndValidateList(refRaw, 'ref');
-        updatePrefs({ allowlistUAs: uaValid, allowlistReferrers: refValid });
-        const skipped = uaErr.length + refErr.length;
-        toast.success(`Imported ${uaValid.length} UA + ${refValid.length} ref patterns`, {
-          description: skipped ? `${skipped} invalid entries skipped` : undefined,
-        });
+        parsed = JSON.parse(String(reader.result || '{}'));
       } catch (e: any) {
-        toast.error('Invalid JSON', { description: e?.message });
+        toast.error('Invalid JSON file', { description: e?.message || 'Could not parse JSON' });
+        announce('Import failed: invalid JSON.');
+        return;
       }
+
+      // Shape + version checks
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        toast.error('Invalid file shape', { description: 'Expected an object with version, allowlistUAs, allowlistReferrers.' });
+        announce('Import failed: invalid shape.');
+        return;
+      }
+      const version = parsed.version;
+      if (typeof version !== 'number') {
+        toast.error('Missing version field', { description: 'Add `"version": 1` at the top level.' });
+        announce('Import failed: missing version.');
+        return;
+      }
+      if (!ALLOWLIST_SUPPORTED_VERSIONS.includes(version)) {
+        toast.error(`Unsupported allowlist version: ${version}`, {
+          description: `Supported: ${ALLOWLIST_SUPPORTED_VERSIONS.join(', ')}. Export from this admin again, or downgrade the file.`,
+        });
+        announce(`Import failed: unsupported version ${version}.`);
+        return;
+      }
+      if (parsed.allowlistUAs !== undefined && !Array.isArray(parsed.allowlistUAs)) {
+        toast.error('Invalid `allowlistUAs`', { description: 'Must be an array of strings.' });
+        return;
+      }
+      if (parsed.allowlistReferrers !== undefined && !Array.isArray(parsed.allowlistReferrers)) {
+        toast.error('Invalid `allowlistReferrers`', { description: 'Must be an array of strings.' });
+        return;
+      }
+
+      const uaRaw = Array.isArray(parsed.allowlistUAs) ? parsed.allowlistUAs.join(',') : '';
+      const refRaw = Array.isArray(parsed.allowlistReferrers) ? parsed.allowlistReferrers.join(',') : '';
+      const { valid: uaValid, errors: uaErr } = parseAndValidateList(uaRaw, 'ua');
+      const { valid: refValid, errors: refErr } = parseAndValidateList(refRaw, 'ref');
+      updatePrefs({ allowlistUAs: uaValid, allowlistReferrers: refValid });
+
+      const allErrs = [
+        ...uaErr.map(e => `UA “${e.entry}”: ${e.error}`),
+        ...refErr.map(e => `ref “${e.entry}”: ${e.error}`),
+      ];
+      const skipped = allErrs.length;
+      toast.success(`Imported v${version}: ${uaValid.length} UA + ${refValid.length} ref patterns`, {
+        description: skipped
+          ? `${skipped} invalid: ${allErrs.slice(0, 5).join(' · ')}${allErrs.length > 5 ? ` · +${allErrs.length - 5} more` : ''}`
+          : undefined,
+      });
+      announce(`Import complete. ${uaValid.length + refValid.length} accepted, ${skipped} rejected.`);
     };
     reader.readAsText(file);
   };
+
 
 
 
