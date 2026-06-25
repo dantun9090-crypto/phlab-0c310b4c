@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useEffect } from 'react';
+import { reportClientError } from '@/lib/error-monitor';
 import { Home, Activity, Flame, Brain, Dna, Microscope, ArrowRight } from 'lucide-react';
 
 const categories = [
