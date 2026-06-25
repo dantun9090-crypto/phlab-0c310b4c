@@ -1,4 +1,6 @@
-import { Link } from "@tanstack/react-router";
+// Link import intentionally removed — /contact, /privacy-policy and
+// /terms-and-conditions are served by the legacy catch-all router, so we use
+// plain <a href> to force a full navigation that the legacy router handles.
 import { useState, type FormEvent } from "react";
 
 // Responsive image variants (AVIF + WebP) live in /public/og/lab/.
