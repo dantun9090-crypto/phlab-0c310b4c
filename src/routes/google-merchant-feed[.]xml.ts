@@ -358,6 +358,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                       p.unitPricingMeasure && p.unitPricingMeasure.value > 0
                         ? `${p.unitPricingMeasure.value} ${p.unitPricingMeasure.unit}`
                         : "",
+                    phlCode: (p.sku || p.id || p.slug || "PHL").toString(),
                     titleA: p.name || p.slug || "",
                     linkA: `/products/${p.id || p.slug}`,
                     titleB: override?.displayName || (p.name || p.slug || ""),
@@ -386,14 +387,14 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               "In-vitro analytical use only",
             ];
 
-            const baseSkuRoot = (p.sku || p.id || p.slug || "").toString();
+
 
             type Side = "A" | "B";
             const buildEntry = (v: DualEntryVariant, side: Side): string => {
               const isA = side === "A";
               const title = isA ? v.titleA : v.titleB;
               const link = `${BASE_URL}${isA ? v.linkA : v.linkB}`;
-              const offerId = `${baseSkuRoot}-${v.sizeKey}-${isA ? "mkt" : "sku"}`;
+              const offerId = `${v.phlCode}${isA ? "A" : "B"}`;
               const sku = offerId;
               const mpn = offerId;
               const categoryId = isA ? CATEGORY_A_ID : CATEGORY_B_ID;
