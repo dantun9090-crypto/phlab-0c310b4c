@@ -574,7 +574,7 @@ export default function LiveActivityTab() {
                       </div>
                       {created && (
                         <div className="text-[#3a5a82] text-[10px] mt-0.5">
-                          {fullTs(created)}
+                          {fullTs(created, prefs.quietTimezone)}
                         </div>
                       )}
                     </div>
@@ -687,7 +687,7 @@ export default function LiveActivityTab() {
                         {timeAgo(s.lastSeen)}
                       </div>
                       <div className="text-[#3a5a82] text-[10px] mt-0.5 max-w-[180px]" title={s.lastSeen.toISOString()}>
-                        {fullTs(s.lastSeen)}
+                        {fullTs(s.lastSeen, prefs.quietTimezone)}
                       </div>
                     </div>
                   </div>
