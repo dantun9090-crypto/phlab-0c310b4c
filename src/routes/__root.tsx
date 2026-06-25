@@ -896,10 +896,13 @@ function RootComponent() {
     return () => window.clearTimeout(stableLoadTimer);
   }, []);
 
-  // Load GA4/GTM AFTER React hydration completes — keeps GTM from mutating
-  // the DOM mid-hydration (React error #418). The bootstrap inline script
-  // installs window.gtag + consent defaults, then the async gtag.js loader
-  // is appended. Both inherit the page nonce via the NONCE_PROPAGATOR.
+  // Load GA4/GTM AFTER React hydration completes AND the main thread is idle.
+  // Deferring to requestIdleCallback (with a 4s fallback, or 1s on first user
+  // interaction) keeps gtag.js (~170 KB) out of the TBT window, which is the
+  // dominant mobile Lighthouse penalty on marketing/landing routes like
+  // /compound, /research and /landing/*. Conversion + page_view still fire,
+  // just a couple seconds later. Bootstrap stays inline so consent + dataLayer
+  // queue any early events before gtag.js resolves them.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if ((window as unknown as { __phlGaBootstrapped?: boolean }).__phlGaBootstrapped) return;
@@ -907,11 +910,24 @@ function RootComponent() {
     inline.text =
       "(function(){window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}window.gtag=gtag;var c={a:false,m:false};try{var r=localStorage.getItem('php_cookie_consent');if(r){var p=JSON.parse(r);c.a=!!p.analytics;c.m=!!p.marketing;}}catch(e){}gtag('consent','default',{ad_storage:c.m?'granted':'denied',ad_user_data:c.m?'granted':'denied',ad_personalization:c.m?'granted':'denied',analytics_storage:c.a?'granted':'denied',functionality_storage:'granted',security_storage:'granted',wait_for_update:500});gtag('js',new Date());gtag('config','G-5HM4YT7HDW',{cookie_domain:'auto',cookie_flags:'SameSite=None;Secure',cookie_expires:63072000,cookie_update:true,send_page_view:true,anonymize_ip:true,allow_google_signals:c.m,allow_ad_personalization_signals:c.m});gtag('config','GT-P3HVF8R5',{send_page_view:false,cookie_domain:'auto'});gtag('config','GT-WRHD4Q69',{send_page_view:false,cookie_domain:'auto'});gtag('config','MC-KJMB7MKB29',{send_page_view:false,cookie_domain:'auto'});window.__phlGaBootstrapped=true;})();";
     document.body.appendChild(inline);
-    const ext = document.createElement('script');
-    ext.async = true;
-    ext.src = 'https://www.googletagmanager.com/gtag/js?id=G-5HM4YT7HDW';
-    document.body.appendChild(ext);
+    let loaded = false;
+    const loadExt = () => {
+      if (loaded) return;
+      loaded = true;
+      const ext = document.createElement('script');
+      ext.async = true;
+      ext.src = 'https://www.googletagmanager.com/gtag/js?id=G-5HM4YT7HDW';
+      document.body.appendChild(ext);
+    };
+    const onInteract = () => window.setTimeout(loadExt, 800);
+    ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach((ev) =>
+      window.addEventListener(ev, onInteract, { once: true, passive: true })
+    );
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+    if (typeof ric === 'function') ric(loadExt, { timeout: 4000 });
+    else window.setTimeout(loadExt, 3500);
   }, []);
+
 
 
 
