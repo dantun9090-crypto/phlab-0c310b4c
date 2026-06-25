@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   UserPlus, Activity, Mail, Clock, Globe, Search, Copy, Check,
-  ChevronLeft, ChevronRight, BellOff, Radio, RotateCcw, Trash2,
+  ChevronLeft, ChevronRight, BellOff, Radio, RotateCcw, Trash2, ShieldOff, Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -12,6 +12,10 @@ import {
   isQuietNow, shouldSuppressToast, COMMON_TIMEZONES, detectLocalTimezone,
 } from '@/lib/quiet-hours';
 import { logToastEvent, type ToastKind } from '@/lib/toast-audit';
+import {
+  detectBotReasons, isBotSession, BOT_REASON_LABELS,
+  type BotDetectionOptions,
+} from '@/lib/bot-detection';
 
 interface RegisteredUser {
   uid: string;
@@ -54,6 +58,9 @@ interface Prefs {
   toastDedupTtlH: number; // hours; entries older than this are forgotten
   toastAuditRetentionDays: number; // retention for toastAuditLogs cleanup job
   hideBots: boolean; // exclude bot/crawler user-agents from live visitors
+  treatForceHideBadgeAsBot: boolean; // when false, forceHideBadge sessions are NOT auto-classified
+  allowlistUAs: string[]; // UA substrings always treated as human (operator tools)
+  allowlistReferrers: string[]; // referrer hostnames always treated as human
 
 }
 const DEFAULT_PREFS: Prefs = {
@@ -73,28 +80,15 @@ const DEFAULT_PREFS: Prefs = {
   toastDedupTtlH: 24,
   toastAuditRetentionDays: 30,
   hideBots: true,
+  treatForceHideBadgeAsBot: true,
+  allowlistUAs: [],
+  allowlistReferrers: [],
 };
 
-const BOT_UA_RE = /bot|crawler|spider|crawling|slurp|bingpreview|facebookexternalhit|embedly|quora link preview|outbrain|pinterest|developers\.google\.com\/\+\/web\/snippet|prerender|headlesschrome|phantomjs|puppeteer|playwright|lighthouse|chrome-lighthouse|gtmetrix|pingdom|uptimerobot|monitor|curl\/|wget\/|python-requests|httpclient|axios\/|node-fetch|go-http-client|java\/|okhttp|scrapy|ahrefsbot|semrushbot|mj12bot|dotbot|petalbot|yandex|baiduspider|duckduckbot|applebot|amazonbot|gptbot|chatgpt|claudebot|anthropic|perplexity|ccbot|google-extended|googleother|adsbot/i;
+// Detection logic + UA/path regex live in '@/lib/bot-detection' (fully tested).
 
-function isBotUA(ua?: string): boolean {
-  if (!ua) return true; // missing UA → almost always automated probe
-  return BOT_UA_RE.test(ua);
-}
 
-// Paths/query params that only synthetic probes hit:
-// - forceHideBadge=true → Google Customer Reviews / Merchant trust-badge iframe probe
-// - __prerender / _escaped_fragment_ → SSR prerender probes
-// - ?lighthouse / ?audit → automated audits
-const BOT_PATH_RE = /(^|[?&])(forceHideBadge|__prerender|_escaped_fragment_|lighthouse|audit|ping|healthcheck)(=|&|$)/i;
-function isBotPath(path?: string): boolean {
-  if (!path) return false;
-  return BOT_PATH_RE.test(path);
-}
 
-function isBotSession(s: { userAgent?: string; path?: string }): boolean {
-  return isBotSession(s) || isBotPath(s.path);
-}
 
 function loadPrefs(): Prefs {
   try {
@@ -404,7 +398,16 @@ export default function LiveActivityTab() {
         if (seenSessionIdsRef.current) {
           const fresh = allArr.filter(s => !seenSessionIdsRef.current!.has(s.sessionId));
           fresh.slice(0, 3).forEach(s => {
-            if (prefsRef.current.hideBots && isBotSession(s)) return;
+            const p = prefsRef.current;
+            const botOpts: BotDetectionOptions = {
+              treatForceHideBadgeAsBot: p.treatForceHideBadgeAsBot,
+              allowlistUAs: p.allowlistUAs,
+              allowlistReferrers: p.allowlistReferrers,
+            };
+            // forceHideBadge toggle is independent of hideBots:
+            // when enabled it suppresses toasts even with humans-only OFF.
+            if (p.treatForceHideBadgeAsBot && detectBotReasons(s, botOpts).includes('force-hide-badge')) return;
+            if (p.hideBots && isBotSession(s, botOpts)) return;
             maybeToast(
               'visitor',
               'New visitor online',
@@ -430,13 +433,25 @@ export default function LiveActivityTab() {
   }, []);
 
   const windowMs = prefs.windowMin * 60_000;
-  const visibleSessions = useMemo(
-    () => (prefs.hideBots ? sessions.filter(s => !isBotSession(s)) : sessions),
-    [sessions, prefs.hideBots]
+  const botOpts = useMemo<BotDetectionOptions>(() => ({
+    treatForceHideBadgeAsBot: prefs.treatForceHideBadgeAsBot,
+    allowlistUAs: prefs.allowlistUAs,
+    allowlistReferrers: prefs.allowlistReferrers,
+  }), [prefs.treatForceHideBadgeAsBot, prefs.allowlistUAs, prefs.allowlistReferrers]);
+
+  // Annotate every session once with its bot reasons — used by the row badge.
+  const annotated = useMemo(
+    () => sessions.map(s => ({ session: s, reasons: detectBotReasons(s, botOpts) })),
+    [sessions, botOpts]
   );
+  const visibleAnnotated = useMemo(
+    () => (prefs.hideBots ? annotated.filter(a => a.reasons.length === 0) : annotated),
+    [annotated, prefs.hideBots]
+  );
+  const visibleSessions = useMemo(() => visibleAnnotated.map(a => a.session), [visibleAnnotated]);
   const botCount = useMemo(
-    () => sessions.reduce((n, s) => n + (isBotSession(s) ? 1 : 0), 0),
-    [sessions]
+    () => annotated.reduce((n, a) => n + (a.reasons.length > 0 ? 1 : 0), 0),
+    [annotated]
   );
   const onlineNow = useMemo(
     () => visibleSessions.filter(s => now - s.lastSeen.getTime() < windowMs).length,
@@ -453,25 +468,26 @@ export default function LiveActivityTab() {
     );
   }, [users, userSearch]);
 
-  const filteredSessions = useMemo(() => {
+  const filteredAnnotated = useMemo(() => {
     const q = sessionSearch.trim().toLowerCase();
-    if (!q) return visibleSessions;
-    return visibleSessions.filter(s =>
-      (s.sessionId || '').toLowerCase().includes(q) ||
-      (s.visitorId || '').toLowerCase().includes(q) ||
-      (s.path || '').toLowerCase().includes(q)
+    if (!q) return visibleAnnotated;
+    return visibleAnnotated.filter(a =>
+      (a.session.sessionId || '').toLowerCase().includes(q) ||
+      (a.session.visitorId || '').toLowerCase().includes(q) ||
+      (a.session.path || '').toLowerCase().includes(q)
     );
-  }, [sessions, sessionSearch]);
+  }, [visibleAnnotated, sessionSearch]);
+  const filteredSessions = useMemo(() => filteredAnnotated.map(a => a.session), [filteredAnnotated]);
 
   const userTotalPages = Math.max(1, Math.ceil(filteredUsers.length / prefs.userPageSize));
-  const sessionTotalPages = Math.max(1, Math.ceil(filteredSessions.length / prefs.sessionPageSize));
+  const sessionTotalPages = Math.max(1, Math.ceil(filteredAnnotated.length / prefs.sessionPageSize));
   const safeUserPage = Math.min(userPage, userTotalPages);
   const safeSessionPage = Math.min(sessionPage, sessionTotalPages);
   const pagedUsers = filteredUsers.slice(
     (safeUserPage - 1) * prefs.userPageSize,
     safeUserPage * prefs.userPageSize
   );
-  const pagedSessions = filteredSessions.slice(
+  const pagedAnnotated = filteredAnnotated.slice(
     (safeSessionPage - 1) * prefs.sessionPageSize,
     safeSessionPage * prefs.sessionPageSize
   );
@@ -575,6 +591,48 @@ export default function LiveActivityTab() {
             {prefs.hideBots && botCount > 0 && (
               <span className="text-slate-500">({botCount} bot{botCount === 1 ? '' : 's'} hidden)</span>
             )}
+          </label>
+          <label
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] cursor-pointer hover:text-white"
+            title="When ON, sessions hitting /?forceHideBadge=true (Google Merchant trust-badge iframe) are always classified as bots — even with Humans-only OFF. Turn OFF to inspect those sessions."
+          >
+            <input
+              type="checkbox"
+              checked={prefs.treatForceHideBadgeAsBot}
+              onChange={e => updatePrefs({ treatForceHideBadgeAsBot: e.target.checked })}
+              className="accent-amber-500"
+            />
+            forceHideBadge = bot
+          </label>
+          <label
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]"
+            title="Comma-separated UA substrings that always pass as human (your own monitoring/QA tools). Case-insensitive."
+          >
+            <span>Allow UAs</span>
+            <input
+              type="text"
+              placeholder="phlabs-internal, my-qa-bot"
+              defaultValue={prefs.allowlistUAs.join(', ')}
+              onBlur={e => updatePrefs({
+                allowlistUAs: e.target.value.split(',').map(s => s.trim()).filter(Boolean),
+              })}
+              className="w-48 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono"
+            />
+          </label>
+          <label
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]"
+            title="Comma-separated referrer hostnames that always pass as human."
+          >
+            <span>Allow refs</span>
+            <input
+              type="text"
+              placeholder="ops.phlabs.co.uk"
+              defaultValue={prefs.allowlistReferrers.join(', ')}
+              onBlur={e => updatePrefs({
+                allowlistReferrers: e.target.value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
+              })}
+              className="w-44 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono"
+            />
           </label>
           <label className="flex items-center gap-2 text-xs text-[#9cb8d9] bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2">
             <Trash2 className="w-3.5 h-3.5" /> Audit retention
@@ -750,18 +808,22 @@ export default function LiveActivityTab() {
             </select>
           </div>
           <div className="divide-y divide-slate-800 max-h-[600px] overflow-y-auto">
-            {pagedSessions.length === 0 && !loading && (
+            {pagedAnnotated.length === 0 && !loading && (
               <div className="p-6 text-center text-[#9cb8d9] text-sm">
                 No matching visitor activity.
               </div>
             )}
-            {pagedSessions.map(s => {
+            {pagedAnnotated.map(({ session: s, reasons }) => {
               const live = now - s.lastSeen.getTime() < windowMs;
+              const isBot = reasons.length > 0;
+              const reasonTitle = isBot
+                ? `Hidden bot — ${reasons.map(r => BOT_REASON_LABELS[r]).join('; ')}`
+                : '';
               return (
-                <div key={s.sessionId} className="p-3 hover:bg-slate-800/40 transition-colors">
+                <div key={s.sessionId} className={`p-3 hover:bg-slate-800/40 transition-colors ${isBot ? 'bg-amber-500/[0.03]' : ''}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span
                           className={`w-2 h-2 rounded-full shrink-0 ${
                             live
@@ -772,6 +834,19 @@ export default function LiveActivityTab() {
                         <span className="text-white text-sm font-mono truncate">
                           {s.path || '/'}
                         </span>
+                        {isBot && (
+                          <span
+                            title={reasonTitle}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] uppercase tracking-wider"
+                          >
+                            <ShieldOff className="w-3 h-3" />
+                            hidden bot
+                            <span className="text-amber-400/70 normal-case tracking-normal">
+                              · {reasons[0]}
+                            </span>
+                            <Info className="w-3 h-3 opacity-70" />
+                          </span>
+                        )}
                       </div>
                       <div className="text-[#9cb8d9] text-xs mt-1 ml-4 flex items-center gap-2 flex-wrap">
                         <span>{shortUA(s.userAgent)}</span>
