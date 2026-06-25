@@ -68,6 +68,16 @@ export default function NotFoundPage() {
         // GTM / dataLayer fallback (works even if gtag.js not yet loaded)
         (w.dataLayer ||= []).push({ event: 'page_not_found', ...payload });
 
+        // Server-side rolling-window monitor → email/Slack alert when the
+        // 404 rate exceeds the threshold configured in
+        // Firestore `settings/errorMonitoring`.
+        reportClientError({
+          type: 'page_not_found',
+          path,
+          status: 404,
+          referrer,
+        });
+
         // Search Console / log-shipping friendly console marker
         // eslint-disable-next-line no-console
         console.warn('[PHL 404]', payload);
