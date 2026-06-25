@@ -52,7 +52,7 @@ export const Route = createFileRoute("/compound")({
         href: "/og/lab/hero-960.avif",
         imageSrcSet:
           "/og/lab/hero-640.avif 640w, /og/lab/hero-960.avif 960w, /og/lab/hero-1440.avif 1440w, /og/lab/hero-1920.avif 1920w",
-        imageSizes: "100vw",
+        imageSizes: "(max-width: 640px) 640px, (max-width: 1024px) 960px, (max-width: 1600px) 1440px, 1920px",
         type: "image/avif",
         fetchpriority: "high",
       },
