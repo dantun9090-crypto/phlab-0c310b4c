@@ -14,6 +14,7 @@ import { Route as ResearchRouteImport } from './routes/research'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as GoogleMerchantFeedDotxmlRouteImport } from './routes/google-merchant-feed[.]xml'
 import { Route as BingFeedDotxmlRouteImport } from './routes/bing-feed[.]xml'
+import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsSlugRouteImport } from './routes/products_.$slug'
@@ -76,6 +77,10 @@ const BingFeedDotxmlRoute = BingFeedDotxmlRouteImport.update({
   path: '/bing-feed.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MarketingRoute = MarketingRouteImport.update({
+  id: '/_marketing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SplatRoute = SplatRouteImport.update({
   id: '/$',
   path: '/$',
@@ -123,9 +128,9 @@ const AdminMerchantFeedPreviewRoute =
     getParentRoute: () => rootRouteImport,
   } as any)
 const MarketingCompoundRoute = MarketingCompoundRouteImport.update({
-  id: '/_marketing/compound',
+  id: '/compound',
   path: '/compound',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => MarketingRoute,
 } as any)
 const ApiWebhooksWallidRoute = ApiWebhooksWallidRouteImport.update({
   id: '/api/webhooks/wallid',
@@ -351,6 +356,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/_marketing': typeof MarketingRouteWithChildren
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
@@ -479,6 +485,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$'
+    | '/_marketing'
     | '/bing-feed.xml'
     | '/google-merchant-feed.xml'
     | '/products'
@@ -522,12 +529,12 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  MarketingRoute: typeof MarketingRouteWithChildren
   BingFeedDotxmlRoute: typeof BingFeedDotxmlRoute
   GoogleMerchantFeedDotxmlRoute: typeof GoogleMerchantFeedDotxmlRoute
   ProductsRoute: typeof ProductsRoute
   ResearchRoute: typeof ResearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  MarketingCompoundRoute: typeof MarketingCompoundRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
   CheckoutCancelRoute: typeof CheckoutCancelRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
@@ -599,6 +606,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BingFeedDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_marketing': {
+      id: '/_marketing'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof MarketingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$': {
       id: '/$'
       path: '/$'
@@ -667,7 +681,7 @@ declare module '@tanstack/react-router' {
       path: '/compound'
       fullPath: '/compound'
       preLoaderRoute: typeof MarketingCompoundRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof MarketingRoute
     }
     '/api/webhooks/wallid': {
       id: '/api/webhooks/wallid'
@@ -847,15 +861,27 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface MarketingRouteChildren {
+  MarketingCompoundRoute: typeof MarketingCompoundRoute
+}
+
+const MarketingRouteChildren: MarketingRouteChildren = {
+  MarketingCompoundRoute: MarketingCompoundRoute,
+}
+
+const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
+  MarketingRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  MarketingRoute: MarketingRouteWithChildren,
   BingFeedDotxmlRoute: BingFeedDotxmlRoute,
   GoogleMerchantFeedDotxmlRoute: GoogleMerchantFeedDotxmlRoute,
   ProductsRoute: ProductsRoute,
   ResearchRoute: ResearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  MarketingCompoundRoute: MarketingCompoundRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
   CheckoutCancelRoute: CheckoutCancelRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
