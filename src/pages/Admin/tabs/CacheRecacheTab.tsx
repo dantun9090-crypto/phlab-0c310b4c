@@ -222,7 +222,7 @@ export default function CacheRecacheTab() {
             </p>
             <p className="text-xs text-amber-300/90 mt-2 flex items-start gap-1.5">
               <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              <span><strong>Default is Off</strong> (24/7 no cache). Any TTL above 24h speeds up returning visitors but increases the risk of stale HTML after a publish (blank pages + MIME-type errors on old <code>/assets/*.js</code>). Use <strong>Off</strong> while debugging publishes.</span>
+              <span><strong>Default is Off</strong> (no cache). A short TTL (e.g. 1 minute) gives fast TTFB (~50ms HIT) while bounding stale-asset risk after a publish. Longer than 15 minutes is not offered because cached HTML referencing old <code>/assets/*.js</code> causes blank pages. Use <strong>Off</strong> while debugging publishes.</span>
             </p>
           </div>
         </div>
