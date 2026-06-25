@@ -486,7 +486,7 @@ export default function LiveActivityTab() {
             })}
           </div>
           <div className="px-3 py-2 border-t border-slate-800 flex items-center justify-between text-xs text-[#9cb8d9]">
-            <span>Page {userPage} / {userTotalPages}</span>
+            <span>Page {safeUserPage} / {userTotalPages}</span>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setUserPage(Math.max(1, safeUserPage - 1))}
@@ -598,7 +598,7 @@ export default function LiveActivityTab() {
             })}
           </div>
           <div className="px-3 py-2 border-t border-slate-800 flex items-center justify-between text-xs text-[#9cb8d9]">
-            <span>Page {sessionPage} / {sessionTotalPages}</span>
+            <span>Page {safeSessionPage} / {sessionTotalPages}</span>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => setSessionPage(Math.max(1, safeSessionPage - 1))}
