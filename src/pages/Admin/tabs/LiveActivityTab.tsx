@@ -766,18 +766,22 @@ export default function LiveActivityTab() {
             </select>
           </div>
           <div className="divide-y divide-slate-800 max-h-[600px] overflow-y-auto">
-            {pagedSessions.length === 0 && !loading && (
+            {pagedAnnotated.length === 0 && !loading && (
               <div className="p-6 text-center text-[#9cb8d9] text-sm">
                 No matching visitor activity.
               </div>
             )}
-            {pagedSessions.map(s => {
+            {pagedAnnotated.map(({ session: s, reasons }) => {
               const live = now - s.lastSeen.getTime() < windowMs;
+              const isBot = reasons.length > 0;
+              const reasonTitle = isBot
+                ? `Hidden bot — ${reasons.map(r => BOT_REASON_LABELS[r]).join('; ')}`
+                : '';
               return (
-                <div key={s.sessionId} className="p-3 hover:bg-slate-800/40 transition-colors">
+                <div key={s.sessionId} className={`p-3 hover:bg-slate-800/40 transition-colors ${isBot ? 'bg-amber-500/[0.03]' : ''}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span
                           className={`w-2 h-2 rounded-full shrink-0 ${
                             live
@@ -788,6 +792,19 @@ export default function LiveActivityTab() {
                         <span className="text-white text-sm font-mono truncate">
                           {s.path || '/'}
                         </span>
+                        {isBot && (
+                          <span
+                            title={reasonTitle}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] uppercase tracking-wider"
+                          >
+                            <ShieldOff className="w-3 h-3" />
+                            hidden bot
+                            <span className="text-amber-400/70 normal-case tracking-normal">
+                              · {reasons[0]}
+                            </span>
+                            <Info className="w-3 h-3 opacity-70" />
+                          </span>
+                        )}
                       </div>
                       <div className="text-[#9cb8d9] text-xs mt-1 ml-4 flex items-center gap-2 flex-wrap">
                         <span>{shortUA(s.userAgent)}</span>
