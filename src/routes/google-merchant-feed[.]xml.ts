@@ -394,7 +394,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               const isA = side === "A";
               const title = isA ? v.titleA : v.titleB;
               const link = `${BASE_URL}${isA ? v.linkA : v.linkB}`;
-              const offerId = `${baseSkuRoot}-${v.sizeKey}-${isA ? "mkt" : "sku"}`;
+              const offerId = `${v.phlCode}${isA ? "A" : "B"}`;
               const sku = offerId;
               const mpn = offerId;
               const categoryId = isA ? CATEGORY_A_ID : CATEGORY_B_ID;
