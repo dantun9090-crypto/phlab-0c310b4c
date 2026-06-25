@@ -1,8 +1,15 @@
 import { Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import heroImg from "@/assets/lab-navy-hero.jpg";
-import molecularImg from "@/assets/lab-navy-molecular.jpg";
-import detailImg from "@/assets/lab-navy-detail.jpg";
+
+// Responsive image variants (AVIF + WebP) live in /public/og/lab/.
+// Mobile (~640) hits ~13 KB AVIF instead of the 186 KB JPG.
+const HERO_AVIF = "/og/lab/hero-640.avif 640w, /og/lab/hero-960.avif 960w, /og/lab/hero-1440.avif 1440w, /og/lab/hero-1920.avif 1920w";
+const HERO_WEBP = "/og/lab/hero-640.webp 640w, /og/lab/hero-960.webp 960w, /og/lab/hero-1440.webp 1440w, /og/lab/hero-1920.webp 1920w";
+const HERO_FALLBACK = "/og/lab/hero-1440.webp";
+const MOLECULAR_AVIF = "/og/lab/molecular-768.avif 768w, /og/lab/molecular-1440.avif 1440w";
+const MOLECULAR_WEBP = "/og/lab/molecular-768.webp 768w, /og/lab/molecular-1440.webp 1440w";
+const DETAIL_AVIF = "/og/lab/detail-768.avif 768w, /og/lab/detail-1440.avif 1440w";
+const DETAIL_WEBP = "/og/lab/detail-768.webp 768w, /og/lab/detail-1440.webp 1440w";
 
 /**
  * /compound — premium navy + gold laboratory landing.
