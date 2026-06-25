@@ -83,7 +83,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "mots-c-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg",
-        titleA: "MOTS-c 10 mg",      linkA: "/products/MTC10A",
+        titleA: "MOTS - c Research Compound 10mg - Laboratory Use", linkA: "/products/MTC10A",
         titleB: "MC16-PHL 10 mg",    linkB: "/products/mc16phl10" },
     ],
   },
