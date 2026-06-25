@@ -445,7 +445,7 @@ export default function ArticlePage() {
                 <ol className="space-y-3">
                   {article.references.map((ref) => (
                     <li key={ref.id} className="flex gap-3 text-xs text-[#3a5a82] leading-relaxed">
-                      <span className="text-[#2a4a7a] font-mono shrink-0 mt-0.5">[{ref.id}]</span>
+                      <span className="text-[#9cb8d9] font-mono shrink-0 mt-0.5">[{ref.id}]</span>
                       <span>
                         {ref.authors} ({ref.year}).{' '}
                         <em className="text-[#4a6a8a]">{ref.title}.</em> {ref.journal}.{' '}
@@ -484,7 +484,7 @@ export default function ArticlePage() {
                         <p className="text-[#d0e8ff] text-sm font-semibold group-hover:text-emerald-300 transition-colors truncate">{p.name}</p>
                         <p className="text-[#3a5a82] text-xs truncate">{p.tagline}</p>
                       </div>
-                      <ArrowRight className="w-3.5 h-3.5 text-[#2a4a7a] group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all shrink-0" />
+                      <ArrowRight className="w-3.5 h-3.5 text-[#9cb8d9] group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all shrink-0" />
                     </Link>
                   ))}
                 </div>

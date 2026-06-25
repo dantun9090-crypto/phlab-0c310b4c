@@ -392,7 +392,7 @@ export default function LandingPage() {
       {/* Research Disclaimer Footer */}
       <section className="py-8 border-t border-white/[0.05]">
         <div className="container mx-auto px-6 text-center">
-          <p className="text-[#2a4a7a] text-xs leading-relaxed max-w-2xl mx-auto">
+          <p className="text-[#9cb8d9] text-xs leading-relaxed max-w-2xl mx-auto">
             All compounds supplied by PH Labs are intended strictly for <strong className="text-[#3a5a82]">in vitro research and laboratory use only</strong>. 
             Not for human or veterinary administration. Every batch is HPLC-tested before dispatch.
             Analytical results documented and available on request.

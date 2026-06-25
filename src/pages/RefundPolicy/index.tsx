@@ -314,7 +314,7 @@ export default function RefundPolicy() {
 
         {/* Company footer */}
         <div className="mt-8 text-center">
-          <p className="text-[#2a4a7a] text-xs">
+          <p className="text-[#9cb8d9] text-xs">
             PH Labs Ltd &mdash; Registered in England &amp; Wales &mdash;{' '}
             <a href="mailto:info@phlabs.co.uk" className="hover:text-[#9cb8d9] transition-colors">
               info@phlabs.co.uk
