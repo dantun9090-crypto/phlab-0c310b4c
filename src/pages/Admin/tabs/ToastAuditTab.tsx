@@ -365,6 +365,14 @@ export default function ToastAuditTab() {
                           <BellOff className="w-3 h-3" /> quiet {r.prefsSnapshot.quietStart}–{r.prefsSnapshot.quietEnd}
                         </span>
                       )}
+                      {r.outcome === 'suppressed:bot' && r.botReasons && r.botReasons.length > 0 && (
+                        <span
+                          className="text-[10px] uppercase tracking-wider text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded px-2 py-0.5 flex items-center gap-1"
+                          title={`Hidden by: ${r.botReasons.join(', ')}${r.prefsSnapshot?.hideBots ? ' · humans-only ON' : ''}${r.prefsSnapshot?.treatForceHideBadgeAsBot ? ' · forceHideBadge=bot ON' : ''}`}
+                        >
+                          <ShieldOff className="w-3 h-3" /> {r.botReasons.join(' + ')}
+                        </span>
+                      )}
                     </div>
                     <div className="text-white text-sm mt-1 truncate">{r.title || '—'}</div>
                     {r.description && (
