@@ -3,140 +3,162 @@ import heroImg from "@/assets/premium-lab-hero.jpg";
 import molecularImg from "@/assets/premium-molecular.jpg";
 
 /**
- * Premium, brand-neutral scientific landing page.
- * No substance names. Used by /compound and /landing/phlabs.
+ * /compound — modern split-screen executive layout.
+ * Brand-neutral. No substance names.
  */
 export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
   return (
-    <main className="min-h-screen bg-[#0a1020] text-slate-100 antialiased">
-      {/* IMPORTANT NOTICE BAR */}
-      <div className="w-full border-b border-amber-300/20 bg-gradient-to-r from-amber-500/5 via-amber-400/10 to-amber-500/5">
-        <div className="mx-auto max-w-6xl px-6 py-3 text-center text-[13px] sm:text-sm text-amber-200/90 tracking-wide">
-          <strong className="font-semibold text-amber-100">Important Notice:</strong>{" "}
-          These research compounds are sold strictly for laboratory and scientific
-          research use only. Not for human consumption.
+    <main className="min-h-screen bg-[#070b14] text-slate-100 antialiased selection:bg-amber-300/30">
+      {/* TOP NOTICE */}
+      <div className="border-b border-white/5 bg-black/40 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-center gap-3 px-6 py-3 text-center text-[11px] sm:text-xs uppercase tracking-[0.25em] text-amber-200/80">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-300 shadow-[0_0_12px_rgba(252,211,77,0.7)]" />
+          For laboratory & scientific research only — not for human consumption
         </div>
       </div>
 
-      {/* HERO */}
-      <section className="relative overflow-hidden">
-        <img
-          src={heroImg}
-          alt=""
-          aria-hidden="true"
-          width={1920}
-          height={1280}
-          className="absolute inset-0 h-full w-full object-cover opacity-40"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-b from-[#0a1020]/70 via-[#0a1020]/85 to-[#0a1020]"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent"
-        />
+      {/* HERO — split screen */}
+      <section className="relative overflow-hidden border-b border-white/5">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 px-6 pt-16 pb-20 lg:pt-24 lg:pb-32">
+          {/* LEFT — copy */}
+          <div className="lg:col-span-7 relative z-10">
+            {eyebrow ? (
+              <div className="mb-10 flex items-center gap-3 text-[11px] uppercase tracking-[0.35em] text-amber-200/80">
+                <span className="h-px w-10 bg-amber-300/60" />
+                {eyebrow}
+              </div>
+            ) : null}
 
-        <div className="relative mx-auto max-w-5xl px-6 pt-24 pb-28 sm:pt-32 sm:pb-40 text-center">
-          {eyebrow ? (
-            <p className="mb-8 inline-flex items-center gap-3 text-[11px] sm:text-xs uppercase tracking-[0.35em] text-amber-200/80">
-              <span className="h-px w-8 bg-amber-300/50" />
-              {eyebrow}
-              <span className="h-px w-8 bg-amber-300/50" />
+            <h1 className="font-serif text-[2.5rem] leading-[1.05] sm:text-5xl md:text-6xl lg:text-7xl font-light tracking-tight text-white">
+              Premium Research
+              <br />
+              Compounds for
+              <br />
+              <span className="italic bg-gradient-to-r from-amber-200 via-amber-100 to-amber-300 bg-clip-text text-transparent">
+                Scientific Laboratories
+              </span>
+            </h1>
+
+            <p className="mt-8 max-w-xl text-lg sm:text-xl font-light leading-relaxed text-slate-300/90">
+              High-purity research materials developed for professional
+              laboratory and scientific applications.
             </p>
-          ) : null}
 
-          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light leading-[1.05] tracking-tight text-white">
-            Premium Research Compounds{" "}
-            <span className="block mt-2 bg-gradient-to-r from-amber-200 via-amber-100 to-amber-300 bg-clip-text text-transparent">
-              for Scientific Laboratories
-            </span>
-          </h1>
-
-          <p className="mx-auto mt-8 max-w-2xl text-base sm:text-lg md:text-xl font-light leading-relaxed text-slate-300/90">
-            High-purity research materials developed for professional laboratory
-            and scientific applications.
-          </p>
-
-          <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="#documentation"
-              className="group inline-flex items-center justify-center px-9 py-4 rounded-sm border border-amber-300/60 bg-amber-300/10 text-amber-100 font-medium text-sm tracking-[0.15em] uppercase transition-all hover:bg-amber-300/20 hover:border-amber-300"
-            >
-              Request Research Documentation
-              <span className="ml-3 transition-transform group-hover:translate-x-1">→</span>
-            </a>
-            <a
-              href="#standards"
-              className="inline-flex items-center justify-center px-9 py-4 rounded-sm border border-slate-500/40 text-slate-200 font-medium text-sm tracking-[0.15em] uppercase transition-all hover:border-slate-300/70 hover:text-white"
-            >
-              Learn More About Our Standards
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* WHAT WE OFFER */}
-      <section className="relative border-t border-white/5 py-24 sm:py-32">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="mb-16 text-center">
-            <p className="mb-5 text-[11px] uppercase tracking-[0.4em] text-amber-200/70">
-              Our Offering
-            </p>
-            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-light text-white">
-              What We Offer
-            </h2>
-            <div className="mx-auto mt-6 h-px w-16 bg-amber-300/50" />
-          </div>
-
-          <p className="mx-auto max-w-3xl text-center text-lg sm:text-xl font-light leading-relaxed text-slate-300/90">
-            We provide premium-grade research compounds intended strictly for
-            laboratory research, analytical studies, and scientific applications.
-            All materials are supplied with detailed documentation and meet high
-            standards of quality and purity.
-          </p>
-
-          <div className="mt-20 grid gap-px bg-white/5 sm:grid-cols-3 overflow-hidden rounded-sm border border-white/5">
-            {[
-              {
-                k: "01",
-                title: "Analytical Documentation",
-                body: "Each batch is accompanied by detailed analytical records supporting reproducible laboratory workflows.",
-              },
-              {
-                k: "02",
-                title: "Verified Purity Standards",
-                body: "Materials are evaluated against rigorous quality benchmarks established for advanced scientific research compounds.",
-              },
-              {
-                k: "03",
-                title: "Laboratory-Grade Supply",
-                body: "Premium laboratory research materials prepared, stored and dispatched under controlled conditions.",
-              },
-            ].map((c) => (
-              <article
-                key={c.k}
-                className="bg-[#0a1020] p-10 transition-colors hover:bg-[#0d1428]"
+            <div className="mt-10 flex flex-col sm:flex-row gap-4">
+              <a
+                href="#documentation"
+                className="group inline-flex items-center justify-center px-8 py-4 rounded-sm bg-amber-300 text-[#0a0f1c] font-semibold text-[12px] tracking-[0.18em] uppercase transition-all hover:bg-amber-200"
               >
-                <div className="mb-6 font-serif text-2xl font-light text-amber-300/80">
-                  {c.k}
+                Request Research Documentation
+                <span className="ml-3 transition-transform group-hover:translate-x-1">→</span>
+              </a>
+              <a
+                href="#standards"
+                className="inline-flex items-center justify-center px-8 py-4 rounded-sm border border-white/15 text-slate-200 font-medium text-[12px] tracking-[0.18em] uppercase transition-all hover:border-white/40 hover:text-white"
+              >
+                Our Standards
+              </a>
+            </div>
+
+            {/* trust strip */}
+            <dl className="mt-16 grid grid-cols-3 gap-px overflow-hidden rounded-sm border border-white/10 bg-white/5 max-w-xl">
+              {[
+                { k: "UK", v: "Prepared & dispatched" },
+                { k: "QC", v: "Verified purity standards" },
+                { k: "Docs", v: "Per-batch records" },
+              ].map((s) => (
+                <div key={s.k} className="bg-[#070b14] px-4 py-5">
+                  <dt className="font-serif text-2xl font-light text-amber-300/90">{s.k}</dt>
+                  <dd className="mt-1 text-[11px] uppercase tracking-wider text-slate-400">{s.v}</dd>
                 </div>
-                <h3 className="mb-3 text-lg font-medium tracking-wide text-white">
-                  {c.title}
-                </h3>
-                <p className="text-sm leading-relaxed text-slate-400">
-                  {c.body}
-                </p>
-              </article>
-            ))}
+              ))}
+            </dl>
+          </div>
+
+          {/* RIGHT — image card */}
+          <div className="lg:col-span-5 relative">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-sm border border-white/10 shadow-[0_40px_120px_-20px_rgba(0,0,0,0.8)]">
+              <img
+                src={heroImg}
+                alt=""
+                aria-hidden="true"
+                width={1280}
+                height={1600}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#070b14] via-[#070b14]/30 to-transparent" />
+              {/* corner ticks */}
+              <span className="absolute left-3 top-3 h-3 w-3 border-l border-t border-amber-300/70" />
+              <span className="absolute right-3 top-3 h-3 w-3 border-r border-t border-amber-300/70" />
+              <span className="absolute left-3 bottom-3 h-3 w-3 border-l border-b border-amber-300/70" />
+              <span className="absolute right-3 bottom-3 h-3 w-3 border-r border-b border-amber-300/70" />
+            </div>
+            {/* floating spec card */}
+            <div className="absolute -bottom-6 -left-6 hidden sm:block rounded-sm border border-amber-300/30 bg-[#0d1322]/95 px-5 py-4 backdrop-blur shadow-xl">
+              <div className="text-[10px] uppercase tracking-[0.3em] text-amber-200/70">Reference</div>
+              <div className="mt-1 font-mono text-xs text-slate-200">PHL · Laboratory Grade</div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* INTENDED USE */}
+      {/* WHAT WE OFFER — horizontal numbered */}
+      <section className="border-b border-white/5 py-24 sm:py-32">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div className="lg:col-span-4">
+              <p className="text-[11px] uppercase tracking-[0.4em] text-amber-200/70">§ 01</p>
+              <h2 className="mt-4 font-serif text-4xl md:text-5xl font-light text-white">
+                What we offer
+              </h2>
+              <div className="mt-6 h-px w-12 bg-amber-300/60" />
+              <p className="mt-8 text-base font-light leading-relaxed text-slate-400">
+                We provide premium-grade research compounds intended strictly
+                for laboratory research, analytical studies, and scientific
+                applications. All materials are supplied with detailed
+                documentation and meet high standards of quality and purity.
+              </p>
+            </div>
+
+            <div className="lg:col-span-8 space-y-px bg-white/5 border border-white/10 rounded-sm overflow-hidden">
+              {[
+                {
+                  k: "01",
+                  title: "Analytical Documentation",
+                  body: "Each batch is accompanied by detailed analytical records supporting reproducible laboratory workflows.",
+                },
+                {
+                  k: "02",
+                  title: "Verified Purity Standards",
+                  body: "Materials are evaluated against rigorous quality benchmarks established for advanced scientific research compounds.",
+                },
+                {
+                  k: "03",
+                  title: "Laboratory-Grade Supply",
+                  body: "Premium laboratory research materials prepared, stored and dispatched under controlled conditions.",
+                },
+              ].map((c) => (
+                <article
+                  key={c.k}
+                  className="group grid grid-cols-[auto_1fr_auto] items-start gap-6 bg-[#070b14] px-6 sm:px-10 py-10 transition-colors hover:bg-[#0c1224]"
+                >
+                  <div className="font-mono text-xs text-amber-300/70 pt-1">{c.k}</div>
+                  <div>
+                    <h3 className="text-xl font-medium text-white">{c.title}</h3>
+                    <p className="mt-3 text-sm leading-relaxed text-slate-400 max-w-xl">{c.body}</p>
+                  </div>
+                  <span className="text-amber-300/40 pt-1 transition-transform group-hover:translate-x-1">→</span>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* INTENDED USE — quote band */}
       <section
         id="standards"
-        className="relative overflow-hidden border-t border-white/5 py-24 sm:py-32"
+        className="relative overflow-hidden border-b border-white/5 py-28 sm:py-40"
       >
         <img
           src={molecularImg}
@@ -145,68 +167,67 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           loading="lazy"
           width={1920}
           height={1280}
-          className="absolute inset-0 h-full w-full object-cover opacity-20"
+          className="absolute inset-0 h-full w-full object-cover opacity-15"
         />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-b from-[#0a1020] via-[#0a1020]/85 to-[#0a1020]"
-        />
-
-        <div className="relative mx-auto max-w-3xl px-6 text-center">
-          <p className="mb-5 text-[11px] uppercase tracking-[0.4em] text-amber-200/70">
-            Scope
-          </p>
-          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-light text-white">
-            Intended Use
-          </h2>
-          <div className="mx-auto mt-6 h-px w-16 bg-amber-300/50" />
-          <p className="mt-10 text-lg sm:text-xl font-light leading-relaxed text-slate-300/90">
+        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#070b14] via-[#070b14]/70 to-[#070b14]" />
+        <div className="relative mx-auto max-w-4xl px-6 text-center">
+          <p className="text-[11px] uppercase tracking-[0.4em] text-amber-200/70">§ 02 — Intended Use</p>
+          <blockquote className="mt-10 font-serif text-2xl sm:text-3xl md:text-4xl font-light leading-[1.3] text-white">
+            <span className="text-amber-300/70">“</span>
             All products are intended exclusively for laboratory and scientific
             research purposes. They are not intended for human consumption,
             medical use, or any therapeutic applications.
-          </p>
+            <span className="text-amber-300/70">”</span>
+          </blockquote>
+          <div className="mx-auto mt-10 h-px w-12 bg-amber-300/50" />
         </div>
       </section>
 
       {/* DOCUMENTATION CTA */}
-      <section id="documentation" className="border-t border-white/5 py-24 sm:py-28">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <h2 className="font-serif text-3xl sm:text-4xl font-light text-white">
-            Request Research Documentation
-          </h2>
-          <p className="mx-auto mt-6 max-w-2xl text-base sm:text-lg font-light leading-relaxed text-slate-300/90">
-            Qualified researchers and institutions may request the detailed
-            documentation accompanying our premium laboratory research materials.
-          </p>
-          <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/contact"
-              className="inline-flex items-center justify-center px-9 py-4 rounded-sm border border-amber-300/60 bg-amber-300/10 text-amber-100 font-medium text-sm tracking-[0.15em] uppercase transition-all hover:bg-amber-300/20 hover:border-amber-300"
-            >
-              Contact Our Team
-            </Link>
-            <Link
-              to="/quality-control"
-              className="inline-flex items-center justify-center px-9 py-4 rounded-sm border border-slate-500/40 text-slate-200 font-medium text-sm tracking-[0.15em] uppercase transition-all hover:border-slate-300/70 hover:text-white"
-            >
-              Quality Standards
-            </Link>
+      <section
+        id="documentation"
+        className="relative border-b border-white/5 py-24 sm:py-32"
+      >
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-end">
+            <div className="lg:col-span-7">
+              <p className="text-[11px] uppercase tracking-[0.4em] text-amber-200/70">§ 03</p>
+              <h2 className="mt-4 font-serif text-4xl md:text-5xl font-light text-white">
+                Request Research Documentation
+              </h2>
+              <p className="mt-6 max-w-xl text-base sm:text-lg font-light leading-relaxed text-slate-300/90">
+                Qualified researchers and institutions may request the detailed
+                documentation accompanying our premium laboratory research
+                materials.
+              </p>
+            </div>
+            <div className="lg:col-span-5 flex flex-col sm:flex-row lg:flex-col gap-3">
+              <Link
+                to="/contact"
+                className="inline-flex items-center justify-between px-7 py-4 rounded-sm bg-amber-300 text-[#0a0f1c] font-semibold text-[12px] tracking-[0.18em] uppercase transition-all hover:bg-amber-200"
+              >
+                Contact Our Team <span>→</span>
+              </Link>
+              <Link
+                to="/quality-control"
+                className="inline-flex items-center justify-between px-7 py-4 rounded-sm border border-white/15 text-slate-200 font-medium text-[12px] tracking-[0.18em] uppercase transition-all hover:border-white/40 hover:text-white"
+              >
+                Quality Standards <span>→</span>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* STRONG LEGAL DISCLAIMER */}
-      <section className="border-t border-white/5 py-20">
-        <div className="mx-auto max-w-4xl px-6">
-          <div className="rounded-sm border border-amber-300/30 bg-gradient-to-b from-amber-500/[0.04] to-transparent p-8 sm:p-12">
-            <p className="mb-5 text-center text-[11px] uppercase tracking-[0.4em] text-amber-200/80">
-              Legal
-            </p>
-            <h2 className="text-center font-serif text-2xl sm:text-3xl font-light text-amber-100">
-              Legal Disclaimer
-            </h2>
-            <div className="mx-auto mt-5 h-px w-12 bg-amber-300/40" />
-            <p className="mt-8 text-sm sm:text-base leading-relaxed text-amber-100/85">
+      {/* LEGAL DISCLAIMER */}
+      <section className="py-20">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 border-t border-amber-300/30 pt-12">
+            <div className="md:w-48">
+              <p className="text-[11px] uppercase tracking-[0.4em] text-amber-200/80">Legal</p>
+              <h2 className="mt-3 font-serif text-2xl font-light text-amber-100">Disclaimer</h2>
+            </div>
+            <p className="text-sm sm:text-[15px] leading-relaxed text-slate-300/90">
               All products offered on this website are intended solely for
               laboratory research and scientific purposes. They are not intended
               for human consumption, medical diagnosis, treatment, or any
@@ -221,9 +242,9 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
       </section>
 
       <footer className="border-t border-white/5 py-10">
-        <div className="mx-auto max-w-6xl px-6 text-center text-xs tracking-wide text-slate-500">
-          © {new Date().getFullYear()} PH Labs · United Kingdom · For Research
-          Use Only. Not for Human Consumption.
+        <div className="mx-auto max-w-7xl px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] uppercase tracking-[0.25em] text-slate-500">
+          <span>© {new Date().getFullYear()} PH Labs · United Kingdom</span>
+          <span>For Research Use Only · Not for Human Consumption</span>
         </div>
       </footer>
     </main>

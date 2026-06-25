@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PremiumLanding } from "@/components/PremiumLanding";
+import { EditorialLanding } from "@/components/EditorialLanding";
 
 const TITLE = "PH Labs | Premium Research Compounds for Scientific Laboratories";
 const DESCRIPTION =
@@ -40,5 +40,5 @@ export const Route = createFileRoute("/landing/phlabs")({
       },
     ],
   }),
-  component: () => <PremiumLanding eyebrow="PH Labs · United Kingdom" />,
+  component: () => <EditorialLanding eyebrow="PH Labs · United Kingdom" />,
 });
