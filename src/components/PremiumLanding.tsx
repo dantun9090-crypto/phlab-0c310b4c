@@ -1,8 +1,15 @@
 import { Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import heroImg from "@/assets/lab-navy-hero.jpg";
-import molecularImg from "@/assets/lab-navy-molecular.jpg";
-import detailImg from "@/assets/lab-navy-detail.jpg";
+
+// Responsive image variants (AVIF + WebP) live in /public/og/lab/.
+// Mobile (~640) hits ~13 KB AVIF instead of the 186 KB JPG.
+const HERO_AVIF = "/og/lab/hero-640.avif 640w, /og/lab/hero-960.avif 960w, /og/lab/hero-1440.avif 1440w, /og/lab/hero-1920.avif 1920w";
+const HERO_WEBP = "/og/lab/hero-640.webp 640w, /og/lab/hero-960.webp 960w, /og/lab/hero-1440.webp 1440w, /og/lab/hero-1920.webp 1920w";
+const HERO_FALLBACK = "/og/lab/hero-1440.webp";
+const MOLECULAR_AVIF = "/og/lab/molecular-768.avif 768w, /og/lab/molecular-1440.avif 1440w";
+const MOLECULAR_WEBP = "/og/lab/molecular-768.webp 768w, /og/lab/molecular-1440.webp 1440w";
+const DETAIL_AVIF = "/og/lab/detail-768.avif 768w, /og/lab/detail-1440.avif 1440w";
+const DETAIL_WEBP = "/og/lab/detail-768.webp 768w, /og/lab/detail-1440.webp 1440w";
 
 /**
  * /compound — premium navy + gold laboratory landing.
@@ -73,13 +80,21 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         .phl-line { transform-origin:left; animation: phlLine 1.2s cubic-bezier(.7,.2,.2,1) forwards; }
         .phl-fade { opacity:0; animation: phlFade 1.4s ease forwards; }
         .phl-float { animation: phlFloat 6s ease-in-out infinite; }
-        .phl-marquee { animation: phlMarquee 42s linear infinite; }
+        .phl-marquee { animation: phlMarquee 42s linear infinite; will-change: transform; }
         .phl-ken { animation: phlKen 22s ease-in-out infinite alternate; }
         .d1{animation-delay:.1s} .d2{animation-delay:.25s} .d3{animation-delay:.4s}
         .d4{animation-delay:.55s} .d5{animation-delay:.7s} .d6{animation-delay:.9s}
         .gold{color:#c9a44c}.gold-bg{background-color:#c9a44c}.gold-border{border-color:#c9a44c}
         .serif{font-family:'Cormorant Garamond','Times New Roman',serif}
         section[id]{scroll-margin-top:80px}
+        /* Mobile + reduced-motion: drop heavy animations to protect INP/CLS/CPU */
+        @media (max-width: 767px) {
+          .phl-ken, .phl-float { animation: none !important; }
+          .phl-marquee { animation-duration: 60s; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .phl-reveal, .phl-line, .phl-fade, .phl-float, .phl-marquee, .phl-ken { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
+        }
       `}</style>
 
       {/* TOP BAR — strong disclaimer */}
@@ -95,16 +110,22 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
       </div>
 
       {/* HERO */}
-      <section className="relative overflow-hidden min-h-[94vh] flex items-center">
+      <section className="relative overflow-hidden min-h-[78vh] sm:min-h-[88vh] lg:min-h-[94vh] flex items-center">
         <div className="absolute inset-0 overflow-hidden">
-          <img
-            src={heroImg}
-            alt=""
-            aria-hidden="true"
-            width={1920}
-            height={1280}
-            className="phl-ken absolute inset-0 h-full w-full object-cover"
-          />
+          <picture>
+            <source type="image/avif" srcSet={HERO_AVIF} sizes="100vw" />
+            <source type="image/webp" srcSet={HERO_WEBP} sizes="100vw" />
+            <img
+              src={HERO_FALLBACK}
+              alt=""
+              aria-hidden="true"
+              width={1920}
+              height={1280}
+              fetchPriority="high"
+              decoding="async"
+              className="phl-ken absolute inset-0 h-full w-full object-cover"
+            />
+          </picture>
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#0a1530]/85 via-[#0a1530]/55 to-[#0a1530]" />
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-[#0a1530]/80 via-transparent to-[#0a1530]/60" />
         </div>
@@ -228,15 +249,20 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
 
       {/* WHAT WE OFFER */}
       <section id="offer" className="relative border-b border-white/10 py-24 sm:py-32 overflow-hidden">
-        <img
-          src={molecularImg}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          width={1920}
-          height={1088}
-          className="absolute inset-0 h-full w-full object-cover opacity-30"
-        />
+        <picture>
+          <source type="image/avif" srcSet={MOLECULAR_AVIF} sizes="100vw" />
+          <source type="image/webp" srcSet={MOLECULAR_WEBP} sizes="100vw" />
+          <img
+            src="/og/lab/molecular-1440.webp"
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            width={1920}
+            height={1088}
+            className="absolute inset-0 h-full w-full object-cover opacity-30"
+          />
+        </picture>
         <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#0a1530] via-[#0a1530]/85 to-[#0a1530]" />
         <div className="relative mx-auto max-w-4xl px-6 text-center">
           <p className="text-[11px] uppercase tracking-[0.5em] gold">§ 02 — What We Offer</p>
@@ -255,15 +281,20 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
 
       {/* INTENDED USE */}
       <section id="intended-use" className="relative overflow-hidden border-b border-white/10 py-32 sm:py-44">
-        <img
-          src={detailImg}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          width={1600}
-          height={1200}
-          className="phl-ken absolute inset-0 h-full w-full object-cover opacity-40"
-        />
+        <picture>
+          <source type="image/avif" srcSet={DETAIL_AVIF} sizes="100vw" />
+          <source type="image/webp" srcSet={DETAIL_WEBP} sizes="100vw" />
+          <img
+            src="/og/lab/detail-1440.webp"
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            width={1600}
+            height={1200}
+            className="phl-ken absolute inset-0 h-full w-full object-cover opacity-40"
+          />
+        </picture>
         <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#0a1530]/80 via-[#0a1530]/65 to-[#0a1530]" />
         <div className="relative mx-auto max-w-4xl px-6 text-center">
           <p className="text-[11px] uppercase tracking-[0.5em] gold">§ 03 — Intended Use</p>
