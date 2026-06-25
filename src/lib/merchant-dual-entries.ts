@@ -75,7 +75,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "melanotan-ii-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg",
-        titleA: "Melanotan - 2 Research Compound 10mg", linkA: "/products/PHLMT10",
+        titleA: "MT-2", linkA: "/products/PHL02M",
         titleB: "MT2-PHL 10 mg",      linkB: "/products/mt2phl10" },
     ],
   },
