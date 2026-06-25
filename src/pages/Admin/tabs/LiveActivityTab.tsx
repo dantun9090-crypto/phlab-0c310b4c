@@ -416,9 +416,17 @@ export default function LiveActivityTab() {
   }, []);
 
   const windowMs = prefs.windowMin * 60_000;
+  const visibleSessions = useMemo(
+    () => (prefs.hideBots ? sessions.filter(s => !isBotUA(s.userAgent)) : sessions),
+    [sessions, prefs.hideBots]
+  );
+  const botCount = useMemo(
+    () => sessions.reduce((n, s) => n + (isBotUA(s.userAgent) ? 1 : 0), 0),
+    [sessions]
+  );
   const onlineNow = useMemo(
-    () => sessions.filter(s => now - s.lastSeen.getTime() < windowMs).length,
-    [sessions, now, windowMs]
+    () => visibleSessions.filter(s => now - s.lastSeen.getTime() < windowMs).length,
+    [visibleSessions, now, windowMs]
   );
 
   const filteredUsers = useMemo(() => {
@@ -433,8 +441,8 @@ export default function LiveActivityTab() {
 
   const filteredSessions = useMemo(() => {
     const q = sessionSearch.trim().toLowerCase();
-    if (!q) return sessions;
-    return sessions.filter(s =>
+    if (!q) return visibleSessions;
+    return visibleSessions.filter(s =>
       (s.sessionId || '').toLowerCase().includes(q) ||
       (s.visitorId || '').toLowerCase().includes(q) ||
       (s.path || '').toLowerCase().includes(q)
