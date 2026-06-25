@@ -19,7 +19,7 @@ export type DualEntryVariant = {
   sizeLabel: string;
   /** Entry A title, e.g. "Retatrutide 10 mg" */
   titleA: string;
-  /** Entry A URL path, e.g. "/products/RET10A" (alphanumeric SKU code) */
+  /** Entry A URL path, e.g. "/products/phl-01rt" (product code) */
   linkA: string;
   /** Entry B title, e.g. "Reta-PHL 10 mg" */
   titleB: string;
@@ -37,7 +37,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "retatrutide-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg",
-        titleA: "Retatrutide-3G-Research Compound 10mg", linkA: "/products/RET10A",
+        titleA: "Retatrutide-3G-Research Compound 10mg", linkA: "/products/phl-01rt",
         titleB: "Reta-PHL 10 mg",    linkB: "/products/retaphl10" },
     ],
   },
@@ -145,7 +145,7 @@ function slugFromLink(link: string): string {
 /**
  * Build alias map: every dual-entry URL slug → canonical product slug.
  * Keys are stored lowercased so the loader can look up case-insensitively
- * (Entry A uses uppercase alphanumeric codes like "RET10A").
+ * (Entry A uses product codes like "phl-01rt").
  */
 export function buildDualEntryAliasMap(): Record<string, string> {
   const map: Record<string, string> = {};
