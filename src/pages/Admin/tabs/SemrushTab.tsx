@@ -970,6 +970,24 @@ function KeywordGeoPanel() {
             <option value="20">Top 20</option>
           </select>
         </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-300 mb-1" title="Parallel API calls — lower to avoid Semrush rate limits">
+            Parallel
+          </label>
+          <select
+            value={String(concurrency)}
+            onChange={(e) => setConcurrency(Number(e.target.value))}
+            className="min-h-[48px] px-3 bg-slate-800 border-2 border-slate-600 text-white rounded-lg text-sm"
+            title="How many countries are fetched simultaneously (1–8). Lower = gentler on Semrush rate limits."
+          >
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="6">6</option>
+            <option value="8">8</option>
+          </select>
+        </div>
         <button
           onClick={() => runLookup('all')}
           disabled={loading || !phrase.trim()}
