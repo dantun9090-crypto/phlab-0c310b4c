@@ -184,15 +184,13 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         </div>
       </section>
 
-      {/* LEGAL DISCLAIMER */}
+      {/* LEGAL DISCLAIMER — centered */}
       <section className="py-20">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] gap-8 border-t border-amber-300/30 pt-12">
-            <div className="md:w-48">
-              <p className="text-[11px] uppercase tracking-[0.4em] text-amber-200/80">Legal</p>
-              <h2 className="mt-3 font-serif text-2xl font-light text-amber-100">Disclaimer</h2>
-            </div>
-            <p className="text-sm sm:text-[15px] leading-relaxed text-slate-300/90">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <div className="border-t border-amber-300/30 pt-12">
+            <p className="text-[11px] uppercase tracking-[0.4em] text-amber-200/80">Legal</p>
+            <h2 className="mt-3 font-serif text-2xl font-light text-amber-100">Disclaimer</h2>
+            <p className="mt-6 text-sm sm:text-[15px] leading-relaxed text-slate-300/90">
               All products offered on this website are intended solely for
               laboratory research and scientific purposes. They are not intended
               for human consumption, medical diagnosis, treatment, or any
