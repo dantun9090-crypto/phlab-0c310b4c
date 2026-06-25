@@ -37,46 +37,46 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "retatrutide-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL1",
-        titleA: "RetatrutideTripleG-Research Compound 10mg", linkA: "/products/k7m2qx",
-        titleB: "Reta-PHL 10 mg",                            linkB: "/products/k7m2qy" },
+        titleA: "RetatrutideTripleG-Research Compound 10mg - Laboratory Use", linkA: "/products/k7m2qx",
+        titleB: "Reta-PHL - Research Compound 10mg - Laboratory Use",         linkB: "/products/k7m2qy" },
     ],
   },
   {
     canonicalSlug: "tb-500-thymosin-beta-4",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL2",
-        titleA: "TB500 10 mg",      linkA: "/products/h3n8wp",
-        titleB: "TB54-PHL 10 mg",   linkB: "/products/h3n8wq" },
+        titleA: "TB500 - Research Compound 10mg - Laboratory Use",     linkA: "/products/h3n8wp",
+        titleB: "TB54-PHL - Research Compound 10mg - Laboratory Use", linkB: "/products/h3n8wq" },
     ],
   },
   {
     canonicalSlug: "pt-141-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL3",
-        titleA: "PT-141",           linkA: "/products/v9r4tb",
-        titleB: "PT41-PHL",         linkB: "/products/v9r4tc" },
+        titleA: "PT-141 - Research Compound 10mg - Laboratory Use",   linkA: "/products/v9r4tb",
+        titleB: "PT41-PHL - Research Compound 10mg - Laboratory Use",    linkB: "/products/v9r4tc" },
     ],
   },
   {
     canonicalSlug: "nad-research-compound",
     variants: [
       { sizeKey: "100mg",  sizeLabel: "100 mg",  phlCode: "PHL4",
-        titleA: "NAD+ 100 mg",      linkA: "/products/z2j5fd",
-        titleB: "ND7-PHL 100 mg",   linkB: "/products/z2j5fe" },
+        titleA: "NAD+ - Research Compound 100mg - Laboratory Use",     linkA: "/products/z2j5fd",
+        titleB: "ND7-PHL - Research Compound 100mg - Laboratory Use",  linkB: "/products/z2j5fe" },
       { sizeKey: "500mg",  sizeLabel: "500 mg",  phlCode: "PHL5",
-        titleA: "NAD+ 500 mg",      linkA: "/products/z2j6gd",
-        titleB: "ND7-PHL 500 mg",   linkB: "/products/z2j6ge" },
+        titleA: "NAD+ - Research Compound 500mg - Laboratory Use",     linkA: "/products/z2j6gd",
+        titleB: "ND7-PHL - Research Compound 500mg - Laboratory Use",  linkB: "/products/z2j6ge" },
       { sizeKey: "1000mg", sizeLabel: "1000 mg", phlCode: "PHL6",
-        titleA: "NAD+ 1000 mg",     linkA: "/products/z2j7hd",
-        titleB: "ND7-PHL 1000 mg",  linkB: "/products/z2j7he" },
+        titleA: "NAD+ - Research Compound 1000mg - Laboratory Use",    linkA: "/products/z2j7hd",
+        titleB: "ND7-PHL - Research Compound 1000mg - Laboratory Use", linkB: "/products/z2j7he" },
     ],
   },
   {
     canonicalSlug: "melanotan-ii-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL7",
-        titleA: "MT-2",             linkA: "/products/q8x1ly",
-        titleB: "MT2-PHL 10 mg",    linkB: "/products/q8x1lz" },
+        titleA: "MT-2 - Research Compound 10mg - Laboratory Use",        linkA: "/products/q8x1ly",
+        titleB: "MT2-PHL - Research Compound 10mg - Laboratory Use",     linkB: "/products/q8x1lz" },
     ],
   },
   {
@@ -84,31 +84,31 @@ export const DUAL_ENTRIES: DualEntry[] = [
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL8",
         titleA: "MOTS - c Research Compound 10mg - Laboratory Use", linkA: "/products/b5d7nh",
-        titleB: "MC16-PHL 10 mg",   linkB: "/products/b5d7ni" },
+        titleB: "MC16-PHL - Research Compound 10mg - Laboratory Use", linkB: "/products/b5d7ni" },
     ],
   },
   {
     canonicalSlug: "klow-blend",
     variants: [
       { sizeKey: "80mg", sizeLabel: "80 mg", phlCode: "PHL9",
-        titleA: "KLOW 80 mg",       linkA: "/products/t4w9rm",
-        titleB: "KW5-PHL 80 mg",    linkB: "/products/t4w9rn" },
+        titleA: "KLOW - Research Compound 80mg - Laboratory Use",      linkA: "/products/t4w9rm",
+        titleB: "KW5-PHL - Research Compound 80mg - Laboratory Use",    linkB: "/products/t4w9rn" },
     ],
   },
   {
     canonicalSlug: "kpv-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL10",
-        titleA: "KPV 10 mg",        linkA: "/products/f6c3vp",
-        titleB: "KP3-PHL 10 mg",    linkB: "/products/f6c3vq" },
+        titleA: "KPV - Research Compound 10mg - Laboratory Use",       linkA: "/products/f6c3vp",
+        titleB: "KP3-PHL - Research Compound 10mg - Laboratory Use",    linkB: "/products/f6c3vq" },
     ],
   },
   {
     canonicalSlug: "glow-blend",
     variants: [
       { sizeKey: "70mg", sizeLabel: "70 mg", phlCode: "PHL11",
-        titleA: "GLOW 70 mg",       linkA: "/products/u2s8gk",
-        titleB: "GW4-PHL 70 mg",    linkB: "/products/u2s8gl" },
+        titleA: "GLOW - Research Compound 70mg - Laboratory Use",      linkA: "/products/u2s8gk",
+        titleB: "GW4-PHL - Research Compound 70mg - Laboratory Use",  linkB: "/products/u2s8gl" },
     ],
   },
   {
@@ -116,15 +116,15 @@ export const DUAL_ENTRIES: DualEntry[] = [
     variants: [
       { sizeKey: "50mg", sizeLabel: "50 mg", phlCode: "PHL12",
         titleA: "GHK - Cu Research Compound 50mg - Laboratory Use", linkA: "/products/n7y4ze",
-        titleB: "GC3-PHL 50 mg",    linkB: "/products/n7y4zf" },
+        titleB: "GC3-PHL - Research Compound 50mg - Laboratory Use", linkB: "/products/n7y4zf" },
     ],
   },
   {
     canonicalSlug: "bacteriostatic-water-research-compound",
     variants: [
       { sizeKey: "10ml", sizeLabel: "10 ml", phlCode: "PHL13",
-        titleA: "Bacteriostatic Water 10 ml", linkA: "/products/d9p1ox",
-        titleB: "BW9-PHL 10 ml",              linkB: "/products/d9p1oy" },
+        titleA: "Bacteriostatic Water - Research Compound 10ml - Laboratory Use", linkA: "/products/d9p1ox",
+        titleB: "BW9-PHL - Research Compound 10ml - Laboratory Use",                  linkB: "/products/d9p1oy" },
     ],
   },
   {
@@ -132,7 +132,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL14",
         titleA: "BPC - 157 Research Compound 10mg - Laboratory Use", linkA: "/products/r3l6ja",
-        titleB: "BPC-PHL 10 mg",    linkB: "/products/r3l6jb" },
+        titleB: "BPC-PHL - Research Compound 10mg - Laboratory Use", linkB: "/products/r3l6jb" },
     ],
   },
 ];
