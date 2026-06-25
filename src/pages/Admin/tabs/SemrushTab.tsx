@@ -58,6 +58,128 @@ function clearRunHistory() {
   try { window.localStorage.removeItem(RUN_HISTORY_KEY); } catch { /* */ }
 }
 
+// ----- In-progress run persistence (survives page refresh) -----
+interface InProgressRun {
+  phrase: string;
+  mode: 'all' | 'resume' | 'failed';
+  startedAt: string;
+  dbList: string[];       // databases planned for this run
+  completed: string[];    // databases finished (success OR errored)
+  concurrency: number;
+}
+function loadInProgress(): InProgressRun | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(IN_PROGRESS_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw) as InProgressRun;
+    if (!p?.phrase || !Array.isArray(p.dbList)) return null;
+    // Drop stale runs
+    if (Date.now() - new Date(p.startedAt).getTime() > IN_PROGRESS_TTL_MS) {
+      window.localStorage.removeItem(IN_PROGRESS_KEY);
+      return null;
+    }
+    return p;
+  } catch { return null; }
+}
+function saveInProgress(p: InProgressRun | null) {
+  try {
+    if (p == null) window.localStorage.removeItem(IN_PROGRESS_KEY);
+    else window.localStorage.setItem(IN_PROGRESS_KEY, JSON.stringify(p));
+  } catch { /* quota */ }
+}
+
+// ----- Concurrency preference -----
+function loadConcurrency(): number {
+  if (typeof window === 'undefined') return 4;
+  try {
+    const raw = Number(window.localStorage.getItem(CONCURRENCY_KEY));
+    if (!Number.isFinite(raw) || raw < 1 || raw > 8) return 4;
+    return Math.floor(raw);
+  } catch { return 4; }
+}
+function saveConcurrency(n: number) {
+  try { window.localStorage.setItem(CONCURRENCY_KEY, String(n)); } catch { /* */ }
+}
+
+// ----- Retry queue with concurrency cap + exponential backoff -----
+function isRetryableMessage(msg: string): boolean {
+  const m = msg.toLowerCase();
+  // 134 = total limit exceeded (NOT retryable — quota issue).
+  if (m.includes('134') || m.includes('limit exceeded')) return false;
+  // network / rate limit / transient
+  return /(429|rate|timeout|timed out|network|fetch failed|503|502|504|temporar)/.test(m);
+}
+
+async function runWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T, index: number) => Promise<void>,
+): Promise<void> {
+  const c = Math.max(1, Math.min(8, concurrency));
+  let cursor = 0;
+  const runners: Promise<void>[] = [];
+  for (let i = 0; i < c; i++) {
+    runners.push((async () => {
+      while (true) {
+        const idx = cursor++;
+        if (idx >= items.length) return;
+        await worker(items[idx], idx);
+      }
+    })());
+  }
+  await Promise.all(runners);
+}
+
+// ----- Run history exports -----
+function runHistoryToCsv(rows: RunHistoryEntry[]): string {
+  const headers = [
+    'id', 'at', 'phrase', 'term', 'mode',
+    'requested', 'succeeded', 'failed', 'unitsUsed', 'quotaRemaining',
+    'coverageCovered', 'coverageCatalog', 'coverageComplete',
+    'failedDatabases', 'error',
+  ];
+  const esc = (v: unknown) => {
+    const s = v == null ? '' : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [headers.join(',')];
+  for (const r of rows) {
+    lines.push([
+      r.id, r.at, r.phrase, r.term, r.mode,
+      r.requested, r.succeeded, r.failed, r.unitsUsed,
+      r.quotaRemaining ?? '',
+      r.coverageAfter.covered, r.coverageAfter.catalog, r.coverageAfter.complete,
+      r.failedDatabases.join('|'), r.error ?? '',
+    ].map(esc).join(','));
+  }
+  return lines.join('\n');
+}
+function downloadBlob(filename: string, mime: string, content: string) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function downloadRunHistory(rows: RunHistoryEntry[], format: 'csv' | 'json') {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  if (format === 'csv') {
+    downloadBlob(`semrush-run-history-${stamp}.csv`, 'text/csv;charset=utf-8', runHistoryToCsv(rows));
+  } else {
+    const payload = {
+      schemaVersion: REPORT_SCHEMA_VERSION,
+      exportedAt: new Date().toISOString(),
+      reportType: 'semrush-run-history',
+      count: rows.length,
+      runs: rows,
+    };
+    downloadBlob(`semrush-run-history-${stamp}.json`, 'application/json', JSON.stringify(payload, null, 2));
+  }
+}
+
 interface OverviewData {
   domain: string;
   database: string;
