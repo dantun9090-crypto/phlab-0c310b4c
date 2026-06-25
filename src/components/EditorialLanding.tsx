@@ -1,269 +1,220 @@
 import { Link } from "@tanstack/react-router";
-import editorialImg from "@/assets/premium-lab-editorial.jpg";
-import molecularImg from "@/assets/premium-molecular.jpg";
+import heroImg from "@/assets/lab-white-hero.jpg";
+import detailImg from "@/assets/lab-white-detail.jpg";
 
 /**
- * /landing/phlabs — editorial magazine layout.
- * Distinct from /compound. Brand-neutral. No substance names.
+ * /landing/phlabs — Moser-inspired editorial layout.
+ * Magazine-style asymmetric, animated word-by-word headline, white lab.
  */
 export function EditorialLanding({ eyebrow }: { eyebrow?: string }) {
+  const headlineWords = ["Precision.", "Purity.", "Provenance."];
   return (
-    <main className="min-h-screen bg-[#f6f3ec] text-[#0c111d] antialiased selection:bg-[#0c111d] selection:text-[#f6f3ec]">
+    <main className="min-h-screen bg-[#f7f6f3] text-neutral-900 antialiased selection:bg-neutral-900 selection:text-white">
+      <style>{`
+        @keyframes edRise {
+          0% { opacity: 0; transform: translateY(36px) skewY(2deg); filter: blur(6px); }
+          100% { opacity: 1; transform: translateY(0) skewY(0); filter: blur(0); }
+        }
+        @keyframes edFade { 0% { opacity: 0; } 100% { opacity: 1; } }
+        @keyframes edScale {
+          0% { opacity: 0; transform: scale(1.08); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes edLine { 0% { transform: scaleX(0); } 100% { transform: scaleX(1); } }
+        @keyframes edDrift {
+          0%,100% { transform: translateY(0); }
+          50% { transform: translateY(-10px); }
+        }
+        .ed-rise { opacity: 0; display: inline-block; animation: edRise 1.1s cubic-bezier(.2,.7,.2,1) forwards; }
+        .ed-fade { opacity: 0; animation: edFade 1.4s ease forwards; }
+        .ed-scale { opacity: 0; animation: edScale 1.6s cubic-bezier(.2,.7,.2,1) forwards; }
+        .ed-line { transform-origin: left; animation: edLine 1.2s cubic-bezier(.7,.2,.2,1) forwards; }
+        .ed-drift { animation: edDrift 7s ease-in-out infinite; }
+        .ed-d1 { animation-delay: .1s; } .ed-d2 { animation-delay: .25s; }
+        .ed-d3 { animation-delay: .4s; } .ed-d4 { animation-delay: .55s; }
+        .ed-d5 { animation-delay: .7s; } .ed-d6 { animation-delay: .9s; }
+        .ed-d7 { animation-delay: 1.1s; }
+      `}</style>
+
       {/* MASTHEAD */}
-      <header className="border-b border-[#0c111d]/15">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-5 text-[10px] uppercase tracking-[0.32em] text-[#0c111d]/70">
-          <span className="font-serif text-base italic tracking-normal text-[#0c111d]">PH Labs</span>
-          <span className="hidden sm:inline">{eyebrow ?? "Laboratory Editorial"}</span>
-          <span>Vol. {new Date().getFullYear()} · UK</span>
+      <header className="border-b border-neutral-300/70">
+        <div className="mx-auto max-w-7xl px-6 py-5 flex items-center justify-between text-[11px] uppercase tracking-[0.35em] text-neutral-600">
+          <span className="ed-fade ed-d1">PH Labs</span>
+          <span className="ed-fade ed-d2 hidden md:inline">№ 01 / Volume MMXXVI</span>
+          <span className="ed-fade ed-d3">For Research Use Only</span>
         </div>
       </header>
 
-      {/* IMPORTANT NOTICE */}
-      <div className="border-b border-[#0c111d]/15 bg-[#0c111d] text-[#f6f3ec]">
-        <div className="mx-auto max-w-[1400px] px-6 py-3 text-center text-[11px] uppercase tracking-[0.3em]">
-          Important Notice — Research compounds for laboratory & scientific use only. Not for human consumption.
-        </div>
-      </div>
-
       {/* HERO — magazine cover */}
-      <section className="relative border-b border-[#0c111d]/15">
-        <div className="mx-auto max-w-[1400px] px-6 pt-16 pb-24 lg:pt-24 lg:pb-32">
-          <div className="grid grid-cols-12 gap-6">
-            {/* vertical brand rail */}
-            <div className="hidden lg:flex col-span-1 items-start justify-center">
-              <div className="sticky top-24 [writing-mode:vertical-rl] rotate-180 text-[10px] uppercase tracking-[0.5em] text-[#0c111d]/50">
-                № 01 — Premium Research Compounds
+      <section className="relative">
+        <div className="mx-auto max-w-7xl px-6 pt-12 lg:pt-20 pb-16 lg:pb-28 grid grid-cols-12 gap-6 lg:gap-10 items-center">
+          {/* left column */}
+          <div className="col-span-12 lg:col-span-7">
+            {eyebrow ? (
+              <div className="ed-fade ed-d1 mb-8 inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.4em] text-neutral-600">
+                <span className="ed-line block h-px w-10 bg-neutral-500" />
+                {eyebrow}
               </div>
-            </div>
+            ) : null}
 
-            <div className="col-span-12 lg:col-span-11">
-              <p className="text-[11px] uppercase tracking-[0.4em] text-[#8a6a1f]">
-                Issue 001 · Scientific Supply
-              </p>
-              <h1 className="mt-8 font-serif text-[2.75rem] leading-[0.98] sm:text-6xl md:text-7xl lg:text-[8.5rem] font-light tracking-[-0.02em] text-[#0c111d]">
-                Premium
-                <br />
-                Research
-                <br />
-                <span className="italic text-[#8a6a1f]">Compounds.</span>
-              </h1>
+            <h1 className="font-serif font-light tracking-tight text-neutral-950 text-[3rem] leading-[0.95] sm:text-[4.5rem] md:text-[6rem] lg:text-[7.5rem]">
+              {headlineWords.map((w, i) => (
+                <span
+                  key={w}
+                  className="ed-rise block italic"
+                  style={{ animationDelay: `${0.15 + i * 0.18}s` }}
+                >
+                  {w}
+                </span>
+              ))}
+            </h1>
 
-              <div className="mt-12 grid grid-cols-1 md:grid-cols-12 gap-10 items-end">
-                <p className="md:col-span-7 text-lg md:text-xl font-light leading-relaxed text-[#0c111d]/80">
-                  High-purity research materials developed for professional
-                  laboratory and scientific applications — supplied with
-                  detailed documentation under controlled conditions in the
-                  United Kingdom.
-                </p>
-                <div className="md:col-span-5 flex flex-col sm:flex-row gap-3">
-                  <a
-                    href="#documentation"
-                    className="group inline-flex items-center justify-between gap-4 px-6 py-4 bg-[#0c111d] text-[#f6f3ec] text-[11px] uppercase tracking-[0.25em] font-medium transition-colors hover:bg-[#8a6a1f]"
-                  >
-                    Request Documentation <span>→</span>
-                  </a>
-                  <a
-                    href="#standards"
-                    className="inline-flex items-center justify-between gap-4 px-6 py-4 border border-[#0c111d]/30 text-[#0c111d] text-[11px] uppercase tracking-[0.25em] font-medium transition-colors hover:border-[#0c111d]"
-                  >
-                    Our Standards <span>→</span>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+            <p className="ed-fade ed-d6 mt-10 max-w-xl text-base sm:text-lg font-light leading-relaxed text-neutral-700">
+              A United Kingdom laboratory supplying high-purity research
+              materials for scientific institutions and qualified researchers.
+            </p>
 
-        {/* full-bleed hero image */}
-        <div className="relative w-full aspect-[16/9] sm:aspect-[21/9] overflow-hidden">
-          <img
-            src={editorialImg}
-            alt=""
-            aria-hidden="true"
-            width={1600}
-            height={900}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#0c111d]/60 to-transparent p-6 sm:p-10">
-            <div className="mx-auto max-w-[1400px] flex items-end justify-between gap-6">
-              <p className="font-serif italic text-[#f6f3ec] text-sm sm:text-base max-w-md">
-                Laboratory-grade supply, prepared under controlled conditions.
-              </p>
-              <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#f6f3ec]/70">
-                Plate I
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* WHAT WE OFFER — index table */}
-      <section className="border-b border-[#0c111d]/15 py-24 sm:py-32">
-        <div className="mx-auto max-w-[1400px] px-6">
-          <div className="grid grid-cols-12 gap-6 mb-16">
-            <div className="col-span-12 md:col-span-3">
-              <p className="text-[11px] uppercase tracking-[0.4em] text-[#8a6a1f]">Chapter I</p>
-            </div>
-            <div className="col-span-12 md:col-span-9">
-              <h2 className="font-serif text-4xl md:text-6xl font-light tracking-tight text-[#0c111d]">
-                What we offer.
-              </h2>
-              <p className="mt-8 max-w-2xl text-base md:text-lg font-light leading-relaxed text-[#0c111d]/75">
-                We provide premium-grade research compounds intended strictly
-                for laboratory research, analytical studies, and scientific
-                applications. All materials are supplied with detailed
-                documentation and meet high standards of quality and purity.
-              </p>
-            </div>
-          </div>
-
-          <ol className="border-t border-[#0c111d]/20">
-            {[
-              {
-                k: "I",
-                title: "Analytical Documentation",
-                meta: "Per batch",
-                body: "Detailed analytical records supporting reproducible laboratory workflows.",
-              },
-              {
-                k: "II",
-                title: "Verified Purity Standards",
-                meta: "Quality benchmarks",
-                body: "Materials evaluated against rigorous benchmarks established for advanced scientific research compounds.",
-              },
-              {
-                k: "III",
-                title: "Laboratory-Grade Supply",
-                meta: "Controlled handling",
-                body: "Premium laboratory research materials prepared, stored and dispatched under controlled conditions.",
-              },
-            ].map((c) => (
-              <li
-                key={c.k}
-                className="group grid grid-cols-12 gap-6 items-baseline border-b border-[#0c111d]/20 py-8 md:py-10 transition-colors hover:bg-[#0c111d]/[0.03]"
+            <div className="ed-fade ed-d7 mt-10 flex flex-wrap gap-3">
+              <Link
+                to="/contact"
+                className="group inline-flex items-center px-7 py-3.5 rounded-full bg-neutral-950 text-white text-[11px] tracking-[0.2em] uppercase font-medium transition-all hover:bg-neutral-800"
               >
-                <span className="col-span-2 md:col-span-1 font-serif text-2xl md:text-3xl italic text-[#8a6a1f]">
-                  {c.k}.
-                </span>
-                <div className="col-span-10 md:col-span-5">
-                  <h3 className="font-serif text-2xl md:text-3xl font-light text-[#0c111d]">
-                    {c.title}
-                  </h3>
-                </div>
-                <p className="col-span-12 md:col-span-5 text-sm md:text-base leading-relaxed text-[#0c111d]/70">
-                  {c.body}
-                </p>
-                <span className="col-span-12 md:col-span-1 text-right text-[10px] uppercase tracking-[0.3em] text-[#0c111d]/50">
-                  {c.meta}
-                </span>
-              </li>
-            ))}
-          </ol>
+                Request Documentation
+                <span className="ml-3 transition-transform group-hover:translate-x-1">→</span>
+              </Link>
+              <Link
+                to="/quality-control"
+                className="inline-flex items-center px-7 py-3.5 rounded-full border border-neutral-400 text-neutral-900 text-[11px] tracking-[0.2em] uppercase font-medium transition-colors hover:border-neutral-950"
+              >
+                Quality Standards
+              </Link>
+            </div>
+          </div>
+
+          {/* right column — image card */}
+          <div className="col-span-12 lg:col-span-5">
+            <div className="ed-scale ed-d2 ed-drift relative aspect-[4/5] overflow-hidden rounded-3xl border border-neutral-200 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.35)]">
+              <img
+                src={heroImg}
+                alt=""
+                aria-hidden="true"
+                width={1920}
+                height={1280}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-white/30 via-transparent to-white/10" />
+              <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between text-[10px] uppercase tracking-[0.35em] text-white drop-shadow">
+                <span>Laboratory · UK</span>
+                <span>Plate 01</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* INTENDED USE — dark band with overlaid serif */}
-      <section
-        id="standards"
-        className="relative bg-[#0c111d] text-[#f6f3ec] py-28 sm:py-40 overflow-hidden"
-      >
+      {/* INDEX TABLE */}
+      <section className="border-y border-neutral-300/70 bg-white">
+        <div className="mx-auto max-w-7xl px-6 py-16">
+          <div className="grid grid-cols-12 gap-6">
+            <div className="col-span-12 md:col-span-3">
+              <p className="text-[11px] uppercase tracking-[0.5em] text-neutral-500">The Index</p>
+              <h2 className="mt-4 font-serif text-3xl md:text-4xl font-light text-neutral-950">
+                Inside this <em>volume</em>
+              </h2>
+            </div>
+            <ol className="col-span-12 md:col-span-9 divide-y divide-neutral-200 border-t border-neutral-200">
+              {[
+                { n: "I", title: "Analytical Documentation", body: "Detailed batch records supporting reproducible laboratory workflows." },
+                { n: "II", title: "Verified Purity Standards", body: "Rigorous quality benchmarks for advanced research compounds." },
+                { n: "III", title: "Laboratory-Grade Supply", body: "Prepared, stored and dispatched under controlled UK conditions." },
+                { n: "IV", title: "Per-Batch Provenance", body: "Traceable records accompany every shipment to qualified institutions." },
+              ].map((row) => (
+                <li key={row.n} className="grid grid-cols-12 gap-6 py-8 group">
+                  <div className="col-span-2 md:col-span-1 font-serif text-2xl font-light text-neutral-400 group-hover:text-neutral-900 transition-colors">{row.n}</div>
+                  <div className="col-span-10 md:col-span-7">
+                    <h3 className="font-serif text-xl md:text-2xl font-light text-neutral-950">{row.title}</h3>
+                  </div>
+                  <p className="col-span-12 md:col-span-4 text-sm leading-relaxed text-neutral-600">{row.body}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      {/* PULL QUOTE */}
+      <section className="relative overflow-hidden py-28 sm:py-40 bg-[#f7f6f3]">
         <img
-          src={molecularImg}
+          src={detailImg}
           alt=""
           aria-hidden="true"
           loading="lazy"
-          width={1920}
-          height={1280}
+          width={1600}
+          height={1200}
           className="absolute inset-0 h-full w-full object-cover opacity-20"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0c111d] via-[#0c111d]/80 to-[#0c111d]" />
-        <div className="relative mx-auto max-w-[1400px] px-6 grid grid-cols-12 gap-6">
-          <div className="col-span-12 md:col-span-3">
-            <p className="text-[11px] uppercase tracking-[0.4em] text-[#d4af55]">Chapter II</p>
-            <p className="mt-3 font-serif italic text-xl text-[#f6f3ec]/70">Intended Use</p>
+        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#f7f6f3]/70 via-[#f7f6f3]/40 to-[#f7f6f3]" />
+        <div className="relative mx-auto max-w-4xl px-6 text-center">
+          <p className="text-[11px] uppercase tracking-[0.5em] text-neutral-500">A note on intent</p>
+          <blockquote className="mt-10 font-serif text-[1.75rem] sm:text-4xl md:text-5xl font-light leading-[1.2] text-neutral-950">
+            <span className="text-neutral-400">“</span>
+            For laboratory and scientific research purposes only. Not for human
+            consumption, medical use, or therapeutic application.
+            <span className="text-neutral-400">”</span>
+          </blockquote>
+          <p className="mt-10 text-[11px] uppercase tracking-[0.4em] text-neutral-500">— PH Labs Editorial Standard</p>
+        </div>
+      </section>
+
+      {/* COLOPHON */}
+      <section className="border-t border-neutral-300/70 bg-white py-20">
+        <div className="mx-auto max-w-7xl px-6 grid grid-cols-1 md:grid-cols-4 gap-10">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.4em] text-neutral-500">Origin</p>
+            <p className="mt-3 font-serif text-2xl font-light text-neutral-950">United Kingdom</p>
+            <p className="mt-2 text-sm text-neutral-600">Prepared, stored and dispatched.</p>
           </div>
-          <div className="col-span-12 md:col-span-9">
-            <p className="font-serif text-3xl sm:text-4xl md:text-5xl font-light leading-[1.2] tracking-tight">
-              All products are intended{" "}
-              <span className="italic text-[#d4af55]">exclusively</span>{" "}
-              for laboratory and scientific research purposes. They are not
-              intended for human consumption, medical use, or any therapeutic
-              applications.
-            </p>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.4em] text-neutral-500">Standard</p>
+            <p className="mt-3 font-serif text-2xl font-light text-neutral-950">Verified Purity</p>
+            <p className="mt-2 text-sm text-neutral-600">Per-batch analytical records.</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.4em] text-neutral-500">Audience</p>
+            <p className="mt-3 font-serif text-2xl font-light text-neutral-950">Qualified Researchers</p>
+            <p className="mt-2 text-sm text-neutral-600">Institutions & scientific professionals.</p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.4em] text-neutral-500">Contact</p>
+            <Link to="/contact" className="mt-3 inline-block font-serif text-2xl font-light text-neutral-950 underline-offset-4 hover:underline">
+              Reach the team →
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* DOCUMENTATION */}
-      <section
-        id="documentation"
-        className="border-b border-[#0c111d]/15 py-24 sm:py-32"
-      >
-        <div className="mx-auto max-w-[1400px] px-6">
-          <div className="grid grid-cols-12 gap-6">
-            <div className="col-span-12 md:col-span-3">
-              <p className="text-[11px] uppercase tracking-[0.4em] text-[#8a6a1f]">Chapter III</p>
-            </div>
-            <div className="col-span-12 md:col-span-9">
-              <h2 className="font-serif text-4xl md:text-6xl font-light tracking-tight">
-                Request research
-                <br />
-                <span className="italic text-[#8a6a1f]">documentation.</span>
-              </h2>
-              <p className="mt-8 max-w-2xl text-base md:text-lg font-light leading-relaxed text-[#0c111d]/75">
-                Qualified researchers and institutions may request the detailed
-                documentation accompanying our premium laboratory research
-                materials.
-              </p>
-              <div className="mt-12 flex flex-col sm:flex-row gap-3">
-                <Link
-                  to="/contact"
-                  className="inline-flex items-center justify-between gap-6 px-7 py-4 bg-[#0c111d] text-[#f6f3ec] text-[11px] uppercase tracking-[0.25em] font-medium transition-colors hover:bg-[#8a6a1f]"
-                >
-                  Contact Our Team <span>→</span>
-                </Link>
-                <Link
-                  to="/quality-control"
-                  className="inline-flex items-center justify-between gap-6 px-7 py-4 border border-[#0c111d]/30 text-[#0c111d] text-[11px] uppercase tracking-[0.25em] font-medium transition-colors hover:border-[#0c111d]"
-                >
-                  Quality Standards <span>→</span>
-                </Link>
-              </div>
-            </div>
-          </div>
+      {/* DISCLAIMER */}
+      <section className="bg-[#f7f6f3] py-20">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <p className="text-[11px] uppercase tracking-[0.5em] text-neutral-500">Legal</p>
+          <h2 className="mt-3 font-serif text-2xl font-light text-neutral-950">Disclaimer</h2>
+          <p className="mt-6 text-sm sm:text-[15px] leading-relaxed text-neutral-600">
+            All products offered on this website are intended solely for
+            laboratory research and scientific purposes. They are not intended
+            for human consumption, medical diagnosis, treatment, or any
+            therapeutic use. By accessing this website or purchasing any
+            product, you confirm that you are a qualified researcher or
+            institution and that you will comply with all applicable laws and
+            regulations regarding the handling and use of research materials.
+            Misuse of these products may be dangerous and illegal.
+          </p>
         </div>
       </section>
 
-      {/* LEGAL */}
-      <section className="bg-[#ebe6da] py-20">
-        <div className="mx-auto max-w-[1400px] px-6 grid grid-cols-12 gap-6">
-          <div className="col-span-12 md:col-span-3">
-            <p className="text-[11px] uppercase tracking-[0.4em] text-[#8a6a1f]">Colophon</p>
-            <h2 className="mt-3 font-serif text-3xl font-light italic text-[#0c111d]">
-              Legal Disclaimer
-            </h2>
-          </div>
-          <div className="col-span-12 md:col-span-9 md:columns-2 md:gap-10 text-[13px] sm:text-sm leading-relaxed text-[#0c111d]/85">
-            <p>
-              All products offered on this website are intended solely for
-              laboratory research and scientific purposes. They are not intended
-              for human consumption, medical diagnosis, treatment, or any
-              therapeutic use. By accessing this website or purchasing any
-              product, you confirm that you are a qualified researcher or
-              institution and that you will comply with all applicable laws and
-              regulations regarding the handling and use of research materials.
-              Misuse of these products may be dangerous and illegal.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="bg-[#0c111d] text-[#f6f3ec]/70 py-10">
-        <div className="mx-auto max-w-[1400px] px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] uppercase tracking-[0.3em]">
-          <span className="font-serif italic text-base normal-case tracking-normal text-[#f6f3ec]">PH Labs</span>
-          <span>© {new Date().getFullYear()} · United Kingdom</span>
-          <span>For Research Use Only</span>
+      <footer className="border-t border-neutral-300/70 bg-white py-10">
+        <div className="mx-auto max-w-7xl px-6 flex flex-col items-center justify-center gap-2 text-[11px] uppercase tracking-[0.3em] text-neutral-500 text-center">
+          <span>© {new Date().getFullYear()} PH Labs · United Kingdom</span>
+          <span>For Research Use Only · Not for Human Consumption</span>
         </div>
       </footer>
     </main>
