@@ -592,6 +592,48 @@ export default function LiveActivityTab() {
               <span className="text-slate-500">({botCount} bot{botCount === 1 ? '' : 's'} hidden)</span>
             )}
           </label>
+          <label
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] cursor-pointer hover:text-white"
+            title="When ON, sessions hitting /?forceHideBadge=true (Google Merchant trust-badge iframe) are always classified as bots — even with Humans-only OFF. Turn OFF to inspect those sessions."
+          >
+            <input
+              type="checkbox"
+              checked={prefs.treatForceHideBadgeAsBot}
+              onChange={e => updatePrefs({ treatForceHideBadgeAsBot: e.target.checked })}
+              className="accent-amber-500"
+            />
+            forceHideBadge = bot
+          </label>
+          <label
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]"
+            title="Comma-separated UA substrings that always pass as human (your own monitoring/QA tools). Case-insensitive."
+          >
+            <span>Allow UAs</span>
+            <input
+              type="text"
+              placeholder="phlabs-internal, my-qa-bot"
+              defaultValue={prefs.allowlistUAs.join(', ')}
+              onBlur={e => updatePrefs({
+                allowlistUAs: e.target.value.split(',').map(s => s.trim()).filter(Boolean),
+              })}
+              className="w-48 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono"
+            />
+          </label>
+          <label
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]"
+            title="Comma-separated referrer hostnames that always pass as human."
+          >
+            <span>Allow refs</span>
+            <input
+              type="text"
+              placeholder="ops.phlabs.co.uk"
+              defaultValue={prefs.allowlistReferrers.join(', ')}
+              onBlur={e => updatePrefs({
+                allowlistReferrers: e.target.value.split(',').map(s => s.trim().toLowerCase()).filter(Boolean),
+              })}
+              className="w-44 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono"
+            />
+          </label>
           <label className="flex items-center gap-2 text-xs text-[#9cb8d9] bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2">
             <Trash2 className="w-3.5 h-3.5" /> Audit retention
             <input
