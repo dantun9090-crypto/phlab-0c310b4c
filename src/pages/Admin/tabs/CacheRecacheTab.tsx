@@ -199,7 +199,7 @@ export default function CacheRecacheTab() {
           <code className="text-emerald-400">/sitemap.xml</code>. Every Lovable Publish auto-fires
           a full Cloudflare purge + Prerender desktop/mobile recache on first visitor request
           (build-id compared server-side via <code className="text-emerald-400">/api/public/post-publish-check</code>).
-          Public HTML cache is admin-controlled: <strong>Off</strong> (default), 24h, 7d, 14d or 30d.
+          Public HTML cache is admin-controlled: <strong>Off</strong> (default), 30s, 1min, 5min or 15min.
           When Off, every HTML response is served with <code>no-store</code> so stale shells cannot stick.
           Private routes, service workers, recovery URLs, and 404 HTML stay no-store regardless of the setting.
           Use the buttons below for ad-hoc purges or to re-trigger manually.
