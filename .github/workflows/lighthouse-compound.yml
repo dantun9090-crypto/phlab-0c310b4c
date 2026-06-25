@@ -1,5 +1,7 @@
 # Lighthouse CI for /compound + /research — runs BOTH desktop and mobile (slow-4G CPU 4x)
-# audits. Either profile failing its thresholds fails the build.
+# audits, uploads the raw reports as artifacts, appends a row to
+# lighthouse-history.csv on main, and posts a PR comment with the delta
+# vs the latest baseline so regressions are visible at review time.
 #
 # Thresholds:
 #   Desktop  — Performance ≥ 0.85, SEO ≥ 0.95
@@ -11,14 +13,20 @@ on:
     branches: [main]
     paths:
       - "src/routes/compound.tsx"
+      - "src/routes/_marketing.compound.tsx"
+      - "src/routes/_marketing.tsx"
       - "src/routes/research.tsx"
+      - "src/components/PremiumLanding.tsx"
       - "public/og/compound.jpg"
       - ".lighthouserc*.json"
       - ".github/workflows/lighthouse-compound.yml"
   pull_request:
     paths:
       - "src/routes/compound.tsx"
+      - "src/routes/_marketing.compound.tsx"
+      - "src/routes/_marketing.tsx"
       - "src/routes/research.tsx"
+      - "src/components/PremiumLanding.tsx"
       - "public/og/compound.jpg"
       - ".lighthouserc*.json"
       - ".github/workflows/lighthouse-compound.yml"
@@ -49,3 +57,77 @@ jobs:
         run: lhci autorun --config=.lighthouserc.${{ matrix.profile }}.json
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Extract summary metrics
+        if: always()
+        run: node scripts/lighthouse-summary.mjs ${{ matrix.profile }} > /tmp/lh-${{ matrix.profile }}.json
+        continue-on-error: true
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-${{ matrix.profile }}-${{ github.run_id }}
+          path: |
+            .lighthouseci/
+            /tmp/lh-${{ matrix.profile }}.json
+          retention-days: 30
+
+  compare:
+    name: Compare vs baseline
+    needs: lighthouse
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: lighthouse-*-${{ github.run_id }}
+          path: /tmp/lh-artifacts
+          merge-multiple: true
+
+      - name: Build comparison
+        id: cmp
+        run: node scripts/lighthouse-compare.mjs /tmp/lh-artifacts lighthouse-history.csv > /tmp/lh-comment.md
+
+      - name: Post PR comment
+        if: always()
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: /tmp/lh-comment.md
+
+  record-baseline:
+    name: Append baseline row
+    needs: lighthouse
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: lighthouse-*-${{ github.run_id }}
+          path: /tmp/lh-artifacts
+          merge-multiple: true
+
+      - name: Append to history
+        run: node scripts/lighthouse-history.mjs /tmp/lh-artifacts lighthouse-history.csv "${{ github.sha }}"
+
+      - name: Commit history (if changed)
+        run: |
+          if [[ -n "$(git status --porcelain lighthouse-history.csv)" ]]; then
+            git config user.name "lovable-bot"
+            git config user.email "bot@phlabs.co.uk"
+            git add lighthouse-history.csv
+            git commit -m "chore(perf): record /compound lighthouse baseline ${GITHUB_SHA::7}"
+            git push
+          fi
