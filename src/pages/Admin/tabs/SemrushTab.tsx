@@ -635,6 +635,13 @@ function KeywordGeoPanel() {
     let lastCatalog: CatalogEntry[] = catalog;
     let runErr: string | null = null;
 
+    // Persist the planned run so a refresh can resume it.
+    const completedSet = new Set<string>();
+    saveInProgress({
+      phrase: term, mode, startedAt,
+      dbList, completed: [], concurrency,
+    });
+
     try {
       const idToken = await getAdminIdToken();
 
@@ -648,32 +655,51 @@ function KeywordGeoPanel() {
         persistCache({ ...cache, [key]: cleaned });
       }
 
-      // Dispatch one call per database in parallel; update progress as each
-      // resolves so the UI shows X / N completed live.
-      const tasks = dbList.map(async (db) => {
-        try {
-          const res = (await fetchGeo({ data: {
-            idToken, phrase: term, databases: [db], autoLimit: true,
-          } })) as ServerGeoResponse;
-          aggRows.push(...res.rows.map((r) => ({ ...r, fetchedAt: res.fetchedAt })));
-          trimmedAll.push(...res.trimmedByQuota);
-          quotaRef.current = res.quota.after;
-          unitsUsedTotal += res.quota.unitsUsed;
-          if (res.catalog.length) lastCatalog = res.catalog;
-        } catch (e: any) {
-          // Convert exception into an errored row so it shows up in cache + retry list.
+      // Worker pool: process dbList with bounded concurrency.
+      // Each task retries transient failures with exponential backoff.
+      await runWithConcurrency(dbList, concurrency, async (db) => {
+        let lastErr: any = null;
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+          try {
+            const res = (await fetchGeo({ data: {
+              idToken, phrase: term, databases: [db], autoLimit: true,
+            } })) as ServerGeoResponse;
+            aggRows.push(...res.rows.map((r) => ({ ...r, fetchedAt: res.fetchedAt })));
+            trimmedAll.push(...res.trimmedByQuota);
+            quotaRef.current = res.quota.after;
+            unitsUsedTotal += res.quota.unitsUsed;
+            if (res.catalog.length) lastCatalog = res.catalog;
+            lastErr = null;
+            break;
+          } catch (e: any) {
+            lastErr = e;
+            const msg = String(e?.message ?? 'request failed');
+            if (attempt < MAX_RETRIES && isRetryableMessage(msg)) {
+              // Exponential backoff + jitter — keeps us under Semrush's burst limits.
+              const delay = BACKOFF_BASE_MS * Math.pow(2, attempt) + Math.floor(Math.random() * 250);
+              await new Promise((r) => setTimeout(r, delay));
+              continue;
+            }
+            break;
+          }
+        }
+        if (lastErr != null) {
           aggRows.push({
             database: db,
             country: catalog.find((c) => c.id === db)?.country ?? db.toUpperCase(),
             volume: null, cpc: null, competition: null, results: null,
-            error: String(e?.message ?? 'request failed').slice(0, 200),
+            error: String(lastErr?.message ?? 'request failed').slice(0, 200),
             fetchedAt: new Date().toISOString(),
           });
-        } finally {
-          setProgress((p) => p ? { done: p.done + 1, total: p.total, current: db } : p);
         }
+        completedSet.add(db);
+        setProgress((p) => p ? { done: completedSet.size, total: p.total, current: db } : p);
+        saveInProgress({
+          phrase: term, mode, startedAt,
+          dbList, completed: Array.from(completedSet), concurrency,
+        });
       });
-      await Promise.all(tasks);
+
 
       const finishedAt = new Date().toISOString();
       const mergedRows = mergeRows(prior?.rows ?? [], aggRows);
