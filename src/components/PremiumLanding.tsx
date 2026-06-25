@@ -334,7 +334,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
               { k: '05', t: 'Cold Dispatch', d: 'Insulated, tracked delivery with batch COA enclosed.' },
             ].map((s) => (
               <li key={s.k} className="relative flex flex-col items-center text-center">
-                <span className="relative z-10 inline-flex items-center justify-center w-13 h-13 min-w-[52px] min-h-[52px] rounded-full border gold-border bg-[#060b18] font-mono text-xs tracking-[0.2em] gold-text">
+                <span className="relative z-10 inline-flex items-center justify-center w-[52px] h-[52px] rounded-full border gold-border bg-[#060b18] font-mono text-xs tracking-[0.2em] gold-text">
                   {s.k}
                 </span>
                 <h3 className="mt-5 display text-[1.05rem] font-light text-white">{s.t}</h3>
