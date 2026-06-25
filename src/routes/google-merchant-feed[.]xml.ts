@@ -472,7 +472,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                 `    <g:custom_label_0>${xmlEscape(customLabel)}</g:custom_label_0>`,
                 v.sizeLabel ? `    <g:unit_pricing_measure>${xmlEscape(v.sizeLabel.replace(/\s+/g, ""))}</g:unit_pricing_measure>` : null,
                 ...MERCHANT_PROMO_IDS.map(
-                  (pid) => `    <g:promotion_id>${xmlEscape(pid)}</g:promotion_id>`,
+                  (pid: string) => `    <g:promotion_id>${xmlEscape(pid)}</g:promotion_id>`,
                 ),
                 `  </item>`,
               ].filter(Boolean).join("\n");
