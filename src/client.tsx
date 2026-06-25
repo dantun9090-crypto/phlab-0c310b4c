@@ -2,6 +2,13 @@
 // Only arm this during an actual cache-recovery navigation. Previously this
 // counted every normal page load, so quick refreshes / preview reloads could
 // falsely show the stale-cache screen even when the app was healthy.
+//
+// Thresholds are runtime-tunable WITHOUT a redeploy via any of:
+//   • URL:           ?phl_loop_threshold=8&phl_loop_window_ms=120000&phl_loop_disabled=1
+//   • localStorage:  __phl_loop_threshold / __phl_loop_window_ms / __phl_loop_disabled
+//   • window global: window.__PHL_LOOP_CONFIG = { threshold, windowMs, disabled }
+//   • <meta name="phl-loop-threshold" content="8"> (also: phl-loop-window-ms, phl-loop-disabled)
+// Defaults: threshold=5 reloads within windowMs=90000. URL/localStorage values persist.
 (() => {
   if (typeof window === "undefined") return;
   try {
@@ -13,6 +20,58 @@
       "__phl_stale_asset_reload_at",
     ];
     const params = new URLSearchParams(window.location.search);
+
+    // --- Runtime-tunable config (no redeploy required) --------------------
+    const readNum = (v: unknown): number | null => {
+      if (v == null) return null;
+      const n = Number(v);
+      return Number.isFinite(n) && n > 0 ? n : null;
+    };
+    const readBool = (v: unknown): boolean =>
+      v === true || v === "1" || v === "true" || v === "yes";
+    const metaVal = (name: string): string | null =>
+      document.querySelector(`meta[name="${name}"]`)?.getAttribute("content") ?? null;
+    const lsGet = (k: string): string | null => {
+      try { return localStorage.getItem(k); } catch { return null; }
+    };
+    const lsSet = (k: string, v: string): void => {
+      try { localStorage.setItem(k, v); } catch { /* ignore */ }
+    };
+    const winCfg = (window as unknown as {
+      __PHL_LOOP_CONFIG?: { threshold?: number; windowMs?: number; disabled?: boolean };
+    }).__PHL_LOOP_CONFIG || {};
+
+    // Persist URL overrides so they survive subsequent navigations.
+    const urlThreshold = params.get("phl_loop_threshold");
+    const urlWindowMs = params.get("phl_loop_window_ms");
+    const urlDisabled = params.get("phl_loop_disabled");
+    if (urlThreshold) lsSet("__phl_loop_threshold", urlThreshold);
+    if (urlWindowMs) lsSet("__phl_loop_window_ms", urlWindowMs);
+    if (urlDisabled != null) lsSet("__phl_loop_disabled", urlDisabled);
+
+    const disabled =
+      readBool(urlDisabled) ||
+      readBool(lsGet("__phl_loop_disabled")) ||
+      readBool(winCfg.disabled) ||
+      readBool(metaVal("phl-loop-disabled"));
+    if (disabled) {
+      sessionStorage.removeItem(KEY);
+      return;
+    }
+
+    const THRESHOLD =
+      readNum(urlThreshold) ??
+      readNum(lsGet("__phl_loop_threshold")) ??
+      readNum(winCfg.threshold) ??
+      readNum(metaVal("phl-loop-threshold")) ??
+      5;
+    const WINDOW_MS =
+      readNum(urlWindowMs) ??
+      readNum(lsGet("__phl_loop_window_ms")) ??
+      readNum(winCfg.windowMs) ??
+      readNum(metaVal("phl-loop-window-ms")) ??
+      90_000;
+
     const isRecoveryNavigation =
       params.has("sw") ||
       params.has("_r") ||
@@ -28,11 +87,12 @@
     const now = Date.now();
     const raw = sessionStorage.getItem(KEY);
     const arr = (raw ? (JSON.parse(raw) as number[]) : []).filter(
-      (t) => now - t < 90_000,
+      (t) => now - t < WINDOW_MS,
     );
     arr.push(now);
     sessionStorage.setItem(KEY, JSON.stringify(arr));
-    if (arr.length >= 5) {
+    if (arr.length >= THRESHOLD) {
+
       sessionStorage.removeItem(KEY);
       document.documentElement.innerHTML =
         '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recovering — PH Labs</title><style>html,body{margin:0;min-height:100%;background:#060f1e;color:#f0f6ff;font-family:system-ui,sans-serif}.box{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}.card{max-width:440px;text-align:center}h1{margin:0 0 12px;font-size:22px}p{margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55}button{appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 18px;cursor:pointer;font-size:14px}</style></head><body><div class="box"><div class="card"><h1>⚠️ Loading issue detected</h1><p>This is usually a stale cache. Clearing it and reloading should fix it.</p><button id="phl-cc">Clear Cache &amp; Reload</button></div></div></body>';
