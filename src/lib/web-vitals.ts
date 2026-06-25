@@ -92,8 +92,12 @@ function observe<T extends PerformanceEntry>(
   }
 }
 
+import { isMarketingRoute } from "@/lib/is-marketing-route";
+
 export function initWebVitals() {
   if (typeof window === "undefined" || typeof PerformanceObserver === "undefined") return;
+  // Marketing landings opt out of RUM — keeps the main thread quiet for LCP.
+  if (isMarketingRoute()) return;
   if ((window as Window & { __phlabsVitalsInit?: boolean }).__phlabsVitalsInit) return;
   (window as Window & { __phlabsVitalsInit?: boolean }).__phlabsVitalsInit = true;
 
