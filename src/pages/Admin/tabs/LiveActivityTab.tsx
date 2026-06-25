@@ -184,17 +184,73 @@ export default function LiveActivityTab() {
   const seenUserIdsRef = useRef<Set<string> | null>(null);
   const seenSessionIdsRef = useRef<Set<string> | null>(null);
 
+  // Persistent dedup map for first-seen toasts (survives remounts + snapshots).
+  const dedupRef = useRef<DedupMap>(loadDedup());
+
   // Keep latest prefs accessible in snapshot callbacks without resubscribing
   const prefsRef = useRef(prefs);
   useEffect(() => { prefsRef.current = prefs; }, [prefs]);
 
-  const maybeToast = (kind: 'signup' | 'visitor', title: string, description: string) => {
+  const maybeToast = (
+    kind: ToastKind,
+    title: string,
+    description: string,
+    targetId?: string,
+  ) => {
     const p = prefsRef.current;
-    if (kind === 'signup' && !p.notifySignups) return;
-    if (kind === 'visitor' && !p.notifyFirstSeen) return;
-    if (p.quietEnabled && isQuietNow(p.quietStart, p.quietEnd)) return;
+    const snapshot = {
+      notifySignups: p.notifySignups,
+      notifyFirstSeen: p.notifyFirstSeen,
+      quietEnabled: p.quietEnabled,
+      quietStart: p.quietStart,
+      quietEnd: p.quietEnd,
+      quietTimezone: p.quietTimezone,
+    };
+
+    // 1) dedup — once per targetId within TTL.
+    if (targetId) {
+      const ttlMs = p.toastDedupTtlH * 3_600_000;
+      const last = dedupRef.current[targetId];
+      if (last && Date.now() - last < ttlMs) {
+        logToastEvent({
+          kind, outcome: 'suppressed:dedup', title, description, targetId,
+          prefsSnapshot: snapshot,
+        });
+        return;
+      }
+    }
+
+    // 2) pref / quiet-hours suppression (shared logic).
+    const verdict = shouldSuppressToast(kind, {
+      notifySignups: p.notifySignups,
+      notifyFirstSeen: p.notifyFirstSeen,
+      quiet: {
+        enabled: p.quietEnabled, start: p.quietStart, end: p.quietEnd,
+        timezone: p.quietTimezone,
+      },
+    });
+    if (verdict.suppressed) {
+      logToastEvent({
+        kind,
+        outcome: verdict.reason === 'pref-off' ? 'suppressed:pref-off' : 'suppressed:quiet-hours',
+        title, description, targetId, prefsSnapshot: snapshot,
+      });
+      return;
+    }
+
+    // 3) deliver + remember.
     if (kind === 'signup') toast.success(title, { description });
     else toast(title, { description });
+
+    if (targetId) {
+      dedupRef.current[targetId] = Date.now();
+      dedupRef.current = pruneDedup(dedupRef.current, p.toastDedupTtlH);
+      saveDedup(dedupRef.current);
+    }
+    logToastEvent({
+      kind, outcome: 'delivered', title, description, targetId,
+      prefsSnapshot: snapshot,
+    });
   };
 
   // Realtime: customers
