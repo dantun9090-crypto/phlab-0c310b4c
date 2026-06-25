@@ -82,6 +82,20 @@ function isBotUA(ua?: string): boolean {
   return BOT_UA_RE.test(ua);
 }
 
+// Paths/query params that only synthetic probes hit:
+// - forceHideBadge=true → Google Customer Reviews / Merchant trust-badge iframe probe
+// - __prerender / _escaped_fragment_ → SSR prerender probes
+// - ?lighthouse / ?audit → automated audits
+const BOT_PATH_RE = /(^|[?&])(forceHideBadge|__prerender|_escaped_fragment_|lighthouse|audit|ping|healthcheck)(=|&|$)/i;
+function isBotPath(path?: string): boolean {
+  if (!path) return false;
+  return BOT_PATH_RE.test(path);
+}
+
+function isBotSession(s: { userAgent?: string; path?: string }): boolean {
+  return isBotSession(s) || isBotPath(s.path);
+}
+
 function loadPrefs(): Prefs {
   try {
     const raw = localStorage.getItem(LS_KEY);
@@ -390,7 +404,7 @@ export default function LiveActivityTab() {
         if (seenSessionIdsRef.current) {
           const fresh = allArr.filter(s => !seenSessionIdsRef.current!.has(s.sessionId));
           fresh.slice(0, 3).forEach(s => {
-            if (prefsRef.current.hideBots && isBotUA(s.userAgent)) return;
+            if (prefsRef.current.hideBots && isBotSession(s)) return;
             maybeToast(
               'visitor',
               'New visitor online',
@@ -417,11 +431,11 @@ export default function LiveActivityTab() {
 
   const windowMs = prefs.windowMin * 60_000;
   const visibleSessions = useMemo(
-    () => (prefs.hideBots ? sessions.filter(s => !isBotUA(s.userAgent)) : sessions),
+    () => (prefs.hideBots ? sessions.filter(s => !isBotSession(s)) : sessions),
     [sessions, prefs.hideBots]
   );
   const botCount = useMemo(
-    () => sessions.reduce((n, s) => n + (isBotUA(s.userAgent) ? 1 : 0), 0),
+    () => sessions.reduce((n, s) => n + (isBotSession(s) ? 1 : 0), 0),
     [sessions]
   );
   const onlineNow = useMemo(
