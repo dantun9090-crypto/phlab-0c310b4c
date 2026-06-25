@@ -93,7 +93,7 @@ function isBotPath(path?: string): boolean {
 }
 
 function isBotSession(s: { userAgent?: string; path?: string }): boolean {
-  return isBotUA(s.userAgent) || isBotPath(s.path);
+  return isBotSession(s) || isBotPath(s.path);
 }
 
 function loadPrefs(): Prefs {
@@ -404,7 +404,7 @@ export default function LiveActivityTab() {
         if (seenSessionIdsRef.current) {
           const fresh = allArr.filter(s => !seenSessionIdsRef.current!.has(s.sessionId));
           fresh.slice(0, 3).forEach(s => {
-            if (prefsRef.current.hideBots && isBotUA(s.userAgent)) return;
+            if (prefsRef.current.hideBots && isBotSession(s)) return;
             maybeToast(
               'visitor',
               'New visitor online',
@@ -431,11 +431,11 @@ export default function LiveActivityTab() {
 
   const windowMs = prefs.windowMin * 60_000;
   const visibleSessions = useMemo(
-    () => (prefs.hideBots ? sessions.filter(s => !isBotUA(s.userAgent)) : sessions),
+    () => (prefs.hideBots ? sessions.filter(s => !isBotSession(s)) : sessions),
     [sessions, prefs.hideBots]
   );
   const botCount = useMemo(
-    () => sessions.reduce((n, s) => n + (isBotUA(s.userAgent) ? 1 : 0), 0),
+    () => sessions.reduce((n, s) => n + (isBotSession(s) ? 1 : 0), 0),
     [sessions]
   );
   const onlineNow = useMemo(
