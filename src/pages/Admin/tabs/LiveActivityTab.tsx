@@ -52,6 +52,7 @@ interface Prefs {
   quietEnd: string;   // "HH:MM"
   quietTimezone: string; // IANA, e.g. "Europe/London"
   toastDedupTtlH: number; // hours; entries older than this are forgotten
+  toastAuditRetentionDays: number; // retention for toastAuditLogs cleanup job
 }
 const DEFAULT_PREFS: Prefs = {
   windowMin: 5,
@@ -68,6 +69,7 @@ const DEFAULT_PREFS: Prefs = {
   quietEnd: '08:00',
   quietTimezone: typeof window !== 'undefined' ? detectLocalTimezone() : 'UTC',
   toastDedupTtlH: 24,
+  toastAuditRetentionDays: 30,
 };
 
 function loadPrefs(): Prefs {
