@@ -346,9 +346,10 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
                 />
               </label>
               <label className="block">
-                <span className="block text-[11px] uppercase tracking-[0.25em] gold mb-2">Institution</span>
+                <span className="block text-[11px] uppercase tracking-[0.25em] gold mb-2">Institution / Company *</span>
                 <input
                   type="text"
+                  required
                   value={form.institution}
                   onChange={(e) => setForm({ ...form, institution: e.target.value })}
                   className="w-full min-h-[48px] rounded-lg border-2 border-slate-600 bg-slate-800 px-4 text-white placeholder-white/30 focus:border-[#c9a44c] focus:outline-none transition-colors"
