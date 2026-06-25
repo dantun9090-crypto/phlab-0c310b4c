@@ -450,24 +450,24 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
               accepts no liability for any misuse of these products.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link
-                to="/"
+              <a
+                href="/"
                 className="inline-flex items-center justify-center px-8 py-3 rounded-full border border-white/20 text-white/80 text-[11px] tracking-[0.2em] uppercase hover:bg-white/5 transition-all"
               >
                 ← Back to homepage
-              </Link>
-              <Link
-                to="/terms-and-conditions"
+              </a>
+              <a
+                href="/terms-and-conditions"
                 className="inline-flex items-center justify-center px-8 py-3 rounded-full border border-white/20 text-white/80 text-[11px] tracking-[0.2em] uppercase hover:bg-white/5 transition-all"
               >
                 Terms of Service
-              </Link>
-              <Link
-                to="/contact"
+              </a>
+              <a
+                href="/contact"
                 className="inline-flex items-center justify-center px-8 py-3 rounded-full border border-white/20 text-white/80 text-[11px] tracking-[0.2em] uppercase hover:bg-white/5 transition-all"
               >
                 Contact
-              </Link>
+              </a>
             </div>
           </div>
         </div>
