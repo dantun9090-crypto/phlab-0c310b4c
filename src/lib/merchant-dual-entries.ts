@@ -145,7 +145,7 @@ function slugFromLink(link: string): string {
 /**
  * Build alias map: every dual-entry URL slug → canonical product slug.
  * Keys are stored lowercased so the loader can look up case-insensitively
- * (Entry A uses uppercase alphanumeric codes like "RET10A").
+ * (Entry A uses product codes like "phl-01rt").
  */
 export function buildDualEntryAliasMap(): Record<string, string> {
   const map: Record<string, string> = {};
