@@ -201,6 +201,15 @@ export default function LiveActivityTab() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [confirmRestoreOpen, setConfirmRestoreOpen] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+
+  /** Announce changes to screen readers + show toast. */
+  const announce = (message: string) => {
+    setStatusMessage(message);
+    // Clear after announcement so the same message can be re-announced later.
+    setTimeout(() => setStatusMessage(''), 1500);
+  };
 
   // Persisted UI state
   const userSearch = prefs.userSearch;
