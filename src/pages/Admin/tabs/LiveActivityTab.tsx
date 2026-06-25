@@ -590,7 +590,10 @@ export default function LiveActivityTab() {
           <div className="flex items-center gap-2 text-blue-400 text-xs uppercase tracking-wider">
             <Globe className="w-4 h-4" /> Sessions (24h)
           </div>
-          <div className="text-white text-3xl font-bold mt-2">{sessions.length}</div>
+          <div className="text-white text-3xl font-bold mt-2">{visibleSessions.length}</div>
+          {prefs.hideBots && botCount > 0 && (
+            <div className="text-[10px] text-slate-500 mt-1">{botCount} bot{botCount === 1 ? '' : 's'} hidden</div>
+          )}
         </div>
         <div className="bg-slate-900 border-2 border-slate-700 rounded-lg p-4">
           <div className="flex items-center gap-2 text-purple-400 text-xs uppercase tracking-wider">
