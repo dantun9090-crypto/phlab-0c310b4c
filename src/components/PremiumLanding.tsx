@@ -281,15 +281,20 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
 
       {/* INTENDED USE */}
       <section id="intended-use" className="relative overflow-hidden border-b border-white/10 py-32 sm:py-44">
-        <img
-          src={detailImg}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          width={1600}
-          height={1200}
-          className="phl-ken absolute inset-0 h-full w-full object-cover opacity-40"
-        />
+        <picture>
+          <source type="image/avif" srcSet={DETAIL_AVIF} sizes="100vw" />
+          <source type="image/webp" srcSet={DETAIL_WEBP} sizes="100vw" />
+          <img
+            src="/og/lab/detail-1440.webp"
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            width={1600}
+            height={1200}
+            className="phl-ken absolute inset-0 h-full w-full object-cover opacity-40"
+          />
+        </picture>
         <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#0a1530]/80 via-[#0a1530]/65 to-[#0a1530]" />
         <div className="relative mx-auto max-w-4xl px-6 text-center">
           <p className="text-[11px] uppercase tracking-[0.5em] gold">§ 03 — Intended Use</p>
