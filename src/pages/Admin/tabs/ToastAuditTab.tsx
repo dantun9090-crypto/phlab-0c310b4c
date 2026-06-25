@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ScrollText, Search, Copy, Check, RefreshCw, Filter, BellOff, CheckCircle2, XCircle,
+  ScrollText, Search, Copy, Check, RefreshCw, Filter, BellOff, CheckCircle2, XCircle, ShieldOff,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   db, collection, query, orderBy, limit as fbLimit, onSnapshot,
 } from '@/lib/firebase';
 
-type OutcomeFilter = 'all' | 'delivered' | 'suppressed' | 'suppressed:pref-off' | 'suppressed:quiet-hours' | 'suppressed:dedup';
+type OutcomeFilter = 'all' | 'delivered' | 'suppressed' | 'suppressed:pref-off' | 'suppressed:quiet-hours' | 'suppressed:dedup' | 'suppressed:bot';
 type KindFilter = 'all' | 'signup' | 'visitor';
 type QuietFilter = 'any' | 'on' | 'off';
+type BotFilter = 'any' | 'only' | 'exclude' | 'force-hide-badge';
 
 interface AuditRow {
   id: string;
@@ -22,6 +23,7 @@ interface AuditRow {
   adminEmail?: string | null;
   timestamp: Date;
   tzLocal?: string | null;
+  botReasons?: string[];
   prefsSnapshot?: {
     notifySignups?: boolean;
     notifyFirstSeen?: boolean;
@@ -29,16 +31,19 @@ interface AuditRow {
     quietStart?: string;
     quietEnd?: string;
     quietTimezone?: string;
+    hideBots?: boolean;
+    treatForceHideBadgeAsBot?: boolean;
   };
 }
 
 const PAGE_SIZES = [50, 100, 250, 500];
-const LS_KEY = 'phl_toastaudit_prefs_v1';
+const LS_KEY = 'phl_toastaudit_prefs_v2';
 
 interface Prefs {
   outcome: OutcomeFilter;
   kind: KindFilter;
   quiet: QuietFilter;
+  bot: BotFilter;
   search: string;
   pageSize: number;
   fetchLimit: number;
@@ -47,6 +52,7 @@ const DEFAULT_PREFS: Prefs = {
   outcome: 'all',
   kind: 'all',
   quiet: 'any',
+  bot: 'any',
   search: '',
   pageSize: 100,
   fetchLimit: 500,
