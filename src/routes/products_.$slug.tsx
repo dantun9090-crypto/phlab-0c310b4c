@@ -8,6 +8,7 @@ import {
 import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
 import { RESEARCH_CONTENT } from "@/lib/research-content";
 import { resolveSlugFromId } from "@/lib/product-id-slug-map";
+import { DUAL_ENTRY_ALIASES } from "@/lib/merchant-dual-entries";
 
 const OG_IMAGE_FALLBACK = `${SITE_URL}/og-image.jpg`;
 
@@ -17,6 +18,8 @@ const SLUG_RE = /^[a-z0-9-]+$/;
 
 // Legacy/external slug aliases → 301 to the canonical product slug.
 // Keeps old inbound links (and Google index entries) from 404'ing.
+// Includes Google Merchant dual-entry URLs (Entry A numeric+slug,
+// Entry B no-hyphen slug) — both forms 301 to canonical product page.
 const LEGACY_SLUG_ALIASES: Record<string, string> = {
   "bpc-157-research-peptide": "bpc-157",
   "tb-500-research-peptide": "tb-500-thymosin-beta-4",
@@ -24,6 +27,8 @@ const LEGACY_SLUG_ALIASES: Record<string, string> = {
   retatrutide: "retatrutide-research-peptide",
   tirzepatide: "tirzepatide-research-peptide",
   "nad-plus": "nad-research-compound",
+  // Dual-entry GMC aliases (Entry A + Entry B for every product variant).
+  ...DUAL_ENTRY_ALIASES,
 };
 
 
