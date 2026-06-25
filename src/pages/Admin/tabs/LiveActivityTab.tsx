@@ -739,9 +739,15 @@ export default function LiveActivityTab() {
           >
             <input
               type="checkbox"
+              role="switch"
+              aria-checked={prefs.hideBots}
+              aria-label={`Humans only filter — ${prefs.hideBots ? 'on' : 'off'}${botCount > 0 ? `, ${botCount} bot${botCount === 1 ? '' : 's'} currently hidden` : ''}`}
               checked={prefs.hideBots}
-              onChange={e => updatePrefs({ hideBots: e.target.checked })}
-              className="accent-emerald-500"
+              onChange={e => {
+                updatePrefs({ hideBots: e.target.checked });
+                announce(`Humans only ${e.target.checked ? 'enabled' : 'disabled'}.`);
+              }}
+              className="accent-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             />
             Humans only
             {prefs.hideBots && botCount > 0 && (
@@ -754,9 +760,15 @@ export default function LiveActivityTab() {
           >
             <input
               type="checkbox"
+              role="switch"
+              aria-checked={prefs.treatForceHideBadgeAsBot}
+              aria-label={`Treat forceHideBadge as bot — ${prefs.treatForceHideBadgeAsBot ? 'on' : 'off'}`}
               checked={prefs.treatForceHideBadgeAsBot}
-              onChange={e => updatePrefs({ treatForceHideBadgeAsBot: e.target.checked })}
-              className="accent-amber-500"
+              onChange={e => {
+                updatePrefs({ treatForceHideBadgeAsBot: e.target.checked });
+                announce(`forceHideBadge classification ${e.target.checked ? 'on' : 'off'}.`);
+              }}
+              className="accent-amber-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
             />
             forceHideBadge = bot
           </label>
@@ -764,45 +776,69 @@ export default function LiveActivityTab() {
             className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]"
             title="Comma-separated UA substrings that always pass as human (your own monitoring/QA tools). Case-insensitive. Validated on blur."
           >
-            <span>Allow UAs</span>
+            <span id="allow-uas-label">Allow UAs</span>
             <input
               type="text"
               key={`ua-${prefs.allowlistUAs.join('|')}`}
               placeholder="phlabs-internal, my-qa-bot"
               defaultValue={prefs.allowlistUAs.join(', ')}
+              aria-labelledby="allow-uas-label"
+              aria-describedby="allow-uas-help"
               onBlur={e => applyAllowlist('ua', e.target.value)}
-              className="w-48 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono"
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  applyAllowlist('ua', (e.target as HTMLInputElement).value);
+                }
+              }}
+              className="w-48 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             />
+            <span id="allow-uas-help" className="sr-only">
+              Comma-separated UA substrings. Saved on blur or Enter.
+            </span>
           </label>
           <label
             className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]"
             title="Comma-separated referrer hostnames that always pass as human. Validated on blur."
           >
-            <span>Allow refs</span>
+            <span id="allow-refs-label">Allow refs</span>
             <input
               type="text"
               key={`ref-${prefs.allowlistReferrers.join('|')}`}
               placeholder="ops.phlabs.co.uk"
               defaultValue={prefs.allowlistReferrers.join(', ')}
+              aria-labelledby="allow-refs-label"
+              aria-describedby="allow-refs-help"
               onBlur={e => applyAllowlist('ref', e.target.value)}
-              className="w-44 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono"
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  applyAllowlist('ref', (e.target as HTMLInputElement).value);
+                }
+              }}
+              className="w-44 bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 font-mono focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             />
+            <span id="allow-refs-help" className="sr-only">
+              Comma-separated referrer hostnames. Saved on blur or Enter.
+            </span>
           </label>
           <button
             type="button"
-            onClick={restoreAllowlistDefaults}
+            onClick={() => setConfirmRestoreOpen(true)}
+            aria-label="Restore default allowlists (UA and referrers). Opens confirmation dialog."
             title="Restore default allowlists (UA + referrers)"
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white hover:border-emerald-500/50"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white hover:border-emerald-500/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
           >
-            <Undo2 className="w-3.5 h-3.5" /> Restore defaults
+            <Undo2 className="w-3.5 h-3.5" aria-hidden="true" /> Restore defaults
           </button>
           <button
             type="button"
             onClick={exportAllowlists}
+            aria-label={`Export allowlists to JSON (${prefs.allowlistUAs.length} UA, ${prefs.allowlistReferrers.length} referrer entries)`}
             title="Export allowlists to JSON"
-            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white"
+            className="flex items-center gap-1.5 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
           >
-            <Download className="w-3.5 h-3.5" /> Export
+            <Download className="w-3.5 h-3.5" aria-hidden="true" /> Export
           </button>
           <label
             title="Import allowlists from a JSON file"
