@@ -489,14 +489,14 @@ export default function LiveActivityTab() {
             <span>Page {userPage} / {userTotalPages}</span>
             <div className="flex items-center gap-1">
               <button
-                onClick={() => setUserPage(p => Math.max(1, p - 1))}
+                onClick={() => setUserPage(Math.max(1, safeUserPage - 1))}
                 disabled={userPage <= 1}
                 className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setUserPage(p => Math.min(userTotalPages, p + 1))}
+                onClick={() => setUserPage(Math.min(userTotalPages, safeUserPage + 1))}
                 disabled={userPage >= userTotalPages}
                 className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40"
               >
@@ -601,14 +601,14 @@ export default function LiveActivityTab() {
             <span>Page {sessionPage} / {sessionTotalPages}</span>
             <div className="flex items-center gap-1">
               <button
-                onClick={() => setSessionPage(p => Math.max(1, p - 1))}
+                onClick={() => setSessionPage(Math.max(1, safeSessionPage - 1))}
                 disabled={sessionPage <= 1}
                 className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setSessionPage(p => Math.min(sessionTotalPages, p + 1))}
+                onClick={() => setSessionPage(Math.min(sessionTotalPages, safeSessionPage + 1))}
                 disabled={sessionPage >= sessionTotalPages}
                 className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40"
               >
