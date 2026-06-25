@@ -17,8 +17,13 @@ const REPORT_SCHEMA_VERSION = '1.2.0';
 const CACHE_KEY = 'phlabs.admin.semrushGeoCache.v2';
 const PENDING_KEY = 'phlabs.admin.semrushGeoPending.v1';
 const RUN_HISTORY_KEY = 'phlabs.admin.semrushRunHistory.v1';
+const IN_PROGRESS_KEY = 'phlabs.admin.semrushInProgress.v1';
+const CONCURRENCY_KEY = 'phlabs.admin.semrushConcurrency.v1';
 const CACHE_LIMIT = 20;
 const RUN_HISTORY_LIMIT = 100;
+const IN_PROGRESS_TTL_MS = 30 * 60 * 1000; // 30 min — stale runs after this
+const MAX_RETRIES = 3;
+const BACKOFF_BASE_MS = 600;
 
 interface RunHistoryEntry {
   id: string;
@@ -51,6 +56,128 @@ function pushRunHistory(entry: RunHistoryEntry): RunHistoryEntry[] {
 }
 function clearRunHistory() {
   try { window.localStorage.removeItem(RUN_HISTORY_KEY); } catch { /* */ }
+}
+
+// ----- In-progress run persistence (survives page refresh) -----
+interface InProgressRun {
+  phrase: string;
+  mode: 'all' | 'resume' | 'failed';
+  startedAt: string;
+  dbList: string[];       // databases planned for this run
+  completed: string[];    // databases finished (success OR errored)
+  concurrency: number;
+}
+function loadInProgress(): InProgressRun | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(IN_PROGRESS_KEY);
+    if (!raw) return null;
+    const p = JSON.parse(raw) as InProgressRun;
+    if (!p?.phrase || !Array.isArray(p.dbList)) return null;
+    // Drop stale runs
+    if (Date.now() - new Date(p.startedAt).getTime() > IN_PROGRESS_TTL_MS) {
+      window.localStorage.removeItem(IN_PROGRESS_KEY);
+      return null;
+    }
+    return p;
+  } catch { return null; }
+}
+function saveInProgress(p: InProgressRun | null) {
+  try {
+    if (p == null) window.localStorage.removeItem(IN_PROGRESS_KEY);
+    else window.localStorage.setItem(IN_PROGRESS_KEY, JSON.stringify(p));
+  } catch { /* quota */ }
+}
+
+// ----- Concurrency preference -----
+function loadConcurrency(): number {
+  if (typeof window === 'undefined') return 4;
+  try {
+    const raw = Number(window.localStorage.getItem(CONCURRENCY_KEY));
+    if (!Number.isFinite(raw) || raw < 1 || raw > 8) return 4;
+    return Math.floor(raw);
+  } catch { return 4; }
+}
+function saveConcurrency(n: number) {
+  try { window.localStorage.setItem(CONCURRENCY_KEY, String(n)); } catch { /* */ }
+}
+
+// ----- Retry queue with concurrency cap + exponential backoff -----
+function isRetryableMessage(msg: string): boolean {
+  const m = msg.toLowerCase();
+  // 134 = total limit exceeded (NOT retryable — quota issue).
+  if (m.includes('134') || m.includes('limit exceeded')) return false;
+  // network / rate limit / transient
+  return /(429|rate|timeout|timed out|network|fetch failed|503|502|504|temporar)/.test(m);
+}
+
+async function runWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T, index: number) => Promise<void>,
+): Promise<void> {
+  const c = Math.max(1, Math.min(8, concurrency));
+  let cursor = 0;
+  const runners: Promise<void>[] = [];
+  for (let i = 0; i < c; i++) {
+    runners.push((async () => {
+      while (true) {
+        const idx = cursor++;
+        if (idx >= items.length) return;
+        await worker(items[idx], idx);
+      }
+    })());
+  }
+  await Promise.all(runners);
+}
+
+// ----- Run history exports -----
+function runHistoryToCsv(rows: RunHistoryEntry[]): string {
+  const headers = [
+    'id', 'at', 'phrase', 'term', 'mode',
+    'requested', 'succeeded', 'failed', 'unitsUsed', 'quotaRemaining',
+    'coverageCovered', 'coverageCatalog', 'coverageComplete',
+    'failedDatabases', 'error',
+  ];
+  const esc = (v: unknown) => {
+    const s = v == null ? '' : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const lines = [headers.join(',')];
+  for (const r of rows) {
+    lines.push([
+      r.id, r.at, r.phrase, r.term, r.mode,
+      r.requested, r.succeeded, r.failed, r.unitsUsed,
+      r.quotaRemaining ?? '',
+      r.coverageAfter.covered, r.coverageAfter.catalog, r.coverageAfter.complete,
+      r.failedDatabases.join('|'), r.error ?? '',
+    ].map(esc).join(','));
+  }
+  return lines.join('\n');
+}
+function downloadBlob(filename: string, mime: string, content: string) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function downloadRunHistory(rows: RunHistoryEntry[], format: 'csv' | 'json') {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  if (format === 'csv') {
+    downloadBlob(`semrush-run-history-${stamp}.csv`, 'text/csv;charset=utf-8', runHistoryToCsv(rows));
+  } else {
+    const payload = {
+      schemaVersion: REPORT_SCHEMA_VERSION,
+      exportedAt: new Date().toISOString(),
+      reportType: 'semrush-run-history',
+      count: rows.length,
+      runs: rows,
+    };
+    downloadBlob(`semrush-run-history-${stamp}.json`, 'application/json', JSON.stringify(payload, null, 2));
+  }
 }
 
 interface OverviewData {
@@ -405,8 +532,11 @@ function KeywordGeoPanel() {
   const [topN, setTopN] = useState<number | 'all'>('all');
   const [progress, setProgress] = useState<{ done: number; total: number; current: string | null } | null>(null);
   const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>([]);
+  const [concurrency, setConcurrency] = useState<number>(() => loadConcurrency());
   const resumeTimerRef = useRef<number | null>(null);
   const autoResumeFiredRef = useRef(false);
+  const restoredRunRef = useRef(false);
+  useEffect(() => { saveConcurrency(concurrency); }, [concurrency]);
 
   // Load cache + pending + initial quota + run history on mount
   useEffect(() => {
@@ -505,6 +635,13 @@ function KeywordGeoPanel() {
     let lastCatalog: CatalogEntry[] = catalog;
     let runErr: string | null = null;
 
+    // Persist the planned run so a refresh can resume it.
+    const completedSet = new Set<string>();
+    saveInProgress({
+      phrase: term, mode, startedAt,
+      dbList, completed: [], concurrency,
+    });
+
     try {
       const idToken = await getAdminIdToken();
 
@@ -518,32 +655,51 @@ function KeywordGeoPanel() {
         persistCache({ ...cache, [key]: cleaned });
       }
 
-      // Dispatch one call per database in parallel; update progress as each
-      // resolves so the UI shows X / N completed live.
-      const tasks = dbList.map(async (db) => {
-        try {
-          const res = (await fetchGeo({ data: {
-            idToken, phrase: term, databases: [db], autoLimit: true,
-          } })) as ServerGeoResponse;
-          aggRows.push(...res.rows.map((r) => ({ ...r, fetchedAt: res.fetchedAt })));
-          trimmedAll.push(...res.trimmedByQuota);
-          quotaRef.current = res.quota.after;
-          unitsUsedTotal += res.quota.unitsUsed;
-          if (res.catalog.length) lastCatalog = res.catalog;
-        } catch (e: any) {
-          // Convert exception into an errored row so it shows up in cache + retry list.
+      // Worker pool: process dbList with bounded concurrency.
+      // Each task retries transient failures with exponential backoff.
+      await runWithConcurrency(dbList, concurrency, async (db) => {
+        let lastErr: any = null;
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+          try {
+            const res = (await fetchGeo({ data: {
+              idToken, phrase: term, databases: [db], autoLimit: true,
+            } })) as ServerGeoResponse;
+            aggRows.push(...res.rows.map((r) => ({ ...r, fetchedAt: res.fetchedAt })));
+            trimmedAll.push(...res.trimmedByQuota);
+            quotaRef.current = res.quota.after;
+            unitsUsedTotal += res.quota.unitsUsed;
+            if (res.catalog.length) lastCatalog = res.catalog;
+            lastErr = null;
+            break;
+          } catch (e: any) {
+            lastErr = e;
+            const msg = String(e?.message ?? 'request failed');
+            if (attempt < MAX_RETRIES && isRetryableMessage(msg)) {
+              // Exponential backoff + jitter — keeps us under Semrush's burst limits.
+              const delay = BACKOFF_BASE_MS * Math.pow(2, attempt) + Math.floor(Math.random() * 250);
+              await new Promise((r) => setTimeout(r, delay));
+              continue;
+            }
+            break;
+          }
+        }
+        if (lastErr != null) {
           aggRows.push({
             database: db,
             country: catalog.find((c) => c.id === db)?.country ?? db.toUpperCase(),
             volume: null, cpc: null, competition: null, results: null,
-            error: String(e?.message ?? 'request failed').slice(0, 200),
+            error: String(lastErr?.message ?? 'request failed').slice(0, 200),
             fetchedAt: new Date().toISOString(),
           });
-        } finally {
-          setProgress((p) => p ? { done: p.done + 1, total: p.total, current: db } : p);
         }
+        completedSet.add(db);
+        setProgress((p) => p ? { done: completedSet.size, total: p.total, current: db } : p);
+        saveInProgress({
+          phrase: term, mode, startedAt,
+          dbList, completed: Array.from(completedSet), concurrency,
+        });
       });
-      await Promise.all(tasks);
+
 
       const finishedAt = new Date().toISOString();
       const mergedRows = mergeRows(prior?.rows ?? [], aggRows);
@@ -611,8 +767,9 @@ function KeywordGeoPanel() {
     } finally {
       setLoading(false);
       setProgress(null);
+      saveInProgress(null);
     }
-  }, [phrase, topN, catalog, cache, fetchGeo]);
+  }, [phrase, topN, catalog, cache, fetchGeo, concurrency]);
 
   // Auto-resume when the quota window resets
   useEffect(() => {
@@ -649,6 +806,30 @@ function KeywordGeoPanel() {
       }
     };
   }, [quota?.resetAt, runLookup, refreshQuota]);
+
+  // Resume an in-progress run that was interrupted by a page refresh.
+  // Waits until catalog is hydrated (quota loaded) so we know the full DB list.
+  useEffect(() => {
+    if (restoredRunRef.current) return;
+    if (loading) return;
+    const ip = loadInProgress();
+    if (!ip) return;
+    const remaining = ip.dbList.filter((d) => !ip.completed.includes(d));
+    if (remaining.length === 0) {
+      saveInProgress(null);
+      restoredRunRef.current = true;
+      return;
+    }
+    // Surface progress immediately so the UI reflects the interrupted run.
+    setProgress({
+      done: ip.completed.length,
+      total: ip.dbList.length,
+      current: null,
+    });
+    restoredRunRef.current = true;
+    // Resume — runLookup('resume') will fetch any still-missing countries for this phrase.
+    void runLookup('resume', ip.phrase);
+  }, [runLookup, loading]);
 
   const triggerDownload = (filename: string, mime: string, content: string) => {
     const blob = new Blob([content], { type: mime });
@@ -762,7 +943,7 @@ function KeywordGeoPanel() {
         }}
       />
 
-      <div className="p-4 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 items-end">
+      <div className="p-4 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto_auto_auto] gap-3 items-end">
         <div>
           <label className="block text-xs font-semibold text-slate-300 mb-1">Keyword / phrase</label>
           <input
@@ -787,6 +968,24 @@ function KeywordGeoPanel() {
             <option value="10">Top 10</option>
             <option value="15">Top 15</option>
             <option value="20">Top 20</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-slate-300 mb-1" title="Parallel API calls — lower to avoid Semrush rate limits">
+            Parallel
+          </label>
+          <select
+            value={String(concurrency)}
+            onChange={(e) => setConcurrency(Number(e.target.value))}
+            className="min-h-[48px] px-3 bg-slate-800 border-2 border-slate-600 text-white rounded-lg text-sm"
+            title="How many countries are fetched simultaneously (1–8). Lower = gentler on Semrush rate limits."
+          >
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="6">6</option>
+            <option value="8">8</option>
           </select>
         </div>
         <button
@@ -1116,13 +1315,29 @@ function KeywordGeoPanel() {
             Audit log of every Semrush run · last {RUN_HISTORY_LIMIT} stored locally
           </span>
           {runHistory.length > 0 && (
-            <button
-              onClick={() => { clearRunHistory(); setRunHistory([]); }}
-              className="ml-auto text-xs text-slate-400 hover:text-red-300 inline-flex items-center gap-1"
-              title="Clear run history"
-            >
-              <Trash2 className="w-3.5 h-3.5" /> Clear history
-            </button>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={() => downloadRunHistory(runHistory, 'csv')}
+                className="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-white rounded inline-flex items-center gap-1"
+                title="Download run history as CSV"
+              >
+                <Download className="w-3.5 h-3.5" /> CSV
+              </button>
+              <button
+                onClick={() => downloadRunHistory(runHistory, 'json')}
+                className="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-white rounded inline-flex items-center gap-1"
+                title="Download run history as JSON (includes schema + metadata)"
+              >
+                <Download className="w-3.5 h-3.5" /> JSON
+              </button>
+              <button
+                onClick={() => { clearRunHistory(); setRunHistory([]); }}
+                className="text-xs text-slate-400 hover:text-red-300 inline-flex items-center gap-1"
+                title="Clear run history"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Clear history
+              </button>
+            </div>
           )}
         </div>
         {runHistory.length === 0 ? (
