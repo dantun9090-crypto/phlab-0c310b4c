@@ -21,13 +21,28 @@ const CURRENCY = "GBP";
  * (or in a separate Promotions feed). Override via env
  * `MERCHANT_PROMO_IDS` (comma-separated) without redeploy.
  *
- * Default: a single launch promo "PHL_LAUNCH" — create the matching
- * promotion in Merchant Center for the badge to render on listings.
+ * SETUP (required for the promo badge to render in Google listings):
+ *   1. Merchant Center → Marketing → Promotions → "Create promotion".
+ *   2. Set "Promotion ID" to exactly `PHL_LAUNCH` (or each ID supplied
+ *      via the `MERCHANT_PROMO_IDS` env var, comma-separated).
+ *   3. Configure offer details (e.g. "10% off", "Free shipping"),
+ *      destination = Shopping ads + free listings, country = GB.
+ *   4. Submit and wait for review — until "Active", the badge will not
+ *      appear even though the feed already references the ID.
+ *
+ * The feed emits one `<g:promotion_id>` tag per ID for every item; an
+ * unknown / unreviewed ID is silently ignored by Google.
  */
-const MERCHANT_PROMO_IDS: string[] = (process.env.MERCHANT_PROMO_IDS || "PHL_LAUNCH")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
+export const DEFAULT_MERCHANT_PROMO_ID = "PHL_LAUNCH";
+
+export function getMerchantPromoIds(): string[] {
+  return (process.env.MERCHANT_PROMO_IDS || DEFAULT_MERCHANT_PROMO_ID)
+    .split(",")
+    .map((s: string) => s.trim())
+    .filter(Boolean);
+}
+
+const MERCHANT_PROMO_IDS: string[] = getMerchantPromoIds();
 // Google UK product taxonomy: Business & Industrial > Science & Laboratory >
 // Biochemicals (ID 6975). Peptide research compounds are biochemicals under
 // the UK taxonomy. Numeric IDs are preferred by Google and keep us out of
@@ -457,7 +472,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                 `    <g:custom_label_0>${xmlEscape(customLabel)}</g:custom_label_0>`,
                 v.sizeLabel ? `    <g:unit_pricing_measure>${xmlEscape(v.sizeLabel.replace(/\s+/g, ""))}</g:unit_pricing_measure>` : null,
                 ...MERCHANT_PROMO_IDS.map(
-                  (pid) => `    <g:promotion_id>${xmlEscape(pid)}</g:promotion_id>`,
+                  (pid: string) => `    <g:promotion_id>${xmlEscape(pid)}</g:promotion_id>`,
                 ),
                 `  </item>`,
               ].filter(Boolean).join("\n");
