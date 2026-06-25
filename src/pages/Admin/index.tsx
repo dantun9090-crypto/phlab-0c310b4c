@@ -63,6 +63,7 @@ import WallidBadgesTab from './tabs/WallidBadgesTab';
 import WallidBanksTab from './tabs/WallidBanksTab';
 import WatchdogTab from './tabs/WatchdogTab';
 import HealthMonitorTab from './tabs/HealthMonitorTab';
+import ResearchIncidentsTab from './tabs/ResearchIncidentsTab';
 import LiveActivityTab from './tabs/LiveActivityTab';
 import ToastAuditTab from './tabs/ToastAuditTab';
 
@@ -456,6 +457,7 @@ export default function AdminPage() {
        case 'wallidbanks': return <WallidBanksTab />;
         case 'watchdog': return <WatchdogTab />;
         case 'healthmonitor': return <HealthMonitorTab />;
+        case 'researchincidents': return <ResearchIncidentsTab />;
         default: return <DashboardTab />;
       }
     })();
@@ -476,7 +478,7 @@ export default function AdminPage() {
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', freegift: 'Free Gift Promo', diagnostics: 'Diagnostics',
     prerenderstatus: 'Prerender Status', cacherecache: 'Cache & Recache', gscmonitor: 'GSC Monitor', urlmonitor: 'URL Monitor', merchantfeed: 'Merchant Feed', bingfeed: 'Bing Shopping',
     securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', shopify: 'Shopify', semrush: 'Semrush',
-    royalmail: 'Royal Mail Labels', webhooktest: 'Webhook Test', wallidpreview: 'Wallid Preview', wallidbadges: 'Wallid Badges', wallidbanks: 'Wallid Banks', watchdog: 'Watchdog', healthmonitor: 'Health Monitor',
+    royalmail: 'Royal Mail Labels', webhooktest: 'Webhook Test', wallidpreview: 'Wallid Preview', wallidbadges: 'Wallid Badges', wallidbanks: 'Wallid Banks', watchdog: 'Watchdog', healthmonitor: 'Health Monitor', researchincidents: 'Research Incidents',
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
 
