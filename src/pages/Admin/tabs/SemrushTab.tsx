@@ -943,7 +943,7 @@ function KeywordGeoPanel() {
         }}
       />
 
-      <div className="p-4 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 items-end">
+      <div className="p-4 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto_auto_auto] gap-3 items-end">
         <div>
           <label className="block text-xs font-semibold text-slate-300 mb-1">Keyword / phrase</label>
           <input
