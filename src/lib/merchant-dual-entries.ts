@@ -19,7 +19,7 @@ export type DualEntryVariant = {
   sizeLabel: string;
   /** Entry A title, e.g. "Retatrutide 10 mg" */
   titleA: string;
-  /** Entry A URL path, e.g. "/products/RET10A" (alphanumeric SKU code) */
+  /** Entry A URL path, e.g. "/products/phl-01rt" (product code) */
   linkA: string;
   /** Entry B title, e.g. "Reta-PHL 10 mg" */
   titleB: string;
