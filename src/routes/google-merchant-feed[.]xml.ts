@@ -14,6 +14,20 @@ const CATEGORY_B_PATH = "Business & Industrial > Science & Laboratory > Laborato
 const BASE_URL = "https://phlabs.co.uk";
 const BRAND = "PH Labs";
 const CURRENCY = "GBP";
+
+/**
+ * Promotion IDs attached to every item in the feed. These must match
+ * promotions defined in Google Merchant Center → Marketing → Promotions
+ * (or in a separate Promotions feed). Override via env
+ * `MERCHANT_PROMO_IDS` (comma-separated) without redeploy.
+ *
+ * Default: a single launch promo "PHL_LAUNCH" — create the matching
+ * promotion in Merchant Center for the badge to render on listings.
+ */
+const MERCHANT_PROMO_IDS: string[] = (process.env.MERCHANT_PROMO_IDS || "PHL_LAUNCH")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 // Google UK product taxonomy: Business & Industrial > Science & Laboratory >
 // Biochemicals (ID 6975). Peptide research compounds are biochemicals under
 // the UK taxonomy. Numeric IDs are preferred by Google and keep us out of
