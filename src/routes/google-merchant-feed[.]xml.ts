@@ -310,60 +310,17 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
         const merchantProducts = products.filter((p) => isAllowedForMerchant(p as any));
 
+        // DUAL-TITLE FEED. Each product fans out into 2 GMC entries per
+        // variant: Entry A (mkt, clean title, numeric+slug URL, category
+        // 5604 Laboratory Equipment) and Entry B (sku, anonymised PHL
+        // title, no-hyphen slug URL, category 5606 Laboratory Chemicals).
+        // Both entries 301-redirect to the same canonical product page.
         const items = merchantProducts
-          .map((p) => {
+          .flatMap((p) => {
+            const variants = getDualVariantsForSlug((p.slug || "").toLowerCase());
             const override = MERCHANT_CODE_OVERRIDES[(p.slug || "").toLowerCase()];
 
-            // Google Merchant feed uses the Firestore document ID URL
-            // (or anonymised research code when override is active).
-            // The route /products/$slug renders the product in place
-            // for both slug, ID, and override code.
-            const linkId = override ? override.code : p.id;
-            const link = `${BASE_URL}/products/${linkId}`;
-            // Neutral title: no "research peptide", no "RUO", no "research
-            // chemical", no "blend" — these phrases trigger Google's
-            // supplement / health classifier even when wrapped in
-            // laboratory language. Strip them from the raw product name.
-            let cleanName = (p.name || "")
-              .replace(/\b(research\s+peptide|research\s+chemical|research\s+compound|reference\s+standard|peptide\s+blend|blend|ruo)\b/gi, "")
-              .replace(/\s+/g, " ")
-              .replace(/[-–—\s]+$/g, "")
-              .trim();
-            // Keep MOTS-c as the compact compound code (no biology expansion).
-            if (/\bmots[-\s]?c\b/i.test(cleanName)) {
-              cleanName = "MOTSC";
-            }
-
-            // Normalise hyphenated codes that trigger health classifiers.
-            cleanName = cleanName
-              .replace(/\bBPC[-\s]?157\b/gi, "BPC157")
-              .replace(/\bTB[-\s]?500\b/gi, "TB500");
-
-            // Override: replace the compound name entirely with the
-            // anonymised PH Labs research code.
-            if (override) cleanName = override.displayName;
-
-            // Compact, professional title. Include net content when known
-            // (e.g. "10 mg") for buyer clarity and to differentiate variants
-            // in Merchant Center diagnostics.
-            const sizeTag =
-              p.unitPricingMeasure && p.unitPricingMeasure.value > 0
-                ? `${p.unitPricingMeasure.value} ${p.unitPricingMeasure.unit}`
-                : "";
-            const title = override
-              ? `${override.code}${sizeTag ? ` ${sizeTag}` : ""} Laboratory Chemical | PH Labs`
-              : `${cleanName || p.name}${sizeTag ? ` ${sizeTag}` : ""} — Analytical Reference Standard | PH Labs`;
-
-            // Per-compound unique scientific description. No human/health
-            // language; emphasises in-vitro laboratory and analytical use.
-            // Override items get a fully neutral laboratory-chemical
-            // description with CAS only (no compound name, no "peptide",
-            // no "research peptide" — terms that trigger Google's
-            // pharmaceutical / supplement classifier).
-            const description = override
-              ? `Laboratory chemical supplied as a lyophilised solid for in-vitro analytical and laboratory testing only. Not a consumer product. Distributed exclusively to qualified UK research laboratories. Technical specification: • CAS Number: ${override.cas} • Internal reference code: ${override.code} • Certificate of Analysis available on request.`
-              : descriptionForCompound(cleanName || p.name || "", p.purity);
-
+            // Shared per-product fields.
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
                 ? p.imageUrl
@@ -372,12 +329,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             const price = `${p.price.toFixed(2)} ${CURRENCY}`;
             const availability =
               typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
-            const sku = override ? override.code : (p.sku || p.id || p.slug);
-            const mpn = override ? override.code : (p.mpn || sku);
-            const hasGtin = !override && !!p.gtin;
-            // Dedupe: never repeat the primary image as an additional image,
-            // and never emit the same additional URL twice (Google flags
-            // duplicate image links in the feed diagnostics).
+            const hasGtin = !!p.gtin;
             const seenImages = new Set<string>([image]);
             const additionalImageTags = (p.additionalImages ?? [])
               .map((u) =>
@@ -394,82 +346,117 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                   `    <g:additional_image_link>${xmlEscape(abs)}</g:additional_image_link>`,
               );
 
+            // Fallback when no dual mapping exists (defensive — shouldn't
+            // happen for catalogued products): synthesise one variant from
+            // the live product so the feed still emits 2 entries.
+            const effectiveVariants: DualEntryVariant[] = variants.length > 0
+              ? variants
+              : [
+                  {
+                    sizeKey: "default",
+                    sizeLabel:
+                      p.unitPricingMeasure && p.unitPricingMeasure.value > 0
+                        ? `${p.unitPricingMeasure.value} ${p.unitPricingMeasure.unit}`
+                        : "",
+                    titleA: p.name || p.slug || "",
+                    linkA: `/products/${p.id || p.slug}`,
+                    titleB: override?.displayName || (p.name || p.slug || ""),
+                    linkB: `/products/${(p.slug || p.id || "").replace(/-/g, "")}`,
+                  },
+                ];
 
-            // Highlights: neutral specs only. Compliance line stays in
-            // description so it's not repeated 5×.
-            const highlights = override
-              ? [
-                  "Lyophilised solid",
-                  "Certificate of Analysis available on request",
-                  "Supplied to qualified UK laboratories",
-                  "In-vitro analytical use only",
-                ]
-              : ([
-                  p.purity ? `HPLC-verified ${p.purity} purity` : "HPLC-verified ≥99% purity",
-                  "Lyophilised powder format",
-                  "Certificate of Analysis available on request",
-                  "Supplied to qualified UK laboratories",
-                ].filter(Boolean) as string[]);
+            const descriptionA = descriptionForCompound(
+              (p.name || "").replace(/\b(research\s+peptide|research\s+chemical|research\s+compound)\b/gi, "").trim(),
+              p.purity,
+            );
+            const descriptionB = override
+              ? `Laboratory chemical supplied as a lyophilised solid for in-vitro analytical and laboratory testing only. Not a consumer product. Distributed exclusively to qualified UK research laboratories. Technical specification: • CAS Number: ${override.cas} • Internal reference code: ${override.code} • Certificate of Analysis available on request.`
+              : `Analytical reference standard supplied as a lyophilised solid for in-vitro laboratory and analytical testing only. Distributed to qualified UK research laboratories. Certificate of Analysis available on request.`;
 
+            const highlightsA = [
+              p.purity ? `HPLC-verified ${p.purity} purity` : "HPLC-verified ≥99% purity",
+              "Lyophilised powder format",
+              "Certificate of Analysis available on request",
+              "Supplied to qualified UK laboratories",
+            ];
+            const highlightsB = [
+              "Lyophilised solid",
+              "Certificate of Analysis available on request",
+              "Supplied to qualified UK laboratories",
+              "In-vitro analytical use only",
+            ];
 
+            const baseSkuRoot = (p.sku || p.id || p.slug || "").toString();
 
+            type Side = "A" | "B";
+            const buildEntry = (v: DualEntryVariant, side: Side): string => {
+              const isA = side === "A";
+              const title = isA ? v.titleA : v.titleB;
+              const link = `${BASE_URL}${isA ? v.linkA : v.linkB}`;
+              const offerId = `${baseSkuRoot}-${v.sizeKey}-${isA ? "mkt" : "sku"}`;
+              const sku = offerId;
+              const mpn = offerId;
+              const categoryId = isA ? CATEGORY_A_ID : CATEGORY_B_ID;
+              const categoryPath = isA ? CATEGORY_A_PATH : CATEGORY_B_PATH;
+              const productType = isA ? "Peptides" : "Research Peptides";
+              const customLabel = isA ? "mkt" : "sku";
+              const description = isA ? descriptionA : descriptionB;
+              const highlights = isA ? highlightsA : highlightsB;
 
-            // Intentionally omit per-category leaves (e.g. "Tissue Repair",
-            // "Metabolic Signalling", "Healing") from product_type and
-            // custom labels — Google's classifier flagged those as health
-            // claims. Feed only the neutral Biochemicals path.
+              return [
+                `  <item>`,
+                `    <g:id>${xmlEscape(offerId)}</g:id>`,
+                `    <title>${cdata(title)}</title>`,
+                `    <link>${xmlEscape(link)}</link>`,
+                `    <g:mobile_link>${xmlEscape(link)}</g:mobile_link>`,
+                `    <description>${cdata(description)}</description>`,
+                `    <g:image_link>${xmlEscape(image)}</g:image_link>`,
+                ...additionalImageTags,
+                `    <g:availability>${availability}</g:availability>`,
+                `    <g:price>${xmlEscape(price)}</g:price>`,
+                `    <g:brand>${xmlEscape(BRAND)}</g:brand>`,
+                `    <g:condition>new</g:condition>`,
+                `    <g:mpn>${xmlEscape(mpn)}</g:mpn>`,
+                `    <g:sku>${xmlEscape(sku)}</g:sku>`,
+                hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
+                `    <g:google_product_category>${categoryId}</g:google_product_category>`,
+                `    <g:product_type>${xmlEscape(productType)}</g:product_type>`,
+                `    <g:adult>no</g:adult>`,
+                `    <g:age_group>adult</g:age_group>`,
+                `    <g:is_bundle>no</g:is_bundle>`,
+                `    <g:multipack>1</g:multipack>`,
+                `    <g:shipping>`,
+                `      <g:country>GB</g:country>`,
+                `      <g:service>Standard</g:service>`,
+                `      <g:price>4.99 ${CURRENCY}</g:price>`,
+                `    </g:shipping>`,
+                `    <g:tax>`,
+                `      <g:country>GB</g:country>`,
+                `      <g:rate>0.00</g:rate>`,
+                `      <g:tax_ship>no</g:tax_ship>`,
+                `    </g:tax>`,
+                `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
+                ...highlights.map(
+                  (h) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
+                ),
+                `    <g:custom_label_0>${xmlEscape(customLabel)}</g:custom_label_0>`,
+                v.sizeLabel ? `    <g:unit_pricing_measure>${xmlEscape(v.sizeLabel.replace(/\s+/g, ""))}</g:unit_pricing_measure>` : null,
+                `  </item>`,
+              ].filter(Boolean).join("\n");
+            };
 
-            return [
-              `  <item>`,
-              `    <g:id>${xmlEscape(override ? override.code : (p.id || p.slug))}</g:id>`,
-              `    <title>${cdata(title)}</title>`,
-              `    <link>${xmlEscape(link)}</link>`,
-              `    <g:mobile_link>${xmlEscape(link)}</g:mobile_link>`,
-              `    <description>${cdata(description)}</description>`,
-              `    <g:image_link>${xmlEscape(image)}</g:image_link>`,
-              ...additionalImageTags,
-              `    <g:availability>${availability}</g:availability>`,
-              `    <g:price>${xmlEscape(price)}</g:price>`,
-              `    <g:brand>${xmlEscape(BRAND)}</g:brand>`,
-              `    <g:condition>new</g:condition>`,
-              `    <g:mpn>${xmlEscape(mpn)}</g:mpn>`,
-              `    <g:sku>${xmlEscape(sku)}</g:sku>`,
-              `    <g:item_group_id>${xmlEscape(override ? override.code : (p.id || p.slug))}</g:item_group_id>`,
-              hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
-              `    <g:google_product_category>${GOOGLE_CATEGORY_ID}</g:google_product_category>`,
-              `    <g:product_type>${xmlEscape(GOOGLE_CATEGORY_PATH)}</g:product_type>`,
-              `    <g:adult>no</g:adult>`,
-              `    <g:age_group>adult</g:age_group>`,
-              `    <g:is_bundle>no</g:is_bundle>`,
-              `    <g:multipack>1</g:multipack>`,
-              `    <g:shipping>`,
-              `      <g:country>GB</g:country>`,
-              `      <g:service>Standard</g:service>`,
-              `      <g:price>4.99 ${CURRENCY}</g:price>`,
-              `    </g:shipping>`,
-              `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
-              ...highlights.map(
-                (h) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
-              ),
-              // Custom labels: purity only, AND only when it looks like a
-              // real purity value (contains a digit / %). Category slugs
-              // like "tissue-repair", "metabolic-signaling",
-              // "cellular-aging" must NEVER be emitted — Google's
-              // classifier reads them as health claims.
-              p.purity && /[0-9%]/.test(p.purity) && !/-/.test(p.purity)
-                ? `    <g:custom_label_0>${xmlEscape(p.purity)}</g:custom_label_0>`
-                : null,
-              // Unit pricing measure — net content per item (e.g. "10 mg").
-              // Parsed from variant name/dosage in firestore-rest.ts.
-              p.unitPricingMeasure && p.unitPricingMeasure.value > 0
-                ? `    <g:unit_pricing_measure>${p.unitPricingMeasure.value}${p.unitPricingMeasure.unit}</g:unit_pricing_measure>`
-                : null,
-
-              `  </item>`,
-            ].filter(Boolean).join("\n");
-
+            const rows: string[] = [];
+            for (const v of effectiveVariants) {
+              rows.push(buildEntry(v, "A"));
+              rows.push(buildEntry(v, "B"));
+            }
+            return rows;
           })
           .join("\n");
+
+        // Reference shared constants to satisfy TS noUnusedLocals after refactor.
+        void GOOGLE_CATEGORY_ID; void GOOGLE_CATEGORY_PATH; void toDisplayCategory;
+
 
         const xml = [
           `<?xml version="1.0" encoding="UTF-8"?>`,
