@@ -354,7 +354,9 @@ export default function ArticlePage() {
           { '@type': 'ListItem', position: 3, name: article.title, item: articleUrl },
         ],
       },
+      ...(article.extraSchema ?? []),
     ];
+
     const scriptEl = document.createElement('script');
     scriptEl.type = 'application/ld+json';
     scriptEl.id = 'article-schema';
