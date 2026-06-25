@@ -27,6 +27,7 @@ import { schedulePrecacheCurrentPage } from "@/lib/lkg-cache";
 import { clearStoreCachesForNewBuild } from "@/lib/build-cache";
 import { PageviewBeacon } from "@/components/PageviewBeacon";
 import { initWebVitals } from "@/lib/web-vitals";
+import { installErrorMonitor } from "@/lib/error-monitor";
 void _clearClientCaches;
 
 function NotFoundComponent() {
