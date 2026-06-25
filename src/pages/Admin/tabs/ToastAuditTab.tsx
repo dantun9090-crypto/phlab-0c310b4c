@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ScrollText, Search, Copy, Check, RefreshCw, Filter, BellOff, CheckCircle2, XCircle, ShieldOff,
+  ScrollText, Search, Copy, Check, RefreshCw, Filter, BellOff, CheckCircle2, XCircle, ShieldOff, Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   db, collection, query, orderBy, limit as fbLimit, onSnapshot,
 } from '@/lib/firebase';
+
+/** Escape a value for CSV (RFC 4180): wrap in quotes if it contains comma/quote/newline. */
+function csvCell(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  const s = String(value);
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
 
 type OutcomeFilter = 'all' | 'delivered' | 'suppressed' | 'suppressed:pref-off' | 'suppressed:quiet-hours' | 'suppressed:dedup' | 'suppressed:bot';
 type KindFilter = 'all' | 'signup' | 'visitor';
