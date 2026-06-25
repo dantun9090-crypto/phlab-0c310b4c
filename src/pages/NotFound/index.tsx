@@ -28,6 +28,53 @@ export default function NotFoundPage() {
     if (!robots) { robots = document.createElement('meta'); robots.setAttribute('name', 'robots'); document.head.appendChild(robots); }
     robots.setAttribute('content', 'noindex, follow');
 
+    // ── 404 monitoring: report to GA4 (gtag) + dataLayer + console ──────────
+    // Lets us spot broken links fast via GA4 → Reports → Engagement → Events
+    // (event name: `page_not_found`).
+    try {
+      const path = window.location.pathname + window.location.search;
+      const referrer = document.referrer || '(direct)';
+      const payload = {
+        page_path: path,
+        page_location: window.location.href,
+        page_referrer: referrer,
+        user_agent: navigator.userAgent,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Dedupe within a single session per (path|referrer) to avoid noise
+      // from SPA double-renders / React StrictMode.
+      const dedupeKey = `phl_404_${path}|${referrer}`;
+      const seen = sessionStorage.getItem(dedupeKey);
+      if (!seen) {
+        sessionStorage.setItem(dedupeKey, '1');
+
+        const w = window as unknown as {
+          gtag?: (...args: unknown[]) => void;
+          dataLayer?: unknown[];
+        };
+
+        // GA4 standard exception + custom event
+        w.gtag?.('event', 'page_not_found', {
+          ...payload,
+          non_interaction: true,
+        });
+        w.gtag?.('event', 'exception', {
+          description: `404: ${path} (ref: ${referrer})`,
+          fatal: false,
+        });
+
+        // GTM / dataLayer fallback (works even if gtag.js not yet loaded)
+        (w.dataLayer ||= []).push({ event: 'page_not_found', ...payload });
+
+        // Search Console / log-shipping friendly console marker
+        // eslint-disable-next-line no-console
+        console.warn('[PHL 404]', payload);
+      }
+    } catch {
+      /* monitoring must never break the 404 page */
+    }
+
     return () => {
       // Clean up so the tag doesn't leak into other routes when SPA-navigating away.
       status?.remove();
