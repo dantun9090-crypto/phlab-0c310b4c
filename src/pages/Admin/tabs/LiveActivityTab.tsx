@@ -269,7 +269,7 @@ export default function LiveActivityTab() {
         if (seenUserIdsRef.current) {
           const fresh = docs.filter(u => !seenUserIdsRef.current!.has(u.uid));
           fresh.slice(0, 3).forEach(u => {
-            maybeToast('signup', 'New customer registered', u.email || u.uid);
+            maybeToast('signup', 'New customer registered', u.email || u.uid, u.uid);
           });
         }
         seenUserIdsRef.current = ids;
@@ -332,7 +332,12 @@ export default function LiveActivityTab() {
         if (seenSessionIdsRef.current) {
           const fresh = arr.filter(s => !seenSessionIdsRef.current!.has(s.sessionId));
           fresh.slice(0, 3).forEach(s => {
-            maybeToast('visitor', 'New visitor online', `${s.path || '/'} · ${shortUA(s.userAgent)}`);
+            maybeToast(
+              'visitor',
+              'New visitor online',
+              `${s.path || '/'} · ${shortUA(s.userAgent)}`,
+              s.visitorId || s.sessionId,
+            );
           });
         }
         seenSessionIdsRef.current = ids;
@@ -390,7 +395,7 @@ export default function LiveActivityTab() {
     safeSessionPage * prefs.sessionPageSize
   );
 
-  const quietActive = prefs.quietEnabled && isQuietNow(prefs.quietStart, prefs.quietEnd);
+  const quietActive = prefs.quietEnabled && isQuietNow(prefs.quietStart, prefs.quietEnd, new Date(), prefs.quietTimezone);
 
 
   return (
