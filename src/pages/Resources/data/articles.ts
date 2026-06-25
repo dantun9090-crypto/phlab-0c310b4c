@@ -199,8 +199,9 @@ For a peptide such as BPC-157 (sequence: GEPPPGKPADDAGLV, MW 1419.5 Da), the cor
     ],
     relatedSlugs: ['hplc-testing-explained', 'tb-500-thymosin-beta-4', 'peptide-storage-reconstitution'],
     content: [
-
+      {
         body: `Body-protective compound 157 (BPC-157) is a synthetic pentadecapeptide comprising the sequence Gly-Glu-Pro-Pro-Pro-Gly-Lys-Pro-Ala-Asp-Asp-Ala-Gly-Leu-Val (GEPPPGKPADDAGLV). It is derived from a region of the human gastric juice protein BPC and was first described by Sikirić and colleagues at the University of Zagreb in the early 1990s. Despite its gastric origin, <a href="/products/bpc-157" style="color: #10b981; text-decoration: underline;">BPC-157</a> has since been investigated in preclinical models across a remarkably wide range of tissue types, including tendon, ligament, muscle, bone, vascular endothelium, and the central nervous system. <strong><a href="/products/bpc-157" style="color: #10b981; text-decoration: underline; font-weight: 700;">Buy research-grade BPC-157 (≥99% HPLC)</a></strong>.`
+
       },
       {
         heading: 'Molecular Targets and Signalling Pathways',
