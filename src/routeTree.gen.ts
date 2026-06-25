@@ -27,6 +27,7 @@ import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.mer
 import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wallid'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
+import { Route as ApiPublicErrorMonitorRouteImport } from './routes/api/public/error-monitor'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as ApiPublicCoaPdfRouteImport } from './routes/api/public/coa-pdf'
 import { Route as ApiPublicCacheConfigRouteImport } from './routes/api/public/cache-config'
@@ -142,6 +143,11 @@ const ApiPublicPostPublishCheckRoute =
     path: '/api/public/post-publish-check',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicErrorMonitorRoute = ApiPublicErrorMonitorRouteImport.update({
+  id: '/api/public/error-monitor',
+  path: '/api/public/error-monitor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
   id: '/api/public/csp-report',
   path: '/api/public/csp-report',
@@ -281,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
@@ -322,6 +329,7 @@ export interface FileRoutesByTo {
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
@@ -364,6 +372,7 @@ export interface FileRoutesById {
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
@@ -407,6 +416,7 @@ export interface FileRouteTypes {
     | '/api/public/cache-config'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
+    | '/api/public/error-monitor'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
     | '/api/webhooks/wallid'
@@ -448,6 +458,7 @@ export interface FileRouteTypes {
     | '/api/public/cache-config'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
+    | '/api/public/error-monitor'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
     | '/api/webhooks/wallid'
@@ -489,6 +500,7 @@ export interface FileRouteTypes {
     | '/api/public/cache-config'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
+    | '/api/public/error-monitor'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
     | '/api/webhooks/wallid'
@@ -531,6 +543,7 @@ export interface RootRouteChildren {
   ApiPublicCacheConfigRoute: typeof ApiPublicCacheConfigRoute
   ApiPublicCoaPdfRoute: typeof ApiPublicCoaPdfRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
+  ApiPublicErrorMonitorRoute: typeof ApiPublicErrorMonitorRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
   ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
@@ -675,6 +688,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/post-publish-check'
       fullPath: '/api/public/post-publish-check'
       preLoaderRoute: typeof ApiPublicPostPublishCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/error-monitor': {
+      id: '/api/public/error-monitor'
+      path: '/api/public/error-monitor'
+      fullPath: '/api/public/error-monitor'
+      preLoaderRoute: typeof ApiPublicErrorMonitorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/csp-report': {
@@ -851,6 +871,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCacheConfigRoute: ApiPublicCacheConfigRoute,
   ApiPublicCoaPdfRoute: ApiPublicCoaPdfRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
+  ApiPublicErrorMonitorRoute: ApiPublicErrorMonitorRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
   ApiWebhooksWallidRoute: ApiWebhooksWallidRoute,
