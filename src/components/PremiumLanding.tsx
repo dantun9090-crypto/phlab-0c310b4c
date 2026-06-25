@@ -94,7 +94,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
       `}</style>
 
       {/* ── TOP BAR ── */}
-      <div className="border-b border-white/10 bg-[#060b18]/95 backdrop-blur sticky top-0 z-30">
+      <div className="mobile-no-blur border-b border-white/10 bg-[#060b18]/95 backdrop-blur sticky top-0 z-30">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5 text-[10.5px] uppercase tracking-[0.35em] text-white/60">
           <span className="lux-fade d1 flex items-center gap-2.5">
             <span className="inline-block h-1.5 w-1.5 rounded-full gold-bg" />
