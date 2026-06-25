@@ -18,7 +18,8 @@ export interface IncidentRow {
   referrer?: string;
   userAgent?: string;
   message?: string;
-  details?: Record<string, unknown>;
+  /** JSON-encoded details payload (kept as string for serialization safety). */
+  detailsJson?: string;
   ip?: string;
 }
 
