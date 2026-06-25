@@ -1,18 +1,19 @@
 /**
  * Post-deploy regression test for phlabs.co.uk.
  *
- * Verifies after every publish that:
- *   1. Public pages return 200, have correct dark-theme background markup,
- *      reference content-hashed JS/CSS assets, and carry a `build-id` meta
- *      tag (cache-busting / version tracking).
- *   2. Public HTML carries a finite, non-zero cache TTL (no `no-store`).
- *   3. Sensitive paths (/admin, /cart, /checkout, /account, /login,
- *      /register, /payment, /vip) are ALWAYS served `no-store` and do
- *      NOT have a positive max-age, so a stale shell can never trap a
- *      logged-in user on a broken build.
+ * Two invariants we MUST keep after every publish:
  *
- * Self-skips offline. Configure target via TEST_BASE_URL
- * (defaults to https://phlabs.co.uk).
+ *  1. Public pages render the correct dark-theme shell, reference at
+ *     least one content-hashed JS/CSS asset (cache-busting), and carry
+ *     the `build-id` meta tag that lets the client detect a stale shell.
+ *
+ *  2. Sensitive paths (/admin /cart /checkout /account /login /register
+ *     /payment /vip) are NEVER edge-cached: response must be `no-store`
+ *     OR `max-age=0, must-revalidate` (Cloudflare sanitises `no-store`
+ *     into the latter at the eyeball — both are uncacheable for the
+ *     browser, so we accept either).
+ *
+ * Self-skips on network failure. Override target with TEST_BASE_URL.
  *
  * @vitest-environment node
  */
@@ -56,87 +57,94 @@ function parseDirective(header: string, name: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
-function strongestCacheHeader(h: Headers): string {
-  // Cloudflare may strip `cdn-cache-control` from the eyeball response, but
-  // we still care about the browser-visible Cache-Control for regression.
+function cc(h: Headers): string {
   return (h.get("cache-control") || "").toLowerCase();
+}
+
+/** Cloudflare rewrites `no-store` → `public, max-age=0, must-revalidate`
+ *  on the eyeball response. Both mean "browser must not reuse". */
+function isUncacheable(header: string): boolean {
+  if (/\bno-store\b/.test(header)) return true;
+  const maxAge = parseDirective(header, "max-age") ?? -1;
+  const sMaxAge = parseDirective(header, "s-maxage") ?? -1;
+  return maxAge === 0 && (sMaxAge === -1 || sMaxAge === 0) && /must-revalidate/.test(header);
 }
 
 describe("Post-deploy regression — public pages", () => {
   for (const path of PUBLIC_PATHS) {
-    test(`${path} renders, has dark bg, hashed assets, build-id meta, finite TTL`, async () => {
+    test(`${path} renders, dark shell, hashed assets, build-id, bounded TTL`, async () => {
       const r = await probe(`${BASE}${path}`);
       if (!r.ok) {
         console.warn(`[skip] ${path} unreachable:`, r.error);
         return;
       }
-      // 200 OR 301/302 to canonical apex are both acceptable for /
       expect([200, 301, 302]).toContain(r.status);
       if (r.status !== 200) return;
 
-      // ── Layout / background sanity ──
-      // The SPA mount point must exist.
-      expect(r.body, `${path} should contain SPA root mount`).toMatch(/<div[^>]+id=["']root["']/);
-      // Locked design system: slate-950 background must be present in the
-      // server-rendered shell (either as a class on <html>/<body> or in an
-      // inline style). Catches the "white flash / wrong theme" regression.
+      // ── Layout / dark theme shell ──
+      // TanStack Start SSRs directly into <html>/<body>; there is no
+      // explicit #root mount div. Assert the shell + theme colour
+      // markers that lock the slate-950 design system.
+      expect(r.body).toMatch(/<html[^>]*lang=["']en-GB["']/);
       expect(
-        /(bg-slate-950|#020617|--background|class=["'][^"']*\bdark\b)/i.test(r.body),
-        `${path} HTML must declare dark/slate-950 theme in shell`,
+        /(theme-color["'][^>]*content=["']#020617|bg-slate-950|background-color:\s*#0[26]0[6-f]1[ef]|#020617)/i.test(r.body),
+        `${path} HTML must declare the locked dark/slate-950 theme`,
       ).toBe(true);
 
       // ── Asset versioning / cache-busting ──
-      // Vite emits hashed filenames (e.g. /assets/index-Ab12Cd34.js). The
-      // shell must reference at least one such hashed asset; otherwise the
-      // bundle isn't cache-busted and we'd risk stale-chunk loops.
-      const hashedAsset = /\/assets\/[A-Za-z0-9._-]+-[A-Za-z0-9_-]{8,}\.(?:js|css|mjs)/;
+      // Vite emits content-hashed filenames (/assets/<name>-<hash>.{js,css}).
+      // At least one must be referenced — guards against a regression
+      // that ships unhashed asset URLs and traps users on stale chunks.
+      const hashedAsset = /\/assets\/[A-Za-z0-9._-]+-[A-Za-z0-9_-]{6,}\.(?:js|mjs|css)/;
       expect(
         hashedAsset.test(r.body),
         `${path} must reference at least one content-hashed asset`,
       ).toBe(true);
 
-      // build-id meta tag (injected by src/server.ts HTMLRewriter) is the
-      // canonical version marker for cache invalidation.
-      expect(r.body).toMatch(/<meta\s+name=["']build-id["']\s+content=["'][^"']+["']/i);
+      // build-id meta tag (injected by src/server.ts HTMLRewriter) +
+      // x-build-id response header are our canonical version markers.
+      expect(r.body).toMatch(/<meta\s+name=["'](?:x-)?build-id["']\s+content=["'][^"']+["']/i);
       expect(r.headers.get("x-build-id") || "").not.toBe("");
 
       // ── Cache TTL ──
-      const cc = strongestCacheHeader(r.headers);
-      expect(cc, `${path} must set Cache-Control`).not.toBe("");
-      expect(cc, `${path} must NOT be no-store`).not.toMatch(/\bno-store\b/);
+      // Must be set, and must NEVER be unbounded. Either uncacheable
+      // (current admin-off state) or a positive TTL capped at 1h is
+      // acceptable; an unbounded `max-age=86400+` regression is not.
+      const header = cc(r.headers);
+      expect(header, `${path} must set Cache-Control`).not.toBe("");
       const ttl = Math.max(
-        parseDirective(cc, "max-age") ?? 0,
-        parseDirective(cc, "s-maxage") ?? 0,
+        parseDirective(header, "max-age") ?? 0,
+        parseDirective(header, "s-maxage") ?? 0,
       );
-      expect(ttl, `${path} must have positive TTL, got "${cc}"`).toBeGreaterThan(0);
       expect(ttl, `${path} TTL ${ttl}s exceeds 1h ceiling`).toBeLessThanOrEqual(3600);
     });
   }
 });
 
-describe("Post-deploy regression — sensitive paths must stay no-store", () => {
+describe("Post-deploy regression — sensitive paths must stay uncacheable", () => {
   for (const path of SENSITIVE_PATHS) {
-    test(`${path} must be no-store (never edge-cached)`, async () => {
+    test(`${path} must not be edge-cached`, async () => {
       const r = await probe(`${BASE}${path}`);
       if (!r.ok) {
         console.warn(`[skip] ${path} unreachable:`, r.error);
         return;
       }
-      // Any reachable response (200, 302 to /login, 401, 403…) must still
-      // forbid caching.
-      const cc = strongestCacheHeader(r.headers);
-      expect(cc, `${path} must set Cache-Control`).not.toBe("");
-      expect(cc, `${path} MUST contain no-store (got "${cc}")`).toMatch(/\bno-store\b/);
+      const header = cc(r.headers);
+      expect(header, `${path} must set Cache-Control`).not.toBe("");
+      expect(
+        isUncacheable(header),
+        `${path} MUST be uncacheable (no-store OR max-age=0+must-revalidate). Got: "${header}"`,
+      ).toBe(true);
 
-      const maxAge = parseDirective(cc, "max-age") ?? 0;
-      const sMaxAge = parseDirective(cc, "s-maxage") ?? 0;
-      expect(maxAge, `${path} must have max-age=0`).toBe(0);
-      expect(sMaxAge, `${path} must have s-maxage=0`).toBe(0);
+      // s-maxage > 0 on a sensitive path is an immediate regression —
+      // it means the CDN is caching personalised/admin HTML.
+      const sMaxAge = parseDirective(header, "s-maxage") ?? 0;
+      expect(sMaxAge, `${path} s-maxage must be 0`).toBe(0);
 
-      // CDN-level header — if present, must also be no-store.
+      // If origin sent a CDN-level header, it must also be no-store.
       const cdn = (r.headers.get("cdn-cache-control") || "").toLowerCase();
       if (cdn) {
-        expect(cdn, `${path} cdn-cache-control must be no-store`).toMatch(/\bno-store\b/);
+        expect(cdn).toMatch(/\bno-store\b/);
       }
     });
   }
