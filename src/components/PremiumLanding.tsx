@@ -1,4 +1,6 @@
-import { Link } from "@tanstack/react-router";
+// Link import intentionally removed — /contact, /privacy-policy and
+// /terms-and-conditions are served by the legacy catch-all router, so we use
+// plain <a href> to force a full navigation that the legacy router handles.
 import { useState, type FormEvent } from "react";
 
 // Responsive image variants (AVIF + WebP) live in /public/og/lab/.
@@ -392,9 +394,9 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
               <span className="text-sm text-white/75 leading-relaxed">
                 I consent to PH Labs processing my details to respond to this
                 enquiry, in accordance with the{" "}
-                <Link to="/privacy-policy" className="gold underline underline-offset-4 hover:brightness-125">
+                <a href="/privacy-policy" className="gold underline underline-offset-4 hover:brightness-125">
                   Privacy Policy
-                </Link>
+                </a>
                 . I confirm I am a qualified researcher and understand these
                 materials are for research use only.
               </span>
@@ -450,24 +452,24 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
               accepts no liability for any misuse of these products.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link
-                to="/"
+              <a
+                href="/"
                 className="inline-flex items-center justify-center px-8 py-3 rounded-full border border-white/20 text-white/80 text-[11px] tracking-[0.2em] uppercase hover:bg-white/5 transition-all"
               >
                 ← Back to homepage
-              </Link>
-              <Link
-                to="/terms-and-conditions"
+              </a>
+              <a
+                href="/terms-and-conditions"
                 className="inline-flex items-center justify-center px-8 py-3 rounded-full border border-white/20 text-white/80 text-[11px] tracking-[0.2em] uppercase hover:bg-white/5 transition-all"
               >
                 Terms of Service
-              </Link>
-              <Link
-                to="/contact"
+              </a>
+              <a
+                href="/contact"
                 className="inline-flex items-center justify-center px-8 py-3 rounded-full border border-white/20 text-white/80 text-[11px] tracking-[0.2em] uppercase hover:bg-white/5 transition-all"
               >
                 Contact
-              </Link>
+              </a>
             </div>
           </div>
         </div>
