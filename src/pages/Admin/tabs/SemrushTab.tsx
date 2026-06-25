@@ -16,7 +16,42 @@ import {
 const REPORT_SCHEMA_VERSION = '1.2.0';
 const CACHE_KEY = 'phlabs.admin.semrushGeoCache.v2';
 const PENDING_KEY = 'phlabs.admin.semrushGeoPending.v1';
+const RUN_HISTORY_KEY = 'phlabs.admin.semrushRunHistory.v1';
 const CACHE_LIMIT = 20;
+const RUN_HISTORY_LIMIT = 100;
+
+interface RunHistoryEntry {
+  id: string;
+  at: string;
+  phrase: string;
+  term: string;
+  mode: 'all' | 'resume' | 'failed';
+  requested: number;
+  succeeded: number;
+  failed: number;
+  unitsUsed: number;
+  quotaRemaining: number | null;
+  coverageAfter: { covered: number; catalog: number; complete: boolean };
+  failedDatabases: string[];
+  error?: string | null;
+}
+
+function loadRunHistory(): RunHistoryEntry[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(RUN_HISTORY_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
+}
+function pushRunHistory(entry: RunHistoryEntry): RunHistoryEntry[] {
+  const all = [entry, ...loadRunHistory()].slice(0, RUN_HISTORY_LIMIT);
+  try { window.localStorage.setItem(RUN_HISTORY_KEY, JSON.stringify(all)); } catch { /* quota */ }
+  return all;
+}
+function clearRunHistory() {
+  try { window.localStorage.removeItem(RUN_HISTORY_KEY); } catch { /* */ }
+}
 
 interface OverviewData {
   domain: string;
@@ -368,15 +403,18 @@ function KeywordGeoPanel() {
   const [quotaLoading, setQuotaLoading] = useState(false);
   const [now, setNow] = useState(() => Date.now());
   const [topN, setTopN] = useState<number | 'all'>('all');
+  const [progress, setProgress] = useState<{ done: number; total: number; current: string | null } | null>(null);
+  const [runHistory, setRunHistory] = useState<RunHistoryEntry[]>([]);
   const resumeTimerRef = useRef<number | null>(null);
   const autoResumeFiredRef = useRef(false);
 
-  // Load cache + pending + initial quota on mount
+  // Load cache + pending + initial quota + run history on mount
   useEffect(() => {
     const c = loadCache();
     setCache(c);
     const p = loadPending();
     if (p && c[p.phrase.toLowerCase()]) setActiveKey(p.phrase.toLowerCase());
+    setRunHistory(loadRunHistory());
     void refreshQuota();
     // eslint-disable-next-line
   }, []);
@@ -425,71 +463,156 @@ function KeywordGeoPanel() {
     () => catalog.filter((c) => !coveredSet.has(c.id)),
     [catalog, coveredSet],
   );
+  const failedDbs = useMemo(
+    () => (activeEntry?.rows ?? []).filter((r) => r.error != null).map((r) => r.database),
+    [activeEntry],
+  );
 
-  // Pick which databases to send to the server for a given action.
-  const buildDbList = useCallback((mode: 'all' | 'resume'): string[] => {
-    if (mode === 'resume') return missing.map((m) => m.id);
-    if (topN === 'all') return catalog.map((c) => c.id);
-    return catalog.slice(0, topN).map((c) => c.id);
-  }, [missing, catalog, topN]);
-
-  const runLookup = useCallback(async (mode: 'all' | 'resume', overridePhrase?: string) => {
+  const runLookup = useCallback(async (mode: 'all' | 'resume' | 'failed', overridePhrase?: string) => {
     const term = (overridePhrase ?? phrase).trim();
     if (!term) return;
+    const key = term.toLowerCase();
+    const prior = cache[key];
+    const priorFailed = (prior?.rows ?? []).filter((r) => r.error != null).map((r) => r.database);
+    const priorMissing = catalog
+      .filter((c) => !(prior?.rows ?? []).some((r) => r.database === c.id))
+      .map((c) => c.id);
+
     const dbList = mode === 'resume'
-      ? missing.map((m) => m.id)
-      : (topN === 'all' ? catalog.map((c) => c.id) : catalog.slice(0, topN).map((c) => c.id));
+      ? priorMissing
+      : mode === 'failed'
+        ? priorFailed
+        : (topN === 'all' ? catalog.map((c) => c.id) : catalog.slice(0, topN).map((c) => c.id));
+
     if (dbList.length === 0) {
-      setError(mode === 'resume' ? 'All countries already fetched.' : 'No countries to fetch.');
+      setError(
+        mode === 'resume' ? 'All countries already fetched.'
+        : mode === 'failed' ? 'No failed countries to retry.'
+        : 'No countries to fetch.',
+      );
       return;
     }
     if (overridePhrase) setPhrase(overridePhrase);
     setLoading(true);
     setError(null);
+    setProgress({ done: 0, total: dbList.length, current: null });
+
+    const startedAt = new Date().toISOString();
+    let aggRows: GeoRow[] = [];
+    let trimmedAll: string[] = [];
+    const quotaRef: { current: QuotaSnapshot | null } = { current: null };
+    let unitsUsedTotal = 0;
+    let lastCatalog: CatalogEntry[] = catalog;
+    let runErr: string | null = null;
+
     try {
       const idToken = await getAdminIdToken();
-      const res = (await fetchGeo({ data: {
-        idToken, phrase: term, databases: dbList, autoLimit: true,
-      } })) as ServerGeoResponse;
 
-      const key = term.toLowerCase();
-      const stamped = res.rows.map((r) => ({ ...r, fetchedAt: res.fetchedAt }));
-      const prior = cache[key];
-      const mergedRows = mergeRows(prior?.rows ?? [], stamped);
+      // For mode='failed' we wipe the prior errored rows from cache first so
+      // mergeRows replaces them with whatever the retry returns.
+      if (mode === 'failed' && prior) {
+        const cleaned: CacheEntry = {
+          ...prior,
+          rows: prior.rows.filter((r) => r.error == null),
+        };
+        persistCache({ ...cache, [key]: cleaned });
+      }
+
+      // Dispatch one call per database in parallel; update progress as each
+      // resolves so the UI shows X / N completed live.
+      const tasks = dbList.map(async (db) => {
+        try {
+          const res = (await fetchGeo({ data: {
+            idToken, phrase: term, databases: [db], autoLimit: true,
+          } })) as ServerGeoResponse;
+          aggRows.push(...res.rows.map((r) => ({ ...r, fetchedAt: res.fetchedAt })));
+          trimmedAll.push(...res.trimmedByQuota);
+          quotaRef.current = res.quota.after;
+          unitsUsedTotal += res.quota.unitsUsed;
+          if (res.catalog.length) lastCatalog = res.catalog;
+        } catch (e: any) {
+          // Convert exception into an errored row so it shows up in cache + retry list.
+          aggRows.push({
+            database: db,
+            country: catalog.find((c) => c.id === db)?.country ?? db.toUpperCase(),
+            volume: null, cpc: null, competition: null, results: null,
+            error: String(e?.message ?? 'request failed').slice(0, 200),
+            fetchedAt: new Date().toISOString(),
+          });
+        } finally {
+          setProgress((p) => p ? { done: p.done + 1, total: p.total, current: db } : p);
+        }
+      });
+      await Promise.all(tasks);
+
+      const finishedAt = new Date().toISOString();
+      const mergedRows = mergeRows(prior?.rows ?? [], aggRows);
       const entry: CacheEntry = {
         phrase: term,
-        lastFetchedAt: res.fetchedAt,
+        lastFetchedAt: finishedAt,
         rows: mergedRows,
         runs: [
           ...(prior?.runs ?? []),
-          {
-            at: res.fetchedAt,
-            fetched: res.fetchedDatabases,
-            trimmed: res.trimmedByQuota,
-            unitsUsed: res.quota.unitsUsed,
-          },
+          { at: finishedAt, fetched: dbList, trimmed: trimmedAll, unitsUsed: unitsUsedTotal },
         ].slice(-25),
-        catalog: res.catalog.length ? res.catalog : (prior?.catalog ?? catalog),
+        catalog: lastCatalog,
       };
       const nextCache = { ...cache, [key]: entry };
       persistCache(nextCache);
       setActiveKey(key);
-      setQuota((q) => q ? { ...q, ...res.quota.after } : q);
+      const qa: QuotaSnapshot | null = quotaRef.current;
+      if (qa) setQuota((q) => q ? { ...q, ...qa } : q);
 
       // Pending background resume
       const stillMissing = entry.catalog.filter((c) => !entry.rows.some((r) => r.database === c.id));
-      if (stillMissing.length > 0 && res.quota.after.resetAt && (res.quota.after.remaining ?? 0) < stillMissing.length) {
-        savePending({ phrase: term, resetAt: res.quota.after.resetAt });
+      if (stillMissing.length > 0 && qa?.resetAt && (qa.remaining ?? 0) < stillMissing.length) {
+        savePending({ phrase: term, resetAt: qa.resetAt });
         autoResumeFiredRef.current = false;
       } else {
         savePending(null);
       }
+
+      // Append cross-phrase audit log
+      const succeeded = aggRows.filter((r) => r.error == null).length;
+      const failedCount = aggRows.length - succeeded;
+      const failedList = aggRows.filter((r) => r.error != null).map((r) => r.database);
+      const history = pushRunHistory({
+        id: `${startedAt}-${key}-${mode}`,
+        at: startedAt,
+        phrase: term, term, mode,
+        requested: dbList.length,
+        succeeded, failed: failedCount,
+        unitsUsed: unitsUsedTotal,
+        quotaRemaining: quotaRef.current?.remaining ?? null,
+        coverageAfter: {
+          covered: entry.rows.length,
+          catalog: entry.catalog.length,
+          complete: stillMissing.length === 0,
+        },
+        failedDatabases: failedList,
+      });
+      setRunHistory(history);
     } catch (e: any) {
-      setError(e?.message ?? 'Lookup failed');
+      runErr = e?.message ?? 'Lookup failed';
+      setError(runErr);
+      const history = pushRunHistory({
+        id: `${startedAt}-${key}-${mode}-err`,
+        at: startedAt, phrase: term, term, mode,
+        requested: dbList.length, succeeded: 0, failed: dbList.length,
+        unitsUsed: unitsUsedTotal, quotaRemaining: quotaRef.current?.remaining ?? null,
+        coverageAfter: {
+          covered: prior?.rows?.length ?? 0,
+          catalog: prior?.catalog?.length ?? catalog.length,
+          complete: false,
+        },
+        failedDatabases: dbList, error: runErr,
+      });
+      setRunHistory(history);
     } finally {
       setLoading(false);
+      setProgress(null);
     }
-  }, [phrase, missing, topN, catalog, cache, fetchGeo]);
+  }, [phrase, topN, catalog, cache, fetchGeo]);
 
   // Auto-resume when the quota window resets
   useEffect(() => {
@@ -639,7 +762,7 @@ function KeywordGeoPanel() {
         }}
       />
 
-      <div className="p-4 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-end">
+      <div className="p-4 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 items-end">
         <div>
           <label className="block text-xs font-semibold text-slate-300 mb-1">Keyword / phrase</label>
           <input
@@ -682,6 +805,14 @@ function KeywordGeoPanel() {
         >
           <RotateCw className="w-4 h-4" /> Resume {missing.length > 0 ? `(${missing.length})` : ''}
         </button>
+        <button
+          onClick={() => runLookup('failed')}
+          disabled={loading || !activeEntry || failedDbs.length === 0}
+          className="min-h-[48px] px-3 bg-amber-700 hover:bg-amber-600 disabled:opacity-40 text-white rounded-lg text-sm font-semibold inline-flex items-center gap-2"
+          title={failedDbs.length > 0 ? `Retry ${failedDbs.length} failed countries` : 'No failed countries to retry'}
+        >
+          <RotateCw className="w-4 h-4" /> Retry failed {failedDbs.length > 0 ? `(${failedDbs.length})` : ''}
+        </button>
         <div className="flex gap-2">
           <button
             onClick={() => activeEntry && downloadCsvFor(activeEntry)}
@@ -701,6 +832,26 @@ function KeywordGeoPanel() {
           </button>
         </div>
       </div>
+
+      {progress && (
+        <div className="mx-4 mb-2 bg-slate-950/60 border-2 border-emerald-700/40 rounded-lg p-3">
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="text-emerald-200 font-semibold inline-flex items-center gap-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Fetching {progress.done} / {progress.total} countries
+              {progress.current && <span className="text-slate-400 font-mono">· {progress.current.toUpperCase()}</span>}
+            </span>
+            <span className="text-slate-400">{Math.round((progress.done / Math.max(1, progress.total)) * 100)}%</span>
+          </div>
+          <div className="h-2 w-full rounded bg-slate-800 overflow-hidden">
+            <div
+              className="h-full bg-emerald-500 transition-all duration-200"
+              style={{ width: `${Math.min(100, (progress.done / Math.max(1, progress.total)) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
 
       {topN !== 'all' && quotaRemaining != null && quotaRemaining < (Number(topN) || 0) && (
         <div className="mx-4 mb-2 bg-amber-950/30 border border-amber-700/40 rounded-lg p-2 text-xs text-amber-200 flex items-center gap-2">
@@ -955,7 +1106,85 @@ function KeywordGeoPanel() {
           </div>
         )}
       </div>
+
+      {/* Run history audit log (cross-phrase) */}
+      <div className="border-t-2 border-slate-700">
+        <div className="px-4 py-3 flex items-center gap-2">
+          <Timer className="w-4 h-4 text-blue-400" />
+          <h3 className="text-white text-sm font-semibold">Run history</h3>
+          <span className="text-xs text-slate-500 ml-2">
+            Audit log of every Semrush run · last {RUN_HISTORY_LIMIT} stored locally
+          </span>
+          {runHistory.length > 0 && (
+            <button
+              onClick={() => { clearRunHistory(); setRunHistory([]); }}
+              className="ml-auto text-xs text-slate-400 hover:text-red-300 inline-flex items-center gap-1"
+              title="Clear run history"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Clear history
+            </button>
+          )}
+        </div>
+        {runHistory.length === 0 ? (
+          <p className="px-4 pb-4 text-xs text-slate-500">No runs logged yet.</p>
+        ) : (
+          <div className="overflow-x-auto max-h-72">
+            <table className="w-full text-xs">
+              <thead className="bg-slate-800/40 text-slate-300 uppercase tracking-wide sticky top-0">
+                <tr>
+                  <th className="text-left px-4 py-2">When</th>
+                  <th className="text-left px-4 py-2">Phrase</th>
+                  <th className="text-left px-4 py-2">Mode</th>
+                  <th className="text-right px-4 py-2">Req</th>
+                  <th className="text-right px-4 py-2">OK</th>
+                  <th className="text-right px-4 py-2">Fail</th>
+                  <th className="text-right px-4 py-2">Units</th>
+                  <th className="text-right px-4 py-2">Quota left</th>
+                  <th className="text-left px-4 py-2">Coverage</th>
+                  <th className="text-left px-4 py-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {runHistory.map((h) => (
+                  <tr key={h.id} className="border-t border-slate-800 hover:bg-slate-800/40">
+                    <td className="px-4 py-1.5 text-slate-400">{new Date(h.at).toLocaleString()}</td>
+                    <td className="px-4 py-1.5 text-white">{h.phrase}</td>
+                    <td className="px-4 py-1.5">
+                      <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-semibold ${
+                        h.mode === 'all' ? 'bg-emerald-900/50 text-emerald-200'
+                        : h.mode === 'resume' ? 'bg-blue-900/50 text-blue-200'
+                        : 'bg-amber-900/50 text-amber-200'
+                      }`}>{h.mode}</span>
+                    </td>
+                    <td className="px-4 py-1.5 text-right text-slate-300">{h.requested}</td>
+                    <td className="px-4 py-1.5 text-right text-emerald-300">{h.succeeded}</td>
+                    <td className={`px-4 py-1.5 text-right ${h.failed > 0 ? 'text-red-300' : 'text-slate-500'}`}>{h.failed}</td>
+                    <td className="px-4 py-1.5 text-right text-slate-200">{h.unitsUsed}</td>
+                    <td className="px-4 py-1.5 text-right text-slate-400">{h.quotaRemaining ?? '—'}</td>
+                    <td className="px-4 py-1.5">
+                      <span className={h.coverageAfter.complete ? 'text-emerald-300' : 'text-amber-300'}>
+                        {h.coverageAfter.covered}/{h.coverageAfter.catalog}
+                        {h.coverageAfter.complete ? ' ✓' : ''}
+                      </span>
+                    </td>
+                    <td className="px-4 py-1.5">
+                      {h.error
+                        ? <span className="text-red-300" title={h.error}>error</span>
+                        : h.failed > 0
+                          ? <span className="text-amber-300" title={h.failedDatabases.join(', ')}>
+                              partial · {h.failedDatabases.length} failed
+                            </span>
+                          : <span className="text-emerald-300">ok</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
+
   );
 }
 
@@ -999,9 +1228,24 @@ function QuotaBanner({
     <div className={`mx-4 mt-4 mb-2 ${palette.bg} border-2 ${palette.border} rounded-lg p-3 flex items-start gap-3`}>
       <Timer className={`w-5 h-5 shrink-0 mt-0.5 ${palette.icon}`} />
       <div className="flex-1 text-xs">
-        <p className={`${palette.text} font-semibold`}>
-          Semrush quota: {quota.remaining ?? '?'} / {quota.total ?? '?'} units remaining
-          {quota.isPaid === false && <span className="ml-2 text-[10px] uppercase tracking-wide opacity-70">free plan</span>}
+        <p className={`${palette.text} font-semibold flex items-center gap-2 flex-wrap`}>
+          <span>Semrush quota: {quota.remaining ?? '?'} / {quota.total ?? '?'} units remaining</span>
+          {(() => {
+            // Plan badge — Trial / Paid / Free. Trial inferred from is_paid=true + small total.
+            if (quota.isPaid === true) {
+              const isTrial = (quota.total ?? 0) > 0 && (quota.total ?? 0) <= 3000;
+              return (
+                <span className={`text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded
+                  ${isTrial ? 'bg-blue-700 text-white' : 'bg-emerald-700 text-white'}`}>
+                  {isTrial ? '7-day Trial' : 'Paid'}
+                </span>
+              );
+            }
+            if (quota.isPaid === false) {
+              return <span className="text-[10px] uppercase tracking-wide font-bold px-1.5 py-0.5 rounded bg-slate-700 text-slate-200">Free plan</span>;
+            }
+            return null;
+          })()}
         </p>
         <p className={`${palette.text} opacity-80 mt-0.5`}>
           A full {fullRunCost}-country geo run costs {fullRunCost} units.
