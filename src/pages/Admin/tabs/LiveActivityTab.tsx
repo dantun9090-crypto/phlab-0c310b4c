@@ -1144,18 +1144,22 @@ export default function LiveActivityTab() {
             <span>Page {safeSessionPage} / {sessionTotalPages}</span>
             <div className="flex items-center gap-1">
               <button
+                type="button"
+                aria-label="Previous page of visitor sessions"
                 onClick={() => setSessionPage(Math.max(1, safeSessionPage - 1))}
                 disabled={sessionPage <= 1}
-                className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40"
+                className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-4 h-4" aria-hidden="true" />
               </button>
               <button
+                type="button"
+                aria-label="Next page of visitor sessions"
                 onClick={() => setSessionPage(Math.min(sessionTotalPages, safeSessionPage + 1))}
                 disabled={sessionPage >= sessionTotalPages}
-                className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40"
+                className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>
