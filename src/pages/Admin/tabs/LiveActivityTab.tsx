@@ -468,25 +468,26 @@ export default function LiveActivityTab() {
     );
   }, [users, userSearch]);
 
-  const filteredSessions = useMemo(() => {
+  const filteredAnnotated = useMemo(() => {
     const q = sessionSearch.trim().toLowerCase();
-    if (!q) return visibleSessions;
-    return visibleSessions.filter(s =>
-      (s.sessionId || '').toLowerCase().includes(q) ||
-      (s.visitorId || '').toLowerCase().includes(q) ||
-      (s.path || '').toLowerCase().includes(q)
+    if (!q) return visibleAnnotated;
+    return visibleAnnotated.filter(a =>
+      (a.session.sessionId || '').toLowerCase().includes(q) ||
+      (a.session.visitorId || '').toLowerCase().includes(q) ||
+      (a.session.path || '').toLowerCase().includes(q)
     );
-  }, [sessions, sessionSearch]);
+  }, [visibleAnnotated, sessionSearch]);
+  const filteredSessions = useMemo(() => filteredAnnotated.map(a => a.session), [filteredAnnotated]);
 
   const userTotalPages = Math.max(1, Math.ceil(filteredUsers.length / prefs.userPageSize));
-  const sessionTotalPages = Math.max(1, Math.ceil(filteredSessions.length / prefs.sessionPageSize));
+  const sessionTotalPages = Math.max(1, Math.ceil(filteredAnnotated.length / prefs.sessionPageSize));
   const safeUserPage = Math.min(userPage, userTotalPages);
   const safeSessionPage = Math.min(sessionPage, sessionTotalPages);
   const pagedUsers = filteredUsers.slice(
     (safeUserPage - 1) * prefs.userPageSize,
     safeUserPage * prefs.userPageSize
   );
-  const pagedSessions = filteredSessions.slice(
+  const pagedAnnotated = filteredAnnotated.slice(
     (safeSessionPage - 1) * prefs.sessionPageSize,
     safeSessionPage * prefs.sessionPageSize
   );
