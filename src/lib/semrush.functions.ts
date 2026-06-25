@@ -31,8 +31,14 @@ async function gwGet(path: string, params: Record<string, string | number | unde
     signal: AbortSignal.timeout(20_000),
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(`Semrush ${res.status}: ${text.slice(0, 80)}`);
-  try { return JSON.parse(text); } catch { throw new Error(`Semrush invalid JSON: ${text.slice(0, 80)}`); }
+  if (!res.ok) throw new Error(`Semrush ${res.status}: ${text.slice(0, 120)}`);
+  let json: any;
+  try { json = JSON.parse(text); } catch { throw new Error(`Semrush invalid JSON: ${text.slice(0, 80)}`); }
+  // Gateway sometimes wraps Semrush quota / auth errors with HTTP 200 + body { error, status }
+  if (json && typeof json === 'object' && typeof json.error === 'string') {
+    throw new Error(`Semrush ${json.status ?? ''}: ${json.error}`.trim());
+  }
+  return json;
 }
 
 const OverviewInput = z.object({
