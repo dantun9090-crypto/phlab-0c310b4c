@@ -49,6 +49,8 @@ interface Prefs {
   quietEnabled: boolean;
   quietStart: string; // "HH:MM"
   quietEnd: string;   // "HH:MM"
+  quietTimezone: string; // IANA, e.g. "Europe/London"
+  toastDedupTtlH: number; // hours; entries older than this are forgotten
 }
 const DEFAULT_PREFS: Prefs = {
   windowMin: 5,
@@ -63,6 +65,8 @@ const DEFAULT_PREFS: Prefs = {
   quietEnabled: false,
   quietStart: '22:00',
   quietEnd: '08:00',
+  quietTimezone: typeof window !== 'undefined' ? detectLocalTimezone() : 'UTC',
+  toastDedupTtlH: 24,
 };
 
 function loadPrefs(): Prefs {
