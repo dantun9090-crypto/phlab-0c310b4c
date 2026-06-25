@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  UserPlus, Activity, RefreshCw, Mail, Clock, Globe, Search, Copy, Check,
-  ChevronLeft, ChevronRight,
+  UserPlus, Activity, Mail, Clock, Globe, Search, Copy, Check,
+  ChevronLeft, ChevronRight, BellOff, Radio,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
-  db, collection, query, orderBy, limit, getDocs, where, Timestamp,
+  db, collection, query, orderBy, limit, onSnapshot, where, Timestamp,
 } from '@/lib/firebase';
 
 interface RegisteredUser {
@@ -31,13 +31,20 @@ type WindowMin = 1 | 5 | 15 | 30 | 60;
 const WINDOW_OPTIONS: WindowMin[] = [1, 5, 15, 30, 60];
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
-const LS_KEY = 'phl_liveactivity_prefs_v1';
+const LS_KEY = 'phl_liveactivity_prefs_v2';
 interface Prefs {
   windowMin: WindowMin;
   userPageSize: number;
   sessionPageSize: number;
   notifySignups: boolean;
   notifyFirstSeen: boolean;
+  userSearch: string;
+  sessionSearch: string;
+  userPage: number;
+  sessionPage: number;
+  quietEnabled: boolean;
+  quietStart: string; // "HH:MM"
+  quietEnd: string;   // "HH:MM"
 }
 const DEFAULT_PREFS: Prefs = {
   windowMin: 5,
@@ -45,6 +52,13 @@ const DEFAULT_PREFS: Prefs = {
   sessionPageSize: 25,
   notifySignups: true,
   notifyFirstSeen: false,
+  userSearch: '',
+  sessionSearch: '',
+  userPage: 1,
+  sessionPage: 1,
+  quietEnabled: false,
+  quietStart: '22:00',
+  quietEnd: '08:00',
 };
 
 function loadPrefs(): Prefs {
@@ -58,6 +72,22 @@ function loadPrefs(): Prefs {
 }
 function savePrefs(p: Prefs) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(p)); } catch { /* noop */ }
+}
+
+/** Returns true if current local time falls within [start, end] quiet window. */
+function isQuietNow(start: string, end: string, now = new Date()): boolean {
+  const toMin = (s: string) => {
+    const [h, m] = s.split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  };
+  const cur = now.getHours() * 60 + now.getMinutes();
+  const s = toMin(start);
+  const e = toMin(end);
+  if (s === e) return false;
+  // Same-day window
+  if (s < e) return cur >= s && cur < e;
+  // Overnight window (e.g. 22:00 → 08:00)
+  return cur >= s || cur < e;
 }
 
 function timeAgo(d: Date): string {
@@ -123,129 +153,130 @@ export default function LiveActivityTab() {
   const [err, setErr] = useState<string | null>(null);
   const [now, setNow] = useState(Date.now());
 
-  const [userSearch, setUserSearch] = useState('');
-  const [sessionSearch, setSessionSearch] = useState('');
-  const [userPage, setUserPage] = useState(1);
-  const [sessionPage, setSessionPage] = useState(1);
+  // Persisted UI state
+  const userSearch = prefs.userSearch;
+  const sessionSearch = prefs.sessionSearch;
+  const userPage = prefs.userPage;
+  const sessionPage = prefs.sessionPage;
+  const setUserSearch = (v: string) => updatePrefs({ userSearch: v, userPage: 1 });
+  const setSessionSearch = (v: string) => updatePrefs({ sessionSearch: v, sessionPage: 1 });
+  const setUserPage = (v: number) => updatePrefs({ userPage: v });
+  const setSessionPage = (v: number) => updatePrefs({ sessionPage: v });
 
-  // Track seen ids for notifications (avoid firing on initial load)
+  // Track seen ids + initial-load flag for notifications (avoid firing on first snapshot)
   const seenUserIdsRef = useRef<Set<string> | null>(null);
   const seenSessionIdsRef = useRef<Set<string> | null>(null);
 
-  const fetchAll = async (opts: { silent?: boolean } = {}) => {
-    if (!opts.silent) setLoading(true);
-    setErr(null);
-    try {
-      // Recently registered customers
-      let userDocs: any[] = [];
-      try {
-        const snap = await getDocs(
-          query(collection(db, 'customers'), orderBy('createdAt', 'desc'), limit(200))
-        );
-        userDocs = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
-      } catch {
-        const snap = await getDocs(collection(db, 'customers'));
-        userDocs = snap.docs.map(d => ({ uid: d.id, ...d.data() }));
-        userDocs.sort((a, b) => {
-          const ta = a.createdAt?.toDate?.()?.getTime?.() || 0;
-          const tb = b.createdAt?.toDate?.()?.getTime?.() || 0;
-          return tb - ta;
-        });
-        userDocs = userDocs.slice(0, 200);
-      }
+  // Keep latest prefs accessible in snapshot callbacks without resubscribing
+  const prefsRef = useRef(prefs);
+  useEffect(() => { prefsRef.current = prefs; }, [prefs]);
 
-      // Notify new signups
-      const userIds = new Set(userDocs.map((u: any) => u.uid));
-      if (seenUserIdsRef.current && prefs.notifySignups) {
-        const fresh = userDocs.filter((u: any) => !seenUserIdsRef.current!.has(u.uid));
-        fresh.slice(0, 3).forEach((u: any) => {
-          toast.success('New customer registered', {
-            description: u.email || u.uid,
-          });
-        });
-      }
-      seenUserIdsRef.current = userIds;
-      setUsers(userDocs as RegisteredUser[]);
-
-      // Last online — visitor_events last 24h, group by session
-      const since = Timestamp.fromMillis(Date.now() - 24 * 60 * 60 * 1000);
-      let evSnap;
-      try {
-        evSnap = await getDocs(
-          query(
-            collection(db, 'visitor_events'),
-            where('createdAt', '>=', since),
-            orderBy('createdAt', 'desc'),
-            limit(3000)
-          )
-        );
-      } catch {
-        evSnap = await getDocs(
-          query(collection(db, 'visitor_events'), orderBy('createdAt', 'desc'), limit(3000))
-        );
-      }
-      const bySession = new Map<string, OnlineSession>();
-      evSnap.docs.forEach(doc => {
-        const d: any = doc.data();
-        const sid = d.sessionId || doc.id;
-        const ts: Date = d.createdAt?.toDate?.() || new Date();
-        const existing = bySession.get(sid);
-        if (!existing) {
-          bySession.set(sid, {
-            sessionId: sid,
-            visitorId: d.visitorId,
-            path: d.path,
-            userAgent: d.userAgent,
-            referrer: d.referrer,
-            lastSeen: ts,
-            firstSeen: d.firstSeen?.toDate?.() || ts,
-            eventCount: 1,
-          });
-        } else {
-          existing.eventCount += 1;
-          if (ts > existing.lastSeen) {
-            existing.lastSeen = ts;
-            existing.path = d.path || existing.path;
-          }
-          if (d.firstSeen?.toDate && (!existing.firstSeen || d.firstSeen.toDate() < existing.firstSeen)) {
-            existing.firstSeen = d.firstSeen.toDate();
-          }
-        }
-      });
-      const arr = Array.from(bySession.values()).sort(
-        (a, b) => b.lastSeen.getTime() - a.lastSeen.getTime()
-      );
-
-      // Notify newly first-seen sessions
-      const sessIds = new Set(arr.map(s => s.sessionId));
-      if (seenSessionIdsRef.current && prefs.notifyFirstSeen) {
-        const fresh = arr.filter(s => !seenSessionIdsRef.current!.has(s.sessionId));
-        fresh.slice(0, 3).forEach(s => {
-          toast('New visitor online', {
-            description: `${s.path || '/'} · ${shortUA(s.userAgent)}`,
-          });
-        });
-      }
-      seenSessionIdsRef.current = sessIds;
-      setSessions(arr);
-    } catch (e: any) {
-      console.error('LiveActivityTab error', e);
-      setErr(e?.message || 'Failed to load activity');
-    } finally {
-      setLoading(false);
-    }
+  const maybeToast = (kind: 'signup' | 'visitor', title: string, description: string) => {
+    const p = prefsRef.current;
+    if (kind === 'signup' && !p.notifySignups) return;
+    if (kind === 'visitor' && !p.notifyFirstSeen) return;
+    if (p.quietEnabled && isQuietNow(p.quietStart, p.quietEnd)) return;
+    if (kind === 'signup') toast.success(title, { description });
+    else toast(title, { description });
   };
 
+  // Realtime: customers
   useEffect(() => {
-    fetchAll();
-    const refresh = setInterval(() => fetchAll({ silent: true }), 30_000);
+    setLoading(true);
+    const qUsers = query(
+      collection(db, 'customers'),
+      orderBy('createdAt', 'desc'),
+      limit(200)
+    );
+    const unsub = onSnapshot(
+      qUsers,
+      (snap) => {
+        const docs = snap.docs.map(d => ({ uid: d.id, ...(d.data() as any) })) as RegisteredUser[];
+        const ids = new Set(docs.map(u => u.uid));
+        if (seenUserIdsRef.current) {
+          const fresh = docs.filter(u => !seenUserIdsRef.current!.has(u.uid));
+          fresh.slice(0, 3).forEach(u => {
+            maybeToast('signup', 'New customer registered', u.email || u.uid);
+          });
+        }
+        seenUserIdsRef.current = ids;
+        setUsers(docs);
+        setLoading(false);
+      },
+      (e) => {
+        console.error('LiveActivity customers snapshot error', e);
+        setErr(e?.message || 'Failed to load customers');
+        setLoading(false);
+      }
+    );
+    return () => unsub();
+  }, []);
+
+  // Realtime: visitor_events (last 24h)
+  useEffect(() => {
+    const since = Timestamp.fromMillis(Date.now() - 24 * 60 * 60 * 1000);
+    const qEvents = query(
+      collection(db, 'visitor_events'),
+      where('createdAt', '>=', since),
+      orderBy('createdAt', 'desc'),
+      limit(3000)
+    );
+    const unsub = onSnapshot(
+      qEvents,
+      (snap) => {
+        const bySession = new Map<string, OnlineSession>();
+        snap.docs.forEach(doc => {
+          const d: any = doc.data();
+          const sid = d.sessionId || doc.id;
+          const ts: Date = d.createdAt?.toDate?.() || new Date();
+          const existing = bySession.get(sid);
+          if (!existing) {
+            bySession.set(sid, {
+              sessionId: sid,
+              visitorId: d.visitorId,
+              path: d.path,
+              userAgent: d.userAgent,
+              referrer: d.referrer,
+              lastSeen: ts,
+              firstSeen: d.firstSeen?.toDate?.() || ts,
+              eventCount: 1,
+            });
+          } else {
+            existing.eventCount += 1;
+            if (ts > existing.lastSeen) {
+              existing.lastSeen = ts;
+              existing.path = d.path || existing.path;
+            }
+            if (d.firstSeen?.toDate && (!existing.firstSeen || d.firstSeen.toDate() < existing.firstSeen)) {
+              existing.firstSeen = d.firstSeen.toDate();
+            }
+          }
+        });
+        const arr = Array.from(bySession.values()).sort(
+          (a, b) => b.lastSeen.getTime() - a.lastSeen.getTime()
+        );
+        const ids = new Set(arr.map(s => s.sessionId));
+        if (seenSessionIdsRef.current) {
+          const fresh = arr.filter(s => !seenSessionIdsRef.current!.has(s.sessionId));
+          fresh.slice(0, 3).forEach(s => {
+            maybeToast('visitor', 'New visitor online', `${s.path || '/'} · ${shortUA(s.userAgent)}`);
+          });
+        }
+        seenSessionIdsRef.current = ids;
+        setSessions(arr);
+      },
+      (e) => {
+        console.error('LiveActivity visitor_events snapshot error', e);
+      }
+    );
+    return () => unsub();
+  }, []);
+
+  // Tick for relative timestamps + online window
+  useEffect(() => {
     const tick = setInterval(() => setNow(Date.now()), 15_000);
-    return () => {
-      clearInterval(refresh);
-      clearInterval(tick);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefs.notifySignups, prefs.notifyFirstSeen]);
+    return () => clearInterval(tick);
+  }, []);
 
   const windowMs = prefs.windowMin * 60_000;
   const onlineNow = useMemo(
@@ -273,20 +304,21 @@ export default function LiveActivityTab() {
     );
   }, [sessions, sessionSearch]);
 
-  // Reset to first page when search changes
-  useEffect(() => { setUserPage(1); }, [userSearch, prefs.userPageSize]);
-  useEffect(() => { setSessionPage(1); }, [sessionSearch, prefs.sessionPageSize]);
-
   const userTotalPages = Math.max(1, Math.ceil(filteredUsers.length / prefs.userPageSize));
   const sessionTotalPages = Math.max(1, Math.ceil(filteredSessions.length / prefs.sessionPageSize));
+  const safeUserPage = Math.min(userPage, userTotalPages);
+  const safeSessionPage = Math.min(sessionPage, sessionTotalPages);
   const pagedUsers = filteredUsers.slice(
-    (userPage - 1) * prefs.userPageSize,
-    userPage * prefs.userPageSize
+    (safeUserPage - 1) * prefs.userPageSize,
+    safeUserPage * prefs.userPageSize
   );
   const pagedSessions = filteredSessions.slice(
-    (sessionPage - 1) * prefs.sessionPageSize,
-    sessionPage * prefs.sessionPageSize
+    (safeSessionPage - 1) * prefs.sessionPageSize,
+    safeSessionPage * prefs.sessionPageSize
   );
+
+  const quietActive = prefs.quietEnabled && isQuietNow(prefs.quietStart, prefs.quietEnd);
+
 
   return (
     <div className="space-y-6">
@@ -316,13 +348,36 @@ export default function LiveActivityTab() {
             />
             Notify new visitors
           </label>
-          <button
-            onClick={() => fetchAll()}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white rounded-lg text-sm font-medium"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
-          </button>
+          <label className="flex items-center gap-2 text-xs text-[#9cb8d9] bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2">
+            <input
+              type="checkbox"
+              checked={prefs.quietEnabled}
+              onChange={e => updatePrefs({ quietEnabled: e.target.checked })}
+            />
+            <BellOff className="w-3.5 h-3.5" /> Quiet hours
+            <input
+              type="time"
+              value={prefs.quietStart}
+              onChange={e => updatePrefs({ quietStart: e.target.value })}
+              disabled={!prefs.quietEnabled}
+              className="bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 disabled:opacity-50"
+            />
+            <span>–</span>
+            <input
+              type="time"
+              value={prefs.quietEnd}
+              onChange={e => updatePrefs({ quietEnd: e.target.value })}
+              disabled={!prefs.quietEnabled}
+              className="bg-slate-800 border-2 border-slate-600 text-white text-xs rounded px-1.5 py-0.5 disabled:opacity-50"
+            />
+            {quietActive && (
+              <span className="text-amber-400 text-[10px] uppercase tracking-wider">muted</span>
+            )}
+          </label>
+          <div className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9]">
+            <Radio className={`w-3.5 h-3.5 ${loading ? 'text-amber-400 animate-pulse' : 'text-emerald-400'}`} />
+            {loading ? 'Connecting…' : 'Live'}
+          </div>
         </div>
       </div>
 
@@ -431,17 +486,17 @@ export default function LiveActivityTab() {
             })}
           </div>
           <div className="px-3 py-2 border-t border-slate-800 flex items-center justify-between text-xs text-[#9cb8d9]">
-            <span>Page {userPage} / {userTotalPages}</span>
+            <span>Page {safeUserPage} / {userTotalPages}</span>
             <div className="flex items-center gap-1">
               <button
-                onClick={() => setUserPage(p => Math.max(1, p - 1))}
+                onClick={() => setUserPage(Math.max(1, safeUserPage - 1))}
                 disabled={userPage <= 1}
                 className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setUserPage(p => Math.min(userTotalPages, p + 1))}
+                onClick={() => setUserPage(Math.min(userTotalPages, safeUserPage + 1))}
                 disabled={userPage >= userTotalPages}
                 className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40"
               >
@@ -543,17 +598,17 @@ export default function LiveActivityTab() {
             })}
           </div>
           <div className="px-3 py-2 border-t border-slate-800 flex items-center justify-between text-xs text-[#9cb8d9]">
-            <span>Page {sessionPage} / {sessionTotalPages}</span>
+            <span>Page {safeSessionPage} / {sessionTotalPages}</span>
             <div className="flex items-center gap-1">
               <button
-                onClick={() => setSessionPage(p => Math.max(1, p - 1))}
+                onClick={() => setSessionPage(Math.max(1, safeSessionPage - 1))}
                 disabled={sessionPage <= 1}
                 className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setSessionPage(p => Math.min(sessionTotalPages, p + 1))}
+                onClick={() => setSessionPage(Math.min(sessionTotalPages, safeSessionPage + 1))}
                 disabled={sessionPage >= sessionTotalPages}
                 className="p-1.5 rounded hover:bg-slate-800 disabled:opacity-40"
               >
