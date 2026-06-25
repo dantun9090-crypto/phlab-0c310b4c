@@ -527,7 +527,7 @@ function KeywordGeoPanel() {
           } })) as ServerGeoResponse;
           aggRows.push(...res.rows.map((r) => ({ ...r, fetchedAt: res.fetchedAt })));
           trimmedAll.push(...res.trimmedByQuota);
-          lastQuotaAfter = res.quota.after;
+          quotaRef.current = res.quota.after;
           unitsUsedTotal += res.quota.unitsUsed;
           if (res.catalog.length) lastCatalog = res.catalog;
         } catch (e: any) {
