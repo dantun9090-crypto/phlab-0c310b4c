@@ -164,7 +164,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           </div>
 
           {/* Spec card */}
-          <div className="lux-fade d6 lux-float mt-24 mx-auto max-w-lg rounded-2xl border border-white/[0.12] bg-white/[0.03] backdrop-blur-md px-10 py-7 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.7)]">
+          <div className="lux-fade d6 lux-float mt-24 mx-auto max-w-lg rounded-2xl border border-white/[0.12] bg-white/[0.03] mobile-no-blur backdrop-blur-md px-10 py-7 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.7)]">
             <dl className="grid grid-cols-3 gap-6 text-center">
               {[
                 { k: "UK", v: "Dispatched" },
