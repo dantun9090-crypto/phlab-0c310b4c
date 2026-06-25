@@ -3,6 +3,9 @@ import {
   detectBotReasons,
   isBotSession,
   BOT_REASON_LABELS,
+  validateUaPattern,
+  validateReferrerHost,
+  parseAndValidateList,
   type SessionLike,
 } from './bot-detection';
 
