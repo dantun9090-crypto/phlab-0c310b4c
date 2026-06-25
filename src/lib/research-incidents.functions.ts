@@ -85,7 +85,7 @@ export const listResearchIncidents = createServerFn({ method: "POST" })
         referrer: r.referrer ? String(r.referrer) : undefined,
         userAgent: r.userAgent ? String(r.userAgent) : undefined,
         message: r.message ? String(r.message) : undefined,
-        details: (r.details as Record<string, unknown> | undefined) ?? undefined,
+        detailsJson: r.details ? JSON.stringify(r.details) : undefined,
         ip: r.ip ? String(r.ip) : undefined,
       });
     }
