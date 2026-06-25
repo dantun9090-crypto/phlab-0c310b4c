@@ -426,7 +426,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
                 ← Back to homepage
               </Link>
               <Link
-                to="/terms-of-service"
+                to="/terms-and-conditions"
                 className="inline-flex items-center justify-center px-8 py-3 rounded-full border border-white/20 text-white/80 text-[11px] tracking-[0.2em] uppercase hover:bg-white/5 transition-all"
               >
                 Terms of Service
