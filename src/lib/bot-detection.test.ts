@@ -143,3 +143,91 @@ describe('bot-detection: other heuristics still work', () => {
     }
   });
 });
+
+describe('validation: allowlist entries', () => {
+  it('validateUaPattern rejects empty / too short / commas', () => {
+    expect(validateUaPattern('').ok).toBe(false);
+    expect(validateUaPattern('a').ok).toBe(false);
+    expect(validateUaPattern('foo,bar').ok).toBe(false);
+    expect(validateUaPattern('phlabs-internal').ok).toBe(true);
+  });
+  it('validateReferrerHost requires a hostname (no scheme/path)', () => {
+    expect(validateReferrerHost('https://ops.phlabs.co.uk/').ok).toBe(false);
+    expect(validateReferrerHost('ops.phlabs.co.uk/dashboard').ok).toBe(false);
+    expect(validateReferrerHost('not_a_host').ok).toBe(false);
+    expect(validateReferrerHost('ops.phlabs.co.uk').ok).toBe(true);
+    expect(validateReferrerHost('OPS.PHLABS.CO.UK').value).toBe('ops.phlabs.co.uk');
+  });
+  it('parseAndValidateList splits, dedups and reports errors', () => {
+    const { valid, errors } = parseAndValidateList(
+      'phlabs-internal, , a, my-qa-bot, my-qa-bot',
+      'ua',
+    );
+    expect(valid).toEqual(['phlabs-internal', 'my-qa-bot']);
+    expect(errors.map(e => e.entry)).toContain('a');
+  });
+});
+
+describe('e2e: forceHideBadge — toast pipeline + counters', () => {
+  // Minimal simulation of the LiveActivityTab pipeline: detection → toast
+  // suppression → "Online now" counter. Mirrors the real component logic.
+  type Sess = SessionLike & { id: string };
+  type Prefs = { hideBots: boolean; treatForceHideBadgeAsBot: boolean };
+
+  function runPipeline(sessions: Sess[], prefs: Prefs) {
+    const toasts: string[] = [];
+    const suppressed: { id: string; reasons: string[] }[] = [];
+    for (const s of sessions) {
+      const reasons = detectBotReasons(s, {
+        treatForceHideBadgeAsBot: prefs.treatForceHideBadgeAsBot,
+      });
+      const hitsForceHide = reasons.includes('force-hide-badge');
+      const isBot = reasons.length > 0;
+      if ((prefs.treatForceHideBadgeAsBot && hitsForceHide) || (prefs.hideBots && isBot)) {
+        suppressed.push({ id: s.id, reasons });
+        continue;
+      }
+      toasts.push(s.id);
+    }
+    const visible = sessions.filter(
+      s => detectBotReasons(s, {
+        treatForceHideBadgeAsBot: prefs.treatForceHideBadgeAsBot,
+      }).length === 0 || !prefs.hideBots,
+    );
+    return { toasts, suppressed, onlineNow: visible.length };
+  }
+
+  const human: Sess = { id: 'h1', userAgent: CHROME_UA, path: '/' };
+  const fhb: Sess = { id: 'fhb', userAgent: CHROME_UA, path: '/?forceHideBadge=true' };
+
+  it('humans-only ON + forceHideBadge=bot ON → fhb suppressed + counter excludes it', () => {
+    const r = runPipeline([human, fhb], { hideBots: true, treatForceHideBadgeAsBot: true });
+    expect(r.toasts).toEqual(['h1']);
+    expect(r.suppressed.map(s => s.id)).toEqual(['fhb']);
+    expect(r.suppressed[0].reasons).toContain('force-hide-badge');
+    expect(r.onlineNow).toBe(1);
+  });
+
+  it('humans-only OFF + forceHideBadge=bot ON → fhb still suppressed from toast, counter shows it', () => {
+    const r = runPipeline([human, fhb], { hideBots: false, treatForceHideBadgeAsBot: true });
+    expect(r.toasts).toEqual(['h1']);
+    expect(r.suppressed.map(s => s.id)).toEqual(['fhb']);
+    // Counter is bound to hideBots only.
+    expect(r.onlineNow).toBe(2);
+  });
+
+  it('humans-only OFF + forceHideBadge=bot OFF → fhb fully visible (toast + counter)', () => {
+    const r = runPipeline([human, fhb], { hideBots: false, treatForceHideBadgeAsBot: false });
+    expect(r.toasts).toEqual(['h1', 'fhb']);
+    expect(r.suppressed).toEqual([]);
+    expect(r.onlineNow).toBe(2);
+  });
+
+  it('humans-only ON + forceHideBadge=bot OFF → fhb still passes (no other bot signals)', () => {
+    const r = runPipeline([human, fhb], { hideBots: true, treatForceHideBadgeAsBot: false });
+    // With the toggle off, forceHideBadge is no longer a bot reason, and the
+    // remaining UA is plain Chrome — so the session is human and toasts fire.
+    expect(r.toasts).toEqual(['h1', 'fhb']);
+    expect(r.onlineNow).toBe(2);
+  });
+});
