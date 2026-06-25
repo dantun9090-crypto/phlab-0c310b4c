@@ -194,6 +194,51 @@ export default function LiveActivityTab() {
   const prefsRef = useRef(prefs);
   useEffect(() => { prefsRef.current = prefs; }, [prefs]);
 
+  // Load retention setting from Firestore (settings/toastAudit.retentionDays) once.
+  const retentionLoadedRef = useRef(false);
+  useEffect(() => {
+    if (retentionLoadedRef.current) return;
+    retentionLoadedRef.current = true;
+    (async () => {
+      try {
+        const snap = await getDoc(doc(db, 'settings', 'toastAudit'));
+        const v = snap.exists() ? (snap.data() as any).retentionDays : undefined;
+        if (typeof v === 'number' && Number.isFinite(v)) {
+          setPrefs(prev => {
+            const next = { ...prev, toastAuditRetentionDays: Math.max(1, Math.min(365, Math.floor(v))) };
+            savePrefs(next);
+            return next;
+          });
+        }
+      } catch (e) {
+        console.warn('[live-activity] load retention failed', e);
+      }
+    })();
+  }, []);
+
+  const saveRetention = async (days: number) => {
+    const clamped = Math.max(1, Math.min(365, Math.floor(days)));
+    updatePrefs({ toastAuditRetentionDays: clamped });
+    try {
+      await setDoc(doc(db, 'settings', 'toastAudit'), {
+        retentionDays: clamped,
+        updatedAt: Timestamp.now(),
+      }, { merge: true });
+      toast.success(`Audit retention saved (${clamped}d)`);
+    } catch (e: any) {
+      toast.error('Failed to save retention', { description: e?.message });
+    }
+  };
+
+  const resetDedup = () => {
+    dedupRef.current = {};
+    try { localStorage.removeItem(DEDUP_KEY); } catch { /* noop */ }
+    toast.success('Dedup cache reset', {
+      description: 'First-seen toasts will fire again immediately.',
+    });
+  };
+
+
   const maybeToast = (
     kind: ToastKind,
     title: string,
