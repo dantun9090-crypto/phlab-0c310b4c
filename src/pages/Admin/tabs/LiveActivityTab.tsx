@@ -53,6 +53,8 @@ interface Prefs {
   quietTimezone: string; // IANA, e.g. "Europe/London"
   toastDedupTtlH: number; // hours; entries older than this are forgotten
   toastAuditRetentionDays: number; // retention for toastAuditLogs cleanup job
+  hideBots: boolean; // exclude bot/crawler user-agents from live visitors
+
 }
 const DEFAULT_PREFS: Prefs = {
   windowMin: 5,
@@ -70,7 +72,15 @@ const DEFAULT_PREFS: Prefs = {
   quietTimezone: typeof window !== 'undefined' ? detectLocalTimezone() : 'UTC',
   toastDedupTtlH: 24,
   toastAuditRetentionDays: 30,
+  hideBots: true,
 };
+
+const BOT_UA_RE = /bot|crawler|spider|crawling|slurp|bingpreview|facebookexternalhit|embedly|quora link preview|outbrain|pinterest|developers\.google\.com\/\+\/web\/snippet|prerender|headlesschrome|phantomjs|puppeteer|playwright|lighthouse|chrome-lighthouse|gtmetrix|pingdom|uptimerobot|monitor|curl\/|wget\/|python-requests|httpclient|axios\/|node-fetch|go-http-client|java\/|okhttp|scrapy|ahrefsbot|semrushbot|mj12bot|dotbot|petalbot|yandex|baiduspider|duckduckbot|applebot|amazonbot|gptbot|chatgpt|claudebot|anthropic|perplexity|ccbot|google-extended|googleother|adsbot/i;
+
+function isBotUA(ua?: string): boolean {
+  if (!ua) return true; // missing UA → almost always automated probe
+  return BOT_UA_RE.test(ua);
+}
 
 function loadPrefs(): Prefs {
   try {
@@ -373,13 +383,14 @@ export default function LiveActivityTab() {
             }
           }
         });
-        const arr = Array.from(bySession.values()).sort(
+        const allArr = Array.from(bySession.values()).sort(
           (a, b) => b.lastSeen.getTime() - a.lastSeen.getTime()
         );
-        const ids = new Set(arr.map(s => s.sessionId));
+        const ids = new Set(allArr.map(s => s.sessionId));
         if (seenSessionIdsRef.current) {
-          const fresh = arr.filter(s => !seenSessionIdsRef.current!.has(s.sessionId));
+          const fresh = allArr.filter(s => !seenSessionIdsRef.current!.has(s.sessionId));
           fresh.slice(0, 3).forEach(s => {
+            if (prefsRef.current.hideBots && isBotUA(s.userAgent)) return;
             maybeToast(
               'visitor',
               'New visitor online',
@@ -389,7 +400,7 @@ export default function LiveActivityTab() {
           });
         }
         seenSessionIdsRef.current = ids;
-        setSessions(arr);
+        setSessions(allArr);
       },
       (e) => {
         console.error('LiveActivity visitor_events snapshot error', e);
@@ -405,9 +416,17 @@ export default function LiveActivityTab() {
   }, []);
 
   const windowMs = prefs.windowMin * 60_000;
+  const visibleSessions = useMemo(
+    () => (prefs.hideBots ? sessions.filter(s => !isBotUA(s.userAgent)) : sessions),
+    [sessions, prefs.hideBots]
+  );
+  const botCount = useMemo(
+    () => sessions.reduce((n, s) => n + (isBotUA(s.userAgent) ? 1 : 0), 0),
+    [sessions]
+  );
   const onlineNow = useMemo(
-    () => sessions.filter(s => now - s.lastSeen.getTime() < windowMs).length,
-    [sessions, now, windowMs]
+    () => visibleSessions.filter(s => now - s.lastSeen.getTime() < windowMs).length,
+    [visibleSessions, now, windowMs]
   );
 
   const filteredUsers = useMemo(() => {
@@ -422,8 +441,8 @@ export default function LiveActivityTab() {
 
   const filteredSessions = useMemo(() => {
     const q = sessionSearch.trim().toLowerCase();
-    if (!q) return sessions;
-    return sessions.filter(s =>
+    if (!q) return visibleSessions;
+    return visibleSessions.filter(s =>
       (s.sessionId || '').toLowerCase().includes(q) ||
       (s.visitorId || '').toLowerCase().includes(q) ||
       (s.path || '').toLowerCase().includes(q)
@@ -528,6 +547,21 @@ export default function LiveActivityTab() {
           >
             <RotateCcw className="w-3.5 h-3.5" /> Reset dedup
           </button>
+          <label
+            className="flex items-center gap-2 px-3 py-2 bg-slate-900 border-2 border-slate-700 rounded-lg text-xs text-[#9cb8d9] cursor-pointer hover:text-white"
+            title="Hide bots, crawlers, prerenderers and uptime monitors from the live visitors list"
+          >
+            <input
+              type="checkbox"
+              checked={prefs.hideBots}
+              onChange={e => updatePrefs({ hideBots: e.target.checked })}
+              className="accent-emerald-500"
+            />
+            Humans only
+            {prefs.hideBots && botCount > 0 && (
+              <span className="text-slate-500">({botCount} bot{botCount === 1 ? '' : 's'} hidden)</span>
+            )}
+          </label>
           <label className="flex items-center gap-2 text-xs text-[#9cb8d9] bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2">
             <Trash2 className="w-3.5 h-3.5" /> Audit retention
             <input
@@ -571,7 +605,10 @@ export default function LiveActivityTab() {
           <div className="flex items-center gap-2 text-blue-400 text-xs uppercase tracking-wider">
             <Globe className="w-4 h-4" /> Sessions (24h)
           </div>
-          <div className="text-white text-3xl font-bold mt-2">{sessions.length}</div>
+          <div className="text-white text-3xl font-bold mt-2">{visibleSessions.length}</div>
+          {prefs.hideBots && botCount > 0 && (
+            <div className="text-[10px] text-slate-500 mt-1">{botCount} bot{botCount === 1 ? '' : 's'} hidden</div>
+          )}
         </div>
         <div className="bg-slate-900 border-2 border-slate-700 rounded-lg p-4">
           <div className="flex items-center gap-2 text-purple-400 text-xs uppercase tracking-wider">
