@@ -1,11 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   Megaphone, Plus, Trash2, Edit2, CheckCircle2, AlertCircle,
-  Loader2, Eye, EyeOff, Link as LinkIcon, Image as ImageIcon, Save, X
+  Loader2, Eye, EyeOff, Link as LinkIcon, Image as ImageIcon, Save, X,
+  Sparkles, Home, ShoppingBag, PanelRight, MousePointerClick, Tag,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { db, storage, collection, getDocs, addDoc, doc, updateDoc, deleteDoc, Timestamp, orderBy, query, storageRef, uploadBytesResumable, getDownloadURL, triggerContentCdnInvalidation, bumpMarketingVersion } from '@/lib/firebase';
+
+const PLACEMENT_ICONS: Record<string, typeof Home> = {
+  homepage_hero: Home,
+  homepage_mid: Sparkles,
+  products_top: ShoppingBag,
+  products_sidebar: PanelRight,
+  popup: MousePointerClick,
+};
 
 interface Advert {
   id?: string;
