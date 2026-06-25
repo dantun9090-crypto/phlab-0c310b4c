@@ -575,8 +575,9 @@ export default function HomePage() {
 
               {/* Sub-copy */}
               <p style={{ fontSize: '1.05rem', lineHeight: 1.75, color: '#9cb8d9', maxWidth: '480px' }}>
-                PH Labs supplies analytical-grade synthetic peptides and laboratory reagents to qualified UK researchers. HPLC and mass-spectrometry verified, Certificate of Analysis with every batch. <strong style={{ color: '#f0a0a0' }}>Research Use Only — Not For Human Consumption.</strong>
+                As a pro peptide research lab, PH Labs synthesises high-purity amino acids and analytical-grade laboratory reagents for qualified UK researchers — supplied for in-vitro scientific research purposes only. HPLC and mass-spectrometry verified, Certificate of Analysis with every batch. <strong style={{ color: '#f0a0a0' }}>Research Use Only — Not For Human Consumption.</strong>
               </p>
+
 
               {/* Trust micro-badges */}
               <div className="flex flex-wrap gap-3">

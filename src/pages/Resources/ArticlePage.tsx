@@ -268,8 +268,13 @@ export default function ArticlePage() {
   useEffect(() => {
     if (!article) return;
     const articleUrl = `https://phlabs.co.uk/resources/${article.slug}`;
-    const shortTitle = article.title.length > 38 ? article.title.slice(0, 36).trimEnd() + '…' : article.title;
-    document.title = `${shortTitle} | PH Labs`;
+    // Prefer per-article SEO override; otherwise truncate the H1 title.
+    if (article.seoTitle) {
+      document.title = article.seoTitle;
+    } else {
+      const shortTitle = article.title.length > 38 ? article.title.slice(0, 36).trimEnd() + '…' : article.title;
+      document.title = `${shortTitle} | PH Labs`;
+    }
 
     const setMeta = (name: string, content: string, prop = false) => {
       const sel = prop ? `meta[property="${name}"]` : `meta[name="${name}"]`;
@@ -282,23 +287,25 @@ export default function ArticlePage() {
       el.setAttribute('content', content);
     };
 
-    // FIX 6: Meta description 120-158 chars ending with "| PH Labs UK"
-    let metaDesc = article.excerpt;
-    const suffix = ' | PH Labs UK';
-    
-    // If excerpt is too long, truncate to fit within 158 chars with suffix
-    if (metaDesc.length + suffix.length > 158) {
-      metaDesc = metaDesc.slice(0, 158 - suffix.length - 3) + '...' + suffix;
+    // Meta description: prefer override, else derive from excerpt.
+    let metaDesc: string;
+    if (article.seoDescription) {
+      metaDesc = article.seoDescription;
     } else {
-      metaDesc = metaDesc + suffix;
+      metaDesc = article.excerpt;
+      const suffix = ' | PH Labs UK';
+      if (metaDesc.length + suffix.length > 158) {
+        metaDesc = metaDesc.slice(0, 158 - suffix.length - 3) + '...' + suffix;
+      } else {
+        metaDesc = metaDesc + suffix;
+      }
+      if (metaDesc.length < 120) {
+        metaDesc = article.excerpt.slice(0, 120 - suffix.length) + suffix;
+      }
     }
-    
-    // Ensure it's at least 120 chars
-    if (metaDesc.length < 120) {
-      metaDesc = article.excerpt.slice(0, 120 - suffix.length) + suffix;
-    }
-    
+
     setMeta('description', metaDesc);
+
     setMeta('keywords', [...article.keywords, 'research peptides UK', 'PH Labs'].join(', '));
     setMeta('og:title', `${article.title} | PH Labs`, true);
     setMeta('og:description', metaDesc, true);
@@ -347,7 +354,9 @@ export default function ArticlePage() {
           { '@type': 'ListItem', position: 3, name: article.title, item: articleUrl },
         ],
       },
+      ...(article.extraSchema ?? []),
     ];
+
     const scriptEl = document.createElement('script');
     scriptEl.type = 'application/ld+json';
     scriptEl.id = 'article-schema';

@@ -10,7 +10,14 @@ export interface Article {
   references: Reference[];
   relatedSlugs: string[];
   keywords: string[];
+  /** SEO override — used as <title>. Falls back to `title` when absent. */
+  seoTitle?: string;
+  /** SEO override — used as <meta name="description">. Falls back to `excerpt`. */
+  seoDescription?: string;
+  /** Optional extra schema objects appended to JSON-LD (e.g. Organization). */
+  extraSchema?: Record<string, unknown>[];
 }
+
 
 export interface Section {
   heading?: string;
@@ -171,17 +178,30 @@ For a peptide such as BPC-157 (sequence: GEPPPGKPADDAGLV, MW 1419.5 Da), the cor
   // ---------------------------------------------
   {
     slug: 'bpc-157-tissue-repair',
-    title: 'BPC-157 in Tissue Repair Studies: Mechanisms and Research Findings',
+    title: 'BPC-157 Research and Human Studies: Tissue Repair Mechanisms',
+    seoTitle: 'BPC-157 Research & Human Studies | Tissue Repair | PHLabs',
+    seoDescription: 'Explore BPC-157 research and human studies on tissue repair, knee pain recovery, blood vessel healing, and side effect profiles. Laboratory-grade compounds from PHLabs.',
     subtitle: 'An evidence-based review of the pentadecapeptide body-protective compound and its reported roles in angiogenesis, tendon repair, and gastrointestinal cytoprotection',
     category: 'Tissue Repair Research',
     readTime: 13,
     publishDate: '2026-02-20',
     excerpt: 'BPC-157 is a synthetic 15-amino-acid peptide derived from a partial sequence of human gastric juice protein BPC. Preclinical studies across multiple tissue types report accelerated healing timelines, enhanced angiogenesis, and modulation of growth factor expression, positioning it as a widely researched compound in regenerative biology.',
-    keywords: ['BPC-157', 'tissue repair', 'angiogenesis', 'tendon healing', 'gastrointestinal', 'VEGF', 'body protective compound'],
+    keywords: ['BPC-157', 'bpc 157 research', 'bpc 157 human studies', 'tissue repair', 'angiogenesis', 'tendon healing', 'knee pain research', 'body protective compound'],
+    extraSchema: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        '@id': 'https://phlabs.co.uk/#organization',
+        name: 'PHLabs',
+        url: 'https://phlabs.co.uk',
+        logo: 'https://phlabs.co.uk/logo.png',
+      },
+    ],
     relatedSlugs: ['hplc-testing-explained', 'tb-500-thymosin-beta-4', 'peptide-storage-reconstitution'],
     content: [
       {
         body: `Body-protective compound 157 (BPC-157) is a synthetic pentadecapeptide comprising the sequence Gly-Glu-Pro-Pro-Pro-Gly-Lys-Pro-Ala-Asp-Asp-Ala-Gly-Leu-Val (GEPPPGKPADDAGLV). It is derived from a region of the human gastric juice protein BPC and was first described by Sikirić and colleagues at the University of Zagreb in the early 1990s. Despite its gastric origin, <a href="/products/bpc-157" style="color: #10b981; text-decoration: underline;">BPC-157</a> has since been investigated in preclinical models across a remarkably wide range of tissue types, including tendon, ligament, muscle, bone, vascular endothelium, and the central nervous system. <strong><a href="/products/bpc-157" style="color: #10b981; text-decoration: underline; font-weight: 700;">Buy research-grade BPC-157 (≥99% HPLC)</a></strong>.`
+
       },
       {
         heading: 'Molecular Targets and Signalling Pathways',
@@ -220,10 +240,27 @@ In colitis models induced by trinitrobenzenesulphonic acid (TNBS) or dextran sod
         }
       },
       {
+        heading: 'BPC-157 Human Studies Overview',
+        body: `Although the body of BPC-157 evidence remains overwhelmingly preclinical, several small-scale human studies have been described in the academic literature. The most frequently cited example involves 12 patients with knee pain associated with patellar tendinopathy, where investigators reported reduced pain scores and improved functional indices over a structured observation window. Additional pilot work with healthy volunteers has examined gastrointestinal tolerability and short-term safety signals. Researchers reviewing this segment of bpc 157 research should treat these human studies as exploratory: cohorts are small, blinding is inconsistent, and primary endpoints vary. Even so, they provide useful context when designing translational protocols.`
+      },
+      {
+        heading: 'Mechanism of Action',
+        body: `Across rodent and in-vitro models, BPC-157 appears to act on the vascular interface: it stabilises endothelial signalling, supports the formation of new blood vessels, and influences nitric-oxide tone in injured tissue. The same angiogenic machinery is what oncology researchers monitor when studying how cancer cells co-opt vasculature, which is why BPC-157 is sometimes used as a probe peptide in tumour-microenvironment assays rather than as a therapeutic candidate. Long term in-vitro exposure studies suggest the peptide does not accumulate intracellularly, but data on chronic systemic exposure in humans is absent — a gap any responsible review must acknowledge.`
+      },
+      {
+        heading: 'Safety & Side Effects Profile',
+        body: `Reported side effects in the published preclinical record are limited to mild, dose-dependent gastrointestinal changes at supraphysiological doses; serious adverse events have not been documented in the peer-reviewed literature available to date. BPC-157 is currently included on the World Anti Doping Agency Prohibited List under the S0 "non-approved substances" category, which means researchers handling samples in any context connected to elite sport must follow strict chain-of-custody procedures. This regulatory status does not reflect a confirmed safety concern; it reflects the absence of an approved medicinal indication.`
+      },
+      {
+        heading: 'Research Applications',
+        body: `Current bpc 157 research clusters around three application areas: musculoskeletal repair models (tendon, ligament, muscle), gastrointestinal protection assays, and vascular/angiogenesis studies. Investigators typically combine BPC-157 with companion compounds such as TB-500 or GHK-Cu when probing wound-healing pathways in vitro. All work should be conducted under institutional biosafety review and documented against batch-specific Certificates of Analysis.`
+      },
+      {
         heading: 'Stability and In-Vitro Research Use',
         body: `BPC-157 is a relatively stable peptide due to its lack of cysteine residues (which are prone to oxidation) and its resistance to gastric proteases — a property studied in the context of oral administration. For in-vitro research, the lyophilised peptide should be reconstituted in sterile bacteriostatic water and stored at 4°C for short-term use (up to 7 days) or -20°C for longer periods. Working concentrations in cell culture assays typically range from 1–100 µM depending on the endpoint; tenocyte migration assays, for example, commonly use 1–10 µM concentrations.`
       }
     ],
+
     references: [
       { id: 1, authors: 'Sikirić P, Seiwerth S, Rucman R, et al.', year: 2013, title: 'Stable gastric pentadecapeptide BPC 157: novel therapy in gastrointestinal tract', journal: 'Curr Pharm Des', doi: '10.2174/13816128113199990241' },
       { id: 2, authors: 'Chang CH, Tsai WC, Lin MS, Hsu YH, Pang JH.', year: 2011, title: 'The promoting effect of pentadecapeptide BPC 157 on tendon healing', journal: 'J Appl Physiol', doi: '10.1152/japplphysiol.00945.2010' },
@@ -349,13 +386,16 @@ Cardiovascular outcome data are available only for semaglutide (SUSTAIN-6, SELEC
   // ---------------------------------------------
   {
     slug: 'ipamorelin-ghrp-research',
-    title: 'Ipamorelin and the GHRP Class: Growth Hormone Secretagogue Research',
+    title: 'GHRP-2 vs Ipamorelin: A Comparative Research Guide',
+    seoTitle: 'GHRP-2 vs Ipamorelin: Comparative Research Guide | PHLabs',
+    seoDescription: 'Compare GHRP-2 vs Ipamorelin in our research guide covering growth hormone secretion, body composition, side effects, and long-term safety data. Lab-grade peptides.',
     subtitle: 'A mechanistic review of ghrelin receptor agonists, comparing ipamorelin, GHRP-2, GHRP-6, and hexarelin across selectivity, pulsatility, and in-vivo GH release data',
     category: 'Endocrine Research',
     readTime: 11,
     publishDate: '2026-01-30',
     excerpt: 'Growth hormone-releasing peptides (GHRPs) are synthetic ghrelin receptor agonists that stimulate pulsatile GH secretion. Ipamorelin is distinguished by its high GHS-R1a selectivity and minimal cortisol/prolactin co-release, making it a preferred tool compound for somatotropic axis research.',
-    keywords: ['ipamorelin', 'GHRP', 'ghrelin receptor', 'growth hormone secretagogue', 'GHS-R1a', 'GHRP-2', 'GHRP-6', 'somatotropic axis'],
+    keywords: ['ipamorelin', 'ghrp 2 vs ipamorelin', 'ghrp-2 vs ipamorelin', 'GHRP', 'ghrelin receptor', 'growth hormone secretagogue', 'GHS-R1a', 'somatotropic axis'],
+
     relatedSlugs: ['what-is-retatrutide', 'hplc-testing-explained', 'bpc-157-tissue-repair'],
     content: [
       {
@@ -383,9 +423,30 @@ Combined administration of ipamorelin with CJC-1295 (a long-acting GHRH analogue
       {
         heading: 'Downstream Effects on IGF-1 and Tissue Endpoints',
         body: `Sustained ipamorelin administration elevates hepatic IGF-1 synthesis through increased GH-stimulated JAK2/STAT5b signalling. In hypophysectomised or GH-deficient rodent models, ipamorelin normalises IGF-1 levels, lean body mass, and femoral bone mineral density within 3–4 weeks. Tibial epiphyseal width, used as a sensitive histomorphometric marker of somatotropic axis activity, is significantly increased versus vehicle controls at all doses above 25 µg/kg/day.`
+      },
+      {
+        heading: 'GHRP-2 vs Ipamorelin: Key Differences',
+        body: `Although both are gh secretagogues acting at GHS-R1a, ghrp-2 vs ipamorelin is the most common head-to-head comparison researchers run when selecting a tool compound. GHRP-2 drives a slightly larger acute GH spike but co-releases cortisol and prolactin in measurable amounts. Ipamorelin produces a cleaner, more selective pulse with minimal off-target endocrine noise — the property that makes it the default choice when receptor-isolated mechanistic work is the goal.`
+      },
+      {
+        heading: 'Growth Hormone Secretion Mechanisms',
+        body: `Both peptides bind GHS-R1a on anterior-pituitary somatotrophs and trigger growth hormone gh release via the phospholipase-C / IP3 / calcium pathway. Pulse onset is rapid: serum GH measurably rises inside 30 minutes after subcutaneous administration in rodent and human studies, then returns toward baseline as the receptor desensitises. The kinetics are why these gh secretagogues are paired with long-acting GHRH analogues in research chemicals protocols designed to interrogate pulse-amplitude vs pulse-frequency contributions to downstream IGF-1.`
+      },
+      {
+        heading: 'Body Composition & Lean Mass Effects',
+        body: `In chronic-dosing rodent body composition studies, GHRP-2 elevates appetite stimulation (a ghrelin-receptor effect) and produces moderate gains in lean mass alongside increased food intake. Ipamorelin, lacking strong orexigenic activity, shifts lean mass without the appetite-driven confounder — useful when researchers want to attribute composition changes to GH/IGF-1 signalling rather than caloric load. Both compounds increase femoral and tibial cortical thickness at multi-week timepoints in young-adult rodents.`
+      },
+      {
+        heading: 'Long-Term Safety & Side Effects',
+        body: `Reported side effects in the published literature are mild and dose-dependent: transient flushing, headache, and short-lived prolactin elevation with GHRP-2; minimal off-target signal with ipamorelin. Long term repeat-dose studies remain limited in scope; chronic GHS-R1a agonism is studied under the anti aging research umbrella precisely because the long-term endocrine consequences in humans are not fully mapped. Researchers should design protocols with explicit washout windows and IGF-1 monitoring.`
+      },
+      {
+        heading: 'Research Chemicals Context',
+        body: `Both peptides are supplied strictly as research chemicals for in-vitro and preclinical work — not for human use. Quality assurance hinges on HPLC purity ≥99% and mass-spectrometry identity confirmation per batch. Reconstitute in sterile bacteriostatic water, aliquot, and store at −20 °C for long-term stability. Cross-batch reproducibility is the most common failure mode in published ipamorelin work and is the reason every PHLabs vial ships with a batch-matched Certificate of Analysis.`
       }
     ],
     references: [
+
       { id: 1, authors: 'Raun K, Hansen BS, Johansen NL, et al.', year: 1998, title: 'Ipamorelin, the first selective growth hormone secretagogue', journal: 'Eur J Endocrinol', doi: '10.1530/eje.0.1390552' },
       { id: 2, authors: 'Bowers CY.', year: 1998, title: 'Growth hormone-releasing peptide (GHRP)', journal: 'Cell Mol Life Sci', doi: '10.1007/s000180050227' },
       { id: 3, authors: 'Smith RG, Pong SS, Hickey G, et al.', year: 1996, title: 'Modulation of pulsatile GH release through a novel receptor in hypothalamus and pituitary gland', journal: 'Recent Prog Horm Res' },
