@@ -58,6 +58,9 @@ interface Prefs {
   toastDedupTtlH: number; // hours; entries older than this are forgotten
   toastAuditRetentionDays: number; // retention for toastAuditLogs cleanup job
   hideBots: boolean; // exclude bot/crawler user-agents from live visitors
+  treatForceHideBadgeAsBot: boolean; // when false, forceHideBadge sessions are NOT auto-classified
+  allowlistUAs: string[]; // UA substrings always treated as human (operator tools)
+  allowlistReferrers: string[]; // referrer hostnames always treated as human
 
 }
 const DEFAULT_PREFS: Prefs = {
@@ -77,7 +80,12 @@ const DEFAULT_PREFS: Prefs = {
   toastDedupTtlH: 24,
   toastAuditRetentionDays: 30,
   hideBots: true,
+  treatForceHideBadgeAsBot: true,
+  allowlistUAs: [],
+  allowlistReferrers: [],
 };
+
+// Detection logic + UA/path regex live in '@/lib/bot-detection' (fully tested).
 
 const BOT_UA_RE = /bot|crawler|spider|crawling|slurp|bingpreview|facebookexternalhit|embedly|quora link preview|outbrain|pinterest|developers\.google\.com\/\+\/web\/snippet|prerender|headlesschrome|phantomjs|puppeteer|playwright|lighthouse|chrome-lighthouse|gtmetrix|pingdom|uptimerobot|monitor|curl\/|wget\/|python-requests|httpclient|axios\/|node-fetch|go-http-client|java\/|okhttp|scrapy|ahrefsbot|semrushbot|mj12bot|dotbot|petalbot|yandex|baiduspider|duckduckbot|applebot|amazonbot|gptbot|chatgpt|claudebot|anthropic|perplexity|ccbot|google-extended|googleother|adsbot/i;
 
