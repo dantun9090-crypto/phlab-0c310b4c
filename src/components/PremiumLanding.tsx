@@ -440,17 +440,34 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         <div className="mx-auto max-w-3xl px-6 text-center">
           <div className="border-t gold-border pt-12">
             <p className="text-[11px] uppercase tracking-[0.5em] gold">Legal</p>
-            <h2 className="mt-3 serif text-2xl font-light text-white">Legal Disclaimer</h2>
+
+            {/* Short Important Notice */}
+            <div className="mt-6 mx-auto max-w-2xl rounded-xl border gold-border bg-[#c9a44c]/10 px-6 py-5 text-left">
+              <p className="text-[10px] uppercase tracking-[0.35em] gold font-semibold">Important Notice</p>
+              <p className="mt-3 text-sm sm:text-[15px] leading-relaxed text-white/90">
+                All products supplied by PH Labs are intended strictly for
+                laboratory and scientific research use only.{" "}
+                <span className="gold font-medium">Not for human consumption,</span>{" "}
+                medical, veterinary or therapeutic application.
+              </p>
+            </div>
+
+            <h2 className="mt-12 serif text-2xl font-light text-white">Legal Disclaimer</h2>
             <p className="mt-6 text-sm sm:text-[15px] leading-relaxed text-white/70">
               All products offered on this website are intended solely for
               laboratory research and scientific purposes. They are not intended
               for human consumption, medical diagnosis, treatment, or any
-              therapeutic use. By accessing this website or purchasing any
-              product, you confirm that you are a qualified researcher or
-              institution and that you will comply with all applicable laws and
-              regulations regarding the handling and use of research materials.
-              Misuse of these products may be dangerous and illegal. The company
-              accepts no liability for any misuse of these products.
+              therapeutic use. Products are sold exclusively to qualified
+              researchers, scientific professionals, academic institutions and
+              commercial laboratories. By accessing this website or purchasing
+              any product, you confirm that you are a qualified researcher or
+              authorised institution and that you will comply with all
+              applicable laws and regulations regarding the handling, storage
+              and use of research materials. Misuse of these products may be
+              dangerous and unlawful. To the maximum extent permitted by law,
+              PH Labs accepts no liability for any loss, damage, injury or
+              claim arising from any use of these products outside of
+              controlled laboratory research settings.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
               <a
