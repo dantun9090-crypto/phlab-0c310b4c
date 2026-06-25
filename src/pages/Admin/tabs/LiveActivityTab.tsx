@@ -82,20 +82,26 @@ function savePrefs(p: Prefs) {
   try { localStorage.setItem(LS_KEY, JSON.stringify(p)); } catch { /* noop */ }
 }
 
-/** Returns true if current local time falls within [start, end] quiet window. */
-function isQuietNow(start: string, end: string, now = new Date()): boolean {
-  const toMin = (s: string) => {
-    const [h, m] = s.split(':').map(Number);
-    return (h || 0) * 60 + (m || 0);
-  };
-  const cur = now.getHours() * 60 + now.getMinutes();
-  const s = toMin(start);
-  const e = toMin(end);
-  if (s === e) return false;
-  // Same-day window
-  if (s < e) return cur >= s && cur < e;
-  // Overnight window (e.g. 22:00 → 08:00)
-  return cur >= s || cur < e;
+// Persistent toast dedup — survives snapshot re-fires and remounts.
+const DEDUP_KEY = 'phl_liveactivity_toast_dedup_v1';
+type DedupMap = Record<string, number>; // key -> ms timestamp
+
+function loadDedup(): DedupMap {
+  try {
+    const raw = localStorage.getItem(DEDUP_KEY);
+    return raw ? (JSON.parse(raw) as DedupMap) : {};
+  } catch {
+    return {};
+  }
+}
+function saveDedup(map: DedupMap) {
+  try { localStorage.setItem(DEDUP_KEY, JSON.stringify(map)); } catch { /* noop */ }
+}
+function pruneDedup(map: DedupMap, ttlH: number): DedupMap {
+  const cutoff = Date.now() - ttlH * 3_600_000;
+  const out: DedupMap = {};
+  for (const [k, v] of Object.entries(map)) if (v >= cutoff) out[k] = v;
+  return out;
 }
 
 function timeAgo(d: Date): string {
