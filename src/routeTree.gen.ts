@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as ResearchRouteImport } from './routes/research'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as GoogleMerchantFeedDotxmlRouteImport } from './routes/google-merchant-feed[.]xml'
 import { Route as BingFeedDotxmlRouteImport } from './routes/bing-feed[.]xml'
@@ -55,11 +54,6 @@ import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hook
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResearchRoute = ResearchRouteImport.update({
-  id: '/research',
-  path: '/research',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsRoute = ProductsRouteImport.update({
@@ -281,7 +275,6 @@ export interface FileRoutesByFullPath {
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
-  '/research': typeof ResearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/compound': typeof MarketingCompoundRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
@@ -324,7 +317,6 @@ export interface FileRoutesByTo {
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
-  '/research': typeof ResearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/compound': typeof MarketingCompoundRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
@@ -369,7 +361,6 @@ export interface FileRoutesById {
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
-  '/research': typeof ResearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_marketing/compound': typeof MarketingCompoundRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
@@ -414,7 +405,6 @@ export interface FileRouteTypes {
     | '/bing-feed.xml'
     | '/google-merchant-feed.xml'
     | '/products'
-    | '/research'
     | '/sitemap.xml'
     | '/compound'
     | '/admin/merchant-feed-preview'
@@ -457,7 +447,6 @@ export interface FileRouteTypes {
     | '/bing-feed.xml'
     | '/google-merchant-feed.xml'
     | '/products'
-    | '/research'
     | '/sitemap.xml'
     | '/compound'
     | '/admin/merchant-feed-preview'
@@ -501,7 +490,6 @@ export interface FileRouteTypes {
     | '/bing-feed.xml'
     | '/google-merchant-feed.xml'
     | '/products'
-    | '/research'
     | '/sitemap.xml'
     | '/_marketing/compound'
     | '/admin/merchant-feed-preview'
@@ -546,7 +534,6 @@ export interface RootRouteChildren {
   BingFeedDotxmlRoute: typeof BingFeedDotxmlRoute
   GoogleMerchantFeedDotxmlRoute: typeof GoogleMerchantFeedDotxmlRoute
   ProductsRoute: typeof ProductsRoute
-  ResearchRoute: typeof ResearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
   CheckoutCancelRoute: typeof CheckoutCancelRoute
@@ -590,13 +577,6 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/research': {
-      id: '/research'
-      path: '/research'
-      fullPath: '/research'
-      preLoaderRoute: typeof ResearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products': {
@@ -901,7 +881,6 @@ const rootRouteChildren: RootRouteChildren = {
   BingFeedDotxmlRoute: BingFeedDotxmlRoute,
   GoogleMerchantFeedDotxmlRoute: GoogleMerchantFeedDotxmlRoute,
   ProductsRoute: ProductsRoute,
-  ResearchRoute: ResearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
   CheckoutCancelRoute: CheckoutCancelRoute,
