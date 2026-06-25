@@ -112,10 +112,13 @@ function timeAgo(d: Date): string {
   return `${Math.floor(sec / 86400)}d ago`;
 }
 
-function fullTs(d: Date): string {
-  // ISO-style with local timezone abbrev
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  return `${d.toLocaleString('en-GB', { hour12: false })} (${tz})`;
+function fullTs(d: Date, tz?: string): string {
+  const zone = tz || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  try {
+    return `${d.toLocaleString('en-GB', { hour12: false, timeZone: zone })} (${zone})`;
+  } catch {
+    return `${d.toLocaleString('en-GB', { hour12: false })} (${zone})`;
+  }
 }
 
 function shortUA(ua?: string): string {
