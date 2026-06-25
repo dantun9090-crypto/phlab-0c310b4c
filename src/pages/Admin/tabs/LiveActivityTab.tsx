@@ -87,26 +87,8 @@ const DEFAULT_PREFS: Prefs = {
 
 // Detection logic + UA/path regex live in '@/lib/bot-detection' (fully tested).
 
-const BOT_UA_RE = /bot|crawler|spider|crawling|slurp|bingpreview|facebookexternalhit|embedly|quora link preview|outbrain|pinterest|developers\.google\.com\/\+\/web\/snippet|prerender|headlesschrome|phantomjs|puppeteer|playwright|lighthouse|chrome-lighthouse|gtmetrix|pingdom|uptimerobot|monitor|curl\/|wget\/|python-requests|httpclient|axios\/|node-fetch|go-http-client|java\/|okhttp|scrapy|ahrefsbot|semrushbot|mj12bot|dotbot|petalbot|yandex|baiduspider|duckduckbot|applebot|amazonbot|gptbot|chatgpt|claudebot|anthropic|perplexity|ccbot|google-extended|googleother|adsbot/i;
 
-function isBotUA(ua?: string): boolean {
-  if (!ua) return true; // missing UA → almost always automated probe
-  return BOT_UA_RE.test(ua);
-}
 
-// Paths/query params that only synthetic probes hit:
-// - forceHideBadge=true → Google Customer Reviews / Merchant trust-badge iframe probe
-// - __prerender / _escaped_fragment_ → SSR prerender probes
-// - ?lighthouse / ?audit → automated audits
-const BOT_PATH_RE = /(^|[?&])(forceHideBadge|__prerender|_escaped_fragment_|lighthouse|audit|ping|healthcheck)(=|&|$)/i;
-function isBotPath(path?: string): boolean {
-  if (!path) return false;
-  return BOT_PATH_RE.test(path);
-}
-
-function isBotSession(s: { userAgent?: string; path?: string }): boolean {
-  return isBotSession(s) || isBotPath(s.path);
-}
 
 function loadPrefs(): Prefs {
   try {
