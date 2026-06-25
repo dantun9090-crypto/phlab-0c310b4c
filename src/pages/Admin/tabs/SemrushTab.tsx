@@ -183,6 +183,9 @@ export default function SemrushTab() {
         )}
       </div>
 
+      {/* Keyword geo breakdown */}
+      <KeywordGeoPanel />
+
       {/* Footer meta */}
       {data && (
         <p className="text-xs text-slate-500">
@@ -193,6 +196,7 @@ export default function SemrushTab() {
     </div>
   );
 }
+
 
 function StatCard({ label, value, prefix, suffix, icon }: {
   label: string; value: any; prefix?: string; suffix?: string; icon?: React.ReactNode;
