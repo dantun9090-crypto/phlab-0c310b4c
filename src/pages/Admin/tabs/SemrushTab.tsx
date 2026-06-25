@@ -762,7 +762,7 @@ function KeywordGeoPanel() {
         }}
       />
 
-      <div className="p-4 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto] gap-3 items-end">
+      <div className="p-4 grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto_auto] gap-3 items-end">
         <div>
           <label className="block text-xs font-semibold text-slate-300 mb-1">Keyword / phrase</label>
           <input
@@ -804,6 +804,14 @@ function KeywordGeoPanel() {
           title={missing.length > 0 ? `Fetch ${missing.length} missing countries` : 'All countries already fetched'}
         >
           <RotateCw className="w-4 h-4" /> Resume {missing.length > 0 ? `(${missing.length})` : ''}
+        </button>
+        <button
+          onClick={() => runLookup('failed')}
+          disabled={loading || !activeEntry || failedDbs.length === 0}
+          className="min-h-[48px] px-3 bg-amber-700 hover:bg-amber-600 disabled:opacity-40 text-white rounded-lg text-sm font-semibold inline-flex items-center gap-2"
+          title={failedDbs.length > 0 ? `Retry ${failedDbs.length} failed countries` : 'No failed countries to retry'}
+        >
+          <RotateCw className="w-4 h-4" /> Retry failed {failedDbs.length > 0 ? `(${failedDbs.length})` : ''}
         </button>
         <div className="flex gap-2">
           <button
