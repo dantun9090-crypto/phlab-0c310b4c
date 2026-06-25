@@ -115,7 +115,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "ghk-cu-research-peptide",
     variants: [
       { sizeKey: "50mg", sizeLabel: "50 mg",
-        titleA: "GHK-Cu 50 mg",      linkA: "/products/GHK50A",
+        titleA: "GHK - Cu Research Compound 50mg - Laboratory Use", linkA: "/products/GHK50A",
         titleB: "GC3-PHL 50 mg",     linkB: "/products/gc3phl50" },
     ],
   },
