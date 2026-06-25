@@ -567,7 +567,7 @@ export default function HomePage() {
                   maxWidth: '100%',
                   overflowWrap: 'break-word',
                 }}>
-                  <span style={{ display: 'block' }}>Synthetic Peptides </span>
+                  <span style={{ display: 'block' }}>Pro Peptide Research Lab </span>
                   <span style={{ display: 'block', color: '#10b981' }}>For In-Vitro Research</span>
                   <span style={{ display: 'block', color: '#c9d8f0', fontWeight: 400, fontSize: '0.72em', overflowWrap: 'break-word' }}>HPLC-Verified ≥99% Purity · CoA Per Batch</span>
                 </h1>
