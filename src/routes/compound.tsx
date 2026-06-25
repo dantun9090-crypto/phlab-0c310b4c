@@ -1,35 +1,28 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { PremiumLanding } from "@/components/PremiumLanding";
 
-const TITLE = "Premium Research Compounds UK | PH Labs";
+const TITLE = "Premium Research Compounds for Scientific Laboratories | PH Labs";
 const DESCRIPTION =
-  "High-purity research compounds for in-vitro laboratory use. HPLC-tested, UK-dispatched, batch-traceable. Strictly for research — not for human consumption.";
+  "High-purity research materials developed for professional laboratory and scientific applications. Premium laboratory research compounds, supplied with detailed documentation. For research use only.";
 const URL = "https://phlabs.co.uk/compound";
 const OG_IMAGE = "https://phlabs.co.uk/og/compound.jpg";
 
-const FAQS: { q: string; a: string }[] = [
+const FAQS = [
   {
-    q: "Are PH Labs compounds intended for human use?",
-    a: "No. All materials supplied by PH Labs are strictly for in-vitro laboratory research by qualified professionals. They are not medicines, supplements, food or cosmetics, and must not be administered to humans or animals.",
+    q: "Who are these research compounds intended for?",
+    a: "Our premium research compounds are supplied exclusively to qualified researchers, scientific professionals, academic institutions and commercial laboratories for laboratory research and analytical studies.",
   },
   {
-    q: "How do you verify purity and quality?",
-    a: "Every batch is tested by High-Performance Liquid Chromatography (HPLC). A Certificate of Analysis is available on request and each unit carries a batch identifier so researchers can trace material back to its analytical record.",
+    q: "Are these products intended for human use?",
+    a: "No. All materials are intended exclusively for laboratory and scientific research purposes. They are not intended for human consumption, medical use, or any therapeutic applications.",
   },
   {
-    q: "Where are the compounds sourced and dispatched from?",
-    a: "Materials are stocked and dispatched from the United Kingdom. We work with established suppliers and maintain batch records for every item that leaves our facility.",
+    q: "What documentation is supplied?",
+    a: "Each batch is accompanied by detailed analytical documentation. Qualified researchers and institutions may request the full research documentation via our contact channel.",
   },
   {
-    q: "How are orders shipped?",
-    a: "UK orders are sent via tracked delivery in secure, temperature-aware packaging suitable for laboratory delivery. Standard dispatch is on the next working day after order confirmation, subject to stock and verification.",
-  },
-  {
-    q: "Who is allowed to purchase?",
-    a: "Purchases are restricted to qualified researchers, scientific professionals and academic or commercial laboratories. By placing an order you confirm you are 18 or over and acquiring materials solely for legitimate research within an appropriately equipped laboratory environment.",
-  },
-  {
-    q: "Do you provide usage, dosage or clinical guidance?",
-    a: "No. PH Labs does not provide any medical, clinical, dosage or administration guidance. Our materials are research reagents only and are not intended to diagnose, treat, cure or prevent any condition.",
+    q: "Where are the materials prepared and dispatched from?",
+    a: "Materials are prepared, stored and dispatched from the United Kingdom under controlled laboratory conditions, with batch records maintained for every shipment.",
   },
 ];
 
@@ -38,6 +31,7 @@ export const Route = createFileRoute("/compound")({
     meta: [
       { title: TITLE },
       { name: "description", content: DESCRIPTION },
+      { name: "robots", content: "index,follow" },
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },
@@ -45,12 +39,10 @@ export const Route = createFileRoute("/compound")({
       { property: "og:image", content: OG_IMAGE },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "640" },
-      { property: "og:image:alt", content: "PH Labs — Premium Research Compounds UK" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: TITLE },
       { name: "twitter:description", content: DESCRIPTION },
       { name: "twitter:image", content: OG_IMAGE },
-      { name: "twitter:image:alt", content: "PH Labs — Premium Research Compounds UK" },
     ],
     links: [{ rel: "canonical", href: URL }],
     scripts: [
@@ -63,7 +55,6 @@ export const Route = createFileRoute("/compound")({
           description: DESCRIPTION,
           url: URL,
           inLanguage: "en-GB",
-          isFamilyFriendly: true,
         }),
       },
       {
@@ -80,234 +71,5 @@ export const Route = createFileRoute("/compound")({
       },
     ],
   }),
-  component: CompoundLandingPage,
+  component: () => <PremiumLanding eyebrow="UK Laboratory Supply" />,
 });
-
-function CompoundLandingPage() {
-  return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
-      {/* Top disclaimer bar — visible above the fold for crawlers + users */}
-      <div className="w-full bg-amber-500/10 border-b border-amber-500/30">
-        <div className="max-w-5xl mx-auto px-6 py-3 text-center text-sm sm:text-base text-amber-200 font-medium">
-          For Research Use Only. Not for Human Consumption.
-        </div>
-      </div>
-
-      {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(16,185,129,0.18),transparent_60%)]"
-        />
-        <div className="relative max-w-5xl mx-auto px-6 pt-20 pb-24 sm:pt-28 sm:pb-32 text-center">
-          <p className="inline-block uppercase tracking-[0.2em] text-xs sm:text-sm text-emerald-400 font-semibold mb-6">
-            UK Laboratory Supply
-          </p>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-tight text-white mb-6">
-            Premium Research Compounds for{" "}
-            <span className="text-emerald-400">Laboratory Research</span>
-          </h1>
-          <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto mb-10">
-            HPLC-tested, batch-traceable research materials supplied to UK
-            laboratories and academic institutions. Strictly for in-vitro
-            research use only.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="#offer"
-              className="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-base transition-colors"
-            >
-              What we offer
-            </a>
-            <a
-              href="#intended-use"
-              className="inline-flex items-center justify-center px-8 py-4 rounded-lg border border-slate-700 hover:border-slate-500 text-slate-100 font-semibold text-base transition-colors"
-            >
-              Intended use
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* WHAT WE OFFER */}
-      <section id="offer" className="py-20 border-t border-slate-800">
-        <div className="max-w-5xl mx-auto px-6">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 text-center">
-            What we offer
-          </h2>
-          <p className="text-slate-400 text-center max-w-2xl mx-auto mb-14">
-            A curated range of research-grade compounds for qualified UK
-            laboratories, universities and research facilities.
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              {
-                title: "HPLC-Tested Purity",
-                body: "Every batch is verified by High-Performance Liquid Chromatography with a Certificate of Analysis available on request.",
-              },
-              {
-                title: "Batch Traceability",
-                body: "Each unit is assigned a batch identifier so researchers can match material to its corresponding analytical record.",
-              },
-              {
-                title: "Research-Grade Materials",
-                body: "General research compounds intended exclusively for in-vitro laboratory investigation and method development.",
-              },
-              {
-                title: "UK Dispatch",
-                body: "Stocked and dispatched from the United Kingdom with tracked delivery to laboratories and research facilities.",
-              },
-              {
-                title: "Cold-Chain Awareness",
-                body: "Guidance on storage, handling and reconstitution provided to support reproducible laboratory workflows.",
-              },
-              {
-                title: "Discreet Packaging",
-                body: "Compounds are shipped in secure, temperature-aware packaging suitable for laboratory delivery.",
-              },
-            ].map((card) => (
-              <article
-                key={card.title}
-                className="rounded-xl bg-slate-900 border border-slate-800 p-6 hover:border-emerald-500/40 transition-colors"
-              >
-                <h3 className="text-lg font-semibold text-white mb-2">
-                  {card.title}
-                </h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  {card.body}
-                </p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* INTENDED USE */}
-      <section
-        id="intended-use"
-        className="py-20 border-t border-slate-800 bg-slate-900/40"
-      >
-        <div className="max-w-3xl mx-auto px-6">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6 text-center">
-            Intended Use
-          </h2>
-          <div className="space-y-5 text-slate-300 text-base sm:text-lg leading-relaxed">
-            <p>
-              All materials supplied by PH Labs are intended{" "}
-              <strong className="text-white">
-                exclusively for in-vitro laboratory research
-              </strong>{" "}
-              by qualified researchers, scientific professionals and academic
-              institutions.
-            </p>
-            <p>
-              Our products are{" "}
-              <strong className="text-white">not medicines</strong> and are{" "}
-              <strong className="text-white">
-                not intended for human or veterinary consumption, diagnostic
-                use, therapeutic use, or any form of clinical application
-              </strong>
-              .
-            </p>
-            <p>
-              By purchasing from PH Labs, you confirm that you are a qualified
-              professional acquiring research materials solely for legitimate
-              scientific investigation within an appropriately equipped
-              laboratory environment.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section id="faq" className="py-20 border-t border-slate-800">
-        <div className="max-w-3xl mx-auto px-6">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 text-center">
-            Frequently Asked Questions
-          </h2>
-          <p className="text-slate-400 text-center mb-12">
-            Research use, sourcing and shipping — at a glance.
-          </p>
-          <div className="space-y-4">
-            {FAQS.map((faq) => (
-              <details
-                key={faq.q}
-                className="group rounded-xl bg-slate-900 border border-slate-800 hover:border-emerald-500/40 transition-colors"
-              >
-                <summary className="cursor-pointer list-none flex items-center justify-between gap-4 px-6 py-5 text-white font-semibold text-base sm:text-lg">
-                  <span>{faq.q}</span>
-                  <span
-                    aria-hidden="true"
-                    className="text-emerald-400 text-xl leading-none transition-transform group-open:rotate-45"
-                  >
-                    +
-                  </span>
-                </summary>
-                <div className="px-6 pb-6 -mt-1 text-slate-300 text-sm sm:text-base leading-relaxed">
-                  {faq.a}
-                </div>
-              </details>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* LEGAL DISCLAIMER (bottom, strong) */}
-      <section className="py-16 border-t border-slate-800">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="rounded-2xl border-2 border-amber-500/50 bg-amber-500/5 p-8 sm:p-10">
-            <h2 className="text-2xl sm:text-3xl font-bold text-amber-300 mb-4 text-center">
-              Legal Disclaimer
-            </h2>
-            <div className="space-y-4 text-amber-100/90 text-sm sm:text-base leading-relaxed">
-              <p>
-                <strong>For Research Use Only. Not for Human Consumption.</strong>{" "}
-                All compounds offered by PH Labs are sold strictly as research
-                materials for in-vitro laboratory use by qualified researchers.
-              </p>
-              <p>
-                These products are not drugs, not food, not cosmetics and not
-                supplements. They are not intended to diagnose, treat, cure or
-                prevent any disease or medical condition, and they must not be
-                administered to humans or animals under any circumstances.
-              </p>
-              <p>
-                It is the sole responsibility of the purchaser to ensure that
-                all materials are handled in accordance with applicable laws,
-                regulations and laboratory safety standards within their
-                jurisdiction. Misuse of research materials is strictly
-                prohibited.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* BACK TO HOME */}
-      <section className="py-16 border-t border-slate-800 bg-slate-900/40">
-        <div className="max-w-2xl mx-auto px-6 text-center">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-white mb-4">
-            Visit the main PH Labs website
-          </h2>
-          <p className="text-slate-400 mb-8">
-            Explore the full PH Labs catalogue and learn more about our UK
-            laboratory supply service.
-          </p>
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center px-8 py-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold text-base transition-colors"
-          >
-            Back to homepage
-          </Link>
-        </div>
-      </section>
-
-      <footer className="py-10 border-t border-slate-800">
-        <div className="max-w-5xl mx-auto px-6 text-center text-xs sm:text-sm text-slate-500">
-          © {new Date().getFullYear()} PH Labs · United Kingdom · For Research
-          Use Only. Not for Human Consumption.
-        </div>
-      </footer>
-    </main>
-  );
-}

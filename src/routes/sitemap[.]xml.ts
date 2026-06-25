@@ -36,6 +36,7 @@ const staticEntries: SitemapEntry[] = [
   { path: "/cookies", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.3" },
   { path: "/research", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
   { path: "/compound", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
+  { path: "/landing/phlabs", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
   { path: "/lab-reports", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.6" },
   { path: "/storage-guide", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.6" },
   // /google-merchant-feed.xml is discovered separately by Merchant Center.
