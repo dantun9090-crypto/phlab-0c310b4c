@@ -1,9 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 
-// Code-split the heavy landing component (form, animations, picture
-// elements) so the LCP hero — already preloaded as an image via
-// head().links — paints before this chunk is parsed.
 const PremiumLanding = lazy(() =>
   import("@/components/PremiumLanding").then((m) => ({ default: m.PremiumLanding })),
 );
@@ -56,11 +53,7 @@ export const Route = createFileRoute("/_marketing/compound")({
       {
         rel: "preload",
         as: "image",
-        href: "/og/lab/hero-960.avif",
-        imageSrcSet:
-          "/og/lab/hero-640.avif 640w, /og/lab/hero-960.avif 960w, /og/lab/hero-1440.avif 1440w, /og/lab/hero-1920.avif 1920w",
-        imageSizes: "(max-width: 640px) 640px, (max-width: 1024px) 960px, (max-width: 1600px) 1440px, 1920px",
-        type: "image/avif",
+        href: "/og/luxury/hero.jpg",
         fetchpriority: "high",
       },
     ],
@@ -99,7 +92,7 @@ function CompoundPage() {
       fallback={
         <div
           aria-hidden="true"
-          className="min-h-screen w-full bg-[#0b1220]"
+          className="min-h-screen w-full bg-[#060b18]"
           style={{ contain: "strict" }}
         />
       }
