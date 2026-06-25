@@ -31,8 +31,14 @@ async function gwGet(path: string, params: Record<string, string | number | unde
     signal: AbortSignal.timeout(20_000),
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(`Semrush ${res.status}: ${text.slice(0, 80)}`);
-  try { return JSON.parse(text); } catch { throw new Error(`Semrush invalid JSON: ${text.slice(0, 80)}`); }
+  if (!res.ok) throw new Error(`Semrush ${res.status}: ${text.slice(0, 120)}`);
+  let json: any;
+  try { json = JSON.parse(text); } catch { throw new Error(`Semrush invalid JSON: ${text.slice(0, 80)}`); }
+  // Gateway sometimes wraps Semrush quota / auth errors with HTTP 200 + body { error, status }
+  if (json && typeof json === 'object' && typeof json.error === 'string') {
+    throw new Error(`Semrush ${json.status ?? ''}: ${json.error}`.trim());
+  }
+  return json;
 }
 
 const OverviewInput = z.object({
@@ -145,6 +151,30 @@ export const getSemrushKeywordGeo = createServerFn({ method: 'POST' })
   })
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
+
+    // Pre-flight: check quota so we don't fire 25 calls into an empty bucket.
+    let quota: { remaining?: number; total?: number; valid_till?: number; is_paid?: boolean } = {};
+    try {
+      const lim = await gwGet('/user/limits', {});
+      quota = {
+        remaining: Number(lim?.remaining ?? lim?.api_units_left ?? NaN),
+        total: Number(lim?.total ?? NaN),
+        valid_till: Number(lim?.valid_till ?? NaN),
+        is_paid: Boolean(lim?.is_paid),
+      };
+    } catch { /* non-fatal */ }
+
+    if (Number.isFinite(quota.remaining as number) && (quota.remaining as number) < GEO_DATABASES.length) {
+      const reset = Number.isFinite(quota.valid_till as number)
+        ? new Date((quota.valid_till as number) * 1000).toISOString()
+        : null;
+      throw new Error(
+        `Semrush quota too low: ${quota.remaining}/${quota.total ?? '?'} units remaining, ` +
+        `need ${GEO_DATABASES.length}. ${quota.is_paid ? '' : 'Free plan — '}` +
+        `${reset ? `resets at ${reset}. ` : ''}` +
+        `Upgrade the Semrush plan or wait for the quota to reset.`,
+      );
+    }
 
     const settled = await Promise.allSettled(
       GEO_DATABASES.map((db) =>

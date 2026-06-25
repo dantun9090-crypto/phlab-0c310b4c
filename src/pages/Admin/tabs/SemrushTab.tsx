@@ -477,7 +477,14 @@ function KeywordGeoPanel() {
       {error && (
         <div className="mx-4 mb-4 bg-red-950/40 border-2 border-red-700/60 rounded-lg p-3 flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-          <p className="text-red-200 text-xs font-mono break-all">{error}</p>
+          <div className="text-xs">
+            <p className="text-red-200 font-mono break-all">{error}</p>
+            {(error.includes('134') || /quota/i.test(error)) && (
+              <p className="text-red-200/80 mt-2 font-sans">
+                The linked Semrush account is out of API units for today. The free plan allows 10 calls/day total — a geo lookup needs {25} (one per country). Upgrade the Semrush plan, or wait for the daily reset shown above, then re-run.
+              </p>
+            )}
+          </div>
         </div>
       )}
 
