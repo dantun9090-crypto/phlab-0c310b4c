@@ -19,6 +19,14 @@ import {
   parseAndValidateList,
   type BotDetectionOptions,
 } from '@/lib/bot-detection';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+
+/** Current schema version for exported allowlists. Bumping requires a migration. */
+const ALLOWLIST_EXPORT_VERSION = 1;
+const ALLOWLIST_SUPPORTED_VERSIONS = [1];
 
 interface RegisteredUser {
   uid: string;
