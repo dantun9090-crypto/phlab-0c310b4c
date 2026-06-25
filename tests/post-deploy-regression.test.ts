@@ -129,22 +129,28 @@ describe("Post-deploy regression — sensitive paths must stay uncacheable", () 
         console.warn(`[skip] ${path} unreachable:`, r.error);
         return;
       }
+      // Browser-visible Cache-Control must forbid reuse.
       const header = cc(r.headers);
       expect(header, `${path} must set Cache-Control`).not.toBe("");
       expect(
         isUncacheable(header),
-        `${path} MUST be uncacheable (no-store OR max-age=0+must-revalidate). Got: "${header}"`,
+        `${path} browser Cache-Control must be uncacheable (no-store OR max-age=0+must-revalidate). Got: "${header}"`,
       ).toBe(true);
 
-      // s-maxage > 0 on a sensitive path is an immediate regression —
-      // it means the CDN is caching personalised/admin HTML.
       const sMaxAge = parseDirective(header, "s-maxage") ?? 0;
       expect(sMaxAge, `${path} s-maxage must be 0`).toBe(0);
 
-      // If origin sent a CDN-level header, it must also be no-store.
-      const cdn = (r.headers.get("cdn-cache-control") || "").toLowerCase();
-      if (cdn) {
-        expect(cdn).toMatch(/\bno-store\b/);
+      // Cloudflare must not be serving a cached copy of a sensitive
+      // page. cf-cache-status of HIT/REVALIDATED/UPDATING/STALE all
+      // mean a previous user's HTML is being replayed — fail hard.
+      // DYNAMIC / BYPASS / MISS / EXPIRED are all acceptable (origin
+      // hit, no cached reuse).
+      const cfStatus = (r.headers.get("cf-cache-status") || "").toUpperCase();
+      if (cfStatus) {
+        expect(
+          ["HIT", "REVALIDATED", "UPDATING", "STALE"].includes(cfStatus),
+          `${path} cf-cache-status must NOT indicate cached reuse. Got: "${cfStatus}"`,
+        ).toBe(false);
       }
     });
   }
