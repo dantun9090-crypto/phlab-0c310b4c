@@ -335,6 +335,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // was triggering React error #418 (hydration mismatch) in
       // Chrome/Firefox/Edge after the GA dynamic-config swap.
       {
+        type: "text/javascript",
+        children: `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "x6yaoubye8");`,
+      },
+      {
 
         type: "application/ld+json",
         children: JSON.stringify({
