@@ -369,8 +369,8 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           <blockquote className="mt-12 display text-2xl sm:text-3xl md:text-[2.75rem] font-light leading-[1.35] text-white">
             <span className="gold-text text-5xl leading-none">“</span>
             All products are intended exclusively for laboratory and scientific
-            research purposes. They are not intended for human consumption,
-            medical use, or any therapeutic applications.
+            research purposes. They are not intended for human use or for any
+            non-research application.
             <span className="gold-text text-5xl leading-none">”</span>
           </blockquote>
           <div className="mx-auto mt-12 h-px w-16 gold-bg" />
