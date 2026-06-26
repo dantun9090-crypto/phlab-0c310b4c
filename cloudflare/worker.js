@@ -661,24 +661,32 @@ export default {
       try {
         const cached = await caches.default.match(prerenderCacheKey);
         if (cached) {
+          phlog.log("phl.prerender.cache", { hit: true, status: cached.status });
+          phlog.log("phl.request.end", { status: cached.status, via: "prerender-cache-hit" });
           const h = new Headers(cached.headers);
           h.set("x-prerender-cache", "HIT");
           h.set("x-phl-via", "prerender-cache-hit");
+          h.set("x-phl-rid", phlog.rid);
           return applySecurityHeaders(new Response(cached.body, { status: cached.status, headers: h }), url);
         }
-      } catch (_) { /* fall through */ }
+        phlog.log("phl.prerender.cache", { hit: false });
+      } catch (e) {
+        phlog.log("phl.prerender.cache", { hit: false, err: String((e && e.message) || e).slice(0, 80) });
+      }
 
       let preStatus = "skipped";
       let preErr = "";
       try {
         const pre = await fetchPrerender(request, token);
         preStatus = pre ? String(pre.status) : "null";
+        phlog.log("phl.prerender.fetch", { status: pre ? pre.status : 0, ok: !!(pre && pre.status < 500 && pre.status !== 429) });
         if (pre && pre.status < 500 && pre.status !== 429) {
           const buf = await pre.arrayBuffer();
           const h = new Headers(pre.headers);
           h.set("x-prerendered", "true");
           h.set("x-prerender-cache", "MISS");
           h.set("x-phl-via", "prerender");
+          h.set("x-phl-rid", phlog.rid);
           h.delete("x-robots-tag");
           h.set("cache-control", `public, max-age=${PRERENDER_CACHE_TTL}, s-maxage=${PRERENDER_CACHE_TTL}, stale-while-revalidate=${PRERENDER_SWR_TTL}`);
           h.delete("set-cookie");
@@ -697,24 +705,31 @@ export default {
               );
             } catch (_) {}
           }
+          phlog.log("phl.request.end", { status: pre.status, via: "prerender", bytes: buf.byteLength });
           const out = applySecurityHeaders(new Response(buf, { status: pre.status, statusText: pre.statusText, headers: h }), url);
           return out;
         }
       } catch (e) {
         preErr = (e && (e.name || e.message)) ? String(e.name || e.message).slice(0, 60) : "err";
+        phlog.log("phl.prerender.fetch", { status: 0, ok: false, err: preErr });
       }
       // Fallback to origin with loop marker so we don't re-enter prerender.
+      phlog.log("phl.prerender.fallback", { preStatus, preErr });
       const reReq = new Request(request, { headers: new Headers(request.headers) });
       reReq.headers.set(LOOP_HEADER, "1");
       try {
         const res = await proxyToOrigin(reReq, origin);
         const h = new Headers(res.headers);
         h.set("x-phl-via", `origin-bot-fallback;pre=${preStatus};err=${preErr}`);
+        h.set("x-phl-rid", phlog.rid);
+        phlog.log("phl.request.end", { status: res.status, via: "origin-bot-fallback" });
         return applySecurityHeaders(new Response(res.body, { status: res.status, statusText: res.statusText, headers: h }));
-      } catch (_) {
+      } catch (e) {
+        phlog.log("phl.error", { where: "bot-fallback-origin", err: String((e && e.message) || e).slice(0, 120) });
         return serveStaleOrError(request);
       }
     }
+
 
     // 6. Normal proxy → origin. We pass `cf.cacheEverything` only for safe
     //    public HTML routes. XML feeds must stay uncached so Merchant Center
