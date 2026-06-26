@@ -229,12 +229,12 @@ export function EditorialLanding({ eyebrow }: { eyebrow?: string }) {
           <p className="mt-6 text-sm sm:text-[15px] leading-relaxed text-neutral-600">
             All products offered on this website are intended solely for
             laboratory research and scientific purposes. They are not intended
-            for human consumption, medical diagnosis, treatment, or any
-            therapeutic use. By accessing this website or purchasing any
-            product, you confirm that you are a qualified researcher or
-            institution and that you will comply with all applicable laws and
-            regulations regarding the handling and use of research materials.
-            Misuse of these products may be dangerous and illegal.
+            for human use or for any non-research application. By accessing this
+            website or purchasing any product, you confirm that you are a
+            qualified researcher or institution and that you will comply with
+            all applicable laws and regulations regarding the handling and use
+            of research materials. Misuse of these products may be dangerous
+            and unlawful.
           </p>
         </div>
       </section>
