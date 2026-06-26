@@ -136,6 +136,13 @@ export default function SitemapTab() {
         xml,
       }, { merge: true });
       addLog('success', `Sitemap regenerated — ${products.filter(p => !(p as any).excludeFromSitemap).length + STATIC_PAGES.length} URLs`);
+      // Auto-ping IndexNow for sitemap.xml so Bing/Yandex re-fetch the index.
+      try {
+        const { submitToIndexNow } = await import('@/lib/indexnow.functions');
+        submitToIndexNow({
+          data: { urls: ['https://phlabs.co.uk/sitemap.xml', 'https://phlabs.co.uk/'] },
+        }).then((r: any) => addLog('info', `IndexNow: ${r?.message || 'submitted'}`)).catch(() => {});
+      } catch { /* best-effort */ }
       setMsg({ type: 'success', text: 'Sitemap regenerated successfully!' });
       setTimeout(() => setMsg(null), 3000);
     } catch (e) {

@@ -188,9 +188,14 @@ export default function PoliciesTab() {
         ...policies,
         updatedAt: new Date().toISOString(),
       });
-      triggerContentCdnInvalidation([
-        '/terms', '/privacy', '/cookies', '/returns', '/shipping', '/research-use-only',
-      ]);
+      const policyPaths = ['/terms', '/privacy', '/cookies', '/returns', '/shipping', '/research-use-only'];
+      triggerContentCdnInvalidation(policyPaths);
+      // Auto-ping IndexNow for the updated policy URLs (best-effort, silent).
+      try {
+        const { submitToIndexNow } = await import('@/lib/indexnow.functions');
+        const urls = policyPaths.map(p => `https://phlabs.co.uk${p}`);
+        submitToIndexNow({ data: { urls } }).catch(() => {});
+      } catch { /* best-effort */ }
       showToast('Policies saved successfully!');
     } catch (e: any) {
       showToast(e?.message || 'Save failed', false);
