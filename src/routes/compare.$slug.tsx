@@ -146,13 +146,12 @@ function ComparePage() {
                   </li>
                 ))}
               </ul>
-              <Link
-                to="/products/category/$slug"
-                params={{ slug: side.slug }}
+              <a
+                href={`/products/category/${side.slug}`}
                 className="inline-block mt-5 text-sm font-semibold text-emerald-400 hover:text-emerald-300"
               >
                 Browse {side.name} research vials →
-              </Link>
+              </a>
             </div>
           ))}
         </section>
