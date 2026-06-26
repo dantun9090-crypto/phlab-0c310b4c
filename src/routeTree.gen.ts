@@ -18,6 +18,7 @@ import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as IndexnowKeyDottxtRouteImport } from './routes/$indexnowKey[.]txt'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ResearchRetatrutideUkRouteImport } from './routes/research.retatrutide-uk'
 import { Route as ProductsSlugRouteImport } from './routes/products_.$slug'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentCancelRouteImport } from './routes/payment.cancel'
@@ -102,6 +103,11 @@ const SplatRoute = SplatRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResearchRetatrutideUkRoute = ResearchRetatrutideUkRouteImport.update({
+  id: '/research/retatrutide-uk',
+  path: '/research/retatrutide-uk',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsSlugRoute = ProductsSlugRouteImport.update({
@@ -338,6 +344,7 @@ export interface FileRoutesByFullPath {
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
@@ -388,6 +395,7 @@ export interface FileRoutesByTo {
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
@@ -440,6 +448,7 @@ export interface FileRoutesById {
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products_/$slug': typeof ProductsSlugRoute
+  '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
@@ -492,6 +501,7 @@ export interface FileRouteTypes {
     | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
+    | '/research/retatrutide-uk'
     | '/api/config/payments'
     | '/api/dsr/process'
     | '/api/payments/cancel'
@@ -542,6 +552,7 @@ export interface FileRouteTypes {
     | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
+    | '/research/retatrutide-uk'
     | '/api/config/payments'
     | '/api/dsr/process'
     | '/api/payments/cancel'
@@ -593,6 +604,7 @@ export interface FileRouteTypes {
     | '/payment/cancel'
     | '/payment/success'
     | '/products_/$slug'
+    | '/research/retatrutide-uk'
     | '/api/config/payments'
     | '/api/dsr/process'
     | '/api/payments/cancel'
@@ -644,6 +656,7 @@ export interface RootRouteChildren {
   PaymentCancelRoute: typeof PaymentCancelRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
+  ResearchRetatrutideUkRoute: typeof ResearchRetatrutideUkRoute
   ApiConfigPaymentsRoute: typeof ApiConfigPaymentsRoute
   ApiDsrProcessRoute: typeof ApiDsrProcessRoute
   ApiPaymentsCancelRoute: typeof ApiPaymentsCancelRoute
@@ -739,6 +752,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/research/retatrutide-uk': {
+      id: '/research/retatrutide-uk'
+      path: '/research/retatrutide-uk'
+      fullPath: '/research/retatrutide-uk'
+      preLoaderRoute: typeof ResearchRetatrutideUkRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products_/$slug': {
@@ -1055,6 +1075,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaymentCancelRoute: PaymentCancelRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ProductsSlugRoute: ProductsSlugRoute,
+  ResearchRetatrutideUkRoute: ResearchRetatrutideUkRoute,
   ApiConfigPaymentsRoute: ApiConfigPaymentsRoute,
   ApiDsrProcessRoute: ApiDsrProcessRoute,
   ApiPaymentsCancelRoute: ApiPaymentsCancelRoute,
@@ -1089,13 +1110,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
