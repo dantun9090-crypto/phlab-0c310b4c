@@ -124,7 +124,10 @@ const RULES: RedirectRule[] = [
   // Bacteriostatic water
   { type: "exact", from: "/products/bacteriostatic-water", to: "/products/bacteriostatic-water-research-compound" },
   { type: "exact", from: "/products/bacteriostatic-water-0-9-benzyl-alcohol-lab-diluent", to: "/products/bacteriostatic-water-research-compound" },
+  // Singular /product/ legacy URL still indexed by Google — single-hop 301
+  { type: "exact", from: "/product/bacteriostatic-water-0-9-benzyl-alcohol-lab-diluent", to: "/products/bacteriostatic-water-research-compound" },
   { type: "exact", from: "/products/bacteriostatic-water-0-9-benzyl-alcohol-laboratory-diluent-reagent-for-research-use-only-ruo", to: "/products/bacteriostatic-water-research-compound" },
+
 
   // Blends
   { type: "exact", from: "/products/glow-blend-laboratory-reference-blend-research-use", to: "/products/glow-blend" },
