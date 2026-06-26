@@ -65,11 +65,20 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
     ],
   },
 
-  // "tb 500 uk" 90/mo · KD 10; "tb labs" 110/mo currently #23
+  // "tb 500 uk" 2,400/mo · KD 38
+  // Semrush UK typo cluster: ~6k/mo combined (tb500 4.4k, tb500 peptide 1.3k)
   "tb-500-thymosin-beta-4": {
     title: "TB-500 UK — Thymosin β-4 Research Peptide | PH Labs",
     description:
       "TB-500 (Thymosin β-4 fragment) UK research peptide. HPLC ≥99% purity, batch CoA. For laboratory research only — not for human consumption.",
+    misspellings: [
+      "tb500",
+      "tb 500",
+      "tb500 peptide",
+      "thymosin beta 4",
+      "thymosin b4",
+      "tb-500 peptide",
+    ],
   },
 
   // "bacteriostatic water uk" 170/mo · KD 3 — very easy win
