@@ -96,6 +96,7 @@ const navGroups = [
       { id: 'edgemonitor', label: 'Edge Monitor', icon: Activity },
       { id: 'semrush', label: 'Semrush', icon: TrendingUp },
       { id: 'seoopportunities', label: 'SEO Opportunities', icon: TrendingUp },
+      { id: 'backlinkoutreach', label: 'Backlink Outreach', icon: TrendingUp },
     ],
   },
 
