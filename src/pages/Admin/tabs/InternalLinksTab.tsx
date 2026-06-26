@@ -14,7 +14,7 @@ import {
   HUB_TARGETS,
   type LinkSuggestion,
 } from '@/lib/internal-link-booster';
-import { logAuditAction } from '@/lib/audit-log';
+import { logAdminAction } from '@/lib/admin-audit';
 
 interface ProductRow {
   id: string;
@@ -82,10 +82,11 @@ export default function InternalLinksTab() {
       const next = applyLinkSuggestions(row.description, chosen);
       await updateProduct(row.id, { description: next } as any);
       try {
-        await logAuditAction({
-          action: 'internal_links_applied',
-          target: row.id,
-          details: {
+        await logAdminAction({
+          action: 'product.update',
+          target: `products/${row.id}`,
+          meta: {
+            kind: 'internal_links_applied',
             slug: row.slug,
             count: chosen.length,
             hubs: chosen.map((c) => c.hubSlug),
