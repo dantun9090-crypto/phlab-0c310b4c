@@ -19,7 +19,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { timingSafeEqualStr } from '@/lib/timing-safe-equal';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { MARKETING_ROUTES, CANONICAL_ORIGIN, GOOGLEBOT_UA, fullUrl } from '@/lib/marketing-routes';
-import { addDocAdmin, getDocAdmin } from '@/lib/server/firestore-admin';
+import { addDocAdmin, getDocAdmin, updateDocAdmin } from '@/lib/server/firestore-admin';
 import { enqueueMailOnce } from '@/lib/server/enqueue-mail';
 
 const ENDPOINT = '/api/public/hooks/seo-health-daily';
