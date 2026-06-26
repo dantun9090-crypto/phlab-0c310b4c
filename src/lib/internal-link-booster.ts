@@ -126,7 +126,7 @@ export function scanForLinkSuggestions(html: string, currentSlug: string | null 
           match: m[0],
           offset: m.index,
           snippet: snippetAround(html, m.index, m[0].length),
-          href: `${PDP_BASE}${hub.slug}`,
+          href: hub.href ?? `${PDP_BASE}${hub.slug}`,
         });
         seenHubs.add(hub.slug);
         break;
