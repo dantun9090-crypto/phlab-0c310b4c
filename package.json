@@ -37,7 +37,8 @@
     "sbom:provenance": "bun scripts/build-provenance.ts",
     "sbom:verify-release": "bash scripts/verify-release-sbom.sh",
     "security:scan": "bun scripts/security-audit.ts",
-    "postbuild": "bun scripts/generate-sbom.ts"
+    "postbuild": "bun scripts/generate-sbom.ts",
+    "scan:landings": "bun scripts/landing-banned-tokens-scan.ts"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.48",
