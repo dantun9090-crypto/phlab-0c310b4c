@@ -20,7 +20,10 @@ interface CategoryConfig {
   seoKeywords: string;
   color: string;
   icon: string;
+  /** When set, filter by these product slugs instead of `product.category`. */
+  productSlugs?: string[];
 }
+
 
 const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   'tissue-repair': {
