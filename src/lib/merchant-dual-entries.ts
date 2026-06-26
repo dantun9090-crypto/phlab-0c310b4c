@@ -45,7 +45,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "retatrutide-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL1",
-        titleA: "Retatrutide Research Peptide 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/k7m2qx",
+        titleA: "Retatrutide Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/k7m2qx",
         titleB: "RETA PHL 10 mg Research Compound",                            linkB: "/products/k7m2qy" },
     ],
   },
@@ -53,7 +53,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "tb-500-thymosin-beta-4",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL2",
-        titleA: "TB-500 Research Peptide 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/h3n8wp",
+        titleA: "TB-500 Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/h3n8wp",
         titleB: "TB54 PHL 10 mg Research Compound",                       linkB: "/products/h3n8wq" },
     ],
   },
@@ -61,7 +61,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "pt-141-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL3",
-        titleA: "PT-141 Research Peptide 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/v9r4tb",
+        titleA: "PT-141 Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/v9r4tb",
         titleB: "PT41 PHL 10 mg Research Compound",                       linkB: "/products/v9r4tc" },
     ],
   },
@@ -83,7 +83,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "melanotan-ii-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL7",
-        titleA: "Melanotan-II Research Peptide 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/q8x1ly",
+        titleA: "Melanotan-II Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/q8x1ly",
         titleB: "MT2 PHL 10 mg Research Compound",                                linkB: "/products/q8x1lz" },
     ],
   },
@@ -91,7 +91,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "mots-c-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL8",
-        titleA: "MOTS-c Research Peptide 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/b5d7nh",
+        titleA: "MOTS-c Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/b5d7nh",
         titleB: "MC16 PHL 10 mg Research Compound",                       linkB: "/products/b5d7ni" },
     ],
   },
@@ -107,7 +107,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "kpv-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL10",
-        titleA: "KPV Research Peptide 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/f6c3vp",
+        titleA: "KPV Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/f6c3vp",
         titleB: "KP3 PHL 10 mg Research Compound",                      linkB: "/products/f6c3vq" },
     ],
   },
@@ -123,7 +123,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "ghk-cu-research-peptide",
     variants: [
       { sizeKey: "50mg", sizeLabel: "50 mg", phlCode: "PHL12",
-        titleA: "GHK-Cu Research Peptide 50 mg — HPLC + CoA | PH Labs UK", linkA: "/products/n7y4ze",
+        titleA: "GHK-Cu Research Compound 50 mg — HPLC + CoA | PH Labs UK", linkA: "/products/n7y4ze",
         titleB: "GC3 PHL 50 mg Research Compound",                         linkB: "/products/n7y4zf" },
     ],
   },
@@ -139,7 +139,7 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "bpc-157",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL14",
-        titleA: "BPC-157 Research Peptide 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/r3l6ja",
+        titleA: "BPC-157 Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/r3l6ja",
         titleB: "BPC PHL 10 mg Research Compound",                          linkB: "/products/r3l6jb" },
     ],
   },
