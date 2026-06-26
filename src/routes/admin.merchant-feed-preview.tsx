@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
-import { Loader2, Shield, RefreshCw, Copy, ExternalLink } from 'lucide-react';
+import { Loader2, Shield, RefreshCw, Copy, ExternalLink, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { auth, db, doc, getDoc, onAuthStateChanged } from '@/lib/firebase';
+import { validateMerchantFeedAdmin, type MerchantFeedValidationReport } from '@/lib/merchant-feed-validation.functions';
 
 export const Route = createFileRoute('/admin/merchant-feed-preview')({
   head: () => ({
@@ -26,6 +27,7 @@ function MerchantFeedPreview() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [report, setReport] = useState<MerchantFeedValidationReport | null>(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -48,9 +50,18 @@ function MerchantFeedPreview() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/google-merchant-feed.xml', { cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setXml(await res.text());
+      const token = await auth.currentUser?.getIdToken(true);
+      if (!token) throw new Error('Not signed in');
+      const [feedRes, validation] = await Promise.all([
+        fetch(`/google-merchant-feed.xml?adminPreview=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'cache-control': 'no-cache' },
+        }),
+        validateMerchantFeedAdmin({ data: { idToken: token } }),
+      ]);
+      if (!feedRes.ok) throw new Error(`Feed HTTP ${feedRes.status}`);
+      setXml(await feedRes.text());
+      setReport(validation);
     } catch (e: any) {
       setError(e?.message || 'Failed to load feed');
     } finally {
@@ -84,16 +95,17 @@ function MerchantFeedPreview() {
 
   const itemCount = (xml.match(/<item>/g) || []).length;
   const sizeKb = (new Blob([xml]).size / 1024).toFixed(1);
+  const brokenItems = report?.items.filter((item) => !item.ok) ?? [];
+  const warningItems = report?.items.filter((item) => item.ok && item.issues.length > 0) ?? [];
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Google Merchant Feed — Preview</h1>
+            <h1 className="text-2xl font-semibold">Google Merchant Feed — Live Preview</h1>
             <p className="text-slate-400 text-sm mt-1">
-              Admin-only render of <code className="text-emerald-400">/google-merchant-feed.xml</code>.
-              The public URL stays accessible to Merchant Center.
+              No-cache admin preview of <code className="text-emerald-400">/google-merchant-feed.xml</code> with required-field and product-link validation before Merchant Center submission.
             </p>
           </div>
           <div className="flex gap-2">
@@ -111,7 +123,7 @@ function MerchantFeedPreview() {
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-sm disabled:opacity-60"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              Reload
+              Reload + Validate
             </button>
             <button
               onClick={async () => {
@@ -128,9 +140,77 @@ function MerchantFeedPreview() {
         </div>
 
         {xml && (
-          <div className="flex gap-4 text-sm text-slate-400 mb-3">
-            <span>Items: <span className="text-white font-mono">{itemCount}</span></span>
-            <span>Size: <span className="text-white font-mono">{sizeKb} KB</span></span>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+            <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+              <div className="text-xs uppercase tracking-wide text-slate-500">Items</div>
+              <div className="text-2xl font-semibold font-mono">{report?.itemCount ?? itemCount}</div>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+              <div className="text-xs uppercase tracking-wide text-slate-500">Size</div>
+              <div className="text-2xl font-semibold font-mono">{sizeKb} KB</div>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+              <div className="text-xs uppercase tracking-wide text-slate-500">Checked Links</div>
+              <div className="text-2xl font-semibold font-mono">{report?.checkedLinks ?? 0}</div>
+            </div>
+            <div className={`rounded-xl border p-4 ${report?.errorCount ? 'border-red-700 bg-red-950/40' : 'border-emerald-800 bg-emerald-950/25'}`}>
+              <div className="text-xs uppercase tracking-wide text-slate-400">Errors</div>
+              <div className="flex items-center gap-2 text-2xl font-semibold font-mono">
+                {report?.errorCount ? <XCircle className="w-5 h-5 text-red-300" /> : <CheckCircle2 className="w-5 h-5 text-emerald-300" />}
+                {report?.errorCount ?? 0}
+              </div>
+            </div>
+            <div className="rounded-xl border border-amber-800 bg-amber-950/20 p-4">
+              <div className="text-xs uppercase tracking-wide text-slate-400">Warnings</div>
+              <div className="flex items-center gap-2 text-2xl font-semibold font-mono">
+                <AlertTriangle className="w-5 h-5 text-amber-300" />
+                {report?.warningCount ?? 0}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {report && (
+          <div className="mb-4 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+            <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h2 className="text-lg font-semibold">Merchant validation results</h2>
+                <p className="text-xs text-slate-500">Generated {new Date(report.generatedAt).toLocaleString()} — validates required GMC fields, 200 product pages, no redirects and no “Page Not Available/noindex”.</p>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-sm font-semibold ${report.errorCount ? 'bg-red-500/15 text-red-200 border border-red-700' : 'bg-emerald-500/15 text-emerald-200 border border-emerald-700'}`}>
+                {report.errorCount ? `${report.errorCount} problems — do not submit` : 'Ready for Merchant Center'}
+              </div>
+            </div>
+
+            {(brokenItems.length > 0 || warningItems.length > 0) ? (
+              <div className="divide-y divide-slate-800 max-h-[420px] overflow-auto">
+                {[...brokenItems, ...warningItems].map((item) => (
+                  <div key={item.id || item.link} className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-white truncate">{item.title || '(missing title)'}</div>
+                        <div className="text-xs text-slate-400 font-mono break-all mt-1">{item.link || '(missing link)'}</div>
+                        {item.canonical && <div className="text-xs text-slate-500 font-mono break-all mt-1">canonical: {item.canonical}</div>}
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-mono ${item.status === 200 ? 'bg-emerald-500/15 text-emerald-200' : 'bg-red-500/15 text-red-200'}`}>
+                        HTTP {item.status || 'ERR'}
+                      </span>
+                    </div>
+                    <ul className="mt-3 space-y-1">
+                      {item.issues.map((issue, idx) => (
+                        <li key={`${item.id}-${issue.field}-${idx}`} className={`text-sm ${issue.severity === 'error' ? 'text-red-200' : 'text-amber-200'}`}>
+                          <span className="font-mono">{issue.field}</span>: {issue.message}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-5 text-emerald-200 flex items-center gap-2">
+                <CheckCircle2 className="w-5 h-5" /> All Merchant feed entries passed required-field and live-link validation.
+              </div>
+            )}
           </div>
         )}
 

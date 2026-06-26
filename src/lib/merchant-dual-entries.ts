@@ -27,6 +27,14 @@ export type DualEntryVariant = {
   linkB: string;
 };
 
+export type DualEntryAliasInfo = {
+  canonicalSlug: string;
+  variant: DualEntryVariant;
+  side: "A" | "B";
+  aliasSlug: string;
+  pageTitle: string;
+};
+
 export type DualEntry = {
   canonicalSlug: string;
   variants: DualEntryVariant[];
@@ -37,102 +45,102 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "retatrutide-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL1",
-        titleA: "Retatrutide Research Peptide 10mg — HPLC + CoA | PH Labs UK",            linkA: "/products/k7m2qx",
-        titleB: "Retatrutide Research Peptide 10mg (Reta-PHL) — HPLC + CoA | PH Labs UK", linkB: "/products/k7m2qy" },
+        titleA: "Retatrutide Research Peptide 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/k7m2qx",
+        titleB: "RETA PHL 10 mg Research Compound",                            linkB: "/products/k7m2qy" },
     ],
   },
   {
     canonicalSlug: "tb-500-thymosin-beta-4",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL2",
-        titleA: "TB-500 Research Peptide 10mg — HPLC + CoA | PH Labs UK",            linkA: "/products/h3n8wp",
-        titleB: "TB-500 Research Peptide 10mg (TB54-PHL) — HPLC + CoA | PH Labs UK", linkB: "/products/h3n8wq" },
+        titleA: "TB-500 Research Peptide 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/h3n8wp",
+        titleB: "TB54 PHL 10 mg Research Compound",                       linkB: "/products/h3n8wq" },
     ],
   },
   {
     canonicalSlug: "pt-141-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL3",
-        titleA: "PT-141 Research Peptide 10mg — HPLC + CoA | PH Labs UK",            linkA: "/products/v9r4tb",
-        titleB: "PT-141 Research Peptide 10mg (PT41-PHL) — HPLC + CoA | PH Labs UK", linkB: "/products/v9r4tc" },
+        titleA: "PT-141 Research Peptide 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/v9r4tb",
+        titleB: "PT41 PHL 10 mg Research Compound",                       linkB: "/products/v9r4tc" },
     ],
   },
   {
     canonicalSlug: "nad-research-compound",
     variants: [
       { sizeKey: "100mg",  sizeLabel: "100 mg",  phlCode: "PHL4",
-        titleA: "NAD+ Research Compound 100mg — HPLC + CoA | PH Labs UK",            linkA: "/products/z2j5fd",
-        titleB: "NAD+ Research Compound 100mg (ND7-PHL) — HPLC + CoA | PH Labs UK",  linkB: "/products/z2j5fe" },
+        titleA: "NAD+ Research Compound 100 mg — HPLC + CoA | PH Labs UK", linkA: "/products/z2j5fd",
+        titleB: "ND7 PHL 100 mg Research Compound",                       linkB: "/products/z2j5fe" },
       { sizeKey: "500mg",  sizeLabel: "500 mg",  phlCode: "PHL5",
-        titleA: "NAD+ Research Compound 500mg — HPLC + CoA | PH Labs UK",            linkA: "/products/z2j6gd",
-        titleB: "NAD+ Research Compound 500mg (ND7-PHL) — HPLC + CoA | PH Labs UK",  linkB: "/products/z2j6ge" },
+        titleA: "NAD+ Research Compound 500 mg — HPLC + CoA | PH Labs UK", linkA: "/products/z2j6gd",
+        titleB: "ND7 PHL 500 mg Research Compound",                       linkB: "/products/z2j6ge" },
       { sizeKey: "1000mg", sizeLabel: "1000 mg", phlCode: "PHL6",
-        titleA: "NAD+ Research Compound 1000mg — HPLC + CoA | PH Labs UK",           linkA: "/products/z2j7hd",
-        titleB: "NAD+ Research Compound 1000mg (ND7-PHL) — HPLC + CoA | PH Labs UK", linkB: "/products/z2j7he" },
+        titleA: "NAD+ Research Compound 1000 mg — HPLC + CoA | PH Labs UK", linkA: "/products/z2j7hd",
+        titleB: "ND7 PHL 1000 mg Research Compound",                       linkB: "/products/z2j7he" },
     ],
   },
   {
     canonicalSlug: "melanotan-ii-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL7",
-        titleA: "Melanotan-II Research Peptide 10mg — HPLC + CoA | PH Labs UK",           linkA: "/products/q8x1ly",
-        titleB: "Melanotan-II Research Peptide 10mg (MT2-PHL) — HPLC + CoA | PH Labs UK", linkB: "/products/q8x1lz" },
+        titleA: "Melanotan-II Research Peptide 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/q8x1ly",
+        titleB: "MT2 PHL 10 mg Research Compound",                                linkB: "/products/q8x1lz" },
     ],
   },
   {
     canonicalSlug: "mots-c-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL8",
-        titleA: "MOTS-c Research Peptide 10mg — HPLC + CoA | PH Labs UK",            linkA: "/products/b5d7nh",
-        titleB: "MOTS-c Research Peptide 10mg (MC16-PHL) — HPLC + CoA | PH Labs UK", linkB: "/products/b5d7ni" },
+        titleA: "MOTS-c Research Peptide 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/b5d7nh",
+        titleB: "MC16 PHL 10 mg Research Compound",                       linkB: "/products/b5d7ni" },
     ],
   },
   {
     canonicalSlug: "klow-blend",
     variants: [
       { sizeKey: "80mg", sizeLabel: "80 mg", phlCode: "PHL9",
-        titleA: "KLOW Blend Research Compound 80mg — HPLC + CoA | PH Labs UK",           linkA: "/products/t4w9rm",
-        titleB: "KLOW Blend Research Compound 80mg (KW5-PHL) — HPLC + CoA | PH Labs UK", linkB: "/products/t4w9rn" },
+        titleA: "KLOW Blend Research Compound 80 mg — HPLC + CoA | PH Labs UK", linkA: "/products/t4w9rm",
+        titleB: "KW5 PHL 80 mg Research Compound",                              linkB: "/products/t4w9rn" },
     ],
   },
   {
     canonicalSlug: "kpv-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL10",
-        titleA: "KPV Research Peptide 10mg — HPLC + CoA | PH Labs UK",           linkA: "/products/f6c3vp",
-        titleB: "KPV Research Peptide 10mg (KP3-PHL) — HPLC + CoA | PH Labs UK", linkB: "/products/f6c3vq" },
+        titleA: "KPV Research Peptide 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/f6c3vp",
+        titleB: "KP3 PHL 10 mg Research Compound",                      linkB: "/products/f6c3vq" },
     ],
   },
   {
     canonicalSlug: "glow-blend",
     variants: [
       { sizeKey: "70mg", sizeLabel: "70 mg", phlCode: "PHL11",
-        titleA: "GLOW Blend Research Compound 70mg — HPLC + CoA | PH Labs UK",           linkA: "/products/u2s8gk",
-        titleB: "GLOW Blend Research Compound 70mg (GW4-PHL) — HPLC + CoA | PH Labs UK", linkB: "/products/u2s8gl" },
+        titleA: "GLOW Blend Research Compound 70 mg — HPLC + CoA | PH Labs UK", linkA: "/products/u2s8gk",
+        titleB: "GW4 PHL 70 mg Research Compound",                              linkB: "/products/u2s8gl" },
     ],
   },
   {
     canonicalSlug: "ghk-cu-research-peptide",
     variants: [
       { sizeKey: "50mg", sizeLabel: "50 mg", phlCode: "PHL12",
-        titleA: "GHK-Cu Research Peptide 50mg — HPLC + CoA | PH Labs UK",           linkA: "/products/n7y4ze",
-        titleB: "GHK-Cu Research Peptide 50mg (GC3-PHL) — HPLC + CoA | PH Labs UK", linkB: "/products/n7y4zf" },
+        titleA: "GHK-Cu Research Peptide 50 mg — HPLC + CoA | PH Labs UK", linkA: "/products/n7y4ze",
+        titleB: "GC3 PHL 50 mg Research Compound",                         linkB: "/products/n7y4zf" },
     ],
   },
   {
     canonicalSlug: "bacteriostatic-water-research-compound",
     variants: [
       { sizeKey: "10ml", sizeLabel: "10 ml", phlCode: "PHL13",
-        titleA: "Bacteriostatic Water Research Compound 10ml — Laboratory Use | PH Labs UK",           linkA: "/products/d9p1ox",
-        titleB: "Bacteriostatic Water Research Compound 10ml (BW9-PHL) — Laboratory Use | PH Labs UK", linkB: "/products/d9p1oy" },
+        titleA: "Bacteriostatic Water Research Compound 10 ml — Laboratory Use | PH Labs UK", linkA: "/products/d9p1ox",
+        titleB: "BW9 PHL 10 ml Research Compound",                                      linkB: "/products/d9p1oy" },
     ],
   },
   {
     canonicalSlug: "bpc-157",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL14",
-        titleA: "BPC-157 Research Peptide 10mg — HPLC + CoA | PH Labs UK",           linkA: "/products/r3l6ja",
-        titleB: "BPC-157 Research Peptide 10mg (BPC-PHL) — HPLC + CoA | PH Labs UK", linkB: "/products/r3l6jb" },
+        titleA: "BPC-157 Research Peptide 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/r3l6ja",
+        titleB: "BPC PHL 10 mg Research Compound",                          linkB: "/products/r3l6jb" },
     ],
   },
 ];
@@ -158,6 +166,44 @@ export function buildDualEntryAliasMap(): Record<string, string> {
 }
 
 export const DUAL_ENTRY_ALIASES: Record<string, string> = buildDualEntryAliasMap();
+
+function displayTitleFromFeedTitle(title: string): string {
+  return title
+    .replace(/\s+—\s+(HPLC \+ CoA|Laboratory Use)\s+\|\s+PH Labs UK$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Lookup helper for landing pages: alias slug → canonical product + visible alias title. */
+export function getDualEntryAliasInfo(slug: string | undefined | null): DualEntryAliasInfo | null {
+  if (!slug) return null;
+  const needle = slug.toLowerCase().replace(/^\/products\//, "");
+  for (const entry of DUAL_ENTRIES) {
+    for (const variant of entry.variants) {
+      const linkASlug = slugFromLink(variant.linkA).toLowerCase();
+      if (linkASlug === needle) {
+        return {
+          canonicalSlug: entry.canonicalSlug,
+          variant,
+          side: "A",
+          aliasSlug: linkASlug,
+          pageTitle: displayTitleFromFeedTitle(variant.titleA),
+        };
+      }
+      const linkBSlug = slugFromLink(variant.linkB).toLowerCase();
+      if (linkBSlug === needle) {
+        return {
+          canonicalSlug: entry.canonicalSlug,
+          variant,
+          side: "B",
+          aliasSlug: linkBSlug,
+          pageTitle: displayTitleFromFeedTitle(variant.titleB),
+        };
+      }
+    }
+  }
+  return null;
+}
 
 /** Lookup helper for the feed: returns variant rows by canonical slug. */
 export function getDualVariantsForSlug(slug: string): DualEntryVariant[] {
