@@ -199,6 +199,11 @@ export default function LandingPageTab() {
       const docRef = doc(db, 'siteSettings', 'landingPage');
       await setDoc(docRef, { ...data, updatedAt: Date.now() });
       triggerContentCdnInvalidation(['/']);
+      // Auto-ping IndexNow so Bing/Yandex re-crawl the homepage quickly.
+      try {
+        const { submitToIndexNow } = await import('@/lib/indexnow.functions');
+        submitToIndexNow({ data: { urls: ['https://phlabs.co.uk/'] } }).catch(() => {});
+      } catch { /* best-effort */ }
       addToast('Landing page saved successfully!', 'success');
     } catch (error) {
       console.error('Error saving:', error);

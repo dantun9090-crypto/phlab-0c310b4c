@@ -10,6 +10,7 @@ import {
 } from '@/lib/firebase';
 
 import { ProductEditor } from '@/components/ProductEditor';
+import { submitToIndexNow } from '@/lib/indexnow.functions';
 
 const LOW_STOCK_THRESHOLD = 10;
 
@@ -90,6 +91,18 @@ export default function InventoryTab() {
       // Silent — recache is best-effort
     }
   };
+
+  // Auto-ping IndexNow (Bing/Yandex/Seznam/Naver) on product save so the
+  // updated PDP enters the indexing queue within minutes. Best-effort, silent.
+  const autoIndexNowProduct = async (slug: string) => {
+    try {
+      const url = `https://phlabs.co.uk/products/${slug}`;
+      await submitToIndexNow({ data: { urls: [url] } });
+    } catch {
+      // Silent — IndexNow is best-effort
+    }
+  };
+
 
 
   const filtered = products.filter(
@@ -274,7 +287,10 @@ export default function InventoryTab() {
           window.dispatchEvent(new CustomEvent('admin:save'));
           // Auto-recache the saved product page in Prerender.io
           const slug = savedProduct.slug || savedProduct.id;
-          if (slug) autoRecacheProduct(slug);
+          if (slug) {
+            autoRecacheProduct(slug);
+            autoIndexNowProduct(slug);
+          }
           // Update local state immediately with saved product to reflect changes
           setProducts((prev) =>
             prev.some((p) => p.id === savedProduct.id)
