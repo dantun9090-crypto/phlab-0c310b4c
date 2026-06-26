@@ -1423,6 +1423,10 @@ export default function ProductDetail() {
               </div>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#f0f6ff] tracking-tight leading-[1.08] mb-4">
                 {product.name}
+                {/* Append " UK" to H1 for SEO-priority slugs (Semrush-targeted
+                    keyword phrases like "retatrutide uk"). Hand-curated via
+                    PRODUCT_SEO_OVERRIDES so we boost only the high-value pages. */}
+                {product.slug && PRODUCT_SEO_OVERRIDES[product.slug] ? ' UK' : ''}
                 {' '}
                 <span className="block text-base md:text-lg font-normal text-[#4a6a8a] mt-2 tracking-normal leading-snug">
                   Research Grade{' '}·{' '}UK Supplier{' '}·{' '}HPLC Verified
