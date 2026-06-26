@@ -20,7 +20,10 @@ interface CategoryConfig {
   seoKeywords: string;
   color: string;
   icon: string;
+  /** When set, filter by these product slugs instead of `product.category`. */
+  productSlugs?: string[];
 }
+
 
 const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   'tissue-repair': {
@@ -86,7 +89,72 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
     color: '#64748b',
     icon: '🔧',
   },
+
+  // ─── Per-peptide hub categories (keyword-led, UK SEO) ──────────────
+  // Each filters by an explicit slug list (productSlugs) instead of
+  // product.category, so a single product can appear under its own hub.
+  'bpc-157': {
+    label: 'BPC-157',
+    description: 'BPC-157 (Body Protection Compound) research peptide — HPLC-verified ≥99% purity with batch CoA. For laboratory research use only.',
+    seoTitle: 'BPC-157 UK — Research Peptide, HPLC + CoA | PH Labs',
+    seoDescription: 'BPC-157 UK research peptide hub. HPLC-tested ≥99% purity with batch Certificate of Analysis. For laboratory research only — not for human consumption.',
+    seoKeywords: 'bpc 157 uk, bpc-157 research peptide uk, buy bpc 157 uk',
+    color: '#10b981',
+    icon: '🧬',
+    productSlugs: ['bpc-157'],
+  },
+  'retatrutide': {
+    label: 'Retatrutide',
+    description: 'Retatrutide research peptide — triple GLP-1/GIP/glucagon receptor agonist supplied for in-vitro laboratory research use only.',
+    seoTitle: 'Retatrutide UK — Research Peptide, HPLC + CoA | PH Labs',
+    seoDescription: 'Retatrutide UK research peptide hub. HPLC-verified ≥99% purity with batch CoA. For laboratory research only — not for human consumption.',
+    seoKeywords: 'retatrutide uk, retatrutide research peptide uk, reta peptide uk',
+    color: '#3b82f6',
+    icon: '⚗️',
+    productSlugs: ['retatrutide-research-peptide'],
+  },
+  'tirzepatide': {
+    label: 'Tirzepatide',
+    description: 'Tirzepatide research peptide — dual GLP-1/GIP receptor agonist for laboratory research use only.',
+    seoTitle: 'Tirzepatide UK — Research Peptide, HPLC + CoA | PH Labs',
+    seoDescription: 'Tirzepatide UK research peptide hub. HPLC-verified ≥99% purity with batch CoA. For laboratory research only — not for human consumption.',
+    seoKeywords: 'tirzepatide uk, tirzepatide peptides uk, tirzepatide research uk',
+    color: '#3b82f6',
+    icon: '⚗️',
+    productSlugs: ['tirzepatide-research-peptide'],
+  },
+  'tb-500': {
+    label: 'TB-500',
+    description: 'TB-500 (Thymosin β-4 fragment) research peptide — HPLC-verified for laboratory research use only.',
+    seoTitle: 'TB-500 UK — Thymosin β-4 Research Peptide | PH Labs',
+    seoDescription: 'TB-500 (Thymosin β-4 fragment) UK research peptide hub. HPLC ≥99% purity with batch CoA. For laboratory research only — not for human consumption.',
+    seoKeywords: 'tb 500 uk, tb-500 research peptide uk, thymosin beta 4 uk',
+    color: '#10b981',
+    icon: '🔬',
+    productSlugs: ['tb-500-thymosin-beta-4'],
+  },
+  'ghk-cu': {
+    label: 'GHK-Cu',
+    description: 'GHK-Cu (copper tripeptide) research reagent — HPLC-verified for in-vitro laboratory research use only.',
+    seoTitle: 'GHK-Cu UK — Copper Tripeptide Research | PH Labs',
+    seoDescription: 'GHK-Cu (copper tripeptide) UK research hub. HPLC ≥99% purity with batch CoA. For laboratory research only — not for human consumption.',
+    seoKeywords: 'ghk cu uk, ghk-cu copper peptide uk, ghk cu research uk',
+    color: '#06b6d4',
+    icon: '🧪',
+    productSlugs: ['ghk-cu-research-peptide'],
+  },
+  'bacteriostatic-water': {
+    label: 'Bacteriostatic Water',
+    description: 'Bacteriostatic water (0.9% benzyl alcohol) — sterile laboratory diluent for in-vitro reconstitution protocols.',
+    seoTitle: 'Bacteriostatic Water UK — Lab Diluent 0.9% BA | PH Labs',
+    seoDescription: 'Bacteriostatic water (0.9% benzyl alcohol) UK — sterile laboratory diluent for in-vitro reconstitution. For research use only — not for human consumption.',
+    seoKeywords: 'bacteriostatic water uk, bac water uk, sterile diluent uk',
+    color: '#64748b',
+    icon: '💧',
+    productSlugs: ['bacteriostatic-water-research-compound'],
+  },
 };
+
 
 // Fallback for unknown categories from DB
 function buildFallbackConfig(slug: string): CategoryConfig {
@@ -149,18 +217,22 @@ export default function CategoryPage() {
     ogImage: 'https://cdn.wegic.ai/assets/onepage/agent/images/1779306071783_0.jpg',
   });
 
-  // Subscribe to products filtered by category
+  // Subscribe to products filtered by category (or explicit slug list)
   useEffect(() => {
     setLoading(true);
+    const slugList = config?.productSlugs;
     const unsub = subscribeToProducts((all) => {
-      const filtered = all.filter(
-        p => p.isActive !== false && p.stock > 0 && p.category === slug
-      );
+      const filtered = all.filter((p) => {
+        if (p.isActive === false || p.stock <= 0) return false;
+        if (slugList && slugList.length) return slugList.includes(p.slug ?? '');
+        return p.category === slug;
+      });
       setProducts(filtered);
       setLoading(false);
     });
     return () => unsub();
-  }, [slug]);
+  }, [slug, config?.productSlugs]);
+
 
   // SEO: when a category is empty (no in-stock products), tell crawlers
   // to skip it. Avoids "0 compounds available" pages appearing in the
