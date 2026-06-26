@@ -302,6 +302,12 @@ export default function MerchantFeedTab() {
                   <a href={item.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 mt-2 text-xs text-emerald-400 hover:text-emerald-300">
                     {item.link} <ExternalLink className="w-3 h-3" />
                   </a>
+                  {live && (live.h1 || live.renderedTitle) && (
+                    <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] text-slate-400">
+                      {live.h1 && <div className="truncate"><span className="text-slate-500">H1:</span> {live.h1}</div>}
+                      {live.renderedTitle && <div className="truncate"><span className="text-slate-500">Title:</span> {live.renderedTitle}</div>}
+                    </div>
+                  )}
                 </div>
               </div>
               {(allErrors.length > 0 || allWarnings.length > 0) && (
