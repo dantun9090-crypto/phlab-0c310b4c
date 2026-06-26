@@ -14,8 +14,8 @@ export const Route = createFileRoute('/$indexnowKey.txt')({
         }
 
         // Expected request: /{key}.txt
-        const requested = params.indexnowKey;
-        if (requested !== `${key}.txt`) {
+        const requested = (params as Record<string, string>)['indexnowKey.txt'];
+        if (requested !== key) {
           // Let the SPA / 404 handler take over for anything else.
           return new Response('Not Found', { status: 404 });
         }
