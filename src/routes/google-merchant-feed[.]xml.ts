@@ -398,6 +398,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                     linkA: `/products/${p.id || p.slug}`,
                     titleB: override?.displayName || (p.name || p.slug || ""),
                     linkB: `/products/${(p.slug || p.id || "").replace(/-/g, "")}`,
+                    cas: override?.cas || "Available on Certificate of Analysis",
                   },
                 ];
 
