@@ -404,7 +404,48 @@ async function getHtmlTtlSeconds() {
   return value;
 }
 
+// ---------- structured logging ----------
+//
+// Single ndjson sink so `wrangler tail --format=json` and Cloudflare Logs
+// produce queryable, correlated events. Each event shares a per-request
+// `rid`, a numeric `t` (ms since request start), and a stable `tag`.
+//
+// Tags emitted:
+//   phl.request.start    — first hop into the Worker
+//   phl.bot.detect       — bot classification (googlebot/hostile/normal)
+//   phl.hostile.block    — 403 hostile-UA short-circuit
+//   phl.prerender.cache  — prerender cache HIT or MISS
+//   phl.prerender.fetch  — outbound Prerender.io fetch result
+//   phl.prerender.fallback — Prerender failed → origin fallback
+//   phl.origin.proxy     — origin response status
+//   phl.request.end      — final response status + total ms
+//   phl.error            — caught exception inside the request handler
+function makeLogger(request, url) {
+  const t0 = Date.now();
+  const rid = (crypto && crypto.randomUUID ? crypto.randomUUID() : String(t0) + Math.random().toString(36).slice(2)).slice(0, 16);
+  const base = {
+    rid,
+    method: request.method,
+    path: url.pathname,
+    host: url.hostname,
+    ray: request.headers.get("cf-ray") || null,
+    ip: request.headers.get("cf-connecting-ip") || null,
+    country: (request.cf && request.cf.country) || null,
+  };
+  return {
+    rid,
+    log(tag, extra) {
+      try {
+        const payload = { tag, t: Date.now() - t0, ...base, ...(extra || {}) };
+        console.log(JSON.stringify(payload));
+      } catch (_) { /* never throw inside logger */ }
+    },
+  };
+}
+
 // ---------- main ----------
+
+
 
 
 
@@ -415,6 +456,10 @@ export default {
     const url = new URL(request.url);
     const host = url.hostname.toLowerCase();
     const origin = null;
+    const phlog = makeLogger(request, url);
+    phlog.log("phl.request.start", { ua: (request.headers.get("user-agent") || "").slice(0, 120) });
+
+
 
     // 0. Pageview beacon — must run BEFORE redirects/prerender/cache.
     //    Cache-cached HTML never reaches the origin, so Lovable's visit
@@ -572,6 +617,8 @@ export default {
     //     These UAs either ignore robots.txt, scrape PII, or feed LLM training
     //     sets. Edge block is the only enforceable layer.
     if (HOSTILE_BOT_UA_RX.test(ua)) {
+      phlog.log("phl.hostile.block", { ua: ua.slice(0, 120) });
+      phlog.log("phl.request.end", { status: 403, via: "hostile-block" });
       return new Response("Forbidden: automated scraping not permitted.\n", {
         status: 403,
         headers: {
@@ -592,19 +639,17 @@ export default {
     const token = env && env.PRERENDER_TOKEN;
     const isLoop = request.headers.has(LOOP_HEADER);
 
-    // Safe debug log — boolean for token presence, never the value itself.
-    // Visible in `wrangler tail` / Cloudflare Logs without leaking secrets.
     if (isBot && isGet && !isStatic) {
-      const branch = token && !isLoop && !PRERENDER_RENDERER_RX.test(ua) ? "prerender" : "normal-proxy";
-      console.log(JSON.stringify({
-        tag: "phlabs-prerender",
-        branch,
-        path: url.pathname,
-        tokenPresent: Boolean(token),
-        uaSample: ua.slice(0, 80),
+      phlog.log("phl.bot.detect", {
         isGooglebot,
-      }));
+        botClass: isGooglebot ? "googlebot" : "other-bot",
+        tokenPresent: Boolean(token),
+        loop: isLoop,
+        rendererUa: PRERENDER_RENDERER_RX.test(ua),
+        branch: token && !isLoop && !PRERENDER_RENDERER_RX.test(ua) ? "prerender" : "normal-proxy",
+      });
     }
+
 
     if (isBot && isGet && !isStatic && token && !isLoop && !PRERENDER_RENDERER_RX.test(ua)) {
       // Prerender cache key — independent of bot UA so all bots share the
@@ -616,24 +661,32 @@ export default {
       try {
         const cached = await caches.default.match(prerenderCacheKey);
         if (cached) {
+          phlog.log("phl.prerender.cache", { hit: true, status: cached.status });
+          phlog.log("phl.request.end", { status: cached.status, via: "prerender-cache-hit" });
           const h = new Headers(cached.headers);
           h.set("x-prerender-cache", "HIT");
           h.set("x-phl-via", "prerender-cache-hit");
+          h.set("x-phl-rid", phlog.rid);
           return applySecurityHeaders(new Response(cached.body, { status: cached.status, headers: h }), url);
         }
-      } catch (_) { /* fall through */ }
+        phlog.log("phl.prerender.cache", { hit: false });
+      } catch (e) {
+        phlog.log("phl.prerender.cache", { hit: false, err: String((e && e.message) || e).slice(0, 80) });
+      }
 
       let preStatus = "skipped";
       let preErr = "";
       try {
         const pre = await fetchPrerender(request, token);
         preStatus = pre ? String(pre.status) : "null";
+        phlog.log("phl.prerender.fetch", { status: pre ? pre.status : 0, ok: !!(pre && pre.status < 500 && pre.status !== 429) });
         if (pre && pre.status < 500 && pre.status !== 429) {
           const buf = await pre.arrayBuffer();
           const h = new Headers(pre.headers);
           h.set("x-prerendered", "true");
           h.set("x-prerender-cache", "MISS");
           h.set("x-phl-via", "prerender");
+          h.set("x-phl-rid", phlog.rid);
           h.delete("x-robots-tag");
           h.set("cache-control", `public, max-age=${PRERENDER_CACHE_TTL}, s-maxage=${PRERENDER_CACHE_TTL}, stale-while-revalidate=${PRERENDER_SWR_TTL}`);
           h.delete("set-cookie");
@@ -652,24 +705,31 @@ export default {
               );
             } catch (_) {}
           }
+          phlog.log("phl.request.end", { status: pre.status, via: "prerender", bytes: buf.byteLength });
           const out = applySecurityHeaders(new Response(buf, { status: pre.status, statusText: pre.statusText, headers: h }), url);
           return out;
         }
       } catch (e) {
         preErr = (e && (e.name || e.message)) ? String(e.name || e.message).slice(0, 60) : "err";
+        phlog.log("phl.prerender.fetch", { status: 0, ok: false, err: preErr });
       }
       // Fallback to origin with loop marker so we don't re-enter prerender.
+      phlog.log("phl.prerender.fallback", { preStatus, preErr });
       const reReq = new Request(request, { headers: new Headers(request.headers) });
       reReq.headers.set(LOOP_HEADER, "1");
       try {
         const res = await proxyToOrigin(reReq, origin);
         const h = new Headers(res.headers);
         h.set("x-phl-via", `origin-bot-fallback;pre=${preStatus};err=${preErr}`);
+        h.set("x-phl-rid", phlog.rid);
+        phlog.log("phl.request.end", { status: res.status, via: "origin-bot-fallback" });
         return applySecurityHeaders(new Response(res.body, { status: res.status, statusText: res.statusText, headers: h }));
-      } catch (_) {
+      } catch (e) {
+        phlog.log("phl.error", { where: "bot-fallback-origin", err: String((e && e.message) || e).slice(0, 120) });
         return serveStaleOrError(request);
       }
     }
+
 
     // 6. Normal proxy → origin. We pass `cf.cacheEverything` only for safe
     //    public HTML routes. XML feeds must stay uncached so Merchant Center
@@ -827,9 +887,13 @@ export default {
         h.set("x-phl-cache", `skip;status=${res.status};html=${isHtml ? 1 : 0}`);
       }
 
+      h.set("x-phl-rid", phlog.rid);
+      phlog.log("phl.origin.proxy", { status: res.status, innerCf: h.get("cf-cache-status") || null });
+      phlog.log("phl.request.end", { status: res.status, via: "normal-proxy" });
       const out = new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
       return rewriteCspNonce(applySecurityHeaders(stripLovableInjectedScripts(out), url));
-    } catch (_) {
+    } catch (e) {
+      phlog.log("phl.error", { where: "outer-fetch", err: String((e && e.message) || e).slice(0, 200) });
       return await serveStaleOrError(request);
     }
   },
