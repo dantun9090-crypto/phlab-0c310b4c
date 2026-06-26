@@ -225,18 +225,19 @@ export const Route = createFileRoute('/api/public/hooks/seo-health-daily')({
           // Update "last-successful" snapshot (only on a fully-clean run, so a
           // sustained failure keeps the alert firing daily until it heals).
           if (failed.length === 0) {
-            await addDocAdmin('seo_health_runs', {
-              updatedAt: new Date().toISOString(),
-              signatures,
-            }, PREV_DOC_ID).catch(async (e: any) => {
-              // overwrite: addDocAdmin throws on duplicate id, retry with merge via REST
-              if (!/ALREADY_EXISTS/i.test(String(e?.message))) throw e;
-              const { setDocAdmin } = await import('@/lib/server/firestore-admin').catch(() => ({} as any));
-              if (typeof setDocAdmin === 'function') {
-                await (setDocAdmin as any)('seo_health_runs', PREV_DOC_ID, { updatedAt: new Date().toISOString(), signatures });
-              }
-            });
+            try {
+              await updateDocAdmin('seo_health_runs', PREV_DOC_ID, {
+                updatedAt: new Date().toISOString(),
+                signatures,
+              });
+            } catch (_) {
+              await addDocAdmin('seo_health_runs', {
+                updatedAt: new Date().toISOString(),
+                signatures,
+              }, PREV_DOC_ID).catch(() => {});
+            }
           }
+
         } catch (e) {
           console.error('[seo-health-daily] persist failed', e);
         }
