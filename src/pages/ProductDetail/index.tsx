@@ -1503,6 +1503,16 @@ export default function ProductDetail() {
                 <span className="text-emerald-300 text-sm font-semibold">Analytical Reference Material · For Research Use Only</span>
               </div>
 
+              {/* "Also known as" — captures organic long-tail misspellings
+                  (Semrush UK: ~1.3k/mo combined, near-zero competition).
+                  Subtle styling so it reads as a helpful synonym list, not SEO spam. */}
+              {!merchantAliasInfo && product.slug && PRODUCT_SEO_OVERRIDES[product.slug]?.misspellings?.length ? (
+                <p className="text-xs text-[#6b829e] mb-3 leading-relaxed">
+                  <span className="font-semibold text-[#8aa3c0]">Also searched as:</span>{' '}
+                  {PRODUCT_SEO_OVERRIDES[product.slug]!.misspellings!.join(', ')}.
+                </p>
+              ) : null}
+
               {/* ── 3-Part Description ── */}
               {(() => {
                 const productSlugKey = (product.slug || nameToSlug(product.name) || product.id).toLowerCase();
