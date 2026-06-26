@@ -7,7 +7,7 @@ import {
 } from "@/lib/products-rest.functions";
 import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
 import { RESEARCH_CONTENT } from "@/lib/research-content";
-import { resolveSlugFromId } from "@/lib/product-id-slug-map";
+import { PRODUCT_ID_TO_SLUG, resolveSlugFromId } from "@/lib/product-id-slug-map";
 import { DUAL_ENTRY_ALIASES, getDualEntryAliasInfo } from "@/lib/merchant-dual-entries";
 import { PRODUCT_SEO_OVERRIDES } from "@/lib/product-seo-overrides";
 
@@ -16,6 +16,10 @@ const OG_IMAGE_FALLBACK = `${SITE_URL}/og-image.jpg`;
 // A "slug-shaped" param is lowercase alnum+hyphens; anything else (uppercase,
 // underscores) is treated as a Firestore document ID.
 const SLUG_RE = /^[a-z0-9-]+$/;
+
+function knownProductIdForSlug(slug: string): string | null {
+  return Object.entries(PRODUCT_ID_TO_SLUG).find(([, mappedSlug]) => mappedSlug === slug)?.[0] ?? null;
+}
 
 // Legacy/external slug aliases → 301 to the canonical product slug.
 // Keeps old inbound links (and Google index entries) from 404'ing.
@@ -45,7 +49,11 @@ export const Route = createFileRoute("/products_/$slug")({
     //    <link> in head() still points to the real product slug for SEO.
     const dualTarget = DUAL_ENTRY_ALIASES[raw.toLowerCase()];
     if (dualTarget) {
-      const product = await fetchProductBySlugFn({ data: { slug: dualTarget } });
+      let product = await fetchProductBySlugFn({ data: { slug: dualTarget } });
+      if (!product) {
+        const knownId = knownProductIdForSlug(dualTarget);
+        if (knownId) product = await fetchProductByIdFn({ data: { id: knownId } });
+      }
       if (product) return { product, matchedBy: "id" as const, aliasInfo: getDualEntryAliasInfo(raw) };
       throw notFound();
     }
