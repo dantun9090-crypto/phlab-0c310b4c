@@ -56,6 +56,25 @@ export function ResearchContentBlock({ slug }: ResearchContentBlockProps) {
         <p>{content.applications}</p>
       </Section>
 
+      {content.structuralDetail && (
+        <Section icon={Atom} title="Structural &amp; Synthetic Detail">
+          <p>{content.structuralDetail}</p>
+        </Section>
+      )}
+
+      {content.methodDetail && (
+        <Section icon={FlaskConical} title="HPLC &amp; Mass-Spectrometry Method">
+          <p>{content.methodDetail}</p>
+        </Section>
+      )}
+
+      {content.receptorPharmacology && (
+        <Section icon={Activity} title="Comparative Receptor Pharmacology">
+          <p>{content.receptorPharmacology}</p>
+        </Section>
+      )}
+
+
       <Section icon={Snowflake} title="Preparation &amp; Storage">
         <p>{content.prepStorage}</p>
       </Section>
