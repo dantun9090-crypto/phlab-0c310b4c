@@ -45,7 +45,7 @@ const DIRECTORIES: Directory[] = [
 
 const STORAGE_KEY = 'phl_backlink_outreach_v1';
 
-interface Record {
+interface OutreachRecord {
   status: Status;
   submittedAt?: string;
   liveAt?: string;
@@ -75,7 +75,7 @@ const STATUS_META: Record<Status, { label: string; color: string; icon: typeof C
 };
 
 export default function BacklinkOutreachTab() {
-  const [records, setRecords] = useState<Record<string, Record>>({});
+  const [records, setRecords] = useState<Record<string, OutreachRecord>>({});
   const [filter, setFilter] = useState<'all' | Status>('all');
   const [copied, setCopied] = useState(false);
 
@@ -86,13 +86,13 @@ export default function BacklinkOutreachTab() {
     } catch { /* noop */ }
   }, []);
 
-  const persist = (next: Record<string, Record>) => {
+  const persist = (next: Record<string, OutreachRecord>) => {
     setRecords(next);
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* noop */ }
   };
 
   const setStatus = (id: string, status: Status) => {
-    const cur = records[id] ?? { status: 'todo' };
+    const cur = records[id] ?? { status: 'todo' } as OutreachRecord;
     const now = new Date().toISOString();
     persist({
       ...records,
@@ -106,7 +106,7 @@ export default function BacklinkOutreachTab() {
   };
 
   const setNote = (id: string, notes: string) => {
-    const cur = records[id] ?? { status: 'todo' as Status };
+    const cur: OutreachRecord = records[id] ?? { status: 'todo' };
     persist({ ...records, [id]: { ...cur, notes } });
   };
 
@@ -188,7 +188,7 @@ export default function BacklinkOutreachTab() {
       <div className="rounded-xl border-2 border-slate-700 bg-slate-900 overflow-hidden">
         <div className="divide-y-2 divide-slate-800">
           {filtered.map((dir) => {
-            const rec = records[dir.id] ?? { status: 'todo' as Status };
+            const rec: OutreachRecord = records[dir.id] ?? { status: 'todo' };
             const Meta = STATUS_META[rec.status];
             const Icon = Meta.icon;
             return (
