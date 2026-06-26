@@ -13,6 +13,9 @@ export interface ProductSeoOverride {
    *  and rendered as a subtle "Also known as" line for organic capture.
    *  Sourced from Semrush UK organic rankings (low-competition long tail). */
   misspellings?: string[];
+  /** Keyword-targeted FAQs prepended to the generic FAQ block + JSON-LD.
+   *  Use to capture striking-distance long-tail queries (e.g. "retatrutide uk buy"). */
+  faqs?: { q: string; a: string }[];
 }
 
 export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
