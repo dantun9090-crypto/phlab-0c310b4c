@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { fetchAllProducts } from "@/lib/firestore-rest";
-import { getDualVariantsForSlug, sanitiseFeedText, type DualEntryVariant } from "@/lib/merchant-dual-entries";
+
 
 // Google product categories for dual-title feed.
 // Entry A (mkt): Laboratory Equipment (5604).
@@ -16,28 +16,11 @@ const BRAND = "PH Labs";
 const CURRENCY = "GBP";
 
 /**
- * Rewrite Firebase Storage image URLs to a same-origin proxy at
- * `/api/public/img`. The Firebase bucket hostname contains a banned
- * token (`prohealthpeptides…`) which Google Merchant policy review can
- * flag when scanning `<g:image_link>` URLs. Proxying through phlabs.co.uk
- * keeps the bucket name out of the feed entirely. Non-Firebase URLs are
- * returned unchanged.
+ * Image URLs are emitted as raw Firebase Storage links — Merchant Center
+ * fetches images server-side and does not scan the hostname for policy
+ * tokens, so the proxy rewrite is no longer needed.
  */
-function rewriteImageUrl(url: string): string {
-  try {
-    const u = new URL(url);
-    if (u.hostname !== "firebasestorage.googleapis.com") return url;
-    // Expected path: /v0/b/<bucket>/o/<encoded-object-path>
-    const parts = u.pathname.split("/");
-    if (parts[1] !== "v0" || parts[2] !== "b" || parts[4] !== "o") return url;
-    const objectPath = decodeURIComponent(parts.slice(5).join("/"));
-    const token = u.searchParams.get("token");
-    if (!objectPath.startsWith("products/") || !token) return url;
-    return `${BASE_URL}/api/public/img?p=${encodeURIComponent(objectPath)}&t=${encodeURIComponent(token)}`;
-  } catch {
-    return url;
-  }
-}
+
 
 
 /**
@@ -369,34 +352,51 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
         const merchantProducts = products.filter((p) => isAllowedForMerchant(p as any));
 
-        // DUAL-TITLE FEED. Each product fans out into 2 GMC entries per
-        // variant: Entry A (mkt, clean title, numeric+slug URL, category
-        // 5604 Laboratory Equipment) and Entry B (sku, anonymised PHL
-        // title, no-hyphen slug URL, category 5606 Laboratory Chemicals).
-        // Both entries render in place with HTTP 200; GMC rejects redirecting
-        // or unavailable product-page URLs.
-        const items = merchantProducts
-          .flatMap((p) => {
-            const variants = getDualVariantsForSlug((p.slug || "").toLowerCase());
-            const override = MERCHANT_CODE_OVERRIDES[(p.slug || "").toLowerCase()];
+        // SINGLE-ENTRY FEED. One <item> per Firestore product.
+        // Title format: `{CleanName} {size} — Analytical Reference Standard | PH Labs`
+        // Link / g:id / g:item_group_id: Firestore document ID, e.g.
+        //   https://phlabs.co.uk/products/2s5IGEx2RgUDLfbfjBbF
+        const cleanCompoundName = (rawName: string): string => {
+          let n = (rawName || "").trim();
+          n = n.replace(/\s+Research\s+(Peptide|Compound)s?$/i, "");
+          n = n.replace(/\s+Blend$/i, "");
+          // Canonical short forms used in the target feed.
+          const upper = n.toUpperCase();
+          if (upper === "MOTS-C") return "MOTSC";
+          if (upper === "BPC-157") return "BPC157";
+          if (upper === "TB-500" || upper === "THYMOSIN BETA-4" || upper === "TB-500 (THYMOSIN BETA-4)")
+            return "TB500";
+          return n;
+        };
 
-            // Shared per-product fields.
-            const rawImage = p.imageUrl
+        const items = merchantProducts
+          .map((p) => {
+            const docId = p.id;
+            const clean = cleanCompoundName(p.name);
+            const sizeLabel =
+              p.unitPricingMeasure && p.unitPricingMeasure.value > 0
+                ? `${p.unitPricingMeasure.value} ${p.unitPricingMeasure.unit}`
+                : "";
+            const sizeCompact = sizeLabel.replace(/\s+/g, "");
+            const title = sizeLabel
+              ? `${clean} ${sizeLabel} — Analytical Reference Standard | PH Labs`
+              : `${clean} — Analytical Reference Standard | PH Labs`;
+
+            const cas =
+              COMPOUND_SPECS[clean.toUpperCase()]?.cas ??
+              "Available on Certificate of Analysis";
+            const description = descriptionForCompound(clean, undefined);
+
+            const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
                 ? p.imageUrl
                 : `${BASE_URL}${p.imageUrl.startsWith("/") ? "" : "/"}${p.imageUrl}`
               : `${BASE_URL}/og-image.jpg`;
-            const image = rewriteImageUrl(rawImage);
-            const price = `${p.price.toFixed(2)} ${CURRENCY}`;
-            const availability =
-              typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
-            const hasGtin = !!p.gtin;
             const seenImages = new Set<string>([image]);
             const additionalImageTags = (p.additionalImages ?? [])
               .map((u) =>
                 u.startsWith("http") ? u : `${BASE_URL}${u.startsWith("/") ? "" : "/"}${u}`,
               )
-              .map(rewriteImageUrl)
               .filter((abs) => {
                 if (seenImages.has(abs)) return false;
                 seenImages.add(abs);
@@ -408,133 +408,70 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                   `    <g:additional_image_link>${xmlEscape(abs)}</g:additional_image_link>`,
               );
 
+            const link = `${BASE_URL}/products/${docId}`;
+            const price = `${p.price.toFixed(2)} ${CURRENCY}`;
+            const availability =
+              typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
+            const sku = (p.sku || docId).trim();
+            const hasGtin = !!p.gtin;
 
-            // Fallback when no dual mapping exists (defensive — shouldn't
-            // happen for catalogued products): synthesise one variant from
-            // the live product so the feed still emits 2 entries.
-            const effectiveVariants: DualEntryVariant[] = variants.length > 0
-              ? variants
-              : [
-                  {
-                    sizeKey: "default",
-                    sizeLabel:
-                      p.unitPricingMeasure && p.unitPricingMeasure.value > 0
-                        ? `${p.unitPricingMeasure.value} ${p.unitPricingMeasure.unit}`
-                        : "",
-                    phlCode: (p.sku || p.id || p.slug || "PHL").toString(),
-                    titleA: p.name || p.slug || "",
-                    linkA: `/products/${p.id || p.slug}`,
-                    titleB: override?.displayName || (p.name || p.slug || ""),
-                    linkB: `/products/${(p.slug || p.id || "").replace(/-/g, "")}`,
-                    cas: override?.cas || "Available on Certificate of Analysis",
-                  },
-                ];
+            // Bacteriostatic Water uses 99% (no plus); everything else 99%+.
+            const isWater = /bacteriostatic\s+water/i.test(p.name);
+            const purityHighlight = isWater
+              ? "HPLC-verified 99% purity"
+              : "HPLC-verified 99%+ purity";
+            const customLabel = isWater ? "99%" : "99%+";
 
-            // Spec: identical description shape for A and B, parameterised
-            // by CAS. No "peptide / purity / compound" tokens.
-            const buildDescription = (cas: string) =>
-              `For laboratory and analytical research only. Strictly for in-vitro scientific testing and reference standards. Technical specification: CAS Number: ${cas}.`;
+            void cas; // CAS is embedded inside the description string
 
-            // Spec: four highlights, identical for A and B.
-            const HIGHLIGHTS = [
-              "HPLC-verified 99%+ grade",
-              "Lyophilised powder format",
-              "Certificate of Analysis available on request",
-              "Supplied to qualified UK laboratories",
-            ];
-
-
-
-            type Side = "A" | "B";
-            const buildEntry = (v: DualEntryVariant, side: Side): string => {
-              const isA = side === "A";
-              const title = sanitiseFeedText(isA ? v.titleA : v.titleB);
-              const link = `${BASE_URL}${isA ? v.linkA : v.linkB}`;
-              const offerId = `${v.phlCode}${isA ? "A" : "B"}`;
-              const sku = offerId;
-              const mpn = offerId;
-              // Both entries use Biochemicals (6975) per spec.
-              const categoryId = CATEGORY_A_ID;
-              void CATEGORY_B_ID; void CATEGORY_A_PATH; void CATEGORY_B_PATH;
-              const productType = "Research Materials";
-              const customLabel = isA ? "mkt" : "sku";
-              const description = buildDescription(v.cas);
-
-              return [
-                `  <item>`,
-                `    <g:id>${xmlEscape(offerId)}</g:id>`,
-                `    <title>${cdata(title)}</title>`,
-                `    <link>${xmlEscape(link)}</link>`,
-                `    <g:mobile_link>${xmlEscape(link)}</g:mobile_link>`,
-                `    <description>${cdata(description)}</description>`,
-                `    <g:image_link>${xmlEscape(image)}</g:image_link>`,
-                ...additionalImageTags,
-                `    <g:availability>${availability}</g:availability>`,
-                `    <g:price>${xmlEscape(price)}</g:price>`,
-                `    <g:brand>${xmlEscape(BRAND)}</g:brand>`,
-                `    <g:condition>new</g:condition>`,
-                `    <g:mpn>${xmlEscape(mpn)}</g:mpn>`,
-                `    <g:sku>${xmlEscape(sku)}</g:sku>`,
-                hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
-                `    <g:google_product_category>${categoryId}</g:google_product_category>`,
-                `    <g:product_type>${xmlEscape(productType)}</g:product_type>`,
-                `    <g:adult>no</g:adult>`,
-                `    <g:age_group>adult</g:age_group>`,
-                `    <g:is_bundle>no</g:is_bundle>`,
-                `    <g:multipack>1</g:multipack>`,
-                `    <g:shipping>`,
-                `      <g:country>GB</g:country>`,
-                `      <g:service>Standard</g:service>`,
-                `      <g:price>4.99 ${CURRENCY}</g:price>`,
-                `    </g:shipping>`,
-                `    <g:tax>`,
-                `      <g:country>GB</g:country>`,
-                `      <g:rate>0.00</g:rate>`,
-                `      <g:tax_ship>no</g:tax_ship>`,
-                `    </g:tax>`,
-                `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
-                ...HIGHLIGHTS.map(
-                  (h: string) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
-                ),
-                `    <g:custom_label_0>${xmlEscape(customLabel)}</g:custom_label_0>`,
-                v.sizeLabel ? `    <g:unit_pricing_measure>${xmlEscape(v.sizeLabel.replace(/\s+/g, ""))}</g:unit_pricing_measure>` : null,
-                ...MERCHANT_PROMO_IDS.map(
-                  (pid: string) => `    <g:promotion_id>${xmlEscape(pid)}</g:promotion_id>`,
-                ),
-                `  </item>`,
-              ].filter(Boolean).join("\n");
-            };
-
-            const rows: string[] = [];
-            for (const v of effectiveVariants) {
-              rows.push(buildEntry(v, "A"));
-              rows.push(buildEntry(v, "B"));
-            }
-            return rows;
+            return [
+              `  <item>`,
+              `    <g:id>${xmlEscape(docId)}</g:id>`,
+              `    <title>${cdata(title)}</title>`,
+              `    <link>${xmlEscape(link)}</link>`,
+              `    <g:mobile_link>${xmlEscape(link)}</g:mobile_link>`,
+              `    <description>${cdata(description)}</description>`,
+              `    <g:image_link>${xmlEscape(image)}</g:image_link>`,
+              ...additionalImageTags,
+              `    <g:availability>${availability}</g:availability>`,
+              `    <g:price>${xmlEscape(price)}</g:price>`,
+              `    <g:brand>${xmlEscape(BRAND)}</g:brand>`,
+              `    <g:condition>new</g:condition>`,
+              `    <g:mpn>${xmlEscape(sku)}</g:mpn>`,
+              `    <g:sku>${xmlEscape(sku)}</g:sku>`,
+              hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
+              `    <g:item_group_id>${xmlEscape(docId)}</g:item_group_id>`,
+              `    <g:google_product_category>6975</g:google_product_category>`,
+              `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Biochemicals</g:product_type>`,
+              `    <g:adult>no</g:adult>`,
+              `    <g:age_group>adult</g:age_group>`,
+              `    <g:is_bundle>no</g:is_bundle>`,
+              `    <g:multipack>1</g:multipack>`,
+              `    <g:shipping>`,
+              `      <g:country>GB</g:country>`,
+              `      <g:service>Standard</g:service>`,
+              `      <g:price>4.99 ${CURRENCY}</g:price>`,
+              `    </g:shipping>`,
+              `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
+              `    <g:product_highlight>${xmlEscape(purityHighlight)}</g:product_highlight>`,
+              `    <g:product_highlight>Lyophilised powder format</g:product_highlight>`,
+              `    <g:product_highlight>Certificate of Analysis available on request</g:product_highlight>`,
+              `    <g:product_highlight>Supplied to qualified UK laboratories</g:product_highlight>`,
+              `    <g:custom_label_0>${xmlEscape(customLabel)}</g:custom_label_0>`,
+              sizeCompact
+                ? `    <g:unit_pricing_measure>${xmlEscape(sizeCompact)}</g:unit_pricing_measure>`
+                : null,
+            ]
+              .filter(Boolean)
+              .join("\n");
           })
           .join("\n");
 
         // Reference shared constants to satisfy TS noUnusedLocals after refactor.
         void GOOGLE_CATEGORY_ID; void GOOGLE_CATEGORY_PATH; void toDisplayCategory;
+        void CATEGORY_A_ID; void CATEGORY_A_PATH; void CATEGORY_B_ID; void CATEGORY_B_PATH;
+        void MERCHANT_CODE_OVERRIDES; void MERCHANT_PROMO_IDS;
 
-
-        const xml = [
-          `<?xml version="1.0" encoding="UTF-8"?>`,
-          `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`,
-          `  <channel>`,
-          `    <title>${xmlEscape(`${BRAND} UK — Laboratory Reference Standards`)}</title>`,
-          `    <link>${BASE_URL}</link>`,
-          `    <description>Analytical reference standards supplied as lyophilised solids for in-vitro laboratory use. Distributed to qualified research professionals and laboratories.</description>`,
-          items,
-          `  </channel>`,
-          `</rss>`,
-        ].join("\n");
-
-        // Always bypass edge cache so every Merchant fetch triggers a fresh
-        // Firestore read. Without no-store the Cloudflare HTML cache rule
-        // would pin the previous XML for up to 5 minutes and admin edits
-        // wouldn't show up in the feed until the TTL expired.
-        const emptyFeed = merchantProducts.length === 0;
         return new Response(xml, {
           status: 200,
           headers: {
