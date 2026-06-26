@@ -3,6 +3,7 @@ import type {} from "@tanstack/react-start";
 import { articles } from "@/pages/Resources/data/articles";
 import { fetchAllProducts } from "@/lib/firestore-rest";
 import { isIndexable } from "@/lib/sitemap-policy";
+import { PROGRAMMATIC_PAGES } from "@/lib/programmatic-seo";
 // DOMAIN GUARD: jedynym źródłem kanonicznej domeny jest src/lib/seo-meta.ts
 // (SITE_URL + assertCanonicalUrl). Nie hardkoduj "https://phlabs.co.uk" tutaj —
 // zmiana w jednym miejscu musi pociągać sitemap, robots, JSON-LD i canonical.
@@ -73,6 +74,14 @@ export const Route = createFileRoute("/sitemap.xml")({
         // Dynamic article entries served by the /$ splat route
         const articleEntries: SitemapEntry[] = articles.map((a) => ({
           path: `/resources/${a.slug}`,
+          changefreq: "monthly",
+          priority: "0.6",
+        }));
+
+        // Programmatic SEO pages (/compare/{slug}) — Phase B
+        const programmaticEntries: SitemapEntry[] = PROGRAMMATIC_PAGES.map((p) => ({
+          path: `/compare/${p.slug}`,
+          lastmod: p.updated,
           changefreq: "monthly",
           priority: "0.6",
         }));
