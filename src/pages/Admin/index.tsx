@@ -58,6 +58,7 @@ import ShopifyTab from './tabs/ShopifyTab';
 import SemrushTab from './tabs/SemrushTab';
 import SEOOpportunitiesTab from './tabs/SEOOpportunitiesTab';
 import BacklinkOutreachTab from './tabs/BacklinkOutreachTab';
+import BacklinkChangesTab from './tabs/BacklinkChangesTab';
 import CacheRecacheTab from './tabs/CacheRecacheTab';
 import UrlMonitorTab from './tabs/UrlMonitorTab';
 import RoyalMailTab from './tabs/RoyalMailTab';
@@ -71,7 +72,7 @@ import ResearchIncidentsTab from './tabs/ResearchIncidentsTab';
 import LiveActivityTab from './tabs/LiveActivityTab';
 import ToastAuditTab from './tabs/ToastAuditTab';
 
-type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'indexnow' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'healthmonitor' | 'researchincidents';
+type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'indexnow' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'backlinkchanges' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'healthmonitor' | 'researchincidents';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -458,6 +459,7 @@ export default function AdminPage() {
         case 'semrush': return <SemrushTab />;
         case 'seoopportunities': return <SEOOpportunitiesTab />;
         case 'backlinkoutreach': return <BacklinkOutreachTab />;
+        case 'backlinkchanges': return <BacklinkChangesTab />;
         case 'royalmail': return <RoyalMailTab />;
         case 'webhooktest': return <WebhookTestTab />;
         case 'wallidpreview': return <WallidPreviewTab />;
@@ -485,7 +487,7 @@ export default function AdminPage() {
     tools: 'Tools', themes: 'Themes', database: 'Database', backup: 'Backup',
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', freegift: 'Free Gift Promo', diagnostics: 'Diagnostics',
     prerenderstatus: 'Prerender Status', cacherecache: 'Cache & Recache', gscmonitor: 'GSC Monitor', marketingcoverage: 'Marketing Coverage', urlmonitor: 'URL Monitor', merchantfeed: 'Merchant Feed', bingfeed: 'Bing Shopping', indexnow: 'IndexNow',
-    securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', shopify: 'Shopify', semrush: 'Semrush', seoopportunities: 'SEO Opportunities', backlinkoutreach: 'Backlink Outreach',
+    securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', shopify: 'Shopify', semrush: 'Semrush', seoopportunities: 'SEO Opportunities', backlinkoutreach: 'Backlink Outreach', backlinkchanges: 'Backlink Changes',
     royalmail: 'Royal Mail Labels', webhooktest: 'Webhook Test', wallidpreview: 'Wallid Preview', wallidbadges: 'Wallid Badges', wallidbanks: 'Wallid Banks', watchdog: 'Watchdog', healthmonitor: 'Health Monitor', researchincidents: 'Research Incidents',
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;

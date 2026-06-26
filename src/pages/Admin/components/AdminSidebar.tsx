@@ -97,6 +97,7 @@ const navGroups = [
       { id: 'semrush', label: 'Semrush', icon: TrendingUp },
       { id: 'seoopportunities', label: 'SEO Opportunities', icon: TrendingUp },
       { id: 'backlinkoutreach', label: 'Backlink Outreach', icon: TrendingUp },
+      { id: 'backlinkchanges', label: 'Backlink Changes', icon: Activity },
     ],
   },
 
