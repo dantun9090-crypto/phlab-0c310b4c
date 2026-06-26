@@ -92,6 +92,18 @@ export default function InventoryTab() {
     }
   };
 
+  // Auto-ping IndexNow (Bing/Yandex/Seznam/Naver) on product save so the
+  // updated PDP enters the indexing queue within minutes. Best-effort, silent.
+  const autoIndexNowProduct = async (slug: string) => {
+    try {
+      const url = `https://phlabs.co.uk/products/${slug}`;
+      await submitToIndexNow({ data: { urls: [url] } });
+    } catch {
+      // Silent — IndexNow is best-effort
+    }
+  };
+
+
 
   const filtered = products.filter(
     (p) =>
