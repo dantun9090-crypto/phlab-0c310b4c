@@ -402,25 +402,17 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                   },
                 ];
 
-            const descriptionA = descriptionForCompound(
-              (p.name || "").replace(/\b(research\s+peptide|research\s+chemical|research\s+compound)\b/gi, "").trim(),
-              p.purity,
-            );
-            const descriptionB = override
-              ? `Laboratory chemical supplied as a lyophilised solid for in-vitro analytical and laboratory testing only. Not a consumer product. Distributed exclusively to qualified UK research laboratories. Technical specification: • CAS Number: ${override.cas} • Internal reference code: ${override.code} • Certificate of Analysis available on request.`
-              : `Analytical reference standard supplied as a lyophilised solid for in-vitro laboratory and analytical testing only. Distributed to qualified UK research laboratories. Certificate of Analysis available on request.`;
+            // Spec: identical description shape for A and B, parameterised
+            // by CAS. No "peptide / purity / compound" tokens.
+            const buildDescription = (cas: string) =>
+              `For laboratory and analytical research only. Strictly for in-vitro scientific testing and reference standards. Technical specification: CAS Number: ${cas}.`;
 
-            const highlightsA = [
-              p.purity ? `HPLC-verified ${p.purity} purity` : "HPLC-verified ≥99% purity",
+            // Spec: four highlights, identical for A and B.
+            const HIGHLIGHTS = [
+              "HPLC-verified 99%+ grade",
               "Lyophilised powder format",
               "Certificate of Analysis available on request",
               "Supplied to qualified UK laboratories",
-            ];
-            const highlightsB = [
-              "Lyophilised solid",
-              "Certificate of Analysis available on request",
-              "Supplied to qualified UK laboratories",
-              "In-vitro analytical use only",
             ];
 
 
