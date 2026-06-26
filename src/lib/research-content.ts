@@ -12,6 +12,8 @@
 export interface ResearchFAQ { q: string; a: string }
 export interface ResearchRelated { slug: string; label: string; relationship: string }
 
+export interface ResearchReference { citation: string; doi?: string }
+
 export interface ResearchContent {
   overview: string;            // ~200 words — identity, discovery, in-vitro MoA
   applications: string;        // ~150 words — assays, concentrations, cell lines
@@ -19,7 +21,16 @@ export interface ResearchContent {
   qualityVerification: string; // ~80 words — HPLC, MS, CoA, sterility
   faqs: ResearchFAQ[];         // 8 research-context questions
   related: ResearchRelated[];  // 4 related compounds
+  /** Optional deep-dive HPLC/MS method paragraph (~300 words). */
+  methodDetail?: string;
+  /** Optional comparative receptor-pharmacology paragraph (~250 words). */
+  receptorPharmacology?: string;
+  /** Optional structural / sequence detail block (~150 words). */
+  structuralDetail?: string;
+  /** Optional cited references (peer-reviewed). */
+  references?: ResearchReference[];
 }
+
 
 export const RESEARCH_CONTENT: Record<string, ResearchContent> = {
 
