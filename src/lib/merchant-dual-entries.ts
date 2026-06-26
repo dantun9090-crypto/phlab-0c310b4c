@@ -126,8 +126,8 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "ghk-cu-research-peptide",
     variants: [
       { sizeKey: "50mg", sizeLabel: "50 mg", phlCode: "PHL12",
-        titleA: "GHK-Cu Research Compound 50 mg — HPLC + CoA | PH Labs UK", linkA: "/products/n7y4ze",
-        titleB: "GC3 PHL 50 mg Research Compound",                         linkB: "/products/n7y4zf" },
+        titleA: "GHK-Cu – Bioactive Copper Complex",          linkA: "/products/ghk-01-phl",
+        titleB: "GHK-Cu – High-Purity Research Material",     linkB: "/products/ghk-cu-phl" },
     ],
   },
   {
