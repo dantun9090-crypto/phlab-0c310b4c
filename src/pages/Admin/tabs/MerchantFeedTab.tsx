@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshCw, ExternalLink, Copy, CheckCircle2, AlertTriangle, XCircle, Download, Eye } from 'lucide-react';
+import { getAdminIdToken } from '@/lib/auth-ready';
+import { validateMerchantFeedAdmin, type MerchantFeedValidationReport } from '@/lib/merchant-feed-validation.functions';
 
 const FEED_URL = '/google-merchant-feed.xml';
 const PUBLIC_FEED_URL = 'https://phlabs.co.uk/google-merchant-feed.xml';
@@ -99,12 +101,26 @@ export default function MerchantFeedTab() {
   const [copied, setCopied] = useState(false);
   const [view, setView] = useState<'table' | 'xml'>('table');
   const [filter, setFilter] = useState<'all' | 'errors' | 'warnings'>('all');
+  const [liveReport, setLiveReport] = useState<MerchantFeedValidationReport | null>(null);
+  const [liveError, setLiveError] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
     setFetchError(null);
+    setLiveError(null);
     try {
-      const res = await fetch(FEED_URL, { headers: { Accept: 'application/xml' }, cache: 'no-store' });
+      const idToken = await getAdminIdToken();
+      const [res, linkValidation] = await Promise.all([
+        fetch(`${FEED_URL}?adminPreview=${Date.now()}`, {
+          headers: { Accept: 'application/xml', 'cache-control': 'no-cache' },
+          cache: 'no-store',
+        }),
+        validateMerchantFeedAdmin({ data: { idToken } }).catch((e: any) => {
+          setLiveError(e?.message || 'Live link validation failed');
+          return null;
+        }),
+      ]);
+      setLiveReport(linkValidation);
       setFeedMeta({
         items: res.headers.get('x-feed-items') || 'unknown',
         empty: res.headers.get('x-feed-empty') || 'unknown',
@@ -127,19 +143,22 @@ export default function MerchantFeedTab() {
     () => parsed.items.map(it => ({ item: it, ...validateItem(it) })),
     [parsed.items]
   );
+  const liveById = useMemo(() => new Map((liveReport?.items ?? []).map(item => [item.id, item])), [liveReport]);
 
   const totals = useMemo(() => {
     const totalErrors = validated.reduce((n, v) => n + v.errors.length, 0);
     const totalWarnings = validated.reduce((n, v) => n + v.warnings.length, 0);
-    const itemsWithErrors = validated.filter(v => v.errors.length > 0).length;
-    return { totalErrors, totalWarnings, itemsWithErrors };
-  }, [validated]);
+    const liveErrors = liveReport?.errorCount ?? 0;
+    const liveWarnings = liveReport?.warningCount ?? 0;
+    const itemsWithErrors = validated.filter(v => v.errors.length > 0 || liveById.get(v.item.id)?.ok === false).length;
+    return { totalErrors: totalErrors + liveErrors, totalWarnings: totalWarnings + liveWarnings, itemsWithErrors };
+  }, [validated, liveById, liveReport]);
 
   const visible = useMemo(() => {
-    if (filter === 'errors') return validated.filter(v => v.errors.length > 0);
-    if (filter === 'warnings') return validated.filter(v => v.warnings.length > 0);
+    if (filter === 'errors') return validated.filter(v => v.errors.length > 0 || liveById.get(v.item.id)?.ok === false);
+    if (filter === 'warnings') return validated.filter(v => v.warnings.length > 0 || (liveById.get(v.item.id)?.issues.some(i => i.severity === 'warning') ?? false));
     return validated;
-  }, [validated, filter]);
+  }, [validated, filter, liveById]);
 
   const copyUrl = async () => {
     await navigator.clipboard.writeText(PUBLIC_FEED_URL);
@@ -163,12 +182,12 @@ export default function MerchantFeedTab() {
         <div>
           <h1 className="text-2xl font-bold text-white mb-1">Google Merchant Feed Preview</h1>
           <p className="text-sm text-slate-400">
-            Live no-cache preview of <code className="text-emerald-400">{FEED_URL}</code> with required-field validation before submitting to Merchant Center.
+            Live no-cache preview of <code className="text-emerald-400">{FEED_URL}</code> with required-field validation and Googlebot-style link checks before submitting to Merchant Center.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={load} disabled={loading} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 text-white text-sm disabled:opacity-50">
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh + validate
           </button>
           <button onClick={copyUrl} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 text-white text-sm">
             {copied ? <CheckCircle2 className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />} Copy public URL
@@ -193,6 +212,16 @@ export default function MerchantFeedTab() {
         <SummaryCard label="Total warnings" value={totals.totalWarnings} tone={totals.totalWarnings ? 'warn' : 'ok'} />
       </div>
 
+      {liveReport && (
+        <div className={`p-4 rounded-lg border-2 text-sm ${liveReport.errorCount ? 'bg-red-950/40 border-red-800 text-red-100' : 'bg-emerald-950/30 border-emerald-800 text-emerald-100'}`}>
+          <div className="flex items-center gap-2 font-semibold">
+            {liveReport.errorCount ? <XCircle className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
+            Live product-page validation: {liveReport.checkedLinks}/{liveReport.itemCount} links checked, {liveReport.errorCount} errors, {liveReport.warningCount} warnings.
+          </div>
+          <p className="text-xs opacity-75 mt-1">Checks HTTP 200, no redirect, no “Page Not Available/noindex”, and required Merchant fields.</p>
+        </div>
+      )}
+
       {feedMeta && (
         <div className="p-4 rounded-lg bg-slate-900 border-2 border-slate-800 text-xs text-slate-300 grid grid-cols-1 md:grid-cols-4 gap-2 font-mono">
           <span>X-Feed-Items: <b className="text-white">{feedMeta.items}</b></span>
@@ -205,6 +234,11 @@ export default function MerchantFeedTab() {
       {fetchError && (
         <div className="p-4 rounded-lg bg-red-950/40 border-2 border-red-800 text-red-200 text-sm">
           Failed to load feed: {fetchError}
+        </div>
+      )}
+      {liveError && (
+        <div className="p-4 rounded-lg bg-amber-950/40 border-2 border-amber-800 text-amber-200 text-sm">
+          Live link validation did not complete: {liveError}
         </div>
       )}
       {parsed.error && (
@@ -236,7 +270,13 @@ export default function MerchantFeedTab() {
               {validated.length === 0 ? 'No items found in feed.' : 'No items match this filter.'}
             </div>
           )}
-          {visible.map(({ item, errors, warnings }) => (
+          {visible.map(({ item, errors, warnings }) => {
+            const live = liveById.get(item.id);
+            const liveErrors = live?.issues.filter(issue => issue.severity === 'error').map(issue => `${issue.field}: ${issue.message}`) ?? [];
+            const liveWarnings = live?.issues.filter(issue => issue.severity === 'warning').map(issue => `${issue.field}: ${issue.message}`) ?? [];
+            const allErrors = [...errors, ...liveErrors];
+            const allWarnings = [...warnings, ...liveWarnings];
+            return (
             <div key={item.id} className="rounded-xl bg-slate-900 border-2 border-slate-800 overflow-hidden">
               <div className="flex gap-4 p-4">
                 {item.image_link && (
@@ -244,10 +284,11 @@ export default function MerchantFeedTab() {
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    {errors.length === 0 && warnings.length === 0 && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
-                    {errors.length > 0 && <XCircle className="w-4 h-4 text-red-400 shrink-0" />}
-                    {errors.length === 0 && warnings.length > 0 && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
+                    {allErrors.length === 0 && allWarnings.length === 0 && <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />}
+                    {allErrors.length > 0 && <XCircle className="w-4 h-4 text-red-400 shrink-0" />}
+                    {allErrors.length === 0 && allWarnings.length > 0 && <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />}
                     <p className="text-white font-semibold text-sm truncate">{item.title || '(no title)'}</p>
+                    {live && <span className={`ml-auto shrink-0 px-2 py-0.5 rounded-full text-[11px] font-mono ${live.status === 200 ? 'bg-emerald-500/15 text-emerald-300' : 'bg-red-500/15 text-red-300'}`}>HTTP {live.status || 'ERR'}</span>}
                   </div>
                   <p className="text-xs text-slate-400 font-mono mb-2">id: {item.id}</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1 text-xs">
@@ -261,16 +302,22 @@ export default function MerchantFeedTab() {
                   <a href={item.link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 mt-2 text-xs text-emerald-400 hover:text-emerald-300">
                     {item.link} <ExternalLink className="w-3 h-3" />
                   </a>
+                  {live && (live.h1 || live.renderedTitle) && (
+                    <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] text-slate-400">
+                      {live.h1 && <div className="truncate"><span className="text-slate-500">H1:</span> {live.h1}</div>}
+                      {live.renderedTitle && <div className="truncate"><span className="text-slate-500">Title:</span> {live.renderedTitle}</div>}
+                    </div>
+                  )}
                 </div>
               </div>
-              {(errors.length > 0 || warnings.length > 0) && (
+              {(allErrors.length > 0 || allWarnings.length > 0) && (
                 <div className="px-4 py-3 border-t-2 border-slate-800 bg-slate-950/50 space-y-1">
-                  {errors.map((e, i) => (
+                  {allErrors.map((e, i) => (
                     <p key={`e${i}`} className="text-xs text-red-300 flex items-start gap-2">
                       <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" /> {e}
                     </p>
                   ))}
-                  {warnings.map((w, i) => (
+                  {allWarnings.map((w, i) => (
                     <p key={`w${i}`} className="text-xs text-amber-300 flex items-start gap-2">
                       <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" /> {w}
                     </p>
@@ -278,7 +325,7 @@ export default function MerchantFeedTab() {
                 </div>
               )}
             </div>
-          ))}
+          );})}
         </div>
       )}
     </div>

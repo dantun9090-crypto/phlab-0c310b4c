@@ -348,7 +348,8 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
         // variant: Entry A (mkt, clean title, numeric+slug URL, category
         // 5604 Laboratory Equipment) and Entry B (sku, anonymised PHL
         // title, no-hyphen slug URL, category 5606 Laboratory Chemicals).
-        // Both entries 301-redirect to the same canonical product page.
+        // Both entries render in place with HTTP 200; GMC rejects redirecting
+        // or unavailable product-page URLs.
         const items = merchantProducts
           .flatMap((p) => {
             const variants = getDualVariantsForSlug((p.slug || "").toLowerCase());

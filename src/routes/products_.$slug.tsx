@@ -7,8 +7,8 @@ import {
 } from "@/lib/products-rest.functions";
 import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
 import { RESEARCH_CONTENT } from "@/lib/research-content";
-import { resolveSlugFromId } from "@/lib/product-id-slug-map";
-import { DUAL_ENTRY_ALIASES } from "@/lib/merchant-dual-entries";
+import { PRODUCT_ID_TO_SLUG, resolveSlugFromId } from "@/lib/product-id-slug-map";
+import { DUAL_ENTRY_ALIASES, getDualEntryAliasInfo } from "@/lib/merchant-dual-entries";
 import { PRODUCT_SEO_OVERRIDES } from "@/lib/product-seo-overrides";
 
 const OG_IMAGE_FALLBACK = `${SITE_URL}/og-image.jpg`;
@@ -17,10 +17,14 @@ const OG_IMAGE_FALLBACK = `${SITE_URL}/og-image.jpg`;
 // underscores) is treated as a Firestore document ID.
 const SLUG_RE = /^[a-z0-9-]+$/;
 
+function knownProductIdForSlug(slug: string): string | null {
+  return Object.entries(PRODUCT_ID_TO_SLUG).find(([, mappedSlug]) => mappedSlug === slug)?.[0] ?? null;
+}
+
 // Legacy/external slug aliases → 301 to the canonical product slug.
 // Keeps old inbound links (and Google index entries) from 404'ing.
-// Includes Google Merchant dual-entry URLs (Entry A numeric+slug,
-// Entry B no-hyphen slug) — both forms 301 to canonical product page.
+// Dual-entry Merchant URLs are intentionally handled before this map and render
+// in place with HTTP 200, because GMC can reject redirects as wrong links.
 const LEGACY_SLUG_ALIASES: Record<string, string> = {
   "bpc-157-research-peptide": "bpc-157",
   "tb-500-research-peptide": "tb-500-thymosin-beta-4",
@@ -45,8 +49,12 @@ export const Route = createFileRoute("/products_/$slug")({
     //    <link> in head() still points to the real product slug for SEO.
     const dualTarget = DUAL_ENTRY_ALIASES[raw.toLowerCase()];
     if (dualTarget) {
-      const product = await fetchProductBySlugFn({ data: { slug: dualTarget } });
-      if (product) return { product, matchedBy: "id" as const };
+      let product = await fetchProductBySlugFn({ data: { slug: dualTarget } });
+      if (!product) {
+        const knownId = knownProductIdForSlug(dualTarget);
+        if (knownId) product = await fetchProductByIdFn({ data: { id: knownId } });
+      }
+      if (product) return { product, matchedBy: "id" as const, aliasInfo: getDualEntryAliasInfo(raw) };
       throw notFound();
     }
 
@@ -71,7 +79,7 @@ export const Route = createFileRoute("/products_/$slug")({
             statusCode: 301,
           });
         }
-        return { product, matchedBy: "slug" as const };
+        return { product, matchedBy: "slug" as const, aliasInfo: null };
       }
       throw notFound();
     }
@@ -82,14 +90,18 @@ export const Route = createFileRoute("/products_/$slug")({
     //    still points to the slug version, so SEO consolidates correctly.
     const mappedSlug = resolveSlugFromId(raw);
     if (mappedSlug) {
-      const product = await fetchProductBySlugFn({ data: { slug: mappedSlug } });
-      if (product) return { product, matchedBy: "id" as const };
+      let product = await fetchProductBySlugFn({ data: { slug: mappedSlug } });
+      if (!product) {
+        const knownId = knownProductIdForSlug(mappedSlug);
+        if (knownId) product = await fetchProductByIdFn({ data: { id: knownId } });
+      }
+      if (product) return { product, matchedBy: "id" as const, aliasInfo: null };
     }
 
     // 3) Fallback: live Firestore lookup for IDs not yet in the static map.
     try {
       const product = await fetchProductByIdFn({ data: { id: raw } });
-      if (product) return { product, matchedBy: "id" as const };
+      if (product) return { product, matchedBy: "id" as const, aliasInfo: null };
     } catch {
       // swallow lookup errors and fall through to notFound
     }
@@ -97,22 +109,25 @@ export const Route = createFileRoute("/products_/$slug")({
   },
   head: ({ params, loaderData }) => {
     const product = loaderData?.product;
-    const name = product?.name ?? params.slug;
+    const aliasTitle = loaderData?.aliasInfo?.pageTitle;
+    const name = aliasTitle || product?.name || params.slug;
     // Resolution order:
     //   1. PRODUCT_SEO_OVERRIDES — hand-tuned, keyword-led, ≤60/≤160 chars
     //      for high-value UK target queries (Semrush-derived).
     //   2. Firestore-managed seoTitle / seoDescription.
     //   3. Generated fallback so older docs without SEO fields still ship
     //      compliant tags.
-    const override = product?.slug ? PRODUCT_SEO_OVERRIDES[product.slug] : undefined;
+    const override = aliasTitle ? undefined : product?.slug ? PRODUCT_SEO_OVERRIDES[product.slug] : undefined;
     const rawTitle =
       override?.title ||
-      product?.seoTitle?.trim() ||
+      (aliasTitle ? `${aliasTitle} | PH Labs UK` : product?.seoTitle?.trim()) ||
       `${name} — Research Grade | PH Labs`;
     const title = clamp(rawTitle, SEO_LIMITS.titleMax);
     const baseDesc =
       override?.description ||
-      product?.seoDescription?.trim() ||
+      (aliasTitle
+        ? `${aliasTitle} supplied by PH Labs UK for laboratory and analytical research use only. HPLC verification and CoA documentation available.`
+        : product?.seoDescription?.trim()) ||
       product?.description ||
       `${name}: HPLC-verified research peptide from PH Labs UK.`;
     const description = clamp(baseDesc.replace(/\s+/g, " ").trim(), SEO_LIMITS.descriptionMax);
@@ -271,14 +286,14 @@ export const Route = createFileRoute("/products_/$slug")({
         },
         // FAQPage JSON-LD — only when the visible ResearchContentBlock will
         // render Q&As for this slug, so structured data mirrors on-page content.
-        ...(RESEARCH_CONTENT[params.slug]?.faqs?.length
+        ...(RESEARCH_CONTENT[product?.slug || params.slug]?.faqs?.length
           ? [{
               type: "application/ld+json" as const,
               children: JSON.stringify({
                 "@context": "https://schema.org",
                 "@type": "FAQPage",
                 "@id": `${url}#faq`,
-                mainEntity: RESEARCH_CONTENT[params.slug]!.faqs.map((f) => ({
+                mainEntity: RESEARCH_CONTENT[product?.slug || params.slug]!.faqs.map((f) => ({
                   "@type": "Question",
                   name: f.q,
                   acceptedAnswer: { "@type": "Answer", text: f.a },
@@ -296,10 +311,10 @@ export const Route = createFileRoute("/products_/$slug")({
 });
 
 function ProductDetailRoute() {
-  const { product } = Route.useLoaderData();
+  const { product, aliasInfo } = Route.useLoaderData();
   return (
     <>
-      <SeoProductBlock product={product} />
+      <SeoProductBlock product={product} displayName={aliasInfo?.pageTitle} />
       {/* Mount LegacyApp using the Firestore DOCUMENT ID (not slug) so the
           legacy ProductDetail (useParams().id → Firestore doc lookup) reliably
           finds the product. Using product.slug works only when slug==docId,
@@ -310,15 +325,16 @@ function ProductDetailRoute() {
   );
 }
 
-function SeoProductBlock({ product }: { product: SeoProduct }) {
+function SeoProductBlock({ product, displayName }: { product: SeoProduct; displayName?: string }) {
   const url = `${SITE_URL}/products/${product.slug}`;
+  const name = displayName || product.name;
   // NOTE: no <h1> here — the visible product page (LegacyApp) emits the
   // canonical product H1. A second hidden H1 here would create a duplicate-H1
   // SEO violation that flags on Lighthouse / Ahrefs / Screaming Frog audits.
   return (
     <div aria-hidden="true" style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
-      <p>{product.name}</p>
-      {product.imageUrl ? <img src={product.imageUrl} alt={`${product.name} research peptide vial — PH Labs UK`} /> : null}
+      <p>{name}</p>
+      {product.imageUrl ? <img src={product.imageUrl} alt={`${name} research peptide vial — PH Labs UK`} /> : null}
       {product.price ? <p>Price: £{product.price.toFixed(2)} GBP</p> : null}
       {product.purity ? <p>Purity: {product.purity}</p> : null}
       <p>{product.description}</p>

@@ -20,6 +20,8 @@ import { SEO_LIMITS, clamp } from '@/lib/seo-meta';
 import { markPrerenderPending, flipPrerenderReadyWhen } from '@/lib/prerender-ready';
 import { sanitizeLab, sanitizeLabClamp } from '@/lib/lab-sanitize';
 import { PRODUCT_SEO_OVERRIDES } from '@/lib/product-seo-overrides';
+import { getDualEntryAliasInfo } from '@/lib/merchant-dual-entries';
+import { PRODUCT_ID_TO_SLUG } from '@/lib/product-id-slug-map';
 
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
@@ -205,6 +207,10 @@ const toStringArray = (value: unknown): string[] => {
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+function knownDocIdForSlug(slug: string): string | null {
+  return Object.entries(PRODUCT_ID_TO_SLUG).find(([, mappedSlug]) => mappedSlug === slug)?.[0] ?? null;
+}
+
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -245,6 +251,7 @@ export default function ProductDetail() {
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [hplcLightboxSrc, setHplcLightboxSrc] = useState<string | null>(null);
+  const merchantAliasInfo = getDualEntryAliasInfo(id);
 
   // Lock background scroll while any lightbox / overlay is open
   useEffect(() => {
@@ -310,7 +317,29 @@ export default function ProductDetail() {
         }
 
         if (!productDoc) {
-          // 1. Try slug lookup first (new SEO-friendly URLs)
+          // 1. Google Merchant dual-entry alias → canonical product doc.
+          //    Keeps /products/<feed-slug> as HTTP 200 with matching visible title,
+          //    instead of falling through to "Page Not Available" for GMC.
+          const merchantAlias = getDualEntryAliasInfo(id);
+          if (merchantAlias) {
+            const aliasOverrideDocId = SLUG_TO_DOC_ID[merchantAlias.canonicalSlug] || knownDocIdForSlug(merchantAlias.canonicalSlug);
+            if (aliasOverrideDocId) {
+              const aliasOverrideDoc = await getDocFromServer(doc(db, 'product_stock', aliasOverrideDocId));
+              if (aliasOverrideDoc.exists()) productDoc = aliasOverrideDoc;
+            }
+            if (!productDoc) {
+              const aliasSnap = await getDocsFromServer(query(
+                collection(db, 'product_stock'),
+                where('slug', '==', merchantAlias.canonicalSlug),
+                limit(1)
+              ));
+              if (!aliasSnap.empty) productDoc = aliasSnap.docs[0];
+            }
+          }
+        }
+
+        if (!productDoc) {
+          // 2. Try slug lookup first (new SEO-friendly URLs)
           const slugQuery = query(
             collection(db, 'product_stock'),
             where('slug', '==', id),
@@ -321,12 +350,12 @@ export default function ProductDetail() {
           if (!slugSnap.empty) {
             productDoc = slugSnap.docs[0];
           } else {
-            // 2. Fallback: try direct Firestore document ID (legacy URLs)
+            // 3. Fallback: try direct Firestore document ID (legacy URLs)
             const directDoc = await getDocFromServer(doc(db, 'product_stock', id));
             if (directDoc.exists()) {
               productDoc = directDoc;
             } else {
-              // 3. Last resort: query by name-derived slug (for products not yet re-seeded)
+              // 4. Last resort: query by name-derived slug (for products not yet re-seeded)
               const allSnap = await getDocsFromServer(collection(db, 'product_stock'));
               const match = allSnap.docs.find((d: any) => nameToSlug(d.data().name || '') === id);
               if (match) productDoc = match;
@@ -493,6 +522,8 @@ export default function ProductDetail() {
   // Inject Product structured data schema for SEO
   useEffect(() => {
     if (!product) return;
+    const merchantTitle = merchantAliasInfo?.pageTitle;
+    const visibleProductName = merchantTitle || product.name;
     const selectedVariant = product.variants?.[selectedVariantIdx];
     // Guard every variant-derived field before it touches the DOM / JSON-LD.
     // Invalid (NaN, negative, non-string) values become safe defaults so the
@@ -535,18 +566,20 @@ export default function ProductDetail() {
     
     // SEO-priority slugs use the hand-curated override (keyword-led, ≤60/≤160).
     // Falls back to the generated title/description for everything else.
-    const seoOverride = product.slug ? PRODUCT_SEO_OVERRIDES[product.slug] : undefined;
+    const seoOverride = merchantTitle ? undefined : product.slug ? PRODUCT_SEO_OVERRIDES[product.slug] : undefined;
 
     // Dynamic Title: {{Product Name}} | ≥99% HPLC | PH Labs UK
     document.title = seoOverride
       ? seoOverride.title
-      : clamp(`${product.name}${titleDosage} | ≥99% HPLC | PH Labs UK`, SEO_LIMITS.titleMax);
+      : clamp(`${visibleProductName}${merchantTitle ? ' | PH Labs UK' : `${titleDosage} | ≥99% HPLC | PH Labs UK`}`, SEO_LIMITS.titleMax);
 
     // Dynamic Meta Description — 150–158 chars, keyword-rich
     const cat = product.category ? ` ${product.category} research` : ' laboratory research';
     const metaDesc = seoOverride
       ? seoOverride.description
-      : sanitizeLabClamp(`Buy ${product.name}${titleDosage} for${cat}. ≥99% purity HPLC-verified, batch CoA included. Fast UK dispatch, free shipping over £50.`, 158);
+      : merchantTitle
+        ? sanitizeLabClamp(`${visibleProductName} supplied by PH Labs UK for laboratory and analytical research use only. HPLC verification and CoA documentation available.`, 158)
+        : sanitizeLabClamp(`Buy ${product.name}${titleDosage} for${cat}. ≥99% purity HPLC-verified, batch CoA included. Fast UK dispatch, free shipping over £50.`, 158);
 
     const setMeta = (name: string, content: string, prop = false) => {
       const sel = prop ? `meta[property="${name}"]` : `meta[name="${name}"]`;
@@ -563,7 +596,7 @@ export default function ProductDetail() {
     setMeta('keywords', `buy ${product.name} UK, ${product.name} research peptide, ${product.name} HPLC, research peptides UK, PH Labs`);
 
     // Open Graph
-    setMeta('og:title', `${product.name} — Research Grade Peptide UK | PH Labs`, true);
+    setMeta('og:title', `${visibleProductName} | PH Labs`, true);
     setMeta('og:description', metaDesc, true);
     setMeta('og:url', productUrl, true);
     setMeta('og:type', 'product', true);
@@ -571,7 +604,7 @@ export default function ProductDetail() {
 
     // Twitter card
     setMeta('twitter:card', 'summary_large_image');
-    setMeta('twitter:title', `Buy ${product.name} UK | PH Labs`);
+    setMeta('twitter:title', `${visibleProductName} | PH Labs`);
     setMeta('twitter:description', metaDesc);
     if (productImage) setMeta('twitter:image', productImage);
     // Dynamic canonical per product (slug-based)
@@ -587,7 +620,7 @@ export default function ProductDetail() {
     const schema = {
       '@context': 'https://schema.org',
       '@type': 'Product',
-      name: product.name,
+      name: visibleProductName,
       description: sanitizeLabClamp(product.description || `Research-grade ${product.name}. HPLC purity tested. For laboratory use only.`, 300),
       image: productImage ? (Array.isArray(product.images) && product.images.length > 0 
         ? product.images.slice(0, 5).map(img => img) 
@@ -646,7 +679,7 @@ export default function ProductDetail() {
             itemCondition: 'https://schema.org/NewCondition',
             availability: Number.isFinite(vStock) && vStock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
             sku: vSku,
-            name: `${product.name} — ${vName}`,
+            name: `${visibleProductName} — ${vName}`,
           };
         }),
         seller: { '@type': 'Organization', name: 'PH Labs', url: 'https://phlabs.co.uk' },
@@ -731,9 +764,9 @@ export default function ProductDetail() {
         name: categoryName,
         item: `https://phlabs.co.uk${categorySlug}`,
       });
-      breadcrumbItems.push({ '@type': 'ListItem', position: 4, name: product.name, item: productUrl });
+      breadcrumbItems.push({ '@type': 'ListItem', position: 4, name: visibleProductName, item: productUrl });
     } else {
-      breadcrumbItems.push({ '@type': 'ListItem', position: 3, name: product.name, item: productUrl });
+      breadcrumbItems.push({ '@type': 'ListItem', position: 3, name: visibleProductName, item: productUrl });
     }
 
     const breadcrumb = {
@@ -834,7 +867,7 @@ export default function ProductDetail() {
       ['twitter:card','twitter:title','twitter:description','twitter:image'].forEach(n => document.querySelector(`meta[name="${n}"]`)?.remove());
       document.querySelector('meta[name="keywords"]')?.remove();
     };
-  }, [product, selectedVariantIdx]);
+  }, [product, selectedVariantIdx, merchantAliasInfo?.pageTitle]);
 
   // Sticky bar — show when CTA scrolls out of view
   useEffect(() => {
@@ -881,6 +914,7 @@ export default function ProductDetail() {
     );
   }
 
+  const displayProductName = merchantAliasInfo?.pageTitle || product.name;
   const allVariants = product.variants ?? [];
   // A variant is "valid" only if it has a non-empty name and a finite, non-negative price.
   // This protects against malformed Firestore docs that would otherwise crash the page.
@@ -1056,7 +1090,7 @@ export default function ProductDetail() {
                   className="text-xs font-semibold truncate block max-w-[160px] sm:max-w-xs"
                   style={{ color: '#8caad4' }}
                 >
-                  {product.name}
+                  {displayProductName}
                 </span>
                 <meta itemProp="position" content={product.category ? '4' : '3'} />
               </li>
@@ -1430,11 +1464,11 @@ export default function ProductDetail() {
                 </span>
               </div>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#f0f6ff] tracking-tight leading-[1.08] mb-4">
-                {product.name}
+                {displayProductName}
                 {/* Append " UK" to H1 for SEO-priority slugs (Semrush-targeted
                     keyword phrases like "retatrutide uk"). Hand-curated via
                     PRODUCT_SEO_OVERRIDES so we boost only the high-value pages. */}
-                {product.slug && PRODUCT_SEO_OVERRIDES[product.slug] ? ' UK' : ''}
+                {!merchantAliasInfo && product.slug && PRODUCT_SEO_OVERRIDES[product.slug] ? ' UK' : ''}
                 {' '}
                 <span className="block text-base md:text-lg font-normal text-[#4a6a8a] mt-2 tracking-normal leading-snug">
                   Research Grade{' '}·{' '}UK Supplier{' '}·{' '}HPLC Verified
