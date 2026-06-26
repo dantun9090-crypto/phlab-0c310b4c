@@ -521,9 +521,9 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
             <h2 className="mt-14 display text-[1.75rem] sm:text-[2rem] font-light text-white">Legal Disclaimer</h2>
             <p className="mt-8 text-sm sm:text-[15px] leading-[1.8] text-white/65">
               All products offered on this website are intended solely for
-              laboratory research and scientific purposes. They are not intended
-              for human consumption, medical diagnosis, treatment, or any
-              therapeutic use. Products are sold exclusively to qualified
+              laboratory research and scientific purposes. They are not
+              intended for human use or for any non-research application.
+              Products are sold exclusively to qualified
               researchers, scientific professionals, academic institutions and
               commercial laboratories. By accessing this website or purchasing
               any product, you confirm that you are a qualified researcher or
