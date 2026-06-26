@@ -13,10 +13,12 @@ import { Link } from "@tanstack/react-router";
  * Dismissal persists in localStorage for 7 days.
  */
 
-const PROMO_CODE = "LAB10";
-const PROMO_HEADLINE = "10% off your first research order";
-const PROMO_SUB = "Use code at checkout · min spend £20";
-const DISMISS_KEY = "phl_landing_promo_dismissed_v1";
+const PROMO_CODES = [
+  { code: "SALE5", label: "5% off · min £20" },
+  { code: "SALE10", label: "10% off · min £80 · free 3ml vial case 🎁" },
+] as const;
+const PROMO_HEADLINE = "Launch promo — save on your research order";
+const DISMISS_KEY = "phl_landing_promo_dismissed_v2";
 const DISMISS_DAYS = 7;
 
 const STARTER_HREF = "/products/bacteriostatic-water-research-compound";
