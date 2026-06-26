@@ -98,6 +98,11 @@ export default function BannerTab() {
       // marketing version stamp so every open tab refetches immediately.
       triggerContentCdnInvalidation(['/']);
       bumpMarketingVersion();
+      // Auto-ping IndexNow (best-effort, silent).
+      try {
+        const { submitToIndexNow } = await import('@/lib/indexnow.functions');
+        submitToIndexNow({ data: { urls: ['https://phlabs.co.uk/'] } }).catch(() => {});
+      } catch { /* best-effort */ }
       window.dispatchEvent(new CustomEvent('admin:save'));
       setOriginal(banner);
       setMsg({ type: 'success', text: 'Banner saved successfully!' });
