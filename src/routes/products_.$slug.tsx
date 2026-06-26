@@ -28,8 +28,10 @@ const LEGACY_SLUG_ALIASES: Record<string, string> = {
   retatrutide: "retatrutide-research-peptide",
   tirzepatide: "tirzepatide-research-peptide",
   "nad-plus": "nad-research-compound",
-  // Dual-entry GMC aliases (Entry A + Entry B for every product variant).
-  ...DUAL_ENTRY_ALIASES,
+  // NOTE: DUAL_ENTRY_ALIASES intentionally NOT spread here. Google Merchant
+  // Center disapproves listings whose link 301-redirects to another URL — the
+  // landing page must return 200 directly. Dual-entry slugs are therefore
+  // resolved in-place below (branch 0) without redirecting.
 };
 
 
@@ -37,16 +39,15 @@ export const Route = createFileRoute("/products_/$slug")({
   loader: async ({ params }) => {
     const raw = params.slug;
 
-    // 0) Dual-entry GMC alias (Entry A uppercase alphanumeric like "RET10A"
-    //    or Entry B lowercase no-hyphen like "retaphl10") → 301 to canonical.
-    //    Checked case-insensitively before slug-shape branching.
+    // 0) Dual-entry GMC alias — render the canonical product IN PLACE so
+    //    the URL keeps the opaque dual-entry slug (no 301). Merchant Center
+    //    fetches the link directly and requires HTTP 200. The canonical
+    //    <link> in head() still points to the real product slug for SEO.
     const dualTarget = DUAL_ENTRY_ALIASES[raw.toLowerCase()];
     if (dualTarget) {
-      throw redirect({
-        to: "/products/$slug",
-        params: { slug: dualTarget },
-        statusCode: 301,
-      });
+      const product = await fetchProductBySlugFn({ data: { slug: dualTarget } });
+      if (product) return { product, matchedBy: "id" as const };
+      throw notFound();
     }
 
     const looksLikeSlug = SLUG_RE.test(raw);
