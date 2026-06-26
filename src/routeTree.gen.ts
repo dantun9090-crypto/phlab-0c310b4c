@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as GoogleMerchantFeedDotxmlRouteImport } from './routes/google-merchant-feed[.]xml'
+import { Route as GoogleAdsSafeFeedDotxmlRouteImport } from './routes/google-ads-safe-feed[.]xml'
 import { Route as BingFeedDotxmlRouteImport } from './routes/bing-feed[.]xml'
 import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as SplatRouteImport } from './routes/$'
@@ -70,6 +71,11 @@ const GoogleMerchantFeedDotxmlRoute =
     path: '/google-merchant-feed.xml',
     getParentRoute: () => rootRouteImport,
   } as any)
+const GoogleAdsSafeFeedDotxmlRoute = GoogleAdsSafeFeedDotxmlRouteImport.update({
+  id: '/google-ads-safe-feed.xml',
+  path: '/google-ads-safe-feed.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BingFeedDotxmlRoute = BingFeedDotxmlRouteImport.update({
   id: '/bing-feed.xml',
   path: '/bing-feed.xml',
@@ -292,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
+  '/google-ads-safe-feed.xml': typeof GoogleAdsSafeFeedDotxmlRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -337,6 +344,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
+  '/google-ads-safe-feed.xml': typeof GoogleAdsSafeFeedDotxmlRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -384,6 +392,7 @@ export interface FileRoutesById {
   '/$': typeof SplatRoute
   '/_marketing': typeof MarketingRouteWithChildren
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
+  '/google-ads-safe-feed.xml': typeof GoogleAdsSafeFeedDotxmlRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -431,6 +440,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/bing-feed.xml'
+    | '/google-ads-safe-feed.xml'
     | '/google-merchant-feed.xml'
     | '/products'
     | '/sitemap.xml'
@@ -476,6 +486,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/bing-feed.xml'
+    | '/google-ads-safe-feed.xml'
     | '/google-merchant-feed.xml'
     | '/products'
     | '/sitemap.xml'
@@ -522,6 +533,7 @@ export interface FileRouteTypes {
     | '/$'
     | '/_marketing'
     | '/bing-feed.xml'
+    | '/google-ads-safe-feed.xml'
     | '/google-merchant-feed.xml'
     | '/products'
     | '/sitemap.xml'
@@ -569,6 +581,7 @@ export interface RootRouteChildren {
   SplatRoute: typeof SplatRoute
   MarketingRoute: typeof MarketingRouteWithChildren
   BingFeedDotxmlRoute: typeof BingFeedDotxmlRoute
+  GoogleAdsSafeFeedDotxmlRoute: typeof GoogleAdsSafeFeedDotxmlRoute
   GoogleMerchantFeedDotxmlRoute: typeof GoogleMerchantFeedDotxmlRoute
   ProductsRoute: typeof ProductsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -631,6 +644,13 @@ declare module '@tanstack/react-router' {
       path: '/google-merchant-feed.xml'
       fullPath: '/google-merchant-feed.xml'
       preLoaderRoute: typeof GoogleMerchantFeedDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/google-ads-safe-feed.xml': {
+      id: '/google-ads-safe-feed.xml'
+      path: '/google-ads-safe-feed.xml'
+      fullPath: '/google-ads-safe-feed.xml'
+      preLoaderRoute: typeof GoogleAdsSafeFeedDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bing-feed.xml': {
@@ -940,6 +960,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplatRoute: SplatRoute,
   MarketingRoute: MarketingRouteWithChildren,
   BingFeedDotxmlRoute: BingFeedDotxmlRoute,
+  GoogleAdsSafeFeedDotxmlRoute: GoogleAdsSafeFeedDotxmlRoute,
   GoogleMerchantFeedDotxmlRoute: GoogleMerchantFeedDotxmlRoute,
   ProductsRoute: ProductsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
