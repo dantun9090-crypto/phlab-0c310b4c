@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import heroImg from "@/assets/lab-luxury-hero.jpg";
 import detailImg from "@/assets/lab-luxury-detail.jpg";
 import wideImg from "@/assets/lab-luxury-wide.jpg";
+import { LandingPromoStrip } from "@/components/LandingPromoStrip";
 
 /**
  * /landing/phlabs — Moser-inspired editorial luxury layout.
