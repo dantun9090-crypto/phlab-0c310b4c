@@ -1,30 +1,36 @@
 /**
- * Dual-title Google Merchant Center entries.
+ * PHL canonical catalog + dual-entry GMC mapping.
  *
- * For each physical article we publish TWO GMC offers:
- *   - Entry A ("mkt"): clean human title
- *   - Entry B ("sku"): anonymised PHL-coded title
+ * Single source of truth for:
+ *   - PHL{N} product codes (sequential, never reused)
+ *   - /products/phl-Na  (Entry A — High-Grade Research Material)
+ *   - /products/phl-Nb  (Entry B — Laboratory Reference Standard)
+ *   - GMC feed titles, CAS numbers, canonical Firestore slug, size label
  *
- * Both entries use opaque alphanumeric URL slugs that do NOT resemble the
- * underlying compound name, and opaque PHL{N} product IDs (PHL1, PHL2…).
- * Each entry's URL renders in place with HTTP 200 via the alias resolver,
- * because Merchant Center can reject redirecting or unavailable product pages.
+ * The public product page renders in place at HTTP 200 via the alias
+ * resolver. Old aliases (reta-10-phl, retatrutide-10mg-phl, bpc-10-phl,
+ * h3n8wp, v9r4tb, …) 301 → the matching phl-Nx URL via
+ * `src/lib/legacy-redirects.ts`.
  *
- * Public site URLs (/products/<canonical-slug>) are untouched.
+ * Per project rules: NO use of the words "peptide", "purity", or
+ * "compound" in any feed-facing field. Verified by
+ * `tests/google-merchant-feed.test.ts`.
  */
 export type DualEntryVariant = {
   sizeKey: string;
   sizeLabel: string;
-  /** Opaque product code, e.g. "PHL1". Drives Entry A id (PHL1A) and Entry B id (PHL1B). */
+  /** Sequential code, e.g. "PHL1". GMC ids become PHL1A / PHL1B. */
   phlCode: string;
-  /** Entry A title, e.g. "Retatrutide 10 mg" */
+  /** Entry A title (max 150 chars). */
   titleA: string;
-  /** Entry A URL path — opaque alphanumeric slug */
+  /** Entry A URL path, e.g. "/products/phl-1a". */
   linkA: string;
-  /** Entry B title, e.g. "Reta-PHL 10 mg" */
+  /** Entry B title (max 150 chars). */
   titleB: string;
-  /** Entry B URL path — opaque alphanumeric slug (different from linkA) */
+  /** Entry B URL path, e.g. "/products/phl-1b". */
   linkB: string;
+  /** CAS number for the feed description / spec. */
+  cas: string;
 };
 
 export type DualEntryAliasInfo = {
@@ -40,110 +46,178 @@ export type DualEntry = {
   variants: DualEntryVariant[];
 };
 
+/**
+ * Canonical catalog. ORDER IS LOAD-BEARING: phlCode increments are baked
+ * into product IDs, slugs, sitemap, 301 redirects, and Merchant Center
+ * item history. Do not reorder. Only append new entries with the next
+ * PHL{N} number.
+ */
 export const DUAL_ENTRIES: DualEntry[] = [
   {
     canonicalSlug: "retatrutide-research-peptide",
     variants: [
-      { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "RTPHL1",
-        titleA: "Retatrutide 10mg – High-Purity Research Compound", linkA: "/products/reta-10-phl",
-        titleB: "Retatrutide 10mg – Analytical Reference Standard", linkB: "/products/retatrutide-10mg-phl" },
-      { sizeKey: "20mg", sizeLabel: "20 mg", phlCode: "RTPHL2",
-        titleA: "Retatrutide 20mg – Laboratory Grade Material",  linkA: "/products/reta-20-phl",
-        titleB: "Retatrutide 20mg – Research Reference Compound", linkB: "/products/retatrutide-20mg-phl" },
-    ],
-  },
-  {
-    canonicalSlug: "tb-500-thymosin-beta-4",
-    variants: [
-      { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL2",
-        titleA: "TB500 Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/h3n8wp",
-        titleB: "TB500 PHL 10 mg Research Compound",                      linkB: "/products/h3n8wq" },
-    ],
-  },
-  {
-    canonicalSlug: "pt-141-research-peptide",
-    variants: [
-      { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL3",
-        titleA: "PT-141 Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/v9r4tb",
-        titleB: "PT41 PHL 10 mg Research Compound",                       linkB: "/products/v9r4tc" },
-    ],
-  },
-  {
-    canonicalSlug: "nad-research-compound",
-    variants: [
-      { sizeKey: "100mg",  sizeLabel: "100 mg",  phlCode: "PHL4",
-        titleA: "NAD+ Research Compound 100 mg — HPLC + CoA | PH Labs UK", linkA: "/products/z2j5fd",
-        titleB: "ND7 PHL 100 mg Research Compound",                       linkB: "/products/z2j5fe" },
-      { sizeKey: "500mg",  sizeLabel: "500 mg",  phlCode: "PHL5",
-        titleA: "NAD+ Research Compound 500 mg — HPLC + CoA | PH Labs UK", linkA: "/products/z2j6gd",
-        titleB: "ND7 PHL 500 mg Research Compound",                       linkB: "/products/z2j6ge" },
-      { sizeKey: "1000mg", sizeLabel: "1000 mg", phlCode: "PHL6",
-        titleA: "NAD+ Research Compound 1000 mg — HPLC + CoA | PH Labs UK", linkA: "/products/z2j7hd",
-        titleB: "ND7 PHL 1000 mg Research Compound",                       linkB: "/products/z2j7he" },
-    ],
-  },
-  {
-    canonicalSlug: "melanotan-ii-research-peptide",
-    variants: [
-      { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL7",
-        titleA: "Melanotan-II Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/q8x1ly",
-        titleB: "MT2 PHL 10 mg Research Compound",                                linkB: "/products/q8x1lz" },
-    ],
-  },
-  {
-    canonicalSlug: "mots-c-research-peptide",
-    variants: [
-      { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "MOPHL3",
-        titleA: "MOTS-c – Mitochondrial Research Compound", linkA: "/products/mots-01-phl",
-        titleB: "MOTS-c – Laboratory Grade Standard",       linkB: "/products/mots-c-phl" },
-    ],
-  },
-  {
-    canonicalSlug: "klow-blend",
-    variants: [
-      { sizeKey: "80mg", sizeLabel: "80 mg", phlCode: "PHL9",
-        titleA: "KLOW Blend Research Compound 80 mg — HPLC + CoA | PH Labs UK", linkA: "/products/t4w9rm",
-        titleB: "KW5 PHL 80 mg Research Compound",                              linkB: "/products/t4w9rn" },
-    ],
-  },
-  {
-    canonicalSlug: "kpv-research-peptide",
-    variants: [
-      { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL10",
-        titleA: "KPV Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/f6c3vp",
-        titleB: "KP3 PHL 10 mg Research Compound",                      linkB: "/products/f6c3vq" },
-    ],
-  },
-  {
-    canonicalSlug: "glow-blend",
-    variants: [
-      { sizeKey: "70mg", sizeLabel: "70 mg", phlCode: "PHL11",
-        titleA: "GLOW Blend Research Compound 70 mg — HPLC + CoA | PH Labs UK", linkA: "/products/u2s8gk",
-        titleB: "GW4 PHL 70 mg Research Compound",                              linkB: "/products/u2s8gl" },
-    ],
-  },
-  {
-    canonicalSlug: "ghk-cu-research-peptide",
-    variants: [
-      { sizeKey: "50mg", sizeLabel: "50 mg", phlCode: "PHL12",
-        titleA: "GHK-Cu – Bioactive Copper Complex",          linkA: "/products/ghk-01-phl",
-        titleB: "GHK-Cu – High-Purity Research Material",     linkB: "/products/ghk-cu-phl" },
-    ],
-  },
-  {
-    canonicalSlug: "bacteriostatic-water-research-compound",
-    variants: [
-      { sizeKey: "10ml", sizeLabel: "10 ml", phlCode: "PHL13",
-        titleA: "Bacteriostatic Water Research Compound 10 ml — Laboratory Use | PH Labs UK", linkA: "/products/d9p1ox",
-        titleB: "BW9 PHL 10 ml Research Compound",                                      linkB: "/products/d9p1oy" },
+      {
+        sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL1", cas: "2381089-83-2",
+        titleA: "Retatrutide 10mg – High-Grade Research Material",
+        linkA: "/products/phl-1a",
+        titleB: "Retatrutide 10mg – Laboratory Reference Standard",
+        linkB: "/products/phl-1b",
+      },
+      {
+        sizeKey: "20mg", sizeLabel: "20 mg", phlCode: "PHL2", cas: "2381089-83-2",
+        titleA: "Retatrutide 20mg – Laboratory Grade Standard",
+        linkA: "/products/phl-2a",
+        titleB: "Retatrutide 20mg – Research Reference Material",
+        linkB: "/products/phl-2b",
+      },
     ],
   },
   {
     canonicalSlug: "bpc-157",
     variants: [
-      { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL14",
-        titleA: "BPC-157 10mg – Research Grade Compound", linkA: "/products/bpc-10-phl",
-        titleB: "BPC-157 10mg – Laboratory Standard",     linkB: "/products/bpc-157-10mg-phl" },
+      {
+        sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL3", cas: "137525-51-0",
+        titleA: "BPC-157 10mg – Research Grade Material",
+        linkA: "/products/phl-3a",
+        titleB: "BPC-157 10mg – Laboratory Reference Standard",
+        linkB: "/products/phl-3b",
+      },
+    ],
+  },
+  {
+    canonicalSlug: "ghk-cu-research-peptide",
+    variants: [
+      {
+        sizeKey: "50mg", sizeLabel: "50 mg", phlCode: "PHL4", cas: "49557-75-7",
+        titleA: "GHK-Cu – Bioactive Copper Preparation",
+        linkA: "/products/phl-4a",
+        titleB: "GHK-Cu – High-Grade Research Material",
+        linkB: "/products/phl-4b",
+      },
+    ],
+  },
+  {
+    canonicalSlug: "mots-c-research-peptide",
+    variants: [
+      {
+        sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL5", cas: "1627580-64-6",
+        titleA: "MOTS-c – Mitochondrial Research Material",
+        linkA: "/products/phl-5a",
+        titleB: "MOTS-c – Laboratory Grade Standard",
+        linkB: "/products/phl-5b",
+      },
+    ],
+  },
+  {
+    canonicalSlug: "tb-500-thymosin-beta-4",
+    variants: [
+      {
+        sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL6", cas: "77591-33-4",
+        titleA: "TB500 10mg – High-Grade Research Material",
+        linkA: "/products/phl-6a",
+        titleB: "TB500 10mg – Laboratory Reference Standard",
+        linkB: "/products/phl-6b",
+      },
+    ],
+  },
+  {
+    canonicalSlug: "pt-141-research-peptide",
+    variants: [
+      {
+        sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL7", cas: "189691-06-3",
+        titleA: "PT-141 10mg – Research Grade Material",
+        linkA: "/products/phl-7a",
+        titleB: "PT-141 10mg – Laboratory Reference Standard",
+        linkB: "/products/phl-7b",
+      },
+    ],
+  },
+  {
+    canonicalSlug: "nad-research-compound",
+    variants: [
+      {
+        sizeKey: "100mg", sizeLabel: "100 mg", phlCode: "PHL8", cas: "53-84-9",
+        titleA: "NAD+ 100mg – High-Grade Research Material",
+        linkA: "/products/phl-8a",
+        titleB: "NAD+ 100mg – Laboratory Reference Standard",
+        linkB: "/products/phl-8b",
+      },
+      {
+        sizeKey: "500mg", sizeLabel: "500 mg", phlCode: "PHL9", cas: "53-84-9",
+        titleA: "NAD+ 500mg – High-Grade Research Material",
+        linkA: "/products/phl-9a",
+        titleB: "NAD+ 500mg – Laboratory Reference Standard",
+        linkB: "/products/phl-9b",
+      },
+      {
+        sizeKey: "1000mg", sizeLabel: "1000 mg", phlCode: "PHL10", cas: "53-84-9",
+        titleA: "NAD+ 1000mg – High-Grade Research Material",
+        linkA: "/products/phl-10a",
+        titleB: "NAD+ 1000mg – Laboratory Reference Standard",
+        linkB: "/products/phl-10b",
+      },
+    ],
+  },
+  {
+    canonicalSlug: "melanotan-ii-research-peptide",
+    variants: [
+      {
+        sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL11", cas: "121062-08-6",
+        titleA: "Melanotan-II 10mg – High-Grade Research Material",
+        linkA: "/products/phl-11a",
+        titleB: "Melanotan-II 10mg – Laboratory Reference Standard",
+        linkB: "/products/phl-11b",
+      },
+    ],
+  },
+  {
+    canonicalSlug: "klow-blend",
+    variants: [
+      {
+        sizeKey: "80mg", sizeLabel: "80 mg", phlCode: "PHL12",
+        cas: "Multi-component reference mixture",
+        titleA: "KLOW Blend 80mg – Research Grade Preparation",
+        linkA: "/products/phl-12a",
+        titleB: "KLOW Blend 80mg – Laboratory Reference Mixture",
+        linkB: "/products/phl-12b",
+      },
+    ],
+  },
+  {
+    canonicalSlug: "kpv-research-peptide",
+    variants: [
+      {
+        sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL13", cas: "67727-97-3",
+        titleA: "KPV 10mg – Research Grade Material",
+        linkA: "/products/phl-13a",
+        titleB: "KPV 10mg – Laboratory Reference Standard",
+        linkB: "/products/phl-13b",
+      },
+    ],
+  },
+  {
+    canonicalSlug: "glow-blend",
+    variants: [
+      {
+        sizeKey: "70mg", sizeLabel: "70 mg", phlCode: "PHL14",
+        cas: "Multi-component reference mixture",
+        titleA: "GLOW Blend 70mg – Research Grade Preparation",
+        linkA: "/products/phl-14a",
+        titleB: "GLOW Blend 70mg – Laboratory Reference Mixture",
+        linkB: "/products/phl-14b",
+      },
+    ],
+  },
+  {
+    canonicalSlug: "bacteriostatic-water-research-compound",
+    variants: [
+      {
+        sizeKey: "10ml", sizeLabel: "10 ml", phlCode: "PHL15", cas: "7732-18-5",
+        titleA: "Bacteriostatic Water 10ml – Laboratory Grade Solution",
+        linkA: "/products/phl-15a",
+        titleB: "Bacteriostatic Water 10ml – Research Reference Solution",
+        linkB: "/products/phl-15b",
+      },
     ],
   },
 ];
@@ -170,13 +244,6 @@ export function buildDualEntryAliasMap(): Record<string, string> {
 
 export const DUAL_ENTRY_ALIASES: Record<string, string> = buildDualEntryAliasMap();
 
-function displayTitleFromFeedTitle(title: string): string {
-  return title
-    .replace(/\s+—\s+(HPLC \+ CoA|Laboratory Use)\s+\|\s+PH Labs UK$/i, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 /** Lookup helper for landing pages: alias slug → canonical product + visible alias title. */
 export function getDualEntryAliasInfo(slug: string | undefined | null): DualEntryAliasInfo | null {
   if (!slug) return null;
@@ -190,7 +257,7 @@ export function getDualEntryAliasInfo(slug: string | undefined | null): DualEntr
           variant,
           side: "A",
           aliasSlug: linkASlug,
-          pageTitle: displayTitleFromFeedTitle(variant.titleA),
+          pageTitle: variant.titleA,
         };
       }
       const linkBSlug = slugFromLink(variant.linkB).toLowerCase();
@@ -200,7 +267,7 @@ export function getDualEntryAliasInfo(slug: string | undefined | null): DualEntr
           variant,
           side: "B",
           aliasSlug: linkBSlug,
-          pageTitle: displayTitleFromFeedTitle(variant.titleB),
+          pageTitle: variant.titleB,
         };
       }
     }
@@ -212,4 +279,29 @@ export function getDualEntryAliasInfo(slug: string | undefined | null): DualEntr
 export function getDualVariantsForSlug(slug: string): DualEntryVariant[] {
   const e = DUAL_ENTRIES.find((d) => d.canonicalSlug === slug);
   return e ? e.variants : [];
+}
+
+/**
+ * Banned tokens (case-insensitive, whole-word). Used by the feed and by
+ * tests to guarantee the words never leak into Merchant Center.
+ */
+export const BANNED_FEED_TOKENS = ["peptide", "peptides", "purity", "compound", "compounds"] as const;
+
+const BANNED_RE = new RegExp(`\\b(${BANNED_FEED_TOKENS.join("|")})\\b`, "gi");
+
+/**
+ * Strip banned tokens and collapse whitespace. Used to sanitise any
+ * Firestore-sourced text before it reaches the GMC feed.
+ */
+export function sanitiseFeedText(input: string): string {
+  return input
+    .replace(BANNED_RE, (m) => {
+      const lower = m.toLowerCase();
+      if (lower === "purity") return "grade";
+      if (lower === "compound" || lower === "compounds") return "material";
+      return ""; // peptide(s) → drop entirely
+    })
+    .replace(/\s+/g, " ")
+    .replace(/\s+([.,;:])/g, "$1")
+    .trim();
 }
