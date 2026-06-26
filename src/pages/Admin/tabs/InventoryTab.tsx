@@ -287,7 +287,10 @@ export default function InventoryTab() {
           window.dispatchEvent(new CustomEvent('admin:save'));
           // Auto-recache the saved product page in Prerender.io
           const slug = savedProduct.slug || savedProduct.id;
-          if (slug) autoRecacheProduct(slug);
+          if (slug) {
+            autoRecacheProduct(slug);
+            autoIndexNowProduct(slug);
+          }
           // Update local state immediately with saved product to reflect changes
           setProducts((prev) =>
             prev.some((p) => p.id === savedProduct.id)
