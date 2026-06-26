@@ -45,11 +45,11 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "retatrutide-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "RTPHL1",
-        titleA: "Retatrutide-Research-Compound-10mg", linkA: "/products/rt10ax",
-        titleB: "RETA PHL 10 mg Research Compound",   linkB: "/products/rt10bx" },
+        titleA: "Retatrutide 10mg – High-Purity Research Compound", linkA: "/products/reta-10-phl",
+        titleB: "Retatrutide 10mg – Analytical Reference Standard", linkB: "/products/retatrutide-10mg-phl" },
       { sizeKey: "20mg", sizeLabel: "20 mg", phlCode: "RTPHL2",
-        titleA: "Retatrutide-Research-Compound-20mg", linkA: "/products/rt20ax",
-        titleB: "RETA PHL 20 mg Research Compound",   linkB: "/products/rt20bx" },
+        titleA: "Retatrutide 20mg – Laboratory Grade Material",  linkA: "/products/reta-20-phl",
+        titleB: "Retatrutide 20mg – Research Reference Compound", linkB: "/products/retatrutide-20mg-phl" },
     ],
   },
   {
@@ -94,8 +94,8 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "mots-c-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "MOPHL3",
-        titleA: "MOTS-C Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/mc10ax",
-        titleB: "MOTS-C PHL 10 mg Research Compound",                       linkB: "/products/mc10bx" },
+        titleA: "MOTS-c – Mitochondrial Research Compound", linkA: "/products/mots-01-phl",
+        titleB: "MOTS-c – Laboratory Grade Standard",       linkB: "/products/mots-c-phl" },
     ],
   },
   {
@@ -126,8 +126,8 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "ghk-cu-research-peptide",
     variants: [
       { sizeKey: "50mg", sizeLabel: "50 mg", phlCode: "PHL12",
-        titleA: "GHK-Cu Research Compound 50 mg — HPLC + CoA | PH Labs UK", linkA: "/products/n7y4ze",
-        titleB: "GC3 PHL 50 mg Research Compound",                         linkB: "/products/n7y4zf" },
+        titleA: "GHK-Cu – Bioactive Copper Complex",          linkA: "/products/ghk-01-phl",
+        titleB: "GHK-Cu – High-Purity Research Material",     linkB: "/products/ghk-cu-phl" },
     ],
   },
   {
@@ -142,8 +142,8 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "bpc-157",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL14",
-        titleA: "BPC-157 Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/r3l6ja",
-        titleB: "BPC PHL 10 mg Research Compound",                          linkB: "/products/r3l6jb" },
+        titleA: "BPC-157 10mg – Research Grade Compound", linkA: "/products/bpc-10-phl",
+        titleB: "BPC-157 10mg – Laboratory Standard",     linkB: "/products/bpc-157-10mg-phl" },
     ],
   },
 ];
