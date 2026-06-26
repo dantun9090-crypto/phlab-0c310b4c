@@ -472,7 +472,21 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
         void CATEGORY_A_ID; void CATEGORY_A_PATH; void CATEGORY_B_ID; void CATEGORY_B_PATH;
         void MERCHANT_CODE_OVERRIDES; void MERCHANT_PROMO_IDS;
 
+        const xml = [
+          `<?xml version="1.0" encoding="UTF-8"?>`,
+          `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`,
+          `  <channel>`,
+          `    <title>${xmlEscape(`${BRAND} UK — Laboratory Reference Standards`)}</title>`,
+          `    <link>${BASE_URL}</link>`,
+          `    <description>Analytical reference standards supplied as lyophilised solids for in-vitro laboratory use. Distributed to qualified research professionals and laboratories.</description>`,
+          items,
+          `  </channel>`,
+          `</rss>`,
+        ].join("\n");
+
+        const emptyFeed = merchantProducts.length === 0;
         return new Response(xml, {
+
           status: 200,
           headers: {
             "Content-Type": "application/xml; charset=utf-8",
