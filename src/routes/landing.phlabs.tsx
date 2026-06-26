@@ -38,6 +38,41 @@ export const Route = createFileRoute("/landing/phlabs")({
           inLanguage: "en-GB",
         }),
       },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          itemListElement: [
+            { "@type": "ListItem", position: 1, name: "Home", item: "https://phlabs.co.uk/" },
+            { "@type": "ListItem", position: 2, name: "PH Labs — UK Laboratory Supply", item: URL },
+          ],
+        }),
+      },
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: [
+            {
+              "@type": "Question",
+              name: "Who are PH Labs research compounds for?",
+              acceptedAnswer: { "@type": "Answer", text: "Supplied exclusively to qualified researchers, scientific professionals, academic institutions and commercial laboratories in the United Kingdom. For research use only — not for human consumption." },
+            },
+            {
+              "@type": "Question",
+              name: "Do you provide batch documentation?",
+              acceptedAnswer: { "@type": "Answer", text: "Yes. Every batch ships with detailed analytical documentation. Full Certificates of Analysis are available on request." },
+            },
+            {
+              "@type": "Question",
+              name: "Where do you ship from?",
+              acceptedAnswer: { "@type": "Answer", text: "All orders are prepared, stored and dispatched from the United Kingdom under controlled laboratory conditions." },
+            },
+          ],
+        }),
+      },
     ],
   }),
   component: () => <EditorialLanding eyebrow="PH Labs · United Kingdom" />,
