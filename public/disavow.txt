@@ -1,0 +1,22 @@
+# Google Search Console disavow file for phlabs.co.uk
+# Submit via: https://search.google.com/search-console/disavow-links
+# Updated: 2026-06-26
+#
+# Rationale: spam / PBN farms attempting to inject low-quality nofollow
+# referrals to phlabs.co.uk. Identified via Semrush backlink audit
+# (Authority Score 2/100 across all 10 referring domains, identical anchor
+# "phlabs.co.uk", thin .shop TLDs, single referring IP cluster).
+#
+# Format: one domain: line per referring domain (Google recommends
+# disavowing at the domain level for PBN-style networks).
+
+domain:seo-growth-authority-boost-hub.shop
+domain:seo-growth-optimization-hub.shop
+domain:seopxl-optimization-lab.shop
+domain:seopxl-organic-boost-lab.shop
+domain:seopxl-performance-authority-engine.shop
+domain:seopxl-ranking-boost-engine.shop
+domain:seopxl-ranking-boost-lab.shop
+domain:seopxl-traffic-growth-lab.shop
+domain:8coint.com
+domain:toplikevideo.com
