@@ -35,7 +35,7 @@ interface Props {
 
 export function LandingPromoStrip({ theme = "dark" }: Props) {
   const [hidden, setHidden] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   useEffect(() => {
     try {
