@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
+import { getDualEntryAliasInfo } from '@/lib/merchant-dual-entries';
 
 const BASE_URL = 'https://phlabs.co.uk';
 const RequiredFieldSchema = z.object({ idToken: z.string().min(10).max(4096) });
@@ -22,6 +23,8 @@ export interface MerchantFeedValidationItem {
   status: number;
   finalUrl: string;
   canonical: string | null;
+  renderedTitle: string | null;
+  h1: string | null;
   contentType: string | null;
   ok: boolean;
   issues: MerchantFeedValidationIssue[];
@@ -57,6 +60,35 @@ function extractCanonical(html: string): string | null {
     html.match(/<link[^>]+rel=["']canonical["'][^>]*href=["']([^"']+)["']/i) ||
     html.match(/<link[^>]+href=["']([^"']+)["'][^>]*rel=["']canonical["']/i);
   return match?.[1] ?? null;
+}
+
+function decodeHtml(value: string): string {
+  return value
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function extractTagText(html: string, tag: 'title' | 'h1'): string | null {
+  const match = html.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\/${tag}>`, 'i'));
+  return match ? decodeHtml(match[1]) : null;
+}
+
+function normaliseForCompare(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/[—–-]/g, ' ')
+    .replace(/\|\s*ph labs uk/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 async function checkOne(itemXml: string): Promise<MerchantFeedValidationItem> {
@@ -98,6 +130,8 @@ async function checkOne(itemXml: string): Promise<MerchantFeedValidationItem> {
   let status = 0;
   let finalUrl = link;
   let canonical: string | null = null;
+  let renderedTitle: string | null = null;
+  let h1: string | null = null;
   let contentType: string | null = null;
 
   if (link) {
@@ -116,6 +150,8 @@ async function checkOne(itemXml: string): Promise<MerchantFeedValidationItem> {
       contentType = res.headers.get('content-type');
       const html = await res.text().catch(() => '');
       canonical = extractCanonical(html);
+      renderedTitle = extractTagText(html, 'title');
+      h1 = extractTagText(html, 'h1');
 
       if (status !== 200) {
         issues.push({ severity: 'error', field: 'link', message: `Product page returned HTTP ${status}.` });
@@ -128,6 +164,27 @@ async function checkOne(itemXml: string): Promise<MerchantFeedValidationItem> {
       }
       if (!canonical) {
         issues.push({ severity: 'warning', field: 'canonical', message: 'Canonical tag was not detected in rendered HTML.' });
+      }
+
+      const aliasSlug = new URL(link).pathname.replace(/^\/products\//, '');
+      const aliasInfo = getDualEntryAliasInfo(aliasSlug);
+      if (aliasInfo) {
+        const expected = aliasInfo.pageTitle;
+        const expectedNorm = normaliseForCompare(expected);
+        const h1Norm = h1 ? normaliseForCompare(h1) : '';
+        const renderedTitleNorm = renderedTitle ? normaliseForCompare(renderedTitle) : '';
+
+        if (!h1) {
+          issues.push({ severity: 'error', field: 'h1', message: `No rendered H1 detected; expected Merchant title "${expected}".` });
+        } else if (!h1Norm.startsWith(expectedNorm)) {
+          issues.push({ severity: 'error', field: 'h1', message: `Rendered H1 does not match feed link/title. Expected it to start with "${expected}"; got "${h1}".` });
+        }
+
+        if (!renderedTitle) {
+          issues.push({ severity: 'warning', field: 'title', message: `No rendered <title> detected; expected "${expected}".` });
+        } else if (!renderedTitleNorm.startsWith(expectedNorm)) {
+          issues.push({ severity: 'warning', field: 'title', message: `Rendered <title> may not match feed title. Expected it to start with "${expected}"; got "${renderedTitle}".` });
+        }
       }
     } catch (error) {
       issues.push({
@@ -145,6 +202,8 @@ async function checkOne(itemXml: string): Promise<MerchantFeedValidationItem> {
     status,
     finalUrl,
     canonical,
+    renderedTitle,
+    h1,
     contentType,
     ok: !issues.some((issue) => issue.severity === 'error'),
     issues,
