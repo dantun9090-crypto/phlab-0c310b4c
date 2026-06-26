@@ -33,6 +33,30 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
       "retatide",
       "reta peptide",
     ],
+    // Targeting 22,200/mo "retatrutide uk" + 1,600/mo "retatrutide uk buy"
+    // + 320/mo "retatrutide uk source" + 260/mo "reta peptide uk"
+    faqs: [
+      {
+        q: "Where can I buy Retatrutide UK research peptide from a verified source?",
+        a: "PH Labs is a UK-based research compound supplier shipping Retatrutide directly from our facility. Every Retatrutide UK order ships with the batch-matched HPLC Certificate of Analysis (CoA) verifying ≥99% purity. Orders are dispatched within 1 business day via tracked UK courier. For laboratory research use only — not for human consumption.",
+      },
+      {
+        q: "What concentrations of Retatrutide does PH Labs supply in the UK?",
+        a: "PH Labs supplies Retatrutide UK in two research-grade lyophilised concentrations — 10 mg and 20 mg vials. Both are produced from the same HPLC-verified lot and shipped sealed with batch CoA documentation, packaged for temperature-stable UK courier transit. Custom institutional quantities available on request.",
+      },
+      {
+        q: "How is Retatrutide UK purity verified and what does the CoA show?",
+        a: "Each Retatrutide batch is tested by reverse-phase HPLC and confirmed by mass spectrometry, with the resulting Certificate of Analysis showing ≥99% purity, peptide content, water content, acetate content, and identity confirmation. The CoA is batch-matched to the vial you receive and is available on the product page or by request.",
+      },
+      {
+        q: "Is Retatrutide legal to buy in the UK for laboratory research?",
+        a: "Yes. Retatrutide is legally sold in the United Kingdom as a research chemical (analytical reference standard) for in-vitro laboratory use. It is not a controlled substance under the Misuse of Drugs Act in Great Britain. It is not a licensed medicine and must not be sold for, or used in, human consumption, supplementation, or veterinary treatment.",
+      },
+      {
+        q: "How should Retatrutide be stored after delivery?",
+        a: "Lyophilised Retatrutide should be stored sealed at −20°C in a dry, light-protected environment. Once reconstituted with bacteriostatic water for laboratory work, store the working solution refrigerated at 2–8°C and minimise freeze-thaw cycles. Handle exclusively under laboratory conditions in line with standard COSHH guidance.",
+      },
+    ],
   },
 
   // "tirzepatide peptides uk" 210/mo currently #37
