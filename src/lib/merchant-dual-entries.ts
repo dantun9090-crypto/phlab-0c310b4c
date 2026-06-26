@@ -45,11 +45,11 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "retatrutide-research-peptide",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "RTPHL1",
-        titleA: "Retatrutide-Research-Compound-10mg", linkA: "/products/rt10ax",
-        titleB: "RETA PHL 10 mg Research Compound",   linkB: "/products/rt10bx" },
+        titleA: "Retatrutide 10mg – High-Purity Research Compound", linkA: "/products/reta-10-phl",
+        titleB: "Retatrutide 10mg – Analytical Reference Standard", linkB: "/products/retatrutide-10mg-phl" },
       { sizeKey: "20mg", sizeLabel: "20 mg", phlCode: "RTPHL2",
-        titleA: "Retatrutide-Research-Compound-20mg", linkA: "/products/rt20ax",
-        titleB: "RETA PHL 20 mg Research Compound",   linkB: "/products/rt20bx" },
+        titleA: "Retatrutide 20mg – Laboratory Grade Material",  linkA: "/products/reta-20-phl",
+        titleB: "Retatrutide 20mg – Research Reference Compound", linkB: "/products/retatrutide-20mg-phl" },
     ],
   },
   {
