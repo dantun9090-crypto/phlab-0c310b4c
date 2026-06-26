@@ -80,10 +80,21 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
   },
 
   // "ghk-cu uk" 90/mo · KD 11 — easy win
+  // Semrush UK typo cluster: ~7k/mo combined (ghkcu 5.4k, ghk 1.6k), near-zero competition
   "ghk-cu-research-peptide": {
     title: "GHK-Cu UK — Copper Tripeptide Research | PH Labs",
     description:
       "GHK-Cu (copper tripeptide) UK research reagent. HPLC ≥99% purity, batch CoA included. For laboratory research only — not for human consumption.",
+    misspellings: [
+      "ghkcu",
+      "ghk",
+      "gkh-cu",
+      "ghk cu",
+      "copper tripeptide",
+      "copper peptide",
+      "ghk peptide",
+      "hk-cu",
+    ],
   },
 
   // "klow blend peptide" 170/mo · currently #57
@@ -123,9 +134,20 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
       "Melanotan-II UK research peptide. HPLC ≥99% purity, batch CoA included. For laboratory research only — not for human consumption.",
   },
 
+  // "nad+ uk" / "nad plus uk" — Semrush UK: ~2.4k/mo combined, near-zero competition
   "nad-research-compound": {
     title: "NAD+ UK — Research Compound, HPLC + CoA | PH Labs",
     description:
       "NAD+ (nicotinamide adenine dinucleotide) UK research reagent. HPLC-verified, batch CoA. For laboratory research only — not for human consumption.",
+    misspellings: [
+      "nad",
+      "nad plus",
+      "nadplus",
+      "nadd",
+      "naad",
+      "nicotinamide adenine dinucleotide",
+      "n-ad",
+      "nad +",
+    ],
   },
 };
