@@ -222,20 +222,18 @@ function ComparePage() {
             either compound in this comparison.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link
-              to="/products/category/$slug"
-              params={{ slug: p.left.slug }}
+            <a
+              href={`/products/category/${p.left.slug}`}
               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-sm font-semibold"
             >
               {p.left.name} research vials
-            </Link>
-            <Link
-              to="/products/category/$slug"
-              params={{ slug: p.right.slug }}
+            </a>
+            <a
+              href={`/products/category/${p.right.slug}`}
               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg text-sm font-semibold"
             >
               {p.right.name} research vials
-            </Link>
+            </a>
             <Link
               to="/products"
               className="px-4 py-2 border border-slate-600 hover:border-emerald-500 rounded-lg text-sm font-semibold"
