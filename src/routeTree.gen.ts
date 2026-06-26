@@ -19,6 +19,7 @@ import { Route as IndexnowKeyDottxtRouteImport } from './routes/$indexnowKey[.]t
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResearchRetatrutideUkRouteImport } from './routes/research.retatrutide-uk'
+import { Route as ResearchBpc157UkRouteImport } from './routes/research.bpc-157-uk'
 import { Route as ProductsSlugRouteImport } from './routes/products_.$slug'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentCancelRouteImport } from './routes/payment.cancel'
@@ -108,6 +109,11 @@ const IndexRoute = IndexRouteImport.update({
 const ResearchRetatrutideUkRoute = ResearchRetatrutideUkRouteImport.update({
   id: '/research/retatrutide-uk',
   path: '/research/retatrutide-uk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResearchBpc157UkRoute = ResearchBpc157UkRouteImport.update({
+  id: '/research/bpc-157-uk',
+  path: '/research/bpc-157-uk',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProductsSlugRoute = ProductsSlugRouteImport.update({
@@ -344,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
@@ -395,6 +402,7 @@ export interface FileRoutesByTo {
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
@@ -448,6 +456,7 @@ export interface FileRoutesById {
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products_/$slug': typeof ProductsSlugRoute
+  '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
@@ -501,6 +510,7 @@ export interface FileRouteTypes {
     | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
+    | '/research/bpc-157-uk'
     | '/research/retatrutide-uk'
     | '/api/config/payments'
     | '/api/dsr/process'
@@ -552,6 +562,7 @@ export interface FileRouteTypes {
     | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
+    | '/research/bpc-157-uk'
     | '/research/retatrutide-uk'
     | '/api/config/payments'
     | '/api/dsr/process'
@@ -604,6 +615,7 @@ export interface FileRouteTypes {
     | '/payment/cancel'
     | '/payment/success'
     | '/products_/$slug'
+    | '/research/bpc-157-uk'
     | '/research/retatrutide-uk'
     | '/api/config/payments'
     | '/api/dsr/process'
@@ -656,6 +668,7 @@ export interface RootRouteChildren {
   PaymentCancelRoute: typeof PaymentCancelRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
+  ResearchBpc157UkRoute: typeof ResearchBpc157UkRoute
   ResearchRetatrutideUkRoute: typeof ResearchRetatrutideUkRoute
   ApiConfigPaymentsRoute: typeof ApiConfigPaymentsRoute
   ApiDsrProcessRoute: typeof ApiDsrProcessRoute
@@ -759,6 +772,13 @@ declare module '@tanstack/react-router' {
       path: '/research/retatrutide-uk'
       fullPath: '/research/retatrutide-uk'
       preLoaderRoute: typeof ResearchRetatrutideUkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/research/bpc-157-uk': {
+      id: '/research/bpc-157-uk'
+      path: '/research/bpc-157-uk'
+      fullPath: '/research/bpc-157-uk'
+      preLoaderRoute: typeof ResearchBpc157UkRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/products_/$slug': {
@@ -1075,6 +1095,7 @@ const rootRouteChildren: RootRouteChildren = {
   PaymentCancelRoute: PaymentCancelRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ProductsSlugRoute: ProductsSlugRoute,
+  ResearchBpc157UkRoute: ResearchBpc157UkRoute,
   ResearchRetatrutideUkRoute: ResearchRetatrutideUkRoute,
   ApiConfigPaymentsRoute: ApiConfigPaymentsRoute,
   ApiDsrProcessRoute: ApiDsrProcessRoute,
