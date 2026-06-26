@@ -593,7 +593,11 @@ export default function ProductDetail() {
     };
 
     setMeta('description', metaDesc);
-    setMeta('keywords', `buy ${product.name} UK, ${product.name} research peptide, ${product.name} HPLC, research peptides UK, PH Labs`);
+    const misspellings = seoOverride?.misspellings ?? [];
+    const misspellTokens = misspellings.length
+      ? misspellings.map((m) => `${m} uk`).join(', ') + ', '
+      : '';
+    setMeta('keywords', `buy ${product.name} UK, ${product.name} research peptide, ${product.name} HPLC, ${misspellTokens}research peptides UK, PH Labs`);
 
     // Open Graph
     setMeta('og:title', `${visibleProductName} | PH Labs`, true);
@@ -1498,6 +1502,16 @@ export default function ProductDetail() {
                 <Microscope className="w-3.5 h-3.5 text-emerald-400" />
                 <span className="text-emerald-300 text-sm font-semibold">Analytical Reference Material · For Research Use Only</span>
               </div>
+
+              {/* "Also known as" — captures organic long-tail misspellings
+                  (Semrush UK: ~1.3k/mo combined, near-zero competition).
+                  Subtle styling so it reads as a helpful synonym list, not SEO spam. */}
+              {!merchantAliasInfo && product.slug && PRODUCT_SEO_OVERRIDES[product.slug]?.misspellings?.length ? (
+                <p className="text-xs text-[#6b829e] mb-3 leading-relaxed">
+                  <span className="font-semibold text-[#8aa3c0]">Also searched as:</span>{' '}
+                  {PRODUCT_SEO_OVERRIDES[product.slug]!.misspellings!.join(', ')}.
+                </p>
+              ) : null}
 
               {/* ── 3-Part Description ── */}
               {(() => {
