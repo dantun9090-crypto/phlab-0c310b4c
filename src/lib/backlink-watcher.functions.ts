@@ -34,5 +34,5 @@ export const listBacklinkSnapshots = createServerFn({ method: 'POST' })
     ]);
     // Exclude the `latest` pointer doc from the run history.
     const history = runs.filter((r) => r.id !== 'latest');
-    return { latest, history };
+    return { latest: (latest ?? null) as any, history: history as any };
   });
