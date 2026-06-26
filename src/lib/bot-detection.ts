@@ -92,7 +92,7 @@ export function isBotSession(
 }
 
 /** Default allowlists (currently empty — operators add their own tools). */
-export const DEFAULT_ALLOWLIST_UAS: string[] = [];
+export const DEFAULT_ALLOWLIST_UAS: string[] = ['semrushbot'];
 export const DEFAULT_ALLOWLIST_REFERRERS: string[] = [];
 
 /** Validate a single UA-substring allowlist entry. */
