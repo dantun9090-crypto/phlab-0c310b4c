@@ -69,6 +69,44 @@ Disallow: /admin/
 Disallow: /api/
 Disallow: /lovable/
 
+# Semrush SEO crawler — allow site audits & backlink discovery
+User-agent: SemrushBot
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /payment
+Disallow: /account
+Disallow: /login
+Disallow: /register
+Disallow: /api/
+Disallow: /webhook/
+Disallow: /server-functions/
+Disallow: /lovable/
+Crawl-delay: 2
+
+User-agent: SemrushBot-SA
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /lovable/
+
+User-agent: SemrushBot-BA
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /lovable/
+
+User-agent: SiteAuditBot
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /lovable/
+
 
 # Block AI training / scraping crawlers
 User-agent: GPTBot
