@@ -1938,7 +1938,11 @@ export default function ProductDetail() {
           const purityForFaq = product.purity ? product.purity : '≥99%';
           const categoryContext = product.category ? ` in the ${product.category.replace(/-/g, ' ')} research area` : '';
 
+          // Per-slug Semrush-driven keyword FAQs prepended for striking-distance capture
+          const overrideFaqs = (product.slug ? PRODUCT_SEO_OVERRIDES[product.slug]?.faqs ?? [] : []);
+
           const faqs = [
+            ...overrideFaqs,
             {
               q: `What is ${product.name} and what is it used for in research?`,
               a: `${product.name} is a research-grade peptide compound used${categoryContext} for in-vitro and preclinical laboratory studies. It is supplied exclusively for scientific research and is not approved for human or veterinary therapeutic use. PH Labs supplies ${product.name} with ${purityForFaq} purity, verified by HPLC and mass spectrometry.`
@@ -1966,10 +1970,6 @@ export default function ProductDetail() {
             {
               q: 'What is your returns policy for research peptides?',
               a: 'We accept returns on unopened products within 14 days of delivery. Products must be in their original sealed condition. As these are specialist research compounds, opened vials cannot be accepted for return. Contact info@phlabs.co.uk to initiate a return.'
-            },
-            {
-              q: `How quickly is ${product.name} dispatched across the UK?`,
-              a: `Orders are typically dispatched within 1 business day from our UK facility. Standard UK delivery takes 1–3 working days via tracked courier. All shipments use discreet, temperature-appropriate packaging to maintain compound integrity during transit.`
             },
           ];
           return (
