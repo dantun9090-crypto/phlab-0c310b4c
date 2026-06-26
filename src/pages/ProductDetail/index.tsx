@@ -20,6 +20,7 @@ import { SEO_LIMITS, clamp } from '@/lib/seo-meta';
 import { markPrerenderPending, flipPrerenderReadyWhen } from '@/lib/prerender-ready';
 import { sanitizeLab, sanitizeLabClamp } from '@/lib/lab-sanitize';
 import { PRODUCT_SEO_OVERRIDES } from '@/lib/product-seo-overrides';
+import { getCategoryHub } from '@/lib/product-category-hubs';
 import { getDualEntryAliasInfo } from '@/lib/merchant-dual-entries';
 import { PRODUCT_ID_TO_SLUG } from '@/lib/product-id-slug-map';
 
@@ -1512,6 +1513,25 @@ export default function ProductDetail() {
                   {PRODUCT_SEO_OVERRIDES[product.slug]!.misspellings!.join(', ')}.
                 </p>
               ) : null}
+
+              {/* Internal link to category hub — boosts /products/category/*
+                  pages in GSC via keyword-led anchor + crawl depth.
+                  Mapping lives in src/lib/product-category-hubs.ts. */}
+              {!merchantAliasInfo && (() => {
+                const hub = getCategoryHub(product.slug);
+                if (!hub) return null;
+                return (
+                  <p className="text-xs text-[#6b829e] mb-3 leading-relaxed">
+                    <span className="font-semibold text-[#8aa3c0]">Browse category:</span>{' '}
+                    <a
+                      href={`/products/category/${hub.slug}`}
+                      className="text-emerald-300/90 hover:text-emerald-200 underline decoration-emerald-500/40 hover:decoration-emerald-300 underline-offset-2"
+                    >
+                      {hub.label}
+                    </a>
+                  </p>
+                );
+              })()}
 
               {/* ── 3-Part Description ── */}
               {(() => {
