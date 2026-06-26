@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Users, LogOut,
   Database, FileText, Image, Settings,
   Zap, Palette, Megaphone, HardDrive, Radio, FlaskConical,
-  Scale, Rocket, Shield, PanelLeftClose, PanelLeft, Mail, Lock, Star, Eye, Search, ShieldCheck, Map, X, ChevronDown, Tag, Activity, ShoppingBag, CreditCard, Sparkles, TrendingUp, Cloud, Package2, Gift
+  Scale, Rocket, Shield, PanelLeftClose, PanelLeft, Mail, Lock, Star, Eye, Search, ShieldCheck, Map, X, ChevronDown, Tag, Activity, ShoppingBag, CreditCard, Sparkles, TrendingUp, Cloud, Package2, Gift, Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { auth, signOut } from '@/lib/firebase';
@@ -79,6 +79,7 @@ const navGroups = [
     items: [
       { id: 'merchantfeed', label: 'Google Merchant Feed', icon: ShoppingBag },
       { id: 'bingfeed', label: 'Bing Shopping Feed', icon: ShoppingCart },
+      { id: 'indexnow', label: 'IndexNow (Instant Index)', icon: Send },
     ],
   },
   {
