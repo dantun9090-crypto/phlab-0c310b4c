@@ -381,11 +381,12 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             const override = MERCHANT_CODE_OVERRIDES[(p.slug || "").toLowerCase()];
 
             // Shared per-product fields.
-            const image = p.imageUrl
+            const rawImage = p.imageUrl
               ? p.imageUrl.startsWith("http")
                 ? p.imageUrl
                 : `${BASE_URL}${p.imageUrl.startsWith("/") ? "" : "/"}${p.imageUrl}`
               : `${BASE_URL}/og-image.jpg`;
+            const image = rewriteImageUrl(rawImage);
             const price = `${p.price.toFixed(2)} ${CURRENCY}`;
             const availability =
               typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
@@ -395,6 +396,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               .map((u) =>
                 u.startsWith("http") ? u : `${BASE_URL}${u.startsWith("/") ? "" : "/"}${u}`,
               )
+              .map(rewriteImageUrl)
               .filter((abs) => {
                 if (seenImages.has(abs)) return false;
                 seenImages.add(abs);
@@ -405,6 +407,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                 (abs) =>
                   `    <g:additional_image_link>${xmlEscape(abs)}</g:additional_image_link>`,
               );
+
 
             // Fallback when no dual mapping exists (defensive — shouldn't
             // happen for catalogued products): synthesise one variant from
