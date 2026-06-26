@@ -19,6 +19,7 @@ import { PRODUCT_SEO_CONTENT } from '@/lib/productSEO';
 import { SEO_LIMITS, clamp } from '@/lib/seo-meta';
 import { markPrerenderPending, flipPrerenderReadyWhen } from '@/lib/prerender-ready';
 import { sanitizeLab, sanitizeLabClamp } from '@/lib/lab-sanitize';
+import { PRODUCT_SEO_OVERRIDES } from '@/lib/product-seo-overrides';
 
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
@@ -532,12 +533,20 @@ export default function ProductDetail() {
     const dosage = isVariantValidForSeo ? (rawDosage as string).trim() : '';
     const titleDosage = dosage ? ` ${dosage}` : '';
     
+    // SEO-priority slugs use the hand-curated override (keyword-led, ≤60/≤160).
+    // Falls back to the generated title/description for everything else.
+    const seoOverride = product.slug ? PRODUCT_SEO_OVERRIDES[product.slug] : undefined;
+
     // Dynamic Title: {{Product Name}} | ≥99% HPLC | PH Labs UK
-    document.title = clamp(`${product.name}${titleDosage} | ≥99% HPLC | PH Labs UK`, SEO_LIMITS.titleMax);
+    document.title = seoOverride
+      ? seoOverride.title
+      : clamp(`${product.name}${titleDosage} | ≥99% HPLC | PH Labs UK`, SEO_LIMITS.titleMax);
 
     // Dynamic Meta Description — 150–158 chars, keyword-rich
     const cat = product.category ? ` ${product.category} research` : ' laboratory research';
-    const metaDesc = sanitizeLabClamp(`Buy ${product.name}${titleDosage} for${cat}. ≥99% purity HPLC-verified, batch CoA included. Fast UK dispatch, free shipping over £50.`, 158);
+    const metaDesc = seoOverride
+      ? seoOverride.description
+      : sanitizeLabClamp(`Buy ${product.name}${titleDosage} for${cat}. ≥99% purity HPLC-verified, batch CoA included. Fast UK dispatch, free shipping over £50.`, 158);
 
     const setMeta = (name: string, content: string, prop = false) => {
       const sel = prop ? `meta[property="${name}"]` : `meta[name="${name}"]`;
@@ -1422,6 +1431,10 @@ export default function ProductDetail() {
               </div>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#f0f6ff] tracking-tight leading-[1.08] mb-4">
                 {product.name}
+                {/* Append " UK" to H1 for SEO-priority slugs (Semrush-targeted
+                    keyword phrases like "retatrutide uk"). Hand-curated via
+                    PRODUCT_SEO_OVERRIDES so we boost only the high-value pages. */}
+                {product.slug && PRODUCT_SEO_OVERRIDES[product.slug] ? ' UK' : ''}
                 {' '}
                 <span className="block text-base md:text-lg font-normal text-[#4a6a8a] mt-2 tracking-normal leading-snug">
                   Research Grade{' '}·{' '}UK Supplier{' '}·{' '}HPLC Verified
