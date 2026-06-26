@@ -461,6 +461,8 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               sizeCompact
                 ? `    <g:unit_pricing_measure>${xmlEscape(sizeCompact)}</g:unit_pricing_measure>`
                 : null,
+              `  </item>`,
+
             ]
               .filter(Boolean)
               .join("\n");
