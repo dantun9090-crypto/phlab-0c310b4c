@@ -533,12 +533,20 @@ export default function ProductDetail() {
     const dosage = isVariantValidForSeo ? (rawDosage as string).trim() : '';
     const titleDosage = dosage ? ` ${dosage}` : '';
     
+    // SEO-priority slugs use the hand-curated override (keyword-led, ≤60/≤160).
+    // Falls back to the generated title/description for everything else.
+    const seoOverride = product.slug ? PRODUCT_SEO_OVERRIDES[product.slug] : undefined;
+
     // Dynamic Title: {{Product Name}} | ≥99% HPLC | PH Labs UK
-    document.title = clamp(`${product.name}${titleDosage} | ≥99% HPLC | PH Labs UK`, SEO_LIMITS.titleMax);
+    document.title = seoOverride
+      ? seoOverride.title
+      : clamp(`${product.name}${titleDosage} | ≥99% HPLC | PH Labs UK`, SEO_LIMITS.titleMax);
 
     // Dynamic Meta Description — 150–158 chars, keyword-rich
     const cat = product.category ? ` ${product.category} research` : ' laboratory research';
-    const metaDesc = sanitizeLabClamp(`Buy ${product.name}${titleDosage} for${cat}. ≥99% purity HPLC-verified, batch CoA included. Fast UK dispatch, free shipping over £50.`, 158);
+    const metaDesc = seoOverride
+      ? seoOverride.description
+      : sanitizeLabClamp(`Buy ${product.name}${titleDosage} for${cat}. ≥99% purity HPLC-verified, batch CoA included. Fast UK dispatch, free shipping over £50.`, 158);
 
     const setMeta = (name: string, content: string, prop = false) => {
       const sel = prop ? `meta[property="${name}"]` : `meta[name="${name}"]`;
