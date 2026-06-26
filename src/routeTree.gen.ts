@@ -45,6 +45,7 @@ import { Route as ApiPublicHooksWallidAlertsRouteImport } from './routes/api/pub
 import { Route as ApiPublicHooksWallidRouteImport } from './routes/api/public/hooks/wallid'
 import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public/hooks/truelayer'
 import { Route as ApiPublicHooksToastAuditCleanupRouteImport } from './routes/api/public/hooks/toast-audit-cleanup'
+import { Route as ApiPublicHooksSeoHealthDailyRouteImport } from './routes/api/public/hooks/seo-health-daily'
 import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/public/hooks/security-cleanup'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
 import { Route as ApiPublicHooksMonitorProductUrlsRouteImport } from './routes/api/public/hooks/monitor-product-urls'
@@ -239,6 +240,12 @@ const ApiPublicHooksToastAuditCleanupRoute =
     path: '/api/public/hooks/toast-audit-cleanup',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSeoHealthDailyRoute =
+  ApiPublicHooksSeoHealthDailyRouteImport.update({
+    id: '/api/public/hooks/seo-health-daily',
+    path: '/api/public/hooks/seo-health-daily',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSecurityCleanupRoute =
   ApiPublicHooksSecurityCleanupRouteImport.update({
     id: '/api/public/hooks/security-cleanup',
@@ -309,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
+  '/api/public/hooks/seo-health-daily': typeof ApiPublicHooksSeoHealthDailyRoute
   '/api/public/hooks/toast-audit-cleanup': typeof ApiPublicHooksToastAuditCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
   '/api/public/hooks/wallid': typeof ApiPublicHooksWallidRoute
@@ -352,6 +360,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
+  '/api/public/hooks/seo-health-daily': typeof ApiPublicHooksSeoHealthDailyRoute
   '/api/public/hooks/toast-audit-cleanup': typeof ApiPublicHooksToastAuditCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
   '/api/public/hooks/wallid': typeof ApiPublicHooksWallidRoute
@@ -397,6 +406,7 @@ export interface FileRoutesById {
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
+  '/api/public/hooks/seo-health-daily': typeof ApiPublicHooksSeoHealthDailyRoute
   '/api/public/hooks/toast-audit-cleanup': typeof ApiPublicHooksToastAuditCleanupRoute
   '/api/public/hooks/truelayer': typeof ApiPublicHooksTruelayerRoute
   '/api/public/hooks/wallid': typeof ApiPublicHooksWallidRoute
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
+    | '/api/public/hooks/seo-health-daily'
     | '/api/public/hooks/toast-audit-cleanup'
     | '/api/public/hooks/truelayer'
     | '/api/public/hooks/wallid'
@@ -485,6 +496,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
+    | '/api/public/hooks/seo-health-daily'
     | '/api/public/hooks/toast-audit-cleanup'
     | '/api/public/hooks/truelayer'
     | '/api/public/hooks/wallid'
@@ -529,6 +541,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
     | '/api/public/hooks/security-cleanup'
+    | '/api/public/hooks/seo-health-daily'
     | '/api/public/hooks/toast-audit-cleanup'
     | '/api/public/hooks/truelayer'
     | '/api/public/hooks/wallid'
@@ -573,6 +586,7 @@ export interface RootRouteChildren {
   ApiPublicHooksMonitorProductUrlsRoute: typeof ApiPublicHooksMonitorProductUrlsRoute
   ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
   ApiPublicHooksSecurityCleanupRoute: typeof ApiPublicHooksSecurityCleanupRoute
+  ApiPublicHooksSeoHealthDailyRoute: typeof ApiPublicHooksSeoHealthDailyRoute
   ApiPublicHooksToastAuditCleanupRoute: typeof ApiPublicHooksToastAuditCleanupRoute
   ApiPublicHooksTruelayerRoute: typeof ApiPublicHooksTruelayerRoute
   ApiPublicHooksWallidRoute: typeof ApiPublicHooksWallidRoute
@@ -837,6 +851,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksToastAuditCleanupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/seo-health-daily': {
+      id: '/api/public/hooks/seo-health-daily'
+      path: '/api/public/hooks/seo-health-daily'
+      fullPath: '/api/public/hooks/seo-health-daily'
+      preLoaderRoute: typeof ApiPublicHooksSeoHealthDailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/security-cleanup': {
       id: '/api/public/hooks/security-cleanup'
       path: '/api/public/hooks/security-cleanup'
@@ -928,6 +949,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksMonitorProductUrlsRoute: ApiPublicHooksMonitorProductUrlsRoute,
   ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
   ApiPublicHooksSecurityCleanupRoute: ApiPublicHooksSecurityCleanupRoute,
+  ApiPublicHooksSeoHealthDailyRoute: ApiPublicHooksSeoHealthDailyRoute,
   ApiPublicHooksToastAuditCleanupRoute: ApiPublicHooksToastAuditCleanupRoute,
   ApiPublicHooksTruelayerRoute: ApiPublicHooksTruelayerRoute,
   ApiPublicHooksWallidRoute: ApiPublicHooksWallidRoute,
