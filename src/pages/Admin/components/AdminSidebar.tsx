@@ -98,6 +98,7 @@ const navGroups = [
       { id: 'seoopportunities', label: 'SEO Opportunities', icon: TrendingUp },
       { id: 'backlinkoutreach', label: 'Backlink Outreach', icon: TrendingUp },
       { id: 'backlinkchanges', label: 'Backlink Changes', icon: Activity },
+      { id: 'internallinks', label: 'Internal Links', icon: Activity },
     ],
   },
 
