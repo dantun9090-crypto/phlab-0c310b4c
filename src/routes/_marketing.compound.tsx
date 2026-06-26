@@ -5,7 +5,7 @@ const PremiumLanding = lazy(() =>
   import("@/components/PremiumLanding").then((m) => ({ default: m.PremiumLanding })),
 );
 
-const TITLE = "Premium Research Compounds for Scientific Laboratories | PH Labs";
+const TITLE = "Premium Research Compounds for UK Laboratories | PH Labs";
 const DESCRIPTION =
   "High-purity research compounds for professional UK laboratories. Detailed batch documentation supplied with every order. For research use only.";
 const URL = "https://phlabs.co.uk/compound";

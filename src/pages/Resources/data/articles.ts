@@ -2465,8 +2465,15 @@ For studies designed to dissect the contribution of GCGR-mediated thermogenesis,
   },
 ];
 
+// Slug aliases — multiple URLs resolving to the same canonical article.
+// Used to satisfy externally requested SEO URLs without duplicating content.
+export const ARTICLE_SLUG_ALIASES: Record<string, string> = {
+  'tirzepatide-vs-retatrutide-research': 'tirzepatide-vs-retatrutide-mechanism',
+};
+
 export function getArticle(slug: string): Article | undefined {
-  return articles.find(a => a.slug === slug);
+  const canonical = ARTICLE_SLUG_ALIASES[slug] ?? slug;
+  return articles.find(a => a.slug === canonical);
 }
 
 export function getRelatedArticles(slugs: string[]): Article[] {

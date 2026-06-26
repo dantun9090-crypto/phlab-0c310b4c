@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { EditorialLanding } from "@/components/EditorialLanding";
 
-const TITLE = "PH Labs | Premium Research Compounds for Scientific Laboratories";
+const TITLE = "PH Labs | Premium Research Compounds for UK Laboratories";
 const DESCRIPTION =
   "PH Labs supplies high-purity research compounds to UK laboratories, with detailed batch documentation for every order. For research use only.";
 const URL = "https://phlabs.co.uk/landing/phlabs";

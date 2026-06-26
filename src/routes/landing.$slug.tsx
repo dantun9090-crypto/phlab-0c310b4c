@@ -25,8 +25,40 @@ interface LandingPageData {
   published: boolean;
 }
 
+function slugToTitle(slug: string): string {
+  const pretty = slug
+    .split("-")
+    .map((s) => (s.length ? s[0].toUpperCase() + s.slice(1) : s))
+    .join(" ");
+  // Keep total ≤ 60 chars: "<Pretty> | PH Labs"
+  const suffix = " | PH Labs";
+  const maxBase = 60 - suffix.length;
+  const base = pretty.length > maxBase ? pretty.slice(0, maxBase - 1).trimEnd() + "…" : pretty;
+  return `${base}${suffix}`;
+}
+
 export const Route = createFileRoute("/landing/$slug")({
   component: DynamicLanding,
+  head: ({ params }) => {
+    const title = slugToTitle(params.slug);
+    const description = `PH Labs ${params.slug.replace(/-/g, " ")} — research compounds for UK laboratories with batch documentation. For research use only.`.slice(0, 158);
+    const url = `https://phlabs.co.uk/landing/${params.slug}`;
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { name: "robots", content: "index,follow" },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "website" },
+        { property: "og:url", content: url },
+        { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+      ],
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
   notFoundComponent: () => (
     <div className="min-h-screen bg-[#060f1e] flex flex-col items-center justify-center text-center p-8">
       <h1 className="text-3xl font-bold text-white mb-3">Landing page not found</h1>
