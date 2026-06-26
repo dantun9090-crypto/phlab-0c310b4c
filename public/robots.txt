@@ -69,6 +69,44 @@ Disallow: /admin/
 Disallow: /api/
 Disallow: /lovable/
 
+# Semrush SEO crawler — allow site audits & backlink discovery
+User-agent: SemrushBot
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /cart
+Disallow: /checkout
+Disallow: /payment
+Disallow: /account
+Disallow: /login
+Disallow: /register
+Disallow: /api/
+Disallow: /webhook/
+Disallow: /server-functions/
+Disallow: /lovable/
+Crawl-delay: 2
+
+User-agent: SemrushBot-SA
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /lovable/
+
+User-agent: SemrushBot-BA
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /lovable/
+
+User-agent: SiteAuditBot
+Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /lovable/
+
 
 # Block AI training / scraping crawlers
 User-agent: GPTBot
@@ -133,4 +171,4 @@ Disallow: /
 
 Sitemap: https://phlabs.co.uk/sitemap.xml
 
-# cache-bust 2026-06-02T18:00:31Z
+# cache-bust 2026-06-26T12:00:00Z
