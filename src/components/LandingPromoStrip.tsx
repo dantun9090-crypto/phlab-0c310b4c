@@ -94,16 +94,20 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[12px] sm:text-[13px]">
         <span className="font-medium tracking-wide">{PROMO_HEADLINE}</span>
         <span className="opacity-70 hidden sm:inline">·</span>
-        <button
-          type="button"
-          onClick={copy}
-          aria-label={`Copy promo code ${PROMO_CODE}`}
-          className={`inline-flex items-center gap-2 rounded-md border px-2.5 py-1 font-mono text-[12px] tracking-[0.18em] uppercase transition-colors ${codeBox}`}
-        >
-          {PROMO_CODE}
-          <span className="text-[10px] opacity-80">{copied ? "Copied" : "Copy"}</span>
-        </button>
-        <span className="opacity-70 hidden sm:inline">{PROMO_SUB}</span>
+        {PROMO_CODES.map(({ code, label }) => (
+          <span key={code} className="inline-flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => copy(code)}
+              aria-label={`Copy promo code ${code}`}
+              className={`inline-flex items-center gap-2 rounded-md border px-2.5 py-1 font-mono text-[12px] tracking-[0.18em] uppercase transition-colors ${codeBox}`}
+            >
+              {code}
+              <span className="text-[10px] opacity-80">{copiedCode === code ? "Copied" : "Copy"}</span>
+            </button>
+            <span className="opacity-70 text-[11px] sm:text-[12px]">{label}</span>
+          </span>
+        ))}
         <Link
           to={STARTER_HREF}
           className={`inline-flex items-center rounded-full px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] font-medium transition-colors ${cta}`}
