@@ -617,6 +617,8 @@ export default {
     //     These UAs either ignore robots.txt, scrape PII, or feed LLM training
     //     sets. Edge block is the only enforceable layer.
     if (HOSTILE_BOT_UA_RX.test(ua)) {
+      phlog.log("phl.hostile.block", { ua: ua.slice(0, 120) });
+      phlog.log("phl.request.end", { status: 403, via: "hostile-block" });
       return new Response("Forbidden: automated scraping not permitted.\n", {
         status: 403,
         headers: {
@@ -637,19 +639,17 @@ export default {
     const token = env && env.PRERENDER_TOKEN;
     const isLoop = request.headers.has(LOOP_HEADER);
 
-    // Safe debug log — boolean for token presence, never the value itself.
-    // Visible in `wrangler tail` / Cloudflare Logs without leaking secrets.
     if (isBot && isGet && !isStatic) {
-      const branch = token && !isLoop && !PRERENDER_RENDERER_RX.test(ua) ? "prerender" : "normal-proxy";
-      console.log(JSON.stringify({
-        tag: "phlabs-prerender",
-        branch,
-        path: url.pathname,
-        tokenPresent: Boolean(token),
-        uaSample: ua.slice(0, 80),
+      phlog.log("phl.bot.detect", {
         isGooglebot,
-      }));
+        botClass: isGooglebot ? "googlebot" : "other-bot",
+        tokenPresent: Boolean(token),
+        loop: isLoop,
+        rendererUa: PRERENDER_RENDERER_RX.test(ua),
+        branch: token && !isLoop && !PRERENDER_RENDERER_RX.test(ua) ? "prerender" : "normal-proxy",
+      });
     }
+
 
     if (isBot && isGet && !isStatic && token && !isLoop && !PRERENDER_RENDERER_RX.test(ua)) {
       // Prerender cache key — independent of bot UA so all bots share the
