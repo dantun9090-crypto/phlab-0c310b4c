@@ -49,6 +49,14 @@ const staticEntries: SitemapEntry[] = [
   { path: "/products/category/melanin", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
   { path: "/products/category/neurological", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
   { path: "/products/category/tissue-repair", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
+  // Per-peptide hub categories (keyword-led, UK SEO)
+  { path: "/products/category/bpc-157", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
+  { path: "/products/category/retatrutide", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
+  { path: "/products/category/tirzepatide", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
+  { path: "/products/category/tb-500", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
+  { path: "/products/category/ghk-cu", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
+  { path: "/products/category/bacteriostatic-water", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
+
 ];
 
 
