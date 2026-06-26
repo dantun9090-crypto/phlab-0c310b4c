@@ -457,6 +457,7 @@ export default function AdminPage() {
         case 'shopify': return <ShopifyTab />;
         case 'semrush': return <SemrushTab />;
         case 'seoopportunities': return <SEOOpportunitiesTab />;
+        case 'backlinkoutreach': return <BacklinkOutreachTab />;
         case 'royalmail': return <RoyalMailTab />;
         case 'webhooktest': return <WebhookTestTab />;
         case 'wallidpreview': return <WallidPreviewTab />;
