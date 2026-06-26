@@ -62,11 +62,11 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
     }
   }
 
-  async function copy() {
+  async function copy(code: string) {
     try {
-      await navigator.clipboard.writeText(PROMO_CODE);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      window.setTimeout(() => setCopiedCode(null), 1800);
     } catch {
       /* ignore */
     }
