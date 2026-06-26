@@ -189,8 +189,8 @@ export function EditorialLanding({ eyebrow }: { eyebrow?: string }) {
           <p className="text-[11px] uppercase tracking-[0.5em] gold">A note on intent</p>
           <blockquote className="mt-10 font-serif text-[1.75rem] sm:text-4xl md:text-5xl font-light leading-[1.2] text-neutral-950">
             <span className="gold text-5xl">“</span>
-            For laboratory and scientific research purposes only. Not for human
-            consumption, medical use, or therapeutic application.
+            For laboratory and scientific research purposes only. Not for
+            human use or for any non-research application.
             <span className="gold text-5xl">”</span>
           </blockquote>
           <div className="mx-auto mt-10 h-px w-12 gold-bg" />
