@@ -4,7 +4,7 @@
 // secret so the key never lives in the client bundle or repo.
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/$indexnowKey')({
+export const Route = createFileRoute('/$indexnowKey.txt')({
   server: {
     handlers: {
       GET: async ({ params }) => {

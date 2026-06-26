@@ -15,6 +15,7 @@ import { Route as GoogleMerchantFeedDotxmlRouteImport } from './routes/google-me
 import { Route as GoogleAdsSafeFeedDotxmlRouteImport } from './routes/google-ads-safe-feed[.]xml'
 import { Route as BingFeedDotxmlRouteImport } from './routes/bing-feed[.]xml'
 import { Route as MarketingRouteImport } from './routes/_marketing'
+import { Route as IndexnowKeyDottxtRouteImport } from './routes/$indexnowKey[.]txt'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsSlugRouteImport } from './routes/products_.$slug'
@@ -83,6 +84,11 @@ const BingFeedDotxmlRoute = BingFeedDotxmlRouteImport.update({
 } as any)
 const MarketingRoute = MarketingRouteImport.update({
   id: '/_marketing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexnowKeyDottxtRoute = IndexnowKeyDottxtRouteImport.update({
+  id: '/$indexnowKey.txt',
+  path: '/$indexnowKey.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SplatRoute = SplatRouteImport.update({
@@ -297,6 +303,7 @@ const ApiPublicHooksFenaRoute = ApiPublicHooksFenaRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/$indexnowKey.txt': typeof IndexnowKeyDottxtRoute
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
   '/google-ads-safe-feed.xml': typeof GoogleAdsSafeFeedDotxmlRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
@@ -343,6 +350,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/$indexnowKey.txt': typeof IndexnowKeyDottxtRoute
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
   '/google-ads-safe-feed.xml': typeof GoogleAdsSafeFeedDotxmlRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
@@ -390,6 +398,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
+  '/$indexnowKey.txt': typeof IndexnowKeyDottxtRoute
   '/_marketing': typeof MarketingRouteWithChildren
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
   '/google-ads-safe-feed.xml': typeof GoogleAdsSafeFeedDotxmlRoute
@@ -439,6 +448,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$'
+    | '/$indexnowKey.txt'
     | '/bing-feed.xml'
     | '/google-ads-safe-feed.xml'
     | '/google-merchant-feed.xml'
@@ -485,6 +495,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$'
+    | '/$indexnowKey.txt'
     | '/bing-feed.xml'
     | '/google-ads-safe-feed.xml'
     | '/google-merchant-feed.xml'
@@ -531,6 +542,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$'
+    | '/$indexnowKey.txt'
     | '/_marketing'
     | '/bing-feed.xml'
     | '/google-ads-safe-feed.xml'
@@ -579,6 +591,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
+  IndexnowKeyDottxtRoute: typeof IndexnowKeyDottxtRoute
   MarketingRoute: typeof MarketingRouteWithChildren
   BingFeedDotxmlRoute: typeof BingFeedDotxmlRoute
   GoogleAdsSafeFeedDotxmlRoute: typeof GoogleAdsSafeFeedDotxmlRoute
@@ -665,6 +678,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof MarketingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$indexnowKey.txt': {
+      id: '/$indexnowKey.txt'
+      path: '/$indexnowKey.txt'
+      fullPath: '/$indexnowKey.txt'
+      preLoaderRoute: typeof IndexnowKeyDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$': {
@@ -958,6 +978,7 @@ const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
+  IndexnowKeyDottxtRoute: IndexnowKeyDottxtRoute,
   MarketingRoute: MarketingRouteWithChildren,
   BingFeedDotxmlRoute: BingFeedDotxmlRoute,
   GoogleAdsSafeFeedDotxmlRoute: GoogleAdsSafeFeedDotxmlRoute,
@@ -1004,13 +1025,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
