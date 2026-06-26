@@ -4,7 +4,7 @@ import {
   DUAL_ENTRIES,
   sanitiseFeedText,
   BANNED_FEED_TOKENS,
-} from "@/lib/merchant-dual-entries";
+} from "../src/lib/merchant-dual-entries";
 
 const BANNED_RE = new RegExp(`\\b(${BANNED_FEED_TOKENS.join("|")})\\b`, "i");
 
