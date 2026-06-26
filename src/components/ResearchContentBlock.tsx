@@ -1,4 +1,4 @@
-import { FlaskConical, Beaker, Snowflake, ShieldCheck, FileText, Link2 } from "lucide-react";
+import { FlaskConical, Beaker, Snowflake, ShieldCheck, FileText, Link2, Atom, Activity, BookOpen } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { RESEARCH_CONTENT, type ResearchContent } from "@/lib/research-content";
 
