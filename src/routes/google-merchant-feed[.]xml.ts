@@ -394,8 +394,13 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                 : "";
             const sizeCompact = sizeLabel.replace(/\s+/g, "");
             const override = MERCHANT_CODE_OVERRIDES[slug];
-            const skuCode = (p.sku || override?.code || docId).trim();
+            const skuCode = (highRisk
+              ? (override?.code || docId)
+              : (p.sku || override?.code || docId)
+            ).trim();
             const skuWithSize = sizeCompact ? `${skuCode}-${sizeCompact}` : skuCode;
+            const merchantId = highRisk && override?.code ? override.code : docId;
+            const merchantLinkId = merchantId;
 
             // High-risk: SKU-code-first title, molecule name omitted.
             // Safe: keep current molecule-first title.
@@ -433,11 +438,11 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                   `    <g:additional_image_link>${xmlEscape(abs)}</g:additional_image_link>`,
               );
 
-            const link = `${BASE_URL}/products/${docId}`;
+            const link = `${BASE_URL}/products/${merchantLinkId}`;
             const price = `${p.price.toFixed(2)} ${CURRENCY}`;
             const availability =
               typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
-            const sku = (p.sku || skuCode || docId).trim();
+            const sku = (highRisk ? skuCode : (p.sku || skuCode || docId)).trim();
             const hasGtin = !!p.gtin;
 
             const isWater = /bacteriostatic\s+water/i.test(p.name);
@@ -450,7 +455,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
             return [
               `  <item>`,
-              `    <g:id>${xmlEscape(docId)}</g:id>`,
+              `    <g:id>${xmlEscape(merchantId)}</g:id>`,
               `    <title>${cdata(title)}</title>`,
               `    <link>${xmlEscape(link)}</link>`,
               `    <g:mobile_link>${xmlEscape(link)}</g:mobile_link>`,
