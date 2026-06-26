@@ -58,6 +58,7 @@ import ShopifyTab from './tabs/ShopifyTab';
 import SemrushTab from './tabs/SemrushTab';
 import SEOOpportunitiesTab from './tabs/SEOOpportunitiesTab';
 import BacklinkOutreachTab from './tabs/BacklinkOutreachTab';
+import BacklinkChangesTab from './tabs/BacklinkChangesTab';
 import CacheRecacheTab from './tabs/CacheRecacheTab';
 import UrlMonitorTab from './tabs/UrlMonitorTab';
 import RoyalMailTab from './tabs/RoyalMailTab';
@@ -71,7 +72,7 @@ import ResearchIncidentsTab from './tabs/ResearchIncidentsTab';
 import LiveActivityTab from './tabs/LiveActivityTab';
 import ToastAuditTab from './tabs/ToastAuditTab';
 
-type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'indexnow' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'healthmonitor' | 'researchincidents';
+type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'bingfeed' | 'indexnow' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'backlinkchanges' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'healthmonitor' | 'researchincidents';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
