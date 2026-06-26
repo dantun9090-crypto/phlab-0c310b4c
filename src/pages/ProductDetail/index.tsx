@@ -20,6 +20,7 @@ import { SEO_LIMITS, clamp } from '@/lib/seo-meta';
 import { markPrerenderPending, flipPrerenderReadyWhen } from '@/lib/prerender-ready';
 import { sanitizeLab, sanitizeLabClamp } from '@/lib/lab-sanitize';
 import { PRODUCT_SEO_OVERRIDES } from '@/lib/product-seo-overrides';
+import { getCategoryHub } from '@/lib/product-category-hubs';
 import { getDualEntryAliasInfo } from '@/lib/merchant-dual-entries';
 import { PRODUCT_ID_TO_SLUG } from '@/lib/product-id-slug-map';
 
