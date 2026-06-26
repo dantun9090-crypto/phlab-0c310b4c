@@ -1514,6 +1514,25 @@ export default function ProductDetail() {
                 </p>
               ) : null}
 
+              {/* Internal link to category hub — boosts /products/category/*
+                  pages in GSC via keyword-led anchor + crawl depth.
+                  Mapping lives in src/lib/product-category-hubs.ts. */}
+              {!merchantAliasInfo && (() => {
+                const hub = getCategoryHub(product.slug);
+                if (!hub) return null;
+                return (
+                  <p className="text-xs text-[#6b829e] mb-3 leading-relaxed">
+                    <span className="font-semibold text-[#8aa3c0]">Browse category:</span>{' '}
+                    <a
+                      href={`/products/category/${hub.slug}`}
+                      className="text-emerald-300/90 hover:text-emerald-200 underline decoration-emerald-500/40 hover:decoration-emerald-300 underline-offset-2"
+                    >
+                      {hub.label}
+                    </a>
+                  </p>
+                );
+              })()}
+
               {/* ── 3-Part Description ── */}
               {(() => {
                 const productSlugKey = (product.slug || nameToSlug(product.name) || product.id).toLowerCase();
