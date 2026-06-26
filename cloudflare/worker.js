@@ -404,7 +404,48 @@ async function getHtmlTtlSeconds() {
   return value;
 }
 
+// ---------- structured logging ----------
+//
+// Single ndjson sink so `wrangler tail --format=json` and Cloudflare Logs
+// produce queryable, correlated events. Each event shares a per-request
+// `rid`, a numeric `t` (ms since request start), and a stable `tag`.
+//
+// Tags emitted:
+//   phl.request.start    — first hop into the Worker
+//   phl.bot.detect       — bot classification (googlebot/hostile/normal)
+//   phl.hostile.block    — 403 hostile-UA short-circuit
+//   phl.prerender.cache  — prerender cache HIT or MISS
+//   phl.prerender.fetch  — outbound Prerender.io fetch result
+//   phl.prerender.fallback — Prerender failed → origin fallback
+//   phl.origin.proxy     — origin response status
+//   phl.request.end      — final response status + total ms
+//   phl.error            — caught exception inside the request handler
+function makeLogger(request, url) {
+  const t0 = Date.now();
+  const rid = (crypto && crypto.randomUUID ? crypto.randomUUID() : String(t0) + Math.random().toString(36).slice(2)).slice(0, 16);
+  const base = {
+    rid,
+    method: request.method,
+    path: url.pathname,
+    host: url.hostname,
+    ray: request.headers.get("cf-ray") || null,
+    ip: request.headers.get("cf-connecting-ip") || null,
+    country: (request.cf && request.cf.country) || null,
+  };
+  return {
+    rid,
+    log(tag, extra) {
+      try {
+        const payload = { tag, t: Date.now() - t0, ...base, ...(extra || {}) };
+        console.log(JSON.stringify(payload));
+      } catch (_) { /* never throw inside logger */ }
+    },
+  };
+}
+
 // ---------- main ----------
+
+
 
 
 
