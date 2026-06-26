@@ -217,18 +217,22 @@ export default function CategoryPage() {
     ogImage: 'https://cdn.wegic.ai/assets/onepage/agent/images/1779306071783_0.jpg',
   });
 
-  // Subscribe to products filtered by category
+  // Subscribe to products filtered by category (or explicit slug list)
   useEffect(() => {
     setLoading(true);
+    const slugList = config?.productSlugs;
     const unsub = subscribeToProducts((all) => {
-      const filtered = all.filter(
-        p => p.isActive !== false && p.stock > 0 && p.category === slug
-      );
+      const filtered = all.filter((p) => {
+        if (p.isActive === false || p.stock <= 0) return false;
+        if (slugList && slugList.length) return slugList.includes(p.slug ?? '');
+        return p.category === slug;
+      });
       setProducts(filtered);
       setLoading(false);
     });
     return () => unsub();
-  }, [slug]);
+  }, [slug, config?.productSlugs]);
+
 
   // SEO: when a category is empty (no in-stock products), tell crawlers
   // to skip it. Avoids "0 compounds available" pages appearing in the
