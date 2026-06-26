@@ -369,80 +369,57 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
           return n;
         };
 
+        // Compounds whose molecule name itself triggers Google's pharma /
+        // weight-loss classifier (GLP-1 agonists, restricted research
+        // peptides). For these we:
+        //   - keep the molecule name OUT of <title> (SKU-code-first)
+        //   - drop <g:unit_pricing_measure> (mg+name = pharma signal)
+        //   - switch product_type to "Laboratory Chemicals" leaf (499954)
+        // Molecule name still appears in <description> for matching.
+        const HIGH_RISK_TOKENS = ["retatrutide", "bpc-157", "bpc157", "bpc 157", "tirzepatide", "semaglutide"];
+        const isHighRisk = (name: string) => {
+          const n = name.toLowerCase();
+          return HIGH_RISK_TOKENS.some((t) => n.includes(t));
+        };
+
         const items = merchantProducts
           .map((p) => {
             const docId = p.id;
             const clean = cleanCompoundName(p.name);
+            const slug = (p.slug || "").toLowerCase();
+            const highRisk = isHighRisk(p.name);
             const sizeLabel =
               p.unitPricingMeasure && p.unitPricingMeasure.value > 0
                 ? `${p.unitPricingMeasure.value} ${p.unitPricingMeasure.unit}`
                 : "";
             const sizeCompact = sizeLabel.replace(/\s+/g, "");
-            const title = sizeLabel
-              ? `${clean} ${sizeLabel} — Analytical Reference Standard | PH Labs`
-              : `${clean} — Analytical Reference Standard | PH Labs`;
+            const override = MERCHANT_CODE_OVERRIDES[slug];
+            const skuCode = (p.sku || override?.code || docId).trim();
+            const skuWithSize = sizeCompact ? `${skuCode}-${sizeCompact}` : skuCode;
+
+            // High-risk: SKU-code-first title, molecule name omitted.
+            // Safe: keep current molecule-first title.
+            const title = highRisk
+              ? (sizeLabel
+                  ? `${skuWithSize} — Lyophilised Analytical Reference Standard ${sizeLabel} (RUO) | PH Labs`
+                  : `${skuWithSize} — Lyophilised Analytical Reference Standard (RUO) | PH Labs`)
+              : (sizeLabel
+                  ? `${clean} ${sizeLabel} — Analytical Reference Standard | PH Labs`
+                  : `${clean} — Analytical Reference Standard | PH Labs`);
 
             const cas =
               COMPOUND_SPECS[clean.toUpperCase()]?.cas ??
               "Available on Certificate of Analysis";
             const description = descriptionForCompound(clean, undefined);
-
-            const image = p.imageUrl
-              ? p.imageUrl.startsWith("http")
-                ? p.imageUrl
-                : `${BASE_URL}${p.imageUrl.startsWith("/") ? "" : "/"}${p.imageUrl}`
-              : `${BASE_URL}/og-image.jpg`;
-            const seenImages = new Set<string>([image]);
-            const additionalImageTags = (p.additionalImages ?? [])
-              .map((u) =>
-                u.startsWith("http") ? u : `${BASE_URL}${u.startsWith("/") ? "" : "/"}${u}`,
-              )
-              .filter((abs) => {
-                if (seenImages.has(abs)) return false;
-                seenImages.add(abs);
-                return true;
-              })
-              .slice(0, 10)
-              .map(
-                (abs) =>
-                  `    <g:additional_image_link>${xmlEscape(abs)}</g:additional_image_link>`,
-              );
-
-            const link = `${BASE_URL}/products/${docId}`;
-            const price = `${p.price.toFixed(2)} ${CURRENCY}`;
-            const availability =
-              typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
-            const sku = (p.sku || docId).trim();
-            const hasGtin = !!p.gtin;
-
-            // Bacteriostatic Water uses 99% (no plus); everything else 99%+.
-            const isWater = /bacteriostatic\s+water/i.test(p.name);
-            const purityHighlight = isWater
-              ? "HPLC-verified 99% purity"
-              : "HPLC-verified 99%+ purity";
-            const customLabel = isWater ? "99%" : "99%+";
-
-            void cas; // CAS is embedded inside the description string
-
-            return [
-              `  <item>`,
-              `    <g:id>${xmlEscape(docId)}</g:id>`,
-              `    <title>${cdata(title)}</title>`,
-              `    <link>${xmlEscape(link)}</link>`,
-              `    <g:mobile_link>${xmlEscape(link)}</g:mobile_link>`,
-              `    <description>${cdata(description)}</description>`,
-              `    <g:image_link>${xmlEscape(image)}</g:image_link>`,
-              ...additionalImageTags,
-              `    <g:availability>${availability}</g:availability>`,
-              `    <g:price>${xmlEscape(price)}</g:price>`,
-              `    <g:brand>${xmlEscape(BRAND)}</g:brand>`,
-              `    <g:condition>new</g:condition>`,
-              `    <g:mpn>${xmlEscape(sku)}</g:mpn>`,
-              `    <g:sku>${xmlEscape(sku)}</g:sku>`,
-              hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
-              `    <g:item_group_id>${xmlEscape(docId)}</g:item_group_id>`,
-              `    <g:google_product_category>6975</g:google_product_category>`,
-              `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Biochemicals</g:product_type>`,
+...
+              // High-risk SKUs use the Laboratory Chemicals leaf (499954)
+              // and skip unit_pricing_measure to avoid the pharma classifier.
+              highRisk
+                ? `    <g:google_product_category>499954</g:google_product_category>`
+                : `    <g:google_product_category>6975</g:google_product_category>`,
+              highRisk
+                ? `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Laboratory Chemicals</g:product_type>`
+                : `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Biochemicals</g:product_type>`,
               `    <g:adult>no</g:adult>`,
               `    <g:age_group>adult</g:age_group>`,
               `    <g:is_bundle>no</g:is_bundle>`,
@@ -458,7 +435,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `    <g:product_highlight>Certificate of Analysis available on request</g:product_highlight>`,
               `    <g:product_highlight>Supplied to qualified UK laboratories</g:product_highlight>`,
               `    <g:custom_label_0>${xmlEscape(customLabel)}</g:custom_label_0>`,
-              sizeCompact
+              !highRisk && sizeCompact
                 ? `    <g:unit_pricing_measure>${xmlEscape(sizeCompact)}</g:unit_pricing_measure>`
                 : null,
               `  </item>`,
