@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { fetchAllProducts } from "@/lib/firestore-rest";
-import { getDualVariantsForSlug, type DualEntryVariant } from "@/lib/merchant-dual-entries";
+import { getDualVariantsForSlug, sanitiseFeedText, type DualEntryVariant } from "@/lib/merchant-dual-entries";
 
 // Google product categories for dual-title feed.
 // Entry A (mkt): Laboratory Equipment (5604).
@@ -398,28 +398,21 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                     linkA: `/products/${p.id || p.slug}`,
                     titleB: override?.displayName || (p.name || p.slug || ""),
                     linkB: `/products/${(p.slug || p.id || "").replace(/-/g, "")}`,
+                    cas: override?.cas || "Available on Certificate of Analysis",
                   },
                 ];
 
-            const descriptionA = descriptionForCompound(
-              (p.name || "").replace(/\b(research\s+peptide|research\s+chemical|research\s+compound)\b/gi, "").trim(),
-              p.purity,
-            );
-            const descriptionB = override
-              ? `Laboratory chemical supplied as a lyophilised solid for in-vitro analytical and laboratory testing only. Not a consumer product. Distributed exclusively to qualified UK research laboratories. Technical specification: • CAS Number: ${override.cas} • Internal reference code: ${override.code} • Certificate of Analysis available on request.`
-              : `Analytical reference standard supplied as a lyophilised solid for in-vitro laboratory and analytical testing only. Distributed to qualified UK research laboratories. Certificate of Analysis available on request.`;
+            // Spec: identical description shape for A and B, parameterised
+            // by CAS. No "peptide / purity / compound" tokens.
+            const buildDescription = (cas: string) =>
+              `For laboratory and analytical research only. Strictly for in-vitro scientific testing and reference standards. Technical specification: CAS Number: ${cas}.`;
 
-            const highlightsA = [
-              p.purity ? `HPLC-verified ${p.purity} purity` : "HPLC-verified ≥99% purity",
+            // Spec: four highlights, identical for A and B.
+            const HIGHLIGHTS = [
+              "HPLC-verified 99%+ grade",
               "Lyophilised powder format",
               "Certificate of Analysis available on request",
               "Supplied to qualified UK laboratories",
-            ];
-            const highlightsB = [
-              "Lyophilised solid",
-              "Certificate of Analysis available on request",
-              "Supplied to qualified UK laboratories",
-              "In-vitro analytical use only",
             ];
 
 
@@ -427,17 +420,17 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             type Side = "A" | "B";
             const buildEntry = (v: DualEntryVariant, side: Side): string => {
               const isA = side === "A";
-              const title = isA ? v.titleA : v.titleB;
+              const title = sanitiseFeedText(isA ? v.titleA : v.titleB);
               const link = `${BASE_URL}${isA ? v.linkA : v.linkB}`;
               const offerId = `${v.phlCode}${isA ? "A" : "B"}`;
               const sku = offerId;
               const mpn = offerId;
-              const categoryId = isA ? CATEGORY_A_ID : CATEGORY_B_ID;
-              const categoryPath = isA ? CATEGORY_A_PATH : CATEGORY_B_PATH;
-              const productType = isA ? "Peptides" : "Research Peptides";
+              // Both entries use Biochemicals (6975) per spec.
+              const categoryId = CATEGORY_A_ID;
+              void CATEGORY_B_ID; void CATEGORY_A_PATH; void CATEGORY_B_PATH;
+              const productType = "Research Materials";
               const customLabel = isA ? "mkt" : "sku";
-              const description = isA ? descriptionA : descriptionB;
-              const highlights = isA ? highlightsA : highlightsB;
+              const description = buildDescription(v.cas);
 
               return [
                 `  <item>`,
@@ -472,8 +465,8 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                 `      <g:tax_ship>no</g:tax_ship>`,
                 `    </g:tax>`,
                 `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
-                ...highlights.map(
-                  (h) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
+                ...HIGHLIGHTS.map(
+                  (h: string) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
                 ),
                 `    <g:custom_label_0>${xmlEscape(customLabel)}</g:custom_label_0>`,
                 v.sizeLabel ? `    <g:unit_pricing_measure>${xmlEscape(v.sizeLabel.replace(/\s+/g, ""))}</g:unit_pricing_measure>` : null,

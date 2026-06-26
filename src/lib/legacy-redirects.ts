@@ -186,6 +186,40 @@ const RULES: RedirectRule[] = [
   // are intentionally NOT redirected here — the /products/$slug route
   // resolves them to the matching product page (used by Google Merchant feed).
 
+  // === PHL{N} alias migration (2026-06-26) ===
+  // Old dual-entry aliases → new sequential PHL{N}A / PHL{N}B URLs.
+  // Keep these forever — they prevent SEO loss on previously-indexed
+  // Merchant feed landing pages.
+  { type: "exact", from: "/products/reta-10-phl", to: "/products/phl-1a" },
+  { type: "exact", from: "/products/retatrutide-10mg-phl", to: "/products/phl-1b" },
+  { type: "exact", from: "/products/reta-20-phl", to: "/products/phl-2a" },
+  { type: "exact", from: "/products/retatrutide-20mg-phl", to: "/products/phl-2b" },
+  { type: "exact", from: "/products/bpc-10-phl", to: "/products/phl-3a" },
+  { type: "exact", from: "/products/bpc-157-10mg-phl", to: "/products/phl-3b" },
+  { type: "exact", from: "/products/ghk-01-phl", to: "/products/phl-4a" },
+  { type: "exact", from: "/products/ghk-cu-phl", to: "/products/phl-4b" },
+  { type: "exact", from: "/products/mots-01-phl", to: "/products/phl-5a" },
+  { type: "exact", from: "/products/mots-c-phl", to: "/products/phl-5b" },
+  { type: "exact", from: "/products/h3n8wp", to: "/products/phl-6a" },
+  { type: "exact", from: "/products/h3n8wq", to: "/products/phl-6b" },
+  { type: "exact", from: "/products/v9r4tb", to: "/products/phl-7a" },
+  { type: "exact", from: "/products/v9r4tc", to: "/products/phl-7b" },
+  { type: "exact", from: "/products/z2j5fd", to: "/products/phl-8a" },
+  { type: "exact", from: "/products/z2j5fe", to: "/products/phl-8b" },
+  { type: "exact", from: "/products/z2j6gd", to: "/products/phl-9a" },
+  { type: "exact", from: "/products/z2j6ge", to: "/products/phl-9b" },
+  { type: "exact", from: "/products/z2j7hd", to: "/products/phl-10a" },
+  { type: "exact", from: "/products/z2j7he", to: "/products/phl-10b" },
+  { type: "exact", from: "/products/q8x1ly", to: "/products/phl-11a" },
+  { type: "exact", from: "/products/q8x1lz", to: "/products/phl-11b" },
+  { type: "exact", from: "/products/t4w9rm", to: "/products/phl-12a" },
+  { type: "exact", from: "/products/t4w9rn", to: "/products/phl-12b" },
+  { type: "exact", from: "/products/f6c3vp", to: "/products/phl-13a" },
+  { type: "exact", from: "/products/f6c3vq", to: "/products/phl-13b" },
+  { type: "exact", from: "/products/u2s8gk", to: "/products/phl-14a" },
+  { type: "exact", from: "/products/u2s8gl", to: "/products/phl-14b" },
+  { type: "exact", from: "/products/d9p1ox", to: "/products/phl-15a" },
+  { type: "exact", from: "/products/d9p1oy", to: "/products/phl-15b" },
 ];
 
 
