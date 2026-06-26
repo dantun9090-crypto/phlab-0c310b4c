@@ -7,8 +7,8 @@
  *
  * Both entries use opaque alphanumeric URL slugs that do NOT resemble the
  * underlying compound name, and opaque PHL{N} product IDs (PHL1, PHL2…).
- * Each entry's URL redirects to the canonical product page via the alias
- * map in src/lib/product-id-slug-map.ts → LEGACY_SLUG_ALIASES.
+ * Each entry's URL renders in place with HTTP 200 via the alias resolver,
+ * because Merchant Center can reject redirecting or unavailable product pages.
  *
  * Public site URLs (/products/<canonical-slug>) are untouched.
  */
