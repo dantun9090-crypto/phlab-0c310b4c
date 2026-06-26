@@ -456,6 +456,10 @@ export default {
     const url = new URL(request.url);
     const host = url.hostname.toLowerCase();
     const origin = null;
+    const phlog = makeLogger(request, url);
+    phlog.log("phl.request.start", { ua: (request.headers.get("user-agent") || "").slice(0, 120) });
+
+
 
     // 0. Pageview beacon — must run BEFORE redirects/prerender/cache.
     //    Cache-cached HTML never reaches the origin, so Lovable's visit
