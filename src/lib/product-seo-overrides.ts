@@ -9,6 +9,10 @@
 export interface ProductSeoOverride {
   title: string;       // ≤60 chars
   description: string; // ≤160 chars
+  /** Common misspellings / alternate spellings — added to meta keywords
+   *  and rendered as a subtle "Also known as" line for organic capture.
+   *  Sourced from Semrush UK organic rankings (low-competition long tail). */
+  misspellings?: string[];
 }
 
 export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
@@ -17,6 +21,15 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
     title: "Retatrutide UK — Research Peptide, HPLC + CoA | PH Labs",
     description:
       "Retatrutide UK research peptide. HPLC-verified ≥99% purity, batch CoA included. For laboratory research only — not for human consumption.",
+    // Semrush UK: ~1,300/mo combined misspell volume, near-zero competition
+    misspellings: [
+      "retatrtide",
+      "retatrutife",
+      "retatrudtide",
+      "retatrutidw",
+      "retatide",
+      "reta peptide",
+    ],
   },
 
   // "tirzepatide peptides uk" 210/mo currently #37
