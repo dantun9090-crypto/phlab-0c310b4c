@@ -300,9 +300,12 @@ function ProductDetailRoute() {
   return (
     <>
       <SeoProductBlock product={product} />
-      {/* When opened via /products/{id}, the legacy app needs the SLUG
-          to look up and render the product — pass the resolved slug. */}
-      <LegacyApp initialPath={`/products/${product.slug}`} />
+      {/* Mount LegacyApp using the Firestore DOCUMENT ID (not slug) so the
+          legacy ProductDetail (useParams().id → Firestore doc lookup) reliably
+          finds the product. Using product.slug works only when slug==docId,
+          and otherwise renders "Page Not Available" + noindex, which Google
+          Merchant reports as "Product page unavailable". */}
+      <LegacyApp initialPath={`/products/${product.id}`} />
     </>
   );
 }
