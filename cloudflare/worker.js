@@ -887,9 +887,13 @@ export default {
         h.set("x-phl-cache", `skip;status=${res.status};html=${isHtml ? 1 : 0}`);
       }
 
+      h.set("x-phl-rid", phlog.rid);
+      phlog.log("phl.origin.proxy", { status: res.status, innerCf: h.get("cf-cache-status") || null });
+      phlog.log("phl.request.end", { status: res.status, via: "normal-proxy" });
       const out = new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
       return rewriteCspNonce(applySecurityHeaders(stripLovableInjectedScripts(out), url));
-    } catch (_) {
+    } catch (e) {
+      phlog.log("phl.error", { where: "outer-fetch", err: String((e && e.message) || e).slice(0, 200) });
       return await serveStaleOrError(request);
     }
   },
