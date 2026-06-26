@@ -45,6 +45,59 @@ function rate(name: VitalRecord["name"], value: number): Rating {
   return "poor";
 }
 
+// RUM sampling — beacon every "poor" sample + ~15% of others.
+// Keeps Firestore write volume tiny while still surfacing trends.
+const SAMPLE_RATE = 0.15;
+
+function deviceClass(): "mobile" | "tablet" | "desktop" {
+  if (typeof window === "undefined") return "desktop";
+  const w = window.innerWidth || 1024;
+  if (w < 640) return "mobile";
+  if (w < 1024) return "tablet";
+  return "desktop";
+}
+
+function connectionClass(): "4g" | "3g" | "2g" | "slow-2g" | "unknown" {
+  try {
+    const c = (navigator as Navigator & { connection?: { effectiveType?: string } }).connection;
+    const t = c?.effectiveType;
+    if (t === "4g" || t === "3g" || t === "2g" || t === "slow-2g") return t;
+  } catch {
+    /* ignore */
+  }
+  return "unknown";
+}
+
+function sendBeacon(rec: VitalRecord) {
+  // Always report "poor" samples; otherwise random-sample.
+  if (rec.rating !== "poor" && Math.random() > SAMPLE_RATE) return;
+  try {
+    const body = JSON.stringify({
+      name: rec.name,
+      value: rec.value,
+      rating: rec.rating,
+      path: rec.path,
+      device: deviceClass(),
+      conn: connectionClass(),
+      build: (window as Window & { __PHLABS_BUILD_ID__?: string }).__PHLABS_BUILD_ID__ ?? "",
+    });
+    const url = "/api/public/web-vitals";
+    if (navigator.sendBeacon) {
+      const blob = new Blob([body], { type: "application/json" });
+      navigator.sendBeacon(url, blob);
+      return;
+    }
+    fetch(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    /* ignore */
+  }
+}
+
 function report(name: VitalRecord["name"], value: number, id: string) {
   const rec: VitalRecord = {
     name,
@@ -76,6 +129,8 @@ function report(name: VitalRecord["name"], value: number, id: string) {
   } catch {
     /* ignore */
   }
+
+  sendBeacon(rec);
 }
 
 function observe<T extends PerformanceEntry>(
