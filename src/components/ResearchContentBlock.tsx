@@ -94,6 +94,36 @@ export function ResearchContentBlock({ slug }: ResearchContentBlockProps) {
         </dl>
       </Section>
 
+      {content.references && content.references.length > 0 && (
+        <Section icon={BookOpen} title="Cited References">
+          <ol className="space-y-2.5 list-decimal list-inside marker:text-emerald-400/70">
+            {content.references.map((r, i) => (
+              <li key={i} className="text-[#9cb8d9] text-[13px] leading-relaxed">
+                <span>{r.citation}</span>
+                {r.doi && (
+                  <>
+                    {' '}
+                    <a
+                      href={`https://doi.org/${r.doi}`}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                      className="text-emerald-300 hover:text-emerald-200 underline decoration-emerald-500/40 underline-offset-2"
+                    >
+                      doi:{r.doi}
+                    </a>
+                  </>
+                )}
+              </li>
+            ))}
+          </ol>
+          <p className="mt-4 text-[11px] text-[#5a80a6] italic">
+            References cited for research-context only. PH Labs supplies analytical reference material for in-vitro laboratory use — not for human consumption.
+          </p>
+        </Section>
+      )}
+
+
+
       <Section icon={Link2} title="Related Research Compounds">
         <ul className="grid sm:grid-cols-2 gap-3">
           {content.related.map((r) => (
