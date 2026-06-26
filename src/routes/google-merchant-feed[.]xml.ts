@@ -16,6 +16,31 @@ const BRAND = "PH Labs";
 const CURRENCY = "GBP";
 
 /**
+ * Rewrite Firebase Storage image URLs to a same-origin proxy at
+ * `/api/public/img`. The Firebase bucket hostname contains a banned
+ * token (`prohealthpeptides…`) which Google Merchant policy review can
+ * flag when scanning `<g:image_link>` URLs. Proxying through phlabs.co.uk
+ * keeps the bucket name out of the feed entirely. Non-Firebase URLs are
+ * returned unchanged.
+ */
+function rewriteImageUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    if (u.hostname !== "firebasestorage.googleapis.com") return url;
+    // Expected path: /v0/b/<bucket>/o/<encoded-object-path>
+    const parts = u.pathname.split("/");
+    if (parts[1] !== "v0" || parts[2] !== "b" || parts[4] !== "o") return url;
+    const objectPath = decodeURIComponent(parts.slice(5).join("/"));
+    const token = u.searchParams.get("token");
+    if (!objectPath.startsWith("products/") || !token) return url;
+    return `${BASE_URL}/api/public/img?p=${encodeURIComponent(objectPath)}&t=${encodeURIComponent(token)}`;
+  } catch {
+    return url;
+  }
+}
+
+
+/**
  * Promotion IDs attached to every item in the feed. These must match
  * promotions defined in Google Merchant Center → Marketing → Promotions
  * (or in a separate Promotions feed). Override via env
