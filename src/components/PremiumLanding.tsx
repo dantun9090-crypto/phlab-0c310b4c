@@ -513,8 +513,8 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
               <p className="mt-4 text-sm sm:text-base leading-[1.7] text-white/90">
                 All products supplied by PH Labs are intended strictly for
                 laboratory and scientific research use only.{" "}
-                <span className="gold-text font-medium">Not for human consumption,</span>{" "}
-                medical, veterinary or therapeutic application.
+                <span className="gold-text font-medium">Not for human use</span>{" "}
+                or for any non-research application.
               </p>
             </div>
 
