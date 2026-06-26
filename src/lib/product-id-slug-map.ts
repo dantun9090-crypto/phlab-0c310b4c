@@ -36,6 +36,7 @@ export const PRODUCT_ID_TO_SLUG: Record<string, string> = {
   // Keep in sync with MERCHANT_CODE_OVERRIDES in google-merchant-feed[.]xml.ts.
   "Reta-PHL": "retatrutide-research-peptide",
   "BPC-PHL": "bpc-157",
+  "PHL-RP09": "bpc-157",
   "PHL-PT41": "pt-141-research-peptide",
   "PHL-TB54": "tb-500-thymosin-beta-4",
   "PHL-MC16": "mots-c-research-peptide",
