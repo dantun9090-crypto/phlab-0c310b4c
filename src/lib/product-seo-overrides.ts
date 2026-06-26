@@ -74,6 +74,20 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
       "terzepatide",
       "tirz peptide",
     ],
+    faqs: [
+      {
+        q: "Where can I buy Tirzepatide UK research peptide with a verified CoA?",
+        a: "PH Labs supplies Tirzepatide UK direct from our laboratory facility. Every Tirzepatide order includes the batch-matched HPLC Certificate of Analysis confirming ≥99% purity. Dispatched within 1 business day via tracked UK courier. Supplied as an analytical reference standard for in-vitro research only — not for human consumption.",
+      },
+      {
+        q: "What concentrations of Tirzepatide does PH Labs offer in the UK?",
+        a: "Tirzepatide UK is available from PH Labs in four research-grade concentrations to support flexible laboratory protocols. All variants ship as lyophilised powder in sealed vials with full batch documentation. Custom institutional quantities available on request.",
+      },
+      {
+        q: "How is Tirzepatide purity verified by PH Labs?",
+        a: "Each Tirzepatide UK batch is tested by reverse-phase HPLC and confirmed by mass spectrometry to ≥99% purity. The Certificate of Analysis covers identity, peptide content, water content, and acetate content, batch-matched to your vial.",
+      },
+    ],
   },
 
   // "bpc 157 uk" 2,900/mo · KD 13 — easy win
@@ -90,9 +104,23 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
       "bpc peptide",
       "pbc-157",
     ],
+    faqs: [
+      {
+        q: "Where can I buy BPC-157 UK research peptide from a verified lab?",
+        a: "PH Labs ships BPC-157 UK direct from our facility with the batch-matched HPLC Certificate of Analysis included on every order. ≥99% purity verified by reverse-phase HPLC and mass spectrometry. Dispatched within 1 business day by tracked UK courier. For in-vitro laboratory research only — not for human consumption.",
+      },
+      {
+        q: "Is BPC-157 legal to buy in the UK for research?",
+        a: "Yes. BPC-157 is legally sold in the UK as a research chemical (analytical reference standard) for in-vitro laboratory use. It is not a controlled substance under the Misuse of Drugs Act in Great Britain and is not a licensed medicine. It must not be used for human consumption or veterinary treatment.",
+      },
+      {
+        q: "How should BPC-157 be stored after delivery?",
+        a: "Lyophilised BPC-157 should be stored sealed at −20°C, light-protected and dry. Once reconstituted with bacteriostatic water for laboratory work, store the working solution refrigerated at 2–8°C and avoid repeated freeze-thaw cycles.",
+      },
+    ],
   },
 
-  // "tb 500 uk" 2,400/mo · KD 38
+  // "tb 500 uk" 2,400/mo · KD 38 + "tb labs" 110/mo currently #23
   // Semrush UK typo cluster: ~6k/mo combined (tb500 4.4k, tb500 peptide 1.3k)
   "tb-500-thymosin-beta-4": {
     title: "TB-500 UK — Thymosin β-4 Research Peptide | PH Labs",
@@ -105,6 +133,21 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
       "thymosin beta 4",
       "thymosin b4",
       "tb-500 peptide",
+      "tb labs",
+    ],
+    faqs: [
+      {
+        q: "Where can I buy TB-500 UK from a verified research lab (TB Labs)?",
+        a: "PH Labs (also searched as TB Labs) supplies TB-500 — the Thymosin β-4 fragment — direct from our UK facility. Every TB-500 UK order ships with the batch-matched HPLC Certificate of Analysis confirming ≥99% purity. Dispatched within 1 business day by tracked UK courier. For in-vitro laboratory research only — not for human consumption.",
+      },
+      {
+        q: "What is the difference between TB-500 and Thymosin β-4?",
+        a: "TB-500 is the synthetic active fragment of the naturally occurring Thymosin β-4 protein, used as an analytical reference standard in laboratory research. PH Labs TB-500 is manufactured to ≥99% purity verified by HPLC and mass spectrometry, with a batch-matched CoA included.",
+      },
+      {
+        q: "How is PH Labs TB-500 UK purity verified?",
+        a: "Each TB-500 batch is tested by reverse-phase HPLC and confirmed by mass spectrometry. The Certificate of Analysis documents identity, peptide content, water content, and acetate content — batch-matched to the vial you receive.",
+      },
     ],
   },
 
