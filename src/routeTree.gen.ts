@@ -23,6 +23,7 @@ import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentCancelRouteImport } from './routes/payment.cancel'
 import { Route as LandingPhlabsRouteImport } from './routes/landing.phlabs'
 import { Route as LandingSlugRouteImport } from './routes/landing.$slug'
+import { Route as CompareSlugRouteImport } from './routes/compare.$slug'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
@@ -126,6 +127,11 @@ const LandingPhlabsRoute = LandingPhlabsRouteImport.update({
 const LandingSlugRoute = LandingSlugRouteImport.update({
   id: '/landing/$slug',
   path: '/landing/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareSlugRoute = CompareSlugRouteImport.update({
+  id: '/compare/$slug',
+  path: '/compare/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
@@ -326,6 +332,7 @@ export interface FileRoutesByFullPath {
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/compare/$slug': typeof CompareSlugRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
   '/payment/cancel': typeof PaymentCancelRoute
@@ -375,6 +382,7 @@ export interface FileRoutesByTo {
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/compare/$slug': typeof CompareSlugRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
   '/payment/cancel': typeof PaymentCancelRoute
@@ -426,6 +434,7 @@ export interface FileRoutesById {
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
+  '/compare/$slug': typeof CompareSlugRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
   '/payment/cancel': typeof PaymentCancelRoute
@@ -477,6 +486,7 @@ export interface FileRouteTypes {
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
     | '/checkout/success'
+    | '/compare/$slug'
     | '/landing/$slug'
     | '/landing/phlabs'
     | '/payment/cancel'
@@ -526,6 +536,7 @@ export interface FileRouteTypes {
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
     | '/checkout/success'
+    | '/compare/$slug'
     | '/landing/$slug'
     | '/landing/phlabs'
     | '/payment/cancel'
@@ -576,6 +587,7 @@ export interface FileRouteTypes {
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
     | '/checkout/success'
+    | '/compare/$slug'
     | '/landing/$slug'
     | '/landing/phlabs'
     | '/payment/cancel'
@@ -626,6 +638,7 @@ export interface RootRouteChildren {
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
   CheckoutCancelRoute: typeof CheckoutCancelRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
+  CompareSlugRoute: typeof CompareSlugRoute
   LandingSlugRoute: typeof LandingSlugRoute
   LandingPhlabsRoute: typeof LandingPhlabsRoute
   PaymentCancelRoute: typeof PaymentCancelRoute
@@ -761,6 +774,13 @@ declare module '@tanstack/react-router' {
       path: '/landing/$slug'
       fullPath: '/landing/$slug'
       preLoaderRoute: typeof LandingSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare/$slug': {
+      id: '/compare/$slug'
+      path: '/compare/$slug'
+      fullPath: '/compare/$slug'
+      preLoaderRoute: typeof CompareSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout/success': {
@@ -1029,6 +1049,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
   CheckoutCancelRoute: CheckoutCancelRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
+  CompareSlugRoute: CompareSlugRoute,
   LandingSlugRoute: LandingSlugRoute,
   LandingPhlabsRoute: LandingPhlabsRoute,
   PaymentCancelRoute: PaymentCancelRoute,

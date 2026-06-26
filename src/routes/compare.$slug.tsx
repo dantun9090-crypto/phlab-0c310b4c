@@ -103,7 +103,7 @@ export const Route = createFileRoute("/compare/$slug")({
 });
 
 function ComparePage() {
-  const { page: p } = Route.useLoaderData();
+  const { page: p } = Route.useLoaderData() as { page: ProgrammaticPage };
   return (
     <main className="bg-slate-950 min-h-screen text-white">
       <article className="max-w-5xl mx-auto px-6 md:px-10 py-12 md:py-16">
