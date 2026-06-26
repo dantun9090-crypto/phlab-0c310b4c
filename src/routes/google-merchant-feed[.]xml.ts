@@ -411,7 +411,60 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               COMPOUND_SPECS[clean.toUpperCase()]?.cas ??
               "Available on Certificate of Analysis";
             const description = descriptionForCompound(clean, undefined);
-...
+
+            const image = p.imageUrl
+              ? p.imageUrl.startsWith("http")
+                ? p.imageUrl
+                : `${BASE_URL}${p.imageUrl.startsWith("/") ? "" : "/"}${p.imageUrl}`
+              : `${BASE_URL}/og-image.jpg`;
+            const seenImages = new Set<string>([image]);
+            const additionalImageTags = (p.additionalImages ?? [])
+              .map((u) =>
+                u.startsWith("http") ? u : `${BASE_URL}${u.startsWith("/") ? "" : "/"}${u}`,
+              )
+              .filter((abs) => {
+                if (seenImages.has(abs)) return false;
+                seenImages.add(abs);
+                return true;
+              })
+              .slice(0, 10)
+              .map(
+                (abs) =>
+                  `    <g:additional_image_link>${xmlEscape(abs)}</g:additional_image_link>`,
+              );
+
+            const link = `${BASE_URL}/products/${docId}`;
+            const price = `${p.price.toFixed(2)} ${CURRENCY}`;
+            const availability =
+              typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
+            const sku = (p.sku || skuCode || docId).trim();
+            const hasGtin = !!p.gtin;
+
+            const isWater = /bacteriostatic\s+water/i.test(p.name);
+            const purityHighlight = isWater
+              ? "HPLC-verified 99% purity"
+              : "HPLC-verified 99%+ purity";
+            const customLabel = isWater ? "99%" : "99%+";
+
+            void cas;
+
+            return [
+              `  <item>`,
+              `    <g:id>${xmlEscape(docId)}</g:id>`,
+              `    <title>${cdata(title)}</title>`,
+              `    <link>${xmlEscape(link)}</link>`,
+              `    <g:mobile_link>${xmlEscape(link)}</g:mobile_link>`,
+              `    <description>${cdata(description)}</description>`,
+              `    <g:image_link>${xmlEscape(image)}</g:image_link>`,
+              ...additionalImageTags,
+              `    <g:availability>${availability}</g:availability>`,
+              `    <g:price>${xmlEscape(price)}</g:price>`,
+              `    <g:brand>${xmlEscape(BRAND)}</g:brand>`,
+              `    <g:condition>new</g:condition>`,
+              `    <g:mpn>${xmlEscape(sku)}</g:mpn>`,
+              `    <g:sku>${xmlEscape(sku)}</g:sku>`,
+              hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
+              `    <g:item_group_id>${xmlEscape(docId)}</g:item_group_id>`,
               // High-risk SKUs use the Laboratory Chemicals leaf (499954)
               // and skip unit_pricing_measure to avoid the pharma classifier.
               highRisk
