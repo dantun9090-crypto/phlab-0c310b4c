@@ -15,15 +15,20 @@
  */
 
 export interface HubTarget {
-  /** Canonical PDP slug. */
+  /** Canonical PDP slug (also default href segment under /products/). */
   slug: string;
   /** Display label used in suggestion UIs. */
   label: string;
   /** Phrases that should anchor a link. First is canonical. */
   aliases: string[];
+  /** Optional explicit href override (defaults to /products/{slug}). */
+  href?: string;
 }
 
 export const HUB_TARGETS: HubTarget[] = [
+  // Pillar pages — checked first so longer multi-word aliases ("retatrutide uk")
+  // win over the generic PDP alias ("Retatrutide").
+  { slug: 'retatrutide-uk-pillar',                  label: 'Retatrutide UK',      aliases: ['retatrutide UK', 'retatrutide uk source', 'reta peptide uk', 'UK retatrutide'], href: '/research/retatrutide-uk' },
   { slug: 'retatrutide-research-peptide',          label: 'Retatrutide',         aliases: ['Retatrutide', 'LY3437943'] },
   { slug: 'tirzepatide-research-peptide',          label: 'Tirzepatide',         aliases: ['Tirzepatide', 'LY3298176'] },
   { slug: 'bpc-157',                                label: 'BPC-157',             aliases: ['BPC-157', 'BPC 157', 'Body Protection Compound 157'] },
