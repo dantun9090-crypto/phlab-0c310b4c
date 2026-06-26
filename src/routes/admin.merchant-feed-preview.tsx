@@ -191,6 +191,8 @@ function MerchantFeedPreview() {
                         <div className="font-semibold text-white truncate">{item.title || '(missing title)'}</div>
                         <div className="text-xs text-slate-400 font-mono break-all mt-1">{item.link || '(missing link)'}</div>
                         {item.canonical && <div className="text-xs text-slate-500 font-mono break-all mt-1">canonical: {item.canonical}</div>}
+                        {item.h1 && <div className="text-xs text-slate-500 break-all mt-1">H1: {item.h1}</div>}
+                        {item.renderedTitle && <div className="text-xs text-slate-500 break-all mt-1">title: {item.renderedTitle}</div>}
                       </div>
                       <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-mono ${item.status === 200 ? 'bg-emerald-500/15 text-emerald-200' : 'bg-red-500/15 text-red-200'}`}>
                         HTTP {item.status || 'ERR'}
