@@ -23,8 +23,8 @@ function knownProductIdForSlug(slug: string): string | null {
 
 // Legacy/external slug aliases → 301 to the canonical product slug.
 // Keeps old inbound links (and Google index entries) from 404'ing.
-// Includes Google Merchant dual-entry URLs (Entry A numeric+slug,
-// Entry B no-hyphen slug) — both forms 301 to canonical product page.
+// Dual-entry Merchant URLs are intentionally handled before this map and render
+// in place with HTTP 200, because GMC can reject redirects as wrong links.
 const LEGACY_SLUG_ALIASES: Record<string, string> = {
   "bpc-157-research-peptide": "bpc-157",
   "tb-500-research-peptide": "tb-500-thymosin-beta-4",
@@ -90,7 +90,11 @@ export const Route = createFileRoute("/products_/$slug")({
     //    still points to the slug version, so SEO consolidates correctly.
     const mappedSlug = resolveSlugFromId(raw);
     if (mappedSlug) {
-      const product = await fetchProductBySlugFn({ data: { slug: mappedSlug } });
+      let product = await fetchProductBySlugFn({ data: { slug: mappedSlug } });
+      if (!product) {
+        const knownId = knownProductIdForSlug(mappedSlug);
+        if (knownId) product = await fetchProductByIdFn({ data: { id: knownId } });
+      }
       if (product) return { product, matchedBy: "id" as const, aliasInfo: null };
     }
 
