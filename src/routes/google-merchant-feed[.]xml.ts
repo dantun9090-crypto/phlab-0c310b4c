@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { fetchAllProducts } from "@/lib/firestore-rest";
-import { getDualVariantsForSlug, type DualEntryVariant } from "@/lib/merchant-dual-entries";
+import { getDualVariantsForSlug, sanitiseFeedText, type DualEntryVariant } from "@/lib/merchant-dual-entries";
 
 // Google product categories for dual-title feed.
 // Entry A (mkt): Laboratory Equipment (5604).
