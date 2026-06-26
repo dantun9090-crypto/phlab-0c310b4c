@@ -79,6 +79,7 @@ const navGroups = [
     items: [
       { id: 'merchantfeed', label: 'Google Merchant Feed', icon: ShoppingBag },
       { id: 'bingfeed', label: 'Bing Shopping Feed', icon: ShoppingCart },
+      { id: 'indexnow', label: 'IndexNow (Instant Index)', icon: Send },
     ],
   },
   {
