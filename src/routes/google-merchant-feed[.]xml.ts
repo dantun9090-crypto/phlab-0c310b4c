@@ -492,6 +492,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `    <g:product_highlight>Lyophilised powder format</g:product_highlight>`,
               `    <g:product_highlight>Certificate of Analysis available on request</g:product_highlight>`,
               `    <g:product_highlight>Supplied to qualified UK laboratories</g:product_highlight>`,
+              ...MERCHANT_PROMO_IDS.map((pid: string) => `    <g:promotion_id>${xmlEscape(pid)}</g:promotion_id>`),
               `    <g:custom_label_0>${xmlEscape(customLabel)}</g:custom_label_0>`,
               !highRisk && sizeCompact
                 ? `    <g:unit_pricing_measure>${xmlEscape(sizeCompact)}</g:unit_pricing_measure>`
