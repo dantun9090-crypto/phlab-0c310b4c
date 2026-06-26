@@ -142,8 +142,8 @@ export const DUAL_ENTRIES: DualEntry[] = [
     canonicalSlug: "bpc-157",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL14",
-        titleA: "BPC-157 Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/r3l6ja",
-        titleB: "BPC PHL 10 mg Research Compound",                          linkB: "/products/r3l6jb" },
+        titleA: "BPC-157 10mg – Research Grade Compound", linkA: "/products/bpc-10-phl",
+        titleB: "BPC-157 10mg – Laboratory Standard",     linkB: "/products/bpc-157-10mg-phl" },
     ],
   },
 ];
