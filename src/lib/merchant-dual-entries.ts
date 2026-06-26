@@ -93,9 +93,9 @@ export const DUAL_ENTRIES: DualEntry[] = [
   {
     canonicalSlug: "mots-c-research-peptide",
     variants: [
-      { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL8",
-        titleA: "MOTS-c Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/b5d7nh",
-        titleB: "MC16 PHL 10 mg Research Compound",                       linkB: "/products/b5d7ni" },
+      { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "MOPHL3",
+        titleA: "MOTS-C Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/mc10ax",
+        titleB: "MOTS-C PHL 10 mg Research Compound",                       linkB: "/products/mc10bx" },
     ],
   },
   {
