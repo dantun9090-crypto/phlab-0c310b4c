@@ -44,17 +44,20 @@ export const DUAL_ENTRIES: DualEntry[] = [
   {
     canonicalSlug: "retatrutide-research-peptide",
     variants: [
-      { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL1",
-        titleA: "Retatrutide Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/k7m2qx",
-        titleB: "RETA PHL 10 mg Research Compound",                            linkB: "/products/k7m2qy" },
+      { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "RTPHL1",
+        titleA: "Retatrutide-Research-Compound-10mg", linkA: "/products/rt10ax",
+        titleB: "RETA PHL 10 mg Research Compound",   linkB: "/products/rt10bx" },
+      { sizeKey: "20mg", sizeLabel: "20 mg", phlCode: "RTPHL2",
+        titleA: "Retatrutide-Research-Compound-20mg", linkA: "/products/rt20ax",
+        titleB: "RETA PHL 20 mg Research Compound",   linkB: "/products/rt20bx" },
     ],
   },
   {
     canonicalSlug: "tb-500-thymosin-beta-4",
     variants: [
       { sizeKey: "10mg", sizeLabel: "10 mg", phlCode: "PHL2",
-        titleA: "TB-500 Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/h3n8wp",
-        titleB: "TB54 PHL 10 mg Research Compound",                       linkB: "/products/h3n8wq" },
+        titleA: "TB500 Research Compound 10 mg — HPLC + CoA | PH Labs UK", linkA: "/products/h3n8wp",
+        titleB: "TB500 PHL 10 mg Research Compound",                      linkB: "/products/h3n8wq" },
     ],
   },
   {
