@@ -56,8 +56,22 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
         q: "How should Retatrutide be stored after delivery?",
         a: "Lyophilised Retatrutide should be stored sealed at −20°C in a dry, light-protected environment. Once reconstituted with bacteriostatic water for laboratory work, store the working solution refrigerated at 2–8°C and minimise freeze-thaw cycles. Handle exclusively under laboratory conditions in line with standard COSHH guidance.",
       },
+      {
+        q: "How does Retatrutide differ from Tirzepatide as a research reference?",
+        a: "Retatrutide (LY3437943) is a balanced triple agonist at the GIP, GLP-1, and glucagon receptors, whereas Tirzepatide (LY3298176) is a dual GIP/GLP-1 agonist with no glucagon-receptor activity. In comparative in-vitro receptor-pharmacology assays, Retatrutide enables researchers to isolate the glucagon-receptor contribution that Tirzepatide lacks — for example in hepatocyte-lipid-metabolism experiments. Both are supplied by PH Labs as ≥99% HPLC-verified analytical reference standards with batch CoA for in-vitro research only.",
+      },
+      {
+        q: "Is Retatrutide 10 mg available for UK research orders?",
+        a: "Yes. PH Labs supplies Retatrutide UK in 10 mg lyophilised vials as well as 20 mg. Both share the same HPLC-verified batch and ship with the matched Certificate of Analysis. Orders are dispatched within one business day via tracked UK courier. Supplied as analytical reference material for in-vitro laboratory use only — not for human consumption.",
+      },
+      {
+        q: "How is Retatrutide shipped within the UK and is packaging discreet?",
+        a: "Retatrutide UK orders are dispatched within one business day in temperature-stable, plain outer packaging via tracked UK courier — typically delivered next business day. Vials ship sealed under inert headspace with the batch-matched HPLC CoA enclosed. Free UK shipping is included on orders over £50. Supplied to laboratory and research customers only.",
+      },
     ],
   },
+
+
 
   // "tirzepatide peptides uk" 210/mo currently #37
   // Semrush UK typo cluster: ~600/mo combined, near-zero competition
