@@ -420,17 +420,17 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             type Side = "A" | "B";
             const buildEntry = (v: DualEntryVariant, side: Side): string => {
               const isA = side === "A";
-              const title = isA ? v.titleA : v.titleB;
+              const title = sanitiseFeedText(isA ? v.titleA : v.titleB);
               const link = `${BASE_URL}${isA ? v.linkA : v.linkB}`;
               const offerId = `${v.phlCode}${isA ? "A" : "B"}`;
               const sku = offerId;
               const mpn = offerId;
-              const categoryId = isA ? CATEGORY_A_ID : CATEGORY_B_ID;
-              const categoryPath = isA ? CATEGORY_A_PATH : CATEGORY_B_PATH;
-              const productType = isA ? "Peptides" : "Research Peptides";
+              // Both entries use Biochemicals (6975) per spec.
+              const categoryId = CATEGORY_A_ID;
+              void CATEGORY_B_ID; void CATEGORY_A_PATH; void CATEGORY_B_PATH;
+              const productType = "Research Materials";
               const customLabel = isA ? "mkt" : "sku";
-              const description = isA ? descriptionA : descriptionB;
-              const highlights = isA ? highlightsA : highlightsB;
+              const description = buildDescription(v.cas);
 
               return [
                 `  <item>`,
@@ -465,8 +465,8 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
                 `      <g:tax_ship>no</g:tax_ship>`,
                 `    </g:tax>`,
                 `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
-                ...highlights.map(
-                  (h) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
+                ...HIGHLIGHTS.map(
+                  (h: string) => `    <g:product_highlight>${xmlEscape(h)}</g:product_highlight>`,
                 ),
                 `    <g:custom_label_0>${xmlEscape(customLabel)}</g:custom_label_0>`,
                 v.sizeLabel ? `    <g:unit_pricing_measure>${xmlEscape(v.sizeLabel.replace(/\s+/g, ""))}</g:unit_pricing_measure>` : null,
