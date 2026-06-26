@@ -13,10 +13,12 @@ import { Link } from "@tanstack/react-router";
  * Dismissal persists in localStorage for 7 days.
  */
 
-const PROMO_CODE = "LAB10";
-const PROMO_HEADLINE = "10% off your first research order";
-const PROMO_SUB = "Use code at checkout · min spend £20";
-const DISMISS_KEY = "phl_landing_promo_dismissed_v1";
+const PROMO_CODES = [
+  { code: "SALE5", label: "5% off · min £20" },
+  { code: "SALE10", label: "10% off · min £80 · free 3ml vial case 🎁" },
+] as const;
+const PROMO_HEADLINE = "Launch promo — save on your research order";
+const DISMISS_KEY = "phl_landing_promo_dismissed_v2";
 const DISMISS_DAYS = 7;
 
 const STARTER_HREF = "/products/bacteriostatic-water-research-compound";
@@ -33,7 +35,7 @@ interface Props {
 
 export function LandingPromoStrip({ theme = "dark" }: Props) {
   const [hidden, setHidden] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -60,11 +62,11 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
     }
   }
 
-  async function copy() {
+  async function copy(code: string) {
     try {
-      await navigator.clipboard.writeText(PROMO_CODE);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      window.setTimeout(() => setCopiedCode(null), 1800);
     } catch {
       /* ignore */
     }
@@ -92,16 +94,20 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[12px] sm:text-[13px]">
         <span className="font-medium tracking-wide">{PROMO_HEADLINE}</span>
         <span className="opacity-70 hidden sm:inline">·</span>
-        <button
-          type="button"
-          onClick={copy}
-          aria-label={`Copy promo code ${PROMO_CODE}`}
-          className={`inline-flex items-center gap-2 rounded-md border px-2.5 py-1 font-mono text-[12px] tracking-[0.18em] uppercase transition-colors ${codeBox}`}
-        >
-          {PROMO_CODE}
-          <span className="text-[10px] opacity-80">{copied ? "Copied" : "Copy"}</span>
-        </button>
-        <span className="opacity-70 hidden sm:inline">{PROMO_SUB}</span>
+        {PROMO_CODES.map(({ code, label }) => (
+          <span key={code} className="inline-flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => copy(code)}
+              aria-label={`Copy promo code ${code}`}
+              className={`inline-flex items-center gap-2 rounded-md border px-2.5 py-1 font-mono text-[12px] tracking-[0.18em] uppercase transition-colors ${codeBox}`}
+            >
+              {code}
+              <span className="text-[10px] opacity-80">{copiedCode === code ? "Copied" : "Copy"}</span>
+            </button>
+            <span className="opacity-70 text-[11px] sm:text-[12px]">{label}</span>
+          </span>
+        ))}
         <Link
           to={STARTER_HREF}
           className={`inline-flex items-center rounded-full px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] font-medium transition-colors ${cta}`}
