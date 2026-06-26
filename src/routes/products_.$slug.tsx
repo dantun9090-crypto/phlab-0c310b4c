@@ -9,6 +9,7 @@ import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
 import { RESEARCH_CONTENT } from "@/lib/research-content";
 import { resolveSlugFromId } from "@/lib/product-id-slug-map";
 import { DUAL_ENTRY_ALIASES } from "@/lib/merchant-dual-entries";
+import { PRODUCT_SEO_OVERRIDES } from "@/lib/product-seo-overrides";
 
 const OG_IMAGE_FALLBACK = `${SITE_URL}/og-image.jpg`;
 
@@ -96,14 +97,20 @@ export const Route = createFileRoute("/products_/$slug")({
   head: ({ params, loaderData }) => {
     const product = loaderData?.product;
     const name = product?.name ?? params.slug;
-    // Prefer Firestore-managed seoTitle / seoDescription. Fall back to
-    // a generated title/description so older docs without SEO fields
-    // still render compliant tags.
+    // Resolution order:
+    //   1. PRODUCT_SEO_OVERRIDES — hand-tuned, keyword-led, ≤60/≤160 chars
+    //      for high-value UK target queries (Semrush-derived).
+    //   2. Firestore-managed seoTitle / seoDescription.
+    //   3. Generated fallback so older docs without SEO fields still ship
+    //      compliant tags.
+    const override = product?.slug ? PRODUCT_SEO_OVERRIDES[product.slug] : undefined;
     const rawTitle =
+      override?.title ||
       product?.seoTitle?.trim() ||
       `${name} — Research Grade | PH Labs`;
     const title = clamp(rawTitle, SEO_LIMITS.titleMax);
     const baseDesc =
+      override?.description ||
       product?.seoDescription?.trim() ||
       product?.description ||
       `${name}: HPLC-verified research peptide from PH Labs UK.`;
