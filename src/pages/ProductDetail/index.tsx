@@ -593,7 +593,11 @@ export default function ProductDetail() {
     };
 
     setMeta('description', metaDesc);
-    setMeta('keywords', `buy ${product.name} UK, ${product.name} research peptide, ${product.name} HPLC, research peptides UK, PH Labs`);
+    const misspellings = seoOverride?.misspellings ?? [];
+    const misspellTokens = misspellings.length
+      ? misspellings.map((m) => `${m} uk`).join(', ') + ', '
+      : '';
+    setMeta('keywords', `buy ${product.name} UK, ${product.name} research peptide, ${product.name} HPLC, ${misspellTokens}research peptides UK, PH Labs`);
 
     // Open Graph
     setMeta('og:title', `${visibleProductName} | PH Labs`, true);
