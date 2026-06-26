@@ -119,28 +119,67 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
       "GLOW research peptide blend UK. HPLC-verified components with batch CoA. For laboratory research only — not for human consumption.",
   },
 
+  // "mots c peptide uk" 110/mo · KD 48
+  // Semrush UK typo cluster: ~3k/mo combined (mots-c 3.6k, mots c 1.3k, mot c 880)
   "mots-c-research-peptide": {
     title: "MOTS-c UK — Mitochondrial Research Peptide | PH Labs",
     description:
       "MOTS-c UK research peptide. HPLC ≥99% purity, batch CoA included. For in-vitro laboratory research only — not for human consumption.",
+    misspellings: [
+      "mots c",
+      "mots-c",
+      "mot c",
+      "mot-c",
+      "motc",
+      "motsc",
+      "mot-c peptide",
+    ],
   },
 
+  // "kpv peptide uk" 90/mo · KD 12 — very easy win
+  // Semrush UK typo cluster: ~1.3k/mo combined (kpv 720, k.p.v 320, k p v 110)
   "kpv-research-peptide": {
     title: "KPV Tripeptide UK — Research Peptide | PH Labs",
     description:
       "KPV tripeptide UK research reagent. HPLC ≥99% purity, batch CoA included. For laboratory research only — not for human consumption.",
+    misspellings: [
+      "kpv",
+      "k.p.v",
+      "k p v",
+      "kpv peptide",
+    ],
   },
 
+  // "pt 141 uk" 210/mo · KD 53
+  // Semrush UK typo cluster: ~2.6k/mo combined (pt141 1.3k, pt 141 peptide 1k)
   "pt-141-research-peptide": {
     title: "PT-141 UK — Bremelanotide Research Peptide | PH Labs",
     description:
       "PT-141 (bremelanotide) UK research peptide. HPLC ≥99% purity, batch CoA. For laboratory research only — not for human consumption.",
+    misspellings: [
+      "pt141",
+      "pt 141",
+      "pt-141 peptide",
+      "pt141 peptide",
+      "bremelanotide",
+      "pt 141 uk",
+    ],
   },
 
+  // "melanotan 2" 4,400/mo · KD 63
+  // Semrush UK typo cluster: ~6.5k/mo combined (mt2 3.6k, melanotan 2.9k)
   "melanotan-2-research-peptide": {
     title: "Melanotan-II UK — Research Peptide, HPLC + CoA | PH Labs",
     description:
       "Melanotan-II UK research peptide. HPLC ≥99% purity, batch CoA included. For laboratory research only — not for human consumption.",
+    misspellings: [
+      "melanotan",
+      "melanotan 2",
+      "mt2",
+      "melanatan",
+      "melanton",
+      "melanotan ii",
+    ],
   },
 
   // "nad+ uk" / "nad plus uk" — Semrush UK: ~2.4k/mo combined, near-zero competition
