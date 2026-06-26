@@ -369,8 +369,8 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           <blockquote className="mt-12 display text-2xl sm:text-3xl md:text-[2.75rem] font-light leading-[1.35] text-white">
             <span className="gold-text text-5xl leading-none">“</span>
             All products are intended exclusively for laboratory and scientific
-            research purposes. They are not intended for human consumption,
-            medical use, or any therapeutic applications.
+            research purposes. They are not intended for human use or for any
+            non-research application.
             <span className="gold-text text-5xl leading-none">”</span>
           </blockquote>
           <div className="mx-auto mt-12 h-px w-16 gold-bg" />
@@ -513,17 +513,17 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
               <p className="mt-4 text-sm sm:text-base leading-[1.7] text-white/90">
                 All products supplied by PH Labs are intended strictly for
                 laboratory and scientific research use only.{" "}
-                <span className="gold-text font-medium">Not for human consumption,</span>{" "}
-                medical, veterinary or therapeutic application.
+                <span className="gold-text font-medium">Not for human use</span>{" "}
+                or for any non-research application.
               </p>
             </div>
 
             <h2 className="mt-14 display text-[1.75rem] sm:text-[2rem] font-light text-white">Legal Disclaimer</h2>
             <p className="mt-8 text-sm sm:text-[15px] leading-[1.8] text-white/65">
               All products offered on this website are intended solely for
-              laboratory research and scientific purposes. They are not intended
-              for human consumption, medical diagnosis, treatment, or any
-              therapeutic use. Products are sold exclusively to qualified
+              laboratory research and scientific purposes. They are not
+              intended for human use or for any non-research application.
+              Products are sold exclusively to qualified
               researchers, scientific professionals, academic institutions and
               commercial laboratories. By accessing this website or purchasing
               any product, you confirm that you are a qualified researcher or

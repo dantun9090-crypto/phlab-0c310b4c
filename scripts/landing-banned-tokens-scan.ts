@@ -41,8 +41,11 @@ const BANNED: RegExp[] = [
   /\bHGH\b/i, /\bSomatropin\b/i, /\bIGF[-\s]?1\b/i,
   /\bGLOW\s+Blend\b/i, /\bKLOW\s+Blend\b/i,
   // Forbidden medical/Ads-policy verbs
-  /\bweight[-\s]?loss\b/i, /\bcures?\b/i, /\btreats?\b/i,
-  /\bdosage\b/i, /\binjectable\b/i,
+  /\bweight[-\s]?loss\b/i, /\bcures?\b/i, /\btreats?\b/i, /\btreatment\b/i,
+  /\bdosage\b/i, /\binjectable\b/i, /\btherapeutic\b/i, /\btherapy\b/i,
+  /\bdiagnos(?:is|e|tic)\b/i, /\bprescription\b/i, /\bdisease\b/i,
+  /\bpatient\b/i, /\banti[-\s]?aging\b/i, /\bmuscle\s+growth\b/i,
+  /\bdiabetes\b/i, /\bcancer\b/i,
 ];
 
 let failed = 0;
