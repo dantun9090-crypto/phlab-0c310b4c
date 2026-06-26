@@ -112,6 +112,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           ...productEntries,
           ...fallbackProductEntries,
           ...articleEntries,
+          ...programmaticEntries,
         ].filter((e) => {
           if (seen.has(e.path)) return false;
           if (!isIndexable(e.path)) return false;
