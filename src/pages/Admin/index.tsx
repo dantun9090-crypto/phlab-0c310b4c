@@ -57,6 +57,7 @@ import AIAssistantTab from './tabs/AIAssistantTab';
 import ShopifyTab from './tabs/ShopifyTab';
 import SemrushTab from './tabs/SemrushTab';
 import SEOOpportunitiesTab from './tabs/SEOOpportunitiesTab';
+import BacklinkOutreachTab from './tabs/BacklinkOutreachTab';
 import CacheRecacheTab from './tabs/CacheRecacheTab';
 import UrlMonitorTab from './tabs/UrlMonitorTab';
 import RoyalMailTab from './tabs/RoyalMailTab';
