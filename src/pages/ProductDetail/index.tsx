@@ -21,6 +21,7 @@ import { markPrerenderPending, flipPrerenderReadyWhen } from '@/lib/prerender-re
 import { sanitizeLab, sanitizeLabClamp } from '@/lib/lab-sanitize';
 import { PRODUCT_SEO_OVERRIDES } from '@/lib/product-seo-overrides';
 import { getDualEntryAliasInfo } from '@/lib/merchant-dual-entries';
+import { PRODUCT_ID_TO_SLUG } from '@/lib/product-id-slug-map';
 
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
@@ -206,6 +207,10 @@ const toStringArray = (value: unknown): string[] => {
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+function knownDocIdForSlug(slug: string): string | null {
+  return Object.entries(PRODUCT_ID_TO_SLUG).find(([, mappedSlug]) => mappedSlug === slug)?.[0] ?? null;
+}
+
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -317,7 +322,7 @@ export default function ProductDetail() {
           //    instead of falling through to "Page Not Available" for GMC.
           const merchantAlias = getDualEntryAliasInfo(id);
           if (merchantAlias) {
-            const aliasOverrideDocId = SLUG_TO_DOC_ID[merchantAlias.canonicalSlug];
+            const aliasOverrideDocId = SLUG_TO_DOC_ID[merchantAlias.canonicalSlug] || knownDocIdForSlug(merchantAlias.canonicalSlug);
             if (aliasOverrideDocId) {
               const aliasOverrideDoc = await getDocFromServer(doc(db, 'product_stock', aliasOverrideDocId));
               if (aliasOverrideDoc.exists()) productDoc = aliasOverrideDoc;
