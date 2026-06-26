@@ -33,17 +33,36 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
   },
 
   // "tirzepatide peptides uk" 210/mo currently #37
+  // Semrush UK typo cluster: ~600/mo combined, near-zero competition
   "tirzepatide-research-peptide": {
     title: "Tirzepatide UK — Research Peptide, HPLC + CoA | PH Labs",
     description:
       "Tirzepatide UK research peptide. HPLC-verified ≥99% purity, batch CoA included. For laboratory research only — not for human consumption.",
+    misspellings: [
+      "tirzepetide",
+      "tirzepatid",
+      "tirzepatyde",
+      "tirzeptide",
+      "tirzapatide",
+      "terzepatide",
+      "tirz peptide",
+    ],
   },
 
   // "bpc 157 uk" 2,900/mo · KD 13 — easy win
+  // Semrush UK typo cluster: ~450/mo combined
   "bpc-157": {
     title: "BPC-157 UK — Research Peptide, HPLC + CoA | PH Labs",
     description:
       "BPC-157 UK research peptide. HPLC-tested ≥99% purity, batch Certificate of Analysis. For laboratory research only — not for human consumption.",
+    misspellings: [
+      "bpc157",
+      "bpc 157",
+      "bcp-157",
+      "bpc-175",
+      "bpc peptide",
+      "pbc-157",
+    ],
   },
 
   // "tb 500 uk" 90/mo · KD 10; "tb labs" 110/mo currently #23
