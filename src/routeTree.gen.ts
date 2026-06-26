@@ -28,6 +28,7 @@ import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as MarketingCompoundRouteImport } from './routes/_marketing.compound'
 import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wallid'
+import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
@@ -151,6 +152,11 @@ const MarketingCompoundRoute = MarketingCompoundRouteImport.update({
 const ApiWebhooksWallidRoute = ApiWebhooksWallidRouteImport.update({
   id: '/api/webhooks/wallid',
   path: '/api/webhooks/wallid',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicWebVitalsRoute = ApiPublicWebVitalsRouteImport.update({
+  id: '/api/public/web-vitals',
+  path: '/api/public/web-vitals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicSendMailRoute = ApiPublicSendMailRouteImport.update({
@@ -337,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
@@ -385,6 +392,7 @@ export interface FileRoutesByTo {
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
@@ -435,6 +443,7 @@ export interface FileRoutesById {
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
@@ -485,6 +494,7 @@ export interface FileRouteTypes {
     | '/api/public/img'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
+    | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/fena'
@@ -533,6 +543,7 @@ export interface FileRouteTypes {
     | '/api/public/img'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
+    | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/fena'
@@ -582,6 +593,7 @@ export interface FileRouteTypes {
     | '/api/public/img'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
+    | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/fena'
@@ -631,6 +643,7 @@ export interface RootRouteChildren {
   ApiPublicImgRoute: typeof ApiPublicImgRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
+  ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
   ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
   ApiPublicHooksBacklinkWatcherRoute: typeof ApiPublicHooksBacklinkWatcherRoute
   ApiPublicHooksFenaRoute: typeof ApiPublicHooksFenaRoute
@@ -783,6 +796,13 @@ declare module '@tanstack/react-router' {
       path: '/api/webhooks/wallid'
       fullPath: '/api/webhooks/wallid'
       preLoaderRoute: typeof ApiWebhooksWallidRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/web-vitals': {
+      id: '/api/public/web-vitals'
+      path: '/api/public/web-vitals'
+      fullPath: '/api/public/web-vitals'
+      preLoaderRoute: typeof ApiPublicWebVitalsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/send-mail': {
@@ -1026,6 +1046,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicImgRoute: ApiPublicImgRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
+  ApiPublicWebVitalsRoute: ApiPublicWebVitalsRoute,
   ApiWebhooksWallidRoute: ApiWebhooksWallidRoute,
   ApiPublicHooksBacklinkWatcherRoute: ApiPublicHooksBacklinkWatcherRoute,
   ApiPublicHooksFenaRoute: ApiPublicHooksFenaRoute,
