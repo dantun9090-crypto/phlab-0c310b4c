@@ -18,7 +18,7 @@ const FAQS = [
   },
   {
     q: "Are these products intended for human use?",
-    a: "No. All materials are intended exclusively for laboratory and scientific research purposes. They are not intended for human consumption, medical use, or any therapeutic applications.",
+    a: "No. All materials are intended exclusively for laboratory and scientific research purposes. They are not intended for human use or for any non-research application.",
   },
   {
     q: "What documentation is supplied?",
