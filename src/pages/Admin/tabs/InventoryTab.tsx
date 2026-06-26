@@ -10,6 +10,7 @@ import {
 } from '@/lib/firebase';
 
 import { ProductEditor } from '@/components/ProductEditor';
+import { submitToIndexNow } from '@/lib/indexnow.functions';
 
 const LOW_STOCK_THRESHOLD = 10;
 
