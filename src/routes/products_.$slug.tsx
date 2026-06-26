@@ -79,7 +79,7 @@ export const Route = createFileRoute("/products_/$slug")({
             statusCode: 301,
           });
         }
-        return { product, matchedBy: "slug" as const };
+        return { product, matchedBy: "slug" as const, aliasInfo: null };
       }
       throw notFound();
     }
@@ -91,13 +91,13 @@ export const Route = createFileRoute("/products_/$slug")({
     const mappedSlug = resolveSlugFromId(raw);
     if (mappedSlug) {
       const product = await fetchProductBySlugFn({ data: { slug: mappedSlug } });
-      if (product) return { product, matchedBy: "id" as const };
+      if (product) return { product, matchedBy: "id" as const, aliasInfo: null };
     }
 
     // 3) Fallback: live Firestore lookup for IDs not yet in the static map.
     try {
       const product = await fetchProductByIdFn({ data: { id: raw } });
-      if (product) return { product, matchedBy: "id" as const };
+      if (product) return { product, matchedBy: "id" as const, aliasInfo: null };
     } catch {
       // swallow lookup errors and fall through to notFound
     }
