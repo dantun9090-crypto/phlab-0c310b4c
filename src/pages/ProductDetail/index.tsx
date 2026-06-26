@@ -792,7 +792,13 @@ export default function ProductDetail() {
     const variantList = (product.variants ?? []).map(v => v.name).filter(Boolean).join(', ');
     const variantSentence = variantList ? ` Available concentrations: ${variantList}.` : '';
 
+    // Per-slug keyword-targeted FAQs (Semrush-driven) prepended to capture
+    // striking-distance long-tail queries (e.g. "retatrutide uk buy").
+    const overrideFaqsRaw = seoOverride?.faqs ?? [];
+    const overrideFaqs = overrideFaqsRaw.map(f => ({ question: f.q, answer: f.a }));
+
     const faqItems = [
+      ...overrideFaqs,
       {
         question: `What is ${product.name} and what is it used for in research?`,
         answer: `${product.name} is a research-grade peptide compound used${categoryContext} for in-vitro and preclinical laboratory studies. It is supplied exclusively for scientific research purposes and is not approved for human or veterinary therapeutic use. PH Labs supplies ${product.name} with ${purityForFaq} purity, verified by HPLC and mass spectrometry, to support reproducible laboratory results.`
