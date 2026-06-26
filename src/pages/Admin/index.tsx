@@ -39,6 +39,7 @@ import FreeGiftTab from './tabs/FreeGiftTab';
 import DiagnosticsTab from './tabs/DiagnosticsTab';
 import PrerenderStatusTab from './tabs/PrerenderStatusTab';
 import GSCMonitorTab from './tabs/GSCMonitorTab';
+import MarketingCoverageTab from './tabs/MarketingCoverageTab';
 import MerchantFeedTab from './tabs/MerchantFeedTab';
 import BingFeedTab from './tabs/BingFeedTab';
 import AuthEventsTab from './tabs/AuthEventsTab';
