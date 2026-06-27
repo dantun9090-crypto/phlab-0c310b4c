@@ -175,6 +175,36 @@ export default function PrivacyRequestsTab() {
     }
   };
 
+  /**
+   * Create a sample DSR row so admins can confirm the UI + Firestore write
+   * round-trip without waiting on a real public submission. Writes under the
+   * regular client SDK so rules and the security shape are exercised.
+   */
+  const createSample = async () => {
+    setSampleBusy(true);
+    try {
+      const types: RequestType[] = ['access', 'rectification', 'deletion', 'portability', 'objection', 'restriction'];
+      const t = types[Math.floor(Math.random() * types.length)];
+      const stamp = Date.now().toString(36).toUpperCase();
+      await addDoc(collection(db, 'dsrRequests'), {
+        type: t,
+        email: `sample+${stamp.toLowerCase()}@phlabs.co.uk`,
+        fullName: `Sample Requester ${stamp}`,
+        details: `Synthetic ${TYPE_LABEL[t]} request generated from Admin → Privacy Requests at ${new Date().toISOString()}. Safe to delete via Erase PII.`,
+        status: 'pending',
+        createdAt: Timestamp.now(),
+        source: 'admin-sample',
+      });
+    } catch (e) {
+      setWriteErrors(n => n + 1);
+      alert(`Sample write failed: ${(e as Error).message}`);
+    } finally {
+      setSampleBusy(false);
+    }
+  };
+
+  const handleRefresh = () => setRefreshNonce(n => n + 1);
+
   return (
     <div className="p-6 max-w-6xl space-y-5">
       <header className="flex items-center gap-3">
