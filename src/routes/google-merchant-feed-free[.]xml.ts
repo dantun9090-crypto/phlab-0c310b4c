@@ -32,6 +32,7 @@ const LEGACY_HOST = "prohealthpeptides.co.uk";
 const LEGACY_BASE_URL = `https://${LEGACY_HOST}`;
 const BRAND = "PH Labs";
 const CURRENCY = "GBP";
+const FEED_REVISION = "prohealth-approved-shape-v2-20260627";
 
 // Hard block — never list (active pharma trial / disapproved molecules).
 const HARD_BLOCKED_NAMES = ["tirzepatide", "semaglutide"];
@@ -237,6 +238,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
 
         const xml = [
           `<?xml version="1.0" encoding="UTF-8"?>`,
+          `<!-- ${FEED_REVISION}: approved-format feed rendered live for ${linkBase} at ${generatedAt} -->`,
           `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`,
           `  <channel>`,
           `    <title>${xmlEscape(`${BRAND} UK — Laboratory Reference Standards`)}</title>`,
@@ -257,7 +259,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
             "Surrogate-Control": "no-store",
             "X-Feed-Items": String(eligible.length),
             "X-Feed-Type": "free-listings-only",
-            "X-Feed-Revision": "free-approved-shape-v1",
+            "X-Feed-Revision": FEED_REVISION,
             "X-Feed-Generated-At": generatedAt,
           },
         });
