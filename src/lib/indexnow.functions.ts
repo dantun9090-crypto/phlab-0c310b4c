@@ -64,6 +64,7 @@ export const submitToIndexNow = createServerFn({ method: 'POST' })
 
     let status = 0;
     let respText = '';
+    let retryAfterHeader: string | null = null;
     try {
       const res = await fetch(ENDPOINT, {
         method: 'POST',
@@ -74,6 +75,7 @@ export const submitToIndexNow = createServerFn({ method: 'POST' })
         body: JSON.stringify(body),
       });
       status = res.status;
+      retryAfterHeader = res.headers.get('retry-after');
       respText = await res.text().catch(() => '');
     } catch (e) {
       return {
@@ -98,10 +100,29 @@ export const submitToIndexNow = createServerFn({ method: 'POST' })
       429: 'Too many requests — slow down',
     };
 
+    // Parse Retry-After header per RFC 7231: either delta-seconds or HTTP-date.
+    let retryAfterMs: number | undefined;
+    if (status === 429) {
+      const fallback = 60_000; // 60s default if header is missing/invalid
+      if (retryAfterHeader) {
+        const asInt = Number(retryAfterHeader);
+        if (Number.isFinite(asInt) && asInt > 0) {
+          retryAfterMs = Math.min(asInt, 3600) * 1000;
+        } else {
+          const asDate = Date.parse(retryAfterHeader);
+          if (!Number.isNaN(asDate)) {
+            retryAfterMs = Math.max(1000, Math.min(3_600_000, asDate - Date.now()));
+          }
+        }
+      }
+      if (!retryAfterMs) retryAfterMs = fallback;
+    }
+
     return {
       ok,
       status,
       submitted: ok ? urlList.length : 0,
       message: messages[status] ?? `HTTP ${status}${respText ? ` — ${respText.slice(0, 200)}` : ''}`,
+      retryAfterMs,
     };
   });
