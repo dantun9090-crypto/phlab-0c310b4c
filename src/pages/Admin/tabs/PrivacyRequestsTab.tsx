@@ -12,12 +12,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { db, auth } from '@/lib/firebase';
 import {
-  collection, query, orderBy, limit, onSnapshot, Timestamp,
+  collection, query, orderBy, limit, onSnapshot, Timestamp, addDoc,
 } from 'firebase/firestore';
 import {
   ShieldCheck, Loader2, Download, Trash2, XCircle, MessageSquare,
-  Mail, Clock, Filter, AlertCircle, CheckCircle2,
+  Mail, Clock, Filter, AlertCircle, CheckCircle2, FlaskConical,
 } from 'lucide-react';
+import HealthMetrics from '@/components/admin/HealthMetrics';
 
 type Status = 'pending' | 'in_progress' | 'waiting_user' | 'completed' | 'rejected';
 type RequestType = 'access' | 'rectification' | 'deletion' | 'portability' | 'objection' | 'restriction';
