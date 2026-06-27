@@ -162,8 +162,9 @@ async function realPush(c: Campaign) {
     'developer-token': process.env.GOOGLE_ADS_DEVELOPER_TOKEN!,
     'Content-Type': 'application/json',
   };
-  if (process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID) {
-    headers['login-customer-id'] = process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID.replace(/-/g, '');
+  const mccId = process.env.GOOGLE_ADS_MCC_CUSTOMER_ID || process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID;
+  if (mccId) {
+    headers['login-customer-id'] = mccId.replace(/-/g, '');
   }
 
   const res = await fetch(`${API_BASE}/customers/${cid}/googleAds:mutate`, {
