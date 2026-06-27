@@ -29,7 +29,7 @@ function micros(gbp: number): string {
 
 /** Build all mutate operations for one campaign. Pure — used in dry-run too. */
 function buildOperations(c: Campaign) {
-  const ops: unknown[] = [];
+  const ops: Record<string, unknown>[] = [];
 
   // 1. Budget
   const budgetRef = '-1';
