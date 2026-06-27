@@ -81,6 +81,21 @@ async function proxyToMain(request, url) {
 
   const upstream = await fetch(target.toString(), init);
   const headers = hardenHeaders(upstream.headers);
+  const contentType = (headers.get("content-type") || "").toLowerCase();
+
+  // Rewrite phlabs.co.uk → prohealthpeptides.co.uk in all text payloads so
+  // Google sees a fully isolated domain: distinct canonicals, og:url,
+  // hreflang, sitemap <loc>, JSON-LD URLs, feed links, robots Sitemap line.
+  // Without this rewrite Google folds the legacy host into phlabs.co.uk as
+  // a duplicate and refuses to index it independently.
+  const isTextual =
+    contentType.includes("text/html") ||
+    contentType.includes("xml") ||
+    contentType.includes("json") ||
+    contentType.includes("text/plain") ||
+    url.pathname === "/robots.txt" ||
+    url.pathname === "/sitemap.xml" ||
+    url.pathname.endsWith(".xml");
 
   if (url.pathname === "/google-merchant-feed-free.xml") {
     const xml = await upstream.text();
@@ -94,10 +109,21 @@ async function proxyToMain(request, url) {
     });
   }
 
-  if ((headers.get("content-type") || "").includes("text/html")) {
-    // Avoid pinning an HTML shell on the legacy host while the domain is being
-    // set up and reviewed in Merchant Center.
-    noStore(headers);
+  if (isTextual) {
+    let body = await upstream.text();
+    body = body
+      .replaceAll(`https://www.${new URL(MAIN_ORIGIN).hostname}`, LEGACY_ORIGIN)
+      .replaceAll(MAIN_ORIGIN, LEGACY_ORIGIN)
+      .replaceAll(`//${new URL(MAIN_ORIGIN).hostname}`, `//${LEGACY_HOST}`);
+    headers.set("x-prohealth-rewrite", "1");
+    if (contentType.includes("text/html")) noStore(headers);
+    // content-length will be stale after rewrite
+    headers.delete("content-length");
+    return new Response(body, {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      headers,
+    });
   }
 
   return new Response(upstream.body, {
