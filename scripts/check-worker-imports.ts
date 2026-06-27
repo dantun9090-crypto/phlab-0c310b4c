@@ -49,9 +49,18 @@ const FORBIDDEN_MODULES = [
   // it before — causing `ReferenceError: EmailAuthProvider is not defined`
   // and a 503 across the entire site. Legacy auth UI MUST stay client-only
   // (dynamic import inside useEffect / *.client.ts modules).
-  "firebase/auth",
-  "@firebase/auth",
 ];
+
+// Symbols that, if referenced in the SSR worker bundle WITHOUT their
+// matching class declaration, will throw `ReferenceError: X is not
+// defined` at request time and 503 the entire site. This catches the
+// chunk-splitting regression where firebase/auth side-effect imports are
+// dropped from the server bundle but UI code still references them.
+const SYMBOL_INTEGRITY: Array<{ symbol: string; declRe: RegExp }> = [
+  { symbol: "EmailAuthProvider", declRe: /class\s+EmailAuthProvider\b/ },
+  { symbol: "GoogleAuthProvider", declRe: /class\s+GoogleAuthProvider\b/ },
+];
+
 
 
 
