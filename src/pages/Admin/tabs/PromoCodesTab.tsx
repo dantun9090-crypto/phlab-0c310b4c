@@ -25,6 +25,19 @@ const emptyDraft: Draft = {
   description: '',
 };
 
+/** Tolerant date coercion — coupons in the wild may store expiryDate as Timestamp, Date, ISO string, ms number, or {seconds}. */
+function toDateSafe(v: any): Date | null {
+  if (!v) return null;
+  try {
+    if (typeof v?.toDate === 'function') return v.toDate();
+    if (v instanceof Date) return v;
+    if (typeof v === 'number') return new Date(v);
+    if (typeof v === 'string') { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
+    if (typeof v === 'object' && typeof v.seconds === 'number') return new Date(v.seconds * 1000);
+  } catch { /* noop */ }
+  return null;
+}
+
 export default function PromoCodesTab() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,7 +68,7 @@ export default function PromoCodesTab() {
       code: c.code,
       type: c.type,
       value: c.value,
-      expiryDate: c.expiryDate?.toDate().toISOString().slice(0, 10) || emptyDraft.expiryDate,
+      expiryDate: (toDateSafe(c.expiryDate)?.toISOString().slice(0, 10)) || emptyDraft.expiryDate,
       maxUses: c.maxUses ?? c.maxUsage,
       minOrderValue: c.minOrderValue,
       isActive: c.isActive,
@@ -287,7 +300,8 @@ export default function PromoCodesTab() {
                 {coupons.map(c => {
                   const used = c.usedCount ?? c.usageCount ?? 0;
                   const max = c.maxUses ?? c.maxUsage;
-                  const expired = c.expiryDate?.toDate() < new Date();
+                  const expDate = toDateSafe(c.expiryDate);
+                  const expired = expDate ? expDate < new Date() : false;
                   return (
                     <tr key={c.id} className="hover:bg-white/[0.02]">
                       <td className="px-4 py-3">
@@ -298,7 +312,7 @@ export default function PromoCodesTab() {
                       <td className="px-4 py-3 text-emerald-400 font-semibold">{formatValue(c)}</td>
                       <td className="px-4 py-3 text-gray-300">{used}{max ? ` / ${max}` : ''}</td>
                       <td className={`px-4 py-3 ${expired ? 'text-red-400' : 'text-gray-300'}`}>
-                        {c.expiryDate?.toDate().toLocaleDateString('en-GB')}
+                        {expDate ? expDate.toLocaleDateString('en-GB') : '—'}
                         {expired && <span className="ml-1 text-xs">(expired)</span>}
                       </td>
                       <td className="px-4 py-3">

@@ -110,7 +110,7 @@ export default function VisitorsTab() {
           where('createdAt', '>=', Timestamp.fromMillis(fromMs)),
           where('createdAt', '<=', Timestamp.fromMillis(toMs)),
           orderBy('createdAt', 'desc'),
-          limit(20_000),
+          limit(10_000),
         );
         const snap = await getDocs(q);
         if (cancelled) return;
@@ -165,7 +165,7 @@ export default function VisitorsTab() {
             search: sessionSearch || null,
             cursor: currentCursor,
             pageSize: sessionPageSize,
-            maxEvents: 20_000,
+            maxEvents: 10_000,
           },
         });
         if (cancelled) return;
