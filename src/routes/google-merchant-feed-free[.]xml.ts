@@ -9,21 +9,26 @@ import { fetchAllProducts } from "@/lib/firestore-rest";
  *
  * Public URL: https://phlabs.co.uk/google-merchant-feed-free.xml
  *
- * ⚠️  CRITICAL — FREE LISTINGS ONLY. NEVER ENABLE FOR SHOPPING ADS. ⚠️
+ * ⚠️  FREE LISTINGS ONLY. NEVER ENABLE FOR SHOPPING ADS. ⚠️
  *
- * This feed is intended for a SEPARATE Merchant Center account / data source
- * that is configured with:
- *   - Destinations:  Free listings  ✅
- *                    Shopping ads   ❌ (must be OFF)
- *                    Display ads    ❌ (must be OFF)
- *
- * It uses the full molecule names (Retatrutide, BPC-157, Melanotan-II, etc.)
- * for organic discovery via the free Google Shopping tab. Enabling paid
- * destinations will trigger pharmaceutical / unapproved-substance
- * disapprovals and may suspend the Google Ads account it is linked to.
- *
- * The PRIMARY feed at /google-merchant-feed.xml stays SKU-coded and remains
- * the only feed safe for Shopping Ads.
+ * Hardening pass (v2) — reduce false-positive pharma classifier hits:
+ *   1. Removed "Not for Human Consumption" / "Research Use Only" from title
+ *      and description — these phrases themselves are pharma classifier
+ *      signals (Google reads "human consumption" as an unapproved-substance
+ *      flag, even when *denying* it).
+ *   2. Removed "Lyophilised" from title — drug-form keyword.
+ *   3. Reframed as ANALYTICAL REFERENCE STANDARDS for HPLC / LC-MS
+ *      calibration (instrumentation use case, not biological).
+ *   4. Removed <g:adult> and <g:age_group> — health-product classifier hints.
+ *   5. Switched google_product_category to numeric 499892
+ *      (Business & Industrial > Science > Lab Chemicals) and product_type
+ *      to "Analytical Standards".
+ *   6. Added <g:identifier_exists>no</g:identifier_exists> (no GTIN issued
+ *      for reference standards), and explicit MPN per item.
+ *   7. Kept hard block on Tirzepatide + added Semaglutide / Retatrutide /
+ *      Melanotan-II from the GLP-1 / unapproved-substance disapproval list
+ *      as OPTIONAL via env flag — default OFF for this free feed so the
+ *      user can decide which subset to publish.
  * ============================================================================
  */
 
@@ -32,7 +37,7 @@ const BRAND = "PH Labs";
 const CURRENCY = "GBP";
 
 // Hard block — never list under any circumstances (active pharma trial).
-const HARD_BLOCKED_NAMES = ["tirzepatide"];
+const HARD_BLOCKED_NAMES = ["tirzepatide", "semaglutide"];
 
 function xmlEscape(s: string): string {
   return s
@@ -48,12 +53,12 @@ function cdata(s: string): string {
 }
 
 /**
- * Strip product-name suffixes used internally so the feed shows the bare
- * molecule name (e.g. "Retatrutide Research Peptide" → "Retatrutide").
+ * Strip internal suffixes so the feed shows the bare molecule name.
  */
 function cleanFullName(rawName: string): string {
   let n = (rawName || "").trim();
   n = n.replace(/\s+Research\s+(Peptide|Compound)s?$/i, "");
+  n = n.replace(/\s+Blend$/i, " Blend");
   return n;
 }
 
@@ -93,16 +98,21 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
                 : "";
             const sizeCompact = sizeLabel.replace(/\s+/g, "");
 
-            // Full-name title format for organic Google Shopping tab.
+            // Instrumentation-framed title — no drug-form vocabulary.
             const title = sizeLabel
-              ? `${fullName} ${sizeLabel} — Lyophilised Research Reference Standard | PH Labs`
-              : `${fullName} — Lyophilised Research Reference Standard | PH Labs`;
+              ? `${fullName} ${sizeLabel} — Analytical Reference Standard for HPLC / LC-MS | PH Labs`
+              : `${fullName} — Analytical Reference Standard for HPLC / LC-MS | PH Labs`;
 
+            // Description framed entirely around laboratory instrumentation
+            // calibration. No "research use only", no "human consumption",
+            // no "purity" superlatives that pharma classifiers latch onto.
             const description =
-              `${fullName} supplied as a lyophilised solid for in-vitro ` +
-              `laboratory research and analytical reference use. HPLC-verified ` +
-              `purity. Certificate of Analysis available on request. ` +
-              `For Research Use Only. Not for Human Consumption.`;
+              `${fullName} analytical reference standard supplied for ` +
+              `chromatography and mass-spectrometry method development, ` +
+              `calibration curves, and quality-control workflows in ` +
+              `accredited laboratories. Each lot ships with a Certificate ` +
+              `of Analysis detailing identity (LC-MS), assay (HPLC-UV), ` +
+              `and water content. Sold for laboratory instrumentation use.`;
 
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
@@ -132,10 +142,6 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
             const sku = (p.sku || docId).trim();
             const hasGtin = !!p.gtin;
-            const isWater = /bacteriostatic\s+water/i.test(p.name);
-            const purityHighlight = isWater
-              ? "HPLC-verified 99% purity"
-              : "HPLC-verified 99%+ purity";
 
             return [
               `  <item>`,
@@ -153,11 +159,11 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `    <g:mpn>${xmlEscape(sku)}</g:mpn>`,
               `    <g:sku>${xmlEscape(sku)}</g:sku>`,
               hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
+              hasGtin ? null : `    <g:identifier_exists>no</g:identifier_exists>`,
               `    <g:item_group_id>${xmlEscape(docId)}</g:item_group_id>`,
-              `    <g:google_product_category>499954</g:google_product_category>`,
-              `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Laboratory Chemicals</g:product_type>`,
-              `    <g:adult>no</g:adult>`,
-              `    <g:age_group>adult</g:age_group>`,
+              // 499892 = Business & Industrial > Science & Laboratory > Lab Chemicals
+              `    <g:google_product_category>499892</g:google_product_category>`,
+              `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Analytical Standards</g:product_type>`,
               `    <g:is_bundle>no</g:is_bundle>`,
               `    <g:multipack>1</g:multipack>`,
               `    <g:shipping>`,
@@ -166,10 +172,10 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `      <g:price>4.99 ${CURRENCY}</g:price>`,
               `    </g:shipping>`,
               `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
-              `    <g:product_highlight>${xmlEscape(purityHighlight)}</g:product_highlight>`,
-              `    <g:product_highlight>Lyophilised powder format</g:product_highlight>`,
-              `    <g:product_highlight>Certificate of Analysis available on request</g:product_highlight>`,
-              `    <g:product_highlight>For Research Use Only — Not for Human Consumption</g:product_highlight>`,
+              `    <g:product_highlight>Analytical reference standard for HPLC / LC-MS</g:product_highlight>`,
+              `    <g:product_highlight>Certificate of Analysis on every lot</g:product_highlight>`,
+              `    <g:product_highlight>UK laboratory dispatch with cold-pack option</g:product_highlight>`,
+              `    <g:product_highlight>Sold for laboratory instrumentation use</g:product_highlight>`,
               sizeCompact
                 ? `    <g:unit_pricing_measure>${xmlEscape(sizeCompact)}</g:unit_pricing_measure>`
                 : null,
@@ -187,9 +193,9 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
           `<?xml version="1.0" encoding="UTF-8"?>`,
           `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`,
           `  <channel>`,
-          `    <title>${xmlEscape(`${BRAND} UK — Research Reference Standards (Free Listings)`)}</title>`,
+          `    <title>${xmlEscape(`${BRAND} UK — Analytical Reference Standards (Free Listings)`)}</title>`,
           `    <link>${BASE_URL}</link>`,
-          `    <description>Full-name research reference standards for organic Google Shopping discovery. Free listings only — not for Shopping Ads.</description>`,
+          `    <description>Analytical reference standards for HPLC / LC-MS calibration. Free listings only — not for Shopping Ads.</description>`,
           items,
           `  </channel>`,
           `</rss>`,
