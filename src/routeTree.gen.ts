@@ -34,6 +34,7 @@ import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as IndexnowKeyDottxtRouteImport } from './routes/$indexnowKey[.]txt'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ResearchIndexRouteImport } from './routes/research.index'
 import { Route as ResearchRetatrutideUkRouteImport } from './routes/research.retatrutide-uk'
 import { Route as ResearchBpc157UkRouteImport } from './routes/research.bpc-157-uk'
 import { Route as ProductsSlugRouteImport } from './routes/products_.$slug'
@@ -202,6 +203,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ResearchIndexRoute = ResearchIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ResearchRoute,
 } as any)
 const ResearchRetatrutideUkRoute = ResearchRetatrutideUkRouteImport.update({
   id: '/retatrutide-uk',
@@ -465,6 +471,7 @@ export interface FileRoutesByFullPath {
   '/products/$slug': typeof ProductsSlugRoute
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
+  '/research/': typeof ResearchIndexRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
@@ -514,7 +521,6 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsRoute
   '/quality-control': typeof QualityControlRoute
   '/refund-policy': typeof RefundPolicyRoute
-  '/research': typeof ResearchRouteWithChildren
   '/resources': typeof ResourcesRoute
   '/search': typeof SearchRoute
   '/shipping-policy': typeof ShippingPolicyRoute
@@ -533,6 +539,7 @@ export interface FileRoutesByTo {
   '/products/$slug': typeof ProductsSlugRoute
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
+  '/research': typeof ResearchIndexRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
@@ -603,6 +610,7 @@ export interface FileRoutesById {
   '/products_/$slug': typeof ProductsSlugRoute
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
+  '/research/': typeof ResearchIndexRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
@@ -673,6 +681,7 @@ export interface FileRouteTypes {
     | '/products/$slug'
     | '/research/bpc-157-uk'
     | '/research/retatrutide-uk'
+    | '/research/'
     | '/api/config/payments'
     | '/api/dsr/process'
     | '/api/payments/cancel'
@@ -722,7 +731,6 @@ export interface FileRouteTypes {
     | '/products'
     | '/quality-control'
     | '/refund-policy'
-    | '/research'
     | '/resources'
     | '/search'
     | '/shipping-policy'
@@ -741,6 +749,7 @@ export interface FileRouteTypes {
     | '/products/$slug'
     | '/research/bpc-157-uk'
     | '/research/retatrutide-uk'
+    | '/research'
     | '/api/config/payments'
     | '/api/dsr/process'
     | '/api/payments/cancel'
@@ -810,6 +819,7 @@ export interface FileRouteTypes {
     | '/products_/$slug'
     | '/research/bpc-157-uk'
     | '/research/retatrutide-uk'
+    | '/research/'
     | '/api/config/payments'
     | '/api/dsr/process'
     | '/api/payments/cancel'
@@ -1085,6 +1095,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/research/': {
+      id: '/research/'
+      path: '/'
+      fullPath: '/research/'
+      preLoaderRoute: typeof ResearchIndexRouteImport
+      parentRoute: typeof ResearchRoute
     }
     '/research/retatrutide-uk': {
       id: '/research/retatrutide-uk'
@@ -1398,11 +1415,13 @@ const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
 interface ResearchRouteChildren {
   ResearchBpc157UkRoute: typeof ResearchBpc157UkRoute
   ResearchRetatrutideUkRoute: typeof ResearchRetatrutideUkRoute
+  ResearchIndexRoute: typeof ResearchIndexRoute
 }
 
 const ResearchRouteChildren: ResearchRouteChildren = {
   ResearchBpc157UkRoute: ResearchBpc157UkRoute,
   ResearchRetatrutideUkRoute: ResearchRetatrutideUkRoute,
+  ResearchIndexRoute: ResearchIndexRoute,
 }
 
 const ResearchRouteWithChildren = ResearchRoute._addFileChildren(
