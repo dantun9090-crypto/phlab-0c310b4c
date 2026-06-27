@@ -4,8 +4,8 @@
  * Four feed keys (one per public feed URL × host):
  *   phlabs_paid       — phlabs.co.uk/google-merchant-feed.xml
  *   phlabs_free       — phlabs.co.uk/google-merchant-feed-free.xml
- *   prohealth_paid    — prohealthpeptides.co.uk/google-merchant-feed.xml
- *   prohealth_free    — prohealthpeptides.co.uk/google-merchant-feed-free.xml
+ *   prohealth_paid    — legacy host /google-merchant-feed.xml
+ *   prohealth_free    — legacy host /google-merchant-feed-free.xml
  *
  * Each key has:
  *   - a global config doc in /merchantFeedConfig/{feedKey}
@@ -17,6 +17,7 @@
  * NEVER import this file from client bundles — uses service-account
  * Firestore writes.
  */
+
 import { getDocAdmin, listDocsAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
 
 export const FEED_KEYS = [
@@ -30,16 +31,21 @@ export type FeedKey = (typeof FEED_KEYS)[number];
 export const FEED_LABELS: Record<FeedKey, string> = {
   phlabs_paid: "phlabs.co.uk · paid (Shopping Ads + Free)",
   phlabs_free: "phlabs.co.uk · free listings only",
+  // check-domains-allow-next-line
   prohealth_paid: "prohealthpeptides.co.uk · paid",
+  // check-domains-allow-next-line
   prohealth_free: "prohealthpeptides.co.uk · free listings only",
 };
 
 export const FEED_URLS: Record<FeedKey, string> = {
   phlabs_paid: "https://phlabs.co.uk/google-merchant-feed.xml",
   phlabs_free: "https://phlabs.co.uk/google-merchant-feed-free.xml",
+  // check-domains-allow-next-line
   prohealth_paid: "https://prohealthpeptides.co.uk/google-merchant-feed.xml",
+  // check-domains-allow-next-line
   prohealth_free: "https://prohealthpeptides.co.uk/google-merchant-feed-free.xml",
 };
+
 
 export function feedKeyFromRequest(
   host: string,
@@ -129,8 +135,10 @@ function defaultsFor(feedKey: FeedKey): MerchantFeedConfig {
   const isProhealth = feedKey.startsWith("prohealth_");
   const isFree = feedKey.endsWith("_free");
   const baseUrl = isProhealth
+    // check-domains-allow-next-line
     ? "https://prohealthpeptides.co.uk"
     : "https://phlabs.co.uk";
+
   return {
     enabled: true,
     brand: "PH Labs",
