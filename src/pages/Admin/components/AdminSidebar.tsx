@@ -44,12 +44,14 @@ const navGroups = [
       { id: 'cartevents', label: 'Cart Events', icon: ShoppingCart },
       { id: 'invoices', label: 'Invoices', icon: FileText },
       { id: 'payments', label: 'Payment Gateways', icon: CreditCard },
+      { id: 'fena', label: 'Fena Payments', icon: CreditCard },
       { id: 'wallidpreview', label: 'Wallid Preview', icon: Eye },
       { id: 'wallidbadges', label: 'Wallid Badges', icon: Eye },
       { id: 'wallidbanks', label: 'Wallid Banks', icon: Package2 },
-      
+
       { id: 'shopify', label: 'Shopify', icon: ShoppingBag },
       { id: 'royalmail', label: 'Royal Mail Labels', icon: Package2 },
+
 
 
 
@@ -71,6 +73,7 @@ const navGroups = [
       { id: 'promocodes', label: 'Promo Codes', icon: Tag },
       { id: 'freegift', label: 'Free Gift Promo', icon: Gift },
       { id: 'emailmarketing', label: 'Email Campaigns', icon: Mail },
+      { id: 'googleads', label: 'Google Ads Campaigns', icon: Megaphone },
       { id: 'emailpreview', label: 'Email Preview', icon: Eye },
     ],
   },
@@ -101,6 +104,7 @@ const navGroups = [
       { id: 'backlinkchanges', label: 'Backlink Changes', icon: Activity },
       { id: 'internallinks', label: 'Internal Links', icon: Activity },
       { id: 'webvitals', label: 'Web Vitals', icon: Activity },
+      { id: 'researchincidents', label: 'Research Incidents', icon: FlaskConical },
     ],
   },
 
