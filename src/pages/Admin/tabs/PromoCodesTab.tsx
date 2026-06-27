@@ -300,7 +300,8 @@ export default function PromoCodesTab() {
                 {coupons.map(c => {
                   const used = c.usedCount ?? c.usageCount ?? 0;
                   const max = c.maxUses ?? c.maxUsage;
-                  const expired = c.expiryDate?.toDate() < new Date();
+                  const expDate = toDateSafe(c.expiryDate);
+                  const expired = expDate ? expDate < new Date() : false;
                   return (
                     <tr key={c.id} className="hover:bg-white/[0.02]">
                       <td className="px-4 py-3">
@@ -311,7 +312,7 @@ export default function PromoCodesTab() {
                       <td className="px-4 py-3 text-emerald-400 font-semibold">{formatValue(c)}</td>
                       <td className="px-4 py-3 text-gray-300">{used}{max ? ` / ${max}` : ''}</td>
                       <td className={`px-4 py-3 ${expired ? 'text-red-400' : 'text-gray-300'}`}>
-                        {c.expiryDate?.toDate().toLocaleDateString('en-GB')}
+                        {expDate ? expDate.toLocaleDateString('en-GB') : '—'}
                         {expired && <span className="ml-1 text-xs">(expired)</span>}
                       </td>
                       <td className="px-4 py-3">
