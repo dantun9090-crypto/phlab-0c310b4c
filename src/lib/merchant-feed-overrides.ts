@@ -135,8 +135,10 @@ function defaultsFor(feedKey: FeedKey): MerchantFeedConfig {
   const isProhealth = feedKey.startsWith("prohealth_");
   const isFree = feedKey.endsWith("_free");
   const baseUrl = isProhealth
+    // check-domains-allow-next-line
     ? "https://prohealthpeptides.co.uk"
     : "https://phlabs.co.uk";
+
   return {
     enabled: true,
     brand: "PH Labs",
