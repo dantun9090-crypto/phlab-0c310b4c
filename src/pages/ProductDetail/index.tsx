@@ -1283,6 +1283,7 @@ export default function ProductDetail() {
                   </div>
 
                   {/* Trustpilot link — legacy ProHealthPeptides reviews */}
+                  {/* check-domains-allow-next-line */}
                   <a
                     href="https://uk.trustpilot.com/review/www.prohealthpeptides.co.uk"
                     target="_blank"
