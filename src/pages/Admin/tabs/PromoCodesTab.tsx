@@ -25,6 +25,19 @@ const emptyDraft: Draft = {
   description: '',
 };
 
+/** Tolerant date coercion — coupons in the wild may store expiryDate as Timestamp, Date, ISO string, ms number, or {seconds}. */
+function toDateSafe(v: any): Date | null {
+  if (!v) return null;
+  try {
+    if (typeof v?.toDate === 'function') return v.toDate();
+    if (v instanceof Date) return v;
+    if (typeof v === 'number') return new Date(v);
+    if (typeof v === 'string') { const d = new Date(v); return isNaN(d.getTime()) ? null : d; }
+    if (typeof v === 'object' && typeof v.seconds === 'number') return new Date(v.seconds * 1000);
+  } catch { /* noop */ }
+  return null;
+}
+
 export default function PromoCodesTab() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
