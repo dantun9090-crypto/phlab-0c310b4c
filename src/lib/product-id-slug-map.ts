@@ -45,7 +45,6 @@ export const PRODUCT_ID_TO_SLUG: Record<string, string> = {
   "PHL-02M": "melanotan-ii-research-peptide",
   "PHL-RP02": "melanotan-ii-research-peptide",
   "MT-2RP2": "melanotan-ii-research-peptide",
-  "PHL-RP09": "bpc-157",
   "BPC-157RP9": "bpc-157",
   "PHL-BW9": "bacteriostatic-water-research-compound",
   "PHL-KW5": "klow-blend",
