@@ -11,6 +11,8 @@ interface SubmitResult {
   status: number;
   submitted: number;
   message: string;
+  /** Milliseconds the caller should wait before retrying (set when status === 429). */
+  retryAfterMs?: number;
 }
 
 /** Validate URLs belong to our host (IndexNow rejects mismatched hosts with 422). */
