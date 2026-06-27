@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { collection, getDocs, orderBy, query, Timestamp, db, createCoupon, updateCoupon, deleteCoupon } from '@/lib/firebase';
 import type { Coupon } from '@/lib/firebase';
 import { Plus, Edit2, Trash2, X, Tag, Loader2 } from 'lucide-react';
@@ -53,7 +54,9 @@ export default function PromoCodesTab() {
       const snap = await getDocs(query(collection(db, 'coupons'), orderBy('createdAt', 'desc')));
       setCoupons(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Coupon));
     } catch (e: any) {
-      setError(e.message || 'Failed to load coupons');
+      const msg = e?.message || 'Failed to load coupons';
+      setError(msg);
+      toast.error('Could not load promo codes', { description: msg });
     } finally {
       setLoading(false);
     }
@@ -80,8 +83,16 @@ export default function PromoCodesTab() {
   };
 
   const handleSave = async () => {
-    if (!draft.code.trim()) { setError('Code is required'); return; }
-    if (draft.type !== 'free_shipping' && (!draft.value || draft.value <= 0)) { setError('Value must be > 0'); return; }
+    if (!draft.code.trim()) {
+      setError('Code is required');
+      toast.error('Code is required', { description: 'Enter a promo code identifier before saving.' });
+      return;
+    }
+    if (draft.type !== 'free_shipping' && (!draft.value || draft.value <= 0)) {
+      setError('Value must be > 0');
+      toast.error('Invalid value', { description: 'Discount value must be greater than zero.' });
+      return;
+    }
     setSaving(true);
     setError('');
     try {
@@ -98,14 +109,18 @@ export default function PromoCodesTab() {
 
       if (editingId) {
         await updateCoupon(editingId, payload);
+        toast.success('Promo code updated', { description: payload.code });
       } else {
         await createCoupon(payload);
+        toast.success('Promo code created', { description: payload.code });
       }
       setShowForm(false);
       setEditingId(null);
       await load();
     } catch (e: any) {
-      setError(e.message || 'Save failed');
+      const msg = e?.message || 'Save failed';
+      setError(msg);
+      toast.error('Could not save promo code', { description: msg });
     } finally {
       setSaving(false);
     }
@@ -115,18 +130,24 @@ export default function PromoCodesTab() {
     if (!confirm('Delete this promo code?')) return;
     try {
       await deleteCoupon(id);
+      toast.success('Promo code deleted');
       await load();
     } catch (e: any) {
-      setError(e.message || 'Delete failed');
+      const msg = e?.message || 'Delete failed';
+      setError(msg);
+      toast.error('Could not delete promo code', { description: msg });
     }
   };
 
   const handleToggleActive = async (c: Coupon) => {
     try {
       await updateCoupon(c.id, { isActive: !c.isActive });
+      toast.success(`Promo code ${!c.isActive ? 'activated' : 'paused'}`, { description: c.code });
       await load();
     } catch (e: any) {
-      setError(e.message || 'Update failed');
+      const msg = e?.message || 'Update failed';
+      setError(msg);
+      toast.error('Could not update promo code', { description: msg });
     }
   };
 

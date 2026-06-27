@@ -14,6 +14,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Skeleton } from '@/components/ui/skeleton';
 import { listVisitorSessions, type VisitorSessionRow, type SessionCursor } from '@/lib/visitor-sessions.functions';
 
+/** Firestore hard cap on `limit()` for a single structured query. Anything
+ *  larger throws `Limit value over maximum 10000`. Used by both the local
+ *  events fetch and the `maxEvents` arg sent to the cursor-paginated server fn
+ *  so paging totals never diverge.  */
+export const FIRESTORE_MAX_LIMIT = 10_000 as const;
+
+
 
 type VisitorEvent = {
   id: string;
@@ -105,12 +112,16 @@ export default function VisitorsTab() {
     setLoading(true); setErr(null);
     (async () => {
       try {
+        // Firestore caps `limit()` at 10_000 for a single structured query —
+        // setting anything larger throws `Limit value over maximum 10000`.
+        // Keep this aligned with FIRESTORE_MAX_LIMIT below and `maxEvents` in the
+        // server fetch so paging stays consistent and we never truncate silently.
         const q = query(
           collection(db, 'visitor_events'),
           where('createdAt', '>=', Timestamp.fromMillis(fromMs)),
           where('createdAt', '<=', Timestamp.fromMillis(toMs)),
           orderBy('createdAt', 'desc'),
-          limit(10_000),
+          limit(FIRESTORE_MAX_LIMIT),
         );
         const snap = await getDocs(q);
         if (cancelled) return;
@@ -165,7 +176,7 @@ export default function VisitorsTab() {
             search: sessionSearch || null,
             cursor: currentCursor,
             pageSize: sessionPageSize,
-            maxEvents: 10_000,
+            maxEvents: FIRESTORE_MAX_LIMIT,
           },
         });
         if (cancelled) return;
