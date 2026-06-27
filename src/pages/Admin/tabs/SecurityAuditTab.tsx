@@ -153,6 +153,7 @@ const BASELINE: Check[] = [
     id: 'cf-canonical-domain',
     category: 'Cloudflare',
     title: 'Canonical + legacy host routing',
+    // check-domains-allow-next-line
     description: 'phlabs.co.uk remains canonical. prohealthpeptides.co.uk is isolated via a Cloudflare legacy proxy for GMC Free Listings; www.prohealthpeptides.co.uk redirects only to its own apex, never to phlabs.co.uk.',
     severity: 'high',
     status: 'pass',

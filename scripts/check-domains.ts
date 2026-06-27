@@ -26,6 +26,7 @@ const IGNORE_DIRS = new Set([
   ".next",
   "coverage",
   ".lovable",
+  "cloudflare",
 ]);
 
 // Plik samego skryptu jest pomijany, bo z definicji zawiera te stringi.
