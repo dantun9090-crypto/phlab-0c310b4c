@@ -35,6 +35,23 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
   const scan = useMemo(() => scanCampaign(campaign), [campaign]);
   const csvs = useMemo(() => buildAdsEditorCsvs(campaign), [campaign]);
   const [showKeywords, setShowKeywords] = useState(false);
+  const [pushing, setPushing] = useState(false);
+  const [pushResult, setPushResult] = useState<Record<string, unknown> | null>(null);
+  const pushFn = useServerFn(pushCampaignToGoogleAds);
+
+  async function handlePush(dryRun: boolean) {
+    if (!dryRun && !confirm(`LIVE push to Google Ads: create "${campaign.name}" (PAUSED) in your account?`)) return;
+    setPushing(true);
+    setPushResult(null);
+    try {
+      const r = await pushFn({ data: { campaignId: campaign.id, dryRun } });
+      setPushResult(r as Record<string, unknown>);
+    } catch (e) {
+      setPushResult({ ok: false, error: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setPushing(false);
+    }
+  }
 
   const totalKeywords = campaign.adGroups.reduce((s, a) => s + a.keywords.length, 0);
   const totalHeadlines = campaign.adGroups.reduce((s, a) => s + a.headlines.length, 0);
