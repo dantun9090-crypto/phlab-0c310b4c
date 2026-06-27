@@ -57,6 +57,16 @@ jobs:
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
         continue-on-error: true
 
+      - name: Verify every sitemap URL returns 200
+        id: prodroutes
+        env:
+          BASE: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+        run: |
+          set +e
+          node scripts/check-prod-routes.mjs | tee prod-routes.log
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
       - name: Annotate summary
         if: always()
         run: |
@@ -103,5 +113,5 @@ jobs:
             });
 
       - name: Fail job on regression
-        if: steps.regression.outputs.exit_code != '0'
+        if: steps.regression.outputs.exit_code != '0' || steps.prodroutes.outputs.exit_code != '0'
         run: exit 1

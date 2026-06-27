@@ -43,7 +43,26 @@ const FORBIDDEN_MODULES = [
   "bcrypt", // native; use bcryptjs / Web Crypto instead
   "sqlite3",
   "better-sqlite3",
+  // firebase/auth pulls EmailAuthProvider, GoogleAuthProvider, etc. that
+  // assume a browser environment (window, IndexedDB). When chunk-splitting
+  // shifts which file owns the import, the SSR bundle has silently shipped
+  // it before — causing `ReferenceError: EmailAuthProvider is not defined`
+  // and a 503 across the entire site. Legacy auth UI MUST stay client-only
+  // (dynamic import inside useEffect / *.client.ts modules).
 ];
+
+// Symbols that, if referenced in the SSR worker bundle WITHOUT their
+// matching class declaration, will throw `ReferenceError: X is not
+// defined` at request time and 503 the entire site. This catches the
+// chunk-splitting regression where firebase/auth side-effect imports are
+// dropped from the server bundle but UI code still references them.
+const SYMBOL_INTEGRITY: Array<{ symbol: string; declRe: RegExp }> = [
+  { symbol: "EmailAuthProvider", declRe: /class\s+EmailAuthProvider\b/ },
+  { symbol: "GoogleAuthProvider", declRe: /class\s+GoogleAuthProvider\b/ },
+];
+
+
+
 
 // Code patterns that almost always indicate Node-only assumptions.
 // Each entry is matched against the bundled source as a literal substring
@@ -132,6 +151,24 @@ function main() {
           sample: snippet(body, idx),
         });
       }
+    }
+  }
+
+  // Symbol-integrity pass: any referenced symbol from SYMBOL_INTEGRITY
+  // that is NOT declared in the same bundle file will throw a
+  // ReferenceError on first request. We treat that as a hard failure.
+  const bodies = files.map((f) => ({ f, body: readFileSync(f, "utf8") }));
+  for (const { symbol, declRe } of SYMBOL_INTEGRITY) {
+    const referenced = bodies.some(({ body }) =>
+      new RegExp(`\\b${symbol}\\b`).test(body),
+    );
+    const declared = bodies.some(({ body }) => declRe.test(body));
+    if (referenced && !declared) {
+      hits.push({
+        file: "dist/server/**",
+        rule: `references "${symbol}" but its class declaration is missing — chunk-split lost firebase/auth side-effect. Keep auth UI in *.client.ts / dynamic import only.`,
+        sample: `referenced=true declared=false`,
+      });
     }
   }
 
