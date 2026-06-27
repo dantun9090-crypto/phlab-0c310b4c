@@ -3,6 +3,7 @@ import heroImg from "@/assets/lab-luxury-hero.jpg";
 import detailImg from "@/assets/lab-luxury-detail.jpg";
 import wideImg from "@/assets/lab-luxury-wide.jpg";
 import { LandingPromoStrip } from "@/components/LandingPromoStrip";
+import { LandingTrustStrip } from "@/components/LandingTrustStrip";
 
 /**
  * /landing/phlabs — Moser-inspired editorial luxury layout.
@@ -13,6 +14,7 @@ export function EditorialLanding({ eyebrow }: { eyebrow?: string }) {
   return (
     <main className="min-h-screen bg-[#f7f6f3] text-neutral-900 antialiased selection:bg-[#b08a3e] selection:text-white">
       <LandingPromoStrip theme="light" />
+      <LandingTrustStrip theme="light" />
       <style>{`
         @keyframes edRise {
           0% { opacity: 0; transform: translateY(36px) skewY(2deg); filter: blur(6px); }
