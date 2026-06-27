@@ -9,12 +9,27 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
+import { Route as StorageGuideRouteImport } from './routes/storage-guide'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ShippingPolicyRouteImport } from './routes/shipping-policy'
+import { Route as SearchRouteImport } from './routes/search'
+import { Route as ResourcesRouteImport } from './routes/resources'
+import { Route as ResearchRouteImport } from './routes/research'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
+import { Route as QualityControlRouteImport } from './routes/quality-control'
 import { Route as ProductsRouteImport } from './routes/products'
+import { Route as PrivacyRequestsRouteImport } from './routes/privacy-requests'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as LabReportsRouteImport } from './routes/lab-reports'
+import { Route as InstallRouteImport } from './routes/install'
 import { Route as GoogleMerchantFeedDotxmlRouteImport } from './routes/google-merchant-feed[.]xml'
 import { Route as GoogleMerchantFeedFreeDotxmlRouteImport } from './routes/google-merchant-feed-free[.]xml'
 import { Route as GoogleAdsSafeFeedDotxmlRouteImport } from './routes/google-ads-safe-feed[.]xml'
+import { Route as CookiesRouteImport } from './routes/cookies'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BingFeedDotxmlRouteImport } from './routes/bing-feed[.]xml'
+import { Route as AboutRouteImport } from './routes/about'
 import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as IndexnowKeyDottxtRouteImport } from './routes/$indexnowKey[.]txt'
 import { Route as SplatRouteImport } from './routes/$'
@@ -62,14 +77,74 @@ import { Route as ApiPublicHooksFenaProcessRetriesRouteImport } from './routes/a
 import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hooks/fena'
 import { Route as ApiPublicHooksBacklinkWatcherRouteImport } from './routes/api/public/hooks/backlink-watcher'
 
+const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
+  id: '/terms-and-conditions',
+  path: '/terms-and-conditions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StorageGuideRoute = StorageGuideRouteImport.update({
+  id: '/storage-guide',
+  path: '/storage-guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShippingPolicyRoute = ShippingPolicyRouteImport.update({
+  id: '/shipping-policy',
+  path: '/shipping-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResearchRoute = ResearchRouteImport.update({
+  id: '/research',
+  path: '/research',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const QualityControlRoute = QualityControlRouteImport.update({
+  id: '/quality-control',
+  path: '/quality-control',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProductsRoute = ProductsRouteImport.update({
   id: '/products',
   path: '/products',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRequestsRoute = PrivacyRequestsRouteImport.update({
+  id: '/privacy-requests',
+  path: '/privacy-requests',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LabReportsRoute = LabReportsRouteImport.update({
+  id: '/lab-reports',
+  path: '/lab-reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InstallRoute = InstallRouteImport.update({
+  id: '/install',
+  path: '/install',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GoogleMerchantFeedDotxmlRoute =
@@ -89,9 +164,24 @@ const GoogleAdsSafeFeedDotxmlRoute = GoogleAdsSafeFeedDotxmlRouteImport.update({
   path: '/google-ads-safe-feed.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CookiesRoute = CookiesRouteImport.update({
+  id: '/cookies',
+  path: '/cookies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BingFeedDotxmlRoute = BingFeedDotxmlRouteImport.update({
   id: '/bing-feed.xml',
   path: '/bing-feed.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarketingRoute = MarketingRouteImport.update({
@@ -114,14 +204,14 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResearchRetatrutideUkRoute = ResearchRetatrutideUkRouteImport.update({
-  id: '/research/retatrutide-uk',
-  path: '/research/retatrutide-uk',
-  getParentRoute: () => rootRouteImport,
+  id: '/retatrutide-uk',
+  path: '/retatrutide-uk',
+  getParentRoute: () => ResearchRoute,
 } as any)
 const ResearchBpc157UkRoute = ResearchBpc157UkRouteImport.update({
-  id: '/research/bpc-157-uk',
-  path: '/research/bpc-157-uk',
-  getParentRoute: () => rootRouteImport,
+  id: '/bpc-157-uk',
+  path: '/bpc-157-uk',
+  getParentRoute: () => ResearchRoute,
 } as any)
 const ProductsSlugRoute = ProductsSlugRouteImport.update({
   id: '/products_/$slug',
@@ -342,12 +432,27 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/$indexnowKey.txt': typeof IndexnowKeyDottxtRoute
+  '/about': typeof AboutRoute
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
+  '/contact': typeof ContactRoute
+  '/cookies': typeof CookiesRoute
   '/google-ads-safe-feed.xml': typeof GoogleAdsSafeFeedDotxmlRoute
   '/google-merchant-feed-free.xml': typeof GoogleMerchantFeedFreeDotxmlRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
+  '/install': typeof InstallRoute
+  '/lab-reports': typeof LabReportsRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/privacy-requests': typeof PrivacyRequestsRoute
   '/products': typeof ProductsRoute
+  '/quality-control': typeof QualityControlRoute
+  '/refund-policy': typeof RefundPolicyRoute
+  '/research': typeof ResearchRouteWithChildren
+  '/resources': typeof ResourcesRoute
+  '/search': typeof SearchRoute
+  '/shipping-policy': typeof ShippingPolicyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/storage-guide': typeof StorageGuideRoute
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/compound': typeof MarketingCompoundRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
@@ -395,12 +500,27 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/$indexnowKey.txt': typeof IndexnowKeyDottxtRoute
+  '/about': typeof AboutRoute
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
+  '/contact': typeof ContactRoute
+  '/cookies': typeof CookiesRoute
   '/google-ads-safe-feed.xml': typeof GoogleAdsSafeFeedDotxmlRoute
   '/google-merchant-feed-free.xml': typeof GoogleMerchantFeedFreeDotxmlRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
+  '/install': typeof InstallRoute
+  '/lab-reports': typeof LabReportsRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/privacy-requests': typeof PrivacyRequestsRoute
   '/products': typeof ProductsRoute
+  '/quality-control': typeof QualityControlRoute
+  '/refund-policy': typeof RefundPolicyRoute
+  '/research': typeof ResearchRouteWithChildren
+  '/resources': typeof ResourcesRoute
+  '/search': typeof SearchRoute
+  '/shipping-policy': typeof ShippingPolicyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/storage-guide': typeof StorageGuideRoute
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/compound': typeof MarketingCompoundRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
@@ -450,12 +570,27 @@ export interface FileRoutesById {
   '/$': typeof SplatRoute
   '/$indexnowKey.txt': typeof IndexnowKeyDottxtRoute
   '/_marketing': typeof MarketingRouteWithChildren
+  '/about': typeof AboutRoute
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
+  '/contact': typeof ContactRoute
+  '/cookies': typeof CookiesRoute
   '/google-ads-safe-feed.xml': typeof GoogleAdsSafeFeedDotxmlRoute
   '/google-merchant-feed-free.xml': typeof GoogleMerchantFeedFreeDotxmlRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
+  '/install': typeof InstallRoute
+  '/lab-reports': typeof LabReportsRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/privacy-requests': typeof PrivacyRequestsRoute
   '/products': typeof ProductsRoute
+  '/quality-control': typeof QualityControlRoute
+  '/refund-policy': typeof RefundPolicyRoute
+  '/research': typeof ResearchRouteWithChildren
+  '/resources': typeof ResourcesRoute
+  '/search': typeof SearchRoute
+  '/shipping-policy': typeof ShippingPolicyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/storage-guide': typeof StorageGuideRoute
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/_marketing/compound': typeof MarketingCompoundRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
@@ -505,12 +640,27 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/$indexnowKey.txt'
+    | '/about'
     | '/bing-feed.xml'
+    | '/contact'
+    | '/cookies'
     | '/google-ads-safe-feed.xml'
     | '/google-merchant-feed-free.xml'
     | '/google-merchant-feed.xml'
+    | '/install'
+    | '/lab-reports'
+    | '/privacy-policy'
+    | '/privacy-requests'
     | '/products'
+    | '/quality-control'
+    | '/refund-policy'
+    | '/research'
+    | '/resources'
+    | '/search'
+    | '/shipping-policy'
     | '/sitemap.xml'
+    | '/storage-guide'
+    | '/terms-and-conditions'
     | '/compound'
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
@@ -558,12 +708,27 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/$indexnowKey.txt'
+    | '/about'
     | '/bing-feed.xml'
+    | '/contact'
+    | '/cookies'
     | '/google-ads-safe-feed.xml'
     | '/google-merchant-feed-free.xml'
     | '/google-merchant-feed.xml'
+    | '/install'
+    | '/lab-reports'
+    | '/privacy-policy'
+    | '/privacy-requests'
     | '/products'
+    | '/quality-control'
+    | '/refund-policy'
+    | '/research'
+    | '/resources'
+    | '/search'
+    | '/shipping-policy'
     | '/sitemap.xml'
+    | '/storage-guide'
+    | '/terms-and-conditions'
     | '/compound'
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
@@ -612,12 +777,27 @@ export interface FileRouteTypes {
     | '/$'
     | '/$indexnowKey.txt'
     | '/_marketing'
+    | '/about'
     | '/bing-feed.xml'
+    | '/contact'
+    | '/cookies'
     | '/google-ads-safe-feed.xml'
     | '/google-merchant-feed-free.xml'
     | '/google-merchant-feed.xml'
+    | '/install'
+    | '/lab-reports'
+    | '/privacy-policy'
+    | '/privacy-requests'
     | '/products'
+    | '/quality-control'
+    | '/refund-policy'
+    | '/research'
+    | '/resources'
+    | '/search'
+    | '/shipping-policy'
     | '/sitemap.xml'
+    | '/storage-guide'
+    | '/terms-and-conditions'
     | '/_marketing/compound'
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
@@ -667,12 +847,27 @@ export interface RootRouteChildren {
   SplatRoute: typeof SplatRoute
   IndexnowKeyDottxtRoute: typeof IndexnowKeyDottxtRoute
   MarketingRoute: typeof MarketingRouteWithChildren
+  AboutRoute: typeof AboutRoute
   BingFeedDotxmlRoute: typeof BingFeedDotxmlRoute
+  ContactRoute: typeof ContactRoute
+  CookiesRoute: typeof CookiesRoute
   GoogleAdsSafeFeedDotxmlRoute: typeof GoogleAdsSafeFeedDotxmlRoute
   GoogleMerchantFeedFreeDotxmlRoute: typeof GoogleMerchantFeedFreeDotxmlRoute
   GoogleMerchantFeedDotxmlRoute: typeof GoogleMerchantFeedDotxmlRoute
+  InstallRoute: typeof InstallRoute
+  LabReportsRoute: typeof LabReportsRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  PrivacyRequestsRoute: typeof PrivacyRequestsRoute
   ProductsRoute: typeof ProductsRoute
+  QualityControlRoute: typeof QualityControlRoute
+  RefundPolicyRoute: typeof RefundPolicyRoute
+  ResearchRoute: typeof ResearchRouteWithChildren
+  ResourcesRoute: typeof ResourcesRoute
+  SearchRoute: typeof SearchRoute
+  ShippingPolicyRoute: typeof ShippingPolicyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  StorageGuideRoute: typeof StorageGuideRoute
+  TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
   CheckoutCancelRoute: typeof CheckoutCancelRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
@@ -682,8 +877,6 @@ export interface RootRouteChildren {
   PaymentCancelRoute: typeof PaymentCancelRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
-  ResearchBpc157UkRoute: typeof ResearchBpc157UkRoute
-  ResearchRetatrutideUkRoute: typeof ResearchRetatrutideUkRoute
   ApiConfigPaymentsRoute: typeof ApiConfigPaymentsRoute
   ApiDsrProcessRoute: typeof ApiDsrProcessRoute
   ApiPaymentsCancelRoute: typeof ApiPaymentsCancelRoute
@@ -718,6 +911,20 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms-and-conditions': {
+      id: '/terms-and-conditions'
+      path: '/terms-and-conditions'
+      fullPath: '/terms-and-conditions'
+      preLoaderRoute: typeof TermsAndConditionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/storage-guide': {
+      id: '/storage-guide'
+      path: '/storage-guide'
+      fullPath: '/storage-guide'
+      preLoaderRoute: typeof StorageGuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -725,11 +932,81 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shipping-policy': {
+      id: '/shipping-policy'
+      path: '/shipping-policy'
+      fullPath: '/shipping-policy'
+      preLoaderRoute: typeof ShippingPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/research': {
+      id: '/research'
+      path: '/research'
+      fullPath: '/research'
+      preLoaderRoute: typeof ResearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/quality-control': {
+      id: '/quality-control'
+      path: '/quality-control'
+      fullPath: '/quality-control'
+      preLoaderRoute: typeof QualityControlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/products': {
       id: '/products'
       path: '/products'
       fullPath: '/products'
       preLoaderRoute: typeof ProductsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-requests': {
+      id: '/privacy-requests'
+      path: '/privacy-requests'
+      fullPath: '/privacy-requests'
+      preLoaderRoute: typeof PrivacyRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lab-reports': {
+      id: '/lab-reports'
+      path: '/lab-reports'
+      fullPath: '/lab-reports'
+      preLoaderRoute: typeof LabReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/install': {
+      id: '/install'
+      path: '/install'
+      fullPath: '/install'
+      preLoaderRoute: typeof InstallRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/google-merchant-feed.xml': {
@@ -753,11 +1030,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GoogleAdsSafeFeedDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cookies': {
+      id: '/cookies'
+      path: '/cookies'
+      fullPath: '/cookies'
+      preLoaderRoute: typeof CookiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bing-feed.xml': {
       id: '/bing-feed.xml'
       path: '/bing-feed.xml'
       fullPath: '/bing-feed.xml'
       preLoaderRoute: typeof BingFeedDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_marketing': {
@@ -790,17 +1088,17 @@ declare module '@tanstack/react-router' {
     }
     '/research/retatrutide-uk': {
       id: '/research/retatrutide-uk'
-      path: '/research/retatrutide-uk'
+      path: '/retatrutide-uk'
       fullPath: '/research/retatrutide-uk'
       preLoaderRoute: typeof ResearchRetatrutideUkRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ResearchRoute
     }
     '/research/bpc-157-uk': {
       id: '/research/bpc-157-uk'
-      path: '/research/bpc-157-uk'
+      path: '/bpc-157-uk'
       fullPath: '/research/bpc-157-uk'
       preLoaderRoute: typeof ResearchBpc157UkRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof ResearchRoute
     }
     '/products_/$slug': {
       id: '/products_/$slug'
@@ -1097,17 +1395,46 @@ const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
   MarketingRouteChildren,
 )
 
+interface ResearchRouteChildren {
+  ResearchBpc157UkRoute: typeof ResearchBpc157UkRoute
+  ResearchRetatrutideUkRoute: typeof ResearchRetatrutideUkRoute
+}
+
+const ResearchRouteChildren: ResearchRouteChildren = {
+  ResearchBpc157UkRoute: ResearchBpc157UkRoute,
+  ResearchRetatrutideUkRoute: ResearchRetatrutideUkRoute,
+}
+
+const ResearchRouteWithChildren = ResearchRoute._addFileChildren(
+  ResearchRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   IndexnowKeyDottxtRoute: IndexnowKeyDottxtRoute,
   MarketingRoute: MarketingRouteWithChildren,
+  AboutRoute: AboutRoute,
   BingFeedDotxmlRoute: BingFeedDotxmlRoute,
+  ContactRoute: ContactRoute,
+  CookiesRoute: CookiesRoute,
   GoogleAdsSafeFeedDotxmlRoute: GoogleAdsSafeFeedDotxmlRoute,
   GoogleMerchantFeedFreeDotxmlRoute: GoogleMerchantFeedFreeDotxmlRoute,
   GoogleMerchantFeedDotxmlRoute: GoogleMerchantFeedDotxmlRoute,
+  InstallRoute: InstallRoute,
+  LabReportsRoute: LabReportsRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
+  PrivacyRequestsRoute: PrivacyRequestsRoute,
   ProductsRoute: ProductsRoute,
+  QualityControlRoute: QualityControlRoute,
+  RefundPolicyRoute: RefundPolicyRoute,
+  ResearchRoute: ResearchRouteWithChildren,
+  ResourcesRoute: ResourcesRoute,
+  SearchRoute: SearchRoute,
+  ShippingPolicyRoute: ShippingPolicyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  StorageGuideRoute: StorageGuideRoute,
+  TermsAndConditionsRoute: TermsAndConditionsRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
   CheckoutCancelRoute: CheckoutCancelRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
@@ -1117,8 +1444,6 @@ const rootRouteChildren: RootRouteChildren = {
   PaymentCancelRoute: PaymentCancelRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ProductsSlugRoute: ProductsSlugRoute,
-  ResearchBpc157UkRoute: ResearchBpc157UkRoute,
-  ResearchRetatrutideUkRoute: ResearchRetatrutideUkRoute,
   ApiConfigPaymentsRoute: ApiConfigPaymentsRoute,
   ApiDsrProcessRoute: ApiDsrProcessRoute,
   ApiPaymentsCancelRoute: ApiPaymentsCancelRoute,
@@ -1153,3 +1478,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
