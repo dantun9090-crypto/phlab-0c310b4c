@@ -39,6 +39,42 @@ const CURRENCY = "GBP";
 // Hard block — never list under any circumstances (active pharma trial).
 const HARD_BLOCKED_NAMES = ["tirzepatide", "semaglutide"];
 
+// CAS lookup by molecule keyword (lowercase substring → CAS number).
+const CAS_BY_KEYWORD: Array<[string, string]> = [
+  ["retatrutide", "2381089-83-2"],
+  ["tirzepatide", "2023788-19-2"],
+  ["bpc-157", "137525-51-0"],
+  ["bpc157", "137525-51-0"],
+  ["kpv", "67727-97-3"],
+  ["ghk-cu", "89030-95-5"],
+  ["ghk cu", "89030-95-5"],
+  ["tb-500", "77591-33-4"],
+  ["tb500", "77591-33-4"],
+  ["mots-c", "1627580-64-6"],
+  ["mots c", "1627580-64-6"],
+  ["nad", "53-84-9"],
+  ["pt-141", "189691-06-3"],
+  ["pt141", "189691-06-3"],
+  ["melanotan", "121062-08-6"],
+  ["bacteriostatic", "100-51-6"],
+];
+
+function casFor(name: string): string | null {
+  const n = (name || "").toLowerCase();
+  for (const [kw, cas] of CAS_BY_KEYWORD) if (n.includes(kw)) return cas;
+  return null;
+}
+
+// Short opaque SKU like "01aa", "02ab" … deterministic per docId + index.
+function shortSku(docId: string, index: number): string {
+  const num = String((index % 99) + 1).padStart(2, "0");
+  let h = 0;
+  for (let i = 0; i < docId.length; i++) h = (h * 31 + docId.charCodeAt(i)) >>> 0;
+  const a = String.fromCharCode(97 + (h % 26));
+  const b = String.fromCharCode(97 + ((h >>> 5) % 26));
+  return `${num}${a}${b}`;
+}
+
 function xmlEscape(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -52,9 +88,6 @@ function cdata(s: string): string {
   return `<![CDATA[${s.replace(/]]>/g, "]]]]><![CDATA[>")}]]>`;
 }
 
-/**
- * Strip internal suffixes so the feed shows the bare molecule name.
- */
 function cleanFullName(rawName: string): string {
   let n = (rawName || "").trim();
   n = n.replace(/\s+Research\s+(Peptide|Compound)s?$/i, "");
@@ -89,7 +122,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
         const eligible = products.filter((p) => isAllowedForFreeListing(p as any));
 
         const items = eligible
-          .map((p) => {
+          .map((p, idx) => {
             const docId = p.id;
             const fullName = cleanFullName(p.name);
             const sizeLabel =
@@ -98,21 +131,14 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
                 : "";
             const sizeCompact = sizeLabel.replace(/\s+/g, "");
 
-            // Instrumentation-framed title — no drug-form vocabulary.
-            const title = sizeLabel
-              ? `${fullName} ${sizeLabel} — Analytical Reference Standard for HPLC / LC-MS | PH Labs`
-              : `${fullName} — Analytical Reference Standard for HPLC / LC-MS | PH Labs`;
+            // Title: "{Name}-Research Compound" (blank, no qualifiers).
+            const title = `${fullName}-Research Compound`;
 
-            // Description framed entirely around laboratory instrumentation
-            // calibration. No "research use only", no "human consumption",
-            // no "purity" superlatives that pharma classifiers latch onto.
-            const description =
-              `${fullName} analytical reference standard supplied for ` +
-              `chromatography and mass-spectrometry method development, ` +
-              `calibration curves, and quality-control workflows in ` +
-              `accredited laboratories. Each lot ships with a Certificate ` +
-              `of Analysis detailing identity (LC-MS), assay (HPLC-UV), ` +
-              `and water content. Sold for laboratory instrumentation use.`;
+            // Description: CAS number + "Only for Laboratory Use". Nothing else.
+            const cas = casFor(p.name);
+            const description = cas
+              ? `CAS ${cas}. Only for Laboratory Use.`
+              : `Only for Laboratory Use.`;
 
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
@@ -140,12 +166,12 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
             const price = `${p.price.toFixed(2)} ${CURRENCY}`;
             const availability =
               typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
-            const sku = (p.sku || docId).trim();
+            const sku = shortSku(docId, idx);
             const hasGtin = !!p.gtin;
 
             return [
               `  <item>`,
-              `    <g:id>${xmlEscape(`FREE-${docId}`)}</g:id>`,
+              `    <g:id>${xmlEscape(sku)}</g:id>`,
               `    <title>${cdata(title)}</title>`,
               `    <link>${xmlEscape(link)}</link>`,
               `    <g:mobile_link>${xmlEscape(link)}</g:mobile_link>`,
@@ -163,7 +189,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `    <g:item_group_id>${xmlEscape(docId)}</g:item_group_id>`,
               // 499892 = Business & Industrial > Science & Laboratory > Lab Chemicals
               `    <g:google_product_category>499892</g:google_product_category>`,
-              `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Analytical Standards</g:product_type>`,
+              `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Laboratory Chemicals</g:product_type>`,
               `    <g:is_bundle>no</g:is_bundle>`,
               `    <g:multipack>1</g:multipack>`,
               `    <g:shipping>`,
@@ -172,10 +198,6 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `      <g:price>4.99 ${CURRENCY}</g:price>`,
               `    </g:shipping>`,
               `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
-              `    <g:product_highlight>Analytical reference standard for HPLC / LC-MS</g:product_highlight>`,
-              `    <g:product_highlight>Certificate of Analysis on every lot</g:product_highlight>`,
-              `    <g:product_highlight>UK laboratory dispatch with cold-pack option</g:product_highlight>`,
-              `    <g:product_highlight>Sold for laboratory instrumentation use</g:product_highlight>`,
               sizeCompact
                 ? `    <g:unit_pricing_measure>${xmlEscape(sizeCompact)}</g:unit_pricing_measure>`
                 : null,
