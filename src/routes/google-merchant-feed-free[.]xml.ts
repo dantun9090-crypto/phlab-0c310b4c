@@ -213,11 +213,16 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `    <g:sku>${xmlEscape(sku)}</g:sku>`,
               `    <g:item_group_id>${xmlEscape(docId)}</g:item_group_id>`,
               `    <g:google_product_category>6975</g:google_product_category>`,
-              `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Biochemicals</g:product_type>`,
+              `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Biochemicals${isLiquid ? "" : " &gt; Peptides"}</g:product_type>`,
               `    <g:adult>no</g:adult>`,
               `    <g:age_group>adult</g:age_group>`,
+              `    <g:identifier_exists>false</g:identifier_exists>`,
               `    <g:is_bundle>no</g:is_bundle>`,
               `    <g:multipack>1</g:multipack>`,
+              sizeCompact
+                ? `    <g:unit_pricing_measure>${xmlEscape(sizeCompact)}</g:unit_pricing_measure>`
+                : null,
+              `    <g:unit_pricing_base_measure>${baseUnit}</g:unit_pricing_base_measure>`,
               `    <g:shipping>`,
               `      <g:country>GB</g:country>`,
               `      <g:service>Standard</g:service>`,
@@ -225,13 +230,12 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `    </g:shipping>`,
               `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
               `    <g:product_highlight>HPLC-verified 99%+ purity</g:product_highlight>`,
-              `    <g:product_highlight>Lyophilised powder format</g:product_highlight>`,
+              isLiquid ? null : `    <g:product_highlight>Lyophilised powder format</g:product_highlight>`,
               `    <g:product_highlight>Certificate of Analysis available on request</g:product_highlight>`,
-              `    <g:product_highlight>Supplied to qualified UK laboratories</g:product_highlight>`,
-              `    <g:custom_label_0>99%+</g:custom_label_0>`,
-              sizeCompact
-                ? `    <g:unit_pricing_measure>${xmlEscape(sizeCompact)}</g:unit_pricing_measure>`
-                : null,
+              `    <g:product_highlight>Supplied to qualified UK laboratories only</g:product_highlight>`,
+              `    <g:custom_label_0>Laboratory Standard</g:custom_label_0>`,
+              `    <g:custom_label_1>Research Only</g:custom_label_1>`,
+              `    <g:custom_label_2>99% Purity</g:custom_label_2>`,
               `  </item>`,
             ]
               .filter(Boolean)
