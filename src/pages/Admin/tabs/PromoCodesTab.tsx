@@ -68,7 +68,7 @@ export default function PromoCodesTab() {
       code: c.code,
       type: c.type,
       value: c.value,
-      expiryDate: c.expiryDate?.toDate().toISOString().slice(0, 10) || emptyDraft.expiryDate,
+      expiryDate: (toDateSafe(c.expiryDate)?.toISOString().slice(0, 10)) || emptyDraft.expiryDate,
       maxUses: c.maxUses ?? c.maxUsage,
       minOrderValue: c.minOrderValue,
       isActive: c.isActive,
