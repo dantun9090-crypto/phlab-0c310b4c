@@ -26,6 +26,8 @@
     "check:www-redirect": "bun scripts/check-www-redirect.ts",
     "smoke:crawler": "bun scripts/crawler-smoke.ts",
     "check:prod-routes": "node scripts/check-prod-routes.mjs",
+    "check:canonicals": "node scripts/check-canonicals.mjs",
+    "check:routes:staging": "BASE=https://id-preview--1f12c255-a30a-4bea-bbab-28d9e6f70804.lovable.app node scripts/check-prod-routes.mjs && BASE=https://id-preview--1f12c255-a30a-4bea-bbab-28d9e6f70804.lovable.app node scripts/check-canonicals.mjs",
     "test:jsonld": "vitest run tests/jsonld-validation.test.ts tests/jsonld-snapshots.test.ts tests/jsonld-edge-cases.test.ts",
     "test:sitemap": "vitest run tests/sitemap-validation.test.ts tests/sitemap-policy-consistency.test.ts tests/sitemap-ci-consistency.test.ts",
     "typecheck": "tsc --noEmit",
