@@ -235,7 +235,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
           `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`,
           `  <channel>`,
           `    <title>${xmlEscape(`${BRAND} UK — Analytical Reference Standards (Free Listings)`)}</title>`,
-          `    <link>${BASE_URL}</link>`,
+          `    <link>${linkBase}</link>`,
           `    <description>Analytical reference standards for HPLC / LC-MS calibration. Free listings only — not for Shopping Ads.</description>`,
           items,
           `  </channel>`,
