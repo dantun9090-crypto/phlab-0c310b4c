@@ -228,7 +228,7 @@ export const pushCampaignToGoogleAds = createServerFn({ method: 'POST' })
         operationCount: ops.length,
         landingPage: c.landingPage,
         dailyBudgetGbp: c.dailyBudget,
-        operationsPreview: ops.slice(0, 5),
+        operationsPreviewJson: JSON.stringify(ops.slice(0, 5), null, 2),
         nextSteps: hasCreds
           ? ['Click "Push (live)" to actually create in Google Ads.']
           : [
