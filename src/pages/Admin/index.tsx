@@ -85,10 +85,46 @@ type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketin
 // JS, and the server fails closed if the whitelist is enabled but unreadable.
 
 
-// Per-tab error boundary — crashes one tab without killing the whole Admin
-class TabErrorBoundary extends Component<{ children: ReactNode; }, { hasError: boolean; error?: Error }> {
-  state = { hasError: false, error: undefined as Error | undefined };
+// Per-tab error boundary — crashes one tab without killing the whole Admin.
+// Also reports the failure to /api/public/admin-errors so we can see the
+// exact failing field (e.g. `A.expiryDate.toDate is not a function`) in
+// server-function-logs + Firestore `admin_errors`.
+function reportAdminError(payload: Record<string, unknown>) {
+  try {
+    const body = JSON.stringify(payload);
+    const url = '/api/public/admin-errors';
+    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      const blob = new Blob([body], { type: 'application/json' });
+      if (navigator.sendBeacon(url, blob)) return;
+    }
+    void fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body, keepalive: true }).catch(() => {});
+  } catch { /* never throw from error reporter */ }
+}
+
+class TabErrorBoundary extends Component<{ children: ReactNode; tabName?: string }, { hasError: boolean; error?: Error; info?: string }> {
+  state = { hasError: false, error: undefined as Error | undefined, info: undefined as string | undefined };
   static getDerivedStateFromError(e: Error) { return { hasError: true, error: e }; }
+  componentDidCatch(error: Error, info: { componentStack?: string }) {
+    const msg = error?.message || String(error);
+    // Heuristic: pull `something.field is not a function` or `Cannot read properties of undefined (reading 'field')`
+    const field =
+      /([A-Za-z_$][\w$]*)\.([A-Za-z_$][\w$]*)\s+is not a function/.exec(msg)?.[0] ??
+      /reading '([^']+)'/.exec(msg)?.[1] ??
+      undefined;
+    this.setState({ info: info?.componentStack });
+    reportAdminError({
+      tab: this.props.tabName,
+      message: msg,
+      stack: error?.stack,
+      componentStack: info?.componentStack,
+      field,
+      url: typeof location !== 'undefined' ? location.href : undefined,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+      buildId: (typeof window !== 'undefined' && (window as unknown as { __BUILD_ID__?: string }).__BUILD_ID__) || undefined,
+    });
+    // eslint-disable-next-line no-console
+    console.error('[admin-tab-error]', this.props.tabName, msg, error?.stack);
+  }
   render() {
     if (this.state.hasError) return (
       <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4 text-center px-6">
@@ -98,8 +134,15 @@ class TabErrorBoundary extends Component<{ children: ReactNode; }, { hasError: b
         <div>
           <p className="text-white font-semibold mb-1">This tab failed to load</p>
           <p className="text-[#3a5a82] text-xs font-mono break-all max-w-md">{this.state.error?.message}</p>
+          {this.state.info && (
+            <details className="mt-2 text-left max-w-md mx-auto">
+              <summary className="text-[#3a5a82] text-[11px] cursor-pointer">Stack</summary>
+              <pre className="mt-1 text-[10px] text-[#3a5a82] whitespace-pre-wrap break-all">{this.state.info}</pre>
+            </details>
+          )}
+          <p className="text-[#3a5a82] text-[10px] mt-2">Reported to admin_errors</p>
         </div>
-        <button onClick={() => this.setState({ hasError: false })} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors flex items-center gap-2">
+        <button onClick={() => this.setState({ hasError: false, error: undefined, info: undefined })} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm rounded-lg transition-colors flex items-center gap-2">
           <RefreshCw className="w-4 h-4" /> Retry
         </button>
       </div>
@@ -107,6 +150,7 @@ class TabErrorBoundary extends Component<{ children: ReactNode; }, { hasError: b
     return this.props.children;
   }
 }
+
 
 export default function AdminPage() {
   const navigate = useNavigate();
