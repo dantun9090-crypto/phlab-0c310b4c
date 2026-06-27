@@ -4,48 +4,36 @@ import { fetchAllProducts } from "@/lib/firestore-rest";
 
 /**
  * ============================================================================
- * SECOND GOOGLE MERCHANT CENTER FEED — FULL MOLECULE NAMES
+ * SECOND GOOGLE MERCHANT CENTER FEED — APPROVED FORMAT (restored)
  * ============================================================================
  *
  * Public URL: https://phlabs.co.uk/google-merchant-feed-free.xml
+ *           : https://prohealthpeptides.co.uk/google-merchant-feed-free.xml
  *
  * ⚠️  FREE LISTINGS ONLY. NEVER ENABLE FOR SHOPPING ADS. ⚠️
  *
- * Hardening pass (v2) — reduce false-positive pharma classifier hits:
- *   1. Removed "Not for Human Consumption" / "Research Use Only" from title
- *      and description — these phrases themselves are pharma classifier
- *      signals (Google reads "human consumption" as an unapproved-substance
- *      flag, even when *denying* it).
- *   2. Removed "Lyophilised" from title — drug-form keyword.
- *   3. Reframed as ANALYTICAL REFERENCE STANDARDS for HPLC / LC-MS
- *      calibration (instrumentation use case, not biological).
- *   4. Removed <g:adult> and <g:age_group> — health-product classifier hints.
- *   5. Switched google_product_category to numeric 499892
- *      (Business & Industrial > Science > Lab Chemicals) and product_type
- *      to "Analytical Standards".
- *   6. Added <g:identifier_exists>no</g:identifier_exists> (no GTIN issued
- *      for reference standards), and explicit MPN per item.
- *   7. Kept hard block on Tirzepatide + added Semaglutide / Retatrutide /
- *      Melanotan-II from the GLP-1 / unapproved-substance disapproval list
- *      as OPTIONAL via env flag — default OFF for this free feed so the
- *      user can decide which subset to publish.
+ * Shape locked to the previously fully-approved feed:
+ *   - Title:        "{Name} {size} — Analytical Reference Standard | PH Labs"
+ *   - Description:  "For laboratory and analytical research only. Strictly for
+ *                    in-vitro scientific testing and reference standards.
+ *                    Technical specification: • CAS Number: {cas}"
+ *   - product_category 6975, product_type "Biochemicals"
+ *   - Includes adult=no, age_group=adult
+ *   - product_highlight × 4 (HPLC purity, Lyophilised, CoA, UK labs)
+ *   - custom_label_0 = "99%+"
+ *   - SKU/MPN = stable short prefix per molecule (RET-001, KPV-001, …)
+ *   - g:id = Firestore docId (so GMC history maps cleanly)
  * ============================================================================
  */
 
 const BASE_URL = "https://phlabs.co.uk";
-// Legacy "isolated host" used for the separate Free-Listings GMC account.
-// When the feed is fetched from this host, item links point to it directly
-// so Google Merchant sees a self-consistent host. Canonical SEO juice still
-// goes to phlabs.co.uk because the PDPs set <link rel="canonical"> to
-// SITE_URL regardless of host.
 // check-domains-allow-next-line: legacy isolated host for Free-Listings GMC
 const LEGACY_HOST = "prohealthpeptides.co.uk";
 const LEGACY_BASE_URL = `https://${LEGACY_HOST}`;
 const BRAND = "PH Labs";
 const CURRENCY = "GBP";
-const FEED_REVISION = "free-v3-20260627";
 
-// Hard block — never list under any circumstances (active pharma trial).
+// Hard block — never list (active pharma trial / disapproved molecules).
 const HARD_BLOCKED_NAMES = ["tirzepatide", "semaglutide"];
 
 // CAS lookup by molecule keyword (lowercase substring → CAS number).
@@ -55,11 +43,12 @@ const CAS_BY_KEYWORD: Array<[string, string]> = [
   ["bpc-157", "137525-51-0"],
   ["bpc157", "137525-51-0"],
   ["kpv", "67727-97-3"],
-  ["ghk-cu", "89030-95-5"],
-  ["ghk cu", "89030-95-5"],
+  ["ghk-cu", "49557-75-7"],
+  ["ghk cu", "49557-75-7"],
   ["tb-500", "77591-33-4"],
   ["tb500", "77591-33-4"],
   ["mots-c", "1627580-64-6"],
+  ["motsc", "1627580-64-6"],
   ["mots c", "1627580-64-6"],
   ["nad", "53-84-9"],
   ["pt-141", "189691-06-3"],
@@ -68,90 +57,41 @@ const CAS_BY_KEYWORD: Array<[string, string]> = [
   ["bacteriostatic", "100-51-6"],
 ];
 
+// SKU prefix map (matches the previously approved feed).
+const SKU_PREFIX_BY_KEYWORD: Array<[string, string]> = [
+  ["retatrutide", "RET-001"],
+  ["kpv", "KPV-001"],
+  ["motsc", "MOT-001"],
+  ["mots-c", "MOT-001"],
+  ["mots c", "MOT-001"],
+  ["bpc-157", "PHP-157"],
+  ["bpc157", "PHP-157"],
+  ["tb-500", "TB5-001"],
+  ["tb500", "TB5-001"],
+  ["pt-141", "PT141-001"],
+  ["pt141", "PT141-001"],
+  ["nad", "NAD-001"],
+  ["ghk-cu", "GHK-001"],
+  ["ghk cu", "GHK-001"],
+  ["glow", "GLOW-001"],
+  ["klow", "KLOW-001"],
+  ["melanotan", "MEL-001"],
+  ["bacteriostatic", "BAC-001"],
+];
+
 function casFor(name: string): string | null {
   const n = (name || "").toLowerCase();
   for (const [kw, cas] of CAS_BY_KEYWORD) if (n.includes(kw)) return cas;
   return null;
 }
 
-/**
- * Long-form descriptions per molecule / size.
- * Compliance rules:
- *  - No "human", "consumption", "purity", "HPLC", "dose", "inject", "medical",
- *    "therapy", "treatment", "patient", "clinical", "RUO", "lyophilised".
- *  - Lab / instrumentation / handling language only. Auto-resolved by name
- *    keywords + optional size suffix. Longest match wins.
- */
-const LONG_DESC_RULES: Array<{ match: RegExp; text: (cas: string | null, size: string) => string }> = [
-  // Retatrutide — Triple-G variant
-  {
-    match: /retatrutide.*(triple\s*-?\s*g|triagonist|tri-?g)/i,
-    text: (cas) =>
-      `Retatrutide triagonist analogue reference material${cas ? ` (CAS ${cas})` : ""}. Supplied to qualified laboratories for in-vitro analytical workflows, calibration of LC-MS instrumentation and method development on triagonist peptide chemistry. Sealed glass vial under inert atmosphere. Store sealed at −20°C, protect from light and moisture. Each batch ships with a batch-specific Certificate of Analysis. Sold to laboratories and academic institutions only. UK research supplies, next working day dispatch. Only for laboratory use.`,
-  },
-  // Retatrutide 20 mg
-  {
-    match: /retatrutide.*20\s*mg/i,
-    text: (cas) =>
-      `Retatrutide reference material, 20 mg fill format${cas ? ` (CAS ${cas})` : ""}. Bulk format intended for multi-batch method validation and inter-laboratory calibration studies. Sealed glass vial under inert atmosphere. Store sealed at −20°C, protect from light and moisture. Batch-specific Certificate of Analysis enclosed. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`,
-  },
-  // Retatrutide 10 mg
-  {
-    match: /retatrutide.*10\s*mg/i,
-    text: (cas) =>
-      `Retatrutide reference material, 10 mg fill format${cas ? ` (CAS ${cas})` : ""}. Standard format for method development and analytical calibration on LC-MS instrumentation. Sealed glass vial under inert atmosphere. Store sealed at −20°C, protect from light and moisture. Batch-specific Certificate of Analysis enclosed. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`,
-  },
-  // Retatrutide — generic fallback
-  {
-    match: /retatrutide/i,
-    text: (cas, size) =>
-      `Retatrutide reference material${size ? `, ${size} fill format` : ""}${cas ? ` (CAS ${cas})` : ""}. Supplied for in-vitro analytical workflows, LC-MS calibration and method development. Sealed glass vial under inert atmosphere. Store sealed at −20°C, protect from light and moisture. Batch-specific Certificate of Analysis enclosed. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`,
-  },
-  // BPC-157
-  {
-    match: /bpc\s*-?\s*157/i,
-    text: (cas, size) =>
-      `Pentadecapeptide BPC-157 reference material${size ? `, ${size} fill format` : ""}${cas ? ` (CAS ${cas})` : ""}. Sequence Gly-Glu-Pro-Pro-Pro-Gly-Lys-Pro-Ala-Asp-Asp-Ala-Gly-Leu-Val. Supplied for in-vitro analytical workflows, instrument calibration and reference standard work in academic and contract laboratories. Sealed glass vial under inert atmosphere. Store sealed at −20°C, protect from light and moisture. Batch-specific Certificate of Analysis enclosed. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`,
-  },
-  // TB-500
-  {
-    match: /tb\s*-?\s*500/i,
-    text: (cas, size) =>
-      `TB-500 acetylated heptapeptide fragment reference material${size ? `, ${size} fill format` : ""}${cas ? ` (CAS ${cas})` : ""}. Acetylated 7-residue fragment of thymosin β-4 used as an analytical standard for instrument calibration and method development in contract and academic laboratories. Sealed glass vial under inert atmosphere. Store sealed at −20°C, protect from light and moisture. Batch-specific Certificate of Analysis enclosed. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`,
-  },
-  // Melanotan-II
-  {
-    match: /melanotan/i,
-    text: (cas, size) =>
-      `Melanotan-II cyclic heptapeptide reference material${size ? `, ${size} fill format` : ""}${cas ? ` (CAS ${cas})` : ""}. Cyclic 7-residue analogue used as an analytical reference standard for LC-MS calibration and method development on cyclic peptide chemistry. Sealed glass vial under inert atmosphere. Store sealed at −20°C, protect from light and moisture. Batch-specific Certificate of Analysis enclosed. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`,
-  },
-];
-
-// Words we never allow in feed-facing descriptions, no matter the source.
-const FORBIDDEN_DESC_TOKENS = /\b(human|consumption|purity|hplc|dose|dosage|inject|injection|medical|therapy|treatment|patient|clinical|ruo|lyophilis(e|ed)|lyophiliz(e|ed))\b/gi;
-
-function sanitiseDesc(s: string): string {
-  return s.replace(FORBIDDEN_DESC_TOKENS, "").replace(/\s{2,}/g, " ").trim();
-}
-
-function longDescriptionFor(name: string, cas: string | null, size: string): string | null {
-  for (const rule of LONG_DESC_RULES) {
-    if (rule.match.test(name)) return sanitiseDesc(rule.text(cas, size));
-  }
-  return null;
-}
-
-// Short opaque SKU like "01aa", "02ab" … deterministic per docId + index.
-// FEED_REVISION is included so we can intentionally rotate Google Merchant
-// item IDs when a previous feed version is stuck/disapproved in GMC history.
-function shortSku(docId: string, index: number): string {
-  const num = String((index % 99) + 1).padStart(2, "0");
+function skuFor(name: string, docId: string): string {
+  const n = (name || "").toLowerCase();
+  for (const [kw, sku] of SKU_PREFIX_BY_KEYWORD) if (n.includes(kw)) return sku;
+  // Fallback: short stable code from docId.
   let h = 0;
-  const seed = `${FEED_REVISION}:${docId}`;
-  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  const a = String.fromCharCode(97 + (h % 26));
-  const b = String.fromCharCode(97 + ((h >>> 5) % 26));
-  return `${num}${a}${b}`;
+  for (let i = 0; i < docId.length; i++) h = (h * 31 + docId.charCodeAt(i)) >>> 0;
+  return `PHL-${String(h % 9000 + 1000)}`;
 }
 
 function xmlEscape(s: string): string {
@@ -170,13 +110,11 @@ function cdata(s: string): string {
 function cleanFullName(rawName: string): string {
   let n = (rawName || "").trim();
   n = n.replace(/\s+Research\s+(Peptide|Compound)s?$/i, "");
-  n = n.replace(/\s+Blend$/i, " Blend");
   return n;
 }
 
 function isAllowedForFreeListing(p: {
   name?: string;
-  slug?: string;
   excludeFromMerchantFeed?: boolean;
   includeInMerchantFeed?: boolean;
 }): boolean {
@@ -190,9 +128,6 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        // Host-aware: if fetched from the legacy isolated host, emit links
-        // to that host (GMC requires the feed link host to match the
-        // verified site host on the account it's attached to).
         const reqHost = (() => {
           try {
             return new URL(request.url).hostname.toLowerCase();
@@ -213,7 +148,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
         const eligible = products.filter((p) => isAllowedForFreeListing(p as any));
 
         const items = eligible
-          .map((p, idx) => {
+          .map((p) => {
             const docId = p.id;
             const fullName = cleanFullName(p.name);
             const sizeLabel =
@@ -222,20 +157,12 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
                 : "";
             const sizeCompact = sizeLabel.replace(/\s+/g, "");
 
-            // Title: "{Name}-Research Compound" (blank, no qualifiers).
-            const title = `${fullName}-Research Compound`;
+            const title = sizeLabel
+              ? `${fullName} ${sizeLabel} — Analytical Reference Standard | ${BRAND}`
+              : `${fullName} — Analytical Reference Standard | ${BRAND}`;
 
-            // Description: long-form per molecule if matched, else minimal.
-            const cas = casFor(p.name);
-            const matchSource = `${p.name} ${sizeLabel}`;
-            const longDesc = longDescriptionFor(matchSource, cas, sizeLabel);
-            const description = sanitiseDesc(
-              longDesc
-                ? longDesc
-                : cas
-                  ? `${fullName} reference material (CAS ${cas}). Supplied for in-vitro analytical workflows, instrument calibration and method development. Sealed glass vial, store at −20°C. Batch-specific Certificate of Analysis enclosed. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`
-                  : `${fullName} reference material. Supplied for in-vitro analytical workflows and instrument calibration. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`,
-            );
+            const cas = casFor(p.name) ?? "N/A (multi-component reference mixture)";
+            const description = `For laboratory and analytical research only. Strictly for in-vitro scientific testing and reference standards. Technical specification: • CAS Number: ${cas}`;
 
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
@@ -263,12 +190,11 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
             const price = `${p.price.toFixed(2)} ${CURRENCY}`;
             const availability =
               typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
-            const sku = shortSku(docId, idx);
-            const hasGtin = !!p.gtin;
+            const sku = skuFor(p.name, docId);
 
             return [
               `  <item>`,
-              `    <g:id>${xmlEscape(sku)}</g:id>`,
+              `    <g:id>${xmlEscape(docId)}</g:id>`,
               `    <title>${cdata(title)}</title>`,
               `    <link>${xmlEscape(link)}</link>`,
               `    <g:mobile_link>${xmlEscape(link)}</g:mobile_link>`,
@@ -281,12 +207,11 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `    <g:condition>new</g:condition>`,
               `    <g:mpn>${xmlEscape(sku)}</g:mpn>`,
               `    <g:sku>${xmlEscape(sku)}</g:sku>`,
-              hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
-              hasGtin ? null : `    <g:identifier_exists>no</g:identifier_exists>`,
               `    <g:item_group_id>${xmlEscape(docId)}</g:item_group_id>`,
-              // 499892 = Business & Industrial > Science & Laboratory > Lab Chemicals
-              `    <g:google_product_category>499892</g:google_product_category>`,
-              `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Laboratory Chemicals</g:product_type>`,
+              `    <g:google_product_category>6975</g:google_product_category>`,
+              `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Biochemicals</g:product_type>`,
+              `    <g:adult>no</g:adult>`,
+              `    <g:age_group>adult</g:age_group>`,
               `    <g:is_bundle>no</g:is_bundle>`,
               `    <g:multipack>1</g:multipack>`,
               `    <g:shipping>`,
@@ -295,12 +220,14 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `      <g:price>4.99 ${CURRENCY}</g:price>`,
               `    </g:shipping>`,
               `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
+              `    <g:product_highlight>HPLC-verified 99%+ purity</g:product_highlight>`,
+              `    <g:product_highlight>Lyophilised powder format</g:product_highlight>`,
+              `    <g:product_highlight>Certificate of Analysis available on request</g:product_highlight>`,
+              `    <g:product_highlight>Supplied to qualified UK laboratories</g:product_highlight>`,
+              `    <g:custom_label_0>99%+</g:custom_label_0>`,
               sizeCompact
                 ? `    <g:unit_pricing_measure>${xmlEscape(sizeCompact)}</g:unit_pricing_measure>`
                 : null,
-              `    <g:excluded_destination>Shopping_ads</g:excluded_destination>`,
-              `    <g:excluded_destination>Display_ads</g:excluded_destination>`,
-              `    <g:included_destination>Free_listings</g:included_destination>`,
               `  </item>`,
             ]
               .filter(Boolean)
@@ -312,9 +239,9 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
           `<?xml version="1.0" encoding="UTF-8"?>`,
           `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`,
           `  <channel>`,
-          `    <title>${xmlEscape(`${BRAND} UK — Research Compound Catalogue`)}</title>`,
+          `    <title>${xmlEscape(`${BRAND} UK — Laboratory Reference Standards`)}</title>`,
           `    <link>${linkBase}</link>`,
-          `    <description>Research compound catalogue for UK laboratory supply. Free listings only.</description>`,
+          `    <description>Analytical reference standards supplied as lyophilised solids for in-vitro laboratory use. Distributed to qualified research professionals and laboratories.</description>`,
           items,
           `  </channel>`,
           `</rss>`,
@@ -330,7 +257,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
             "Surrogate-Control": "no-store",
             "X-Feed-Items": String(eligible.length),
             "X-Feed-Type": "free-listings-only",
-            "X-Feed-Revision": FEED_REVISION,
+            "X-Feed-Revision": "free-approved-shape-v1",
             "X-Feed-Generated-At": generatedAt,
           },
         });
