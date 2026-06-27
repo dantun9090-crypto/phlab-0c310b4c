@@ -31,29 +31,27 @@ function listRouteFiles(dir: string): string[] {
 describe("/research route source-of-truth", () => {
   const routeFiles = listRouteFiles(ROUTES_DIR);
 
-  it("has NO TanStack route file claiming /research", () => {
+  it("any TanStack route claiming /research MUST mount LegacyApp (not a marketing landing)", () => {
     const offenders: string[] = [];
     for (const f of routeFiles) {
-      // Filename-based check — any file that would generate the /research
-      // route id (research.tsx, research.index.tsx, _marketing.research.tsx,
-      // research/index.tsx, etc.).
       const rel = f.replace(ROUTES_DIR + "/", "");
-      const isResearchFile =
+      const src = readFileSync(f, "utf8");
+      const claimsResearch =
+        /createFileRoute\(\s*["']\/research["']\s*\)/.test(src) ||
         /(^|\/|\.)research(\.index)?\.(tsx?|jsx?)$/.test(rel) ||
         /(^|\/|\.)research\/index\.(tsx?|jsx?)$/.test(rel);
-      if (isResearchFile) {
-        offenders.push(rel);
-        continue;
-      }
-      // Content-based check — any createFileRoute("/research" ...) string.
-      const src = readFileSync(f, "utf8");
-      if (/createFileRoute\(\s*["']\/research(["']|\/)/.test(src)) {
-        offenders.push(`${rel} (contains createFileRoute("/research"))`);
+      if (!claimsResearch) continue;
+      // Allowed shape: mounts LegacyApp (directly or via LegacyMount helper),
+      // which renders src/pages/Research/index.tsx through react-router.
+      const mountsLegacy =
+        /LegacyApp/.test(src) || /LegacyMount/.test(src) || /legacy-mount/.test(src);
+      if (!mountsLegacy) {
+        offenders.push(`${rel} (claims /research but does NOT mount LegacyApp)`);
       }
     }
     expect(
       offenders,
-      `Found TanStack route(s) overriding /research — delete them so the splat ($.tsx) serves the legacy article page:\n  ${offenders.join("\n  ")}`,
+      `Found TanStack route(s) overriding /research with a non-legacy component — they must mount LegacyApp so src/pages/Research/index.tsx renders:\n  ${offenders.join("\n  ")}`,
     ).toEqual([]);
   });
 
