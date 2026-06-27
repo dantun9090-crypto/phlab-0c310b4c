@@ -454,6 +454,7 @@ export default function AdminPage() {
         case 'marketingcoverage': return <MarketingCoverageTab />;
         case 'urlmonitor': return <UrlMonitorTab />;
         case 'merchantfeed': return <MerchantFeedTab />;
+        case 'merchantfeededitor': return <MerchantFeedEditorTab />;
         case 'bingfeed': return <BingFeedTab />;
         case 'indexnow': return <IndexNowTab />;
         case 'securityaudit': return <SecurityAuditTab />;
