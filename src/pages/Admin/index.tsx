@@ -59,6 +59,7 @@ import SemrushTab from './tabs/SemrushTab';
 import SEOOpportunitiesTab from './tabs/SEOOpportunitiesTab';
 import BacklinkOutreachTab from './tabs/BacklinkOutreachTab';
 import BacklinkChangesTab from './tabs/BacklinkChangesTab';
+import GoogleAdsTab from './tabs/GoogleAdsTab';
 import InternalLinksTab from './tabs/InternalLinksTab';
 import WebVitalsTab from './tabs/WebVitalsTab';
 import CacheRecacheTab from './tabs/CacheRecacheTab';
