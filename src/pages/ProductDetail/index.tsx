@@ -1282,29 +1282,21 @@ export default function ProductDetail() {
                     ))}
                   </div>
 
-                  {/* Live Trustpilot MicroStar — product CRO */}
-                  <div className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl" style={{ background: 'rgba(11,26,48,0.8)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  {/* Trustpilot link — legacy ProHealthPeptides reviews */}
+                  <a
+                    href="https://uk.trustpilot.com/review/www.prohealthpeptides.co.uk"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Read our reviews on Trustpilot"
+                    className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-all hover:scale-[1.01] hover:bg-[#0e2240] cursor-pointer"
+                    style={{ background: 'rgba(11,26,48,0.8)', border: '1px solid rgba(0,182,122,0.3)' }}
+                  >
                     <Star className="w-4 h-4 text-[#00b67a] fill-current" />
-                    <div
-                      className="trustpilot-widget"
-                      data-locale="en-GB"
-                      data-template-id="5419b6a8b0d04a076446a9ad"
-                      data-businessunit-id="67ca49f84aa95fe13cae48e3"
-                      data-style-height="20px"
-                      data-style-width="100%"
-                      data-theme="dark"
-                      data-stars="5"
-                    >
-                      <a
-                        href="https://uk.trustpilot.com/review/phlabs.co.uk"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[#00b67a] text-xs font-semibold hover:underline"
-                      >
-                        Rated Excellent on Trustpilot
-                      </a>
-                    </div>
-                  </div>
+                    <span className="text-[#00b67a] text-xs font-semibold">
+                      Rated Excellent on Trustpilot — read reviews
+                    </span>
+                  </a>
+
                 </>
               );
             })()}
