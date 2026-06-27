@@ -243,7 +243,19 @@ export default function MarketingTab() {
                       <p className="text-[#9cb8d9] text-xs mt-0.5">
                         {c.type === 'percentage' ? `${c.value}% off` : `£${c.value} off`}
                         {' · '}{c.usageCount} uses{c.maxUsage ? ` / ${c.maxUsage}` : ''}
-                        {c.expiryDate ? ` · Exp ${c.expiryDate.toDate().toLocaleDateString('en-GB')}` : ''}
+                        {(() => {
+                          const v: any = c.expiryDate;
+                          if (!v) return '';
+                          let d: Date | null = null;
+                          try {
+                            if (typeof v?.toDate === 'function') d = v.toDate();
+                            else if (v instanceof Date) d = v;
+                            else if (typeof v === 'number') d = new Date(v);
+                            else if (typeof v === 'string') { const x = new Date(v); d = isNaN(x.getTime()) ? null : x; }
+                            else if (typeof v === 'object' && typeof v.seconds === 'number') d = new Date(v.seconds * 1000);
+                          } catch { d = null; }
+                          return d ? ` · Exp ${d.toLocaleDateString('en-GB')}` : '';
+                        })()}
                       </p>
                     </div>
                     <button onClick={() => handleCopy(c.code)} aria-label="Copy coupon code" className="min-w-[44px] min-h-[44px] flex items-center justify-center bg-white/[0.06] hover:bg-[#1a3a5c]/50 text-[#9cb8d9] hover:text-white rounded transition-colors">
