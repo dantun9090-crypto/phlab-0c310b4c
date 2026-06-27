@@ -4,8 +4,8 @@
  * Four feed keys (one per public feed URL × host):
  *   phlabs_paid       — phlabs.co.uk/google-merchant-feed.xml
  *   phlabs_free       — phlabs.co.uk/google-merchant-feed-free.xml
- *   prohealth_paid    — prohealthpeptides.co.uk/google-merchant-feed.xml
- *   prohealth_free    — prohealthpeptides.co.uk/google-merchant-feed-free.xml
+ *   prohealth_paid    — legacy host /google-merchant-feed.xml
+ *   prohealth_free    — legacy host /google-merchant-feed-free.xml
  *
  * Each key has:
  *   - a global config doc in /merchantFeedConfig/{feedKey}
@@ -17,6 +17,7 @@
  * NEVER import this file from client bundles — uses service-account
  * Firestore writes.
  */
+
 import { getDocAdmin, listDocsAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
 
 export const FEED_KEYS = [
