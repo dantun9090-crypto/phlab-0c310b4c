@@ -1101,31 +1101,47 @@ export default {
       }
 
 
-      // 4b. Unknown top-level path → real HTTP 404 + noindex header so Google
-      // doesn't index junk URLs (meta name=robots is overridden by the HTTP
-      // header otherwise).
+      // 4b. SSR-signalled 404 only. The SPA splat route emits
+      //   <meta name="prerender-status-code" content="404">
+      // for genuinely-unknown paths. We ONLY downgrade an SSR 200 HTML
+      // response to a real HTTP 404 (with x-robots-tag: noindex) when
+      // that sentinel is present in the body. Previously we forced 404
+      // for any 200 HTML whose first path segment wasn't in KNOWN_ROOTS
+      // — that was fragile: every newly-added dedicated route had to be
+      // added to the allow-list or its valid 200 page silently became
+      // a 404. Trusting the SSR sentinel keeps the decision next to
+      // the component that owns it.
       const ct = normalized.headers.get("content-type") ?? "";
-      if (
+      const isHtml200 =
         normalized.status === 200 &&
         ct.includes("text/html") &&
         !BYPASS_PATH_PREFIXES.some((p) => url.pathname.startsWith(p)) &&
-        !STATIC_EXT.test(url.pathname) &&
-        !isKnownFirstSegment(url.pathname)
-      ) {
-        const h = new Headers(normalized.headers);
-        h.set("x-robots-tag", "noindex, follow");
-        h.set("cache-control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0");
-        h.set("cdn-cache-control", "no-store");
-        h.set("cloudflare-cdn-cache-control", "no-store");
-        h.set("surrogate-control", "no-store");
-        h.set("pragma", "no-cache");
-        h.set("expires", "0");
-        h.delete("age");
-        normalized = new Response(normalized.body, {
-          status: 404,
-          statusText: "Not Found",
-          headers: h,
-        });
+        !STATIC_EXT.test(url.pathname);
+      if (isHtml200) {
+        const peek = await normalized.clone().text();
+        const sentinel404 =
+          /<meta[^>]+name=["']prerender-status-code["'][^>]+content=["']404["']/i.test(
+            peek,
+          ) && !isKnownFirstSegment(url.pathname);
+        if (sentinel404) {
+          const h = new Headers(normalized.headers);
+          h.set("x-robots-tag", "noindex, follow");
+          h.set(
+            "cache-control",
+            "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+          );
+          h.set("cdn-cache-control", "no-store");
+          h.set("cloudflare-cdn-cache-control", "no-store");
+          h.set("surrogate-control", "no-store");
+          h.set("pragma", "no-cache");
+          h.set("expires", "0");
+          h.delete("age");
+          normalized = new Response(peek, {
+            status: 404,
+            statusText: "Not Found",
+            headers: h,
+          });
+        }
       }
 
       normalized = applyCacheRecoveryHeaders(normalized, url);
