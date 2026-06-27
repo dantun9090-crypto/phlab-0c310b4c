@@ -53,10 +53,12 @@ const adminUnlockAttempts = new Map<string, { count: number; start: number }>();
 // intentionally excluded so previews keep working. phlabs.co.uk apex is NOT
 // in this list — it is served directly to avoid hosting-layer loops.
 //
+// check-domains-allow-next-line: doc comment about legacy host
 // NOTE: `prohealthpeptides.co.uk` is intentionally NOT in this set — it is
 // served as an isolated "legacy host" that renders the same app but with
 // canonical → phlabs.co.uk (set per-route). Used as the home of a separate
 // Google Merchant Center Free-Listings account with full molecule names.
+// check-domains-allow-next-line: doc comment about legacy host
 // `www.prohealthpeptides.co.uk` 301s to the bare apex of the legacy host.
 const REDIRECT_HOSTS = new Set<string>([
   // www.phlabs.co.uk → phlabs.co.uk (apex is canonical)
