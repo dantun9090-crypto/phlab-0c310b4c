@@ -38,6 +38,7 @@ const BASE_URL = "https://phlabs.co.uk";
 // so Google Merchant sees a self-consistent host. Canonical SEO juice still
 // goes to phlabs.co.uk because the PDPs set <link rel="canonical"> to
 // SITE_URL regardless of host.
+// check-domains-allow-next-line: legacy isolated host for Free-Listings GMC
 const LEGACY_HOST = "prohealthpeptides.co.uk";
 const LEGACY_BASE_URL = `https://${LEGACY_HOST}`;
 const BRAND = "PH Labs";
