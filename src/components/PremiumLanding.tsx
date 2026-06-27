@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { LandingPromoStrip } from "@/components/LandingPromoStrip";
+import { LandingTrustStrip } from "@/components/LandingTrustStrip";
 
 /* ───── Luxury background assets ───── */
 const HERO_IMG = "/og/luxury/hero.jpg";
@@ -64,6 +65,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
     <main data-source="premium-landing" data-route="/compound" className="min-h-screen bg-[#060b18] text-white antialiased selection:bg-[#c9a44c] selection:text-[#060b18] scroll-smooth">
       <PremiumLandingGuard />
       <LandingPromoStrip theme="dark" />
+      <LandingTrustStrip theme="dark" />
 
 
 
