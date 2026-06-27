@@ -51,6 +51,9 @@ const FORBIDDEN_MODULES = [
   // (dynamic import inside useEffect / *.client.ts modules).
   "firebase/auth",
   "@firebase/auth",
+];
+
+
 
 // Code patterns that almost always indicate Node-only assumptions.
 // Each entry is matched against the bundled source as a literal substring
