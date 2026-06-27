@@ -57,15 +57,37 @@ jobs:
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
         continue-on-error: true
 
-      - name: Verify every sitemap URL returns 200
+      - name: Verify every sitemap URL returns 200 (+ noindex policy)
         id: prodroutes
         env:
           BASE: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+          REPORT_PATH: /tmp/prod-routes-report.json
         run: |
           set +e
           node scripts/check-prod-routes.mjs | tee prod-routes.log
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
         continue-on-error: true
+
+      - name: Canonical uniqueness check
+        id: canonicals
+        env:
+          BASE: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+          CANONICAL_REPORT_PATH: /tmp/canonicals-report.json
+        run: |
+          set +e
+          node scripts/check-canonicals.mjs | tee canonicals.log
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Render route audit Markdown
+        if: always()
+        run: |
+          node scripts/render-route-audit-md.mjs \
+            --routes /tmp/prod-routes-report.json \
+            --canonicals /tmp/canonicals-report.json \
+            --title "Production route audit" \
+            --out /tmp/route-audit.md
+          cat /tmp/route-audit.md >> "$GITHUB_STEP_SUMMARY" || true
 
       - name: Annotate summary
         if: always()
@@ -82,11 +104,17 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: post-deploy-regression-${{ github.sha }}
+          name: route-audit-${{ github.sha }}
           path: |
             regression.log
             regression-report.xml
+            prod-routes.log
+            canonicals.log
+            /tmp/prod-routes-report.json
+            /tmp/canonicals-report.json
+            /tmp/route-audit.md
           retention-days: 30
+
 
       - name: Open issue on regression
         if: steps.regression.outputs.exit_code != '0' && github.event_name != 'schedule'
