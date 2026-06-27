@@ -152,11 +152,11 @@ const BASELINE: Check[] = [
   {
     id: 'cf-canonical-domain',
     category: 'Cloudflare',
-    title: 'Canonical domain redirect',
-    description: 'Legacy prohealthpeptides domains redirect to https://phlabs.co.uk. phlabs.co.uk is temporarily served directly to avoid the host-level www → apex loop.',
+    title: 'Canonical + legacy host routing',
+    description: 'phlabs.co.uk remains canonical. prohealthpeptides.co.uk is isolated via a Cloudflare legacy proxy for GMC Free Listings; www.prohealthpeptides.co.uk redirects only to its own apex, never to phlabs.co.uk.',
     severity: 'high',
     status: 'pass',
-    detail: 'src/server.ts',
+    detail: 'src/server.ts · cloudflare/prohealth-legacy-proxy.js',
   },
   {
     id: 'robots-bots',
