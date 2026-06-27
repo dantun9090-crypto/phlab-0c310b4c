@@ -33,6 +33,13 @@ import { fetchAllProducts } from "@/lib/firestore-rest";
  */
 
 const BASE_URL = "https://phlabs.co.uk";
+// Legacy "isolated host" used for the separate Free-Listings GMC account.
+// When the feed is fetched from this host, item links point to it directly
+// so Google Merchant sees a self-consistent host. Canonical SEO juice still
+// goes to phlabs.co.uk because the PDPs set <link rel="canonical"> to
+// SITE_URL regardless of host.
+const LEGACY_HOST = "prohealthpeptides.co.uk";
+const LEGACY_BASE_URL = `https://${LEGACY_HOST}`;
 const BRAND = "PH Labs";
 const CURRENCY = "GBP";
 
@@ -110,7 +117,19 @@ function isAllowedForFreeListing(p: {
 export const Route = createFileRoute("/google-merchant-feed-free.xml")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
+        // Host-aware: if fetched from the legacy isolated host, emit links
+        // to that host (GMC requires the feed link host to match the
+        // verified site host on the account it's attached to).
+        const reqHost = (() => {
+          try {
+            return new URL(request.url).hostname.toLowerCase();
+          } catch {
+            return "";
+          }
+        })();
+        const linkBase = reqHost === LEGACY_HOST ? LEGACY_BASE_URL : BASE_URL;
+
         let products = [] as Awaited<ReturnType<typeof fetchAllProducts>>;
         const generatedAt = new Date().toISOString();
         try {
@@ -162,7 +181,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
                   `    <g:additional_image_link>${xmlEscape(abs)}</g:additional_image_link>`,
               );
 
-            const link = `${BASE_URL}/products/${docId}`;
+            const link = `${linkBase}/products/${docId}`;
             const price = `${p.price.toFixed(2)} ${CURRENCY}`;
             const availability =
               typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
@@ -216,7 +235,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
           `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`,
           `  <channel>`,
           `    <title>${xmlEscape(`${BRAND} UK — Analytical Reference Standards (Free Listings)`)}</title>`,
-          `    <link>${BASE_URL}</link>`,
+          `    <link>${linkBase}</link>`,
           `    <description>Analytical reference standards for HPLC / LC-MS calibration. Free listings only — not for Shopping Ads.</description>`,
           items,
           `  </channel>`,
