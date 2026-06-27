@@ -32,7 +32,7 @@ const LEGACY_HOST = "prohealthpeptides.co.uk";
 const LEGACY_BASE_URL = `https://${LEGACY_HOST}`;
 const BRAND = "PH Labs";
 const CURRENCY = "GBP";
-const FEED_REVISION = "prohealth-approved-shape-v2-20260627";
+const FEED_REVISION = "prohealth-grok-safe-v3-20260627";
 
 // Hard block — never list (active pharma trial / disapproved molecules).
 const HARD_BLOCKED_NAMES = ["tirzepatide", "semaglutide"];
@@ -163,7 +163,10 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               : `${fullName} — Analytical Reference Standard | ${BRAND}`;
 
             const cas = casFor(p.name) ?? "N/A (multi-component reference mixture)";
-            const description = `For laboratory and analytical research only. Strictly for in-vitro scientific testing and reference standards. Technical specification: • CAS Number: ${cas}`;
+            const isLiquid = /bacteriostatic|water/i.test(p.name);
+            const baseUnit = isLiquid ? "1 ml" : "1 mg";
+            const lyoLine = isLiquid ? "" : " • Lyophilised powder format";
+            const description = `For laboratory and analytical research ONLY. Strictly for in-vitro scientific testing and reference standards. NOT for human consumption, therapeutic or diagnostic use. Technical specification: • CAS Number: ${cas} • HPLC-verified 99%+ purity${lyoLine}. Certificate of Analysis available on request. Supplied to qualified UK laboratories.`;
 
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
@@ -210,11 +213,16 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `    <g:sku>${xmlEscape(sku)}</g:sku>`,
               `    <g:item_group_id>${xmlEscape(docId)}</g:item_group_id>`,
               `    <g:google_product_category>6975</g:google_product_category>`,
-              `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Biochemicals</g:product_type>`,
+              `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Biochemicals${isLiquid ? "" : " &gt; Peptides"}</g:product_type>`,
               `    <g:adult>no</g:adult>`,
               `    <g:age_group>adult</g:age_group>`,
+              `    <g:identifier_exists>false</g:identifier_exists>`,
               `    <g:is_bundle>no</g:is_bundle>`,
               `    <g:multipack>1</g:multipack>`,
+              sizeCompact
+                ? `    <g:unit_pricing_measure>${xmlEscape(sizeCompact)}</g:unit_pricing_measure>`
+                : null,
+              `    <g:unit_pricing_base_measure>${baseUnit}</g:unit_pricing_base_measure>`,
               `    <g:shipping>`,
               `      <g:country>GB</g:country>`,
               `      <g:service>Standard</g:service>`,
@@ -222,13 +230,12 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `    </g:shipping>`,
               `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
               `    <g:product_highlight>HPLC-verified 99%+ purity</g:product_highlight>`,
-              `    <g:product_highlight>Lyophilised powder format</g:product_highlight>`,
+              isLiquid ? null : `    <g:product_highlight>Lyophilised powder format</g:product_highlight>`,
               `    <g:product_highlight>Certificate of Analysis available on request</g:product_highlight>`,
-              `    <g:product_highlight>Supplied to qualified UK laboratories</g:product_highlight>`,
-              `    <g:custom_label_0>99%+</g:custom_label_0>`,
-              sizeCompact
-                ? `    <g:unit_pricing_measure>${xmlEscape(sizeCompact)}</g:unit_pricing_measure>`
-                : null,
+              `    <g:product_highlight>Supplied to qualified UK laboratories only</g:product_highlight>`,
+              `    <g:custom_label_0>Laboratory Standard</g:custom_label_0>`,
+              `    <g:custom_label_1>Research Only</g:custom_label_1>`,
+              `    <g:custom_label_2>99% Purity</g:custom_label_2>`,
               `  </item>`,
             ]
               .filter(Boolean)
@@ -243,7 +250,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
           `  <channel>`,
           `    <title>${xmlEscape(`${BRAND} UK — Laboratory Reference Standards`)}</title>`,
           `    <link>${linkBase}</link>`,
-          `    <description>Analytical reference standards supplied as lyophilised solids for in-vitro laboratory use. Distributed to qualified research professionals and laboratories.</description>`,
+          `    <description>Analytical reference standards supplied as lyophilised solids for in-vitro laboratory use. Distributed to qualified research professionals and laboratories only.</description>`,
           items,
           `  </channel>`,
           `</rss>`,
