@@ -463,6 +463,7 @@ export default function AdminPage() {
         case 'seoopportunities': return <SEOOpportunitiesTab />;
         case 'backlinkoutreach': return <BacklinkOutreachTab />;
         case 'backlinkchanges': return <BacklinkChangesTab />;
+        case 'googleads': return <GoogleAdsTab />;
         case 'internallinks': return <InternalLinksTab />;
         case 'webvitals': return <WebVitalsTab />;
         case 'royalmail': return <RoyalMailTab />;
