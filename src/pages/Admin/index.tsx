@@ -41,6 +41,7 @@ import PrerenderStatusTab from './tabs/PrerenderStatusTab';
 import GSCMonitorTab from './tabs/GSCMonitorTab';
 import MarketingCoverageTab from './tabs/MarketingCoverageTab';
 import MerchantFeedTab from './tabs/MerchantFeedTab';
+import MerchantFeedEditorTab from './tabs/MerchantFeedEditorTab';
 import BingFeedTab from './tabs/BingFeedTab';
 import IndexNowTab from './tabs/IndexNowTab';
 import AuthEventsTab from './tabs/AuthEventsTab';
