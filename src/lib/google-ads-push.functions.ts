@@ -173,26 +173,24 @@ async function realPush(c: Campaign) {
   });
 
   const text = await res.text();
-  let body: unknown;
-  try { body = JSON.parse(text); } catch { body = text; }
 
   if (!res.ok) {
     return {
       ok: false as const,
       status: res.status,
-      error: body,
+      errorJson: text,
       hint:
         res.status === 401
           ? 'OAuth/developer-token rejected. Verify GOOGLE_ADS_DEVELOPER_TOKEN and that the OAuth client owns the customer ID.'
           : res.status === 403
           ? 'Customer ID not accessible by this OAuth user, or developer token lacks access.'
-          : 'See `error` for Google Ads field violations.',
+          : 'See `errorJson` for Google Ads field violations.',
     };
   }
   return {
     ok: true as const,
     status: res.status,
-    result: body,
+    resultJson: text,
     deepLink: `https://ads.google.com/aw/campaigns?ocid=&__c=${cid}`,
   };
 }
