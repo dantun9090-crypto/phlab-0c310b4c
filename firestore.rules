@@ -164,6 +164,21 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ---------- toastAuditLogs (admin-written, admin-read) ----------
+    // Logged from src/lib/toast-audit.ts every time a Live Activity toast
+    // is attempted (delivered or suppressed). Only signed-in admins can
+    // append; only admins can read. Past entries are immutable.
+    match /toastAuditLogs/{id} {
+      allow read:   if isAdmin();
+      allow create: if isAdmin()
+                    && request.resource.data.kind in ['signup','visitor']
+                    && request.resource.data.outcome is string
+                    && request.resource.data.outcome.size() < 64
+                    && request.resource.data.title is string
+                    && request.resource.data.title.size() < 300;
+      allow update, delete: if false;
+    }
+
     // ---------- admin_health_logs (server-written, admin-read) ----------
     // Written exclusively by the scheduled health-check hook via the
     // Firebase service account. Clients (even admins) may NEVER mutate.
