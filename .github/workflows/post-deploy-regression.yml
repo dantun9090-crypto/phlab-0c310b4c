@@ -141,5 +141,6 @@ jobs:
             });
 
       - name: Fail job on regression
-        if: steps.regression.outputs.exit_code != '0' || steps.prodroutes.outputs.exit_code != '0'
+        if: steps.regression.outputs.exit_code != '0' || steps.prodroutes.outputs.exit_code != '0' || steps.canonicals.outputs.exit_code != '0'
         run: exit 1
+
