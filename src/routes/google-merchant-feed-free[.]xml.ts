@@ -43,6 +43,7 @@ const LEGACY_HOST = "prohealthpeptides.co.uk";
 const LEGACY_BASE_URL = `https://${LEGACY_HOST}`;
 const BRAND = "PH Labs";
 const CURRENCY = "GBP";
+const FEED_REVISION = "free-v3-20260627";
 
 // Hard block — never list under any circumstances (active pharma trial).
 const HARD_BLOCKED_NAMES = ["tirzepatide", "semaglutide"];
@@ -141,10 +142,13 @@ function longDescriptionFor(name: string, cas: string | null, size: string): str
 }
 
 // Short opaque SKU like "01aa", "02ab" … deterministic per docId + index.
+// FEED_REVISION is included so we can intentionally rotate Google Merchant
+// item IDs when a previous feed version is stuck/disapproved in GMC history.
 function shortSku(docId: string, index: number): string {
   const num = String((index % 99) + 1).padStart(2, "0");
   let h = 0;
-  for (let i = 0; i < docId.length; i++) h = (h * 31 + docId.charCodeAt(i)) >>> 0;
+  const seed = `${FEED_REVISION}:${docId}`;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
   const a = String.fromCharCode(97 + (h % 26));
   const b = String.fromCharCode(97 + ((h >>> 5) % 26));
   return `${num}${a}${b}`;
@@ -308,9 +312,9 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
           `<?xml version="1.0" encoding="UTF-8"?>`,
           `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`,
           `  <channel>`,
-          `    <title>${xmlEscape(`${BRAND} UK — Analytical Reference Standards (Free Listings)`)}</title>`,
+          `    <title>${xmlEscape(`${BRAND} UK — Research Compound Catalogue`)}</title>`,
           `    <link>${linkBase}</link>`,
-          `    <description>Analytical reference standards for HPLC / LC-MS calibration. Free listings only — not for Shopping Ads.</description>`,
+          `    <description>Research compound catalogue for UK laboratory supply. Free listings only.</description>`,
           items,
           `  </channel>`,
           `</rss>`,
@@ -326,6 +330,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
             "Surrogate-Control": "no-store",
             "X-Feed-Items": String(eligible.length),
             "X-Feed-Type": "free-listings-only",
+            "X-Feed-Revision": FEED_REVISION,
             "X-Feed-Generated-At": generatedAt,
           },
         });
