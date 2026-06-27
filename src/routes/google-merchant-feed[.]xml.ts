@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { fetchAllProducts } from "@/lib/firestore-rest";
+import {
+  feedKeyFromRequest,
+  loadFeedConfig,
+  loadFeedOverrides,
+  isProductAllowed,
+  applyOverrideToItem,
+} from "@/lib/merchant-feed-overrides";
 
 
 // Google product categories for dual-title feed.
@@ -358,7 +365,13 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
 
 
-        const merchantProducts = products.filter((p) => isAllowedForMerchant(p as any));
+        const reqHost = (() => { try { return new URL(request.url).hostname.toLowerCase(); } catch { return ""; } })();
+        const feedKey = feedKeyFromRequest(reqHost, "paid");
+        const adminConfig = await loadFeedConfig(feedKey);
+        const adminOverrides = await loadFeedOverrides(feedKey);
+        const merchantProducts = products.filter(
+          (p) => isAllowedForMerchant(p as any) && isProductAllowed(p as any, adminOverrides.get(p.id), adminConfig),
+        );
 
         // SINGLE-ENTRY FEED. One <item> per Firestore product.
         // Title format: `{CleanName} {size} — Analytical Reference Standard | PH Labs`
@@ -465,7 +478,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
 
             void cas;
 
-            return [
+            const itemXml = [
               `  <item>`,
               `    <g:id>${xmlEscape(merchantId)}</g:id>`,
               `    <title>${cdata(title)}</title>`,
@@ -514,6 +527,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             ]
               .filter(Boolean)
               .join("\n");
+            return applyOverrideToItem(itemXml, adminOverrides.get(docId));
           })
           .join("\n");
 
