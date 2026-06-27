@@ -138,7 +138,7 @@ const MERCHANT_CODE_OVERRIDES: Record<string, MerchantOverride> = {
   "mots-c-research-peptide": { code: "PHL-MC16", displayName: "PHL-MC16", cas: "1627580-64-6" },
   "kpv-research-peptide": { code: "PHL-KP3", displayName: "PHL-KP3", cas: "67727-97-3" },
   "glow-blend": { code: "PHL-GW4", displayName: "PHL-GW4", cas: "N/A (multi-component reference mixture)" },
-  "melanotan-ii-research-peptide": { code: "MT-2RP2", displayName: "MT-2RP2", cas: "121062-08-6" },
+  "melanotan-ii-research-peptide": { code: "MT-2RP2", displayName: "MT - M2-", cas: "121062-08-6" },
   "bacteriostatic-water-research-compound": { code: "PHL-BW9", displayName: "PHL-BW9", cas: "7732-18-5" },
   "klow-blend": { code: "PHL-KW5", displayName: "PHL-KW5", cas: "N/A (multi-component reference mixture)" },
   "ghk-cu-research-peptide": { code: "PHL-GC3", displayName: "PHL-GC3", cas: "49557-75-7" },
@@ -398,7 +398,8 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               ? (override?.code || docId)
               : (p.sku || override?.code || docId)
             ).trim();
-            const skuWithSize = sizeCompact ? `${skuCode}-${sizeCompact}` : skuCode;
+            const displaySku = override?.displayName || skuCode;
+            const skuWithSize = sizeCompact ? `${displaySku} ${sizeCompact}` : displaySku;
             const merchantId = highRisk && override?.code ? override.code : docId;
             const merchantLinkId = merchantId;
 
