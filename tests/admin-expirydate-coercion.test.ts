@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Regression guard: the admin Marketing + Promo Codes tabs must tolerate
  * every `expiryDate` shape we have seen in Firestore in the wild:
