@@ -404,7 +404,10 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               : (p.sku || override?.code || docId)
             ).trim();
             const displaySku = override?.displayName || skuCode;
-            const skuWithSize = sizeCompact ? `${displaySku} ${sizeCompact}` : displaySku;
+            const skuWithSize =
+              sizeCompact && !override?.noSizePrefix
+                ? `${displaySku} ${sizeCompact}`
+                : displaySku;
             const merchantId = highRisk && override?.code ? override.code : docId;
             const merchantLinkId = merchantId;
 
