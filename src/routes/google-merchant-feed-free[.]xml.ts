@@ -32,7 +32,7 @@ const LEGACY_HOST = "prohealthpeptides.co.uk";
 const LEGACY_BASE_URL = `https://${LEGACY_HOST}`;
 const BRAND = "PH Labs";
 const CURRENCY = "GBP";
-const FEED_REVISION = "prohealth-grok-safe-v3-20260627";
+const FEED_REVISION = "prohealth-grok-safe-v4-semrush-20260627";
 
 // Hard block — never list (active pharma trial / disapproved molecules).
 const HARD_BLOCKED_NAMES = ["tirzepatide", "semaglutide"];
@@ -158,15 +158,27 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
                 : "";
             const sizeCompact = sizeLabel.replace(/\s+/g, "");
 
+            // Semrush UK: "research peptides uk" 480/mo KDI 34 = realistic.
+            // "reference standard" / "lyophilised peptide" = <40/mo combined.
+            // Front-load molecule + size + form + purity USP so Free Listings
+            // match real user queries; brand last; compliance line stays.
+            const isLiquid = /bacteriostatic|water/i.test(p.name);
+            const formLabel = isLiquid ? "Sterile Solution" : "Lyophilised Powder";
             const title = sizeLabel
-              ? `${fullName} ${sizeLabel} — Analytical Reference Standard | ${BRAND}`
-              : `${fullName} — Analytical Reference Standard | ${BRAND}`;
+              ? `${fullName} ${sizeLabel} — ${formLabel} | HPLC 99% Purity | Research Compound | ${BRAND} UK`
+              : `${fullName} — ${formLabel} | HPLC 99% Purity | Research Compound | ${BRAND} UK`;
 
             const cas = casFor(p.name) ?? "N/A (multi-component reference mixture)";
-            const isLiquid = /bacteriostatic|water/i.test(p.name);
             const baseUnit = isLiquid ? "1 ml" : "1 mg";
-            const lyoLine = isLiquid ? "" : " • Lyophilised powder format";
-            const description = `For laboratory and analytical research ONLY. Strictly for in-vitro scientific testing and reference standards. NOT for human consumption, therapeutic or diagnostic use. Technical specification: • CAS Number: ${cas} • HPLC-verified 99%+ purity${lyoLine}. Certificate of Analysis available on request. Supplied to qualified UK laboratories.`;
+            const formLine = isLiquid ? "sterile aqueous solution" : "lyophilised solid powder";
+            // USP-first description: form + purity + spec + CoA + UK fulfilment,
+            // mandatory non-human-use disclaimer at the end (v3 compliance shape).
+            const description =
+              `${fullName}${sizeLabel ? ` ${sizeLabel}` : ""} supplied as a ${formLine} for in-vitro laboratory research and analytical reference work in the United Kingdom. ` +
+              `HPLC-verified ≥99% purity, Certificate of Analysis (CoA) issued per batch with retention sample. ` +
+              `Technical specification: • CAS Number: ${cas} • Purity ≥99% by RP-HPLC • Form: ${formLine} • Storage: 2–8 °C, protect from light. ` +
+              `Dispatched from a UK facility to qualified laboratories, research institutions and analytical chemists. ` +
+              `Strictly for in-vitro scientific testing and reference standards. NOT for human consumption, therapeutic or diagnostic use.`;
 
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
@@ -229,13 +241,23 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `      <g:price>4.99 ${CURRENCY}</g:price>`,
               `    </g:shipping>`,
               `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
-              `    <g:product_highlight>HPLC-verified 99%+ purity</g:product_highlight>`,
-              isLiquid ? null : `    <g:product_highlight>Lyophilised powder format</g:product_highlight>`,
-              `    <g:product_highlight>Certificate of Analysis available on request</g:product_highlight>`,
-              `    <g:product_highlight>Supplied to qualified UK laboratories only</g:product_highlight>`,
-              `    <g:custom_label_0>Laboratory Standard</g:custom_label_0>`,
-              `    <g:custom_label_1>Research Only</g:custom_label_1>`,
-              `    <g:custom_label_2>99% Purity</g:custom_label_2>`,
+              // Structured product_detail attributes — Google Free Listings
+              // surfaces these as a spec table and uses them as ranking signals.
+              `    <g:product_detail><g:section_name>Specification</g:section_name><g:attribute_name>CAS Number</g:attribute_name><g:attribute_value>${xmlEscape(cas)}</g:attribute_value></g:product_detail>`,
+              `    <g:product_detail><g:section_name>Specification</g:section_name><g:attribute_name>Purity</g:attribute_name><g:attribute_value>≥99% by RP-HPLC</g:attribute_value></g:product_detail>`,
+              `    <g:product_detail><g:section_name>Specification</g:section_name><g:attribute_name>Form</g:attribute_name><g:attribute_value>${isLiquid ? "Sterile aqueous solution" : "Lyophilised solid powder"}</g:attribute_value></g:product_detail>`,
+              `    <g:product_detail><g:section_name>Specification</g:section_name><g:attribute_name>Storage</g:attribute_name><g:attribute_value>2–8 °C, protect from light</g:attribute_value></g:product_detail>`,
+              `    <g:product_detail><g:section_name>Specification</g:section_name><g:attribute_name>Certificate of Analysis</g:attribute_name><g:attribute_value>Issued per batch with retention sample</g:attribute_value></g:product_detail>`,
+              `    <g:product_detail><g:section_name>Compliance</g:section_name><g:attribute_name>Intended Use</g:attribute_name><g:attribute_value>In-vitro laboratory research only — NOT for human consumption</g:attribute_value></g:product_detail>`,
+              `    <g:product_highlight>HPLC-verified ≥99% purity (CoA per batch)</g:product_highlight>`,
+              isLiquid ? null : `    <g:product_highlight>Lyophilised powder, stable cold-chain dispatch</g:product_highlight>`,
+              `    <g:product_highlight>UK fulfilment to qualified laboratories</g:product_highlight>`,
+              `    <g:product_highlight>Retention sample held for analytical traceability</g:product_highlight>`,
+              `    <g:custom_label_0>Laboratory Reference Standard</g:custom_label_0>`,
+              `    <g:custom_label_1>In-Vitro Research Only</g:custom_label_1>`,
+              `    <g:custom_label_2>HPLC ≥99% Purity</g:custom_label_2>`,
+              `    <g:custom_label_3>UK Dispatch</g:custom_label_3>`,
+              `    <g:custom_label_4>${xmlEscape(formLabel)}</g:custom_label_4>`,
               `  </item>`,
             ]
               .filter(Boolean)
@@ -248,9 +270,9 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
           `<!-- ${FEED_REVISION}: approved-format feed rendered live for ${linkBase} at ${generatedAt} -->`,
           `<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">`,
           `  <channel>`,
-          `    <title>${xmlEscape(`${BRAND} UK — Laboratory Reference Standards`)}</title>`,
+          `    <title>${xmlEscape(`${BRAND} UK — Research Compounds &amp; Laboratory Reference Standards`)}</title>`,
           `    <link>${linkBase}</link>`,
-          `    <description>Analytical reference standards supplied as lyophilised solids for in-vitro laboratory use. Distributed to qualified research professionals and laboratories only.</description>`,
+          `    <description>UK-dispatched research compounds and analytical reference standards — HPLC ≥99% purity, CoA per batch, in-vitro laboratory use only. NOT for human consumption.</description>`,
           items,
           `  </channel>`,
           `</rss>`,
