@@ -14,6 +14,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Skeleton } from '@/components/ui/skeleton';
 import { listVisitorSessions, type VisitorSessionRow, type SessionCursor } from '@/lib/visitor-sessions.functions';
 
+/** Firestore hard cap on `limit()` for a single structured query. Anything
+ *  larger throws `Limit value over maximum 10000`. Used by both the local
+ *  events fetch and the `maxEvents` arg sent to the cursor-paginated server fn
+ *  so paging totals never diverge.  */
+export const FIRESTORE_MAX_LIMIT = 10_000 as const;
+
+
 
 type VisitorEvent = {
   id: string;
