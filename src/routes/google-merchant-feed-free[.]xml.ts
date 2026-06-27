@@ -1,6 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
 import { fetchAllProducts } from "@/lib/firestore-rest";
+import {
+  feedKeyFromRequest,
+  loadFeedConfig,
+  loadFeedOverrides,
+  isProductAllowed,
+  applyOverrideToItem,
+} from "@/lib/merchant-feed-overrides";
 
 /**
  * ============================================================================
@@ -146,7 +153,12 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
           products = [];
         }
 
-        const eligible = products.filter((p) => isAllowedForFreeListing(p as any));
+        const feedKey = feedKeyFromRequest(reqHost, "free");
+        const adminConfig = await loadFeedConfig(feedKey);
+        const adminOverrides = await loadFeedOverrides(feedKey);
+        const eligible = products.filter(
+          (p) => isAllowedForFreeListing(p as any) && isProductAllowed(p as any, adminOverrides.get(p.id), adminConfig),
+        );
 
         const items = eligible
           .map((p) => {
@@ -208,7 +220,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
             const sku = skuFor(p.name, docId);
 
-            return [
+            const itemXml = [
               `  <item>`,
               `    <g:id>${xmlEscape(docId)}</g:id>`,
               `    <title>${cdata(title)}</title>`,
@@ -241,8 +253,6 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `      <g:price>4.99 ${CURRENCY}</g:price>`,
               `    </g:shipping>`,
               `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
-              // Structured product_detail attributes — Google Free Listings
-              // surfaces these as a spec table and uses them as ranking signals.
               `    <g:product_detail><g:section_name>Specification</g:section_name><g:attribute_name>CAS Number</g:attribute_name><g:attribute_value>${xmlEscape(cas)}</g:attribute_value></g:product_detail>`,
               `    <g:product_detail><g:section_name>Specification</g:section_name><g:attribute_name>Purity</g:attribute_name><g:attribute_value>≥99% by RP-HPLC</g:attribute_value></g:product_detail>`,
               `    <g:product_detail><g:section_name>Specification</g:section_name><g:attribute_name>Form</g:attribute_name><g:attribute_value>${isLiquid ? "Sterile aqueous solution" : "Lyophilised solid powder"}</g:attribute_value></g:product_detail>`,
@@ -262,6 +272,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
             ]
               .filter(Boolean)
               .join("\n");
+            return applyOverrideToItem(itemXml, adminOverrides.get(docId));
           })
           .join("\n");
 
