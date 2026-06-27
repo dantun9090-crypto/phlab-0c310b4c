@@ -234,8 +234,14 @@ export function resolveLegacyRedirect(pathname: string): string | null {
       ? pathname.slice(0, -1)
       : pathname;
 
+  // Exact matches take priority over prefix matches so legacy product slugs
+  // (e.g. /product/bacteriostatic-water-0-9-benzyl-alcohol-lab-diluent) map
+  // to the CURRENT canonical slug rather than the literal /products/<same>
+  // tail produced by the generic /product/ → /products/ prefix rule.
   for (const rule of RULES) {
     if (rule.type === "exact" && clean === rule.from) return rule.to;
+  }
+  for (const rule of RULES) {
     if (rule.type === "prefix" && clean.startsWith(rule.from)) {
       const tail = clean.slice(rule.from.length);
       return rule.to + tail;
