@@ -53,8 +53,12 @@ function ratingClass(r: "good" | "needs-improvement" | "poor"): string {
 
 export default function WebVitalsTab() {
   const fetchSummary = useServerFn(getWebVitalsSummary);
+  const fetchTrends = useServerFn(getWebVitalsTrends);
+  const fetchAlerts = useServerFn(getWebVitalsAlerts);
   const [days, setDays] = useState(7);
   const [data, setData] = useState<VitalsSummary | null>(null);
+  const [trends, setTrends] = useState<VitalsTrends | null>(null);
+  const [alerts, setAlerts] = useState<VitalsAlert[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -62,8 +66,14 @@ export default function WebVitalsTab() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetchSummary({ data: { days: d } });
-      setData(res);
+      const [summary, trend, alertRows] = await Promise.all([
+        fetchSummary({ data: { days: d } }),
+        fetchTrends({ data: { days: d } }),
+        fetchAlerts({ data: { days: Math.max(d, 7), limit: 50 } }),
+      ]);
+      setData(summary);
+      setTrends(trend);
+      setAlerts(alertRows);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load");
     } finally {
