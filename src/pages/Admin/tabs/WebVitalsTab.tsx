@@ -236,7 +236,7 @@ export default function WebVitalsTab() {
               key={m}
               metric={m}
               points={trends?.byMetric?.[m] ?? []}
-              format={(v) => formatValue(m, v)}
+              format={(v: number) => formatValue(m, v)}
               thresholds={THRESHOLDS[m]}
             />
           ))}
