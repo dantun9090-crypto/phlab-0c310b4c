@@ -4,8 +4,8 @@
  * Manages 4 feeds independently:
  *   - phlabs_paid       phlabs.co.uk/google-merchant-feed.xml
  *   - phlabs_free       phlabs.co.uk/google-merchant-feed-free.xml
- *   - prohealth_paid    prohealthpeptides.co.uk/google-merchant-feed.xml
- *   - prohealth_free    prohealthpeptides.co.uk/google-merchant-feed-free.xml
+ *   - prohealth_paid    legacy host /google-merchant-feed.xml
+ *   - prohealth_free    legacy host /google-merchant-feed-free.xml
  *
  * Features: global settings, inclusion toggles, per-product overrides,
  * risk rules, live diff preview against the rendered XML.
@@ -26,9 +26,12 @@ import {
 const FEEDS = [
   { key: 'phlabs_paid', label: 'phlabs.co.uk · Paid (Shopping)', url: 'https://phlabs.co.uk/google-merchant-feed.xml' },
   { key: 'phlabs_free', label: 'phlabs.co.uk · Free Listings', url: 'https://phlabs.co.uk/google-merchant-feed-free.xml' },
+  // check-domains-allow-next-line
   { key: 'prohealth_paid', label: 'prohealthpeptides.co.uk · Paid', url: 'https://prohealthpeptides.co.uk/google-merchant-feed.xml' },
+  // check-domains-allow-next-line
   { key: 'prohealth_free', label: 'prohealthpeptides.co.uk · Free', url: 'https://prohealthpeptides.co.uk/google-merchant-feed-free.xml' },
 ] as const;
+
 type FeedKey = (typeof FEEDS)[number]['key'];
 
 interface ConfigData {
