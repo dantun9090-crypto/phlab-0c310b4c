@@ -376,7 +376,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
         //   - drop <g:unit_pricing_measure> (mg+name = pharma signal)
         //   - switch product_type to "Laboratory Chemicals" leaf (499954)
         // Molecule name still appears in <description> for matching.
-        const HIGH_RISK_TOKENS = ["retatrutide", "bpc-157", "bpc157", "bpc 157", "tirzepatide", "semaglutide"];
+        const HIGH_RISK_TOKENS = ["retatrutide", "bpc-157", "bpc157", "bpc 157", "tirzepatide", "semaglutide", "melanotan", "mt-2", "mt-ii", "mt2"];
         const isHighRisk = (name: string) => {
           const n = name.toLowerCase();
           return HIGH_RISK_TOKENS.some((t) => n.includes(t));
