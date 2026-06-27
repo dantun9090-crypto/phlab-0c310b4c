@@ -112,15 +112,22 @@ The compound is currently progressing through Phase 3 evaluation (TRIUMPH progra
   {
     slug: 'hplc-testing-explained',
     title: 'HPLC Testing Explained: How Peptide Purity Is Verified',
+    seoTitle: 'What Is HPLC Testing? Peptide Purity Verification | PH Labs',
+    seoDescription: 'What is HPLC testing? A complete UK guide to reversed-phase HPLC for peptide purity verification — chromatograms, peak area %, LC-MS confirmation, and FAQ.',
     subtitle: 'Understanding reversed-phase HPLC, analytical method development, and how chromatographic data validates research-grade peptide quality',
     category: 'Analytical Chemistry',
     readTime: 11,
     publishDate: '2026-03-05',
     excerpt: 'High-performance liquid chromatography (HPLC) is the gold-standard technique for verifying peptide identity and purity. This guide explains how reversed-phase HPLC works, how to interpret chromatograms, and why peak area percentage matters when sourcing research compounds.',
-    keywords: ['HPLC', 'peptide purity', 'reversed-phase HPLC', 'chromatography', 'analytical testing', 'research peptides', 'mass spectrometry'],
+    keywords: ['what is hplc testing', 'HPLC testing', 'HPLC', 'peptide purity', 'reversed-phase HPLC', 'chromatography', 'analytical testing', 'research peptides', 'mass spectrometry'],
     relatedSlugs: ['what-is-retatrutide', 'bpc-157-tissue-repair', 'retatrutide-vs-tirzepatide-vs-semaglutide'],
     content: [
       {
+        heading: 'What Is HPLC Testing? (Quick Answer)',
+        body: `<strong>HPLC testing (High-Performance Liquid Chromatography)</strong> is an analytical laboratory technique used to separate, identify, and quantify the components of a mixture. For research peptides, HPLC verifies <strong>purity</strong> (typically reported as peak area % at UV 214 nm) and confirms <strong>identity</strong> by retention time against a reference standard. A result of <strong>≥98% HPLC purity</strong> means at least 98% of the detected material is the target compound, with the remainder being synthesis-related impurities such as truncated sequences or oxidised by-products. All PH Labs research peptides are <a href="/quality-control" style="color: #10b981; text-decoration: underline; font-weight: 700;">tested by reversed-phase HPLC</a> with batch certificates available on request.`
+      },
+      {
+
         body: `High-performance liquid chromatography (HPLC) is the definitive analytical technique used to assess the identity, purity, and concentration of synthetic peptides. When a research supplier provides an HPLC certificate, they are communicating quantitative information about the composition of the compound at the molecular level. Understanding what that data means — and what it doesn't — is essential for anyone working with research-grade peptides.`
       },
       {
