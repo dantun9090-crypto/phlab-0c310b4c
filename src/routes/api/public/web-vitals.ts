@@ -128,6 +128,36 @@ export const Route = createFileRoute("/api/public/web-vitals")({
             build: v.build ?? "",
             createdAt: new Date().toISOString(),
           });
+
+          // ── Alerting ──────────────────────────────────────────────
+          // Hard thresholds beyond Google's "poor" line. When breached
+          // we drop a row into `web_vitals_alerts`; the admin Web Vitals
+          // tab listens and surfaces a red badge + toast. Keeps volume
+          // tiny (only the worst tail of "poor" samples write here).
+          const ALERT_THRESHOLDS: Record<string, number> = {
+            LCP: 4000,   // ms — "poor" starts at 4000
+            INP: 500,    // ms — "poor" starts at 500
+            CLS: 250,    // value*1000 — "poor" starts at 250
+            FCP: 3000,   // ms
+            TTFB: 1800,  // ms
+          };
+          if (v.rating === "poor" && v.value >= (ALERT_THRESHOLDS[v.name] ?? Infinity)) {
+            try {
+              await addDocAdmin("web_vitals_alerts", {
+                name: v.name,
+                value: Math.round(v.value),
+                threshold: ALERT_THRESHOLDS[v.name],
+                path: v.path.slice(0, 200),
+                pathBucket,
+                device: v.device ?? "desktop",
+                conn: v.conn ?? "unknown",
+                build: v.build ?? "",
+                createdAt: new Date().toISOString(),
+              });
+            } catch (alertErr) {
+              console.warn("[web-vitals] alert write failed", alertErr);
+            }
+          }
         } catch (err) {
           console.error("[web-vitals] persist failed", err);
           return json({ ok: false }, 500, origin);
