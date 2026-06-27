@@ -122,7 +122,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
         const eligible = products.filter((p) => isAllowedForFreeListing(p as any));
 
         const items = eligible
-          .map((p) => {
+          .map((p, idx) => {
             const docId = p.id;
             const fullName = cleanFullName(p.name);
             const sizeLabel =
@@ -131,21 +131,14 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
                 : "";
             const sizeCompact = sizeLabel.replace(/\s+/g, "");
 
-            // Instrumentation-framed title — no drug-form vocabulary.
-            const title = sizeLabel
-              ? `${fullName} ${sizeLabel} — Analytical Reference Standard for HPLC / LC-MS | PH Labs`
-              : `${fullName} — Analytical Reference Standard for HPLC / LC-MS | PH Labs`;
+            // Title: "{Name}-Research Compound" (blank, no qualifiers).
+            const title = `${fullName}-Research Compound`;
 
-            // Description framed entirely around laboratory instrumentation
-            // calibration. No "research use only", no "human consumption",
-            // no "purity" superlatives that pharma classifiers latch onto.
-            const description =
-              `${fullName} analytical reference standard supplied for ` +
-              `chromatography and mass-spectrometry method development, ` +
-              `calibration curves, and quality-control workflows in ` +
-              `accredited laboratories. Each lot ships with a Certificate ` +
-              `of Analysis detailing identity (LC-MS), assay (HPLC-UV), ` +
-              `and water content. Sold for laboratory instrumentation use.`;
+            // Description: CAS number + "Only for Laboratory Use". Nothing else.
+            const cas = casFor(p.name);
+            const description = cas
+              ? `CAS ${cas}. Only for Laboratory Use.`
+              : `Only for Laboratory Use.`;
 
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
@@ -173,12 +166,12 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
             const price = `${p.price.toFixed(2)} ${CURRENCY}`;
             const availability =
               typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
-            const sku = (p.sku || docId).trim();
+            const sku = shortSku(docId, idx);
             const hasGtin = !!p.gtin;
 
             return [
               `  <item>`,
-              `    <g:id>${xmlEscape(`FREE-${docId}`)}</g:id>`,
+              `    <g:id>${xmlEscape(sku)}</g:id>`,
               `    <title>${cdata(title)}</title>`,
               `    <link>${xmlEscape(link)}</link>`,
               `    <g:mobile_link>${xmlEscape(link)}</g:mobile_link>`,
@@ -196,7 +189,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `    <g:item_group_id>${xmlEscape(docId)}</g:item_group_id>`,
               // 499892 = Business & Industrial > Science & Laboratory > Lab Chemicals
               `    <g:google_product_category>499892</g:google_product_category>`,
-              `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Analytical Standards</g:product_type>`,
+              `    <g:product_type>Business &amp; Industrial &gt; Science &amp; Laboratory &gt; Laboratory Chemicals</g:product_type>`,
               `    <g:is_bundle>no</g:is_bundle>`,
               `    <g:multipack>1</g:multipack>`,
               `    <g:shipping>`,
@@ -205,10 +198,6 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `      <g:price>4.99 ${CURRENCY}</g:price>`,
               `    </g:shipping>`,
               `    <g:shipping_weight>${(p.weightGrams ?? 20)} g</g:shipping_weight>`,
-              `    <g:product_highlight>Analytical reference standard for HPLC / LC-MS</g:product_highlight>`,
-              `    <g:product_highlight>Certificate of Analysis on every lot</g:product_highlight>`,
-              `    <g:product_highlight>UK laboratory dispatch with cold-pack option</g:product_highlight>`,
-              `    <g:product_highlight>Sold for laboratory instrumentation use</g:product_highlight>`,
               sizeCompact
                 ? `    <g:unit_pricing_measure>${xmlEscape(sizeCompact)}</g:unit_pricing_measure>`
                 : null,
