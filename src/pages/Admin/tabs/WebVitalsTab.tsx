@@ -8,13 +8,20 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Activity, AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react";
+import { Activity, AlertTriangle, BellRing, CheckCircle2, RefreshCw } from "lucide-react";
 
 import {
   getWebVitalsSummary,
   type VitalsSummary,
   type VitalsBucket,
 } from "@/lib/web-vitals-summary.functions";
+import {
+  getWebVitalsTrends,
+  getWebVitalsAlerts,
+  type VitalsTrends,
+  type VitalsAlert,
+  type DailyVitalsPoint,
+} from "@/lib/web-vitals-trends.functions";
 
 type MetricName = "LCP" | "CLS" | "INP" | "FCP" | "TTFB";
 
