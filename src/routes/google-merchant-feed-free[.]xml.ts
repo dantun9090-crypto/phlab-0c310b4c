@@ -181,7 +181,7 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
                   `    <g:additional_image_link>${xmlEscape(abs)}</g:additional_image_link>`,
               );
 
-            const link = `${BASE_URL}/products/${docId}`;
+            const link = `${linkBase}/products/${docId}`;
             const price = `${p.price.toFixed(2)} ${CURRENCY}`;
             const availability =
               typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
