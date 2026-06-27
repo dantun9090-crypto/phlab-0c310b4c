@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as GoogleMerchantFeedDotxmlRouteImport } from './routes/google-merchant-feed[.]xml'
+import { Route as GoogleMerchantFeedFreeDotxmlRouteImport } from './routes/google-merchant-feed-free[.]xml'
 import { Route as GoogleAdsSafeFeedDotxmlRouteImport } from './routes/google-ads-safe-feed[.]xml'
 import { Route as BingFeedDotxmlRouteImport } from './routes/bing-feed[.]xml'
 import { Route as MarketingRouteImport } from './routes/_marketing'
@@ -75,6 +76,12 @@ const GoogleMerchantFeedDotxmlRoute =
   GoogleMerchantFeedDotxmlRouteImport.update({
     id: '/google-merchant-feed.xml',
     path: '/google-merchant-feed.xml',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const GoogleMerchantFeedFreeDotxmlRoute =
+  GoogleMerchantFeedFreeDotxmlRouteImport.update({
+    id: '/google-merchant-feed-free.xml',
+    path: '/google-merchant-feed-free.xml',
     getParentRoute: () => rootRouteImport,
   } as any)
 const GoogleAdsSafeFeedDotxmlRoute = GoogleAdsSafeFeedDotxmlRouteImport.update({
@@ -337,6 +344,7 @@ export interface FileRoutesByFullPath {
   '/$indexnowKey.txt': typeof IndexnowKeyDottxtRoute
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
   '/google-ads-safe-feed.xml': typeof GoogleAdsSafeFeedDotxmlRoute
+  '/google-merchant-feed-free.xml': typeof GoogleMerchantFeedFreeDotxmlRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -389,6 +397,7 @@ export interface FileRoutesByTo {
   '/$indexnowKey.txt': typeof IndexnowKeyDottxtRoute
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
   '/google-ads-safe-feed.xml': typeof GoogleAdsSafeFeedDotxmlRoute
+  '/google-merchant-feed-free.xml': typeof GoogleMerchantFeedFreeDotxmlRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -443,6 +452,7 @@ export interface FileRoutesById {
   '/_marketing': typeof MarketingRouteWithChildren
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
   '/google-ads-safe-feed.xml': typeof GoogleAdsSafeFeedDotxmlRoute
+  '/google-merchant-feed-free.xml': typeof GoogleMerchantFeedFreeDotxmlRoute
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/products': typeof ProductsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -497,6 +507,7 @@ export interface FileRouteTypes {
     | '/$indexnowKey.txt'
     | '/bing-feed.xml'
     | '/google-ads-safe-feed.xml'
+    | '/google-merchant-feed-free.xml'
     | '/google-merchant-feed.xml'
     | '/products'
     | '/sitemap.xml'
@@ -549,6 +560,7 @@ export interface FileRouteTypes {
     | '/$indexnowKey.txt'
     | '/bing-feed.xml'
     | '/google-ads-safe-feed.xml'
+    | '/google-merchant-feed-free.xml'
     | '/google-merchant-feed.xml'
     | '/products'
     | '/sitemap.xml'
@@ -602,6 +614,7 @@ export interface FileRouteTypes {
     | '/_marketing'
     | '/bing-feed.xml'
     | '/google-ads-safe-feed.xml'
+    | '/google-merchant-feed-free.xml'
     | '/google-merchant-feed.xml'
     | '/products'
     | '/sitemap.xml'
@@ -656,6 +669,7 @@ export interface RootRouteChildren {
   MarketingRoute: typeof MarketingRouteWithChildren
   BingFeedDotxmlRoute: typeof BingFeedDotxmlRoute
   GoogleAdsSafeFeedDotxmlRoute: typeof GoogleAdsSafeFeedDotxmlRoute
+  GoogleMerchantFeedFreeDotxmlRoute: typeof GoogleMerchantFeedFreeDotxmlRoute
   GoogleMerchantFeedDotxmlRoute: typeof GoogleMerchantFeedDotxmlRoute
   ProductsRoute: typeof ProductsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -723,6 +737,13 @@ declare module '@tanstack/react-router' {
       path: '/google-merchant-feed.xml'
       fullPath: '/google-merchant-feed.xml'
       preLoaderRoute: typeof GoogleMerchantFeedDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/google-merchant-feed-free.xml': {
+      id: '/google-merchant-feed-free.xml'
+      path: '/google-merchant-feed-free.xml'
+      fullPath: '/google-merchant-feed-free.xml'
+      preLoaderRoute: typeof GoogleMerchantFeedFreeDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/google-ads-safe-feed.xml': {
@@ -1083,6 +1104,7 @@ const rootRouteChildren: RootRouteChildren = {
   MarketingRoute: MarketingRouteWithChildren,
   BingFeedDotxmlRoute: BingFeedDotxmlRoute,
   GoogleAdsSafeFeedDotxmlRoute: GoogleAdsSafeFeedDotxmlRoute,
+  GoogleMerchantFeedFreeDotxmlRoute: GoogleMerchantFeedFreeDotxmlRoute,
   GoogleMerchantFeedDotxmlRoute: GoogleMerchantFeedDotxmlRoute,
   ProductsRoute: ProductsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
