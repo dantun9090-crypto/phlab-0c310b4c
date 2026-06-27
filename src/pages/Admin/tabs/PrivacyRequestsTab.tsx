@@ -103,18 +103,28 @@ export default function PrivacyRequestsTab() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | Status>('pending');
 
+  // Health metrics — see src/components/admin/HealthMetrics.tsx
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
+  const [readErrors, setReadErrors] = useState(0);
+  const [writeErrors, setWriteErrors] = useState(0);
+  const [refreshNonce, setRefreshNonce] = useState(0);
+  const [sampleBusy, setSampleBusy] = useState(false);
+
   useEffect(() => {
+    setLoading(true);
     const q = query(collection(db, 'dsrRequests'), orderBy('createdAt', 'desc'), limit(300));
     const unsub = onSnapshot(q, snap => {
       setRows(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })));
+      setLastFetched(new Date());
       setLoading(false);
       setError(null);
     }, err => {
+      setReadErrors(n => n + 1);
       setError(err?.code || err?.message || 'Failed to load requests');
       setLoading(false);
     });
     return () => unsub();
-  }, []);
+  }, [refreshNonce]);
 
   const filtered = useMemo(
     () => filter === 'all' ? rows : rows.filter(r => r.status === filter),
