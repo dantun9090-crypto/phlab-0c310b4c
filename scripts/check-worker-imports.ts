@@ -154,6 +154,24 @@ function main() {
     }
   }
 
+  // Symbol-integrity pass: any referenced symbol from SYMBOL_INTEGRITY
+  // that is NOT declared in the same bundle file will throw a
+  // ReferenceError on first request. We treat that as a hard failure.
+  const bodies = files.map((f) => ({ f, body: readFileSync(f, "utf8") }));
+  for (const { symbol, declRe } of SYMBOL_INTEGRITY) {
+    const referenced = bodies.some(({ body }) =>
+      new RegExp(`\\b${symbol}\\b`).test(body),
+    );
+    const declared = bodies.some(({ body }) => declRe.test(body));
+    if (referenced && !declared) {
+      hits.push({
+        file: "dist/server/**",
+        rule: `references "${symbol}" but its class declaration is missing — chunk-split lost firebase/auth side-effect. Keep auth UI in *.client.ts / dynamic import only.`,
+        sample: `referenced=true declared=false`,
+      });
+    }
+  }
+
   const totalKb = Math.round(
     files.reduce((acc, f) => acc + statSync(f).size, 0) / 1024,
   );
