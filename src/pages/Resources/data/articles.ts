@@ -286,14 +286,20 @@ In colitis models induced by trinitrobenzenesulphonic acid (TNBS) or dextran sod
   {
     slug: 'tb-500-thymosin-beta-4',
     title: 'TB-500 and Thymosin Beta-4: Actin Sequestration and Tissue Regeneration Research',
+    seoTitle: 'TB-500 (Thymosin Beta-4) UK Research Peptide — TB Labs Guide | PH Labs',
+    seoDescription: 'TB-500 / Thymosin Beta-4 UK research peptide guide from a UK research lab (TB labs): actin sequestration, cardiac repair, wound-healing data, dosage forms & FAQ.',
     subtitle: 'Exploring the endogenous actin-binding peptide Thymosin beta4, its synthetic fragment TB-500, and preclinical evidence across cardiac, dermal, and musculoskeletal models',
     category: 'Tissue Repair Research',
     readTime: 12,
     publishDate: '2026-02-08',
     excerpt: 'Thymosin Beta-4 (Tbeta4) is a 43-amino-acid peptide involved in actin polymerisation, cell migration, and wound healing. Its synthetic C-terminal fragment, often termed TB-500, has been studied in models of cardiac repair, dermal wound closure, and skeletal muscle regeneration.',
-    keywords: ['TB-500', 'thymosin beta-4', 'actin sequestration', 'wound healing', 'cardiac repair', 'cell migration', 'Tbeta4'],
+    keywords: ['TB-500', 'tb labs', 'tb-500 uk', 'buy tb-500 uk', 'thymosin beta-4', 'thymosin beta 4 uk', 'actin sequestration', 'wound healing', 'cardiac repair', 'cell migration', 'Tbeta4'],
     relatedSlugs: ['bpc-157-tissue-repair', 'hplc-testing-explained', 'peptide-storage-reconstitution'],
     content: [
+      {
+        heading: 'TB-500 / Thymosin Beta-4 — Quick Overview',
+        body: `<strong>TB-500</strong> is a synthetic research peptide corresponding to the active fragment of <strong>Thymosin Beta-4 (Tβ4)</strong>, a 43-amino-acid actin-sequestering peptide naturally abundant in platelets and wound fluid. In preclinical models TB-500 is studied for its effects on cell migration, angiogenesis, cardiac progenitor activation, and dermal/corneal wound closure. PH Labs supplies <strong>TB-500 (Thymosin Beta-4) at ≥99% HPLC purity</strong> with batch CoA — see the <a href="/products/tb-500-thymosin-beta-4" style="color: #10b981; text-decoration: underline; font-weight: 700;">TB-500 product page</a> for current UK stock and pricing. <em>For laboratory and analytical research use only. Not for personal use.</em>`
+      },
       {
         body: `Thymosin Beta-4 (Tbeta4) is one of the most abundant intracellular peptides in mammalian cells, present at concentrations of 200–500 µM in platelets and neutrophils. Its primary function is the sequestration of G-actin monomers: by binding actin with high affinity (Kd ~0.7 µM), Tbeta4 regulates the dynamic equilibrium between actin monomer pools and filamentous actin networks. This control over the actin cytoskeleton has downstream consequences for cell migration, morphology, and the cellular response to injury. <strong><a href="/products/tb-500-thymosin-beta-4" style="color: #10b981; text-decoration: underline; font-weight: 700;">Buy research-grade TB-500 / Thymosin Beta-4 (≥99% HPLC)</a></strong>.`
       },
@@ -316,6 +322,10 @@ VEGF and FGF pathway upregulation was confirmed by qRT-PCR in Tbeta4-treated myo
         body: `In full-thickness excisional wound models in mice, topical or systemic Tbeta4 administration accelerated re-epithelialisation, increased keratinocyte migration rates, and improved dermis collagen organisation. The mechanism operates through enhanced lamellipodia formation in migrating keratinocytes — a directly actin-cytoskeleton-dependent process. Alpha-smooth muscle actin (alpha-SMA) expression in wound myofibroblasts was also modulated, suggesting an effect on the contractile phase of wound healing.
 
 Corneal wound healing has emerged as one of the most reproducible applications: alkali-burn and excimer laser corneal injury models in rabbits demonstrate faster epithelial gap closure and reduced stromal haze with Tbeta4 eye drops compared to vehicle alone.`
+      },
+      {
+        heading: 'TB-500 FAQ (UK Research Lab Sourcing)',
+        body: `<strong>What is TB-500?</strong><br/>TB-500 is a synthetic research peptide corresponding to the active fragment of Thymosin Beta-4 (Tβ4). It is supplied as a lyophilised powder for reconstitution and is used as an analytical reference standard in in-vitro studies of cell migration, actin dynamics, and tissue-repair biology.<br/><br/><strong>Is TB-500 the same as Thymosin Beta-4?</strong><br/>Not exactly. Native Tβ4 is the full 43-amino-acid peptide; TB-500 commercial preparations correspond to a shorter active fragment of the same sequence. Both target the same actin-sequestering pathway.<br/><br/><strong>Where can I buy TB-500 in the UK?</strong><br/>PH Labs is a UK research-supply lab (sometimes referenced as "TB labs" for Thymosin Beta-4 sourcing). TB-500 ships from the UK with ≥99% HPLC purity and a batch certificate. See the <a href="/products/tb-500-thymosin-beta-4" style="color: #10b981; text-decoration: underline;">TB-500 product page</a> for UK stock.<br/><br/><strong>What purity should TB-500 be?</strong><br/>Reputable research suppliers test every batch by reversed-phase HPLC and report ≥98–99% peak area at UV 214 nm. <a href="/resources/hplc-testing-explained" style="color: #10b981; text-decoration: underline;">Learn how HPLC purity is verified</a>.<br/><br/><strong>How is TB-500 reconstituted for research use?</strong><br/>Lyophilised TB-500 is typically reconstituted with <a href="/products/bacteriostatic-water-research-compound" style="color: #10b981; text-decoration: underline;">bacteriostatic water</a> for in-vitro work. See the <a href="/resources/peptide-storage-reconstitution" style="color: #10b981; text-decoration: underline;">peptide storage & reconstitution guide</a> for stability and handling. <em>For laboratory and analytical research use only. Not for personal use.</em>`
       }
     ],
     references: [
