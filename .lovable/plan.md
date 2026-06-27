@@ -1,99 +1,65 @@
-## Cel
 
-Uruchomić `prohealthpeptides.co.uk` jako osobny "host" dla nowego konta Google Merchant Center (Free Listings, pełne nazwy: Retatrutide, BPC-157, Melanotan-II, PT-141 etc.) — z izolacją od głównego konta GMC na `phlabs.co.uk`. Zero ryzyka dla głównego SEO i Google Ads.
+## Goal
 
-## Architektura docelowa
+Lock down the regressions that just bit us (`/compare/*` getting silently `noindex`'d, `/research` canonical bleeding into pillar pages) with automated checks that fail the build, and make production crawl results visible directly in the PR / Actions UI.
 
-```text
-prohealthpeptides.co.uk
-├── /                              → mini-home (pełne nazwy, "Research Compounds Catalogue")
-├── /products/{slug}               → strona produktu z pełną nazwą + canonical → phlabs.co.uk/products/{slug}
-├── /google-merchant-feed-free.xml → feed z pełnymi nazwami + CAS
-└── (DNS TXT: weryfikacja GMC)
+## 1. Canonical uniqueness check
 
-phlabs.co.uk (bez zmian)
-└── działa jak teraz, opaque SKU feed
-```
+New script: `scripts/check-canonicals.mjs`
 
-## Co robi Lovable (kod)
+- Crawls the same URL set as `scripts/check-prod-routes.mjs` (critical list + every `<loc>` in `/sitemap.xml`).
+- For each URL, GETs the HTML and asserts:
+  - Exactly **one** `<link rel="canonical">` tag.
+  - Its `href` is absolute, on `https://phlabs.co.uk`, and equals the fetched URL (ignoring trailing slash + query allowlist `?utm_*`).
+  - `og:url` (if present) matches the canonical.
+- Output: per-URL OK / FAIL with the offending hrefs.
+- Exit 1 on any failure.
+- Wire into `package.json` as `check:canonicals` and add a step to `.github/workflows/post-deploy-regression.yml` right after the prod-routes step.
 
-### 1. Usunięcie 301 redirect (`src/server.ts`)
-- Wyrzucamy `prohealthpeptides.co.uk` z `REDIRECT_HOSTS`.
-- Zostawiamy `www.prohealthpeptides.co.uk` z 301 → `prohealthpeptides.co.uk` (apex jako kanoniczny dla tej domeny).
-- Edycja redirect logic: `www.prohealthpeptides.co.uk` celuje w apex `prohealthpeptides.co.uk`, NIE w `phlabs.co.uk`.
+## 2. Robots / noindex validation
 
-### 2. Host-aware rendering (helper `src/lib/host-context.ts`)
-- Wykrywa host z requestu (SSR + client).
-- `isLegacyHost()` → true dla `prohealthpeptides.co.uk`.
+Extend `scripts/check-prod-routes.mjs` (don't fork — same crawl, more assertions):
 
-### 3. Host-aware GMC feed
-- Aktualizacja `src/routes/google-merchant-feed-free[.]xml.ts`:
-  - Gdy host = `prohealthpeptides.co.uk`: użyj **pełnych nazw molekuł** w `<g:title>` (Retatrutide, BPC-157, Melanotan-II, PT-141, Tirzepatide).
-  - Opis: tylko `CAS {number}. Only for Laboratory Use.` (już zaimplementowane).
-  - `<link>` w feedzie → `https://prohealthpeptides.co.uk/products/{slug}` (nie phlabs).
-  - SKU short codes (`01aa` etc.) bez zmian.
+- A URL may carry `x-robots-tag: noindex` or `<meta name="robots" content="noindex">` **only if** the response status is 404 OR is a 3xx redirect (checked with `redirect: "manual"` first pass).
+- All other URLs with noindex → FAIL (this is exactly the `/compare/*` regression class).
+- Sitemap URLs may never be noindex regardless of status (existing rule, keep).
+- Emit a structured JSON report at `/tmp/prod-routes-report.json` with `{url, status, xRobots, metaRobots, verdict}` rows for the next step to consume.
 
-### 4. Host-aware canonical + meta
-- `src/routes/products_.$slug.tsx`: gdy host = `prohealthpeptides.co.uk`, `<link rel="canonical">` → `https://phlabs.co.uk/products/{slug}` (przekazuje całą "SEO juice" do głównej domeny, nie kanibalizuje).
-- `<meta name="robots" content="noindex, follow">` na wszystkich stronach `prohealthpeptides.co.uk` POZA tymi, do których GMC linkuje (PDP) — zapobiega duplikatom w Google Search, GMC i tak nie patrzy na robots.
-- Tytuł/H1 strony produktu: pełna nazwa molekuły (dla GMC review human-reviewer widzi czytelny content).
+Also tighten `src/server.ts`: the SSR-sentinel logic already added (`<meta name="prerender-status-code" content="404">`) is the only path that may inject the `x-robots-tag: noindex` header. Add an inline comment + a unit test in `tests/post-deploy-regression.test.ts` asserting a known-good route (e.g. `/compare/bpc-157-vs-tb-500`) is **not** stamped noindex.
 
-### 5. Mini-home dla `prohealthpeptides.co.uk`
-- `src/routes/index.tsx` z host-check: na legacy host renderuje listę produktów z pełnymi nazwami + dyskleimer "For Research Use Only. Not for Human Consumption.".
-- Canonical → `phlabs.co.uk/` (lub noindex jeśli nie chcemy duplikatu).
+## 3. Publish results as artifact + PR summary
 
-### 6. Robots / sitemap dla legacy host
-- `public/robots.txt` jest globalny, ale `src/routes/robots.txt.ts` może być host-aware.
-- Na `prohealthpeptides.co.uk`: `Allow: /products/*` i `/google-merchant-feed-free.xml`, `Disallow: /` reszta. Sitemap niepotrzebny (GMC czyta feed bezpośrednio).
+Update `.github/workflows/post-deploy-regression.yml`:
 
-### 7. Wyłączenie Cloudflare Workera `phlab` na tej domenie
-- Przez Cloudflare API: usunięcie custom domain `prohealthpeptides.co.uk` i `www.prohealthpeptides.co.uk` z Workera `phlab`. Bez tego Worker dalej zwraca 301 zanim ruch dojdzie do Lovable hostingu.
-- Worker `phlab` zostaje (na wypadek, gdyby ktoś chciał go reaktywować), ale bez bindingów.
+- New step after prod-routes + canonicals: render `/tmp/prod-routes-report.json` into a Markdown table (failures first, then a collapsed `<details>` with the full pass list) and append to `$GITHUB_STEP_SUMMARY`.
+- Upload `prod-routes-report.json`, `prod-routes.log`, and `canonicals.log` as a single artifact `route-audit-${{ github.sha }}` (retention 30 days).
+- On `pull_request` events: post/update a sticky PR comment with the same Markdown table (using `actions/github-script` + comment marker `<!-- route-audit -->`). On `push`/`schedule` just rely on the step summary.
 
-## Co robisz Ty (operacyjnie, poza kodem)
+## 4. Staging route checker (release gate)
 
-### A. DNS + Custom Domain w Lovable
-1. Lovable: Project Settings → Domains → **Connect Domain** → `prohealthpeptides.co.uk` (i osobno `www.prohealthpeptides.co.uk`).
-2. Lovable poda dwa rekordy A (185.158.133.1) i TXT `_lovable`.
-3. W Cloudflare (zone `prohealthpeptides.co.uk` — jeśli jest pod tym samym kontem CF, sprawdzę): zaktualizować A records, dodać TXT, **wyłączyć Proxy (chmurka szara)** lub zaznaczyć "Domain uses Cloudflare proxy" w Lovable (Advanced).
-4. Czekamy na SSL (do 72h, zwykle <1h).
+New workflow: `.github/workflows/pre-release-route-check.yml`
 
-### B. Nowe konto Google Merchant Center
-1. Nowy Gmail (z mobile/incognito, inny IP — najlepiej hotspot). **Nigdy** wcześniej nieużywany w GMC/Ads.
-2. merchants.google.com → utwórz konto:
-   - Nazwa biznesu: **"PH Research Supplies UK"** (inna niż na głównym koncie).
-   - Witryna: `https://prohealthpeptides.co.uk`.
-   - Kraj: UK, waluta: GBP.
-3. Weryfikacja domeny: **DNS TXT** w Cloudflare (najszybsza, nie meta tag).
-4. Source/Feed: scheduled fetch → `https://prohealthpeptides.co.uk/google-merchant-feed-free.xml`.
-5. Destinations: **TYLKO Free Listings**. WYŁĄCZ Shopping Ads i Performance Max.
-6. **Nie** linkuj tego GMC z żadnym Google Ads kontem.
+- Triggers: `workflow_dispatch` (manual) + `pull_request` targeting `main` with paths affecting `src/routes/**`, `src/server.ts`, `src/lib/known-roots.ts`, `cloudflare/worker.js`, `wrangler.jsonc`.
+- Runs `BASE=https://id-preview--1f12c255-a30a-4bea-bbab-28d9e6f70804.lovable.app node scripts/check-prod-routes.mjs` + `node scripts/check-canonicals.mjs` against the preview/staging URL.
+- Uses the same artifact + PR-comment renderer as step 3 (comment marker `<!-- staging-route-audit -->` so it doesn't clobber the prod one).
+- Fails the job (and therefore blocks merge if branch protection requires it) on any non-200, unauthorized noindex, or canonical violation.
+- Includes the same 60s edge-propagation wait used in the post-deploy workflow.
 
-## Ryzyka i co robić jak coś nie pyknie
+## Files
 
-- **GMC i tak disapprove pełnych nazw** (~30-40% szans): wtedy zostaje albo (a) opaque SKU na tej domenie też, albo (b) Free Listings są martwe i zostaje tylko Search Ads na phlabs.co.uk.
-- **Google połączy konta po fingerprint** (~20% szans): nowy email zostanie zbanowany w 1-2 tygodnie. Wtedy reset i ewentualnie kolejna domena (nie warto inwestować w więcej).
-- **SSL nie wstaje na CF proxy**: przełączyć proxy na szare (DNS only).
-- **Konflikt: domena była już podpięta gdzieś**: w Lovable Custom Domain UI wybrać "Take over" po weryfikacji TXT.
+**New**
+- `scripts/check-canonicals.mjs`
+- `scripts/render-route-audit-md.mjs` (shared Markdown renderer used by both workflows)
+- `.github/workflows/pre-release-route-check.yml`
 
-## Kolejność wykonania
+**Edited**
+- `scripts/check-prod-routes.mjs` — noindex policy + JSON report output
+- `.github/workflows/post-deploy-regression.yml` — canonicals step, artifact, PR summary
+- `package.json` — `check:canonicals`, `check:routes:staging` scripts
+- `src/server.ts` — inline doc comment on the sentinel-only noindex path
+- `tests/post-deploy-regression.test.ts` — assert no spurious noindex on `/compare/*`
 
-1. **Lovable (ja):** kod (kroki 1-6) — pushnę razem.
-2. **Cloudflare API (ja):** odepnę Worker `phlab` od `prohealthpeptides.co.uk` (krok 7).
-3. **Ty:** podepnij domenę w Lovable (krok A) — dam dokładne rekordy DNS.
-4. **Ty:** poczekaj na SSL "Active" w Lovable.
-5. **Ja:** sprawdzę że feed działa pod `https://prohealthpeptides.co.uk/google-merchant-feed-free.xml` i PDP renderują pełne nazwy.
-6. **Ty:** załóż nowy GMC (krok B) i dodaj feed.
-7. **Razem:** monitorujemy approval w GMC przez 24-72h.
+## Out of scope
 
-## Pliki które zmienię
-
-- `src/server.ts` — usunięcie hosta z `REDIRECT_HOSTS`, dodanie nowej reguły dla `www.prohealthpeptides.co.uk → prohealthpeptides.co.uk`.
-- `src/lib/host-context.ts` (nowy) — helper `isLegacyHost()`.
-- `src/routes/google-merchant-feed-free[.]xml.ts` — host-aware pełne nazwy + linki.
-- `src/routes/products_.$slug.tsx` — host-aware canonical → phlabs.co.uk.
-- `src/routes/index.tsx` — host-aware mini-home dla legacy.
-- `src/routes/robots[.]txt.ts` — host-aware robots.
-- `src/pages/Admin/tabs/CloudflareTab.tsx` lub równoważny — info status tej domeny (sync z workspace rule: każda zmiana = update admin).
-
-Potwierdź, że plan OK, to wdrażam wszystkie zmiany kodowe + odpinam Worker w Cloudflare i podaję Ci dokładne DNS-y do wklejenia.
+- No changes to product behavior, UI, route components, or the worker's request handling itself beyond comments + the existing sentinel logic.
+- No changes to sitemap contents.
