@@ -523,7 +523,7 @@ export default function AdminPage() {
         default: return <DashboardTab />;
       }
     })();
-    return <TabErrorBoundary key={activeTab}>{tab}</TabErrorBoundary>;
+    return <TabErrorBoundary key={activeTab} tabName={activeTab}>{tab}</TabErrorBoundary>;
   };
 
   const sidebarWidth = sidebarCollapsed ? 68 : 256;
