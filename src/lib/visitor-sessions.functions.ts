@@ -23,8 +23,10 @@ const Input = z.object({
   search: z.string().max(200).optional().nullable(),
   cursor: CursorSchema.nullable().optional(),
   pageSize: z.number().int().min(5).max(200).default(50),
-  /** Hard cap on events scanned per request. */
-  maxEvents: z.number().int().min(500).max(50_000).default(20_000),
+  /** Hard cap on events scanned per request. Firestore caps `limit()` at 10_000
+   *  for a single structured query — anything larger throws
+   *  `Limit value over maximum 10000`. Do NOT raise this ceiling. */
+  maxEvents: z.number().int().min(500).max(10_000).default(10_000),
 });
 
 export interface VisitorSessionRow {
