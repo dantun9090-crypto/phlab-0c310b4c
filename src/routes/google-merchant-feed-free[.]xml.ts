@@ -117,7 +117,19 @@ function isAllowedForFreeListing(p: {
 export const Route = createFileRoute("/google-merchant-feed-free.xml")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
+        // Host-aware: if fetched from the legacy isolated host, emit links
+        // to that host (GMC requires the feed link host to match the
+        // verified site host on the account it's attached to).
+        const reqHost = (() => {
+          try {
+            return new URL(request.url).hostname.toLowerCase();
+          } catch {
+            return "";
+          }
+        })();
+        const linkBase = reqHost === LEGACY_HOST ? LEGACY_BASE_URL : BASE_URL;
+
         let products = [] as Awaited<ReturnType<typeof fetchAllProducts>>;
         const generatedAt = new Date().toISOString();
         try {
