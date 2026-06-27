@@ -1,0 +1,106 @@
+name: Pre-release route check (staging)
+
+# Blocks merges into main when staging preview returns any non-200,
+# unauthorized noindex, or canonical-uniqueness violation.
+# Runs the same scripts as post-deploy-regression but against the
+# Lovable preview URL so we catch regressions BEFORE they hit prod.
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Staging base URL"
+        required: false
+        default: "https://id-preview--1f12c255-a30a-4bea-bbab-28d9e6f70804.lovable.app"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/routes/**"
+      - "src/server.ts"
+      - "src/lib/known-roots.ts"
+      - "cloudflare/worker.js"
+      - "wrangler.jsonc"
+      - "scripts/check-prod-routes.mjs"
+      - "scripts/check-canonicals.mjs"
+
+jobs:
+  staging-routes:
+    name: Staging route + canonical check
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      pull-requests: write
+    env:
+      BASE: ${{ github.event.inputs.base_url || 'https://id-preview--1f12c255-a30a-4bea-bbab-28d9e6f70804.lovable.app' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for preview to propagate
+        run: sleep 60
+
+      - name: Crawl status codes + noindex policy
+        id: routes
+        run: |
+          set +e
+          REPORT_PATH=/tmp/prod-routes-report.json \
+            BASE="$BASE" node scripts/check-prod-routes.mjs | tee /tmp/prod-routes.log
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Crawl canonical uniqueness
+        id: canonicals
+        run: |
+          set +e
+          CANONICAL_REPORT_PATH=/tmp/canonicals-report.json \
+            BASE="$BASE" node scripts/check-canonicals.mjs | tee /tmp/canonicals.log
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Render Markdown report
+        if: always()
+        run: |
+          node scripts/render-route-audit-md.mjs \
+            --routes /tmp/prod-routes-report.json \
+            --canonicals /tmp/canonicals-report.json \
+            --title "Staging route audit ($BASE)" \
+            --out /tmp/route-audit.md
+          cat /tmp/route-audit.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload audit artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-route-audit-${{ github.sha }}
+          path: |
+            /tmp/prod-routes-report.json
+            /tmp/canonicals-report.json
+            /tmp/prod-routes.log
+            /tmp/canonicals.log
+            /tmp/route-audit.md
+          retention-days: 30
+
+      - name: Sticky PR comment
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('/tmp/route-audit.md', 'utf8');
+            const marker = '<!-- staging-route-audit -->';
+            const fullBody = `${marker}\n${body}`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const comments = await github.rest.issues.listComments({ owner, repo, issue_number });
+            const existing = comments.data.find((c) => c.body && c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: fullBody });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: fullBody });
+            }
+
+      - name: Fail if staging is broken
+        if: steps.routes.outputs.exit_code != '0' || steps.canonicals.outputs.exit_code != '0'
+        run: |
+          echo "::error::Staging route audit failed — see step summary and PR comment."
+          exit 1
