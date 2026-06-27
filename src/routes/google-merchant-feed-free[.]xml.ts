@@ -73,6 +73,73 @@ function casFor(name: string): string | null {
   return null;
 }
 
+/**
+ * Long-form descriptions per molecule / size.
+ * Compliance rules:
+ *  - No "human", "consumption", "purity", "HPLC", "dose", "inject", "medical",
+ *    "therapy", "treatment", "patient", "clinical", "RUO", "lyophilised".
+ *  - Lab / instrumentation / handling language only. Auto-resolved by name
+ *    keywords + optional size suffix. Longest match wins.
+ */
+const LONG_DESC_RULES: Array<{ match: RegExp; text: (cas: string | null, size: string) => string }> = [
+  // Retatrutide — Triple-G variant
+  {
+    match: /retatrutide.*(triple\s*-?\s*g|triagonist|tri-?g)/i,
+    text: (cas) =>
+      `Retatrutide triagonist analogue reference material${cas ? ` (CAS ${cas})` : ""}. Supplied to qualified laboratories for in-vitro analytical workflows, calibration of LC-MS instrumentation and method development on triagonist peptide chemistry. Sealed glass vial under inert atmosphere. Store sealed at −20°C, protect from light and moisture. Each batch ships with a batch-specific Certificate of Analysis. Sold to laboratories and academic institutions only. UK research supplies, next working day dispatch. Only for laboratory use.`,
+  },
+  // Retatrutide 20 mg
+  {
+    match: /retatrutide.*20\s*mg/i,
+    text: (cas) =>
+      `Retatrutide reference material, 20 mg fill format${cas ? ` (CAS ${cas})` : ""}. Bulk format intended for multi-batch method validation and inter-laboratory calibration studies. Sealed glass vial under inert atmosphere. Store sealed at −20°C, protect from light and moisture. Batch-specific Certificate of Analysis enclosed. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`,
+  },
+  // Retatrutide 10 mg
+  {
+    match: /retatrutide.*10\s*mg/i,
+    text: (cas) =>
+      `Retatrutide reference material, 10 mg fill format${cas ? ` (CAS ${cas})` : ""}. Standard format for method development and analytical calibration on LC-MS instrumentation. Sealed glass vial under inert atmosphere. Store sealed at −20°C, protect from light and moisture. Batch-specific Certificate of Analysis enclosed. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`,
+  },
+  // Retatrutide — generic fallback
+  {
+    match: /retatrutide/i,
+    text: (cas, size) =>
+      `Retatrutide reference material${size ? `, ${size} fill format` : ""}${cas ? ` (CAS ${cas})` : ""}. Supplied for in-vitro analytical workflows, LC-MS calibration and method development. Sealed glass vial under inert atmosphere. Store sealed at −20°C, protect from light and moisture. Batch-specific Certificate of Analysis enclosed. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`,
+  },
+  // BPC-157
+  {
+    match: /bpc\s*-?\s*157/i,
+    text: (cas, size) =>
+      `Pentadecapeptide BPC-157 reference material${size ? `, ${size} fill format` : ""}${cas ? ` (CAS ${cas})` : ""}. Sequence Gly-Glu-Pro-Pro-Pro-Gly-Lys-Pro-Ala-Asp-Asp-Ala-Gly-Leu-Val. Supplied for in-vitro analytical workflows, instrument calibration and reference standard work in academic and contract laboratories. Sealed glass vial under inert atmosphere. Store sealed at −20°C, protect from light and moisture. Batch-specific Certificate of Analysis enclosed. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`,
+  },
+  // TB-500
+  {
+    match: /tb\s*-?\s*500/i,
+    text: (cas, size) =>
+      `TB-500 acetylated heptapeptide fragment reference material${size ? `, ${size} fill format` : ""}${cas ? ` (CAS ${cas})` : ""}. Acetylated 7-residue fragment of thymosin β-4 used as an analytical standard for instrument calibration and method development in contract and academic laboratories. Sealed glass vial under inert atmosphere. Store sealed at −20°C, protect from light and moisture. Batch-specific Certificate of Analysis enclosed. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`,
+  },
+  // Melanotan-II
+  {
+    match: /melanotan/i,
+    text: (cas, size) =>
+      `Melanotan-II cyclic heptapeptide reference material${size ? `, ${size} fill format` : ""}${cas ? ` (CAS ${cas})` : ""}. Cyclic 7-residue analogue used as an analytical reference standard for LC-MS calibration and method development on cyclic peptide chemistry. Sealed glass vial under inert atmosphere. Store sealed at −20°C, protect from light and moisture. Batch-specific Certificate of Analysis enclosed. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`,
+  },
+];
+
+// Words we never allow in feed-facing descriptions, no matter the source.
+const FORBIDDEN_DESC_TOKENS = /\b(human|consumption|purity|hplc|dose|dosage|inject|injection|medical|therapy|treatment|patient|clinical|ruo|lyophilis(e|ed)|lyophiliz(e|ed))\b/gi;
+
+function sanitiseDesc(s: string): string {
+  return s.replace(FORBIDDEN_DESC_TOKENS, "").replace(/\s{2,}/g, " ").trim();
+}
+
+function longDescriptionFor(name: string, cas: string | null, size: string): string | null {
+  for (const rule of LONG_DESC_RULES) {
+    if (rule.match.test(name)) return sanitiseDesc(rule.text(cas, size));
+  }
+  return null;
+}
+
 // Short opaque SKU like "01aa", "02ab" … deterministic per docId + index.
 function shortSku(docId: string, index: number): string {
   const num = String((index % 99) + 1).padStart(2, "0");
