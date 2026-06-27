@@ -691,11 +691,23 @@ export default function SEOTab() {
                   placeholder="https://..."
                   className="flex-1 px-4 py-3 bg-[#1e293b] border-2 border-[#475569] rounded-lg text-[#f8fafc] text-base placeholder-[#94a3b8] focus:outline-none focus:border-[#3b82f6] focus:shadow-[0_0_0_3px_rgba(59,130,246,0.3)] transition-all min-h-[48px]"
                 />
-                <button className="px-4 py-2 bg-white/[0.04] border border-white/10 rounded-xl text-sm text-[#8caad4] hover:text-white hover:border-green-500/30 transition-colors flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4" />
-                  Upload
+                <button
+                  type="button"
+                  onClick={() => siteOgInputRef.current?.click()}
+                  disabled={ogUploadingKey === 'site'}
+                  className="px-4 py-2 bg-white/[0.04] border border-white/10 rounded-xl text-sm text-[#8caad4] hover:text-white hover:border-green-500/30 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {ogUploadingKey === 'site' ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                  {ogUploadingKey === 'site' ? 'Uploading…' : 'Upload'}
                 </button>
-              </div>
+                <input
+                  ref={siteOgInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadOgImage(f, 'site'); e.currentTarget.value = ''; }}
+                />
+
               <p className="text-xs text-[#5a80a6] mt-1">Default image for social shares (1200×630px recommended)</p>
             </div>
           </div>
