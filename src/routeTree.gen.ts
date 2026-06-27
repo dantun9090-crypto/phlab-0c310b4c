@@ -56,6 +56,7 @@ import { Route as ApiPublicErrorMonitorRouteImport } from './routes/api/public/e
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as ApiPublicCoaPdfRouteImport } from './routes/api/public/coa-pdf'
 import { Route as ApiPublicCacheConfigRouteImport } from './routes/api/public/cache-config'
+import { Route as ApiPublicAdminErrorsRouteImport } from './routes/api/public/admin-errors'
 import { Route as ApiPaymentsStatusRouteImport } from './routes/api/payments/status'
 import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/create'
 import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/cancel'
@@ -317,6 +318,11 @@ const ApiPublicCacheConfigRoute = ApiPublicCacheConfigRouteImport.update({
   path: '/api/public/cache-config',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAdminErrorsRoute = ApiPublicAdminErrorsRouteImport.update({
+  id: '/api/public/admin-errors',
+  path: '/api/public/admin-errors',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPaymentsStatusRoute = ApiPaymentsStatusRouteImport.update({
   id: '/api/payments/status',
   path: '/api/payments/status',
@@ -484,6 +490,7 @@ export interface FileRoutesByFullPath {
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
+  '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -553,6 +560,7 @@ export interface FileRoutesByTo {
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
+  '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -625,6 +633,7 @@ export interface FileRoutesById {
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
+  '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -697,6 +706,7 @@ export interface FileRouteTypes {
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/status'
+    | '/api/public/admin-errors'
     | '/api/public/cache-config'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
@@ -766,6 +776,7 @@ export interface FileRouteTypes {
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/status'
+    | '/api/public/admin-errors'
     | '/api/public/cache-config'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
@@ -837,6 +848,7 @@ export interface FileRouteTypes {
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/status'
+    | '/api/public/admin-errors'
     | '/api/public/cache-config'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
@@ -905,6 +917,7 @@ export interface RootRouteChildren {
   ApiPaymentsCancelRoute: typeof ApiPaymentsCancelRoute
   ApiPaymentsCreateRoute: typeof ApiPaymentsCreateRoute
   ApiPaymentsStatusRoute: typeof ApiPaymentsStatusRoute
+  ApiPublicAdminErrorsRoute: typeof ApiPublicAdminErrorsRoute
   ApiPublicCacheConfigRoute: typeof ApiPublicCacheConfigRoute
   ApiPublicCoaPdfRoute: typeof ApiPublicCoaPdfRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
@@ -1264,6 +1277,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCacheConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/admin-errors': {
+      id: '/api/public/admin-errors'
+      path: '/api/public/admin-errors'
+      fullPath: '/api/public/admin-errors'
+      preLoaderRoute: typeof ApiPublicAdminErrorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/payments/status': {
       id: '/api/payments/status'
       path: '/api/payments/status'
@@ -1489,6 +1509,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPaymentsCancelRoute: ApiPaymentsCancelRoute,
   ApiPaymentsCreateRoute: ApiPaymentsCreateRoute,
   ApiPaymentsStatusRoute: ApiPaymentsStatusRoute,
+  ApiPublicAdminErrorsRoute: ApiPublicAdminErrorsRoute,
   ApiPublicCacheConfigRoute: ApiPublicCacheConfigRoute,
   ApiPublicCoaPdfRoute: ApiPublicCoaPdfRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
