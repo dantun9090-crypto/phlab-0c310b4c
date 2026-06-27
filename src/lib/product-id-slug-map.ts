@@ -43,6 +43,7 @@ export const PRODUCT_ID_TO_SLUG: Record<string, string> = {
   "PHL-KP3": "kpv-research-peptide",
   "PHL-GW4": "glow-blend",
   "PHL-02M": "melanotan-ii-research-peptide",
+  "PHL-RP02": "melanotan-ii-research-peptide",
   "PHL-BW9": "bacteriostatic-water-research-compound",
   "PHL-KW5": "klow-blend",
   "PHL-GC3": "ghk-cu-research-peptide",
