@@ -54,7 +54,9 @@ export default function PromoCodesTab() {
       const snap = await getDocs(query(collection(db, 'coupons'), orderBy('createdAt', 'desc')));
       setCoupons(snap.docs.map(d => ({ id: d.id, ...d.data() }) as Coupon));
     } catch (e: any) {
-      setError(e.message || 'Failed to load coupons');
+      const msg = e?.message || 'Failed to load coupons';
+      setError(msg);
+      toast.error('Could not load promo codes', { description: msg });
     } finally {
       setLoading(false);
     }
