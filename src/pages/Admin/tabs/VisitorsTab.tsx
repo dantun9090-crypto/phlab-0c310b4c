@@ -176,7 +176,7 @@ export default function VisitorsTab() {
             search: sessionSearch || null,
             cursor: currentCursor,
             pageSize: sessionPageSize,
-            maxEvents: 10_000,
+            maxEvents: FIRESTORE_MAX_LIMIT,
           },
         });
         if (cancelled) return;
