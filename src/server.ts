@@ -52,13 +52,22 @@ const adminUnlockAttempts = new Map<string, { count: number; start: number }>();
 // Lovable preview/published hosts (*.lovable.app, *.lovableproject.com) are
 // intentionally excluded so previews keep working. phlabs.co.uk apex is NOT
 // in this list — it is served directly to avoid hosting-layer loops.
+//
+// NOTE: `prohealthpeptides.co.uk` is intentionally NOT in this set — it is
+// served as an isolated "legacy host" that renders the same app but with
+// canonical → phlabs.co.uk (set per-route). Used as the home of a separate
+// Google Merchant Center Free-Listings account with full molecule names.
+// `www.prohealthpeptides.co.uk` 301s to the bare apex of the legacy host.
 const REDIRECT_HOSTS = new Set<string>([
   // www.phlabs.co.uk → phlabs.co.uk (apex is canonical)
   "www.phlabs.co.uk",
-  // check-domains-allow-next-line: legacy host, musi tu zostać żeby zadziałał 301 do phlabs.co.uk
-  "prohealthpeptides.co.uk",
-  // check-domains-allow-next-line: legacy host, musi tu zostać żeby zadziałał 301 do phlabs.co.uk
-  "www.prohealthpeptides.co.uk",
+]);
+
+// Hosts that 301 to their own apex (not to phlabs.co.uk).
+// check-domains-allow-next-line: own-apex redirect for legacy host
+const WWW_TO_APEX_HOSTS = new Map<string, string>([
+  // check-domains-allow-next-line: legacy host, www → apex on the same legacy host
+  ["www.prohealthpeptides.co.uk", "prohealthpeptides.co.uk"],
 ]);
 
 
