@@ -132,13 +132,13 @@ const HARD_BLOCKED_SLUGS = new Set<string>([
 type MerchantOverride = { code: string; displayName: string; cas: string };
 const MERCHANT_CODE_OVERRIDES: Record<string, MerchantOverride> = {
   "retatrutide-research-peptide": { code: "Reta-PHL", displayName: "Reta-PHL", cas: "2381089-83-2" },
-  "bpc-157": { code: "PHL-RP09", displayName: "PHL-RP09", cas: "137525-51-0" },
+  "bpc-157": { code: "BPC-157RP9", displayName: "BPC-157RP9", cas: "137525-51-0" },
   "pt-141-research-peptide": { code: "PHL-PT41", displayName: "PHL-PT41", cas: "189691-06-3" },
   "tb-500-thymosin-beta-4": { code: "PHL-TB54", displayName: "PHL-TB54", cas: "77591-33-4" },
   "mots-c-research-peptide": { code: "PHL-MC16", displayName: "PHL-MC16", cas: "1627580-64-6" },
   "kpv-research-peptide": { code: "PHL-KP3", displayName: "PHL-KP3", cas: "67727-97-3" },
   "glow-blend": { code: "PHL-GW4", displayName: "PHL-GW4", cas: "N/A (multi-component reference mixture)" },
-  "melanotan-ii-research-peptide": { code: "PHL-RP02", displayName: "PHL-RP02", cas: "121062-08-6" },
+  "melanotan-ii-research-peptide": { code: "MT-2RP2", displayName: "MT-2RP2", cas: "121062-08-6" },
   "bacteriostatic-water-research-compound": { code: "PHL-BW9", displayName: "PHL-BW9", cas: "7732-18-5" },
   "klow-blend": { code: "PHL-KW5", displayName: "PHL-KW5", cas: "N/A (multi-component reference mixture)" },
   "ghk-cu-research-peptide": { code: "PHL-GC3", displayName: "PHL-GC3", cas: "49557-75-7" },
