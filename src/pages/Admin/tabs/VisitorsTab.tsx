@@ -165,7 +165,7 @@ export default function VisitorsTab() {
             search: sessionSearch || null,
             cursor: currentCursor,
             pageSize: sessionPageSize,
-            maxEvents: 20_000,
+            maxEvents: 10_000,
           },
         });
         if (cancelled) return;
