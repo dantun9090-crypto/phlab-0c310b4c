@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
+import { useServerFn } from '@tanstack/react-start';
 import {
   CAMPAIGNS,
   buildAdsEditorCsvs,
   scanCampaign,
   type Campaign,
 } from '@/lib/google-ads-campaign';
+import { pushCampaignToGoogleAds } from '@/lib/google-ads-push.functions';
 
 function download(filename: string, content: string, mime = 'text/csv') {
   const blob = new Blob([content], { type: `${mime};charset=utf-8` });
@@ -33,6 +35,23 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
   const scan = useMemo(() => scanCampaign(campaign), [campaign]);
   const csvs = useMemo(() => buildAdsEditorCsvs(campaign), [campaign]);
   const [showKeywords, setShowKeywords] = useState(false);
+  const [pushing, setPushing] = useState(false);
+  const [pushResult, setPushResult] = useState<Record<string, unknown> | null>(null);
+  const pushFn = useServerFn(pushCampaignToGoogleAds);
+
+  async function handlePush(dryRun: boolean) {
+    if (!dryRun && !confirm(`LIVE push to Google Ads: create "${campaign.name}" (PAUSED) in your account?`)) return;
+    setPushing(true);
+    setPushResult(null);
+    try {
+      const r = await pushFn({ data: { campaignId: campaign.id, dryRun } });
+      setPushResult(r as Record<string, unknown>);
+    } catch (e) {
+      setPushResult({ ok: false, error: e instanceof Error ? e.message : String(e) });
+    } finally {
+      setPushing(false);
+    }
+  }
 
   const totalKeywords = campaign.adGroups.reduce((s, a) => s + a.keywords.length, 0);
   const totalHeadlines = campaign.adGroups.reduce((s, a) => s + a.headlines.length, 0);
@@ -96,6 +115,47 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2 mb-3">
+        <button
+          onClick={() => handlePush(false)}
+          disabled={pushing || !scan.ok}
+          className="bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-semibold text-sm"
+          title={scan.ok ? 'Push to Google Ads (PAUSED)' : 'Fix policy hits first'}
+        >
+          {pushing ? '⏳ Pushing…' : '🚀 Push to Google Ads'}
+        </button>
+        <button
+          onClick={() => handlePush(true)}
+          disabled={pushing}
+          className="bg-slate-700 hover:bg-slate-600 disabled:opacity-40 text-white px-3 py-2 rounded-lg text-xs"
+          title="Build operations and show what would be sent — no API call"
+        >
+          🧪 Dry-run preview
+        </button>
+      </div>
+
+      {pushResult && (
+        <div
+          className={`mb-3 rounded border-2 p-3 text-xs ${
+            pushResult.ok ? 'border-emerald-700 bg-emerald-950' : 'border-red-700 bg-red-950'
+          }`}
+        >
+          <div className={`font-semibold mb-1 ${pushResult.ok ? 'text-emerald-200' : 'text-red-200'}`}>
+            {pushResult.ok ? '✓' : '✗'} {String(pushResult.mode ?? 'result')}
+            {typeof pushResult.reason === 'string' && ` — ${pushResult.reason}`}
+            {typeof pushResult.hint === 'string' && ` — ${pushResult.hint}`}
+          </div>
+          {typeof pushResult.deepLink === 'string' && (
+            <a href={pushResult.deepLink} target="_blank" rel="noreferrer" className="text-emerald-400 underline">
+              Open in Google Ads →
+            </a>
+          )}
+          <pre className="mt-2 max-h-64 overflow-auto text-slate-300 whitespace-pre-wrap break-all">
+            {JSON.stringify(pushResult, null, 2)}
+          </pre>
         </div>
       )}
 
