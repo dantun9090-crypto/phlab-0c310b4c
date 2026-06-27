@@ -8,7 +8,7 @@ import { fetchAllProducts } from "@/lib/firestore-rest";
  * ============================================================================
  *
  * Public URL: https://phlabs.co.uk/google-merchant-feed-free.xml
- *           : https://prohealthpeptides.co.uk/google-merchant-feed-free.xml
+ *           : https://{LEGACY_HOST}/google-merchant-feed-free.xml (legacy isolated host)
  *
  * ⚠️  FREE LISTINGS ONLY. NEVER ENABLE FOR SHOPPING ADS. ⚠️
  *
