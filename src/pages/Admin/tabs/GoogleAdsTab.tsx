@@ -233,14 +233,19 @@ export default function GoogleAdsTab() {
   return (
     <div className="p-4 md:p-6 max-w-7xl">
       <header className="mb-6">
-        <h2 className="text-2xl font-bold text-white">Google Ads Campaigns</h2>
+        <h2 className="text-2xl font-bold text-white">Google Ads — Search Text Campaigns</h2>
         <p className="text-slate-400 text-sm mt-1">
-          Two production-ready Search campaigns for{' '}
+          Standard <strong className="text-white">Search text ads</strong> (Responsive Search Ads) — no Google Merchant Center required. Two campaigns targeting{' '}
           <code className="text-emerald-400">/compound</code> and{' '}
           <code className="text-emerald-400">/landing/phlabs</code>. Download CSVs and import via{' '}
           Google Ads Editor → File → Import → Choose file. All campaigns ship PAUSED — review and enable.
         </p>
       </header>
+
+      <div className="mb-4 rounded-lg border-2 border-blue-700 bg-blue-950 p-3 text-sm text-blue-200">
+        <strong>ℹ️ Search-only — no Merchant Center</strong>{' '}
+        These are classic text ads (headlines + descriptions) that appear in Google Search results. They do <strong>not</strong> use Google Merchant Center or Shopping ads, so product disapprovals in GMC do not block them.
+      </div>
 
       <div
         className={`mb-4 rounded-lg p-3 border-2 ${
