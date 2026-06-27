@@ -1,4 +1,4 @@
-import LegacyApp from "@/legacy/LegacyApp";
+import LegacyClientApp from "@/legacy/LegacyClientApp";
 import { SEO_LIMITS, SITE_URL, canonicalUrl, clamp, metaForPath } from "@/lib/seo-meta";
 
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
@@ -32,10 +32,15 @@ export function legacyHead(path: string) {
 }
 
 /**
- * Render LegacyApp at a known legacy path. Used by dedicated route files
- * that exist purely to ensure TanStack matches the URL (the splat catch-all
- * has been observed to miss top-level segments in some builds).
+ * Render the legacy SPA at a known path. Uses LegacyClientApp (dynamic
+ * import in useEffect) instead of importing LegacyApp directly — keeping
+ * firebase/auth (EmailAuthProvider et al.) out of the SSR worker bundle
+ * for these dedicated routes. SSR returns the head() metadata + an empty
+ * shell, hydration mounts the real legacy app, matching splat behavior.
+ *
+ * `path` is accepted for API compatibility; LegacyClientApp reads the
+ * URL from the browser on mount.
  */
-export function LegacyMount({ path }: { path: string }) {
-  return <LegacyApp initialPath={path} />;
+export function LegacyMount(_props: { path: string }) {
+  return <LegacyClientApp />;
 }
