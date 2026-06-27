@@ -222,6 +222,97 @@ export default function WebVitalsTab() {
         );
       })}
 
+      {/* ──────────────────── Trend charts (min/avg/max per day) ──── */}
+      <section className="bg-slate-900 border border-slate-700 rounded-lg p-4">
+        <header className="flex items-center justify-between mb-3">
+          <h2 className="text-white font-semibold">
+            Daily trend — last {trends?.windowDays ?? days} days
+          </h2>
+          <span className="text-xs text-slate-400">avg line, min/max band</span>
+        </header>
+        <div className="grid gap-4 md:grid-cols-3">
+          {(["LCP", "INP", "CLS"] as const).map((m) => (
+            <TrendChart
+              key={m}
+              metric={m}
+              points={trends?.byMetric?.[m] ?? []}
+              format={(v) => formatValue(m, v)}
+              thresholds={THRESHOLDS[m]}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* ──────────────────── Recent alerts panel ───────────────── */}
+      <section className="bg-slate-900 border border-slate-700 rounded-lg overflow-hidden">
+        <header className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
+          <h2 className="text-white font-semibold flex items-center gap-2">
+            <BellRing className="w-4 h-4 text-red-400" />
+            Recent threshold breaches
+          </h2>
+          <span className="text-xs text-slate-400">
+            {alerts.length} in last {Math.max(days, 7)} day(s)
+          </span>
+        </header>
+        {alerts.length === 0 ? (
+          <div className="p-6 text-center text-slate-400 text-sm">
+            No alerts — every "poor" sample stayed under the hard threshold.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-800 text-slate-300">
+                <tr>
+                  <th className="text-left px-4 py-2">When</th>
+                  <th className="text-left px-4 py-2">Metric</th>
+                  <th className="text-right px-4 py-2">Value</th>
+                  <th className="text-right px-4 py-2">Threshold</th>
+                  <th className="text-left px-4 py-2">Path</th>
+                  <th className="text-left px-4 py-2">Device</th>
+                  <th className="text-left px-4 py-2">Conn</th>
+                  <th className="text-left px-4 py-2">Build</th>
+                </tr>
+              </thead>
+              <tbody>
+                {alerts.map((a) => {
+                  const when = a.createdAt
+                    ? new Date(a.createdAt).toLocaleString()
+                    : "—";
+                  const safePath = a.path?.startsWith("/") ? a.path : `/${a.path || ""}`;
+                  return (
+                    <tr key={a.id} className="border-t border-slate-800">
+                      <td className="px-4 py-2 text-slate-400 whitespace-nowrap">{when}</td>
+                      <td className="px-4 py-2 text-white font-semibold">{a.name}</td>
+                      <td className="px-4 py-2 text-right text-red-300 font-mono">
+                        {formatValue(a.name as MetricName, a.value)}
+                      </td>
+                      <td className="px-4 py-2 text-right text-slate-400 font-mono">
+                        {formatValue(a.name as MetricName, a.threshold)}
+                      </td>
+                      <td className="px-4 py-2 text-slate-200 font-mono">
+                        <a
+                          href={safePath}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-emerald-400 hover:underline"
+                        >
+                          {safePath}
+                        </a>
+                      </td>
+                      <td className="px-4 py-2 text-slate-300">{a.device || "—"}</td>
+                      <td className="px-4 py-2 text-slate-300">{a.conn || "—"}</td>
+                      <td className="px-4 py-2 text-slate-400 font-mono text-xs">
+                        {a.build ? a.build.slice(0, 12) : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       {data && data.totalSamples === 0 ? (
         <div className="text-slate-400 text-sm bg-slate-900 border border-slate-700 rounded-lg p-6 text-center">
           No samples yet for this window. Beacons are sampled at ~15% (plus all
