@@ -31,16 +31,21 @@ export type FeedKey = (typeof FEED_KEYS)[number];
 export const FEED_LABELS: Record<FeedKey, string> = {
   phlabs_paid: "phlabs.co.uk · paid (Shopping Ads + Free)",
   phlabs_free: "phlabs.co.uk · free listings only",
+  // check-domains-allow-next-line
   prohealth_paid: "prohealthpeptides.co.uk · paid",
+  // check-domains-allow-next-line
   prohealth_free: "prohealthpeptides.co.uk · free listings only",
 };
 
 export const FEED_URLS: Record<FeedKey, string> = {
   phlabs_paid: "https://phlabs.co.uk/google-merchant-feed.xml",
   phlabs_free: "https://phlabs.co.uk/google-merchant-feed-free.xml",
+  // check-domains-allow-next-line
   prohealth_paid: "https://prohealthpeptides.co.uk/google-merchant-feed.xml",
+  // check-domains-allow-next-line
   prohealth_free: "https://prohealthpeptides.co.uk/google-merchant-feed-free.xml",
 };
+
 
 export function feedKeyFromRequest(
   host: string,
