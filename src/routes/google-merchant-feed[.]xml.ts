@@ -129,10 +129,15 @@ const HARD_BLOCKED_SLUGS = new Set<string>([
  * Changing the code value also resets the Merchant item history, so a
  * previously-disapproved item is re-reviewed as a brand-new product.
  */
-type MerchantOverride = { code: string; displayName: string; cas: string };
+type MerchantOverride = {
+  code: string;
+  displayName: string;
+  cas: string;
+  noSizePrefix?: boolean;
+};
 const MERCHANT_CODE_OVERRIDES: Record<string, MerchantOverride> = {
   "retatrutide-research-peptide": { code: "Reta-PHL", displayName: "Reta-PHL", cas: "2381089-83-2" },
-  "bpc-157": { code: "BPC-157RP9", displayName: "BPC-157RP9", cas: "137525-51-0" },
+  "bpc-157": { code: "BPC-157RP9", displayName: "BPC157", cas: "137525-51-0", noSizePrefix: true },
   "pt-141-research-peptide": { code: "PHL-PT41", displayName: "PHL-PT41", cas: "189691-06-3" },
   "tb-500-thymosin-beta-4": { code: "PHL-TB54", displayName: "PHL-TB54", cas: "77591-33-4" },
   "mots-c-research-peptide": { code: "PHL-MC16", displayName: "PHL-MC16", cas: "1627580-64-6" },
@@ -399,7 +404,10 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               : (p.sku || override?.code || docId)
             ).trim();
             const displaySku = override?.displayName || skuCode;
-            const skuWithSize = sizeCompact ? `${displaySku} ${sizeCompact}` : displaySku;
+            const skuWithSize =
+              sizeCompact && !override?.noSizePrefix
+                ? `${displaySku} ${sizeCompact}`
+                : displaySku;
             const merchantId = highRisk && override?.code ? override.code : docId;
             const merchantLinkId = merchantId;
 
