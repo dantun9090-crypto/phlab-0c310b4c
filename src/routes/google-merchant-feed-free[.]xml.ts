@@ -163,7 +163,10 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               : `${fullName} — Analytical Reference Standard | ${BRAND}`;
 
             const cas = casFor(p.name) ?? "N/A (multi-component reference mixture)";
-            const description = `For laboratory and analytical research only. Strictly for in-vitro scientific testing and reference standards. Technical specification: • CAS Number: ${cas}`;
+            const isLiquid = /bacteriostatic|water/i.test(p.name);
+            const baseUnit = isLiquid ? "1 ml" : "1 mg";
+            const lyoLine = isLiquid ? "" : " • Lyophilised powder format";
+            const description = `For laboratory and analytical research ONLY. Strictly for in-vitro scientific testing and reference standards. NOT for human consumption, therapeutic or diagnostic use. Technical specification: • CAS Number: ${cas} • HPLC-verified 99%+ purity${lyoLine}. Certificate of Analysis available on request. Supplied to qualified UK laboratories.`;
 
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
