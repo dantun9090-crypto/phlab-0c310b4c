@@ -494,7 +494,7 @@ export default function AdminPage() {
     seo: 'SEO Settings', sitemap: 'Sitemap Manager', settings: 'Site Settings',
     tools: 'Tools', themes: 'Themes', database: 'Database', backup: 'Backup',
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', freegift: 'Free Gift Promo', diagnostics: 'Diagnostics',
-    prerenderstatus: 'Prerender Status', cacherecache: 'Cache & Recache', gscmonitor: 'GSC Monitor', marketingcoverage: 'Marketing Coverage', urlmonitor: 'URL Monitor', merchantfeed: 'Merchant Feed', bingfeed: 'Bing Shopping', indexnow: 'IndexNow',
+    prerenderstatus: 'Prerender Status', cacherecache: 'Cache & Recache', gscmonitor: 'GSC Monitor', marketingcoverage: 'Marketing Coverage', urlmonitor: 'URL Monitor', merchantfeed: 'Merchant Feed', merchantfeededitor: 'Merchant Feed Editor', bingfeed: 'Bing Shopping', indexnow: 'IndexNow',
     securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', shopify: 'Shopify', semrush: 'Semrush', seoopportunities: 'SEO Opportunities', backlinkoutreach: 'Backlink Outreach', backlinkchanges: 'Backlink Changes', googleads: 'Google Ads Campaigns', internallinks: 'Internal Links', webvitals: 'Web Vitals',
     royalmail: 'Royal Mail Labels', webhooktest: 'Webhook Test', wallidpreview: 'Wallid Preview', wallidbadges: 'Wallid Badges', wallidbanks: 'Wallid Banks', watchdog: 'Watchdog', healthmonitor: 'Health Monitor', researchincidents: 'Research Incidents',
   };
