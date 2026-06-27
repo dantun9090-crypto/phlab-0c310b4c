@@ -105,12 +105,16 @@ export default function VisitorsTab() {
     setLoading(true); setErr(null);
     (async () => {
       try {
+        // Firestore caps `limit()` at 10_000 for a single structured query —
+        // setting anything larger throws `Limit value over maximum 10000`.
+        // Keep this aligned with FIRESTORE_MAX_LIMIT below and `maxEvents` in the
+        // server fetch so paging stays consistent and we never truncate silently.
         const q = query(
           collection(db, 'visitor_events'),
           where('createdAt', '>=', Timestamp.fromMillis(fromMs)),
           where('createdAt', '<=', Timestamp.fromMillis(toMs)),
           orderBy('createdAt', 'desc'),
-          limit(10_000),
+          limit(FIRESTORE_MAX_LIMIT),
         );
         const snap = await getDocs(q);
         if (cancelled) return;
