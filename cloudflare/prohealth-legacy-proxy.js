@@ -54,6 +54,10 @@ function hardenHeaders(headers) {
   for (const [key, value] of Object.entries(SECURITY_HEADERS)) out.set(key, value);
   out.delete("server");
   out.delete("x-powered-by");
+  // Upstream cookies are scoped to phlabs.co.uk and are not valid for this
+  // legacy host. Strip them to avoid leaking irrelevant cookie attributes into
+  // GMC/browser checks on prohealthpeptides.co.uk.
+  out.delete("set-cookie");
   const location = out.get("location");
   if (location) out.set("location", location.replaceAll(MAIN_ORIGIN, LEGACY_ORIGIN));
   return out;
