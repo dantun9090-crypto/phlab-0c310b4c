@@ -39,6 +39,42 @@ const CURRENCY = "GBP";
 // Hard block — never list under any circumstances (active pharma trial).
 const HARD_BLOCKED_NAMES = ["tirzepatide", "semaglutide"];
 
+// CAS lookup by molecule keyword (lowercase substring → CAS number).
+const CAS_BY_KEYWORD: Array<[string, string]> = [
+  ["retatrutide", "2381089-83-2"],
+  ["tirzepatide", "2023788-19-2"],
+  ["bpc-157", "137525-51-0"],
+  ["bpc157", "137525-51-0"],
+  ["kpv", "67727-97-3"],
+  ["ghk-cu", "89030-95-5"],
+  ["ghk cu", "89030-95-5"],
+  ["tb-500", "77591-33-4"],
+  ["tb500", "77591-33-4"],
+  ["mots-c", "1627580-64-6"],
+  ["mots c", "1627580-64-6"],
+  ["nad", "53-84-9"],
+  ["pt-141", "189691-06-3"],
+  ["pt141", "189691-06-3"],
+  ["melanotan", "121062-08-6"],
+  ["bacteriostatic", "100-51-6"],
+];
+
+function casFor(name: string): string | null {
+  const n = (name || "").toLowerCase();
+  for (const [kw, cas] of CAS_BY_KEYWORD) if (n.includes(kw)) return cas;
+  return null;
+}
+
+// Short opaque SKU like "01aa", "02ab" … deterministic per docId + index.
+function shortSku(docId: string, index: number): string {
+  const num = String((index % 99) + 1).padStart(2, "0");
+  let h = 0;
+  for (let i = 0; i < docId.length; i++) h = (h * 31 + docId.charCodeAt(i)) >>> 0;
+  const a = String.fromCharCode(97 + (h % 26));
+  const b = String.fromCharCode(97 + ((h >>> 5) % 26));
+  return `${num}${a}${b}`;
+}
+
 function xmlEscape(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -52,9 +88,6 @@ function cdata(s: string): string {
   return `<![CDATA[${s.replace(/]]>/g, "]]]]><![CDATA[>")}]]>`;
 }
 
-/**
- * Strip internal suffixes so the feed shows the bare molecule name.
- */
 function cleanFullName(rawName: string): string {
   let n = (rawName || "").trim();
   n = n.replace(/\s+Research\s+(Peptide|Compound)s?$/i, "");
