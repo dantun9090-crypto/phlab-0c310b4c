@@ -83,6 +83,41 @@ export default function SEOTab() {
   const [loadingCacheStatus, setLoadingCacheStatus] = useState(false);
   const [cacheStatusError, setCacheStatusError] = useState('');
 
+  // OG image upload state (site-wide + per-page)
+  const siteOgInputRef = useRef<HTMLInputElement | null>(null);
+  const pageOgInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [ogUploadingKey, setOgUploadingKey] = useState<string | null>(null);
+
+  const uploadOgImage = async (file: File, targetKey: 'site' | keyof PagesSEO) => {
+    setOgUploadingKey(String(targetKey));
+    setMsg(null);
+    try {
+      const { validateImageFile, sanitizeFilename } = await import('@/lib/upload-validation');
+      await validateImageFile(file);
+      const { compressToWebp } = await import('@/lib/imageCompress');
+      const webp = await compressToWebp(file, { maxPx: 1200, quality: 0.85, targetBytes: 200_000 });
+      const safe = sanitizeFilename(webp.name);
+      const path = `seo/og/${targetKey}_${Date.now()}_${safe}`;
+      const sRef = storageRef(storage, path);
+      const task = uploadBytesResumable(sRef, webp);
+      await new Promise<void>((resolve, reject) => {
+        task.on('state_changed', undefined, reject, () => resolve());
+      });
+      const url = await getDownloadURL(task.snapshot.ref);
+      if (targetKey === 'site') {
+        setGlobalSEO(prev => ({ ...prev, siteOGImage: url }));
+      } else {
+        setPagesSEO(prev => ({ ...prev, [targetKey]: { ...prev[targetKey], ogImage: url } }));
+      }
+      setMsg({ type: 'success', text: `OG image uploaded (${Math.round(webp.size / 1024)} KB). Click Save to publish.` });
+    } catch (err: any) {
+      setMsg({ type: 'error', text: 'Upload failed: ' + (err?.message || 'unknown error') });
+    } finally {
+      setOgUploadingKey(null);
+    }
+  };
+
+
   // Direct fetch to Prerender.io — they support CORS for authenticated requests.
   // NOTE: We intentionally do NOT fall back to public CORS proxies (e.g. corsproxy.io)
   // because the request body contains the prerenderToken — a third-party proxy operator
