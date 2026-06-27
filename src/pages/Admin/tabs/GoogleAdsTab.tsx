@@ -120,6 +120,47 @@ function CampaignCard({ campaign }: { campaign: Campaign }) {
 
       <div className="flex flex-wrap gap-2 mb-3">
         <button
+          onClick={() => handlePush(false)}
+          disabled={pushing || !scan.ok}
+          className="bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-semibold text-sm"
+          title={scan.ok ? 'Push to Google Ads (PAUSED)' : 'Fix policy hits first'}
+        >
+          {pushing ? '⏳ Pushing…' : '🚀 Push to Google Ads'}
+        </button>
+        <button
+          onClick={() => handlePush(true)}
+          disabled={pushing}
+          className="bg-slate-700 hover:bg-slate-600 disabled:opacity-40 text-white px-3 py-2 rounded-lg text-xs"
+          title="Build operations and show what would be sent — no API call"
+        >
+          🧪 Dry-run preview
+        </button>
+      </div>
+
+      {pushResult && (
+        <div
+          className={`mb-3 rounded border-2 p-3 text-xs ${
+            pushResult.ok ? 'border-emerald-700 bg-emerald-950' : 'border-red-700 bg-red-950'
+          }`}
+        >
+          <div className={`font-semibold mb-1 ${pushResult.ok ? 'text-emerald-200' : 'text-red-200'}`}>
+            {pushResult.ok ? '✓' : '✗'} {String(pushResult.mode ?? 'result')}
+            {typeof pushResult.reason === 'string' && ` — ${pushResult.reason}`}
+            {typeof pushResult.hint === 'string' && ` — ${pushResult.hint}`}
+          </div>
+          {typeof pushResult.deepLink === 'string' && (
+            <a href={pushResult.deepLink} target="_blank" rel="noreferrer" className="text-emerald-400 underline">
+              Open in Google Ads →
+            </a>
+          )}
+          <pre className="mt-2 max-h-64 overflow-auto text-slate-300 whitespace-pre-wrap break-all">
+            {JSON.stringify(pushResult, null, 2)}
+          </pre>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2 mb-3">
+        <button
           onClick={() => downloadZip(csvs, campaign.id)}
           className="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg font-semibold text-sm"
         >
