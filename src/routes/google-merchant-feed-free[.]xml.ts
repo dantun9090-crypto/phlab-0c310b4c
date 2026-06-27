@@ -33,6 +33,13 @@ import { fetchAllProducts } from "@/lib/firestore-rest";
  */
 
 const BASE_URL = "https://phlabs.co.uk";
+// Legacy "isolated host" used for the separate Free-Listings GMC account.
+// When the feed is fetched from this host, item links point to it directly
+// so Google Merchant sees a self-consistent host. Canonical SEO juice still
+// goes to phlabs.co.uk because the PDPs set <link rel="canonical"> to
+// SITE_URL regardless of host.
+const LEGACY_HOST = "prohealthpeptides.co.uk";
+const LEGACY_BASE_URL = `https://${LEGACY_HOST}`;
 const BRAND = "PH Labs";
 const CURRENCY = "GBP";
 
