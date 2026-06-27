@@ -707,8 +707,9 @@ export default function SEOTab() {
                   className="hidden"
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadOgImage(f, 'site'); e.currentTarget.value = ''; }}
                 />
-
+              </div>
               <p className="text-xs text-[#5a80a6] mt-1">Default image for social shares (1200×630px recommended)</p>
+
             </div>
           </div>
         </div>
