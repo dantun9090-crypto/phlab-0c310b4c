@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useServerFn } from '@tanstack/react-start';
-import { db, doc, getDoc, setDoc, collection, getDocs, auth } from '@/lib/firebase';
-import { Search, Globe, FileText, Package, BookOpen, Save, AlertCircle, CheckCircle2, Eye, Image as ImageIcon, RefreshCw, Map, Zap, ExternalLink, Key, Loader2, Trash2, Clock, Gauge, SearchCode } from 'lucide-react';
+import { db, doc, getDoc, setDoc, collection, getDocs, auth, storage, storageRef, uploadBytesResumable, getDownloadURL } from '@/lib/firebase';
+import { Search, Globe, FileText, Package, BookOpen, Save, AlertCircle, CheckCircle2, Eye, Image as ImageIcon, RefreshCw, Map, Zap, ExternalLink, Key, Loader2, Trash2, Clock, Gauge, SearchCode, Loader } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { recachePrerenderUrlsBulk } from '@/lib/prerender-status.functions';
+
 
 
 import { getAdminIdToken } from '@/lib/auth-ready';
@@ -81,6 +82,41 @@ export default function SEOTab() {
   const [cacheStatusCount, setCacheStatusCount] = useState<number | null>(null);
   const [loadingCacheStatus, setLoadingCacheStatus] = useState(false);
   const [cacheStatusError, setCacheStatusError] = useState('');
+
+  // OG image upload state (site-wide + per-page)
+  const siteOgInputRef = useRef<HTMLInputElement | null>(null);
+  const pageOgInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [ogUploadingKey, setOgUploadingKey] = useState<string | null>(null);
+
+  const uploadOgImage = async (file: File, targetKey: 'site' | keyof PagesSEO) => {
+    setOgUploadingKey(String(targetKey));
+    setMsg(null);
+    try {
+      const { validateImageFile, sanitizeFilename } = await import('@/lib/upload-validation');
+      await validateImageFile(file);
+      const { compressToWebp } = await import('@/lib/imageCompress');
+      const webp = await compressToWebp(file, { maxPx: 1200, quality: 0.85, targetBytes: 200_000 });
+      const safe = sanitizeFilename(webp.name);
+      const path = `seo/og/${targetKey}_${Date.now()}_${safe}`;
+      const sRef = storageRef(storage, path);
+      const task = uploadBytesResumable(sRef, webp);
+      await new Promise<void>((resolve, reject) => {
+        task.on('state_changed', undefined, reject, () => resolve());
+      });
+      const url = await getDownloadURL(task.snapshot.ref);
+      if (targetKey === 'site') {
+        setGlobalSEO(prev => ({ ...prev, siteOGImage: url }));
+      } else {
+        setPagesSEO(prev => ({ ...prev, [targetKey]: { ...prev[targetKey], ogImage: url } }));
+      }
+      setMsg({ type: 'success', text: `OG image uploaded (${Math.round(webp.size / 1024)} KB). Click Save to publish.` });
+    } catch (err: any) {
+      setMsg({ type: 'error', text: 'Upload failed: ' + (err?.message || 'unknown error') });
+    } finally {
+      setOgUploadingKey(null);
+    }
+  };
+
 
   // Direct fetch to Prerender.io — they support CORS for authenticated requests.
   // NOTE: We intentionally do NOT fall back to public CORS proxies (e.g. corsproxy.io)
@@ -655,12 +691,25 @@ export default function SEOTab() {
                   placeholder="https://..."
                   className="flex-1 px-4 py-3 bg-[#1e293b] border-2 border-[#475569] rounded-lg text-[#f8fafc] text-base placeholder-[#94a3b8] focus:outline-none focus:border-[#3b82f6] focus:shadow-[0_0_0_3px_rgba(59,130,246,0.3)] transition-all min-h-[48px]"
                 />
-                <button className="px-4 py-2 bg-white/[0.04] border border-white/10 rounded-xl text-sm text-[#8caad4] hover:text-white hover:border-green-500/30 transition-colors flex items-center gap-2">
-                  <ImageIcon className="w-4 h-4" />
-                  Upload
+                <button
+                  type="button"
+                  onClick={() => siteOgInputRef.current?.click()}
+                  disabled={ogUploadingKey === 'site'}
+                  className="px-4 py-2 bg-white/[0.04] border border-white/10 rounded-xl text-sm text-[#8caad4] hover:text-white hover:border-green-500/30 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {ogUploadingKey === 'site' ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                  {ogUploadingKey === 'site' ? 'Uploading…' : 'Upload'}
                 </button>
+                <input
+                  ref={siteOgInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadOgImage(f, 'site'); e.currentTarget.value = ''; }}
+                />
               </div>
               <p className="text-xs text-[#5a80a6] mt-1">Default image for social shares (1200×630px recommended)</p>
+
             </div>
           </div>
         </div>
@@ -746,11 +795,24 @@ export default function SEOTab() {
                       placeholder="https://..."
                       className="flex-1 px-4 py-3 bg-[#1e293b] border-2 border-[#475569] rounded-lg text-[#f8fafc] text-base placeholder-[#94a3b8] focus:outline-none focus:border-[#3b82f6] focus:shadow-[0_0_0_3px_rgba(59,130,246,0.3)] transition-all min-h-[48px]"
                     />
-                    <button className="px-4 py-2 bg-white/[0.04] border border-white/10 rounded-xl text-sm text-[#8caad4] hover:text-white hover:border-green-500/30 transition-colors flex items-center gap-2">
-                      <ImageIcon className="w-4 h-4" />
-                      Upload
+                    <button
+                      type="button"
+                      onClick={() => pageOgInputRefs.current[pageKey]?.click()}
+                      disabled={ogUploadingKey === pageKey}
+                      className="px-4 py-2 bg-white/[0.04] border border-white/10 rounded-xl text-sm text-[#8caad4] hover:text-white hover:border-green-500/30 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {ogUploadingKey === pageKey ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+                      {ogUploadingKey === pageKey ? 'Uploading…' : 'Upload'}
                     </button>
+                    <input
+                      ref={(el) => { pageOgInputRefs.current[pageKey] = el; }}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadOgImage(f, pageKey); e.currentTarget.value = ''; }}
+                    />
                   </div>
+
                 </div>
 
                 {renderGooglePreview(page.title, page.canonical || 'https://phlabs.co.uk/', page.metaDescription)}
