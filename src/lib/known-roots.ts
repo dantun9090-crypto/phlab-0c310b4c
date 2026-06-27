@@ -4,7 +4,7 @@
 // not just a meta tag (which Google ignores when the HTTP header says index).
 export const KNOWN_ROOTS: ReadonlySet<string> = new Set<string>([
   "", "products", "product", "resources", "research", "compound", "search",
-  "about", "contact",
+  "about", "contact", "compare",
   "shipping-policy", "refund-policy", "terms-and-conditions",
   "privacy-policy", "cookies", "cookie-policy", "privacy-requests",
   "lab-reports", "quality-control", "storage-guide",
