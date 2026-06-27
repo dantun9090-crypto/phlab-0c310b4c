@@ -221,11 +221,17 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
             // Title: "{Name}-Research Compound" (blank, no qualifiers).
             const title = `${fullName}-Research Compound`;
 
-            // Description: CAS number + "Only for Laboratory Use". Nothing else.
+            // Description: long-form per molecule if matched, else minimal.
             const cas = casFor(p.name);
-            const description = cas
-              ? `CAS ${cas}. Only for Laboratory Use.`
-              : `Only for Laboratory Use.`;
+            const matchSource = `${p.name} ${sizeLabel}`;
+            const longDesc = longDescriptionFor(matchSource, cas, sizeLabel);
+            const description = sanitiseDesc(
+              longDesc
+                ? longDesc
+                : cas
+                  ? `${fullName} reference material (CAS ${cas}). Supplied for in-vitro analytical workflows, instrument calibration and method development. Sealed glass vial, store at −20°C. Batch-specific Certificate of Analysis enclosed. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`
+                  : `${fullName} reference material. Supplied for in-vitro analytical workflows and instrument calibration. UK research supplies, next working day dispatch. Sold to laboratories and academic institutions only. Only for laboratory use.`,
+            );
 
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
