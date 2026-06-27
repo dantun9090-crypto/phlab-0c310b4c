@@ -162,13 +162,13 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
             // "reference standard" / "lyophilised peptide" = <40/mo combined.
             // Front-load molecule + size + form + purity USP so Free Listings
             // match real user queries; brand last; compliance line stays.
-            const formLabel = isLiquidName(p.name) ? "Sterile Solution" : "Lyophilised Powder";
+            const isLiquid = /bacteriostatic|water/i.test(p.name);
+            const formLabel = isLiquid ? "Sterile Solution" : "Lyophilised Powder";
             const title = sizeLabel
               ? `${fullName} ${sizeLabel} — ${formLabel} | HPLC 99% Purity | Research Compound | ${BRAND} UK`
               : `${fullName} — ${formLabel} | HPLC 99% Purity | Research Compound | ${BRAND} UK`;
 
             const cas = casFor(p.name) ?? "N/A (multi-component reference mixture)";
-            const isLiquid = isLiquidName(p.name);
             const baseUnit = isLiquid ? "1 ml" : "1 mg";
             const formLine = isLiquid ? "sterile aqueous solution" : "lyophilised solid powder";
             // USP-first description: form + purity + spec + CoA + UK fulfilment,
