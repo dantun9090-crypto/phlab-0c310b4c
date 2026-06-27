@@ -894,6 +894,16 @@ export default {
         log.info({ event: "worker.redirect", status: 301, reason: "canonical-host", to: dest.toString(), ...baseFields });
         return Response.redirect(dest.toString(), 301);
       }
+      // www of a legacy host → its own apex (NOT canonical phlabs.co.uk).
+      const wwwApex = WWW_TO_APEX_HOSTS.get(reqHost);
+      if (wwwApex) {
+        const dest = new URL(url.toString());
+        dest.hostname = wwwApex;
+        dest.protocol = "https:";
+        dest.port = "";
+        log.info({ event: "worker.redirect", status: 301, reason: "legacy-www-apex", to: dest.toString(), ...baseFields });
+        return Response.redirect(dest.toString(), 301);
+      }
 
       // 1a-pre. Stale hashed-asset guard. If a request for /assets/* or
       // /_build/* reaches the Worker, the static-asset binding already
