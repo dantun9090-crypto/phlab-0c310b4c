@@ -43,7 +43,14 @@ const FORBIDDEN_MODULES = [
   "bcrypt", // native; use bcryptjs / Web Crypto instead
   "sqlite3",
   "better-sqlite3",
-];
+  // firebase/auth pulls EmailAuthProvider, GoogleAuthProvider, etc. that
+  // assume a browser environment (window, IndexedDB). When chunk-splitting
+  // shifts which file owns the import, the SSR bundle has silently shipped
+  // it before — causing `ReferenceError: EmailAuthProvider is not defined`
+  // and a 503 across the entire site. Legacy auth UI MUST stay client-only
+  // (dynamic import inside useEffect / *.client.ts modules).
+  "firebase/auth",
+  "@firebase/auth",
 
 // Code patterns that almost always indicate Node-only assumptions.
 // Each entry is matched against the bundled source as a literal substring
