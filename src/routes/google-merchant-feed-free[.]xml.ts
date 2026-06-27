@@ -158,15 +158,27 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
                 : "";
             const sizeCompact = sizeLabel.replace(/\s+/g, "");
 
+            // Semrush UK: "research peptides uk" 480/mo KDI 34 = realistic.
+            // "reference standard" / "lyophilised peptide" = <40/mo combined.
+            // Front-load molecule + size + form + purity USP so Free Listings
+            // match real user queries; brand last; compliance line stays.
+            const formLabel = isLiquidName(p.name) ? "Sterile Solution" : "Lyophilised Powder";
             const title = sizeLabel
-              ? `${fullName} ${sizeLabel} — Analytical Reference Standard | ${BRAND}`
-              : `${fullName} — Analytical Reference Standard | ${BRAND}`;
+              ? `${fullName} ${sizeLabel} — ${formLabel} | HPLC 99% Purity | Research Compound | ${BRAND} UK`
+              : `${fullName} — ${formLabel} | HPLC 99% Purity | Research Compound | ${BRAND} UK`;
 
             const cas = casFor(p.name) ?? "N/A (multi-component reference mixture)";
-            const isLiquid = /bacteriostatic|water/i.test(p.name);
+            const isLiquid = isLiquidName(p.name);
             const baseUnit = isLiquid ? "1 ml" : "1 mg";
-            const lyoLine = isLiquid ? "" : " • Lyophilised powder format";
-            const description = `For laboratory and analytical research ONLY. Strictly for in-vitro scientific testing and reference standards. NOT for human consumption, therapeutic or diagnostic use. Technical specification: • CAS Number: ${cas} • HPLC-verified 99%+ purity${lyoLine}. Certificate of Analysis available on request. Supplied to qualified UK laboratories.`;
+            const formLine = isLiquid ? "sterile aqueous solution" : "lyophilised solid powder";
+            // USP-first description: form + purity + spec + CoA + UK fulfilment,
+            // mandatory non-human-use disclaimer at the end (v3 compliance shape).
+            const description =
+              `${fullName}${sizeLabel ? ` ${sizeLabel}` : ""} supplied as a ${formLine} for in-vitro laboratory research and analytical reference work in the United Kingdom. ` +
+              `HPLC-verified ≥99% purity, Certificate of Analysis (CoA) issued per batch with retention sample. ` +
+              `Technical specification: • CAS Number: ${cas} • Purity ≥99% by RP-HPLC • Form: ${formLine} • Storage: 2–8 °C, protect from light. ` +
+              `Dispatched from a UK facility to qualified laboratories, research institutions and analytical chemists. ` +
+              `Strictly for in-vitro scientific testing and reference standards. NOT for human consumption, therapeutic or diagnostic use.`;
 
             const image = p.imageUrl
               ? p.imageUrl.startsWith("http")
