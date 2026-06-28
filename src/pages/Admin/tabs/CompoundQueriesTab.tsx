@@ -305,47 +305,9 @@ export default function CompoundQueriesTab() {
     }
   }
 
-  /**
-   * Scrub anything that looks like a credential before the dry-run JSON
-   * leaves the browser. Keeps `correlationId` intact so the file is still
-   * traceable end-to-end against the audit log.
-   *
-   * Redacts:
-   *  - Firebase idToken / OAuth access_token / refresh_token / id_token
-   *  - `Authorization`, `developer-token`, `x-goog-api-key` headers
-   *  - `Bearer ...` strings anywhere in the payload
-   *  - Google Ads customer IDs in `customers/<digits>/...` resource paths
-   *  - Bare JWT-shaped tokens (xxx.yyy.zzz)
-   */
-  function redactSensitiveJson(input: string): string {
-    const SENSITIVE_KEYS = new Set([
-      'idtoken', 'authorization', 'access_token', 'refresh_token', 'id_token',
-      'developer-token', 'developertoken', 'x-goog-api-key',
-      'client_secret', 'clientsecret', 'apikey', 'api_key',
-      'x-connection-api-key', 'login-customer-id',
-    ]);
-    let obj: unknown;
-    try { obj = JSON.parse(input); } catch { return input; }
-    const walk = (v: unknown): unknown => {
-      if (Array.isArray(v)) return v.map(walk);
-      if (v && typeof v === 'object') {
-        const out: Record<string, unknown> = {};
-        for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
-          if (SENSITIVE_KEYS.has(k.toLowerCase())) out[k] = '[REDACTED]';
-          else out[k] = walk(val);
-        }
-        return out;
-      }
-      if (typeof v === 'string') {
-        return v
-          .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [REDACTED]')
-          .replace(/\bey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g, '[REDACTED_JWT]')
-          .replace(/customers\/\d{6,}/g, 'customers/[REDACTED_CID]');
-      }
-      return v;
-    };
-    return JSON.stringify(walk(obj), null, 2);
-  }
+  // Redaction logic lives in `@/lib/redact-sensitive` so it's unit-tested
+  // (src/lib/redact-sensitive.test.ts) and shared with the audit tab.
+
 
   function downloadPreviewJson() {
     if (!applyPreview) return;
