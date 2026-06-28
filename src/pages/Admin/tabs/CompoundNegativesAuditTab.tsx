@@ -12,6 +12,16 @@ import { auth } from '@/lib/firebase';
 import { listCompoundNegativesAudit } from '@/lib/compound-queries.functions';
 import { redactSensitiveValue } from '@/lib/redact-sensitive';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 
 type RetryAttempt = { attempt: number; delayMs: number; error?: string };
