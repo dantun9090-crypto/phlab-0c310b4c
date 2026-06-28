@@ -39,6 +39,7 @@ const staticEntries: SitemapEntry[] = [
   { path: "/research/retatrutide-uk", lastmod: "2026-06-26", changefreq: "weekly", priority: "0.9" },
   { path: "/research/bpc-157-uk", lastmod: "2026-06-26", changefreq: "weekly", priority: "0.9" },
   { path: "/compound", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
+  { path: "/peptide-calculator", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.7" },
   { path: "/landing/phlabs", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
   { path: "/lab-reports", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.6" },
   { path: "/storage-guide", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.6" },
