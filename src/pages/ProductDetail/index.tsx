@@ -923,6 +923,7 @@ export default function ProductDetail() {
       document.getElementById('product-schema')?.remove();
       document.getElementById('breadcrumb-schema')?.remove();
       document.getElementById('faq-schema')?.remove();
+      document.getElementById('howto-schema')?.remove();
       document.getElementById('merchant-return-schema')?.remove();
       // Restore defaults on unmount
       document.title = 'Buy Research Peptides UK | HPLC-Verified | PH Labs';
