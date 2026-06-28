@@ -22,21 +22,21 @@ describe('retatrutide FAQ schema (overrides)', () => {
 
   it('exists with FAQ entries', () => {
     expect(entry).toBeDefined();
-    expect(Array.isArray(entry.faq)).toBe(true);
-    expect((entry.faq ?? []).length).toBeGreaterThanOrEqual(4);
+    expect(Array.isArray(entry.faqs)).toBe(true);
+    expect((entry.faqs ?? []).length).toBeGreaterThanOrEqual(4);
   });
 
   it('FAQ payload mentions every targeted misspelling', () => {
-    const blob = JSON.stringify(entry.faq ?? []).toLowerCase();
+    const blob = JSON.stringify(entry.faqs ?? []).toLowerCase();
     for (const typo of REQUIRED_MISSPELLINGS) {
       expect(blob, `missing "${typo}" in FAQ payload`).toContain(typo);
     }
   });
 
-  it('meta description covers the primary misspellings list', () => {
-    const blob = JSON.stringify(entry.keywords ?? []).toLowerCase();
+  it('misspellings list covers the primary typo cluster', () => {
+    const blob = JSON.stringify(entry.misspellings ?? []).toLowerCase();
     for (const typo of REQUIRED_MISSPELLINGS) {
-      expect(blob, `missing "${typo}" in keywords`).toContain(typo);
+      expect(blob, `missing "${typo}" in misspellings`).toContain(typo);
     }
   });
 });
