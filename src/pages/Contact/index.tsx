@@ -556,9 +556,11 @@ export default function Contact() {
 
                       <button
                         type="submit"
-                        disabled={sending}
+                        disabled={sending || !qualified}
+                        title={!qualified ? "Please confirm research use before sending" : undefined}
                         className="w-full group flex items-center justify-center gap-2.5 py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all duration-300 shadow-[0_4px_20px_rgba(16,185,129,0.3)] hover:shadow-[0_4px_28px_rgba(16,185,129,0.5)] hover:-translate-y-0.5 active:translate-y-0"
                       >
+
                         {sending ? (
                           <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>
                         ) : (

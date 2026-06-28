@@ -24,6 +24,14 @@ export default function RequestCatalog() {
   });
   const [status, setStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [sentReceipt, setSentReceipt] = useState<{
+    to: string;
+    subject: string;
+    message: string;
+    sentAt: string;
+    delivery: "queued" | "fallback";
+  } | null>(null);
+
 
   useSEO("request-catalog", {
     title: "Request Full Research Catalogue | PH Labs UK",
@@ -51,24 +59,43 @@ export default function RequestCatalog() {
     setStatus("sending");
     setErrorMsg("");
     trackEvent("submit_request_catalog", { location: "request_catalog_page" });
+    const subject = `Catalogue Request — ${form.institution || "Independent Researcher"}`;
+    const message =
+      `Catalogue request via /request-catalog\n\n` +
+      `Institution: ${form.institution || "—"}\n` +
+      `Role: ${form.role || "—"}\n` +
+      `Research purpose: ${form.purpose || "—"}\n\n` +
+      `Catalogue link sent: https://phlabs.co.uk${CATALOGUE_PDF_URL}`;
     try {
       const ok = await sendPublicMail({
         template: "contact",
         name: form.name,
         email: form.email,
-        subject: `Catalogue Request — ${form.institution || "Independent Researcher"}`,
-        message:
-          `Catalogue request via /request-catalog\n\n` +
-          `Institution: ${form.institution || "—"}\n` +
-          `Role: ${form.role || "—"}\n` +
-          `Research purpose: ${form.purpose || "—"}\n\n` +
-          `Catalogue link sent: https://phlabs.co.uk${CATALOGUE_PDF_URL}`,
+        subject,
+        message,
       });
       if (!ok) throw new Error("Mail delivery failed");
+      setSentReceipt({
+        to: form.email,
+        subject,
+        message,
+        sentAt: new Date().toISOString(),
+        delivery: "queued",
+      });
       setStatus("ok");
       trackEvent("request_catalog_success");
     } catch (err) {
+      setSentReceipt({
+        to: form.email,
+        subject,
+        message,
+        sentAt: new Date().toISOString(),
+        delivery: "fallback",
+      });
       setStatus("error");
+      trackEvent("request_catalog_failure", {
+        reason: err instanceof Error ? err.message : "unknown",
+      });
       setErrorMsg(
         err instanceof Error
           ? `We couldn't send your request: ${err.message}. You can still download the catalogue below.`
@@ -76,6 +103,7 @@ export default function RequestCatalog() {
       );
     }
   }
+
 
   return (
     <main className="min-h-screen bg-[#060b18] text-white">
@@ -97,25 +125,61 @@ export default function RequestCatalog() {
 
       <section className="py-16 sm:py-24 bg-[#080e1f]">
         <div className="mx-auto max-w-3xl px-6">
-          {status === "ok" ? (
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-8 sm:p-12 text-center">
-              <h2 className="text-2xl font-light mb-3" style={{ fontFamily: "'Cormorant Garamond',serif" }}>
-                Catalogue on its way
-              </h2>
-              <p className="text-white/80 mb-8">
-                We've emailed the catalogue to <strong>{form.email}</strong>.
-                You can also download it instantly below.
-              </p>
-              <a
-                href={CATALOGUE_PDF_URL}
-                download
-                onClick={() => trackEvent("download_catalog_pdf", { location: "request_catalog_success" })}
-                className="inline-flex items-center justify-center px-10 py-4 rounded-full bg-[#c9a44c] text-[#060b18] text-[12px] tracking-[0.2em] uppercase font-semibold hover:brightness-110 transition-all"
-              >
-                Download Catalogue (PDF) →
-              </a>
+          {status === "ok" && sentReceipt ? (
+            <div
+              data-testid="catalog-success"
+              className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-8 sm:p-12"
+            >
+              <div className="text-center">
+                <h2 className="text-2xl font-light mb-3" style={{ fontFamily: "'Cormorant Garamond',serif" }}>
+                  Catalogue on its way
+                </h2>
+                <p className="text-white/80 mb-2">
+                  Email <span data-testid="catalog-delivery-status" className="inline-flex items-center gap-1.5 text-emerald-300 font-medium">● queued for delivery</span> to{" "}
+                  <strong>{sentReceipt.to}</strong>.
+                </p>
+                <p className="text-white/55 text-xs mb-8">
+                  Sent {new Date(sentReceipt.sentAt).toLocaleString("en-GB")}
+                </p>
+                <a
+                  href={CATALOGUE_PDF_URL}
+                  download
+                  data-testid="catalog-download-link"
+                  onClick={() => trackEvent("download_catalog_pdf", { location: "request_catalog_success" })}
+                  className="inline-flex items-center justify-center px-10 py-4 rounded-full bg-[#c9a44c] text-[#060b18] text-[12px] tracking-[0.2em] uppercase font-semibold hover:brightness-110 transition-all"
+                >
+                  Download Catalogue (PDF) →
+                </a>
+                <p className="mt-3 text-[11px] uppercase tracking-[0.3em] text-white/40">
+                  Direct file: {CATALOGUE_PDF_URL}
+                </p>
+              </div>
+
+              <div className="mt-10 rounded-xl border border-white/10 bg-[#060b18] p-6 text-left">
+                <p className="text-[11px] uppercase tracking-[0.3em] text-[#c9a44c] mb-3">Email Receipt</p>
+                <dl className="space-y-2 text-sm">
+                  <div className="flex flex-col sm:flex-row sm:gap-3">
+                    <dt className="text-white/45 sm:w-24">To</dt>
+                    <dd data-testid="receipt-to" className="text-white/85 break-all">{sentReceipt.to}</dd>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:gap-3">
+                    <dt className="text-white/45 sm:w-24">Subject</dt>
+                    <dd data-testid="receipt-subject" className="text-white/85">{sentReceipt.subject}</dd>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:gap-3">
+                    <dt className="text-white/45 sm:w-24">Message</dt>
+                    <dd
+                      data-testid="receipt-message"
+                      className="text-white/75 whitespace-pre-wrap font-mono text-xs leading-relaxed"
+                    >
+                      {sentReceipt.message}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
             </div>
           ) : (
+
             <form
               onSubmit={submit}
               className="rounded-2xl border border-white/[0.09] bg-[#060b18] p-8 sm:p-12 space-y-6"
