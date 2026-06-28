@@ -153,7 +153,34 @@ test.describe("/resources/peptide-categories-uk-research", () => {
     await page.goto(URL, { waitUntil: "domcontentloaded" });
     await expect(page.locator("h1")).toContainText(/Peptide Categories/i, {
       timeout: 15_000,
-    });
+  });
+
+  test("canonical, og:url and twitter:url exactly equal the canonical URL", async ({
+    page,
+  }) => {
+    const EXPECTED = `https://phlabs.co.uk/resources/${SLUG}`;
+    const res = await page.goto(URL, { waitUntil: "domcontentloaded" });
+    expect(res?.ok(), `GET returned ${res?.status()}`).toBeTruthy();
+
+    const canonical = await page
+      .locator('link[rel="canonical"]')
+      .getAttribute("href");
+    expect(canonical, "canonical href").toBe(EXPECTED);
+
+    const ogUrl = await page
+      .locator('meta[property="og:url"]')
+      .getAttribute("content");
+    expect(ogUrl, "og:url content").toBe(EXPECTED);
+
+    const twitterUrl = await page
+      .locator('meta[name="twitter:url"]')
+      .getAttribute("content");
+    expect(twitterUrl, "twitter:url content").toBe(EXPECTED);
+
+    // All three must be byte-identical — crawlers treat any mismatch as a
+    // canonicalisation signal pointing somewhere else.
+    expect(new Set([canonical, ogUrl, twitterUrl]).size).toBe(1);
+  });
     await page
       .waitForLoadState("load", { timeout: 10_000 })
       .catch(() => undefined);
