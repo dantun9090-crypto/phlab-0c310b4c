@@ -150,7 +150,7 @@ export default function ReindexHookTab() {
               "Request Indexing". Google has no public automation endpoint for
               this step.
             </p>
-            <ul className="space-y-1.5">
+            <ul data-testid="gsc-inspector-list" className="space-y-1.5">
               {result.gscInspectorLinks.map((link) => (
                 <li key={link.url} className="flex items-center gap-2 text-sm">
                   <a
