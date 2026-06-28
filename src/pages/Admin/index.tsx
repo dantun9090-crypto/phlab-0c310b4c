@@ -513,6 +513,7 @@ export default function AdminPage() {
         case 'backlinkchanges': return <BacklinkChangesTab />;
         case 'googleads': return <GoogleAdsTab />;
         case 'compoundqueries': return <CompoundQueriesTab />;
+        case 'compoundnegativesaudit': return <CompoundNegativesAuditTab />;
         case 'internallinks': return <InternalLinksTab />;
         case 'webvitals': return <WebVitalsTab />;
         case 'royalmail': return <RoyalMailTab />;
