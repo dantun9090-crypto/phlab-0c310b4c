@@ -88,6 +88,7 @@ export default function ReindexHookTab() {
           type="button"
           onClick={submit}
           disabled={busy}
+          data-testid="reindex-trigger"
           className="inline-flex items-center gap-2 px-4 py-2.5 min-h-[48px] rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold disabled:opacity-50"
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
@@ -102,7 +103,7 @@ export default function ReindexHookTab() {
       )}
 
       {result && (
-        <section className="bg-slate-900 border-2 border-slate-700 rounded-lg p-4 space-y-4">
+        <section data-testid="reindex-result" className="bg-slate-900 border-2 border-slate-700 rounded-lg p-4 space-y-4">
           <div className="flex items-center gap-2">
             {result.ok ? (
               <CheckCircle2 className="w-5 h-5 text-emerald-400" />
@@ -149,7 +150,7 @@ export default function ReindexHookTab() {
               "Request Indexing". Google has no public automation endpoint for
               this step.
             </p>
-            <ul className="space-y-1.5">
+            <ul data-testid="gsc-inspector-list" className="space-y-1.5">
               {result.gscInspectorLinks.map((link) => (
                 <li key={link.url} className="flex items-center gap-2 text-sm">
                   <a
