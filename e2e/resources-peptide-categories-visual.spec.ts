@@ -153,6 +153,22 @@ test.describe("/resources/peptide-categories-uk-research", () => {
     await page.goto(URL, { waitUntil: "domcontentloaded" });
     await expect(page.locator("h1")).toContainText(/Peptide Categories/i, {
       timeout: 15_000,
+    });
+    await page
+      .waitForLoadState("load", { timeout: 10_000 })
+      .catch(() => undefined);
+    await page.waitForTimeout(500);
+    await page.evaluate(() => {
+      document
+        .querySelectorAll("details[open]")
+        .forEach((d) => d.removeAttribute("open"));
+    });
+    await page.addStyleTag({ content: KILL_MOTION_CSS });
+
+    await expect(page).toHaveScreenshot(
+      "resources-peptide-categories-uk-research.png",
+      { fullPage: true, maxDiffPixelRatio: 0.02, threshold: 0.25 },
+    );
   });
 
   test("canonical, og:url and twitter:url exactly equal the canonical URL", async ({
@@ -180,22 +196,6 @@ test.describe("/resources/peptide-categories-uk-research", () => {
     // All three must be byte-identical — crawlers treat any mismatch as a
     // canonicalisation signal pointing somewhere else.
     expect(new Set([canonical, ogUrl, twitterUrl]).size).toBe(1);
-  });
-    await page
-      .waitForLoadState("load", { timeout: 10_000 })
-      .catch(() => undefined);
-    await page.waitForTimeout(500);
-    await page.evaluate(() => {
-      document
-        .querySelectorAll("details[open]")
-        .forEach((d) => d.removeAttribute("open"));
-    });
-    await page.addStyleTag({ content: KILL_MOTION_CSS });
-
-    await expect(page).toHaveScreenshot(
-      "resources-peptide-categories-uk-research.png",
-      { fullPage: true, maxDiffPixelRatio: 0.02, threshold: 0.25 },
-    );
   });
 
   test("reachable from /resources index navigation", async ({ page }) => {
