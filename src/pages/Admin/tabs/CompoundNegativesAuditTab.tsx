@@ -10,7 +10,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import { auth } from '@/lib/firebase';
 import { listCompoundNegativesAudit } from '@/lib/compound-queries.functions';
+import { redactSensitiveValue } from '@/lib/redact-sensitive';
 import { toast } from 'sonner';
+
 
 type RetryAttempt = { attempt: number; delayMs: number; error?: string };
 type AuditRow = {
