@@ -1,4 +1,6 @@
+// @vitest-environment node
 /**
+
  * Validates Google Ads Editor bulk-import CSV shape for negative keywords:
  *  - exact header order
  *  - CRLF line endings
