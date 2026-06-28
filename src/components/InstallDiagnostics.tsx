@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, RefreshCw, Share, PlusSquare, Apple } from 'lucide-react';
 
 interface SWInfo {
   supported: boolean;
@@ -17,6 +17,8 @@ interface Diagnostics {
   standalone: boolean;
   isSecure: boolean;
   manifestLinked: boolean;
+  isIos: boolean;
+  isIosSafari: boolean;
   userAgent: string;
 }
 
@@ -65,14 +67,16 @@ export default function InstallDiagnostics() {
         (window.navigator as any).standalone === true;
 
       const ua = navigator.userAgent;
-      const isChromium = /chrome|edg|opr|brave/i.test(ua) && !/firefox|fxios/i.test(ua);
-      const isIos = /iphone|ipad|ipod/i.test(ua);
+      const isIpadOS = /Macintosh/i.test(ua) && (navigator as any).maxTouchPoints > 1;
+      const isIos = /iphone|ipad|ipod/i.test(ua) || isIpadOS;
+      const isIosSafari = isIos && /safari/i.test(ua) && !/crios|fxios|edgios|opios/i.test(ua);
+      const isChromium = !isIos && /chrome|edg|opr|brave/i.test(ua) && !/firefox|fxios/i.test(ua);
       const isFirefox = /firefox|fxios/i.test(ua);
 
       let bipReason = '';
       if (bipFired) bipReason = 'Fired — native prompt available.';
       else if (standalone) bipReason = 'Already installed (running standalone).';
-      else if (isIos) bipReason = 'iOS Safari never fires this event — use Share → Add to Home Screen.';
+      else if (isIos) bipReason = 'iOS Safari never fires this event — use Share → Add to Home Screen (see instructions below).';
       else if (isFirefox) bipReason = 'Firefox does not support web app install.';
       else if (!isChromium) bipReason = 'Browser does not support beforeinstallprompt.';
       else if (!registered) bipReason = 'No service worker yet — Chromium requires one for installability.';
@@ -85,6 +89,8 @@ export default function InstallDiagnostics() {
         standalone,
         isSecure: window.isSecureContext,
         manifestLinked,
+        isIos,
+        isIosSafari,
         userAgent: ua,
       });
     }
