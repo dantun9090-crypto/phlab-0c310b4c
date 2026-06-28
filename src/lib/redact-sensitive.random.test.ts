@@ -52,8 +52,9 @@ function makeJwt(rand: () => number): string {
 }
 
 function makeBearerToken(rand: () => number): string {
-  // anything matching /Bearer\s+[A-Za-z0-9._-]+/
-  const ab = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-';
+  // anything matching /Bearer\s+[A-Za-z0-9._-]+/ — keep alphanumerics so \b
+  // bounding is clean and the assertion `out.includes(bearer)` is unambiguous.
+  const ab = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   return randStr(rand, 20 + Math.floor(rand() * 30), ab);
 }
 
