@@ -515,3 +515,22 @@ export const applyNegativesToGoogleAds = createServerFn({ method: 'POST' })
     }
     return { ok: true as const, mode: 'live' as const, status: res.status, resultJson: text };
   });
+
+// ─── Audit history list ────────────────────────────────────────────────
+
+export const listCompoundNegativesAudit = createServerFn({ method: 'POST' })
+  .inputValidator((d: { idToken: string; limit?: number }) => {
+    if (!d?.idToken) throw new Error('idToken required');
+    const limit = Math.min(Math.max(Number(d.limit ?? 100) || 100, 1), 500);
+    return { idToken: d.idToken, limit };
+  })
+  .handler(async ({ data }) => {
+    await requireAdmin(data.idToken);
+    const { listDocsAdmin } = await import('@/lib/server/firestore-admin');
+    const rows = await listDocsAdmin('compound_negatives_applied', {
+      orderBy: 'createdAt',
+      direction: 'DESCENDING',
+      limit: data.limit,
+    });
+    return { rowsJson: JSON.stringify(rows) };
+  });
