@@ -45,6 +45,7 @@ import MerchantFeedTab from './tabs/MerchantFeedTab';
 import MerchantFeedEditorTab from './tabs/MerchantFeedEditorTab';
 import BingFeedTab from './tabs/BingFeedTab';
 import IndexNowTab from './tabs/IndexNowTab';
+import ReindexHookTab from './tabs/ReindexHookTab';
 import AuthEventsTab from './tabs/AuthEventsTab';
 import VisitorsTab from './tabs/VisitorsTab';
 import PrivacyRequestsTab from './tabs/PrivacyRequestsTab';
