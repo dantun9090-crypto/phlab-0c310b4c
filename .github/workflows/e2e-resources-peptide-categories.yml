@@ -19,6 +19,8 @@ on:
       - "e2e/resources-peptide-categories-visual.spec.ts"
       - "playwright.config.ts"
       - ".github/workflows/e2e-resources-peptide-categories.yml"
+      - ".lighthouserc.resources.json"
+      - ".lighthouserc.resources.mobile.json"
   schedule:
     - cron: "37 5 * * *"
   workflow_dispatch:
@@ -103,6 +105,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: []
+    strategy:
+      fail-fast: false
+      matrix:
+        viewport: [desktop, mobile]
+        include:
+          - viewport: desktop
+            config: .lighthouserc.resources.json
+            report_dir: lhci-report
+          - viewport: mobile
+            config: .lighthouserc.resources.mobile.json
+            report_dir: lhci-report-mobile
     steps:
       - uses: actions/checkout@v4
 
@@ -131,15 +144,15 @@ jobs:
           done
           echo "server failed to start"; tail -n 200 server.log; exit 1
 
-      - name: Run Lighthouse CI (performance + a11y thresholds)
-        run: lhci autorun --config=.lighthouserc.resources.json
+      - name: Run Lighthouse CI — ${{ matrix.viewport }} (performance + a11y thresholds)
+        run: lhci autorun --config=${{ matrix.config }}
 
       - name: Upload Lighthouse report (always)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: lighthouse-report-resources-peptide-categories
-          path: lhci-report
+          name: lighthouse-report-resources-peptide-categories-${{ matrix.viewport }}
+          path: ${{ matrix.report_dir }}
           if-no-files-found: ignore
           retention-days: 14
 
@@ -147,7 +160,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: server-log-lighthouse-resources-peptide-categories
+          name: server-log-lighthouse-resources-peptide-categories-${{ matrix.viewport }}
           path: server.log
           if-no-files-found: ignore
           retention-days: 7
