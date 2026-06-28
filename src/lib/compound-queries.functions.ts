@@ -58,6 +58,27 @@ export const DEFAULT_THRESHOLDS: CompoundThresholds = {
   windowDays: 28,
 };
 
+/** Strict validator — throws on invalid input. Used by save fn and cron. */
+export function validateThresholds(t: Partial<CompoundThresholds>): CompoundThresholds {
+  const errors: string[] = [];
+  const minImpressions = Number(t.minImpressions);
+  const growthRatio = Number(t.growthRatio);
+  const windowDays = Number(t.windowDays);
+  if (!Number.isFinite(minImpressions) || !Number.isInteger(minImpressions) || minImpressions < 1 || minImpressions > 10_000) {
+    errors.push('minImpressions must be an integer between 1 and 10000');
+  }
+  if (!Number.isFinite(growthRatio) || growthRatio < 0 || growthRatio > 50) {
+    errors.push('growthRatio must be a number between 0 and 50');
+  }
+  if (!Number.isFinite(windowDays) || !Number.isInteger(windowDays) || windowDays < 1 || windowDays > 90) {
+    errors.push('windowDays must be an integer between 1 and 90');
+  }
+  if (errors.length) throw new Error(`Invalid thresholds: ${errors.join('; ')}`);
+  return { minImpressions, growthRatio, windowDays };
+}
+
+
+
 function authHeaders() {
   const lovable = process.env.LOVABLE_API_KEY;
   const gsc = process.env.GOOGLE_SEARCH_CONSOLE_API_KEY;
