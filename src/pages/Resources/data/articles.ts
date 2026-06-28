@@ -2484,6 +2484,79 @@ For studies designed to dissect the contribution of GCGR-mediated thermogenesis,
       { id: 5, authors: 'Knerr PJ, Mowery SA, Douros JD, et al.', year: 2022, title: 'Next generation GLP-1/GIP/glucagon triple agonists normalize body weight in obese mice', journal: 'Mol Metab', doi: '10.1016/j.molmet.2022.101533' },
     ]
   },
+  // ---------------------------------------------
+  // Peptide Categories in UK Laboratory Research
+  // Compliant rewrite of Semrush ContentShake brief (593ca154)
+  // Targets: "what are peptides" (vol 14.8K, KDI 45), "uk peptides" (vol 14.8K, KDI 52)
+  // ---------------------------------------------
+  {
+    slug: 'peptide-categories-uk-research',
+    title: 'Peptide Categories in UK Laboratory Research: 7 Classes Studied in Modern Labs',
+    subtitle: 'A research-focused overview of seven peptide classes characterised in UK laboratories — structural biology, receptor pharmacology, and analytical reference work, not clinical use',
+    category: 'Foundational Science',
+    readTime: 12,
+    publishDate: '2026-06-28',
+    excerpt: 'Peptides studied in UK laboratories fall into a small number of well-defined classes — collagen fragments, tissue-remodelling research peptides, growth-hormone secretagogues, incretin analogues, melanocortin ligands, mitochondrial-derived peptides, and immunomodulatory fragments. This guide explains each class in research terms: target receptors, characterisation methods, and where each sits in the modern UK research literature. For Research Use Only.',
+    keywords: ['what are peptides', 'uk peptides', 'peptides uk', 'peptide categories', 'research peptides', 'peptide classes', 'laboratory peptides', 'amino acids'],
+    relatedSlugs: ['what-are-peptides', 'hplc-testing-explained', 'research-peptides-uk', 'peptide-storage-lyophilisation-science'],
+    content: [
+      {
+        body: `Peptides studied in UK laboratories are short chains of amino acids — typically 2 to 50 residues — used as reference standards in receptor pharmacology, analytical method development, and preclinical signalling research. This guide covers seven of the most commonly characterised peptide classes in modern UK research, written for laboratory staff selecting reference materials and planning experiments. <strong>All products discussed are For Research Use Only. Not for Human Consumption.</strong> Each section links to deeper technical guides and to the corresponding HPLC-verified research material in our <a href="/products" style="color: #10b981; text-decoration: underline;">catalogue</a>. For the underlying chemistry, see <a href="/resources/what-are-peptides" style="color: #10b981; text-decoration: underline;">What Are Peptides? A Comprehensive Guide for UK Researchers</a>.`
+      },
+      {
+        heading: 'Class 1: Collagen-Derived Peptides and Matrix Biology',
+        body: `Collagen-derived peptides are short fragments released by enzymatic digestion of triple-helical collagen. The most studied research fragments in this class include GHK (glycine–histidine–lysine) and the larger matrikines. In UK dermal-fibroblast and extracellular-matrix laboratories these peptides serve as reference ligands for studying matrix remodelling pathways, fibroblast signalling, and copper transport. Characterisation is straightforward by reversed-phase HPLC and ESI-MS; the small size makes purity verification unambiguous. See the dedicated <a href="/resources/ghk-cu-copper-peptide-research" style="color: #10b981; text-decoration: underline;">GHK-Cu research guide</a>.`
+      },
+      {
+        heading: 'Class 2: Tissue-Remodelling Research Peptides (BPC-157, TB-500)',
+        body: `Two of the most-cited peptides in UK preclinical tissue-remodelling research are <a href="/products/bpc-157" style="color: #10b981; text-decoration: underline;">BPC-157</a>, a 15-residue fragment derived from human gastric juice protein, and <a href="/products/tb-500-thymosin-beta-4" style="color: #10b981; text-decoration: underline;">TB-500</a>, a 17-residue active fragment of thymosin beta-4. Both are studied as in-vitro tool compounds in fibroblast migration assays, endothelial tube-formation models, and actin-cytoskeleton imaging studies. Neither is licensed as a medicine in the UK; both are supplied strictly as research reference material with batch-specific HPLC documentation. Direct comparison is covered in <a href="/resources/bpc-157-vs-tb-500-comparison" style="color: #10b981; text-decoration: underline;">BPC-157 vs TB-500</a>.`,
+        callout: {
+          type: 'info',
+          text: 'These compounds are investigational research peptides. They are not approved therapeutics in the UK or EU and no efficacy, dosing, or administration claims are made.'
+        }
+      },
+      {
+        heading: 'Class 3: Growth-Hormone Secretagogue Research Peptides',
+        body: `The growth-hormone-releasing peptide (GHRP) class — ipamorelin, GHRP-2, GHRP-6, hexarelin — together with the GHRH analogues CJC-1295 and MOD GRF(1-29), are used in UK endocrine research as pharmacological probes of the ghrelin (GHS-R1a) and GHRH receptor systems. Pituitary cell culture, cAMP accumulation assays, and rodent pulse-amplitude studies are the standard characterisation contexts. See <a href="/resources/ipamorelin-ghrp-research" style="color: #10b981; text-decoration: underline;">Ipamorelin and the GHRP Class</a> and <a href="/resources/cjc-1295-mod-grf-ghrh-research" style="color: #10b981; text-decoration: underline;">CJC-1295 / MOD GRF(1-29) research</a> for the full mechanistic profile.`
+      },
+      {
+        heading: 'Class 4: Incretin and Multi-Receptor Metabolic Research Peptides',
+        body: `Single-, dual-, and triple-receptor agonists of the GLP-1, GIP, and glucagon receptor families are the most active area of contemporary metabolic peptide research. <a href="/products/tirzepatide-research-peptide" style="color: #10b981; text-decoration: underline;">Tirzepatide</a> (GLP-1R / GIPR) and <a href="/products/retatrutide-research-peptide" style="color: #10b981; text-decoration: underline;">retatrutide</a> (GLP-1R / GIPR / GCGR) are the canonical reference compounds. UK laboratories use these as tool peptides for in-vitro receptor selectivity panels, beta-arrestin recruitment assays, and rodent metabolic-phenotyping studies. Mechanistic detail in <a href="/resources/tirzepatide-vs-retatrutide-mechanism" style="color: #10b981; text-decoration: underline;">Tirzepatide vs Retatrutide: Dual vs Triple Receptor Agonism</a>.`
+      },
+      {
+        heading: 'Class 5: Melanocortin Receptor Ligands',
+        body: `Synthetic analogues of alpha-MSH — including <a href="/products/melanotan-ii-research-peptide" style="color: #10b981; text-decoration: underline;">Melanotan-II</a> and PT-141 (bremelanotide) — are characterised as research probes for the melanocortin receptor subfamily (MC1R–MC5R). They are used in receptor selectivity studies, central-nervous-system signalling research, and cAMP / Galpha-s coupling assays. See <a href="/resources/melanotan-2-melanocortin-research" style="color: #10b981; text-decoration: underline;">Melanotan II melanocortin research</a> and <a href="/resources/pt-141-bremelanotide-melanocortin-research" style="color: #10b981; text-decoration: underline;">PT-141 melanocortin pharmacology</a>.`
+      },
+      {
+        heading: 'Class 6: Mitochondrial-Derived and Cellular Energy Research Peptides',
+        body: `MOTS-c — a 16-residue mitochondrial-derived peptide — and the broader NAD+ precursor family represent a rapidly growing class of research compounds used in mitochondrial biology, AMPK signalling, and sirtuin activation studies. UK laboratories working on cellular bioenergetics use these as reference standards in Western blot, qPCR, and Seahorse extracellular-flux assay workflows. See <a href="/resources/mots-c-mitochondrial-derived-peptide" style="color: #10b981; text-decoration: underline;">MOTS-c research</a> and <a href="/resources/nad-nicotinamide-adenine-dinucleotide-research" style="color: #10b981; text-decoration: underline;">NAD+ research</a>.`
+      },
+      {
+        heading: 'Class 7: Immunomodulatory Research Fragments',
+        body: `The KPV tripeptide (lysine–proline–valine) — the C-terminal fragment of alpha-MSH — together with thymic peptide fragments and selank, are studied in UK preclinical immunology laboratories as probes of NF-kB signalling, melanocortin-mediated inflammation modulation, and neuroimmune crosstalk. These are reference tool compounds for in-vitro macrophage and lymphocyte signalling assays. Full mechanistic context in <a href="/resources/kpv-tripeptide-anti-inflammatory-research" style="color: #10b981; text-decoration: underline;">KPV tripeptide research</a> and <a href="/resources/selank-anxiolytic-nootropic-peptide" style="color: #10b981; text-decoration: underline;">Selank research</a>.`,
+        callout: {
+          type: 'warning',
+          text: 'All seven classes described are supplied For Research Use Only. None are licensed medicines in the UK under the Human Medicines Regulations 2012. No clinical, dosage, or administration claims are made.'
+        }
+      },
+      {
+        heading: 'How These Classes Are Characterised in UK Laboratories',
+        body: `Across all seven classes, identity and purity are verified by reversed-phase HPLC (≥99% by area) and ESI-MS or MALDI-TOF mass spectrometry against the expected monoisotopic mass. UK research-grade material is supplied as lyophilised powder with a batch-specific Certificate of Analysis. Reconstitution is performed in bacteriostatic water; aliquots are stored at −20 °C or −80 °C to minimise freeze–thaw cycles. The PH Labs <a href="/quality-control" style="color: #10b981; text-decoration: underline;">quality control</a> process and <a href="/lab-reports" style="color: #10b981; text-decoration: underline;">lab reports library</a> document the underlying chromatograms for every batch. For the analytical detail, see <a href="/resources/how-to-read-hplc-certificate-of-analysis" style="color: #10b981; text-decoration: underline;">How to Read an HPLC Certificate of Analysis</a> and <a href="/resources/mass-spectrometry-peptide-identity-verification" style="color: #10b981; text-decoration: underline;">Mass Spectrometry for Peptide Identity Verification</a>.`
+      },
+      {
+        heading: 'Summary',
+        body: `Seven peptide classes account for the majority of contemporary UK laboratory peptide research: matrix-biology fragments, tissue-remodelling research peptides, growth-hormone secretagogues, multi-receptor metabolic agonists, melanocortin ligands, mitochondrial-derived peptides, and immunomodulatory fragments. Each class has a defined receptor target, an established set of in-vitro and preclinical characterisation methods, and a body of peer-reviewed UK and international literature. Selection of a reference compound should be driven by the research question — receptor selectivity, signalling pathway, or analytical reference need — and supported by batch-specific HPLC and mass spectrometry documentation. <strong>For Research Use Only. Not for Human Consumption.</strong>`
+      }
+    ],
+    references: [
+      { id: 1, authors: 'Lau JL, Dunn MK.', year: 2018, title: 'Therapeutic peptides: Historical perspectives, current development trends, and future directions', journal: 'Bioorg Med Chem', doi: '10.1016/j.bmc.2017.06.052' },
+      { id: 2, authors: 'Henninot A, Collins JC, Nuss JM.', year: 2018, title: 'The Current State of Peptide Drug Discovery: Back to the Future?', journal: 'J Med Chem', doi: '10.1021/acs.jmedchem.7b00318' },
+      { id: 3, authors: 'Pickart L, Margolina A.', year: 2018, title: 'Regenerative and Protective Actions of the GHK-Cu Peptide in the Light of the New Gene Data', journal: 'Int J Mol Sci', doi: '10.3390/ijms19071987' },
+      { id: 4, authors: 'Jastreboff AM, Kaplan LM, Frias JP, et al.', year: 2023, title: 'Triple-hormone-receptor agonist retatrutide for obesity — a phase 2 trial', journal: 'N Engl J Med', doi: '10.1056/NEJMoa2301972' },
+      { id: 5, authors: 'Lee C, Zeng J, Drew BG, et al.', year: 2015, title: 'The mitochondrial-derived peptide MOTS-c promotes metabolic homeostasis', journal: 'Cell Metab', doi: '10.1016/j.cmet.2015.02.009' },
+      { id: 6, authors: 'Medicines and Healthcare products Regulatory Agency (MHRA)', year: 2024, title: 'What is a medicine?', journal: 'MHRA Guidance' },
+    ]
+  },
 ];
 
 // Slug aliases — multiple URLs resolving to the same canonical article.
