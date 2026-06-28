@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Schema validation for the Retatrutide product page.
  *
