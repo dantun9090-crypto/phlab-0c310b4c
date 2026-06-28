@@ -19,6 +19,8 @@ on:
       - "e2e/resources-peptide-categories-visual.spec.ts"
       - "playwright.config.ts"
       - ".github/workflows/e2e-resources-peptide-categories.yml"
+      - ".lighthouserc.resources.json"
+      - ".lighthouserc.resources.mobile.json"
   schedule:
     - cron: "37 5 * * *"
   workflow_dispatch:
