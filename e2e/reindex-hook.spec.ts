@@ -55,7 +55,7 @@ test.describe('reindex hook contract', () => {
     expect(String(json.error)).toMatch(/unauthorized/i);
   });
 
-  test('returns IndexNow + GSC inspector deep-links when authenticated', async ({ request }) => {
+  test('returns IndexNow + GSC inspector deep-links when authenticated', async ({ request }, testInfo) => {
     test.skip(!TOKEN, 'PRERENDER_TOKEN not available to test runner');
 
     const res = await request.post(ENDPOINT, {
@@ -64,40 +64,67 @@ test.describe('reindex hook contract', () => {
       failOnStatusCode: false,
     });
 
+    const status = res.status();
+    let json: Record<string, unknown> = {};
+    try { json = await res.json(); } catch { /* non-json body */ }
+    // Always attach for forensic value; CI uploads the run's output dir.
+    attachJsonOnFailure(testInfo, `reindex-response-${status}`, { status, body: json });
+
     // 429 cooldown is acceptable if a previous test pulse fired within 30s.
-    if (res.status() === 429) {
-      const j = await res.json();
-      expect(j.error).toBe('cooldown');
-      test.info().annotations.push({ type: 'note', description: 'cooldown hit — contract not exercised' });
+    if (status === 429) {
+      expect(json.error).toBe('cooldown');
+      testInfo.annotations.push({ type: 'note', description: 'cooldown hit — contract not exercised' });
       return;
     }
 
-    expect(res.status()).toBe(200);
-    const json = await res.json();
+    expect(status).toBe(200);
 
     // Shape assertions — these are the contract the admin UI depends on.
-    expect(Array.isArray(json.submittedUrls)).toBe(true);
-    expect(json.submittedUrls.length).toBe(SAMPLE_URLS.length);
-    for (const u of json.submittedUrls) {
+    const submitted = json.submittedUrls as unknown;
+    expect(Array.isArray(submitted)).toBe(true);
+    expect((submitted as string[]).length).toBe(SAMPLE_URLS.length);
+    for (const u of submitted as string[]) {
       expect(u).toMatch(/^https:\/\/phlabs\.co\.uk\//);
     }
 
-    expect(json.indexNow).toBeDefined();
-    expect(typeof json.indexNow.status).toBe('number');
-    expect(typeof json.indexNow.submitted).toBe('number');
+    const indexNow = json.indexNow as Record<string, unknown> | undefined;
+    expect(indexNow).toBeDefined();
+    expect(typeof indexNow!.status).toBe('number');
+    expect(typeof indexNow!.submitted).toBe('number');
 
-    expect(json.prerender?.desktop).toBeDefined();
-    expect(json.prerender?.mobile).toBeDefined();
-    expect(typeof json.prerender.desktop.status).toBe('number');
-    expect(typeof json.prerender.mobile.status).toBe('number');
+    const prerender = json.prerender as { desktop?: Record<string, unknown>; mobile?: Record<string, unknown> } | undefined;
+    expect(prerender?.desktop).toBeDefined();
+    expect(prerender?.mobile).toBeDefined();
+    expect(typeof prerender!.desktop!.status).toBe('number');
+    expect(typeof prerender!.mobile!.status).toBe('number');
 
-    expect(Array.isArray(json.gscInspectorLinks)).toBe(true);
-    expect(json.gscInspectorLinks.length).toBe(SAMPLE_URLS.length);
-    for (const link of json.gscInspectorLinks) {
+    const links = json.gscInspectorLinks as Array<{ url: string; inspector: string }>;
+    expect(Array.isArray(links)).toBe(true);
+    expect(links.length).toBe(SAMPLE_URLS.length);
+    for (const link of links) {
       expect(link.url).toMatch(/^https:\/\/phlabs\.co\.uk\//);
       expect(link.inspector).toMatch(
         /^https:\/\/search\.google\.com\/search-console\/inspect\?resource_id=sc-domain%3Aphlabs\.co\.uk&id=https/,
       );
+    }
+  });
+
+  test('rejects invalid payload with structured 400', async ({ request }, testInfo) => {
+    test.skip(!TOKEN, 'PRERENDER_TOKEN not available to test runner');
+    const res = await request.post(ENDPOINT, {
+      headers: { 'x-recache-secret': TOKEN! },
+      data: { urls: ['https://evil.example.com/x', ''] },
+      failOnStatusCode: false,
+    });
+    const json = await res.json();
+    attachJsonOnFailure(testInfo, 'reindex-invalid-payload', { status: res.status(), body: json });
+    // Either 400 (validated) or 429 (cooldown raced); both are valid.
+    expect([400, 429]).toContain(res.status());
+    if (res.status() === 400) {
+      expect(json.ok).toBe(false);
+      expect(json.error).toBe('invalid_payload');
+      expect(Array.isArray(json.issues)).toBe(true);
+      expect(json.issues.length).toBeGreaterThan(0);
     }
   });
 });
