@@ -4,13 +4,18 @@ name: E2E — /compound + /contact + /request-catalog regression
 #   * /compound CTAs / analytics tracking
 #   * /contact qualification gating
 #   * /request-catalog email payload + receipt handling
+#   * /PH-Labs-Research-Catalogue.pdf shipped asset
 #
 # Runs on PRs that touch the affected files, nightly, and on demand.
+# Matrix runs the functional suite on BOTH Chromium and Firefox to ensure
+# qualification gating + disabled-button behaviour is consistent.
+# Visual snapshots are chromium-only (font hinting differs in Firefox).
 
 on:
   pull_request:
     paths:
       - "src/components/PremiumLanding.tsx"
+      - "src/components/LandingTrustStrip.tsx"
       - "src/routes/_marketing.compound.tsx"
       - "src/pages/Contact/index.tsx"
       - "src/routes/contact.tsx"
@@ -19,7 +24,11 @@ on:
       - "src/lib/analytics.ts"
       - "src/lib/sendPublicMail.ts"
       - "src/routes/api/public/send-mail.ts"
+      - "public/PH-Labs-Research-Catalogue.pdf"
       - "e2e/compound-contact-catalog-regression.spec.ts"
+      - "e2e/compound-catalog-visual.spec.ts"
+      - "tests/catalogue-pdf-contents.test.ts"
+      - "playwright.config.ts"
       - ".github/workflows/e2e-compound-contact-catalog.yml"
   schedule:
     - cron: "23 5 * * *"
@@ -30,9 +39,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  pdf-contents:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Verify catalogue PDF contents
+        run: bunx vitest run tests/catalogue-pdf-contents.test.ts
+
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
     env:
       TEST_BASE_URL: http://localhost:8080
     steps:
@@ -45,8 +70,8 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install Playwright (Node + Chromium)
-        run: bunx playwright install --with-deps chromium
+      - name: Install Playwright browser (${{ matrix.browser }})
+        run: bunx playwright install --with-deps ${{ matrix.browser }}
 
       - name: Start dev server
         run: |
@@ -59,25 +84,40 @@ jobs:
           done
           echo "server failed to start"; tail -n 200 server.log; exit 1
 
-      - name: Run regression spec
-        run: bunx playwright test e2e/compound-contact-catalog-regression.spec.ts --reporter=list,junit
+      - name: Run regression spec (functional, both browsers)
+        run: |
+          bunx playwright test \
+            e2e/compound-contact-catalog-regression.spec.ts \
+            e2e/compound-catalog-visual.spec.ts \
+            --project=${{ matrix.browser }} \
+            --reporter=list,html,junit
         env:
           PLAYWRIGHT_JUNIT_OUTPUT_NAME: test-results/junit.xml
 
-      - name: Upload Playwright report on failure
+      - name: Upload Playwright HTML report (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: |
-            playwright-report
-            test-results
+          name: playwright-report-${{ matrix.browser }}
+          path: playwright-report
           if-no-files-found: ignore
+          retention-days: 14
 
-      - name: Upload server log on failure
+      - name: Upload screenshots / videos / traces (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: server-log
+          name: playwright-test-results-${{ matrix.browser }}
+          # test-results/ holds per-test trace.zip, screenshots, videos.
+          path: test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload server log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-log-${{ matrix.browser }}
           path: server.log
           if-no-files-found: ignore
+          retention-days: 7
