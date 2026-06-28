@@ -1,0 +1,56 @@
+name: Reindex Hook E2E
+
+on:
+  pull_request:
+    paths:
+      - 'src/routes/api/public/hooks/reindex.ts'
+      - 'src/pages/Admin/tabs/ReindexHookTab.tsx'
+      - 'src/lib/reindex.functions.ts'
+      - 'e2e/reindex-hook.spec.ts'
+      - 'e2e/admin-reindex-flow.spec.ts'
+      - '.github/workflows/reindex-hook.yml'
+  workflow_dispatch:
+
+jobs:
+  reindex-hook:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      E2E_BASE_URL: http://localhost:8080
+      PRERENDER_TOKEN: ${{ secrets.PRERENDER_TOKEN }}
+      BING_INDEXNOW_API_KEY: ${{ secrets.BING_INDEXNOW_API_KEY }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_E2E_EMAIL }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_E2E_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps chromium
+
+      - name: Build app
+        run: bun run build
+
+      - name: Start preview server
+        run: |
+          (bun run preview --port 8080 &) && \
+            for i in {1..40}; do
+              curl -sf http://localhost:8080 >/dev/null && break || sleep 1
+            done
+
+      - name: Run reindex contract tests
+        run: bunx playwright test e2e/reindex-hook.spec.ts e2e/admin-reindex-flow.spec.ts --reporter=list,html
+
+      - name: Upload Playwright report + traces + videos + JSON bundles
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reindex-hook-artifacts
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
