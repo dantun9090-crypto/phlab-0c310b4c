@@ -505,6 +505,7 @@ export default function AdminPage() {
         case 'merchantfeededitor': return <MerchantFeedEditorTab />;
         case 'bingfeed': return <BingFeedTab />;
         case 'indexnow': return <IndexNowTab />;
+        case 'reindexhook': return <ReindexHookTab />;
         case 'securityaudit': return <SecurityAuditTab />;
         case 'edgemonitor': return <EdgeMonitorTab />;
         case 'securityevents': return <SecurityEventsTab />;
