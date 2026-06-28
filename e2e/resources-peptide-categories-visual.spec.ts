@@ -339,7 +339,139 @@ test.describe("/resources/peptide-categories-uk-research", () => {
       expect(ct, `share image ${url} content-type ${ct}`).toMatch(/^image\//i);
     }
   });
+
+  test("trailing-slash URL normalizes and canonical/og:url/twitter:url still match", async ({
+    page,
+  }) => {
+    const EXPECTED = `https://phlabs.co.uk/resources/${SLUG}`;
+    // Hit the trailing-slash variant. The router may either redirect
+    // (final URL has no trailing slash) or serve the same document; in
+    // both cases the canonical/og:url/twitter:url must point at the
+    // canonical no-trailing-slash URL — never at the slashed variant.
+    const res = await page.goto(`${URL}/`, { waitUntil: "domcontentloaded" });
+    expect(res, "no response for trailing-slash URL").toBeTruthy();
+    expect(
+      res!.status(),
+      `trailing-slash URL returned ${res!.status()}`,
+    ).toBeLessThan(400);
+
+    // Final URL (after any normalization) must not keep a trailing slash
+    // on the article path.
+    const finalUrl = new URL(page.url());
+    expect(
+      finalUrl.pathname,
+      `expected normalized pathname, got ${finalUrl.pathname}`,
+    ).toBe(`/resources/${SLUG}`);
+
+    const canonical = await page
+      .locator('link[rel="canonical"]')
+      .getAttribute("href");
+    const ogUrl = await page
+      .locator('meta[property="og:url"]')
+      .getAttribute("content");
+    const twitterUrl = await page
+      .locator('meta[name="twitter:url"]')
+      .getAttribute("content");
+
+    expect(canonical, "canonical href after trailing-slash hit").toBe(EXPECTED);
+    expect(ogUrl, "og:url after trailing-slash hit").toBe(EXPECTED);
+    expect(twitterUrl, "twitter:url after trailing-slash hit").toBe(EXPECTED);
+    expect(
+      new Set([canonical, ogUrl, twitterUrl]).size,
+      "canonical/og:url/twitter:url must be byte-identical",
+    ).toBe(1);
+  });
+
+  test("robots meta tag is index,follow (page must remain crawlable)", async ({
+    page,
+  }) => {
+    await page.goto(URL, { waitUntil: "domcontentloaded" });
+
+    const robots = await page
+      .locator('meta[name="robots"]')
+      .getAttribute("content");
+
+    // A missing robots meta defaults to index,follow — that's acceptable.
+    // What we MUST NOT ship is noindex / nofollow / none on this pillar.
+    if (robots !== null) {
+      const tokens = robots
+        .toLowerCase()
+        .split(",")
+        .map((t) => t.trim());
+      expect(tokens, `robots tokens: ${robots}`).not.toContain("noindex");
+      expect(tokens, `robots tokens: ${robots}`).not.toContain("nofollow");
+      expect(tokens, `robots tokens: ${robots}`).not.toContain("none");
+      // When the directive is present it should explicitly allow indexing.
+      expect(
+        tokens.includes("index") ||
+          tokens.includes("all") ||
+          // Bare "follow" with no index directive defaults to index — accept.
+          tokens.includes("follow"),
+        `robots tokens must permit indexing, got: ${robots}`,
+      ).toBe(true);
+    }
+
+    // googlebot-specific meta, if present, must also not block indexing.
+    const googlebot = await page
+      .locator('meta[name="googlebot"]')
+      .getAttribute("content");
+    if (googlebot !== null) {
+      const tokens = googlebot.toLowerCase().split(",").map((t) => t.trim());
+      expect(tokens, `googlebot tokens: ${googlebot}`).not.toContain("noindex");
+      expect(tokens, `googlebot tokens: ${googlebot}`).not.toContain("nofollow");
+      expect(tokens, `googlebot tokens: ${googlebot}`).not.toContain("none");
+    }
+  });
+
+  test("JSON-LD blocks declare @context schema.org and a recognised @type", async ({
+    page,
+  }) => {
+    await page.goto(URL, { waitUntil: "domcontentloaded" });
+    await expect(page.locator("h1")).toContainText(/Peptide Categories/i, {
+      timeout: 15_000,
+    });
+
+    const blocks = await page
+      .locator('script[type="application/ld+json"]')
+      .allTextContents();
+    expect(blocks.length, "expected at least one JSON-LD block").toBeGreaterThan(0);
+
+    const allNodes: any[] = [];
+    for (const raw of blocks) {
+      let parsed: any;
+      try {
+        parsed = JSON.parse(raw);
+      } catch (e) {
+        throw new Error(`JSON-LD block is not valid JSON: ${(e as Error).message}\n${raw.slice(0, 200)}`);
+      }
+      const nodes = Array.isArray(parsed) ? parsed : [parsed];
+      for (const n of nodes) {
+        // Each top-level node must declare schema.org as its @context.
+        const ctx = n["@context"];
+        const ctxStr = Array.isArray(ctx) ? ctx.join(",") : ctx;
+        expect(
+          typeof ctxStr === "string" && /schema\.org/i.test(ctxStr),
+          `JSON-LD @context must reference schema.org, got ${JSON.stringify(ctx)}`,
+        ).toBe(true);
+        // @type is required for crawler parsing.
+        expect(n["@type"], "JSON-LD @type missing").toBeTruthy();
+        allNodes.push(n);
+      }
+    }
+
+    // At least one node must be Article-class for this pillar page.
+    const articleLike = allNodes.find((n) => {
+      const t = Array.isArray(n["@type"]) ? n["@type"] : [n["@type"]];
+      return t.some((x: string) =>
+        /^(Article|NewsArticle|BlogPosting|TechArticle|ScholarlyArticle)$/i.test(
+          x,
+        ),
+      );
+    });
+    expect(articleLike, "expected an Article-class JSON-LD node").toBeTruthy();
+  });
 });
+
 
 test.describe("/resources/peptide-categories-uk-research (mobile)", () => {
   // iPhone 12-ish viewport — catches responsive a11y issues like tap-target
