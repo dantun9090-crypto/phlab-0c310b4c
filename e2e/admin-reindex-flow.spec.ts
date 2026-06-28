@@ -64,8 +64,30 @@ test('admin Fast Reindex returns IndexNow + GSC links without errors', async ({ 
     const list = page.getByTestId('gsc-inspector-list');
     await expect(list).toBeVisible();
     const links = list.locator('a[href*="search.google.com/search-console/inspect"]');
-    expect(await links.count()).toBeGreaterThan(0);
+    const linkCount = await links.count();
+    expect(linkCount).toBeGreaterThan(0);
+    expect(linkCount).toBeLessThanOrEqual(200); // server cap
     await expect(result).toContainText(/IndexNow/i);
+
+    // 4b. IndexNow URL contract: every submitted URL must be
+    //     https://phlabs.co.uk/... and counts must line up 1:1 with the
+    //     rendered GSC inspector links.
+    const body = await res.json().catch(() => ({}));
+    const submitted = (body?.submittedUrls ?? []) as string[];
+    expect(Array.isArray(submitted)).toBe(true);
+    expect(submitted.length).toBe(linkCount);
+    expect(submitted.length).toBeLessThanOrEqual(200);
+    for (const u of submitted) {
+      expect(u).toMatch(/^https:\/\/phlabs\.co\.uk\/[^\s]*$/);
+      const parsed = new URL(u);
+      expect(parsed.hostname).toBe('phlabs.co.uk');
+      expect(parsed.protocol).toBe('https:');
+    }
+    const indexNow = body?.indexNow as { status?: number; submitted?: number } | undefined;
+    expect(indexNow).toBeDefined();
+    expect(typeof indexNow!.status).toBe('number');
+    expect(typeof indexNow!.submitted).toBe('number');
+    expect(indexNow!.submitted!).toBeLessThanOrEqual(submitted.length);
   }
 
   // 5. No unrelated console / network errors during the flow.
