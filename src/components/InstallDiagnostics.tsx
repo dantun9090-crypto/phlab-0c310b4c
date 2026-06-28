@@ -179,6 +179,57 @@ export default function InstallDiagnostics() {
         value={diag.standalone ? 'standalone (installed)' : 'browser tab'}
       />
 
+      {diag.isIos && !diag.standalone && (
+        <div
+          data-testid="ios-install-instructions"
+          className="mt-4 p-4 rounded-xl border"
+          style={{ background: 'rgba(59,130,246,0.08)', borderColor: 'rgba(59,130,246,0.25)' }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Apple className="w-4 h-4 text-blue-300" />
+            <h3 className="text-sm font-semibold text-white">
+              {diag.isIosSafari
+                ? 'Install on iPhone / iPad (Safari)'
+                : 'Open in Safari to install on iPhone / iPad'}
+            </h3>
+          </div>
+          {!diag.isIosSafari && (
+            <p className="text-xs text-blue-200/80 mb-3">
+              Apple only allows installing web apps from <strong>Safari</strong>. Open
+              <code className="mx-1 px-1.5 py-0.5 rounded bg-white/10">phlabs.co.uk/install</code>
+              in Safari, then follow these steps:
+            </p>
+          )}
+          <ol className="space-y-2.5 text-sm text-slate-200">
+            <li className="flex gap-2.5">
+              <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">1</span>
+              <span>
+                Tap the <Share className="inline w-4 h-4 mx-0.5 align-text-bottom text-blue-300" />
+                <strong> Share</strong> button at the bottom of Safari (top-right on iPad).
+              </span>
+            </li>
+            <li className="flex gap-2.5">
+              <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">2</span>
+              <span>
+                Scroll and tap <PlusSquare className="inline w-4 h-4 mx-0.5 align-text-bottom text-blue-300" />
+                <strong> Add to Home Screen</strong>.
+              </span>
+            </li>
+            <li className="flex gap-2.5">
+              <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">3</span>
+              <span>Confirm the name <strong>PH Labs</strong> and tap <strong>Add</strong> — the app icon appears on your home screen.</span>
+            </li>
+            <li className="flex gap-2.5">
+              <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">4</span>
+              <span>Tap the new PH Labs icon — it opens the catalogue full-screen, just like a native app.</span>
+            </li>
+          </ol>
+          <p className="mt-3 text-[11px] text-blue-200/70">
+            iOS does not expose <code>beforeinstallprompt</code>, so no in-page button can replace these steps.
+          </p>
+        </div>
+      )}
+
       <details className="mt-3">
         <summary className="text-xs text-slate-400 cursor-pointer">User agent</summary>
         <code className="text-[11px] text-slate-500 break-all block mt-1">{diag.userAgent}</code>
