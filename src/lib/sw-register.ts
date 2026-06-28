@@ -17,8 +17,8 @@ const SW_URL = '/sw.js';
 const PHLABS_HOSTS = new Set<string>([
   'phlabs.co.uk',
   'www.phlabs.co.uk',
-  'prohealthpeptides.co.uk',
-  'www.prohealthpeptides.co.uk',
+  'prohealthpeptides.co.uk', // check-domains-allow-line: legacy host SW cleanup
+  'www.prohealthpeptides.co.uk', // check-domains-allow-line: legacy host SW cleanup
 ]);
 
 function isLovablePreviewHost(host: string): boolean {
