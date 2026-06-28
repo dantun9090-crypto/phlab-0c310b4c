@@ -403,28 +403,91 @@ async function getAdsAccessToken(): Promise<string> {
   return ((await res.json()) as { access_token: string }).access_token;
 }
 
+/**
+ * Generate a short, sortable correlation ID so every dry-run and live
+ * apply can be traced end-to-end across UI → server fn → audit log →
+ * Google Ads API response.
+ *
+ * Shape: `cmp-<base36 ms timestamp>-<6 random base36 chars>`.
+ */
+function newCorrelationId(): string {
+  const t = Date.now().toString(36);
+  const r = Math.random().toString(36).slice(2, 8).padEnd(6, '0');
+  return `cmp-${t}-${r}`;
+}
+
+/**
+ * Retry an async operation with exponential backoff + jitter. Used for
+ * Google Ads API mutations from the weekly cron and the live apply path,
+ * which occasionally see 429/5xx blips.
+ *
+ * `shouldRetry` lets callers opt out of retrying e.g. 4xx validation errors.
+ */
+export async function retryWithBackoff<T>(
+  op: (attempt: number) => Promise<T>,
+  opts: {
+    maxAttempts?: number;
+    baseDelayMs?: number;
+    maxDelayMs?: number;
+    shouldRetry?: (err: unknown, attempt: number) => boolean;
+    onAttempt?: (info: { attempt: number; delayMs: number; error?: unknown }) => void;
+  } = {},
+): Promise<{ result: T; attempts: Array<{ attempt: number; delayMs: number; error?: string }> }> {
+  const maxAttempts = opts.maxAttempts ?? 4;
+  const baseDelay = opts.baseDelayMs ?? 500;
+  const maxDelay = opts.maxDelayMs ?? 8_000;
+  const attempts: Array<{ attempt: number; delayMs: number; error?: string }> = [];
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const result = await op(attempt);
+      attempts.push({ attempt, delayMs: 0 });
+      return { result, attempts };
+    } catch (err) {
+      lastErr = err;
+      const retry =
+        attempt < maxAttempts && (opts.shouldRetry ? opts.shouldRetry(err, attempt) : true);
+      const delayMs = retry
+        ? Math.min(maxDelay, baseDelay * 2 ** (attempt - 1)) + Math.floor(Math.random() * 250)
+        : 0;
+      attempts.push({
+        attempt,
+        delayMs,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      opts.onAttempt?.({ attempt, delayMs, error: err });
+      if (!retry) break;
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
+}
+
 export const applyNegativesToGoogleAds = createServerFn({ method: 'POST' })
   .inputValidator((d: {
     idToken: string;
     campaignResourceId?: string; // numeric Google Ads campaign id (live mode only)
     negatives: string[];
     dryRun?: boolean;
+    correlationId?: string;
   }) => {
     if (!d?.idToken) throw new Error('idToken required');
     const negatives = Array.from(
       new Set((d.negatives ?? []).map((s) => String(s).trim().toLowerCase()).filter(Boolean)),
     ).slice(0, 200);
+    const cid = (d.correlationId || '').trim().slice(0, 64) || newCorrelationId();
     return {
       idToken: d.idToken,
       campaignResourceId: (d.campaignResourceId || '').replace(/[^0-9]/g, ''),
       negatives,
       dryRun: d.dryRun !== false, // default to dry-run for safety
+      correlationId: cid,
     };
   })
   .handler(async ({ data }) => {
     await requireAdmin(data.idToken);
     if (data.negatives.length === 0) {
-      return { ok: false as const, error: 'No negatives to apply' };
+      return { ok: false as const, error: 'No negatives to apply', correlationId: data.correlationId };
     }
 
     const cid = (process.env.GOOGLE_ADS_CUSTOMER_ID ?? '').replace(/-/g, '');
@@ -448,6 +511,7 @@ export const applyNegativesToGoogleAds = createServerFn({ method: 'POST' })
     }));
 
     const audit = {
+      correlationId: data.correlationId,
       negatives: data.negatives,
       operationCount: ops.length,
       campaignResourceId: data.campaignResourceId || null,
@@ -456,65 +520,110 @@ export const applyNegativesToGoogleAds = createServerFn({ method: 'POST' })
     };
 
     if (data.dryRun || !hasCreds || !data.campaignResourceId) {
-      // Audit dry-runs too so we have a paper trail.
+      const operationsPreviewJson = JSON.stringify(
+        { correlationId: data.correlationId, operations: ops },
+        null,
+        2,
+      );
       try {
         const { addDocAdmin } = await import('@/lib/server/firestore-admin');
-        await addDocAdmin('compound_negatives_applied', { ...audit, mode: 'dry-run' });
+        await addDocAdmin('compound_negatives_applied', {
+          ...audit,
+          mode: 'dry-run',
+          previewJson: operationsPreviewJson.slice(0, 8000),
+        });
       } catch { /* non-fatal */ }
       return {
         ok: true as const,
         mode: 'dry-run' as const,
+        correlationId: data.correlationId,
         reason: !hasCreds
           ? 'Google Ads credentials not configured'
           : !data.campaignResourceId
           ? 'No campaignResourceId — preview only'
           : 'dryRun=true requested',
         operationCount: ops.length,
-        operationsPreviewJson: JSON.stringify(ops.slice(0, 10), null, 2),
+        operationsPreviewJson,
         negatives: data.negatives,
       };
     }
 
-    // Live push
+    // Live push with exponential-backoff retry on 429/5xx.
     const token = await getAdsAccessToken();
     const headers: Record<string, string> = {
       Authorization: `Bearer ${token}`,
       'developer-token': process.env.GOOGLE_ADS_DEVELOPER_TOKEN!,
       'Content-Type': 'application/json',
+      'x-correlation-id': data.correlationId,
     };
     const mccId = process.env.GOOGLE_ADS_MCC_CUSTOMER_ID || process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID;
     if (mccId) headers['login-customer-id'] = mccId.replace(/-/g, '');
 
-    const res = await fetch(`${ADS_API_BASE}/customers/${cid}/campaignCriteria:mutate`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        operations: ops.map((o) => o.campaignCriterionOperation),
-        partialFailure: true,
-        validateOnly: false,
-      }),
-    });
-    const text = await res.text();
+    let lastStatus = 0;
+    let lastBody = '';
+    let retryAttempts: Array<{ attempt: number; delayMs: number; error?: string }> = [];
+    try {
+      const { attempts } = await retryWithBackoff(
+        async () => {
+          const res = await fetch(`${ADS_API_BASE}/customers/${cid}/campaignCriteria:mutate`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              operations: ops.map((o) => o.campaignCriterionOperation),
+              partialFailure: true,
+              validateOnly: false,
+            }),
+          });
+          lastStatus = res.status;
+          lastBody = await res.text();
+          // Retry only on rate-limit / server errors. 4xx other than 429 = bad input.
+          if (res.status === 429 || res.status >= 500) {
+            throw new Error(`Google Ads ${res.status}: ${lastBody.slice(0, 200)}`);
+          }
+          return res;
+        },
+        { maxAttempts: 3, baseDelayMs: 600 },
+      );
+      retryAttempts = attempts;
+    } catch (err) {
+      retryAttempts.push({
+        attempt: retryAttempts.length + 1,
+        delayMs: 0,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+
     try {
       const { addDocAdmin } = await import('@/lib/server/firestore-admin');
       await addDocAdmin('compound_negatives_applied', {
         ...audit,
         mode: 'live',
-        httpStatus: res.status,
-        responseSnippet: text.slice(0, 4000),
+        httpStatus: lastStatus,
+        retryAttempts,
+        responseSnippet: lastBody.slice(0, 4000),
       });
     } catch { /* non-fatal */ }
 
-    if (!res.ok) {
+    if (!lastStatus || lastStatus >= 400) {
       return {
         ok: false as const,
         mode: 'live' as const,
-        status: res.status,
-        errorJson: text,
+        correlationId: data.correlationId,
+        status: lastStatus,
+        retryAttempts,
+        errorJson: lastBody,
       };
     }
-    return { ok: true as const, mode: 'live' as const, status: res.status, resultJson: text };
+    return {
+      ok: true as const,
+      mode: 'live' as const,
+      correlationId: data.correlationId,
+      status: lastStatus,
+      retryAttempts,
+      resultJson: lastBody,
+    };
   });
+
 
 // ─── Audit history list ────────────────────────────────────────────────
 

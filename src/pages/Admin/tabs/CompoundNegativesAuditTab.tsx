@@ -12,6 +12,7 @@ import { auth } from '@/lib/firebase';
 import { listCompoundNegativesAudit } from '@/lib/compound-queries.functions';
 import { toast } from 'sonner';
 
+type RetryAttempt = { attempt: number; delayMs: number; error?: string };
 type AuditRow = {
   id?: string;
   mode?: 'dry-run' | 'live';
@@ -21,9 +22,13 @@ type AuditRow = {
   dryRun?: boolean;
   httpStatus?: number;
   responseSnippet?: string;
+  previewJson?: string;
+  correlationId?: string;
+  retryAttempts?: RetryAttempt[];
   createdAt?: string | { _seconds?: number; seconds?: number };
   thresholds?: { minImpressions?: number; growthRatio?: number; windowDays?: number };
 };
+
 
 function fmtTs(v: AuditRow['createdAt']): string {
   if (!v) return '—';
@@ -76,20 +81,23 @@ export default function CompoundNegativesAuditTab() {
 
   function exportCsv() {
     const header =
-      'Timestamp,Mode,CampaignResourceId,OperationCount,HttpStatus,MinImpressions,GrowthRatio,WindowDays,Negatives\r\n';
+      'Timestamp,CorrelationId,Mode,CampaignResourceId,OperationCount,RetryCount,HttpStatus,MinImpressions,GrowthRatio,WindowDays,Negatives\r\n';
     const body = filtered
       .map((r) => {
         const cells = [
           fmtTs(r.createdAt),
+          r.correlationId ?? '',
           r.mode ?? '',
           r.campaignResourceId ?? '',
           String(r.operationCount ?? r.negatives?.length ?? 0),
+          String(r.retryAttempts?.length ?? 0),
           String(r.httpStatus ?? ''),
           String(r.thresholds?.minImpressions ?? ''),
           String(r.thresholds?.growthRatio ?? ''),
           String(r.thresholds?.windowDays ?? ''),
           (r.negatives ?? []).join(' | '),
         ];
+
         return cells
           .map((c) => (/[,"\r\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c))
           .join(',');
@@ -171,13 +179,16 @@ export default function CompoundNegativesAuditTab() {
             <tr>
               <th className="text-left px-3 py-2">When</th>
               <th className="text-left px-3 py-2">Mode</th>
+              <th className="text-left px-3 py-2">Correlation ID</th>
               <th className="text-left px-3 py-2">Campaign ID</th>
               <th className="text-right px-3 py-2">Ops</th>
+              <th className="text-right px-3 py-2">Retries</th>
               <th className="text-left px-3 py-2">Thresholds</th>
               <th className="text-right px-3 py-2">HTTP</th>
               <th />
             </tr>
           </thead>
+
           <tbody>
             {filtered.map((r, i) => {
               const isOpen = expanded.has(i);
@@ -205,11 +216,36 @@ export default function CompoundNegativesAuditTab() {
                         {r.mode ?? '—'}
                       </span>
                     </td>
+                    <td className="px-3 py-2 text-cyan-300 font-mono text-[11px]">
+                      {r.correlationId ? (
+                        <button
+                          onClick={() => navigator.clipboard?.writeText(r.correlationId!)}
+                          title="Click to copy"
+                          className="hover:text-cyan-200"
+                        >
+                          {r.correlationId}
+                        </button>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td className="px-3 py-2 text-emerald-300 font-mono text-xs">
                       {r.campaignResourceId || '—'}
                     </td>
                     <td className="px-3 py-2 text-right text-slate-200">
                       {r.operationCount ?? r.negatives?.length ?? 0}
+                    </td>
+                    <td
+                      className={`px-3 py-2 text-right font-mono text-xs ${
+                        (r.retryAttempts?.length ?? 0) > 1 ? 'text-amber-300' : 'text-slate-500'
+                      }`}
+                      title={
+                        r.retryAttempts
+                          ?.map((a) => `#${a.attempt} +${a.delayMs}ms${a.error ? ` — ${a.error}` : ''}`)
+                          .join('\n') || ''
+                      }
+                    >
+                      {r.retryAttempts?.length ?? 0}
                     </td>
                     <td className="px-3 py-2 text-slate-400 text-xs font-mono">
                       {r.thresholds
@@ -235,10 +271,11 @@ export default function CompoundNegativesAuditTab() {
                         {isOpen ? '▲ Hide' : '▼ Details'}
                       </button>
                     </td>
+
                   </tr>
                   {isOpen && (
                     <tr key={`detail-${i}`} className="bg-slate-950 border-t border-slate-800">
-                      <td colSpan={7} className="px-3 py-3">
+                      <td colSpan={9} className="px-3 py-3">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                           <div>
                             <h4 className="text-xs font-semibold text-slate-300 mb-1">
@@ -261,8 +298,36 @@ export default function CompoundNegativesAuditTab() {
                               )}
                             </div>
                           </div>
-                          {r.responseSnippet && (
+                          {(r.retryAttempts?.length ?? 0) > 0 && (
                             <div>
+                              <h4 className="text-xs font-semibold text-slate-300 mb-1">
+                                Retry timeline ({r.retryAttempts!.length})
+                              </h4>
+                              <ol className="rounded bg-slate-900 border border-slate-800 p-2 text-[11px] font-mono text-slate-200 space-y-0.5">
+                                {r.retryAttempts!.map((a, idx) => (
+                                  <li
+                                    key={idx}
+                                    className={a.error ? 'text-amber-300' : 'text-emerald-300'}
+                                  >
+                                    #{a.attempt} · delay {a.delayMs}ms
+                                    {a.error ? ` · ${a.error}` : ' · ok'}
+                                  </li>
+                                ))}
+                              </ol>
+                            </div>
+                          )}
+                          {r.previewJson && (
+                            <div className="lg:col-span-2">
+                              <h4 className="text-xs font-semibold text-slate-300 mb-1">
+                                Dry-run operations preview
+                              </h4>
+                              <pre className="max-h-48 overflow-auto rounded bg-slate-900 border border-slate-800 p-2 text-[11px] text-cyan-200 whitespace-pre-wrap font-mono">
+                                {r.previewJson}
+                              </pre>
+                            </div>
+                          )}
+                          {r.responseSnippet && (
+                            <div className="lg:col-span-2">
                               <h4 className="text-xs font-semibold text-slate-300 mb-1">
                                 Google Ads API response
                               </h4>
@@ -280,11 +345,12 @@ export default function CompoundNegativesAuditTab() {
             })}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-3 py-6 text-center text-slate-400">
+                <td colSpan={9} className="px-3 py-6 text-center text-slate-400">
                   No audit entries for this filter.
                 </td>
               </tr>
             )}
+
           </tbody>
         </table>
       </div>
