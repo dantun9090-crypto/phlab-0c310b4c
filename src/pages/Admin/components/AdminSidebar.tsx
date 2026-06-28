@@ -85,6 +85,7 @@ const navGroups = [
       { id: 'merchantfeededitor', label: 'Merchant Feed Editor (4 feeds)', icon: ShoppingBag },
       { id: 'bingfeed', label: 'Bing Shopping Feed', icon: ShoppingCart },
       { id: 'indexnow', label: 'IndexNow (Instant Index)', icon: Send },
+      { id: 'reindexhook', label: 'Fast Reindex (Landing pages)', icon: Send },
     ],
   },
   {
