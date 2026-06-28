@@ -98,3 +98,57 @@ jobs:
           path: server.log
           if-no-files-found: ignore
           retention-days: 7
+
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: []
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli@0.14.x
+
+      - name: Start dev server
+        run: |
+          (bun run dev > server.log 2>&1 &)
+          for i in $(seq 1 90); do
+            if curl -fsS -o /dev/null "http://localhost:8080/resources/peptide-categories-uk-research"; then
+              echo "server up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "server failed to start"; tail -n 200 server.log; exit 1
+
+      - name: Run Lighthouse CI (performance + a11y thresholds)
+        run: lhci autorun --config=.lighthouserc.resources.json
+
+      - name: Upload Lighthouse report (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report-resources-peptide-categories
+          path: lhci-report
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload server log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-log-lighthouse-resources-peptide-categories
+          path: server.log
+          if-no-files-found: ignore
+          retention-days: 7
+
