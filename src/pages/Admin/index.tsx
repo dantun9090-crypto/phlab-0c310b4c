@@ -730,6 +730,8 @@ export default function AdminPage() {
 
         {/* ── Cloudflare Dev Mode warning (3h auto-expiry → blank page risk) ── */}
         <DevModeBanner />
+        <AdminSpaFallbackBanner />
+
 
         {/* ── Tab content ── */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden" style={{ isolation: 'auto' }}>
