@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Verifies the bundled /PH-Labs-Research-Catalogue.pdf:
  *   1. Exists at public/PH-Labs-Research-Catalogue.pdf
