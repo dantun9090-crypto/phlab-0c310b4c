@@ -840,6 +840,63 @@ export default function ProductDetail() {
     document.getElementById('faq-schema')?.remove();
     document.head.appendChild(faqEl);
 
+    // ══ HowTo JSON-LD — reconstitution + storage (Retatrutide page) ══
+    // Targets misspellings (retatrtide, retatrutife, retatrutidw, retatide) in
+    // the HowTo name/description so the schema indexes against typo queries.
+    document.getElementById('howto-schema')?.remove();
+    if (product.slug === 'retatrutide-research-peptide') {
+      const howTo = {
+        '@context': 'https://schema.org',
+        '@type': 'HowTo',
+        name: 'How to reconstitute and store Retatrutide research peptide (UK lab protocol)',
+        description:
+          'Step-by-step laboratory reconstitution and storage protocol for Retatrutide (also searched as retatrtide, retatrutife, retatrudtide, retatrutidw, retatide, reta peptide). Supplied by PH Labs as a ≥99% HPLC-verified analytical reference standard for in-vitro research use only — not for human consumption.',
+        totalTime: 'PT10M',
+        tool: [
+          { '@type': 'HowToTool', name: 'Bacteriostatic water (sterile diluent, lab grade)' },
+          { '@type': 'HowToTool', name: 'Sterile syringe and needle (research consumables)' },
+          { '@type': 'HowToTool', name: 'Alcohol swab' },
+          { '@type': 'HowToTool', name: 'Calibrated −20 °C freezer for lyophilised stock storage' },
+        ],
+        supply: [
+          { '@type': 'HowToSupply', name: 'Retatrutide lyophilised vial (10 mg or 20 mg, PH Labs UK batch with CoA)' },
+        ],
+        step: [
+          {
+            '@type': 'HowToStep',
+            name: 'Equilibrate the sealed Retatrutide vial',
+            text: 'Remove the sealed Retatrutide vial from −20 °C storage and let it equilibrate at laboratory ambient temperature for 5–10 minutes before opening, to minimise condensation on the lyophilised cake.',
+          },
+          {
+            '@type': 'HowToStep',
+            name: 'Sanitise the stopper',
+            text: 'Wipe the rubber stopper of both the Retatrutide vial and the bacteriostatic water vial with a single-use alcohol swab.',
+          },
+          {
+            '@type': 'HowToStep',
+            name: 'Add diluent to the peptide vial',
+            text: 'Using a sterile research-grade syringe, slowly inject the chosen volume of bacteriostatic water down the inner wall of the Retatrutide vial. Do not spray directly onto the lyophilised cake.',
+          },
+          {
+            '@type': 'HowToStep',
+            name: 'Solubilise gently',
+            text: 'Gently swirl — do not shake or vortex — the vial until the Retatrutide cake fully dissolves into a clear solution. Vigorous agitation can shear the peptide.',
+          },
+          {
+            '@type': 'HowToStep',
+            name: 'Store the working solution',
+            text: 'Store the reconstituted Retatrutide working solution refrigerated at 2–8 °C and use within standard short-term peptide working-stock windows. Minimise freeze-thaw cycles. Any unused lyophilised vials remain at −20 °C, sealed and light-protected. For in-vitro laboratory research only — not for human consumption.',
+          },
+        ],
+      };
+      const howEl = document.createElement('script');
+      howEl.type = 'application/ld+json';
+      howEl.id = 'howto-schema';
+      howEl.textContent = JSON.stringify(howTo);
+      document.head.appendChild(howEl);
+    }
+
+
     // ══ MerchantReturnPolicy schema — required for Google Shopping / Merchant Center ══
     const returnPolicy = {
       '@context': 'https://schema.org',
