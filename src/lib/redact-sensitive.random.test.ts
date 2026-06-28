@@ -41,8 +41,10 @@ function randStr(rand: () => number, len: number, alphabet: string): string {
 }
 
 function makeJwt(rand: () => number): string {
-  const ab = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-';
+  const ab = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   // matches /\bey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/
+  // Use only alphanumerics so \b cleanly bounds the token (trailing -/_ would
+  // leave a stray character outside the redaction match).
   const header = 'ey' + randStr(rand, 14 + Math.floor(rand() * 10), ab);
   const payload = randStr(rand, 14 + Math.floor(rand() * 30), ab);
   const sig = randStr(rand, 14 + Math.floor(rand() * 20), ab);
