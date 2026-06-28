@@ -118,20 +118,66 @@ export const Route = createFileRoute("/api/public/hooks/reindex")({
         }
         lastRunAt = now;
 
-        // Resolve URL list.
+        // Resolve & validate URL list.
+        const urlEntrySchema = z
+          .string()
+          .trim()
+          .min(1, "url must not be empty")
+          .max(2000, "url exceeds 2000 chars")
+          .refine(
+            (u) => u.startsWith("/") || /^https?:\/\//i.test(u),
+            "url must be an absolute http(s) URL or start with '/'",
+          )
+          .refine(
+            (u) => {
+              if (u.startsWith("/")) return true;
+              try {
+                const parsed = new URL(u);
+                return parsed.hostname === HOST || parsed.hostname === `www.${HOST}`;
+              } catch {
+                return false;
+              }
+            },
+            `url must point to ${HOST}`,
+          );
+        const bodySchema = z
+          .object({
+            urls: z.array(urlEntrySchema).min(1).max(200).optional(),
+          })
+          .strict();
+
         let paths: string[] = DEFAULT_PATHS;
-        try {
-          const body = (await request.json().catch(() => null)) as
-            | { urls?: string[] }
-            | null;
-          if (body?.urls && Array.isArray(body.urls) && body.urls.length > 0) {
-            paths = body.urls
-              .filter((u): u is string => typeof u === "string")
-              .map((u) => (u.startsWith("http") ? new URL(u).pathname + new URL(u).search : u))
-              .slice(0, 200);
+        const rawBody = await request.text().catch(() => "");
+        if (rawBody.trim().length > 0) {
+          let parsedJson: unknown;
+          try {
+            parsedJson = JSON.parse(rawBody);
+          } catch {
+            return Response.json(
+              { ok: false, error: "invalid_json", message: "Request body is not valid JSON" },
+              { status: 400 },
+            );
           }
-        } catch {
-          // body parse failed → keep defaults
+          const result = bodySchema.safeParse(parsedJson);
+          if (!result.success) {
+            return Response.json(
+              {
+                ok: false,
+                error: "invalid_payload",
+                issues: result.error.issues.map((i) => ({
+                  path: i.path.join("."),
+                  message: i.message,
+                  code: i.code,
+                })),
+              },
+              { status: 400 },
+            );
+          }
+          if (result.data.urls && result.data.urls.length > 0) {
+            paths = result.data.urls.map((u) =>
+              u.startsWith("http") ? new URL(u).pathname + new URL(u).search : u,
+            );
+          }
         }
 
         const fullUrls = Array.from(
