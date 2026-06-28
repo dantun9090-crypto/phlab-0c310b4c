@@ -3,7 +3,7 @@
   "name": "PH Labs UK — Research Peptides",
   "short_name": "PH Labs",
   "description": "HPLC-verified research peptides — UK supplier. For research use only.",
-  "start_url": "/?source=pwa",
+  "start_url": "/products?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
