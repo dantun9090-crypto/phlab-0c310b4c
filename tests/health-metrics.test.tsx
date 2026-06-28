@@ -11,7 +11,7 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import HealthMetrics from '@/components/admin/HealthMetrics';
+import HealthMetrics from '../src/components/admin/HealthMetrics';
 
 describe('HealthMetrics', () => {
   beforeEach(() => { vi.useFakeTimers(); });
