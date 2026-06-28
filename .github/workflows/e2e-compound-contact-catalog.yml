@@ -48,13 +48,10 @@ jobs:
       - name: Install Playwright (Node + Chromium)
         run: bunx playwright install --with-deps chromium
 
-      - name: Build app
-        run: bun run build
-
-      - name: Start preview server
+      - name: Start dev server
         run: |
-          (bun run start &) > server.log 2>&1
-          for i in $(seq 1 60); do
+          (bun run dev > server.log 2>&1 &)
+          for i in $(seq 1 90); do
             if curl -fsS -o /dev/null "http://localhost:8080/"; then
               echo "server up after ${i}s"; exit 0
             fi
