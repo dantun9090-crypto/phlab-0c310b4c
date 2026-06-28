@@ -271,6 +271,18 @@ export default function ToastAuditTab() {
         </div>
       </div>
 
+      <HealthMetrics
+        lastFetched={lastFetched}
+        readErrors={readErrors}
+        writeErrors={0}
+        lastError={err}
+        docCount={rows.length}
+        source="toastAuditLogs"
+        onRefresh={() => setRefreshNonce(n => n + 1)}
+      />
+
+
+
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="bg-slate-900 border-2 border-slate-700 rounded-lg p-3">
