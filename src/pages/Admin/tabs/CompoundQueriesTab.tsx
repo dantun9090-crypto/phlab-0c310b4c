@@ -133,6 +133,13 @@ export default function CompoundQueriesTab() {
   }
 
   async function saveThresholds() {
+    // Client-side guardrails — fail loud before round-trip to server.
+    try {
+      validateThresholds(thresholds);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+      return;
+    }
     setSavingThresholds(true);
     try {
       const idToken = await getIdToken();
@@ -145,6 +152,18 @@ export default function CompoundQueriesTab() {
       setSavingThresholds(false);
     }
   }
+
+  function downloadSampleCsv() {
+    const blob = new Blob([buildSampleNegativesCsv()], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'google-ads-negatives-sample.csv';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast.success('Sample CSV downloaded');
+  }
+
 
   async function loadHistory() {
     setHistoryLoading(true);
