@@ -46,6 +46,7 @@ export const ARTICLE_INDEX: ArticleIndexEntry[] = [
   { slug: 'retatrutide-research-guide', title: 'Retatrutide Research Peptide: An Analytical Profile for UK Laboratories' },
   { slug: 'peptide-safety-legality-uk', title: 'The Safety and Legality of Buying Research Peptides in the UK' },
   { slug: 'what-are-peptides', title: 'What Are Peptides? A Comprehensive Guide for UK Researchers' },
+  { slug: 'peptide-categories-uk-research', title: 'Peptide Categories in UK Laboratory Research: 7 Classes Studied in Modern Labs' },
   { slug: 'tirzepatide-vs-retatrutide-mechanism', title: 'Tirzepatide vs Retatrutide: Dual vs Triple Receptor Agonism in Research Models' },
   { slug: 'tirzepatide-vs-retatrutide-research', title: 'Tirzepatide vs Retatrutide: A Technical Research Comparison' },
 ];
