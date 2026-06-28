@@ -125,7 +125,129 @@ describe('HealthMetrics', () => {
     expect(toggle).toHaveAttribute('aria-checked', 'false');
     act(() => { vi.advanceTimersByTime(120_000); });
     expect(onRefresh).toHaveBeenCalledTimes(3);
+
+  it('renders latency when lastLatencyMs is a non-negative number, hidden otherwise', () => {
+    const { rerender } = render(
+      <HealthMetrics lastFetched={new Date()} readErrors={0} writeErrors={0} />
+    );
+    expect(screen.queryByTestId('health-latency')).toBeNull();
+
+    rerender(
+      <HealthMetrics lastFetched={new Date()} readErrors={0} writeErrors={0} lastLatencyMs={142.7} />
+    );
+    expect(screen.getByTestId('health-latency')).toHaveTextContent('143ms');
   });
+
+  it('renders the fetching spinner only while isFetching=true and disables refresh', () => {
+    const onRefresh = vi.fn();
+    const { rerender } = render(
+      <HealthMetrics lastFetched={new Date()} readErrors={0} writeErrors={0} onRefresh={onRefresh} />
+    );
+    expect(screen.queryByTestId('health-fetching')).toBeNull();
+    expect(screen.getByTestId('health-refresh')).not.toBeDisabled();
+
+    rerender(
+      <HealthMetrics lastFetched={new Date()} readErrors={0} writeErrors={0} onRefresh={onRefresh} isFetching />
+    );
+    expect(screen.getByTestId('health-fetching')).toBeInTheDocument();
+    expect(screen.getByTestId('health-refresh')).toBeDisabled();
+  });
+
+  it('shows the next-tick countdown only while auto-refresh is enabled', () => {
+    const onRefresh = vi.fn();
+    render(
+      <HealthMetrics
+        lastFetched={new Date()}
+        readErrors={0}
+        writeErrors={0}
+        onRefresh={onRefresh}
+        autoRefreshIntervalMs={30_000}
+      />
+    );
+
+    expect(screen.queryByTestId('health-next-tick')).toBeNull();
+
+    fireEvent.click(screen.getByTestId('health-auto-refresh-toggle'));
+    expect(screen.getByTestId('health-next-tick')).toHaveTextContent(/next in 30s/);
+
+    act(() => { vi.advanceTimersByTime(10_000); });
+    expect(screen.getByTestId('health-next-tick')).toHaveTextContent(/next in 20s/);
+
+    fireEvent.click(screen.getByTestId('health-auto-refresh-toggle'));
+    expect(screen.queryByTestId('health-next-tick')).toBeNull();
+  });
+
+  it('auto-refresh ticker is stable across parent re-renders that swap onRefresh and interval', () => {
+    // Simulate a parent that re-renders frequently and passes a fresh
+    // closure each time — the ticker must NOT reset.
+    const calls: string[] = [];
+    const makeHandler = (label: string) => () => { calls.push(label); };
+
+    const { rerender } = render(
+      <HealthMetrics
+        lastFetched={new Date()}
+        readErrors={0}
+        writeErrors={0}
+        onRefresh={makeHandler('v1')}
+        autoRefreshIntervalMs={30_000}
+        defaultAutoRefresh
+      />
+    );
+
+    // Re-render twice within the interval with new closures.
+    act(() => { vi.advanceTimersByTime(10_000); });
+    rerender(
+      <HealthMetrics
+        lastFetched={new Date()}
+        readErrors={0}
+        writeErrors={0}
+        onRefresh={makeHandler('v2')}
+        autoRefreshIntervalMs={30_000}
+        defaultAutoRefresh
+      />
+    );
+    act(() => { vi.advanceTimersByTime(10_000); });
+    rerender(
+      <HealthMetrics
+        lastFetched={new Date()}
+        readErrors={0}
+        writeErrors={0}
+        onRefresh={makeHandler('v3')}
+        autoRefreshIntervalMs={30_000}
+        defaultAutoRefresh
+      />
+    );
+
+    // We are now at t=20s — no tick yet because the ticker was NOT reset.
+    expect(calls).toEqual([]);
+
+    // At t=30s the original ticker fires, using the LATEST handler ref.
+    act(() => { vi.advanceTimersByTime(10_000); });
+    expect(calls).toEqual(['v3']);
+
+    // Continues firing on the original cadence.
+    act(() => { vi.advanceTimersByTime(30_000); });
+    expect(calls).toEqual(['v3', 'v3']);
+  });
+
+  it('manual refresh handler survives parent re-renders (latest closure wins)', () => {
+    const a = vi.fn();
+    const b = vi.fn();
+
+    const { rerender } = render(
+      <HealthMetrics lastFetched={new Date()} readErrors={0} writeErrors={0} onRefresh={a} />
+    );
+    fireEvent.click(screen.getByTestId('health-refresh'));
+    expect(a).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <HealthMetrics lastFetched={new Date()} readErrors={0} writeErrors={0} onRefresh={b} />
+    );
+    fireEvent.click(screen.getByTestId('health-refresh'));
+    expect(b).toHaveBeenCalledTimes(1);
+    expect(a).toHaveBeenCalledTimes(1);
+  });
+});
 
   it('auto-refresh respects defaultAutoRefresh and enforces a 5s minimum', () => {
     const onRefresh = vi.fn();
