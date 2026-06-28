@@ -17,6 +17,7 @@ import { enforceRateLimit } from '@/lib/rate-limit';
 import {
   analyzeCompoundQueries,
   DEFAULT_THRESHOLDS,
+  validateThresholds,
   type CompoundThresholds,
 } from '@/lib/compound-queries.functions';
 import { addDocAdmin, getDocAdmin } from '@/lib/server/firestore-admin';
