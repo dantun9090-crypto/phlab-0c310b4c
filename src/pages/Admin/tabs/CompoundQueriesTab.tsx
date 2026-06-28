@@ -13,6 +13,8 @@ import {
   type CompoundThresholds,
 } from '@/lib/compound-queries.functions';
 import { toast } from 'sonner';
+import { redactSensitiveJson } from '@/lib/redact-sensitive';
+
 
 type Row = {
   query: string;
