@@ -6,6 +6,10 @@ name: redaction-tests
 # bare JWT / customers/<cid> patterns while preserving correlationId verbatim.
 # Any regression here would leak credentials into files admins download — block
 # the merge before that ships.
+#
+# Matrix: Node 20 and 22 (active LTS). The redactor is pure-string regex work,
+# but pinning a matrix protects us from V8/regex-engine drift between Node
+# major versions before it can ship to prod.
 
 on:
   push:
@@ -26,11 +30,67 @@ on:
 jobs:
   redaction:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20, 22]
+    name: redaction (node ${{ matrix.node-version }})
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
+
+      # Typecheck FIRST — if the redactor or its tests don't compile, fail
+      # fast with a clear signal instead of a noisy vitest stack trace.
+      - name: Typecheck redaction sources
+        run: bunx tsgo --noEmit -p tsconfig.json
+
       - name: Run redaction test suite
-        run: bunx vitest run src/lib/redact-sensitive.test.ts src/lib/redact-sensitive.random.test.ts --reporter=verbose
+        id: redaction_tests
+        run: |
+          mkdir -p artifacts/redaction
+          bunx vitest run \
+            src/lib/redact-sensitive.test.ts \
+            src/lib/redact-sensitive.random.test.ts \
+            --reporter=verbose \
+            --reporter=json --outputFile=artifacts/redaction/results.json \
+            2>&1 | tee artifacts/redaction/output.log
+
+      # On failure, re-run the redactor against a fixture payload so the
+      # uploaded artifact contains the SANITIZED request/response samples
+      # and the correlationId trail an engineer needs to reproduce the bug.
+      # Inputs are synthetic — no real tokens are ever written to disk.
+      - name: Capture sanitized sample bundle on failure
+        if: failure()
+        run: |
+          mkdir -p artifacts/redaction
+          node -e "
+            const { redactSensitiveValue } = require('./src/lib/redact-sensitive.ts');
+            const correlationId = 'ci-' + process.env.GITHUB_RUN_ID + '-' + process.env.MATRIX_NODE;
+            const sample = {
+              correlationId,
+              request: {
+                headers: { Authorization: 'Bearer eyJhbGciOiJIUzI1NiJ9.payloadpayloadpayload.signaturesignature', 'developer-token': 'dev_secret_value' },
+                body: { resourceName: 'customers/1234567890/campaigns/55' }
+              },
+              response: { status: 200, log: 'sent correlationId=' + correlationId + ' Bearer abc.def.ghi to customers/9876543210' }
+            };
+            require('fs').writeFileSync('artifacts/redaction/sanitized-sample.json', redactSensitiveValue(sample));
+            console.log('correlationId trail:', correlationId);
+          " || echo "fixture capture skipped (loader unavailable)"
+        env:
+          MATRIX_NODE: ${{ matrix.node-version }}
+
+      - name: Upload redaction artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: redaction-failure-node${{ matrix.node-version }}
+          path: artifacts/redaction/
+          retention-days: 14
+          if-no-files-found: warn
