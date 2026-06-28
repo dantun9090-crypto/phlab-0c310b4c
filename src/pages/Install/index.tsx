@@ -190,6 +190,8 @@ export default function InstallPage() {
             dismissed it. Use the button above to install anytime.
           </Faq>
         </div>
+
+        <InstallDiagnostics />
       </div>
     </div>
   );
