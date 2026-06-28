@@ -371,13 +371,54 @@ export default function CompoundNegativesAuditTab() {
           ⬇ JSON (redacted, filtered)
         </button>
         <button
-          onClick={resetServiceWorkerAndReload}
+          onClick={() => setSwResetOpen(true)}
           className="bg-amber-700 hover:bg-amber-600 text-white px-3 py-2 rounded-lg text-xs font-semibold"
           title="Unregister Service Worker, clear caches, hard-reload /admin"
         >
           ♻ Reset SW & Reload
         </button>
       </div>
+
+      <AlertDialog open={swResetOpen} onOpenChange={(o) => !swResetBusy && setSwResetOpen(o)}>
+        <AlertDialogContent className="bg-slate-900 border-2 border-slate-700 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">
+              Reset Service Worker & hard-reload?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-300 space-y-2">
+              <span className="block">This will, for this browser only:</span>
+              <ul className="list-disc pl-5 text-slate-200 text-sm space-y-1">
+                <li>Unregister every active service worker on this origin.</li>
+                <li>Delete every CacheStorage bucket (offline cache, asset cache).</li>
+                <li>Hard-reload to <code className="text-emerald-300">/admin?sw=off</code>.</li>
+              </ul>
+              <span className="block text-amber-300 text-xs">
+                Your sign-in, Firestore data, and admin settings are NOT affected. You may
+                see a brief blank page while the new app shell downloads.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={swResetBusy}
+              className="bg-slate-700 text-white hover:bg-slate-600 border-slate-600"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={swResetBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                void performSwReset();
+              }}
+              className="bg-amber-600 hover:bg-amber-500 text-white"
+            >
+              {swResetBusy ? 'Clearing…' : 'Clear & Reload'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {cidQuery && (
         <p className="text-[11px] text-cyan-300 mb-3 font-mono">
           Showing {filtered.length} attempt(s) for correlationId containing{' '}
