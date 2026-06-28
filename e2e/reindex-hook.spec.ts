@@ -11,6 +11,8 @@
  *      unauthenticated leg always runs so the contract stays guarded.
  */
 import { test, expect } from '@playwright/test';
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 
 const BASE = process.env.E2E_BASE_URL ?? 'http://localhost:8080';
 const ENDPOINT = `${BASE}/api/public/hooks/reindex`;
@@ -18,7 +20,30 @@ const TOKEN = process.env.PRERENDER_TOKEN;
 
 const SAMPLE_URLS = ['/compound', '/peptide-calculator'];
 
+// Capture trace+video for every test in this file so a CI failure ships
+// reindex JSON, network log, and screenshot artifacts.
+test.use({ trace: 'retain-on-failure', video: 'retain-on-failure' });
+
+function attachJsonOnFailure(testInfo: import('@playwright/test').TestInfo, name: string, payload: unknown) {
+  try {
+    const dir = testInfo.outputDir;
+    mkdirSync(dir, { recursive: true });
+    const file = join(dir, `${name}.json`);
+    writeFileSync(file, JSON.stringify(payload, null, 2));
+    testInfo.attachments.push({ name: `${name}.json`, path: file, contentType: 'application/json' });
+  } catch {
+    /* ignore artifact write errors */
+  }
+}
+
 test.describe('reindex hook contract', () => {
+  test.afterEach(async ({}, testInfo) => {
+    if (testInfo.status !== testInfo.expectedStatus) {
+      // Mark for CI artifact upload — see .github/workflows/reindex-hook.yml
+      testInfo.annotations.push({ type: 'artifact', description: 'reindex hook failure bundle attached' });
+    }
+  });
+
   test('rejects without x-recache-secret', async ({ request }) => {
     const res = await request.post(ENDPOINT, {
       data: { urls: SAMPLE_URLS },
