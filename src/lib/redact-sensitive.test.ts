@@ -74,7 +74,7 @@ describe('redactSensitiveJson', () => {
 
   it('scrubs multiple sensitive patterns embedded in one long log line while preserving correlationId verbatim', () => {
     const cid = 'cmp-MiXeD-CaSe-123';
-    const jwt = 'eyJhbGciOi.payload1234567890.signature1234567890';
+    const jwt = 'eyJhbGciOiJIUzI1NiJ9.payloadOneTwoThree1234.signatureOneTwoThree1234';
     const longLine =
       `[2026-01-01] correlationId=${cid} sent request ` +
       `Authorization: Bearer ${jwt} to customers/9876543210/campaigns/55 ` +
