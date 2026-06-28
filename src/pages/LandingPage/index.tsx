@@ -192,7 +192,7 @@ export default function LandingPage() {
                 transition={{ delay: 0.2 }}
                 className="rounded-2xl overflow-hidden border border-white/[0.08] mb-8 max-h-80 object-cover"
               >
-                <img src={data.heroImageUrl} alt="Hero" className="w-full h-80 object-cover" loading="eager" fetchPriority="high" />
+                <img src={data.heroImageUrl} alt={data.heroHeading || "PH Labs research peptides — UK laboratory supplier"} className="w-full h-80 object-cover" loading="eager" fetchPriority="high" />
               </motion.div>
             )}
             <motion.div

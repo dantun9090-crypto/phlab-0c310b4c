@@ -218,9 +218,10 @@ export default function AboutPage() {
             </div>
 
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05] mb-6 max-w-3xl">
-              <span className="text-[#f0f6ff]">Science-Led.</span>
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
+              <span className="sr-only">About PH Labs — UK Peptide Research Supplier. </span>
+              <span aria-hidden="true" className="text-[#f0f6ff]">Science-Led.</span>
+              <br aria-hidden="true" />
+              <span aria-hidden="true" className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
                 Quality-Driven.
               </span>
             </h1>
