@@ -74,6 +74,7 @@ import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public
 import { Route as ApiPublicHooksToastAuditCleanupRouteImport } from './routes/api/public/hooks/toast-audit-cleanup'
 import { Route as ApiPublicHooksSeoHealthDailyRouteImport } from './routes/api/public/hooks/seo-health-daily'
 import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/public/hooks/security-cleanup'
+import { Route as ApiPublicHooksReindexRouteImport } from './routes/api/public/hooks/reindex'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
 import { Route as ApiPublicHooksMonitorProductUrlsRouteImport } from './routes/api/public/hooks/monitor-product-urls'
 import { Route as ApiPublicHooksLighthousePsiRouteImport } from './routes/api/public/hooks/lighthouse-psi'
@@ -419,6 +420,11 @@ const ApiPublicHooksSecurityCleanupRoute =
     path: '/api/public/hooks/security-cleanup',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksReindexRoute = ApiPublicHooksReindexRouteImport.update({
+  id: '/api/public/hooks/reindex',
+  path: '/api/public/hooks/reindex',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksPrerenderRecacheRoute =
   ApiPublicHooksPrerenderRecacheRouteImport.update({
     id: '/api/public/hooks/prerender-recache',
@@ -530,6 +536,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
+  '/api/public/hooks/reindex': typeof ApiPublicHooksReindexRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/seo-health-daily': typeof ApiPublicHooksSeoHealthDailyRoute
   '/api/public/hooks/toast-audit-cleanup': typeof ApiPublicHooksToastAuditCleanupRoute
@@ -603,6 +610,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
+  '/api/public/hooks/reindex': typeof ApiPublicHooksReindexRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/seo-health-daily': typeof ApiPublicHooksSeoHealthDailyRoute
   '/api/public/hooks/toast-audit-cleanup': typeof ApiPublicHooksToastAuditCleanupRoute
@@ -679,6 +687,7 @@ export interface FileRoutesById {
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
+  '/api/public/hooks/reindex': typeof ApiPublicHooksReindexRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/seo-health-daily': typeof ApiPublicHooksSeoHealthDailyRoute
   '/api/public/hooks/toast-audit-cleanup': typeof ApiPublicHooksToastAuditCleanupRoute
@@ -755,6 +764,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
+    | '/api/public/hooks/reindex'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/seo-health-daily'
     | '/api/public/hooks/toast-audit-cleanup'
@@ -828,6 +838,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
+    | '/api/public/hooks/reindex'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/seo-health-daily'
     | '/api/public/hooks/toast-audit-cleanup'
@@ -903,6 +914,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
+    | '/api/public/hooks/reindex'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/seo-health-daily'
     | '/api/public/hooks/toast-audit-cleanup'
@@ -974,6 +986,7 @@ export interface RootRouteChildren {
   ApiPublicHooksLighthousePsiRoute: typeof ApiPublicHooksLighthousePsiRoute
   ApiPublicHooksMonitorProductUrlsRoute: typeof ApiPublicHooksMonitorProductUrlsRoute
   ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
+  ApiPublicHooksReindexRoute: typeof ApiPublicHooksReindexRoute
   ApiPublicHooksSecurityCleanupRoute: typeof ApiPublicHooksSecurityCleanupRoute
   ApiPublicHooksSeoHealthDailyRoute: typeof ApiPublicHooksSeoHealthDailyRoute
   ApiPublicHooksToastAuditCleanupRoute: typeof ApiPublicHooksToastAuditCleanupRoute
@@ -1443,6 +1456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSecurityCleanupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/reindex': {
+      id: '/api/public/hooks/reindex'
+      path: '/api/public/hooks/reindex'
+      fullPath: '/api/public/hooks/reindex'
+      preLoaderRoute: typeof ApiPublicHooksReindexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/prerender-recache': {
       id: '/api/public/hooks/prerender-recache'
       path: '/api/public/hooks/prerender-recache'
@@ -1603,6 +1623,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksLighthousePsiRoute: ApiPublicHooksLighthousePsiRoute,
   ApiPublicHooksMonitorProductUrlsRoute: ApiPublicHooksMonitorProductUrlsRoute,
   ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
+  ApiPublicHooksReindexRoute: ApiPublicHooksReindexRoute,
   ApiPublicHooksSecurityCleanupRoute: ApiPublicHooksSecurityCleanupRoute,
   ApiPublicHooksSeoHealthDailyRoute: ApiPublicHooksSeoHealthDailyRoute,
   ApiPublicHooksToastAuditCleanupRoute: ApiPublicHooksToastAuditCleanupRoute,
