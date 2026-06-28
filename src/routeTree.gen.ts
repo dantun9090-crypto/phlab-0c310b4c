@@ -80,6 +80,7 @@ import { Route as ApiPublicHooksLighthousePsiRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksHealthCheckRouteImport } from './routes/api/public/hooks/health-check'
 import { Route as ApiPublicHooksFenaProcessRetriesRouteImport } from './routes/api/public/hooks/fena-process-retries'
 import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hooks/fena'
+import { Route as ApiPublicHooksCompoundQueryHistoryRouteImport } from './routes/api/public/hooks/compound-query-history'
 import { Route as ApiPublicHooksBacklinkWatcherRouteImport } from './routes/api/public/hooks/backlink-watcher'
 
 const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
@@ -453,6 +454,12 @@ const ApiPublicHooksFenaRoute = ApiPublicHooksFenaRouteImport.update({
   path: '/api/public/hooks/fena',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksCompoundQueryHistoryRoute =
+  ApiPublicHooksCompoundQueryHistoryRouteImport.update({
+    id: '/api/public/hooks/compound-query-history',
+    path: '/api/public/hooks/compound-query-history',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksBacklinkWatcherRoute =
   ApiPublicHooksBacklinkWatcherRouteImport.update({
     id: '/api/public/hooks/backlink-watcher',
@@ -516,6 +523,7 @@ export interface FileRoutesByFullPath {
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
+  '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
@@ -588,6 +596,7 @@ export interface FileRoutesByTo {
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
+  '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
@@ -663,6 +672,7 @@ export interface FileRoutesById {
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
+  '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
@@ -738,6 +748,7 @@ export interface FileRouteTypes {
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/api/public/hooks/backlink-watcher'
+    | '/api/public/hooks/compound-query-history'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
     | '/api/public/hooks/health-check'
@@ -810,6 +821,7 @@ export interface FileRouteTypes {
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/api/public/hooks/backlink-watcher'
+    | '/api/public/hooks/compound-query-history'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
     | '/api/public/hooks/health-check'
@@ -884,6 +896,7 @@ export interface FileRouteTypes {
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/api/public/hooks/backlink-watcher'
+    | '/api/public/hooks/compound-query-history'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
     | '/api/public/hooks/health-check'
@@ -954,6 +967,7 @@ export interface RootRouteChildren {
   ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
   ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
   ApiPublicHooksBacklinkWatcherRoute: typeof ApiPublicHooksBacklinkWatcherRoute
+  ApiPublicHooksCompoundQueryHistoryRoute: typeof ApiPublicHooksCompoundQueryHistoryRoute
   ApiPublicHooksFenaRoute: typeof ApiPublicHooksFenaRoute
   ApiPublicHooksFenaProcessRetriesRoute: typeof ApiPublicHooksFenaProcessRetriesRoute
   ApiPublicHooksHealthCheckRoute: typeof ApiPublicHooksHealthCheckRoute
@@ -1471,6 +1485,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksFenaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/compound-query-history': {
+      id: '/api/public/hooks/compound-query-history'
+      path: '/api/public/hooks/compound-query-history'
+      fullPath: '/api/public/hooks/compound-query-history'
+      preLoaderRoute: typeof ApiPublicHooksCompoundQueryHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/backlink-watcher': {
       id: '/api/public/hooks/backlink-watcher'
       path: '/api/public/hooks/backlink-watcher'
@@ -1574,6 +1595,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWebVitalsRoute: ApiPublicWebVitalsRoute,
   ApiWebhooksWallidRoute: ApiWebhooksWallidRoute,
   ApiPublicHooksBacklinkWatcherRoute: ApiPublicHooksBacklinkWatcherRoute,
+  ApiPublicHooksCompoundQueryHistoryRoute:
+    ApiPublicHooksCompoundQueryHistoryRoute,
   ApiPublicHooksFenaRoute: ApiPublicHooksFenaRoute,
   ApiPublicHooksFenaProcessRetriesRoute: ApiPublicHooksFenaProcessRetriesRoute,
   ApiPublicHooksHealthCheckRoute: ApiPublicHooksHealthCheckRoute,

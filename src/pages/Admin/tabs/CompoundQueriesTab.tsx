@@ -1,7 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import { auth } from '@/lib/firebase';
-import { fetchCompoundQueries } from '@/lib/compound-queries.functions';
+import {
+  fetchCompoundQueries,
+  getCompoundThresholds,
+  saveCompoundThresholds,
+  listCompoundHistory,
+  applyNegativesToGoogleAds,
+  buildNegativesCsv,
+  type CompoundThresholds,
+} from '@/lib/compound-queries.functions';
 import { toast } from 'sonner';
 
 type Row = {
@@ -31,8 +39,27 @@ type Result = {
   fetchedAt: string;
 };
 
+type HistoryEntry = {
+  pagePath?: string;
+  startDate?: string;
+  endDate?: string;
+  totalImpressions?: number;
+  totalClicks?: number;
+  riskyCount?: number;
+  riskyTrendingCount?: number;
+  riskyTrendingQueries?: string[];
+  fetchedAt?: string;
+};
+
+const CAMPAIGN_NAME_DEFAULT = 'PHLABS — Compound Search';
+
 export default function CompoundQueriesTab() {
   const fetchFn = useServerFn(fetchCompoundQueries);
+  const getThresholdsFn = useServerFn(getCompoundThresholds);
+  const saveThresholdsFn = useServerFn(saveCompoundThresholds);
+  const listHistoryFn = useServerFn(listCompoundHistory);
+  const applyFn = useServerFn(applyNegativesToGoogleAds);
+
   const [data, setData] = useState<Result | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,17 +67,47 @@ export default function CompoundQueriesTab() {
   const [page, setPage] = useState<'/compound' | '/landing/phlabs'>('/compound');
   const [filter, setFilter] = useState<'all' | 'risk' | 'trending'>('all');
 
+  const [thresholds, setThresholds] = useState<CompoundThresholds>({
+    minImpressions: 5,
+    growthRatio: 0.5,
+    windowDays: 28,
+  });
+  const [thresholdsDirty, setThresholdsDirty] = useState(false);
+  const [savingThresholds, setSavingThresholds] = useState(false);
+
+  const [proposedNegatives, setProposedNegatives] = useState<Set<string>>(new Set());
+  const [campaignName, setCampaignName] = useState(CAMPAIGN_NAME_DEFAULT);
+  const [campaignResourceId, setCampaignResourceId] = useState('');
+  const [applyPreview, setApplyPreview] = useState<string | null>(null);
+  const [applying, setApplying] = useState(false);
+
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  async function getIdToken() {
+    const user = auth.currentUser;
+    if (!user) throw new Error('Not signed in');
+    return user.getIdToken();
+  }
+
   async function load() {
     setLoading(true);
     setError(null);
     try {
-      const user = auth.currentUser;
-      if (!user) throw new Error('Not signed in');
-      const idToken = await user.getIdToken();
+      const idToken = await getIdToken();
       const r = await fetchFn({ data: { idToken, days, pagePath: page } });
       setData(r as Result);
+      // Auto-seed proposed negatives = risky & trending queries.
+      const seed = new Set(
+        (r as Result).rows
+          .filter((x) => x.riskTokens.length > 0 && x.trending)
+          .map((x) => x.query.trim().toLowerCase()),
+      );
+      setProposedNegatives(seed);
       if ((r as Result).riskyTrendingCount > 0) {
-        toast.warning(`${(r as Result).riskyTrendingCount} high-risk queries trending up`);
+        toast.warning(
+          `${(r as Result).riskyTrendingCount} high-risk queries trending — seeded into Proposed Negatives`,
+        );
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -60,6 +117,53 @@ export default function CompoundQueriesTab() {
       setLoading(false);
     }
   }
+
+  async function loadThresholds() {
+    try {
+      const idToken = await getIdToken();
+      const t = await getThresholdsFn({ data: { idToken } });
+      setThresholds(t as CompoundThresholds);
+      setDays((t as CompoundThresholds).windowDays);
+      setThresholdsDirty(false);
+    } catch (e) {
+      toast.error(`Threshold load failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  async function saveThresholds() {
+    setSavingThresholds(true);
+    try {
+      const idToken = await getIdToken();
+      await saveThresholdsFn({ data: { idToken, thresholds } });
+      toast.success('Thresholds saved — re-run analysis to apply');
+      setThresholdsDirty(false);
+    } catch (e) {
+      toast.error(`Save failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setSavingThresholds(false);
+    }
+  }
+
+  async function loadHistory() {
+    setHistoryLoading(true);
+    try {
+      const idToken = await getIdToken();
+      const r = (await listHistoryFn({ data: { idToken, limit: 60 } })) as {
+        rowsJson: string;
+      };
+      const parsed = JSON.parse(r.rowsJson) as HistoryEntry[];
+      setHistory(parsed.filter((h) => !page || h.pagePath === page));
+    } catch (e) {
+      toast.error(`History load failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadThresholds();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     load();
@@ -72,6 +176,16 @@ export default function CompoundQueriesTab() {
     if (filter === 'trending') return data.rows.filter((r) => r.trending);
     return data.rows;
   }, [data, filter]);
+
+  function toggleNegative(q: string) {
+    const key = q.trim().toLowerCase();
+    setProposedNegatives((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   function exportCsv() {
     if (!data) return;
@@ -93,13 +207,71 @@ export default function CompoundQueriesTab() {
           ].join(','),
         )
         .join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    download(csv, `compound-queries-${page.replace(/\//g, '_')}-${data.endDate}.csv`);
+  }
+
+  function exportNegativesCsv() {
+    const list = Array.from(proposedNegatives);
+    if (list.length === 0) {
+      toast.error('No proposed negatives selected');
+      return;
+    }
+    const csv = buildNegativesCsv(campaignName, list);
+    download(csv, `google-ads-negatives-${new Date().toISOString().slice(0, 10)}.csv`);
+  }
+
+  function download(text: string, name: string) {
+    const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `compound-queries-${page.replace(/\//g, '_')}-${data.endDate}.csv`;
+    a.download = name;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function applyDryRun() {
+    await runApply(true);
+  }
+  async function applyLive() {
+    if (!campaignResourceId.trim()) {
+      toast.error('Enter Google Ads campaign ID first');
+      return;
+    }
+    if (
+      !confirm(
+        `Push ${proposedNegatives.size} negative keyword(s) LIVE to campaign ${campaignResourceId}? This cannot be undone.`,
+      )
+    )
+      return;
+    await runApply(false);
+  }
+
+  async function runApply(dryRun: boolean) {
+    setApplying(true);
+    setApplyPreview(null);
+    try {
+      const idToken = await getIdToken();
+      const r = await applyFn({
+        data: {
+          idToken,
+          campaignResourceId: campaignResourceId.trim() || undefined,
+          negatives: Array.from(proposedNegatives),
+          dryRun,
+        },
+      });
+      const json = JSON.stringify(r, null, 2);
+      setApplyPreview(json);
+      if ((r as { ok: boolean }).ok) {
+        toast.success(dryRun ? 'Dry-run complete — review preview' : 'Negatives pushed to Google Ads');
+      } else {
+        toast.error('Apply failed — see preview');
+      }
+    } catch (e) {
+      toast.error(`Apply failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setApplying(false);
+    }
   }
 
   return (
@@ -109,11 +281,11 @@ export default function CompoundQueriesTab() {
         <p className="text-slate-400 text-sm mt-1">
           GSC queries driving impressions and clicks to{' '}
           <code className="text-emerald-400">{page}</code> over the last {days} days.
-          High-risk terms (recreational intent, molecule names, dosing, weight loss)
-          are flagged. Trending = ≥5 new impressions and &gt;50% growth vs prior window.
+          High-risk terms are flagged. Thresholds for "trending" are configurable below.
         </p>
       </header>
 
+      {/* Controls */}
       <div className="flex flex-wrap gap-2 mb-4 items-center">
         <select
           value={page}
@@ -157,9 +329,67 @@ export default function CompoundQueriesTab() {
           disabled={!data}
           className="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs"
         >
-          ⬇ CSV
+          ⬇ CSV (queries)
         </button>
       </div>
+
+      {/* Thresholds editor */}
+      <details className="mb-4 rounded-xl border-2 border-slate-700 bg-slate-900 p-4">
+        <summary className="cursor-pointer text-white font-semibold">
+          ⚙ Detection thresholds
+        </summary>
+        <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+          <NumberField
+            label="Min impressions (current window)"
+            value={thresholds.minImpressions}
+            onChange={(v) => {
+              setThresholds({ ...thresholds, minImpressions: v });
+              setThresholdsDirty(true);
+            }}
+            min={1}
+            max={10000}
+            help="A query must have at least this many impressions in the current window to be flagged as trending."
+          />
+          <NumberField
+            label="Growth ratio (vs prior window)"
+            value={thresholds.growthRatio}
+            step={0.1}
+            onChange={(v) => {
+              setThresholds({ ...thresholds, growthRatio: v });
+              setThresholdsDirty(true);
+            }}
+            min={0}
+            max={50}
+            help="0.5 = +50% more impressions than the prior window of same length."
+          />
+          <NumberField
+            label="Window (days)"
+            value={thresholds.windowDays}
+            onChange={(v) => {
+              setThresholds({ ...thresholds, windowDays: v });
+              setThresholdsDirty(true);
+            }}
+            min={1}
+            max={90}
+            help="Length of the lookback window for current vs prior comparison."
+          />
+        </div>
+        <div className="mt-3 flex gap-2">
+          <button
+            onClick={saveThresholds}
+            disabled={!thresholdsDirty || savingThresholds}
+            className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-semibold"
+          >
+            {savingThresholds ? '⏳ Saving…' : '💾 Save thresholds'}
+          </button>
+          <button
+            onClick={loadThresholds}
+            className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg text-xs"
+          >
+            ↻ Reload from server
+          </button>
+        </div>
+      </details>
 
       {error && (
         <div className="mb-4 rounded border-2 border-red-700 bg-red-950 p-3 text-sm text-red-200">
@@ -185,18 +415,88 @@ export default function CompoundQueriesTab() {
             />
           </div>
 
-          {data.riskyTrendingCount > 0 && (
-            <div className="mb-4 rounded border-2 border-red-700 bg-red-950 p-3 text-sm text-red-200">
-              <strong>⚠ {data.riskyTrendingCount} high-risk query(ies) trending up.</strong>{' '}
-              These contain Google-Ads-banned tokens and gained meaningful impressions vs the prior
-              window. Consider adding them as negative keywords in Google Ads → Campaigns tab.
+          {/* Proposed negatives */}
+          <section className="mb-6 rounded-xl border-2 border-amber-700 bg-amber-950/40 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h3 className="text-white font-semibold">
+                🛡 Proposed negative keywords ({proposedNegatives.size})
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={exportNegativesCsv}
+                  className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg text-xs"
+                >
+                  ⬇ Export Google Ads CSV
+                </button>
+                <button
+                  onClick={applyDryRun}
+                  disabled={applying || proposedNegatives.size === 0}
+                  className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+                >
+                  {applying ? '⏳' : '🔍'} Dry-run
+                </button>
+                <button
+                  onClick={applyLive}
+                  disabled={applying || proposedNegatives.size === 0 || !campaignResourceId.trim()}
+                  className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+                >
+                  🚀 Apply live
+                </button>
+              </div>
             </div>
-          )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+              <label className="text-xs text-amber-100">
+                Campaign name (CSV header)
+                <input
+                  value={campaignName}
+                  onChange={(e) => setCampaignName(e.target.value)}
+                  className="block mt-1 w-full border-2 border-slate-600 bg-slate-800 text-white rounded px-2 py-1 text-sm"
+                />
+              </label>
+              <label className="text-xs text-amber-100">
+                Google Ads campaign ID (numeric) — required for live push
+                <input
+                  value={campaignResourceId}
+                  onChange={(e) => setCampaignResourceId(e.target.value)}
+                  placeholder="e.g. 1234567890"
+                  className="block mt-1 w-full border-2 border-slate-600 bg-slate-800 text-white rounded px-2 py-1 text-sm font-mono"
+                />
+              </label>
+            </div>
+            <div className="max-h-48 overflow-auto rounded border border-amber-800 bg-slate-900 p-2">
+              {proposedNegatives.size === 0 ? (
+                <p className="text-amber-200 text-xs italic">
+                  No proposed negatives. Tick the box on any high-risk row below to add it.
+                </p>
+              ) : (
+                <ul className="flex flex-wrap gap-1.5">
+                  {Array.from(proposedNegatives).map((q) => (
+                    <li key={q}>
+                      <button
+                        onClick={() => toggleNegative(q)}
+                        className="px-2 py-0.5 rounded bg-red-700 hover:bg-red-600 text-red-50 text-xs font-mono"
+                        title="Click to remove"
+                      >
+                        {q} ✕
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            {applyPreview && (
+              <pre className="mt-3 max-h-64 overflow-auto rounded bg-slate-950 border border-slate-700 text-xs text-emerald-200 p-2 font-mono whitespace-pre-wrap">
+                {applyPreview}
+              </pre>
+            )}
+          </section>
 
+          {/* Query table */}
           <div className="overflow-auto rounded-xl border-2 border-slate-700 bg-slate-900">
             <table className="w-full text-sm">
               <thead className="bg-slate-800 text-slate-300">
                 <tr>
+                  <th className="px-3 py-2">+/-</th>
                   <th className="text-left px-3 py-2">Query</th>
                   <th className="text-right px-3 py-2">Impr.</th>
                   <th className="text-right px-3 py-2">Δ Impr.</th>
@@ -209,13 +509,21 @@ export default function CompoundQueriesTab() {
               <tbody>
                 {filtered.slice(0, 250).map((r) => {
                   const risky = r.riskTokens.length > 0;
+                  const key = r.query.trim().toLowerCase();
+                  const checked = proposedNegatives.has(key);
                   return (
                     <tr
                       key={r.query}
-                      className={`border-t border-slate-800 ${
-                        risky ? 'bg-red-950/40' : ''
-                      }`}
+                      className={`border-t border-slate-800 ${risky ? 'bg-red-950/40' : ''}`}
                     >
+                      <td className="px-3 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleNegative(r.query)}
+                          aria-label={`Add ${r.query} as negative keyword`}
+                        />
+                      </td>
                       <td className="px-3 py-2 text-white font-mono text-xs">{r.query}</td>
                       <td className="px-3 py-2 text-right text-slate-200">{r.impressions}</td>
                       <td
@@ -260,7 +568,7 @@ export default function CompoundQueriesTab() {
                 })}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-3 py-6 text-center text-slate-400">
+                    <td colSpan={8} className="px-3 py-6 text-center text-slate-400">
                       No queries match this filter.
                     </td>
                   </tr>
@@ -276,6 +584,67 @@ export default function CompoundQueriesTab() {
           </p>
         </>
       )}
+
+      {/* Trend history */}
+      <section className="mt-8 rounded-xl border-2 border-slate-700 bg-slate-900 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-white font-semibold">📈 Weekly trend history</h3>
+          <button
+            onClick={loadHistory}
+            disabled={historyLoading}
+            className="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs"
+          >
+            {historyLoading ? '⏳' : '↻'} Load history
+          </button>
+        </div>
+        <p className="text-xs text-slate-400 mb-3">
+          Snapshots are written by the weekly cron at{' '}
+          <code>/api/public/hooks/compound-query-history</code> (auth via{' '}
+          <code>x-cleanup-secret</code>). Schedule it weekly in your cron runner.
+        </p>
+        {history.length === 0 ? (
+          <p className="text-slate-500 text-sm italic">No history loaded yet.</p>
+        ) : (
+          <div className="overflow-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-slate-800 text-slate-300">
+                <tr>
+                  <th className="text-left px-3 py-2">Snapshot</th>
+                  <th className="text-left px-3 py-2">Page</th>
+                  <th className="text-left px-3 py-2">Window</th>
+                  <th className="text-right px-3 py-2">Impr.</th>
+                  <th className="text-right px-3 py-2">Clicks</th>
+                  <th className="text-right px-3 py-2">Risky</th>
+                  <th className="text-right px-3 py-2">Risky↑</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((h, i) => (
+                  <tr key={i} className="border-t border-slate-800">
+                    <td className="px-3 py-2 text-slate-300">
+                      {h.fetchedAt ? new Date(h.fetchedAt).toLocaleString('en-GB') : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-emerald-300 font-mono">{h.pagePath}</td>
+                    <td className="px-3 py-2 text-slate-400">
+                      {h.startDate} → {h.endDate}
+                    </td>
+                    <td className="px-3 py-2 text-right text-slate-200">
+                      {(h.totalImpressions ?? 0).toLocaleString('en-GB')}
+                    </td>
+                    <td className="px-3 py-2 text-right text-slate-200">
+                      {(h.totalClicks ?? 0).toLocaleString('en-GB')}
+                    </td>
+                    <td className="px-3 py-2 text-right text-amber-300">{h.riskyCount ?? 0}</td>
+                    <td className="px-3 py-2 text-right text-red-300">
+                      {h.riskyTrendingCount ?? 0}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
@@ -302,5 +671,39 @@ function Stat({
       <div className="text-xs opacity-80">{label}</div>
       <div className="text-lg font-bold">{value.toLocaleString('en-GB')}</div>
     </div>
+  );
+}
+
+function NumberField({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  step = 1,
+  help,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  help?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="text-xs text-slate-300">{label}</span>
+      <input
+        type="number"
+        value={value}
+        min={min}
+        max={max}
+        step={step}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="mt-1 w-full border-2 border-slate-600 bg-slate-800 text-white rounded px-2 py-1 text-sm"
+      />
+      {help && <span className="block text-[11px] text-slate-500 mt-1">{help}</span>}
+    </label>
   );
 }
