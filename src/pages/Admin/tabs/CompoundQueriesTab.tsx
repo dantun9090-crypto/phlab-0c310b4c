@@ -514,9 +514,30 @@ export default function CompoundQueriesTab() {
               )}
             </div>
             {applyPreview && (
-              <pre className="mt-3 max-h-64 overflow-auto rounded bg-slate-950 border border-slate-700 text-xs text-emerald-200 p-2 font-mono whitespace-pre-wrap">
-                {applyPreview}
-              </pre>
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-1">
+                  <h4 className="text-xs font-semibold text-slate-200">
+                    Server response — verify before pushing live
+                  </h4>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard?.writeText(applyPreview);
+                      toast.success('Preview copied');
+                    }}
+                    className="text-xs text-blue-300 hover:text-blue-200"
+                  >
+                    📋 Copy
+                  </button>
+                </div>
+                <pre className="max-h-64 overflow-auto rounded bg-slate-950 border border-slate-700 text-xs text-emerald-200 p-2 font-mono whitespace-pre-wrap">
+                  {applyPreview}
+                </pre>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Tip: a successful dry-run returns{' '}
+                  <code className="text-emerald-300">"mode":"dry-run","ok":true</code> and lists
+                  the exact <code>campaignCriterion.create</code> operations that would be sent.
+                </p>
+              </div>
             )}
           </section>
 
