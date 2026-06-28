@@ -344,6 +344,21 @@ export default function CompoundNegativesAuditTab() {
         >
           ⬇ CSV (attempts)
         </button>
+        <button
+          onClick={downloadRedactedJsonBundle}
+          disabled={filtered.length === 0}
+          className="bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+          title="Download redacted JSON for the currently filtered correlationId results"
+        >
+          ⬇ JSON (redacted, filtered)
+        </button>
+        <button
+          onClick={resetServiceWorkerAndReload}
+          className="bg-amber-700 hover:bg-amber-600 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+          title="Unregister Service Worker, clear caches, hard-reload /admin"
+        >
+          ♻ Reset SW & Reload
+        </button>
       </div>
       {cidQuery && (
         <p className="text-[11px] text-cyan-300 mb-3 font-mono">
