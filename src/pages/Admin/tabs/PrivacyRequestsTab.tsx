@@ -207,9 +207,6 @@ export default function PrivacyRequestsTab() {
 
   return (
     <div className="p-6 max-w-6xl space-y-5">
-      <header className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
-          <ShieldCheck className="w-5 h-5 text-emerald-400" />
       <header className="flex items-center gap-3 flex-wrap">
         <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
           <ShieldCheck className="w-5 h-5 text-emerald-400" />
@@ -242,7 +239,6 @@ export default function PrivacyRequestsTab() {
         source="dsrRequests"
         onRefresh={handleRefresh}
       />
-      </header>
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
