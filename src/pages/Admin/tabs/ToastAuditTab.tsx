@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import {
   db, collection, query, orderBy, limit as fbLimit, onSnapshot,
 } from '@/lib/firebase';
+import HealthMetrics from '@/components/admin/HealthMetrics';
 
 /** Escape a value for CSV (RFC 4180): wrap in quotes if it contains comma/quote/newline. */
 function csvCell(value: unknown): string {
@@ -115,6 +116,11 @@ export default function ToastAuditTab() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
+  // Health metrics — see src/components/admin/HealthMetrics.tsx
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
+  const [readErrors, setReadErrors] = useState(0);
+  const [refreshNonce, setRefreshNonce] = useState(0);
+
   useEffect(() => {
     setLoading(true);
     const q = query(collection(db, 'toastAuditLogs'), orderBy('timestamp', 'desc'), fbLimit(prefs.fetchLimit));
@@ -138,16 +144,18 @@ export default function ToastAuditTab() {
           };
         });
         setRows(arr);
+        setLastFetched(new Date());
         setLoading(false);
         setErr(null);
       },
       (e) => {
         console.error('ToastAudit snapshot error', e);
+        setReadErrors(n => n + 1);
         setErr(e?.message || 'Failed to load audit log');
         setLoading(false);
       });
     return () => unsub();
-  }, [prefs.fetchLimit]);
+  }, [prefs.fetchLimit, refreshNonce]);
 
   const filtered = useMemo(() => {
     const q = prefs.search.trim().toLowerCase();
@@ -262,6 +270,18 @@ export default function ToastAuditTab() {
           </button>
         </div>
       </div>
+
+      <HealthMetrics
+        lastFetched={lastFetched}
+        readErrors={readErrors}
+        writeErrors={0}
+        lastError={err}
+        docCount={rows.length}
+        source="toastAuditLogs"
+        onRefresh={() => setRefreshNonce(n => n + 1)}
+      />
+
+
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">

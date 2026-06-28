@@ -12,12 +12,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { db, auth } from '@/lib/firebase';
 import {
-  collection, query, orderBy, limit, onSnapshot, Timestamp,
+  collection, query, orderBy, limit, onSnapshot, Timestamp, addDoc,
 } from 'firebase/firestore';
 import {
   ShieldCheck, Loader2, Download, Trash2, XCircle, MessageSquare,
-  Mail, Clock, Filter, AlertCircle, CheckCircle2,
+  Mail, Clock, Filter, AlertCircle, CheckCircle2, FlaskConical,
 } from 'lucide-react';
+import HealthMetrics from '@/components/admin/HealthMetrics';
 
 type Status = 'pending' | 'in_progress' | 'waiting_user' | 'completed' | 'rejected';
 type RequestType = 'access' | 'rectification' | 'deletion' | 'portability' | 'objection' | 'restriction';
@@ -102,18 +103,28 @@ export default function PrivacyRequestsTab() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | Status>('pending');
 
+  // Health metrics — see src/components/admin/HealthMetrics.tsx
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
+  const [readErrors, setReadErrors] = useState(0);
+  const [writeErrors, setWriteErrors] = useState(0);
+  const [refreshNonce, setRefreshNonce] = useState(0);
+  const [sampleBusy, setSampleBusy] = useState(false);
+
   useEffect(() => {
+    setLoading(true);
     const q = query(collection(db, 'dsrRequests'), orderBy('createdAt', 'desc'), limit(300));
     const unsub = onSnapshot(q, snap => {
       setRows(snap.docs.map(d => ({ id: d.id, ...(d.data() as any) })));
+      setLastFetched(new Date());
       setLoading(false);
       setError(null);
     }, err => {
+      setReadErrors(n => n + 1);
       setError(err?.code || err?.message || 'Failed to load requests');
       setLoading(false);
     });
     return () => unsub();
-  }, []);
+  }, [refreshNonce]);
 
   const filtered = useMemo(
     () => filter === 'all' ? rows : rows.filter(r => r.status === filter),
@@ -164,19 +175,70 @@ export default function PrivacyRequestsTab() {
     }
   };
 
+  /**
+   * Create a sample DSR row so admins can confirm the UI + Firestore write
+   * round-trip without waiting on a real public submission. Writes under the
+   * regular client SDK so rules and the security shape are exercised.
+   */
+  const createSample = async () => {
+    setSampleBusy(true);
+    try {
+      const types: RequestType[] = ['access', 'rectification', 'deletion', 'portability', 'objection', 'restriction'];
+      const t = types[Math.floor(Math.random() * types.length)];
+      const stamp = Date.now().toString(36).toUpperCase();
+      await addDoc(collection(db, 'dsrRequests'), {
+        type: t,
+        email: `sample+${stamp.toLowerCase()}@phlabs.co.uk`,
+        fullName: `Sample Requester ${stamp}`,
+        details: `Synthetic ${TYPE_LABEL[t]} request generated from Admin → Privacy Requests at ${new Date().toISOString()}. Safe to delete via Erase PII.`,
+        status: 'pending',
+        createdAt: Timestamp.now(),
+        source: 'admin-sample',
+      });
+    } catch (e) {
+      setWriteErrors(n => n + 1);
+      alert(`Sample write failed: ${(e as Error).message}`);
+    } finally {
+      setSampleBusy(false);
+    }
+  };
+
+  const handleRefresh = () => setRefreshNonce(n => n + 1);
+
   return (
     <div className="p-6 max-w-6xl space-y-5">
-      <header className="flex items-center gap-3">
+      <header className="flex items-center gap-3 flex-wrap">
         <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
           <ShieldCheck className="w-5 h-5 text-emerald-400" />
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold text-white">Privacy Requests (GDPR / DSR)</h1>
           <p className="text-sm text-slate-400">
             Data Subject Requests from /privacy-requests. Statutory deadline: 30 days.
           </p>
         </div>
+        <button
+          type="button"
+          data-testid="dsr-create-sample"
+          onClick={createSample}
+          disabled={sampleBusy}
+          className="text-xs font-semibold flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50"
+          title="Create a synthetic sample DSR row so you can validate the UI + Firestore writes"
+        >
+          {sampleBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FlaskConical className="w-3.5 h-3.5" />}
+          Utwórz przykładowe zgłoszenie
+        </button>
       </header>
+
+      <HealthMetrics
+        lastFetched={lastFetched}
+        readErrors={readErrors}
+        writeErrors={writeErrors}
+        lastError={error}
+        docCount={rows.length}
+        source="dsrRequests"
+        onRefresh={handleRefresh}
+      />
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         {[
