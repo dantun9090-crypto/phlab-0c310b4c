@@ -10,7 +10,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import { auth } from '@/lib/firebase';
 import { listCompoundNegativesAudit } from '@/lib/compound-queries.functions';
+import { redactSensitiveValue } from '@/lib/redact-sensitive';
 import { toast } from 'sonner';
+
 
 type RetryAttempt = { attempt: number; delayMs: number; error?: string };
 type AuditRow = {
@@ -184,8 +186,8 @@ export default function CompoundNegativesAuditTab() {
     download(header + body + '\r\n', `compound-negatives-audit-${new Date().toISOString().slice(0, 10)}.csv`);
   }
 
-  function download(text: string, name: string) {
-    const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+  function download(text: string, name: string, mime = 'text/csv;charset=utf-8') {
+    const blob = new Blob([text], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -193,6 +195,70 @@ export default function CompoundNegativesAuditTab() {
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+
+  /**
+   * Bulk-download the redacted dry-run / response payloads for whatever
+   * the user is currently filtering on (mode + correlationId search).
+   * Output is one JSON file containing an array of entries with credentials
+   * scrubbed via `redactSensitiveValue`; `correlationId` is preserved.
+   */
+  function downloadRedactedJsonBundle() {
+    if (filtered.length === 0) return;
+    const payload = filtered.map((r) => ({
+      correlationId: r.correlationId ?? null,
+      createdAt: fmtTs(r.createdAt),
+      mode: r.mode ?? null,
+      campaignResourceId: r.campaignResourceId ?? null,
+      operationCount: r.operationCount ?? r.negatives?.length ?? 0,
+      httpStatus: r.httpStatus ?? null,
+      thresholds: r.thresholds ?? null,
+      retryAttempts: r.retryAttempts ?? [],
+      previewJson: r.previewJson ? safeParse(r.previewJson) : null,
+      responseSnippet: r.responseSnippet ?? null,
+    }));
+    const wrapped = {
+      _note: 'Sensitive fields redacted. correlationId preserved for tracing.',
+      exportedAt: new Date().toISOString(),
+      filter: { mode: filter, correlationIdQuery: cidQuery || null },
+      count: filtered.length,
+      entries: payload,
+    };
+    const redacted = redactSensitiveValue(wrapped);
+    const tag = cidQuery ? cidQuery.replace(/[^a-z0-9-]/gi, '_') : 'filtered';
+    download(redacted, `compound-negatives-${tag}.redacted.json`, 'application/json');
+    toast.success(`Downloaded ${filtered.length} redacted entries`);
+  }
+
+  function safeParse(s: string): unknown {
+    try { return JSON.parse(s); } catch { return s; }
+  }
+
+  /**
+   * Unregister any active Service Worker(s), clear all CacheStorage buckets
+   * scoped to this origin, then hard-reload the admin page. Used when a stale
+   * SW is serving an old admin bundle that 404s on refresh.
+   */
+  async function resetServiceWorkerAndReload() {
+    const confirmed = window.confirm(
+      'Unregister the Service Worker, clear browser caches, and hard-reload the admin panel?',
+    );
+    if (!confirmed) return;
+    try {
+      if ('serviceWorker' in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      toast.success('Service Worker cleared — reloading…');
+      setTimeout(() => window.location.replace('/admin?sw=off'), 400);
+    } catch (e) {
+      toast.error(`SW reset failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
 
   const counts = useMemo(
     () => ({
@@ -277,6 +343,21 @@ export default function CompoundNegativesAuditTab() {
           title="One row per retry attempt, grouped by correlationId"
         >
           ⬇ CSV (attempts)
+        </button>
+        <button
+          onClick={downloadRedactedJsonBundle}
+          disabled={filtered.length === 0}
+          className="bg-emerald-700 hover:bg-emerald-600 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+          title="Download redacted JSON for the currently filtered correlationId results"
+        >
+          ⬇ JSON (redacted, filtered)
+        </button>
+        <button
+          onClick={resetServiceWorkerAndReload}
+          className="bg-amber-700 hover:bg-amber-600 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+          title="Unregister Service Worker, clear caches, hard-reload /admin"
+        >
+          ♻ Reset SW & Reload
         </button>
       </div>
       {cidQuery && (
