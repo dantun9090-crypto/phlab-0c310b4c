@@ -268,9 +268,14 @@ export default function CompoundQueriesTab() {
     await runApply(false);
   }
 
+  function newClientCorrelationId(): string {
+    return `ui-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  }
+
   async function runApply(dryRun: boolean) {
     setApplying(true);
     setApplyPreview(null);
+    const correlationId = newClientCorrelationId();
     try {
       const idToken = await getIdToken();
       const r = await applyFn({
@@ -279,21 +284,46 @@ export default function CompoundQueriesTab() {
           campaignResourceId: campaignResourceId.trim() || undefined,
           negatives: Array.from(proposedNegatives),
           dryRun,
+          correlationId,
         },
       });
       const json = JSON.stringify(r, null, 2);
       setApplyPreview(json);
       if ((r as { ok: boolean }).ok) {
-        toast.success(dryRun ? 'Dry-run complete — review preview' : 'Negatives pushed to Google Ads');
+        toast.success(
+          dryRun
+            ? `Dry-run ${correlationId} complete — review preview`
+            : `Negatives pushed (${correlationId})`,
+        );
       } else {
-        toast.error('Apply failed — see preview');
+        toast.error(`Apply failed — see preview (${correlationId})`);
       }
     } catch (e) {
-      toast.error(`Apply failed: ${e instanceof Error ? e.message : String(e)}`);
+      toast.error(`Apply failed (${correlationId}): ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setApplying(false);
     }
   }
+
+  function downloadPreviewJson() {
+    if (!applyPreview) return;
+    let cid = 'preview';
+    try {
+      const parsed = JSON.parse(applyPreview) as { correlationId?: string };
+      if (parsed.correlationId) cid = parsed.correlationId;
+    } catch { /* ignore */ }
+    const blob = new Blob([applyPreview], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `compound-negatives-dryrun-${cid}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast.success('Preview JSON downloaded');
+  }
+
 
   return (
     <div className="p-4 md:p-6 max-w-7xl">
@@ -519,26 +549,37 @@ export default function CompoundQueriesTab() {
                   <h4 className="text-xs font-semibold text-slate-200">
                     Server response — verify before pushing live
                   </h4>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard?.writeText(applyPreview);
-                      toast.success('Preview copied');
-                    }}
-                    className="text-xs text-blue-300 hover:text-blue-200"
-                  >
-                    📋 Copy
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={downloadPreviewJson}
+                      className="text-xs text-emerald-300 hover:text-emerald-200"
+                      title="Download the exact server response (includes correlationId)"
+                    >
+                      ⬇ Download JSON
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard?.writeText(applyPreview);
+                        toast.success('Preview copied');
+                      }}
+                      className="text-xs text-blue-300 hover:text-blue-200"
+                    >
+                      📋 Copy
+                    </button>
+                  </div>
                 </div>
                 <pre className="max-h-64 overflow-auto rounded bg-slate-950 border border-slate-700 text-xs text-emerald-200 p-2 font-mono whitespace-pre-wrap">
                   {applyPreview}
                 </pre>
                 <p className="text-[11px] text-slate-400 mt-1">
                   Tip: a successful dry-run returns{' '}
-                  <code className="text-emerald-300">"mode":"dry-run","ok":true</code> and lists
-                  the exact <code>campaignCriterion.create</code> operations that would be sent.
+                  <code className="text-emerald-300">"mode":"dry-run","ok":true</code> with a{' '}
+                  <code className="text-emerald-300">correlationId</code> you can trace in the
+                  Compound Negatives Audit tab.
                 </p>
               </div>
             )}
+
           </section>
 
           {/* Query table */}
