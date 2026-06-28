@@ -58,6 +58,27 @@ export const DEFAULT_THRESHOLDS: CompoundThresholds = {
   windowDays: 28,
 };
 
+/** Strict validator — throws on invalid input. Used by save fn and cron. */
+export function validateThresholds(t: Partial<CompoundThresholds>): CompoundThresholds {
+  const errors: string[] = [];
+  const minImpressions = Number(t.minImpressions);
+  const growthRatio = Number(t.growthRatio);
+  const windowDays = Number(t.windowDays);
+  if (!Number.isFinite(minImpressions) || !Number.isInteger(minImpressions) || minImpressions < 1 || minImpressions > 10_000) {
+    errors.push('minImpressions must be an integer between 1 and 10000');
+  }
+  if (!Number.isFinite(growthRatio) || growthRatio < 0 || growthRatio > 50) {
+    errors.push('growthRatio must be a number between 0 and 50');
+  }
+  if (!Number.isFinite(windowDays) || !Number.isInteger(windowDays) || windowDays < 1 || windowDays > 90) {
+    errors.push('windowDays must be an integer between 1 and 90');
+  }
+  if (errors.length) throw new Error(`Invalid thresholds: ${errors.join('; ')}`);
+  return { minImpressions, growthRatio, windowDays };
+}
+
+
+
 function authHeaders() {
   const lovable = process.env.LOVABLE_API_KEY;
   const gsc = process.env.GOOGLE_SEARCH_CONSOLE_API_KEY;
@@ -251,14 +272,12 @@ export const saveCompoundThresholds = createServerFn({ method: 'POST' })
   .inputValidator((d: { idToken: string; thresholds: Partial<CompoundThresholds> }) => {
     if (!d?.idToken) throw new Error('idToken required');
     const t = d.thresholds ?? {};
-    return {
-      idToken: d.idToken,
-      thresholds: {
-        minImpressions: Math.max(1, Math.min(10_000, Number(t.minImpressions ?? 5))),
-        growthRatio: Math.max(0, Math.min(50, Number(t.growthRatio ?? 0.5))),
-        windowDays: Math.max(1, Math.min(90, Number(t.windowDays ?? 28))),
-      },
-    };
+    const validated = validateThresholds({
+      minImpressions: Number(t.minImpressions),
+      growthRatio: Number(t.growthRatio),
+      windowDays: Number(t.windowDays),
+    });
+    return { idToken: d.idToken, thresholds: validated };
   })
   .handler(async ({ data }) => {
     await requireAdmin(data.idToken);
@@ -301,15 +320,66 @@ export const listCompoundHistory = createServerFn({ method: 'POST' })
 
 // ─── Apply negatives to Google Ads (dry-run + live) ─────────────────────
 
-/** Build a Google Ads Editor CSV of negative keywords. */
-export function buildNegativesCsv(campaignName: string, negatives: string[]): string {
-  // Google Ads Editor — Negative campaign keyword bulk format.
-  const header = 'Campaign,Keyword,Match Type,Criterion Type\n';
-  const lines = negatives
-    .map((kw) => `${JSON.stringify(campaignName)},${JSON.stringify(kw)},Phrase,Negative Keyword`)
-    .join('\n');
-  return header + lines + '\n';
+/**
+ * RFC 4180–style CSV cell escaping — wraps in double quotes only when
+ * needed, escapes embedded quotes by doubling them.
+ */
+function csvCell(value: string | number): string {
+  const s = String(value);
+  if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
 }
+
+export type NegativeMatchType = 'Broad' | 'Phrase' | 'Exact';
+
+/**
+ * Build a Google Ads Editor–compatible negative-keyword bulk CSV.
+ *
+ * Header order matches the Google Ads Editor import schema for
+ * "Campaign negative keyword" rows:
+ *   Campaign, Keyword, Criterion Type, Match Type, Status
+ *
+ * - Criterion Type is always "Negative Keyword" (campaign-level negative).
+ * - Match Type defaults to "Phrase" (safest balance of breadth vs. precision).
+ * - Status defaults to "Enabled" so the import activates immediately.
+ *
+ * Reference: Google Ads Editor → File → Export → CSV column reference.
+ */
+export function buildNegativesCsv(
+  campaignName: string,
+  negatives: string[],
+  matchType: NegativeMatchType = 'Phrase',
+  status: 'Enabled' | 'Paused' = 'Enabled',
+): string {
+  const header = 'Campaign,Keyword,Criterion Type,Match Type,Status\r\n';
+  const rows = negatives
+    .map((kw) =>
+      [
+        csvCell(campaignName),
+        csvCell(kw.trim().toLowerCase()),
+        'Negative Keyword',
+        matchType,
+        status,
+      ].join(','),
+    )
+    .join('\r\n');
+  return rows ? header + rows + '\r\n' : header;
+}
+
+/**
+ * Static sample CSV — same exact schema as live exports — so admins can
+ * download a known-good reference before importing into Google Ads Editor.
+ */
+export function buildSampleNegativesCsv(): string {
+  return buildNegativesCsv(
+    'PHLABS — Compound Search',
+    ['recreational use', 'how to inject', 'weight loss', 'human consumption'],
+    'Phrase',
+    'Enabled',
+  );
+}
+
+
 
 const ADS_API_VERSION = 'v18';
 const ADS_API_BASE = `https://googleads.googleapis.com/${ADS_API_VERSION}`;
@@ -444,4 +514,23 @@ export const applyNegativesToGoogleAds = createServerFn({ method: 'POST' })
       };
     }
     return { ok: true as const, mode: 'live' as const, status: res.status, resultJson: text };
+  });
+
+// ─── Audit history list ────────────────────────────────────────────────
+
+export const listCompoundNegativesAudit = createServerFn({ method: 'POST' })
+  .inputValidator((d: { idToken: string; limit?: number }) => {
+    if (!d?.idToken) throw new Error('idToken required');
+    const limit = Math.min(Math.max(Number(d.limit ?? 100) || 100, 1), 500);
+    return { idToken: d.idToken, limit };
+  })
+  .handler(async ({ data }) => {
+    await requireAdmin(data.idToken);
+    const { listDocsAdmin } = await import('@/lib/server/firestore-admin');
+    const rows = await listDocsAdmin('compound_negatives_applied', {
+      orderBy: 'createdAt',
+      direction: 'DESCENDING',
+      limit: data.limit,
+    });
+    return { rowsJson: JSON.stringify(rows) };
   });

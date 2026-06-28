@@ -17,6 +17,7 @@ import { enforceRateLimit } from '@/lib/rate-limit';
 import {
   analyzeCompoundQueries,
   DEFAULT_THRESHOLDS,
+  validateThresholds,
   type CompoundThresholds,
 } from '@/lib/compound-queries.functions';
 import { addDocAdmin, getDocAdmin } from '@/lib/server/firestore-admin';
@@ -55,13 +56,20 @@ export const Route = createFileRoute('/api/public/hooks/compound-query-history')
             | Partial<CompoundThresholds>
             | null;
           if (d) {
-            thresholds = {
-              minImpressions: Number(d.minImpressions ?? DEFAULT_THRESHOLDS.minImpressions),
-              growthRatio: Number(d.growthRatio ?? DEFAULT_THRESHOLDS.growthRatio),
-              windowDays: Number(d.windowDays ?? DEFAULT_THRESHOLDS.windowDays),
-            };
+            try {
+              thresholds = validateThresholds({
+                minImpressions: Number(d.minImpressions),
+                growthRatio: Number(d.growthRatio),
+                windowDays: Number(d.windowDays),
+              });
+            } catch {
+              // Stored thresholds are invalid — fall back to defaults rather
+              // than running the job with bad inputs.
+              thresholds = DEFAULT_THRESHOLDS;
+            }
           }
         } catch { /* use defaults */ }
+
 
         const pages: Array<'/compound' | '/landing/phlabs'> = ['/compound', '/landing/phlabs'];
         const results: Array<{ pagePath: string; ok: boolean; error?: string }> = [];

@@ -8,6 +8,8 @@ import {
   listCompoundHistory,
   applyNegativesToGoogleAds,
   buildNegativesCsv,
+  buildSampleNegativesCsv,
+  validateThresholds,
   type CompoundThresholds,
 } from '@/lib/compound-queries.functions';
 import { toast } from 'sonner';
@@ -131,6 +133,13 @@ export default function CompoundQueriesTab() {
   }
 
   async function saveThresholds() {
+    // Client-side guardrails — fail loud before round-trip to server.
+    try {
+      validateThresholds(thresholds);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+      return;
+    }
     setSavingThresholds(true);
     try {
       const idToken = await getIdToken();
@@ -143,6 +152,18 @@ export default function CompoundQueriesTab() {
       setSavingThresholds(false);
     }
   }
+
+  function downloadSampleCsv() {
+    const blob = new Blob([buildSampleNegativesCsv()], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'google-ads-negatives-sample.csv';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast.success('Sample CSV downloaded');
+  }
+
 
   async function loadHistory() {
     setHistoryLoading(true);
@@ -421,7 +442,14 @@ export default function CompoundQueriesTab() {
               <h3 className="text-white font-semibold">
                 🛡 Proposed negative keywords ({proposedNegatives.size})
               </h3>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={downloadSampleCsv}
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-100 px-3 py-2 rounded-lg text-xs border border-slate-600"
+                  title="Download a tiny example CSV matching Google Ads Editor schema"
+                >
+                  📄 Sample CSV
+                </button>
                 <button
                   onClick={exportNegativesCsv}
                   className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg text-xs"
@@ -433,12 +461,13 @@ export default function CompoundQueriesTab() {
                   disabled={applying || proposedNegatives.size === 0}
                   className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs font-semibold"
                 >
-                  {applying ? '⏳' : '🔍'} Dry-run
+                  {applying ? '⏳' : '🔍'} Dry-run preview
                 </button>
                 <button
                   onClick={applyLive}
                   disabled={applying || proposedNegatives.size === 0 || !campaignResourceId.trim()}
                   className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+                  title="Live push requires a successful dry-run first"
                 >
                   🚀 Apply live
                 </button>
@@ -485,9 +514,30 @@ export default function CompoundQueriesTab() {
               )}
             </div>
             {applyPreview && (
-              <pre className="mt-3 max-h-64 overflow-auto rounded bg-slate-950 border border-slate-700 text-xs text-emerald-200 p-2 font-mono whitespace-pre-wrap">
-                {applyPreview}
-              </pre>
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-1">
+                  <h4 className="text-xs font-semibold text-slate-200">
+                    Server response — verify before pushing live
+                  </h4>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard?.writeText(applyPreview);
+                      toast.success('Preview copied');
+                    }}
+                    className="text-xs text-blue-300 hover:text-blue-200"
+                  >
+                    📋 Copy
+                  </button>
+                </div>
+                <pre className="max-h-64 overflow-auto rounded bg-slate-950 border border-slate-700 text-xs text-emerald-200 p-2 font-mono whitespace-pre-wrap">
+                  {applyPreview}
+                </pre>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Tip: a successful dry-run returns{' '}
+                  <code className="text-emerald-300">"mode":"dry-run","ok":true</code> and lists
+                  the exact <code>campaignCriterion.create</code> operations that would be sent.
+                </p>
+              </div>
             )}
           </section>
 
