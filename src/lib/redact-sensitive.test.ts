@@ -70,6 +70,8 @@ describe('redactSensitiveJson', () => {
 
   it('returns input unchanged if not valid JSON', () => {
     expect(redactSensitiveJson('not json {')).toBe('not json {');
+  });
+
   it('scrubs multiple sensitive patterns embedded in one long log line while preserving correlationId verbatim', () => {
     const cid = 'cmp-MiXeD-CaSe-123';
     const jwt = 'eyJhbGciOi.payload1234567890.signature1234567890';
