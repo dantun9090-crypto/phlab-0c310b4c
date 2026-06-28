@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, AlertCircle, RefreshCw, Share, PlusSquare, Apple } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { CheckCircle2, XCircle, AlertCircle, RefreshCw, Share, PlusSquare, Apple, MoreVertical } from 'lucide-react';
 
 interface SWInfo {
   supported: boolean;
@@ -19,7 +19,14 @@ interface Diagnostics {
   manifestLinked: boolean;
   isIos: boolean;
   isIosSafari: boolean;
+  isIosChrome: boolean;
   userAgent: string;
+}
+
+interface RefreshLogEntry {
+  ts: number;
+  ok: boolean;
+  summary: string;
 }
 
 /**
@@ -30,21 +37,24 @@ interface Diagnostics {
 export default function InstallDiagnostics() {
   const [diag, setDiag] = useState<Diagnostics | null>(null);
   const [tick, setTick] = useState(0);
+  const [log, setLog] = useState<RefreshLogEntry[]>([]);
+  const bipFiredRef = useRef(false);
 
   useEffect(() => {
-    let bipFired = false;
     const onBip = () => {
-      bipFired = true;
-      void refresh();
+      bipFiredRef.current = true;
+      void refresh(false);
     };
     window.addEventListener('beforeinstallprompt', onBip);
 
-    async function refresh() {
+    async function refresh(userInitiated: boolean) {
       const supported = 'serviceWorker' in navigator;
       let registered = false;
       let scope: string | undefined;
       let scriptURL: string | undefined;
       let state: string | undefined;
+      let ok = true;
+      let errMsg = '';
       if (supported) {
         try {
           const reg = await navigator.serviceWorker.getRegistration('/');
@@ -57,8 +67,9 @@ export default function InstallDiagnostics() {
               state = sw.state;
             }
           }
-        } catch {
-          /* ignore */
+        } catch (e) {
+          ok = false;
+          errMsg = e instanceof Error ? e.message : String(e);
         }
       }
       const manifestLinked = !!document.querySelector('link[rel="manifest"]');
@@ -70,13 +81,15 @@ export default function InstallDiagnostics() {
       const isIpadOS = /Macintosh/i.test(ua) && (navigator as any).maxTouchPoints > 1;
       const isIos = /iphone|ipad|ipod/i.test(ua) || isIpadOS;
       const isIosSafari = isIos && /safari/i.test(ua) && !/crios|fxios|edgios|opios/i.test(ua);
+      const isIosChrome = isIos && /crios/i.test(ua);
       const isChromium = !isIos && /chrome|edg|opr|brave/i.test(ua) && !/firefox|fxios/i.test(ua);
       const isFirefox = /firefox|fxios/i.test(ua);
 
+      const bipFired = bipFiredRef.current;
       let bipReason = '';
       if (bipFired) bipReason = 'Fired — native prompt available.';
       else if (standalone) bipReason = 'Already installed (running standalone).';
-      else if (isIos) bipReason = 'iOS Safari never fires this event — use Share → Add to Home Screen (see instructions below).';
+      else if (isIos) bipReason = 'iOS never fires this event — use Share → Add to Home Screen (see instructions below).';
       else if (isFirefox) bipReason = 'Firefox does not support web app install.';
       else if (!isChromium) bipReason = 'Browser does not support beforeinstallprompt.';
       else if (!registered) bipReason = 'No service worker yet — Chromium requires one for installability.';
@@ -91,11 +104,21 @@ export default function InstallDiagnostics() {
         manifestLinked,
         isIos,
         isIosSafari,
+        isIosChrome,
         userAgent: ua,
       });
+
+      if (userInitiated) {
+        const summary = ok
+          ? `SW ${registered ? `registered (${state ?? '?'})` : 'not registered'} · BIP ${bipFired ? 'fired' : 'pending'} · manifest ${manifestLinked ? 'ok' : 'missing'}`
+          : `error: ${errMsg}`;
+        setLog((prev) =>
+          [{ ts: Date.now(), ok, summary }, ...prev].slice(0, 5),
+        );
+      }
     }
 
-    void refresh();
+    void refresh(false);
     return () => {
       window.removeEventListener('beforeinstallprompt', onBip);
     };
@@ -119,6 +142,11 @@ export default function InstallDiagnostics() {
     </div>
   );
 
+  const formatTime = (ts: number) => {
+    const d = new Date(ts);
+    return d.toLocaleTimeString('en-GB', { hour12: false });
+  };
+
   return (
     <div
       data-testid="install-diagnostics"
@@ -129,6 +157,7 @@ export default function InstallDiagnostics() {
         <h2 className="text-base font-semibold text-white">Install diagnostics</h2>
         <button
           type="button"
+          data-testid="install-diagnostics-refresh"
           onClick={() => setTick((t) => t + 1)}
           className="flex items-center gap-1.5 text-xs text-slate-300 px-2.5 py-1.5 rounded-lg border border-white/10 hover:bg-white/5"
         >
@@ -179,6 +208,40 @@ export default function InstallDiagnostics() {
         value={diag.standalone ? 'standalone (installed)' : 'browser tab'}
       />
 
+      {/* Refresh log */}
+      <div
+        data-testid="install-diagnostics-refresh-log"
+        className="mt-4 p-3 rounded-xl border"
+        style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.06)' }}
+      >
+        <div className="text-xs uppercase tracking-wider text-slate-400 mb-2">
+          Refresh log {log.length > 0 && <span className="text-slate-500 normal-case">· last {log.length}</span>}
+        </div>
+        {log.length === 0 ? (
+          <div className="text-xs text-slate-500" data-testid="refresh-log-empty">
+            No manual refresh yet — click Refresh to record a snapshot.
+          </div>
+        ) : (
+          <ul className="space-y-1.5">
+            {log.map((entry) => (
+              <li
+                key={entry.ts}
+                data-testid="refresh-log-entry"
+                className="flex items-start gap-2 text-xs text-slate-300 font-mono"
+              >
+                {entry.ok ? (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                ) : (
+                  <XCircle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+                )}
+                <span className="text-slate-400 shrink-0">{formatTime(entry.ts)}</span>
+                <span className="text-slate-200 break-words">{entry.summary}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {diag.isIos && !diag.standalone && (
         <div
           data-testid="ios-install-instructions"
@@ -190,40 +253,108 @@ export default function InstallDiagnostics() {
             <h3 className="text-sm font-semibold text-white">
               {diag.isIosSafari
                 ? 'Install on iPhone / iPad (Safari)'
-                : 'Open in Safari to install on iPhone / iPad'}
+                : diag.isIosChrome
+                  ? 'Install on iPhone / iPad (Chrome on iOS)'
+                  : 'Open in Safari to install on iPhone / iPad'}
             </h3>
           </div>
-          {!diag.isIosSafari && (
-            <p className="text-xs text-blue-200/80 mb-3">
-              Apple only allows installing web apps from <strong>Safari</strong>. Open
-              <code className="mx-1 px-1.5 py-0.5 rounded bg-white/10">phlabs.co.uk/install</code>
-              in Safari, then follow these steps:
-            </p>
+
+          {/* Safari branch */}
+          {diag.isIosSafari && (
+            <ol className="space-y-2.5 text-sm text-slate-200" data-testid="ios-safari-steps">
+              <li className="flex gap-2.5">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">1</span>
+                <span>
+                  Tap the <Share className="inline w-4 h-4 mx-0.5 align-text-bottom text-blue-300" />
+                  <strong> Share</strong> button at the bottom of Safari (top-right on iPad).
+                </span>
+              </li>
+              <li className="flex gap-2.5">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">2</span>
+                <span>
+                  Scroll and tap <PlusSquare className="inline w-4 h-4 mx-0.5 align-text-bottom text-blue-300" />
+                  <strong> Add to Home Screen</strong>.
+                </span>
+              </li>
+              <li className="flex gap-2.5">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">3</span>
+                <span>Confirm the name <strong>PH Labs</strong> and tap <strong>Add</strong> — the app icon appears on your home screen.</span>
+              </li>
+              <li className="flex gap-2.5">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">4</span>
+                <span>Tap the new PH Labs icon — it opens the catalogue full-screen, just like a native app.</span>
+              </li>
+            </ol>
           )}
-          <ol className="space-y-2.5 text-sm text-slate-200">
-            <li className="flex gap-2.5">
-              <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">1</span>
-              <span>
-                Tap the <Share className="inline w-4 h-4 mx-0.5 align-text-bottom text-blue-300" />
-                <strong> Share</strong> button at the bottom of Safari (top-right on iPad).
-              </span>
-            </li>
-            <li className="flex gap-2.5">
-              <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">2</span>
-              <span>
-                Scroll and tap <PlusSquare className="inline w-4 h-4 mx-0.5 align-text-bottom text-blue-300" />
-                <strong> Add to Home Screen</strong>.
-              </span>
-            </li>
-            <li className="flex gap-2.5">
-              <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">3</span>
-              <span>Confirm the name <strong>PH Labs</strong> and tap <strong>Add</strong> — the app icon appears on your home screen.</span>
-            </li>
-            <li className="flex gap-2.5">
-              <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">4</span>
-              <span>Tap the new PH Labs icon — it opens the catalogue full-screen, just like a native app.</span>
-            </li>
-          </ol>
+
+          {/* Chrome on iOS branch (iOS 16.4+ supports Add to Home Screen from Chrome's Share sheet) */}
+          {diag.isIosChrome && (
+            <ol className="space-y-2.5 text-sm text-slate-200" data-testid="ios-chrome-steps">
+              <li className="flex gap-2.5">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">1</span>
+                <span>
+                  Tap the <MoreVertical className="inline w-4 h-4 mx-0.5 align-text-bottom text-blue-300" />
+                  <strong> ⋯ menu</strong> (bottom-right of Chrome on iOS).
+                </span>
+              </li>
+              <li className="flex gap-2.5">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">2</span>
+                <span>
+                  Tap <Share className="inline w-4 h-4 mx-0.5 align-text-bottom text-blue-300" />
+                  <strong> Share…</strong>, then choose <PlusSquare className="inline w-4 h-4 mx-0.5 align-text-bottom text-blue-300" />
+                  <strong> Add to Home Screen</strong>.
+                </span>
+              </li>
+              <li className="flex gap-2.5">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">3</span>
+                <span>
+                  If the option is missing, open the same page in Safari instead —
+                  <a
+                    href="https://phlabs.co.uk/install"
+                    className="underline text-blue-300 hover:text-blue-200 mx-1"
+                  >
+                    phlabs.co.uk/install
+                  </a>
+                  — and follow the Safari steps.
+                </span>
+              </li>
+              <li className="flex gap-2.5">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">4</span>
+                <span>Tap the new PH Labs icon on your home screen — it opens the catalogue full-screen.</span>
+              </li>
+            </ol>
+          )}
+
+          {/* Other iOS browsers (Firefox, Edge, Opera on iOS) */}
+          {!diag.isIosSafari && !diag.isIosChrome && (
+            <>
+              <p className="text-xs text-blue-200/80 mb-3">
+                Apple only allows installing web apps from <strong>Safari</strong>. Open
+                <a
+                  href="https://phlabs.co.uk/install"
+                  className="underline text-blue-300 hover:text-blue-200 mx-1"
+                >
+                  phlabs.co.uk/install
+                </a>
+                in Safari, then:
+              </p>
+              <ol className="space-y-2.5 text-sm text-slate-200" data-testid="ios-other-steps">
+                <li className="flex gap-2.5">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">1</span>
+                  <span>
+                    Tap <Share className="inline w-4 h-4 mx-0.5 align-text-bottom text-blue-300" />
+                    <strong> Share</strong> → <PlusSquare className="inline w-4 h-4 mx-0.5 align-text-bottom text-blue-300" />
+                    <strong> Add to Home Screen</strong>.
+                  </span>
+                </li>
+                <li className="flex gap-2.5">
+                  <span className="shrink-0 w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center justify-center">2</span>
+                  <span>Confirm <strong>PH Labs</strong> and tap <strong>Add</strong>.</span>
+                </li>
+              </ol>
+            </>
+          )}
+
           <p className="mt-3 text-[11px] text-blue-200/70">
             iOS does not expose <code>beforeinstallprompt</code>, so no in-page button can replace these steps.
           </p>
