@@ -96,7 +96,7 @@ export const STRUCTURED_SNIPPETS = {
     'Analytical Standards',
     'Lab Reagents',
     'Reference Materials',
-    'Research Compounds',
+    'Research Materials',
     'Bacteriostatic Water',
   ],
 };
@@ -234,7 +234,7 @@ export const CAMPAIGN_EDITORIAL: Campaign = {
   sitelinks: [
     { text: 'Quality Control', desc1: 'Batch documentation', desc2: 'Verified per order', url: 'https://phlabs.co.uk/landing/phlabs#qc' },
     { text: 'About PH Labs', desc1: 'UK laboratory team', desc2: 'Institution trusted', url: 'https://phlabs.co.uk/about' },
-    { text: 'Research Catalogue', desc1: 'Browse compounds', desc2: 'Reference standards', url: 'https://phlabs.co.uk/products' },
+    { text: 'Research Catalogue', desc1: 'Browse standards', desc2: 'Reference standards', url: 'https://phlabs.co.uk/products' },
     { text: 'Contact', desc1: 'Lab procurement', desc2: 'Bulk enquiries welcome', url: 'https://phlabs.co.uk/contact' },
   ],
   adGroups: [
@@ -243,7 +243,7 @@ export const CAMPAIGN_EDITORIAL: Campaign = {
       maxCpc: 0.55,
       keywords: [
         '"uk lab supplier"', '"british research supplier"',
-        '"uk laboratory supplier"', '"research compound supplier uk"',
+        '"uk laboratory supplier"', '"lab supplier uk"',
         '"uk based lab supply"', '"laboratory stockist uk"',
         '[uk lab supplier]', '[laboratory stockist uk]',
       ],
@@ -293,7 +293,7 @@ export const CAMPAIGN_EDITORIAL: Campaign = {
       headlines: [
         'Research Catalogue UK', 'Browse Lab Stock', 'Full UK Catalogue',
         'Lab Supply Range', 'PH Labs Catalogue', 'Research Grade Only',
-        'Institution Stock', 'Documented Compounds', 'UK Dispatch Same Day',
+        'Institution Stock', 'Documented Standards', 'UK Dispatch Same Day',
         'Editorial Lab Range', 'Verified Inventory', 'Research Use Only',
         'Trusted UK Supplier', 'High-Purity Range', 'Lab-Grade Materials',
       ],
