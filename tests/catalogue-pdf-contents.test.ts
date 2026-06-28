@@ -11,9 +11,8 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
-// pdf-parse v2 default export is a function returning { text, ... }
-// CommonJS-style import keeps Vitest happy under Node ESM.
-import pdf from "pdf-parse";
+// pdf-parse v2 exports a PDFParse class.
+import { PDFParse } from "pdf-parse";
 
 const PDF_PATH = resolve(process.cwd(), "public/PH-Labs-Research-Catalogue.pdf");
 const EXPECTED_URL = "/PH-Labs-Research-Catalogue.pdf";
