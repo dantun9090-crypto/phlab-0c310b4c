@@ -150,8 +150,6 @@ describe('redactSensitiveJson', () => {
     expect(out.c).toBe('customers/[REDACTED_CID]');
     expect(out.correlationId).toBe('cmp-keep');
   });
-});
-
 
   it('redactSensitiveValue handles arrays at the root', () => {
     const out = JSON.parse(redactSensitiveValue([
@@ -163,3 +161,4 @@ describe('redactSensitiveJson', () => {
     expect(out[1].resourceName).toBe('customers/[REDACTED_CID]/x');
   });
 });
+
