@@ -36,6 +36,7 @@ import { Route as IndexnowKeyDottxtRouteImport } from './routes/$indexnowKey[.]t
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResearchIndexRouteImport } from './routes/research.index'
+import { Route as ResourcesPeptideCategoriesUkResearchRouteImport } from './routes/resources.peptide-categories-uk-research'
 import { Route as ResearchRetatrutideUkRouteImport } from './routes/research.retatrutide-uk'
 import { Route as ResearchBpc157UkRouteImport } from './routes/research.bpc-157-uk'
 import { Route as ProductsSlugRouteImport } from './routes/products_.$slug'
@@ -217,6 +218,12 @@ const ResearchIndexRoute = ResearchIndexRouteImport.update({
   path: '/',
   getParentRoute: () => ResearchRoute,
 } as any)
+const ResourcesPeptideCategoriesUkResearchRoute =
+  ResourcesPeptideCategoriesUkResearchRouteImport.update({
+    id: '/peptide-categories-uk-research',
+    path: '/peptide-categories-uk-research',
+    getParentRoute: () => ResourcesRoute,
+  } as any)
 const ResearchRetatrutideUkRoute = ResearchRetatrutideUkRouteImport.update({
   id: '/retatrutide-uk',
   path: '/retatrutide-uk',
@@ -473,7 +480,7 @@ export interface FileRoutesByFullPath {
   '/refund-policy': typeof RefundPolicyRoute
   '/request-catalog': typeof RequestCatalogRoute
   '/research': typeof ResearchRouteWithChildren
-  '/resources': typeof ResourcesRoute
+  '/resources': typeof ResourcesRouteWithChildren
   '/search': typeof SearchRoute
   '/shipping-policy': typeof ShippingPolicyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -491,6 +498,7 @@ export interface FileRoutesByFullPath {
   '/products/$slug': typeof ProductsSlugRoute
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
+  '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
   '/research/': typeof ResearchIndexRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
@@ -544,7 +552,7 @@ export interface FileRoutesByTo {
   '/quality-control': typeof QualityControlRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/request-catalog': typeof RequestCatalogRoute
-  '/resources': typeof ResourcesRoute
+  '/resources': typeof ResourcesRouteWithChildren
   '/search': typeof SearchRoute
   '/shipping-policy': typeof ShippingPolicyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -562,6 +570,7 @@ export interface FileRoutesByTo {
   '/products/$slug': typeof ProductsSlugRoute
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
+  '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
   '/research': typeof ResearchIndexRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
@@ -618,7 +627,7 @@ export interface FileRoutesById {
   '/refund-policy': typeof RefundPolicyRoute
   '/request-catalog': typeof RequestCatalogRoute
   '/research': typeof ResearchRouteWithChildren
-  '/resources': typeof ResourcesRoute
+  '/resources': typeof ResourcesRouteWithChildren
   '/search': typeof SearchRoute
   '/shipping-policy': typeof ShippingPolicyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -636,6 +645,7 @@ export interface FileRoutesById {
   '/products_/$slug': typeof ProductsSlugRoute
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
+  '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
   '/research/': typeof ResearchIndexRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
@@ -710,6 +720,7 @@ export interface FileRouteTypes {
     | '/products/$slug'
     | '/research/bpc-157-uk'
     | '/research/retatrutide-uk'
+    | '/resources/peptide-categories-uk-research'
     | '/research/'
     | '/api/config/payments'
     | '/api/dsr/process'
@@ -781,6 +792,7 @@ export interface FileRouteTypes {
     | '/products/$slug'
     | '/research/bpc-157-uk'
     | '/research/retatrutide-uk'
+    | '/resources/peptide-categories-uk-research'
     | '/research'
     | '/api/config/payments'
     | '/api/dsr/process'
@@ -854,6 +866,7 @@ export interface FileRouteTypes {
     | '/products_/$slug'
     | '/research/bpc-157-uk'
     | '/research/retatrutide-uk'
+    | '/resources/peptide-categories-uk-research'
     | '/research/'
     | '/api/config/payments'
     | '/api/dsr/process'
@@ -910,7 +923,7 @@ export interface RootRouteChildren {
   RefundPolicyRoute: typeof RefundPolicyRoute
   RequestCatalogRoute: typeof RequestCatalogRoute
   ResearchRoute: typeof ResearchRouteWithChildren
-  ResourcesRoute: typeof ResourcesRoute
+  ResourcesRoute: typeof ResourcesRouteWithChildren
   SearchRoute: typeof SearchRoute
   ShippingPolicyRoute: typeof ShippingPolicyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -1149,6 +1162,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/research/'
       preLoaderRoute: typeof ResearchIndexRouteImport
       parentRoute: typeof ResearchRoute
+    }
+    '/resources/peptide-categories-uk-research': {
+      id: '/resources/peptide-categories-uk-research'
+      path: '/peptide-categories-uk-research'
+      fullPath: '/resources/peptide-categories-uk-research'
+      preLoaderRoute: typeof ResourcesPeptideCategoriesUkResearchRouteImport
+      parentRoute: typeof ResourcesRoute
     }
     '/research/retatrutide-uk': {
       id: '/research/retatrutide-uk'
@@ -1489,6 +1509,19 @@ const ResearchRouteWithChildren = ResearchRoute._addFileChildren(
   ResearchRouteChildren,
 )
 
+interface ResourcesRouteChildren {
+  ResourcesPeptideCategoriesUkResearchRoute: typeof ResourcesPeptideCategoriesUkResearchRoute
+}
+
+const ResourcesRouteChildren: ResourcesRouteChildren = {
+  ResourcesPeptideCategoriesUkResearchRoute:
+    ResourcesPeptideCategoriesUkResearchRoute,
+}
+
+const ResourcesRouteWithChildren = ResourcesRoute._addFileChildren(
+  ResourcesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
@@ -1510,7 +1543,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundPolicyRoute: RefundPolicyRoute,
   RequestCatalogRoute: RequestCatalogRoute,
   ResearchRoute: ResearchRouteWithChildren,
-  ResourcesRoute: ResourcesRoute,
+  ResourcesRoute: ResourcesRouteWithChildren,
   SearchRoute: SearchRoute,
   ShippingPolicyRoute: ShippingPolicyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
