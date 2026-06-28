@@ -296,7 +296,7 @@ export const listCompoundHistory = createServerFn({ method: 'POST' })
       direction: 'DESCENDING',
       limit: data.limit,
     });
-    return { rows: rows as Array<Record<string, unknown>> };
+    return { rowsJson: JSON.stringify(rows) };
   });
 
 // ─── Apply negatives to Google Ads (dry-run + live) ─────────────────────
