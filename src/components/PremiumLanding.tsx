@@ -214,11 +214,12 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         <div className="lux-marquee flex whitespace-nowrap py-7 text-[11px] uppercase tracking-[0.55em] text-white/50">
           {Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="flex shrink-0 items-center gap-14 pr-14">
-              <span>Premium Research Materials</span><span className="gold-text text-lg">◆</span>
-              <span>United Kingdom Laboratory</span><span className="gold-text text-lg">◆</span>
-              <span>Verified Purity Standards</span><span className="gold-text text-lg">◆</span>
-              <span>Per-Batch Documentation</span><span className="gold-text text-lg">◆</span>
-              <span>Controlled Conditions</span><span className="gold-text text-lg">◆</span>
+              <span>99%+ Purity</span><span className="gold-text text-lg">◆</span>
+              <span>Independent HPLC Analysis</span><span className="gold-text text-lg">◆</span>
+              <span>UK-Based Laboratory</span><span className="gold-text text-lg">◆</span>
+              <span>Per-Batch Certificate of Analysis</span><span className="gold-text text-lg">◆</span>
+              <span>Same-Day Dispatch · Before 15:00 GMT</span><span className="gold-text text-lg">◆</span>
+              <span>Cold-Chain Shipping</span><span className="gold-text text-lg">◆</span>
             </div>
           ))}
         </div>
