@@ -50,7 +50,8 @@ const UTM_TEMPLATE =
 export const NEGATIVE_KEYWORDS: string[] = [
   // pharma / medical
   'human consumption', 'human use', 'human', 'injectable', 'injection',
-  'dosage', 'dose', 'how to use', 'how to inject',
+  'dosage', 'dose', 'dosing', 'cycle', 'stack',
+  'how to use', 'how to inject', 'how to mix',
   'treatment', 'therapy', 'therapeutic', 'cure', 'cures',
   'medical', 'medicine', 'medicinal', 'prescription',
   'patient', 'clinical', 'diagnosis', 'diagnose',
@@ -58,6 +59,10 @@ export const NEGATIVE_KEYWORDS: string[] = [
   'anti aging', 'anti-aging', 'muscle growth', 'bodybuilding',
   'steroid', 'sarms', 'prohormone',
   'diabetes', 'cancer', 'disease',
+  // recreational / abuse intent (Google "Dangerous Products" policy)
+  'recreational', 'designer', 'designer drug', 'legal high', 'legal highs',
+  'rc', 'research chemical', 'research chemicals',
+  'psychoactive', 'nootropic high', 'party',
   // molecule names (Google flags these)
   'retatrutide', 'tirzepatide', 'semaglutide',
   'bpc-157', 'bpc 157', 'tb-500', 'tb 500',
@@ -65,6 +70,7 @@ export const NEGATIVE_KEYWORDS: string[] = [
   'melanotan', 'mt-2', 'mt ii', 'mots-c', 'kpv',
   'ipamorelin', 'cjc-1295', 'cjc 1295',
   'hgh', 'somatropin', 'igf-1', 'igf 1',
+  'peptide', 'peptides',
   // non-buying intent
   'free', 'cheap', 'wholesale', 'bulk',
   'jobs', 'job', 'career', 'salary', 'cv',
@@ -90,7 +96,7 @@ export const STRUCTURED_SNIPPETS = {
     'Analytical Standards',
     'Lab Reagents',
     'Reference Materials',
-    'Research Compounds',
+    'Research Materials',
     'Bacteriostatic Water',
   ],
 };
@@ -118,27 +124,28 @@ export const CAMPAIGN_COMPOUND: Campaign = {
   ],
   adGroups: [
     {
-      name: 'AG01 — Research Compounds',
-      maxCpc: 0.65,
+      name: 'AG01 — Reference Standards UK',
+      maxCpc: 0.75,
       keywords: [
-        '"research compounds uk"', '"lab compounds uk"',
-        '"analytical standards uk"', '"reference standards uk"',
-        '"research compounds"', '"lab reagents uk"',
-        '"laboratory reagents uk"', '"research materials uk"',
-        '[research compounds uk]', '[analytical standards uk]',
+        '"reference standards uk"', '"laboratory reagents uk"',
+        '"lab reagents uk"', '"analytical reagents uk"',
+        '"analytical standards uk"', '"reference materials uk"',
+        '"certified reference materials uk"', '"reagent supplier uk"',
+        '[reference standards uk]', '[laboratory reagents uk]',
+        '[lab reagents uk]',
       ],
       headlines: [
-        'UK Research Compounds', 'Lab-Grade Materials', 'Batch Docs Supplied',
-        'For Research Use Only', 'Premium Lab Supply', 'UK Laboratory Stock',
-        'Controlled Conditions', 'Scientific Research Only', 'High-Purity Standards',
-        'Professional Labs UK', 'Analytical Grade Only', 'Research Supply UK',
-        'Verified Documentation', 'Institution-Grade Supply', 'UK-Based Preparation',
+        'Reference Standards UK', 'Laboratory Reagents UK', 'Lab-Grade Materials',
+        'Batch Docs Supplied', 'For Research Use Only', 'UK Laboratory Stock',
+        'Analytical Grade Only', 'Reagent Supplier UK', 'High-Purity Standards',
+        'Professional Labs UK', 'Institution-Grade Supply', 'Reference Materials UK',
+        'Verified Documentation', 'Controlled UK Preparation', 'Research Supply UK',
       ],
       descriptions: [
-        'High-purity research compounds prepared under controlled UK laboratory conditions. Full batch documentation supplied.',
+        'Analytical reference standards and laboratory reagents prepared under controlled UK conditions. Full batch documentation supplied.',
         'Trusted by academic and commercial laboratories across the UK. For scientific and analytical research use only.',
-        'Detailed certificates and batch records included. Professional-grade materials for qualified researchers.',
-        'Dispatched from UK facilities with tracked delivery. Research-use-only compounds for laboratory analysis.',
+        'Detailed certificates and batch records included. Professional-grade reference materials for qualified researchers.',
+        'Dispatched from UK facilities with tracked delivery. Reference standards and reagents for laboratory analysis.',
       ],
     },
     {
@@ -146,15 +153,15 @@ export const CAMPAIGN_COMPOUND: Campaign = {
       maxCpc: 0.45,
       keywords: [
         '"laboratory supplies uk"', '"lab supplies uk"',
-        '"scientific supplies uk"', '"research lab supplies"',
-        '"lab equipment uk"', '"analytical supplies uk"',
+        '"scientific supplies uk"', '"analytical supplies uk"',
+        '"lab equipment uk"', '"research lab supplies"',
         '[laboratory supplies uk]', '[lab supplies uk]',
       ],
       headlines: [
         'Lab Supplies UK', 'Scientific Materials', 'Research Lab Stock',
         'UK Laboratory Supply', 'Analytical Supplies', 'Professional Lab Gear',
         'Institution-Grade Stock', 'Controlled UK Dispatch', 'Lab-Ready Materials',
-        'Research Supply Store', 'Scientific Supply UK', 'Batch Tracked Delivery',
+        'Reference Standards UK', 'Scientific Supply UK', 'Batch Tracked Delivery',
         'UK-Based Stockist', 'Laboratory Essentials', 'Research Grade Only',
       ],
       descriptions: [
@@ -169,12 +176,12 @@ export const CAMPAIGN_COMPOUND: Campaign = {
       keywords: [
         '"lab reagents uk"', '"laboratory reagents uk"',
         '"analytical reagents uk"', '"research reagents uk"',
-        '"chemical standards uk"', '"reference materials uk"',
-        '[lab reagents uk]', '[chemical standards uk]',
+        '"reference materials uk"', '"reagent standards uk"',
+        '[lab reagents uk]', '[reference materials uk]',
       ],
       headlines: [
         'Analytical Reagents UK', 'Reference Standards', 'Lab Reagents Stocked',
-        'Chemical Standards UK', 'Research Reagents Only', 'UK Lab Reagent Supply',
+        'Reference Materials UK', 'Research Reagents Only', 'UK Lab Reagent Supply',
         'High-Purity Standards', 'Batch Docs Included', 'Professional Reagents',
         'Institution Supply UK', 'Verified Reagent Batches', 'Laboratory Standard Stock',
         'UK Research Reagents', 'Controlled Preparation', 'Scientific Grade Only',
@@ -227,7 +234,7 @@ export const CAMPAIGN_EDITORIAL: Campaign = {
   sitelinks: [
     { text: 'Quality Control', desc1: 'Batch documentation', desc2: 'Verified per order', url: 'https://phlabs.co.uk/landing/phlabs#qc' },
     { text: 'About PH Labs', desc1: 'UK laboratory team', desc2: 'Institution trusted', url: 'https://phlabs.co.uk/about' },
-    { text: 'Research Catalogue', desc1: 'Browse compounds', desc2: 'Reference standards', url: 'https://phlabs.co.uk/products' },
+    { text: 'Research Catalogue', desc1: 'Browse standards', desc2: 'Reference standards', url: 'https://phlabs.co.uk/products' },
     { text: 'Contact', desc1: 'Lab procurement', desc2: 'Bulk enquiries welcome', url: 'https://phlabs.co.uk/contact' },
   ],
   adGroups: [
@@ -236,7 +243,7 @@ export const CAMPAIGN_EDITORIAL: Campaign = {
       maxCpc: 0.55,
       keywords: [
         '"uk lab supplier"', '"british research supplier"',
-        '"uk laboratory supplier"', '"research compound supplier uk"',
+        '"uk laboratory supplier"', '"lab supplier uk"',
         '"uk based lab supply"', '"laboratory stockist uk"',
         '[uk lab supplier]', '[laboratory stockist uk]',
       ],
@@ -286,7 +293,7 @@ export const CAMPAIGN_EDITORIAL: Campaign = {
       headlines: [
         'Research Catalogue UK', 'Browse Lab Stock', 'Full UK Catalogue',
         'Lab Supply Range', 'PH Labs Catalogue', 'Research Grade Only',
-        'Institution Stock', 'Documented Compounds', 'UK Dispatch Same Day',
+        'Institution Stock', 'Documented Standards', 'UK Dispatch Same Day',
         'Editorial Lab Range', 'Verified Inventory', 'Research Use Only',
         'Trusted UK Supplier', 'High-Purity Range', 'Lab-Grade Materials',
       ],
