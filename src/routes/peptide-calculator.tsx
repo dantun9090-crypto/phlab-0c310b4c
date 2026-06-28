@@ -87,15 +87,7 @@ function PeptideCalculatorPage() {
 
   return (
     <main className="mx-auto min-h-screen max-w-3xl bg-slate-950 px-4 py-12 text-slate-100">
-      <SEOHead
-        title="Peptide Reconstitution Calculator UK | PH Labs"
-        description="Free research peptide reconstitution calculator. Convert vial mg + BAC water mL into mg/mL, mcg/mL and U-100 syringe units. For in-vitro laboratory research only — not for human consumption."
-        canonical="https://phlabs.co.uk/peptide-calculator"
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+
 
       <header className="mb-8">
         <p className="text-sm font-semibold uppercase tracking-wide text-emerald-400">
