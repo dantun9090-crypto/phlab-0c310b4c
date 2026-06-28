@@ -219,6 +219,23 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // ---------- compound query history (server-written, admin-read) ----------
+    // Written by /api/public/hooks/compound-query-history (weekly cron) via
+    // the Firebase service account. Stores GSC query snapshots for /compound
+    // so admins can chart trend history and review flagged risky queries.
+    match /compound_query_history/{id} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // ---------- compound negatives audit (server-written, admin-read) ------
+    // Written when an admin uses "Apply negatives" in the CompoundQueries tab.
+    // Records what was pushed to Google Ads (dry-run + live) for audit.
+    match /compound_negatives_applied/{id} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
 
 
     // ---------- auth events (append-only diagnostic log) ----------
