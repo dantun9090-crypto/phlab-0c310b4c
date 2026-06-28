@@ -305,6 +305,48 @@ export default function CompoundQueriesTab() {
     }
   }
 
+  /**
+   * Scrub anything that looks like a credential before the dry-run JSON
+   * leaves the browser. Keeps `correlationId` intact so the file is still
+   * traceable end-to-end against the audit log.
+   *
+   * Redacts:
+   *  - Firebase idToken / OAuth access_token / refresh_token / id_token
+   *  - `Authorization`, `developer-token`, `x-goog-api-key` headers
+   *  - `Bearer ...` strings anywhere in the payload
+   *  - Google Ads customer IDs in `customers/<digits>/...` resource paths
+   *  - Bare JWT-shaped tokens (xxx.yyy.zzz)
+   */
+  function redactSensitiveJson(input: string): string {
+    const SENSITIVE_KEYS = new Set([
+      'idtoken', 'authorization', 'access_token', 'refresh_token', 'id_token',
+      'developer-token', 'developertoken', 'x-goog-api-key',
+      'client_secret', 'clientsecret', 'apikey', 'api_key',
+      'x-connection-api-key', 'login-customer-id',
+    ]);
+    let obj: unknown;
+    try { obj = JSON.parse(input); } catch { return input; }
+    const walk = (v: unknown): unknown => {
+      if (Array.isArray(v)) return v.map(walk);
+      if (v && typeof v === 'object') {
+        const out: Record<string, unknown> = {};
+        for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+          if (SENSITIVE_KEYS.has(k.toLowerCase())) out[k] = '[REDACTED]';
+          else out[k] = walk(val);
+        }
+        return out;
+      }
+      if (typeof v === 'string') {
+        return v
+          .replace(/Bearer\s+[A-Za-z0-9._-]+/gi, 'Bearer [REDACTED]')
+          .replace(/\bey[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g, '[REDACTED_JWT]')
+          .replace(/customers\/\d{6,}/g, 'customers/[REDACTED_CID]');
+      }
+      return v;
+    };
+    return JSON.stringify(walk(obj), null, 2);
+  }
+
   function downloadPreviewJson() {
     if (!applyPreview) return;
     let cid = 'preview';
@@ -312,16 +354,27 @@ export default function CompoundQueriesTab() {
       const parsed = JSON.parse(applyPreview) as { correlationId?: string };
       if (parsed.correlationId) cid = parsed.correlationId;
     } catch { /* ignore */ }
-    const blob = new Blob([applyPreview], { type: 'application/json' });
+    const redacted = redactSensitiveJson(applyPreview);
+    const wrapped = JSON.stringify(
+      {
+        _note: 'Sensitive fields redacted before download. correlationId preserved for tracing.',
+        correlationId: cid,
+        exportedAt: new Date().toISOString(),
+        payload: JSON.parse(redacted),
+      },
+      null,
+      2,
+    );
+    const blob = new Blob([wrapped], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `compound-negatives-dryrun-${cid}.json`;
+    a.download = `compound-negatives-dryrun-${cid}.redacted.json`;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    toast.success('Preview JSON downloaded');
+    toast.success('Redacted preview JSON downloaded');
   }
 
 

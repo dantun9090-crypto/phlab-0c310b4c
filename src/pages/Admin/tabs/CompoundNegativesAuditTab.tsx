@@ -43,6 +43,7 @@ export default function CompoundNegativesAuditTab() {
   const [rows, setRows] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<'all' | 'dry-run' | 'live'>('all');
+  const [cidQuery, setCidQuery] = useState('');
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   async function load() {
@@ -65,10 +66,28 @@ export default function CompoundNegativesAuditTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /**
+   * Filter pipeline:
+   *  1. Apply mode (all | dry-run | live)
+   *  2. Apply correlationId search (case-insensitive, substring)
+   *  3. When a CID search is active, sort chronologically ASC so the
+   *     dry-run → live sequence reads top-to-bottom.
+   */
   const filtered = useMemo(() => {
-    if (filter === 'all') return rows;
-    return rows.filter((r) => r.mode === filter);
-  }, [rows, filter]);
+    let out = filter === 'all' ? rows : rows.filter((r) => r.mode === filter);
+    const q = cidQuery.trim().toLowerCase();
+    if (q) {
+      out = out.filter((r) => (r.correlationId ?? '').toLowerCase().includes(q));
+      const tsOf = (v: AuditRow['createdAt']): number => {
+        if (!v) return 0;
+        if (typeof v === 'string') return new Date(v).getTime();
+        const s = v._seconds ?? v.seconds;
+        return typeof s === 'number' ? s * 1000 : 0;
+      };
+      out = [...out].sort((a, b) => tsOf(a.createdAt) - tsOf(b.createdAt));
+    }
+    return out;
+  }, [rows, filter, cidQuery]);
 
   function toggle(i: number) {
     setExpanded((p) => {
@@ -79,35 +98,98 @@ export default function CompoundNegativesAuditTab() {
     });
   }
 
-  function exportCsv() {
+
+  /**
+   * CSV export.
+   *  - "summary" mode: one row per audit entry (legacy shape, plus retry count).
+   *  - "attempts" mode: one row per retry attempt under the same correlationId,
+   *    so you can see attempt index → delay → final success/failure for each
+   *    operation grouped by correlationId.
+   */
+  function exportCsv(mode: 'summary' | 'attempts' = 'summary') {
+    const esc = (c: string) => (/[,"\r\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c);
+
+    if (mode === 'attempts') {
+      const header =
+        'CorrelationId,Timestamp,Mode,CampaignResourceId,OperationCount,AttemptIndex,AttemptCount,DelayMs,AttemptError,FinalHttpStatus,FinalOutcome\r\n';
+      const lines: string[] = [];
+      for (const r of filtered) {
+        const attempts =
+          r.retryAttempts && r.retryAttempts.length > 0
+            ? r.retryAttempts
+            : [{ attempt: 1, delayMs: 0, error: undefined as string | undefined }];
+        const total = attempts.length;
+        const lastErr = attempts[attempts.length - 1]?.error;
+        const httpOk =
+          typeof r.httpStatus === 'number' && r.httpStatus > 0 && r.httpStatus < 400;
+        const finalOutcome = r.mode === 'dry-run'
+          ? 'dry-run'
+          : httpOk && !lastErr
+          ? 'success'
+          : 'failure';
+        for (const a of attempts) {
+          lines.push(
+            [
+              r.correlationId ?? '',
+              fmtTs(r.createdAt),
+              r.mode ?? '',
+              r.campaignResourceId ?? '',
+              String(r.operationCount ?? r.negatives?.length ?? 0),
+              String(a.attempt),
+              String(total),
+              String(a.delayMs ?? 0),
+              a.error ?? '',
+              String(r.httpStatus ?? ''),
+              finalOutcome,
+            ]
+              .map(esc)
+              .join(','),
+          );
+        }
+      }
+      download(header + lines.join('\r\n') + '\r\n', `compound-negatives-attempts-${new Date().toISOString().slice(0, 10)}.csv`);
+      return;
+    }
+
     const header =
-      'Timestamp,CorrelationId,Mode,CampaignResourceId,OperationCount,RetryCount,HttpStatus,MinImpressions,GrowthRatio,WindowDays,Negatives\r\n';
+      'Timestamp,CorrelationId,Mode,CampaignResourceId,OperationCount,RetryCount,FinalOutcome,HttpStatus,MinImpressions,GrowthRatio,WindowDays,Negatives\r\n';
     const body = filtered
       .map((r) => {
-        const cells = [
+        const httpOk =
+          typeof r.httpStatus === 'number' && r.httpStatus > 0 && r.httpStatus < 400;
+        const lastErr = r.retryAttempts?.[r.retryAttempts.length - 1]?.error;
+        const finalOutcome = r.mode === 'dry-run'
+          ? 'dry-run'
+          : httpOk && !lastErr
+          ? 'success'
+          : 'failure';
+        return [
           fmtTs(r.createdAt),
           r.correlationId ?? '',
           r.mode ?? '',
           r.campaignResourceId ?? '',
           String(r.operationCount ?? r.negatives?.length ?? 0),
           String(r.retryAttempts?.length ?? 0),
+          finalOutcome,
           String(r.httpStatus ?? ''),
           String(r.thresholds?.minImpressions ?? ''),
           String(r.thresholds?.growthRatio ?? ''),
           String(r.thresholds?.windowDays ?? ''),
           (r.negatives ?? []).join(' | '),
-        ];
-
-        return cells
-          .map((c) => (/[,"\r\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c))
+        ]
+          .map(esc)
           .join(',');
       })
       .join('\r\n');
-    const blob = new Blob([header + body + '\r\n'], { type: 'text/csv;charset=utf-8' });
+    download(header + body + '\r\n', `compound-negatives-audit-${new Date().toISOString().slice(0, 10)}.csv`);
+  }
+
+  function download(text: string, name: string) {
+    const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `compound-negatives-audit-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = name;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
@@ -164,14 +246,45 @@ export default function CompoundNegativesAuditTab() {
         >
           {loading ? '⏳ Loading…' : '↻ Refresh'}
         </button>
+        <input
+          type="search"
+          value={cidQuery}
+          onChange={(e) => setCidQuery(e.target.value)}
+          placeholder="🔎 Filter by correlationId (e.g. cmp- / ui- / cron-)"
+          className="flex-1 min-w-[260px] border-2 border-slate-600 bg-slate-800 text-white rounded-lg px-3 py-2 text-xs font-mono placeholder:text-slate-500"
+          aria-label="Filter by correlation ID"
+        />
+        {cidQuery && (
+          <button
+            onClick={() => setCidQuery('')}
+            className="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-xs"
+          >
+            ✕ Clear
+          </button>
+        )}
         <button
-          onClick={exportCsv}
+          onClick={() => exportCsv('summary')}
           disabled={filtered.length === 0}
           className="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs"
+          title="One row per audit entry"
         >
-          ⬇ CSV
+          ⬇ CSV (summary)
+        </button>
+        <button
+          onClick={() => exportCsv('attempts')}
+          disabled={filtered.length === 0}
+          className="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs"
+          title="One row per retry attempt, grouped by correlationId"
+        >
+          ⬇ CSV (attempts)
         </button>
       </div>
+      {cidQuery && (
+        <p className="text-[11px] text-cyan-300 mb-3 font-mono">
+          Showing {filtered.length} attempt(s) for correlationId containing{' '}
+          <span className="bg-slate-800 px-1 rounded">{cidQuery}</span> · sorted oldest → newest
+        </p>
+      )}
 
       <div className="overflow-auto rounded-xl border-2 border-slate-700 bg-slate-900">
         <table className="w-full text-sm">
