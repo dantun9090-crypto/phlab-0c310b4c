@@ -116,6 +116,11 @@ export default function ToastAuditTab() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
+  // Health metrics — see src/components/admin/HealthMetrics.tsx
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
+  const [readErrors, setReadErrors] = useState(0);
+  const [refreshNonce, setRefreshNonce] = useState(0);
+
   useEffect(() => {
     setLoading(true);
     const q = query(collection(db, 'toastAuditLogs'), orderBy('timestamp', 'desc'), fbLimit(prefs.fetchLimit));
@@ -139,16 +144,18 @@ export default function ToastAuditTab() {
           };
         });
         setRows(arr);
+        setLastFetched(new Date());
         setLoading(false);
         setErr(null);
       },
       (e) => {
         console.error('ToastAudit snapshot error', e);
+        setReadErrors(n => n + 1);
         setErr(e?.message || 'Failed to load audit log');
         setLoading(false);
       });
     return () => unsub();
-  }, [prefs.fetchLimit]);
+  }, [prefs.fetchLimit, refreshNonce]);
 
   const filtered = useMemo(() => {
     const q = prefs.search.trim().toLowerCase();
