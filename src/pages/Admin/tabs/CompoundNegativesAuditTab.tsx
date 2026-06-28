@@ -117,16 +117,97 @@ export default function CompoundNegativesAuditTab() {
           (r.negatives ?? []).join(' | '),
         ];
 
-        return cells
-          .map((c) => (/[,"\r\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c))
+  /**
+   * CSV export.
+   *  - "summary" mode: one row per audit entry (legacy shape, plus retry count).
+   *  - "attempts" mode: one row per retry attempt under the same correlationId,
+   *    so you can see attempt index → delay → final success/failure for each
+   *    operation grouped by correlationId.
+   */
+  function exportCsv(mode: 'summary' | 'attempts' = 'summary') {
+    const esc = (c: string) => (/[,"\r\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c);
+
+    if (mode === 'attempts') {
+      const header =
+        'CorrelationId,Timestamp,Mode,CampaignResourceId,OperationCount,AttemptIndex,AttemptCount,DelayMs,AttemptError,FinalHttpStatus,FinalOutcome\r\n';
+      const lines: string[] = [];
+      for (const r of filtered) {
+        const attempts =
+          r.retryAttempts && r.retryAttempts.length > 0
+            ? r.retryAttempts
+            : [{ attempt: 1, delayMs: 0, error: undefined as string | undefined }];
+        const total = attempts.length;
+        const lastErr = attempts[attempts.length - 1]?.error;
+        const httpOk =
+          typeof r.httpStatus === 'number' && r.httpStatus > 0 && r.httpStatus < 400;
+        const finalOutcome = r.mode === 'dry-run'
+          ? 'dry-run'
+          : httpOk && !lastErr
+          ? 'success'
+          : 'failure';
+        for (const a of attempts) {
+          lines.push(
+            [
+              r.correlationId ?? '',
+              fmtTs(r.createdAt),
+              r.mode ?? '',
+              r.campaignResourceId ?? '',
+              String(r.operationCount ?? r.negatives?.length ?? 0),
+              String(a.attempt),
+              String(total),
+              String(a.delayMs ?? 0),
+              a.error ?? '',
+              String(r.httpStatus ?? ''),
+              finalOutcome,
+            ]
+              .map(esc)
+              .join(','),
+          );
+        }
+      }
+      download(header + lines.join('\r\n') + '\r\n', `compound-negatives-attempts-${new Date().toISOString().slice(0, 10)}.csv`);
+      return;
+    }
+
+    const header =
+      'Timestamp,CorrelationId,Mode,CampaignResourceId,OperationCount,RetryCount,FinalOutcome,HttpStatus,MinImpressions,GrowthRatio,WindowDays,Negatives\r\n';
+    const body = filtered
+      .map((r) => {
+        const httpOk =
+          typeof r.httpStatus === 'number' && r.httpStatus > 0 && r.httpStatus < 400;
+        const lastErr = r.retryAttempts?.[r.retryAttempts.length - 1]?.error;
+        const finalOutcome = r.mode === 'dry-run'
+          ? 'dry-run'
+          : httpOk && !lastErr
+          ? 'success'
+          : 'failure';
+        return [
+          fmtTs(r.createdAt),
+          r.correlationId ?? '',
+          r.mode ?? '',
+          r.campaignResourceId ?? '',
+          String(r.operationCount ?? r.negatives?.length ?? 0),
+          String(r.retryAttempts?.length ?? 0),
+          finalOutcome,
+          String(r.httpStatus ?? ''),
+          String(r.thresholds?.minImpressions ?? ''),
+          String(r.thresholds?.growthRatio ?? ''),
+          String(r.thresholds?.windowDays ?? ''),
+          (r.negatives ?? []).join(' | '),
+        ]
+          .map(esc)
           .join(',');
       })
       .join('\r\n');
-    const blob = new Blob([header + body + '\r\n'], { type: 'text/csv;charset=utf-8' });
+    download(header + body + '\r\n', `compound-negatives-audit-${new Date().toISOString().slice(0, 10)}.csv`);
+  }
+
+  function download(text: string, name: string) {
+    const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `compound-negatives-audit-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = name;
     a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
