@@ -250,26 +250,32 @@ export default function CompoundNegativesAuditTab() {
    * scoped to this origin, then hard-reload the admin page. Used when a stale
    * SW is serving an old admin bundle that 404s on refresh.
    */
-  async function resetServiceWorkerAndReload() {
-    const confirmed = window.confirm(
-      'Unregister the Service Worker, clear browser caches, and hard-reload the admin panel?',
-    );
-    if (!confirmed) return;
+  async function performSwReset() {
+    setSwResetBusy(true);
+    let unregistered = 0;
+    let cachesCleared = 0;
     try {
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map((r) => r.unregister()));
+        const results = await Promise.all(regs.map((r) => r.unregister()));
+        unregistered = results.filter(Boolean).length;
       }
       if ('caches' in window) {
         const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
+        const results = await Promise.all(keys.map((k) => caches.delete(k)));
+        cachesCleared = results.filter(Boolean).length;
       }
-      toast.success('Service Worker cleared — reloading…');
-      setTimeout(() => window.location.replace('/admin?sw=off'), 400);
+      toast.success(
+        `Cleared ${unregistered} service worker${unregistered === 1 ? '' : 's'} and ${cachesCleared} cache bucket${cachesCleared === 1 ? '' : 's'} — hard-reloading…`,
+      );
+      setSwResetOpen(false);
+      setTimeout(() => window.location.replace('/admin?sw=off'), 500);
     } catch (e) {
       toast.error(`SW reset failed: ${e instanceof Error ? e.message : String(e)}`);
+      setSwResetBusy(false);
     }
   }
+
 
 
   const counts = useMemo(
