@@ -77,7 +77,9 @@
   --secondary: oklch(0.968 0.007 247.896);
   --secondary-foreground: oklch(0.208 0.042 265.755);
   --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
+  /* WCAG AA fix: bumped from 0.554 → 0.48 so muted body text/headings hit
+     ≥4.5:1 contrast against --muted (0.968) and --background (1.0). */
+  --muted-foreground: oklch(0.48 0.046 257.417);
   --accent: oklch(0.968 0.007 247.896);
   --accent-foreground: oklch(0.208 0.042 265.755);
   --destructive: oklch(0.577 0.245 27.325);
