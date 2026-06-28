@@ -246,14 +246,45 @@ export default function CompoundNegativesAuditTab() {
         >
           {loading ? '⏳ Loading…' : '↻ Refresh'}
         </button>
+        <input
+          type="search"
+          value={cidQuery}
+          onChange={(e) => setCidQuery(e.target.value)}
+          placeholder="🔎 Filter by correlationId (e.g. cmp- / ui- / cron-)"
+          className="flex-1 min-w-[260px] border-2 border-slate-600 bg-slate-800 text-white rounded-lg px-3 py-2 text-xs font-mono placeholder:text-slate-500"
+          aria-label="Filter by correlation ID"
+        />
+        {cidQuery && (
+          <button
+            onClick={() => setCidQuery('')}
+            className="bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-2 rounded-lg text-xs"
+          >
+            ✕ Clear
+          </button>
+        )}
         <button
-          onClick={exportCsv}
+          onClick={() => exportCsv('summary')}
           disabled={filtered.length === 0}
           className="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs"
+          title="One row per audit entry"
         >
-          ⬇ CSV
+          ⬇ CSV (summary)
+        </button>
+        <button
+          onClick={() => exportCsv('attempts')}
+          disabled={filtered.length === 0}
+          className="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs"
+          title="One row per retry attempt, grouped by correlationId"
+        >
+          ⬇ CSV (attempts)
         </button>
       </div>
+      {cidQuery && (
+        <p className="text-[11px] text-cyan-300 mb-3 font-mono">
+          Showing {filtered.length} attempt(s) for correlationId containing{' '}
+          <span className="bg-slate-800 px-1 rounded">{cidQuery}</span> · sorted oldest → newest
+        </p>
+      )}
 
       <div className="overflow-auto rounded-xl border-2 border-slate-700 bg-slate-900">
         <table className="w-full text-sm">
