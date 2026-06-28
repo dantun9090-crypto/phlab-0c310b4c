@@ -199,4 +199,48 @@ test.describe("/resources/peptide-categories-uk-research", () => {
       `https://phlabs.co.uk/resources/${SLUG}`,
     );
   });
+
+  test("has no critical axe WCAG violations", async ({ page }) => {
+    await page.goto(URL, { waitUntil: "domcontentloaded" });
+    await expect(page.locator("h1")).toContainText(/Peptide Categories/i, {
+      timeout: 15_000,
+    });
+    await page
+      .waitForLoadState("load", { timeout: 10_000 })
+      .catch(() => undefined);
+
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"])
+      .disableRules(["region"])
+      .analyze();
+
+    const blocking = results.violations.filter((v) => v.impact === "critical");
+    const serious = results.violations.filter((v) => v.impact === "serious");
+
+    if (blocking.length > 0) {
+      const summary = blocking
+        .map(
+          (v) =>
+            `  - [${v.impact}] ${v.id}: ${v.help} (${v.nodes.length} node${
+              v.nodes.length === 1 ? "" : "s"
+            })\n    ${v.helpUrl}`,
+        )
+        .join("\n");
+      console.error(
+        `\n${blocking.length} critical /resources/${SLUG} a11y violation(s):\n${summary}\n`,
+      );
+    }
+    if (serious.length > 0) {
+      console.warn(
+        `\n${serious.length} serious non-blocking a11y warning(s) on /resources/${SLUG}: ${serious
+          .map((v) => v.id)
+          .join(", ")}\n`,
+      );
+    }
+
+    expect(
+      blocking,
+      `${blocking.length} critical axe violation(s) — see console`,
+    ).toEqual([]);
+  });
 });
