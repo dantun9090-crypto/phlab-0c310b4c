@@ -88,6 +88,7 @@ export default function ReindexHookTab() {
           type="button"
           onClick={submit}
           disabled={busy}
+          data-testid="reindex-trigger"
           className="inline-flex items-center gap-2 px-4 py-2.5 min-h-[48px] rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold disabled:opacity-50"
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}
