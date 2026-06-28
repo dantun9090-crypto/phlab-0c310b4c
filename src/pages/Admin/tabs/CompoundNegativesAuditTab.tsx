@@ -57,6 +57,8 @@ export default function CompoundNegativesAuditTab() {
   const [filter, setFilter] = useState<'all' | 'dry-run' | 'live'>('all');
   const [cidQuery, setCidQuery] = useState('');
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [swResetOpen, setSwResetOpen] = useState(false);
+  const [swResetBusy, setSwResetBusy] = useState(false);
 
   async function load() {
     setLoading(true);
