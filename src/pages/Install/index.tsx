@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Smartphone, Apple, Monitor, Chrome, Share, MoreVertical, Download, CheckCircle2 } from 'lucide-react';
 import InstallAppButton from '@/components/InstallAppButton';
+import InstallDiagnostics from '@/components/InstallDiagnostics';
 
 type Platform =
   | 'ios-safari'
@@ -189,6 +190,8 @@ export default function InstallPage() {
             dismissed it. Use the button above to install anytime.
           </Faq>
         </div>
+
+        <InstallDiagnostics />
       </div>
     </div>
   );

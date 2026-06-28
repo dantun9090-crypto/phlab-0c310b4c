@@ -1,10 +1,25 @@
 // Guarded service-worker registration for PH Labs.
-// - Registers /sw.js only in production browsers on real PH Labs origins.
-// - Refuses to register in Lovable preview, iframes, dev, or when `?sw=off`
-//   is in the URL. In any refused context we proactively unregister our SW
-//   so stale workers can't strand users on a cached page.
+//
+// We register a minimal **install-only** SW (`/sw.js`) on real PH Labs
+// production origins so Chromium fires `beforeinstallprompt` and the in-page
+// Install button on /install actually works. The SW never caches or
+// intercepts responses (see public/sw.js), so it cannot cause stale-chunk
+// blank pages.
+//
+// Anywhere we should NOT register (Lovable preview, iframe, dev, `?sw=off`)
+// we proactively unregister any prior SW + clear Cache Storage so users
+// can't get stranded on a stale registration.
+
+import { isMarketingRoute } from '@/lib/is-marketing-route';
 
 const SW_URL = '/sw.js';
+
+const PHLABS_HOSTS = new Set<string>([
+  'phlabs.co.uk',
+  'www.phlabs.co.uk',
+  'prohealthpeptides.co.uk',
+  'www.prohealthpeptides.co.uk',
+]);
 
 function isLovablePreviewHost(host: string): boolean {
   return (
@@ -21,17 +36,20 @@ function isLovablePreviewHost(host: string): boolean {
   );
 }
 
-function isOwnRegistration(r: ServiceWorkerRegistration): boolean {
-  const scriptURL = r.active?.scriptURL || r.installing?.scriptURL || r.waiting?.scriptURL || '';
-  if (!scriptURL) return false;
+function shouldRegister(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (!('serviceWorker' in navigator)) return false;
   try {
-    const u = new URL(scriptURL);
-    if (u.origin !== window.location.origin) return false;
-    const basename = u.pathname.split('/').pop();
-    return basename === 'sw.js' || basename === 'service-worker.js';
-  } catch (_) {
+    if (window.top !== window.self) return false; // iframe
+  } catch {
     return false;
   }
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('sw') === 'off') return false;
+  const host = url.hostname;
+  if (isLovablePreviewHost(host)) return false;
+  if (!PHLABS_HOSTS.has(host)) return false;
+  return true;
 }
 
 async function unregisterServiceWorkersAndCaches() {
@@ -50,7 +68,6 @@ async function unregisterServiceWorkersAndCaches() {
       const names = await caches.keys();
       await Promise.all(
         names.map(async (name) => {
-          try { console.info('Cache deleted:', name); } catch (_) {}
           try { await caches.delete(name); } catch (_) {}
         })
       );
@@ -58,28 +75,36 @@ async function unregisterServiceWorkersAndCaches() {
   } catch (_) {}
 }
 
-import { isMarketingRoute } from '@/lib/is-marketing-route';
-
 export function registerOfflineSW() {
   if (typeof window === 'undefined') return;
   if (!('serviceWorker' in navigator)) return;
-  // Marketing landings (e.g. /compound) skip the SW cleanup pass — they
-  // load no SW themselves and the cleanup work eats main-thread time
-  // during LCP. The cleanup will run on the user's next navigation into
-  // the main app.
+
+  // Marketing landings skip all SW work to protect LCP. The decision is
+  // re-evaluated on the user's next navigation into the main app.
   if (isMarketingRoute()) return;
 
-  // We do NOT register any service worker. Caching an app-shell SW caused
-  // stale-chunk blank pages on mobile / installed PWAs after deploys; the
-  // chunk-reload safety net (src/lib/chunk-reload.ts) handles recovery on
-  // the rare lazy-import failure without holding stale HTML.
-  //
-  // Emergency cleanup: unregister every old service worker and clear every
-  // Cache Storage bucket so stale workers cannot serve JS with a bad MIME type.
-  void unregisterServiceWorkersAndCaches();
-  // Reference SW_URL so the export stays meaningful and the variable is not
-  // dropped by tree-shaking lints.
-  void SW_URL;
+  if (!shouldRegister()) {
+    void unregisterServiceWorkersAndCaches();
+    return;
+  }
+
+  // Defer past load so it never competes with LCP.
+  const register = () => {
+    navigator.serviceWorker
+      .register(SW_URL, { scope: '/' })
+      .then((reg) => {
+        try { console.info('SW registered (install-only):', reg.scope); } catch (_) {}
+      })
+      .catch((err) => {
+        try { console.warn('SW registration failed:', err); } catch (_) {}
+      });
+  };
+
+  if (document.readyState === 'complete') {
+    setTimeout(register, 0);
+  } else {
+    window.addEventListener('load', () => setTimeout(register, 0), { once: true });
+  }
 }
 
 registerOfflineSW();
