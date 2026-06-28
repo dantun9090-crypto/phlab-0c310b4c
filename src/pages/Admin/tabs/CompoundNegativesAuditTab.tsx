@@ -81,20 +81,23 @@ export default function CompoundNegativesAuditTab() {
 
   function exportCsv() {
     const header =
-      'Timestamp,Mode,CampaignResourceId,OperationCount,HttpStatus,MinImpressions,GrowthRatio,WindowDays,Negatives\r\n';
+      'Timestamp,CorrelationId,Mode,CampaignResourceId,OperationCount,RetryCount,HttpStatus,MinImpressions,GrowthRatio,WindowDays,Negatives\r\n';
     const body = filtered
       .map((r) => {
         const cells = [
           fmtTs(r.createdAt),
+          r.correlationId ?? '',
           r.mode ?? '',
           r.campaignResourceId ?? '',
           String(r.operationCount ?? r.negatives?.length ?? 0),
+          String(r.retryAttempts?.length ?? 0),
           String(r.httpStatus ?? ''),
           String(r.thresholds?.minImpressions ?? ''),
           String(r.thresholds?.growthRatio ?? ''),
           String(r.thresholds?.windowDays ?? ''),
           (r.negatives ?? []).join(' | '),
         ];
+
         return cells
           .map((c) => (/[,"\r\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c))
           .join(',');
