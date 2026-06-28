@@ -145,29 +145,29 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           <h1 className="display font-light tracking-tight text-white text-[2.8rem] leading-[1.02] sm:text-[4.2rem] md:text-[5.5rem] lg:text-[6.5rem]">
             <span className="block lux-fade-up d2">Premium Research</span>
             <span className="block lux-fade-up d3">Compounds for</span>
-            <span className="block lux-fade-up d4 italic gold-text">Scientific Laboratories</span>
+            <span className="block lux-fade-up d4 italic gold-text">UK Laboratories</span>
           </h1>
 
           <div className="mx-auto mt-8 h-px w-20 gold-bg lux-line d3" />
 
           <p className="lux-fade-up d5 mx-auto mt-10 max-w-2xl text-base sm:text-lg font-light leading-[1.7] text-white/70">
-            High-purity research materials prepared under controlled UK laboratory
-            conditions for professional scientific applications.
+            High-purity materials prepared under controlled laboratory conditions
+            with independent HPLC verification and full batch documentation.
           </p>
 
           <div className="lux-fade-up d6 mt-14 flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
-              href="#request-form"
+              href="/contact"
               className="group inline-flex items-center justify-center px-10 py-4 rounded-full gold-bg text-[#060b18] text-[12px] tracking-[0.2em] uppercase font-semibold transition-all hover:brightness-110 hover:scale-[1.02] shadow-[0_24px_60px_-20px_rgba(201,164,76,0.55)]"
             >
-              Request Research Documentation
+              Contact Research Team
               <span className="ml-3 transition-transform group-hover:translate-x-1.5">→</span>
             </a>
             <a
-              href="#standards"
+              href="#request-form"
               className="inline-flex items-center justify-center px-10 py-4 rounded-full border gold-border text-white text-[12px] tracking-[0.2em] uppercase font-medium transition-all hover:bg-white/[0.04] hover:border-[#c9a44c]/60"
             >
-              Our Standards
+              Request Documentation
             </a>
           </div>
 
@@ -214,11 +214,12 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         <div className="lux-marquee flex whitespace-nowrap py-7 text-[11px] uppercase tracking-[0.55em] text-white/50">
           {Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="flex shrink-0 items-center gap-14 pr-14">
-              <span>Premium Research Materials</span><span className="gold-text text-lg">◆</span>
-              <span>United Kingdom Laboratory</span><span className="gold-text text-lg">◆</span>
-              <span>Verified Purity Standards</span><span className="gold-text text-lg">◆</span>
-              <span>Per-Batch Documentation</span><span className="gold-text text-lg">◆</span>
-              <span>Controlled Conditions</span><span className="gold-text text-lg">◆</span>
+              <span>99%+ Purity</span><span className="gold-text text-lg">◆</span>
+              <span>Independent HPLC Analysis</span><span className="gold-text text-lg">◆</span>
+              <span>UK-Based Laboratory</span><span className="gold-text text-lg">◆</span>
+              <span>Per-Batch Certificate of Analysis</span><span className="gold-text text-lg">◆</span>
+              <span>Same-Day Dispatch · Before 15:00 GMT</span><span className="gold-text text-lg">◆</span>
+              <span>Cold-Chain Shipping</span><span className="gold-text text-lg">◆</span>
             </div>
           ))}
         </div>
@@ -287,17 +288,17 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           <div className="text-center">
             <p className="text-[11px] uppercase tracking-[0.55em] gold-text">§ 02·B — Why PH Labs</p>
             <h2 className="mt-6 display text-[2.4rem] sm:text-[3rem] md:text-[3.5rem] font-light text-white leading-[1.1]">
-              Four pillars that <span className="italic gold-text">define our work</span>
+              Built for <span className="italic gold-text">Scientific Excellence</span>
             </h2>
             <div className="mx-auto mt-8 h-px w-16 gold-bg" />
           </div>
 
           <div className="mt-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { n: '01', t: 'UK Laboratory', d: 'Controlled, temperature-monitored facility based in the United Kingdom.', sym: '⌬' },
-              { n: '02', t: 'Per-Batch COA', d: 'Independent HPLC analysis attached to every consignment we dispatch.', sym: '✓' },
-              { n: '03', t: 'Cold-Chain Logistics', d: 'Insulated, tracked dispatch designed for sensitive research materials.', sym: '❄' },
-              { n: '04', t: 'Discreet Handling', d: 'Confidential laboratory packaging — never branded externally.', sym: '◈' },
+              { n: '01', t: 'United Kingdom Laboratory', d: 'All compounds are synthesized, purified, and handled in our UK facility under strict controlled conditions.', sym: '⌬' },
+              { n: '02', t: 'Verified Purity', d: 'Every batch undergoes independent third-party HPLC testing with detailed analytical reports.', sym: '✓' },
+              { n: '03', t: 'Full Documentation', d: 'Certificate of Analysis provided with every shipment for complete traceability.', sym: '◈' },
+              { n: '04', t: 'Professional Handling', d: 'Temperature-controlled storage and discreet, unbranded packaging for research institutions.', sym: '❄' },
             ].map((p) => (
               <article
                 key={p.n}
@@ -322,7 +323,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           <div className="text-center">
             <p className="text-[11px] uppercase tracking-[0.55em] gold-text">§ 02·C — Quality Control</p>
             <h2 className="mt-6 display text-[2.4rem] sm:text-[3rem] md:text-[3.5rem] font-light text-white leading-[1.1]">
-              From synthesis to <span className="italic gold-text">your laboratory</span>
+              From Synthesis to Dispatch — <span className="italic gold-text">Five Stage Protocol</span>
             </h2>
             <div className="mx-auto mt-8 h-px w-16 gold-bg" />
             <p className="mx-auto mt-8 max-w-2xl text-sm sm:text-base text-white/65 font-light leading-[1.8]">
@@ -500,6 +501,38 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
               </p>
             )}
           </form>
+        </div>
+      </section>
+
+      {/* ── FINAL CTA ── */}
+      <section id="final-cta" className="border-b border-white/10 py-28 sm:py-36 bg-gradient-to-b from-[#080e1f] to-[#060b18]">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <p className="text-[11px] uppercase tracking-[0.55em] gold-text">§ 05 — Get In Touch</p>
+          <h2 className="mt-6 display text-[2.2rem] sm:text-[2.75rem] md:text-[3.25rem] font-light text-white leading-[1.15]">
+            Ready to proceed with <span className="italic gold-text">your research?</span>
+          </h2>
+          <div className="mx-auto mt-8 h-px w-16 gold-bg" />
+          <p className="mt-8 mx-auto max-w-xl text-base font-light leading-[1.75] text-white/70">
+            Our team is available to provide detailed product information and
+            documentation to qualified researchers.
+          </p>
+          <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a
+              href="/contact"
+              className="inline-flex items-center justify-center px-9 py-4 rounded-full gold-bg text-[#060b18] text-[12px] tracking-[0.2em] uppercase font-semibold transition-all hover:brightness-110 shadow-[0_24px_60px_-20px_rgba(201,164,76,0.55)]"
+            >
+              Message Research Team →
+            </a>
+            <a
+              href="#request-form"
+              className="inline-flex items-center justify-center px-9 py-4 rounded-full border gold-border text-white text-[12px] tracking-[0.2em] uppercase font-medium transition-all hover:bg-white/[0.04]"
+            >
+              Request Full Catalogue
+            </a>
+          </div>
+          <p className="mt-8 text-[11px] uppercase tracking-[0.35em] text-white/40">
+            Restricted to qualified researchers · For research use only
+          </p>
         </div>
       </section>
 
