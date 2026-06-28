@@ -145,29 +145,29 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           <h1 className="display font-light tracking-tight text-white text-[2.8rem] leading-[1.02] sm:text-[4.2rem] md:text-[5.5rem] lg:text-[6.5rem]">
             <span className="block lux-fade-up d2">Premium Research</span>
             <span className="block lux-fade-up d3">Compounds for</span>
-            <span className="block lux-fade-up d4 italic gold-text">Scientific Laboratories</span>
+            <span className="block lux-fade-up d4 italic gold-text">UK Laboratories</span>
           </h1>
 
           <div className="mx-auto mt-8 h-px w-20 gold-bg lux-line d3" />
 
           <p className="lux-fade-up d5 mx-auto mt-10 max-w-2xl text-base sm:text-lg font-light leading-[1.7] text-white/70">
-            High-purity research materials prepared under controlled UK laboratory
-            conditions for professional scientific applications.
+            High-purity materials prepared under controlled laboratory conditions
+            with independent HPLC verification and full batch documentation.
           </p>
 
           <div className="lux-fade-up d6 mt-14 flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
-              href="#request-form"
+              href="/contact"
               className="group inline-flex items-center justify-center px-10 py-4 rounded-full gold-bg text-[#060b18] text-[12px] tracking-[0.2em] uppercase font-semibold transition-all hover:brightness-110 hover:scale-[1.02] shadow-[0_24px_60px_-20px_rgba(201,164,76,0.55)]"
             >
-              Request Research Documentation
+              Contact Research Team
               <span className="ml-3 transition-transform group-hover:translate-x-1.5">→</span>
             </a>
             <a
-              href="#standards"
+              href="#request-form"
               className="inline-flex items-center justify-center px-10 py-4 rounded-full border gold-border text-white text-[12px] tracking-[0.2em] uppercase font-medium transition-all hover:bg-white/[0.04] hover:border-[#c9a44c]/60"
             >
-              Our Standards
+              Request Documentation
             </a>
           </div>
 
