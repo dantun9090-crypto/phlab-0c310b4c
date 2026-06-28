@@ -1,0 +1,100 @@
+name: E2E — /resources/peptide-categories-uk-research regression
+
+# Visual, SEO head, sitemap, navigation, and axe a11y regression for the
+# compliant Semrush pillar article. Runs on every PR touching the article,
+# its route, the SEO helpers, the sitemap, or the spec itself, plus nightly
+# and on demand. Matrix runs Chromium + Firefox; the visual-snapshot test
+# inside the spec is skipped on Firefox (font hinting differs).
+
+on:
+  pull_request:
+    paths:
+      - "src/routes/resources.peptide-categories-uk-research.tsx"
+      - "src/routes/resources.tsx"
+      - "src/pages/Resources/data/articles.ts"
+      - "src/pages/Resources/data/articles-index.ts"
+      - "src/lib/legacy-mount.tsx"
+      - "src/lib/seo-meta.ts"
+      - "src/routes/sitemap[.]xml.ts"
+      - "e2e/resources-peptide-categories-visual.spec.ts"
+      - "playwright.config.ts"
+      - ".github/workflows/e2e-resources-peptide-categories.yml"
+  schedule:
+    - cron: "37 5 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-resources-peptide-categories-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox]
+    env:
+      TEST_BASE_URL: http://localhost:8080
+      RESOURCES_BASE_URL: http://localhost:8080
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browser (${{ matrix.browser }})
+        run: bunx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Start dev server
+        run: |
+          (bun run dev > server.log 2>&1 &)
+          for i in $(seq 1 90); do
+            if curl -fsS -o /dev/null "http://localhost:8080/"; then
+              echo "server up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "server failed to start"; tail -n 200 server.log; exit 1
+
+      - name: Run resources-peptide-categories-visual spec
+        run: |
+          bunx playwright test \
+            e2e/resources-peptide-categories-visual.spec.ts \
+            --project=${{ matrix.browser }} \
+            --reporter=list,html,junit
+        env:
+          PLAYWRIGHT_JUNIT_OUTPUT_NAME: test-results/junit.xml
+
+      - name: Upload Playwright HTML report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-resources-peptide-categories-${{ matrix.browser }}
+          path: playwright-report
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload screenshots / videos / trace.zip (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results-resources-peptide-categories-${{ matrix.browser }}
+          # test-results/ holds per-test trace.zip, screenshots, and videos.
+          path: test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Upload server log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-log-resources-peptide-categories-${{ matrix.browser }}
+          path: server.log
+          if-no-files-found: ignore
+          retention-days: 7
