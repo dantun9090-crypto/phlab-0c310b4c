@@ -504,6 +504,38 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         </div>
       </section>
 
+      {/* ── FINAL CTA ── */}
+      <section id="final-cta" className="border-b border-white/10 py-28 sm:py-36 bg-gradient-to-b from-[#080e1f] to-[#060b18]">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <p className="text-[11px] uppercase tracking-[0.55em] gold-text">§ 05 — Get In Touch</p>
+          <h2 className="mt-6 display text-[2.2rem] sm:text-[2.75rem] md:text-[3.25rem] font-light text-white leading-[1.15]">
+            Ready to proceed with <span className="italic gold-text">your research?</span>
+          </h2>
+          <div className="mx-auto mt-8 h-px w-16 gold-bg" />
+          <p className="mt-8 mx-auto max-w-xl text-base font-light leading-[1.75] text-white/70">
+            Our team is available to provide detailed product information and
+            documentation to qualified researchers.
+          </p>
+          <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <a
+              href="/contact"
+              className="inline-flex items-center justify-center px-9 py-4 rounded-full gold-bg text-[#060b18] text-[12px] tracking-[0.2em] uppercase font-semibold transition-all hover:brightness-110 shadow-[0_24px_60px_-20px_rgba(201,164,76,0.55)]"
+            >
+              Message Research Team →
+            </a>
+            <a
+              href="#request-form"
+              className="inline-flex items-center justify-center px-9 py-4 rounded-full border gold-border text-white text-[12px] tracking-[0.2em] uppercase font-medium transition-all hover:bg-white/[0.04]"
+            >
+              Request Full Catalogue
+            </a>
+          </div>
+          <p className="mt-8 text-[11px] uppercase tracking-[0.35em] text-white/40">
+            Restricted to qualified researchers · For research use only
+          </p>
+        </div>
+      </section>
+
       {/* ── LEGAL DISCLAIMER ── */}
       <section id="disclaimer" className="py-24 sm:py-32 bg-[#060b18]">
         <div className="mx-auto max-w-3xl px-6 text-center">
