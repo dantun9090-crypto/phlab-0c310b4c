@@ -125,6 +125,7 @@ describe('HealthMetrics', () => {
     expect(toggle).toHaveAttribute('aria-checked', 'false');
     act(() => { vi.advanceTimersByTime(120_000); });
     expect(onRefresh).toHaveBeenCalledTimes(3);
+  });
 
   it('renders latency when lastLatencyMs is a non-negative number, hidden otherwise', () => {
     const { rerender } = render(
