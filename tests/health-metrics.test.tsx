@@ -248,7 +248,6 @@ describe('HealthMetrics', () => {
     expect(b).toHaveBeenCalledTimes(1);
     expect(a).toHaveBeenCalledTimes(1);
   });
-});
 
   it('auto-refresh respects defaultAutoRefresh and enforces a 5s minimum', () => {
     const onRefresh = vi.fn();
