@@ -66,10 +66,28 @@ export default function CompoundNegativesAuditTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /**
+   * Filter pipeline:
+   *  1. Apply mode (all | dry-run | live)
+   *  2. Apply correlationId search (case-insensitive, substring)
+   *  3. When a CID search is active, sort chronologically ASC so the
+   *     dry-run → live sequence reads top-to-bottom.
+   */
   const filtered = useMemo(() => {
-    if (filter === 'all') return rows;
-    return rows.filter((r) => r.mode === filter);
-  }, [rows, filter]);
+    let out = filter === 'all' ? rows : rows.filter((r) => r.mode === filter);
+    const q = cidQuery.trim().toLowerCase();
+    if (q) {
+      out = out.filter((r) => (r.correlationId ?? '').toLowerCase().includes(q));
+      const tsOf = (v: AuditRow['createdAt']): number => {
+        if (!v) return 0;
+        if (typeof v === 'string') return new Date(v).getTime();
+        const s = v._seconds ?? v.seconds;
+        return typeof s === 'number' ? s * 1000 : 0;
+      };
+      out = [...out].sort((a, b) => tsOf(a.createdAt) - tsOf(b.createdAt));
+    }
+    return out;
+  }, [rows, filter, cidQuery]);
 
   function toggle(i: number) {
     setExpanded((p) => {
