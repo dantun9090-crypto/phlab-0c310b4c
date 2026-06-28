@@ -323,7 +323,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           <div className="text-center">
             <p className="text-[11px] uppercase tracking-[0.55em] gold-text">§ 02·C — Quality Control</p>
             <h2 className="mt-6 display text-[2.4rem] sm:text-[3rem] md:text-[3.5rem] font-light text-white leading-[1.1]">
-              From synthesis to <span className="italic gold-text">your laboratory</span>
+              From Synthesis to Dispatch — <span className="italic gold-text">Five Stage Protocol</span>
             </h2>
             <div className="mx-auto mt-8 h-px w-16 gold-bg" />
             <p className="mx-auto mt-8 max-w-2xl text-sm sm:text-base text-white/65 font-light leading-[1.8]">
