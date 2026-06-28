@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
-import { auth } from '@/integrations/firebase/client';
+import { auth } from '@/lib/firebase';
 import { fetchCompoundQueries } from '@/lib/compound-queries.functions';
 import { toast } from 'sonner';
 
