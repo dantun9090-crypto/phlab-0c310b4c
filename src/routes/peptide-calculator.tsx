@@ -12,9 +12,38 @@
  */
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { SEOHead } from "@/components/SEOHead";
+
+const TITLE = "Peptide Reconstitution Calculator UK | PH Labs";
+const DESCRIPTION =
+  "Free research peptide reconstitution calculator. Convert vial mg + BAC water mL into mg/mL, mcg/mL and U-100 syringe units. For in-vitro laboratory research only — not for human consumption.";
+const URL_SELF = "https://phlabs.co.uk/peptide-calculator";
+
+const APP_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "PH Labs Peptide Reconstitution Calculator (UK)",
+  applicationCategory: "ScientificCalculatorApplication",
+  operatingSystem: "Any",
+  url: URL_SELF,
+  description: DESCRIPTION,
+  offers: { "@type": "Offer", price: "0", priceCurrency: "GBP" },
+};
 
 export const Route = createFileRoute("/peptide-calculator")({
+  head: () => ({
+    meta: [
+      { title: TITLE },
+      { name: "description", content: DESCRIPTION },
+      { name: "robots", content: "index,follow" },
+      { name: "keywords", content: "peptide calculator uk, peptide reconstitution calculator, bac water peptide calculator, research peptide mg ml, peptide dosing calculator uk" },
+      { property: "og:title", content: TITLE },
+      { property: "og:description", content: DESCRIPTION },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: URL_SELF },
+    ],
+    links: [{ rel: "canonical", href: URL_SELF }],
+    scripts: [{ type: "application/ld+json", children: JSON.stringify(APP_LD) }],
+  }),
   component: PeptideCalculatorPage,
 });
 
