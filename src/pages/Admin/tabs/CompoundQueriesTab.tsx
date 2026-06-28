@@ -442,7 +442,14 @@ export default function CompoundQueriesTab() {
               <h3 className="text-white font-semibold">
                 🛡 Proposed negative keywords ({proposedNegatives.size})
               </h3>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={downloadSampleCsv}
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-100 px-3 py-2 rounded-lg text-xs border border-slate-600"
+                  title="Download a tiny example CSV matching Google Ads Editor schema"
+                >
+                  📄 Sample CSV
+                </button>
                 <button
                   onClick={exportNegativesCsv}
                   className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded-lg text-xs"
@@ -454,12 +461,13 @@ export default function CompoundQueriesTab() {
                   disabled={applying || proposedNegatives.size === 0}
                   className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs font-semibold"
                 >
-                  {applying ? '⏳' : '🔍'} Dry-run
+                  {applying ? '⏳' : '🔍'} Dry-run preview
                 </button>
                 <button
                   onClick={applyLive}
                   disabled={applying || proposedNegatives.size === 0 || !campaignResourceId.trim()}
                   className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white px-3 py-2 rounded-lg text-xs font-semibold"
+                  title="Live push requires a successful dry-run first"
                 >
                   🚀 Apply live
                 </button>
