@@ -320,15 +320,66 @@ export const listCompoundHistory = createServerFn({ method: 'POST' })
 
 // ─── Apply negatives to Google Ads (dry-run + live) ─────────────────────
 
-/** Build a Google Ads Editor CSV of negative keywords. */
-export function buildNegativesCsv(campaignName: string, negatives: string[]): string {
-  // Google Ads Editor — Negative campaign keyword bulk format.
-  const header = 'Campaign,Keyword,Match Type,Criterion Type\n';
-  const lines = negatives
-    .map((kw) => `${JSON.stringify(campaignName)},${JSON.stringify(kw)},Phrase,Negative Keyword`)
-    .join('\n');
-  return header + lines + '\n';
+/**
+ * RFC 4180–style CSV cell escaping — wraps in double quotes only when
+ * needed, escapes embedded quotes by doubling them.
+ */
+function csvCell(value: string | number): string {
+  const s = String(value);
+  if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
 }
+
+export type NegativeMatchType = 'Broad' | 'Phrase' | 'Exact';
+
+/**
+ * Build a Google Ads Editor–compatible negative-keyword bulk CSV.
+ *
+ * Header order matches the Google Ads Editor import schema for
+ * "Campaign negative keyword" rows:
+ *   Campaign, Keyword, Criterion Type, Match Type, Status
+ *
+ * - Criterion Type is always "Negative Keyword" (campaign-level negative).
+ * - Match Type defaults to "Phrase" (safest balance of breadth vs. precision).
+ * - Status defaults to "Enabled" so the import activates immediately.
+ *
+ * Reference: Google Ads Editor → File → Export → CSV column reference.
+ */
+export function buildNegativesCsv(
+  campaignName: string,
+  negatives: string[],
+  matchType: NegativeMatchType = 'Phrase',
+  status: 'Enabled' | 'Paused' = 'Enabled',
+): string {
+  const header = 'Campaign,Keyword,Criterion Type,Match Type,Status\r\n';
+  const rows = negatives
+    .map((kw) =>
+      [
+        csvCell(campaignName),
+        csvCell(kw.trim().toLowerCase()),
+        'Negative Keyword',
+        matchType,
+        status,
+      ].join(','),
+    )
+    .join('\r\n');
+  return rows ? header + rows + '\r\n' : header;
+}
+
+/**
+ * Static sample CSV — same exact schema as live exports — so admins can
+ * download a known-good reference before importing into Google Ads Editor.
+ */
+export function buildSampleNegativesCsv(): string {
+  return buildNegativesCsv(
+    'PHLABS — Compound Search',
+    ['recreational use', 'how to inject', 'weight loss', 'human consumption'],
+    'Phrase',
+    'Enabled',
+  );
+}
+
+
 
 const ADS_API_VERSION = 'v18';
 const ADS_API_BASE = `https://googleads.googleapis.com/${ADS_API_VERSION}`;
