@@ -70,20 +70,6 @@ function PeptideCalculatorPage() {
     };
   }, [vialMg, bacMl, desiredMcg, syringeUnits]);
 
-  const jsonLd = useMemo(
-    () => ({
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      name: "PH Labs Peptide Reconstitution Calculator (UK)",
-      applicationCategory: "ScientificCalculatorApplication",
-      operatingSystem: "Any",
-      url: "https://phlabs.co.uk/peptide-calculator",
-      description:
-        "Free UK research-peptide reconstitution and concentration calculator. Convert lyophilised vial mass and bacteriostatic water diluent volume into mg/mL, mcg/mL, mL per dose and U-100 syringe units. For in-vitro laboratory research only — not for human consumption.",
-      offers: { "@type": "Offer", price: "0", priceCurrency: "GBP" },
-    }),
-    [],
-  );
 
   return (
     <main className="mx-auto min-h-screen max-w-3xl bg-slate-950 px-4 py-12 text-slate-100">
