@@ -23,6 +23,7 @@ import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PrivacyRequestsRouteImport } from './routes/privacy-requests'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as PeptideCalculatorRouteImport } from './routes/peptide-calculator'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as LabReportsRouteImport } from './routes/lab-reports'
 import { Route as InstallRouteImport } from './routes/install'
 import { Route as GoogleMerchantFeedDotxmlRouteImport } from './routes/google-merchant-feed[.]xml'
@@ -31,6 +32,8 @@ import { Route as GoogleAdsSafeFeedDotxmlRouteImport } from './routes/google-ads
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BingFeedDotxmlRouteImport } from './routes/bing-feed[.]xml'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AccountRouteImport } from './routes/account'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as IndexnowKeyDottxtRouteImport } from './routes/$indexnowKey[.]txt'
@@ -155,6 +158,11 @@ const PeptideCalculatorRoute = PeptideCalculatorRouteImport.update({
   path: '/peptide-calculator',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LabReportsRoute = LabReportsRouteImport.update({
   id: '/lab-reports',
   path: '/lab-reports',
@@ -195,6 +203,16 @@ const ContactRoute = ContactRouteImport.update({
 const BingFeedDotxmlRoute = BingFeedDotxmlRouteImport.update({
   id: '/bing-feed.xml',
   path: '/bing-feed.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountRoute = AccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -284,9 +302,9 @@ const CheckoutCancelRoute = CheckoutCancelRouteImport.update({
 } as any)
 const AdminMerchantFeedPreviewRoute =
   AdminMerchantFeedPreviewRouteImport.update({
-    id: '/admin/merchant-feed-preview',
-    path: '/admin/merchant-feed-preview',
-    getParentRoute: () => rootRouteImport,
+    id: '/merchant-feed-preview',
+    path: '/merchant-feed-preview',
+    getParentRoute: () => AdminRoute,
   } as any)
 const MarketingCompoundRoute = MarketingCompoundRouteImport.update({
   id: '/compound',
@@ -484,6 +502,8 @@ export interface FileRoutesByFullPath {
   '/$': typeof SplatRoute
   '/$indexnowKey.txt': typeof IndexnowKeyDottxtRoute
   '/about': typeof AboutRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRouteWithChildren
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
   '/contact': typeof ContactRoute
   '/cookies': typeof CookiesRoute
@@ -492,6 +512,7 @@ export interface FileRoutesByFullPath {
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/install': typeof InstallRoute
   '/lab-reports': typeof LabReportsRoute
+  '/login': typeof LoginRoute
   '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
@@ -560,6 +581,8 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/$indexnowKey.txt': typeof IndexnowKeyDottxtRoute
   '/about': typeof AboutRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRouteWithChildren
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
   '/contact': typeof ContactRoute
   '/cookies': typeof CookiesRoute
@@ -568,6 +591,7 @@ export interface FileRoutesByTo {
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/install': typeof InstallRoute
   '/lab-reports': typeof LabReportsRoute
+  '/login': typeof LoginRoute
   '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
@@ -637,6 +661,8 @@ export interface FileRoutesById {
   '/$indexnowKey.txt': typeof IndexnowKeyDottxtRoute
   '/_marketing': typeof MarketingRouteWithChildren
   '/about': typeof AboutRoute
+  '/account': typeof AccountRoute
+  '/admin': typeof AdminRouteWithChildren
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
   '/contact': typeof ContactRoute
   '/cookies': typeof CookiesRoute
@@ -645,6 +671,7 @@ export interface FileRoutesById {
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/install': typeof InstallRoute
   '/lab-reports': typeof LabReportsRoute
+  '/login': typeof LoginRoute
   '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
@@ -715,6 +742,8 @@ export interface FileRouteTypes {
     | '/$'
     | '/$indexnowKey.txt'
     | '/about'
+    | '/account'
+    | '/admin'
     | '/bing-feed.xml'
     | '/contact'
     | '/cookies'
@@ -723,6 +752,7 @@ export interface FileRouteTypes {
     | '/google-merchant-feed.xml'
     | '/install'
     | '/lab-reports'
+    | '/login'
     | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
@@ -791,6 +821,8 @@ export interface FileRouteTypes {
     | '/$'
     | '/$indexnowKey.txt'
     | '/about'
+    | '/account'
+    | '/admin'
     | '/bing-feed.xml'
     | '/contact'
     | '/cookies'
@@ -799,6 +831,7 @@ export interface FileRouteTypes {
     | '/google-merchant-feed.xml'
     | '/install'
     | '/lab-reports'
+    | '/login'
     | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
@@ -867,6 +900,8 @@ export interface FileRouteTypes {
     | '/$indexnowKey.txt'
     | '/_marketing'
     | '/about'
+    | '/account'
+    | '/admin'
     | '/bing-feed.xml'
     | '/contact'
     | '/cookies'
@@ -875,6 +910,7 @@ export interface FileRouteTypes {
     | '/google-merchant-feed.xml'
     | '/install'
     | '/lab-reports'
+    | '/login'
     | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
@@ -945,6 +981,8 @@ export interface RootRouteChildren {
   IndexnowKeyDottxtRoute: typeof IndexnowKeyDottxtRoute
   MarketingRoute: typeof MarketingRouteWithChildren
   AboutRoute: typeof AboutRoute
+  AccountRoute: typeof AccountRoute
+  AdminRoute: typeof AdminRouteWithChildren
   BingFeedDotxmlRoute: typeof BingFeedDotxmlRoute
   ContactRoute: typeof ContactRoute
   CookiesRoute: typeof CookiesRoute
@@ -953,6 +991,7 @@ export interface RootRouteChildren {
   GoogleMerchantFeedDotxmlRoute: typeof GoogleMerchantFeedDotxmlRoute
   InstallRoute: typeof InstallRoute
   LabReportsRoute: typeof LabReportsRoute
+  LoginRoute: typeof LoginRoute
   PeptideCalculatorRoute: typeof PeptideCalculatorRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   PrivacyRequestsRoute: typeof PrivacyRequestsRoute
@@ -967,7 +1006,6 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StorageGuideRoute: typeof StorageGuideRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
-  AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
   CheckoutCancelRoute: typeof CheckoutCancelRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   CompareSlugRoute: typeof CompareSlugRoute
@@ -1112,6 +1150,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PeptideCalculatorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lab-reports': {
       id: '/lab-reports'
       path: '/lab-reports'
@@ -1166,6 +1211,20 @@ declare module '@tanstack/react-router' {
       path: '/bing-feed.xml'
       fullPath: '/bing-feed.xml'
       preLoaderRoute: typeof BingFeedDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account': {
+      id: '/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -1289,10 +1348,10 @@ declare module '@tanstack/react-router' {
     }
     '/admin/merchant-feed-preview': {
       id: '/admin/merchant-feed-preview'
-      path: '/admin/merchant-feed-preview'
+      path: '/merchant-feed-preview'
       fullPath: '/admin/merchant-feed-preview'
       preLoaderRoute: typeof AdminMerchantFeedPreviewRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/_marketing/compound': {
       id: '/_marketing/compound'
@@ -1554,6 +1613,16 @@ const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
   MarketingRouteChildren,
 )
 
+interface AdminRouteChildren {
+  AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface ResearchRouteChildren {
   ResearchBpc157UkRoute: typeof ResearchBpc157UkRoute
   ResearchRetatrutideUkRoute: typeof ResearchRetatrutideUkRoute
@@ -1589,6 +1658,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexnowKeyDottxtRoute: IndexnowKeyDottxtRoute,
   MarketingRoute: MarketingRouteWithChildren,
   AboutRoute: AboutRoute,
+  AccountRoute: AccountRoute,
+  AdminRoute: AdminRouteWithChildren,
   BingFeedDotxmlRoute: BingFeedDotxmlRoute,
   ContactRoute: ContactRoute,
   CookiesRoute: CookiesRoute,
@@ -1597,6 +1668,7 @@ const rootRouteChildren: RootRouteChildren = {
   GoogleMerchantFeedDotxmlRoute: GoogleMerchantFeedDotxmlRoute,
   InstallRoute: InstallRoute,
   LabReportsRoute: LabReportsRoute,
+  LoginRoute: LoginRoute,
   PeptideCalculatorRoute: PeptideCalculatorRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   PrivacyRequestsRoute: PrivacyRequestsRoute,
@@ -1611,7 +1683,6 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StorageGuideRoute: StorageGuideRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
-  AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
   CheckoutCancelRoute: CheckoutCancelRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   CompareSlugRoute: CompareSlugRoute,
@@ -1659,3 +1730,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
