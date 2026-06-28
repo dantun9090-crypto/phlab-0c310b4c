@@ -1,4 +1,6 @@
+// @vitest-environment happy-dom
 /**
+
  * HealthMetrics unit tests
  *
  * Drives the component through the two real-world states it exists to
