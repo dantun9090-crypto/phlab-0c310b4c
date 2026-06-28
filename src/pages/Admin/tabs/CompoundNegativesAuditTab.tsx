@@ -12,6 +12,16 @@ import { auth } from '@/lib/firebase';
 import { listCompoundNegativesAudit } from '@/lib/compound-queries.functions';
 import { redactSensitiveValue } from '@/lib/redact-sensitive';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 
 type RetryAttempt = { attempt: number; delayMs: number; error?: string };
@@ -47,6 +57,8 @@ export default function CompoundNegativesAuditTab() {
   const [filter, setFilter] = useState<'all' | 'dry-run' | 'live'>('all');
   const [cidQuery, setCidQuery] = useState('');
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [swResetOpen, setSwResetOpen] = useState(false);
+  const [swResetBusy, setSwResetBusy] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -238,26 +250,32 @@ export default function CompoundNegativesAuditTab() {
    * scoped to this origin, then hard-reload the admin page. Used when a stale
    * SW is serving an old admin bundle that 404s on refresh.
    */
-  async function resetServiceWorkerAndReload() {
-    const confirmed = window.confirm(
-      'Unregister the Service Worker, clear browser caches, and hard-reload the admin panel?',
-    );
-    if (!confirmed) return;
+  async function performSwReset() {
+    setSwResetBusy(true);
+    let unregistered = 0;
+    let cachesCleared = 0;
     try {
       if ('serviceWorker' in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map((r) => r.unregister()));
+        const results = await Promise.all(regs.map((r) => r.unregister()));
+        unregistered = results.filter(Boolean).length;
       }
       if ('caches' in window) {
         const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
+        const results = await Promise.all(keys.map((k) => caches.delete(k)));
+        cachesCleared = results.filter(Boolean).length;
       }
-      toast.success('Service Worker cleared — reloading…');
-      setTimeout(() => window.location.replace('/admin?sw=off'), 400);
+      toast.success(
+        `Cleared ${unregistered} service worker${unregistered === 1 ? '' : 's'} and ${cachesCleared} cache bucket${cachesCleared === 1 ? '' : 's'} — hard-reloading…`,
+      );
+      setSwResetOpen(false);
+      setTimeout(() => window.location.replace('/admin?sw=off'), 500);
     } catch (e) {
       toast.error(`SW reset failed: ${e instanceof Error ? e.message : String(e)}`);
+      setSwResetBusy(false);
     }
   }
+
 
 
   const counts = useMemo(
@@ -353,13 +371,54 @@ export default function CompoundNegativesAuditTab() {
           ⬇ JSON (redacted, filtered)
         </button>
         <button
-          onClick={resetServiceWorkerAndReload}
+          onClick={() => setSwResetOpen(true)}
           className="bg-amber-700 hover:bg-amber-600 text-white px-3 py-2 rounded-lg text-xs font-semibold"
           title="Unregister Service Worker, clear caches, hard-reload /admin"
         >
           ♻ Reset SW & Reload
         </button>
       </div>
+
+      <AlertDialog open={swResetOpen} onOpenChange={(o) => !swResetBusy && setSwResetOpen(o)}>
+        <AlertDialogContent className="bg-slate-900 border-2 border-slate-700 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">
+              Reset Service Worker & hard-reload?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-slate-300 space-y-2">
+              <span className="block">This will, for this browser only:</span>
+              <ul className="list-disc pl-5 text-slate-200 text-sm space-y-1">
+                <li>Unregister every active service worker on this origin.</li>
+                <li>Delete every CacheStorage bucket (offline cache, asset cache).</li>
+                <li>Hard-reload to <code className="text-emerald-300">/admin?sw=off</code>.</li>
+              </ul>
+              <span className="block text-amber-300 text-xs">
+                Your sign-in, Firestore data, and admin settings are NOT affected. You may
+                see a brief blank page while the new app shell downloads.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={swResetBusy}
+              className="bg-slate-700 text-white hover:bg-slate-600 border-slate-600"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={swResetBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                void performSwReset();
+              }}
+              className="bg-amber-600 hover:bg-amber-500 text-white"
+            >
+              {swResetBusy ? 'Clearing…' : 'Clear & Reload'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {cidQuery && (
         <p className="text-[11px] text-cyan-300 mb-3 font-mono">
           Showing {filtered.length} attempt(s) for correlationId containing{' '}
