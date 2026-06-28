@@ -16,6 +16,7 @@ import { Route as ShippingPolicyRouteImport } from './routes/shipping-policy'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as ResearchRouteImport } from './routes/research'
+import { Route as RequestCatalogRouteImport } from './routes/request-catalog'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as QualityControlRouteImport } from './routes/quality-control'
 import { Route as ProductsRouteImport } from './routes/products'
@@ -113,6 +114,11 @@ const ResourcesRoute = ResourcesRouteImport.update({
 const ResearchRoute = ResearchRouteImport.update({
   id: '/research',
   path: '/research',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RequestCatalogRoute = RequestCatalogRouteImport.update({
+  id: '/request-catalog',
+  path: '/request-catalog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RefundPolicyRoute = RefundPolicyRouteImport.update({
@@ -465,6 +471,7 @@ export interface FileRoutesByFullPath {
   '/products': typeof ProductsRoute
   '/quality-control': typeof QualityControlRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/request-catalog': typeof RequestCatalogRoute
   '/research': typeof ResearchRouteWithChildren
   '/resources': typeof ResourcesRoute
   '/search': typeof SearchRoute
@@ -536,6 +543,7 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsRoute
   '/quality-control': typeof QualityControlRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/request-catalog': typeof RequestCatalogRoute
   '/resources': typeof ResourcesRoute
   '/search': typeof SearchRoute
   '/shipping-policy': typeof ShippingPolicyRoute
@@ -608,6 +616,7 @@ export interface FileRoutesById {
   '/products': typeof ProductsRoute
   '/quality-control': typeof QualityControlRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/request-catalog': typeof RequestCatalogRoute
   '/research': typeof ResearchRouteWithChildren
   '/resources': typeof ResourcesRoute
   '/search': typeof SearchRoute
@@ -681,6 +690,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/quality-control'
     | '/refund-policy'
+    | '/request-catalog'
     | '/research'
     | '/resources'
     | '/search'
@@ -752,6 +762,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/quality-control'
     | '/refund-policy'
+    | '/request-catalog'
     | '/resources'
     | '/search'
     | '/shipping-policy'
@@ -823,6 +834,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/quality-control'
     | '/refund-policy'
+    | '/request-catalog'
     | '/research'
     | '/resources'
     | '/search'
@@ -896,6 +908,7 @@ export interface RootRouteChildren {
   ProductsRoute: typeof ProductsRoute
   QualityControlRoute: typeof QualityControlRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
+  RequestCatalogRoute: typeof RequestCatalogRoute
   ResearchRoute: typeof ResearchRouteWithChildren
   ResourcesRoute: typeof ResourcesRoute
   SearchRoute: typeof SearchRoute
@@ -995,6 +1008,13 @@ declare module '@tanstack/react-router' {
       path: '/research'
       fullPath: '/research'
       preLoaderRoute: typeof ResearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/request-catalog': {
+      id: '/request-catalog'
+      path: '/request-catalog'
+      fullPath: '/request-catalog'
+      preLoaderRoute: typeof RequestCatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/refund-policy': {
@@ -1488,6 +1508,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsRoute: ProductsRoute,
   QualityControlRoute: QualityControlRoute,
   RefundPolicyRoute: RefundPolicyRoute,
+  RequestCatalogRoute: RequestCatalogRoute,
   ResearchRoute: ResearchRouteWithChildren,
   ResourcesRoute: ResourcesRoute,
   SearchRoute: SearchRoute,
