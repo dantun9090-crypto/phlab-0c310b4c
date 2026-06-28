@@ -156,8 +156,20 @@ jobs:
           done
           echo "server failed to start"; tail -n 200 server.log; exit 1
 
-      - name: Run Lighthouse CI — ${{ matrix.viewport }} (performance + a11y thresholds)
+      - name: Run Lighthouse CI — ${{ matrix.viewport }} (absolute thresholds)
         run: lhci autorun --config=${{ matrix.config }}
+
+      - name: Baseline-delta regression check — ${{ matrix.viewport }}
+        # Fails ONLY when a tracked category regresses beyond the tolerance
+        # vs the committed baseline. lhci already enforces absolute floors;
+        # this catches drift inside the floor (e.g. perf 0.92 → 0.84).
+        run: |
+          node scripts/lh-baseline-delta.mjs \
+            --report-dir ${{ matrix.report_dir }} \
+            --baseline ${{ matrix.baseline }} \
+            --max-delta 0.05
+
+
 
       - name: Upload Lighthouse report (always)
         if: always()
