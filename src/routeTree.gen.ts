@@ -22,6 +22,7 @@ import { Route as QualityControlRouteImport } from './routes/quality-control'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PrivacyRequestsRouteImport } from './routes/privacy-requests'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as PeptideCalculatorRouteImport } from './routes/peptide-calculator'
 import { Route as LabReportsRouteImport } from './routes/lab-reports'
 import { Route as InstallRouteImport } from './routes/install'
 import { Route as GoogleMerchantFeedDotxmlRouteImport } from './routes/google-merchant-feed[.]xml'
@@ -147,6 +148,11 @@ const PrivacyRequestsRoute = PrivacyRequestsRouteImport.update({
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   id: '/privacy-policy',
   path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PeptideCalculatorRoute = PeptideCalculatorRouteImport.update({
+  id: '/peptide-calculator',
+  path: '/peptide-calculator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LabReportsRoute = LabReportsRouteImport.update({
@@ -486,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/install': typeof InstallRoute
   '/lab-reports': typeof LabReportsRoute
+  '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
   '/products': typeof ProductsRoute
@@ -561,6 +568,7 @@ export interface FileRoutesByTo {
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/install': typeof InstallRoute
   '/lab-reports': typeof LabReportsRoute
+  '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
   '/products': typeof ProductsRoute
@@ -637,6 +645,7 @@ export interface FileRoutesById {
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/install': typeof InstallRoute
   '/lab-reports': typeof LabReportsRoute
+  '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
   '/products': typeof ProductsRoute
@@ -714,6 +723,7 @@ export interface FileRouteTypes {
     | '/google-merchant-feed.xml'
     | '/install'
     | '/lab-reports'
+    | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
     | '/products'
@@ -789,6 +799,7 @@ export interface FileRouteTypes {
     | '/google-merchant-feed.xml'
     | '/install'
     | '/lab-reports'
+    | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
     | '/products'
@@ -864,6 +875,7 @@ export interface FileRouteTypes {
     | '/google-merchant-feed.xml'
     | '/install'
     | '/lab-reports'
+    | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
     | '/products'
@@ -941,6 +953,7 @@ export interface RootRouteChildren {
   GoogleMerchantFeedDotxmlRoute: typeof GoogleMerchantFeedDotxmlRoute
   InstallRoute: typeof InstallRoute
   LabReportsRoute: typeof LabReportsRoute
+  PeptideCalculatorRoute: typeof PeptideCalculatorRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   PrivacyRequestsRoute: typeof PrivacyRequestsRoute
   ProductsRoute: typeof ProductsRoute
@@ -1090,6 +1103,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy-policy'
       fullPath: '/privacy-policy'
       preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/peptide-calculator': {
+      id: '/peptide-calculator'
+      path: '/peptide-calculator'
+      fullPath: '/peptide-calculator'
+      preLoaderRoute: typeof PeptideCalculatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lab-reports': {
@@ -1577,6 +1597,7 @@ const rootRouteChildren: RootRouteChildren = {
   GoogleMerchantFeedDotxmlRoute: GoogleMerchantFeedDotxmlRoute,
   InstallRoute: InstallRoute,
   LabReportsRoute: LabReportsRoute,
+  PeptideCalculatorRoute: PeptideCalculatorRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   PrivacyRequestsRoute: PrivacyRequestsRoute,
   ProductsRoute: ProductsRoute,
