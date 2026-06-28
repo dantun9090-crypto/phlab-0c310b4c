@@ -9,6 +9,7 @@ import { Shield, Loader2, Menu, WifiOff, RefreshCw, Clock, Command as CmdIcon, E
 import AdminSidebar from './components/AdminSidebar';
 import CommandPalette, { type CommandItem } from './components/CommandPalette';
 import DevModeBanner from './components/DevModeBanner';
+import AdminSpaFallbackBanner from '@/components/admin/AdminSpaFallbackBanner';
 import DashboardTab from './tabs/DashboardTab';
 import InventoryTab from './tabs/InventoryTab';
 import OrdersTab from './tabs/OrdersTab';
