@@ -77,17 +77,29 @@ export default function AdminSpaFallbackBanner() {
   }, []);
 
   if (state.status === 'ok') {
-    // Quiet healthy state — single thin line so admins can still see
-    // the URL + confirmation without taking screen space.
+    // Quiet healthy state — single thin line surfacing the diagnostic
+    // facts we'd otherwise lose: probe path, HTTP status, content-type,
+    // and whether the response was HTML. Makes regressions trivial to
+    // attribute when an admin pings us.
+    const isHtml = state.contentType.includes('text/html');
     return (
       <div
         className="px-4 py-1.5 text-[11px] font-mono text-slate-500 border-b border-slate-800 bg-slate-950/60 flex flex-wrap gap-x-3 gap-y-1"
         data-testid="admin-spa-fallback-banner-ok"
+        data-probe-path={state.servedUrl}
+        data-probe-status={String(state.httpStatus)}
+        data-probe-html={isHtml ? 'true' : 'false'}
       >
         <span className="text-emerald-400">● SPA fallback OK</span>
         <span>at {currentUrl}</span>
         <span className="text-slate-600">
-          (probe {state.httpStatus} {state.contentType.split(';')[0]})
+          probe <span className="text-slate-400">{state.servedUrl}</span>
+          {' '}→ <span className="text-slate-400">HTTP {state.httpStatus}</span>
+          {' · '}<span className="text-slate-400">{state.contentType.split(';')[0] || 'unknown'}</span>
+          {' · '}
+          <span className={isHtml ? 'text-emerald-400' : 'text-amber-400'}>
+            {isHtml ? 'HTML ✓' : 'non-HTML ⚠'}
+          </span>
         </span>
       </div>
     );
