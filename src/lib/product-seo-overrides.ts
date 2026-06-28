@@ -37,6 +37,12 @@ export const PRODUCT_SEO_OVERRIDES: Record<string, ProductSeoOverride> = {
     // + 320/mo "retatrutide uk source" + 260/mo "reta peptide uk"
     faqs: [
       {
+        // Misspelling-capture FAQ — directly answers "retatrtide", "retatrutife",
+        // "retatrutidw", "retatide" queries (Semrush UK long-tail typo cluster).
+        q: "Is 'retatrtide', 'retatrutife', 'retatrutidw' or 'retatide' the same as Retatrutide?",
+        a: "Yes — 'retatrtide', 'retatrutife', 'retatrudtide', 'retatrutidw', 'retatide' and 'reta peptide' are all common spelling variants of the same research compound: Retatrutide (LY3437943), a balanced GIP / GLP-1 / glucagon triple-receptor agonist supplied by PH Labs as a ≥99% HPLC-verified analytical reference standard. If you searched for any of those typo variants you've reached the correct UK product page — Retatrutide is shipped from our UK facility with a batch-matched Certificate of Analysis. For laboratory research only — not for human consumption.",
+      },
+      {
         q: "Where can I buy Retatrutide UK research peptide from a verified source?",
         a: "PH Labs is a UK-based research compound supplier shipping Retatrutide directly from our facility. Every Retatrutide UK order ships with the batch-matched HPLC Certificate of Analysis (CoA) verifying ≥99% purity. Orders are dispatched within 1 business day via tracked UK courier. For laboratory research use only — not for human consumption.",
       },

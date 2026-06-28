@@ -22,6 +22,7 @@ import { Route as QualityControlRouteImport } from './routes/quality-control'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PrivacyRequestsRouteImport } from './routes/privacy-requests'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as PeptideCalculatorRouteImport } from './routes/peptide-calculator'
 import { Route as LabReportsRouteImport } from './routes/lab-reports'
 import { Route as InstallRouteImport } from './routes/install'
 import { Route as GoogleMerchantFeedDotxmlRouteImport } from './routes/google-merchant-feed[.]xml'
@@ -74,6 +75,7 @@ import { Route as ApiPublicHooksTruelayerRouteImport } from './routes/api/public
 import { Route as ApiPublicHooksToastAuditCleanupRouteImport } from './routes/api/public/hooks/toast-audit-cleanup'
 import { Route as ApiPublicHooksSeoHealthDailyRouteImport } from './routes/api/public/hooks/seo-health-daily'
 import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/public/hooks/security-cleanup'
+import { Route as ApiPublicHooksReindexRouteImport } from './routes/api/public/hooks/reindex'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
 import { Route as ApiPublicHooksMonitorProductUrlsRouteImport } from './routes/api/public/hooks/monitor-product-urls'
 import { Route as ApiPublicHooksLighthousePsiRouteImport } from './routes/api/public/hooks/lighthouse-psi'
@@ -146,6 +148,11 @@ const PrivacyRequestsRoute = PrivacyRequestsRouteImport.update({
 const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
   id: '/privacy-policy',
   path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PeptideCalculatorRoute = PeptideCalculatorRouteImport.update({
+  id: '/peptide-calculator',
+  path: '/peptide-calculator',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LabReportsRoute = LabReportsRouteImport.update({
@@ -419,6 +426,11 @@ const ApiPublicHooksSecurityCleanupRoute =
     path: '/api/public/hooks/security-cleanup',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksReindexRoute = ApiPublicHooksReindexRouteImport.update({
+  id: '/api/public/hooks/reindex',
+  path: '/api/public/hooks/reindex',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksPrerenderRecacheRoute =
   ApiPublicHooksPrerenderRecacheRouteImport.update({
     id: '/api/public/hooks/prerender-recache',
@@ -480,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/install': typeof InstallRoute
   '/lab-reports': typeof LabReportsRoute
+  '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
   '/products': typeof ProductsRoute
@@ -530,6 +543,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
+  '/api/public/hooks/reindex': typeof ApiPublicHooksReindexRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/seo-health-daily': typeof ApiPublicHooksSeoHealthDailyRoute
   '/api/public/hooks/toast-audit-cleanup': typeof ApiPublicHooksToastAuditCleanupRoute
@@ -554,6 +568,7 @@ export interface FileRoutesByTo {
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/install': typeof InstallRoute
   '/lab-reports': typeof LabReportsRoute
+  '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
   '/products': typeof ProductsRoute
@@ -603,6 +618,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
+  '/api/public/hooks/reindex': typeof ApiPublicHooksReindexRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/seo-health-daily': typeof ApiPublicHooksSeoHealthDailyRoute
   '/api/public/hooks/toast-audit-cleanup': typeof ApiPublicHooksToastAuditCleanupRoute
@@ -629,6 +645,7 @@ export interface FileRoutesById {
   '/google-merchant-feed.xml': typeof GoogleMerchantFeedDotxmlRoute
   '/install': typeof InstallRoute
   '/lab-reports': typeof LabReportsRoute
+  '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
   '/products': typeof ProductsRoute
@@ -679,6 +696,7 @@ export interface FileRoutesById {
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
+  '/api/public/hooks/reindex': typeof ApiPublicHooksReindexRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/seo-health-daily': typeof ApiPublicHooksSeoHealthDailyRoute
   '/api/public/hooks/toast-audit-cleanup': typeof ApiPublicHooksToastAuditCleanupRoute
@@ -705,6 +723,7 @@ export interface FileRouteTypes {
     | '/google-merchant-feed.xml'
     | '/install'
     | '/lab-reports'
+    | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
     | '/products'
@@ -755,6 +774,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
+    | '/api/public/hooks/reindex'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/seo-health-daily'
     | '/api/public/hooks/toast-audit-cleanup'
@@ -779,6 +799,7 @@ export interface FileRouteTypes {
     | '/google-merchant-feed.xml'
     | '/install'
     | '/lab-reports'
+    | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
     | '/products'
@@ -828,6 +849,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
+    | '/api/public/hooks/reindex'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/seo-health-daily'
     | '/api/public/hooks/toast-audit-cleanup'
@@ -853,6 +875,7 @@ export interface FileRouteTypes {
     | '/google-merchant-feed.xml'
     | '/install'
     | '/lab-reports'
+    | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
     | '/products'
@@ -903,6 +926,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
+    | '/api/public/hooks/reindex'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/seo-health-daily'
     | '/api/public/hooks/toast-audit-cleanup'
@@ -929,6 +953,7 @@ export interface RootRouteChildren {
   GoogleMerchantFeedDotxmlRoute: typeof GoogleMerchantFeedDotxmlRoute
   InstallRoute: typeof InstallRoute
   LabReportsRoute: typeof LabReportsRoute
+  PeptideCalculatorRoute: typeof PeptideCalculatorRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   PrivacyRequestsRoute: typeof PrivacyRequestsRoute
   ProductsRoute: typeof ProductsRoute
@@ -974,6 +999,7 @@ export interface RootRouteChildren {
   ApiPublicHooksLighthousePsiRoute: typeof ApiPublicHooksLighthousePsiRoute
   ApiPublicHooksMonitorProductUrlsRoute: typeof ApiPublicHooksMonitorProductUrlsRoute
   ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
+  ApiPublicHooksReindexRoute: typeof ApiPublicHooksReindexRoute
   ApiPublicHooksSecurityCleanupRoute: typeof ApiPublicHooksSecurityCleanupRoute
   ApiPublicHooksSeoHealthDailyRoute: typeof ApiPublicHooksSeoHealthDailyRoute
   ApiPublicHooksToastAuditCleanupRoute: typeof ApiPublicHooksToastAuditCleanupRoute
@@ -1077,6 +1103,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy-policy'
       fullPath: '/privacy-policy'
       preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/peptide-calculator': {
+      id: '/peptide-calculator'
+      path: '/peptide-calculator'
+      fullPath: '/peptide-calculator'
+      preLoaderRoute: typeof PeptideCalculatorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lab-reports': {
@@ -1443,6 +1476,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSecurityCleanupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/reindex': {
+      id: '/api/public/hooks/reindex'
+      path: '/api/public/hooks/reindex'
+      fullPath: '/api/public/hooks/reindex'
+      preLoaderRoute: typeof ApiPublicHooksReindexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/prerender-recache': {
       id: '/api/public/hooks/prerender-recache'
       path: '/api/public/hooks/prerender-recache'
@@ -1557,6 +1597,7 @@ const rootRouteChildren: RootRouteChildren = {
   GoogleMerchantFeedDotxmlRoute: GoogleMerchantFeedDotxmlRoute,
   InstallRoute: InstallRoute,
   LabReportsRoute: LabReportsRoute,
+  PeptideCalculatorRoute: PeptideCalculatorRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   PrivacyRequestsRoute: PrivacyRequestsRoute,
   ProductsRoute: ProductsRoute,
@@ -1603,6 +1644,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksLighthousePsiRoute: ApiPublicHooksLighthousePsiRoute,
   ApiPublicHooksMonitorProductUrlsRoute: ApiPublicHooksMonitorProductUrlsRoute,
   ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
+  ApiPublicHooksReindexRoute: ApiPublicHooksReindexRoute,
   ApiPublicHooksSecurityCleanupRoute: ApiPublicHooksSecurityCleanupRoute,
   ApiPublicHooksSeoHealthDailyRoute: ApiPublicHooksSeoHealthDailyRoute,
   ApiPublicHooksToastAuditCleanupRoute: ApiPublicHooksToastAuditCleanupRoute,
@@ -1617,13 +1659,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

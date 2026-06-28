@@ -40,7 +40,7 @@ const benefits = [
     desc: 'Laboratory studies investigate BPC-157 and TB-500 (Thymosin Beta-4) in models of tendon, ligament, and gastric tissue. Preclinical data explores angiogenesis, cytokine modulation, and cell migration pathways.',
     tag: 'Most Researched',
     color: '#10b981',
-    slug: '/products',
+    slug: '/products/tb-500-thymosin-beta-4',
   },
   {
     icon: Flame,
