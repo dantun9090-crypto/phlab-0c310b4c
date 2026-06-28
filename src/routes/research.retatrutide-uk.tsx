@@ -227,7 +227,13 @@ function RetatrutidePillarPage() {
             <li><a href="/compare/retatrutide-vs-semaglutide" className="block rounded-lg border border-slate-800 bg-slate-900 p-4 hover:border-emerald-500">Retatrutide vs Semaglutide</a></li>
             <li><a href="/compare/retatrutide-vs-cagrilintide" className="block rounded-lg border border-slate-800 bg-slate-900 p-4 hover:border-emerald-500">Retatrutide vs Cagrilintide</a></li>
             <li><a href="/compare/retatrutide-vs-survodutide" className="block rounded-lg border border-slate-800 bg-slate-900 p-4 hover:border-emerald-500">Retatrutide vs Survodutide</a></li>
+            <li><a href="/products/tb-500-thymosin-beta-4" className="block rounded-lg border border-slate-800 bg-slate-900 p-4 hover:border-emerald-500">Related orthogonal reference: TB-500 (Thymosin Beta-4)</a></li>
           </ul>
+          <p className="mt-3 text-sm text-slate-400">
+            Researchers comparing GLP-1 / GIP / glucagon triple agonism with tissue-repair pathways frequently
+            pair Retatrutide with <a href="/products/tb-500-thymosin-beta-4" className="text-emerald-400 hover:underline">TB-500 (Thymosin Beta-4)</a>
+            {' '}as an orthogonal mechanism control in in-vitro panels.
+          </p>
         </section>
 
         <section className="mb-10">
