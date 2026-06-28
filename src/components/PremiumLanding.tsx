@@ -288,17 +288,17 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           <div className="text-center">
             <p className="text-[11px] uppercase tracking-[0.55em] gold-text">§ 02·B — Why PH Labs</p>
             <h2 className="mt-6 display text-[2.4rem] sm:text-[3rem] md:text-[3.5rem] font-light text-white leading-[1.1]">
-              Four pillars that <span className="italic gold-text">define our work</span>
+              Built for <span className="italic gold-text">Scientific Excellence</span>
             </h2>
             <div className="mx-auto mt-8 h-px w-16 gold-bg" />
           </div>
 
           <div className="mt-20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { n: '01', t: 'UK Laboratory', d: 'Controlled, temperature-monitored facility based in the United Kingdom.', sym: '⌬' },
-              { n: '02', t: 'Per-Batch COA', d: 'Independent HPLC analysis attached to every consignment we dispatch.', sym: '✓' },
-              { n: '03', t: 'Cold-Chain Logistics', d: 'Insulated, tracked dispatch designed for sensitive research materials.', sym: '❄' },
-              { n: '04', t: 'Discreet Handling', d: 'Confidential laboratory packaging — never branded externally.', sym: '◈' },
+              { n: '01', t: 'United Kingdom Laboratory', d: 'All compounds are synthesized, purified, and handled in our UK facility under strict controlled conditions.', sym: '⌬' },
+              { n: '02', t: 'Verified Purity', d: 'Every batch undergoes independent third-party HPLC testing with detailed analytical reports.', sym: '✓' },
+              { n: '03', t: 'Full Documentation', d: 'Certificate of Analysis provided with every shipment for complete traceability.', sym: '◈' },
+              { n: '04', t: 'Professional Handling', d: 'Temperature-controlled storage and discreet, unbranded packaging for research institutions.', sym: '❄' },
             ].map((p) => (
               <article
                 key={p.n}
