@@ -537,6 +537,23 @@ export default function Contact() {
 
                       </div>
 
+                      <label className="flex items-start gap-3 cursor-pointer rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-4">
+                        <input
+                          type="checkbox"
+                          checked={qualified}
+                          onChange={e => setQualified(e.target.checked)}
+                          className="mt-1 h-4 w-4 accent-amber-400 flex-shrink-0"
+                          required
+                          aria-required="true"
+                        />
+                        <span className="text-xs sm:text-sm text-[#cde0ff] leading-[1.65]">
+                          I confirm I'm a qualified researcher or lab representative and that any
+                          materials supplied are for <strong className="text-amber-300">research use only</strong> —
+                          not for human consumption or any non-research application.
+                        </span>
+                      </label>
+
+
                       <button
                         type="submit"
                         disabled={sending}
