@@ -18,9 +18,15 @@ import {
   analyzeCompoundQueries,
   DEFAULT_THRESHOLDS,
   validateThresholds,
+  retryWithBackoff,
   type CompoundThresholds,
 } from '@/lib/compound-queries.functions';
 import { addDocAdmin, getDocAdmin } from '@/lib/server/firestore-admin';
+
+function newRunCorrelationId(): string {
+  return `cron-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
 
 const ENDPOINT = '/api/public/hooks/compound-query-history';
 
@@ -72,12 +78,22 @@ export const Route = createFileRoute('/api/public/hooks/compound-query-history')
 
 
         const pages: Array<'/compound' | '/landing/phlabs'> = ['/compound', '/landing/phlabs'];
-        const results: Array<{ pagePath: string; ok: boolean; error?: string }> = [];
+        const correlationId = newRunCorrelationId();
+        const results: Array<{
+          pagePath: string;
+          ok: boolean;
+          error?: string;
+          attempts?: Array<{ attempt: number; delayMs: number; error?: string }>;
+        }> = [];
 
         for (const p of pages) {
+          let attempts: Array<{ attempt: number; delayMs: number; error?: string }> = [];
           try {
-            const r = await analyzeCompoundQueries(thresholds.windowDays, p, thresholds);
-            // Slim down rows for storage (top 100 by impressions).
+            const { result: r, attempts: a } = await retryWithBackoff(
+              () => analyzeCompoundQueries(thresholds.windowDays, p, thresholds),
+              { maxAttempts: 3, baseDelayMs: 800 },
+            );
+            attempts = a;
             const slim = r.rows.slice(0, 100).map((row) => ({
               query: row.query,
               clicks: row.clicks,
@@ -90,6 +106,7 @@ export const Route = createFileRoute('/api/public/hooks/compound-query-history')
               riskTokens: row.riskTokens,
             }));
             await addDocAdmin('compound_query_history', {
+              correlationId,
               pagePath: r.pagePath,
               siteUrl: r.siteUrl,
               startDate: r.startDate,
@@ -106,23 +123,34 @@ export const Route = createFileRoute('/api/public/hooks/compound-query-history')
                 .map((x) => x.query)
                 .slice(0, 50),
               topRows: slim,
+              retryAttempts: attempts,
               fetchedAt: r.fetchedAt,
               createdAt: new Date(),
             });
-            results.push({ pagePath: p, ok: true });
+            results.push({ pagePath: p, ok: true, attempts });
           } catch (e) {
-            results.push({
-              pagePath: p,
-              ok: false,
-              error: e instanceof Error ? e.message : String(e),
-            });
+            const errorMsg = e instanceof Error ? e.message : String(e);
+            // Audit failed runs too so retry history is preserved.
+            try {
+              await addDocAdmin('compound_query_history', {
+                correlationId,
+                pagePath: p,
+                ok: false,
+                error: errorMsg,
+                retryAttempts: attempts,
+                thresholds,
+                createdAt: new Date(),
+              });
+            } catch { /* non-fatal */ }
+            results.push({ pagePath: p, ok: false, error: errorMsg, attempts });
           }
         }
 
         return new Response(
-          JSON.stringify({ ok: true, results, ranAt: new Date().toISOString() }),
+          JSON.stringify({ ok: true, correlationId, results, ranAt: new Date().toISOString() }),
           { headers: { 'content-type': 'application/json' } },
         );
+
       },
     },
   },
