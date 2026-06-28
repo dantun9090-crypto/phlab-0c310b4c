@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import {
   db, collection, query, orderBy, limit as fbLimit, onSnapshot,
 } from '@/lib/firebase';
+import HealthMetrics from '@/components/admin/HealthMetrics';
 
 /** Escape a value for CSV (RFC 4180): wrap in quotes if it contains comma/quote/newline. */
 function csvCell(value: unknown): string {
