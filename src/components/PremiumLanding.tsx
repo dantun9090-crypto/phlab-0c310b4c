@@ -1,11 +1,25 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { LandingPromoStrip } from "@/components/LandingPromoStrip";
 import { LandingTrustStrip } from "@/components/LandingTrustStrip";
+import { trackCtaClick, trackEvent } from "@/lib/analytics";
 
 /* ───── Luxury background assets ───── */
 const HERO_IMG = "/og/luxury/hero.jpg";
 const MOLECULAR_IMG = "/og/luxury/molecular.jpg";
 const DETAIL_IMG = "/og/luxury/detail.jpg";
+
+/* ───── Direct-contact channels (qualified researchers) ───── */
+const PH_PHONE_E164 = "447826549934";
+const WHATSAPP_URL = `https://wa.me/${PH_PHONE_E164}?text=${encodeURIComponent(
+  "Hello PH Labs — I'm a qualified researcher interested in your compounds.",
+)}`;
+const TELEGRAM_URL = `https://t.me/+${PH_PHONE_E164}`;
+const CATALOGUE_URL = "/request-catalog";
+
+function trackCompoundCta(label: string, channel?: string) {
+  trackCtaClick(label, "compound_landing");
+  trackEvent("compound_cta_click", { cta: label, channel: channel || label, location: "compound" });
+}
 
 /**
  * /compound — Ultra-premium Full Gold Premium landing.
@@ -158,6 +172,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           <div className="lux-fade-up d6 mt-14 flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
               href="/contact"
+              onClick={() => trackCompoundCta("Contact Research Team", "contact_page")}
               className="group inline-flex items-center justify-center px-10 py-4 rounded-full gold-bg text-[#060b18] text-[12px] tracking-[0.2em] uppercase font-semibold transition-all hover:brightness-110 hover:scale-[1.02] shadow-[0_24px_60px_-20px_rgba(201,164,76,0.55)]"
             >
               Contact Research Team
@@ -165,11 +180,36 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
             </a>
             <a
               href="#request-form"
+              onClick={() => trackCompoundCta("Request Documentation", "request_form")}
               className="inline-flex items-center justify-center px-10 py-4 rounded-full border gold-border text-white text-[12px] tracking-[0.2em] uppercase font-medium transition-all hover:bg-white/[0.04] hover:border-[#c9a44c]/60"
             >
               Request Documentation
             </a>
           </div>
+
+          {/* Direct-contact channels for qualified researchers */}
+          <div className="lux-fade-up d6 mt-6 flex flex-wrap items-center justify-center gap-3 text-[11px] uppercase tracking-[0.3em] text-white/55">
+            <span>Direct line:</span>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackCompoundCta("WhatsApp", "whatsapp")}
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 px-4 py-1.5 text-emerald-200 hover:bg-emerald-400/10 transition-colors"
+            >
+              WhatsApp +44 7826 549934
+            </a>
+            <a
+              href={TELEGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackCompoundCta("Telegram", "telegram")}
+              className="inline-flex items-center gap-2 rounded-full border border-sky-400/40 px-4 py-1.5 text-sky-200 hover:bg-sky-400/10 transition-colors"
+            >
+              Telegram +44 7826 549934
+            </a>
+          </div>
+
 
           {/* Spec card */}
           <div className="lux-fade d6 lux-float mt-24 mx-auto max-w-lg rounded-2xl border border-white/[0.12] bg-white/[0.03] mobile-no-blur backdrop-blur-md px-10 py-7 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.7)]">
@@ -519,15 +559,37 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
               href="/contact"
+              onClick={() => trackCompoundCta("Contact Research Team", "contact_page_footer")}
               className="inline-flex items-center justify-center px-9 py-4 rounded-full gold-bg text-[#060b18] text-[12px] tracking-[0.2em] uppercase font-semibold transition-all hover:brightness-110 shadow-[0_24px_60px_-20px_rgba(201,164,76,0.55)]"
             >
               Message Research Team →
             </a>
             <a
-              href="#request-form"
+              href={CATALOGUE_URL}
+              onClick={() => trackCompoundCta("Request Full Catalog", "request_catalog")}
               className="inline-flex items-center justify-center px-9 py-4 rounded-full border gold-border text-white text-[12px] tracking-[0.2em] uppercase font-medium transition-all hover:bg-white/[0.04]"
             >
               Request Full Catalogue
+            </a>
+          </div>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackCompoundCta("WhatsApp", "whatsapp_footer")}
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 border border-emerald-400/40 px-5 py-2.5 text-[12px] uppercase tracking-[0.25em] text-emerald-200 hover:bg-emerald-500/25 transition-colors"
+            >
+              WhatsApp +44 7826 549934
+            </a>
+            <a
+              href={TELEGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackCompoundCta("Telegram", "telegram_footer")}
+              className="inline-flex items-center gap-2 rounded-full bg-sky-500/15 border border-sky-400/40 px-5 py-2.5 text-[12px] uppercase tracking-[0.25em] text-sky-200 hover:bg-sky-500/25 transition-colors"
+            >
+              Telegram +44 7826 549934
             </a>
           </div>
           <p className="mt-8 text-[11px] uppercase tracking-[0.35em] text-white/40">
@@ -535,6 +597,21 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           </p>
         </div>
       </section>
+
+      {/* Floating WhatsApp button — qualified researchers only */}
+      <a
+        href={WHATSAPP_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => trackCompoundCta("WhatsApp", "whatsapp_float")}
+        aria-label="Chat with PH Labs on WhatsApp"
+        className="fixed bottom-6 right-6 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_18px_40px_-12px_rgba(37,211,102,0.7)] hover:scale-105 transition-transform"
+      >
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor" aria-hidden="true">
+          <path d="M.057 24l1.687-6.163A11.867 11.867 0 010 11.892C0 5.33 5.373 0 11.99 0 15.21 0 18.235 1.246 20.503 3.488A11.82 11.82 0 0124 11.9c-.003 6.562-5.376 11.892-11.988 11.892a12.04 12.04 0 01-5.737-1.457L.057 24zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.594 5.448 0 9.886-4.39 9.889-9.79.002-5.413-4.415-9.79-9.881-9.793-5.452 0-9.887 4.388-9.889 9.787-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-1.08zM17.36 14.43c-.074-.123-.272-.197-.57-.345-.296-.149-1.758-.866-2.03-.967-.272-.099-.47-.148-.669.15-.198.296-.768.967-.941 1.165-.173.198-.347.223-.644.075-.297-.15-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.296-.347.445-.52.149-.174.198-.297.297-.495.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01a1.1 1.1 0 00-.797.371c-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.095 3.2 5.076 4.487.71.306 1.262.489 1.694.626.712.226 1.36.194 1.872.118.572-.085 1.758-.719 2.006-1.413.247-.694.247-1.289.173-1.413z" />
+        </svg>
+      </a>
+
 
       {/* ── LEGAL DISCLAIMER ── */}
       <section id="disclaimer" className="py-24 sm:py-32 bg-[#060b18]">

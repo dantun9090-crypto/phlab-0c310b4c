@@ -13,7 +13,7 @@ export const KNOWN_ROOTS: ReadonlySet<string> = new Set<string>([
   "cart", "checkout", "payment", "order", "orders", "account", "login", "signup",
   "register", "auth", "reset-password", "forgot-password", "verify",
   "admin", "thank-you", "success", "cancel",
-  "faq", "faqs", "blog", "install", "vip", "vip-store",
+  "faq", "faqs", "blog", "install", "vip", "vip-store", "request-catalog",
 ]);
 
 export function isKnownFirstSegment(pathname: string): boolean {

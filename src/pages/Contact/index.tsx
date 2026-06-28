@@ -66,6 +66,7 @@ function FadeIn({ children, delay = 0, direction = 'up', className = '' }: {
 export default function Contact() {
   const [settings, setSettings] = useState<SiteSettings>({});
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
+  const [qualified, setQualified] = useState(false);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
@@ -125,6 +126,10 @@ export default function Contact() {
     const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!name || !email || !message) {
       setError('Please fill in all required fields.');
+      return;
+    }
+    if (!qualified) {
+      setError('Please confirm you are enquiring for research use only.');
       return;
     }
     if (name.length > 100) { setError('Name must be 100 characters or fewer.'); return; }
@@ -302,14 +307,32 @@ export default function Contact() {
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-5">
-              <span className="text-[#f0f6ff]">Let's Talk</span>
+              <span className="text-[#f0f6ff]">Premium Research</span>
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Research</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Compounds — Talk to the Team</span>
             </h1>
 
             <p className="text-[#8aabcf] text-lg leading-relaxed">
-              {settings.contactSubheading || 'Questions about our laboratory reagents, an order, or technical specs for in-vitro research? Our UK team is happy to help.'}
+              {settings.contactSubheading || 'Documentation, batch CoAs and HPLC reports for qualified researchers and UK laboratories. Our team typically replies within one business day.'}
             </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <a
+                href="https://wa.me/447826549934"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-500/10 px-4 py-2 text-emerald-200 text-xs uppercase tracking-[0.25em] hover:bg-emerald-500/20 transition-colors"
+              >
+                WhatsApp +44 7826 549934
+              </a>
+              <a
+                href="https://t.me/+447826549934"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-sky-400/40 bg-sky-500/10 px-4 py-2 text-sky-200 text-xs uppercase tracking-[0.25em] hover:bg-sky-500/20 transition-colors"
+              >
+                Telegram +44 7826 549934
+              </a>
+            </div>
           </motion.div>
         </div>
       </div>
@@ -513,6 +536,23 @@ export default function Contact() {
                         />
 
                       </div>
+
+                      <label className="flex items-start gap-3 cursor-pointer rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-4">
+                        <input
+                          type="checkbox"
+                          checked={qualified}
+                          onChange={e => setQualified(e.target.checked)}
+                          className="mt-1 h-4 w-4 accent-amber-400 flex-shrink-0"
+                          required
+                          aria-required="true"
+                        />
+                        <span className="text-xs sm:text-sm text-[#cde0ff] leading-[1.65]">
+                          I confirm I'm a qualified researcher or lab representative and that any
+                          materials supplied are for <strong className="text-amber-300">research use only</strong> —
+                          not for human consumption or any non-research application.
+                        </span>
+                      </label>
+
 
                       <button
                         type="submit"

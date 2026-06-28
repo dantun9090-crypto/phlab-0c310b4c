@@ -39,6 +39,7 @@ const StorageGuide = lazy(() => import('@/pages/StorageGuide'));
 const LabReports = lazy(() => import('@/pages/LabReports'));
 const Research = lazy(() => import('@/pages/Research'));
 const Install = lazy(() => import('@/pages/Install'));
+const RequestCatalog = lazy(() => import('@/pages/RequestCatalog'));
 const CategoryPage = lazy(() => import('@/pages/CategoryPage'));
 const PrivacyRequests = lazy(() => import('@/pages/PrivacyRequests'));
 
@@ -138,6 +139,7 @@ const routes = [
       { path: 'resources/:slug',   element: <ArticlePage /> },
       { path: 'research',          element: <Research /> },
       { path: 'install',           element: <Install /> },
+      { path: 'request-catalog',   element: <RequestCatalog /> },
       { path: '*',                 element: <NotFound /> },
     ],
   },
