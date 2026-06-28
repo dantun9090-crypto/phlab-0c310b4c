@@ -9,6 +9,7 @@
  *   bunx playwright test e2e/resources-peptide-categories-visual.spec.ts --update-snapshots
  */
 import { test, expect } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
 const BASE =
   process.env.RESOURCES_BASE_URL ||
@@ -71,6 +72,38 @@ test.describe("/resources/peptide-categories-uk-research", () => {
       .locator('meta[property="og:type"]')
       .getAttribute("content");
     expect(ogType).toBe("article");
+
+    // og:image + twitter:image must be absolute https URLs on the canonical
+    // host (relative URLs break Facebook/LinkedIn/Twitter card scrapers).
+    const ogImage = await page
+      .locator('meta[property="og:image"]')
+      .getAttribute("content");
+    expect(ogImage ?? "").toMatch(/^https:\/\/phlabs\.co\.uk\/.+\.(jpg|jpeg|png|webp)$/i);
+
+    const twitterCard = await page
+      .locator('meta[name="twitter:card"]')
+      .getAttribute("content");
+    expect(twitterCard).toBe("summary_large_image");
+
+    const twitterImage = await page
+      .locator('meta[name="twitter:image"]')
+      .getAttribute("content");
+    expect(twitterImage ?? "").toMatch(/^https:\/\/phlabs\.co\.uk\/.+\.(jpg|jpeg|png|webp)$/i);
+
+    const twitterTitle = await page
+      .locator('meta[name="twitter:title"]')
+      .getAttribute("content");
+    expect(twitterTitle ?? "").toMatch(/Peptide Categories/i);
+
+    const twitterDescription = await page
+      .locator('meta[name="twitter:description"]')
+      .getAttribute("content");
+    expect(twitterDescription ?? "").toMatch(/seven peptide classes/i);
+
+    const twitterUrl = await page
+      .locator('meta[name="twitter:url"]')
+      .getAttribute("content");
+    expect(twitterUrl).toBe(`https://phlabs.co.uk/resources/${SLUG}`);
 
     // Wait for the legacy SPA to hydrate the article body.
     await expect(page.locator("h1")).toContainText(/Peptide Categories/i, {
