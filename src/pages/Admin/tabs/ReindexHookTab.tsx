@@ -103,7 +103,7 @@ export default function ReindexHookTab() {
       )}
 
       {result && (
-        <section className="bg-slate-900 border-2 border-slate-700 rounded-lg p-4 space-y-4">
+        <section data-testid="reindex-result" className="bg-slate-900 border-2 border-slate-700 rounded-lg p-4 space-y-4">
           <div className="flex items-center gap-2">
             {result.ok ? (
               <CheckCircle2 className="w-5 h-5 text-emerald-400" />
