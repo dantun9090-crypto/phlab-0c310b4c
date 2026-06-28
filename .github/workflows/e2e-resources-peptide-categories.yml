@@ -122,9 +122,12 @@ jobs:
           - viewport: desktop
             config: .lighthouserc.resources.json
             report_dir: lhci-report
+            baseline: lighthouse-baseline/desktop.json
           - viewport: mobile
             config: .lighthouserc.resources.mobile.json
             report_dir: lhci-report-mobile
+            baseline: lighthouse-baseline/mobile.json
+
     steps:
       - uses: actions/checkout@v4
 
