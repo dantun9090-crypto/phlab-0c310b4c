@@ -21,6 +21,9 @@ on:
       - ".github/workflows/e2e-resources-peptide-categories.yml"
       - ".lighthouserc.resources.json"
       - ".lighthouserc.resources.mobile.json"
+      - "scripts/lh-baseline-delta.mjs"
+      - "lighthouse-baseline/**"
+
   schedule:
     - cron: "37 5 * * *"
   workflow_dispatch:
@@ -77,8 +80,10 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-resources-peptide-categories-${{ matrix.browser }}
-          path: playwright-report
+          name: playwright-report-resources-peptide-categories-visual-${{ matrix.browser }}
+          path: |
+            playwright-report/**
+            !playwright-report/**/.cache/**
           if-no-files-found: ignore
           retention-days: 14
 
@@ -86,9 +91,15 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-test-results-resources-peptide-categories-${{ matrix.browser }}
-          # test-results/ holds per-test trace.zip, screenshots, and videos.
-          path: test-results
+          # Artifact name encodes the spec + browser viewport so multiple
+          # matrix legs don't collide in the run summary.
+          name: playwright-artifacts-resources-peptide-categories-visual-${{ matrix.browser }}
+          path: |
+            test-results/resources-peptide-categories-visual-*/**
+            test-results/**/trace.zip
+            test-results/**/*.png
+            test-results/**/*.webm
+            test-results/junit.xml
           if-no-files-found: ignore
           retention-days: 14
 
@@ -96,10 +107,11 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: server-log-resources-peptide-categories-${{ matrix.browser }}
+          name: server-log-resources-peptide-categories-visual-${{ matrix.browser }}
           path: server.log
           if-no-files-found: ignore
           retention-days: 7
+
 
   lighthouse:
     runs-on: ubuntu-latest
@@ -113,9 +125,12 @@ jobs:
           - viewport: desktop
             config: .lighthouserc.resources.json
             report_dir: lhci-report
+            baseline: lighthouse-baseline/desktop.json
           - viewport: mobile
             config: .lighthouserc.resources.mobile.json
             report_dir: lhci-report-mobile
+            baseline: lighthouse-baseline/mobile.json
+
     steps:
       - uses: actions/checkout@v4
 
@@ -144,8 +159,20 @@ jobs:
           done
           echo "server failed to start"; tail -n 200 server.log; exit 1
 
-      - name: Run Lighthouse CI — ${{ matrix.viewport }} (performance + a11y thresholds)
+      - name: Run Lighthouse CI — ${{ matrix.viewport }} (absolute thresholds)
         run: lhci autorun --config=${{ matrix.config }}
+
+      - name: Baseline-delta regression check — ${{ matrix.viewport }}
+        # Fails ONLY when a tracked category regresses beyond the tolerance
+        # vs the committed baseline. lhci already enforces absolute floors;
+        # this catches drift inside the floor (e.g. perf 0.92 → 0.84).
+        run: |
+          node scripts/lh-baseline-delta.mjs \
+            --report-dir ${{ matrix.report_dir }} \
+            --baseline ${{ matrix.baseline }} \
+            --max-delta 0.05
+
+
 
       - name: Upload Lighthouse report (always)
         if: always()

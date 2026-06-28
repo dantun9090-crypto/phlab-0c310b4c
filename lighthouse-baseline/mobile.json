@@ -1,0 +1,6 @@
+{
+  "capturedAt": "1970-01-01T00:00:00.000Z",
+  "url": "/resources/peptide-categories-uk-research",
+  "note": "Seed baseline — will be replaced on first successful CI run. Update via: node scripts/lh-baseline-delta.mjs --report-dir ./lhci-report-mobile --baseline lighthouse-baseline/mobile.json --update",
+  "scores": {}
+}
