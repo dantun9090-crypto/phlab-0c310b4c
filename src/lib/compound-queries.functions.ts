@@ -272,14 +272,12 @@ export const saveCompoundThresholds = createServerFn({ method: 'POST' })
   .inputValidator((d: { idToken: string; thresholds: Partial<CompoundThresholds> }) => {
     if (!d?.idToken) throw new Error('idToken required');
     const t = d.thresholds ?? {};
-    return {
-      idToken: d.idToken,
-      thresholds: {
-        minImpressions: Math.max(1, Math.min(10_000, Number(t.minImpressions ?? 5))),
-        growthRatio: Math.max(0, Math.min(50, Number(t.growthRatio ?? 0.5))),
-        windowDays: Math.max(1, Math.min(90, Number(t.windowDays ?? 28))),
-      },
-    };
+    const validated = validateThresholds({
+      minImpressions: Number(t.minImpressions),
+      growthRatio: Number(t.growthRatio),
+      windowDays: Number(t.windowDays),
+    });
+    return { idToken: d.idToken, thresholds: validated };
   })
   .handler(async ({ data }) => {
     await requireAdmin(data.idToken);
