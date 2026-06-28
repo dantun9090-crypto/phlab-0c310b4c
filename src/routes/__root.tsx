@@ -339,6 +339,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         children: `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "x6yaoubye8");`,
       },
       {
+        // Taboola Pixel (page_view, advertiser id 2057501)
+        type: "text/javascript",
+        children: `window._tfa = window._tfa || [];window._tfa.push({notify:'event',name:'page_view',id:2057501});!function(t,f,a,x){if(!document.getElementById(x)){t.async=1;t.src=a;t.id=x;f.parentNode.insertBefore(t,f);}}(document.createElement('script'),document.getElementsByTagName('script')[0],'//cdn.taboola.com/libtrc/unip/2057501/tfa.js','tb_tfa_script');`,
+      },
+      {
 
         type: "application/ld+json",
         children: JSON.stringify({

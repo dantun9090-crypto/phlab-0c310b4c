@@ -1,0 +1,36 @@
+name: redaction-tests
+
+# Fails the build if the credential-redaction guarantees change. The downloadable
+# dry-run / audit JSON payloads in CompoundQueriesTab + CompoundNegativesAuditTab
+# rely on src/lib/redact-sensitive.ts to scrub idToken / Authorization / Bearer /
+# bare JWT / customers/<cid> patterns while preserving correlationId verbatim.
+# Any regression here would leak credentials into files admins download — block
+# the merge before that ships.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/lib/redact-sensitive.ts'
+      - 'src/lib/redact-sensitive.test.ts'
+      - 'src/lib/redact-sensitive.random.test.ts'
+      - '.github/workflows/redaction-tests.yml'
+  pull_request:
+    paths:
+      - 'src/lib/redact-sensitive.ts'
+      - 'src/lib/redact-sensitive.test.ts'
+      - 'src/lib/redact-sensitive.random.test.ts'
+      - '.github/workflows/redaction-tests.yml'
+  workflow_dispatch: {}
+
+jobs:
+  redaction:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Run redaction test suite
+        run: bunx vitest run src/lib/redact-sensitive.test.ts src/lib/redact-sensitive.random.test.ts --reporter=verbose
