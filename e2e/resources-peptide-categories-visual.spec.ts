@@ -243,4 +243,130 @@ test.describe("/resources/peptide-categories-uk-research", () => {
       `${blocking.length} critical axe violation(s) — see console`,
     ).toEqual([]);
   });
+
+  test("emits Article JSON-LD with required fields", async ({ page }) => {
+    await page.goto(URL, { waitUntil: "domcontentloaded" });
+    await expect(page.locator("h1")).toContainText(/Peptide Categories/i, {
+      timeout: 15_000,
+    });
+
+    const blocks = await page
+      .locator('script[type="application/ld+json"]')
+      .allTextContents();
+    expect(blocks.length, "expected at least one JSON-LD block").toBeGreaterThan(0);
+
+    const parsed = blocks
+      .map((t) => {
+        try {
+          return JSON.parse(t);
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean)
+      .flatMap((node: any) => (Array.isArray(node) ? node : [node]));
+
+    const article = parsed.find(
+      (n: any) =>
+        n &&
+        (n["@type"] === "Article" ||
+          (Array.isArray(n["@type"]) && n["@type"].includes("Article"))),
+    );
+    expect(article, "Article JSON-LD block not found").toBeTruthy();
+
+    expect(typeof article.headline).toBe("string");
+    expect(article.headline).toMatch(/Peptide Categories/i);
+
+    expect(typeof article.description).toBe("string");
+    expect(article.description.length).toBeGreaterThan(20);
+
+    expect(article.url).toBe(`https://phlabs.co.uk/resources/${SLUG}`);
+
+    const image = Array.isArray(article.image) ? article.image[0] : article.image;
+    const imageUrl = typeof image === "string" ? image : image?.url;
+    expect(imageUrl ?? "").toMatch(
+      /^https:\/\/phlabs\.co\.uk\/.+\.(jpg|jpeg|png|webp)$/i,
+    );
+  });
+
+  test("og:image and twitter:image return HTTP 200", async ({ page, request }) => {
+    await page.goto(URL, { waitUntil: "domcontentloaded" });
+
+    const ogImage = await page
+      .locator('meta[property="og:image"]')
+      .getAttribute("content");
+    const twitterImage = await page
+      .locator('meta[name="twitter:image"]')
+      .getAttribute("content");
+
+    expect(ogImage, "og:image missing").toBeTruthy();
+    expect(twitterImage, "twitter:image missing").toBeTruthy();
+
+    for (const url of [ogImage!, twitterImage!]) {
+      const r = await request.get(url);
+      expect(
+        r.ok(),
+        `share image ${url} returned ${r.status()}`,
+      ).toBeTruthy();
+      const ct = r.headers()["content-type"] ?? "";
+      expect(ct, `share image ${url} content-type ${ct}`).toMatch(/^image\//i);
+    }
+  });
+});
+
+test.describe("/resources/peptide-categories-uk-research (mobile)", () => {
+  // iPhone 12-ish viewport — catches responsive a11y issues like tap-target
+  // size, horizontal scroll, and contrast at narrow widths.
+  test.use({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    isMobile: true,
+    hasTouch: true,
+  });
+
+  test("has no critical axe WCAG violations on mobile viewport", async ({
+    page,
+  }) => {
+    await page.goto(URL, { waitUntil: "domcontentloaded" });
+    await expect(page.locator("h1")).toContainText(/Peptide Categories/i, {
+      timeout: 15_000,
+    });
+    await page
+      .waitForLoadState("load", { timeout: 10_000 })
+      .catch(() => undefined);
+
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"])
+      .disableRules(["region"])
+      .analyze();
+
+    const blocking = results.violations.filter((v) => v.impact === "critical");
+    const serious = results.violations.filter((v) => v.impact === "serious");
+
+    if (blocking.length > 0) {
+      const summary = blocking
+        .map(
+          (v) =>
+            `  - [${v.impact}] ${v.id}: ${v.help} (${v.nodes.length} node${
+              v.nodes.length === 1 ? "" : "s"
+            })\n    ${v.helpUrl}`,
+        )
+        .join("\n");
+      console.error(
+        `\n${blocking.length} critical mobile a11y violation(s):\n${summary}\n`,
+      );
+    }
+    if (serious.length > 0) {
+      console.warn(
+        `\n${serious.length} serious non-blocking mobile a11y warning(s): ${serious
+          .map((v) => v.id)
+          .join(", ")}\n`,
+      );
+    }
+
+    expect(
+      blocking,
+      `${blocking.length} critical mobile axe violation(s) — see console`,
+    ).toEqual([]);
+  });
 });
