@@ -210,13 +210,38 @@ export default function PrivacyRequestsTab() {
       <header className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
           <ShieldCheck className="w-5 h-5 text-emerald-400" />
+      <header className="flex items-center gap-3 flex-wrap">
+        <div className="w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
+          <ShieldCheck className="w-5 h-5 text-emerald-400" />
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <h1 className="text-2xl font-bold text-white">Privacy Requests (GDPR / DSR)</h1>
           <p className="text-sm text-slate-400">
             Data Subject Requests from /privacy-requests. Statutory deadline: 30 days.
           </p>
         </div>
+        <button
+          type="button"
+          data-testid="dsr-create-sample"
+          onClick={createSample}
+          disabled={sampleBusy}
+          className="text-xs font-semibold flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50"
+          title="Create a synthetic sample DSR row so you can validate the UI + Firestore writes"
+        >
+          {sampleBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FlaskConical className="w-3.5 h-3.5" />}
+          Utwórz przykładowe zgłoszenie
+        </button>
+      </header>
+
+      <HealthMetrics
+        lastFetched={lastFetched}
+        readErrors={readErrors}
+        writeErrors={writeErrors}
+        lastError={error}
+        docCount={rows.length}
+        source="dsrRequests"
+        onRefresh={handleRefresh}
+      />
       </header>
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
