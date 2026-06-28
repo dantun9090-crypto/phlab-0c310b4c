@@ -31,7 +31,10 @@ export const triggerReindex = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<ReindexHookResponse> => {
     // Authorize: must be admin.
     const { supabase, userId } = context;
-    const { data: isAdmin } = await supabase.rpc("has_role", {
+    const { data: isAdmin } = await (supabase.rpc as unknown as (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: boolean | null }>)("has_role", {
       _user_id: userId,
       _role: "admin",
     });
