@@ -24,9 +24,10 @@ describe("PH-Labs-Research-Catalogue.pdf", () => {
 
   it("parses and contains the expected catalogue text", async () => {
     const buf = readFileSync(PDF_PATH);
-    const parsed = await (pdf as unknown as (b: Buffer) => Promise<{ text: string; numpages: number }>)(buf);
-    const text = parsed.text.replace(/\s+/g, " ");
-    expect(parsed.numpages).toBeGreaterThan(0);
+    const parser = new PDFParse({ data: new Uint8Array(buf) });
+    const parsed = await parser.getText();
+    const text = String(parsed.text).replace(/\s+/g, " ");
+    expect(parsed.total ?? parsed.pages?.length ?? 1).toBeGreaterThan(0);
     expect(text).toMatch(/PH\s*LABS/i);
     expect(text).toMatch(/Research Compound Catalogue/i);
     expect(text).toMatch(/For Research Use Only\.\s*Not for Human Consumption\./i);
