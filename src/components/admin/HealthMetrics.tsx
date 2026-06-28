@@ -1,6 +1,7 @@
 /**
  * Admin tab health bar — "Last fetched" + read/write error counters,
- * with an optional auto-refresh toggle.
+ * with optional auto-refresh, latency display, next-tick countdown,
+ * and an inline loading indicator.
  *
  * Used in tabs backed by Firestore listeners (PrivacyRequestsTab,
  * ToastAuditTab, …) so we can confirm at a glance whether rules and
@@ -10,11 +11,12 @@
  *
  * Auto-refresh: when `onRefresh` is provided, an admin can toggle a
  * ticker that re-invokes `onRefresh` every `autoRefreshIntervalMs`
- * (default 30s). The toggle is local-state only — it does not persist
- * across mounts, since the whole point is post-deploy smoke checking.
+ * (default 30s, floored at 5s). The interval is stable across parent
+ * re-renders — `onRefresh` is held in a ref so a fresh closure on every
+ * parent render does NOT tear down or restart the ticker.
  */
 import { useEffect, useRef, useState } from 'react';
-import { CheckCircle2, AlertTriangle, Clock, RefreshCw, Pause, Play } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Clock, RefreshCw, Pause, Play, Loader2 } from 'lucide-react';
 
 export interface HealthMetricsProps {
   /** Last successful snapshot timestamp; null while loading. */
@@ -31,10 +33,14 @@ export interface HealthMetricsProps {
   source?: string;
   /** Refresh handler — re-subscribes the listener if provided. */
   onRefresh?: () => void;
-  /** Auto-refresh tick interval in ms. Defaults to 30000 (30s). */
+  /** Auto-refresh tick interval in ms. Defaults to 30000 (30s). Floored at 5s. */
   autoRefreshIntervalMs?: number;
   /** If true, auto-refresh starts enabled on mount. Defaults to false. */
   defaultAutoRefresh?: boolean;
+  /** Latency of the most recent fetch, in ms. */
+  lastLatencyMs?: number | null;
+  /** If true, a fetch is currently in progress — shows spinner. */
+  isFetching?: boolean;
 }
 
 function timeAgo(d: Date | null): string {
@@ -52,29 +58,44 @@ function timeAgo(d: Date | null): string {
 export default function HealthMetrics({
   lastFetched, readErrors, writeErrors, lastError, docCount, source, onRefresh,
   autoRefreshIntervalMs = 30_000, defaultAutoRefresh = false,
+  lastLatencyMs = null, isFetching = false,
 }: HealthMetricsProps) {
-  // Re-render every 15s so "Last fetched" stays fresh.
+  // Re-render every 1s so "Last fetched" and the next-tick countdown stay fresh.
   const [, force] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => force(n => n + 1), 15_000);
+    const id = setInterval(() => force(n => n + 1), 1_000);
     return () => clearInterval(id);
   }, []);
 
   const [autoOn, setAutoOn] = useState<boolean>(defaultAutoRefresh && !!onRefresh);
-  // Keep a ref to the latest onRefresh so the interval doesn't need to
-  // be torn down every render when a parent passes a fresh closure.
+  // Keep refs to the latest onRefresh and interval so the ticker doesn't
+  // tear down when a parent passes a fresh closure each render.
   const onRefreshRef = useRef(onRefresh);
   useEffect(() => { onRefreshRef.current = onRefresh; }, [onRefresh]);
+  const intervalMsRef = useRef(autoRefreshIntervalMs);
+  useEffect(() => { intervalMsRef.current = autoRefreshIntervalMs; }, [autoRefreshIntervalMs]);
+
+  // Tracks when the next auto-refresh tick is scheduled for, so the UI can
+  // render a countdown. Reset on toggle and on each tick.
+  const [nextTickAt, setNextTickAt] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!autoOn || !onRefreshRef.current) return;
-    const ms = Math.max(5_000, autoRefreshIntervalMs);
-    const id = setInterval(() => { onRefreshRef.current?.(); }, ms);
+    if (!autoOn) { setNextTickAt(null); return; }
+    const ms = Math.max(5_000, intervalMsRef.current);
+    setNextTickAt(Date.now() + ms);
+    const id = setInterval(() => {
+      onRefreshRef.current?.();
+      setNextTickAt(Date.now() + Math.max(5_000, intervalMsRef.current));
+    }, ms);
     return () => clearInterval(id);
-  }, [autoOn, autoRefreshIntervalMs]);
+    // Only re-run when toggled — NOT on every parent re-render that swaps
+    // `onRefresh` or `autoRefreshIntervalMs`. Those are read via refs.
+  }, [autoOn]);
 
   const ok = readErrors === 0 && writeErrors === 0;
-  const intervalLabel = `${Math.round(autoRefreshIntervalMs / 1000)}s`;
+  const effectiveInterval = Math.max(5_000, autoRefreshIntervalMs);
+  const intervalLabel = `${Math.round(effectiveInterval / 1000)}s`;
+  const secsToNext = nextTickAt ? Math.max(0, Math.ceil((nextTickAt - Date.now()) / 1000)) : null;
 
   return (
     <div
@@ -91,6 +112,21 @@ export default function HealthMetrics({
         {ok ? 'Healthy' : 'Issues'}
       </span>
 
+      {isFetching && (
+        <>
+          <span className="text-slate-500">·</span>
+          <span
+            data-testid="health-fetching"
+            role="progressbar"
+            aria-label="Fetching"
+            className="inline-flex items-center gap-1 text-sky-300 font-mono"
+          >
+            <Loader2 className="w-3 h-3 animate-spin" />
+            fetching…
+          </span>
+        </>
+      )}
+
       <span className="text-slate-500">·</span>
 
       <span className="inline-flex items-center gap-1 text-slate-300" title={lastFetched ? lastFetched.toLocaleString('en-GB') : 'Never'}>
@@ -98,6 +134,20 @@ export default function HealthMetrics({
         <span className="text-slate-400">Last fetched:</span>
         <span data-testid="health-last-fetched" className="font-mono">{timeAgo(lastFetched)}</span>
       </span>
+
+      {typeof lastLatencyMs === 'number' && lastLatencyMs >= 0 && (
+        <>
+          <span className="text-slate-500">·</span>
+          <span
+            data-testid="health-latency"
+            className="text-slate-300"
+            title="Latency of the most recent fetch"
+          >
+            <span className="text-slate-400">Latency:</span>{' '}
+            <span className="font-mono">{Math.round(lastLatencyMs)}ms</span>
+          </span>
+        </>
+      )}
 
       {typeof docCount === 'number' && (
         <>
@@ -151,15 +201,25 @@ export default function HealthMetrics({
             {autoOn ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
             Auto {intervalLabel}
           </button>
+          {autoOn && secsToNext !== null && (
+            <span
+              data-testid="health-next-tick"
+              className="font-mono text-[10px] text-emerald-300/80"
+              title="Time until next auto-refresh"
+            >
+              next in {secsToNext}s
+            </span>
+          )}
           <button
             type="button"
             onClick={onRefresh}
             aria-label="Refresh tab data"
             data-testid="health-refresh"
-            className="ml-1 inline-flex items-center justify-center w-7 h-7 rounded border border-slate-700 bg-slate-800 hover:border-emerald-500/50 text-slate-300 hover:text-emerald-300"
+            disabled={isFetching}
+            className="ml-1 inline-flex items-center justify-center w-7 h-7 rounded border border-slate-700 bg-slate-800 hover:border-emerald-500/50 text-slate-300 hover:text-emerald-300 disabled:opacity-50 disabled:cursor-not-allowed"
             title="Refresh"
           >
-            <RefreshCw className="w-3 h-3" />
+            <RefreshCw className={`w-3 h-3 ${isFetching ? 'animate-spin' : ''}`} />
           </button>
         </>
       )}
