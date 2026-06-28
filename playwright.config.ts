@@ -39,7 +39,7 @@ export default defineConfig({
   },
   fullyParallel: false,
   retries: 0,
-  reporter: [["list"]],
+  reporter: [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]],
   use: {
     baseURL:
       process.env.TEST_BASE_URL ||
@@ -51,11 +51,23 @@ export default defineConfig({
     reducedMotion: "reduce",
     locale: "en-GB",
     timezoneId: "Europe/London",
+    // Capture trace + screenshot + video on failure so CI can upload them.
+    trace: "retain-on-failure",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
   },
   projects: [
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 1800 }, deviceScaleFactor: 1 },
+    },
+    {
+      // Firefox runs the SAME functional suite (qualification gating,
+      // disabled-button behaviour, payload assertions). Visual snapshots are
+      // skipped inside the spec — Firefox font hinting makes pixel diffing
+      // noisy and the chromium baseline is the source of truth.
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"], viewport: { width: 1280, height: 1800 }, deviceScaleFactor: 1 },
     },
   ],
 });
