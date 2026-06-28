@@ -98,4 +98,44 @@ test.describe('Admin: Privacy Requests + Toast Audit', () => {
     expect(errors.filter(e => /permission-denied|FirebaseError/i.test(e)),
       `Firestore errors leaked:\n${errors.join('\n')}`).toHaveLength(0);
   });
+
+  test('Privacy Requests: "Utwórz przykładowe zgłoszenie" creates a visible row and counters reflect the write', async ({ page }) => {
+    await signIn(page);
+    await openAdminTab(page, 'privacyrequests');
+
+    // Make sure the listener is subscribed before we trigger the write,
+    // so the snapshot delta is observable.
+    const docCount = page.getByTestId('health-doc-count').first();
+    await expect(docCount).toBeVisible();
+    const beforeText = (await docCount.textContent())?.trim() || '0';
+    const before = Number.parseInt(beforeText, 10) || 0;
+
+    // Make sure the filter shows pending rows (sample is created with
+    // status: 'pending'), otherwise the new row would be filter-hidden.
+    const pendingTab = page.getByRole('button', { name: /^Pending/i }).first();
+    if (await pendingTab.count()) await pendingTab.click().catch(() => {});
+
+    // Trigger the sample write.
+    await page.getByTestId('dsr-create-sample').click();
+
+    // Expect the doc count to increment (Firestore snapshot delta).
+    await expect.poll(
+      async () => Number.parseInt((await docCount.textContent())?.trim() || '0', 10) || 0,
+      { timeout: 10_000 },
+    ).toBeGreaterThan(before);
+
+    // The new row's synthetic email should be visible in the list.
+    await expect(page.getByText(/sample\+[a-z0-9]+@phlabs\.co\.uk/i).first()).toBeVisible({ timeout: 10_000 });
+
+    // Write-error counter must still read 0 — the write succeeded.
+    await expect(page.getByTestId('health-write-errors').first()).toContainText('write err: 0');
+
+    // Triggering a refresh should update "Last fetched" to "just now".
+    await page.getByTestId('health-refresh').first().click();
+    await expect.poll(
+      async () => (await page.getByTestId('health-last-fetched').first().textContent())?.trim(),
+      { timeout: 5_000 },
+    ).toMatch(/just now|^[0-9]+s ago$/);
+  });
 });
+
