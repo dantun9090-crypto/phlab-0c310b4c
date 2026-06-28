@@ -17,6 +17,7 @@
  *       secret already used by /api/public/hooks/prerender-recache).
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
 import { timingSafeEqualStr } from "@/lib/timing-safe-equal";
 import { enforceRateLimit } from "@/lib/rate-limit";
 
