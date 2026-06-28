@@ -108,7 +108,7 @@ describe('redactSensitiveJson', () => {
         {
           correlationId: 'ui-child-a',
           ops: [
-            { resourceName: 'customers/1000000001/x', token: 'eyJabc.defghi1234567890.signxyz1234567890' },
+            { resourceName: 'customers/1000000001/x', token: 'eyJhbGciOiJIUzI1NiJ9.payloadOneTwoThree1234.signatureOneTwoThree1234' },
             { note: 'curl -H "authorization: Bearer leak.me.now" https://x' },
           ],
         },
