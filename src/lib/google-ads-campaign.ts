@@ -50,7 +50,8 @@ const UTM_TEMPLATE =
 export const NEGATIVE_KEYWORDS: string[] = [
   // pharma / medical
   'human consumption', 'human use', 'human', 'injectable', 'injection',
-  'dosage', 'dose', 'how to use', 'how to inject',
+  'dosage', 'dose', 'dosing', 'cycle', 'stack',
+  'how to use', 'how to inject', 'how to mix',
   'treatment', 'therapy', 'therapeutic', 'cure', 'cures',
   'medical', 'medicine', 'medicinal', 'prescription',
   'patient', 'clinical', 'diagnosis', 'diagnose',
@@ -58,6 +59,10 @@ export const NEGATIVE_KEYWORDS: string[] = [
   'anti aging', 'anti-aging', 'muscle growth', 'bodybuilding',
   'steroid', 'sarms', 'prohormone',
   'diabetes', 'cancer', 'disease',
+  // recreational / abuse intent (Google "Dangerous Products" policy)
+  'recreational', 'designer', 'designer drug', 'legal high', 'legal highs',
+  'rc', 'research chemical', 'research chemicals',
+  'psychoactive', 'nootropic high', 'party',
   // molecule names (Google flags these)
   'retatrutide', 'tirzepatide', 'semaglutide',
   'bpc-157', 'bpc 157', 'tb-500', 'tb 500',
@@ -65,6 +70,7 @@ export const NEGATIVE_KEYWORDS: string[] = [
   'melanotan', 'mt-2', 'mt ii', 'mots-c', 'kpv',
   'ipamorelin', 'cjc-1295', 'cjc 1295',
   'hgh', 'somatropin', 'igf-1', 'igf 1',
+  'peptide', 'peptides',
   // non-buying intent
   'free', 'cheap', 'wholesale', 'bulk',
   'jobs', 'job', 'career', 'salary', 'cv',
