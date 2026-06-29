@@ -4,6 +4,7 @@ import { Loader, CheckCircle2, AlertCircle, RefreshCw, LifeBuoy } from "lucide-r
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { trackPurchase, type GaItem } from "@/lib/analytics";
+import { trackBingPurchase } from "@/lib/bing-uet";
 
 /**
  * Fire GA4 `purchase` event exactly once per order. Reads the order doc
