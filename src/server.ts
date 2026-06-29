@@ -431,6 +431,26 @@ function isCacheableHtmlPath(pathname: string): boolean {
   return true;
 }
 
+// Mirrors the phlabs-prerender Worker's HTML_CACHE_ALLOW_* lists. When true,
+// the origin emits `__CSP_NONCE__` placeholders so the Worker can rewrite a
+// fresh nonce per request and safely store a single shared HTML body in
+// caches.default. Must stay in lock-step with cloudflare/phlabs-prerender.mjs.
+const CACHEABLE_ROUTE_EXACT = new Set<string>([
+  "/", "/products", "/compound", "/sitemap.xml", "/robots.txt",
+]);
+const CACHEABLE_ROUTE_PREFIXES = [
+  "/products/", "/compound/", "/landing/", "/research/", "/blog/", "/resources/",
+];
+function isCacheableRoute(pathname: string): boolean {
+  if (!isCacheableHtmlPath(pathname)) return false;
+  if (CACHEABLE_ROUTE_EXACT.has(pathname)) return true;
+  for (const p of CACHEABLE_ROUTE_PREFIXES) {
+    if (pathname.startsWith(p)) return true;
+  }
+  return false;
+}
+
+
 function applySecurityHeaders(response: Response, nonce: string, hostname?: string, pathname?: string, htmlTtl: number = 0): Response {
   const stripped = stripInternalHeaders(response);
   const contentType = stripped.headers.get("content-type") ?? "";
