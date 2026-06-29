@@ -1,8 +1,11 @@
 /**
+ * @vitest-environment node
+ *
  * Unit tests for the Worker's CSP nonce rewriter (reference implementation in
  * `cloudflare/lib/rewrite-csp-nonce.mjs` — mirrors the production HTMLRewriter
  * logic in `cloudflare/phlabs-prerender.mjs`).
  */
+
 import { describe, it, expect } from "vitest";
 import {
   rewriteCspNonceString,
