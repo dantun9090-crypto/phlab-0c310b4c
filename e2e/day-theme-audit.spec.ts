@@ -75,10 +75,50 @@ async function stabilise(page: Page) {
   await page.locator("main, h1, header").first().waitFor({ state: "visible" });
   await page.evaluate(() => (document as any).fonts?.ready);
   await page.waitForLoadState("networkidle").catch(() => {});
+  // Kill every motion source: CSS animations/transitions, smooth scroll,
+  // caret blink, AND requestAnimationFrame loops (Framer Motion, GSAP,
+  // canvas/3D tickers). The rAF stub keeps callbacks idempotent — they
+  // run once synchronously so layout settles, then no further frames fire.
   await page.addStyleTag({
-    content:
-      "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;caret-color:transparent!important;scroll-behavior:auto!important}",
+    content: [
+      "*,*::before,*::after{",
+      "animation:none!important;",
+      "animation-duration:0s!important;animation-delay:0s!important;",
+      "transition:none!important;",
+      "transition-duration:0s!important;transition-delay:0s!important;",
+      "caret-color:transparent!important;",
+      "scroll-behavior:auto!important;",
+      "}",
+      "html,body{scroll-behavior:auto!important}",
+    ].join(""),
   });
+  await page.evaluate(() => {
+    try {
+      const w = window as any;
+      const ran = new Set<number>();
+      let id = 0;
+      w.requestAnimationFrame = (cb: FrameRequestCallback) => {
+        const n = ++id;
+        if (ran.has(n)) return n;
+        ran.add(n);
+        try {
+          cb(performance.now());
+        } catch {
+          /* ignore */
+        }
+        return n;
+      };
+      w.cancelAnimationFrame = () => {};
+    } catch {
+      /* ignore */
+    }
+  });
+  // Fixed time budget so any lingering async work (image decode, late
+  // hydration) lands before capture. Deterministic, not host-dependent.
+  await page.waitForTimeout(400);
+  // Scroll to top deterministically — eliminates sticky-header jitter.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.mouse.move(0, 0);
 }
 
 function rgbOf(el: Locator, prop: "color" | "backgroundColor") {
