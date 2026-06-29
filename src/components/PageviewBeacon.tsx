@@ -47,6 +47,20 @@ export function PageviewBeacon() {
     } catch {
       /* ignore */
     }
+
+    // Record page_view into Supabase analytics_events (RLS-allowed anon insert).
+    try {
+      supabase
+        .from("analytics_events")
+        .insert({
+          event_type: "page_view",
+          path: pathname.slice(0, 2048),
+          user_agent: (navigator.userAgent || "").slice(0, 1024),
+        })
+        .then(() => {}, () => {});
+    } catch {
+      /* ignore */
+    }
   }, [pathname]);
 
   return null;
