@@ -308,22 +308,82 @@ html[data-theme]:not([data-theme="navy-professional"]) .shadow-2xl {
  * Emerald accents, header height, layout and spacing all stay unchanged.
  * Admin pages keep their dark chrome regardless.
  */
-html.light body {
+html.light {
+  color-scheme: light;
   background-color: #ffffff;
-  color: #0f172a;
 }
-html.light .bg-slate-950 { background-color: #ffffff !important; }
-html.light .bg-slate-900 { background-color: #f8fafc !important; }
-html.light .bg-slate-800 { background-color: #f1f5f9 !important; }
-html.light .text-white { color: #0f172a !important; }
+html.light body {
+  background-color: #ffffff !important;
+  color: #0f172a;
+  background-image: none !important;
+}
+
+/* Large surfaces: slate-950/900/800 → white / slate-50 / slate-100 */
+html.light .bg-slate-950,
+html.light [class*="bg-slate-950"] { background-color: #ffffff !important; }
+html.light .bg-slate-900,
+html.light [class*="bg-slate-900"] { background-color: #f8fafc !important; }
+html.light .bg-slate-800,
+html.light [class*="bg-slate-800"] { background-color: #f1f5f9 !important; }
+html.light .bg-slate-700,
+html.light [class*="bg-slate-700"] { background-color: #e2e8f0 !important; }
+
+/* Inline dark backgrounds set via style="background:#020617..." */
+html.light header[style*="#040d1a"],
+html.light header[style*="#020617"],
+html.light header[style*="rgba(0,4,12"],
+html.light header[style*="rgba(2,6,23"] {
+  background-color: rgba(255,255,255,0.92) !important;
+  backdrop-filter: saturate(160%) blur(12px);
+  -webkit-backdrop-filter: saturate(160%) blur(12px);
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+
+/* Text colors */
+html.light .text-white,
+html.light .text-slate-50,
+html.light .text-slate-100,
+html.light .text-slate-200 { color: #0f172a !important; }
 html.light .text-slate-300 { color: #334155 !important; }
 html.light .text-slate-400 { color: #475569 !important; }
+html.light .text-slate-500 { color: #64748b !important; }
+
+/* Borders */
+html.light .border-white\/10,
+html.light .border-white\/20,
+html.light .border-slate-600,
 html.light .border-slate-700,
-html.light .border-slate-800 { border-color: #e2e8f0 !important; }
-/* Keep emerald accents + admin panel dark. */
+html.light .border-slate-800,
+html.light .border-slate-900 { border-color: #e2e8f0 !important; }
+
+/* Translucent white overlays used as cards on dark bg → soft slate */
+html.light .bg-white\/5,
+html.light .bg-white\/\[0\.05\],
+html.light .bg-white\/\[0\.06\],
+html.light .bg-white\/\[0\.08\],
+html.light .bg-white\/10 {
+  background-color: rgba(15,23,42,0.04) !important;
+}
+
+/* Subtle shadows so cards lift on a white page */
+html.light .shadow-2xl { box-shadow: 0 12px 40px -16px rgba(15,23,42,0.18) !important; }
+html.light .shadow-xl  { box-shadow: 0 10px 30px -14px rgba(15,23,42,0.15) !important; }
+html.light .shadow-lg  { box-shadow: 0 6px 18px -10px rgba(15,23,42,0.12) !important; }
+
+/* Header icon buttons need readable color on white */
+html.light header button[aria-label],
+html.light nav button[aria-label] { color: #334155; }
+html.light header button[aria-label]:hover,
+html.light nav button[aria-label]:hover { color: #0f172a; background-color: #f1f5f9 !important; }
+
+/* Keep the admin panel and any opt-out element dark regardless. */
 html.light .admin-dark,
-html.light .admin-dark * {
+html.light .admin-dark *,
+html.light [data-keep-dark],
+html.light [data-keep-dark] * {
   background-color: revert;
   color: revert;
+  border-color: revert;
 }
+
 
