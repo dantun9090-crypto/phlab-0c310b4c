@@ -297,3 +297,33 @@ html[data-theme]:not([data-theme="navy-professional"]) .shadow-2xl {
   white-space: nowrap;
   border: 0;
 }
+
+/* ----------------------------------------------------------------------------
+ * Day mode (opt-in via DayNightToggle → `html.light`)
+ * ----------------------------------------------------------------------------
+ * The PH Labs site is locked to a dark slate-950 palette. When the user
+ * explicitly toggles day mode, we invert the largest surfaces (slate-950 →
+ * white, slate-900 → slate-50, white text → slate-900) so the site is
+ * readable in bright environments WITHOUT redesigning brand colors.
+ * Emerald accents, header height, layout and spacing all stay unchanged.
+ * Admin pages keep their dark chrome regardless.
+ */
+html.light body {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+html.light .bg-slate-950 { background-color: #ffffff !important; }
+html.light .bg-slate-900 { background-color: #f8fafc !important; }
+html.light .bg-slate-800 { background-color: #f1f5f9 !important; }
+html.light .text-white { color: #0f172a !important; }
+html.light .text-slate-300 { color: #334155 !important; }
+html.light .text-slate-400 { color: #475569 !important; }
+html.light .border-slate-700,
+html.light .border-slate-800 { border-color: #e2e8f0 !important; }
+/* Keep emerald accents + admin panel dark. */
+html.light .admin-dark,
+html.light .admin-dark * {
+  background-color: revert;
+  color: revert;
+}
+
