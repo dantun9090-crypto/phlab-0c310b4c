@@ -856,7 +856,8 @@ function RootShell({ children }: { children: React.ReactNode }) {
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html:
-              "(function(){try{var m=localStorage.getItem('phlabs-theme-mode');if(m==='light'){document.documentElement.classList.add('light');document.documentElement.setAttribute('data-theme-mode','light');}else{document.documentElement.setAttribute('data-theme-mode','dark');}}catch(e){}})();",
+              "(function(){try{var s=localStorage.getItem('phlabs-theme-mode');var m=(s==='light'||s==='dark')?s:((window.matchMedia&&window.matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark');var d=document.documentElement;if(m==='light'){d.classList.add('light');d.setAttribute('data-theme-mode','light');d.style.backgroundColor='#ffffff';}else{d.classList.remove('light');d.setAttribute('data-theme-mode','dark');}}catch(e){}})();",
+
           }}
         />
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: FORCE_SW_CLEANUP }} />
