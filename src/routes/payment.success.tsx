@@ -7,6 +7,7 @@ import { getOrderPaymentStatus } from "@/lib/fena.functions";
 import { Loader, CheckCircle2, AlertCircle } from "lucide-react";
 import SourceSurveyCard from "@/components/SourceSurveyCard";
 import { trackPurchase, renderGoogleCustomerReviewsOptIn, type GaItem } from "@/lib/analytics";
+import { trackBingPurchase } from "@/lib/bing-uet";
 
 /**
  * Fire GA4 `purchase` event AND trigger Google Customer Reviews opt-in
