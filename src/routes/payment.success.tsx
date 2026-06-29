@@ -35,6 +35,8 @@ async function firePostPurchaseTrackingOnce(orderId: string) {
       currency: "GBP",
     }));
     trackPurchase(orderId, Number.isFinite(value) ? value : 0, items);
+    trackBingPurchase(orderId);
+
 
     // Google Customer Reviews opt-in — no-op if VITE_GCR_MERCHANT_ID
     // is not configured. Email and country pulled from order shipping data.
