@@ -36,6 +36,7 @@ async function fireGaPurchaseOnce(orderId: string, snapData?: Record<string, unk
       currency: "GBP",
     }));
     trackPurchase(orderId, Number.isFinite(value) ? value : 0, items);
+    trackBingPurchase(orderId);
     try { localStorage.setItem(key, "1"); } catch { /* ignore */ }
   } catch { /* ignore — analytics must never break the success page */ }
 }
