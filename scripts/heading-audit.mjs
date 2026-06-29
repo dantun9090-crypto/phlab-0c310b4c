@@ -39,10 +39,18 @@ const ROUTES = [
 ];
 
 function extractHeadings(html) {
+  // Strip <script>…</script>, <style>…</style>, and HTML comments so heading
+  // strings that live inside inline JS string literals (recovery screens, JSON-LD)
+  // don't get counted as real DOM headings.
+  const cleaned = html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, '')
+    .replace(/<!--[\s\S]*?-->/g, '');
   const headings = [];
   const re = /<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>/gi;
   let m;
-  while ((m = re.exec(html))) {
+  while ((m = re.exec(cleaned))) {
     const level = Number(m[1]);
     const text = m[2].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80);
     headings.push({ level, text });
