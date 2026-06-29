@@ -25,6 +25,7 @@ import { Logo } from './Logo';
 import { UnderConstruction } from './UnderConstruction';
 import ResearchGate from './ResearchGate';
 import { Navigation } from './Navigation';
+import DayNightToggle from './DayNightToggle';
 import { WhatsAppIcon, FacebookIcon, InstagramIcon, TwitterXIcon, YoutubeIcon } from './SocialIcons';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { initVisitorTracking, trackVisitorPageView } from '@/lib/visitor-tracking';
