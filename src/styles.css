@@ -329,11 +329,21 @@ html[data-theme-mode] *::after {
 html.light {
   color-scheme: light;
   background-color: #ffffff;
+  --background: 0 0% 100%;
+  --foreground: 222 47% 11%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 215 16% 35%;
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 160 84% 39%;
 }
 html.light body {
   background-color: #ffffff !important;
   color: #0f172a;
-  background-image: none !important;
+  background-image:
+    radial-gradient(1200px 600px at 10% -10%, rgba(16,185,129,0.06), transparent 60%),
+    radial-gradient(900px 500px at 110% 10%, rgba(56,189,248,0.05), transparent 60%) !important;
+  background-attachment: fixed;
 }
 
 /* Large surfaces: slate-950/900/800 → white / slate-50 / slate-100 */
@@ -345,16 +355,34 @@ html.light .bg-slate-800,
 html.light [class*="bg-slate-800"] { background-color: #f1f5f9 !important; }
 html.light .bg-slate-700,
 html.light [class*="bg-slate-700"] { background-color: #e2e8f0 !important; }
+html.light .bg-black,
+html.light [class*="bg-black"] { background-color: #ffffff !important; }
+
+/* Neutralise heavy dark gradients used on hero / sections so the page feels cohesive */
+html.light [class*="from-slate-9"],
+html.light [class*="via-slate-9"],
+html.light [class*="to-slate-9"],
+html.light [class*="from-slate-950"],
+html.light [class*="to-slate-950"],
+html.light [class*="from-black"],
+html.light [class*="to-black"] {
+  --tw-gradient-from: #ffffff !important;
+  --tw-gradient-via: #f8fafc !important;
+  --tw-gradient-to: #f1f5f9 !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via, transparent), var(--tw-gradient-to) !important;
+}
 
 /* Inline dark backgrounds set via style="background:#020617..." */
 html.light header[style*="#040d1a"],
 html.light header[style*="#020617"],
 html.light header[style*="rgba(0,4,12"],
 html.light header[style*="rgba(2,6,23"] {
-  background-color: rgba(255,255,255,0.92) !important;
-  backdrop-filter: saturate(160%) blur(12px);
-  -webkit-backdrop-filter: saturate(160%) blur(12px);
+  background-color: rgba(255,255,255,0.85) !important;
+  background-image: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,250,252,0.85)) !important;
+  backdrop-filter: saturate(180%) blur(14px);
+  -webkit-backdrop-filter: saturate(180%) blur(14px);
   border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 1px 0 rgba(15,23,42,0.04), 0 8px 24px -16px rgba(15,23,42,0.08) !important;
 }
 
 /* Text colors */
@@ -366,7 +394,20 @@ html.light .text-slate-300 { color: #334155 !important; }
 html.light .text-slate-400 { color: #475569 !important; }
 html.light .text-slate-500 { color: #64748b !important; }
 
+/* Keep emerald-on-emerald buttons readable (white text on emerald) */
+html.light .bg-emerald-500 .text-white,
+html.light .bg-emerald-600 .text-white,
+html.light [class*="bg-emerald-"] .text-white,
+html.light .bg-emerald-500.text-white,
+html.light .bg-emerald-600.text-white,
+html.light [class*="bg-emerald-"].text-white { color: #ffffff !important; }
+
+/* Emerald accents in body copy stay branded but slightly darker for AA */
+html.light .text-emerald-400 { color: #059669 !important; }
+html.light .text-emerald-300 { color: #10b981 !important; }
+
 /* Borders */
+html.light .border-white\/5,
 html.light .border-white\/10,
 html.light .border-white\/20,
 html.light .border-slate-600,
@@ -374,25 +415,58 @@ html.light .border-slate-700,
 html.light .border-slate-800,
 html.light .border-slate-900 { border-color: #e2e8f0 !important; }
 
-/* Translucent white overlays used as cards on dark bg → soft slate */
+/* Translucent white overlays used as cards on dark bg → soft slate with a hint of warmth */
 html.light .bg-white\/5,
 html.light .bg-white\/\[0\.05\],
 html.light .bg-white\/\[0\.06\],
 html.light .bg-white\/\[0\.08\],
 html.light .bg-white\/10 {
-  background-color: rgba(15,23,42,0.04) !important;
+  background-color: #ffffff !important;
+  border: 1px solid #eef2f7;
 }
 
-/* Subtle shadows so cards lift on a white page */
-html.light .shadow-2xl { box-shadow: 0 12px 40px -16px rgba(15,23,42,0.18) !important; }
-html.light .shadow-xl  { box-shadow: 0 10px 30px -14px rgba(15,23,42,0.15) !important; }
-html.light .shadow-lg  { box-shadow: 0 6px 18px -10px rgba(15,23,42,0.12) !important; }
+/* Card lift on white pages */
+html.light .shadow-2xl { box-shadow: 0 20px 50px -24px rgba(15,23,42,0.18), 0 2px 6px -2px rgba(15,23,42,0.06) !important; }
+html.light .shadow-xl  { box-shadow: 0 14px 36px -18px rgba(15,23,42,0.16), 0 2px 6px -2px rgba(15,23,42,0.05) !important; }
+html.light .shadow-lg  { box-shadow: 0 8px 22px -12px rgba(15,23,42,0.12), 0 1px 3px -1px rgba(15,23,42,0.04) !important; }
 
-/* Header icon buttons need readable color on white */
+/* Header icon buttons readable on white */
 html.light header button[aria-label],
 html.light nav button[aria-label] { color: #334155; }
 html.light header button[aria-label]:hover,
 html.light nav button[aria-label]:hover { color: #0f172a; background-color: #f1f5f9 !important; }
+
+/* Form controls — visible borders on white */
+html.light input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html.light textarea,
+html.light select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+html.light input::placeholder,
+html.light textarea::placeholder { color: #94a3b8 !important; }
+html.light input:focus,
+html.light textarea:focus,
+html.light select:focus {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.18) !important;
+  outline: none;
+}
+
+/* Links pick up emerald accent */
+html.light a:not([class*="bg-"]):not([class*="text-"]) { color: #047857; }
+html.light a:not([class*="bg-"]):not([class*="text-"]):hover { color: #065f46; }
+
+/* Dividers / hr */
+html.light hr { border-color: #e2e8f0 !important; }
+
+/* Footer dark blocks → soft slate-50 with emerald hairline */
+html.light footer {
+  background-color: #f8fafc !important;
+  background-image: linear-gradient(180deg, #ffffff, #f1f5f9) !important;
+  border-top: 1px solid #e2e8f0 !important;
+}
 
 /* Keep the admin panel and any opt-out element dark regardless. */
 html.light .admin-dark,
@@ -403,5 +477,6 @@ html.light [data-keep-dark] * {
   color: revert;
   border-color: revert;
 }
+
 
 
