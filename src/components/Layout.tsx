@@ -685,6 +685,9 @@ export function Layout({ children }: LayoutProps) {
 
               <div className="w-px h-5 bg-white/[0.1] hidden md:block mx-0.5" />
 
+              {/* Day / Night theme toggle */}
+              <DayNightToggle variant="inline" />
+
               {/* Search */}
               <button
                 onClick={() => setIsSearchOpen(!isSearchOpen)}
