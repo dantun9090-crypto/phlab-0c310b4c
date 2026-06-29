@@ -22,10 +22,26 @@ function applyMode(mode: 'dark' | 'light') {
   if (mode === 'light') {
     root.classList.add('light');
     root.setAttribute('data-theme-mode', 'light');
+    root.style.backgroundColor = '#ffffff';
+    if (document.body) document.body.style.backgroundColor = '#ffffff';
   } else {
     root.classList.remove('light');
     root.setAttribute('data-theme-mode', 'dark');
+    root.style.backgroundColor = '#060f1e';
+    if (document.body) document.body.style.backgroundColor = '#060f1e';
   }
+}
+
+function initialMode(): 'dark' | 'light' {
+  if (typeof document === 'undefined') return 'dark';
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === 'light' || stored === 'dark') return stored;
+  } catch { /* ignore */ }
+  if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: light)').matches) {
+    return 'light';
+  }
+  return 'dark';
 }
 
 export default function DayNightToggle({ variant = 'floating' }: { variant?: 'floating' | 'inline' }) {
@@ -33,15 +49,12 @@ export default function DayNightToggle({ variant = 'floating' }: { variant?: 'fl
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = (localStorage.getItem(STORAGE_KEY) as 'dark' | 'light' | null) ?? 'dark';
-      setMode(stored);
-      applyMode(stored);
-    } catch {
-      applyMode('dark');
-    }
+    const m = initialMode();
+    setMode(m);
+    applyMode(m);
     setMounted(true);
   }, []);
+
 
   const toggle = useCallback(() => {
     setMode((prev) => {
