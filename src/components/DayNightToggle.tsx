@@ -67,16 +67,38 @@ export default function DayNightToggle({ variant = 'floating' }: { variant?: 'fl
         aria-pressed={isLight}
         title={isLight ? 'Night mode' : 'Day mode'}
         className={
-          'group relative min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border transition-all duration-300 ' +
+          'group relative min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border overflow-hidden transition-all duration-300 ' +
           (isLight
-            ? 'text-slate-600 hover:text-slate-900 border-slate-200 hover:border-slate-300 hover:bg-slate-100'
-            : 'text-[#7a9ec8] hover:text-white border-transparent hover:border-white/[0.08] hover:bg-white/[0.06]')
+            ? 'text-amber-600 border-amber-200/80 bg-gradient-to-br from-amber-50 to-white hover:from-amber-100 hover:to-amber-50 hover:border-amber-300 shadow-[0_1px_2px_rgba(15,23,42,0.06)]'
+            : 'text-[#9bbce3] border-white/[0.08] bg-gradient-to-br from-slate-900/40 to-slate-800/20 hover:from-slate-800/60 hover:to-slate-700/40 hover:border-white/15 hover:text-white')
         }
       >
-        <Icon className="w-[17px] h-[17px] transition-colors group-hover:text-emerald-500" />
+        {/* Sun rays glow in light mode */}
+        {isLight && (
+          <span aria-hidden className="absolute inset-0 rounded-xl bg-amber-300/0 group-hover:bg-amber-300/10 transition-colors duration-300" />
+        )}
+        <span className="relative inline-flex items-center justify-center w-[18px] h-[18px]">
+          <Sun
+            aria-hidden
+            className={
+              'absolute inset-0 w-[18px] h-[18px] transition-all duration-500 ' +
+              (isLight ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-50')
+            }
+            strokeWidth={2.25}
+          />
+          <Moon
+            aria-hidden
+            className={
+              'absolute inset-0 w-[18px] h-[18px] transition-all duration-500 ' +
+              (isLight ? 'opacity-0 rotate-90 scale-50' : 'opacity-100 rotate-0 scale-100')
+            }
+            strokeWidth={2.25}
+          />
+        </span>
       </button>
     );
   }
+
 
 
   return (
