@@ -36,7 +36,7 @@ const pwArgs = [
   "playwright",
   "test",
   spec,
-  "--reporter=line",
+  "--reporter=line,json",
   ...(update ? ["--update-snapshots"] : []),
 ];
 
@@ -45,5 +45,13 @@ console.log(
 );
 
 const runner = process.env.PW_RUNNER || "bunx";
-const result = spawnSync(runner, pwArgs, { stdio: "inherit" });
+const result = spawnSync(runner, pwArgs, {
+  stdio: "inherit",
+  env: {
+    ...process.env,
+    PLAYWRIGHT_JSON_OUTPUT_NAME:
+      process.env.PLAYWRIGHT_JSON_OUTPUT_NAME ||
+      "playwright-report/report.json",
+  },
+});
 process.exit(result.status ?? 1);

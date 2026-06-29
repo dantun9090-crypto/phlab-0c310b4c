@@ -75,10 +75,50 @@ async function stabilise(page: Page) {
   await page.locator("main, h1, header").first().waitFor({ state: "visible" });
   await page.evaluate(() => (document as any).fonts?.ready);
   await page.waitForLoadState("networkidle").catch(() => {});
+  // Kill every motion source: CSS animations/transitions, smooth scroll,
+  // caret blink, AND requestAnimationFrame loops (Framer Motion, GSAP,
+  // canvas/3D tickers). The rAF stub keeps callbacks idempotent — they
+  // run once synchronously so layout settles, then no further frames fire.
   await page.addStyleTag({
-    content:
-      "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;caret-color:transparent!important;scroll-behavior:auto!important}",
+    content: [
+      "*,*::before,*::after{",
+      "animation:none!important;",
+      "animation-duration:0s!important;animation-delay:0s!important;",
+      "transition:none!important;",
+      "transition-duration:0s!important;transition-delay:0s!important;",
+      "caret-color:transparent!important;",
+      "scroll-behavior:auto!important;",
+      "}",
+      "html,body{scroll-behavior:auto!important}",
+    ].join(""),
   });
+  await page.evaluate(() => {
+    try {
+      const w = window as any;
+      const ran = new Set<number>();
+      let id = 0;
+      w.requestAnimationFrame = (cb: FrameRequestCallback) => {
+        const n = ++id;
+        if (ran.has(n)) return n;
+        ran.add(n);
+        try {
+          cb(performance.now());
+        } catch {
+          /* ignore */
+        }
+        return n;
+      };
+      w.cancelAnimationFrame = () => {};
+    } catch {
+      /* ignore */
+    }
+  });
+  // Fixed time budget so any lingering async work (image decode, late
+  // hydration) lands before capture. Deterministic, not host-dependent.
+  await page.waitForTimeout(400);
+  // Scroll to top deterministically — eliminates sticky-header jitter.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.mouse.move(0, 0);
 }
 
 function rgbOf(el: Locator, prop: "color" | "backgroundColor") {
@@ -261,26 +301,117 @@ test.describe("Day theme — unified audit", () => {
     });
   }
 
-  // ---------- 4. Visual regression ----------
-  for (const path of PAGES) {
-    test(`visual regression — light theme @ ${path}`, async ({ page }) => {
-      await forceTheme(page, "light");
-      await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
-      await waitForTheme(page, "light");
-      await stabilise(page);
-      // Park the cursor so hover state never leaks into the snapshot.
-      await page.mouse.move(0, 0);
-      const slug =
-        path === "/"
-          ? "home"
-          : path.replace(/[\\/]/g, "-").replace(/^-/, "");
-      await expect(page).toHaveScreenshot(`day-theme-${slug}.png`, {
-        fullPage: false,
-        animations: "disabled",
-        caret: "hide",
+  // ---------- 4. Visual regression (desktop + tablet + mobile) ----------
+  const VIEWPORTS = [
+    { name: "desktop", width: 1280, height: 1800 },
+    { name: "tablet", width: 834, height: 1112 },
+    { name: "mobile", width: 390, height: 844 },
+  ] as const;
+  for (const vp of VIEWPORTS) {
+    for (const path of PAGES) {
+      test(`visual regression — ${vp.name} light @ ${path}`, async ({
+        browser,
+      }) => {
+        const ctx = await browser.newContext({
+          viewport: { width: vp.width, height: vp.height },
+          deviceScaleFactor: 1,
+          colorScheme: "no-preference",
+          reducedMotion: "reduce",
+        });
+        const page = await ctx.newPage();
+        await forceTheme(page, "light");
+        await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
+        await waitForTheme(page, "light");
+        await stabilise(page);
+
+        // Toggle visibility check — must be reachable on every viewport.
+        const btn = page
+          .getByRole("button", { name: /switch to night mode/i })
+          .first();
+        await expect(btn).toBeVisible();
+        expect((await svgColor(btn)).replace(/\s+/g, "")).toBe(WHITE);
+        await btn.focus();
+        expect(
+          await btn.evaluate((el) => getComputedStyle(el).boxShadow !== "none"),
+        ).toBe(true);
+        await page.mouse.move(0, 0);
+
+        const slug =
+          path === "/" ? "home" : path.replace(/[\\/]/g, "-").replace(/^-/, "");
+        await expect(page).toHaveScreenshot(
+          `day-theme-${vp.name}-${slug}.png`,
+          { fullPage: false, animations: "disabled", caret: "hide" },
+        );
+        await ctx.close();
       });
-    });
+    }
   }
+
+  // ---------- 5. CSS variable contract ----------
+  // Even if screenshots look similar, a regression in the token map
+  // (background / foreground / border / ring / primary) breaks every
+  // downstream component. Assert the html.light variables resolve to
+  // the locked PH Labs day palette.
+  test("CSS variables: html.light token map is locked", async ({ page }) => {
+    await forceTheme(page, "light");
+    await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
+    await waitForTheme(page, "light");
+    await stabilise(page);
+
+    const vars = await page.evaluate(() => {
+      const cs = getComputedStyle(document.documentElement);
+      const get = (n: string) => cs.getPropertyValue(n).trim();
+      return {
+        background: get("--background"),
+        foreground: get("--foreground"),
+        card: get("--card"),
+        border: get("--border"),
+        primary: get("--primary"),
+        ring: get("--ring"),
+      };
+    });
+
+    // Locked palette from src/styles.css → `html.light`.
+    expect(vars.background).toBe("0 0% 100%"); // pure white
+    expect(vars.foreground).toBe("222 47% 11%"); // slate-900
+    expect(vars.border).toBe("214 32% 91%"); // slate-200
+    expect(vars.ring).toBe("160 84% 39%"); // emerald-500
+    // Card + primary may be redefined per surface, but must be set.
+    expect(vars.card.length).toBeGreaterThan(0);
+    expect(vars.primary.length).toBeGreaterThan(0);
+
+    // Resolved body color: light text on white background.
+    const body = await page.evaluate(() => {
+      const cs = getComputedStyle(document.body);
+      return { color: cs.color, bg: cs.backgroundColor };
+    });
+    // Body bg must be a near-white surface, text must be dark.
+    const bgM = body.bg.match(/\d+/g)!.map(Number);
+    expect(Math.min(bgM[0], bgM[1], bgM[2])).toBeGreaterThan(240);
+    const fgM = body.color.match(/\d+/g)!.map(Number);
+    expect(Math.max(fgM[0], fgM[1], fgM[2])).toBeLessThan(80);
+
+    // Link color must be visible (not the dark-mode default).
+    const link = page.locator("a:visible").first();
+    if (await link.count()) {
+      const c = await rgbOf(link, "color");
+      const parts = c.match(/\d+/g)!.map(Number);
+      // Must not be near-white (that would be a leaked dark theme color).
+      expect(Math.min(parts[0], parts[1], parts[2])).toBeLessThan(230);
+    }
+
+    // Focus ring on the toggle resolves to the emerald --ring token.
+    const btn = page
+      .getByRole("button", { name: /switch to night mode/i })
+      .first();
+    await btn.focus();
+    const shadow = await btn.evaluate(
+      (el) => getComputedStyle(el).boxShadow,
+    );
+    expect(shadow).not.toBe("none");
+    expect(shadow.length).toBeGreaterThan(0);
+  });
+
 
   // ---------- Media-query matrix ----------
   for (const colorScheme of ["light", "dark"] as const) {
