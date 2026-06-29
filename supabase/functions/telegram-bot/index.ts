@@ -184,9 +184,27 @@ button{background:#10b981;color:#020617;border:0;padding:10px 16px;border-radius
 button.sec{background:#1e293b;color:#e2e8f0}
 a{color:#10b981}
 .big{font-size:24px;font-weight:700}
+.alert{padding:16px;border-radius:8px;margin:12px 0;font-weight:600;font-size:15px;display:flex;align-items:center;gap:12px}
+.alert-ok{background:rgba(16,185,129,.15);border:2px solid #10b981;color:#10b981}
+.alert-bad{background:rgba(239,68,68,.15);border:2px solid #ef4444;color:#ef4444}
+.urlbox{display:flex;gap:8px;align-items:center}
+.urlbox input{flex:1;background:#0b1220;border:1px solid #1e293b;color:#fff;padding:8px;border-radius:6px;font-family:ui-monospace,monospace;font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:6px 8px;text-align:left;border-bottom:1px solid #1e293b;font-family:ui-monospace,monospace}
+th{color:#94a3b8;font-weight:600;font-size:11px;text-transform:uppercase}
+.toggle{display:inline-flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.toggle input{width:18px;height:18px;accent-color:#10b981}
+.pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 </style></head><body>
 <h1>🩺 Telegram Bot Diagnostics</h1>
-<p class="${ok ? "ok" : "bad"}" id="status">${ok ? "✅ Webhook zarejestrowany i bez błędów" : "⚠️ Webhook ma problem — sprawdź szczegóły poniżej"}</p>
+
+<div id="alertBox" class="alert ${ok && wh.url === `${SUPABASE_URL}/functions/v1/telegram-bot` ? "alert-ok" : "alert-bad"}">
+  <span style="font-size:24px">${ok && wh.url === `${SUPABASE_URL}/functions/v1/telegram-bot` ? "✅" : "⚠️"}</span>
+  <span id="alertText">${ok && wh.url === `${SUPABASE_URL}/functions/v1/telegram-bot` ? "Webhook URL zgodny z oczekiwanym endpointem" : (wh.url ? "Webhook URL NIE PASUJE do oczekiwanego endpointu!" : "Webhook nie jest zarejestrowany")}</span>
+</div>
+
+<p class="toggle"><label class="toggle"><input type="checkbox" id="autoTog" checked> Auto-refresh co 5s</label> <span id="liveDot" class="pulse"></span> <span id="liveTxt" style="color:#94a3b8;font-size:12px">aktywny</span></p>
 
 <div class="card">
   <h2 style="margin-top:0">Bot</h2>
@@ -197,8 +215,16 @@ a{color:#10b981}
 
 <div class="card">
   <h2 style="margin-top:0">🌐 Webhook (getWebhookInfo)</h2>
-  <p style="margin:0 0 8px;color:#94a3b8">Konfiguracja aktualnie zarejestrowana w Telegramie. Porównaj <code>URL</code> z oczekiwanym: <code>${escapeHtml(SUPABASE_URL)}/functions/v1/telegram-bot</code></p>
-  <div class="row"><span class="k">URL</span><span class="v" id="wh_url">${escapeHtml(wh.url ?? "—")}</span></div>
+  <p style="margin:0 0 8px;color:#94a3b8">Oczekiwany endpoint:</p>
+  <div class="urlbox" style="margin-bottom:8px">
+    <input id="expectedUrl" readonly value="${escapeHtml(`${SUPABASE_URL}/functions/v1/telegram-bot`)}">
+    <button class="sec" onclick="copyVal('expectedUrl', this)">📋 Kopiuj</button>
+  </div>
+  <p style="margin:8px 0;color:#94a3b8">Aktywny webhook URL:</p>
+  <div class="urlbox" style="margin-bottom:12px">
+    <input id="activeUrl" readonly value="${escapeHtml(wh.url ?? "")}">
+    <button class="sec" onclick="copyVal('activeUrl', this)">📋 Kopiuj</button>
+  </div>
   <div class="row"><span class="k">Match z oczekiwanym</span><span class="v" id="wh_match">${wh.url === `${SUPABASE_URL}/functions/v1/telegram-bot` ? '<span class="ok">✅ zgodny</span>' : '<span class="bad">❌ różny</span>'}</span></div>
   <div class="row"><span class="k">IP address</span><span class="v" id="wh_ip">${escapeHtml(wh.ip_address ?? "—")}</span></div>
   <div class="row"><span class="k">Custom certificate</span><span class="v" id="wh_cert">${wh.has_custom_certificate ? "tak" : "nie"}</span></div>
@@ -210,9 +236,21 @@ a{color:#10b981}
   <div class="row"><span class="k">Last sync error date</span><span class="v" id="wh_syncerr">${wh.last_synchronization_error_date ? new Date(wh.last_synchronization_error_date * 1000).toISOString() : "—"}</span></div>
   <div class="row"><span class="k">Sprawdzono</span><span class="v" id="wh_checked">${new Date().toISOString()}</span></div>
   <p style="margin-top:12px">
-    <button onclick="checkWebhook()">🔍 Sprawdź teraz</button>
+    <button onclick="checkWebhook(true)">🔍 Sprawdź teraz</button>
     <a href="?setup=1"><button class="sec">♻️ Re-register</button></a>
   </p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">📜 Historia sprawdzeń</h2>
+  <p style="margin:0 0 8px;color:#94a3b8">Ostatnie 20 wywołań <code>getWebhookInfo</code> (zapisane lokalnie w przeglądarce).</p>
+  <div style="overflow-x:auto">
+    <table id="histTbl">
+      <thead><tr><th>Czas (UTC)</th><th>URL</th><th>Match</th><th>Pending</th><th>Last error</th></tr></thead>
+      <tbody><tr><td colspan="5" style="color:#94a3b8;text-align:center">Brak wpisów — kliknij „Sprawdź teraz".</td></tr></tbody>
+    </table>
+  </div>
+  <p style="margin-top:8px"><button class="sec" onclick="clearHist()">🗑️ Wyczyść historię</button></p>
 </div>
 
 <div class="card">
@@ -228,17 +266,6 @@ a{color:#10b981}
 </div>
 
 <div class="card">
-  <h2 style="margin-top:0">📋 Test krok-po-kroku</h2>
-  <ol>
-    <li>Kliknij <b>🔍 Sprawdź teraz</b> i potwierdź, że <code>URL</code> = <code>${escapeHtml(SUPABASE_URL)}/functions/v1/telegram-bot</code>.</li>
-    <li>Zapisz <b>aktualne liczniki</b>: <code>updates = <span id="snapU">${diag.updates}</span></code>, <code>errors = <span id="snapE">${diag.errors}</span></code>.</li>
-    <li>W czacie wyślij <code>/myid</code>. Bot powinien natychmiast odpowiedzieć Twoim chat ID.</li>
-    <li>Wróć tutaj i kliknij <b>🔄 Odśwież liczniki</b>.</li>
-    <li>Sprawdź: ✅ <code>Updates</code> +1, ✅ <code>Last command</code> = <code>/myid</code>, ✅ <code>Errors</code> bez zmian.</li>
-  </ol>
-</div>
-
-<div class="card">
   <h2 style="margin-top:0">Endpointy</h2>
   <div class="row"><span class="k">UI diag</span><span class="v"><a href="?diag=ui">?diag=ui</a></span></div>
   <div class="row"><span class="k">JSON diag</span><span class="v"><a href="?diag=1">?diag=1</a></span></div>
@@ -247,9 +274,44 @@ a{color:#10b981}
 
 <script>
 const EXPECTED_URL = ${JSON.stringify(`${SUPABASE_URL}/functions/v1/telegram-bot`)};
-async function fetchDiag(){
-  return fetch('?diag=1', {cache:'no-store'}).then(r=>r.json()).catch(()=>null);
+const HIST_KEY = 'tg-bot-diag-history-v1';
+
+function esc(s){return String(s ?? '—').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+function loadHist(){try{return JSON.parse(localStorage.getItem(HIST_KEY)||'[]')}catch{return []}}
+function saveHist(h){try{localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0,20)))}catch{}}
+function renderHist(){
+  const h = loadHist();
+  const tb = document.querySelector('#histTbl tbody');
+  if(!h.length){tb.innerHTML = '<tr><td colspan="5" style="color:#94a3b8;text-align:center">Brak wpisów — kliknij „Sprawdź teraz".</td></tr>';return}
+  tb.innerHTML = h.map(e => {
+    const match = e.url === EXPECTED_URL ? '<span class="ok">✅</span>' : '<span class="bad">❌</span>';
+    const err = e.err ? '<span class="bad">'+esc(e.err)+'</span>' : '<span class="ok">brak</span>';
+    return '<tr><td>'+esc(e.t)+'</td><td style="max-width:280px;word-break:break-all">'+esc(e.url||'—')+'</td><td>'+match+'</td><td>'+(e.pending??0)+'</td><td>'+err+'</td></tr>';
+  }).join('');
 }
+function pushHist(wh){
+  const h = loadHist();
+  h.unshift({t:new Date().toISOString(), url:wh?.url||'', pending:wh?.pending_update_count||0, err:wh?.last_error_message||''});
+  saveHist(h); renderHist();
+}
+function clearHist(){localStorage.removeItem(HIST_KEY); renderHist()}
+async function copyVal(id, btn){
+  const el = document.getElementById(id);
+  try{await navigator.clipboard.writeText(el.value); const o=btn.textContent; btn.textContent='✅ Skopiowano'; setTimeout(()=>btn.textContent=o,1500)}
+  catch{el.select(); document.execCommand('copy')}
+}
+async function fetchDiag(){return fetch('?diag=1',{cache:'no-store'}).then(r=>r.json()).catch(()=>null)}
+
+function updateAlert(wh){
+  const box = document.getElementById('alertBox');
+  const txt = document.getElementById('alertText');
+  const icon = box.querySelector('span:first-child');
+  if(!wh || !wh.url){box.className='alert alert-bad';icon.textContent='⚠️';txt.textContent='Webhook nie jest zarejestrowany';return}
+  if(wh.url !== EXPECTED_URL){box.className='alert alert-bad';icon.textContent='⚠️';txt.textContent='Webhook URL NIE PASUJE do oczekiwanego endpointu!';return}
+  if(wh.last_error_message){box.className='alert alert-bad';icon.textContent='⚠️';txt.textContent='Webhook zgodny, ale Telegram zwrócił błąd: '+wh.last_error_message;return}
+  box.className='alert alert-ok';icon.textContent='✅';txt.textContent='Webhook URL zgodny z oczekiwanym endpointem';
+}
+
 async function refresh(){
   const r = await fetchDiag(); if(!r) return;
   document.getElementById('updates').textContent = r.runtime.updates;
@@ -258,15 +320,14 @@ async function refresh(){
   document.getElementById('lastUpd').textContent = r.runtime.lastUpdateAt ?? '—';
   document.getElementById('lastCmd').textContent = r.runtime.lastCommand ?? '—';
   document.getElementById('lastErr').textContent = r.runtime.lastError ?? '—';
+  return r;
 }
-function esc(s){return String(s ?? '—').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
-async function checkWebhook(){
-  const btn = event.target; btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ Sprawdzam...';
-  const r = await fetchDiag();
-  btn.disabled = false; btn.textContent = orig;
-  if(!r || !r.webhook){ document.getElementById('status').innerHTML = '<span class="bad">❌ Nie udało się pobrać getWebhookInfo</span>'; return; }
+
+async function checkWebhook(record){
+  const r = await refresh();
+  if(!r || !r.webhook){updateAlert(null);return}
   const wh = r.webhook;
-  document.getElementById('wh_url').textContent = wh.url ?? '—';
+  document.getElementById('activeUrl').value = wh.url ?? '';
   document.getElementById('wh_match').innerHTML = wh.url === EXPECTED_URL ? '<span class="ok">✅ zgodny</span>' : '<span class="bad">❌ różny</span>';
   document.getElementById('wh_ip').textContent = wh.ip_address ?? '—';
   document.getElementById('wh_cert').textContent = wh.has_custom_certificate ? 'tak' : 'nie';
@@ -279,11 +340,21 @@ async function checkWebhook(){
   em.className = 'v ' + (wh.last_error_message ? 'bad' : 'ok');
   document.getElementById('wh_syncerr').textContent = wh.last_synchronization_error_date ? new Date(wh.last_synchronization_error_date*1000).toISOString() : '—';
   document.getElementById('wh_checked').textContent = new Date().toISOString();
-  const ok = wh.url && !wh.last_error_message && wh.url === EXPECTED_URL;
-  const st = document.getElementById('status');
-  st.className = ok ? 'ok' : 'bad';
-  st.textContent = ok ? '✅ Webhook zgodny i bez błędów' : '⚠️ Webhook ma problem — sprawdź szczegóły powyżej';
+  updateAlert(wh);
+  if(record) pushHist(wh);
 }
+
+let autoTimer = null;
+function setAuto(on){
+  if(autoTimer){clearInterval(autoTimer);autoTimer=null}
+  document.getElementById('liveDot').style.display = on ? 'inline-block' : 'none';
+  document.getElementById('liveTxt').textContent = on ? 'aktywny (co 5s)' : 'wyłączony';
+  if(on){autoTimer = setInterval(()=>checkWebhook(false), 5000)}
+}
+document.getElementById('autoTog').addEventListener('change', e => setAuto(e.target.checked));
+
+renderHist();
+setAuto(true);
 </script>
 </body></html>`;
     return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
