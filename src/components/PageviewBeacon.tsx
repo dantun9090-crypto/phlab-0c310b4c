@@ -7,6 +7,7 @@
  */
 import { useEffect, useRef } from "react";
 import { useRouterState } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 
 const EXCLUDED_PREFIXES = [
   "/admin",
