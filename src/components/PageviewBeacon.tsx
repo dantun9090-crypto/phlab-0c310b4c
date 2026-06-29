@@ -7,6 +7,7 @@
  */
 import { useEffect, useRef } from "react";
 import { useRouterState } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 
 const EXCLUDED_PREFIXES = [
   "/admin",
@@ -43,6 +44,20 @@ export function PageviewBeacon() {
         headers: { "Content-Type": "text/plain" },
         body: pathname,
       }).catch(() => {});
+    } catch {
+      /* ignore */
+    }
+
+    // Record page_view into Supabase analytics_events (RLS-allowed anon insert).
+    try {
+      supabase
+        .from("analytics_events")
+        .insert({
+          event_type: "page_view",
+          path: pathname.slice(0, 2048),
+          user_agent: (navigator.userAgent || "").slice(0, 1024),
+        })
+        .then(() => {}, () => {});
     } catch {
       /* ignore */
     }
