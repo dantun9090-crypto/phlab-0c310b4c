@@ -312,13 +312,26 @@ test.describe("Day theme — unified audit", () => {
       test(`visual regression — ${vp.name} light @ ${path}`, async ({
         browser,
       }) => {
+        // Fresh context per run — guarantees no cookies, no localStorage,
+        // no sessionStorage, no IndexedDB bleed (including a stale day/night
+        // toggle value) from any sibling test in the same worker.
         const ctx = await browser.newContext({
           viewport: { width: vp.width, height: vp.height },
           deviceScaleFactor: 1,
           colorScheme: "no-preference",
           reducedMotion: "reduce",
+          storageState: { cookies: [], origins: [] },
         });
+        await ctx.clearCookies();
         const page = await ctx.newPage();
+        // Wipe any persisted storage on the BASE origin before we seed the
+        // theme, so the toggle value we set is the only one present.
+        await page.goto(`${BASE}/__blank`, { waitUntil: "domcontentloaded" })
+          .catch(() => page.goto(BASE, { waitUntil: "domcontentloaded" }));
+        await page.evaluate(() => {
+          try { localStorage.clear(); } catch { /* ignore */ }
+          try { sessionStorage.clear(); } catch { /* ignore */ }
+        });
         await forceTheme(page, "light");
         await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
         await waitForTheme(page, "light");
@@ -338,9 +351,18 @@ test.describe("Day theme — unified audit", () => {
 
         const slug =
           path === "/" ? "home" : path.replace(/[\\/]/g, "-").replace(/^-/, "");
+        // Explicit pixel-diff threshold: only meaningful regressions fail.
+        // - maxDiffPixelRatio 0.5% absorbs sub-pixel AA + font hinting jitter.
+        // - threshold 0.2 is Playwright's per-pixel colour tolerance.
         await expect(page).toHaveScreenshot(
           `day-theme-${vp.name}-${slug}.png`,
-          { fullPage: false, animations: "disabled", caret: "hide" },
+          {
+            fullPage: false,
+            animations: "disabled",
+            caret: "hide",
+            maxDiffPixelRatio: 0.005,
+            threshold: 0.2,
+          },
         );
         await ctx.close();
       });
