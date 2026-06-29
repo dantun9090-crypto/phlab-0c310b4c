@@ -345,6 +345,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         children: `window._tfa = window._tfa || [];window._tfa.push({notify:'event',name:'page_view',id:2057501});!function(t,f,a,x){if(!document.getElementById(x)){t.async=1;t.src=a;t.id=x;f.parentNode.insertBefore(t,f);}}(document.createElement('script'),document.getElementsByTagName('script')[0],'//cdn.taboola.com/libtrc/unip/2057501/tfa.js','tb_tfa_script');`,
       },
       {
+        // Microsoft Bing UET tag (ti: K120006478) — fires page_load on every route.
+        // Purchase conversions are fired from checkout/payment success pages via
+        // window.uetq.push('event','purchase', { revenue_value, currency }).
+        type: "text/javascript",
+        children: `(function(w,d,t,r,u){var f,n,i;w[u]=w[u]||[],f=function(){var o={ti:"K120006478",enableAutoSpaTracking:true};o.q=w[u],w[u]=new UET(o),w[u].push("pageLoad")},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function(){var s=this.readyState;s&&s!=="loaded"&&s!=="complete"||(f(),n.onload=n.onreadystatechange=null)},i=d.getElementsByTagName(t)[0],i.parentNode.insertBefore(n,i)})(window,document,"script","//bat.bing.com/bat.js","uetq");`,
+      },
+      {
 
         type: "application/ld+json",
         children: JSON.stringify({
