@@ -186,16 +186,33 @@ a{color:#10b981}
 .big{font-size:24px;font-weight:700}
 </style></head><body>
 <h1>🩺 Telegram Bot Diagnostics</h1>
-<p class="${ok ? "ok" : "bad"}">${ok ? "✅ Webhook zarejestrowany i bez błędów" : "⚠️ Webhook ma problem — sprawdź szczegóły poniżej"}</p>
+<p class="${ok ? "ok" : "bad"}" id="status">${ok ? "✅ Webhook zarejestrowany i bez błędów" : "⚠️ Webhook ma problem — sprawdź szczegóły poniżej"}</p>
 
 <div class="card">
   <h2 style="margin-top:0">Bot</h2>
   <div class="row"><span class="k">Nazwa</span><span class="v">${escapeHtml(botName)}</span></div>
-  <div class="row"><span class="k">Webhook URL</span><span class="v">${escapeHtml(wh.url ?? "—")}</span></div>
-  <div class="row"><span class="k">Pending updates</span><span class="v">${wh.pending_update_count ?? 0}</span></div>
-  <div class="row"><span class="k">Last error</span><span class="v ${wh.last_error_message ? "bad" : "ok"}">${escapeHtml(wh.last_error_message ?? "brak")}</span></div>
   <div class="row"><span class="k">Admin configured</span><span class="v ${ADMIN_IDS.size > 0 ? "ok" : "warn"}">${ADMIN_IDS.size > 0 ? `✅ ${ADMIN_IDS.size}` : "❌ brak"}</span></div>
   <div class="row"><span class="k">Webhook secret</span><span class="v ${WEBHOOK_SECRET ? "ok" : "warn"}">${WEBHOOK_SECRET ? "✅" : "❌"}</span></div>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">🌐 Webhook (getWebhookInfo)</h2>
+  <p style="margin:0 0 8px;color:#94a3b8">Konfiguracja aktualnie zarejestrowana w Telegramie. Porównaj <code>URL</code> z oczekiwanym: <code>${escapeHtml(SUPABASE_URL)}/functions/v1/telegram-bot</code></p>
+  <div class="row"><span class="k">URL</span><span class="v" id="wh_url">${escapeHtml(wh.url ?? "—")}</span></div>
+  <div class="row"><span class="k">Match z oczekiwanym</span><span class="v" id="wh_match">${wh.url === `${SUPABASE_URL}/functions/v1/telegram-bot` ? '<span class="ok">✅ zgodny</span>' : '<span class="bad">❌ różny</span>'}</span></div>
+  <div class="row"><span class="k">IP address</span><span class="v" id="wh_ip">${escapeHtml(wh.ip_address ?? "—")}</span></div>
+  <div class="row"><span class="k">Custom certificate</span><span class="v" id="wh_cert">${wh.has_custom_certificate ? "tak" : "nie"}</span></div>
+  <div class="row"><span class="k">Pending updates</span><span class="v" id="wh_pending">${wh.pending_update_count ?? 0}</span></div>
+  <div class="row"><span class="k">Max connections</span><span class="v" id="wh_max">${wh.max_connections ?? "—"}</span></div>
+  <div class="row"><span class="k">Allowed updates</span><span class="v" id="wh_allow">${escapeHtml((wh.allowed_updates ?? []).join(", ") || "(wszystkie)")}</span></div>
+  <div class="row"><span class="k">Last error date</span><span class="v" id="wh_errdate">${wh.last_error_date ? new Date(wh.last_error_date * 1000).toISOString() : "—"}</span></div>
+  <div class="row"><span class="k">Last error message</span><span class="v ${wh.last_error_message ? "bad" : "ok"}" id="wh_errmsg">${escapeHtml(wh.last_error_message ?? "brak")}</span></div>
+  <div class="row"><span class="k">Last sync error date</span><span class="v" id="wh_syncerr">${wh.last_synchronization_error_date ? new Date(wh.last_synchronization_error_date * 1000).toISOString() : "—"}</span></div>
+  <div class="row"><span class="k">Sprawdzono</span><span class="v" id="wh_checked">${new Date().toISOString()}</span></div>
+  <p style="margin-top:12px">
+    <button onclick="checkWebhook()">🔍 Sprawdź teraz</button>
+    <a href="?setup=1"><button class="sec">♻️ Re-register</button></a>
+  </p>
 </div>
 
 <div class="card">
@@ -213,22 +230,12 @@ a{color:#10b981}
 <div class="card">
   <h2 style="margin-top:0">📋 Test krok-po-kroku</h2>
   <ol>
-    <li>Otwórz bota: <a href="${botName !== "(unknown)" ? `https://t.me/${botName.slice(1)}` : "#"}" target="_blank">${escapeHtml(botName)}</a> (lub kliknij 💬 powyżej).</li>
+    <li>Kliknij <b>🔍 Sprawdź teraz</b> i potwierdź, że <code>URL</code> = <code>${escapeHtml(SUPABASE_URL)}/functions/v1/telegram-bot</code>.</li>
     <li>Zapisz <b>aktualne liczniki</b>: <code>updates = <span id="snapU">${diag.updates}</span></code>, <code>errors = <span id="snapE">${diag.errors}</span></code>.</li>
     <li>W czacie wyślij <code>/myid</code>. Bot powinien natychmiast odpowiedzieć Twoim chat ID.</li>
     <li>Wróć tutaj i kliknij <b>🔄 Odśwież liczniki</b>.</li>
-    <li>Sprawdź:
-      <ul>
-        <li>✅ <code>Updates</code> wzrosło o 1 → webhook dostarcza wiadomości.</li>
-        <li>✅ <code>Last command</code> = <code>/myid</code> → handler zadziałał.</li>
-        <li>✅ <code>Errors</code> bez zmian → brak błędów po stronie funkcji.</li>
-      </ul>
-    </li>
-    <li>Wyślij <code>/status</code> — bot zwróci te same liczniki bezpośrednio w Telegramie.</li>
-    <li>Jeśli jesteś adminem, wyślij <code>/wizyty</code> — bot zwróci sformatowaną listę.</li>
+    <li>Sprawdź: ✅ <code>Updates</code> +1, ✅ <code>Last command</code> = <code>/myid</code>, ✅ <code>Errors</code> bez zmian.</li>
   </ol>
-  <p><b>Co oznacza brak zmiany licznika?</b><br>
-  Webhook nie dociera — sprawdź <code>Last error</code> w sekcji <i>Bot</i>, zarejestruj ponownie: <a href="?setup=1"><code>?setup=1</code></a>, lub zobacz logi edge function.</p>
 </div>
 
 <div class="card">
@@ -239,15 +246,43 @@ a{color:#10b981}
 </div>
 
 <script>
+const EXPECTED_URL = ${JSON.stringify(`${SUPABASE_URL}/functions/v1/telegram-bot`)};
+async function fetchDiag(){
+  return fetch('?diag=1', {cache:'no-store'}).then(r=>r.json()).catch(()=>null);
+}
 async function refresh(){
-  const r = await fetch('?diag=1').then(r=>r.json()).catch(()=>null);
-  if(!r) return;
+  const r = await fetchDiag(); if(!r) return;
   document.getElementById('updates').textContent = r.runtime.updates;
   document.getElementById('errors').textContent = r.runtime.errors;
   document.getElementById('errors').className = 'v big ' + (r.runtime.errors>0?'bad':'ok');
   document.getElementById('lastUpd').textContent = r.runtime.lastUpdateAt ?? '—';
   document.getElementById('lastCmd').textContent = r.runtime.lastCommand ?? '—';
   document.getElementById('lastErr').textContent = r.runtime.lastError ?? '—';
+}
+function esc(s){return String(s ?? '—').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))}
+async function checkWebhook(){
+  const btn = event.target; btn.disabled = true; const orig = btn.textContent; btn.textContent = '⏳ Sprawdzam...';
+  const r = await fetchDiag();
+  btn.disabled = false; btn.textContent = orig;
+  if(!r || !r.webhook){ document.getElementById('status').innerHTML = '<span class="bad">❌ Nie udało się pobrać getWebhookInfo</span>'; return; }
+  const wh = r.webhook;
+  document.getElementById('wh_url').textContent = wh.url ?? '—';
+  document.getElementById('wh_match').innerHTML = wh.url === EXPECTED_URL ? '<span class="ok">✅ zgodny</span>' : '<span class="bad">❌ różny</span>';
+  document.getElementById('wh_ip').textContent = wh.ip_address ?? '—';
+  document.getElementById('wh_cert').textContent = wh.has_custom_certificate ? 'tak' : 'nie';
+  document.getElementById('wh_pending').textContent = wh.pending_update_count ?? 0;
+  document.getElementById('wh_max').textContent = wh.max_connections ?? '—';
+  document.getElementById('wh_allow').textContent = (wh.allowed_updates ?? []).join(', ') || '(wszystkie)';
+  document.getElementById('wh_errdate').textContent = wh.last_error_date ? new Date(wh.last_error_date*1000).toISOString() : '—';
+  const em = document.getElementById('wh_errmsg');
+  em.textContent = wh.last_error_message ?? 'brak';
+  em.className = 'v ' + (wh.last_error_message ? 'bad' : 'ok');
+  document.getElementById('wh_syncerr').textContent = wh.last_synchronization_error_date ? new Date(wh.last_synchronization_error_date*1000).toISOString() : '—';
+  document.getElementById('wh_checked').textContent = new Date().toISOString();
+  const ok = wh.url && !wh.last_error_message && wh.url === EXPECTED_URL;
+  const st = document.getElementById('status');
+  st.className = ok ? 'ok' : 'bad';
+  st.textContent = ok ? '✅ Webhook zgodny i bez błędów' : '⚠️ Webhook ma problem — sprawdź szczegóły powyżej';
 }
 </script>
 </body></html>`;
