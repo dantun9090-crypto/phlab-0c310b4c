@@ -980,7 +980,7 @@ function RootComponent() {
       <QueryClientProvider client={queryClient}>
         <PageviewBeacon />
         <PageTransition />
-        <DayNightToggle />
+        {/* DayNightToggle moved into the header (Layout.tsx) */}
       </QueryClientProvider>
     </RootHydrationBoundary>
   );
