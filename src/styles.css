@@ -308,6 +308,24 @@ html[data-theme]:not([data-theme="navy-professional"]) .shadow-2xl {
  * Emerald accents, header height, layout and spacing all stay unchanged.
  * Admin pages keep their dark chrome regardless.
  */
+/* Smooth color transitions when toggling day/night — applied to all
+ * elements but limited to color-related properties so layout/scroll
+ * performance is unaffected. Honors prefers-reduced-motion. */
+html[data-theme-mode] *,
+html[data-theme-mode] *::before,
+html[data-theme-mode] *::after {
+  transition-property: background-color, color, border-color, fill, stroke, box-shadow;
+  transition-duration: 280ms;
+  transition-timing-function: ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme-mode] *,
+  html[data-theme-mode] *::before,
+  html[data-theme-mode] *::after {
+    transition-duration: 0ms !important;
+  }
+}
+
 html.light {
   color-scheme: light;
   background-color: #ffffff;
