@@ -165,13 +165,14 @@ function isLovableHost(hostname: string): boolean {
   );
 }
 
-function buildCsp(nonce: string, hostname?: string): string {
+function buildCsp(_nonce: string, hostname?: string): string {
   if (hostname && isLovableHost(hostname)) {
     return CSP_TEMPLATE_PREVIEW;
   }
-  // Replace ALL occurrences of __NONCE__ (script-src + script-src-elem).
-  return CSP_TEMPLATE.split("__NONCE__").join(nonce);
+  // Nonce removed: scripts validated via 'self' + SHA-256 hashes + 'strict-dynamic' + host allowlist.
+  return CSP_TEMPLATE;
 }
+
 
 
 // ==================== Bot management + Prerender.io ====================
