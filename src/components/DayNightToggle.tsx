@@ -66,12 +66,18 @@ export default function DayNightToggle({ variant = 'floating' }: { variant?: 'fl
         aria-label={label}
         aria-pressed={isLight}
         title={isLight ? 'Night mode' : 'Day mode'}
-        className="group relative min-w-[44px] min-h-[44px] flex items-center justify-center text-[#7a9ec8] hover:text-white transition-all duration-300 rounded-xl hover:bg-white/[0.06] border border-transparent hover:border-white/[0.08]"
+        className={
+          'group relative min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border transition-all duration-300 ' +
+          (isLight
+            ? 'text-slate-600 hover:text-slate-900 border-slate-200 hover:border-slate-300 hover:bg-slate-100'
+            : 'text-[#7a9ec8] hover:text-white border-transparent hover:border-white/[0.08] hover:bg-white/[0.06]')
+        }
       >
-        <Icon className="w-[17px] h-[17px] group-hover:text-emerald-400 transition-colors" />
+        <Icon className="w-[17px] h-[17px] transition-colors group-hover:text-emerald-500" />
       </button>
     );
   }
+
 
   return (
     <button
