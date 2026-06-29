@@ -684,10 +684,7 @@ export function Layout({ children }: LayoutProps) {
                 </Link>
               )}
 
-              <div className="w-px h-5 bg-white/[0.1] hidden md:block mx-0.5" />
-
-              {/* Day / Night theme toggle */}
-              <DayNightToggle variant="inline" />
+              {/* Day / Night theme toggle disabled per request */}
 
               {/* Search */}
               <button
