@@ -434,6 +434,85 @@ test.describe("Day theme — unified audit", () => {
     expect(shadow.length).toBeGreaterThan(0);
   });
 
+  // ---------- 5b. CSS variable contract — DARK ----------
+  // Mirror of the light-mode lock: a regression in the dark token map
+  // silently breaks every shadcn component in night mode even when
+  // screenshots look "fine". Assert the html.dark variables resolve to
+  // the locked PH Labs night palette (slate-950 / slate-900 / emerald).
+  test("CSS variables: html.dark token map is locked", async ({ page }) => {
+    await forceTheme(page, "dark");
+    await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
+    await waitForTheme(page, "dark");
+    await stabilise(page);
+
+    const vars = await page.evaluate(() => {
+      const cs = getComputedStyle(document.documentElement);
+      const get = (n: string) => cs.getPropertyValue(n).trim();
+      return {
+        background: get("--background"),
+        foreground: get("--foreground"),
+        card: get("--card"),
+        border: get("--border"),
+        primary: get("--primary"),
+        ring: get("--ring"),
+      };
+    });
+
+    // All tokens must be set in dark mode.
+    for (const [k, v] of Object.entries(vars)) {
+      expect(v.length, `--${k} missing in html.dark`).toBeGreaterThan(0);
+    }
+
+    // Helper: HSL "H S% L%" → lightness as number.
+    const lightness = (hsl: string) => {
+      const m = hsl.match(/(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)%\s+(-?\d+(?:\.\d+)?)%/);
+      return m ? Number(m[3]) : NaN;
+    };
+
+    // Background + card must be DARK surfaces (lightness < 20%).
+    expect(lightness(vars.background)).toBeLessThan(20);
+    expect(lightness(vars.card)).toBeLessThan(25);
+    // Foreground must be LIGHT (lightness > 80%) for contrast.
+    expect(lightness(vars.foreground)).toBeGreaterThan(80);
+    // Border must stay subtle on dark (lightness < 35%).
+    expect(lightness(vars.border)).toBeLessThan(35);
+    // Ring must remain the emerald accent (hue near 160).
+    const ringHue = Number(vars.ring.split(/\s+/)[0]);
+    expect(ringHue).toBeGreaterThan(140);
+    expect(ringHue).toBeLessThan(180);
+
+    // Resolved body colour: dark surface, light text.
+    const body = await page.evaluate(() => {
+      const cs = getComputedStyle(document.body);
+      return { color: cs.color, bg: cs.backgroundColor };
+    });
+    const bgM = body.bg.match(/\d+/g)!.map(Number);
+    expect(Math.max(bgM[0], bgM[1], bgM[2])).toBeLessThan(40);
+    const fgM = body.color.match(/\d+/g)!.map(Number);
+    expect(Math.min(fgM[0], fgM[1], fgM[2])).toBeGreaterThan(180);
+
+    // Link must not collapse to dark on dark.
+    const link = page.locator("a:visible").first();
+    if (await link.count()) {
+      const c = await rgbOf(link, "color");
+      const parts = c.match(/\d+/g)!.map(Number);
+      expect(Math.max(parts[0], parts[1], parts[2])).toBeGreaterThan(120);
+    }
+
+    // Focus ring on the toggle still resolves to --ring (emerald).
+    const btn = page
+      .getByRole("button", { name: /switch to day mode/i })
+      .first();
+    await btn.focus();
+    const shadow = await btn.evaluate(
+      (el) => getComputedStyle(el).boxShadow,
+    );
+    expect(shadow).not.toBe("none");
+    expect(shadow.length).toBeGreaterThan(0);
+  });
+
+
+
 
   // ---------- Media-query matrix ----------
   for (const colorScheme of ["light", "dark"] as const) {
