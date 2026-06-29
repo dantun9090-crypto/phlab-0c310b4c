@@ -851,6 +851,14 @@ function RootShell({ children }: { children: React.ReactNode }) {
             modulepreload links for hashed bundles. Old service workers can
             otherwise intercept those requests before cleanup starts. */}
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: NONCE_PROPAGATOR }} />
+        {/* Apply persisted day/night theme before paint to avoid flash. */}
+        <script
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var m=localStorage.getItem('phlabs-theme-mode');if(m==='light'){document.documentElement.classList.add('light');document.documentElement.setAttribute('data-theme-mode','light');}else{document.documentElement.setAttribute('data-theme-mode','dark');}}catch(e){}})();",
+          }}
+        />
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: FORCE_SW_CLEANUP }} />
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: STALE_ASSET_RECOVERY }} />
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
