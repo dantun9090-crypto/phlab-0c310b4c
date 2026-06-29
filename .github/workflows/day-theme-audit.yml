@@ -72,6 +72,23 @@ jobs:
             bun run test:day-theme
           fi
 
+      - name: Build PR comment (pass/fail + diff thumbnails)
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        run: |
+          node scripts/day-theme-pr-comment.mjs \
+            --report playwright-report/report.json \
+            --results test-results \
+            --out pr-comment.md
+          echo "--- pr-comment.md ---"
+          head -c 2000 pr-comment.md || true
+
+      - name: Post PR comment
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: day-theme-audit
+          path: pr-comment.md
+
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -81,6 +98,7 @@ jobs:
             playwright-report/
             test-results/
             e2e/day-theme-audit.spec.ts-snapshots/
+            pr-comment.md
           retention-days: 14
 
       - name: Upload regenerated snapshots
