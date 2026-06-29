@@ -74,6 +74,18 @@ async function todaysVisitsSummary(): Promise<string> {
 }
 
 Deno.serve(async (req) => {
+  const url = new URL(req.url);
+  if (req.method === "GET" && url.searchParams.get("setup") === "1") {
+    const webhookUrl = `${SUPABASE_URL}/functions/v1/telegram-bot`;
+    const body: Record<string, unknown> = { url: webhookUrl, allowed_updates: ["message"] };
+    if (WEBHOOK_SECRET) body.secret_token = WEBHOOK_SECRET;
+    const r = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setWebhook`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return new Response(await r.text(), { status: r.status, headers: { "Content-Type": "application/json" } });
+  }
   if (req.method !== "POST") return new Response("ok");
 
   if (WEBHOOK_SECRET) {
