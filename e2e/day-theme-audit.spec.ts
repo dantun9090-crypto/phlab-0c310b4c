@@ -27,6 +27,9 @@ const BASE =
   "http://localhost:8080";
 
 const PAGES = ["/", "/products", "/compound"] as const;
+// Extended routes — auth/account/admin shells must also stay minimal in
+// light mode (admin chrome opts out via `.admin-dark` / `[data-keep-dark]`).
+const EXTENDED_PAGES = ["/login", "/account", "/admin"] as const;
 const STORAGE_KEY = "phlabs-theme-mode";
 
 async function forceTheme(page: Page, mode: "light" | "dark") {
