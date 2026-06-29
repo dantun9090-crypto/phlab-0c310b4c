@@ -7,9 +7,7 @@
  */
 declare global {
   interface Window {
-    uetq?: Array<unknown> & {
-      push: (...args: unknown[]) => void;
-    };
+    uetq?: { push: (...args: unknown[]) => void } | unknown[];
   }
 }
 
