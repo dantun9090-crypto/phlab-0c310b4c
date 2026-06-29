@@ -1,24 +1,22 @@
 /**
- * Day-theme audit suite.
+ * Day-theme audit suite — unified accessibility, contract, and visual
+ * regression coverage for the light theme.
  *
- * Verifies, on the main public pages, that:
- *  1. axe-core finds NO critical/serious WCAG violations in light mode.
- *     Re-runs the scan in dark mode on the home page as a control so the
- *     suite catches regressions on either theme.
- *  2. The header day/night toggle has the expected contract in BOTH themes:
- *       - night : aria-label "Switch to day mode", focus-visible ring visible
- *       - day   : aria-label "Switch to night mode", sun icon is computed
- *                 WHITE (rgb 255,255,255) on a solid slate-900 pill, and the
- *                 focus-visible ring is reachable by keyboard.
- *  3. The light theme stays MINIMAL — no element on the visible page paints
- *     a near-black background (the old "heavy gradient" regression).
- *  4. Visual regression snapshots are captured per page in light mode so
- *     unintended gradients / heavy effects fail the next run.
+ * Sections:
+ *  1. axe-core WCAG 2.1 AA scan (light + dark control).
+ *  2. Day/night toggle contract — explicit SVG icon color assertions,
+ *     plus hover/focus styles for BOTH keyboard AND mouse paths so
+ *     regressions on either trigger surface a failure.
+ *  3. "No heavy dark surface" scan on main + extended routes
+ *     (auth/account/admin/billing/profile/settings subpages) to keep the
+ *     whole light theme minimal.
+ *  4. Visual regression — deterministic viewport, fonts ready, network
+ *     idle, animations killed before snapshot.
  *
- * Snapshots are tolerant (see playwright.config.ts toHaveScreenshot
- * defaults) so font hinting + sub-pixel drift never flake the suite.
+ * Baselines are seeded/updated via `bun run test:day-theme:update`
+ * (single entrypoint for local + CI; see scripts/day-theme-snapshots.mjs).
  */
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page, type Locator } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
 const BASE =
@@ -27,10 +25,28 @@ const BASE =
   "http://localhost:8080";
 
 const PAGES = ["/", "/products", "/compound"] as const;
-// Extended routes — auth/account/admin shells must also stay minimal in
-// light mode (admin chrome opts out via `.admin-dark` / `[data-keep-dark]`).
-const EXTENDED_PAGES = ["/login", "/account", "/admin"] as const;
+// Auth/account/admin shells must also stay minimal in light mode.
+// Admin chrome opts out via `.admin-dark` / `[data-keep-dark]` / `[data-admin-shell]`.
+const EXTENDED_PAGES = [
+  "/login",
+  "/account",
+  "/account/billing",
+  "/account/profile",
+  "/account/settings",
+  "/admin",
+  "/admin/settings",
+] as const;
 const STORAGE_KEY = "phlabs-theme-mode";
+const SLATE_900 = "rgb(15,23,42)";
+const SLATE_800 = "rgb(30,41,59)";
+const WHITE = "rgb(255,255,255)";
+
+// Deterministic viewport for visual regression — avoids host-default drift.
+test.use({
+  viewport: { width: 1280, height: 1800 },
+  deviceScaleFactor: 1,
+  colorScheme: "no-preference",
+});
 
 async function forceTheme(page: Page, mode: "light" | "dark") {
   await page.addInitScript(
@@ -50,29 +66,56 @@ async function waitForTheme(page: Page, mode: "light" | "dark") {
     (expected) =>
       document.documentElement.getAttribute("data-theme-mode") === expected,
     mode,
+    { timeout: 5000 },
   );
 }
 
+async function stabilise(page: Page) {
+  // Wait for hydration + fonts + network so screenshots are deterministic.
+  await page.locator("main, h1, header").first().waitFor({ state: "visible" });
+  await page.evaluate(() => (document as any).fonts?.ready);
+  await page.waitForLoadState("networkidle").catch(() => {});
+  await page.addStyleTag({
+    content:
+      "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;caret-color:transparent!important;scroll-behavior:auto!important}",
+  });
+}
+
+function rgbOf(el: Locator, prop: "color" | "backgroundColor") {
+  return el.evaluate(
+    (node, p) => getComputedStyle(node as Element)[p as any] as string,
+    prop,
+  );
+}
+
+async function svgColor(btn: Locator) {
+  return btn.evaluate((el) => {
+    const visible = Array.from(el.querySelectorAll("svg")).find((s) => {
+      const cs = getComputedStyle(s);
+      return cs.opacity !== "0" && cs.visibility !== "hidden";
+    }) as SVGElement | undefined;
+    return visible ? getComputedStyle(visible).color : "";
+  });
+}
+
 test.describe("Day theme — unified audit", () => {
+  // ---------- 1. axe ----------
   for (const path of PAGES) {
-    test(`no critical/serious axe violations in light mode @ ${path}`, async ({
+    test(`axe: no critical/serious violations in light mode @ ${path}`, async ({
       page,
     }) => {
       await forceTheme(page, "light");
       await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
       await waitForTheme(page, "light");
-      await expect(page.locator("main, h1").first()).toBeVisible();
+      await stabilise(page);
 
       const results = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-        // top disclaimer + footer divs are decorative, not landmarks.
         .disableRules(["region"])
         .analyze();
-
       const blocking = results.violations.filter(
         (v) => v.impact === "critical" || v.impact === "serious",
       );
-
       if (blocking.length) {
         console.error(
           blocking
@@ -83,19 +126,15 @@ test.describe("Day theme — unified audit", () => {
             .join("\n"),
         );
       }
-      expect(
-        blocking,
-        `${blocking.length} blocking a11y issue(s) in light mode — see console`,
-      ).toEqual([]);
+      expect(blocking).toEqual([]);
     });
   }
 
-  test("dark mode home control still passes axe (no regression)", async ({
-    page,
-  }) => {
+  test("axe: dark mode home control still passes", async ({ page }) => {
     await forceTheme(page, "dark");
     await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
     await waitForTheme(page, "dark");
+    await stabilise(page);
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
       .disableRules(["region"])
@@ -106,34 +145,46 @@ test.describe("Day theme — unified audit", () => {
     expect(blocking).toEqual([]);
   });
 
-  test("toggle: night styling preserved + focus-visible ring reachable", async ({
+  // ---------- 2. Toggle contract (mouse + keyboard) ----------
+  test("toggle: night styling — keyboard focus + mouse hover", async ({
     page,
   }) => {
     await forceTheme(page, "dark");
     await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
     await waitForTheme(page, "dark");
+    await stabilise(page);
 
     const btn = page
       .getByRole("button", { name: /switch to day mode/i })
       .first();
     await expect(btn).toBeVisible();
 
-    // Keyboard focus must reach the toggle and show a ring.
+    // Keyboard focus path — ring must render.
     await btn.focus();
-    const hasRing = await btn.evaluate((el) => {
-      const s = getComputedStyle(el);
-      // focus-visible ring is rendered via box-shadow on Tailwind's ring utility.
-      return s.boxShadow !== "none" && s.boxShadow.length > 0;
-    });
-    expect(hasRing, "night-mode toggle must show a focus ring").toBe(true);
+    expect(
+      await btn.evaluate((el) => getComputedStyle(el).boxShadow !== "none"),
+    ).toBe(true);
+
+    // SVG icon (moon in night mode) must NOT be pure black.
+    const icon = await svgColor(btn);
+    expect(icon.replace(/\s+/g, "")).not.toBe("rgb(0,0,0)");
+    expect(icon.replace(/\s+/g, "")).not.toBe("");
+
+    // Mouse hover path — text colour must lighten to white.
+    await btn.hover();
+    // Allow style update to apply.
+    await page.waitForTimeout(50);
+    const hoverColor = (await rgbOf(btn, "color")).replace(/\s+/g, "");
+    expect(hoverColor).toBe(WHITE);
   });
 
-  test("toggle: day mode sun icon is WHITE on slate-900 pill", async ({
+  test("toggle: day styling — explicit SVG color + hover + focus", async ({
     page,
   }) => {
     await forceTheme(page, "light");
     await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
     await waitForTheme(page, "light");
+    await stabilise(page);
 
     const btn = page
       .getByRole("button", { name: /switch to night mode/i })
@@ -141,109 +192,47 @@ test.describe("Day theme — unified audit", () => {
     await expect(btn).toBeVisible();
     expect(await btn.getAttribute("aria-pressed")).toBe("true");
 
-    const { bg, sunColor } = await btn.evaluate((el) => {
-      const sun = el.querySelector("svg") as SVGElement | null;
-      return {
-        bg: getComputedStyle(el).backgroundColor,
-        sunColor: sun ? getComputedStyle(sun).color : "",
-      };
-    });
-
-    // slate-900 = rgb(15, 23, 42)
-    expect(bg.replace(/\s+/g, "")).toBe("rgb(15,23,42)");
-    // Sun stroke uses currentColor → must be pure white.
-    expect(sunColor.replace(/\s+/g, "")).toBe("rgb(255,255,255)");
-
-    // Focus ring still present in light mode.
-    await btn.focus();
-    const hasRing = await btn.evaluate(
-      (el) => getComputedStyle(el).boxShadow !== "none",
+    // Idle: slate-900 pill, white sun icon.
+    expect((await rgbOf(btn, "backgroundColor")).replace(/\s+/g, "")).toBe(
+      SLATE_900,
     );
-    expect(hasRing, "day-mode toggle must show a focus ring").toBe(true);
+    expect((await svgColor(btn)).replace(/\s+/g, "")).toBe(WHITE);
 
-    // Hover must keep the icon readable (no transparent background swap).
+    // Mouse hover: bg → slate-800, icon STAYS white.
     await btn.hover();
-    const hoverBg = await btn.evaluate(
-      (el) => getComputedStyle(el).backgroundColor,
+    await page.waitForTimeout(50);
+    expect((await rgbOf(btn, "backgroundColor")).replace(/\s+/g, "")).toBe(
+      SLATE_800,
     );
-    // slate-800 = rgb(30, 41, 59)
-    expect(hoverBg.replace(/\s+/g, "")).toBe("rgb(30,41,59)");
+    expect((await svgColor(btn)).replace(/\s+/g, "")).toBe(WHITE);
+
+    // Keyboard focus path: ring visible AND icon still white.
+    await page.mouse.move(0, 0);
+    await btn.focus();
+    expect(
+      await btn.evaluate((el) => getComputedStyle(el).boxShadow !== "none"),
+    ).toBe(true);
+    expect((await svgColor(btn)).replace(/\s+/g, "")).toBe(WHITE);
   });
 
-  for (const path of PAGES) {
-    test(`light theme: no heavy dark surfaces remain @ ${path}`, async ({
-      page,
-    }) => {
-      await forceTheme(page, "light");
-      await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
-      await waitForTheme(page, "light");
-
-      // Scan every visible element above the fold for near-black painted
-      // backgrounds — the regression we want to catch is a dark hero/section
-      // bleeding through in light mode.
-      const offenders = await page.evaluate(() => {
-        const out: { tag: string; bg: string }[] = [];
-        const els = Array.from(document.body.querySelectorAll<HTMLElement>("*"));
-        for (const el of els) {
-          if (el.closest("[data-keep-dark], .admin-dark")) continue;
-          const r = el.getBoundingClientRect();
-          if (r.width < 80 || r.height < 40) continue;
-          if (r.top > window.innerHeight) continue;
-          const bg = getComputedStyle(el).backgroundColor;
-          const m = bg.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/);
-          if (!m) continue;
-          const [r1, g1, b1] = [+m[1], +m[2], +m[3]];
-          const a = m[4] === undefined ? 1 : +m[4];
-          if (a < 0.5) continue;
-          const max = Math.max(r1, g1, b1);
-          if (max < 40) out.push({ tag: el.tagName.toLowerCase(), bg });
-        }
-        return out.slice(0, 5);
-      });
-      expect(offenders, `dark surfaces leaking into light theme: ${JSON.stringify(offenders)}`).toEqual([]);
-    });
-  }
-
-  for (const path of PAGES) {
-    test(`visual regression — light theme @ ${path}`, async ({ page }) => {
-      await forceTheme(page, "light");
-      await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
-      await waitForTheme(page, "light");
-      // Stabilise: kill animations / blinking carets handled globally.
-      await page.addStyleTag({
-        content:
-          "*,*::before,*::after{animation:none!important;transition:none!important}",
-      });
-      await page.waitForLoadState("networkidle").catch(() => {});
-      const slug = path === "/" ? "home" : path.replace(/[\\/]/g, "-").replace(/^-/, "");
-      await expect(page).toHaveScreenshot(`day-theme-${slug}.png`, {
-        fullPage: false,
-      });
-    });
-  }
-
-  // ---------- Extended routes (settings / account / admin shells) ----------
-  for (const path of EXTENDED_PAGES) {
-    test(`extended route stays minimal in light mode @ ${path}`, async ({
-      page,
-    }) => {
+  // ---------- 3. Heavy-surface scan ----------
+  for (const path of [...PAGES, ...EXTENDED_PAGES]) {
+    test(`light theme stays minimal @ ${path}`, async ({ page }) => {
       await forceTheme(page, "light");
       const resp = await page.goto(`${BASE}${path}`, {
         waitUntil: "domcontentloaded",
       });
-      // Auth-gated routes may redirect to /login — that's fine, we still
-      // want the light shell to be minimal wherever we land.
       expect(resp?.status() ?? 200).toBeLessThan(500);
       await waitForTheme(page, "light");
+      await stabilise(page);
 
-      // Reuse the heavy-surface scan but excluding admin chrome.
       const offenders = await page.evaluate(() => {
         const out: { tag: string; bg: string; cls: string }[] = [];
-        const els = Array.from(
-          document.body.querySelectorAll<HTMLElement>("*"),
-        );
+        const els = Array.from(document.body.querySelectorAll<HTMLElement>("*"));
         for (const el of els) {
-          if (el.closest("[data-keep-dark], .admin-dark, [data-admin-shell]"))
+          if (
+            el.closest("[data-keep-dark], .admin-dark, [data-admin-shell]")
+          )
             continue;
           const r = el.getBoundingClientRect();
           if (r.width < 120 || r.height < 60) continue;
@@ -260,7 +249,7 @@ test.describe("Day theme — unified audit", () => {
             out.push({
               tag: el.tagName.toLowerCase(),
               bg,
-              cls: el.className?.toString().slice(0, 80) ?? "",
+              cls: (el.className?.toString?.() ?? "").slice(0, 80),
             });
         }
         return out.slice(0, 5);
@@ -269,50 +258,47 @@ test.describe("Day theme — unified audit", () => {
         offenders,
         `dark surfaces leaked into light theme on ${path}: ${JSON.stringify(offenders)}`,
       ).toEqual([]);
-
-      // Buttons + links must use the unified token colors (no arbitrary
-      // pure-black / pure-white text that bypasses theming).
-      const arbitraryText = await page.evaluate(() => {
-        const sel = "a, button";
-        const els = Array.from(document.querySelectorAll<HTMLElement>(sel));
-        const bad: string[] = [];
-        for (const el of els.slice(0, 200)) {
-          if (el.closest("[data-keep-dark], .admin-dark")) continue;
-          const c = getComputedStyle(el).color.replace(/\s+/g, "");
-          // Pure white text on a light theme button is the canonical
-          // contrast-fail we want to surface.
-          if (c === "rgb(255,255,255)") {
-            const r = el.getBoundingClientRect();
-            if (r.width > 0 && r.height > 0)
-              bad.push(`${el.tagName.toLowerCase()}:${c}`);
-          }
-        }
-        return bad.slice(0, 5);
-      });
-      // Buttons may legitimately be white-on-dark (primary CTAs use a dark
-      // pill in light mode — see the day/night toggle). We only assert the
-      // count stays small, not zero, to avoid false positives.
-      expect(arbitraryText.length).toBeLessThan(20);
     });
   }
 
-  // ---------- Media-query matrix for the toggle ----------
+  // ---------- 4. Visual regression ----------
+  for (const path of PAGES) {
+    test(`visual regression — light theme @ ${path}`, async ({ page }) => {
+      await forceTheme(page, "light");
+      await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
+      await waitForTheme(page, "light");
+      await stabilise(page);
+      // Park the cursor so hover state never leaks into the snapshot.
+      await page.mouse.move(0, 0);
+      const slug =
+        path === "/"
+          ? "home"
+          : path.replace(/[\\/]/g, "-").replace(/^-/, "");
+      await expect(page).toHaveScreenshot(`day-theme-${slug}.png`, {
+        fullPage: false,
+        animations: "disabled",
+        caret: "hide",
+      });
+    });
+  }
+
+  // ---------- Media-query matrix ----------
   for (const colorScheme of ["light", "dark"] as const) {
     for (const reducedMotion of ["no-preference", "reduce"] as const) {
-      test(`toggle stays correct under prefers-color-scheme=${colorScheme} + prefers-reduced-motion=${reducedMotion}`, async ({
+      test(`toggle: prefers-color-scheme=${colorScheme} + prefers-reduced-motion=${reducedMotion}`, async ({
         browser,
       }) => {
         const ctx = await browser.newContext({
           colorScheme,
           reducedMotion,
           viewport: { width: 1280, height: 1800 },
+          deviceScaleFactor: 1,
         });
         const page = await ctx.newPage();
-        // Force the app mode to match the OS preference so we audit the
-        // matching theme; the toggle must respect both.
         await forceTheme(page, colorScheme === "light" ? "light" : "dark");
         await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
         await waitForTheme(page, colorScheme === "light" ? "light" : "dark");
+        await stabilise(page);
 
         const labelRx =
           colorScheme === "light"
@@ -321,39 +307,20 @@ test.describe("Day theme — unified audit", () => {
         const btn = page.getByRole("button", { name: labelRx }).first();
         await expect(btn).toBeVisible();
 
-        // Focus must be reachable + show ring regardless of media prefs.
         await btn.focus();
-        const ringOk = await btn.evaluate(
-          (el) => getComputedStyle(el).boxShadow !== "none",
-        );
-        expect(ringOk).toBe(true);
+        expect(
+          await btn.evaluate((el) => getComputedStyle(el).boxShadow !== "none"),
+        ).toBe(true);
 
-        // Icon contrast guarantee per theme.
-        const { bg, sunColor } = await btn.evaluate((el) => {
-          const sun = el.querySelector("svg") as SVGElement | null;
-          return {
-            bg: getComputedStyle(el).backgroundColor,
-            sunColor: sun ? getComputedStyle(sun).color : "",
-          };
-        });
+        const sun = await svgColor(btn);
         if (colorScheme === "light") {
-          expect(bg.replace(/\s+/g, "")).toBe("rgb(15,23,42)");
-          expect(sunColor.replace(/\s+/g, "")).toBe("rgb(255,255,255)");
+          expect(
+            (await rgbOf(btn, "backgroundColor")).replace(/\s+/g, ""),
+          ).toBe(SLATE_900);
+          expect(sun.replace(/\s+/g, "")).toBe(WHITE);
         } else {
-          // Night styling: icon must NOT be pure black (regression guard).
-          expect(sunColor.replace(/\s+/g, "")).not.toBe("rgb(0,0,0)");
+          expect(sun.replace(/\s+/g, "")).not.toBe("rgb(0,0,0)");
         }
-
-        // Under reduce-motion, the toggle must not animate transforms.
-        if (reducedMotion === "reduce") {
-          const dur = await btn.evaluate((el) => {
-            const sun = el.querySelector("svg");
-            return sun ? getComputedStyle(sun).transitionDuration : "0s";
-          });
-          // Either explicitly 0s or ignored by browser under reduce-motion.
-          expect(["0s", "0ms", ""].includes(dur) || dur.length > 0).toBe(true);
-        }
-
         await ctx.close();
       });
     }

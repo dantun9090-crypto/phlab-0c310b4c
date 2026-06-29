@@ -67,9 +67,9 @@ jobs:
           UPDATE_SNAPSHOTS: ${{ github.event.inputs.update_snapshots }}
         run: |
           if [ "$UPDATE_SNAPSHOTS" = "true" ]; then
-            bunx playwright test e2e/day-theme-audit.spec.ts --update-snapshots --reporter=line
+            bun run test:day-theme:update
           else
-            bunx playwright test e2e/day-theme-audit.spec.ts --reporter=line
+            bun run test:day-theme
           fi
 
       - name: Upload Playwright report on failure
