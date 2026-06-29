@@ -484,12 +484,19 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   }
   htmlHeaders.delete("age");
 
-  // Always emit a real per-request nonce. The previous placeholder path
-  // required an additional edge rewrite; when a request bypassed that rewrite,
-  // browsers rejected every inline boot script and the app got stuck on the
-  // recovery screen. Keeping the nonce real here makes the origin response
-  // self-contained and safe for previews, direct origin hits, and production.
-  const effectiveNonce = nonce;
+  // Cacheable anonymous routes on the production host emit `__CSP_NONCE__`
+  // placeholders. The `phlabs-prerender` Worker rewrites a fresh nonce per
+  // request before serving, allowing a single HTML body to live in
+  // caches.default. Non-cacheable routes (auth/checkout/admin) and
+  // preview/Lovable hosts (which bypass the Worker) keep the real
+  // per-request nonce so the page is self-contained.
+  const useNoncePlaceholder =
+    pathname != null &&
+    isCacheableRoute(pathname) &&
+    !!hostname &&
+    !isLovableHost(hostname);
+  const effectiveNonce = useNoncePlaceholder ? "__CSP_NONCE__" : nonce;
+
 
   const htmlResponse = new Response(stripped.body, {
     status: stripped.status,
