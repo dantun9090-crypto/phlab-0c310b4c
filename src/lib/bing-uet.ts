@@ -19,8 +19,8 @@ export function trackBingPurchase(orderId?: string): void {
   if (FIRED.has(key)) return;
   FIRED.add(key);
   try {
-    window.uetq = window.uetq || [];
-    window.uetq.push("event", "purchase", {
+    const q = (window.uetq = (window.uetq || []) as unknown[]);
+    (q as { push: (...args: unknown[]) => void }).push("event", "purchase", {
       event_category: "ecommerce",
       event_label: orderId || "purchase",
       revenue_value: 1,
