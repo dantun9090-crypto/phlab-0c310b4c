@@ -7,6 +7,7 @@ import { getOrderPaymentStatus } from "@/lib/fena.functions";
 import { Loader, CheckCircle2, AlertCircle } from "lucide-react";
 import SourceSurveyCard from "@/components/SourceSurveyCard";
 import { trackPurchase, renderGoogleCustomerReviewsOptIn, type GaItem } from "@/lib/analytics";
+import { trackBingPurchase } from "@/lib/bing-uet";
 
 /**
  * Fire GA4 `purchase` event AND trigger Google Customer Reviews opt-in
@@ -34,6 +35,8 @@ async function firePostPurchaseTrackingOnce(orderId: string) {
       currency: "GBP",
     }));
     trackPurchase(orderId, Number.isFinite(value) ? value : 0, items);
+    trackBingPurchase(orderId);
+
 
     // Google Customer Reviews opt-in — no-op if VITE_GCR_MERCHANT_ID
     // is not configured. Email and country pulled from order shipping data.

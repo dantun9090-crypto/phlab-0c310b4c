@@ -4,6 +4,7 @@ import { Loader, CheckCircle2, AlertCircle, RefreshCw, LifeBuoy } from "lucide-r
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { trackPurchase, type GaItem } from "@/lib/analytics";
+import { trackBingPurchase } from "@/lib/bing-uet";
 
 /**
  * Fire GA4 `purchase` event exactly once per order. Reads the order doc
@@ -35,6 +36,7 @@ async function fireGaPurchaseOnce(orderId: string, snapData?: Record<string, unk
       currency: "GBP",
     }));
     trackPurchase(orderId, Number.isFinite(value) ? value : 0, items);
+    trackBingPurchase(orderId);
     try { localStorage.setItem(key, "1"); } catch { /* ignore */ }
   } catch { /* ignore — analytics must never break the success page */ }
 }
