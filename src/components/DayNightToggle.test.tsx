@@ -7,6 +7,7 @@
  *    outline; emerald focus-visible ring is present.
  *  - aria-pressed + aria-label flip correctly when toggled.
  */
+// @vitest-environment happy-dom
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import DayNightToggle from "./DayNightToggle";
