@@ -26,6 +26,7 @@ import {
 import { schedulePrecacheCurrentPage } from "@/lib/lkg-cache";
 import { clearStoreCachesForNewBuild } from "@/lib/build-cache";
 import { PageviewBeacon } from "@/components/PageviewBeacon";
+import DayNightToggle from "@/components/DayNightToggle";
 import { initWebVitals } from "@/lib/web-vitals";
 import { installErrorMonitor } from "@/lib/error-monitor";
 void _clearClientCaches;
@@ -979,6 +980,7 @@ function RootComponent() {
       <QueryClientProvider client={queryClient}>
         <PageviewBeacon />
         <PageTransition />
+        <DayNightToggle />
       </QueryClientProvider>
     </RootHydrationBoundary>
   );
