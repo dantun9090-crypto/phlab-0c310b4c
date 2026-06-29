@@ -328,7 +328,7 @@ html[data-theme-mode] *::after {
 
 html.light {
   color-scheme: light;
-  background-color: #ffffff;
+  background-color: #ffffff !important;
   --background: 0 0% 100%;
   --foreground: 222 47% 11%;
   --muted: 210 40% 96%;
@@ -337,11 +337,14 @@ html.light {
   --input: 214 32% 91%;
   --ring: 160 84% 39%;
 }
-html.light body {
+html.light,
+html.light body,
+html.light #root {
   background-color: #ffffff !important;
-  color: #0f172a;
   background-image: none !important;
+  color: #0f172a !important;
 }
+
 
 /* Large surfaces → clean white / near-white scale, no gradients */
 html.light .bg-slate-950,
