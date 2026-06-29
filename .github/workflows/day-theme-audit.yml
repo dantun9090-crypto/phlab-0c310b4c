@@ -1,0 +1,92 @@
+name: Day Theme Audit (axe + visual regression)
+
+# Runs the unified light-theme audit:
+#   - axe-core WCAG 2.1 AA scan (fails on critical/serious findings)
+#   - day/night toggle contract under prefers-color-scheme + prefers-reduced-motion
+#   - "no heavy dark surface" regression scan on main + extended routes
+#   - visual regression snapshots (committed under
+#     e2e/day-theme-audit.spec.ts-snapshots/). Subsequent runs fail on diff.
+#
+# To (re)baseline snapshots intentionally:
+#   gh workflow run "Day Theme Audit (axe + visual regression)" \
+#     -f update_snapshots=true
+# then commit the regenerated PNGs from the uploaded artifact.
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "e2e/day-theme-audit.spec.ts"
+      - "src/styles.css"
+      - "src/components/DayNightToggle.tsx"
+      - ".github/workflows/day-theme-audit.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: "Regenerate visual baselines"
+        type: boolean
+        default: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Build app
+        run: bun run build
+
+      - name: Start preview server
+        run: |
+          bun run preview --port 8080 &
+          for i in {1..40}; do
+            if curl -sf http://localhost:8080 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          echo "preview server failed to start" >&2
+          exit 1
+        env:
+          NODE_ENV: production
+
+      - name: Run day-theme audit
+        env:
+          TEST_BASE_URL: http://localhost:8080
+          UPDATE_SNAPSHOTS: ${{ github.event.inputs.update_snapshots }}
+        run: |
+          if [ "$UPDATE_SNAPSHOTS" = "true" ]; then
+            bunx playwright test e2e/day-theme-audit.spec.ts --update-snapshots --reporter=line
+          else
+            bunx playwright test e2e/day-theme-audit.spec.ts --reporter=line
+          fi
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: day-theme-audit-report
+          path: |
+            playwright-report/
+            test-results/
+            e2e/day-theme-audit.spec.ts-snapshots/
+          retention-days: 14
+
+      - name: Upload regenerated snapshots
+        if: ${{ github.event.inputs.update_snapshots == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: day-theme-snapshots
+          path: e2e/day-theme-audit.spec.ts-snapshots/
+          retention-days: 30
