@@ -901,6 +901,7 @@ function RootComponent() {
     (window as unknown as { __PHL_REACT_READY__?: boolean }).__PHL_REACT_READY__ = true;
     initWebVitals();
     installErrorMonitor();
+    installBfcacheMonitor();
     const stableLoadTimer = window.setTimeout(() => {
       try {
         localStorage.removeItem('phl_reload_count');
