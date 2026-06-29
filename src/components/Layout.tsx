@@ -25,6 +25,7 @@ import { Logo } from './Logo';
 import { UnderConstruction } from './UnderConstruction';
 import ResearchGate from './ResearchGate';
 import { Navigation } from './Navigation';
+import DayNightToggle from './DayNightToggle';
 import { WhatsAppIcon, FacebookIcon, InstagramIcon, TwitterXIcon, YoutubeIcon } from './SocialIcons';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { initVisitorTracking, trackVisitorPageView } from '@/lib/visitor-tracking';
@@ -684,6 +685,9 @@ export function Layout({ children }: LayoutProps) {
               )}
 
               <div className="w-px h-5 bg-white/[0.1] hidden md:block mx-0.5" />
+
+              {/* Day / Night theme toggle */}
+              <DayNightToggle variant="inline" />
 
               {/* Search */}
               <button
