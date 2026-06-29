@@ -473,8 +473,20 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
     htmlHeaders.delete("surrogate-control");
     htmlHeaders.delete("pragma");
     htmlHeaders.delete("expires");
+  } else if (cacheable && stripped.status === 200) {
+    // Edge cache disabled (htmlTtl=0) but route is anonymous/public —
+    // emit bfcache-friendly headers so the browser back/forward cache works.
+    // `no-store` would disqualify the page from bfcache and cause images to
+    // flash blank on back navigation. `private, max-age=0, must-revalidate`
+    // forces revalidation on direct nav but keeps bfcache eligibility.
+    htmlHeaders.set("cache-control", "private, max-age=0, must-revalidate");
+    htmlHeaders.set("cdn-cache-control", "no-store");
+    htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
+    htmlHeaders.delete("surrogate-control");
+    htmlHeaders.delete("pragma");
+    htmlHeaders.delete("expires");
   } else {
-    // Sensitive routes OR caching disabled by admin — never cache.
+    // Sensitive routes (auth/checkout/admin) — never cache, never bfcache.
     htmlHeaders.set("cache-control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0");
     htmlHeaders.set("cdn-cache-control", "no-store");
     htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
@@ -482,6 +494,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
     htmlHeaders.set("pragma", "no-cache");
     htmlHeaders.set("expires", "0");
   }
+
   htmlHeaders.delete("age");
 
   // Cacheable anonymous routes on the production host emit `__CSP_NONCE__`
