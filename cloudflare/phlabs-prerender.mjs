@@ -183,28 +183,12 @@ function generateNonce() {
 }
 __name(generateNonce, "generateNonce");
 function rewriteCspNonce(response) {
-  const csp = response.headers.get("content-security-policy") || "";
-  if (!csp.includes(NONCE_PLACEHOLDER)) return response;
-  const nonce = generateNonce();
-  const headers = new Headers(response.headers);
-  headers.set("content-security-policy", csp.replace(NONCE_PLACEHOLDER_RX, nonce));
-  const rewritten = new HTMLRewriter().on("script[nonce]", {
-    element(el) {
-      const cur = el.getAttribute("nonce");
-      if (cur === NONCE_PLACEHOLDER) el.setAttribute("nonce", nonce);
-    }
-  }).on("style[nonce]", {
-    element(el) {
-      const cur = el.getAttribute("nonce");
-      if (cur === NONCE_PLACEHOLDER) el.setAttribute("nonce", nonce);
-    }
-  }).transform(new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers
-  }));
-  return rewritten;
+  // Nonce removed from origin CSP/HTML. Pass-through; kept as a no-op so
+  // callers don't need to change. Safe even if a stale origin still emits
+  // `__CSP_NONCE__` — those requests will fail CSP rather than leak a placeholder.
+  return response;
 }
+
 __name(rewriteCspNonce, "rewriteCspNonce");
 function isFirebaseAuthHelperPath(url) {
   return FIREBASE_AUTH_PREFIXES.some((p) => url.pathname.startsWith(p));

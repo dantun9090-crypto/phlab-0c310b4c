@@ -82,8 +82,8 @@ const WWW_TO_APEX_HOSTS = new Map<string, string>([
 // where they still apply.
 const CSP_TEMPLATE = [
   "default-src 'self'",
-  "script-src 'self' 'nonce-__NONCE__' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://tagmanager.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://apis.google.com https://www.gstatic.com",
-  "script-src-elem 'self' 'nonce-__NONCE__' 'sha256-mrBnEBPEu1cVSfhGrkrw/dBIOJNNQLHdJ61NnrATtfw=' 'sha256-jyIFcdfiq7FRXZ9gsRvlrQ/9AoR9yXerUljboT/aaME=' 'sha256-P76PTj/+WUmS6f0n1sfwajT44t1MjQJYpDlRxTJYKeE=' 'sha256-x0FXfKlW1TW3dYqEupVj71DBtxzhCQY6eo8gTSTNEqI=' 'sha256-1dUE2SWmQf7b3WMy5T0IPlQoQ/qO26kekht68yKNI0c=' 'sha256-yPsXJ27cEeAjHnZfoiHYKch1nRQqMOhIFNk1Ovh7l+U=' 'sha256-Atx3EcQzMKU3+hzT0UoMWZdSotkIW2snZlwb0vZvglM=' 'sha256-xiXK+qAK3o1GPzx/8hQrgS/gkeN839JZc3fK/lhLh/Y=' 'sha256-FZaW1rpBnpzY9HJR8VQSUozeZ+wNA0el8Qs9vRJq2h4=' 'sha256-gDFHc/BaV5luc9YrNvraq8cW6HYuXPsawF+U/YGYs2k=' https://*.googletagmanager.com https://*.google-analytics.com https://*.google.com https://*.google.co.uk https://*.gstatic.com https://*.stripe.com https://*.wallid.com",
+  "script-src 'self' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://tagmanager.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://apis.google.com https://www.gstatic.com",
+  "script-src-elem 'self' 'sha256-mrBnEBPEu1cVSfhGrkrw/dBIOJNNQLHdJ61NnrATtfw=' 'sha256-jyIFcdfiq7FRXZ9gsRvlrQ/9AoR9yXerUljboT/aaME=' 'sha256-P76PTj/+WUmS6f0n1sfwajT44t1MjQJYpDlRxTJYKeE=' 'sha256-x0FXfKlW1TW3dYqEupVj71DBtxzhCQY6eo8gTSTNEqI=' 'sha256-1dUE2SWmQf7b3WMy5T0IPlQoQ/qO26kekht68yKNI0c=' 'sha256-yPsXJ27cEeAjHnZfoiHYKch1nRQqMOhIFNk1Ovh7l+U=' 'sha256-Atx3EcQzMKU3+hzT0UoMWZdSotkIW2snZlwb0vZvglM=' 'sha256-xiXK+qAK3o1GPzx/8hQrgS/gkeN839JZc3fK/lhLh/Y=' 'sha256-FZaW1rpBnpzY9HJR8VQSUozeZ+wNA0el8Qs9vRJq2h4=' 'sha256-gDFHc/BaV5luc9YrNvraq8cW6HYuXPsawF+U/YGYs2k=' 'strict-dynamic' https://*.googletagmanager.com https://*.google-analytics.com https://*.google.com https://*.google.co.uk https://*.gstatic.com https://*.stripe.com https://*.wallid.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com",
   "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com",
   "style-src-attr 'unsafe-inline'",
@@ -165,13 +165,14 @@ function isLovableHost(hostname: string): boolean {
   );
 }
 
-function buildCsp(nonce: string, hostname?: string): string {
+function buildCsp(_nonce: string, hostname?: string): string {
   if (hostname && isLovableHost(hostname)) {
     return CSP_TEMPLATE_PREVIEW;
   }
-  // Replace ALL occurrences of __NONCE__ (script-src + script-src-elem).
-  return CSP_TEMPLATE.split("__NONCE__").join(nonce);
+  // Nonce removed: scripts validated via 'self' + SHA-256 hashes + 'strict-dynamic' + host allowlist.
+  return CSP_TEMPLATE;
 }
+
 
 
 // ==================== Bot management + Prerender.io ====================
@@ -450,8 +451,15 @@ function isCacheableRoute(pathname: string): boolean {
   return false;
 }
 
+// Public roots that should be edge-cacheable with the unified
+// `public, s-maxage=60, max-age=0, stale-while-revalidate=86400` policy.
+const PUBLIC_EDGE_CACHEABLE = new Set<string>(["/", "/products", "/compound", "/research"]);
+function isPublicEdgeCacheable(pathname: string): boolean {
+  return PUBLIC_EDGE_CACHEABLE.has(pathname);
+}
 
-function applySecurityHeaders(response: Response, nonce: string, hostname?: string, pathname?: string, htmlTtl: number = 0): Response {
+
+function applySecurityHeaders(response: Response, nonce: string, hostname?: string, pathname?: string, _htmlTtl: number = 0): Response {
   const stripped = stripInternalHeaders(response);
   const contentType = stripped.headers.get("content-type") ?? "";
   // Only decorate HTML — leaving JSON/XML/asset responses untouched avoids
@@ -459,35 +467,20 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   if (!contentType.includes("text/html")) return stripped;
 
   const htmlHeaders = new Headers(stripped.headers);
-  const cacheable = pathname ? isCacheableHtmlPath(pathname) : false;
-  // htmlTtl is admin-controlled via /admin → Cache & Recache. 0 disables the
-  // edge cache entirely (no-store everywhere) so blank-page risk after a
-  // publish is zero. >0 sets max-age + stale-while-revalidate.
-  if (cacheable && stripped.status === 200 && htmlTtl > 0) {
-    // Browsers must always revalidate (max-age=0) so a publish is visible
-    // immediately on next nav. CF edge holds the response for htmlTtl + can
-    // serve stale up to 24h while revalidating.
-    htmlHeaders.set("cache-control", "public, max-age=0, must-revalidate");
-    htmlHeaders.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
-    htmlHeaders.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
-    htmlHeaders.delete("surrogate-control");
-    htmlHeaders.delete("pragma");
-    htmlHeaders.delete("expires");
-  } else if (cacheable && stripped.status === 200) {
-    // Edge cache disabled (htmlTtl=0) but route is anonymous/public —
-    // emit bfcache-friendly headers so the browser back/forward cache works.
-    // `no-store` would disqualify the page from bfcache and cause images to
-    // flash blank on back navigation. `private, max-age=0, must-revalidate`
-    // forces revalidation on direct nav but keeps bfcache eligibility.
-    htmlHeaders.set("cache-control", "private, max-age=0, must-revalidate");
-    htmlHeaders.set("cdn-cache-control", "no-store");
-    htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
+  const publicCacheable = pathname ? isPublicEdgeCacheable(pathname) : false;
+
+  if (publicCacheable && stripped.status === 200) {
+    // Public root pages: edge-cacheable, browser revalidates each nav, CF
+    // holds for 60s and may serve stale for 24h while revalidating.
+    htmlHeaders.set("cache-control", "public, s-maxage=60, max-age=0, stale-while-revalidate=86400");
+    htmlHeaders.set("cdn-cache-control", "public, s-maxage=60, max-age=0, stale-while-revalidate=86400");
+    htmlHeaders.set("cloudflare-cdn-cache-control", "public, s-maxage=60, max-age=0, stale-while-revalidate=86400");
     htmlHeaders.delete("surrogate-control");
     htmlHeaders.delete("pragma");
     htmlHeaders.delete("expires");
   } else {
-    // Sensitive routes (auth/checkout/admin) — never cache, never bfcache.
-    htmlHeaders.set("cache-control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0");
+    // All other routes (auth/checkout/admin/api/dynamic) — never cache.
+    htmlHeaders.set("cache-control", "private, no-store, no-cache, must-revalidate, max-age=0");
     htmlHeaders.set("cdn-cache-control", "no-store");
     htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
     htmlHeaders.set("surrogate-control", "no-store");
@@ -497,28 +490,14 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
 
   htmlHeaders.delete("age");
 
-  // Cacheable anonymous routes on the production host emit `__CSP_NONCE__`
-  // placeholders. The `phlabs-prerender` Worker rewrites a fresh nonce per
-  // request before serving, allowing a single HTML body to live in
-  // caches.default. Non-cacheable routes (auth/checkout/admin) and
-  // preview/Lovable hosts (which bypass the Worker) keep the real
-  // per-request nonce so the page is self-contained.
-  const useNoncePlaceholder =
-    pathname != null &&
-    isCacheableRoute(pathname) &&
-    !!hostname &&
-    !isLovableHost(hostname);
-  const effectiveNonce = useNoncePlaceholder ? "__CSP_NONCE__" : nonce;
-
-
   const htmlResponse = new Response(stripped.body, {
     status: stripped.status,
     statusText: stripped.statusText,
     headers: htmlHeaders,
   });
 
-  // Inject the (placeholder or real) nonce into every <script> element via
-  // workerd's built-in HTMLRewriter.
+  // HTMLRewriter: only append build-id meta. Per-request nonce injection
+  // removed so HTML bodies are identical across requests and edge-cacheable.
   type RwElement = {
     setAttribute: (k: string, v: string) => void;
     append: (html: string, opts?: { html: boolean }) => void;
@@ -534,11 +513,6 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   if (RewriterCtor) {
     const rewriter: Rewriter = new RewriterCtor();
     rewritten = rewriter
-      .on("script", {
-        element(el) {
-          el.setAttribute("nonce", effectiveNonce);
-        },
-      })
       .on("head", {
         element(el) {
           el.append(`<meta name="build-id" content="${buildId}">`, { html: true });
@@ -551,13 +525,14 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
     if (!headers.has(k)) headers.set(k, v);
   }
-  headers.set("content-security-policy", buildCsp(effectiveNonce, hostname));
+  headers.set("content-security-policy", buildCsp(nonce, hostname));
   headers.set("x-build-id", buildId);
   return new Response(rewritten.body, {
     status: rewritten.status,
     statusText: rewritten.statusText,
     headers,
   });
+
 }
 
 function brandedErrorResponse(nonce: string, hostname?: string): Response {
