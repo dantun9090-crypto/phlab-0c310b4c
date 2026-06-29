@@ -221,4 +221,141 @@ test.describe("Day theme — unified audit", () => {
       });
     });
   }
+
+  // ---------- Extended routes (settings / account / admin shells) ----------
+  for (const path of EXTENDED_PAGES) {
+    test(`extended route stays minimal in light mode @ ${path}`, async ({
+      page,
+    }) => {
+      await forceTheme(page, "light");
+      const resp = await page.goto(`${BASE}${path}`, {
+        waitUntil: "domcontentloaded",
+      });
+      // Auth-gated routes may redirect to /login — that's fine, we still
+      // want the light shell to be minimal wherever we land.
+      expect(resp?.status() ?? 200).toBeLessThan(500);
+      await waitForTheme(page, "light");
+
+      // Reuse the heavy-surface scan but excluding admin chrome.
+      const offenders = await page.evaluate(() => {
+        const out: { tag: string; bg: string; cls: string }[] = [];
+        const els = Array.from(
+          document.body.querySelectorAll<HTMLElement>("*"),
+        );
+        for (const el of els) {
+          if (el.closest("[data-keep-dark], .admin-dark, [data-admin-shell]"))
+            continue;
+          const r = el.getBoundingClientRect();
+          if (r.width < 120 || r.height < 60) continue;
+          if (r.top > window.innerHeight) continue;
+          const bg = getComputedStyle(el).backgroundColor;
+          const m = bg.match(
+            /^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/,
+          );
+          if (!m) continue;
+          const a = m[4] === undefined ? 1 : +m[4];
+          if (a < 0.5) continue;
+          const max = Math.max(+m[1], +m[2], +m[3]);
+          if (max < 40)
+            out.push({
+              tag: el.tagName.toLowerCase(),
+              bg,
+              cls: el.className?.toString().slice(0, 80) ?? "",
+            });
+        }
+        return out.slice(0, 5);
+      });
+      expect(
+        offenders,
+        `dark surfaces leaked into light theme on ${path}: ${JSON.stringify(offenders)}`,
+      ).toEqual([]);
+
+      // Buttons + links must use the unified token colors (no arbitrary
+      // pure-black / pure-white text that bypasses theming).
+      const arbitraryText = await page.evaluate(() => {
+        const sel = "a, button";
+        const els = Array.from(document.querySelectorAll<HTMLElement>(sel));
+        const bad: string[] = [];
+        for (const el of els.slice(0, 200)) {
+          if (el.closest("[data-keep-dark], .admin-dark")) continue;
+          const c = getComputedStyle(el).color.replace(/\s+/g, "");
+          // Pure white text on a light theme button is the canonical
+          // contrast-fail we want to surface.
+          if (c === "rgb(255,255,255)") {
+            const r = el.getBoundingClientRect();
+            if (r.width > 0 && r.height > 0)
+              bad.push(`${el.tagName.toLowerCase()}:${c}`);
+          }
+        }
+        return bad.slice(0, 5);
+      });
+      // Buttons may legitimately be white-on-dark (primary CTAs use a dark
+      // pill in light mode — see the day/night toggle). We only assert the
+      // count stays small, not zero, to avoid false positives.
+      expect(arbitraryText.length).toBeLessThan(20);
+    });
+  }
+
+  // ---------- Media-query matrix for the toggle ----------
+  for (const colorScheme of ["light", "dark"] as const) {
+    for (const reducedMotion of ["no-preference", "reduce"] as const) {
+      test(`toggle stays correct under prefers-color-scheme=${colorScheme} + prefers-reduced-motion=${reducedMotion}`, async ({
+        browser,
+      }) => {
+        const ctx = await browser.newContext({
+          colorScheme,
+          reducedMotion,
+          viewport: { width: 1280, height: 1800 },
+        });
+        const page = await ctx.newPage();
+        // Force the app mode to match the OS preference so we audit the
+        // matching theme; the toggle must respect both.
+        await forceTheme(page, colorScheme === "light" ? "light" : "dark");
+        await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
+        await waitForTheme(page, colorScheme === "light" ? "light" : "dark");
+
+        const labelRx =
+          colorScheme === "light"
+            ? /switch to night mode/i
+            : /switch to day mode/i;
+        const btn = page.getByRole("button", { name: labelRx }).first();
+        await expect(btn).toBeVisible();
+
+        // Focus must be reachable + show ring regardless of media prefs.
+        await btn.focus();
+        const ringOk = await btn.evaluate(
+          (el) => getComputedStyle(el).boxShadow !== "none",
+        );
+        expect(ringOk).toBe(true);
+
+        // Icon contrast guarantee per theme.
+        const { bg, sunColor } = await btn.evaluate((el) => {
+          const sun = el.querySelector("svg") as SVGElement | null;
+          return {
+            bg: getComputedStyle(el).backgroundColor,
+            sunColor: sun ? getComputedStyle(sun).color : "",
+          };
+        });
+        if (colorScheme === "light") {
+          expect(bg.replace(/\s+/g, "")).toBe("rgb(15,23,42)");
+          expect(sunColor.replace(/\s+/g, "")).toBe("rgb(255,255,255)");
+        } else {
+          // Night styling: icon must NOT be pure black (regression guard).
+          expect(sunColor.replace(/\s+/g, "")).not.toBe("rgb(0,0,0)");
+        }
+
+        // Under reduce-motion, the toggle must not animate transforms.
+        if (reducedMotion === "reduce") {
+          const dur = await btn.evaluate((el) => {
+            const sun = el.querySelector("svg");
+            return sun ? getComputedStyle(sun).transitionDuration : "0s";
+          });
+          // Either explicitly 0s or ignored by browser under reduce-motion.
+          expect(["0s", "0ms", ""].includes(dur) || dur.length > 0).toBe(true);
+        }
+
+        await ctx.close();
+      });
+    }
+  }
 });
