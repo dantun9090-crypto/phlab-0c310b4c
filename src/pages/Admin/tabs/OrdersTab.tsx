@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ShoppingCart, Search, Clock, Package, Truck, CheckCircle, XCircle,
@@ -250,13 +250,42 @@ export default function OrdersTab() {
     loadOrders();
   }, []);
 
+  // Trigger element to return focus to when the modal closes.
+  const triggerRef = useRef<HTMLElement | null>(null);
+  // First focusable inside the modal (the Close button) — autofocus on open.
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+
   // Lock background scroll while the order detail modal is open (prevents
   // the page behind from scrolling on mobile when reviewing an order).
+  // Also: capture the trigger element, autofocus the modal close button,
+  // handle Escape to close, and restore focus on unmount.
   useEffect(() => {
     if (typeof document === 'undefined' || !selected) return;
+    triggerRef.current = (document.activeElement as HTMLElement) || null;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    // Autofocus the close button on next paint so the assistive tech announces it.
+    const focusTimer = window.setTimeout(() => {
+      closeBtnRef.current?.focus();
+    }, 30);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setSelected(null);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      window.clearTimeout(focusTimer);
+      document.body.style.overflow = prev;
+      // Return focus to the trigger element if it's still in the DOM.
+      const t = triggerRef.current;
+      if (t && document.contains(t) && typeof t.focus === 'function') {
+        try { t.focus(); } catch { /* ignore */ }
+      }
+      triggerRef.current = null;
+    };
   }, [selected]);
 
   // Sync inputs when selected order changes
@@ -957,14 +986,19 @@ export default function OrdersTab() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Order details"
+            data-testid="orders-modal-overlay"
+            className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
             onClick={e => { if (e.target === e.currentTarget) setSelected(null); }}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#04101f] border border-white/[0.08] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto"
+              data-testid="orders-modal-panel"
+              className="relative z-[1001] bg-[#04101f] border border-white/[0.08] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto shadow-2xl"
             >
               <div>
                 {/* Sticky header — key info + actions always visible */}
@@ -1016,7 +1050,7 @@ export default function OrdersTab() {
                         : <Trash2 className="w-3.5 h-3.5" />}
                       Delete Order
                     </button>
-                    <button onClick={() => setSelected(null)} aria-label="Close order details" className="text-[#9cb8d9] hover:text-white transition-colors">
+                    <button ref={closeBtnRef} onClick={() => setSelected(null)} aria-label="Close order details" data-testid="orders-modal-close" className="text-[#9cb8d9] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded">
                       <X className="w-5 h-5" />
                     </button>
                   </div>

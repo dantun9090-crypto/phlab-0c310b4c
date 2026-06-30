@@ -701,24 +701,52 @@ const BOOT_WATCHDOG = `
       });
     };
     // Upload schema-compliant payload (matches /api/public/error-monitor Zod).
-    // Captures the screenshot synchronously-enough that sendBeacon still has
-    // a live document; falls back to fetch+keepalive when the page is gone.
+    // - htmlSnapshot is hard-capped at 32KB (schema cap 40KB).
+    // - screenshot is dropped when above ~600KB (schema cap 600KB) so we never
+    //   blow the request body and never trigger a 413.
+    // - sendBeacon is fire-and-forget; when unavailable OR returns false we
+    //   retry the fetch path with exponential backoff (1s, 2s, 4s).
+    // - Truncation/drops log to console.warn so admins see why artifacts went missing.
+    var HTML_CAP=32000;
+    var SCREENSHOT_CAP=600000; // bytes-ish; data URL length
+    var uploadWithRetry=function(body){
+      var attempt=0;
+      var go=function(){
+        attempt++;
+        fetch('/api/public/error-monitor',{ method:'POST', headers:{'content-type':'application/json'}, body:body, keepalive:true })
+          .then(function(r){ if(!r || !r.ok){ throw new Error('status '+(r?r.status:'none')); } })
+          .catch(function(err){
+            if(attempt>=3){ try{ console.warn('[phlabs] blank-watchdog upload failed after retries:', err && err.message); }catch(e){} return; }
+            var delay=Math.pow(2,attempt-1)*1000; // 1s, 2s, 4s
+            setTimeout(go, delay);
+          });
+      };
+      go();
+    };
     var uploadSnapshot=function(payload){
       try{
         var html='';
         try{ html=(document.documentElement&&document.documentElement.outerHTML)||''; }catch(e){}
-        if(html.length>32000) html=html.slice(0,32000)+'…[truncated]';
+        var htmlTruncated=false;
+        if(html.length>HTML_CAP){ html=html.slice(0,HTML_CAP)+'…[truncated]'; htmlTruncated=true; }
         captureScreenshot().then(function(screenshot){
           try{
-            var details={ reason:String(payload.reason||''), elapsed:Number(payload.elapsed)||0, ticks:Number(payload.ticks)||0, attempts:Number(payload.attempts)||0, readyState:String(payload.readyState||''), reactReady:!!payload.reactReady, fallbackMs:Number(diagnostics.config.fallbackMs)||0, maxAttempts:Number(diagnostics.config.maxAttempts)||0 };
+            var screenshotDropped=false;
+            if(screenshot && screenshot.length>SCREENSHOT_CAP){
+              screenshotDropped=true;
+              screenshot=null;
+            }
+            if(htmlTruncated){ try{ console.warn('[phlabs] blank-watchdog: htmlSnapshot truncated to '+HTML_CAP+' chars'); }catch(e){} }
+            if(screenshotDropped){ try{ console.warn('[phlabs] blank-watchdog: screenshot dropped (over cap)'); }catch(e){} }
+            var details={ reason:String(payload.reason||''), elapsed:Number(payload.elapsed)||0, ticks:Number(payload.ticks)||0, attempts:Number(payload.attempts)||0, readyState:String(payload.readyState||''), reactReady:!!payload.reactReady, fallbackMs:Number(diagnostics.config.fallbackMs)||0, maxAttempts:Number(diagnostics.config.maxAttempts)||0, htmlTruncated:htmlTruncated, screenshotDropped:screenshotDropped };
             var bodyObj={ type:'blank_watchdog', path:location.pathname, message:'blank-watchdog fallback shown', userAgent:String(payload.ua||navigator.userAgent).slice(0,500), details:details, htmlSnapshot:html };
             if(screenshot) bodyObj.screenshot=screenshot;
             var body=JSON.stringify(bodyObj);
+            var beaconOk=false;
             if(navigator.sendBeacon){
-              navigator.sendBeacon('/api/public/error-monitor', new Blob([body],{type:'application/json'}));
-            } else {
-              fetch('/api/public/error-monitor',{ method:'POST', headers:{'content-type':'application/json'}, body:body, keepalive:true }).catch(function(){});
+              try{ beaconOk=navigator.sendBeacon('/api/public/error-monitor', new Blob([body],{type:'application/json'})); }catch(e){ beaconOk=false; }
             }
+            if(!beaconOk){ uploadWithRetry(body); }
           }catch(e){}
         });
       }catch(e){}
