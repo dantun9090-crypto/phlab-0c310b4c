@@ -72,7 +72,7 @@ function walk(dir: string) {
     if (IGNORE_DIRS.has(entry) || entry.startsWith(".DS_Store")) continue;
     const full = join(dir, entry);
     const rel = relative(ROOT, full);
-    if (rel === SELF) continue;
+    if (GUARD_FILES.has(rel)) continue;
     const st = statSync(full);
     if (st.isDirectory()) {
       walk(full);
