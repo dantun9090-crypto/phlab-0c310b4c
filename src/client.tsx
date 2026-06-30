@@ -328,11 +328,11 @@ function getCsrRouter() {
   return csrRouter;
 }
 
-function app(mode: "ssr" | "csr" = "ssr", router: ReturnType<typeof getRouter> = getCsrRouter()) {
+function app(mode: "ssr" | "csr" = "ssr", router?: ReturnType<typeof getRouter>) {
   return (
     <StrictMode>
       <ClientRootErrorBoundary>
-        {mode === "csr" ? <RouterProvider router={router} /> : <StartClient />}
+        {mode === "csr" ? <RouterProvider router={router ?? getCsrRouter()} /> : <StartClient />}
       </ClientRootErrorBoundary>
     </StrictMode>
   );
