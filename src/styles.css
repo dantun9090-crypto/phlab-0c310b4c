@@ -487,12 +487,12 @@ html.light [data-keep-dark] * {
 
 
 
-/* Live Sales Popup — locked layout (left side, below sticky header).
-   Header: 56px mobile / 64px desktop (PH Labs design system).
-   Gap below header: 12px mobile / 16px desktop. iOS-safe insets included. */
+/* Live Sales Popup — locked layout (left side, below disclaimer).
+   JS sets --phl-popup-top dynamically by measuring the disclaimer strip.
+   Fallbacks account for 2-line text on narrow screens vs 1-line on desktop. */
 .phl-live-sales-popup {
   position: fixed;
-  top: calc(56px + 34px + 8px + env(safe-area-inset-top, 0px));
+  top: var(--phl-popup-top, calc(64px + 44px + 10px + env(safe-area-inset-top, 0px)));
   left: calc(12px + env(safe-area-inset-left, 0px));
   right: auto;
   bottom: auto;
@@ -500,9 +500,15 @@ html.light [data-keep-dark] * {
   max-width: 320px;
   z-index: 2147483000;
 }
+@media (min-width: 580px) {
+  .phl-live-sales-popup {
+    top: var(--phl-popup-top, calc(64px + 30px + 10px + env(safe-area-inset-top, 0px)));
+    left: calc(14px + env(safe-area-inset-left, 0px));
+  }
+}
 @media (min-width: 768px) {
   .phl-live-sales-popup {
-    top: calc(64px + 34px + 8px + env(safe-area-inset-top, 0px));
+    top: var(--phl-popup-top, calc(64px + 28px + 12px + env(safe-area-inset-top, 0px)));
     left: calc(16px + env(safe-area-inset-left, 0px));
   }
 }

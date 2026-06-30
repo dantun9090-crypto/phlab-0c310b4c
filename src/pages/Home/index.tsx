@@ -485,7 +485,7 @@ export default function HomePage() {
       )}
 
       {/* ── Research disclaimer strip (under banner) ── */}
-      <div style={{
+      <div id="phl-research-disclaimer" style={{
         background: 'rgba(16,185,129,0.06)',
         borderBottom: '1px solid rgba(16,185,129,0.12)',
         padding: '5px 16px',
