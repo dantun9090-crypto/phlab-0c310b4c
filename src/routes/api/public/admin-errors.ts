@@ -11,6 +11,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { addDocAdmin } from '@/lib/server/firestore-admin';
+import { enforceRateLimit } from '@/lib/rate-limit';
+
+
 
 const Body = z.object({
   tab: z.string().max(120).optional(),
