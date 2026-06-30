@@ -386,15 +386,52 @@ function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
     "expires": "0",
     "x-robots-tag": "noindex, nofollow",
     "vary": "*",
+    "x-phl-via": "missing-build-asset-recovery",
   });
   if (!isScript) {
     headers.set("content-type", "text/css; charset=utf-8");
-    return new Response("/* missing stale PH Labs build stylesheet — refresh manually if needed */\n", { status: 404, headers });
+    return new Response("/* missing stale PH Labs build stylesheet — safe empty fallback */\n", { status: 200, headers });
   }
   headers.set("content-type", "text/javascript; charset=utf-8");
   return new Response(
-    "console.warn('[PHL] Missing stale build asset. Automatic reload is disabled to prevent refresh loops.');\n",
-    { status: 404, headers },
+    `(() => {
+  try {
+    console.warn('[PHL] Missing stale build asset. Showing manual cache recovery screen.');
+    const clearKeys = ['__phl_reload_window','__phl_hard_reload_in_flight','__phl_route_auto_recovery_done','__phl_reloaded_at','__phl_stale_asset_reload_at','phl_reload_count','__phl_stale_asset_reload_count','__phl_hydration_error_seen'];
+    const reset = async () => {
+      for (const key of clearKeys) {
+        try { sessionStorage.removeItem(key); } catch {}
+        try { localStorage.removeItem(key); } catch {}
+      }
+      try {
+        if ('caches' in window) {
+          const names = await caches.keys();
+          await Promise.all(names.filter((name) => /^(phlabs-|workbox-|precache-|runtime-)/i.test(name)).map((name) => caches.delete(name)));
+        }
+      } catch {}
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((reg) => reg.unregister()));
+        }
+      } catch {}
+      const url = new URL(location.href);
+      url.searchParams.set('sw', 'off');
+      url.searchParams.set('_r', String(Date.now()));
+      location.replace(url.toString());
+    };
+    const render = () => {
+      document.documentElement.setAttribute('lang', 'en-GB');
+      document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs cache reset needed</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">Your browser received an old page after the latest update. Click once to clear the local cache and reopen the site.</p><button id="phl-stale-reset" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;cursor:pointer;font-size:16px">Clear cache & open site</button></div></div>';
+      document.getElementById('phl-stale-reset')?.addEventListener('click', () => { void reset(); });
+    };
+    if (document.body) render(); else addEventListener('DOMContentLoaded', render, { once: true });
+  } catch (error) {
+    console.error('[PHL] stale asset recovery failed', error);
+  }
+})();
+`,
+    { status: 200, headers },
   );
 }
 
