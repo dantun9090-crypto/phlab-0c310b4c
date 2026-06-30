@@ -304,6 +304,12 @@ class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasEr
   componentDidCatch(error: Error, info: { componentStack?: string }) {
     if (isHydrationCrash(error)) markHydrationCrash(error);
     console.error("[ROOT ERROR BOUNDARY]", error, info?.componentStack || "");
+    reportClientError({
+      source: "error-boundary",
+      message: error?.message || String(error),
+      stack: [error?.stack, info?.componentStack].filter(Boolean).join("\n--- componentStack ---\n"),
+      routeId: typeof location !== "undefined" ? location.pathname : undefined,
+    });
   }
 
   render() {
