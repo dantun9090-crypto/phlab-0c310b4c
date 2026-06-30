@@ -195,7 +195,9 @@ export function Layout({ children }: LayoutProps) {
   const researchBannerOffset = isLandingPage ? '0px' : 'var(--rg-banner-h, 0px)';
   const disclaimerVisible = !isCleanPage && !isLandingPage;
   const layoutVars = {
-    '--phl-disclaimer-h': disclaimerVisible ? '28px' : '0px',
+    // The research disclaimer now lives inside the fixed header under the logo,
+    // so it must not add another row to the global page offset.
+    '--phl-disclaimer-h': '0px',
   } as CSSProperties;
   
   // Check if any cart items have no variant selected
@@ -647,6 +649,16 @@ export function Layout({ children }: LayoutProps) {
               <div className="flex flex-col leading-[1.05] min-w-0">
                 <span className="font-extrabold text-white text-[18px] sm:text-[22px] tracking-tight group-hover:text-emerald-300 transition-colors duration-200 truncate">PH Labs</span>
                 <span className="text-[10px] sm:text-[11px] text-emerald-400/90 font-semibold tracking-[0.22em] uppercase mt-0.5">Research Grade</span>
+                {disclaimerVisible && (
+                  <span
+                    id="phl-research-disclaimer"
+                    role="note"
+                    aria-label="Research use disclaimer"
+                    className="mt-1 hidden max-w-[280px] truncate text-[8px] font-bold uppercase tracking-[0.12em] text-emerald-200/65 sm:block"
+                  >
+                    For Laboratory Research Use Only — Not for Human or Veterinary Consumption
+                  </span>
+                )}
               </div>
             </Link>
 
@@ -876,34 +888,12 @@ export function Layout({ children }: LayoutProps) {
 
       </header>}
 
-      {disclaimerVisible && (
-        <div
-          id="phl-research-disclaimer"
-          role="note"
-          aria-label="Research use disclaimer"
-          className="fixed left-0 right-0 z-[49] flex items-center justify-center px-3 text-center"
-          style={{
-            top: `calc(${researchBannerOffset} + 32px + 64px)`,
-            height: 'var(--phl-disclaimer-h, 28px)',
-            background: 'rgba(3,10,20,0.96)',
-            borderBottom: '1px solid rgba(16,185,129,0.14)',
-            color: 'rgba(134,217,188,0.78)',
-            fontSize: '10px',
-            fontWeight: 700,
-            letterSpacing: '0.07em',
-            textTransform: 'uppercase',
-          }}
-        >
-          For Laboratory Research Use Only — Not for Human or Veterinary Consumption
-        </div>
-      )}
-
       {/* Main content */}
       <main
         className="flex-1"
         style={isAuthPage
           ? { paddingTop: 0 }
-          : { paddingTop: 'calc(var(--rg-banner-h, 34px) + 32px + 64px + var(--phl-disclaimer-h, 0px) + env(safe-area-inset-top))' }
+          : { paddingTop: 'calc(var(--rg-banner-h, 34px) + 32px + 64px + env(safe-area-inset-top))' }
         }
       >
         {children}
