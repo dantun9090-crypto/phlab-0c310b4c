@@ -25,16 +25,33 @@ async function firePostPurchaseTrackingOnce(orderId: string) {
     const data = snap.data() as Record<string, unknown>;
     const totalRaw = (data.total ?? data.totalPrice ?? data.amount ?? 0) as number | string;
     const value = typeof totalRaw === "string" ? parseFloat(totalRaw) : Number(totalRaw);
+    const taxRaw = (data.vatAmount ?? data.tax ?? 0) as number | string;
+    const tax = typeof taxRaw === "string" ? parseFloat(taxRaw) : Number(taxRaw);
+    const shipRaw = (data.shippingCost ?? data.shippingTotal ?? 0) as number | string;
+    const shippingAmount = typeof shipRaw === "string" ? parseFloat(shipRaw) : Number(shipRaw);
     const rawItems = Array.isArray(data.items) ? (data.items as Array<Record<string, unknown>>) : [];
     const items: GaItem[] = rawItems.map((it) => ({
       item_id: String(it.id ?? it.productId ?? it.sku ?? it.slug ?? ""),
       item_name: String(it.name ?? it.title ?? "Item"),
       item_variant: it.variantName ? String(it.variantName) : (it.variant ? String(it.variant) : undefined),
-      price: Number(it.priceNum ?? it.price ?? 0),
+      price: Number(it.priceNum ?? it.price ?? 0), // inc-VAT per unit (UK B2C)
       quantity: Number(it.quantity ?? 1),
       currency: "GBP",
     }));
-    trackPurchase(orderId, Number.isFinite(value) ? value : 0, items);
+    const shipAddr = (data.shipping ?? data.shippingAddress ?? {}) as Record<string, unknown>;
+    const userData = {
+      email: String(data.email ?? data.customerEmail ?? shipAddr.email ?? "") || undefined,
+      phone: String(data.phone ?? shipAddr.phone ?? "") || undefined,
+      firstName: String(shipAddr.firstName ?? shipAddr.first_name ?? "") || undefined,
+      lastName: String(shipAddr.lastName ?? shipAddr.last_name ?? "") || undefined,
+      country: String(shipAddr.country ?? shipAddr.countryCode ?? "GB") || undefined,
+      postalCode: String(shipAddr.postalCode ?? shipAddr.postcode ?? shipAddr.zip ?? "") || undefined,
+    };
+    trackPurchase(orderId, Number.isFinite(value) ? value : 0, items, {
+      tax: Number.isFinite(tax) ? tax : 0,
+      shipping: Number.isFinite(shippingAmount) ? shippingAmount : 0,
+      userData,
+    });
     trackBingPurchase(orderId);
 
 

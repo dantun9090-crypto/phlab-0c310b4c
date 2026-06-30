@@ -510,3 +510,47 @@ html.light [data-keep-dark] * {
     left: calc(16px + env(safe-area-inset-left, 0px));
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────
+ * Mobile UX baseline (Task 2 — Conversion Hardening)
+ * Applied globally; no visual redesign, only iOS/Android friction fixes.
+ * ────────────────────────────────────────────────────────────────────── */
+
+/* iOS Safari zooms the viewport when an input < 16px gains focus.
+   Force 16px on form fields so the keyboard never shifts the page. */
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Kill the 300ms tap delay and double-tap-zoom on interactive elements,
+   without disabling pinch-zoom for accessibility. */
+button,
+a,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+label[for],
+summary {
+  touch-action: manipulation;
+}
+
+/* Sticky header safety: in-page anchors and focused inputs must not
+   land under the fixed header. Header is ~64px desktop / 56px mobile;
+   --phl-disclaimer-h already accounts for the optional notice strip. */
+html {
+  scroll-padding-top: calc(72px + var(--phl-disclaimer-h, 0px));
+}
+@media (max-width: 640px) {
+  html { scroll-padding-top: calc(64px + var(--phl-disclaimer-h, 0px)); }
+}
+
+/* Prevent runaway horizontal scroll without masking the real cause —
+   only clip body, never the html element (would break sticky positioning). */
+body {
+  overflow-x: clip;
+}

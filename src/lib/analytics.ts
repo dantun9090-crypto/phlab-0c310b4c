@@ -306,9 +306,83 @@ export function trackCtaClick(label: string, location?: string): void {
   trackEvent('cta_click', { cta_label: label, cta_location: location || window.location.pathname });
 }
 
-export function trackPurchase(transactionId: string, value: number, items: GaItem[]): void {
-  trackEvent('purchase', { transaction_id: transactionId, currency: 'GBP', value, items });
-  trackAdsPurchaseConversion(transactionId, value);
+/**
+ * Optional purchase extras: tax + shipping (both VAT-inclusive — UK B2C
+ * convention: `value` is gross order total INC VAT), and user_data for
+ * Enhanced Conversions (email/phone SHA-256 hashed automatically).
+ */
+export interface PurchaseExtras {
+  /** VAT amount in the order, GBP. */
+  tax?: number;
+  /** Shipping cost (inc-VAT), GBP. */
+  shipping?: number;
+  /** Raw PII — hashed in-browser before being sent. */
+  userData?: {
+    email?: string;
+    phone?: string; // E.164 preferred (+447…)
+    firstName?: string;
+    lastName?: string;
+    country?: string; // ISO-3166 alpha-2
+    postalCode?: string;
+  };
+}
+
+async function sha256Hex(input: string): Promise<string> {
+  const data = new TextEncoder().encode(input.trim().toLowerCase());
+  const buf = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function buildUserData(u: NonNullable<PurchaseExtras['userData']>): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  if (typeof crypto === 'undefined' || !crypto.subtle) return out;
+  try {
+    if (u.email) out.sha256_email_address = await sha256Hex(u.email);
+    if (u.phone) {
+      // E.164 normalisation: keep leading + and digits only.
+      const e164 = u.phone.replace(/[^\d+]/g, '');
+      if (e164) out.sha256_phone_number = await sha256Hex(e164);
+    }
+    if (u.firstName) out.sha256_first_name = await sha256Hex(u.firstName);
+    if (u.lastName) out.sha256_last_name = await sha256Hex(u.lastName);
+    if (u.country) out.country = u.country.toUpperCase().slice(0, 2);
+    if (u.postalCode) out.postal_code = u.postalCode.toUpperCase().replace(/\s+/g, '');
+  } catch { /* ignore — crypto subtle unavailable */ }
+  return out;
+}
+
+/**
+ * GA4 + Google Ads purchase. `value` is gross/VAT-inclusive (£) — UK B2C.
+ * `extras.tax` and `extras.shipping` are surfaced as native GA4 fields so
+ * Google Ads reports net revenue correctly. `extras.userData` enables
+ * Enhanced Conversions (PII hashed client-side; raw values never leave).
+ */
+export function trackPurchase(
+  transactionId: string,
+  value: number,
+  items: GaItem[],
+  extras: PurchaseExtras = {},
+): void {
+  const params: Record<string, unknown> = {
+    transaction_id: transactionId,
+    currency: 'GBP',
+    value,
+    items,
+  };
+  if (typeof extras.tax === 'number' && Number.isFinite(extras.tax)) params.tax = extras.tax;
+  if (typeof extras.shipping === 'number' && Number.isFinite(extras.shipping)) params.shipping = extras.shipping;
+
+  const fire = (userData?: Record<string, string>) => {
+    if (userData && Object.keys(userData).length) params.user_data = userData;
+    trackEvent('purchase', params);
+    trackAdsPurchaseConversion(transactionId, value, userData);
+  };
+
+  if (extras.userData) {
+    buildUserData(extras.userData).then(fire).catch(() => fire());
+  } else {
+    fire();
+  }
 }
 
 /**
@@ -316,18 +390,24 @@ export function trackPurchase(transactionId: string, value: number, items: GaIte
  * VITE_GOOGLE_ADS_CONVERSION_ID (AW-XXXXXXXXXX) and
  * VITE_GOOGLE_ADS_PURCHASE_LABEL to be set at build time. No-op otherwise.
  */
-export function trackAdsPurchaseConversion(transactionId: string, value: number): void {
+export function trackAdsPurchaseConversion(
+  transactionId: string,
+  value: number,
+  userData?: Record<string, string>,
+): void {
   if (!GOOGLE_ADS_CONVERSION_ID || !GOOGLE_ADS_PURCHASE_LABEL) return;
   if (!ensureAnalyticsReady()) return;
   const ga = window.gtag;
   if (!ga) return;
   log('ads conversion', { transactionId, value });
-  ga('event', 'conversion', {
+  const payload: Record<string, unknown> = {
     send_to: `${GOOGLE_ADS_CONVERSION_ID}/${GOOGLE_ADS_PURCHASE_LABEL}`,
     value,
     currency: 'GBP',
     transaction_id: transactionId,
-  });
+  };
+  if (userData && Object.keys(userData).length) payload.user_data = userData;
+  ga('event', 'conversion', payload);
 }
 
 
