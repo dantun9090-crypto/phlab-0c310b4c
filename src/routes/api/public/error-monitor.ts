@@ -71,6 +71,7 @@ const EVENT_TYPES = [
   "rate_limited",
   "research_overlay",
   "compound_overlay",
+  "client_exception",
 ] as const;
 type EventType = (typeof EVENT_TYPES)[number];
 
@@ -80,7 +81,10 @@ const Body = z.object({
   status: z.number().int().min(0).max(599).optional(),
   referrer: z.string().trim().max(500).optional(),
   userAgent: z.string().trim().max(500).optional(),
-  message: z.string().trim().max(500).optional(),
+  message: z.string().trim().max(2000).optional(),
+  stack: z.string().trim().max(8000).optional(),
+  routeId: z.string().trim().max(300).optional(),
+  buildId: z.string().trim().max(120).optional(),
   /** Optional detector metadata (e.g. which DOM markers matched). */
   details: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
 });
@@ -91,6 +95,7 @@ const DEFAULT_THRESHOLDS: Record<EventType, number> = {
   rate_limited: 10,
   research_overlay: 1,
   compound_overlay: 1,
+  client_exception: 5,
 };
 const DEFAULT_WINDOW_MIN = 5;
 const DEFAULT_COOLDOWN_MIN = 30;
