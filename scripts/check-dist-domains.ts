@@ -82,14 +82,9 @@ function scan(full: string, rel: string, scope: "dist" | "e2e") {
   } catch {
     return;
   }
-  // Quick reject: don't pay regex cost on irrelevant files.
-  if (
-    !/prohealthpeptides|phlab\.lovable\.app|php+labs?/i.test(content)
-  ) {
-    return;
-  }
+  const rules = RULES_FOR[scope];
   const lines = content.split(/\r?\n/);
-  for (const rule of FORBIDDEN) {
+  for (const rule of rules) {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       // e2e sources may opt out per line; dist NEVER may.
