@@ -1,8 +1,9 @@
 name: Live smoke test (phlabs.co.uk)
 
-# Hits the live homepage every 30 min and fails if the page returns
-# empty HTML, the "Please refresh" / "Something went wrong" fallback,
-# or any uncaught JS error fires during load.
+# Hits the live homepage + critical routes every 30 min. Fails if any
+# route returns empty HTML, the "Please refresh" / "Something went wrong"
+# fallback, uncaught JS errors, or missing security headers. Posts a
+# Slack alert with the failing URL + last response headers on failure.
 
 on:
   schedule:
@@ -13,17 +14,76 @@ on:
     paths:
       - "e2e/live-smoke.spec.ts"
       - ".github/workflows/live-smoke.yml"
+      - "src/routes/api/public/health.ts"
 
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
       - run: bun install --frozen-lockfile
       - run: bunx playwright install --with-deps chromium
-      - name: Smoke test live homepage
+
+      - name: Smoke test live routes
+        id: smoke
         env:
           SMOKE_BASE_URL: https://phlabs.co.uk
         run: bunx playwright test e2e/live-smoke.spec.ts --reporter=line
+
+      - name: Capture failing headers
+        if: failure()
+        id: capture
+        env:
+          SMOKE_BASE_URL: https://phlabs.co.uk
+        run: |
+          set +e
+          {
+            echo "## Live smoke FAILED"
+            echo ""
+            for path in / /login /cart /products /compound /api/public/health; do
+              echo "### $SMOKE_BASE_URL$path"
+              echo '```'
+              curl -sSI -A "GitHubActions-LiveSmoke/1.0" --max-time 15 "$SMOKE_BASE_URL$path" \
+                | head -n 40
+              echo '```'
+              echo ""
+            done
+          } > smoke-report.md
+          {
+            echo 'report<<__EOF__'
+            cat smoke-report.md
+            echo '__EOF__'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upload report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-report
+          path: smoke-report.md
+          if-no-files-found: ignore
+
+      - name: Slack alert on failure
+        if: failure() && env.SLACK_ALERT_WEBHOOK_URL != ''
+        env:
+          SLACK_ALERT_WEBHOOK_URL: ${{ secrets.SLACK_ALERT_WEBHOOK_URL }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPORT: ${{ steps.capture.outputs.report }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.request
+          url = os.environ["SLACK_ALERT_WEBHOOK_URL"]
+          text = (
+              ":rotating_light: *Live smoke failed* — https://phlabs.co.uk\n"
+              f"<{os.environ['RUN_URL']}|View run>\n\n"
+              f"{os.environ.get('REPORT','(no report)')[:3500]}"
+          )
+          req = urllib.request.Request(
+              url,
+              data=json.dumps({"text": text}).encode(),
+              headers={"content-type": "application/json"},
+          )
+          urllib.request.urlopen(req, timeout=10).read()
+          PY

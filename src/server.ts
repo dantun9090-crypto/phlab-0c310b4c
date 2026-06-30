@@ -513,7 +513,9 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
       .on("head", {
         element(el) {
           el.append(`<meta name="build-id" content="${buildId}">`, { html: true });
+          el.append(`<meta name="release" content="${buildId}">`, { html: true });
         },
+
       })
       .transform(htmlResponse);
   }
