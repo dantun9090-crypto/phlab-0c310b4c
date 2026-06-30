@@ -1,23 +1,21 @@
 #!/usr/bin/env bun
 /**
- * Post-build guard: ensures forbidden domain literals never ship in the
- * built bundles or in the e2e test sources that get checked in.
+ * Post-build guard: scans built bundles + checked-in e2e sources for
+ * forbidden domain literals.
  *
- * Scans:
- *   - dist/        (built client + server bundles emitted by `vite build`)
- *   - e2e/         (Playwright test sources)
- *
- * Forbidden literals (NEVER allowed in shipped output):
- *   - prohealthpeptides.co.uk
- *   - phlab.lovable.app
- *   - phplabs / phplab    (typo for `phlabs`)
+ * Scope per directory:
+ *   - dist/   → fails ONLY on the `phplabs` / `phplab` typo. Legacy-host
+ *               literals (`prohealthpeptides.co.uk`, `phlab.lovable.app`)
+ *               legitimately appear in built code (301 redirect tables,
+ *               SEO metadata mapping previous canonicals → phlabs.co.uk).
+ *               The source-level guard (`scripts/check-domains.ts`) is
+ *               the authoritative gate for those, with pragma allow-list
+ *               for intentional uses. Typos are NEVER intentional.
+ *   - e2e/    → fails on all three forbidden patterns. Lines may opt out
+ *               via `check-domains-allow-line` (matches the convention in
+ *               scripts/check-domains.ts).
  *
  * Canonical: https://phlabs.co.uk
- *
- * An `e2e/` source may opt out a single line with the comment marker
- * `check-domains-allow-line` (matches the convention in
- * scripts/check-domains.ts). `dist/` has NO opt-out — built bundles must
- * never contain these strings.
  */
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
 import { join, relative } from "node:path";
@@ -25,13 +23,24 @@ import { join, relative } from "node:path";
 const ROOT = process.cwd();
 const SELF = relative(ROOT, import.meta.path);
 
-const TARGET_DIRS = ["dist", "e2e"];
+const TARGET_DIRS: Array<{ name: string; scope: "dist" | "e2e" }> = [
+  { name: "dist", scope: "dist" },
+  { name: "e2e", scope: "e2e" },
+];
 
-const FORBIDDEN: { pattern: RegExp; label: string }[] = [
+type Rule = { pattern: RegExp; label: string };
+const TYPO_RULE: Rule = {
+  pattern: /\bphp+labs?\b/gi,
+  label: "phplabs / phplab (typo — correct spelling is 'phlabs')",
+};
+const LEGACY_RULES: Rule[] = [
   { pattern: /prohealthpeptides\.co\.uk/gi, label: "prohealthpeptides.co.uk" },
   { pattern: /phlab\.lovable\.app/gi, label: "phlab.lovable.app" },
-  { pattern: /\bphp+labs?\b/gi, label: "phplabs / phplab (typo)" },
 ];
+const RULES_FOR: Record<"dist" | "e2e", Rule[]> = {
+  dist: [TYPO_RULE],
+  e2e: [...LEGACY_RULES, TYPO_RULE],
+};
 
 // Binary / noise extensions to skip when scanning dist/.
 const SKIP_EXT = new Set([
