@@ -1,7 +1,12 @@
 name: Payment a11y (PaymentMethodOptions)
-# Runs the payment selector accessibility suite on every PR + push to main.
-# Fails the build on any NEW serious/critical axe violation, on broken role
-# semantics, or on tap targets that drop below 44×44.
+# Runs the payment selector accessibility, integration, keyboard, and visual
+# regression suites on every PR + push to main.
+# Fails the build on:
+#   - NEW serious/critical axe violations
+#   - broken role / aria semantics
+#   - tap targets that drop below 44×44
+#   - focus traps or skipped controls at 320px / 360px
+#   - layout-affecting DOM/CSS drift vs the committed screenshot baseline
 on:
   pull_request:
     paths:
@@ -9,6 +14,8 @@ on:
       - "src/components/PaymentMethodOptions.test.tsx"
       - "src/routes/__e2e.payment-options.tsx"
       - "e2e/payment-options-a11y.spec.ts"
+      - "e2e/payment-options-visual.spec.ts"
+      - "e2e/payment-options-visual.spec.ts-snapshots/**"
       - "playwright.config.ts"
       - "vitest.config.ts"
       - ".github/workflows/payment-a11y.yml"
@@ -19,6 +26,7 @@ on:
       - "src/components/PaymentMethodOptions.test.tsx"
       - "src/routes/__e2e.payment-options.tsx"
       - "e2e/payment-options-a11y.spec.ts"
+      - "e2e/payment-options-visual.spec.ts"
 
 permissions:
   contents: read
@@ -36,13 +44,17 @@ jobs:
       - name: Unit + responsive tests
         run: bunx vitest run src/components/PaymentMethodOptions.test.tsx
 
-  e2e:
-    name: Playwright a11y (preview)
+  a11y:
+    name: Playwright a11y (${{ matrix.project }})
     needs: unit
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Run the role/aria/keyboard suite on all three engines to catch
+        # browser-specific focus + ARIA behaviour differences.
+        project: [chromium, firefox, webkit]
     env:
-      # Always run against the lovable preview build — the harness route is
-      # blocked on production hosts.
       TEST_BASE_URL: https://id-preview--1f12c255-a30a-4bea-bbab-28d9e6f70804.lovable.app
     steps:
       - uses: actions/checkout@v4
@@ -51,13 +63,42 @@ jobs:
           bun-version: latest
       - run: bun install --frozen-lockfile
       - name: Install Playwright browsers
-        run: bunx playwright install --with-deps chromium
-      - name: Run payment a11y suite
-        run: bunx playwright test e2e/payment-options-a11y.spec.ts --project=chromium
+        run: bunx playwright install --with-deps ${{ matrix.project }}
+      - name: Run a11y suite
+        run: bunx playwright test e2e/payment-options-a11y.spec.ts --project=${{ matrix.project }}
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-payment-a11y
+          name: playwright-report-a11y-${{ matrix.project }}
           path: playwright-report
           retention-days: 7
+
+  visual:
+    # Visual regression is Chromium-only — Firefox/WebKit font hinting makes
+    # pixel diffing noisy. Structural / keyboard checks above already cover
+    # the other engines.
+    name: Playwright visual + integration (Chromium)
+    needs: unit
+    runs-on: ubuntu-latest
+    env:
+      TEST_BASE_URL: https://id-preview--1f12c255-a30a-4bea-bbab-28d9e6f70804.lovable.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+      - name: Run visual + integration suite
+        run: bunx playwright test e2e/payment-options-visual.spec.ts --project=chromium
+      - name: Upload visual diff artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-visual-diff
+          path: |
+            playwright-report
+            test-results
+          retention-days: 14

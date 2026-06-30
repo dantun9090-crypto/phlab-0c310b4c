@@ -69,5 +69,13 @@ export default defineConfig({
       name: "firefox",
       use: { ...devices["Desktop Firefox"], viewport: { width: 1280, height: 1800 }, deviceScaleFactor: 1 },
     },
+    {
+      // WebKit catches Safari-specific role / focus quirks (e.g. Safari
+      // historically skips buttons in Tab order unless full keyboard access
+      // is on — our explicit role="radio" + tabIndex flow must hold up
+      // regardless).
+      name: "webkit",
+      use: { ...devices["Desktop Safari"], viewport: { width: 1280, height: 1800 }, deviceScaleFactor: 1 },
+    },
   ],
 });
