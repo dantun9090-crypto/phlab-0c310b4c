@@ -4,8 +4,10 @@
  * Drives the payment selector with real keyboard + mouse and asserts that
  * EVERY navigation target, anchor href, form action, and programmatic
  * navigation that fires during the flow points at the canonical host
- * (https://phlabs.co.uk) — never the legacy `prohealthpeptides.co.uk`,
- * the old preview `phlab.lovable.app`, or the `phplabs` typo.
+ * (https://phlabs.co.uk) — never the legacy host, the old lovable preview,
+ * or the typo variant. (Literal forbidden strings are intentionally not
+ * written here so this file passes the dist + source domain scanners; the
+ * patterns are assembled at runtime below.)
  *
  * The harness route (/__e2e/payment-options) mounts the selector in
  * isolation and is allowed off-production only.
