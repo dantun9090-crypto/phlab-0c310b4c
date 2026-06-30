@@ -137,6 +137,9 @@ import { createRoot, hydrateRoot, type Root } from "react-dom/client";
 import { StartClient } from "@tanstack/react-start/client";
 import { RouterProvider } from "@tanstack/react-router";
 import { getRouter } from "./router";
+import { installClientErrorReporter, reportClientError } from "./lib/client-error-reporter";
+
+installClientErrorReporter();
 
 declare global {
   interface Window {
@@ -301,20 +304,36 @@ class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasEr
   componentDidCatch(error: Error, info: { componentStack?: string }) {
     if (isHydrationCrash(error)) markHydrationCrash(error);
     console.error("[ROOT ERROR BOUNDARY]", error, info?.componentStack || "");
+    reportClientError({
+      source: "error-boundary",
+      message: error?.message || String(error),
+      stack: [error?.stack, info?.componentStack].filter(Boolean).join("\n--- componentStack ---\n"),
+      routeId: typeof location !== "undefined" ? location.pathname : undefined,
+    });
   }
 
   render() {
     if (!this.state.hasError) return this.props.children;
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#060f1e", color: "#f0f6ff", padding: 24 }}>
-        <div style={{ maxWidth: 460, textAlign: "center" }}>
-          <h1 style={{ fontSize: 22, margin: "0 0 10px", fontWeight: 700 }}>Please refresh</h1>
-          <p style={{ margin: "0 0 22px", color: "#9fb0c8", fontSize: 14, lineHeight: 1.55 }}>
-            The page could not initialise cleanly.
+      <div role="alert" style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#060f1e", color: "#f0f6ff", padding: 24 }}>
+        <div style={{ maxWidth: 480, textAlign: "center" }}>
+          <h1 style={{ fontSize: 22, margin: "0 0 10px", fontWeight: 700 }}>Something went wrong</h1>
+          <p style={{ margin: "0 0 18px", color: "#9fb0c8", fontSize: 14, lineHeight: 1.55 }}>
+            We hit an unexpected error rendering this page. The issue has been reported. Please try again or refresh.
           </p>
-          <button type="button" onClick={() => location.reload()} style={{ appearance: "none", border: 0, borderRadius: 8, background: "#10b981", color: "#03140d", fontWeight: 700, padding: "12px 16px", cursor: "pointer" }}>
-            Refresh
-          </button>
+          {this.state.error?.message ? (
+            <pre style={{ margin: "0 0 18px", padding: 10, background: "#0b1a2e", border: "1px solid #1f2d44", borderRadius: 8, color: "#cdd9ea", fontSize: 12, textAlign: "left", overflow: "auto", maxHeight: 140 }}>
+              {String(this.state.error.message).slice(0, 400)}
+            </pre>
+          ) : null}
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+            <button type="button" onClick={() => this.setState({ hasError: false, error: undefined })} style={{ appearance: "none", border: "1px solid #1f2d44", borderRadius: 8, background: "transparent", color: "#f0f6ff", fontWeight: 600, padding: "10px 14px", cursor: "pointer" }}>
+              Try again
+            </button>
+            <button type="button" onClick={() => location.reload()} style={{ appearance: "none", border: 0, borderRadius: 8, background: "#10b981", color: "#03140d", fontWeight: 700, padding: "10px 14px", cursor: "pointer" }}>
+              Refresh
+            </button>
+          </div>
         </div>
       </div>
     );

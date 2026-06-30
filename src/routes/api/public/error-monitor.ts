@@ -71,6 +71,7 @@ const EVENT_TYPES = [
   "rate_limited",
   "research_overlay",
   "compound_overlay",
+  "client_exception",
 ] as const;
 type EventType = (typeof EVENT_TYPES)[number];
 
@@ -80,7 +81,10 @@ const Body = z.object({
   status: z.number().int().min(0).max(599).optional(),
   referrer: z.string().trim().max(500).optional(),
   userAgent: z.string().trim().max(500).optional(),
-  message: z.string().trim().max(500).optional(),
+  message: z.string().trim().max(2000).optional(),
+  stack: z.string().trim().max(8000).optional(),
+  routeId: z.string().trim().max(300).optional(),
+  buildId: z.string().trim().max(120).optional(),
   /** Optional detector metadata (e.g. which DOM markers matched). */
   details: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
 });
@@ -91,6 +95,7 @@ const DEFAULT_THRESHOLDS: Record<EventType, number> = {
   rate_limited: 10,
   research_overlay: 1,
   compound_overlay: 1,
+  client_exception: 5,
 };
 const DEFAULT_WINDOW_MIN = 5;
 const DEFAULT_COOLDOWN_MIN = 30;
@@ -120,6 +125,7 @@ async function loadSettings(): Promise<MonitorSettings> {
       rate_limited: Number(t.rate_limited ?? DEFAULT_THRESHOLDS.rate_limited),
       research_overlay: Number(t.research_overlay ?? DEFAULT_THRESHOLDS.research_overlay),
       compound_overlay: Number(t.compound_overlay ?? DEFAULT_THRESHOLDS.compound_overlay),
+      client_exception: Number(t.client_exception ?? DEFAULT_THRESHOLDS.client_exception),
     },
     alertEmail: typeof doc?.alertEmail === "string" ? doc.alertEmail : DEFAULT_ALERT_EMAIL,
     slackWebhookUrl:
@@ -187,6 +193,7 @@ function alertSubject(type: EventType, count: number, windowMin: number): string
     rate_limited: "429 rate-limit spike",
     research_overlay: "/research overlay detected",
     compound_overlay: "/compound overlay detected",
+    client_exception: "client JS exception",
   };
   return `[PH Labs] ${labels[type]}: ${count} in ${windowMin}m`;
 }
