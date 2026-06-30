@@ -5,6 +5,7 @@ import { enforceRateLimit } from '@/lib/rate-limit';
 import { listDocsAdmin } from '@/lib/server/firestore-admin';
 
 type OrderRow = Record<string, unknown> & { id: string };
+const EXCLUDED_STATUSES = new Set(['cancelled', 'canceled', 'refunded', 'failed', 'expired']);
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -77,7 +78,7 @@ export const Route = createFileRoute('/api/public/live-orders')({
           const rows = await fetchRecentOrderRows();
 
           const orders = rows
-            .filter((row) => ['completed', 'paid'].includes(String(row.status || '').toLowerCase()))
+            .filter((row) => !EXCLUDED_STATUSES.has(String(row.status || '').toLowerCase()))
             .map((row) => mapRawOrderToLive(row as Parameters<typeof mapRawOrderToLive>[0]))
             .filter((order): order is LiveOrder => Boolean(order))
             .slice(0, limit);

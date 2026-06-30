@@ -9,6 +9,7 @@ export interface LiveOrder {
   productImage?: string; // optional thumbnail
   createdAtMs: number;   // epoch ms
   userId?: string;
+  status?: string;
 }
 
 interface RawOrderLike {
@@ -68,6 +69,7 @@ export const mapRawOrderToLive = (raw: RawOrderLike): LiveOrder | null => {
     productImage: item?.image || item?.imageUrl,
     createdAtMs,
     userId: raw.customer?.uid || raw.userId,
+    status: raw.status,
   };
 };
 
@@ -84,5 +86,10 @@ export const formatTimeAgo = (ms: number, now: number = Date.now()): string => {
   return `${d}d ago`;
 };
 
-export const formatLivePopupText = (o: LiveOrder, now?: number): string =>
-  `${o.initial} from ${o.city} purchased ${o.productName} ${formatTimeAgo(o.createdAtMs, now)}`;
+export const formatLivePopupText = (o: LiveOrder, now?: number): string => {
+  const status = String(o.status || '').toLowerCase();
+  const verb = ['paid', 'completed', 'processing', 'shipped', 'delivered', 'fulfilled'].includes(status)
+    ? 'purchased'
+    : 'placed an order for';
+  return `${o.initial} from ${o.city} ${verb} ${o.productName} ${formatTimeAgo(o.createdAtMs, now)}`;
+};
