@@ -14,6 +14,7 @@ on:
       - "src/components/PaymentMethodOptions.test.tsx"
       - "src/routes/__e2e.payment-options.tsx"
       - "e2e/payment-options-a11y.spec.ts"
+      - "e2e/payment-options-domain-guard.spec.ts"
       - "e2e/payment-options-visual.spec.ts"
       - "e2e/payment-options-visual.spec.ts-snapshots/**"
       - "playwright.config.ts"
