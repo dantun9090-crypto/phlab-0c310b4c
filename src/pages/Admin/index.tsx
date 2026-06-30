@@ -165,7 +165,12 @@ export default function AdminPage() {
   const [firestoreError, setFirestoreError] = useState(false);
   const [ipChecked, setIpChecked] = useState(false);
   const [ipAllowed, setIpAllowed] = useState(true);
-  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    if (typeof window !== 'undefined' && window.location.pathname === '/admin/health') {
+      return 'infrahealth';
+    }
+    return 'dashboard';
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(() => typeof window !== 'undefined' && window.innerWidth >= 1024);
