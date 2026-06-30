@@ -1050,7 +1050,7 @@ export default function OrdersTab() {
                         : <Trash2 className="w-3.5 h-3.5" />}
                       Delete Order
                     </button>
-                    <button onClick={() => setSelected(null)} aria-label="Close order details" className="text-[#9cb8d9] hover:text-white transition-colors">
+                    <button ref={closeBtnRef} onClick={() => setSelected(null)} aria-label="Close order details" data-testid="orders-modal-close" className="text-[#9cb8d9] hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded">
                       <X className="w-5 h-5" />
                     </button>
                   </div>
