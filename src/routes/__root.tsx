@@ -808,7 +808,10 @@ const STALE_ASSET_RECOVERY = `
         localStorage.removeItem('phl_reload_count');
       }catch(e){}
     };
+    var emit=function(evt,extra){ try{ var fn=window.__phlSwTelemetry; if(typeof fn==='function') fn(evt,extra||null); }catch(e){} };
     var hardReloadClean=function(){
+      emit('sw_cache_reset_clicked',{ path: location.pathname });
+      try{ sessionStorage.setItem('phl-sw-cache-reset-pending',String(Date.now())); }catch(e){}
       clearAllStaleFlags();
       // Unregister all SWs and wipe caches so the next request hits the
       // freshly-purged Cloudflare edge instead of a stale SW snapshot.
