@@ -125,7 +125,7 @@ async function runWithConcurrency<T, R>(items: T[], limit: number, fn: (t: T) =>
 }
 
 export const runMarketingCoverageReport = createServerFn({ method: 'POST' })
-  .inputValidator((d: { idToken: string }) => {
+  .validator((d: { idToken: string }) => {
     if (!d?.idToken) throw new Error('idToken required');
     return d;
   })

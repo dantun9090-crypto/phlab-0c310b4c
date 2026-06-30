@@ -20,7 +20,7 @@ export type ValidateCouponResult =
   | { ok: false; error: string };
 
 export const validateCouponFn = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => Input.parse(input))
+  .validator((input: unknown) => Input.parse(input))
   .handler(async ({ data }): Promise<ValidateCouponResult> => {
     const { lookupCoupon } = await import('./cart-validation.server');
     const res = await lookupCoupon(data.code, data.subtotal);

@@ -242,7 +242,7 @@ async function headStatus(url: string): Promise<number> {
 
 export const runSitemapAudit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { idToken: string }) => {
+  .validator((data: { idToken: string }) => {
     if (!data?.idToken || typeof data.idToken !== "string") {
       // Log + alert before throwing so unauthorized attempts are recorded.
       void logUnauthorized({

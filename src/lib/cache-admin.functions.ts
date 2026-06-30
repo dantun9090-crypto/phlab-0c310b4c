@@ -35,7 +35,7 @@ const PurgeSchema = z.object({
 });
 
 export const purgeCloudflareCache = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => PurgeSchema.parse(input))
+  .validator((input: unknown) => PurgeSchema.parse(input))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     const token = process.env.CLOUDFLARE_API_TOKEN;
@@ -129,7 +129,7 @@ async function postRecache(
 }
 
 export const recacheSitemapPrerender = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => RecacheSchema.parse(input))
+  .validator((input: unknown) => RecacheSchema.parse(input))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     const token = process.env.PRERENDER_TOKEN;

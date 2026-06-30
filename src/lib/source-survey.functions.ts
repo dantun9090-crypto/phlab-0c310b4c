@@ -12,14 +12,14 @@ import {
 export type { SubmitSurveyResult } from "./source-survey.server";
 
 export const submitSourceSurvey = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => submitSurveySchema.parse(input))
+  .validator((input: unknown) => submitSurveySchema.parse(input))
   .handler(async ({ data }): Promise<SubmitSurveyResult> => {
     const { runSubmitSurvey } = await import("./source-survey.server");
     return runSubmitSurvey(data);
   });
 
 export const skipSourceSurvey = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => skipSurveySchema.parse(input))
+  .validator((input: unknown) => skipSurveySchema.parse(input))
   .handler(async ({ data }) => {
     const { runSkipSurvey } = await import("./source-survey.server");
     return runSkipSurvey(data);

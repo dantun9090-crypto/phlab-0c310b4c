@@ -9,7 +9,7 @@ import { cartInputSchema, type ValidateCartResult } from './cart-validation.serv
 export type { ValidateCartResult } from './cart-validation.server';
 
 export const validateCartPrices = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => cartInputSchema.parse(input))
+  .validator((input: unknown) => cartInputSchema.parse(input))
   .handler(async ({ data }): Promise<ValidateCartResult> => {
     const { runValidateCart } = await import('./cart-validation.server');
     return runValidateCart(data);

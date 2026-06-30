@@ -41,7 +41,7 @@ export const fetchAllProductsFn = createServerFn({ method: 'GET' }).handler(
 );
 
 export const fetchProductBySlugFn = createServerFn({ method: 'GET' })
-  .inputValidator((input: { slug: string }) => {
+  .validator((input: { slug: string }) => {
     if (
       !input ||
       typeof input.slug !== 'string' ||
@@ -63,7 +63,7 @@ export const fetchProductBySlugFn = createServerFn({ method: 'GET' })
   });
 
 export const fetchProductByIdFn = createServerFn({ method: 'GET' })
-  .inputValidator((input: { id: string }) => {
+  .validator((input: { id: string }) => {
     if (
       !input ||
       typeof input.id !== 'string' ||

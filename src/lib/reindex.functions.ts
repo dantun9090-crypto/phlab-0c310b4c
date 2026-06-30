@@ -25,7 +25,7 @@ export type ReindexHookResponse = {
 
 export const triggerReindex = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     (input: { urls?: string[] } | undefined) => input ?? {},
   )
   .handler(async ({ data, context }): Promise<ReindexHookResponse> => {

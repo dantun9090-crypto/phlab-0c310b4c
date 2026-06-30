@@ -40,7 +40,7 @@ async function cfFetch(method: 'GET' | 'PATCH', body?: unknown) {
 }
 
 export const getDevModeStatus = createServerFn({ method: 'POST' })
-  .inputValidator((i: unknown) => TokenInput.parse(i))
+  .validator((i: unknown) => TokenInput.parse(i))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     const r = await cfFetch('GET');
@@ -55,7 +55,7 @@ export const getDevModeStatus = createServerFn({ method: 'POST' })
 const SetSchema = TokenInput.extend({ value: z.enum(['on', 'off']) });
 
 export const setDevMode = createServerFn({ method: 'POST' })
-  .inputValidator((i: unknown) => SetSchema.parse(i))
+  .validator((i: unknown) => SetSchema.parse(i))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     const r = await cfFetch('PATCH', { value: data.value });

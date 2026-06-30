@@ -58,7 +58,7 @@ const CreateInput = z.object({
 });
 
 export const createFenaPaymentLink = createServerFn({ method: "POST" })
-  .inputValidator((d) => CreateInput.parse(d))
+  .validator((d) => CreateInput.parse(d))
   .handler(async ({ data }) => {
     const user = await verifyFirebaseIdToken(data.idToken);
     const order = await getDocAdmin("orders", data.orderId);
@@ -122,7 +122,7 @@ const StatusInput = z.object({
 }).refine((d) => d.orderId || d.paymentId, { message: "orderId or paymentId is required" });
 
 export const getOrderPaymentStatus = createServerFn({ method: "POST" })
-  .inputValidator((d) => StatusInput.parse(d))
+  .validator((d) => StatusInput.parse(d))
   .handler(async ({ data }) => {
     const user = await verifyFirebaseIdToken(data.idToken);
     const orderIdFromPayment = data.paymentId
@@ -245,7 +245,7 @@ function pickStr(obj: Record<string, unknown>, key: string): string | undefined 
 }
 
 export const listFenaWebhookEvents = createServerFn({ method: "POST" })
-  .inputValidator((d) => AdminEventsInput.parse(d))
+  .validator((d) => AdminEventsInput.parse(d))
   .handler(async ({ data }): Promise<FenaWebhookEventRow[]> => {
     await requireFirebaseAdmin(data.idToken);
     const rows = await listDocsAdmin("fena_webhook_events", {
@@ -322,7 +322,7 @@ function coerceOrphan(row: Record<string, unknown> & { id: string }): FenaOrphan
 }
 
 export const listFenaOrphanPayments = createServerFn({ method: "POST" })
-  .inputValidator((d) => AdminEventsInput.parse(d))
+  .validator((d) => AdminEventsInput.parse(d))
   .handler(async ({ data }): Promise<FenaOrphanPaymentRow[]> => {
     await requireFirebaseAdmin(data.idToken);
     const rows = await listDocsAdmin("fena_orphan_payments", {
@@ -353,7 +353,7 @@ export interface FenaReconcileResult {
  * orphan record as resolved so it stops appearing in the admin list.
  */
 export const reconcileFenaOrphans = createServerFn({ method: "POST" })
-  .inputValidator((d) => AdminEventsInput.parse(d))
+  .validator((d) => AdminEventsInput.parse(d))
   .handler(async ({ data }): Promise<FenaReconcileResult> => {
     await requireFirebaseAdmin(data.idToken);
     const orphans = await listDocsAdmin("fena_orphan_payments", {
@@ -521,7 +521,7 @@ export interface FenaBankAccountRow {
 }
 
 export const listFenaBankAccountsAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d) => AdminEventsInput.parse(d))
+  .validator((d) => AdminEventsInput.parse(d))
   .handler(async ({ data }): Promise<{ env: string; accounts: FenaBankAccountRow[] }> => {
     await requireFirebaseAdmin(data.idToken);
     const accs: FenaBankAccount[] = await fenaListBankAccounts();
@@ -556,7 +556,7 @@ const SetEnvInput = z.object({
 });
 
 export const getFenaIntegrationSettings = createServerFn({ method: "POST" })
-  .inputValidator((d) => AdminEventsInput.parse(d))
+  .validator((d) => AdminEventsInput.parse(d))
   .handler(async ({ data }): Promise<{
     env: "sandbox" | "production";
     source: "settings" | "secret" | "default";
@@ -580,7 +580,7 @@ export const getFenaIntegrationSettings = createServerFn({ method: "POST" })
   });
 
 export const setFenaIntegrationEnv = createServerFn({ method: "POST" })
-  .inputValidator((d) => SetEnvInput.parse(d))
+  .validator((d) => SetEnvInput.parse(d))
   .handler(async ({ data }): Promise<{ env: "sandbox" | "production" }> => {
     await requireFirebaseAdmin(data.idToken);
     await updateDocAdmin("settings", "fena", {
@@ -603,7 +603,7 @@ export interface FenaDryRunResult {
 }
 
 export const dryRunFenaConnection = createServerFn({ method: "POST" })
-  .inputValidator((d) => AdminEventsInput.parse(d))
+  .validator((d) => AdminEventsInput.parse(d))
   .handler(async ({ data }): Promise<FenaDryRunResult> => {
     await requireFirebaseAdmin(data.idToken);
     const env = await getFenaEnvLabel();
@@ -655,7 +655,7 @@ export interface FenaTransactionRow {
 }
 
 export const listFenaTransactionsAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d) => AdminEventsInput.parse(d))
+  .validator((d) => AdminEventsInput.parse(d))
   .handler(async ({ data }): Promise<{
     env: "sandbox" | "production";
     transactions: FenaTransactionRow[];
@@ -725,7 +725,7 @@ const RenameInput = z.object({
 });
 
 export const renameFenaBankAccount = createServerFn({ method: "POST" })
-  .inputValidator((d) => RenameInput.parse(d))
+  .validator((d) => RenameInput.parse(d))
   .handler(async ({ data }): Promise<{ ok: true }> => {
     await requireFirebaseAdmin(data.idToken);
     await fenaRenameBankAccount(data.id, data.name);
@@ -738,7 +738,7 @@ const IdOnlyInput = z.object({
 });
 
 export const setDefaultFenaBankAccount = createServerFn({ method: "POST" })
-  .inputValidator((d) => IdOnlyInput.parse(d))
+  .validator((d) => IdOnlyInput.parse(d))
   .handler(async ({ data }): Promise<{ ok: true }> => {
     await requireFirebaseAdmin(data.idToken);
     await fenaSetDefaultBankAccount(data.id);
@@ -762,7 +762,7 @@ const ConnectInput = z.object({
 });
 
 export const connectFenaBankAccount = createServerFn({ method: "POST" })
-  .inputValidator((d) => ConnectInput.parse(d))
+  .validator((d) => ConnectInput.parse(d))
   .handler(async ({ data }): Promise<{ authUri: string }> => {
     await requireFirebaseAdmin(data.idToken);
     const authUri = await fenaConnectBankAccount(data.provider);
@@ -817,7 +817,7 @@ export interface FenaIntegrationStatus {
 }
 
 export const getFenaIntegrationStatus = createServerFn({ method: "POST" })
-  .inputValidator((d) => AdminEventsInput.parse(d))
+  .validator((d) => AdminEventsInput.parse(d))
   .handler(async ({ data }): Promise<FenaIntegrationStatus> => {
     await requireFirebaseAdmin(data.idToken);
     const env = await getFenaEnvLabel();
@@ -981,7 +981,7 @@ export interface FenaWebhookEventsPage {
 }
 
 export const listFenaWebhookEventsPaged = createServerFn({ method: "POST" })
-  .inputValidator((d) => WebhookListInput.parse(d))
+  .validator((d) => WebhookListInput.parse(d))
   .handler(async ({ data }): Promise<FenaWebhookEventsPage> => {
     await requireFirebaseAdmin(data.idToken);
     // When a search/outcome filter is active, broaden the server-side fetch
@@ -1055,7 +1055,7 @@ export const listFenaWebhookEventsPaged = createServerFn({ method: "POST" })
 export type FenaQuotaStatus = FenaQuotaSnapshot;
 
 export const getFenaQuotaStatus = createServerFn({ method: "POST" })
-  .inputValidator((d) => AdminEventsInput.parse(d))
+  .validator((d) => AdminEventsInput.parse(d))
   .handler(async ({ data }): Promise<FenaQuotaStatus> => {
     await requireFirebaseAdmin(data.idToken);
     return getFenaQuotaSnapshot();
@@ -1067,7 +1067,7 @@ const SetLimitInput = z.object({
 });
 
 export const setFenaQuotaDailyLimit = createServerFn({ method: "POST" })
-  .inputValidator((d) => SetLimitInput.parse(d))
+  .validator((d) => SetLimitInput.parse(d))
   .handler(async ({ data }): Promise<{ dailyLimit: number }> => {
     await requireFirebaseAdmin(data.idToken);
     const dailyLimit = await setFenaDailyLimit(data.dailyLimit);
@@ -1110,7 +1110,7 @@ function coerceRetryRow(row: Record<string, unknown> & { id: string }): FenaRetr
 }
 
 export const listFenaRetryQueue = createServerFn({ method: "POST" })
-  .inputValidator((d) => AdminEventsInput.parse(d))
+  .validator((d) => AdminEventsInput.parse(d))
   .handler(async ({ data }): Promise<FenaRetryRow[]> => {
     await requireFirebaseAdmin(data.idToken);
     const rows = await listDocsAdmin("fena_retry_queue", {
@@ -1122,7 +1122,7 @@ export const listFenaRetryQueue = createServerFn({ method: "POST" })
   });
 
 export const processFenaRetriesAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d) => AdminEventsInput.parse(d))
+  .validator((d) => AdminEventsInput.parse(d))
   .handler(async ({ data }): Promise<RetryProcessResult> => {
     await requireFirebaseAdmin(data.idToken);
     return processFenaRetries(async (orderId, updates) => {
@@ -1136,7 +1136,7 @@ const DeleteRetryInput = z.object({
 });
 
 export const deleteFenaRetryRow = createServerFn({ method: "POST" })
-  .inputValidator((d) => DeleteRetryInput.parse(d))
+  .validator((d) => DeleteRetryInput.parse(d))
   .handler(async ({ data }): Promise<{ ok: true }> => {
     await requireFirebaseAdmin(data.idToken);
     await deleteDocAdmin("fena_retry_queue", data.id);

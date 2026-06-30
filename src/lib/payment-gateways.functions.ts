@@ -34,7 +34,7 @@ const TokenInput = z.object({ idToken: z.string().min(10).max(4096) });
 const GatewayIdSchema = z.enum(["fena", "truelayer"]);
 
 export const listPaymentGateways = createServerFn({ method: "POST" })
-  .inputValidator((d) => TokenInput.parse(d))
+  .validator((d) => TokenInput.parse(d))
   .handler(async ({ data }): Promise<PaymentGatewayConfig[]> => {
     await requireFirebaseAdmin(data.idToken);
     return listGatewayConfigs(true);
@@ -47,7 +47,7 @@ const ToggleInput = z.object({
 });
 
 export const togglePaymentGateway = createServerFn({ method: "POST" })
-  .inputValidator((d) => ToggleInput.parse(d))
+  .validator((d) => ToggleInput.parse(d))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     await setGatewayEnabled(data.gateway, data.enabled);
@@ -61,7 +61,7 @@ const PriorityInput = z.object({
 });
 
 export const setPaymentGatewayPriority = createServerFn({ method: "POST" })
-  .inputValidator((d) => PriorityInput.parse(d))
+  .validator((d) => PriorityInput.parse(d))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     await setGatewayPriority(data.gateway, data.priority);
@@ -75,7 +75,7 @@ const SandboxInput = z.object({
 });
 
 export const setPaymentGatewaySandbox = createServerFn({ method: "POST" })
-  .inputValidator((d) => SandboxInput.parse(d))
+  .validator((d) => SandboxInput.parse(d))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     await setGatewaySandbox(data.gateway, data.sandbox);
@@ -88,7 +88,7 @@ const TestInput = z.object({
 });
 
 export const testPaymentGateway = createServerFn({ method: "POST" })
-  .inputValidator((d) => TestInput.parse(d))
+  .validator((d) => TestInput.parse(d))
   .handler(
     async ({
       data,
@@ -154,7 +154,7 @@ const CreateLinkInput = z.object({
  * direct calls to `createFenaPaymentLink` from the checkout/payment pages.
  */
 export const createGatewayPaymentLink = createServerFn({ method: "POST" })
-  .inputValidator((d) => CreateLinkInput.parse(d))
+  .validator((d) => CreateLinkInput.parse(d))
   .handler(
     async ({
       data,

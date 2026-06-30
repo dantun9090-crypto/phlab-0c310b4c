@@ -73,7 +73,7 @@ function parseKeywords(json: any): KwRow[] {
 }
 
 export const getSemrushKeywordGaps = createServerFn({ method: 'POST' })
-  .inputValidator((data: unknown) => {
+  .validator((data: unknown) => {
     const p = Input.parse(data);
     return {
       idToken: p.idToken,

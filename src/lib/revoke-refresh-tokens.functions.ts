@@ -77,7 +77,7 @@ async function getAccessToken(): Promise<{ token: string; projectId: string }> {
  * (so we cannot be used to log out arbitrary accounts from the public internet).
  */
 export const revokeMyRefreshTokens = createServerFn({ method: 'POST' })
-  .inputValidator((data: { idToken: string }) => {
+  .validator((data: { idToken: string }) => {
     if (!data?.idToken || typeof data.idToken !== 'string' || data.idToken.length > 4000) {
       throw new Error('idToken required');
     }

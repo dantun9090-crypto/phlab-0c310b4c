@@ -222,7 +222,7 @@ export async function purgeCloudflareEverything(): Promise<{
 const TokenSchema = z.object({ idToken: z.string().min(20).max(4096) });
 
 export const getCacheHealth = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => TokenSchema.parse(input))
+  .validator((input: unknown) => TokenSchema.parse(input))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     const result = await runHealthProbe();
@@ -231,7 +231,7 @@ export const getCacheHealth = createServerFn({ method: 'POST' })
   });
 
 export const purgeCacheNow = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => TokenSchema.parse(input))
+  .validator((input: unknown) => TokenSchema.parse(input))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     const r = await purgeCloudflareEverything();
@@ -265,7 +265,7 @@ function sanitizeRows(
 }
 
 export const listHealthLogs = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     TokenSchema.extend({ limit: z.number().int().min(1).max(200).default(50) }).parse(
       input,
     ),
@@ -289,7 +289,7 @@ export const listHealthLogs = createServerFn({ method: 'POST' })
   });
 
 export const listHealthAlerts = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => TokenSchema.parse(input))
+  .validator((input: unknown) => TokenSchema.parse(input))
   .handler(async ({ data }): Promise<{ ok: boolean; rows: SerializableRow[]; error?: string }> => {
     await requireFirebaseAdmin(data.idToken);
     try {
@@ -312,7 +312,7 @@ export const listHealthAlerts = createServerFn({ method: 'POST' })
   });
 
 export const acknowledgeHealthAlert = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) =>
+  .validator((input: unknown) =>
     TokenSchema.extend({ id: z.string().min(1).max(120) }).parse(input),
   )
   .handler(async ({ data }) => {

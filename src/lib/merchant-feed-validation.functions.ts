@@ -223,7 +223,7 @@ async function runWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T)
 }
 
 export const validateMerchantFeedAdmin = createServerFn({ method: 'POST' })
-  .inputValidator((data) => RequiredFieldSchema.parse(data))
+  .validator((data) => RequiredFieldSchema.parse(data))
   .handler(async ({ data }): Promise<MerchantFeedValidationReport> => {
     await requireAdmin(data.idToken);
     const feedUrl = `${BASE_URL}/google-merchant-feed.xml?preview=${Date.now()}`;

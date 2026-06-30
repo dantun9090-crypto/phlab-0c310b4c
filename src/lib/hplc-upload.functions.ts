@@ -10,7 +10,7 @@ const Input = z.object({
 });
 
 export const uploadHplcImageAdmin = createServerFn({ method: "POST" })
-  .inputValidator((data) => Input.parse(data))
+  .validator((data) => Input.parse(data))
   .handler(async ({ data }) => {
     const { requireFirebaseAdmin } = await import("@/lib/server/firebase-auth-admin");
     await requireFirebaseAdmin(data.idToken);

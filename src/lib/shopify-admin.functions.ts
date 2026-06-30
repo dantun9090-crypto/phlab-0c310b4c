@@ -32,7 +32,7 @@ async function shopifyFetch(path: string, init?: RequestInit) {
 }
 
 export const getShopInfo = createServerFn({ method: 'POST' })
-  .inputValidator((d: { idToken: string }) => ({ idToken: idTokenSchema.parse(d?.idToken) }))
+  .validator((d: { idToken: string }) => ({ idToken: idTokenSchema.parse(d?.idToken) }))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     const res = await shopifyFetch('shop.json');
@@ -50,7 +50,7 @@ export const getShopInfo = createServerFn({ method: 'POST' })
   });
 
 export const listAdminProducts = createServerFn({ method: 'POST' })
-  .inputValidator((d: { idToken: string; limit?: number }) => ({
+  .validator((d: { idToken: string; limit?: number }) => ({
     idToken: idTokenSchema.parse(d?.idToken),
     limit: d?.limit ?? 250,
   }))
@@ -77,7 +77,7 @@ export const listAdminProducts = createServerFn({ method: 'POST' })
   });
 
 export const createAdminProduct = createServerFn({ method: 'POST' })
-  .inputValidator((d: {
+  .validator((d: {
     idToken: string;
     title: string; body_html?: string; price?: string; vendor?: string;
     product_type?: string; images?: string[]; status?: 'active' | 'draft';
@@ -99,7 +99,7 @@ export const createAdminProduct = createServerFn({ method: 'POST' })
   });
 
 export const updateAdminProduct = createServerFn({ method: 'POST' })
-  .inputValidator((d: {
+  .validator((d: {
     idToken: string;
     id: number; title?: string; body_html?: string; price?: string;
     vendor?: string; product_type?: string; images?: string[];

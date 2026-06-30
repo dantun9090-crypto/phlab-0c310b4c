@@ -56,7 +56,7 @@ async function unregisterServiceWorkersAndCaches() {
   try {
     const regs = await navigator.serviceWorker.getRegistrations();
     await Promise.all(
-      regs.map(async (r) => {
+      regs.filter((r) => /\/(?:sw|service-worker)\.js(?:$|[?#])/i.test(r.active?.scriptURL || r.installing?.scriptURL || r.waiting?.scriptURL || '')).map(async (r) => {
         try { console.info('SW unregistered:', r.scope); } catch (_) {}
         try { await r.unregister(); } catch (_) {}
       })
@@ -67,7 +67,7 @@ async function unregisterServiceWorkersAndCaches() {
     if ('caches' in window) {
       const names = await caches.keys();
       await Promise.all(
-        names.map(async (name) => {
+        names.filter((name) => /^(phlabs-offline-|workbox-|precache-|runtime-)/i.test(name) || /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/i.test(name)).map(async (name) => {
           try { await caches.delete(name); } catch (_) {}
         })
       );

@@ -6,7 +6,7 @@ async function requireAdmin(idToken: string): Promise<void> {
 }
 
 export const listUrlMonitorScans = createServerFn({ method: 'POST' })
-  .inputValidator((data: { idToken: string }) => {
+  .validator((data: { idToken: string }) => {
     if (!data?.idToken || typeof data.idToken !== 'string') throw new Error('idToken required');
     return data;
   })

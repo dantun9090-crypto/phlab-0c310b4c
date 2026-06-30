@@ -35,7 +35,7 @@ function filterValid(urls: string[]): string[] {
 }
 
 export const submitToIndexNow = createServerFn({ method: 'POST' })
-  .inputValidator((input: { urls: string[] }) => {
+  .validator((input: { urls: string[] }) => {
     if (!input || !Array.isArray(input.urls)) {
       throw new Error('urls[] required');
     }

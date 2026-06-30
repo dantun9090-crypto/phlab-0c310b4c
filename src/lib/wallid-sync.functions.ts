@@ -39,7 +39,7 @@ export interface WallidSyncResult {
 }
 
 export const syncWallidPaymentAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d) => Input.parse(d))
+  .validator((d) => Input.parse(d))
   .handler(async ({ data }): Promise<WallidSyncResult> => {
     await requireFirebaseAdmin(data.idToken);
 
@@ -197,7 +197,7 @@ export interface StuckWallidRow {
 }
 
 export const listStuckWallidPaymentsAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d) => StuckInput.parse(d))
+  .validator((d) => StuckInput.parse(d))
   .handler(async ({ data }): Promise<{ rows: StuckWallidRow[] }> => {
     await requireFirebaseAdmin(data.idToken);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

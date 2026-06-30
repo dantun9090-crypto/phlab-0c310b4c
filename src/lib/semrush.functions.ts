@@ -60,7 +60,7 @@ const OverviewInput = z.object({
 });
 
 export const getSemrushOverview = createServerFn({ method: 'POST' })
-  .inputValidator((data: unknown) => {
+  .validator((data: unknown) => {
     const parsed = OverviewInput.parse(data);
     const domain = (parsed.domain || DEFAULT_DOMAIN).toLowerCase();
     if (!ALLOWED_DOMAINS.has(domain)) throw new Error('domain not on allowlist');
@@ -156,7 +156,7 @@ async function fetchQuota(): Promise<{
 
 const QuotaInput = z.object({ idToken: z.string().min(10).max(4096) });
 export const getSemrushQuota = createServerFn({ method: 'POST' })
-  .inputValidator((data: unknown) => QuotaInput.parse(data))
+  .validator((data: unknown) => QuotaInput.parse(data))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     const q = await fetchQuota();
@@ -179,7 +179,7 @@ const KeywordGeoInput = z.object({
 });
 
 export const getSemrushKeywordGeo = createServerFn({ method: 'POST' })
-  .inputValidator((data: unknown) => {
+  .validator((data: unknown) => {
     const parsed = KeywordGeoInput.parse(data);
     // Sanitize databases against allowlist + dedupe, preserving priority order.
     let dbs = (parsed.databases ?? GEO_DATABASES.map((d) => d.id))

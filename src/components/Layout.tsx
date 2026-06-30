@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { ReactNode, useState, useEffect, useRef, useMemo, useCallback, type CSSProperties } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, X, Plus, Minus, Trash2, User as UserIcon,
@@ -193,6 +193,12 @@ export function Layout({ children }: LayoutProps) {
   const isLandingPage = location.pathname.startsWith('/landing');
   const isCleanPage = isAuthPage || isAdminPage;
   const researchBannerOffset = isLandingPage ? '0px' : 'var(--rg-banner-h, 0px)';
+  const disclaimerVisible = !isCleanPage && !isLandingPage;
+  const layoutVars = {
+    // The research disclaimer now lives inside the fixed header under the logo,
+    // so it must not add another row to the global page offset.
+    '--phl-disclaimer-h': '0px',
+  } as CSSProperties;
   
   // Check if any cart items have no variant selected
   const hasItemsWithoutVariant = useMemo(() => {
@@ -570,7 +576,7 @@ export function Layout({ children }: LayoutProps) {
 
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col" style={layoutVars}>
       {/* Research confirmation gate + sticky research banner */}
       {!isCleanPage && !isLandingPage && <ResearchGate />}
 
@@ -643,6 +649,16 @@ export function Layout({ children }: LayoutProps) {
               <div className="flex flex-col leading-[1.05] min-w-0">
                 <span className="font-extrabold text-white text-[18px] sm:text-[22px] tracking-tight group-hover:text-emerald-300 transition-colors duration-200 truncate">PH Labs</span>
                 <span className="text-[10px] sm:text-[11px] text-emerald-400/90 font-semibold tracking-[0.22em] uppercase mt-0.5">Research Grade</span>
+                {disclaimerVisible && (
+                  <span
+                    id="phl-research-disclaimer"
+                    role="note"
+                    aria-label="Research use disclaimer"
+                    className="mt-1 block max-w-[170px] truncate text-[8px] font-bold uppercase tracking-[0.10em] text-emerald-200/65 sm:max-w-[280px] sm:tracking-[0.12em]"
+                  >
+                    For Laboratory Research Use Only — Not for Human or Veterinary Consumption
+                  </span>
+                )}
               </div>
             </Link>
 

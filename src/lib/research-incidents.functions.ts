@@ -70,7 +70,7 @@ function normalizeStatus(v: unknown): IncidentStatus {
 }
 
 export const listResearchIncidents = createServerFn({ method: "POST" })
-  .inputValidator((data) => Input.parse(data))
+  .validator((data) => Input.parse(data))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     const limit = data.limit ?? 100;
@@ -165,7 +165,7 @@ const ResolveInput = z.object({
  * `auditLogs` with adminUid, action, target, before/after, and timestamp.
  */
 export const resolveResearchIncident = createServerFn({ method: "POST" })
-  .inputValidator((data) => ResolveInput.parse(data))
+  .validator((data) => ResolveInput.parse(data))
   .handler(async ({ data }) => {
     const user = await requireFirebaseAdmin(data.idToken);
     const nowIso = new Date().toISOString();

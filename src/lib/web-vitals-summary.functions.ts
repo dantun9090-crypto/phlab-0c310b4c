@@ -54,7 +54,7 @@ function percentile(sorted: number[], p: number): number {
 
 export const getWebVitalsSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { days?: number } | undefined) => ({
+  .validator((d: { days?: number } | undefined) => ({
     days: Math.min(Math.max(d?.days ?? 7, 1), 30),
   }))
   .handler(async ({ data }): Promise<VitalsSummary> => {
