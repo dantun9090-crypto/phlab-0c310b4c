@@ -17,9 +17,9 @@ const ROOT = process.cwd();
 // Same patterns the build-time guard enforces. Keep these in sync with
 // scripts/check-domains.ts — if you add one here, add it there too.
 const FORBIDDEN: { pattern: RegExp; label: string }[] = [
-  { pattern: /prohealthpeptides\.co\.uk/gi, label: "prohealthpeptides.co.uk" },
-  { pattern: /phlab\.lovable\.app/gi, label: "phlab.lovable.app" },
-  { pattern: /\bphp+labs?\b/gi, label: "phplabs/phplab (typo)" },
+  { pattern: /prohealthpeptides\.co\.uk/gi, label: "prohealthpeptides.co.uk" }, // check-domains-allow-line: guard self-reference
+  { pattern: /phlab\.lovable\.app/gi, label: "phlab.lovable.app" }, // check-domains-allow-line: guard self-reference
+  { pattern: /\bphp+labs?\b/gi, label: "phplabs/phplab (typo)" }, // check-domains-allow-line: guard self-reference
 ];
 
 const SCAN_DIRS = ["src/routes", "e2e"];
