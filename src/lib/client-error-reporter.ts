@@ -16,11 +16,22 @@ const recent: number[] = [];
 
 function buildId(): string | undefined {
   if (typeof document === "undefined") return undefined;
+  // Server injects <meta name="build-id">; older builds used "x-build-id".
   return (
+    document.querySelector('meta[name="build-id"]')?.getAttribute("content") ||
     document.querySelector('meta[name="x-build-id"]')?.getAttribute("content") ||
     undefined
   );
 }
+
+function release(): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  return (
+    document.querySelector('meta[name="release"]')?.getAttribute("content") ||
+    buildId()
+  );
+}
+
 
 function firstFrame(stack?: string): string {
   if (!stack) return "";
