@@ -7,7 +7,7 @@
  *  - Primary only → Pay-by-Bank tile renders with "via {name}".
  *  - Primary + backups → label shows auto-failover providers.
  */
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import PaymentMethodOptions from "./PaymentMethodOptions";
 import type { CheckoutPaymentOptions } from "@/lib/payments/types";
