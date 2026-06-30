@@ -138,8 +138,10 @@ import { StartClient } from "@tanstack/react-start/client";
 import { RouterProvider } from "@tanstack/react-router";
 import { getRouter } from "./router";
 import { installClientErrorReporter, reportClientError } from "./lib/client-error-reporter";
+import { initSwTelemetry } from "./lib/swTelemetry";
 
 installClientErrorReporter();
+initSwTelemetry();
 
 declare global {
   interface Window {
