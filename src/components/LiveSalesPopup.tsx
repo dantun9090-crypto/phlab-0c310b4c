@@ -197,9 +197,9 @@ export default function LiveSalesPopup() {
       onMouseLeave={handleMouseLeave}
       className="fixed pointer-events-auto"
       style={{
-        // Position under the site header (logo area)
-        top: 64,
-        right: 12,
+        // Position: lower-left, away from header and cart badges
+        bottom: 16,
+        left: 12,
         maxWidth: 'min(320px, calc(100vw - 24px))',
         width: '92vw',
         zIndex: 2147483000,
@@ -245,8 +245,8 @@ export default function LiveSalesPopup() {
       <style>{`
         @media (min-width: 768px) {
           [role="status"][aria-live="polite"] {
-            right: 16px !important;
-            top: 72px !important;
+            left: 16px !important;
+            bottom: 20px !important;
           }
         }
       `}</style>
