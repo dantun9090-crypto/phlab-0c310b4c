@@ -537,6 +537,7 @@ export default function AdminPage() {
         case 'healthmonitor': return <HealthMonitorTab />;
         case 'infrahealth': return <InfraHealthTab />;
         case 'researchincidents': return <ResearchIncidentsTab />;
+        case 'purgeincidents': return <PurgeIncidentsTab />;
         default: return <DashboardTab />;
       }
     })();
