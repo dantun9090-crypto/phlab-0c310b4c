@@ -51,8 +51,8 @@ function shouldSend(message: string, stack?: string): boolean {
 }
 
 function isResourceLoadNoise(event: Event): boolean {
-  const target = event.target as Element | null;
-  if (!target || target === window) return false;
+  const target = event.target as EventTarget | null;
+  if (!target || target === window || !(target instanceof Element)) return false;
   const tag = target.tagName?.toLowerCase();
   if (!tag || !["script", "img", "link", "iframe"].includes(tag)) return false;
   const url =
