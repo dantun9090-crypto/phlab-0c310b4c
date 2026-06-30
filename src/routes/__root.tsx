@@ -76,12 +76,8 @@ function OfflineScreen() {
     let cancelled = false;
     void findCachedLastKnownUrl().then((u) => { if (!cancelled) setCachedUrl(u); });
 
-    // Auto-retry when the browser reports the connection is back.
-    const onOnline = () => { void hardReload(); };
-    window.addEventListener("online", onOnline);
     return () => {
       cancelled = true;
-      window.removeEventListener("online", onOnline);
     };
   }, []);
 
@@ -258,13 +254,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "google", content: "notranslate" },
-      // Belt-and-braces: even when an intermediary ignores response headers,
-      // these <meta http-equiv> tags signal the HTML document itself must
-      // never be cached. Prevents stale shells loading new hashed asset
-      // chunks (which would surface as React hydration error #418).
-      { httpEquiv: "Cache-Control", content: "no-cache, no-store, must-revalidate" },
-      { httpEquiv: "Pragma", content: "no-cache" },
-      { httpEquiv: "Expires", content: "0" },
+      // Do NOT add Cache-Control/Pragma/Expires http-equiv tags here. Real
+      // cache policy belongs in response headers; meta no-store conflicted
+      // with Cloudflare edge HTML caching and amplified stale-shell recovery
+      // after publishes.
       // Build marker — helps confirm which build a stale tab is running.
       { name: "x-build-id", content: typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev" },
       { name: "author", content: "PH Labs UK" },

@@ -15,6 +15,8 @@ interface RawOrderLike {
   id?: string;
   userId?: string;
   userName?: string;
+  customerName?: string;
+  firstName?: string;
   customer?: { firstName?: string; uid?: string; city?: string } | null;
   items?: Array<{ name?: string; productName?: string; image?: string; imageUrl?: string }> | null;
   shippingAddress?: { city?: string } | string | null;
@@ -51,7 +53,7 @@ export const mapRawOrderToLive = (raw: RawOrderLike): LiveOrder | null => {
   const productName = (item?.name || item?.productName)?.trim();
   if (!id || !productName) return null;
 
-  const firstName = raw.customer?.firstName || raw.userName;
+  const firstName = raw.customer?.firstName || raw.firstName || raw.userName || raw.customerName;
   const city =
     (typeof raw.shippingAddress === 'object' && raw.shippingAddress?.city?.trim()) ||
     raw.customer?.city?.trim() ||

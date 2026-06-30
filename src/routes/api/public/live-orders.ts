@@ -1,30 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 import { mapRawOrderToLive, type LiveOrder } from '@/lib/orderFormatter';
+import { enforceRateLimit } from '@/lib/rate-limit';
 import { listDocsAdmin } from '@/lib/server/firestore-admin';
-
-const WINDOW_MS = 60_000;
-const MAX_PER_WINDOW = 120;
-const hits = new Map<string, { count: number; resetAt: number }>();
-
-function rateLimited(ip: string): boolean {
-  const now = Date.now();
-  const cur = hits.get(ip);
-  if (!cur || cur.resetAt < now) {
-    hits.set(ip, { count: 1, resetAt: now + WINDOW_MS });
-    return false;
-  }
-  cur.count += 1;
-  return cur.count > MAX_PER_WINDOW;
-}
-
-function ipFrom(request: Request): string {
-  return (
-    request.headers.get('cf-connecting-ip') ||
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    'unknown'
-  );
-}
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -41,7 +19,12 @@ export const Route = createFileRoute('/api/public/live-orders')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        if (rateLimited(ipFrom(request))) return json({ orders: [] }, 429);
+        const limited = await enforceRateLimit(request, 'live-orders', {
+          limit: 120,
+          windowMs: 60_000,
+          retryAfterSec: 60,
+        });
+        if (limited) return json({ orders: [] }, 429);
 
         const url = new URL(request.url);
         const limit = Math.min(Math.max(Number(url.searchParams.get('limit') || 20), 1), 20);

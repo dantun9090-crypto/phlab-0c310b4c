@@ -95,6 +95,7 @@ export const useLiveOrders = (): UseLiveOrdersResult => {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    let cancelled = false;
 
     const cb = (orders: LiveOrder[], newOrder: LiveOrder | null) => {
       setRecentOrders(orders);
@@ -106,6 +107,7 @@ export const useLiveOrders = (): UseLiveOrdersResult => {
     // rotation interval so the pool stays current.
     const startNow = () => {
       timerRef.current = window.setTimeout(() => {
+        if (cancelled) return;
         startSharedListener();
         setIsListening(true);
       }, 3000);
@@ -114,7 +116,9 @@ export const useLiveOrders = (): UseLiveOrdersResult => {
     else window.addEventListener('load', startNow, { once: true });
 
     return () => {
+      cancelled = true;
       if (timerRef.current) window.clearTimeout(timerRef.current);
+      window.removeEventListener('load', startNow);
       sharedListeners.delete(cb);
       stopSharedListenerIfIdle();
     };
