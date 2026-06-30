@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ShoppingCart, Search, Clock, Package, Truck, CheckCircle, XCircle,
   Eye, Printer, RefreshCw, ChevronDown, X, Send, Hash, Copy,
@@ -948,8 +949,9 @@ export default function OrdersTab() {
         </div>
       )}
 
-      {/* Order Detail Modal */}
-      <AnimatePresence>
+      {/* Order Detail Modal — portalled to body so transformed ancestors don't break `fixed` positioning */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
         {selected && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -1411,7 +1413,9 @@ export default function OrdersTab() {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
