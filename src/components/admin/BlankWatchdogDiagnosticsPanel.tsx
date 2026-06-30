@@ -61,6 +61,33 @@ export function BlankWatchdogDiagnosticsPanel() {
         <Row label="Captured" value={new Date(snap.capturedAt).toLocaleTimeString()} />
       </dl>
 
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-700 pt-3">
+        <button
+          type="button"
+          onClick={() => {
+            try {
+              const wd = (window as any).__phlBlankWatchdog;
+              if (wd && typeof wd.forceFallback === 'function') {
+                wd.forceFallback();
+              } else {
+                // eslint-disable-next-line no-console
+                console.warn('[phlabs] __phlBlankWatchdog.forceFallback unavailable');
+              }
+            } catch {
+              /* ignore */
+            }
+          }}
+          className="min-h-[48px] rounded-lg border-2 border-red-500/60 bg-red-500/10 px-4 font-semibold text-red-200 hover:bg-red-500/20"
+          aria-label="Force the blank-page watchdog fallback overlay for reproduction"
+          data-testid="blank-watchdog-force-fallback"
+        >
+          Force fallback (reproduce)
+        </button>
+        <span className="text-xs text-slate-400">
+          Triggers <code>window.__phlBlankWatchdog.forceFallback()</code> — shows overlay and uploads snapshot.
+        </span>
+      </div>
+
       <ConfigEditor config={snap.config} />
 
       <details className="mt-3">
