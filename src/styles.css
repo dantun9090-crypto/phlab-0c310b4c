@@ -492,7 +492,7 @@ html.light [data-keep-dark] * {
    Gap below header: 12px mobile / 16px desktop. iOS-safe insets included. */
 .phl-live-sales-popup {
   position: fixed;
-  top: calc(56px + 12px + env(safe-area-inset-top, 0px));
+  top: calc(56px + 34px + 8px + env(safe-area-inset-top, 0px));
   left: calc(12px + env(safe-area-inset-left, 0px));
   right: auto;
   bottom: auto;
@@ -502,7 +502,7 @@ html.light [data-keep-dark] * {
 }
 @media (min-width: 768px) {
   .phl-live-sales-popup {
-    top: calc(64px + 16px + env(safe-area-inset-top, 0px));
+    top: calc(64px + 34px + 8px + env(safe-area-inset-top, 0px));
     left: calc(16px + env(safe-area-inset-left, 0px));
   }
 }
