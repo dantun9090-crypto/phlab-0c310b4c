@@ -135,6 +135,8 @@
 import { Component, StrictMode, startTransition, type ReactNode } from "react";
 import { createRoot, hydrateRoot, type Root } from "react-dom/client";
 import { StartClient } from "@tanstack/react-start/client";
+import { RouterProvider } from "@tanstack/react-router";
+import { getRouter } from "./router";
 
 declare global {
   interface Window {
@@ -319,11 +321,18 @@ class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasEr
   }
 }
 
-function app() {
+let csrRouter: ReturnType<typeof getRouter> | undefined;
+
+function getCsrRouter() {
+  if (!csrRouter) csrRouter = getRouter();
+  return csrRouter;
+}
+
+function app(mode: "ssr" | "csr" = "ssr", router?: ReturnType<typeof getRouter>) {
   return (
     <StrictMode>
       <ClientRootErrorBoundary>
-        <StartClient />
+        {mode === "csr" ? <RouterProvider router={router ?? getCsrRouter()} /> : <StartClient />}
       </ClientRootErrorBoundary>
     </StrictMode>
   );
@@ -342,27 +351,43 @@ function renderCsr(error: unknown): void {
     console.error("[HYDRATION FALLBACK] Hydration root unmount failed", unmountError);
   }
   prepareDocumentForCsr();
-  try {
-    createRoot(document, {
-      onUncaughtError: (rootError, info) => {
-        console.error("[ROOT ERROR BOUNDARY] uncaught", rootError, info?.componentStack || "");
-        showStaticFallback(rootError);
-      },
-      onCaughtError: (rootError, info) => {
-        console.error("[ROOT ERROR BOUNDARY] caught", rootError, info?.componentStack || "");
-      },
-      onRecoverableError: (rootError, info) => {
-        console.error("[ROOT ERROR BOUNDARY] recoverable", rootError, info?.componentStack || "");
-      },
-    }).render(app());
-  } catch (renderError) {
-    showStaticFallback(renderError);
-  }
+  void (async () => {
+    const router = getCsrRouter();
+    try {
+      // In pure CSR mode TanStack's <Transitioner /> normally calls
+      // router.load() in a layout effect. On mobile Chrome this leaves one
+      // render where firstId/matches are empty; with our document-level shell
+      // that can trip the root boundary and show the dead "Please refresh"
+      // screen. Load the initial route before mounting React instead.
+      await router.load({ sync: true });
+    } catch (loadError) {
+      // Still mount: the router error boundary can render route-level errors,
+      // but do not let a pre-mount loader failure kill the whole app shell.
+      console.error("[CSR BOOT] initial router.load failed", loadError);
+    }
+
+    try {
+      createRoot(document, {
+        onUncaughtError: (rootError, info) => {
+          console.error("[ROOT ERROR BOUNDARY] uncaught", rootError, info?.componentStack || "");
+          showStaticFallback(rootError);
+        },
+        onCaughtError: (rootError, info) => {
+          console.error("[ROOT ERROR BOUNDARY] caught", rootError, info?.componentStack || "");
+        },
+        onRecoverableError: (rootError, info) => {
+          console.error("[ROOT ERROR BOUNDARY] recoverable", rootError, info?.componentStack || "");
+        },
+      }).render(app("csr", router));
+    } catch (renderError) {
+      showStaticFallback(renderError);
+    }
+  })();
 }
 
 function hydrateOrFallback(): void {
   try {
-    hydrationRoot = hydrateRoot(document, app(), {
+    hydrationRoot = hydrateRoot(document, app("ssr"), {
       onRecoverableError: (error, info) => {
         console.error("[HYDRATION DIAG] recoverable", error, info?.componentStack || "");
         if (isHydrationCrash(error)) window.setTimeout(() => renderCsr(error), 0);
