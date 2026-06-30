@@ -94,9 +94,9 @@ export default function LiveSalesPopup() {
         scheduleDismiss();
         return;
       }
-      const pool = eligible.slice(0, 8);
+      const pool = eligible.slice(0, 20);
       if (pool.length === 0) return;
-      const order = pool[rotateIdxRef.current % pool.length];
+      const order = pool[Math.floor(Math.random() * pool.length)];
       rotateIdxRef.current += 1;
       setState({ order, visible: true });
       lastTriggerRef.current = Date.now();
