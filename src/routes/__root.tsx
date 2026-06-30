@@ -605,34 +605,98 @@ const BOOT_WATCHDOG = `
         return;
       }
     }
+    // === Blank-page watchdog =================================================
+    // Goals (post-2026-06-30 refresh-loop incident):
+    //  1. Structured diagnostic log so future loops are debuggable.
+    //  2. Better hasPaint() — fewer false negatives on slow/legit paints.
+    //  3. Hard retry limit + per-session debounce so we cannot loop reload.
+    //  4. Friendly fallback UI (manual refresh button) instead of auto-reload.
+    // Exposes window.__phlBlankWatchdog for e2e + admin debug.
     var WATCH='__phl_blank_watchdog_done';
+    var ATTEMPTS_KEY='__phl_blank_watchdog_attempts';
+    var LAST_KEY='__phl_blank_watchdog_last_at';
+    var MAX_ATTEMPTS=3;
+    var DEBOUNCE_MS=60000;
+    var FALLBACK_MS=12000;
     var started=Date.now();
+    var diagnostics={ started: started, ticks: 0, lastPaint: false, reason: '', fallbackShown: false };
+    try{ window.__phlBlankWatchdog=diagnostics; }catch(e){}
     var hasPaint=function(){
       try{
-        if(document.querySelector('[data-phl-app-ready], header, main, #research-gate, #home, #products, [role="dialog"]')) return true;
+        // 1. Explicit ready markers + common app landmarks.
+        if(document.querySelector('[data-phl-app-ready], [data-phl-ready], header, nav, main, footer, #research-gate, #home, #products, [role="dialog"], [role="main"], [role="banner"], .phl-shell, #root > *, #__next > *')) { diagnostics.reason='landmark'; return true; }
         var body=document.body;
-        if(!body) return false;
-        var text=(body.innerText||'').replace(/\s+/g,' ').trim();
-        if(text.length>80) return true;
-        var rects=Array.prototype.slice.call(body.querySelectorAll('body *')).filter(function(el){
-          try{ var r=el.getBoundingClientRect(); return r.width>80&&r.height>40; }catch(e){ return false; }
-        });
-        return rects.length>2;
-      }catch(e){ return false; }
+        if(!body) { diagnostics.reason='no-body'; return false; }
+        // 2. Visible text content.
+        var text=(body.innerText||body.textContent||'').replace(/\\s+/g,' ').trim();
+        if(text.length>40) { diagnostics.reason='text:'+text.length; return true; }
+        // 3. Any rendered image, svg, canvas, or video.
+        if(body.querySelector('img, svg, canvas, video, picture')) { diagnostics.reason='media'; return true; }
+        // 4. Any sized child block (lowered threshold for mobile + landing pages).
+        var children=body.querySelectorAll('*');
+        var sized=0;
+        for(var i=0;i<children.length && sized<3;i++){
+          try{ var r=children[i].getBoundingClientRect(); if(r.width>40 && r.height>20) sized++; }catch(e){}
+        }
+        if(sized>=2) { diagnostics.reason='sized:'+sized; return true; }
+        // 5. React/TanStack mounted but empty? Treat as paint to avoid loop.
+        try{ if(window.__PHL_REACT_READY__) { diagnostics.reason='react-ready'; return true; } }catch(e){}
+        diagnostics.reason='blank';
+        return false;
+      }catch(e){ diagnostics.reason='hasPaint-error'; return true; /* fail-open */ }
+    };
+    var attempts=0;
+    try{ attempts=parseInt(sessionStorage.getItem(ATTEMPTS_KEY)||'0',10)||0; }catch(e){}
+    var lastAt=0;
+    try{ lastAt=parseInt(sessionStorage.getItem(LAST_KEY)||'0',10)||0; }catch(e){}
+    var showFallback=function(){
+      if(diagnostics.fallbackShown) return;
+      diagnostics.fallbackShown=true;
+      try{
+        if(!document.body) return;
+        // Only inject fallback if there's truly nothing visible.
+        if(hasPaint()) return;
+        var div=document.createElement('div');
+        div.id='phl-blank-fallback';
+        div.setAttribute('role','alert');
+        div.style.cssText='position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px';
+        div.innerHTML='<div style="max-width:440px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Taking longer than usual</h1><p style="margin:0 0 18px;color:#9fb0c8;font-size:14px;line-height:1.55">The page has not finished loading. This is usually a slow connection or a stale cache. Try refreshing manually.</p><button id="phl-blank-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer;min-height:44px">Refresh page</button> <a href="/?sw=off" style="display:inline-block;margin-left:8px;color:#9fb0c8;text-decoration:underline;min-height:44px;line-height:44px">Clear &amp; reload</a></div>';
+        document.body.appendChild(div);
+        var btn=document.getElementById('phl-blank-refresh');
+        if(btn) btn.addEventListener('click',function(){ try{ sessionStorage.removeItem(ATTEMPTS_KEY); sessionStorage.removeItem(LAST_KEY); }catch(e){} location.reload(); });
+      }catch(e){}
     };
     var tick=function(){
-      if(hasPaint()) return;
-      if(Date.now()-started<7000){ setTimeout(tick,700); return; }
-      // Watchdog auto-reload DISABLED 2026-06-30 — was causing a constant
-      // refresh loop when hasPaint() heuristics missed legitimate content.
-      // Detection retained for console diagnostics only; no navigation.
-      try{ console.warn('[phlabs] blank-watchdog: no paint after 7s (auto-reload disabled)'); }catch(e){}
+      diagnostics.ticks++;
+      var painted=hasPaint();
+      diagnostics.lastPaint=painted;
+      if(painted){
+        try{ sessionStorage.removeItem(ATTEMPTS_KEY); }catch(e){}
+        try{ console.info('[phlabs] blank-watchdog: paint detected ('+diagnostics.reason+') after '+(Date.now()-started)+'ms, ticks='+diagnostics.ticks); }catch(e){}
+        return;
+      }
+      var elapsed=Date.now()-started;
+      if(elapsed<7000){ setTimeout(tick,700); return; }
+      // No paint after 7s — log structured diagnostics.
+      var payload={ at:new Date().toISOString(), url:location.href, elapsed:elapsed, ticks:diagnostics.ticks, reason:diagnostics.reason, attempts:attempts, lastAt:lastAt, readyState:document.readyState, reactReady:!!window.__PHL_REACT_READY__, ua:navigator.userAgent.slice(0,140) };
+      try{ console.warn('[phlabs] blank-watchdog: NO PAINT', payload); }catch(e){}
+      // Retry limit + debounce — auto-reload stays DISABLED.
+      // We only escalate to the friendly fallback UI; we never call location.replace.
+      var canEscalate = attempts < MAX_ATTEMPTS && (Date.now()-lastAt) > DEBOUNCE_MS;
+      try{ sessionStorage.setItem(ATTEMPTS_KEY,String(attempts+1)); sessionStorage.setItem(LAST_KEY,String(Date.now())); }catch(e){}
+      if(elapsed>=FALLBACK_MS && canEscalate){
+        try{ console.warn('[phlabs] blank-watchdog: showing manual fallback (attempts='+(attempts+1)+'/'+MAX_ATTEMPTS+')'); }catch(e){}
+        showFallback();
+        return;
+      }
+      if(elapsed<FALLBACK_MS){ setTimeout(tick,1000); return; }
     };
     if(document.readyState==='loading'){
       document.addEventListener('DOMContentLoaded',function(){ setTimeout(tick,7000); },{once:true});
     }else{
       setTimeout(tick,7000);
     }
+
 
 
 
