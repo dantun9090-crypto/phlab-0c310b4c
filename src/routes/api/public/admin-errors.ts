@@ -45,6 +45,18 @@ export const Route = createFileRoute('/api/public/admin-errors')({
         new Response(null, { status: 204, headers: cors(request.headers.get('origin')) }),
       POST: async ({ request }) => {
         const headers = { ...cors(request.headers.get('origin')), 'content-type': 'application/json' };
+        const limited = await enforceRateLimit(request, 'admin-errors', {
+          limit: 30,
+          windowMs: 60_000,
+          retryAfterSec: 60,
+        });
+        if (limited) {
+          // Preserve CORS headers on the 429 so the browser can read it.
+          const merged = new Headers(limited.headers);
+          for (const [k, v] of Object.entries(cors(request.headers.get('origin')))) merged.set(k, v);
+          return new Response(limited.body, { status: 429, headers: merged });
+        }
+
         let raw: unknown;
         try { raw = await request.json(); } catch { return new Response('{"ok":false,"error":"bad json"}', { status: 400, headers }); }
         const parsed = Body.safeParse(raw);
