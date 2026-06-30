@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   ShoppingCart, Search, Clock, Package, Truck, CheckCircle, XCircle,
@@ -250,13 +250,42 @@ export default function OrdersTab() {
     loadOrders();
   }, []);
 
+  // Trigger element to return focus to when the modal closes.
+  const triggerRef = useRef<HTMLElement | null>(null);
+  // First focusable inside the modal (the Close button) — autofocus on open.
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+
   // Lock background scroll while the order detail modal is open (prevents
   // the page behind from scrolling on mobile when reviewing an order).
+  // Also: capture the trigger element, autofocus the modal close button,
+  // handle Escape to close, and restore focus on unmount.
   useEffect(() => {
     if (typeof document === 'undefined' || !selected) return;
+    triggerRef.current = (document.activeElement as HTMLElement) || null;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
+    // Autofocus the close button on next paint so the assistive tech announces it.
+    const focusTimer = window.setTimeout(() => {
+      closeBtnRef.current?.focus();
+    }, 30);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setSelected(null);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      window.clearTimeout(focusTimer);
+      document.body.style.overflow = prev;
+      // Return focus to the trigger element if it's still in the DOM.
+      const t = triggerRef.current;
+      if (t && document.contains(t) && typeof t.focus === 'function') {
+        try { t.focus(); } catch { /* ignore */ }
+      }
+      triggerRef.current = null;
+    };
   }, [selected]);
 
   // Sync inputs when selected order changes
