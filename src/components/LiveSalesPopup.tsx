@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouterState } from '@tanstack/react-router';
+import { useLocation } from 'react-router-dom';
 import { X, Package } from 'lucide-react';
 import { useLiveOrders } from '@/hooks/useLiveOrders';
 import { formatLivePopupText, type LiveOrder } from '@/lib/orderFormatter';
@@ -22,7 +22,7 @@ const prefersReducedMotion = (): boolean =>
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
 export default function LiveSalesPopup() {
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const pathname = useLocation().pathname;
   const { recentOrders, latestNewOrder } = useLiveOrders();
   const [state, setState] = useState<PopupState>({ order: null, visible: false });
   const [hovered, setHovered] = useState(false);

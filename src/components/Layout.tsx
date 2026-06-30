@@ -25,6 +25,7 @@ import { Logo } from './Logo';
 import { UnderConstruction } from './UnderConstruction';
 import ResearchGate from './ResearchGate';
 import { Navigation } from './Navigation';
+import LiveSalesPopup from './LiveSalesPopup';
 import DayNightToggle from './DayNightToggle';
 import { WhatsAppIcon, FacebookIcon, InstagramIcon, TwitterXIcon, YoutubeIcon } from './SocialIcons';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
@@ -881,6 +882,8 @@ export function Layout({ children }: LayoutProps) {
       >
         {children}
       </main>
+
+      <LiveSalesPopup />
 
       {/* Cart / Checkout Drawer */}
       {isCartOpen && (
