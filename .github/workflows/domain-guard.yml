@@ -1,0 +1,44 @@
+name: Domain guard
+# Fails the PR / push if any forbidden domain literal is re-introduced.
+# Covers source files (check-domains + check-domains.test), URL consistency,
+# and the built dist/ bundle (post-build literal scan).
+#
+# Forbidden:
+#   - prohealthpeptides.co.uk
+#   - phlab.lovable.app
+#   - phplabs / phplab  (typo)
+# Canonical: https://phlabs.co.uk
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  domain-guard:
+    name: Domain guard (source + built dist)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+
+      - name: Source guard — check-domains (script)
+        run: bun scripts/check-domains.ts
+
+      - name: Source guard — check-domains.test (vitest)
+        run: bunx vitest run scripts/check-domains.test.ts
+
+      - name: Source guard — URL consistency
+        run: bun scripts/check-url-consistency.ts
+
+      - name: Build (runs prebuild guards + postbuild dist scan)
+        run: bun run build
+
+      - name: Post-build guard — scan dist/ + e2e/ for forbidden literals
+        run: bun scripts/check-dist-domains.ts
