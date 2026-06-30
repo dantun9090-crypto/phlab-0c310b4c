@@ -53,6 +53,7 @@ import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as MarketingCompoundRouteImport } from './routes/_marketing.compound'
+import { Route as _e2eWatchdogPanelRouteImport } from './routes/__e2e.watchdog-panel'
 import { Route as _e2ePaymentOptionsRouteImport } from './routes/__e2e.payment-options'
 import { Route as _e2eOrdersModalRouteImport } from './routes/__e2e.orders-modal'
 import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wallid'
@@ -314,6 +315,11 @@ const MarketingCompoundRoute = MarketingCompoundRouteImport.update({
   path: '/compound',
   getParentRoute: () => MarketingRoute,
 } as any)
+const _e2eWatchdogPanelRoute = _e2eWatchdogPanelRouteImport.update({
+  id: '/__e2e/watchdog-panel',
+  path: '/watchdog-panel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const _e2ePaymentOptionsRoute = _e2ePaymentOptionsRouteImport.update({
   id: '/__e2e/payment-options',
   path: '/payment-options',
@@ -547,6 +553,7 @@ export interface FileRoutesByFullPath {
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/orders-modal': typeof _e2eOrdersModalRoute
   '/payment-options': typeof _e2ePaymentOptionsRoute
+  '/watchdog-panel': typeof _e2eWatchdogPanelRoute
   '/compound': typeof MarketingCompoundRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
@@ -628,6 +635,7 @@ export interface FileRoutesByTo {
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/orders-modal': typeof _e2eOrdersModalRoute
   '/payment-options': typeof _e2ePaymentOptionsRoute
+  '/watchdog-panel': typeof _e2eWatchdogPanelRoute
   '/compound': typeof MarketingCompoundRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
@@ -712,6 +720,7 @@ export interface FileRoutesById {
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/__e2e/orders-modal': typeof _e2eOrdersModalRoute
   '/__e2e/payment-options': typeof _e2ePaymentOptionsRoute
+  '/__e2e/watchdog-panel': typeof _e2eWatchdogPanelRoute
   '/_marketing/compound': typeof MarketingCompoundRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
@@ -796,6 +805,7 @@ export interface FileRouteTypes {
     | '/terms-and-conditions'
     | '/orders-modal'
     | '/payment-options'
+    | '/watchdog-panel'
     | '/compound'
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
@@ -877,6 +887,7 @@ export interface FileRouteTypes {
     | '/terms-and-conditions'
     | '/orders-modal'
     | '/payment-options'
+    | '/watchdog-panel'
     | '/compound'
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
@@ -960,6 +971,7 @@ export interface FileRouteTypes {
     | '/terms-and-conditions'
     | '/__e2e/orders-modal'
     | '/__e2e/payment-options'
+    | '/__e2e/watchdog-panel'
     | '/_marketing/compound'
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
@@ -1044,6 +1056,7 @@ export interface RootRouteChildren {
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   _e2eOrdersModalRoute: typeof _e2eOrdersModalRoute
   _e2ePaymentOptionsRoute: typeof _e2ePaymentOptionsRoute
+  _e2eWatchdogPanelRoute: typeof _e2eWatchdogPanelRoute
   CheckoutCancelRoute: typeof CheckoutCancelRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   CompareSlugRoute: typeof CompareSlugRoute
@@ -1399,6 +1412,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingCompoundRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/__e2e/watchdog-panel': {
+      id: '/__e2e/watchdog-panel'
+      path: '/watchdog-panel'
+      fullPath: '/watchdog-panel'
+      preLoaderRoute: typeof _e2eWatchdogPanelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/__e2e/payment-options': {
       id: '/__e2e/payment-options'
       path: '/payment-options'
@@ -1745,6 +1765,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   _e2eOrdersModalRoute: _e2eOrdersModalRoute,
   _e2ePaymentOptionsRoute: _e2ePaymentOptionsRoute,
+  _e2eWatchdogPanelRoute: _e2eWatchdogPanelRoute,
   CheckoutCancelRoute: CheckoutCancelRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   CompareSlugRoute: CompareSlugRoute,

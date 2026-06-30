@@ -272,11 +272,23 @@ function UploadStatusBlock({ upload }: { upload: BlankWatchdogUploadStatus | nul
           <dd data-testid="upload-attempts" className="font-mono">{upload.attempts}</dd>
           <dt className="opacity-70">HTML truncated</dt>
           <dd data-testid="upload-html-truncated" className="font-mono">
-            {upload.htmlTruncated ? `yes (orig ${upload.htmlOriginalLength} ch)` : "no"}
+            {upload.htmlTruncated ? (
+              <span data-testid="upload-html-truncation-indicator">
+                yes (orig {upload.htmlOriginalLength} ch → 32000 ch)
+              </span>
+            ) : (
+              "no"
+            )}
           </dd>
           <dt className="opacity-70">Screenshot dropped</dt>
           <dd data-testid="upload-screenshot-dropped" className="font-mono">
-            {upload.screenshotDropped ? "yes (over 600KB cap)" : "no"}
+            {upload.screenshotDropped ? (
+              <span data-testid="upload-screenshot-dropped-indicator">
+                yes (over 600KB cap)
+              </span>
+            ) : (
+              "no"
+            )}
           </dd>
         </dl>
       )}

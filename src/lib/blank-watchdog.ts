@@ -296,3 +296,90 @@ export function shouldDropScreenshot(
 ): boolean {
   return !!screenshot && screenshot.length > cap;
 }
+
+// ---------------------------------------------------------------------------
+// uploadWithRetry — pure mirror of the inline retry pipeline in
+// `src/routes/__root.tsx`. Kept here so unit tests can assert the exact
+// backoff schedule (1s, 2s, 4s) and max-attempt cap (3) without spinning
+// up a browser. Any change here MUST be mirrored in the inline script.
+// ---------------------------------------------------------------------------
+
+export interface UploadRetryStatus {
+  method: "fetch";
+  attempts: number;
+  ok: boolean;
+  error?: string;
+  htmlTruncated: boolean;
+  screenshotDropped: boolean;
+  htmlOriginalLength: number;
+}
+
+export interface UploadRetryDeps {
+  fetch: (url: string, init: RequestInit) => Promise<{ ok: boolean; status?: number }>;
+  setTimeout: (cb: () => void, ms: number) => unknown;
+  onStatus: (s: UploadRetryStatus) => void;
+}
+
+export interface UploadRetryOptions {
+  url?: string;
+  maxAttempts?: number;
+  /** Backoff schedule in ms, indexed by attempt-1. Defaults to [1000, 2000, 4000]. */
+  delaysMs?: number[];
+}
+
+/**
+ * Fires a JSON POST with exponential backoff. Records every state transition
+ * via `deps.onStatus` so callers (and tests) can verify attempt counts and
+ * the final ok/error state. Resolves once the upload succeeds or all retries
+ * are exhausted — never rejects.
+ */
+export function uploadWithRetry(
+  body: string,
+  base: { htmlTruncated: boolean; screenshotDropped: boolean; htmlOriginalLength: number },
+  deps: UploadRetryDeps,
+  opts: UploadRetryOptions = {},
+): Promise<UploadRetryStatus> {
+  const url = opts.url ?? "/api/public/error-monitor";
+  const maxAttempts = opts.maxAttempts ?? 3;
+  const delays = opts.delaysMs ?? [1000, 2000, 4000];
+  return new Promise((resolve) => {
+    let attempt = 0;
+    const go = () => {
+      attempt++;
+      const inFlight: UploadRetryStatus = {
+        method: "fetch",
+        attempts: attempt,
+        ok: false,
+        htmlTruncated: base.htmlTruncated,
+        screenshotDropped: base.screenshotDropped,
+        htmlOriginalLength: base.htmlOriginalLength,
+      };
+      deps.onStatus(inFlight);
+      deps
+        .fetch(url, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body,
+          keepalive: true,
+        })
+        .then((r) => {
+          if (!r || !r.ok) throw new Error("status " + (r ? r.status : "none"));
+          const okStatus = { ...inFlight, ok: true };
+          deps.onStatus(okStatus);
+          resolve(okStatus);
+        })
+        .catch((err: unknown) => {
+          const msg = (err as { message?: string })?.message || "unknown";
+          if (attempt >= maxAttempts) {
+            const final = { ...inFlight, ok: false, error: msg };
+            deps.onStatus(final);
+            resolve(final);
+            return;
+          }
+          const delay = delays[attempt - 1] ?? delays[delays.length - 1];
+          deps.setTimeout(go, delay);
+        });
+    };
+    go();
+  });
+}
