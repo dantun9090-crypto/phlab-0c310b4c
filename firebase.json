@@ -15,6 +15,32 @@
     ],
     "headers": [
       {
+        "source": "/robots.txt",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=3600, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/sitemap.xml",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "public, max-age=300, stale-while-revalidate=3600"
+          },
+          {
+            "key": "Surrogate-Control",
+            "value": "max-age=3600"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/xml; charset=utf-8"
+          }
+        ]
+      },
+      {
         "source": "**/*.@(js|mjs|css|woff2|woff|ttf|otf)",
         "headers": [
           {
