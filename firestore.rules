@@ -476,6 +476,36 @@ service cloud.firestore {
     }
 
 
+    // ---------- sw_telemetry (append-only client telemetry) ----------
+    // Logged by src/lib/swTelemetry.ts — tracks "Update available" overlay
+    // appearances, blank-watchdog fallback shows, build-id mismatches, and
+    // cache-reset clicks/successes. Anyone may CREATE with a locked shape so
+    // we still capture events from unauthenticated visitors during the
+    // recovery flow. Admin-only read. No edits / deletes.
+    match /sw_telemetry/{id} {
+      allow read: if isAdmin();
+      allow create: if request.resource.data.event is string
+                    && request.resource.data.event.size() > 0
+                    && request.resource.data.event.size() < 64
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.sessionId is string
+                    && request.resource.data.sessionId.size() < 80
+                    && request.resource.data.buildId is string
+                    && request.resource.data.buildId.size() < 80
+                    && request.resource.data.clientTs is int
+                    && (!('url' in request.resource.data)
+                        || (request.resource.data.url is string
+                            && request.resource.data.url.size() < 600))
+                    && (!('userAgent' in request.resource.data)
+                        || (request.resource.data.userAgent is string
+                            && request.resource.data.userAgent.size() < 400))
+                    && (!('extra' in request.resource.data)
+                        || request.resource.data.extra == null
+                        || (request.resource.data.extra is string
+                            && request.resource.data.extra.size() < 600));
+      allow update, delete: if false;
+    }
+
     // ---------- default deny ----------
     match /{document=**} {
       allow read, write: if false;

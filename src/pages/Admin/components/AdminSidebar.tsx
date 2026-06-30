@@ -127,6 +127,7 @@ const navGroups = [
       { id: 'watchdog', label: 'Watchdog / Auto-Heal', icon: Activity },
       { id: 'healthmonitor', label: 'Health Monitor', icon: Activity },
       { id: 'infrahealth', label: 'Infrastructure Health', icon: Activity },
+      { id: 'purgeincidents', label: 'Purge Incidents', icon: Activity },
     ],
   },
 ];
