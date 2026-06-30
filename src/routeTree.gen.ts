@@ -62,6 +62,7 @@ import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
 import { Route as ApiPublicLiveOrdersRouteImport } from './routes/api/public/live-orders'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
+import { Route as ApiPublicHealthDeepRouteImport } from './routes/api/public/health-deep'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicErrorMonitorRouteImport } from './routes/api/public/error-monitor'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
@@ -362,6 +363,11 @@ const ApiPublicImgRoute = ApiPublicImgRouteImport.update({
   path: '/api/public/img',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHealthDeepRoute = ApiPublicHealthDeepRouteImport.update({
+  id: '/api/public/health-deep',
+  path: '/api/public/health-deep',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
   id: '/api/public/health',
   path: '/api/public/health',
@@ -585,6 +591,7 @@ export interface FileRoutesByFullPath {
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/health-deep': typeof ApiPublicHealthDeepRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
@@ -668,6 +675,7 @@ export interface FileRoutesByTo {
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/health-deep': typeof ApiPublicHealthDeepRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
@@ -754,6 +762,7 @@ export interface FileRoutesById {
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/health-deep': typeof ApiPublicHealthDeepRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
@@ -840,6 +849,7 @@ export interface FileRouteTypes {
     | '/api/public/csp-report'
     | '/api/public/error-monitor'
     | '/api/public/health'
+    | '/api/public/health-deep'
     | '/api/public/img'
     | '/api/public/live-orders'
     | '/api/public/post-publish-check'
@@ -923,6 +933,7 @@ export interface FileRouteTypes {
     | '/api/public/csp-report'
     | '/api/public/error-monitor'
     | '/api/public/health'
+    | '/api/public/health-deep'
     | '/api/public/img'
     | '/api/public/live-orders'
     | '/api/public/post-publish-check'
@@ -1008,6 +1019,7 @@ export interface FileRouteTypes {
     | '/api/public/csp-report'
     | '/api/public/error-monitor'
     | '/api/public/health'
+    | '/api/public/health-deep'
     | '/api/public/img'
     | '/api/public/live-orders'
     | '/api/public/post-publish-check'
@@ -1088,6 +1100,7 @@ export interface RootRouteChildren {
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicErrorMonitorRoute: typeof ApiPublicErrorMonitorRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
+  ApiPublicHealthDeepRoute: typeof ApiPublicHealthDeepRoute
   ApiPublicImgRoute: typeof ApiPublicImgRoute
   ApiPublicLiveOrdersRoute: typeof ApiPublicLiveOrdersRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
@@ -1488,6 +1501,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicImgRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/health-deep': {
+      id: '/api/public/health-deep'
+      path: '/api/public/health-deep'
+      fullPath: '/api/public/health-deep'
+      preLoaderRoute: typeof ApiPublicHealthDeepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/health': {
       id: '/api/public/health'
       path: '/api/public/health'
@@ -1805,6 +1825,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicErrorMonitorRoute: ApiPublicErrorMonitorRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
+  ApiPublicHealthDeepRoute: ApiPublicHealthDeepRoute,
   ApiPublicImgRoute: ApiPublicImgRoute,
   ApiPublicLiveOrdersRoute: ApiPublicLiveOrdersRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
