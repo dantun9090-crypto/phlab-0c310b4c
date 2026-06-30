@@ -102,6 +102,8 @@ export default function LiveSalesPopup() {
       lastTriggerRef.current = Date.now();
       scheduleDismiss();
     };
+    // Kick off immediately so user sees one within ~500ms instead of waiting full interval
+    const kickoff = window.setTimeout(tick, 500);
     rotateTimerRef.current = window.setInterval(tick, ROTATE_INTERVAL_MS);
     return () => {
       if (rotateTimerRef.current) window.clearInterval(rotateTimerRef.current);
