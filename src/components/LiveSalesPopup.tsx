@@ -245,8 +245,8 @@ export default function LiveSalesPopup() {
       <style>{`
         @media (min-width: 768px) {
           [role="status"][aria-live="polite"] {
-            right: 16px !important;
-            top: 72px !important;
+            left: 16px !important;
+            bottom: 20px !important;
           }
         }
       `}</style>
