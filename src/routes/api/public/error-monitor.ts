@@ -85,6 +85,8 @@ const Body = z.object({
   stack: z.string().trim().max(8000).optional(),
   routeId: z.string().trim().max(300).optional(),
   buildId: z.string().trim().max(120).optional(),
+  release: z.string().trim().max(120).optional(),
+
   /** Optional detector metadata (e.g. which DOM markers matched). */
   details: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
 });
