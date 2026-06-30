@@ -4,6 +4,7 @@ import {
   readBlankWatchdogSnapshot,
   type BlankWatchdogConfig,
   type BlankWatchdogSnapshot,
+  type BlankWatchdogUploadStatus,
 } from "@/lib/blank-watchdog";
 
 /**
