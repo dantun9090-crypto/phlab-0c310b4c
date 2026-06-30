@@ -16,7 +16,7 @@ import { requireFirebaseAdmin } from "@/lib/server/firebase-auth-admin";
 const Input = z.object({ idToken: z.string().min(10).max(4096) });
 
 export const createWallidTestPayment = createServerFn({ method: "POST" })
-  .inputValidator((d) => Input.parse(d))
+  .validator((d) => Input.parse(d))
   .handler(
     async ({
       data,

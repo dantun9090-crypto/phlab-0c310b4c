@@ -92,7 +92,7 @@ export interface MailHealth {
 }
 
 export const getMailHealth = createServerFn({ method: 'POST' })
-  .inputValidator((data) => Input.parse(data))
+  .validator((data) => Input.parse(data))
   .handler(async ({ data }): Promise<MailHealth> => {
     await requireFirebaseAdmin(data.idToken);
 

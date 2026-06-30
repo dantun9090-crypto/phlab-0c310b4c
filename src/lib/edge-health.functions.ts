@@ -61,7 +61,7 @@ async function timedFetch(url: string, ua: string) {
 }
 
 export const probeEdgeHealth = createServerFn({ method: 'POST' })
-  .inputValidator((data: { idToken: string }) => {
+  .validator((data: { idToken: string }) => {
     if (!data?.idToken || typeof data.idToken !== 'string') throw new Error('idToken required');
     return data;
   })

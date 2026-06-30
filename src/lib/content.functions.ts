@@ -19,7 +19,7 @@ const PublishInput = z.object({
 
 export const upsertArticle = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => PublishInput.parse(input))
+  .validator((input) => PublishInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { data: row, error } = await supabase

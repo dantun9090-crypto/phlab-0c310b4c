@@ -82,7 +82,7 @@ async function requireAdmin(idToken: string): Promise<void> {
  * Fetch Search Analytics performance (last 28 days, by page).
  */
 export const fetchGscPerformance = createServerFn({ method: 'POST' })
-  .inputValidator((data: { idToken: string; days?: number; siteUrl?: string }) => {
+  .validator((data: { idToken: string; days?: number; siteUrl?: string }) => {
     if (!data?.idToken) throw new Error('idToken required');
     const days = Math.min(Math.max(Number(data.days ?? 28), 1), 90);
     const siteUrl = data.siteUrl ?? SITE_URL;
@@ -140,7 +140,7 @@ export const fetchGscPerformance = createServerFn({ method: 'POST' })
  * Rate-limited by Google (~2000/day, 600/min) — call sparingly.
  */
 export const inspectGscUrl = createServerFn({ method: 'POST' })
-  .inputValidator((data: { idToken: string; inspectionUrl: string; siteUrl?: string }) => {
+  .validator((data: { idToken: string; inspectionUrl: string; siteUrl?: string }) => {
     if (!data?.idToken) throw new Error('idToken required');
     if (!data?.inspectionUrl) throw new Error('inspectionUrl required');
     try {
@@ -203,7 +203,7 @@ export const inspectGscUrl = createServerFn({ method: 'POST' })
  * List verified sites in this GSC account.
  */
 export const listGscSites = createServerFn({ method: 'POST' })
-  .inputValidator((data: { idToken: string }) => {
+  .validator((data: { idToken: string }) => {
     if (!data?.idToken) throw new Error('idToken required');
     return data;
   })

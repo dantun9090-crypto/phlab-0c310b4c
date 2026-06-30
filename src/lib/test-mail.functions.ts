@@ -21,7 +21,7 @@ const Input = z.object({
 });
 
 export const sendTestMail = createServerFn({ method: "POST" })
-  .inputValidator((d) => Input.parse(d))
+  .validator((d) => Input.parse(d))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
 

@@ -134,7 +134,7 @@ export async function runEdgeMonitor(): Promise<MonitorSample> {
 }
 
 export const probeEdgeMonitor = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => InputSchema.parse(input))
+  .validator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data }) => {
     try {
       await requireFirebaseAdmin(data.idToken);

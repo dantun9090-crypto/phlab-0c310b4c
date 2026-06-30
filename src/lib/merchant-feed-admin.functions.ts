@@ -21,7 +21,7 @@ async function requireAdmin(idToken: string): Promise<string> {
 const GetConfigSchema = IdTokenSchema.extend({ feedKey: FeedKeyEnum });
 
 export const getMerchantFeedConfig = createServerFn({ method: "POST" })
-  .inputValidator((d) => GetConfigSchema.parse(d))
+  .validator((d) => GetConfigSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin(data.idToken);
     const { loadFeedConfig, loadFeedOverrides, FEED_URLS, FEED_LABELS } = await import(
@@ -46,7 +46,7 @@ const SaveConfigSchema = IdTokenSchema.extend({
 });
 
 export const saveMerchantFeedConfig = createServerFn({ method: "POST" })
-  .inputValidator((d) => SaveConfigSchema.parse(d))
+  .validator((d) => SaveConfigSchema.parse(d))
   .handler(async ({ data }) => {
     const uid = await requireAdmin(data.idToken);
     const { saveFeedConfig } = await import("@/lib/merchant-feed-overrides");
@@ -88,7 +88,7 @@ const SaveOverrideSchema = IdTokenSchema.extend({
 });
 
 export const saveMerchantFeedOverride = createServerFn({ method: "POST" })
-  .inputValidator((d) => SaveOverrideSchema.parse(d))
+  .validator((d) => SaveOverrideSchema.parse(d))
   .handler(async ({ data }) => {
     const uid = await requireAdmin(data.idToken);
     const { saveProductOverride } = await import("@/lib/merchant-feed-overrides");
@@ -115,7 +115,7 @@ const BulkSchema = IdTokenSchema.extend({
 });
 
 export const bulkSetMerchantFeedInclusion = createServerFn({ method: "POST" })
-  .inputValidator((d) => BulkSchema.parse(d))
+  .validator((d) => BulkSchema.parse(d))
   .handler(async ({ data }) => {
     const uid = await requireAdmin(data.idToken);
     const { bulkSetInclusion } = await import("@/lib/merchant-feed-overrides");
@@ -139,7 +139,7 @@ export const bulkSetMerchantFeedInclusion = createServerFn({ method: "POST" })
 const ListProductsSchema = IdTokenSchema.extend({ feedKey: FeedKeyEnum });
 
 export const listMerchantFeedProducts = createServerFn({ method: "POST" })
-  .inputValidator((d) => ListProductsSchema.parse(d))
+  .validator((d) => ListProductsSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin(data.idToken);
     const { fetchAllProducts } = await import("@/lib/firestore-rest");

@@ -134,7 +134,7 @@ async function recachePrerender(urls: string[]): Promise<{ ok: boolean; desktop:
 }
 
 export const invalidateProductCache = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => InputSchema.parse(input))
+  .validator((input: unknown) => InputSchema.parse(input))
   .handler(async ({ data }) => {
     // Verify caller is an authenticated admin before touching any
     // rate-limited upstream APIs.
@@ -184,7 +184,7 @@ const ContentInputSchema = z.object({
 });
 
 export const invalidateContentCache = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => ContentInputSchema.parse(input))
+  .validator((input: unknown) => ContentInputSchema.parse(input))
   .handler(async ({ data }) => {
     try {
       await requireFirebaseAdmin(data.idToken);

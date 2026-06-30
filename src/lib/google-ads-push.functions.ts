@@ -197,7 +197,7 @@ async function realPush(c: Campaign) {
 }
 
 export const pushCampaignToGoogleAds = createServerFn({ method: 'POST' })
-  .inputValidator((input: { campaignId: string; dryRun?: boolean }) => input)
+  .validator((input: { campaignId: string; dryRun?: boolean }) => input)
   .handler(async ({ data }) => {
     const c = CAMPAIGNS.find((x) => x.id === data.campaignId);
     if (!c) return { ok: false as const, error: 'Unknown campaignId' };

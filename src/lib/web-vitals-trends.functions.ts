@@ -48,7 +48,7 @@ function dayKey(iso: string): string {
 
 export const getWebVitalsTrends = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { days?: number } | undefined) => ({
+  .validator((d: { days?: number } | undefined) => ({
     days: Math.min(Math.max(d?.days ?? 7, 1), 30),
   }))
   .handler(async ({ data }): Promise<VitalsTrends> => {
@@ -137,7 +137,7 @@ export interface VitalsAlert {
 
 export const getWebVitalsAlerts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { limit?: number; days?: number } | undefined) => ({
+  .validator((d: { limit?: number; days?: number } | undefined) => ({
     limit: Math.min(Math.max(d?.limit ?? 50, 1), 200),
     days: Math.min(Math.max(d?.days ?? 7, 1), 30),
   }))

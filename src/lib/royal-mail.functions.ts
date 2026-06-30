@@ -44,7 +44,7 @@ export interface RoyalMailResult {
 
 
 export const createRoyalMailOrder = createServerFn({ method: 'POST' })
-  .inputValidator((d) => Input.parse(d))
+  .validator((d) => Input.parse(d))
   .handler(async ({ data }): Promise<RoyalMailResult> => {
     await requireFirebaseAdmin(data.idToken);
 

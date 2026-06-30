@@ -11,7 +11,7 @@ const Input = z.object({ idToken: z.string().min(20).max(4096) });
 const ENDPOINT = 'https://phlabs.co.uk/api/public/hooks/watchdog';
 
 export const triggerWatchdogRun = createServerFn({ method: 'POST' })
-  .inputValidator((i: unknown) => Input.parse(i))
+  .validator((i: unknown) => Input.parse(i))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     const secret = process.env.CLEANUP_SECRET;

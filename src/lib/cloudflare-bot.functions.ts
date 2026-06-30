@@ -45,7 +45,7 @@ export interface CloudflareBotStatus {
  * The Cloudflare API token is server-side only (process.env.CLOUDFLARE_API_TOKEN).
  */
 export const getCloudflareBotStatus = createServerFn({ method: 'POST' })
-  .inputValidator((data) => InputSchema.parse(data))
+  .validator((data) => InputSchema.parse(data))
   .handler(async ({ data }): Promise<CloudflareBotStatus> => {
     await requireFirebaseAdmin(data.idToken);
 

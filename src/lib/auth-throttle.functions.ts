@@ -28,7 +28,7 @@ const ResetInput = z.object({
 });
 
 export const requestPasswordReset = createServerFn({ method: "POST" })
-  .inputValidator((d) => ResetInput.parse(d))
+  .validator((d) => ResetInput.parse(d))
   .handler(async ({ data }) => {
     const req = getRequest();
     const blocked = await enforceRateLimit(req, "auth.password-reset", {
@@ -62,7 +62,7 @@ const VerifyInput = z.object({
 });
 
 export const requestEmailVerification = createServerFn({ method: "POST" })
-  .inputValidator((d) => VerifyInput.parse(d))
+  .validator((d) => VerifyInput.parse(d))
   .handler(async ({ data }) => {
     const req = getRequest();
     const blocked = await enforceRateLimit(req, "auth.email-verify", {

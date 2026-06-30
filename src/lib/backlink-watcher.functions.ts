@@ -12,7 +12,7 @@ const IdTokenInput = z.object({
 });
 
 export const runBacklinkWatcherNow = createServerFn({ method: 'POST' })
-  .inputValidator((data: unknown) => z.object({ idToken: z.string().min(10).max(4096) }).parse(data))
+  .validator((data: unknown) => z.object({ idToken: z.string().min(10).max(4096) }).parse(data))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     const { runBacklinkWatcher } = await import('@/lib/backlink-watcher.server');
@@ -20,7 +20,7 @@ export const runBacklinkWatcherNow = createServerFn({ method: 'POST' })
   });
 
 export const listBacklinkSnapshots = createServerFn({ method: 'POST' })
-  .inputValidator((data: unknown) => IdTokenInput.parse(data))
+  .validator((data: unknown) => IdTokenInput.parse(data))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     const { listDocsAdmin, getDocAdmin } = await import('@/lib/server/firestore-admin');

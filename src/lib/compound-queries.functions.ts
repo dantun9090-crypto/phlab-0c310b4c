@@ -243,7 +243,7 @@ export async function analyzeCompoundQueries(
 }
 
 export const fetchCompoundQueries = createServerFn({ method: 'POST' })
-  .inputValidator((d: { idToken: string; days?: number; pagePath?: string }) => {
+  .validator((d: { idToken: string; days?: number; pagePath?: string }) => {
     if (!d?.idToken) throw new Error('idToken required');
     const days = Math.min(Math.max(Number(d.days ?? 0) || 0, 0), 90);
     const pagePath = d.pagePath === '/landing/phlabs' ? '/landing/phlabs' : '/compound';
@@ -259,7 +259,7 @@ export const fetchCompoundQueries = createServerFn({ method: 'POST' })
 // ─── Thresholds: get / save ─────────────────────────────────────────────
 
 export const getCompoundThresholds = createServerFn({ method: 'POST' })
-  .inputValidator((d: { idToken: string }) => {
+  .validator((d: { idToken: string }) => {
     if (!d?.idToken) throw new Error('idToken required');
     return d;
   })
@@ -269,7 +269,7 @@ export const getCompoundThresholds = createServerFn({ method: 'POST' })
   });
 
 export const saveCompoundThresholds = createServerFn({ method: 'POST' })
-  .inputValidator((d: { idToken: string; thresholds: Partial<CompoundThresholds> }) => {
+  .validator((d: { idToken: string; thresholds: Partial<CompoundThresholds> }) => {
     if (!d?.idToken) throw new Error('idToken required');
     const t = d.thresholds ?? {};
     const validated = validateThresholds({
@@ -303,7 +303,7 @@ export const saveCompoundThresholds = createServerFn({ method: 'POST' })
 // ─── History list ───────────────────────────────────────────────────────
 
 export const listCompoundHistory = createServerFn({ method: 'POST' })
-  .inputValidator((d: { idToken: string; limit?: number }) => {
+  .validator((d: { idToken: string; limit?: number }) => {
     if (!d?.idToken) throw new Error('idToken required');
     return { idToken: d.idToken, limit: Math.min(Math.max(Number(d.limit ?? 30), 1), 200) };
   })
@@ -464,7 +464,7 @@ export async function retryWithBackoff<T>(
 }
 
 export const applyNegativesToGoogleAds = createServerFn({ method: 'POST' })
-  .inputValidator((d: {
+  .validator((d: {
     idToken: string;
     campaignResourceId?: string; // numeric Google Ads campaign id (live mode only)
     negatives: string[];
@@ -628,7 +628,7 @@ export const applyNegativesToGoogleAds = createServerFn({ method: 'POST' })
 // ─── Audit history list ────────────────────────────────────────────────
 
 export const listCompoundNegativesAudit = createServerFn({ method: 'POST' })
-  .inputValidator((d: { idToken: string; limit?: number }) => {
+  .validator((d: { idToken: string; limit?: number }) => {
     if (!d?.idToken) throw new Error('idToken required');
     const limit = Math.min(Math.max(Number(d.limit ?? 100) || 100, 1), 500);
     return { idToken: d.idToken, limit };

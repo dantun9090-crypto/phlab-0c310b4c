@@ -82,7 +82,7 @@ function tsMs(v: unknown): number {
 }
 
 export const listVisitorSessions = createServerFn({ method: 'POST' })
-  .inputValidator((data) => Input.parse(data))
+  .validator((data) => Input.parse(data))
   .handler(async ({ data }): Promise<ListVisitorSessionsResult> => {
     const { requireFirebaseAdmin } = await import('@/lib/server/firebase-auth-admin');
     await requireFirebaseAdmin(data.idToken);

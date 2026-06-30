@@ -22,7 +22,7 @@ const ALLOWED_TTLS = CACHE_TTL_OPTIONS.map((o) => o.value);
 const GetSchema = z.object({ idToken: z.string().min(20).max(4096) });
 
 export const getCacheConfig = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => GetSchema.parse(input))
+  .validator((input: unknown) => GetSchema.parse(input))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     let htmlTtlSeconds: number = DEFAULT_HTML_TTL_SECONDS;
@@ -65,7 +65,7 @@ const SetSchema = z.object({
 });
 
 export const setCacheConfig = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => SetSchema.parse(input))
+  .validator((input: unknown) => SetSchema.parse(input))
   .handler(async ({ data }) => {
     const user = await requireFirebaseAdmin(data.idToken);
     const payload = {

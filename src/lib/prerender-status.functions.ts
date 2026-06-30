@@ -14,7 +14,7 @@ async function requireAdmin(idToken: string): Promise<void> {
  * plausibly sized. Live Googlebot simulation verifies the real outcome.
  */
 export const checkPrerenderTokenLength = createServerFn({ method: 'POST' })
-  .inputValidator((data: { idToken: string }) => {
+  .validator((data: { idToken: string }) => {
     if (!data?.idToken || typeof data.idToken !== 'string') throw new Error('idToken required');
     return data;
   })
@@ -39,7 +39,7 @@ export const checkPrerenderTokenLength = createServerFn({ method: 'POST' })
  * (`invalid-x-prerender-token-provided` is the usual culprit).
  */
 export const checkGooglebotResponse = createServerFn({ method: 'POST' })
-  .inputValidator((data: { url?: string; idToken: string }) => {
+  .validator((data: { url?: string; idToken: string }) => {
     if (!data?.idToken || typeof data.idToken !== 'string') throw new Error('idToken required');
     return data;
   })
@@ -232,7 +232,7 @@ const DEFAULT_TARGETS = [
 ];
 
 export const probePrerenderStatus = createServerFn({ method: 'POST' })
-  .inputValidator((data: { urls?: string[]; idToken: string }) => {
+  .validator((data: { urls?: string[]; idToken: string }) => {
     if (!data?.idToken || typeof data.idToken !== 'string') throw new Error('idToken required');
     return data;
   })
@@ -253,7 +253,7 @@ export const probePrerenderStatus = createServerFn({ method: 'POST' })
  * POST https://api.prerender.io/recache  { prerenderToken, url }
  */
 export const recachePrerenderUrl = createServerFn({ method: 'POST' })
-  .inputValidator((data: { url: string; idToken: string }) => {
+  .validator((data: { url: string; idToken: string }) => {
     if (!data?.url || !isAllowedUrl(data.url)) {
       throw new Error('Only phlabs.co.uk URLs are allowed.');
     }
@@ -290,7 +290,7 @@ export const recachePrerenderUrl = createServerFn({ method: 'POST' })
  * so calling it from the browser yields "NetworkError when attempting to fetch resource".
  */
 export const recachePrerenderUrlsBulk = createServerFn({ method: 'POST' })
-  .inputValidator((data: { urls: string[]; adaptiveType?: 'mobile' | 'desktop'; idToken: string }) => {
+  .validator((data: { urls: string[]; adaptiveType?: 'mobile' | 'desktop'; idToken: string }) => {
     if (!Array.isArray(data?.urls) || data.urls.length === 0) {
       throw new Error('urls[] is required');
     }

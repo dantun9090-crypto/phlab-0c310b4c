@@ -72,7 +72,7 @@ async function dispatchOne(
 }
 
 export const sendTestWallidWebhook = createServerFn({ method: "POST" })
-  .inputValidator((d) => Input.parse(d))
+  .validator((d) => Input.parse(d))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
 
@@ -170,7 +170,7 @@ export const sendTestWallidWebhook = createServerFn({ method: "POST" })
 
 // Last N webhook event rows for the debug feed.
 export const listRecentWebhookEvents = createServerFn({ method: "POST" })
-  .inputValidator((d) => z.object({ idToken: z.string().min(10).max(4096) }).parse(d))
+  .validator((d) => z.object({ idToken: z.string().min(10).max(4096) }).parse(d))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

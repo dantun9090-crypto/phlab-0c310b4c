@@ -16,7 +16,7 @@ const TokenInput = z.object({ idToken: z.string().min(10).max(4096) });
 const SetInput = TokenInput.extend({ enabled: z.boolean() });
 
 export const getWallidEnabledAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d) => TokenInput.parse(d))
+  .validator((d) => TokenInput.parse(d))
   .handler(async ({ data }): Promise<{ enabled: boolean }> => {
     await requireFirebaseAdmin(data.idToken);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -30,7 +30,7 @@ export const getWallidEnabledAdmin = createServerFn({ method: "POST" })
   });
 
 export const setWallidEnabledAdmin = createServerFn({ method: "POST" })
-  .inputValidator((d) => SetInput.parse(d))
+  .validator((d) => SetInput.parse(d))
   .handler(async ({ data }): Promise<{ enabled: boolean }> => {
     await requireFirebaseAdmin(data.idToken);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

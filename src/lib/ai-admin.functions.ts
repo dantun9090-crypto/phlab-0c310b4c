@@ -104,7 +104,7 @@ async function buildInsightsContext(): Promise<string> {
 }
 
 export const aiAdminChat = createServerFn({ method: 'POST' })
-  .inputValidator((d: unknown) => Input.parse(d))
+  .validator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
     await requireFirebaseAdmin(data.idToken);
 

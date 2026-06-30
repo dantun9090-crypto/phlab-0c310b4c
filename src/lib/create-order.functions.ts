@@ -9,7 +9,7 @@ import { createOrderInputSchema, type CreateOrderResult } from './create-order.s
 export type { CreateOrderResult } from './create-order.server';
 
 export const createOrder = createServerFn({ method: 'POST' })
-  .inputValidator((input: unknown) => createOrderInputSchema.parse(input))
+  .validator((input: unknown) => createOrderInputSchema.parse(input))
   .handler(async ({ data }): Promise<CreateOrderResult> => {
     const { runCreateOrder } = await import('./create-order.server');
     try {
