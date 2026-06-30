@@ -700,6 +700,7 @@ const BOOT_WATCHDOG = `
     var showFallback=function(payload){
       if(diagnostics.fallbackShown) return;
       diagnostics.fallbackShown=true;
+      try{ var fn=window.__phlSwTelemetry; if(typeof fn==='function') fn('sw_hydration_fallback_shown',{ elapsed: payload&&payload.elapsed||0, reason: (payload&&payload.reason)||'' }); }catch(_e){}
       uploadSnapshot(payload);
       try{
         if(!document.body) return;
