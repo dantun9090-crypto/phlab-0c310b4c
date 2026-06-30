@@ -484,6 +484,91 @@ export default function CacheRecacheTab() {
           </div>
         </div>
       )}
+
+      {/* Persistent purge history (Firestore) */}
+      <div className="bg-[#0b1a30]/70 border border-white/[0.07] rounded-xl p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <History className="w-4 h-4 text-[#9cb8d9]" />
+            Purge history
+            <span className="text-[11px] text-[#9cb8d9] font-normal">
+              (last {history.length} entries · Firestore)
+            </span>
+          </h3>
+          <button
+            onClick={() => void loadHistory()}
+            disabled={historyLoading}
+            className="text-xs px-2 py-1 border border-slate-600 rounded hover:bg-slate-700 disabled:opacity-40 flex items-center gap-1 text-[#9cb8d9]"
+          >
+            {historyLoading ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3 h-3" />
+            )}
+            Refresh
+          </button>
+        </div>
+        {history.length === 0 ? (
+          <p className="text-xs text-[#9cb8d9]">No purges recorded yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-[#9cb8d9] border-b border-white/10">
+                  <th className="py-2 pr-3">When</th>
+                  <th className="py-2 pr-3">Scope</th>
+                  <th className="py-2 pr-3">Result</th>
+                  <th className="py-2 pr-3">Smoke</th>
+                  <th className="py-2 pr-3">Duration</th>
+                  <th className="py-2 pr-3">By</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((h) => (
+                  <tr key={h.id} className="border-b border-white/[0.04]">
+                    <td className="py-2 pr-3 text-white whitespace-nowrap">
+                      {new Date(h.at).toLocaleString('en-GB')}
+                    </td>
+                    <td className="py-2 pr-3 text-white font-mono">{h.scope}</td>
+                    <td className="py-2 pr-3">
+                      {h.ok ? (
+                        <span className="text-emerald-400 inline-flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> {h.status}
+                          {h.fileCount > 0 ? ` · ${h.fileCount} files` : ''}
+                        </span>
+                      ) : (
+                        <span className="text-red-400 inline-flex items-center gap-1" title={h.error}>
+                          <XCircle className="w-3 h-3" /> {h.status || 'ERR'}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-2 pr-3">
+                      {h.smoke ? (
+                        h.smoke.ok ? (
+                          <span className="text-emerald-400">OK</span>
+                        ) : (
+                          <span
+                            className="text-amber-400"
+                            title={h.smoke.failures.join('\n')}
+                          >
+                            {h.smoke.failures.length} fail
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-[#3a5a82]">—</span>
+                      )}
+                    </td>
+                    <td className="py-2 pr-3 text-[#9cb8d9]">{h.durationMs} ms</td>
+                    <td className="py-2 pr-3 text-[#9cb8d9] truncate max-w-[180px]" title={h.triggeredBy}>
+                      {h.triggeredBy}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
