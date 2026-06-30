@@ -50,6 +50,30 @@ function shouldSend(message: string, stack?: string): boolean {
   return true;
 }
 
+function isResourceLoadNoise(event: Event): boolean {
+  const target = event.target as Element | null;
+  if (!target || target === window) return false;
+  const tag = target.tagName?.toLowerCase();
+  if (!tag || !["script", "img", "link", "iframe"].includes(tag)) return false;
+  const url =
+    target instanceof HTMLScriptElement ? target.src :
+    target instanceof HTMLImageElement ? target.src :
+    target instanceof HTMLLinkElement ? target.href :
+    target instanceof HTMLIFrameElement ? target.src :
+    "";
+  try {
+    console.warn("[CLIENT ERROR REPORTER] suppressed resource-load noise", tag, url || "[inline]");
+  } catch { /* noop */ }
+  return true;
+}
+
+function isCrossOriginScriptNoise(message: string, stack?: string): boolean {
+  const clean = String(message || "").trim();
+  if (/^Script error\.?$/i.test(clean)) return true;
+  if (/^Unknown error$/i.test(clean) && !stack) return true;
+  return false;
+}
+
 export interface ReportOptions {
   source: "window.error" | "unhandledrejection" | "error-boundary" | "manual";
   message: string;
@@ -125,6 +149,10 @@ export function installClientErrorReporter(): void {
       const message =
         (err && (err.message as string)) || (event as ErrorEvent).message || "Unknown error";
       const stack = err && typeof err.stack === "string" ? err.stack : undefined;
+      if (isResourceLoadNoise(event) || isCrossOriginScriptNoise(message, stack)) {
+        event.preventDefault?.();
+        return;
+      }
       if (isDomMutationConflict(message, stack)) {
         try {
           console.warn(
