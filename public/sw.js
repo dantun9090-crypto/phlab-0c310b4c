@@ -35,12 +35,22 @@ self.addEventListener('install', () => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
+    const purged = [];
     try {
       const keys = await caches.keys();
-      await Promise.allSettled(keys.filter(isAppShellCache).map((key) => caches.delete(key)));
+      const toPurge = keys.filter(isAppShellCache);
+      await Promise.allSettled(toPurge.map((key) => caches.delete(key)));
+      purged.push(...toPurge);
     } catch (_) {
       /* ignore */
     }
+    // Broadcast activation for [SW-DEBUG] client logger.
+    try {
+      const clients = await self.clients.matchAll({ includeUncontrolled: true });
+      for (const c of clients) {
+        c.postMessage({ type: 'sw-debug', event: 'activate', version: SW_VERSION, purgedCaches: purged, ts: Date.now() });
+      }
+    } catch (_) { /* ignore */ }
     // Intentionally NOT calling self.clients.claim() — claiming open tabs
     // fires `controllerchange` in every browser session right after publish,
     // which combined with any reload-on-controllerchange logic causes an
