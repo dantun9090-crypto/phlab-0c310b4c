@@ -1,0 +1,16 @@
+import { chromium, devices } from 'playwright';
+const browser = await chromium.launch({ headless: true });
+const context = await browser.newContext({ ...devices['Pixel 7'], ignoreHTTPSErrors: true });
+const page = await context.newPage();
+const logs=[];
+page.on('console', msg => logs.push({type: msg.type(), text: msg.text()}));
+page.on('pageerror', err => logs.push({type:'pageerror', text: err.stack || err.message}));
+page.on('requestfailed', req => logs.push({type:'requestfailed', text: `${req.url()} ${req.failure()?.errorText}`}));
+const resp = await page.goto('https://phlabs.co.uk/', {waitUntil:'domcontentloaded', timeout:30000});
+await page.waitForTimeout(10000);
+const bodyText = await page.locator('body').innerText().catch(e=>'ERR:'+e.message);
+const title = await page.title().catch(e=>'ERR:'+e.message);
+const htmlClass = await page.locator('html').getAttribute('class').catch(()=>null);
+const scripts = await page.evaluate(() => Array.from(document.scripts).slice(0,30).map(s=>({src:s.src || '[inline]', id:s.id, text:(s.textContent||'').slice(0,100)}))).catch(e=>String(e));
+console.log(JSON.stringify({status:resp?.status(), url:page.url(), title, htmlClass, bodyText: bodyText.slice(0,1000), logs, scripts}, null, 2));
+await browser.close();
