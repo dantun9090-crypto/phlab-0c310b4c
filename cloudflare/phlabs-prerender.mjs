@@ -375,9 +375,13 @@ function stripLovableInjectedScripts(response) {
   return new HTMLRewriter().on("script[src]", new StripLovableScripts()).transform(response);
 }
 __name(stripLovableInjectedScripts, "stripLovableInjectedScripts");
-var _ttlCache = { value: 0, expiresAt: 0 };
+var _ttlCache = { value: 60, expiresAt: 0 };
 var TTL_CACHE_MS = 6e4;
-var TTL_DEFAULT = 0;
+var TTL_DEFAULT = 60;
+var TTL_MIN = 60;
+// Allow 0 from KV as an explicit "disable" signal, but coerce to TTL_MIN below
+// so cold hits still populate caches.default. Other allowed values warm cache
+// for longer when configured.
 var TTL_ALLOWED = /* @__PURE__ */ new Set([0, 30, 60, 300, 900]);
 async function getHtmlTtlSeconds() {
   const now = Date.now();
@@ -397,6 +401,11 @@ async function getHtmlTtlSeconds() {
     }
   } catch {
   }
+  // Final guard: KV may return 0/NaN/undefined — never let cacheTtl drop to 0.
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) value = TTL_MIN;
+  else if (n < TTL_MIN) value = TTL_MIN;
+  else value = n;
   _ttlCache = { value, expiresAt: now + TTL_CACHE_MS };
   return value;
 }
