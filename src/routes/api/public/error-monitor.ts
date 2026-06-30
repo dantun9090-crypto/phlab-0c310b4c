@@ -139,6 +139,7 @@ async function loadSettings(): Promise<MonitorSettings> {
       research_overlay: Number(t.research_overlay ?? DEFAULT_THRESHOLDS.research_overlay),
       compound_overlay: Number(t.compound_overlay ?? DEFAULT_THRESHOLDS.compound_overlay),
       client_exception: Number(t.client_exception ?? DEFAULT_THRESHOLDS.client_exception),
+      blank_watchdog: Number(t.blank_watchdog ?? DEFAULT_THRESHOLDS.blank_watchdog),
     },
     alertEmail: typeof doc?.alertEmail === "string" ? doc.alertEmail : DEFAULT_ALERT_EMAIL,
     slackWebhookUrl:
@@ -207,6 +208,7 @@ function alertSubject(type: EventType, count: number, windowMin: number): string
     research_overlay: "/research overlay detected",
     compound_overlay: "/compound overlay detected",
     client_exception: "client JS exception",
+    blank_watchdog: "blank-page fallback shown",
   };
   return `[PH Labs] ${labels[type]}: ${count} in ${windowMin}m`;
 }
