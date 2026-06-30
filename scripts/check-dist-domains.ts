@@ -49,11 +49,27 @@ const SKIP_EXT = new Set([
   ".mp4", ".webm", ".mp3", ".wav",
   ".pdf", ".zip", ".gz", ".br",
   ".wasm",
+  ".map", // sourcemaps embed full source; source guard already covers them
 ]);
 
-// In e2e/, only scan source files. In dist/, scan everything textual.
+// dist/ files that legitimately contain forbidden literals because their
+// SOURCE is a guard / typo-detector / 301-redirect table. These are matched
+// against the relative path with a substring contains() check.
+const DIST_INTENTIONAL_CARRIERS = [
+  "seo-meta",            // src/lib/seo-meta.ts → FORBIDDEN_DOMAINS guard list
+  "merchant-feed-overrides", // legacy-host product overrides
+  "prerender-status",    // legacy-host prerender status
+  "router-",             // router-CgkFkLsm.mjs — REDIRECT_HOSTS table
+  "LegacyApp",           // legacy app redirector
+];
+
 type Hit = { file: string; line: number; match: string; label: string };
 const hits: Hit[] = [];
+
+function isIntentionalCarrier(rel: string, scope: "dist" | "e2e"): boolean {
+  if (scope !== "dist") return false;
+  return DIST_INTENTIONAL_CARRIERS.some((needle) => rel.includes(needle));
+}
 
 function walk(dir: string, scope: "dist" | "e2e") {
   for (const entry of readdirSync(dir)) {
@@ -71,6 +87,7 @@ function walk(dir: string, scope: "dist" | "e2e") {
     const ext = dot >= 0 ? entry.slice(dot).toLowerCase() : "";
     if (SKIP_EXT.has(ext)) continue;
     if (st.size > 10_000_000) continue;
+    if (isIntentionalCarrier(rel, scope)) continue;
     scan(full, rel, scope);
   }
 }
