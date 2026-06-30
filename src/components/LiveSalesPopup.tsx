@@ -236,29 +236,9 @@ export default function LiveSalesPopup() {
         </button>
       </div>
 
-      {/*
-        Locked layout — left side, below sticky header.
-        Header height: 56px mobile / 64px desktop (per PH Labs design system).
-        Gap below header: 12px mobile / 16px desktop.
-        Uses env(safe-area-inset-*) for iOS notch / left edge.
-      */}
-      <style>{`
-        .phl-live-sales-popup {
-          top: calc(56px + 12px + env(safe-area-inset-top, 0px));
-          left: calc(12px + env(safe-area-inset-left, 0px));
-          right: auto;
-          bottom: auto;
-          width: min(320px, calc(100vw - 24px));
-          max-width: 320px;
-          z-index: 2147483000;
-        }
-        @media (min-width: 768px) {
-          .phl-live-sales-popup {
-            top: calc(64px + 16px + env(safe-area-inset-top, 0px));
-            left: calc(16px + env(safe-area-inset-left, 0px));
-          }
-        }
-      `}</style>
+      {/* Locked layout lives in src/styles.css (.phl-live-sales-popup) so it
+          is not re-injected on every render and is testable without the
+          component being mounted. */}
     </div>
   );
 }
