@@ -529,6 +529,7 @@ export default function AdminPage() {
        case 'watchdog': return <WatchdogTab />;
        case 'blankwatchdog': return <BlankWatchdogTab />;
         case 'healthmonitor': return <HealthMonitorTab />;
+        case 'infrahealth': return <InfraHealthTab />;
         case 'researchincidents': return <ResearchIncidentsTab />;
         default: return <DashboardTab />;
       }
