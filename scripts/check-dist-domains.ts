@@ -113,11 +113,19 @@ function scan(full: string, rel: string, scope: "dist" | "e2e") {
   for (const rule of rules) {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      // e2e sources may opt out per line; dist NEVER may.
+      // e2e sources may opt out per line; dist NEVER may by pragma.
       if (
         scope === "e2e" &&
         (line.includes("check-domains-allow-line") ||
           (i > 0 && lines[i - 1].includes("check-domains-allow-next-line")))
+      ) {
+        continue;
+      }
+      // dist: skip lines whose context proves the literal is part of a
+      // guard / redirect / typo-detector payload bundled from source.
+      if (
+        scope === "dist" &&
+        LINE_CONTEXT_ALLOWLIST.some((needle) => line.includes(needle))
       ) {
         continue;
       }
