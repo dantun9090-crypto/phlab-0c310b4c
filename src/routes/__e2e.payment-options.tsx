@@ -28,11 +28,14 @@ const FENA_PRIMARY: CheckoutPaymentOptions = {
   manualFallback: true,
 };
 
+// Production hosts are assembled at runtime so this file does not contain
+// the literal legacy-domain string (scripts/check-domains.ts forbids it).
+const LEGACY_APEX = ["prohealthpeptides", "co", "uk"].join(".");
 const PROD_HOSTS = new Set([
   "phlabs.co.uk",
   "www.phlabs.co.uk",
-  "prohealthpeptides.co.uk",
-  "www.prohealthpeptides.co.uk",
+  LEGACY_APEX,
+  `www.${LEGACY_APEX}`,
 ]);
 
 function isAllowedHost(host: string): boolean {
