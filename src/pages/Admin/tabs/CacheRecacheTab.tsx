@@ -1,21 +1,41 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
-import { Loader2, Trash2, Zap, AlertTriangle, CheckCircle2, XCircle, Cloud, RefreshCw, Clock, Save } from 'lucide-react';
+import {
+  Loader2,
+  Trash2,
+  Zap,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Cloud,
+  RefreshCw,
+  Clock,
+  Save,
+  History,
+  FileText,
+  Image as ImageIcon,
+  Globe,
+} from 'lucide-react';
 import {
   purgeCloudflareCache,
   recacheSitemapPrerender,
+  listPurgeHistory,
+  type PurgeHistoryRow,
 } from '@/lib/cache-admin.functions';
 import { getCacheConfig, setCacheConfig } from '@/lib/cache-config.functions';
 import { CACHE_TTL_OPTIONS, DEFAULT_HTML_TTL_SECONDS } from '@/lib/cache-config-shared';
-import { auth } from '@/lib/firebase';
 
 import { getAdminIdToken } from '@/lib/auth-ready';
+
+type PurgeScope = 'all' | 'html' | 'assets' | 'files';
+
 interface OpResult {
   kind: 'purge' | 'recache' | 'config';
   ok: boolean;
   detail: string;
   at: string;
 }
+
 
 export default function CacheRecacheTab() {
   const purgeFn = useServerFn(purgeCloudflareCache);
