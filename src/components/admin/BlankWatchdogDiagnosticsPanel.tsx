@@ -61,6 +61,9 @@ export function BlankWatchdogDiagnosticsPanel() {
         <Row label="Captured" value={new Date(snap.capturedAt).toLocaleTimeString()} />
       </dl>
 
+      <UploadStatusBlock upload={snap.diagnostics?.lastUpload ?? null} />
+
+
       <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-700 pt-3">
         <button
           type="button"
