@@ -186,23 +186,18 @@ export default function LiveSalesPopup() {
   const text = formatLivePopupText(order);
 
   const transition = reduced ? 'none' : 'transform 400ms ease-out, opacity 300ms ease-out';
-  const transform = visible ? 'translateX(0)' : reduced ? 'none' : 'translateX(110%)';
+  const transform = visible ? 'translateX(0)' : reduced ? 'none' : 'translateX(-110%)';
   const opacity = visible ? 1 : 0;
 
   return (
     <div
+      id="phl-live-sales-popup"
       role="status"
       aria-live="polite"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="fixed pointer-events-auto"
+      className="phl-live-sales-popup fixed pointer-events-auto"
       style={{
-        // Position: lower-left, away from header and cart badges
-        bottom: 16,
-        left: 12,
-        maxWidth: 'min(320px, calc(100vw - 24px))',
-        width: '92vw',
-        zIndex: 2147483000,
         transform,
         opacity,
         transition,
@@ -214,7 +209,6 @@ export default function LiveSalesPopup() {
       >
         <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-800">
           {order.productImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img src={order.productImage} alt="" className="h-full w-full object-cover" loading="lazy" />
           ) : (
             <Package className="h-5 w-5 text-emerald-400" aria-hidden="true" />
@@ -242,14 +236,10 @@ export default function LiveSalesPopup() {
         </button>
       </div>
 
-      <style>{`
-        @media (min-width: 768px) {
-          [role="status"][aria-live="polite"] {
-            left: 16px !important;
-            bottom: 20px !important;
-          }
-        }
-      `}</style>
+      {/* Locked layout lives in src/styles.css (.phl-live-sales-popup) so it
+          is not re-injected on every render and is testable without the
+          component being mounted. */}
     </div>
   );
 }
+

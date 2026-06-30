@@ -486,3 +486,23 @@ html.light [data-keep-dark] * {
 
 
 
+
+/* Live Sales Popup — locked layout (left side, below sticky header).
+   Header: 56px mobile / 64px desktop (PH Labs design system).
+   Gap below header: 12px mobile / 16px desktop. iOS-safe insets included. */
+.phl-live-sales-popup {
+  position: fixed;
+  top: calc(56px + 12px + env(safe-area-inset-top, 0px));
+  left: calc(12px + env(safe-area-inset-left, 0px));
+  right: auto;
+  bottom: auto;
+  width: min(320px, calc(100vw - 24px));
+  max-width: 320px;
+  z-index: 2147483000;
+}
+@media (min-width: 768px) {
+  .phl-live-sales-popup {
+    top: calc(64px + 16px + env(safe-area-inset-top, 0px));
+    left: calc(16px + env(safe-area-inset-left, 0px));
+  }
+}
