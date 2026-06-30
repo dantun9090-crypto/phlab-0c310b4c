@@ -171,7 +171,9 @@ export default function LiveSalesPopup() {
         return;
       }
       const rect = el.getBoundingClientRect();
-      const value = Math.round(rect.bottom + 8);
+      const header = el.closest('header');
+      const headerBottom = header ? header.getBoundingClientRect().bottom : 0;
+      const value = Math.round(Math.max(rect.bottom, headerBottom) + 8);
       document.documentElement.style.setProperty('--phl-popup-top', `${value}px`);
     };
 
