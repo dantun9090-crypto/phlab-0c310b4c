@@ -846,11 +846,12 @@ const STALE_ASSET_RECOVERY = `
     };
     var showLimit=function(){
       try{ console.error('[STALE_ASSET] Automatic reload blocked'); }catch(e){}
+      emit('sw_stale_reload_shown',{ path: location.pathname });
       try{
         if(!document.body){ document.addEventListener('DOMContentLoaded',showLimit,{once:true}); return; }
         document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Update available</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">A fresh version is available. Click to clear cached files and reload.</p><button id="phl-stale-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer;min-height:44px">Refresh &amp; clear cache</button></div></div>';
         var btn=document.getElementById('phl-stale-refresh');
-        if(btn) btn.addEventListener('click',hardReloadClean);
+        if(btn) btn.addEventListener('click',function(){ emit('sw_stale_reload_accepted'); hardReloadClean(); });
       }catch(e){}
     };
 
