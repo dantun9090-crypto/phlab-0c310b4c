@@ -709,14 +709,21 @@ const BOOT_WATCHDOG = `
     // - Truncation/drops log to console.warn so admins see why artifacts went missing.
     var HTML_CAP=32000;
     var SCREENSHOT_CAP=600000; // bytes-ish; data URL length
-    var uploadWithRetry=function(body){
+    var recordUpload=function(patch){
+      try{
+        diagnostics.lastUpload = Object.assign({ method:'none', ok:false, attempts:0, htmlTruncated:false, screenshotDropped:false, htmlOriginalLength:0, at:Date.now() }, diagnostics.lastUpload||{}, patch, { at:Date.now() });
+      }catch(e){}
+    };
+    var uploadWithRetry=function(body, baseStatus){
       var attempt=0;
       var go=function(){
         attempt++;
+        recordUpload(Object.assign({}, baseStatus, { method:'fetch', attempts:attempt, ok:false }));
         fetch('/api/public/error-monitor',{ method:'POST', headers:{'content-type':'application/json'}, body:body, keepalive:true })
-          .then(function(r){ if(!r || !r.ok){ throw new Error('status '+(r?r.status:'none')); } })
+          .then(function(r){ if(!r || !r.ok){ throw new Error('status '+(r?r.status:'none')); } recordUpload(Object.assign({}, baseStatus, { method:'fetch', attempts:attempt, ok:true })); })
           .catch(function(err){
-            if(attempt>=3){ try{ console.warn('[phlabs] blank-watchdog upload failed after retries:', err && err.message); }catch(e){} return; }
+            var msg=(err&&err.message)||'unknown';
+            if(attempt>=3){ try{ console.warn('[phlabs] blank-watchdog upload failed after retries:', msg); }catch(e){} recordUpload(Object.assign({}, baseStatus, { method:'fetch', attempts:attempt, ok:false, error:msg })); return; }
             var delay=Math.pow(2,attempt-1)*1000; // 1s, 2s, 4s
             setTimeout(go, delay);
           });
@@ -727,6 +734,7 @@ const BOOT_WATCHDOG = `
       try{
         var html='';
         try{ html=(document.documentElement&&document.documentElement.outerHTML)||''; }catch(e){}
+        var htmlOriginalLength=html.length;
         var htmlTruncated=false;
         if(html.length>HTML_CAP){ html=html.slice(0,HTML_CAP)+'…[truncated]'; htmlTruncated=true; }
         captureScreenshot().then(function(screenshot){
@@ -736,17 +744,22 @@ const BOOT_WATCHDOG = `
               screenshotDropped=true;
               screenshot=null;
             }
-            if(htmlTruncated){ try{ console.warn('[phlabs] blank-watchdog: htmlSnapshot truncated to '+HTML_CAP+' chars'); }catch(e){} }
+            if(htmlTruncated){ try{ console.warn('[phlabs] blank-watchdog: htmlSnapshot truncated from '+htmlOriginalLength+' to '+HTML_CAP+' chars'); }catch(e){} }
             if(screenshotDropped){ try{ console.warn('[phlabs] blank-watchdog: screenshot dropped (over cap)'); }catch(e){} }
-            var details={ reason:String(payload.reason||''), elapsed:Number(payload.elapsed)||0, ticks:Number(payload.ticks)||0, attempts:Number(payload.attempts)||0, readyState:String(payload.readyState||''), reactReady:!!payload.reactReady, fallbackMs:Number(diagnostics.config.fallbackMs)||0, maxAttempts:Number(diagnostics.config.maxAttempts)||0, htmlTruncated:htmlTruncated, screenshotDropped:screenshotDropped };
+            var details={ reason:String(payload.reason||''), elapsed:Number(payload.elapsed)||0, ticks:Number(payload.ticks)||0, attempts:Number(payload.attempts)||0, readyState:String(payload.readyState||''), reactReady:!!payload.reactReady, fallbackMs:Number(diagnostics.config.fallbackMs)||0, maxAttempts:Number(diagnostics.config.maxAttempts)||0, htmlTruncated:htmlTruncated, screenshotDropped:screenshotDropped, htmlOriginalLength:htmlOriginalLength };
             var bodyObj={ type:'blank_watchdog', path:location.pathname, message:'blank-watchdog fallback shown', userAgent:String(payload.ua||navigator.userAgent).slice(0,500), details:details, htmlSnapshot:html };
             if(screenshot) bodyObj.screenshot=screenshot;
             var body=JSON.stringify(bodyObj);
+            var baseStatus={ htmlTruncated:htmlTruncated, screenshotDropped:screenshotDropped, htmlOriginalLength:htmlOriginalLength };
             var beaconOk=false;
             if(navigator.sendBeacon){
               try{ beaconOk=navigator.sendBeacon('/api/public/error-monitor', new Blob([body],{type:'application/json'})); }catch(e){ beaconOk=false; }
             }
-            if(!beaconOk){ uploadWithRetry(body); }
+            if(beaconOk){
+              recordUpload(Object.assign({}, baseStatus, { method:'beacon', attempts:1, ok:true }));
+            } else {
+              uploadWithRetry(body, baseStatus);
+            }
           }catch(e){}
         });
       }catch(e){}
