@@ -44,10 +44,10 @@ async function fireGaPurchaseOnce(orderId: string, snapData?: Record<string, unk
 export const Route = createFileRoute("/checkout/success")({
   head: () => ({
     meta: [
-      { title: "Payment Confirmed — PH Labs" },
-      { name: "description", content: "Your research peptide order with PH Labs UK has been received." },
-      { property: "og:title", content: "Payment Confirmed — PH Labs" },
-      { property: "og:description", content: "Your research peptide order with PH Labs UK has been received." },
+      { title: "Order Confirmed — PH Labs" },
+      { name: "description", content: "Your research peptide order with PH Labs UK has been received and is being processed." },
+      { property: "og:title", content: "Order Confirmed — PH Labs" },
+      { property: "og:description", content: "Your research peptide order with PH Labs UK has been received and is being processed." },
       { property: "og:url", content: "https://phlabs.co.uk/checkout/success" },
       { name: "robots", content: "noindex, nofollow, noarchive" },
     ],

@@ -46,11 +46,6 @@ const staticEntries: SitemapEntry[] = [
   // /google-merchant-feed.xml is discovered separately by Merchant Center.
   { path: "/bing-feed.xml", lastmod: STATIC_LASTMOD, changefreq: "daily", priority: "0.2" },
   // Category landing pages (legacy router /products/category/:slug)
-  { path: "/products/category/cellular-aging", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
-  { path: "/products/category/blends", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
-  { path: "/products/category/metabolic-signaling", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
-  { path: "/products/category/accessories", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.6" },
-  { path: "/products/category/melanin", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
   { path: "/products/category/neurological", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
   { path: "/products/category/tissue-repair", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
   // Per-peptide hub categories (keyword-led, UK SEO)

@@ -6,10 +6,10 @@ import { auth } from "@/lib/firebase";
 export const Route = createFileRoute("/checkout/cancel")({
   head: () => ({
     meta: [
-      { title: "Payment Cancelled — PH Labs" },
-      { name: "description", content: "Your bank payment was cancelled and no charge was made." },
-      { property: "og:title", content: "Payment Cancelled — PH Labs" },
-      { property: "og:description", content: "Your bank payment was cancelled and no charge was made." },
+      { title: "Order Cancelled — PH Labs" },
+      { name: "description", content: "Your checkout was cancelled and no charge was made to your account." },
+      { property: "og:title", content: "Order Cancelled — PH Labs" },
+      { property: "og:description", content: "Your checkout was cancelled and no charge was made to your account." },
       { property: "og:url", content: "https://phlabs.co.uk/checkout/cancel" },
       { name: "robots", content: "noindex, nofollow, noarchive" },
     ],
