@@ -10,7 +10,8 @@ interface UseLiveOrdersResult {
 // Shared singleton poller so mounting multiple components doesn't create
 // duplicate requests. Orders stay private in Firestore; this hits a sanitized
 // same-origin endpoint that returns only GDPR-safe social-proof fields.
-const POLL_MS = 3000;
+const POLL_MS = 15_000;
+const MAX_POLL_MS = 60_000;
 let sharedStop: (() => void) | null = null;
 let sharedOrders: LiveOrder[] = [];
 let sharedListeners: Set<(orders: LiveOrder[], newOrder: LiveOrder | null) => void> = new Set();
@@ -36,6 +37,8 @@ const startSharedListener = () => {
   let stopped = false;
   let timer: number | null = null;
   let inFlight: AbortController | null = null;
+  let nextDelayMs = POLL_MS;
+  let failureCount = 0;
 
   const notify = (orders: LiveOrder[], newest: LiveOrder | null) => {
     sharedOrders = orders;
@@ -55,6 +58,8 @@ const startSharedListener = () => {
       });
       const data = (await res.json().catch(() => ({ orders: [] }))) as { orders?: LiveOrder[]; count?: number; debug?: unknown };
       const orders = Array.isArray(data.orders) ? data.orders : [];
+      nextDelayMs = POLL_MS;
+      failureCount = 0;
       const previous = seenIds;
       let newest: LiveOrder | null = null;
       for (const order of orders) {
@@ -66,10 +71,14 @@ const startSharedListener = () => {
       notify(orders, newest);
     } catch (error) {
       if ((error as { name?: string })?.name !== 'AbortError') {
-        console.warn('[useLiveOrders] poll error', error);
+        failureCount += 1;
+        nextDelayMs = Math.min(MAX_POLL_MS, POLL_MS * 2 ** Math.min(failureCount, 3));
+        if (failureCount === 1 || failureCount % 5 === 0) {
+          console.warn('[useLiveOrders] poll error', error);
+        }
       }
     } finally {
-      if (!stopped) timer = window.setTimeout(poll, POLL_MS);
+      if (!stopped) timer = window.setTimeout(poll, nextDelayMs);
     }
   };
 

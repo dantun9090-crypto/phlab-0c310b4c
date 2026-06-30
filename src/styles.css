@@ -66,6 +66,7 @@
 
 :root {
   --radius: 0.625rem;
+  --phl-disclaimer-h: 0px;
   --background: oklch(1 0 0);
   --foreground: oklch(0.129 0.042 264.695);
   --card: oklch(1 0 0);
@@ -487,12 +488,11 @@ html.light [data-keep-dark] * {
 
 
 
-/* Live Sales Popup — locked layout (left side, below disclaimer).
-   JS sets --phl-popup-top dynamically by measuring the disclaimer strip.
-   Fallbacks account for 2-line text on narrow screens vs 1-line on desktop. */
+/* Live Sales Popup — locked layout (left side, below the fixed disclaimer).
+   JS sets --phl-popup-top dynamically by measuring the disclaimer strip. */
 .phl-live-sales-popup {
   position: fixed;
-  top: var(--phl-popup-top, calc(64px + 44px + 10px + env(safe-area-inset-top, 0px)));
+  top: var(--phl-popup-top, calc(var(--rg-banner-h, 0px) + 32px + 64px + var(--phl-disclaimer-h, 28px) + 8px + env(safe-area-inset-top, 0px)));
   left: calc(12px + env(safe-area-inset-left, 0px));
   right: auto;
   bottom: auto;
@@ -502,13 +502,11 @@ html.light [data-keep-dark] * {
 }
 @media (min-width: 580px) {
   .phl-live-sales-popup {
-    top: var(--phl-popup-top, calc(64px + 30px + 10px + env(safe-area-inset-top, 0px)));
     left: calc(14px + env(safe-area-inset-left, 0px));
   }
 }
 @media (min-width: 768px) {
   .phl-live-sales-popup {
-    top: var(--phl-popup-top, calc(64px + 28px + 12px + env(safe-area-inset-top, 0px)));
     left: calc(16px + env(safe-area-inset-left, 0px));
   }
 }

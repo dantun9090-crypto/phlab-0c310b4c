@@ -389,12 +389,12 @@ function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
   });
   if (!isScript) {
     headers.set("content-type", "text/css; charset=utf-8");
-    return new Response("/* missing stale PH Labs build stylesheet */\n", { status: 200, headers });
+    return new Response("/* missing stale PH Labs build stylesheet — refresh manually if needed */\n", { status: 404, headers });
   }
   headers.set("content-type", "text/javascript; charset=utf-8");
   return new Response(
-    "try{var k='__phl_missing_asset_reload_at_v3',n=Date.now(),l=+(localStorage.getItem(k)||0);if(n-l>600000){localStorage.setItem(k,String(n));var q=new URLSearchParams(location.search);if(q.get('_r')!=='missing-asset'){q.set('_r','missing-asset');q.set('_t',String(n));location.replace(location.pathname+'?'+q.toString()+location.hash)}}console.warn('[PHL] Missing build asset recovery suppressed repeated auto-reload')}catch(e){console.warn('[PHL] Missing build asset recovery failed',e)}\n",
-    { status: 200, headers },
+    "console.warn('[PHL] Missing stale build asset. Automatic reload is disabled to prevent refresh loops.');\n",
+    { status: 404, headers },
   );
 }
 
