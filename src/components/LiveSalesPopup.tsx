@@ -197,8 +197,8 @@ export default function LiveSalesPopup() {
       onMouseLeave={handleMouseLeave}
       className="fixed pointer-events-auto"
       style={{
-        // Keep above Google Merchant / Lovable badges that also sit bottom-right.
-        bottom: 'max(84px, calc(env(safe-area-inset-bottom) + 84px))',
+        // Position under the site header (logo area)
+        top: 64,
         right: 12,
         maxWidth: 'min(320px, calc(100vw - 24px))',
         width: '92vw',
