@@ -191,18 +191,13 @@ export default function LiveSalesPopup() {
 
   return (
     <div
+      id="phl-live-sales-popup"
       role="status"
       aria-live="polite"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="fixed pointer-events-auto"
+      className="phl-live-sales-popup fixed pointer-events-auto"
       style={{
-        // Position: lower-left, away from header and cart badges
-        bottom: 16,
-        left: 12,
-        maxWidth: 'min(320px, calc(100vw - 24px))',
-        width: '92vw',
-        zIndex: 2147483000,
         transform,
         opacity,
         transition,
@@ -214,7 +209,6 @@ export default function LiveSalesPopup() {
       >
         <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-800">
           {order.productImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img src={order.productImage} alt="" className="h-full w-full object-cover" loading="lazy" />
           ) : (
             <Package className="h-5 w-5 text-emerald-400" aria-hidden="true" />
@@ -242,14 +236,30 @@ export default function LiveSalesPopup() {
         </button>
       </div>
 
+      {/*
+        Locked layout — left side, below sticky header.
+        Header height: 56px mobile / 64px desktop (per PH Labs design system).
+        Gap below header: 12px mobile / 16px desktop.
+        Uses env(safe-area-inset-*) for iOS notch / left edge.
+      */}
       <style>{`
+        .phl-live-sales-popup {
+          top: calc(56px + 12px + env(safe-area-inset-top, 0px));
+          left: calc(12px + env(safe-area-inset-left, 0px));
+          right: auto;
+          bottom: auto;
+          width: min(320px, calc(100vw - 24px));
+          max-width: 320px;
+          z-index: 2147483000;
+        }
         @media (min-width: 768px) {
-          [role="status"][aria-live="polite"] {
-            left: 16px !important;
-            bottom: 20px !important;
+          .phl-live-sales-popup {
+            top: calc(64px + 16px + env(safe-area-inset-top, 0px));
+            left: calc(16px + env(safe-area-inset-left, 0px));
           }
         }
       `}</style>
     </div>
   );
 }
+
