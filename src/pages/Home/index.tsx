@@ -495,6 +495,18 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* ── Research disclaimer strip (under banner) ── */}
+      <div style={{
+        background: 'rgba(16,185,129,0.06)',
+        borderBottom: '1px solid rgba(16,185,129,0.12)',
+        padding: '5px 16px',
+        textAlign: 'center',
+      }}>
+        <p style={{ color: 'rgba(74,222,128,0.8)', fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', margin: 0 }}>
+          For Laboratory Research Use Only — Not for Human or Veterinary Consumption
+        </p>
+      </div>
+
       {/* ════════════════════════════════
           ADVERTS — HERO SLOT (moved to top)
       ════════════════════════════════ */}
