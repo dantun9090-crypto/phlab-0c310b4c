@@ -1,5 +1,5 @@
 import { chromium, devices } from 'playwright';
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: true, executablePath: '/bin/chromium' });
 const context = await browser.newContext({ ...devices['Pixel 7'], ignoreHTTPSErrors: true });
 const page = await context.newPage();
 const logs=[];
