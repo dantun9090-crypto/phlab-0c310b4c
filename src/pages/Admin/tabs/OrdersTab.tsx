@@ -986,14 +986,19 @@ export default function OrdersTab() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Order details"
+            data-testid="orders-modal-overlay"
+            className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
             onClick={e => { if (e.target === e.currentTarget) setSelected(null); }}
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#04101f] border border-white/[0.08] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto"
+              data-testid="orders-modal-panel"
+              className="relative z-[1001] bg-[#04101f] border border-white/[0.08] rounded-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto shadow-2xl"
             >
               <div>
                 {/* Sticky header — key info + actions always visible */}
