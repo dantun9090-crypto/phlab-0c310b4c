@@ -248,5 +248,73 @@ describe("PaymentMethodOptions", () => {
       }
     });
   });
+
+  describe("responsive layout at 320px width", () => {
+    // Older customers often shop on the smallest supported viewport. The
+    // instruction lists must wrap and stay within their container — no
+    // horizontal overflow, no truncated step text.
+    const SMALL = 320;
+
+    beforeEach(() => {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        value: SMALL,
+      });
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    it("renders Open Banking instructions without horizontal overflow at 320px", () => {
+      const { container } = render(
+        <div style={{ width: `${SMALL}px` }}>
+          <PaymentMethodOptions
+            options={FENA_PRIMARY}
+            value="pay_by_bank"
+            onChange={noop}
+          />
+        </div>,
+      );
+      const region = document.getElementById("pay-by-bank-instructions")!;
+      expect(region).toBeInTheDocument();
+
+      // Container width must not exceed the viewport.
+      expect(region.scrollWidth).toBeLessThanOrEqual(SMALL);
+
+      // Every step must keep its full text (no truncation/clipping classes).
+      const steps = region.querySelectorAll("ol > li");
+      expect(steps.length).toBe(4);
+      steps.forEach((li) => {
+        expect(li.textContent?.trim().length ?? 0).toBeGreaterThan(10);
+        expect(li.className).not.toMatch(/\btruncate\b/);
+        expect(li.className).not.toMatch(/\boverflow-hidden\b/);
+        // Long URLs / bank names need an explicit break helper.
+        expect(li.querySelector(".break-words")).not.toBeNull();
+      });
+
+      // The wrapping payment selector itself must not overflow.
+      const root = container.firstElementChild as HTMLElement;
+      expect(root.scrollWidth).toBeLessThanOrEqual(SMALL);
+    });
+
+    it("renders Manual Bank Transfer instructions without horizontal overflow at 320px", () => {
+      render(
+        <div style={{ width: `${SMALL}px` }}>
+          <PaymentMethodOptions
+            options={FENA_PRIMARY}
+            value="bank_transfer"
+            onChange={noop}
+          />
+        </div>,
+      );
+      const region = document.getElementById("manual-bank-instructions")!;
+      expect(region).toBeInTheDocument();
+      expect(region.scrollWidth).toBeLessThanOrEqual(SMALL);
+      const steps = region.querySelectorAll("ol > li");
+      expect(steps.length).toBe(4);
+      steps.forEach((li) => {
+        expect(li.className).not.toMatch(/\btruncate\b/);
+      });
+    });
+  });
 });
+
 
