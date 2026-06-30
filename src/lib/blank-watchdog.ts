@@ -184,12 +184,33 @@ export function readBlankWatchdogConfig(
 // Runtime diagnostics reader (used by the admin panel).
 // ---------------------------------------------------------------------------
 
+export interface BlankWatchdogUploadStatus {
+  /** Which transport was used last: sendBeacon vs fetch fallback. */
+  method: "beacon" | "fetch" | "none";
+  /** True when the last attempt completed successfully. */
+  ok: boolean;
+  /** Number of fetch-retry attempts made (sendBeacon counts as 1). */
+  attempts: number;
+  /** True when htmlSnapshot was clipped to fit under HTML_CAP. */
+  htmlTruncated: boolean;
+  /** True when the screenshot data URL was dropped (over SCREENSHOT_CAP). */
+  screenshotDropped: boolean;
+  /** Original htmlSnapshot character length, before truncation. */
+  htmlOriginalLength: number;
+  /** Last error message if attempts exhausted. */
+  error?: string;
+  /** ms-since-epoch of the most recent attempt. */
+  at: number;
+}
+
 export interface BlankWatchdogDiagnostics {
   started: number;
   ticks: number;
   lastPaint: boolean;
   reason: string;
   fallbackShown: boolean;
+  /** Most recent upload status — populated by uploadSnapshot. */
+  lastUpload?: BlankWatchdogUploadStatus | null;
 }
 
 export interface BlankWatchdogSnapshot {
@@ -236,4 +257,42 @@ export function readBlankWatchdogSnapshot(
     config: readBlankWatchdogConfig(win),
     capturedAt: new Date().toISOString(),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Payload-size guards. Pure + exported so unit tests can hammer them without
+// spinning up a browser. The inline watchdog in src/routes/__root.tsx applies
+// the same caps (kept in sync — see blank-watchdog.test.ts).
+// ---------------------------------------------------------------------------
+
+export const HTML_SNAPSHOT_CAP = 32_000;
+export const SCREENSHOT_CAP = 600_000;
+
+export interface TruncateResult {
+  value: string;
+  truncated: boolean;
+  originalLength: number;
+}
+
+export function truncateHtmlSnapshot(
+  html: string,
+  cap: number = HTML_SNAPSHOT_CAP,
+): TruncateResult {
+  const original = typeof html === "string" ? html : "";
+  if (original.length <= cap) {
+    return { value: original, truncated: false, originalLength: original.length };
+  }
+  return {
+    value: original.slice(0, cap) + "…[truncated]",
+    truncated: true,
+    originalLength: original.length,
+  };
+}
+
+/** Returns true when the screenshot data URL is too large to ship. */
+export function shouldDropScreenshot(
+  screenshot: string | null | undefined,
+  cap: number = SCREENSHOT_CAP,
+): boolean {
+  return !!screenshot && screenshot.length > cap;
 }

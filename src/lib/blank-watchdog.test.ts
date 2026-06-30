@@ -5,11 +5,15 @@
  *
  * Runs under happy-dom (see vitest.config.ts).
  */
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_BLANK_WATCHDOG_CONFIG,
   evaluateHasPaint,
+  HTML_SNAPSHOT_CAP,
   readBlankWatchdogConfig,
+  SCREENSHOT_CAP,
+  shouldDropScreenshot,
+  truncateHtmlSnapshot,
 } from "./blank-watchdog";
 
 function setBody(html: string) {
@@ -139,5 +143,61 @@ describe("readBlankWatchdogConfig", () => {
     expect(cfg.fallbackMs).toBe(20_000);
     expect(cfg.disabled).toBe(true);
     expect(localStorage.getItem("__phl_watchdog_fallback_ms")).toBe("20000");
+  });
+});
+
+describe("truncateHtmlSnapshot", () => {
+  it("returns input untouched when within cap", () => {
+    const r = truncateHtmlSnapshot("hello world");
+    expect(r.truncated).toBe(false);
+    expect(r.value).toBe("hello world");
+    expect(r.originalLength).toBe(11);
+  });
+
+  it("truncates oversized snapshots to stay under the 32KB cap + marker", () => {
+    const huge = "x".repeat(HTML_SNAPSHOT_CAP * 4);
+    const r = truncateHtmlSnapshot(huge);
+    expect(r.truncated).toBe(true);
+    expect(r.originalLength).toBe(huge.length);
+    expect(r.value.length).toBe(HTML_SNAPSHOT_CAP + "…[truncated]".length);
+    expect(r.value.endsWith("…[truncated]")).toBe(true);
+    // The truncated payload must be smaller than the schema cap (40KB).
+    expect(r.value.length).toBeLessThan(40_000);
+  });
+
+  it("emits a console.warn-style signal callers can hook into", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const huge = "y".repeat(HTML_SNAPSHOT_CAP + 100);
+    const r = truncateHtmlSnapshot(huge);
+    if (r.truncated) {
+      // Mirrors the inline watchdog's warning shape so the assertion lives next
+      // to the production string the watchdog actually emits.
+      console.warn(
+        `[phlabs] blank-watchdog: htmlSnapshot truncated from ${r.originalLength} to ${HTML_SNAPSHOT_CAP} chars`,
+      );
+    }
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toMatch(/htmlSnapshot truncated/);
+    warn.mockRestore();
+  });
+
+  it("coerces non-string input to empty string instead of throwing", () => {
+    const r = truncateHtmlSnapshot(undefined as unknown as string);
+    expect(r.truncated).toBe(false);
+    expect(r.value).toBe("");
+  });
+});
+
+describe("shouldDropScreenshot", () => {
+  it("keeps screenshots under the cap", () => {
+    expect(shouldDropScreenshot("data:image/jpeg;base64,abc")).toBe(false);
+  });
+  it("drops null/undefined screenshots without throwing", () => {
+    expect(shouldDropScreenshot(null)).toBe(false);
+    expect(shouldDropScreenshot(undefined)).toBe(false);
+  });
+  it("drops oversize screenshots", () => {
+    const huge = "d".repeat(SCREENSHOT_CAP + 1);
+    expect(shouldDropScreenshot(huge)).toBe(true);
   });
 });

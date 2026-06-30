@@ -268,10 +268,44 @@ export default function OrdersTab() {
     const focusTimer = window.setTimeout(() => {
       closeBtnRef.current?.focus();
     }, 30);
+    // Focus trap: Tab / Shift+Tab cycles inside the dialog panel only.
+    const FOCUSABLE = 'a[href],area[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    const getPanel = () => document.querySelector<HTMLElement>('[data-testid="orders-modal-panel"]');
+    const focusables = () => {
+      const panel = getPanel();
+      if (!panel) return [] as HTMLElement[];
+      return Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE))
+        .filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null);
+    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
         setSelected(null);
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const items = focusables();
+      if (items.length === 0) {
+        e.preventDefault();
+        closeBtnRef.current?.focus();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      const panel = getPanel();
+      const inside = !!(panel && active && panel.contains(active));
+      if (!inside) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+        return;
+      }
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
       }
     };
     document.addEventListener('keydown', onKey);
