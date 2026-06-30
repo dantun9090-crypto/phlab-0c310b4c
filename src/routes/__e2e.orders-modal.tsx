@@ -55,11 +55,31 @@ function OrdersModalHarness() {
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const focusTimer = window.setTimeout(() => closeBtnRef.current?.focus(), 30);
+    const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]):not([type="hidden"]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    const getPanel = () => document.querySelector<HTMLElement>('[data-testid="orders-modal-panel"]');
+    const focusables = () => {
+      const panel = getPanel();
+      if (!panel) return [] as HTMLElement[];
+      return Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE))
+        .filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null);
+    };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
         setOpen(false);
+        return;
       }
+      if (e.key !== 'Tab') return;
+      const items = focusables();
+      if (items.length === 0) { e.preventDefault(); closeBtnRef.current?.focus(); return; }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      const panel = getPanel();
+      const inside = !!(panel && active && panel.contains(active));
+      if (!inside) { e.preventDefault(); (e.shiftKey ? last : first).focus(); return; }
+      if (e.shiftKey && active === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
     };
     document.addEventListener('keydown', onKey);
     return () => {
@@ -77,6 +97,14 @@ function OrdersModalHarness() {
   return (
     <main className="min-h-dvh bg-[#060f1e] p-6 text-white">
       <h1 className="mb-4 text-xl font-bold">E2E: Orders Modal</h1>
+      {/* External focusable element used to verify the focus trap does not escape. */}
+      <button
+        type="button"
+        data-testid="outside-button"
+        className="mb-4 min-h-[44px] rounded border border-slate-600 px-3"
+      >
+        Outside the modal
+      </button>
       {/* Spacer so the page is scrollable — the modal must stay centered regardless. */}
       <div style={{ height: '2400px' }} className="rounded bg-slate-900/40 p-4 text-sm text-slate-400">
         Scroll spacer. Open trigger at the bottom.
@@ -114,6 +142,21 @@ function OrdersModalHarness() {
             >
               Close
             </button>
+            <button
+              type="button"
+              data-testid="orders-modal-action"
+              className="mt-4 ml-2 min-h-[48px] rounded-lg bg-emerald-500 px-4 font-semibold text-slate-950"
+            >
+              Action
+            </button>
+            <a
+              href="#noop"
+              data-testid="orders-modal-link"
+              className="mt-4 ml-2 inline-block min-h-[48px] rounded-lg border border-slate-600 px-4 py-2 font-semibold text-slate-200"
+              onClick={(e) => e.preventDefault()}
+            >
+              Link
+            </a>
           </div>
         </div>,
         document.body,
