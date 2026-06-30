@@ -53,6 +53,7 @@ import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as MarketingCompoundRouteImport } from './routes/_marketing.compound'
+import { Route as _e2ePaymentOptionsRouteImport } from './routes/__e2e.payment-options'
 import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wallid'
 import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
@@ -312,6 +313,11 @@ const MarketingCompoundRoute = MarketingCompoundRouteImport.update({
   path: '/compound',
   getParentRoute: () => MarketingRoute,
 } as any)
+const _e2ePaymentOptionsRoute = _e2ePaymentOptionsRouteImport.update({
+  id: '/__e2e/payment-options',
+  path: '/payment-options',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWebhooksWallidRoute = ApiWebhooksWallidRouteImport.update({
   id: '/api/webhooks/wallid',
   path: '/api/webhooks/wallid',
@@ -533,6 +539,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/payment-options': typeof _e2ePaymentOptionsRoute
   '/compound': typeof MarketingCompoundRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
@@ -612,6 +619,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/payment-options': typeof _e2ePaymentOptionsRoute
   '/compound': typeof MarketingCompoundRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
@@ -694,6 +702,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/__e2e/payment-options': typeof _e2ePaymentOptionsRoute
   '/_marketing/compound': typeof MarketingCompoundRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
@@ -776,6 +785,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/storage-guide'
     | '/terms-and-conditions'
+    | '/payment-options'
     | '/compound'
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
@@ -855,6 +865,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/storage-guide'
     | '/terms-and-conditions'
+    | '/payment-options'
     | '/compound'
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
@@ -936,6 +947,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/storage-guide'
     | '/terms-and-conditions'
+    | '/__e2e/payment-options'
     | '/_marketing/compound'
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
@@ -1018,6 +1030,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StorageGuideRoute: typeof StorageGuideRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
+  _e2ePaymentOptionsRoute: typeof _e2ePaymentOptionsRoute
   CheckoutCancelRoute: typeof CheckoutCancelRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   CompareSlugRoute: typeof CompareSlugRoute
@@ -1373,6 +1386,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingCompoundRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/__e2e/payment-options': {
+      id: '/__e2e/payment-options'
+      path: '/payment-options'
+      fullPath: '/payment-options'
+      preLoaderRoute: typeof _e2ePaymentOptionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/webhooks/wallid': {
       id: '/api/webhooks/wallid'
       path: '/api/webhooks/wallid'
@@ -1703,6 +1723,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StorageGuideRoute: StorageGuideRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
+  _e2ePaymentOptionsRoute: _e2ePaymentOptionsRoute,
   CheckoutCancelRoute: CheckoutCancelRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   CompareSlugRoute: CompareSlugRoute,
