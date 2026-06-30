@@ -40,7 +40,7 @@ export default function PaymentMethodOptions({
       {noOnline && (
         <div
           data-testid="manual-only-notice"
-          className="bg-amber-500/8 border border-amber-500/20 rounded-xl p-3 text-xs text-amber-200"
+          className="bg-amber-500/10 border-2 border-amber-500/40 rounded-xl p-4 text-base text-amber-100 leading-relaxed"
         >
           Instant Pay-by-Bank is temporarily unavailable. Please complete your
           order via Manual Bank Transfer below — your order will be reserved for
@@ -53,28 +53,32 @@ export default function PaymentMethodOptions({
           type="button"
           data-testid="wallid-pay-by-bank-button"
           onClick={() => onChange("wallid")}
-          className={`w-full flex items-start gap-3 text-left p-3 rounded-xl border transition-all mb-2 ${
+          aria-pressed={value === "wallid"}
+          className={`w-full flex items-start gap-4 text-left p-5 rounded-2xl border-2 transition-all mb-3 min-h-[88px] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/60 ${
             value === "wallid"
-              ? "border-emerald-500/60 bg-emerald-500/10"
-              : "border-white/10 bg-[#060f1e] hover:border-white/20"
+              ? "border-emerald-400 bg-emerald-500/15 shadow-lg shadow-emerald-500/20"
+              : "border-white/20 bg-[#060f1e] hover:border-emerald-400/60 hover:bg-white/5"
           }`}
         >
-          <Landmark
-            className={`w-5 h-5 mt-0.5 shrink-0 ${
-              value === "wallid" ? "text-emerald-400" : "text-gray-400"
+          <span
+            className={`flex items-center justify-center w-12 h-12 rounded-xl shrink-0 ${
+              value === "wallid" ? "bg-emerald-500 text-black" : "bg-white/10 text-emerald-300"
             }`}
-          />
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-white flex items-center gap-2 flex-wrap">
-              Pay by Bank (Instant UK Bank Transfer)
-              <span className="text-[10px] uppercase tracking-wider bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">
+            aria-hidden="true"
+          >
+            <Landmark className="w-7 h-7" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-lg font-bold text-white flex items-center gap-2 flex-wrap leading-tight">
+              Pay by Bank
+              <span className="text-xs font-bold uppercase tracking-wide bg-emerald-400 text-black px-2 py-0.5 rounded">
                 Recommended
               </span>
             </p>
-            <p className="text-[11px] text-gray-400 leading-snug mt-0.5">
+            <p className="text-sm text-slate-200 leading-relaxed mt-1.5">
               Pay securely from any UK bank app — instant confirmation, no card needed.
             </p>
-            <UkBankBadges className="mt-2" />
+            <UkBankBadges className="mt-3" />
           </div>
         </button>
       )}
@@ -82,51 +86,55 @@ export default function PaymentMethodOptions({
         <WallidTrustElements className="mb-3" />
       )}
       <div
-        className={`grid grid-cols-1 ${hasOnline ? "sm:grid-cols-2" : ""} gap-2`}
+        className={`grid grid-cols-1 ${hasOnline ? "sm:grid-cols-2" : ""} gap-3`}
       >
         {hasOnline && (
           <button
             type="button"
             data-testid="pay-by-bank-button"
             onClick={() => onChange("pay_by_bank")}
-            className={`flex items-start gap-3 text-left p-3 rounded-xl border transition-all ${
+            aria-pressed={value === "pay_by_bank"}
+            className={`flex items-start gap-4 text-left p-5 rounded-2xl border-2 transition-all min-h-[88px] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/60 ${
               value === "pay_by_bank"
-                ? "border-emerald-500/60 bg-emerald-500/10"
-                : "border-white/10 bg-[#060f1e] hover:border-white/20"
+                ? "border-emerald-400 bg-emerald-500/15 shadow-lg shadow-emerald-500/20"
+                : "border-white/20 bg-[#060f1e] hover:border-emerald-400/60 hover:bg-white/5"
             }`}
           >
-            <Landmark
-              className={`w-5 h-5 mt-0.5 shrink-0 ${
-                value === "pay_by_bank" ? "text-emerald-400" : "text-gray-400"
+            <span
+              className={`flex items-center justify-center w-12 h-12 rounded-xl shrink-0 ${
+                value === "pay_by_bank" ? "bg-emerald-500 text-black" : "bg-white/10 text-emerald-300"
               }`}
-            />
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-white flex items-center gap-2 flex-wrap">
+              aria-hidden="true"
+            >
+              <Landmark className="w-7 h-7" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-lg font-bold text-white flex items-center gap-2 flex-wrap leading-tight">
                 Pay by Bank
-                <span className="text-[10px] uppercase tracking-wider bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded">
+                <span className="text-xs font-bold uppercase tracking-wide bg-emerald-400 text-black px-2 py-0.5 rounded">
                   Instant
                 </span>
               </p>
-              <p className="text-[11px] text-gray-400 leading-snug mt-0.5">
+              <p className="text-sm text-slate-200 leading-relaxed mt-1.5">
                 Pay instantly from your UK bank account — no card needed, no
                 chargebacks.
               </p>
               {options?.primary && (
                 <p
                   data-testid="active-gateway-label"
-                  className="text-[10px] text-emerald-300/80 mt-1"
+                  className="text-xs text-emerald-200 mt-1.5"
                 >
                   via {options.primary.name}
                   {options.primary.sandbox && " (sandbox)"}
                   {options.backups.length > 0 && (
-                    <span className="text-gray-400">
+                    <span className="text-slate-300">
                       {" "}· backup configured: {" "}
                       {options.backups.map((b) => b.name).join(", ")}
                     </span>
                   )}
                 </p>
               )}
-              <UkBankBadges className="mt-2" />
+              <UkBankBadges className="mt-3" />
             </div>
           </button>
         )}
@@ -134,23 +142,27 @@ export default function PaymentMethodOptions({
           type="button"
           data-testid="manual-bank-transfer-button"
           onClick={() => onChange("bank_transfer")}
-          className={`flex items-start gap-3 text-left p-3 rounded-xl border transition-all ${
+          aria-pressed={value === "bank_transfer"}
+          className={`flex items-start gap-4 text-left p-5 rounded-2xl border-2 transition-all min-h-[88px] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-400/60 ${
             value === "bank_transfer"
-              ? "border-emerald-500/60 bg-emerald-500/10"
-              : "border-white/10 bg-[#060f1e] hover:border-white/20"
+              ? "border-emerald-400 bg-emerald-500/15 shadow-lg shadow-emerald-500/20"
+              : "border-white/20 bg-[#060f1e] hover:border-emerald-400/60 hover:bg-white/5"
           }`}
         >
-          <Landmark
-            className={`w-5 h-5 mt-0.5 shrink-0 ${
-              value === "bank_transfer" ? "text-emerald-400" : "text-gray-400"
+          <span
+            className={`flex items-center justify-center w-12 h-12 rounded-xl shrink-0 ${
+              value === "bank_transfer" ? "bg-emerald-500 text-black" : "bg-white/10 text-emerald-300"
             }`}
-          />
-          <div>
-            <p className="text-sm font-semibold text-white">
+            aria-hidden="true"
+          >
+            <Landmark className="w-7 h-7" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="text-lg font-bold text-white leading-tight">
               Manual Bank Transfer
             </p>
-            <p className="text-[11px] text-gray-400 leading-snug mt-0.5">
-              Receive bank details by email and transfer manually within 48h.
+            <p className="text-sm text-slate-200 leading-relaxed mt-1.5">
+              Receive bank details by email and transfer manually within 48 hours.
             </p>
           </div>
         </button>
