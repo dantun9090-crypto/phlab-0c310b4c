@@ -161,6 +161,32 @@ export default function LiveSalesPopup() {
 
 
 
+  // Dynamically measure the research-disclaimer strip on the home page and
+  // set --phl-popup-top so the popup sits exactly underneath it.
+  useEffect(() => {
+    if (pathname !== '/') return;
+
+    const updateTop = () => {
+      const el = document.getElementById('phl-research-disclaimer');
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const value = Math.round(rect.bottom + 8);
+      document.documentElement.style.setProperty('--phl-popup-top', `${value}px`);
+    };
+
+    // Only set when the user is near the top of the page; below that the
+    // fixed popup stays in place while the disclaimer scrolls away.
+    if (window.scrollY < 60) updateTop();
+
+    const onScroll = () => { if (window.scrollY < 60) updateTop(); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', updateTop);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', updateTop);
+    };
+  }, [pathname]);
+
   // Cleanup on unmount
   useEffect(() => () => clearDismissTimer(), []);
 
