@@ -40,10 +40,19 @@ jobs:
       - name: Install deps (frozen)
         run: bun install --frozen-lockfile
 
-      - name: Build (production)
+      - name: Build (production, retry + diagnostics)
         run: bun run build
         env:
           BUILD_ID: ${{ github.sha }}
+
+      - name: Upload production build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-build-logs-${{ github.sha }}-${{ github.run_attempt }}
+          path: build-logs
+          if-no-files-found: ignore
+          retention-days: 30
 
       - name: Generate SBOM
         run: bun run sbom
