@@ -96,6 +96,23 @@ export function reportClientError(opts: ReportOptions): void {
   }
 }
 
+/**
+ * Detect the "third-party mutated DOM out from under React" pattern.
+ * Symptoms: `removeChild` / `insertBefore` TypeErrors thrown from inside
+ * the React reconciler (xg/Fn/Ut/Hg minified frames or commitDeletion /
+ * commitMutationEffects). These are caused by external scripts (analytics
+ * pixels, browser extensions, watermark removers) deleting nodes React
+ * manages. We log a single diagnostic line and suppress so the user
+ * doesn't see an "Unknown error" alert email per page view.
+ */
+function isDomMutationConflict(message: string, stack?: string): boolean {
+  if (!/removeChild|insertBefore|not a child of this node|NotFoundError/i.test(message)) {
+    return false;
+  }
+  const s = stack || "";
+  return /commitDeletion|commitMutation|reconciler|\bxg\b|\bFn\b|\bUt\b|\bHg\b|react-dom/i.test(s) || s === "";
+}
+
 let installed = false;
 export function installClientErrorReporter(): void {
   if (installed || typeof window === "undefined") return;
@@ -108,6 +125,18 @@ export function installClientErrorReporter(): void {
       const message =
         (err && (err.message as string)) || (event as ErrorEvent).message || "Unknown error";
       const stack = err && typeof err.stack === "string" ? err.stack : undefined;
+      if (isDomMutationConflict(message, stack)) {
+        try {
+          console.warn(
+            "[DOM MUTATION CONFLICT]",
+            new Date().toISOString(),
+            location.pathname,
+            message.slice(0, 200),
+          );
+          event.preventDefault?.();
+        } catch { /* noop */ }
+        return; // suppress beacon — known cosmetic third-party conflict
+      }
       reportClientError({ source: "window.error", message, stack });
     },
     true,
@@ -120,6 +149,18 @@ export function installClientErrorReporter(): void {
       const message =
         (reason && (reason.message as string)) || String(reason) || "Unhandled promise rejection";
       const stack = reason && typeof reason.stack === "string" ? reason.stack : undefined;
+      if (isDomMutationConflict(message, stack)) {
+        try {
+          console.warn(
+            "[DOM MUTATION CONFLICT]",
+            new Date().toISOString(),
+            location.pathname,
+            message.slice(0, 200),
+          );
+          event.preventDefault?.();
+        } catch { /* noop */ }
+        return;
+      }
       reportClientError({ source: "unhandledrejection", message, stack });
     },
     true,

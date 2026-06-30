@@ -47,9 +47,14 @@ export function removeWatermark() {
 
     nodesToRemove.forEach(node => {
       try {
-        node.parentNode?.removeChild(node);
-      } catch (e) {
-        // Ignore errors
+        // Defensive: guard parentNode in case React (or another script)
+        // already detached this node since we queued it.
+        const parent = node.parentNode;
+        if (parent && parent.contains(node)) {
+          parent.removeChild(node);
+        }
+      } catch {
+        // Ignore — never let watermark cleanup crash the page.
       }
     });
 
