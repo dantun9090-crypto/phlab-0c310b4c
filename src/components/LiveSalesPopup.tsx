@@ -176,14 +176,36 @@ export default function LiveSalesPopup() {
 
     // Only set when the user is near the top of the page; below that the
     // fixed popup stays in place while the disclaimer scrolls away.
-    if (window.scrollY < 60) updateTop();
+    const NEAR_TOP_THRESHOLD = 60;
+    if (window.scrollY < NEAR_TOP_THRESHOLD) updateTop();
 
-    const onScroll = () => { if (window.scrollY < 60) updateTop(); };
+    // Throttled scroll handler: max one measurement per animation frame.
+    let scrollPending = false;
+    const onScroll = () => {
+      if (window.scrollY >= NEAR_TOP_THRESHOLD) return;
+      if (scrollPending) return;
+      scrollPending = true;
+      requestAnimationFrame(() => {
+        scrollPending = false;
+        if (window.scrollY < NEAR_TOP_THRESHOLD) updateTop();
+      });
+    };
+
+    // Debounced resize handler: wait for the layout to settle.
+    let resizeTimer: number | null = null;
+    const onResize = () => {
+      if (resizeTimer) window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => {
+        if (window.scrollY < NEAR_TOP_THRESHOLD) updateTop();
+      }, 150);
+    };
+
     window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', updateTop);
+    window.addEventListener('resize', onResize);
     return () => {
       window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', updateTop);
+      window.removeEventListener('resize', onResize);
+      if (resizeTimer) window.clearTimeout(resizeTimer);
     };
   }, [pathname]);
 
