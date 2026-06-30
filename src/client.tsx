@@ -429,6 +429,9 @@ capturePreHydrationDom();
 const stopMutationLogger = installPreReactMutationLogger();
 window.__phlHydrationFallback = (error?: unknown) => renderCsr(error || new Error("External hydration fallback requested"));
 
+// Temporary SW debug instrumentation — gated by ?sw_debug=1 (persists).
+void import("@/lib/sw-debug").then((m) => m.startSwDebug()).catch(() => { /* noop */ });
+
 window.addEventListener("error", (event) => {
   const error = event.error ?? event.message;
   if (isHydrationCrash(error)) renderCsr(error);
