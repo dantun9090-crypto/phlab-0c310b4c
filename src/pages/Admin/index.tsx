@@ -539,6 +539,7 @@ export default function AdminPage() {
         case 'infrahealth': return <InfraHealthTab />;
         case 'researchincidents': return <ResearchIncidentsTab />;
         case 'purgeincidents': return <PurgeIncidentsTab />;
+        case 'swtelemetrydebug': return <SwTelemetryDebugTab />;
         default: return <DashboardTab />;
       }
     })();
