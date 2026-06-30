@@ -92,12 +92,19 @@ export default function LiveSalesPopup() {
 
   const showOrder = (order: LiveOrder) => {
     const now = Date.now();
-    if (now - lastTriggerRef.current < DEBOUNCE_MS) {
-      // queue it
+    if (visibleRef.current) {
+      // Single-popup lock: never stack a second toast over a visible one.
       if (!queueRef.current.find((o) => o.id === order.id)) queueRef.current.push(order);
+      dlog('skip (popup already visible) — queued:', order.id);
+      return;
+    }
+    if (now - lastTriggerRef.current < DEBOUNCE_MS) {
+      if (!queueRef.current.find((o) => o.id === order.id)) queueRef.current.push(order);
+      dlog('skip (debounce) — queued:', order.id);
       return;
     }
     lastTriggerRef.current = now;
+    dlog('show order:', order.id, order);
     setState({ order, visible: true });
     scheduleDismiss();
   };
@@ -107,40 +114,50 @@ export default function LiveSalesPopup() {
     if (!latestNewOrder || isHiddenRoute) return;
     if (Date.now() < snoozeUntilRef.current) return;
     if (currentUid && latestNewOrder.userId === currentUid) return;
+    dlog('new order arrived:', latestNewOrder.id);
     showOrder(latestNewOrder);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latestNewOrder]);
 
-  // Rotation through recent orders
+  // Rotation through recent orders. Uses refs so the interval picks up the
+  // newest pool without resetting every Firestore snapshot.
   useEffect(() => {
-    if (isHiddenRoute || eligible.length === 0) return;
+    if (isHiddenRoute) return;
     const tick = () => {
       if (hovered) return;
+      if (visibleRef.current) {
+        dlog('tick skipped — popup still visible');
+        return;
+      }
       if (Date.now() < snoozeUntilRef.current) return;
-      // process queue first
       const next = queueRef.current.shift();
       if (next) {
-        setState({ order: next, visible: true });
+        dlog('tick — from queue:', next.id);
         lastTriggerRef.current = Date.now();
+        setState({ order: next, visible: true });
         scheduleDismiss();
         return;
       }
-      const pool = eligible.slice(0, 20);
-      if (pool.length === 0) return;
+      const pool = eligibleRef.current.slice(0, 20);
+      if (pool.length === 0) {
+        dlog('tick — pool empty');
+        return;
+      }
       const order = pool[Math.floor(Math.random() * pool.length)];
       rotateIdxRef.current += 1;
-      setState({ order, visible: true });
+      dlog('tick — picked random:', order.id, 'from pool size', pool.length);
       lastTriggerRef.current = Date.now();
+      setState({ order, visible: true });
       scheduleDismiss();
     };
-    // Kick off immediately so user sees one within ~500ms instead of waiting full interval
     const kickoff = window.setTimeout(tick, 500);
     rotateTimerRef.current = window.setInterval(tick, ROTATE_INTERVAL_MS);
     return () => {
       window.clearTimeout(kickoff);
       if (rotateTimerRef.current) window.clearInterval(rotateTimerRef.current);
     };
-  }, [eligible, isHiddenRoute, hovered]);
+  }, [isHiddenRoute, hovered]);
+
 
 
   // Cleanup on unmount
