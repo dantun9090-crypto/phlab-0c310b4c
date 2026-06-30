@@ -67,6 +67,8 @@ jobs:
         run: bunx playwright install --with-deps ${{ matrix.project }}
       - name: Run a11y suite
         run: bunx playwright test e2e/payment-options-a11y.spec.ts --project=${{ matrix.project }}
+      - name: Run domain-guard suite
+        run: bunx playwright test e2e/payment-options-domain-guard.spec.ts --project=${{ matrix.project }}
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
