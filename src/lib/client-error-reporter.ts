@@ -73,7 +73,9 @@ export function reportClientError(opts: ReportOptions): void {
       stack: opts.stack?.slice(0, 8000),
       routeId: opts.routeId,
       buildId: buildId(),
+      release: release(),
     };
+
 
     const body = JSON.stringify(payload);
     const url = "/api/public/error-monitor";
