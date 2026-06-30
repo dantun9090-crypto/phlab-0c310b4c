@@ -40,7 +40,7 @@ function missingBuildAssetRecoveryResponse(pathname) {
     return new Response("/* stale PH Labs build stylesheet recovered */\n", { status: 200, headers: h });
   }
   h.set("content-type", "text/javascript; charset=utf-8");
-  return new Response("try{var q=new URLSearchParams(location.search);q.set('sw','off');q.set('_r','missing-asset');location.replace(location.pathname+'?'+q.toString()+location.hash)}catch(e){location.replace('/?sw=off&_r=missing-asset')}\n", { status: 200, headers: h });
+  return new Response("try{var k='__phl_missing_asset_reload_at_v3',n=Date.now(),l=+(localStorage.getItem(k)||0);if(n-l>600000){localStorage.setItem(k,String(n));var q=new URLSearchParams(location.search);if(q.get('_r')!=='missing-asset'){q.set('_r','missing-asset');q.set('_t',String(n));location.replace(location.pathname+'?'+q.toString()+location.hash)}}console.warn('[PHL] Missing build asset recovery suppressed repeated auto-reload')}catch(e){console.warn('[PHL] Missing build asset recovery failed',e)}\n", { status: 200, headers: h });
 }
 __name(missingBuildAssetRecoveryResponse, "missingBuildAssetRecoveryResponse");
 var BOT_UA_RX = new RegExp(
@@ -603,12 +603,6 @@ var phlabs_prerender_patched_default = {
         const hit = await caches.default.match(cacheKey);
         if (hit) {
           const h = new Headers(hit.headers);
-          const cachedCsp = h.get("content-security-policy") || "";
-          if (!cachedCsp.includes(NONCE_PLACEHOLDER)) {
-            ctx.waitUntil(caches.default.delete(cacheKey).catch(() => {
-            }));
-            throw new Error("stale-html-cache-missing-csp");
-          }
           h.set("cache-control", "public, max-age=0, must-revalidate");
           h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
           h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
@@ -669,7 +663,7 @@ var phlabs_prerender_patched_default = {
       h.set("x-phl-via", `${normalProxyVia};inner=${innerCf || "n/a"}`);
       const isHtml = (h.get("content-type") || "").includes("text/html");
       const cspForCache = h.get("content-security-policy") || "";
-      if (htmlCacheable && cacheKey && res.status === 200 && isHtml && cspForCache.includes(NONCE_PLACEHOLDER)) {
+      if (htmlCacheable && cacheKey && res.status === 200 && isHtml) {
         try {
           const strippedForCache = stripLovableInjectedScripts(
             new Response(res.body, { status: res.status, statusText: res.statusText, headers: h })
@@ -677,7 +671,7 @@ var phlabs_prerender_patched_default = {
           const buf = await strippedForCache.arrayBuffer();
           const cacheHeaders = new Headers();
           cacheHeaders.set("content-type", h.get("content-type") || "text/html; charset=utf-8");
-          cacheHeaders.set("content-security-policy", cspForCache);
+          if (cspForCache) cacheHeaders.set("content-security-policy", cspForCache);
           const reportingEndpoints = h.get("reporting-endpoints");
           if (reportingEndpoints) cacheHeaders.set("reporting-endpoints", reportingEndpoints);
           cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);

@@ -338,19 +338,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // Chrome/Firefox/Edge after the GA dynamic-config swap.
       {
         type: "text/javascript",
-        children: `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);})(window, document, "clarity", "script", "x6yaoubye8");`,
+        children: `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];if(y&&y.parentNode){y.parentNode.insertBefore(t,y)}else{(l.head||l.documentElement).appendChild(t)}})(window, document, "clarity", "script", "x6yaoubye8");`,
       },
       {
         // Taboola Pixel (page_view, advertiser id 2057501)
         type: "text/javascript",
-        children: `window._tfa = window._tfa || [];window._tfa.push({notify:'event',name:'page_view',id:2057501});!function(t,f,a,x){if(!document.getElementById(x)){t.async=1;t.src=a;t.id=x;f.parentNode.insertBefore(t,f);}}(document.createElement('script'),document.getElementsByTagName('script')[0],'//cdn.taboola.com/libtrc/unip/2057501/tfa.js','tb_tfa_script');`,
+        children: `window._tfa = window._tfa || [];window._tfa.push({notify:'event',name:'page_view',id:2057501});!function(t,f,a,x){if(!document.getElementById(x)){t.async=1;t.src=a;t.id=x;if(f&&f.parentNode){f.parentNode.insertBefore(t,f)}else{(document.head||document.documentElement).appendChild(t)}}}(document.createElement('script'),document.getElementsByTagName('script')[0],'//cdn.taboola.com/libtrc/unip/2057501/tfa.js','tb_tfa_script');`,
       },
       {
         // Microsoft Bing UET tag (ti: K120006478) — fires page_load on every route.
         // Purchase conversions are fired from checkout/payment success pages via
         // window.uetq.push('event','purchase', { revenue_value, currency }).
         type: "text/javascript",
-        children: `(function(w,d,t,r,u){var f,n,i;w[u]=w[u]||[],f=function(){var o={ti:"K120006478",enableAutoSpaTracking:true};o.q=w[u],w[u]=new UET(o),w[u].push("pageLoad")},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function(){var s=this.readyState;s&&s!=="loaded"&&s!=="complete"||(f(),n.onload=n.onreadystatechange=null)},i=d.getElementsByTagName(t)[0],i.parentNode.insertBefore(n,i)})(window,document,"script","//bat.bing.com/bat.js","uetq");`,
+        children: `(function(w,d,t,r,u){var f,n,i;w[u]=w[u]||[],f=function(){var o={ti:"K120006478",enableAutoSpaTracking:true};o.q=w[u],w[u]=new UET(o),w[u].push("pageLoad")},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function(){var s=this.readyState;s&&s!=="loaded"&&s!=="complete"||(f(),n.onload=n.onreadystatechange=null)},i=d.getElementsByTagName(t)[0];if(i&&i.parentNode){i.parentNode.insertBefore(n,i)}else{(d.head||d.documentElement).appendChild(n)}})(window,document,"script","//bat.bing.com/bat.js","uetq");`,
       },
       {
 

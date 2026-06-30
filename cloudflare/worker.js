@@ -767,11 +767,6 @@ export default {
         const hit = await caches.default.match(cacheKey);
         if (hit) {
           const h = new Headers(hit.headers);
-          const cachedCsp = h.get("content-security-policy") || "";
-          if (!cachedCsp.includes(NONCE_PLACEHOLDER)) {
-            ctx.waitUntil(caches.default.delete(cacheKey).catch(() => {}));
-            throw new Error("stale-html-cache-missing-csp");
-          }
           h.set("cache-control", "public, max-age=0, must-revalidate");
           h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
           h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
@@ -856,7 +851,7 @@ export default {
       //     client (which still passes through HTMLRewriter + security
       //     headers and keeps the visitor's Set-Cookie intact).
       const cspForCache = h.get("content-security-policy") || "";
-      if (htmlCacheable && cacheKey && res.status === 200 && isHtml && cspForCache.includes(NONCE_PLACEHOLDER)) {
+      if (htmlCacheable && cacheKey && res.status === 200 && isHtml) {
         try {
           const strippedForCache = stripLovableInjectedScripts(
             new Response(res.body, { status: res.status, statusText: res.statusText, headers: h }),
@@ -866,7 +861,7 @@ export default {
           // (Set-Cookie, Vary, private, no-store) can block caches.default.put.
           const cacheHeaders = new Headers();
           cacheHeaders.set("content-type", h.get("content-type") || "text/html; charset=utf-8");
-          cacheHeaders.set("content-security-policy", cspForCache);
+          if (cspForCache) cacheHeaders.set("content-security-policy", cspForCache);
           const reportingEndpoints = h.get("reporting-endpoints");
           if (reportingEndpoints) cacheHeaders.set("reporting-endpoints", reportingEndpoints);
           cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);

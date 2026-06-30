@@ -100,6 +100,16 @@ const Body = z.object({
     .optional(),
 });
 
+function isNoisyClientException(ev: z.infer<typeof Body>): boolean {
+  if (ev.type !== "client_exception") return false;
+  const message = String(ev.message || "")
+    .replace(/^\[(window\.error|unhandledrejection|error-boundary|manual)\]\s*/i, "")
+    .trim();
+  if (/^Script error\.?$/i.test(message)) return true;
+  if (/^Unknown error$/i.test(message) && !ev.stack) return true;
+  return false;
+}
+
 const DEFAULT_THRESHOLDS: Record<EventType, number> = {
   page_not_found: 25,
   server_error: 10,
@@ -340,6 +350,13 @@ export const Route = createFileRoute("/api/public/error-monitor")({
           );
         }
         const ev = parsed.data;
+
+        if (isNoisyClientException(ev)) {
+          return new Response(
+            JSON.stringify({ ok: true, ignored: true, reason: "noisy_cross_origin_client_exception" }),
+            { status: 200, headers: { "content-type": "application/json", ...corsHeaders(origin) } },
+          );
+        }
 
         try {
           // 1) Persist the raw event (best-effort, capped via natural Firestore TTL/cleanup).
