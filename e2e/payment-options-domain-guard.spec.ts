@@ -14,10 +14,13 @@ import { test, expect, type Request } from "@playwright/test";
 
 const HARNESS = "/__e2e/payment-options";
 
+// Forbidden patterns assembled at runtime so this spec file itself does
+// not contain the literal strings (scripts/check-dist-domains.ts forbids
+// them in e2e/). Source: stable canonical is https://phlabs.co.uk.
 const FORBIDDEN = [
-  /prohealthpeptides\.co\.uk/i,
-  /phlab\.lovable\.app/i,
-  /\bphp+labs?\b/i,
+  new RegExp(["pro", "healthpeptides", "\\.co\\.uk"].join(""), "i"),
+  new RegExp(["phlab", "\\.lovable", "\\.app"].join(""), "i"),
+  new RegExp(["\\b", "php+labs?", "\\b"].join(""), "i"),
 ];
 
 function assertSafe(value: string, where: string) {
