@@ -11,7 +11,7 @@ interface PopupState {
 }
 
 const HIDDEN_ROUTES = ['/checkout', '/cart', '/success', '/account', '/login'];
-const AUTO_DISMISS_MS = 2800;
+const AUTO_DISMISS_MS = 5500;
 const ROTATE_INTERVAL_MS = 3000;
 const DEBOUNCE_MS = 1500;
 const SNOOZE_MS = 60_000;
@@ -197,8 +197,8 @@ export default function LiveSalesPopup() {
       onMouseLeave={handleMouseLeave}
       className="fixed pointer-events-auto"
       style={{
-        // Keep above Google Merchant / Lovable badges that also sit bottom-right.
-        bottom: 'max(84px, calc(env(safe-area-inset-bottom) + 84px))',
+        // Position under the site header (logo area)
+        top: 64,
         right: 12,
         maxWidth: 'min(320px, calc(100vw - 24px))',
         width: '92vw',
@@ -246,7 +246,7 @@ export default function LiveSalesPopup() {
         @media (min-width: 768px) {
           [role="status"][aria-live="polite"] {
             right: 16px !important;
-            bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px)) !important;
+            top: 72px !important;
           }
         }
       `}</style>
