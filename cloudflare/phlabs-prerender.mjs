@@ -241,6 +241,26 @@ function applySecurityHeaders(res, url) {
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
 }
 __name(applySecurityHeaders, "applySecurityHeaders");
+async function repairInlineBootScripts(response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("text/html")) return response;
+  const html = await response.text();
+  let fixed = html;
+  fixed = fixed.replace(
+    "var isLegacy=function(registration){ return //service-worker.js(?:$|[?#])/i.test(scriptUrl(registration)); };",
+    "var isLegacy=function(registration){ return new RegExp('\\\\/service-worker\\\\.js(?:$|[?#])','i').test(scriptUrl(registration)); };"
+  );
+  fixed = fixed.replace(
+    "var isAppWorker=function(registration){ return //(?:sw|service-worker).js(?:$|[?#])/i.test(scriptUrl(registration)); };",
+    "var isAppWorker=function(registration){ return new RegExp('\\\\/(?:sw|service-worker)\\\\.js(?:$|[?#])','i').test(scriptUrl(registration)); };"
+  );
+  if (fixed === html) return new Response(html, { status: response.status, statusText: response.statusText, headers: response.headers });
+  const h = new Headers(response.headers);
+  h.delete("content-length");
+  h.set("x-phl-html-hotfix", "inline-sw-regex");
+  return new Response(fixed, { status: response.status, statusText: response.statusText, headers: h });
+}
+__name(repairInlineBootScripts, "repairInlineBootScripts");
 function noCache(headers) {
   headers.set("cache-control", "no-cache, no-store, must-revalidate");
   headers.set("pragma", "no-cache");
