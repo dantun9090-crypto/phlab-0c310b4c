@@ -78,8 +78,7 @@ export function SmartImage({
         height={height}
         loading={loading}
         decoding={decoding}
-        // @ts-expect-error fetchpriority is valid in modern browsers
-        fetchpriority={fetchPriority ?? (loading === "eager" ? "high" : "auto")}
+        fetchPriority={fetchPriority ?? (loading === "eager" ? "high" : "auto")}
         className={className}
         style={{
           display: "block",

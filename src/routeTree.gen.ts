@@ -60,6 +60,7 @@ import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wal
 import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
+import { Route as ApiPublicLiveOrdersRouteImport } from './routes/api/public/live-orders'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicErrorMonitorRouteImport } from './routes/api/public/error-monitor'
@@ -351,6 +352,11 @@ const ApiPublicPostPublishCheckRoute =
     path: '/api/public/post-publish-check',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicLiveOrdersRoute = ApiPublicLiveOrdersRouteImport.update({
+  id: '/api/public/live-orders',
+  path: '/api/public/live-orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicImgRoute = ApiPublicImgRouteImport.update({
   id: '/api/public/img',
   path: '/api/public/img',
@@ -580,6 +586,7 @@ export interface FileRoutesByFullPath {
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/img': typeof ApiPublicImgRoute
+  '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
@@ -662,6 +669,7 @@ export interface FileRoutesByTo {
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/img': typeof ApiPublicImgRoute
+  '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
@@ -747,6 +755,7 @@ export interface FileRoutesById {
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/img': typeof ApiPublicImgRoute
+  '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
@@ -832,6 +841,7 @@ export interface FileRouteTypes {
     | '/api/public/error-monitor'
     | '/api/public/health'
     | '/api/public/img'
+    | '/api/public/live-orders'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
     | '/api/public/web-vitals'
@@ -914,6 +924,7 @@ export interface FileRouteTypes {
     | '/api/public/error-monitor'
     | '/api/public/health'
     | '/api/public/img'
+    | '/api/public/live-orders'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
     | '/api/public/web-vitals'
@@ -998,6 +1009,7 @@ export interface FileRouteTypes {
     | '/api/public/error-monitor'
     | '/api/public/health'
     | '/api/public/img'
+    | '/api/public/live-orders'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
     | '/api/public/web-vitals'
@@ -1077,6 +1089,7 @@ export interface RootRouteChildren {
   ApiPublicErrorMonitorRoute: typeof ApiPublicErrorMonitorRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicImgRoute: typeof ApiPublicImgRoute
+  ApiPublicLiveOrdersRoute: typeof ApiPublicLiveOrdersRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
   ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
@@ -1461,6 +1474,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPostPublishCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/live-orders': {
+      id: '/api/public/live-orders'
+      path: '/api/public/live-orders'
+      fullPath: '/api/public/live-orders'
+      preLoaderRoute: typeof ApiPublicLiveOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/img': {
       id: '/api/public/img'
       path: '/api/public/img'
@@ -1786,6 +1806,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicErrorMonitorRoute: ApiPublicErrorMonitorRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicImgRoute: ApiPublicImgRoute,
+  ApiPublicLiveOrdersRoute: ApiPublicLiveOrdersRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
   ApiPublicWebVitalsRoute: ApiPublicWebVitalsRoute,

@@ -76,12 +76,8 @@ function OfflineScreen() {
     let cancelled = false;
     void findCachedLastKnownUrl().then((u) => { if (!cancelled) setCachedUrl(u); });
 
-    // Auto-retry when the browser reports the connection is back.
-    const onOnline = () => { void hardReload(); };
-    window.addEventListener("online", onOnline);
     return () => {
       cancelled = true;
-      window.removeEventListener("online", onOnline);
     };
   }, []);
 
@@ -186,31 +182,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
     if (isHydrationError) {
       markHydrationError();
-      return;
     }
-    if (!isOnline()) return;
-    // Never auto-reload on critical user flows — destroys form/auth/cart state.
-    try {
-      const path = window.location.pathname.toLowerCase();
-      const NEVER = ["/login", "/auth", "/account", "/checkout", "/cart", "/register"];
-      if (NEVER.some((p) => path.startsWith(p))) {
-        console.warn("[RELOAD BLOCKED] Critical route:", path);
-        return;
-      }
-    } catch { /* ignore */ }
-    // Retry once for true stale-route errors, then stop and show this screen.
-    let attempt = 0;
-    try {
-      attempt = Number(sessionStorage.getItem(AUTO_RECOVERY_DONE_KEY) || "0");
-      if (attempt >= 1) return;
-      sessionStorage.setItem(AUTO_RECOVERY_DONE_KEY, String(attempt + 1));
-      sessionStorage.removeItem(HARD_RELOAD_FLAG);
-    } catch { /* ignore */ }
-    const delay = 250 + attempt * 400;
-    const t = setTimeout(() => {
-      void hardReload({ clean: true });
-    }, delay);
-    return () => clearTimeout(t);
   }, [isHydrationError]);
 
   // Track connectivity in real time so the screen can flip without a reload
@@ -282,13 +254,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "google", content: "notranslate" },
-      // Belt-and-braces: even when an intermediary ignores response headers,
-      // these <meta http-equiv> tags signal the HTML document itself must
-      // never be cached. Prevents stale shells loading new hashed asset
-      // chunks (which would surface as React hydration error #418).
-      { httpEquiv: "Cache-Control", content: "no-cache, no-store, must-revalidate" },
-      { httpEquiv: "Pragma", content: "no-cache" },
-      { httpEquiv: "Expires", content: "0" },
+      // Do NOT add Cache-Control/Pragma/Expires http-equiv tags here. Real
+      // cache policy belongs in response headers; meta no-store conflicted
+      // with Cloudflare edge HTML caching and amplified stale-shell recovery
+      // after publishes.
       // Build marker — helps confirm which build a stale tab is running.
       { name: "x-build-id", content: typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev" },
       { name: "author", content: "PH Labs UK" },
@@ -498,11 +467,10 @@ const FORCE_SW_CLEANUP = `
     if('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations){
       if(navigator.serviceWorker.controller){
         try{
-          // Persistent (localStorage) — was sessionStorage, which re-fired the
-          // hard reload in every new tab/refresh and produced a "page stuck /
-          // auto-refresh" loop. Now: at most ONE controlled-SW recovery reload
-          // per device, ever. The unregister + cache-clear path below still
-          // runs on every load, but without the visibility-hidden + replace.
+              // Never auto-navigate here. Old builds used location.replace()
+              // during SW cleanup; after publishes that created refresh loops.
+              // Cleanup can run in the background and the current page may keep
+              // rendering normally.
           var KEY='__phl_controlled_sw_reload_done_v2';
           var done=null;
           try{ done=localStorage.getItem(KEY); }catch(e){}
@@ -510,8 +478,7 @@ const FORCE_SW_CLEANUP = `
             try{ localStorage.setItem(KEY,String(Date.now())); }catch(e){}
             navigator.serviceWorker.getRegistrations().then(function(registrations){
               return Promise.all(registrations.map(function(registration){ return registration.unregister().catch(function(){}); }));
-            }).then(clearAllCaches, clearAllCaches).finally(function(){ location.replace(recoveryUrl('controlled-sw')); });
-            if(document.documentElement) document.documentElement.style.visibility='hidden';
+            }).then(clearAllCaches, clearAllCaches);
             return;
           }
         }catch(e){}
@@ -554,56 +521,32 @@ const BOOT_WATCHDOG = `
       }catch(e){ return false; }
     };
     if(qs.get('sw')==='off'){
-      var DONE='__phl_sw_off_done';
-      var lastDone=0;
-      try{ lastDone=Number(sessionStorage.getItem(DONE)||'0'); }catch(e){}
-      if(lastDone && Date.now()-lastDone<10000){
-        // Already cleaned this session — strip recovery-only parameters.
-        try{
-          qs.delete('sw');
-          qs.delete('_r');
-            qs.delete('stale_recovery');
-          var clean=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
-          history.replaceState(null,'',clean);
-        }catch(e){}
-      } else {
-        var jobs=[];
-        // 1. Emergency cleanup: delete every Cache Storage bucket on this origin.
-        try{
-          if('caches' in window){
-            jobs.push(settle(caches.keys().then(function(ks){
-              return Promise.all(ks.filter(ownCache).map(function(k){ return settle(caches.delete(k)); }));
-            })));
-          }
-        }catch(e){}
-        // 2. Emergency cleanup: unregister every service worker on this origin.
-        try{
-          if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){
-            jobs.push(settle(navigator.serviceWorker.getRegistrations().then(function(rs){
-              return Promise.all(rs.filter(ownReg).map(function(r){ return settle(r.unregister()); }));
-            })));
-          }
-        }catch(e){}
-        // 3. Clear only PH Labs recovery flags, not all site/browser storage.
-        try{ localStorage.removeItem('php_pwa_prompted'); sessionStorage.removeItem('__phl_hard_reload_in_flight'); sessionStorage.removeItem('__phl_route_err_reload_at'); sessionStorage.removeItem('__phl_route_err_reload_count'); sessionStorage.removeItem('__phl_boot_reload_at'); sessionStorage.removeItem('__phl_boot_reload_count'); }catch(e){}
-        // 4. Wait (max 4s) for cleanup then hard reload to a clean URL.
-        var FALLBACK=setTimeout(finish, 4000);
-        function finish(){
-          clearTimeout(FALLBACK);
-          try{ sessionStorage.setItem(DONE,String(Date.now())); }catch(e){}
-          try{
-            qs.delete('sw');
-            qs.delete('_r');
-            qs.delete('stale_recovery');
-            var url=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
-            location.replace(url);
-          }catch(e){ location.reload(); }
+      // Legacy recovery URLs used to clear caches and then auto-reload. That
+      // created endless loops after publish when old HTML kept reintroducing
+      // ?sw=off. Now we strip the recovery-only params, run cleanup in the
+      // background, and continue booting without any automatic navigation.
+      try{
+        qs.delete('sw');
+        qs.delete('_r');
+        qs.delete('stale_recovery');
+        var cleanSwUrl=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
+        history.replaceState(null,'',cleanSwUrl);
+      }catch(e){}
+      try{
+        if('caches' in window){
+          settle(caches.keys().then(function(ks){
+            return Promise.all(ks.filter(ownCache).map(function(k){ return settle(caches.delete(k)); }));
+          }));
         }
-        Promise.all(jobs).then(finish, finish);
-        // Stop further script eval on this page — we're about to reload.
-        if(document.documentElement) document.documentElement.style.visibility='hidden';
-        return;
-      }
+      }catch(e){}
+      try{
+        if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){
+          settle(navigator.serviceWorker.getRegistrations().then(function(rs){
+            return Promise.all(rs.filter(ownReg).map(function(r){ return settle(r.unregister()); }));
+          }));
+        }
+      }catch(e){}
+      try{ localStorage.removeItem('php_pwa_prompted'); sessionStorage.removeItem('__phl_hard_reload_in_flight'); sessionStorage.removeItem('__phl_route_err_reload_at'); sessionStorage.removeItem('__phl_route_err_reload_count'); sessionStorage.removeItem('__phl_boot_reload_at'); sessionStorage.removeItem('__phl_boot_reload_count'); }catch(e){}
     }
     // === Blank-page watchdog =================================================
     // Goals (post-2026-06-30 refresh-loop incident):
@@ -861,10 +804,10 @@ const STALE_ASSET_RECOVERY = `
     };
     var hasHydration=function(){ try{ return !!sessionStorage.getItem(HYDRATION); }catch(e){ return false; } };
     var showLimit=function(){
-      try{ console.error('[STALE_ASSET] Blocked reload — limit reached'); }catch(e){}
+      try{ console.error('[STALE_ASSET] Automatic reload blocked'); }catch(e){}
       try{
         if(!document.body){ document.addEventListener('DOMContentLoaded',showLimit,{once:true}); return; }
-        document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Update available</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">Update available. Please close this tab and reopen.</p><button id="phl-stale-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer">Refresh manually</button></div></div>';
+        document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Update available</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">A fresh version is available. Automatic refresh is blocked to stop loops.</p><button id="phl-stale-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer">Refresh manually</button></div></div>';
         var btn=document.getElementById('phl-stale-refresh');
         if(btn) btn.addEventListener('click',function(){ location.reload(); });
       }catch(e){}
@@ -892,7 +835,7 @@ const STALE_ASSET_RECOVERY = `
       try{
         var last=Number(sessionStorage.getItem(KEY)||'0');
         var count=readCount();
-        if(count>=2||onRecoveryUrl()){ showLimit(); return; }
+        if(count>=1||onRecoveryUrl()){ showLimit(); return; }
         if(last&&Date.now()-last<30000) return;
       }catch(e){}
       // Verify the asset is actually missing before forcing a reload.
@@ -905,7 +848,7 @@ const STALE_ASSET_RECOVERY = `
             try{
               if(onRecoveryUrl()){ showLimit(); return; }
               var count=readCount();
-              if(count>=2){ showLimit(); return; }
+              if(count>=1){ showLimit(); return; }
               count=count+1;
               sessionStorage.setItem(KEY,String(Date.now()));
               sessionStorage.setItem(COUNT,String(count));
@@ -920,14 +863,7 @@ const STALE_ASSET_RECOVERY = `
               fetch('/api/public/post-publish-check',{method:'GET',cache:'no-store',credentials:'omit',keepalive:true}).catch(function(){});
             }catch(e){}
 
-            setTimeout(function(){
-              var qs;
-              try{
-                qs=new URLSearchParams(location.search);
-                qs.set('sw','off'); qs.set('_r','stale-asset'); qs.set('stale_recovery','1');
-                location.replace(location.pathname+'?'+qs.toString()+location.hash);
-              }catch(e){ location.replace('/?sw=off&_r=stale-asset&stale_recovery=1'); }
-            }, 2500);
+            showLimit();
           }
         }).catch(function(){});
       }catch(e){}

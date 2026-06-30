@@ -120,8 +120,7 @@ function doReload(reason: string) {
     /* ignore */
   }
   // eslint-disable-next-line no-console
-  console.warn("[chunk-reload] reloading:", reason);
-  void hardReload({ clean: true });
+  console.warn("[chunk-reload] automatic reload blocked:", reason);
 }
 
 // Self-heal: when a stale chunk is confirmed missing, fire the public
@@ -304,7 +303,7 @@ if (typeof window !== "undefined" && !__phlIsMarketing()) {
       const away = Date.now() - hiddenAt;
       hiddenAt = null;
       if (away > REVISIT_THRESHOLD_MS) {
-        reloadOnce("long tab-away", undefined, false);
+        console.info("[chunk-reload] long tab-away detected; automatic reload disabled");
       }
     }
   });
