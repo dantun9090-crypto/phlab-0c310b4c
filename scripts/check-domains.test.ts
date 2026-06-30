@@ -60,10 +60,16 @@ describe("forbidden-domain guard (routes + e2e)", () => {
         const lines = content.split(/\r?\n/);
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i];
+          const prev = i > 0 ? lines[i - 1] : "";
           // Reset regex state between lines (global flag).
           pattern.lastIndex = 0;
           if (!pattern.test(line)) continue;
-          if (line.includes("check-domains-allow-line")) continue;
+          if (
+            line.includes("check-domains-allow-line") ||
+            prev.includes("check-domains-allow-next-line")
+          ) {
+            continue;
+          }
           hits.push(`${relative(ROOT, file)}:${i + 1}  →  ${line.trim()}`);
         }
       }
