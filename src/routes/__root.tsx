@@ -781,7 +781,7 @@ const STALE_ASSET_RECOVERY = `
     var isHydration=function(x){
       var msg='';
       try{ msg=String((x&&(x.message||x.name||x.stack))||x||''); }catch(e){}
-      return /Minified React error #418\\b|react\\.dev\\/errors\\/418\\b|Hydration failed|hydration mismatch|server rendered HTML didn't match|server-rendered HTML.+client-side React|NotFoundError.+removeChild|removeChild.+not a child of this node|Node\\.removeChild/i.test(msg);
+      return new RegExp('Minified React error #418\\\\b|react\\\\.dev\\\\/errors\\\\/418\\\\b|Hydration failed|hydration mismatch|server rendered HTML didn\\'t match|server-rendered HTML.+client-side React|NotFoundError.+removeChild|removeChild.+not a child of this node|Node\\\\.removeChild','i').test(msg);
     };
     var showHydration=function(){
       try{
