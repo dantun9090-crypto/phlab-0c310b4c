@@ -676,7 +676,7 @@ var phlabs_prerender_patched_default = {
           h.set("x-phl-cache", "HIT");
           h.delete("age");
           const cachedOut = new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers: h });
-          return rewriteCspNonce(applySecurityHeaders(stripLovableInjectedScripts(cachedOut), url));
+          return rewriteCspNonce(await repairInlineBootScripts(applySecurityHeaders(stripLovableInjectedScripts(cachedOut), url)));
         }
       } catch (_) {
       }
@@ -753,7 +753,7 @@ var phlabs_prerender_patched_default = {
           ctx.waitUntil(putPromise);
           h.set("x-phl-cache", `miss;put=${putErr}`);
           const liveOut = new Response(buf, { status: res.status, statusText: res.statusText, headers: h });
-          return rewriteCspNonce(applySecurityHeaders(liveOut, url));
+          return rewriteCspNonce(await repairInlineBootScripts(applySecurityHeaders(liveOut, url)));
         } catch (e) {
           h.set("x-phl-cache", "buf-err:" + (e && e.message || "x").slice(0, 30));
         }
@@ -764,7 +764,7 @@ var phlabs_prerender_patched_default = {
       }
 
       const out = new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
-      return rewriteCspNonce(applySecurityHeaders(stripLovableInjectedScripts(out), url));
+      return rewriteCspNonce(await repairInlineBootScripts(applySecurityHeaders(stripLovableInjectedScripts(out), url)));
     } catch (_) {
       return await serveStaleOrError(request);
     }
