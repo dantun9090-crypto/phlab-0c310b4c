@@ -142,8 +142,19 @@ jobs:
 
       # Runs the EXACT production build that ships to Cloudflare Workers.
       # No --mode development, no dev-only shortcuts.
-      - name: Production build
+      # The build script performs environment readiness checks, captures full
+      # phase logs, and retries transient infra/network failures before failing.
+      - name: Production build with retry + diagnostics
         run: bun run build
+
+      - name: Upload production build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-build-logs-${{ github.sha }}-${{ github.run_attempt }}
+          path: build-logs
+          if-no-files-found: ignore
+          retention-days: 30
 
       # Scans dist/server/** (the Worker bundle) and fails if any Node-only
       # module slipped in. Catches regressions like a transitive dep pulling
