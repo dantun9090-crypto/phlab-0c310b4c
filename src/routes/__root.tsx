@@ -660,16 +660,10 @@ const STALE_ASSET_RECOVERY = `
     // inline (not in a React useEffect) means chunks 404'ing can't block it,
     // so stale-HTML loops self-heal on the very first visitor instead of
     // requiring a manual admin purge. Throttled to once per 5 min per tab.
-    try{
-      var h=(location.hostname||'');
-      if(/(^|\\.)phlabs\\.co\\.uk$/i.test(h)){
-        var last=Number(sessionStorage.getItem(PURGE_FIRED)||'0');
-        if(!last || Date.now()-last > 5*60*1000){
-          sessionStorage.setItem(PURGE_FIRED,String(Date.now()));
-          fetch('/api/public/post-publish-check',{method:'GET',cache:'no-store',credentials:'omit',keepalive:true}).catch(function(){});
-        }
-      }
-    }catch(e){}
+    // Preemptive purge on every visit was removed — it caused 3s+ TTFB on
+    // origin under load. The stale-asset 404 path below still triggers the
+    // purge on demand when a visitor is provably on an old build.
+
 
     var isHydration=function(x){
       var msg='';
