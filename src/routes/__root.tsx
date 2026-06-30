@@ -443,14 +443,6 @@ const NONCE_PROPAGATOR = `
 
 const FORCE_SW_CLEANUP = `
 (function(){
-  var recoveryUrl=function(reason){
-    try{
-      var qs=new URLSearchParams(location.search);
-      qs.set('sw','off');
-      qs.set('_r',reason||'sw');
-      return location.pathname+'?'+qs.toString()+location.hash;
-    }catch(e){ return '/?sw=off&_r=sw'; }
-  };
   var clearAllCaches=function(){
     try{
       if('caches' in window && caches.keys){
@@ -463,36 +455,34 @@ const FORCE_SW_CLEANUP = `
       }
     }catch(e){}
   };
+  var shouldFullCleanup=false;
+  try{
+    var qs=new URLSearchParams(location.search);
+    shouldFullCleanup=qs.get('sw')==='off'||qs.get('phl_sw_cleanup')==='1';
+  }catch(e){}
+  var scriptUrl=function(registration){
+    try{return (registration.active&&registration.active.scriptURL)||(registration.installing&&registration.installing.scriptURL)||(registration.waiting&&registration.waiting.scriptURL)||'';}catch(e){return '';}
+  };
+  var isLegacy=function(registration){ return /\/service-worker\.js(?:$|[?#])/i.test(scriptUrl(registration)); };
+  var isAppWorker=function(registration){ return /\/(?:sw|service-worker)\.js(?:$|[?#])/i.test(scriptUrl(registration)); };
   try{
     if('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations){
-      if(navigator.serviceWorker.controller){
-        try{
-              // Never auto-navigate here. Old builds used location.replace()
-              // during SW cleanup; after publishes that created refresh loops.
-              // Cleanup can run in the background and the current page may keep
-              // rendering normally.
-          var KEY='__phl_controlled_sw_reload_done_v2';
-          var done=null;
-          try{ done=localStorage.getItem(KEY); }catch(e){}
-          if(!done){
-            try{ localStorage.setItem(KEY,String(Date.now())); }catch(e){}
-            navigator.serviceWorker.getRegistrations().then(function(registrations){
-              return Promise.all(registrations.map(function(registration){ return registration.unregister().catch(function(){}); }));
-            }).then(clearAllCaches, clearAllCaches);
-            return;
-          }
-        }catch(e){}
-      }
       navigator.serviceWorker.getRegistrations().then(function(registrations){
+        // Normal visits must NOT unregister /sw.js on every load. That creates
+        // service-worker churn after every publish and looks like a refresh
+        // loop. Only explicit ?sw=off runs a full cleanup; otherwise remove
+        // only the legacy /service-worker.js kill-switch registration.
+        var filtered=registrations.filter(shouldFullCleanup?isAppWorker:isLegacy);
         return Promise.all(registrations.map(function(registration){
+          if(filtered.indexOf(registration)===-1) return Promise.resolve();
           try{ console.info('SW unregistered:', registration.scope); }catch(e){}
           return registration.unregister().catch(function(){});
         }));
-      }).then(clearAllCaches, clearAllCaches);
+      }).then(function(){ if(shouldFullCleanup) clearAllCaches(); },function(){ if(shouldFullCleanup) clearAllCaches(); });
     } else {
-      clearAllCaches();
+      if(shouldFullCleanup) clearAllCaches();
     }
-  }catch(e){ clearAllCaches(); }
+  }catch(e){ if(shouldFullCleanup) clearAllCaches(); }
 
 })();
 `;
