@@ -266,8 +266,59 @@ export type GaItem = {
   currency?: string;
 };
 
+/**
+ * Best-effort hashed userData for Enhanced Conversions on upper-funnel
+ * events. Reads from Firebase auth (email, phoneNumber, displayName) if a
+ * user is signed in. Falls back to a session cache populated at checkout.
+ * Returns an empty object when nothing is available — call sites never
+ * need to pass userData explicitly.
+ */
+const EC_SESSION_KEY = 'php_ec_userdata';
+
+export function cacheUserDataForEnhancedConversions(u: NonNullable<PurchaseExtras['userData']>): void {
+  if (typeof sessionStorage === 'undefined') return;
+  try { sessionStorage.setItem(EC_SESSION_KEY, JSON.stringify(u)); } catch { /* ignore */ }
+}
+
+async function inferUpperFunnelUserData(): Promise<Record<string, string>> {
+  if (typeof window === 'undefined') return {};
+  let raw: NonNullable<PurchaseExtras['userData']> | null = null;
+  try {
+    const cached = sessionStorage.getItem(EC_SESSION_KEY);
+    if (cached) raw = JSON.parse(cached);
+  } catch { /* ignore */ }
+  if (!raw) {
+    try {
+      // Lazy import to avoid pulling firebase into early analytics bundle.
+      const mod = await import('@/lib/firebase');
+      const u = mod.auth?.currentUser;
+      if (u && (u.email || u.phoneNumber)) {
+        const [firstName, ...rest] = (u.displayName || '').split(' ');
+        raw = {
+          email: u.email || undefined,
+          phone: u.phoneNumber || undefined,
+          firstName: firstName || undefined,
+          lastName: rest.join(' ') || undefined,
+        };
+      }
+    } catch { /* firebase not ready — skip */ }
+  }
+  if (!raw) return {};
+  try { return await buildUserData(raw); } catch { return {}; }
+}
+
+function attachUserDataAndSend(eventName: string, params: Record<string, unknown>): void {
+  // Fire immediately with whatever we have (don't delay the event), then
+  // re-fire with user_data if we can resolve it. GA4 dedupes on
+  // transaction-shaped events — for upper-funnel we just attach once.
+  inferUpperFunnelUserData().then((ud) => {
+    if (Object.keys(ud).length) params.user_data = ud;
+    trackEvent(eventName, params);
+  }).catch(() => trackEvent(eventName, params));
+}
+
 export function trackAddToCart(item: GaItem, value?: number): void {
-  trackEvent('add_to_cart', {
+  attachUserDataAndSend('add_to_cart', {
     currency: item.currency || 'GBP',
     value: value ?? (item.price ?? 0) * (item.quantity ?? 1),
     items: [item],
@@ -276,30 +327,50 @@ export function trackAddToCart(item: GaItem, value?: number): void {
 
 export function trackViewCart(items: GaItem[], value: number): void {
   if (!oncePerSession('view_cart', ecommerceFingerprint(items, value))) return;
-  trackEvent('view_cart', {
-    currency: 'GBP',
-    value,
-    items,
-  });
+  attachUserDataAndSend('view_cart', { currency: 'GBP', value, items });
 }
 
 export function trackBeginCheckout(items: GaItem[], value: number): void {
   if (!oncePerSession('begin_checkout', ecommerceFingerprint(items, value))) return;
-  trackEvent('begin_checkout', {
-    currency: 'GBP',
-    value,
-    items,
-  });
+  attachUserDataAndSend('begin_checkout', { currency: 'GBP', value, items });
+  scheduleCartRecovery(items, value);
 }
 
 export function trackAddPaymentInfo(items: GaItem[], value: number, paymentType: string): void {
   if (!oncePerSession('add_payment_info', ecommerceFingerprint(items, value, paymentType))) return;
-  trackEvent('add_payment_info', {
+  attachUserDataAndSend('add_payment_info', {
     currency: 'GBP',
     value,
     payment_type: paymentType,
     items,
   });
+}
+
+/* Cart-recovery: if begin_checkout fires but no purchase within 30 min in
+ * the same tab/session, re-fire begin_checkout ONCE so Google Ads sees a
+ * fresh signal for abandoned-cart attribution. Hashed userData is attached
+ * automatically by attachUserDataAndSend. */
+const RECOVERY_FLAG = 'php_ec_recovery_fired';
+const PURCHASE_FLAG = 'php_ec_purchase_done';
+function scheduleCartRecovery(items: GaItem[], value: number): void {
+  if (typeof window === 'undefined') return;
+  try {
+    if (sessionStorage.getItem(RECOVERY_FLAG) === '1') return;
+    if (sessionStorage.getItem(PURCHASE_FLAG) === '1') return;
+  } catch { /* ignore */ }
+  window.setTimeout(() => {
+    try {
+      if (sessionStorage.getItem(PURCHASE_FLAG) === '1') return;
+      if (sessionStorage.getItem(RECOVERY_FLAG) === '1') return;
+      sessionStorage.setItem(RECOVERY_FLAG, '1');
+    } catch { /* ignore */ }
+    attachUserDataAndSend('begin_checkout', {
+      currency: 'GBP',
+      value,
+      items,
+      cart_recovery: true,
+    });
+  }, 30 * 60 * 1000);
 }
 
 export function trackCtaClick(label: string, location?: string): void {
@@ -376,6 +447,8 @@ export function trackPurchase(
     if (userData && Object.keys(userData).length) params.user_data = userData;
     trackEvent('purchase', params);
     trackAdsPurchaseConversion(transactionId, value, userData);
+    // Mark purchase done so the abandoned-cart recovery timer skips re-firing.
+    try { sessionStorage.setItem('php_ec_purchase_done', '1'); } catch { /* ignore */ }
   };
 
   if (extras.userData) {
