@@ -234,4 +234,54 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
+function UploadStatusBlock({ upload }: { upload: BlankWatchdogUploadStatus | null }) {
+  const tone = !upload
+    ? "border-slate-700 bg-slate-900 text-slate-300"
+    : upload.ok
+      ? "border-emerald-700/40 bg-emerald-500/10 text-emerald-100"
+      : "border-red-700/40 bg-red-500/10 text-red-100";
+  return (
+    <section
+      aria-label="Last snapshot upload"
+      data-testid="blank-watchdog-upload-status"
+      className={`mt-3 rounded-lg border-2 px-3 py-2 text-sm ${tone}`}
+    >
+      <header className="flex items-center justify-between gap-2">
+        <span className="font-semibold">Last upload</span>
+        <span className="font-mono text-xs">
+          {upload ? new Date(upload.at).toLocaleTimeString() : "—"}
+        </span>
+      </header>
+      {!upload ? (
+        <p className="mt-1 text-xs opacity-80">No upload attempted yet.</p>
+      ) : (
+        <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+          <dt className="opacity-70">Transport</dt>
+          <dd data-testid="upload-method" className="font-mono">
+            {upload.method === "beacon"
+              ? "sendBeacon"
+              : upload.method === "fetch"
+                ? "fetch (fallback)"
+                : "—"}
+          </dd>
+          <dt className="opacity-70">Status</dt>
+          <dd data-testid="upload-ok" className="font-mono">
+            {upload.ok ? "OK" : upload.error ? `failed (${upload.error})` : "in flight / failed"}
+          </dd>
+          <dt className="opacity-70">Retry attempts</dt>
+          <dd data-testid="upload-attempts" className="font-mono">{upload.attempts}</dd>
+          <dt className="opacity-70">HTML truncated</dt>
+          <dd data-testid="upload-html-truncated" className="font-mono">
+            {upload.htmlTruncated ? `yes (orig ${upload.htmlOriginalLength} ch)` : "no"}
+          </dd>
+          <dt className="opacity-70">Screenshot dropped</dt>
+          <dd data-testid="upload-screenshot-dropped" className="font-mono">
+            {upload.screenshotDropped ? "yes (over 600KB cap)" : "no"}
+          </dd>
+        </dl>
+      )}
+    </section>
+  );
+}
+
 export default BlankWatchdogDiagnosticsPanel;
