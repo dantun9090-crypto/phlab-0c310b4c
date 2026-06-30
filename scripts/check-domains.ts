@@ -29,8 +29,14 @@ const IGNORE_DIRS = new Set([
   "cloudflare",
 ]);
 
-// Plik samego skryptu jest pomijany, bo z definicji zawiera te stringi.
-const SELF = relative(ROOT, import.meta.path);
+// Sibling guard files are intentionally exempt — they describe the
+// forbidden patterns to enforce them.
+const GUARD_FILES = new Set<string>([
+  relative(ROOT, import.meta.path),
+  "scripts/check-dist-domains.ts",
+  "scripts/check-domains.test.ts",
+  ".github/workflows/domain-guard.yml",
+]);
 
 const FORBIDDEN: { pattern: RegExp; label: string; hint: string }[] = [
   {
@@ -66,7 +72,7 @@ function walk(dir: string) {
     if (IGNORE_DIRS.has(entry) || entry.startsWith(".DS_Store")) continue;
     const full = join(dir, entry);
     const rel = relative(ROOT, full);
-    if (rel === SELF) continue;
+    if (GUARD_FILES.has(rel)) continue;
     const st = statSync(full);
     if (st.isDirectory()) {
       walk(full);
