@@ -793,15 +793,64 @@ const STALE_ASSET_RECOVERY = `
       }catch(e){}
     };
     var hasHydration=function(){ try{ return !!sessionStorage.getItem(HYDRATION); }catch(e){ return false; } };
+    var clearAllStaleFlags=function(){
+      try{
+        sessionStorage.removeItem(KEY);
+        sessionStorage.removeItem(COUNT);
+        sessionStorage.removeItem(LEGACY_COUNT);
+        sessionStorage.removeItem(HYDRATION);
+        sessionStorage.removeItem(PURGE_FIRED);
+        sessionStorage.removeItem('__phl_boot_reload_at');
+        sessionStorage.removeItem('__phl_boot_reload_count');
+        sessionStorage.removeItem('__phl_route_err_reload_at');
+        sessionStorage.removeItem('__phl_route_err_reload_count');
+        sessionStorage.removeItem('__phl_hard_reload_in_flight');
+        localStorage.removeItem('phl_reload_count');
+      }catch(e){}
+    };
+    var hardReloadClean=function(){
+      clearAllStaleFlags();
+      // Unregister all SWs and wipe caches so the next request hits the
+      // freshly-purged Cloudflare edge instead of a stale SW snapshot.
+      var done=function(){
+        try{
+          var u=new URL(location.href);
+          u.searchParams.set('_r', String(Date.now()));
+          location.replace(u.toString());
+        }catch(e){ location.reload(); }
+      };
+      var pending=0,finished=false;
+      var tick=function(){ if(!finished&&pending<=0){ finished=true; done(); } };
+      try{
+        if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){
+          pending++;
+          navigator.serviceWorker.getRegistrations().then(function(regs){
+            return Promise.all(regs.map(function(r){ return r.unregister().catch(function(){}); }));
+          }).catch(function(){}).then(function(){ pending--; tick(); });
+        }
+      }catch(e){}
+      try{
+        if(window.caches&&caches.keys){
+          pending++;
+          caches.keys().then(function(keys){
+            return Promise.all(keys.map(function(k){ return caches.delete(k).catch(function(){}); }));
+          }).catch(function(){}).then(function(){ pending--; tick(); });
+        }
+      }catch(e){}
+      // Hard timeout — never let cleanup stall the recovery click.
+      setTimeout(function(){ if(!finished){ finished=true; done(); } },1500);
+      tick();
+    };
     var showLimit=function(){
       try{ console.error('[STALE_ASSET] Automatic reload blocked'); }catch(e){}
       try{
         if(!document.body){ document.addEventListener('DOMContentLoaded',showLimit,{once:true}); return; }
-        document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Update available</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">A fresh version is available. Automatic refresh is blocked to stop loops.</p><button id="phl-stale-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer">Refresh manually</button></div></div>';
+        document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Update available</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">A fresh version is available. Click to clear cached files and reload.</p><button id="phl-stale-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer;min-height:44px">Refresh &amp; clear cache</button></div></div>';
         var btn=document.getElementById('phl-stale-refresh');
-        if(btn) btn.addEventListener('click',function(){ location.reload(); });
+        if(btn) btn.addEventListener('click',hardReloadClean);
       }catch(e){}
     };
+
     var readCount=function(){
       try{
         var a=Number(sessionStorage.getItem(COUNT)||'0');
