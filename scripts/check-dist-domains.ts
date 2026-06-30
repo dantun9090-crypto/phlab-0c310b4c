@@ -106,20 +106,20 @@ function scan(full: string, rel: string, scope: "dist" | "e2e") {
 }
 
 let scanned = 0;
-for (const d of TARGET_DIRS) {
-  const full = join(ROOT, d);
+for (const { name, scope } of TARGET_DIRS) {
+  const full = join(ROOT, name);
   if (!existsSync(full)) {
-    if (d === "dist") {
+    if (name === "dist") {
       console.log(
         `ℹ️  check-dist-domains: dist/ missing — run \`bun run build\` first. Skipping dist scan.`,
       );
       continue;
     }
-    console.log(`ℹ️  check-dist-domains: ${d}/ missing — skipping.`);
+    console.log(`ℹ️  check-dist-domains: ${name}/ missing — skipping.`);
     continue;
   }
   scanned++;
-  walk(full, d as "dist" | "e2e");
+  walk(full, scope);
 }
 
 if (hits.length === 0) {
