@@ -918,6 +918,35 @@ const STALE_ASSET_RECOVERY = `
       if(ASSET_RE.test(src)) recover(src);
     },true);
 
+    // Auto-reset the stale-asset counter once the app has clearly booted
+    // without any asset 404s. Without this, a single transient 404 leaves
+    // the counter at 1 forever, so the very next 404 immediately shows the
+    // "Update available" wall — even after a Cloudflare purge has fixed the
+    // underlying problem. We wait 8s after first paint and only reset if
+    // there have been zero asset errors in this window.
+    try{
+      var sawAssetErr=false;
+      addEventListener('error',function(ev){
+        var t=ev&&ev.target;
+        if(!t||t===window) return;
+        var s=(t.src||t.href||'')+'';
+        if(s && ASSET_RE.test(s)) sawAssetErr=true;
+      },true);
+      var resetIfClean=function(){
+        if(sawAssetErr) return;
+        try{
+          sessionStorage.removeItem(KEY);
+          sessionStorage.removeItem(COUNT);
+          sessionStorage.removeItem(LEGACY_COUNT);
+          localStorage.removeItem('phl_reload_count');
+        }catch(e){}
+      };
+      // Fire 8s after DOMContentLoaded (or now, if already loaded).
+      var schedule=function(){ setTimeout(resetIfClean,8000); };
+      if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',schedule,{once:true});
+      else schedule();
+    }catch(e){}
+
   }catch(e){}
 })();
 `;
