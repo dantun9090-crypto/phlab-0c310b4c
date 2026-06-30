@@ -42,12 +42,18 @@ export default function CacheRecacheTab() {
   const recacheFn = useServerFn(recacheSitemapPrerender);
   const getCfg = useServerFn(getCacheConfig);
   const setCfg = useServerFn(setCacheConfig);
+  const listHistoryFn = useServerFn(listPurgeHistory);
 
   const [purging, setPurging] = useState(false);
   const [recaching, setRecaching] = useState(false);
   const [filesText, setFilesText] = useState('');
   const [includeMobile, setIncludeMobile] = useState(true);
   const [log, setLog] = useState<OpResult[]>([]);
+  const [scope, setScope] = useState<Exclude<PurgeScope, 'files'>>('all');
+  const [runSmoke, setRunSmoke] = useState(true);
+  const [history, setHistory] = useState<PurgeHistoryRow[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
 
   // HTML edge-cache TTL state
   const [ttl, setTtl] = useState<number>(DEFAULT_HTML_TTL_SECONDS);
