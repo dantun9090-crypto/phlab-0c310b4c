@@ -615,46 +615,81 @@ const BOOT_WATCHDOG = `
     var WATCH='__phl_blank_watchdog_done';
     var ATTEMPTS_KEY='__phl_blank_watchdog_attempts';
     var LAST_KEY='__phl_blank_watchdog_last_at';
-    var MAX_ATTEMPTS=3;
-    var DEBOUNCE_MS=60000;
-    var FALLBACK_MS=12000;
+    // --- Config flags (URL → localStorage → window global → <meta> → default)
+    // Spec/tests: src/lib/blank-watchdog.ts.
+    var readNum=function(v){ if(v==null) return null; var n=Number(v); return (isFinite(n)&&n>0)?n:null; };
+    var readBool=function(v){ return v===true||v==='1'||v==='true'||v==='yes'; };
+    var qp=null; try{ qp=new URLSearchParams(location.search); }catch(e){}
+    var lsGet=function(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } };
+    var lsSet=function(k,v){ try{ localStorage.setItem(k,v); }catch(e){} };
+    var metaVal=function(n){ try{ var m=document.querySelector('meta[name="'+n+'"]'); return m?m.getAttribute('content'):null; }catch(e){ return null; } };
+    var winCfg=(window.__PHL_WATCHDOG_CONFIG)||{};
+    var pickNum=function(key,snake,dflt){
+      var url=qp?qp.get('phl_watchdog_'+snake):null;
+      if(url) lsSet('__phl_watchdog_'+snake,url);
+      return readNum(url)
+        || readNum(lsGet('__phl_watchdog_'+snake))
+        || readNum(winCfg[key])
+        || readNum(metaVal('phl-watchdog-'+snake.replace(/_/g,'-')))
+        || dflt;
+    };
+    var MAX_ATTEMPTS=pickNum('maxAttempts','max_attempts',3);
+    var DEBOUNCE_MS=pickNum('debounceMs','debounce_ms',60000);
+    var FALLBACK_MS=pickNum('fallbackMs','fallback_ms',12000);
+    var TEXT_THRESHOLD=pickNum('textThreshold','text_threshold',40);
+    var SIZED_THRESHOLD=pickNum('sizedBlocksThreshold','sized_blocks_threshold',2);
+    var urlDisabled=qp?qp.get('phl_watchdog_disabled'):null;
+    if(urlDisabled!=null) lsSet('__phl_watchdog_disabled',urlDisabled);
+    var DISABLED=readBool(urlDisabled)||readBool(lsGet('__phl_watchdog_disabled'))||readBool(winCfg.disabled)||readBool(metaVal('phl-watchdog-disabled'));
     var started=Date.now();
-    var diagnostics={ started: started, ticks: 0, lastPaint: false, reason: '', fallbackShown: false };
+    var diagnostics={ started: started, ticks: 0, lastPaint: false, reason: '', fallbackShown: false, config:{ fallbackMs:FALLBACK_MS, debounceMs:DEBOUNCE_MS, maxAttempts:MAX_ATTEMPTS, textThreshold:TEXT_THRESHOLD, sizedBlocksThreshold:SIZED_THRESHOLD, disabled:DISABLED } };
     try{ window.__phlBlankWatchdog=diagnostics; }catch(e){}
+    if(DISABLED){ try{ console.info('[phlabs] blank-watchdog: DISABLED via flag'); }catch(e){} return; }
     var hasPaint=function(){
       try{
-        // 1. Explicit ready markers + common app landmarks.
         if(document.querySelector('[data-phl-app-ready], [data-phl-ready], header, nav, main, footer, #research-gate, #home, #products, [role="dialog"], [role="main"], [role="banner"], .phl-shell, #root > *, #__next > *')) { diagnostics.reason='landmark'; return true; }
         var body=document.body;
         if(!body) { diagnostics.reason='no-body'; return false; }
-        // 2. Visible text content.
         var text=(body.innerText||body.textContent||'').replace(/\\s+/g,' ').trim();
-        if(text.length>40) { diagnostics.reason='text:'+text.length; return true; }
-        // 3. Any rendered image, svg, canvas, or video.
+        if(text.length>TEXT_THRESHOLD) { diagnostics.reason='text:'+text.length; return true; }
         if(body.querySelector('img, svg, canvas, video, picture')) { diagnostics.reason='media'; return true; }
-        // 4. Any sized child block (lowered threshold for mobile + landing pages).
         var children=body.querySelectorAll('*');
         var sized=0;
-        for(var i=0;i<children.length && sized<3;i++){
+        for(var i=0;i<children.length && sized<SIZED_THRESHOLD+1;i++){
           try{ var r=children[i].getBoundingClientRect(); if(r.width>40 && r.height>20) sized++; }catch(e){}
         }
-        if(sized>=2) { diagnostics.reason='sized:'+sized; return true; }
-        // 5. React/TanStack mounted but empty? Treat as paint to avoid loop.
+        if(sized>=SIZED_THRESHOLD) { diagnostics.reason='sized:'+sized; return true; }
         try{ if(window.__PHL_REACT_READY__) { diagnostics.reason='react-ready'; return true; } }catch(e){}
         diagnostics.reason='blank';
         return false;
-      }catch(e){ diagnostics.reason='hasPaint-error'; return true; /* fail-open */ }
+      }catch(e){ diagnostics.reason='hasPaint-error'; return true; }
     };
     var attempts=0;
     try{ attempts=parseInt(sessionStorage.getItem(ATTEMPTS_KEY)||'0',10)||0; }catch(e){}
     var lastAt=0;
     try{ lastAt=parseInt(sessionStorage.getItem(LAST_KEY)||'0',10)||0; }catch(e){}
-    var showFallback=function(){
+    var captureSnapshot=function(payload){
+      // Best-effort POST a DOM snapshot to the error monitor so we can see
+      // what HTML actually rendered before the fallback fired. Truncated to
+      // 32KB to stay well under any edge body limits. Fire-and-forget.
+      try{
+        var html='';
+        try{ html=(document.documentElement&&document.documentElement.outerHTML)||''; }catch(e){}
+        if(html.length>32768) html=html.slice(0,32768)+'…[truncated]';
+        var body=JSON.stringify({ source:'blank-watchdog', at:payload.at, url:payload.url, payload:payload, htmlSnapshot:html, headChildren:Array.prototype.map.call(document.head?document.head.children:[],function(el){ return el.tagName+(el.id?'#'+el.id:''); }), bodyChildren:Array.prototype.map.call(document.body?document.body.children:[],function(el){ return el.tagName+(el.id?'#'+el.id:''); }) });
+        if(navigator.sendBeacon){
+          navigator.sendBeacon('/api/public/error-monitor', new Blob([body],{type:'application/json'}));
+        } else {
+          fetch('/api/public/error-monitor',{ method:'POST', headers:{'content-type':'application/json'}, body:body, keepalive:true }).catch(function(){});
+        }
+      }catch(e){}
+    };
+    var showFallback=function(payload){
       if(diagnostics.fallbackShown) return;
       diagnostics.fallbackShown=true;
+      captureSnapshot(payload);
       try{
         if(!document.body) return;
-        // Only inject fallback if there's truly nothing visible.
         if(hasPaint()) return;
         var div=document.createElement('div');
         div.id='phl-blank-fallback';
@@ -677,16 +712,13 @@ const BOOT_WATCHDOG = `
       }
       var elapsed=Date.now()-started;
       if(elapsed<7000){ setTimeout(tick,700); return; }
-      // No paint after 7s — log structured diagnostics.
-      var payload={ at:new Date().toISOString(), url:location.href, elapsed:elapsed, ticks:diagnostics.ticks, reason:diagnostics.reason, attempts:attempts, lastAt:lastAt, readyState:document.readyState, reactReady:!!window.__PHL_REACT_READY__, ua:navigator.userAgent.slice(0,140) };
+      var payload={ at:new Date().toISOString(), url:location.href, elapsed:elapsed, ticks:diagnostics.ticks, reason:diagnostics.reason, attempts:attempts, lastAt:lastAt, readyState:document.readyState, reactReady:!!window.__PHL_REACT_READY__, ua:navigator.userAgent.slice(0,140), config:diagnostics.config };
       try{ console.warn('[phlabs] blank-watchdog: NO PAINT', payload); }catch(e){}
-      // Retry limit + debounce — auto-reload stays DISABLED.
-      // We only escalate to the friendly fallback UI; we never call location.replace.
       var canEscalate = attempts < MAX_ATTEMPTS && (Date.now()-lastAt) > DEBOUNCE_MS;
       try{ sessionStorage.setItem(ATTEMPTS_KEY,String(attempts+1)); sessionStorage.setItem(LAST_KEY,String(Date.now())); }catch(e){}
       if(elapsed>=FALLBACK_MS && canEscalate){
         try{ console.warn('[phlabs] blank-watchdog: showing manual fallback (attempts='+(attempts+1)+'/'+MAX_ATTEMPTS+')'); }catch(e){}
-        showFallback();
+        showFallback(payload);
         return;
       }
       if(elapsed<FALLBACK_MS){ setTimeout(tick,1000); return; }
@@ -696,6 +728,7 @@ const BOOT_WATCHDOG = `
     }else{
       setTimeout(tick,7000);
     }
+
 
 
 
