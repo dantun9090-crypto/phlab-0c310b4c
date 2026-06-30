@@ -135,6 +135,8 @@
 import { Component, StrictMode, startTransition, type ReactNode } from "react";
 import { createRoot, hydrateRoot, type Root } from "react-dom/client";
 import { StartClient } from "@tanstack/react-start/client";
+import { RouterProvider } from "@tanstack/react-router";
+import { getRouter } from "./router";
 
 declare global {
   interface Window {
@@ -319,11 +321,18 @@ class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasEr
   }
 }
 
-function app() {
+let csrRouter: ReturnType<typeof getRouter> | undefined;
+
+function getCsrRouter() {
+  if (!csrRouter) csrRouter = getRouter();
+  return csrRouter;
+}
+
+function app(mode: "ssr" | "csr" = "ssr") {
   return (
     <StrictMode>
       <ClientRootErrorBoundary>
-        <StartClient />
+        {mode === "csr" ? <RouterProvider router={getCsrRouter()} /> : <StartClient />}
       </ClientRootErrorBoundary>
     </StrictMode>
   );
@@ -354,7 +363,7 @@ function renderCsr(error: unknown): void {
       onRecoverableError: (rootError, info) => {
         console.error("[ROOT ERROR BOUNDARY] recoverable", rootError, info?.componentStack || "");
       },
-    }).render(app());
+    }).render(app("csr"));
   } catch (renderError) {
     showStaticFallback(renderError);
   }
@@ -362,7 +371,7 @@ function renderCsr(error: unknown): void {
 
 function hydrateOrFallback(): void {
   try {
-    hydrationRoot = hydrateRoot(document, app(), {
+    hydrationRoot = hydrateRoot(document, app("ssr"), {
       onRecoverableError: (error, info) => {
         console.error("[HYDRATION DIAG] recoverable", error, info?.componentStack || "");
         if (isHydrationCrash(error)) window.setTimeout(() => renderCsr(error), 0);

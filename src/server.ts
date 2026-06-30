@@ -73,17 +73,14 @@ const WWW_TO_APEX_HOSTS = new Map<string, string>([
 ]);
 
 
-// Content-Security-Policy — script-src is nonce + 'strict-dynamic' only on
-// the production host. In CSP3 browsers, 'strict-dynamic' makes host
-// allowlists in script-src be IGNORED — listing them produces Firefox
-// console warnings without adding any protection. Trust flows from the
-// nonce on the initial scripts to anything they dynamically load. Host
-// allowlists remain on img-src / connect-src / frame-src / style-src
-// where they still apply.
+// Content-Security-Policy — emergency recovery profile.
+// Keep inline scripts allowed because TanStack Start emits critical bootstrap
+// data and PH Labs boot guards as inline scripts. A stale hash-only CSP blocked
+// these scripts in Chrome mobile and left the store on the static refresh page.
 const CSP_TEMPLATE = [
   "default-src 'self'",
-  "script-src 'self' 'strict-dynamic' https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://tagmanager.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://apis.google.com https://www.gstatic.com",
-  "script-src-elem 'self' 'sha256-mrBnEBPEu1cVSfhGrkrw/dBIOJNNQLHdJ61NnrATtfw=' 'sha256-jyIFcdfiq7FRXZ9gsRvlrQ/9AoR9yXerUljboT/aaME=' 'sha256-P76PTj/+WUmS6f0n1sfwajT44t1MjQJYpDlRxTJYKeE=' 'sha256-x0FXfKlW1TW3dYqEupVj71DBtxzhCQY6eo8gTSTNEqI=' 'sha256-1dUE2SWmQf7b3WMy5T0IPlQoQ/qO26kekht68yKNI0c=' 'sha256-yPsXJ27cEeAjHnZfoiHYKch1nRQqMOhIFNk1Ovh7l+U=' 'sha256-Atx3EcQzMKU3+hzT0UoMWZdSotkIW2snZlwb0vZvglM=' 'sha256-xiXK+qAK3o1GPzx/8hQrgS/gkeN839JZc3fK/lhLh/Y=' 'sha256-FZaW1rpBnpzY9HJR8VQSUozeZ+wNA0el8Qs9vRJq2h4=' 'sha256-gDFHc/BaV5luc9YrNvraq8cW6HYuXPsawF+U/YGYs2k=' 'strict-dynamic' https://*.googletagmanager.com https://*.google-analytics.com https://*.google.com https://*.google.co.uk https://*.gstatic.com https://*.stripe.com https://*.wallid.com",
+  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://tagmanager.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://apis.google.com https://www.gstatic.com https://*.google.com https://*.google.co.uk https://*.gstatic.com https://*.stripe.com https://*.wallid.com https://cdn.taboola.com https://www.clarity.ms https://bat.bing.com",
+  "script-src-elem 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://tagmanager.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://apis.google.com https://www.gstatic.com https://*.google.com https://*.google.co.uk https://*.gstatic.com https://*.stripe.com https://*.wallid.com https://cdn.taboola.com https://www.clarity.ms https://bat.bing.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com",
   "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com",
   "style-src-attr 'unsafe-inline'",
@@ -169,7 +166,7 @@ function buildCsp(_nonce: string, hostname?: string): string {
   if (hostname && isLovableHost(hostname)) {
     return CSP_TEMPLATE_PREVIEW;
   }
-  // Nonce removed: scripts validated via 'self' + SHA-256 hashes + 'strict-dynamic' + host allowlist.
+  // Emergency recovery CSP: no per-request nonce, no stale hash list.
   return CSP_TEMPLATE;
 }
 
