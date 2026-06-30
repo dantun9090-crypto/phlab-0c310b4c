@@ -38,7 +38,15 @@ const LEGACY_RULES: Rule[] = [
   { pattern: /phlab\.lovable\.app/gi, label: "phlab.lovable.app" },
 ];
 const RULES_FOR: Record<"dist" | "e2e", Rule[]> = {
-  dist: [TYPO_RULE],
+  // dist/ scan is intentionally narrow: the source-level guard
+  // (scripts/check-domains.ts, run in prebuild) is authoritative for
+  // src → dist content. Anything that lands in dist/ originated in src/
+  // and either: (a) already passed the source guard (intentional, pragma-
+  // allowed), or (b) failed the source guard and the build was rejected
+  // before postbuild ran. The dist scan exists as a belt-and-suspenders
+  // smoke check to catch accidental third-party / generated content
+  // (e.g. inlined vendor data) re-introducing legacy hosts.
+  dist: LEGACY_RULES,
   e2e: [...LEGACY_RULES, TYPO_RULE],
 };
 
