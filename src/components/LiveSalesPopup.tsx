@@ -21,6 +21,21 @@ const prefersReducedMotion = (): boolean =>
   typeof window !== 'undefined' &&
   window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
 
+const isDebug = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    if (window.localStorage?.getItem('livePopupDebug') === '1') return true;
+    if (new URLSearchParams(window.location.search).get('livePopupDebug') === '1') {
+      window.localStorage?.setItem('livePopupDebug', '1');
+      return true;
+    }
+  } catch {}
+  return false;
+};
+const dlog = (...args: unknown[]) => {
+  if (isDebug()) console.log('[LiveSalesPopup]', ...args);
+};
+
 export default function LiveSalesPopup() {
   const pathname = useLocation().pathname;
   const { recentOrders, latestNewOrder } = useLiveOrders();
@@ -32,18 +47,34 @@ export default function LiveSalesPopup() {
   const rotateIdxRef = useRef<number>(0);
   const dismissTimerRef = useRef<number | null>(null);
   const rotateTimerRef = useRef<number | null>(null);
+  const visibleRef = useRef<boolean>(false);
+  const eligibleRef = useRef<LiveOrder[]>([]);
   const reduced = useMemo(() => prefersReducedMotion(), []);
 
   const isHiddenRoute = HIDDEN_ROUTES.some((r) => pathname.startsWith(r));
   const currentUid = auth.currentUser?.uid;
 
-  // Filter eligible orders (recent, not own).
+  // Filter eligible orders (recent, not own). Refreshed live via Firestore snapshot.
   const eligible = useMemo(() => {
     const cutoff = Date.now() - MAX_AGE_MS;
-    return recentOrders.filter(
+    const list = recentOrders.filter(
       (o) => o.createdAtMs >= cutoff && (!currentUid || o.userId !== currentUid),
     );
+    dlog('pool refresh — recentOrders:', recentOrders.length, 'eligible:', list.length, list);
+    return list;
   }, [recentOrders, currentUid]);
+
+  // Keep ref in sync so the rotation interval always sees the freshest pool
+  // without tearing down on every snapshot.
+  useEffect(() => {
+    eligibleRef.current = eligible;
+  }, [eligible]);
+
+  // Track visibility for single-popup lock inside interval closures.
+  useEffect(() => {
+    visibleRef.current = state.visible;
+  }, [state.visible]);
+
 
   const clearDismissTimer = () => {
     if (dismissTimerRef.current) {
