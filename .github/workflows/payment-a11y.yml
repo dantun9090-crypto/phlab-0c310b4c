@@ -1,0 +1,63 @@
+name: Payment a11y (PaymentMethodOptions)
+# Runs the payment selector accessibility suite on every PR + push to main.
+# Fails the build on any NEW serious/critical axe violation, on broken role
+# semantics, or on tap targets that drop below 44×44.
+on:
+  pull_request:
+    paths:
+      - "src/components/PaymentMethodOptions.tsx"
+      - "src/components/PaymentMethodOptions.test.tsx"
+      - "src/routes/__e2e.payment-options.tsx"
+      - "e2e/payment-options-a11y.spec.ts"
+      - "playwright.config.ts"
+      - "vitest.config.ts"
+      - ".github/workflows/payment-a11y.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/components/PaymentMethodOptions.tsx"
+      - "src/components/PaymentMethodOptions.test.tsx"
+      - "src/routes/__e2e.payment-options.tsx"
+      - "e2e/payment-options-a11y.spec.ts"
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Vitest (PaymentMethodOptions)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Unit + responsive tests
+        run: bunx vitest run src/components/PaymentMethodOptions.test.tsx
+
+  e2e:
+    name: Playwright a11y (preview)
+    needs: unit
+    runs-on: ubuntu-latest
+    env:
+      # Always run against the lovable preview build — the harness route is
+      # blocked on production hosts.
+      TEST_BASE_URL: https://id-preview--1f12c255-a30a-4bea-bbab-28d9e6f70804.lovable.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+      - name: Run payment a11y suite
+        run: bunx playwright test e2e/payment-options-a11y.spec.ts --project=chromium
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-payment-a11y
+          path: playwright-report
+          retention-days: 7
