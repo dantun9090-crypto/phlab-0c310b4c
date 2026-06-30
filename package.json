@@ -40,7 +40,8 @@
     "sbom:provenance": "bun scripts/build-provenance.ts",
     "sbom:verify-release": "bash scripts/verify-release-sbom.sh",
     "security:scan": "bun scripts/security-audit.ts",
-    "postbuild": "bun scripts/generate-sbom.ts",
+    "postbuild": "bun scripts/generate-sbom.ts && bun scripts/check-dist-domains.ts",
+    "check:dist-domains": "bun scripts/check-dist-domains.ts",
     "scan:landings": "bun scripts/landing-banned-tokens-scan.ts",
     "test:day-theme": "node scripts/day-theme-snapshots.mjs",
     "test:day-theme:update": "node scripts/day-theme-snapshots.mjs --update"
