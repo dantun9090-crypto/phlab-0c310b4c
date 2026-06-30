@@ -11,7 +11,7 @@ interface PopupState {
 }
 
 const HIDDEN_ROUTES = ['/checkout', '/cart', '/success', '/account', '/login'];
-const AUTO_DISMISS_MS = 2800;
+const AUTO_DISMISS_MS = 5500;
 const ROTATE_INTERVAL_MS = 3000;
 const DEBOUNCE_MS = 1500;
 const SNOOZE_MS = 60_000;
