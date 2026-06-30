@@ -27,7 +27,7 @@ describe("uploadWithRetry", () => {
 
     const p = uploadWithRetry("{}", base, {
       fetch: fetchMock,
-      setTimeout: setTimeoutSpy as unknown as UploadRetryStatus["attempts"] extends number ? typeof setTimeout : never,
+      setTimeout: setTimeoutSpy as unknown as (cb: () => void, ms: number) => unknown,
       onStatus: (s) => statuses.push({ ...s }),
     });
 
@@ -73,7 +73,7 @@ describe("uploadWithRetry", () => {
     const statuses: UploadRetryStatus[] = [];
     const p = uploadWithRetry("{}", base, {
       fetch: fetchMock,
-      setTimeout: setTimeout as unknown as UploadRetryStatus["attempts"] extends number ? typeof setTimeout : never,
+      setTimeout: ((cb: () => void, ms: number) => setTimeout(cb, ms)),
       onStatus: (s) => statuses.push({ ...s }),
     });
 
@@ -96,7 +96,7 @@ describe("uploadWithRetry", () => {
       { htmlTruncated: true, screenshotDropped: true, htmlOriginalLength: 50_000 },
       {
         fetch: fetchMock,
-        setTimeout: setTimeout as unknown as UploadRetryStatus["attempts"] extends number ? typeof setTimeout : never,
+        setTimeout: ((cb: () => void, ms: number) => setTimeout(cb, ms)),
         onStatus: (s) => statuses.push({ ...s }),
       },
     );
