@@ -64,9 +64,9 @@ export const Route = createFileRoute("/")({
               rel: "preload",
               as: "image",
               href: isFirebase ? enc(1280) : src,
-              imagesrcset: isFirebase ? widths.map(w => `${enc(w)} ${w}w`).join(", ") : undefined,
-              imagesizes: isFirebase ? "100vw" : undefined,
-              fetchpriority: "high",
+              imageSrcSet: isFirebase ? widths.map(w => `${enc(w)} ${w}w`).join(", ") : undefined,
+              imageSizes: isFirebase ? "100vw" : undefined,
+              fetchPriority: "high",
             } as const];
           })()
         : []),

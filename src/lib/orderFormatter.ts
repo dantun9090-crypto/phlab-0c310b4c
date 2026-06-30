@@ -15,17 +15,21 @@ interface RawOrderLike {
   id?: string;
   userId?: string;
   userName?: string;
-  customer?: { firstName?: string; uid?: string } | null;
-  items?: Array<{ name?: string; image?: string; imageUrl?: string }> | null;
-  shippingAddress?: { city?: string } | null;
-  orderDate?: { seconds?: number } | Date | null;
-  createdAt?: { seconds?: number } | Date | null;
+  customer?: { firstName?: string; uid?: string; city?: string } | null;
+  items?: Array<{ name?: string; productName?: string; image?: string; imageUrl?: string }> | null;
+  shippingAddress?: { city?: string } | string | null;
+  orderDate?: { seconds?: number } | Date | string | null;
+  createdAt?: { seconds?: number } | Date | string | null;
   status?: string;
 }
 
 const toMs = (v: unknown): number => {
   if (!v) return 0;
   if (v instanceof Date) return v.getTime();
+  if (typeof v === 'string') {
+    const parsed = Date.parse(v);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
   if (typeof v === 'object' && v !== null && 'seconds' in (v as any)) {
     const s = (v as { seconds?: number }).seconds;
     return typeof s === 'number' ? s * 1000 : 0;
@@ -44,11 +48,14 @@ const firstInitial = (name?: string): string => {
 export const mapRawOrderToLive = (raw: RawOrderLike): LiveOrder | null => {
   const id = raw.id;
   const item = raw.items?.[0];
-  const productName = item?.name?.trim();
+  const productName = (item?.name || item?.productName)?.trim();
   if (!id || !productName) return null;
 
   const firstName = raw.customer?.firstName || raw.userName;
-  const city = raw.shippingAddress?.city?.trim() || 'UK';
+  const city =
+    (typeof raw.shippingAddress === 'object' && raw.shippingAddress?.city?.trim()) ||
+    raw.customer?.city?.trim() ||
+    'UK';
   const createdAtMs = toMs(raw.orderDate) || toMs(raw.createdAt);
 
   return {

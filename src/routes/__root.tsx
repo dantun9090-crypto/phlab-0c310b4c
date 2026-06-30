@@ -186,31 +186,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
     if (isHydrationError) {
       markHydrationError();
-      return;
     }
-    if (!isOnline()) return;
-    // Never auto-reload on critical user flows — destroys form/auth/cart state.
-    try {
-      const path = window.location.pathname.toLowerCase();
-      const NEVER = ["/login", "/auth", "/account", "/checkout", "/cart", "/register"];
-      if (NEVER.some((p) => path.startsWith(p))) {
-        console.warn("[RELOAD BLOCKED] Critical route:", path);
-        return;
-      }
-    } catch { /* ignore */ }
-    // Retry once for true stale-route errors, then stop and show this screen.
-    let attempt = 0;
-    try {
-      attempt = Number(sessionStorage.getItem(AUTO_RECOVERY_DONE_KEY) || "0");
-      if (attempt >= 1) return;
-      sessionStorage.setItem(AUTO_RECOVERY_DONE_KEY, String(attempt + 1));
-      sessionStorage.removeItem(HARD_RELOAD_FLAG);
-    } catch { /* ignore */ }
-    const delay = 250 + attempt * 400;
-    const t = setTimeout(() => {
-      void hardReload({ clean: true });
-    }, delay);
-    return () => clearTimeout(t);
   }, [isHydrationError]);
 
   // Track connectivity in real time so the screen can flip without a reload
@@ -498,11 +474,10 @@ const FORCE_SW_CLEANUP = `
     if('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations){
       if(navigator.serviceWorker.controller){
         try{
-          // Persistent (localStorage) — was sessionStorage, which re-fired the
-          // hard reload in every new tab/refresh and produced a "page stuck /
-          // auto-refresh" loop. Now: at most ONE controlled-SW recovery reload
-          // per device, ever. The unregister + cache-clear path below still
-          // runs on every load, but without the visibility-hidden + replace.
+              // Never auto-navigate here. Old builds used location.replace()
+              // during SW cleanup; after publishes that created refresh loops.
+              // Cleanup can run in the background and the current page may keep
+              // rendering normally.
           var KEY='__phl_controlled_sw_reload_done_v2';
           var done=null;
           try{ done=localStorage.getItem(KEY); }catch(e){}
@@ -510,8 +485,7 @@ const FORCE_SW_CLEANUP = `
             try{ localStorage.setItem(KEY,String(Date.now())); }catch(e){}
             navigator.serviceWorker.getRegistrations().then(function(registrations){
               return Promise.all(registrations.map(function(registration){ return registration.unregister().catch(function(){}); }));
-            }).then(clearAllCaches, clearAllCaches).finally(function(){ location.replace(recoveryUrl('controlled-sw')); });
-            if(document.documentElement) document.documentElement.style.visibility='hidden';
+            }).then(clearAllCaches, clearAllCaches);
             return;
           }
         }catch(e){}
@@ -861,10 +835,10 @@ const STALE_ASSET_RECOVERY = `
     };
     var hasHydration=function(){ try{ return !!sessionStorage.getItem(HYDRATION); }catch(e){ return false; } };
     var showLimit=function(){
-      try{ console.error('[STALE_ASSET] Blocked reload — limit reached'); }catch(e){}
+      try{ console.error('[STALE_ASSET] Automatic reload blocked'); }catch(e){}
       try{
         if(!document.body){ document.addEventListener('DOMContentLoaded',showLimit,{once:true}); return; }
-        document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Update available</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">Update available. Please close this tab and reopen.</p><button id="phl-stale-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer">Refresh manually</button></div></div>';
+        document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Update available</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">A fresh version is available. Automatic refresh is blocked to stop loops.</p><button id="phl-stale-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer">Refresh manually</button></div></div>';
         var btn=document.getElementById('phl-stale-refresh');
         if(btn) btn.addEventListener('click',function(){ location.reload(); });
       }catch(e){}
@@ -892,7 +866,7 @@ const STALE_ASSET_RECOVERY = `
       try{
         var last=Number(sessionStorage.getItem(KEY)||'0');
         var count=readCount();
-        if(count>=2||onRecoveryUrl()){ showLimit(); return; }
+        if(count>=1||onRecoveryUrl()){ showLimit(); return; }
         if(last&&Date.now()-last<30000) return;
       }catch(e){}
       // Verify the asset is actually missing before forcing a reload.
@@ -905,7 +879,7 @@ const STALE_ASSET_RECOVERY = `
             try{
               if(onRecoveryUrl()){ showLimit(); return; }
               var count=readCount();
-              if(count>=2){ showLimit(); return; }
+              if(count>=1){ showLimit(); return; }
               count=count+1;
               sessionStorage.setItem(KEY,String(Date.now()));
               sessionStorage.setItem(COUNT,String(count));
@@ -920,14 +894,7 @@ const STALE_ASSET_RECOVERY = `
               fetch('/api/public/post-publish-check',{method:'GET',cache:'no-store',credentials:'omit',keepalive:true}).catch(function(){});
             }catch(e){}
 
-            setTimeout(function(){
-              var qs;
-              try{
-                qs=new URLSearchParams(location.search);
-                qs.set('sw','off'); qs.set('_r','stale-asset'); qs.set('stale_recovery','1');
-                location.replace(location.pathname+'?'+qs.toString()+location.hash);
-              }catch(e){ location.replace('/?sw=off&_r=stale-asset&stale_recovery=1'); }
-            }, 2500);
+            showLimit();
           }
         }).catch(function(){});
       }catch(e){}
