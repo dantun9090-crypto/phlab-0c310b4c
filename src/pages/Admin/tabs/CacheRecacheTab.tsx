@@ -332,34 +332,70 @@ export default function CacheRecacheTab() {
 
 
 
-      {/* Cloudflare full purge */}
+      {/* Cloudflare scoped purge */}
       <div className="bg-[#0b1a30]/70 border border-white/[0.07] rounded-xl p-4 space-y-3">
         <div className="flex items-start gap-3">
           <div className="w-9 h-9 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
             <Trash2 className="w-4 h-4 text-red-400" />
           </div>
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-white">Purge Cloudflare cache — everything</h3>
+            <h3 className="text-sm font-semibold text-white">Purge Cloudflare cache — choose scope</h3>
             <p className="text-xs text-[#9cb8d9] mt-1">
-              Calls <code className="text-emerald-400">POST /zones/{`{zone}`}/purge_cache</code> with{' '}
-              <code className="text-emerald-400">{`{"purge_everything": true}`}</code>. Removes every cached HTML, asset and prerender
-              snapshot on Cloudflare&apos;s edge for the phlabs.co.uk zone. Product edits automatically purge the affected product/category URLs and recache desktop + mobile bot snapshots.
+              Calls <code className="text-emerald-400">POST /zones/{`{zone}`}/purge_cache</code>. A post-purge smoke
+              test fetches <code>/</code>, <code>/products</code> and a product page, asserts HTTP 200 and verifies
+              GA/Ads beacons are still rendered. Failures and timeouts trigger a Telegram alert.
             </p>
-            <div className="mt-2 flex items-start gap-2 text-xs text-amber-300/90">
-              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              <span>Next visitor on every URL pays a cache-MISS (≈ 500–800&nbsp;ms instead of ≈ 50&nbsp;ms).</span>
-            </div>
           </div>
         </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {([
+            { v: 'all', label: 'Full purge', desc: 'HTML + assets', Icon: Globe },
+            { v: 'html', label: 'HTML only', desc: 'Top 30 pages', Icon: FileText },
+            { v: 'assets', label: 'Assets only', desc: 'Pro plan: full', Icon: ImageIcon },
+          ] as const).map(({ v, label, desc, Icon }) => {
+            const active = scope === v;
+            return (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setScope(v)}
+                className={`text-left p-3 rounded-lg border-2 transition-colors ${
+                  active
+                    ? 'border-red-500 bg-red-500/10'
+                    : 'border-slate-700 hover:border-slate-500 bg-slate-800/40'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon className={`w-4 h-4 ${active ? 'text-red-300' : 'text-slate-400'}`} />
+                  <span className="text-sm font-semibold text-white">{label}</span>
+                </div>
+                <div className="text-[11px] text-[#9cb8d9] mt-1">{desc}</div>
+              </button>
+            );
+          })}
+        </div>
+
+        <label className="flex items-center gap-2 text-xs text-[#9cb8d9]">
+          <input
+            type="checkbox"
+            checked={runSmoke}
+            onChange={(e) => setRunSmoke(e.target.checked)}
+            className="w-4 h-4 accent-red-500"
+          />
+          Run post-purge smoke test (HTML 200 + GA/Ads beacons present)
+        </label>
+
         <button
-          onClick={runPurgeEverything}
+          onClick={runScopedPurge}
           disabled={purging}
           className="w-full sm:w-auto min-h-[48px] px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
         >
           {purging ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-          Purge everything
+          Purge ({scope})
         </button>
       </div>
+
 
       {/* Cloudflare selective purge */}
       <div className="bg-[#0b1a30]/70 border border-white/[0.07] rounded-xl p-4 space-y-3">
