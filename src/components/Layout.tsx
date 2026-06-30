@@ -654,7 +654,7 @@ export function Layout({ children }: LayoutProps) {
                     id="phl-research-disclaimer"
                     role="note"
                     aria-label="Research use disclaimer"
-                    className="mt-1 hidden max-w-[280px] truncate text-[8px] font-bold uppercase tracking-[0.12em] text-emerald-200/65 sm:block"
+                    className="mt-1 block max-w-[170px] truncate text-[8px] font-bold uppercase tracking-[0.10em] text-emerald-200/65 sm:max-w-[280px] sm:tracking-[0.12em]"
                   >
                     For Laboratory Research Use Only — Not for Human or Veterinary Consumption
                   </span>
