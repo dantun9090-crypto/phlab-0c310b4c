@@ -52,6 +52,7 @@ import { Route as CompareSlugRouteImport } from './routes/compare.$slug'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
+import { Route as AdminHealthRouteImport } from './routes/admin.health'
 import { Route as MarketingCompoundRouteImport } from './routes/_marketing.compound'
 import { Route as _e2eWatchdogPanelRouteImport } from './routes/__e2e.watchdog-panel'
 import { Route as _e2ePaymentOptionsRouteImport } from './routes/__e2e.payment-options'
@@ -312,6 +313,11 @@ const AdminMerchantFeedPreviewRoute =
     path: '/merchant-feed-preview',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminHealthRoute = AdminHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
+  getParentRoute: () => AdminRoute,
+} as any)
 const MarketingCompoundRoute = MarketingCompoundRouteImport.update({
   id: '/compound',
   path: '/compound',
@@ -567,6 +573,7 @@ export interface FileRoutesByFullPath {
   '/payment-options': typeof _e2ePaymentOptionsRoute
   '/watchdog-panel': typeof _e2eWatchdogPanelRoute
   '/compound': typeof MarketingCompoundRoute
+  '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -651,6 +658,7 @@ export interface FileRoutesByTo {
   '/payment-options': typeof _e2ePaymentOptionsRoute
   '/watchdog-panel': typeof _e2eWatchdogPanelRoute
   '/compound': typeof MarketingCompoundRoute
+  '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -738,6 +746,7 @@ export interface FileRoutesById {
   '/__e2e/payment-options': typeof _e2ePaymentOptionsRoute
   '/__e2e/watchdog-panel': typeof _e2eWatchdogPanelRoute
   '/_marketing/compound': typeof MarketingCompoundRoute
+  '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
@@ -825,6 +834,7 @@ export interface FileRouteTypes {
     | '/payment-options'
     | '/watchdog-panel'
     | '/compound'
+    | '/admin/health'
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
     | '/checkout/success'
@@ -909,6 +919,7 @@ export interface FileRouteTypes {
     | '/payment-options'
     | '/watchdog-panel'
     | '/compound'
+    | '/admin/health'
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
     | '/checkout/success'
@@ -995,6 +1006,7 @@ export interface FileRouteTypes {
     | '/__e2e/payment-options'
     | '/__e2e/watchdog-panel'
     | '/_marketing/compound'
+    | '/admin/health'
     | '/admin/merchant-feed-preview'
     | '/checkout/cancel'
     | '/checkout/success'
@@ -1431,6 +1443,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMerchantFeedPreviewRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/health': {
+      id: '/admin/health'
+      path: '/health'
+      fullPath: '/admin/health'
+      preLoaderRoute: typeof AdminHealthRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_marketing/compound': {
       id: '/_marketing/compound'
       path: '/compound'
@@ -1734,10 +1753,12 @@ const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
+  AdminHealthRoute: typeof AdminHealthRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminHealthRoute: AdminHealthRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
 }
 
