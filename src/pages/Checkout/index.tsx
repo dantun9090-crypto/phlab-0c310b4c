@@ -647,6 +647,18 @@ export default function CheckoutPage() {
     }
 
     try {
+      // Cache hashed userData for Enhanced Conversions so add_payment_info
+      // and any subsequent begin_checkout / cart-recovery events carry it
+      // even for guest checkout (no Firebase auth user yet).
+      const { cacheUserDataForEnhancedConversions } = await import('@/lib/analytics');
+      cacheUserDataForEnhancedConversions({
+        email: form.email,
+        phone: form.phone,
+        firstName: form.firstName,
+        lastName: form.lastName,
+        country: 'GB',
+        postalCode: form.postcode,
+      });
       trackAddPaymentInfo(
         cartToGaItems(),
         Number(total) || 0,
