@@ -137,4 +137,116 @@ describe("PaymentMethodOptions", () => {
     expect(onChange).toHaveBeenNthCalledWith(1, "pay_by_bank");
     expect(onChange).toHaveBeenNthCalledWith(2, "bank_transfer");
   });
+
+  describe("accessibility semantics", () => {
+    it("exposes a radiogroup with role=radio + aria-checked on each option", () => {
+      render(
+        <PaymentMethodOptions
+          options={FENA_PRIMARY}
+          value="pay_by_bank"
+          onChange={noop}
+        />,
+      );
+      const group = screen.getByRole("radiogroup", {
+        name: /choose how you want to pay/i,
+      });
+      expect(group).toBeInTheDocument();
+
+      const payByBank = screen.getByTestId("pay-by-bank-button");
+      const manual = screen.getByTestId("manual-bank-transfer-button");
+      expect(payByBank).toHaveAttribute("role", "radio");
+      expect(manual).toHaveAttribute("role", "radio");
+      expect(payByBank).toHaveAttribute("aria-checked", "true");
+      expect(manual).toHaveAttribute("aria-checked", "false");
+    });
+
+    it("links aria-describedby to the visible instructions for the selected option", () => {
+      const { rerender } = render(
+        <PaymentMethodOptions
+          options={FENA_PRIMARY}
+          value="pay_by_bank"
+          onChange={noop}
+        />,
+      );
+      const payByBank = screen.getByTestId("pay-by-bank-button");
+      const describedBy = payByBank.getAttribute("aria-describedby");
+      expect(describedBy).toBe("pay-by-bank-instructions");
+      expect(document.getElementById(describedBy!)).toBeInTheDocument();
+
+      rerender(
+        <PaymentMethodOptions
+          options={FENA_PRIMARY}
+          value="bank_transfer"
+          onChange={noop}
+        />,
+      );
+      const manual = screen.getByTestId("manual-bank-transfer-button");
+      expect(manual.getAttribute("aria-describedby")).toBe(
+        "manual-bank-instructions",
+      );
+      expect(
+        document.getElementById("manual-bank-instructions"),
+      ).toBeInTheDocument();
+      // unselected option must not carry a stale describedby
+      expect(
+        screen.getByTestId("pay-by-bank-button").getAttribute("aria-describedby"),
+      ).toBeNull();
+    });
+
+    it("announces selected state via a visible chip and screen-reader-only text", () => {
+      render(
+        <PaymentMethodOptions
+          options={FENA_PRIMARY}
+          value="bank_transfer"
+          onChange={noop}
+        />,
+      );
+      const manual = screen.getByTestId("manual-bank-transfer-button");
+      expect(manual.textContent).toMatch(/Selected/);
+      expect(manual.textContent).toMatch(/Selected\. We will email you/i);
+    });
+
+    it("renders the 4-step Open Banking instructions when pay_by_bank is selected", () => {
+      render(
+        <PaymentMethodOptions
+          options={FENA_PRIMARY}
+          value="pay_by_bank"
+          onChange={noop}
+        />,
+      );
+      const region = document.getElementById("pay-by-bank-instructions")!;
+      expect(region).toBeInTheDocument();
+      expect(region.querySelectorAll("ol > li").length).toBe(4);
+    });
+
+    it("renders the 4-step Manual Bank Transfer instructions when bank_transfer is selected", () => {
+      render(
+        <PaymentMethodOptions
+          options={FENA_PRIMARY}
+          value="bank_transfer"
+          onChange={noop}
+        />,
+      );
+      const region = document.getElementById("manual-bank-instructions")!;
+      expect(region).toBeInTheDocument();
+      expect(region.querySelectorAll("ol > li").length).toBe(4);
+    });
+
+    it("keeps each option as a single keyboard-focusable button (no tabindex traps)", () => {
+      render(
+        <PaymentMethodOptions
+          options={FENA_PRIMARY}
+          value="pay_by_bank"
+          onChange={noop}
+        />,
+      );
+      for (const id of ["pay-by-bank-button", "manual-bank-transfer-button"]) {
+        const btn = screen.getByTestId(id);
+        expect(btn.tagName).toBe("BUTTON");
+        // Native buttons are tabbable; explicit tabindex would break order.
+        expect(btn.hasAttribute("tabindex")).toBe(false);
+      }
+    });
+  });
 });
+
