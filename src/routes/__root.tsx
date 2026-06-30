@@ -623,14 +623,10 @@ const BOOT_WATCHDOG = `
     var tick=function(){
       if(hasPaint()) return;
       if(Date.now()-started<7000){ setTimeout(tick,700); return; }
-      try{
-        var last=Number(sessionStorage.getItem(WATCH)||'0');
-        if(last&&Date.now()-last<60000) return;
-        sessionStorage.setItem(WATCH,String(Date.now()));
-        qs.set('sw','off');
-        qs.delete('_r');
-        location.replace(location.pathname+'?'+qs.toString()+location.hash);
-      }catch(e){ location.replace('/?sw=off'); }
+      // Watchdog auto-reload DISABLED 2026-06-30 — was causing a constant
+      // refresh loop when hasPaint() heuristics missed legitimate content.
+      // Detection retained for console diagnostics only; no navigation.
+      try{ console.warn('[phlabs] blank-watchdog: no paint after 7s (auto-reload disabled)'); }catch(e){}
     };
     if(document.readyState==='loading'){
       document.addEventListener('DOMContentLoaded',function(){ setTimeout(tick,7000); },{once:true});
