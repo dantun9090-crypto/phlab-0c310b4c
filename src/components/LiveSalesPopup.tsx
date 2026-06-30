@@ -106,9 +106,11 @@ export default function LiveSalesPopup() {
     const kickoff = window.setTimeout(tick, 500);
     rotateTimerRef.current = window.setInterval(tick, ROTATE_INTERVAL_MS);
     return () => {
+      window.clearTimeout(kickoff);
       if (rotateTimerRef.current) window.clearInterval(rotateTimerRef.current);
     };
   }, [eligible, isHiddenRoute, hovered]);
+
 
   // Cleanup on unmount
   useEffect(() => () => clearDismissTimer(), []);
