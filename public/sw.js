@@ -37,11 +37,11 @@ self.addEventListener('activate', (event) => {
     } catch (_) {
       /* ignore */
     }
-    try {
-      await self.clients.claim();
-    } catch (_) {
-      /* ignore */
-    }
+    // Intentionally NOT calling self.clients.claim() — claiming open tabs
+    // fires `controllerchange` in every browser session right after publish,
+    // which combined with any reload-on-controllerchange logic causes an
+    // infinite refresh loop. The new SW will take control on the next
+    // natural navigation, which is the safe default.
   })());
 });
 
