@@ -125,6 +125,7 @@ async function loadSettings(): Promise<MonitorSettings> {
       rate_limited: Number(t.rate_limited ?? DEFAULT_THRESHOLDS.rate_limited),
       research_overlay: Number(t.research_overlay ?? DEFAULT_THRESHOLDS.research_overlay),
       compound_overlay: Number(t.compound_overlay ?? DEFAULT_THRESHOLDS.compound_overlay),
+      client_exception: Number(t.client_exception ?? DEFAULT_THRESHOLDS.client_exception),
     },
     alertEmail: typeof doc?.alertEmail === "string" ? doc.alertEmail : DEFAULT_ALERT_EMAIL,
     slackWebhookUrl:
