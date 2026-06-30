@@ -193,6 +193,7 @@ function alertSubject(type: EventType, count: number, windowMin: number): string
     rate_limited: "429 rate-limit spike",
     research_overlay: "/research overlay detected",
     compound_overlay: "/compound overlay detected",
+    client_exception: "client JS exception",
   };
   return `[PH Labs] ${labels[type]}: ${count} in ${windowMin}m`;
 }
