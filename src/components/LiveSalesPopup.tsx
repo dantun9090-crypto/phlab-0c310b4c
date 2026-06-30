@@ -1,0 +1,200 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouterState } from '@tanstack/react-router';
+import { X, Package } from 'lucide-react';
+import { useLiveOrders } from '@/hooks/useLiveOrders';
+import { formatLivePopupText, type LiveOrder } from '@/lib/orderFormatter';
+import { auth } from '@/lib/firebase';
+
+interface PopupState {
+  order: LiveOrder | null;
+  visible: boolean;
+}
+
+const HIDDEN_ROUTES = ['/checkout', '/cart', '/success', '/account', '/login'];
+const AUTO_DISMISS_MS = 6000;
+const ROTATE_INTERVAL_MS = 8000;
+const DEBOUNCE_MS = 5000;
+const SNOOZE_MS = 60_000;
+const MAX_AGE_MS = 48 * 60 * 60 * 1000;
+
+const prefersReducedMotion = (): boolean =>
+  typeof window !== 'undefined' &&
+  window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+
+export default function LiveSalesPopup() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { recentOrders, latestNewOrder } = useLiveOrders();
+  const [state, setState] = useState<PopupState>({ order: null, visible: false });
+  const [hovered, setHovered] = useState(false);
+  const snoozeUntilRef = useRef<number>(0);
+  const lastTriggerRef = useRef<number>(0);
+  const queueRef = useRef<LiveOrder[]>([]);
+  const rotateIdxRef = useRef<number>(0);
+  const dismissTimerRef = useRef<number | null>(null);
+  const rotateTimerRef = useRef<number | null>(null);
+  const reduced = useMemo(() => prefersReducedMotion(), []);
+
+  const isHiddenRoute = HIDDEN_ROUTES.some((r) => pathname.startsWith(r));
+  const currentUid = auth.currentUser?.uid;
+
+  // Filter eligible orders (recent, not own).
+  const eligible = useMemo(() => {
+    const cutoff = Date.now() - MAX_AGE_MS;
+    return recentOrders.filter(
+      (o) => o.createdAtMs >= cutoff && (!currentUid || o.userId !== currentUid),
+    );
+  }, [recentOrders, currentUid]);
+
+  const clearDismissTimer = () => {
+    if (dismissTimerRef.current) {
+      window.clearTimeout(dismissTimerRef.current);
+      dismissTimerRef.current = null;
+    }
+  };
+
+  const scheduleDismiss = () => {
+    clearDismissTimer();
+    dismissTimerRef.current = window.setTimeout(() => {
+      setState((s) => ({ ...s, visible: false }));
+    }, AUTO_DISMISS_MS);
+  };
+
+  const showOrder = (order: LiveOrder) => {
+    const now = Date.now();
+    if (now - lastTriggerRef.current < DEBOUNCE_MS) {
+      // queue it
+      if (!queueRef.current.find((o) => o.id === order.id)) queueRef.current.push(order);
+      return;
+    }
+    lastTriggerRef.current = now;
+    setState({ order, visible: true });
+    scheduleDismiss();
+  };
+
+  // New order arrival
+  useEffect(() => {
+    if (!latestNewOrder || isHiddenRoute) return;
+    if (Date.now() < snoozeUntilRef.current) return;
+    if (currentUid && latestNewOrder.userId === currentUid) return;
+    showOrder(latestNewOrder);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [latestNewOrder]);
+
+  // Rotation through recent orders
+  useEffect(() => {
+    if (isHiddenRoute || eligible.length === 0) return;
+    const tick = () => {
+      if (hovered) return;
+      if (Date.now() < snoozeUntilRef.current) return;
+      // process queue first
+      const next = queueRef.current.shift();
+      if (next) {
+        setState({ order: next, visible: true });
+        lastTriggerRef.current = Date.now();
+        scheduleDismiss();
+        return;
+      }
+      const pool = eligible.slice(0, 8);
+      if (pool.length === 0) return;
+      const order = pool[rotateIdxRef.current % pool.length];
+      rotateIdxRef.current += 1;
+      setState({ order, visible: true });
+      lastTriggerRef.current = Date.now();
+      scheduleDismiss();
+    };
+    rotateTimerRef.current = window.setInterval(tick, ROTATE_INTERVAL_MS);
+    return () => {
+      if (rotateTimerRef.current) window.clearInterval(rotateTimerRef.current);
+    };
+  }, [eligible, isHiddenRoute, hovered]);
+
+  // Cleanup on unmount
+  useEffect(() => () => clearDismissTimer(), []);
+
+  // Pause on hover
+  const handleMouseEnter = () => {
+    setHovered(true);
+    clearDismissTimer();
+  };
+  const handleMouseLeave = () => {
+    setHovered(false);
+    if (state.visible) scheduleDismiss();
+  };
+
+  const handleClose = () => {
+    snoozeUntilRef.current = Date.now() + SNOOZE_MS;
+    queueRef.current = [];
+    setState((s) => ({ ...s, visible: false }));
+  };
+
+  if (isHiddenRoute || !state.order) return null;
+
+  const { order, visible } = state;
+  const text = formatLivePopupText(order);
+
+  const transition = reduced ? 'none' : 'transform 400ms ease-out, opacity 300ms ease-out';
+  const transform = visible ? 'translateX(0)' : reduced ? 'none' : 'translateX(110%)';
+  const opacity = visible ? 1 : 0;
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="fixed z-[9998] pointer-events-auto"
+      style={{
+        bottom: 'max(12px, env(safe-area-inset-bottom))',
+        right: 12,
+        maxWidth: 'min(320px, calc(100vw - 24px))',
+        width: '92vw',
+        transform,
+        opacity,
+        transition,
+      }}
+    >
+      <div
+        className="flex items-center gap-3 rounded-xl border border-white/10 p-3 pr-8 shadow-2xl backdrop-blur"
+        style={{ background: 'rgba(2, 6, 23, 0.92)' }}
+      >
+        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-800">
+          {order.productImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={order.productImage} alt="" className="h-full w-full object-cover" loading="lazy" />
+          ) : (
+            <Package className="h-5 w-5 text-emerald-400" aria-hidden="true" />
+          )}
+          <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+          </span>
+        </div>
+
+        <div className="min-w-0 flex-1 text-[13px] leading-snug text-white">
+          <div className="mb-0.5 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
+            <span>Live</span>
+          </div>
+          <p className="truncate" title={text}>{text}</p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleClose}
+          aria-label="Dismiss notification"
+          className="absolute right-1.5 top-1.5 rounded p-1 text-slate-400 hover:bg-white/10 hover:text-white transition-colors"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <style>{`
+        @media (min-width: 768px) {
+          [role="status"][aria-live="polite"] {
+            right: 16px !important;
+            bottom: max(16px, env(safe-area-inset-bottom)) !important;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
