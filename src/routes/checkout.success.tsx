@@ -26,16 +26,33 @@ async function fireGaPurchaseOnce(orderId: string, snapData?: Record<string, unk
     }
     const totalRaw = (data.total ?? data.totalPrice ?? data.amount ?? 0) as number | string;
     const value = typeof totalRaw === "string" ? parseFloat(totalRaw) : Number(totalRaw);
+    const taxRaw = (data.vatAmount ?? data.tax ?? 0) as number | string;
+    const tax = typeof taxRaw === "string" ? parseFloat(taxRaw) : Number(taxRaw);
+    const shipRaw = (data.shippingCost ?? data.shippingTotal ?? data.shipping ?? 0) as number | string;
+    const shipping = typeof shipRaw === "number" ? shipRaw : (typeof shipRaw === "string" ? parseFloat(shipRaw) : 0);
     const rawItems = Array.isArray(data.items) ? (data.items as Array<Record<string, unknown>>) : [];
     const items: GaItem[] = rawItems.map((it) => ({
       item_id: String(it.id ?? it.productId ?? it.sku ?? it.slug ?? ""),
       item_name: String(it.name ?? it.title ?? "Item"),
       item_variant: it.variantName ? String(it.variantName) : (it.variant ? String(it.variant) : undefined),
-      price: Number(it.priceNum ?? it.price ?? 0),
+      price: Number(it.priceNum ?? it.price ?? 0), // inc-VAT per unit (UK B2C)
       quantity: Number(it.quantity ?? 1),
       currency: "GBP",
     }));
-    trackPurchase(orderId, Number.isFinite(value) ? value : 0, items);
+    const ship = (data.shippingAddress ?? data.shipping_address ?? {}) as Record<string, unknown>;
+    const userData = {
+      email: String(data.email ?? data.customerEmail ?? ship.email ?? "") || undefined,
+      phone: String(data.phone ?? ship.phone ?? "") || undefined,
+      firstName: String(ship.firstName ?? ship.first_name ?? "") || undefined,
+      lastName: String(ship.lastName ?? ship.last_name ?? "") || undefined,
+      country: String(ship.country ?? ship.countryCode ?? "GB") || undefined,
+      postalCode: String(ship.postalCode ?? ship.postcode ?? ship.zip ?? "") || undefined,
+    };
+    trackPurchase(orderId, Number.isFinite(value) ? value : 0, items, {
+      tax: Number.isFinite(tax) ? tax : 0,
+      shipping: Number.isFinite(shipping) ? shipping : 0,
+      userData,
+    });
     trackBingPurchase(orderId);
     try { localStorage.setItem(key, "1"); } catch { /* ignore */ }
   } catch { /* ignore — analytics must never break the success page */ }
