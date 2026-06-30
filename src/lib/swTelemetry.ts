@@ -76,17 +76,73 @@ function writeBuffer(items: BufferedEvent[]): void {
   }
 }
 
+export interface SwTelemetryDebugStats {
+  queueSize: number;
+  lastFlushAt: number | null;
+  lastFlushStatus: 'idle' | 'ok' | 'error' | 'buffered';
+  lastFlushError: string | null;
+  lastEventAt: number | null;
+  lastEvent: SwTelemetryEvent | null;
+  writes: number;
+  failures: number;
+  sessionId: string;
+  buildId: string;
+}
+
+const stats: SwTelemetryDebugStats = {
+  queueSize: 0,
+  lastFlushAt: null,
+  lastFlushStatus: 'idle',
+  lastFlushError: null,
+  lastEventAt: null,
+  lastEvent: null,
+  writes: 0,
+  failures: 0,
+  sessionId: '',
+  buildId: '',
+};
+
+function notifyStats() {
+  try {
+    stats.queueSize = readBuffer().length;
+    window.dispatchEvent(new CustomEvent('phl-sw-tel-stats', { detail: { ...stats } }));
+  } catch { /* ignore */ }
+}
+
+export function getSwTelemetryDebugStats(): SwTelemetryDebugStats {
+  try {
+    stats.queueSize = readBuffer().length;
+    stats.sessionId = getSessionId();
+    stats.buildId = currentBuildId();
+  } catch { /* ignore */ }
+  return { ...stats };
+}
+
 async function persist(ev: BufferedEvent): Promise<void> {
-  await addDoc(collection(db, 'sw_telemetry'), {
-    event: ev.event,
-    clientTs: ev.ts,
-    buildId: ev.buildId,
-    url: ev.url.slice(0, 500),
-    userAgent: ev.ua.slice(0, 300),
-    sessionId: ev.sessionId,
-    extra: ev.extra ? JSON.stringify(ev.extra).slice(0, 500) : null,
-    createdAt: serverTimestamp(),
-  });
+  try {
+    await addDoc(collection(db, 'sw_telemetry'), {
+      event: ev.event,
+      clientTs: ev.ts,
+      buildId: ev.buildId,
+      url: ev.url.slice(0, 500),
+      userAgent: ev.ua.slice(0, 300),
+      sessionId: ev.sessionId,
+      extra: ev.extra ? JSON.stringify(ev.extra).slice(0, 500) : null,
+      createdAt: serverTimestamp(),
+    });
+    stats.writes += 1;
+    stats.lastFlushAt = Date.now();
+    stats.lastFlushStatus = 'ok';
+    stats.lastFlushError = null;
+    notifyStats();
+  } catch (err) {
+    stats.failures += 1;
+    stats.lastFlushAt = Date.now();
+    stats.lastFlushStatus = 'error';
+    stats.lastFlushError = String((err as Error)?.message || err).slice(0, 240);
+    notifyStats();
+    throw err;
+  }
 }
 
 export function logSwTelemetry(
@@ -103,6 +159,8 @@ export function logSwTelemetry(
     sessionId: getSessionId(),
     extra,
   };
+  stats.lastEvent = event;
+  stats.lastEventAt = item.ts;
   try {
     console.info('[sw-telemetry]', event, extra || '');
   } catch {
@@ -113,6 +171,8 @@ export function logSwTelemetry(
     const buf = readBuffer();
     buf.push(item);
     writeBuffer(buf);
+    stats.lastFlushStatus = 'buffered';
+    notifyStats();
   });
 }
 
@@ -126,6 +186,8 @@ function flushBuffer(): void {
       const cur = readBuffer();
       cur.push(item);
       writeBuffer(cur);
+      stats.lastFlushStatus = 'buffered';
+      notifyStats();
     });
   }
 }

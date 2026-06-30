@@ -128,6 +128,7 @@ const navGroups = [
       { id: 'healthmonitor', label: 'Health Monitor', icon: Activity },
       { id: 'infrahealth', label: 'Infrastructure Health', icon: Activity },
       { id: 'purgeincidents', label: 'Purge Incidents', icon: Activity },
+      { id: 'swtelemetrydebug', label: 'SW Telemetry Debug', icon: Activity },
     ],
   },
 ];
