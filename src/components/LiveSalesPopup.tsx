@@ -186,7 +186,7 @@ export default function LiveSalesPopup() {
   const text = formatLivePopupText(order);
 
   const transition = reduced ? 'none' : 'transform 400ms ease-out, opacity 300ms ease-out';
-  const transform = visible ? 'translateX(0)' : reduced ? 'none' : 'translateX(110%)';
+  const transform = visible ? 'translateX(0)' : reduced ? 'none' : 'translateX(-110%)';
   const opacity = visible ? 1 : 0;
 
   return (
