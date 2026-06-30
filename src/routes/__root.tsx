@@ -521,56 +521,32 @@ const BOOT_WATCHDOG = `
       }catch(e){ return false; }
     };
     if(qs.get('sw')==='off'){
-      var DONE='__phl_sw_off_done';
-      var lastDone=0;
-      try{ lastDone=Number(sessionStorage.getItem(DONE)||'0'); }catch(e){}
-      if(lastDone && Date.now()-lastDone<10000){
-        // Already cleaned this session — strip recovery-only parameters.
-        try{
-          qs.delete('sw');
-          qs.delete('_r');
-            qs.delete('stale_recovery');
-          var clean=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
-          history.replaceState(null,'',clean);
-        }catch(e){}
-      } else {
-        var jobs=[];
-        // 1. Emergency cleanup: delete every Cache Storage bucket on this origin.
-        try{
-          if('caches' in window){
-            jobs.push(settle(caches.keys().then(function(ks){
-              return Promise.all(ks.filter(ownCache).map(function(k){ return settle(caches.delete(k)); }));
-            })));
-          }
-        }catch(e){}
-        // 2. Emergency cleanup: unregister every service worker on this origin.
-        try{
-          if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){
-            jobs.push(settle(navigator.serviceWorker.getRegistrations().then(function(rs){
-              return Promise.all(rs.filter(ownReg).map(function(r){ return settle(r.unregister()); }));
-            })));
-          }
-        }catch(e){}
-        // 3. Clear only PH Labs recovery flags, not all site/browser storage.
-        try{ localStorage.removeItem('php_pwa_prompted'); sessionStorage.removeItem('__phl_hard_reload_in_flight'); sessionStorage.removeItem('__phl_route_err_reload_at'); sessionStorage.removeItem('__phl_route_err_reload_count'); sessionStorage.removeItem('__phl_boot_reload_at'); sessionStorage.removeItem('__phl_boot_reload_count'); }catch(e){}
-        // 4. Wait (max 4s) for cleanup then hard reload to a clean URL.
-        var FALLBACK=setTimeout(finish, 4000);
-        function finish(){
-          clearTimeout(FALLBACK);
-          try{ sessionStorage.setItem(DONE,String(Date.now())); }catch(e){}
-          try{
-            qs.delete('sw');
-            qs.delete('_r');
-            qs.delete('stale_recovery');
-            var url=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
-            location.replace(url);
-          }catch(e){ location.reload(); }
+      // Legacy recovery URLs used to clear caches and then auto-reload. That
+      // created endless loops after publish when old HTML kept reintroducing
+      // ?sw=off. Now we strip the recovery-only params, run cleanup in the
+      // background, and continue booting without any automatic navigation.
+      try{
+        qs.delete('sw');
+        qs.delete('_r');
+        qs.delete('stale_recovery');
+        var cleanSwUrl=location.pathname+(qs.toString()?'?'+qs.toString():'')+location.hash;
+        history.replaceState(null,'',cleanSwUrl);
+      }catch(e){}
+      try{
+        if('caches' in window){
+          settle(caches.keys().then(function(ks){
+            return Promise.all(ks.filter(ownCache).map(function(k){ return settle(caches.delete(k)); }));
+          }));
         }
-        Promise.all(jobs).then(finish, finish);
-        // Stop further script eval on this page — we're about to reload.
-        if(document.documentElement) document.documentElement.style.visibility='hidden';
-        return;
-      }
+      }catch(e){}
+      try{
+        if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){
+          settle(navigator.serviceWorker.getRegistrations().then(function(rs){
+            return Promise.all(rs.filter(ownReg).map(function(r){ return settle(r.unregister()); }));
+          }));
+        }
+      }catch(e){}
+      try{ localStorage.removeItem('php_pwa_prompted'); sessionStorage.removeItem('__phl_hard_reload_in_flight'); sessionStorage.removeItem('__phl_route_err_reload_at'); sessionStorage.removeItem('__phl_route_err_reload_count'); sessionStorage.removeItem('__phl_boot_reload_at'); sessionStorage.removeItem('__phl_boot_reload_count'); }catch(e){}
     }
     // === Blank-page watchdog =================================================
     // Goals (post-2026-06-30 refresh-loop incident):
