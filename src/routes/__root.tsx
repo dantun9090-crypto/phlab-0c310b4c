@@ -463,8 +463,8 @@ const FORCE_SW_CLEANUP = `
   var scriptUrl=function(registration){
     try{return (registration.active&&registration.active.scriptURL)||(registration.installing&&registration.installing.scriptURL)||(registration.waiting&&registration.waiting.scriptURL)||'';}catch(e){return '';}
   };
-  var isLegacy=function(registration){ return /\/service-worker\.js(?:$|[?#])/i.test(scriptUrl(registration)); };
-  var isAppWorker=function(registration){ return /\/(?:sw|service-worker)\.js(?:$|[?#])/i.test(scriptUrl(registration)); };
+  var isLegacy=function(registration){ return new RegExp('\\/service-worker\\.js(?:$|[?#])','i').test(scriptUrl(registration)); };
+  var isAppWorker=function(registration){ return new RegExp('\\/(?:sw|service-worker)\\.js(?:$|[?#])','i').test(scriptUrl(registration)); };
   try{
     if('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations){
       navigator.serviceWorker.getRegistrations().then(function(registrations){
