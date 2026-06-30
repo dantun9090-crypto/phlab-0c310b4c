@@ -20,8 +20,10 @@ interface SitemapEntry {
   priority?: string;
 }
 
-// Static-page lastmod. Bumped manually when site-wide content/layout changes.
-const STATIC_LASTMOD = "2026-06-11";
+// Static-page lastmod resolves dynamically at request time so Google never
+// sees a frozen date. Per-route overrides below remain hard-coded where we
+// want to signal a meaningful content edit.
+const STATIC_LASTMOD = new Date().toISOString().slice(0, 10);
 
 const staticEntries: SitemapEntry[] = [
   { path: "/", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "1.0" },
