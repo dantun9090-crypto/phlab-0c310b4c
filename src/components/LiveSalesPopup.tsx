@@ -54,12 +54,13 @@ export default function LiveSalesPopup() {
   const isHiddenRoute = HIDDEN_ROUTES.some((r) => pathname.startsWith(r));
   const currentUid = auth.currentUser?.uid;
 
-  // Filter eligible orders (recent, not own). Refreshed live via Firestore snapshot.
+  // Filter eligible orders (recent, not own). Refreshed live via sanitized API.
   const eligible = useMemo(() => {
     const cutoff = Date.now() - MAX_AGE_MS;
-    const list = recentOrders.filter(
-      (o) => o.createdAtMs >= cutoff && (!currentUid || o.userId !== currentUid),
-    );
+    const list = recentOrders.filter((o) => {
+      const hasUsableTime = Number.isFinite(o.createdAtMs) && o.createdAtMs > 0;
+      return (!hasUsableTime || o.createdAtMs >= cutoff) && (!currentUid || o.userId !== currentUid);
+    });
     dlog('pool refresh — recentOrders:', recentOrders.length, 'eligible:', list.length, list);
     return list;
   }, [recentOrders, currentUid]);
@@ -194,12 +195,14 @@ export default function LiveSalesPopup() {
       aria-live="polite"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="fixed z-[9998] pointer-events-auto"
+      className="fixed pointer-events-auto"
       style={{
-        bottom: 'max(12px, env(safe-area-inset-bottom))',
+        // Keep above Google Merchant / Lovable badges that also sit bottom-right.
+        bottom: 'max(84px, calc(env(safe-area-inset-bottom) + 84px))',
         right: 12,
         maxWidth: 'min(320px, calc(100vw - 24px))',
         width: '92vw',
+        zIndex: 2147483000,
         transform,
         opacity,
         transition,
@@ -243,7 +246,7 @@ export default function LiveSalesPopup() {
         @media (min-width: 768px) {
           [role="status"][aria-live="polite"] {
             right: 16px !important;
-            bottom: max(16px, env(safe-area-inset-bottom)) !important;
+            bottom: max(92px, calc(env(safe-area-inset-bottom) + 92px)) !important;
           }
         }
       `}</style>

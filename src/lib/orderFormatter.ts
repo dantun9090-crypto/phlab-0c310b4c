@@ -58,7 +58,7 @@ export const mapRawOrderToLive = (raw: RawOrderLike): LiveOrder | null => {
     (typeof raw.shippingAddress === 'object' && raw.shippingAddress?.city?.trim()) ||
     raw.customer?.city?.trim() ||
     'UK';
-  const createdAtMs = toMs(raw.orderDate) || toMs(raw.createdAt);
+  const createdAtMs = toMs(raw.orderDate) || toMs(raw.createdAt) || Date.now();
 
   return {
     id,
