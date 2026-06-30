@@ -54,27 +54,30 @@ function InstructionList({
   return (
     <div
       id={id}
-      className="mt-3 rounded-xl border-2 border-emerald-400/30 bg-emerald-500/5 p-4"
+      role="region"
+      aria-label={title}
+      className="mt-3 rounded-xl border-2 border-emerald-400/40 bg-emerald-500/5 p-4 sm:p-5"
     >
-      <p className="text-base font-bold text-emerald-200 leading-snug">
+      <p className="text-lg sm:text-xl font-bold text-emerald-100 leading-snug">
         {title}
       </p>
-      <ol className="mt-2 space-y-2 text-base text-slate-100 leading-relaxed">
+      <ol className="mt-3 space-y-3 sm:space-y-4 text-base sm:text-lg text-white leading-loose break-words">
         {steps.map((step, i) => (
-          <li key={i} className="flex gap-3">
+          <li key={i} className="flex gap-3 sm:gap-4">
             <span
               aria-hidden="true"
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-sm font-bold text-black"
+              className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-emerald-400 text-base font-bold text-black"
             >
               {i + 1}
             </span>
-            <span className="min-w-0">{step}</span>
+            <span className="min-w-0 flex-1 break-words">{step}</span>
           </li>
         ))}
       </ol>
     </div>
   );
 }
+
 
 export default function PaymentMethodOptions({
   options,
