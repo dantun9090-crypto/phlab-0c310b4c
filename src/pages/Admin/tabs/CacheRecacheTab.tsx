@@ -1,15 +1,34 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
-import { Loader2, Trash2, Zap, AlertTriangle, CheckCircle2, XCircle, Cloud, RefreshCw, Clock, Save } from 'lucide-react';
+import {
+  Loader2,
+  Trash2,
+  Zap,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Cloud,
+  RefreshCw,
+  Clock,
+  Save,
+  History,
+  FileText,
+  Image as ImageIcon,
+  Globe,
+} from 'lucide-react';
 import {
   purgeCloudflareCache,
   recacheSitemapPrerender,
+  listPurgeHistory,
+  type PurgeHistoryRow,
 } from '@/lib/cache-admin.functions';
 import { getCacheConfig, setCacheConfig } from '@/lib/cache-config.functions';
 import { CACHE_TTL_OPTIONS, DEFAULT_HTML_TTL_SECONDS } from '@/lib/cache-config-shared';
-import { auth } from '@/lib/firebase';
 
 import { getAdminIdToken } from '@/lib/auth-ready';
+
+type PurgeScope = 'all' | 'html' | 'assets' | 'files';
+
 interface OpResult {
   kind: 'purge' | 'recache' | 'config';
   ok: boolean;
@@ -17,17 +36,24 @@ interface OpResult {
   at: string;
 }
 
+
 export default function CacheRecacheTab() {
   const purgeFn = useServerFn(purgeCloudflareCache);
   const recacheFn = useServerFn(recacheSitemapPrerender);
   const getCfg = useServerFn(getCacheConfig);
   const setCfg = useServerFn(setCacheConfig);
+  const listHistoryFn = useServerFn(listPurgeHistory);
 
   const [purging, setPurging] = useState(false);
   const [recaching, setRecaching] = useState(false);
   const [filesText, setFilesText] = useState('');
   const [includeMobile, setIncludeMobile] = useState(true);
   const [log, setLog] = useState<OpResult[]>([]);
+  const [scope, setScope] = useState<Exclude<PurgeScope, 'files'>>('all');
+  const [runSmoke, setRunSmoke] = useState(true);
+  const [history, setHistory] = useState<PurgeHistoryRow[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+
 
   // HTML edge-cache TTL state
   const [ttl, setTtl] = useState<number>(DEFAULT_HTML_TTL_SECONDS);
@@ -101,22 +127,58 @@ export default function CacheRecacheTab() {
   }
 
 
-  const runPurgeEverything = async () => {
-    if (!confirm('Purge the ENTIRE Cloudflare cache for phlabs.co.uk? Returning visitors will get a cache MISS on the next request.')) {
-      return;
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const idToken = await getAdminIdToken();
+      const res = await listHistoryFn({ data: { idToken, limit: 50 } });
+      if (res.ok) setHistory(res.rows);
+    } catch {
+      /* swallow — surfaced by next manual reload */
+    } finally {
+      setHistoryLoading(false);
     }
+  }, [listHistoryFn]);
+
+  useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
+
+  function describePurgeResult(
+    res: Awaited<ReturnType<typeof purgeFn>>,
+  ): string {
+    const base = res.ok
+      ? `Purged scope=${res.scope}${res.fileCount ? ` (${res.fileCount} file(s))` : ''} — HTTP ${res.status}, ${('durationMs' in res ? res.durationMs : 0)} ms`
+      : `Failed scope=${res.scope}: ${('error' in res && res.error) || ('response' in res ? res.response : '')} (HTTP ${res.status})`;
+    const smoke = 'smoke' in res && res.smoke
+      ? res.smoke.ok
+        ? ' — smoke OK'
+        : ` — smoke FAILED (${res.smoke.failures.join('; ')})`
+      : '';
+    const note = ('scopeNote' in res && res.scopeNote) ? res.scopeNote : '';
+    return base + smoke + note;
+  }
+
+  const runScopedPurge = async () => {
+    const labels: Record<typeof scope, string> = {
+      all: 'the ENTIRE Cloudflare cache (HTML + assets)',
+      html: 'top HTML routes only (sitemap-derived, up to 30)',
+      assets: 'asset cache (Pro plan: falls back to purge_everything)',
+    };
+    if (!confirm(`Purge ${labels[scope]} for phlabs.co.uk?`)) return;
     setPurging(true);
     try {
       const idToken = await getAdminIdToken();
-      const res = await purgeFn({ data: { idToken, purgeEverything: true } });
+      const res = await purgeFn({
+        data: { idToken, scope, runSmokeTest: runSmoke },
+      });
       pushLog({
         kind: 'purge',
-        ok: res.ok,
-        detail: res.ok
-          ? `Purged everything (HTTP ${res.status}, ${('durationMs' in res ? res.durationMs : 0)} ms)`
-          : `Failed: ${('error' in res && res.error) || ('response' in res ? res.response : '')} (HTTP ${res.status})`,
+        ok: res.ok && (!('smoke' in res) || !res.smoke || res.smoke.ok),
+        detail: describePurgeResult(res),
         at: new Date().toISOString(),
       });
+      void loadHistory();
     } catch (e) {
       pushLog({
         kind: 'purge',
@@ -141,15 +203,16 @@ export default function CacheRecacheTab() {
     setPurging(true);
     try {
       const idToken = await getAdminIdToken();
-      const res = await purgeFn({ data: { idToken, purgeEverything: false, files } });
+      const res = await purgeFn({
+        data: { idToken, scope: 'files', files, runSmokeTest: false },
+      });
       pushLog({
         kind: 'purge',
         ok: res.ok,
-        detail: res.ok
-          ? `Purged ${files.length} URL(s) (HTTP ${res.status})`
-          : `Failed: ${('error' in res && res.error) || ('response' in res ? res.response : '')} (HTTP ${res.status})`,
+        detail: describePurgeResult(res),
         at: new Date().toISOString(),
       });
+      void loadHistory();
     } catch (e) {
       pushLog({
         kind: 'purge',
@@ -161,6 +224,7 @@ export default function CacheRecacheTab() {
       setPurging(false);
     }
   };
+
 
   const runRecache = async () => {
     setRecaching(true);
@@ -268,34 +332,70 @@ export default function CacheRecacheTab() {
 
 
 
-      {/* Cloudflare full purge */}
+      {/* Cloudflare scoped purge */}
       <div className="bg-[#0b1a30]/70 border border-white/[0.07] rounded-xl p-4 space-y-3">
         <div className="flex items-start gap-3">
           <div className="w-9 h-9 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
             <Trash2 className="w-4 h-4 text-red-400" />
           </div>
           <div className="flex-1">
-            <h3 className="text-sm font-semibold text-white">Purge Cloudflare cache — everything</h3>
+            <h3 className="text-sm font-semibold text-white">Purge Cloudflare cache — choose scope</h3>
             <p className="text-xs text-[#9cb8d9] mt-1">
-              Calls <code className="text-emerald-400">POST /zones/{`{zone}`}/purge_cache</code> with{' '}
-              <code className="text-emerald-400">{`{"purge_everything": true}`}</code>. Removes every cached HTML, asset and prerender
-              snapshot on Cloudflare&apos;s edge for the phlabs.co.uk zone. Product edits automatically purge the affected product/category URLs and recache desktop + mobile bot snapshots.
+              Calls <code className="text-emerald-400">POST /zones/{`{zone}`}/purge_cache</code>. A post-purge smoke
+              test fetches <code>/</code>, <code>/products</code> and a product page, asserts HTTP 200 and verifies
+              GA/Ads beacons are still rendered. Failures and timeouts trigger a Telegram alert.
             </p>
-            <div className="mt-2 flex items-start gap-2 text-xs text-amber-300/90">
-              <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              <span>Next visitor on every URL pays a cache-MISS (≈ 500–800&nbsp;ms instead of ≈ 50&nbsp;ms).</span>
-            </div>
           </div>
         </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {([
+            { v: 'all', label: 'Full purge', desc: 'HTML + assets', Icon: Globe },
+            { v: 'html', label: 'HTML only', desc: 'Top 30 pages', Icon: FileText },
+            { v: 'assets', label: 'Assets only', desc: 'Pro plan: full', Icon: ImageIcon },
+          ] as const).map(({ v, label, desc, Icon }) => {
+            const active = scope === v;
+            return (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setScope(v)}
+                className={`text-left p-3 rounded-lg border-2 transition-colors ${
+                  active
+                    ? 'border-red-500 bg-red-500/10'
+                    : 'border-slate-700 hover:border-slate-500 bg-slate-800/40'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon className={`w-4 h-4 ${active ? 'text-red-300' : 'text-slate-400'}`} />
+                  <span className="text-sm font-semibold text-white">{label}</span>
+                </div>
+                <div className="text-[11px] text-[#9cb8d9] mt-1">{desc}</div>
+              </button>
+            );
+          })}
+        </div>
+
+        <label className="flex items-center gap-2 text-xs text-[#9cb8d9]">
+          <input
+            type="checkbox"
+            checked={runSmoke}
+            onChange={(e) => setRunSmoke(e.target.checked)}
+            className="w-4 h-4 accent-red-500"
+          />
+          Run post-purge smoke test (HTML 200 + GA/Ads beacons present)
+        </label>
+
         <button
-          onClick={runPurgeEverything}
+          onClick={runScopedPurge}
           disabled={purging}
           className="w-full sm:w-auto min-h-[48px] px-4 py-2 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2"
         >
           {purging ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-          Purge everything
+          Purge ({scope})
         </button>
       </div>
+
 
       {/* Cloudflare selective purge */}
       <div className="bg-[#0b1a30]/70 border border-white/[0.07] rounded-xl p-4 space-y-3">
@@ -384,6 +484,91 @@ export default function CacheRecacheTab() {
           </div>
         </div>
       )}
+
+      {/* Persistent purge history (Firestore) */}
+      <div className="bg-[#0b1a30]/70 border border-white/[0.07] rounded-xl p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <History className="w-4 h-4 text-[#9cb8d9]" />
+            Purge history
+            <span className="text-[11px] text-[#9cb8d9] font-normal">
+              (last {history.length} entries · Firestore)
+            </span>
+          </h3>
+          <button
+            onClick={() => void loadHistory()}
+            disabled={historyLoading}
+            className="text-xs px-2 py-1 border border-slate-600 rounded hover:bg-slate-700 disabled:opacity-40 flex items-center gap-1 text-[#9cb8d9]"
+          >
+            {historyLoading ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3 h-3" />
+            )}
+            Refresh
+          </button>
+        </div>
+        {history.length === 0 ? (
+          <p className="text-xs text-[#9cb8d9]">No purges recorded yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-left text-[#9cb8d9] border-b border-white/10">
+                  <th className="py-2 pr-3">When</th>
+                  <th className="py-2 pr-3">Scope</th>
+                  <th className="py-2 pr-3">Result</th>
+                  <th className="py-2 pr-3">Smoke</th>
+                  <th className="py-2 pr-3">Duration</th>
+                  <th className="py-2 pr-3">By</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((h) => (
+                  <tr key={h.id} className="border-b border-white/[0.04]">
+                    <td className="py-2 pr-3 text-white whitespace-nowrap">
+                      {new Date(h.at).toLocaleString('en-GB')}
+                    </td>
+                    <td className="py-2 pr-3 text-white font-mono">{h.scope}</td>
+                    <td className="py-2 pr-3">
+                      {h.ok ? (
+                        <span className="text-emerald-400 inline-flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> {h.status}
+                          {h.fileCount > 0 ? ` · ${h.fileCount} files` : ''}
+                        </span>
+                      ) : (
+                        <span className="text-red-400 inline-flex items-center gap-1" title={h.error}>
+                          <XCircle className="w-3 h-3" /> {h.status || 'ERR'}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-2 pr-3">
+                      {h.smoke ? (
+                        h.smoke.ok ? (
+                          <span className="text-emerald-400">OK</span>
+                        ) : (
+                          <span
+                            className="text-amber-400"
+                            title={h.smoke.failures.join('\n')}
+                          >
+                            {h.smoke.failures.length} fail
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-[#3a5a82]">—</span>
+                      )}
+                    </td>
+                    <td className="py-2 pr-3 text-[#9cb8d9]">{h.durationMs} ms</td>
+                    <td className="py-2 pr-3 text-[#9cb8d9] truncate max-w-[180px]" title={h.triggeredBy}>
+                      {h.triggeredBy}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
