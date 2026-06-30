@@ -374,17 +374,19 @@ function renderCsr(error: unknown): void {
   prepareDocumentForCsr();
   void (async () => {
     const router = getCsrRouter();
+    // Kick off initial load but DO NOT await — awaiting router.load() before
+    // mount has hung the boot in preview/mobile cases, leaving the user on
+    // the "Loading PH Labs…" shell forever. <Transitioner /> will drive the
+    // first render correctly once React mounts.
     try {
-      // In pure CSR mode TanStack's <Transitioner /> normally calls
-      // router.load() in a layout effect. On mobile Chrome this leaves one
-      // render where firstId/matches are empty; with our document-level shell
-      // that can trip the root boundary and show the dead "Please refresh"
-      // screen. Load the initial route before mounting React instead.
-      await router.load({ sync: true });
+      const loadPromise = router.load();
+      if (loadPromise && typeof (loadPromise as Promise<unknown>).catch === "function") {
+        (loadPromise as Promise<unknown>).catch((loadError) => {
+          console.error("[CSR BOOT] initial router.load failed", loadError);
+        });
+      }
     } catch (loadError) {
-      // Still mount: the router error boundary can render route-level errors,
-      // but do not let a pre-mount loader failure kill the whole app shell.
-      console.error("[CSR BOOT] initial router.load failed", loadError);
+      console.error("[CSR BOOT] initial router.load threw synchronously", loadError);
     }
 
     try {
@@ -404,6 +406,7 @@ function renderCsr(error: unknown): void {
       showStaticFallback(renderError);
     }
   })();
+
 }
 
 function hydrateOrFallback(): void {
