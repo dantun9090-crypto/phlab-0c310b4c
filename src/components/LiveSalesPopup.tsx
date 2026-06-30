@@ -11,11 +11,11 @@ interface PopupState {
 }
 
 const HIDDEN_ROUTES = ['/checkout', '/cart', '/success', '/account', '/login'];
-const AUTO_DISMISS_MS = 6000;
-const ROTATE_INTERVAL_MS = 8000;
-const DEBOUNCE_MS = 5000;
+const AUTO_DISMISS_MS = 2800;
+const ROTATE_INTERVAL_MS = 3000;
+const DEBOUNCE_MS = 1500;
 const SNOOZE_MS = 60_000;
-const MAX_AGE_MS = 48 * 60 * 60 * 1000;
+const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 const prefersReducedMotion = (): boolean =>
   typeof window !== 'undefined' &&
@@ -102,11 +102,15 @@ export default function LiveSalesPopup() {
       lastTriggerRef.current = Date.now();
       scheduleDismiss();
     };
+    // Kick off immediately so user sees one within ~500ms instead of waiting full interval
+    const kickoff = window.setTimeout(tick, 500);
     rotateTimerRef.current = window.setInterval(tick, ROTATE_INTERVAL_MS);
     return () => {
+      window.clearTimeout(kickoff);
       if (rotateTimerRef.current) window.clearInterval(rotateTimerRef.current);
     };
   }, [eligible, isHiddenRoute, hovered]);
+
 
   // Cleanup on unmount
   useEffect(() => () => clearDismissTimer(), []);
