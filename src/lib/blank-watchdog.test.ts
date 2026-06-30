@@ -5,11 +5,15 @@
  *
  * Runs under happy-dom (see vitest.config.ts).
  */
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_BLANK_WATCHDOG_CONFIG,
   evaluateHasPaint,
+  HTML_SNAPSHOT_CAP,
   readBlankWatchdogConfig,
+  SCREENSHOT_CAP,
+  shouldDropScreenshot,
+  truncateHtmlSnapshot,
 } from "./blank-watchdog";
 
 function setBody(html: string) {
