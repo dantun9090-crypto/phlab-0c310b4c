@@ -646,10 +646,12 @@ var phlabs_prerender_patched_default = {
       } else if (isStatic) {
         if (!h.has("cache-control")) h.set("cache-control", "public, max-age=31536000, immutable");
       } else if (isXmlFeed) {
-        h.set("cache-control", "no-store, no-cache, must-revalidate, max-age=0");
-        h.set("cdn-cache-control", "no-store");
-        h.set("cloudflare-cdn-cache-control", "no-store");
+        // XML feeds (sitemap, merchant feed) — short edge TTL instead of bypass
+        h.set("cache-control", "public, max-age=0, must-revalidate");
+        h.set("cdn-cache-control", "public, max-age=300, stale-while-revalidate=3600");
+        h.set("cloudflare-cdn-cache-control", "public, max-age=300, stale-while-revalidate=3600");
         h.set("content-type", "application/xml; charset=utf-8");
+
       } else if ((h.get("content-type") || "").includes("text/html")) {
         if (htmlTtl > 0) {
           h.set("cache-control", "public, max-age=0, must-revalidate");

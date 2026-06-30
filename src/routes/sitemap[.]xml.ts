@@ -92,13 +92,19 @@ export const Route = createFileRoute("/sitemap.xml")({
         try {
           const products = await fetchAllProducts();
           productEntries = products
-            .map((p) => ({
-              path: `/products/${p.slug}`,
-              lastmod: p.updatedAt ? p.updatedAt.slice(0, 10) : undefined,
-              changefreq: "weekly" as const,
-              priority: "0.8",
-              imageLoc: p.imageUrl && /^https?:\/\//.test(p.imageUrl) ? p.imageUrl : undefined,
-            }));
+            .map((p) => {
+              const raw = p.updatedAt ? p.updatedAt.slice(0, 10) : undefined;
+              // Guard against epoch / pre-2000 dates that confuse Google
+              const lastmod = raw && raw >= "2000-01-01" ? raw : STATIC_LASTMOD;
+              return {
+                path: `/products/${p.slug}`,
+                lastmod,
+                changefreq: "weekly" as const,
+                priority: "0.8",
+                imageLoc: p.imageUrl && /^https?:\/\//.test(p.imageUrl) ? p.imageUrl : undefined,
+              };
+            });
+
         } catch {
           productEntries = [];
         }
