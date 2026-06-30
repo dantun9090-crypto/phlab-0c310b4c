@@ -72,6 +72,7 @@ const EVENT_TYPES = [
   "research_overlay",
   "compound_overlay",
   "client_exception",
+  "blank_watchdog",
 ] as const;
 type EventType = (typeof EVENT_TYPES)[number];
 
@@ -89,6 +90,14 @@ const Body = z.object({
 
   /** Optional detector metadata (e.g. which DOM markers matched). */
   details: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
+
+  /** Blank-watchdog artefacts. Truncated client-side; capped here as belt-and-braces. */
+  htmlSnapshot: z.string().max(40_000).optional(),
+  screenshot: z
+    .string()
+    .max(600_000)
+    .regex(/^data:image\/(png|jpeg|webp);base64,/)
+    .optional(),
 });
 
 const DEFAULT_THRESHOLDS: Record<EventType, number> = {
@@ -98,7 +107,9 @@ const DEFAULT_THRESHOLDS: Record<EventType, number> = {
   research_overlay: 1,
   compound_overlay: 1,
   client_exception: 5,
+  blank_watchdog: 3,
 };
+
 const DEFAULT_WINDOW_MIN = 5;
 const DEFAULT_COOLDOWN_MIN = 30;
 const DEFAULT_ALERT_EMAIL = "info@phlabs.co.uk";
@@ -128,6 +139,7 @@ async function loadSettings(): Promise<MonitorSettings> {
       research_overlay: Number(t.research_overlay ?? DEFAULT_THRESHOLDS.research_overlay),
       compound_overlay: Number(t.compound_overlay ?? DEFAULT_THRESHOLDS.compound_overlay),
       client_exception: Number(t.client_exception ?? DEFAULT_THRESHOLDS.client_exception),
+      blank_watchdog: Number(t.blank_watchdog ?? DEFAULT_THRESHOLDS.blank_watchdog),
     },
     alertEmail: typeof doc?.alertEmail === "string" ? doc.alertEmail : DEFAULT_ALERT_EMAIL,
     slackWebhookUrl:
@@ -196,6 +208,7 @@ function alertSubject(type: EventType, count: number, windowMin: number): string
     research_overlay: "/research overlay detected",
     compound_overlay: "/compound overlay detected",
     client_exception: "client JS exception",
+    blank_watchdog: "blank-page fallback shown",
   };
   return `[PH Labs] ${labels[type]}: ${count} in ${windowMin}m`;
 }

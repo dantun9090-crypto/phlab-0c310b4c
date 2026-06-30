@@ -668,26 +668,65 @@ const BOOT_WATCHDOG = `
     try{ attempts=parseInt(sessionStorage.getItem(ATTEMPTS_KEY)||'0',10)||0; }catch(e){}
     var lastAt=0;
     try{ lastAt=parseInt(sessionStorage.getItem(LAST_KEY)||'0',10)||0; }catch(e){}
-    var captureSnapshot=function(payload){
-      // Best-effort POST a DOM snapshot to the error monitor so we can see
-      // what HTML actually rendered before the fallback fired. Truncated to
-      // 32KB to stay well under any edge body limits. Fire-and-forget.
+    // Best-effort SVG-foreignObject screenshot. Pure JS, no deps. Lossy and
+    // can return null when the canvas is tainted by cross-origin images.
+    // Mirrors src/lib/blank-watchdog-screenshot.ts.
+    var captureScreenshot=function(){
+      return new Promise(function(resolve){
+        var done=false;
+        var finish=function(v){ if(done) return; done=true; resolve(v); };
+        setTimeout(function(){ finish(null); },1500);
+        try{
+          if(!document.body) return finish(null);
+          var w=Math.min(window.innerWidth||1024,1024);
+          var h=Math.min(window.innerHeight||1024,1024);
+          var clone=document.body.cloneNode(true);
+          try{ clone.querySelectorAll("script, link[rel='stylesheet']").forEach(function(n){ n.remove(); }); }catch(e){}
+          var inner=new XMLSerializer().serializeToString(clone);
+          var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="background:#060f1e;color:#f0f6ff;font-family:system-ui;width:'+w+'px;height:'+h+'px;overflow:hidden">'+inner+'</div></foreignObject></svg>';
+          var img=new Image();
+          img.onload=function(){
+            try{
+              var canvas=document.createElement('canvas');
+              canvas.width=w; canvas.height=h;
+              var ctx=canvas.getContext('2d');
+              if(!ctx) return finish(null);
+              ctx.drawImage(img,0,0);
+              finish(canvas.toDataURL('image/jpeg',0.5));
+            }catch(e){ finish(null); }
+          };
+          img.onerror=function(){ finish(null); };
+          img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+        }catch(e){ finish(null); }
+      });
+    };
+    // Upload schema-compliant payload (matches /api/public/error-monitor Zod).
+    // Captures the screenshot synchronously-enough that sendBeacon still has
+    // a live document; falls back to fetch+keepalive when the page is gone.
+    var uploadSnapshot=function(payload){
       try{
         var html='';
         try{ html=(document.documentElement&&document.documentElement.outerHTML)||''; }catch(e){}
-        if(html.length>32768) html=html.slice(0,32768)+'…[truncated]';
-        var body=JSON.stringify({ source:'blank-watchdog', at:payload.at, url:payload.url, payload:payload, htmlSnapshot:html, headChildren:Array.prototype.map.call(document.head?document.head.children:[],function(el){ return el.tagName+(el.id?'#'+el.id:''); }), bodyChildren:Array.prototype.map.call(document.body?document.body.children:[],function(el){ return el.tagName+(el.id?'#'+el.id:''); }) });
-        if(navigator.sendBeacon){
-          navigator.sendBeacon('/api/public/error-monitor', new Blob([body],{type:'application/json'}));
-        } else {
-          fetch('/api/public/error-monitor',{ method:'POST', headers:{'content-type':'application/json'}, body:body, keepalive:true }).catch(function(){});
-        }
+        if(html.length>32000) html=html.slice(0,32000)+'…[truncated]';
+        captureScreenshot().then(function(screenshot){
+          try{
+            var details={ reason:String(payload.reason||''), elapsed:Number(payload.elapsed)||0, ticks:Number(payload.ticks)||0, attempts:Number(payload.attempts)||0, readyState:String(payload.readyState||''), reactReady:!!payload.reactReady, fallbackMs:Number(diagnostics.config.fallbackMs)||0, maxAttempts:Number(diagnostics.config.maxAttempts)||0 };
+            var bodyObj={ type:'blank_watchdog', path:location.pathname, message:'blank-watchdog fallback shown', userAgent:String(payload.ua||navigator.userAgent).slice(0,500), details:details, htmlSnapshot:html };
+            if(screenshot) bodyObj.screenshot=screenshot;
+            var body=JSON.stringify(bodyObj);
+            if(navigator.sendBeacon){
+              navigator.sendBeacon('/api/public/error-monitor', new Blob([body],{type:'application/json'}));
+            } else {
+              fetch('/api/public/error-monitor',{ method:'POST', headers:{'content-type':'application/json'}, body:body, keepalive:true }).catch(function(){});
+            }
+          }catch(e){}
+        });
       }catch(e){}
     };
     var showFallback=function(payload){
       if(diagnostics.fallbackShown) return;
       diagnostics.fallbackShown=true;
-      captureSnapshot(payload);
+      uploadSnapshot(payload);
       try{
         if(!document.body) return;
         if(hasPaint()) return;
@@ -701,6 +740,12 @@ const BOOT_WATCHDOG = `
         if(btn) btn.addEventListener('click',function(){ try{ sessionStorage.removeItem(ATTEMPTS_KEY); sessionStorage.removeItem(LAST_KEY); }catch(e){} location.reload(); });
       }catch(e){}
     };
+    // Public test/admin hook: trigger the full fallback pipeline on demand.
+    try{ diagnostics.forceFallback=function(){
+      var payload={ at:new Date().toISOString(), url:location.href, elapsed:Date.now()-started, ticks:diagnostics.ticks, reason:'forced:'+(diagnostics.reason||'manual'), attempts:attempts, lastAt:lastAt, readyState:document.readyState, reactReady:!!window.__PHL_REACT_READY__, ua:navigator.userAgent.slice(0,140), config:diagnostics.config };
+      showFallback(payload);
+    }; }catch(e){}
+
     var tick=function(){
       diagnostics.ticks++;
       var painted=hasPaint();
