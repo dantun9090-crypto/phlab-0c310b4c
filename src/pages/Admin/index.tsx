@@ -79,8 +79,9 @@ import HealthMonitorTab from './tabs/HealthMonitorTab';
 import ResearchIncidentsTab from './tabs/ResearchIncidentsTab';
 import LiveActivityTab from './tabs/LiveActivityTab';
 import ToastAuditTab from './tabs/ToastAuditTab';
+import BlankWatchdogTab from './tabs/BlankWatchdogTab';
 
-type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'merchantfeededitor' | 'bingfeed' | 'indexnow' | 'reindexhook' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'backlinkchanges' | 'googleads' | 'compoundqueries' | 'compoundnegativesaudit' | 'internallinks' | 'webvitals' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'healthmonitor' | 'researchincidents';
+type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'merchantfeededitor' | 'bingfeed' | 'indexnow' | 'reindexhook' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'backlinkchanges' | 'googleads' | 'compoundqueries' | 'compoundnegativesaudit' | 'internallinks' | 'webvitals' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'blankwatchdog' | 'healthmonitor' | 'researchincidents';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -524,7 +525,8 @@ export default function AdminPage() {
         case 'wallidpreview': return <WallidPreviewTab />;
         case 'wallidbadges': return <WallidBadgesTab />;
        case 'wallidbanks': return <WallidBanksTab />;
-        case 'watchdog': return <WatchdogTab />;
+       case 'watchdog': return <WatchdogTab />;
+       case 'blankwatchdog': return <BlankWatchdogTab />;
         case 'healthmonitor': return <HealthMonitorTab />;
         case 'researchincidents': return <ResearchIncidentsTab />;
         default: return <DashboardTab />;
