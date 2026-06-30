@@ -127,22 +127,58 @@ export default function CacheRecacheTab() {
   }
 
 
-  const runPurgeEverything = async () => {
-    if (!confirm('Purge the ENTIRE Cloudflare cache for phlabs.co.uk? Returning visitors will get a cache MISS on the next request.')) {
-      return;
+  const loadHistory = useCallback(async () => {
+    setHistoryLoading(true);
+    try {
+      const idToken = await getAdminIdToken();
+      const res = await listHistoryFn({ data: { idToken, limit: 50 } });
+      if (res.ok) setHistory(res.rows);
+    } catch {
+      /* swallow — surfaced by next manual reload */
+    } finally {
+      setHistoryLoading(false);
     }
+  }, [listHistoryFn]);
+
+  useEffect(() => {
+    void loadHistory();
+  }, [loadHistory]);
+
+  function describePurgeResult(
+    res: Awaited<ReturnType<typeof purgeFn>>,
+  ): string {
+    const base = res.ok
+      ? `Purged scope=${res.scope}${res.fileCount ? ` (${res.fileCount} file(s))` : ''} — HTTP ${res.status}, ${('durationMs' in res ? res.durationMs : 0)} ms`
+      : `Failed scope=${res.scope}: ${('error' in res && res.error) || ('response' in res ? res.response : '')} (HTTP ${res.status})`;
+    const smoke = 'smoke' in res && res.smoke
+      ? res.smoke.ok
+        ? ' — smoke OK'
+        : ` — smoke FAILED (${res.smoke.failures.join('; ')})`
+      : '';
+    const note = ('scopeNote' in res && res.scopeNote) ? res.scopeNote : '';
+    return base + smoke + note;
+  }
+
+  const runScopedPurge = async () => {
+    const labels: Record<typeof scope, string> = {
+      all: 'the ENTIRE Cloudflare cache (HTML + assets)',
+      html: 'top HTML routes only (sitemap-derived, up to 30)',
+      assets: 'asset cache (Pro plan: falls back to purge_everything)',
+    };
+    if (!confirm(`Purge ${labels[scope]} for phlabs.co.uk?`)) return;
     setPurging(true);
     try {
       const idToken = await getAdminIdToken();
-      const res = await purgeFn({ data: { idToken, purgeEverything: true } });
+      const res = await purgeFn({
+        data: { idToken, scope, runSmokeTest: runSmoke },
+      });
       pushLog({
         kind: 'purge',
-        ok: res.ok,
-        detail: res.ok
-          ? `Purged everything (HTTP ${res.status}, ${('durationMs' in res ? res.durationMs : 0)} ms)`
-          : `Failed: ${('error' in res && res.error) || ('response' in res ? res.response : '')} (HTTP ${res.status})`,
+        ok: res.ok && (!('smoke' in res) || !res.smoke || res.smoke.ok),
+        detail: describePurgeResult(res),
         at: new Date().toISOString(),
       });
+      void loadHistory();
     } catch (e) {
       pushLog({
         kind: 'purge',
@@ -167,15 +203,16 @@ export default function CacheRecacheTab() {
     setPurging(true);
     try {
       const idToken = await getAdminIdToken();
-      const res = await purgeFn({ data: { idToken, purgeEverything: false, files } });
+      const res = await purgeFn({
+        data: { idToken, scope: 'files', files, runSmokeTest: false },
+      });
       pushLog({
         kind: 'purge',
         ok: res.ok,
-        detail: res.ok
-          ? `Purged ${files.length} URL(s) (HTTP ${res.status})`
-          : `Failed: ${('error' in res && res.error) || ('response' in res ? res.response : '')} (HTTP ${res.status})`,
+        detail: describePurgeResult(res),
         at: new Date().toISOString(),
       });
+      void loadHistory();
     } catch (e) {
       pushLog({
         kind: 'purge',
@@ -187,6 +224,7 @@ export default function CacheRecacheTab() {
       setPurging(false);
     }
   };
+
 
   const runRecache = async () => {
     setRecaching(true);
