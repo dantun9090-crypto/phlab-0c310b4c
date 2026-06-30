@@ -393,7 +393,7 @@ function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
   }
   headers.set("content-type", "text/javascript; charset=utf-8");
   return new Response(
-    "try{var q=new URLSearchParams(location.search);q.set('sw','off');q.set('_r','missing-asset');location.replace(location.pathname+'?'+q.toString()+location.hash)}catch(e){location.replace('/?sw=off&_r=missing-asset')}\n",
+    "try{var k='__phl_missing_asset_reload_at_v3',n=Date.now(),l=+(localStorage.getItem(k)||0);if(n-l>600000){localStorage.setItem(k,String(n));var q=new URLSearchParams(location.search);if(q.get('_r')!=='missing-asset'){q.set('_r','missing-asset');q.set('_t',String(n));location.replace(location.pathname+'?'+q.toString()+location.hash)}}console.warn('[PHL] Missing build asset recovery suppressed repeated auto-reload')}catch(e){console.warn('[PHL] Missing build asset recovery failed',e)}\n",
     { status: 200, headers },
   );
 }
