@@ -58,6 +58,7 @@ import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
+import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicErrorMonitorRouteImport } from './routes/api/public/error-monitor'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as ApiPublicCoaPdfRouteImport } from './routes/api/public/coa-pdf'
@@ -337,6 +338,11 @@ const ApiPublicImgRoute = ApiPublicImgRouteImport.update({
   path: '/api/public/img',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
+  id: '/api/public/health',
+  path: '/api/public/health',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicErrorMonitorRoute = ApiPublicErrorMonitorRouteImport.update({
   id: '/api/public/error-monitor',
   path: '/api/public/error-monitor',
@@ -551,6 +557,7 @@ export interface FileRoutesByFullPath {
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -629,6 +636,7 @@ export interface FileRoutesByTo {
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -710,6 +718,7 @@ export interface FileRoutesById {
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
+  '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -791,6 +800,7 @@ export interface FileRouteTypes {
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
     | '/api/public/error-monitor'
+    | '/api/public/health'
     | '/api/public/img'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
@@ -869,6 +879,7 @@ export interface FileRouteTypes {
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
     | '/api/public/error-monitor'
+    | '/api/public/health'
     | '/api/public/img'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
@@ -949,6 +960,7 @@ export interface FileRouteTypes {
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
     | '/api/public/error-monitor'
+    | '/api/public/health'
     | '/api/public/img'
     | '/api/public/post-publish-check'
     | '/api/public/send-mail'
@@ -1024,6 +1036,7 @@ export interface RootRouteChildren {
   ApiPublicCoaPdfRoute: typeof ApiPublicCoaPdfRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicErrorMonitorRoute: typeof ApiPublicErrorMonitorRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicImgRoute: typeof ApiPublicImgRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
@@ -1395,6 +1408,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicImgRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/health': {
+      id: '/api/public/health'
+      path: '/api/public/health'
+      fullPath: '/api/public/health'
+      preLoaderRoute: typeof ApiPublicHealthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/error-monitor': {
       id: '/api/public/error-monitor'
       path: '/api/public/error-monitor'
@@ -1701,6 +1721,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCoaPdfRoute: ApiPublicCoaPdfRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicErrorMonitorRoute: ApiPublicErrorMonitorRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicImgRoute: ApiPublicImgRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
