@@ -447,6 +447,8 @@ export function trackPurchase(
     if (userData && Object.keys(userData).length) params.user_data = userData;
     trackEvent('purchase', params);
     trackAdsPurchaseConversion(transactionId, value, userData);
+    // Mark purchase done so the abandoned-cart recovery timer skips re-firing.
+    try { sessionStorage.setItem('php_ec_purchase_done', '1'); } catch { /* ignore */ }
   };
 
   if (extras.userData) {
