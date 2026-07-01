@@ -14,6 +14,12 @@ on:
         default: "true"
         type: choice
         options: ["true", "false"]
+      notify:
+        description: "Send Slack + email notifications on failure"
+        required: false
+        default: "true"
+        type: choice
+        options: ["true", "false"]
 jobs:
   monitor:
     runs-on: ubuntu-latest
@@ -32,6 +38,8 @@ jobs:
           echo "exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
       - name: Write CI summary
         if: always()
+        env:
+          MONITOR_HOSTS: ${{ github.event.inputs.hosts }}
         run: |
           {
             echo "## HEAD vs GET Monitor"
@@ -48,8 +56,17 @@ jobs:
             echo ""
             echo "</details>"
           } >> "$GITHUB_STEP_SUMMARY"
+      - name: Notify Slack + email on failure
+        if: always() && steps.run.outputs.exit != '0' && (github.event.inputs.notify || 'true') == 'true'
         env:
-          MONITOR_HOSTS: ${{ github.event.inputs.hosts }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+          ALERT_EMAIL_FROM: ${{ secrets.ALERT_EMAIL_FROM }}
+          ALERT_TITLE: "phlabs.co.uk HEAD vs GET Monitor FAILED"
+          ALERT_LOG_PATH: /tmp/monitor.log
+          ALERT_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/notify-monitor-alert.mjs
       - name: Enforce alert exit
         if: always()
         run: |
