@@ -229,7 +229,7 @@ if (!DISABLE_LOG) {
         "content-type": "application/json",
         apikey: SUPA_KEY,
         authorization: `Bearer ${SUPA_KEY}`,
-        prefer: "return=minimal",
+        prefer: "resolution=merge-duplicates",
       },
       body: JSON.stringify(rows),
     });
