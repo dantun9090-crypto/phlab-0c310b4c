@@ -42,6 +42,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResearchIndexRouteImport } from './routes/research.index'
 import { Route as ResourcesPeptideCategoriesUkResearchRouteImport } from './routes/resources.peptide-categories-uk-research'
 import { Route as ResearchRetatrutideUkRouteImport } from './routes/research.retatrutide-uk'
+import { Route as ResearchBpc157VsTb500RouteImport } from './routes/research.bpc-157-vs-tb-500'
 import { Route as ResearchBpc157UkRouteImport } from './routes/research.bpc-157-uk'
 import { Route as ProductsSlugRouteImport } from './routes/products_.$slug'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
@@ -263,6 +264,11 @@ const ResourcesPeptideCategoriesUkResearchRoute =
 const ResearchRetatrutideUkRoute = ResearchRetatrutideUkRouteImport.update({
   id: '/retatrutide-uk',
   path: '/retatrutide-uk',
+  getParentRoute: () => ResearchRoute,
+} as any)
+const ResearchBpc157VsTb500Route = ResearchBpc157VsTb500RouteImport.update({
+  id: '/bpc-157-vs-tb-500',
+  path: '/bpc-157-vs-tb-500',
   getParentRoute: () => ResearchRoute,
 } as any)
 const ResearchBpc157UkRoute = ResearchBpc157UkRouteImport.update({
@@ -602,6 +608,7 @@ export interface FileRoutesByFullPath {
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
+  '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
   '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
   '/research/': typeof ResearchIndexRoute
@@ -690,6 +697,7 @@ export interface FileRoutesByTo {
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
+  '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
   '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
   '/research': typeof ResearchIndexRoute
@@ -781,6 +789,7 @@ export interface FileRoutesById {
   '/payment/success': typeof PaymentSuccessRoute
   '/products_/$slug': typeof ProductsSlugRoute
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
+  '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
   '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
   '/research/': typeof ResearchIndexRoute
@@ -872,6 +881,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/products/$slug'
     | '/research/bpc-157-uk'
+    | '/research/bpc-157-vs-tb-500'
     | '/research/retatrutide-uk'
     | '/resources/peptide-categories-uk-research'
     | '/research/'
@@ -960,6 +970,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/products/$slug'
     | '/research/bpc-157-uk'
+    | '/research/bpc-157-vs-tb-500'
     | '/research/retatrutide-uk'
     | '/resources/peptide-categories-uk-research'
     | '/research'
@@ -1050,6 +1061,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/products_/$slug'
     | '/research/bpc-157-uk'
+    | '/research/bpc-157-vs-tb-500'
     | '/research/retatrutide-uk'
     | '/resources/peptide-categories-uk-research'
     | '/research/'
@@ -1410,6 +1422,13 @@ declare module '@tanstack/react-router' {
       path: '/retatrutide-uk'
       fullPath: '/research/retatrutide-uk'
       preLoaderRoute: typeof ResearchRetatrutideUkRouteImport
+      parentRoute: typeof ResearchRoute
+    }
+    '/research/bpc-157-vs-tb-500': {
+      id: '/research/bpc-157-vs-tb-500'
+      path: '/bpc-157-vs-tb-500'
+      fullPath: '/research/bpc-157-vs-tb-500'
+      preLoaderRoute: typeof ResearchBpc157VsTb500RouteImport
       parentRoute: typeof ResearchRoute
     }
     '/research/bpc-157-uk': {
@@ -1826,12 +1845,14 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface ResearchRouteChildren {
   ResearchBpc157UkRoute: typeof ResearchBpc157UkRoute
+  ResearchBpc157VsTb500Route: typeof ResearchBpc157VsTb500Route
   ResearchRetatrutideUkRoute: typeof ResearchRetatrutideUkRoute
   ResearchIndexRoute: typeof ResearchIndexRoute
 }
 
 const ResearchRouteChildren: ResearchRouteChildren = {
   ResearchBpc157UkRoute: ResearchBpc157UkRoute,
+  ResearchBpc157VsTb500Route: ResearchBpc157VsTb500Route,
   ResearchRetatrutideUkRoute: ResearchRetatrutideUkRoute,
   ResearchIndexRoute: ResearchIndexRoute,
 }
