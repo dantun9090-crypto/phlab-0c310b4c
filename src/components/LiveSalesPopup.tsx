@@ -50,7 +50,7 @@ export default function LiveSalesPopup() {
   const eligibleRef = useRef<LiveOrder[]>([]);
   const reduced = useMemo(() => prefersReducedMotion(), []);
 
-  const isHiddenRoute = HIDDEN_ROUTES.some((r) => pathname.startsWith(r));
+  const isHomePage = pathname === '/' || pathname === '/index';
   const currentUid = auth.currentUser?.uid;
 
   // Filter eligible orders (recent, not own). Refreshed live via sanitized API.
