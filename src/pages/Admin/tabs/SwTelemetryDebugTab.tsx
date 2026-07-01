@@ -155,11 +155,17 @@ async function fetchEdgeCorrelation(): Promise<EdgeCorrelation> {
   }
 }
 
+export type AutoRefreshSecs = 0 | 5 | 15 | 30 | 60;
+const AUTO_REFRESH_OPTIONS: AutoRefreshSecs[] = [0, 5, 15, 30, 60];
+
 export default function SwTelemetryDebugTab() {
   const [stats, setStats] = useState<SwTelemetryDebugStats>(() => getSwTelemetryDebugStats());
   const [autoRefresh, setAutoRefresh] = useState(true);
+  /** Unified refresh cadence (seconds) for samples + publish-hold + charts. */
+  const [refreshSecs, setRefreshSecs] = useState<AutoRefreshSecs>(15);
   const [edge, setEdge] = useState<EdgeCorrelation | null>(null);
   const [edgeLoading, setEdgeLoading] = useState(false);
+  const [lastAutoRefreshAt, setLastAutoRefreshAt] = useState<number>(() => Date.now());
 
   const refreshEdge = async () => {
     setEdgeLoading(true);
@@ -195,11 +201,8 @@ export default function SwTelemetryDebugTab() {
   const [filterRoute, setFilterRoute] = useState<string>('');
   const [timeWindow, setTimeWindow] = useState<TimeWindowKey>('24h');
   const [viewMode, setViewMode] = useState<'raw' | 'rate'>('raw');
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const id = window.setInterval(() => setSamples(loadMountSamples()), 3000);
-    return () => window.clearInterval(id);
-  }, [autoRefresh]);
+  /** Drill-down selection: click a bar segment to pin a (bucket, code) filter. */
+  const [drillDown, setDrillDown] = useState<{ hour: number; label: string; code: MountErrorCode } | null>(null);
 
   // -- Publish-hold banner (canary rollback flag) --------------------------
   interface PublishHoldDoc {
@@ -207,20 +210,29 @@ export default function SwTelemetryDebugTab() {
     bootBadInWindow?: number; failuresInWindow?: number; updatedAt?: string;
   }
   const [publishHold, setPublishHold] = useState<{ hold: boolean; current: PublishHoldDoc | null }>({ hold: false, current: null });
+
+  const loadHold = async () => {
+    try {
+      const res = await fetch('/api/public/publish-hold', { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json() as { hold?: boolean; current?: PublishHoldDoc | null };
+      setPublishHold({ hold: !!data.hold, current: data.current ?? null });
+    } catch { /* ignore */ }
+  };
+
+  // Unified auto-refresh loop for samples + publish-hold. Cadence is user
+  // controlled via `refreshSecs`. Setting it to 0 disables the timer.
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch('/api/public/publish-hold', { cache: 'no-store' });
-        if (!res.ok) return;
-        const data = await res.json() as { hold?: boolean; current?: PublishHoldDoc | null };
-        if (!cancelled) setPublishHold({ hold: !!data.hold, current: data.current ?? null });
-      } catch { /* ignore */ }
-    };
-    void load();
-    const id = window.setInterval(load, 30_000);
-    return () => { cancelled = true; window.clearInterval(id); };
-  }, []);
+    void loadHold();
+    if (refreshSecs === 0) return;
+    const id = window.setInterval(() => {
+      setSamples(loadMountSamples());
+      setLastAutoRefreshAt(Date.now());
+      void loadHold();
+    }, refreshSecs * 1000);
+    return () => window.clearInterval(id);
+  }, [refreshSecs]);
+
 
   const filteredSamples = useMemo(() => {
     const cfg = WINDOWS[timeWindow];
