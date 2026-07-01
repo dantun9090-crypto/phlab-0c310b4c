@@ -193,15 +193,44 @@ export default function SwTelemetryDebugTab() {
   const [samples, setSamples] = useState<MountSample[]>(() => loadMountSamples());
   const [filterBuild, setFilterBuild] = useState<string>('');
   const [filterRoute, setFilterRoute] = useState<string>('');
+  const [timeWindow, setTimeWindow] = useState<TimeWindowKey>('24h');
+  const [viewMode, setViewMode] = useState<'raw' | 'rate'>('raw');
   useEffect(() => {
     if (!autoRefresh) return;
     const id = window.setInterval(() => setSamples(loadMountSamples()), 3000);
     return () => window.clearInterval(id);
   }, [autoRefresh]);
 
-  const filteredSamples = useMemo(() => samples.filter(
-    (s) => (!filterBuild || s.buildId === filterBuild) && (!filterRoute || s.route === filterRoute),
-  ), [samples, filterBuild, filterRoute]);
+  // -- Publish-hold banner (canary rollback flag) --------------------------
+  interface PublishHoldDoc {
+    buildId?: string; reason?: string; source?: string; hold?: boolean;
+    bootBadInWindow?: number; failuresInWindow?: number; updatedAt?: string;
+  }
+  const [publishHold, setPublishHold] = useState<{ hold: boolean; current: PublishHoldDoc | null }>({ hold: false, current: null });
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/public/publish-hold', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json() as { hold?: boolean; current?: PublishHoldDoc | null };
+        if (!cancelled) setPublishHold({ hold: !!data.hold, current: data.current ?? null });
+      } catch { /* ignore */ }
+    };
+    void load();
+    const id = window.setInterval(load, 30_000);
+    return () => { cancelled = true; window.clearInterval(id); };
+  }, []);
+
+  const filteredSamples = useMemo(() => {
+    const cfg = WINDOWS[timeWindow];
+    const cutoff = Date.now() - cfg.totalMs;
+    return samples.filter(
+      (s) => (s.eventTs ?? s.ts) >= cutoff
+        && (!filterBuild || s.buildId === filterBuild)
+        && (!filterRoute || s.route === filterRoute),
+    );
+  }, [samples, filterBuild, filterRoute, timeWindow]);
 
   const buildOptions = useMemo(
     () => Array.from(new Set(samples.map((s) => s.buildId))).filter(Boolean),
@@ -218,7 +247,8 @@ export default function SwTelemetryDebugTab() {
     return t;
   }, [filteredSamples]);
 
-  const timeline = useMemo(() => buildTimeline(filteredSamples), [filteredSamples]);
+  const timeline = useMemo(() => buildTimeline(filteredSamples, timeWindow), [filteredSamples, timeWindow]);
+
 
   const downloadCsv = () => {
     const csv = mountSamplesToCsv(filteredSamples);
