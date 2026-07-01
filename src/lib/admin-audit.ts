@@ -3,7 +3,8 @@
 // Use logAdminAction() from any admin-only client surface that mutates
 // products, prices, stock, orders, customers, or permissions.
 
-import { auth, db, collection, addDoc, Timestamp } from '@/lib/firebase';
+import { auth, db, collection, addDoc } from '@/lib/firebase';
+import { serverTimestamp } from 'firebase/firestore';
 
 export type AdminAuditAction =
   | 'customer.role.update'
