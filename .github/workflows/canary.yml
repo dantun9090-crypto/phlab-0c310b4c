@@ -1,0 +1,38 @@
+name: canary
+
+on:
+  schedule:
+    # Every 15 min — catch stale-asset / blank-page regressions fast.
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Base URL to canary (default https://phlabs.co.uk)"
+        required: false
+        default: "https://phlabs.co.uk"
+
+concurrency:
+  group: canary-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - name: Run canary
+        env:
+          CANARY_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+          CANARY_PATHS: "/,/products,/login,/admin"
+        run: node scripts/canary-check.mjs
+      - name: Notify Slack on failure
+        if: failure() && env.SLACK_WEBHOOK_URL != ''
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -sS -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\":rotating_light: phlabs.co.uk canary FAILED — see run ${{ github.run_id }}\"}" \
+            "$SLACK_WEBHOOK_URL" || true
