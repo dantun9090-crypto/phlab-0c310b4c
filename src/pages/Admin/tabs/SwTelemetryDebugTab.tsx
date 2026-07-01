@@ -49,26 +49,48 @@ const CODE_COLOR: Record<string, string> = {
   MOUNT_UNKNOWN: '#94a3b8',
 };
 
-function buildTimeline(samples: MountSample[]): TimelineBin[] {
+export type TimeWindowKey = '6h' | '24h' | '7d';
+const WINDOWS: Record<TimeWindowKey, { totalMs: number; bins: number; bucketMs: number; labelFmt: (d: Date) => string }> = {
+  '6h': {
+    totalMs: 6 * 3_600_000,
+    bins: 24,          // 15-min buckets
+    bucketMs: 15 * 60_000,
+    labelFmt: (d) => `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`,
+  },
+  '24h': {
+    totalMs: 24 * 3_600_000,
+    bins: 24,          // 1-hour buckets
+    bucketMs: 3_600_000,
+    labelFmt: (d) => `${d.getHours().toString().padStart(2, '0')}h`,
+  },
+  '7d': {
+    totalMs: 7 * 24 * 3_600_000,
+    bins: 28,          // 6-hour buckets
+    bucketMs: 6 * 3_600_000,
+    labelFmt: (d) => `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}h`,
+  },
+};
+
+function buildTimeline(samples: MountSample[], windowKey: TimeWindowKey): TimelineBin[] {
+  const cfg = WINDOWS[windowKey];
   const now = Date.now();
-  const HOUR = 3_600_000;
+  const start = now - cfg.totalMs;
   const bins: TimelineBin[] = [];
-  for (let i = 23; i >= 0; i--) {
-    const start = now - i * HOUR;
-    bins.push({
-      hour: start,
-      label: new Date(start).getHours().toString().padStart(2, '0') + 'h',
-      counts: {},
-    });
+  for (let i = cfg.bins - 1; i >= 0; i--) {
+    const t = now - i * cfg.bucketMs;
+    bins.push({ hour: t, label: cfg.labelFmt(new Date(t)), counts: {} });
   }
   for (const s of samples) {
-    const idx = Math.floor((now - s.ts) / HOUR);
-    if (idx < 0 || idx >= 24) continue;
-    const bin = bins[23 - idx];
+    const t = s.eventTs ?? s.ts;
+    if (t < start || t > now) continue;
+    const idx = Math.min(cfg.bins - 1, Math.floor((now - t) / cfg.bucketMs));
+    const bin = bins[cfg.bins - 1 - idx];
+    if (!bin) continue;
     bin.counts[s.code] = (bin.counts[s.code] || 0) + 1;
   }
   return bins;
 }
+
 
 
 
