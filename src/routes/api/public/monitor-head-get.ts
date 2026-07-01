@@ -12,7 +12,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 
-const HOSTS = ["https://phlabs.co.uk", "https://prohealthpeptides.co.uk"];
+const HOSTS = ["https://phlabs.co.uk", "https://prohealthpeptides.co.uk"]; // check-domains-allow-line: legacy host monitored intentionally
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 phlabs-monitor/1.0";
 
