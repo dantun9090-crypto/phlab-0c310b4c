@@ -21,43 +21,83 @@
  *
  * Response: { success, trackingNumber|null, orderId, message }  on success
  *           { error: string | object }                          on failure
+ *
+ * CORS: origin allowlist only. Requests from any other origin (including
+ * `Origin: null`) receive NO Access-Control-Allow-Origin header, which
+ * causes the browser to block them. Server-to-server callers (no Origin
+ * header) still work because CORS is browser-enforced.
  */
+
+const ALLOWED_ORIGINS = new Set([
+  'https://phlabs.co.uk',
+  'https://www.phlabs.co.uk',
+  'https://prohealthpeptides.co.uk',
+  'https://www.prohealthpeptides.co.uk',
+  'https://phlab.lovable.app',
+  'https://id-preview--1f12c255-a30a-4bea-bbab-28d9e6f70804.lovable.app',
+  'http://localhost:8080',
+  'http://localhost:3000',
+]);
+
+function corsHeadersFor(request) {
+  const origin = request.headers.get('Origin');
+  const headers = {
+    'Vary': 'Origin',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, x-phlabs-auth',
+    'Access-Control-Max-Age': '86400',
+  };
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+  }
+  return headers;
+}
+
+function jsonResponse(request, body, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...corsHeadersFor(request) },
+  });
+}
 
 export default {
   async fetch(request, env, ctx) {
     // CORS preflight
     if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        status: 204,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST',
-          'Access-Control-Allow-Headers': 'Content-Type, x-phlabs-auth'
-        }
-      });
+      const cors = corsHeadersFor(request);
+      // Preflight from a disallowed origin: reply without ACAO so the
+      // browser blocks the follow-up request.
+      if (!cors['Access-Control-Allow-Origin']) {
+        return new Response(null, { status: 403, headers: { 'Vary': 'Origin' } });
+      }
+      return new Response(null, { status: 204, headers: cors });
     }
 
     if (request.method !== 'POST') {
       return new Response('Method not allowed', { status: 405 });
     }
 
+    // Origin gate for browser callers. Server-to-server callers omit
+    // Origin entirely and are allowed (auth still required below).
+    const origin = request.headers.get('Origin');
+    if (origin && !ALLOWED_ORIGINS.has(origin)) {
+      return new Response(JSON.stringify({ error: 'Origin not allowed' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json', 'Vary': 'Origin' },
+      });
+    }
+
     // Auth gate — shared secret between your frontend and this worker
     const authHeader = request.headers.get('x-phlabs-auth');
     if (authHeader !== env.SHARED_SECRET) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-      });
+      return jsonResponse(request, { error: 'Unauthorized' }, 401);
     }
 
     try {
       const order = await request.json();
 
       if (!order.postcode || !order.addressLine1 || !order.orderId) {
-        return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-          status: 400,
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-        });
+        return jsonResponse(request, { error: 'Missing required fields' }, 400);
       }
 
       const nowIso = new Date().toISOString();
@@ -114,8 +154,6 @@ export default {
 
       const payload = { items: [item] };
 
-
-
       const sendToRoyalMail = (body) => fetch('https://api.parcel.royalmail.com/api/v1/orders', {
         method: 'POST',
         headers: {
@@ -153,46 +191,32 @@ export default {
       }
 
       if (!rmRes.ok) {
-        return new Response(JSON.stringify({
+        return jsonResponse(request, {
           error: rmData?.message || rmData,
-          details: rmData?.details || rmData?.failedOrders || null
-        }), {
-          status: rmRes.status,
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-        });
+          details: rmData?.details || rmData?.failedOrders || null,
+        }, rmRes.status);
       }
 
       if ((rmData.errorsCount || 0) > 0 || !rmData.createdOrders?.length) {
-        return new Response(JSON.stringify({
+        return jsonResponse(request, {
           error: 'Royal Mail rejected the order',
-          details: rmData.failedOrders || rmData
-        }), {
-          status: 422,
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-        });
+          details: rmData.failedOrders || rmData,
+        }, 422);
       }
 
       const createdOrder = rmData.createdOrders?.[0] || {};
       const trackingNumber = createdOrder.trackingNumber || createdOrder.packages?.[0]?.trackingNumber || null;
 
-      return new Response(JSON.stringify({
+      return jsonResponse(request, {
         success: true,
         trackingNumber: trackingNumber,
         orderId: createdOrder.orderIdentifier || createdOrder.orderId || order.orderId,
         serviceCodeUsed,
-        message: 'Order created in Click & Drop. Print label from Royal Mail dashboard.'
-      }), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
+        message: 'Order created in Click & Drop. Print label from Royal Mail dashboard.',
       });
 
     } catch (err) {
-      return new Response(JSON.stringify({ error: err.message }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-      });
+      return jsonResponse(request, { error: err.message }, 500);
     }
   }
 };
