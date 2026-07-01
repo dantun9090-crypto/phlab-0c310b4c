@@ -18,6 +18,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { addDocAdmin, getDocAdmin, listDocsAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
+import { selectLatestActiveHold, type PublishHoldRow } from "@/lib/publish-hold-select";
+
 
 const Body = z.object({
   buildId: z.string().trim().min(1).max(120),
@@ -102,22 +104,15 @@ export const Route = createFileRoute("/api/public/publish-hold")({
           }
         }
         try {
-          const rows = await listDocsAdmin("publish_hold", {
+          const rows = (await listDocsAdmin("publish_hold", {
             orderBy: "updatedAt",
             direction: "DESCENDING",
             limit: 10,
-          });
-          const active = rows.filter((r) => r.hold === true);
-          const current = active[0] ?? null;
-          return json({
-            ok: true,
-            hold: !!current,
-            current,
-            active,
-            recent: rows,
-          });
+          })) as PublishHoldRow[];
+          return json({ ok: true, ...selectLatestActiveHold(rows) });
         } catch (err) {
           return json({ ok: true, hold: false, current: null, active: [], recent: [], error: String((err as Error).message).slice(0, 200) });
+
         }
       },
 
