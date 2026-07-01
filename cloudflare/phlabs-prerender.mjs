@@ -60,7 +60,7 @@ function isEmergencyPrerenderFallbackPath(pathname) {
 __name(isEmergencyPrerenderFallbackPath, "isEmergencyPrerenderFallbackPath");
 function appShellFallbackHtml(pathname) {
   const safePath = pathname.replace(/[<>&"']/g, "");
-  return `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>PH Labs UK is reconnecting</title><style>html,body{margin:0;min-height:100%;background:#060f1e;color:#f8fafc;font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}body{display:grid;place-items:center;padding:24px}.card{max-width:520px;background:#0f172a;border:1px solid #243145;border-radius:16px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.35)}h1{font-size:24px;line-height:1.2;margin:0 0 12px}p{margin:0 0 14px;color:#cbd5e1}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}a,button{appearance:none;border:0;border-radius:10px;padding:13px 16px;font-weight:800;font-size:16px;text-decoration:none;cursor:pointer}.primary{background:#10b981;color:#03140d}.secondary{background:#1e293b;color:#e2e8f0}.small{font-size:13px;color:#94a3b8;margin-top:18px}</style></head><body><main class="card"><h1>PH Labs is reconnecting</h1><p>This secure page is temporarily unavailable while our live app server reconnects.</p><p>Public product and research pages are online. Checkout, login and admin require the origin app to be republished.</p><div class="actions"><button class="primary" onclick="location.reload()">Try again</button><a class="secondary" href="/products">Open products</a><a class="secondary" href="mailto:info@phlabs.co.uk">Contact us</a></div><p class="small">Route: ${safePath} · Edge recovery active</p></main><script>try{setTimeout(function(){location.reload()},30000)}catch(e){}</script></body></html>`;
+  return `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>PH Labs UK is reconnecting</title><style>html,body{margin:0;min-height:100%;background:#060f1e;color:#f8fafc;font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}body{display:grid;place-items:center;padding:24px}.card{max-width:520px;background:#0f172a;border:1px solid #243145;border-radius:16px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.35)}h1{font-size:24px;line-height:1.2;margin:0 0 12px}p{margin:0 0 14px;color:#cbd5e1}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}a,button{appearance:none;border:0;border-radius:10px;padding:13px 16px;font-weight:800;font-size:16px;text-decoration:none;cursor:pointer}.primary{background:#10b981;color:#03140d}.secondary{background:#1e293b;color:#e2e8f0}.small{font-size:13px;color:#94a3b8;margin-top:18px}</style></head><body><main class="card"><h1>PH Labs is reconnecting</h1><p>This secure page is temporarily unavailable while our live app server reconnects.</p><p>Public product and research pages are online. Checkout, login and admin require the origin app to be republished.</p><div class="actions"><button class="primary" onclick="location.reload()">Try again</button><a class="secondary" href="/products">Open products</a><a class="secondary" href="mailto:info@phlabs.co.uk">Contact us</a></div><p class="small">Route: ${safePath} · Edge recovery active</p></main></body></html>`;
 }
 __name(appShellFallbackHtml, "appShellFallbackHtml");
 function appShellFallbackResponse(url) {
@@ -485,9 +485,10 @@ async function fetchPrerender(request, token) {
 }
 __name(fetchPrerender, "fetchPrerender");
 async function fetchEmergencyPrerenderFallback(request, token, url) {
-  if (!token || request.method !== "GET" || !isEmergencyPrerenderFallbackPath(url.pathname)) return null;
+  if (!token || !["GET", "HEAD"].includes(request.method) || !isEmergencyPrerenderFallbackPath(url.pathname)) return null;
   try {
-    const pre = await fetchPrerender(request, token);
+    const preRequest = request.method === "HEAD" ? new Request(request.url, { method: "GET", headers: request.headers }) : request;
+    const pre = await fetchPrerender(preRequest, token);
     if (!pre || pre.status >= 500 || pre.status === 429) return null;
     const h = new Headers(pre.headers);
     h.set("x-prerendered", "true");
@@ -498,7 +499,12 @@ async function fetchEmergencyPrerenderFallback(request, token, url) {
     h.set("cloudflare-cdn-cache-control", "public, max-age=60, stale-while-revalidate=3600");
     h.delete("set-cookie");
     h.delete("x-robots-tag");
-    return applySecurityHeaders(new Response(pre.body, { status: pre.status, statusText: pre.statusText, headers: h }), url);
+    // Origin is currently broken and prerender snapshots may reference stale
+    // /assets/index-*.js. If a browser loads that missing JS it can enter the
+    // cache-recovery reload path repeatedly. Keep public content online as a
+    // read-only emergency snapshot and prevent stale boot scripts from running.
+    const body = request.method === "HEAD" ? null : pre.body;
+    return applySecurityHeaders(stripAllScripts(new Response(body, { status: pre.status, statusText: pre.statusText, headers: h })), url);
   } catch (_) {
     return null;
   }
@@ -529,12 +535,41 @@ var StripLovableScripts = class {
     }
   }
 };
+var StripAllScripts = class {
+  static {
+    __name(this, "StripAllScripts");
+  }
+  element(el) {
+    el.remove();
+  }
+};
+var StripScriptPreloads = class {
+  static {
+    __name(this, "StripScriptPreloads");
+  }
+  element(el) {
+    const rel = (el.getAttribute("rel") || "").toLowerCase();
+    const href = el.getAttribute("href") || "";
+    if (rel === "modulepreload" || /\.(?:js|mjs)(?:[?#]|$)/i.test(href)) {
+      el.remove();
+    }
+  }
+};
 function stripLovableInjectedScripts(response) {
   const ct = response.headers.get("content-type") || "";
   if (!ct.includes("text/html")) return response;
   return new HTMLRewriter().on("script[src]", new StripLovableScripts()).transform(response);
 }
 __name(stripLovableInjectedScripts, "stripLovableInjectedScripts");
+function stripAllScripts(response) {
+  const ct = response.headers.get("content-type") || "";
+  if (!ct.includes("text/html")) return response;
+  return new HTMLRewriter()
+    .on("script", new StripAllScripts())
+    .on("link", new StripScriptPreloads())
+    .transform(response);
+}
+__name(stripAllScripts, "stripAllScripts");
 var _ttlCache = { value: 60, expiresAt: 0 };
 var TTL_CACHE_MS = 6e4;
 var TTL_DEFAULT = 60;
@@ -797,8 +832,8 @@ var phlabs_prerender_patched_default = {
       if (res.status === 0 || res.status === 521 || res.status === 522 || res.status === 523) {
         const emergency = await fetchEmergencyPrerenderFallback(request, token, url);
         if (emergency) return emergency;
-        if (request.method === "GET" && url.pathname === "/sitemap.xml") return emergencySitemapResponse();
-        if (request.method === "GET" && APP_SHELL_FALLBACK_EXACT.has(url.pathname)) return appShellFallbackResponse(url);
+        if (["GET", "HEAD"].includes(request.method) && url.pathname === "/sitemap.xml") return emergencySitemapResponse();
+        if (["GET", "HEAD"].includes(request.method) && APP_SHELL_FALLBACK_EXACT.has(url.pathname)) return appShellFallbackResponse(url);
         return brandedErrorResponse(503, 30);
       }
       const h = new Headers(res.headers);
@@ -833,8 +868,8 @@ var phlabs_prerender_patched_default = {
         noCache(h);
         const emergency = await fetchEmergencyPrerenderFallback(request, token, url);
         if (emergency) return emergency;
-        if (request.method === "GET" && url.pathname === "/sitemap.xml") return emergencySitemapResponse();
-        if (request.method === "GET" && APP_SHELL_FALLBACK_EXACT.has(url.pathname)) return appShellFallbackResponse(url);
+        if (["GET", "HEAD"].includes(request.method) && url.pathname === "/sitemap.xml") return emergencySitemapResponse();
+        if (["GET", "HEAD"].includes(request.method) && APP_SHELL_FALLBACK_EXACT.has(url.pathname)) return appShellFallbackResponse(url);
         return await serveStaleOrError(request);
       }
       const innerCf = res.headers.get("cf-cache-status");
