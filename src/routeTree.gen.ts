@@ -69,6 +69,7 @@ import { Route as ApiPublicLiveOrdersRouteImport } from './routes/api/public/liv
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
 import { Route as ApiPublicHealthDeepRouteImport } from './routes/api/public/health-deep'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
+import { Route as ApiPublicFirestoreBackupsRouteImport } from './routes/api/public/firestore-backups'
 import { Route as ApiPublicErrorMonitorRouteImport } from './routes/api/public/error-monitor'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as ApiPublicCoaPdfRouteImport } from './routes/api/public/coa-pdf'
@@ -94,6 +95,7 @@ import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api
 import { Route as ApiPublicHooksMonitorProductUrlsRouteImport } from './routes/api/public/hooks/monitor-product-urls'
 import { Route as ApiPublicHooksLighthousePsiRouteImport } from './routes/api/public/hooks/lighthouse-psi'
 import { Route as ApiPublicHooksHealthCheckRouteImport } from './routes/api/public/hooks/health-check'
+import { Route as ApiPublicHooksFirestoreBackupRouteImport } from './routes/api/public/hooks/firestore-backup'
 import { Route as ApiPublicHooksFenaProcessRetriesRouteImport } from './routes/api/public/hooks/fena-process-retries'
 import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hooks/fena'
 import { Route as ApiPublicHooksCompoundQueryHistoryRouteImport } from './routes/api/public/hooks/compound-query-history'
@@ -403,6 +405,12 @@ const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
   path: '/api/public/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicFirestoreBackupsRoute =
+  ApiPublicFirestoreBackupsRouteImport.update({
+    id: '/api/public/firestore-backups',
+    path: '/api/public/firestore-backups',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicErrorMonitorRoute = ApiPublicErrorMonitorRouteImport.update({
   id: '/api/public/error-monitor',
   path: '/api/public/error-monitor',
@@ -539,6 +547,12 @@ const ApiPublicHooksHealthCheckRoute =
     path: '/api/public/hooks/health-check',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksFirestoreBackupRoute =
+  ApiPublicHooksFirestoreBackupRouteImport.update({
+    id: '/api/public/hooks/firestore-backup',
+    path: '/api/public/hooks/firestore-backup',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksFenaProcessRetriesRoute =
   ApiPublicHooksFenaProcessRetriesRouteImport.update({
     id: '/api/public/hooks/fena-process-retries',
@@ -622,6 +636,7 @@ export interface FileRoutesByFullPath {
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
+  '/api/public/firestore-backups': typeof ApiPublicFirestoreBackupsRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/health-deep': typeof ApiPublicHealthDeepRoute
   '/api/public/img': typeof ApiPublicImgRoute
@@ -637,6 +652,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
+  '/api/public/hooks/firestore-backup': typeof ApiPublicHooksFirestoreBackupRoute
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
@@ -711,6 +727,7 @@ export interface FileRoutesByTo {
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
+  '/api/public/firestore-backups': typeof ApiPublicFirestoreBackupsRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/health-deep': typeof ApiPublicHealthDeepRoute
   '/api/public/img': typeof ApiPublicImgRoute
@@ -726,6 +743,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
+  '/api/public/hooks/firestore-backup': typeof ApiPublicHooksFirestoreBackupRoute
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
@@ -803,6 +821,7 @@ export interface FileRoutesById {
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
+  '/api/public/firestore-backups': typeof ApiPublicFirestoreBackupsRoute
   '/api/public/health': typeof ApiPublicHealthRoute
   '/api/public/health-deep': typeof ApiPublicHealthDeepRoute
   '/api/public/img': typeof ApiPublicImgRoute
@@ -818,6 +837,7 @@ export interface FileRoutesById {
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
   '/api/public/hooks/fena-process-retries': typeof ApiPublicHooksFenaProcessRetriesRoute
+  '/api/public/hooks/firestore-backup': typeof ApiPublicHooksFirestoreBackupRoute
   '/api/public/hooks/health-check': typeof ApiPublicHooksHealthCheckRoute
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
@@ -895,6 +915,7 @@ export interface FileRouteTypes {
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
     | '/api/public/error-monitor'
+    | '/api/public/firestore-backups'
     | '/api/public/health'
     | '/api/public/health-deep'
     | '/api/public/img'
@@ -910,6 +931,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/compound-query-history'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
+    | '/api/public/hooks/firestore-backup'
     | '/api/public/hooks/health-check'
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
@@ -984,6 +1006,7 @@ export interface FileRouteTypes {
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
     | '/api/public/error-monitor'
+    | '/api/public/firestore-backups'
     | '/api/public/health'
     | '/api/public/health-deep'
     | '/api/public/img'
@@ -999,6 +1022,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/compound-query-history'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
+    | '/api/public/hooks/firestore-backup'
     | '/api/public/hooks/health-check'
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
@@ -1075,6 +1099,7 @@ export interface FileRouteTypes {
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
     | '/api/public/error-monitor'
+    | '/api/public/firestore-backups'
     | '/api/public/health'
     | '/api/public/health-deep'
     | '/api/public/img'
@@ -1090,6 +1115,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/compound-query-history'
     | '/api/public/hooks/fena'
     | '/api/public/hooks/fena-process-retries'
+    | '/api/public/hooks/firestore-backup'
     | '/api/public/hooks/health-check'
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
@@ -1159,6 +1185,7 @@ export interface RootRouteChildren {
   ApiPublicCoaPdfRoute: typeof ApiPublicCoaPdfRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicErrorMonitorRoute: typeof ApiPublicErrorMonitorRoute
+  ApiPublicFirestoreBackupsRoute: typeof ApiPublicFirestoreBackupsRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
   ApiPublicHealthDeepRoute: typeof ApiPublicHealthDeepRoute
   ApiPublicImgRoute: typeof ApiPublicImgRoute
@@ -1174,6 +1201,7 @@ export interface RootRouteChildren {
   ApiPublicHooksCompoundQueryHistoryRoute: typeof ApiPublicHooksCompoundQueryHistoryRoute
   ApiPublicHooksFenaRoute: typeof ApiPublicHooksFenaRoute
   ApiPublicHooksFenaProcessRetriesRoute: typeof ApiPublicHooksFenaProcessRetriesRoute
+  ApiPublicHooksFirestoreBackupRoute: typeof ApiPublicHooksFirestoreBackupRoute
   ApiPublicHooksHealthCheckRoute: typeof ApiPublicHooksHealthCheckRoute
   ApiPublicHooksLighthousePsiRoute: typeof ApiPublicHooksLighthousePsiRoute
   ApiPublicHooksMonitorProductUrlsRoute: typeof ApiPublicHooksMonitorProductUrlsRoute
@@ -1613,6 +1641,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/firestore-backups': {
+      id: '/api/public/firestore-backups'
+      path: '/api/public/firestore-backups'
+      fullPath: '/api/public/firestore-backups'
+      preLoaderRoute: typeof ApiPublicFirestoreBackupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/error-monitor': {
       id: '/api/public/error-monitor'
       path: '/api/public/error-monitor'
@@ -1788,6 +1823,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksHealthCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/firestore-backup': {
+      id: '/api/public/hooks/firestore-backup'
+      path: '/api/public/hooks/firestore-backup'
+      fullPath: '/api/public/hooks/firestore-backup'
+      preLoaderRoute: typeof ApiPublicHooksFirestoreBackupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/fena-process-retries': {
       id: '/api/public/hooks/fena-process-retries'
       path: '/api/public/hooks/fena-process-retries'
@@ -1926,6 +1968,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCoaPdfRoute: ApiPublicCoaPdfRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicErrorMonitorRoute: ApiPublicErrorMonitorRoute,
+  ApiPublicFirestoreBackupsRoute: ApiPublicFirestoreBackupsRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
   ApiPublicHealthDeepRoute: ApiPublicHealthDeepRoute,
   ApiPublicImgRoute: ApiPublicImgRoute,
@@ -1942,6 +1985,7 @@ const rootRouteChildren: RootRouteChildren = {
     ApiPublicHooksCompoundQueryHistoryRoute,
   ApiPublicHooksFenaRoute: ApiPublicHooksFenaRoute,
   ApiPublicHooksFenaProcessRetriesRoute: ApiPublicHooksFenaProcessRetriesRoute,
+  ApiPublicHooksFirestoreBackupRoute: ApiPublicHooksFirestoreBackupRoute,
   ApiPublicHooksHealthCheckRoute: ApiPublicHooksHealthCheckRoute,
   ApiPublicHooksLighthousePsiRoute: ApiPublicHooksLighthousePsiRoute,
   ApiPublicHooksMonitorProductUrlsRoute: ApiPublicHooksMonitorProductUrlsRoute,

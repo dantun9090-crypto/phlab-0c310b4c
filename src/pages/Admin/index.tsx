@@ -22,6 +22,7 @@ import SiteSettingsTab from './tabs/SiteSettingsTab';
 import ToolsTab from './tabs/ToolsTab';
 import ThemesTab from './tabs/ThemesTab';
 import BackupTab from './tabs/BackupTab';
+import FirestoreBackupsTab from './tabs/FirestoreBackupsTab';
 import AdvertsTab from './tabs/AdvertsTab';
 import PoliciesTab from './tabs/PoliciesTab';
 import LandingPageTab from './tabs/LandingPageTab';
@@ -85,7 +86,7 @@ import PurgeIncidentsTab from './tabs/PurgeIncidentsTab';
 import SwTelemetryDebugTab from './tabs/SwTelemetryDebugTab';
 import MonitorLogTab from './tabs/MonitorLogTab';
 
-type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'merchantfeededitor' | 'bingfeed' | 'indexnow' | 'reindexhook' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'backlinkchanges' | 'googleads' | 'compoundqueries' | 'compoundnegativesaudit' | 'internallinks' | 'webvitals' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'blankwatchdog' | 'healthmonitor' | 'infrahealth' | 'researchincidents' | 'purgeincidents' | 'swtelemetrydebug' | 'monitorlog';
+type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'firestorebackups' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'merchantfeededitor' | 'bingfeed' | 'indexnow' | 'reindexhook' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'backlinkchanges' | 'googleads' | 'compoundqueries' | 'compoundnegativesaudit' | 'internallinks' | 'webvitals' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'blankwatchdog' | 'healthmonitor' | 'infrahealth' | 'researchincidents' | 'purgeincidents' | 'swtelemetrydebug' | 'monitorlog';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -480,6 +481,7 @@ export default function AdminPage() {
         case 'marketing': return <MarketingTab />;
         case 'database': return <DatabaseTab />;
         case 'backup': return <BackupTab />;
+        case 'firestorebackups': return <FirestoreBackupsTab />;
         case 'adverts': return <AdvertsTab />;
         case 'policies': return <PoliciesTab />;
         case 'landing': return <LandingPageTab />;
@@ -558,7 +560,7 @@ export default function AdminPage() {
     adverts: 'Adverts', landing: 'Landing Pages', policies: 'Policies',
     marketing: 'Marketing', emailmarketing: 'Email Campaigns', emailpreview: 'Email Preview',
     seo: 'SEO Settings', sitemap: 'Sitemap Manager', settings: 'Site Settings',
-    tools: 'Tools', themes: 'Themes', database: 'Database', backup: 'Backup',
+    tools: 'Tools', themes: 'Themes', database: 'Database', backup: 'Backup', firestorebackups: 'Firestore Backups',
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', freegift: 'Free Gift Promo', diagnostics: 'Diagnostics',
     prerenderstatus: 'Prerender Status', cacherecache: 'Cache & Recache', gscmonitor: 'GSC Monitor', marketingcoverage: 'Marketing Coverage', urlmonitor: 'URL Monitor', merchantfeed: 'Merchant Feed', merchantfeededitor: 'Merchant Feed Editor', bingfeed: 'Bing Shopping', indexnow: 'IndexNow', reindexhook: 'Fast Reindex (Compound + Calculator)',
     securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', shopify: 'Shopify', semrush: 'Semrush', seoopportunities: 'SEO Opportunities', backlinkoutreach: 'Backlink Outreach', backlinkchanges: 'Backlink Changes', googleads: 'Google Ads Campaigns', compoundqueries: '/compound Queries', compoundnegativesaudit: 'Compound Negatives Audit', internallinks: 'Internal Links', webvitals: 'Web Vitals',

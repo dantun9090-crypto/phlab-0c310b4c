@@ -1,0 +1,54 @@
+name: Firestore Backup (nightly)
+on:
+  schedule:
+    # 03:15 UTC every day — after Cloudflare cache/CDN quiet period.
+    - cron: "15 3 * * *"
+  workflow_dispatch:
+    inputs:
+      collections:
+        description: "Comma-separated Firestore collection IDs (blank = all collections)"
+        required: false
+        default: ""
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Trigger Firestore export
+        env:
+          # Any Supabase apikey (anon/publishable) satisfies the route guard;
+          # the actual export runs under the Firebase service account
+          # configured on the origin.
+          BACKUP_URL: https://phlabs.co.uk/api/public/hooks/firestore-backup
+          CRON_SECRET: ${{ secrets.CLEANUP_SECRET }}
+          COLLECTIONS: ${{ github.event.inputs.collections }}
+        run: |
+          set -euo pipefail
+          body='{}'
+          if [ -n "${COLLECTIONS}" ]; then
+            IFS=',' read -ra arr <<< "${COLLECTIONS}"
+            json='['
+            first=1
+            for c in "${arr[@]}"; do
+              c_trim="$(echo -n "$c" | xargs)"
+              [ -z "$c_trim" ] && continue
+              if [ $first -eq 1 ]; then first=0; else json+=','; fi
+              json+="\"$c_trim\""
+            done
+            json+=']'
+            body="{\"collectionIds\":$json}"
+          fi
+          echo "POST $BACKUP_URL body=$body"
+          http_code=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
+            -X POST "$BACKUP_URL" \
+            -H "content-type: application/json" \
+            -H "x-cron-secret: ${CRON_SECRET}" \
+            --data "$body")
+          echo "HTTP $http_code"
+          cat /tmp/resp.json || true
+          echo
+          if [ "$http_code" != "200" ]; then
+            echo "::error::Firestore backup trigger failed with HTTP $http_code"
+            exit 1
+          fi
