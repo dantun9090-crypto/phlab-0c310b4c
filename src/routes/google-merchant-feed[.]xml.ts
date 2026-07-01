@@ -468,13 +468,12 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
             const availability =
               typeof p.stock === "number" && p.stock <= 0 ? "out of stock" : "in stock";
             const sku = (highRisk ? skuCode : (p.sku || skuCode || docId)).trim();
-            const hasGtin = !!p.gtin;
+            void p.gtin; // GTIN intentionally omitted — MPN-only per Google policy for lab reagents
 
             const isWater = /bacteriostatic\s+water/i.test(p.name);
             const purityHighlight = isWater
               ? "HPLC-verified 99% purity"
               : "HPLC-verified 99%+ purity";
-            const customLabel = isWater ? "99%" : "99%+";
 
             void cas;
 
