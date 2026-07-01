@@ -543,6 +543,18 @@ var StripAllScripts = class {
     el.remove();
   }
 };
+var StripScriptPreloads = class {
+  static {
+    __name(this, "StripScriptPreloads");
+  }
+  element(el) {
+    const rel = (el.getAttribute("rel") || "").toLowerCase();
+    const href = el.getAttribute("href") || "";
+    if (rel === "modulepreload" || /\.(?:js|mjs)(?:[?#]|$)/i.test(href)) {
+      el.remove();
+    }
+  }
+};
 function stripLovableInjectedScripts(response) {
   const ct = response.headers.get("content-type") || "";
   if (!ct.includes("text/html")) return response;
@@ -552,7 +564,10 @@ __name(stripLovableInjectedScripts, "stripLovableInjectedScripts");
 function stripAllScripts(response) {
   const ct = response.headers.get("content-type") || "";
   if (!ct.includes("text/html")) return response;
-  return new HTMLRewriter().on("script", new StripAllScripts()).transform(response);
+  return new HTMLRewriter()
+    .on("script", new StripAllScripts())
+    .on("link", new StripScriptPreloads())
+    .transform(response);
 }
 __name(stripAllScripts, "stripAllScripts");
 var _ttlCache = { value: 60, expiresAt: 0 };
