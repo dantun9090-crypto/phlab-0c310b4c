@@ -111,7 +111,7 @@ export default function LiveSalesPopup() {
 
   // New order arrival
   useEffect(() => {
-    if (!latestNewOrder || isHiddenRoute) return;
+    if (!latestNewOrder || !isHomePage) return;
     if (Date.now() < snoozeUntilRef.current) return;
     if (currentUid && latestNewOrder.userId === currentUid) return;
     dlog('new order arrived:', latestNewOrder.id);
