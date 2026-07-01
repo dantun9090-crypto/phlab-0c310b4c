@@ -541,6 +541,7 @@ export default function AdminPage() {
         case 'researchincidents': return <ResearchIncidentsTab />;
         case 'purgeincidents': return <PurgeIncidentsTab />;
         case 'swtelemetrydebug': return <SwTelemetryDebugTab />;
+        case 'cacherecovery': return <CacheRecoveryTab />;
         default: return <DashboardTab />;
       }
     })();
