@@ -442,8 +442,25 @@ export default function SwTelemetryDebugTab() {
             checked={autoRefresh}
             onChange={(e) => setAutoRefresh(e.target.checked)}
           />
-          Auto-refresh (1.5s)
+          Fast stats (1.5s)
         </label>
+        <label className="inline-flex items-center gap-2 text-sm text-slate-300">
+          <span>Auto-refresh charts / hold</span>
+          <select
+            value={refreshSecs}
+            onChange={(e) => setRefreshSecs(Number(e.target.value) as AutoRefreshSecs)}
+            className="rounded border-2 border-slate-600 bg-slate-800 text-white text-sm px-2 py-1 min-h-[36px]"
+            aria-label="Auto-refresh interval for mount telemetry and publish-hold banner"
+          >
+            {AUTO_REFRESH_OPTIONS.map((n) => (
+              <option key={n} value={n}>{n === 0 ? 'Off' : `every ${n}s`}</option>
+            ))}
+          </select>
+          {refreshSecs !== 0 && (
+            <span className="text-xs text-slate-500">last {Math.max(0, Math.round((Date.now() - lastAutoRefreshAt) / 1000))}s ago</span>
+          )}
+        </label>
+
       </div>
 
       {/* -- Mount telemetry: retained samples + chart + CSV -------------- */}
