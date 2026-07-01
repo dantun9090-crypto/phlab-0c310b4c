@@ -10,7 +10,6 @@ interface PopupState {
   visible: boolean;
 }
 
-const HIDDEN_ROUTES = ['/checkout', '/cart', '/success', '/account', '/login'];
 const AUTO_DISMISS_MS = 5500;
 const ROTATE_INTERVAL_MS = 3000;
 const DEBOUNCE_MS = 1500;
@@ -51,7 +50,7 @@ export default function LiveSalesPopup() {
   const eligibleRef = useRef<LiveOrder[]>([]);
   const reduced = useMemo(() => prefersReducedMotion(), []);
 
-  const isHiddenRoute = HIDDEN_ROUTES.some((r) => pathname.startsWith(r));
+  const isHomePage = pathname === '/' || pathname === '/index';
   const currentUid = auth.currentUser?.uid;
 
   // Filter eligible orders (recent, not own). Refreshed live via sanitized API.
@@ -112,7 +111,7 @@ export default function LiveSalesPopup() {
 
   // New order arrival
   useEffect(() => {
-    if (!latestNewOrder || isHiddenRoute) return;
+    if (!latestNewOrder || !isHomePage) return;
     if (Date.now() < snoozeUntilRef.current) return;
     if (currentUid && latestNewOrder.userId === currentUid) return;
     dlog('new order arrived:', latestNewOrder.id);
@@ -123,7 +122,7 @@ export default function LiveSalesPopup() {
   // Rotation through recent orders. Uses refs so the interval picks up the
   // newest pool without resetting every Firestore snapshot.
   useEffect(() => {
-    if (isHiddenRoute) return;
+    if (!isHomePage) return;
     const tick = () => {
       if (hovered) return;
       if (visibleRef.current) {
@@ -157,7 +156,7 @@ export default function LiveSalesPopup() {
       window.clearTimeout(kickoff);
       if (rotateTimerRef.current) window.clearInterval(rotateTimerRef.current);
     };
-  }, [isHiddenRoute, hovered]);
+  }, [!isHomePage, hovered]);
 
 
 
@@ -232,7 +231,7 @@ export default function LiveSalesPopup() {
     setState((s) => ({ ...s, visible: false }));
   };
 
-  if (isHiddenRoute || !state.order) return null;
+  if (!isHomePage || !state.order) return null;
 
   const { order, visible } = state;
   const text = formatLivePopupText(order);
