@@ -475,35 +475,48 @@ export default function SwTelemetryDebugTab() {
           ))}
         </div>
 
-        {/* 24h stacked-bar timeline (inline SVG, no chart lib) */}
+        {/* Stacked-bar timeline (inline SVG, no chart lib). In "rate" mode
+            each bucket is normalized to events per hour. */}
         {(() => {
           const width = 720;
           const height = 140;
-          const padLeft = 28;
+          const padLeft = 32;
           const padBottom = 20;
           const chartH = height - padBottom - 8;
           const chartW = width - padLeft - 8;
-          const maxCount = Math.max(1, ...timeline.map((b) => TRACKED_CODES.reduce((n, c) => n + (b.counts[c] || 0), 0)));
+          const cfg = WINDOWS[timeWindow];
+          const scale = viewMode === 'rate' ? 3_600_000 / cfg.bucketMs : 1;
+          const bucketTotals = timeline.map((b) =>
+            TRACKED_CODES.reduce((n, c) => n + (b.counts[c] || 0), 0) * scale,
+          );
+          const maxCount = Math.max(1, ...bucketTotals);
           const barW = chartW / timeline.length - 2;
+          const yLabel = viewMode === 'rate' ? `${maxCount.toFixed(1)}/h` : String(Math.ceil(maxCount));
           return (
-            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-40 bg-slate-950 rounded border border-slate-800" role="img" aria-label="Mount telemetry per hour (last 24h)">
+            <svg
+              viewBox={`0 0 ${width} ${height}`}
+              className="w-full h-40 bg-slate-950 rounded border border-slate-800"
+              role="img"
+              aria-label={`Mount telemetry ${viewMode === 'rate' ? '(events/h)' : '(raw counts)'} for last ${timeWindow}`}
+            >
               {[0, 0.5, 1].map((f) => (
                 <line key={f} x1={padLeft} x2={width - 8} y1={8 + chartH * (1 - f)} y2={8 + chartH * (1 - f)} stroke="#1e293b" strokeWidth={1} />
               ))}
-              <text x={4} y={12} fill="#64748b" fontSize={10}>{maxCount}</text>
+              <text x={4} y={12} fill="#64748b" fontSize={10}>{yLabel}</text>
               <text x={4} y={height - padBottom - 2} fill="#64748b" fontSize={10}>0</text>
               {timeline.map((bin, i) => {
                 let yCursor = 8 + chartH;
+                const labelStep = Math.max(1, Math.round(timeline.length / 6));
                 return (
                   <g key={i}>
                     {TRACKED_CODES.map((c) => {
-                      const v = bin.counts[c] || 0;
+                      const v = (bin.counts[c] || 0) * scale;
                       if (!v) return null;
                       const h = (v / maxCount) * chartH;
                       yCursor -= h;
                       return <rect key={c} x={padLeft + i * (barW + 2)} y={yCursor} width={barW} height={h} fill={CODE_COLOR[c]} />;
                     })}
-                    {i % 4 === 0 && (
+                    {i % labelStep === 0 && (
                       <text x={padLeft + i * (barW + 2)} y={height - 6} fill="#64748b" fontSize={9}>{bin.label}</text>
                     )}
                   </g>
@@ -512,6 +525,7 @@ export default function SwTelemetryDebugTab() {
             </svg>
           );
         })()}
+
 
         {filteredSamples.length === 0 && (
           <div className="text-xs text-slate-500 italic">
