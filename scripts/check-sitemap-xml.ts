@@ -209,11 +209,9 @@ function validateXml(label: string, xml: string): void {
     "<image:loc>",
     (idxs) => `<url>.<image:image> indexes [${idxs.join(", ")}]`,
   );
-  reportDupes(
-    lastmodIndexes,
-    "<lastmod>",
-    (idxs) => `<url> indexes [${idxs.join(", ")}]`,
-  );
+  // Note: <lastmod> is intentionally NOT deduped — many pages legitimately
+  // share the same build/publish timestamp.
+
 
 
   if (errors.length > 0) {
