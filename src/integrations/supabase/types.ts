@@ -382,7 +382,26 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      monitor_head_get_summary: {
+        Row: {
+          host: string | null
+          last_alerts: Json | null
+          last_assets_ok: number | null
+          last_assets_total: number | null
+          last_checked_at: string | null
+          last_get_ms: number | null
+          last_get_status: string | null
+          last_had_alert: boolean | null
+          last_has_module_entry: boolean | null
+          last_head_ms: number | null
+          last_head_status: string | null
+          last_html_bytes: number | null
+          last_missing_bundles: Json | null
+          last_run_url: string | null
+          last_source: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       record_monitor_alert: {
