@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useLocation } from "@tanstack/react-router";
 import LegacyApp from "@/legacy/LegacyApp";
 import { canonicalUrl } from "@/lib/seo-meta";
 
@@ -14,5 +14,7 @@ export const Route = createFileRoute("/payment")({
 });
 
 function PaymentMount() {
+  const { pathname } = useLocation();
+  if (pathname.replace(/\/+$/, "") !== "/payment") return <Outlet />;
   return <LegacyApp initialPath="/payment" />;
 }
