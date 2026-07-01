@@ -158,19 +158,106 @@ async function fetchEdgeCorrelation(): Promise<EdgeCorrelation> {
 export type AutoRefreshSecs = 0 | 5 | 15 | 30 | 60;
 const AUTO_REFRESH_OPTIONS: AutoRefreshSecs[] = [0, 5, 15, 30, 60];
 
+// -----------------------------------------------------------------------------
+// URL + localStorage persistence for view state (drill-down, filters, refresh)
+// -----------------------------------------------------------------------------
+const PERSIST_LS_KEY = '__phl_sw_debug_view_v1';
+
+interface PersistedView {
+  refreshSecs?: AutoRefreshSecs;
+  timeWindow?: TimeWindowKey;
+  viewMode?: 'raw' | 'rate';
+  filterBuild?: string;
+  filterRoute?: string;
+  drill?: { hour: number; label: string; code: MountErrorCode } | null;
+  sortKey?: SortKey;
+  sortDir?: 'asc' | 'desc';
+  pageSize?: number;
+}
+
+type SortKey = 'eventTs' | 'mountDurationMs' | 'route' | 'code';
+
+function readPersistedView(): PersistedView {
+  if (typeof window === 'undefined') return {};
+  const out: PersistedView = {};
+  try {
+    const raw = localStorage.getItem(PERSIST_LS_KEY);
+    if (raw) Object.assign(out, JSON.parse(raw) as PersistedView);
+  } catch { /* ignore */ }
+  try {
+    const q = new URLSearchParams(location.search);
+    const rs = q.get('rs'); if (rs != null) out.refreshSecs = (Number(rs) as AutoRefreshSecs);
+    const tw = q.get('tw') as TimeWindowKey | null; if (tw && (tw === '6h' || tw === '24h' || tw === '7d')) out.timeWindow = tw;
+    const vm = q.get('vm'); if (vm === 'raw' || vm === 'rate') out.viewMode = vm;
+    const fb = q.get('fb'); if (fb != null) out.filterBuild = fb;
+    const fr = q.get('fr'); if (fr != null) out.filterRoute = fr;
+    const sk = q.get('sk') as SortKey | null;
+    if (sk && ['eventTs', 'mountDurationMs', 'route', 'code'].includes(sk)) out.sortKey = sk;
+    const sd = q.get('sd'); if (sd === 'asc' || sd === 'desc') out.sortDir = sd;
+    const ps = q.get('ps'); if (ps) out.pageSize = Math.max(5, Math.min(200, Number(ps) || 25));
+    const dd = q.get('dd');
+    if (dd) {
+      const [hourStr, code, ...rest] = dd.split('|');
+      const hour = Number(hourStr);
+      if (!Number.isNaN(hour) && code && TRACKED_CODES.includes(code as MountErrorCode)) {
+        out.drill = { hour, code: code as MountErrorCode, label: rest.join('|') || new Date(hour).toLocaleTimeString() };
+      }
+    } else if (q.has('dd')) {
+      out.drill = null;
+    }
+  } catch { /* ignore */ }
+  return out;
+}
+
+function writePersistedView(v: PersistedView): void {
+  if (typeof window === 'undefined') return;
+  try { localStorage.setItem(PERSIST_LS_KEY, JSON.stringify(v)); } catch { /* ignore */ }
+  try {
+    const url = new URL(location.href);
+    const set = (k: string, val: string | number | null | undefined) => {
+      if (val === '' || val == null) url.searchParams.delete(k);
+      else url.searchParams.set(k, String(val));
+    };
+    set('rs', v.refreshSecs); set('tw', v.timeWindow); set('vm', v.viewMode);
+    set('fb', v.filterBuild); set('fr', v.filterRoute);
+    set('sk', v.sortKey); set('sd', v.sortDir); set('ps', v.pageSize);
+    if (v.drill) url.searchParams.set('dd', `${v.drill.hour}|${v.drill.code}|${v.drill.label}`);
+    else url.searchParams.delete('dd');
+    history.replaceState(null, '', url.toString());
+  } catch { /* ignore */ }
+}
+
+// Retry with exponential backoff, capped.
+async function fetchWithBackoff<T>(fn: () => Promise<T>, attempt = 0): Promise<T> {
+  try { return await fn(); }
+  catch (err) {
+    if (attempt >= 3) throw err;
+    const delay = Math.min(8000, 500 * 2 ** attempt);
+    await new Promise((r) => setTimeout(r, delay));
+    return fetchWithBackoff(fn, attempt + 1);
+  }
+}
+
 export default function SwTelemetryDebugTab() {
+  const persisted = useMemo(() => readPersistedView(), []);
   const [stats, setStats] = useState<SwTelemetryDebugStats>(() => getSwTelemetryDebugStats());
   const [autoRefresh, setAutoRefresh] = useState(true);
   /** Unified refresh cadence (seconds) for samples + publish-hold + charts. */
-  const [refreshSecs, setRefreshSecs] = useState<AutoRefreshSecs>(15);
+  const [refreshSecs, setRefreshSecs] = useState<AutoRefreshSecs>(persisted.refreshSecs ?? 15);
   const [edge, setEdge] = useState<EdgeCorrelation | null>(null);
   const [edgeLoading, setEdgeLoading] = useState(false);
+  const [edgeError, setEdgeError] = useState<string | null>(null);
   const [lastAutoRefreshAt, setLastAutoRefreshAt] = useState<number>(() => Date.now());
 
   const refreshEdge = async () => {
     setEdgeLoading(true);
+    setEdgeError(null);
     try {
-      setEdge(await fetchEdgeCorrelation());
+      const result = await fetchWithBackoff(() => fetchEdgeCorrelation());
+      setEdge(result);
+      if (result.error) setEdgeError(result.error);
+    } catch (err) {
+      setEdgeError(String((err as Error)?.message || err).slice(0, 200));
     } finally {
       setEdgeLoading(false);
     }
@@ -197,12 +284,21 @@ export default function SwTelemetryDebugTab() {
 
   // -- Retained mount samples (per-browser localStorage buffer) ------------
   const [samples, setSamples] = useState<MountSample[]>(() => loadMountSamples());
-  const [filterBuild, setFilterBuild] = useState<string>('');
-  const [filterRoute, setFilterRoute] = useState<string>('');
-  const [timeWindow, setTimeWindow] = useState<TimeWindowKey>('24h');
-  const [viewMode, setViewMode] = useState<'raw' | 'rate'>('raw');
+  const [filterBuild, setFilterBuild] = useState<string>(persisted.filterBuild ?? '');
+  const [filterRoute, setFilterRoute] = useState<string>(persisted.filterRoute ?? '');
+  const [timeWindow, setTimeWindow] = useState<TimeWindowKey>(persisted.timeWindow ?? '24h');
+  const [viewMode, setViewMode] = useState<'raw' | 'rate'>(persisted.viewMode ?? 'raw');
   /** Drill-down selection: click a bar segment to pin a (bucket, code) filter. */
-  const [drillDown, setDrillDown] = useState<{ hour: number; label: string; code: MountErrorCode } | null>(null);
+  const [drillDown, setDrillDown] = useState<{ hour: number; label: string; code: MountErrorCode } | null>(persisted.drill ?? null);
+  const [sortKey, setSortKey] = useState<SortKey>(persisted.sortKey ?? 'eventTs');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>(persisted.sortDir ?? 'desc');
+  const [pageSize, setPageSize] = useState<number>(persisted.pageSize ?? 25);
+  const [page, setPage] = useState<number>(0);
+
+  // Sync all persisted view state to URL + localStorage.
+  useEffect(() => {
+    writePersistedView({ refreshSecs, timeWindow, viewMode, filterBuild, filterRoute, drill: drillDown, sortKey, sortDir, pageSize });
+  }, [refreshSecs, timeWindow, viewMode, filterBuild, filterRoute, drillDown, sortKey, sortDir, pageSize]);
 
   // -- Publish-hold banner (canary rollback flag) --------------------------
   interface PublishHoldDoc {
@@ -210,14 +306,23 @@ export default function SwTelemetryDebugTab() {
     bootBadInWindow?: number; failuresInWindow?: number; updatedAt?: string;
   }
   const [publishHold, setPublishHold] = useState<{ hold: boolean; current: PublishHoldDoc | null }>({ hold: false, current: null });
+  const [holdError, setHoldError] = useState<string | null>(null);
+  const [holdRetryAt, setHoldRetryAt] = useState<number | null>(null);
 
   const loadHold = async () => {
     try {
-      const res = await fetch('/api/public/publish-hold', { cache: 'no-store' });
-      if (!res.ok) return;
-      const data = await res.json() as { hold?: boolean; current?: PublishHoldDoc | null };
+      const data = await fetchWithBackoff(async () => {
+        const res = await fetch('/api/public/publish-hold', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json() as Promise<{ hold?: boolean; current?: PublishHoldDoc | null }>;
+      });
       setPublishHold({ hold: !!data.hold, current: data.current ?? null });
-    } catch { /* ignore */ }
+      setHoldError(null);
+      setHoldRetryAt(null);
+    } catch (err) {
+      setHoldError(String((err as Error)?.message || err).slice(0, 200));
+      setHoldRetryAt(Date.now() + 15_000);
+    }
   };
 
   // Unified auto-refresh loop for samples + publish-hold. Cadence is user
@@ -262,19 +367,43 @@ export default function SwTelemetryDebugTab() {
   const timeline = useMemo(() => buildTimeline(filteredSamples, timeWindow), [filteredSamples, timeWindow]);
 
   /**
-   * Samples that fall inside the currently drilled-down (bucket, code).
-   * A bucket represents the interval [bucket.hour - bucketMs, bucket.hour].
+   * Samples that fall inside the currently drilled-down (bucket, code),
+   * respecting the sortable-column selection.
    */
   const drillDownSamples = useMemo(() => {
     if (!drillDown) return [];
     const bucketMs = WINDOWS[timeWindow].bucketMs;
     const end = drillDown.hour;
     const start = end - bucketMs;
-    return filteredSamples.filter((s) => {
+    const rows = filteredSamples.filter((s) => {
       const t = s.eventTs ?? s.ts;
       return s.code === drillDown.code && t > start && t <= end;
     });
-  }, [drillDown, filteredSamples, timeWindow]);
+    const dir = sortDir === 'asc' ? 1 : -1;
+    const cmp = (a: MountSample, b: MountSample): number => {
+      switch (sortKey) {
+        case 'eventTs': return ((a.eventTs ?? a.ts) - (b.eventTs ?? b.ts)) * dir;
+        case 'mountDurationMs': return ((a.mountDurationMs ?? -1) - (b.mountDurationMs ?? -1)) * dir;
+        case 'route': return a.route.localeCompare(b.route) * dir;
+        case 'code': return a.code.localeCompare(b.code) * dir;
+      }
+    };
+    return rows.slice().sort(cmp);
+  }, [drillDown, filteredSamples, timeWindow, sortKey, sortDir]);
+
+  // Reset pagination when the drill-down data changes.
+  useEffect(() => { setPage(0); }, [drillDown, sortKey, sortDir, pageSize, filterBuild, filterRoute, timeWindow]);
+
+  const totalPages = Math.max(1, Math.ceil(drillDownSamples.length / pageSize));
+  const pagedDrillDown = useMemo(
+    () => drillDownSamples.slice(page * pageSize, page * pageSize + pageSize),
+    [drillDownSamples, page, pageSize],
+  );
+
+  const toggleSort = (k: SortKey) => {
+    if (sortKey === k) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else { setSortKey(k); setSortDir(k === 'route' || k === 'code' ? 'asc' : 'desc'); }
+  };
 
   // Clear a stale drill-down whenever the underlying filter/window changes.
   useEffect(() => { setDrillDown(null); }, [timeWindow, filterBuild, filterRoute]);
@@ -288,6 +417,22 @@ export default function SwTelemetryDebugTab() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `mount-telemetry-${new Date().toISOString().replace(/[:.]/g, '-')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadDrillDownCsv = () => {
+    if (!drillDown || drillDownSamples.length === 0) return;
+    const csv = mountSamplesToCsv(drillDownSamples);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const safeCode = drillDown.code.replace(/[^A-Za-z0-9_]/g, '');
+    const safeLabel = drillDown.label.replace(/[^A-Za-z0-9_-]/g, '_');
+    a.download = `mount-telemetry-drill-${safeCode}-${safeLabel}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
