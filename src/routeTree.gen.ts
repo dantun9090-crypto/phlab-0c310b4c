@@ -62,6 +62,7 @@ import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicPublishHoldRouteImport } from './routes/api/public/publish-hold'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
+import { Route as ApiPublicMonitorLogRouteImport } from './routes/api/public/monitor-log'
 import { Route as ApiPublicMonitorHeadGetRouteImport } from './routes/api/public/monitor-head-get'
 import { Route as ApiPublicLiveOrdersRouteImport } from './routes/api/public/live-orders'
 import { Route as ApiPublicImgRouteImport } from './routes/api/public/img'
@@ -366,6 +367,11 @@ const ApiPublicPostPublishCheckRoute =
     path: '/api/public/post-publish-check',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicMonitorLogRoute = ApiPublicMonitorLogRouteImport.update({
+  id: '/api/public/monitor-log',
+  path: '/api/public/monitor-log',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicMonitorHeadGetRoute = ApiPublicMonitorHeadGetRouteImport.update({
   id: '/api/public/monitor-head-get',
   path: '/api/public/monitor-head-get',
@@ -614,6 +620,7 @@ export interface FileRoutesByFullPath {
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
+  '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -701,6 +708,7 @@ export interface FileRoutesByTo {
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
+  '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -791,6 +799,7 @@ export interface FileRoutesById {
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
+  '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -881,6 +890,7 @@ export interface FileRouteTypes {
     | '/api/public/img'
     | '/api/public/live-orders'
     | '/api/public/monitor-head-get'
+    | '/api/public/monitor-log'
     | '/api/public/post-publish-check'
     | '/api/public/publish-hold'
     | '/api/public/send-mail'
@@ -968,6 +978,7 @@ export interface FileRouteTypes {
     | '/api/public/img'
     | '/api/public/live-orders'
     | '/api/public/monitor-head-get'
+    | '/api/public/monitor-log'
     | '/api/public/post-publish-check'
     | '/api/public/publish-hold'
     | '/api/public/send-mail'
@@ -1057,6 +1068,7 @@ export interface FileRouteTypes {
     | '/api/public/img'
     | '/api/public/live-orders'
     | '/api/public/monitor-head-get'
+    | '/api/public/monitor-log'
     | '/api/public/post-publish-check'
     | '/api/public/publish-hold'
     | '/api/public/send-mail'
@@ -1140,6 +1152,7 @@ export interface RootRouteChildren {
   ApiPublicImgRoute: typeof ApiPublicImgRoute
   ApiPublicLiveOrdersRoute: typeof ApiPublicLiveOrdersRoute
   ApiPublicMonitorHeadGetRoute: typeof ApiPublicMonitorHeadGetRoute
+  ApiPublicMonitorLogRoute: typeof ApiPublicMonitorLogRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
   ApiPublicPublishHoldRoute: typeof ApiPublicPublishHoldRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
@@ -1539,6 +1552,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPostPublishCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/monitor-log': {
+      id: '/api/public/monitor-log'
+      path: '/api/public/monitor-log'
+      fullPath: '/api/public/monitor-log'
+      preLoaderRoute: typeof ApiPublicMonitorLogRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/monitor-head-get': {
       id: '/api/public/monitor-head-get'
       path: '/api/public/monitor-head-get'
@@ -1890,6 +1910,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicImgRoute: ApiPublicImgRoute,
   ApiPublicLiveOrdersRoute: ApiPublicLiveOrdersRoute,
   ApiPublicMonitorHeadGetRoute: ApiPublicMonitorHeadGetRoute,
+  ApiPublicMonitorLogRoute: ApiPublicMonitorLogRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
   ApiPublicPublishHoldRoute: ApiPublicPublishHoldRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
