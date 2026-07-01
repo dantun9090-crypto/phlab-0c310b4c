@@ -1,0 +1,8 @@
+name = "phlabs-prerender"
+main = "cloudflare/phlabs-prerender.mjs"
+compatibility_date = "2025-09-24"
+workers_dev = false
+routes = [
+  { pattern = "phlabs.co.uk/*", zone_name = "phlabs.co.uk" },
+  { pattern = "www.phlabs.co.uk/*", zone_name = "phlabs.co.uk" }
+]
