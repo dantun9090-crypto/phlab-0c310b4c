@@ -139,7 +139,7 @@ export type Database = {
           id: string
           info: Json
           missing_bundles: Json
-          run_url: string | null
+          run_url: string
           source: string
         }
         Insert: {
@@ -164,7 +164,7 @@ export type Database = {
           id?: string
           info?: Json
           missing_bundles?: Json
-          run_url?: string | null
+          run_url?: string
           source?: string
         }
         Update: {
@@ -189,7 +189,7 @@ export type Database = {
           id?: string
           info?: Json
           missing_bundles?: Json
-          run_url?: string | null
+          run_url?: string
           source?: string
         }
         Relationships: []

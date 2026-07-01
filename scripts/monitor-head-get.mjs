@@ -220,7 +220,7 @@ if (!DISABLE_LOG) {
     ...r.row,
     had_alert: r.alerts.length > 0,
     source: SOURCE.slice(0, 40),
-    run_url: RUN_URL ? String(RUN_URL).slice(0, 500) : null,
+    run_url: RUN_URL ? String(RUN_URL).slice(0, 500) : '',
   }));
   try {
     const res = await fetch(`${SUPA_URL}/rest/v1/monitor_head_get_log`, {
@@ -229,7 +229,7 @@ if (!DISABLE_LOG) {
         "content-type": "application/json",
         apikey: SUPA_KEY,
         authorization: `Bearer ${SUPA_KEY}`,
-        prefer: "return=minimal",
+        prefer: "resolution=merge-duplicates",
       },
       body: JSON.stringify(rows),
     });
