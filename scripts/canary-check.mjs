@@ -16,6 +16,25 @@ const PATHS = (process.env.CANARY_PATHS || "/,/products,/login,/admin").split(",
 const BAD = [
   { re: /return\s+\/\/service-worker/, why: "return + line-comment (broken SW isLegacy)" },
   { re: /return\s+\/\/\(\?:sw\|service-worker\)/, why: "return + line-comment (broken isAppWorker)" },
+  { re: /=\s*\/\/service-worker\.js/, why: "assign to line-comment (broken SW filter)" },
+  { re: /\/\/service-worker\\?\.js\/i\.test/, why: "regex-in-comment leak" },
+];
+
+// Signals the entry JS body is a stale HTML fallback / redirect page rather
+// than a real JS bundle.
+const JS_HTML_MARKERS = [
+  /^\s*<!doctype/i,
+  /<html[\s>]/i,
+  /<head[\s>]/i,
+  /<script[\s>]/i,
+];
+// Signals valid JS content (any one is enough).
+const JS_VALID_MARKERS = [
+  /\bimport\s*[({]/,
+  /\bexport\s+/,
+  /\bfunction\s*\(/,
+  /=>\s*[{(]/,
+  /\bconst\s+\w+\s*=/,
 ];
 
 const UA = "phlabs-canary/1.0 (+ci)";
