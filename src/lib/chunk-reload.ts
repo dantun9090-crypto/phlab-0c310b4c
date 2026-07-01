@@ -152,13 +152,22 @@ async function isChunkReloadEnabled(): Promise<boolean> {
   return killSwitchInFlight;
 }
 
-function doReload(reason: string) {
+async function doReload(reason: string) {
   if (!isOnline()) return;
   if (hasHydrationErrorState()) return;
   if (isCriticalRoute()) {
     // eslint-disable-next-line no-console
     console.warn("[RELOAD BLOCKED] Critical route:", window.location.pathname, "reason:", reason);
     try { logSwTelemetry('sw_cache_recovery_failed', { reason, blocked: 'critical-route', path: window.location.pathname }); } catch {}
+    return;
+  }
+  // Remote kill-switch — if disabled, show a brief non-blocking message and
+  // record the suppression. We must NOT re-surface the old "cache reset
+  // needed" screen when this happens.
+  const enabled = await isChunkReloadEnabled();
+  if (!enabled) {
+    try { logSwTelemetry('sw_cache_recovery_failed', { reason, blocked: 'kill-switch', path: window.location.pathname }); } catch {}
+    try { showRecoveryToast('kill-switch'); } catch {}
     return;
   }
   try {
