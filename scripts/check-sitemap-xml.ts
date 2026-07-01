@@ -112,6 +112,8 @@ function validateXml(label: string, xml: string): void {
   // 3) Per-entry field assertions.
   let imagesChecked = 0;
   let lastmodChecked = 0;
+  const locIndexes = new Map<string, number[]>();
+
   urls.forEach((u, i) => {
     const at = `<url> #${i}`;
 
