@@ -15,10 +15,20 @@ const HOSTS = (process.env.MONITOR_HOSTS ||
   "https://phlabs.co.uk,https://prohealthpeptides.co.uk")
   .split(",").map((s) => s.trim()).filter(Boolean);
 
+// Tunable via env — defaults tightened from the previous 15s / no-retry setup.
+const num = (v, d) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : d; };
+const HEAD_TIMEOUT_MS  = num(process.env.MONITOR_HEAD_TIMEOUT_MS, 5000);
+const GET_TIMEOUT_MS   = num(process.env.MONITOR_GET_TIMEOUT_MS, 8000);
+const ASSET_TIMEOUT_MS = num(process.env.MONITOR_ASSET_TIMEOUT_MS, 8000);
+const RETRIES          = num(process.env.MONITOR_RETRIES, 2);           // extra attempts
+const RETRY_BASE_MS    = num(process.env.MONITOR_RETRY_BASE_MS, 400);   // exp backoff base
+
 const UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 phlabs-monitor/1.0";
 
-async function timedFetch(url, init = {}, ms = 15000) {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function timedFetch(url, init = {}, ms = 8000) {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), ms);
   const t0 = Date.now();
@@ -37,14 +47,38 @@ async function timedFetch(url, init = {}, ms = 15000) {
   }
 }
 
+// Retry on transient failures: network error, timeout/abort, 5xx, 408, 429.
+// 2xx/3xx/4xx (except 408/429) return immediately — those are real signals.
+async function fetchWithRetries(url, init, timeoutMs, retries = RETRIES) {
+  let last;
+  const attempts = Math.max(1, retries + 1);
+  for (let i = 0; i < attempts; i++) {
+    const r = await timedFetch(url, init, timeoutMs);
+    last = r;
+    const transient = !r.res
+      || r.res.status >= 500
+      || r.res.status === 408
+      || r.res.status === 429;
+    if (!transient) return { ...r, attempts: i + 1 };
+    if (i < attempts - 1) await sleep(RETRY_BASE_MS * Math.pow(2, i));
+  }
+  return { ...last, attempts };
+}
+
 async function checkHost(host) {
   const alerts = [];
   const info = [];
 
   const [head, get] = await Promise.all([
-    timedFetch(host + "/", { method: "HEAD" }),
-    timedFetch(host + "/", { method: "GET", headers: { accept: "text/html" } }),
+    fetchWithRetries(host + "/", { method: "HEAD" }, HEAD_TIMEOUT_MS),
+    fetchWithRetries(host + "/", { method: "GET", headers: { accept: "text/html" } }, GET_TIMEOUT_MS),
   ]);
+
+  if (head.attempts > 1) info.push(`HEAD needed ${head.attempts} attempts`);
+  if (get.attempts > 1)  info.push(`GET needed ${get.attempts} attempts`);
+
+  const headStatus = head.res ? head.res.status : `ERR(${head.error})`;
+  const getStatus = get.res ? get.res.status : `ERR(${get.error})`;
 
   const headStatus = head.res ? head.res.status : `ERR(${head.error})`;
   const getStatus = get.res ? get.res.status : `ERR(${get.error})`;
