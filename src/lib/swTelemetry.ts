@@ -9,6 +9,7 @@
 
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { currentBrowser } from '@/lib/browser-info';
 
 export type SwTelemetryEvent =
   | 'sw_stale_reload_shown'
