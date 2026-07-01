@@ -79,6 +79,10 @@ export interface ReportOptions {
   message: string;
   stack?: string;
   routeId?: string;
+  /** Normalized mount/boot error code (optional; see src/lib/mount-error-codes.ts). */
+  code?: string;
+  /** Entry-JS asset hash for build correlation (optional). */
+  assetHash?: string;
 }
 
 export function reportClientError(opts: ReportOptions): void {
@@ -87,6 +91,18 @@ export function reportClientError(opts: ReportOptions): void {
     const message = String(opts.message || "").slice(0, 2000);
     if (!message) return;
     if (!shouldSend(message, opts.stack)) return;
+
+    // Extract stable code from the stack blob if not passed explicitly.
+    let code = opts.code;
+    if (!code && opts.stack) {
+      const m = opts.stack.match(/\bcode=([A-Z_]+)\b/);
+      if (m) code = m[1];
+    }
+    let assetHash = opts.assetHash;
+    if (!assetHash && opts.stack) {
+      const m = opts.stack.match(/\bassetHash=([^\s]+)/);
+      if (m && m[1] !== 'n/a') assetHash = m[1];
+    }
 
     const payload = {
       type: "client_exception" as const,
@@ -98,7 +114,10 @@ export function reportClientError(opts: ReportOptions): void {
       routeId: opts.routeId,
       buildId: buildId(),
       release: release(),
+      code,
+      assetHash,
     };
+
 
 
     const body = JSON.stringify(payload);
