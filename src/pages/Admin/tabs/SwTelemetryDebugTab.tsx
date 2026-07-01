@@ -123,10 +123,55 @@ export default function SwTelemetryDebugTab() {
     };
   }, [autoRefresh]);
 
+  // -- Retained mount samples (per-browser localStorage buffer) ------------
+  const [samples, setSamples] = useState<MountSample[]>(() => loadMountSamples());
+  const [filterBuild, setFilterBuild] = useState<string>('');
+  const [filterRoute, setFilterRoute] = useState<string>('');
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const id = window.setInterval(() => setSamples(loadMountSamples()), 3000);
+    return () => window.clearInterval(id);
+  }, [autoRefresh]);
+
+  const filteredSamples = useMemo(() => samples.filter(
+    (s) => (!filterBuild || s.buildId === filterBuild) && (!filterRoute || s.route === filterRoute),
+  ), [samples, filterBuild, filterRoute]);
+
+  const buildOptions = useMemo(
+    () => Array.from(new Set(samples.map((s) => s.buildId))).filter(Boolean),
+    [samples],
+  );
+  const routeOptions = useMemo(
+    () => Array.from(new Set(samples.map((s) => s.route))).filter(Boolean),
+    [samples],
+  );
+
+  const codeTotals = useMemo(() => {
+    const t: Record<string, number> = {};
+    for (const s of filteredSamples) t[s.code] = (t[s.code] || 0) + 1;
+    return t;
+  }, [filteredSamples]);
+
+  const timeline = useMemo(() => buildTimeline(filteredSamples), [filteredSamples]);
+
+  const downloadCsv = () => {
+    const csv = mountSamplesToCsv(filteredSamples);
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mount-telemetry-${new Date().toISOString().replace(/[:.]/g, '-')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
   const fireTest = () => {
     logSwTelemetry('sw_stale_reload_shown', { source: 'admin_debug_test', ts: Date.now() });
     setTimeout(() => setStats(getSwTelemetryDebugStats()), 250);
   };
+
 
   return (
     <div className="space-y-6">
