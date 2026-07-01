@@ -112,6 +112,8 @@ function validateXml(label: string, xml: string): void {
   // 3) Per-entry field assertions.
   let imagesChecked = 0;
   let lastmodChecked = 0;
+  const locIndexes = new Map<string, number[]>();
+
   urls.forEach((u, i) => {
     const at = `<url> #${i}`;
 
@@ -119,7 +121,13 @@ function validateXml(label: string, xml: string): void {
       push(`${at} has no <loc>`);
     } else if (!isValidAbsoluteHttpsUrl(u.loc)) {
       push(`${at} <loc> is not a valid absolute URL: "${u.loc}"`);
+    } else {
+      const key = u.loc.trim();
+      const list = locIndexes.get(key) ?? [];
+      list.push(i);
+      locIndexes.set(key, list);
     }
+
 
     if ("lastmod" in u && u.lastmod !== undefined) {
       lastmodChecked++;
@@ -167,7 +175,22 @@ function validateXml(label: string, xml: string): void {
         } else if (!isValidAbsoluteHttpsUrl(iloc)) {
           push(`${iat} <image:loc>="${iloc}" is not a valid absolute URL`);
         }
-      });
+  });
+
+  // 4) Duplicate <loc> detection — every entry must be unique. Report ALL
+  //    duplicate groups with their 0-based <url> indexes so the offending
+  //    generator call sites are easy to find.
+  const duplicates = [...locIndexes.entries()]
+    .filter(([, idxs]) => idxs.length > 1)
+    .sort((a, b) => b[1].length - a[1].length);
+  if (duplicates.length > 0) {
+    for (const [loc, idxs] of duplicates) {
+      push(
+        `duplicate <loc> "${loc}" appears ${idxs.length}× at <url> indexes [${idxs.join(", ")}]`,
+      );
+    }
+  }
+
     }
   });
 
