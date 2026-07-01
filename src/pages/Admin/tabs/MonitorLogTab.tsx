@@ -257,11 +257,83 @@ export default function MonitorLogTab() {
                     <div><span className="text-slate-500">Source:</span> {r.source ?? '—'}</div>
                     <div className="truncate">
                       <span className="text-slate-500">Run:</span>{' '}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-slate-300">
+                    <div><span className="text-slate-500">HEAD attempts:</span> {r.head_attempts ?? '—'}</div>
+                    <div><span className="text-slate-500">GET attempts:</span> {r.get_attempts ?? '—'}</div>
+                    <div><span className="text-slate-500">Source:</span> {r.source ?? '—'}</div>
+                    <div className="truncate">
+                      <span className="text-slate-500">Run:</span>{' '}
                       {r.run_url
                         ? <a href={r.run_url} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">open</a>
                         : '—'}
                     </div>
+                    <div><span className="text-slate-500">HEAD time:</span> {r.head_duration_ms != null ? `${r.head_duration_ms} ms` : '—'}</div>
+                    <div><span className="text-slate-500">GET time:</span> {r.get_duration_ms != null ? `${r.get_duration_ms} ms` : '—'}</div>
+                    <div><span className="text-slate-500">HTML bytes:</span> {r.html_bytes != null ? r.html_bytes.toLocaleString() : '—'}</div>
+                    <div>
+                      <span className="text-slate-500">Content-Type:</span>{' '}
+                      {(r.get_headers as Record<string, string> | null)?.['content-type'] ?? '—'}
+                    </div>
                   </div>
+
+                  {(r.head_headers || r.get_headers) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {(['HEAD headers', r.head_headers] as const).slice(0, 0)}
+                      {[
+                        { label: 'HEAD response headers', h: r.head_headers },
+                        { label: 'GET response headers', h: r.get_headers },
+                      ].map(({ label, h }) => h ? (
+                        <div key={label}>
+                          <div className="text-slate-400 text-xs uppercase mb-1">{label}</div>
+                          <pre className="bg-slate-900 border border-slate-700 rounded p-3 text-[11px] text-slate-300 overflow-x-auto whitespace-pre-wrap">
+{JSON.stringify(h, null, 2)}
+                          </pre>
+                        </div>
+                      ) : null)}
+                    </div>
+                  )}
+
+                  {toArr(r.asset_samples).length > 0 && (
+                    <div>
+                      <div className="text-slate-400 text-xs uppercase mb-1">Asset probe samples ({toArr(r.asset_samples).length})</div>
+                      <div className="overflow-x-auto border border-slate-700 rounded">
+                        <table className="w-full text-[11px] text-slate-300">
+                          <thead className="bg-slate-800 text-slate-400 uppercase">
+                            <tr>
+                              <th className="text-left px-2 py-1">URL</th>
+                              <th className="text-center px-2 py-1">Status</th>
+                              <th className="text-center px-2 py-1">Time</th>
+                              <th className="text-center px-2 py-1">Bytes</th>
+                              <th className="text-left px-2 py-1">Content-Type</th>
+                              <th className="text-left px-2 py-1">Cache</th>
+                              <th className="text-center px-2 py-1">Module</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {toArr(r.asset_samples).map((raw, i) => {
+                              const s = raw as {
+                                url?: string; status?: number | null; duration_ms?: number | null;
+                                bytes?: number | null; content_type?: string | null;
+                                cache?: string | null; module?: boolean; attempts?: number;
+                              };
+                              const short = (s.url || '').split('/assets/')[1] || s.url || '—';
+                              return (
+                                <tr key={i} className="border-t border-slate-800">
+                                  <td className="px-2 py-1 font-mono">/assets/{short}</td>
+                                  <td className="px-2 py-1 text-center font-mono">{s.status ?? '—'}</td>
+                                  <td className="px-2 py-1 text-center">{s.duration_ms != null ? `${s.duration_ms}ms` : '—'}{s.attempts && s.attempts > 1 ? ` ×${s.attempts}` : ''}</td>
+                                  <td className="px-2 py-1 text-center">{s.bytes != null ? s.bytes.toLocaleString() : '—'}</td>
+                                  <td className="px-2 py-1 truncate max-w-[220px]">{s.content_type ?? '—'}</td>
+                                  <td className="px-2 py-1 truncate max-w-[120px]">{s.cache ?? '—'}</td>
+                                  <td className="px-2 py-1 text-center">{s.module ? '✅' : '—'}</td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
 
                   {alerts.length > 0 && (
                     <div>
