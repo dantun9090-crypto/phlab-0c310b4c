@@ -3,7 +3,8 @@
 // Use logAdminAction() from any admin-only client surface that mutates
 // products, prices, stock, orders, customers, or permissions.
 
-import { auth, db, collection, addDoc, Timestamp } from '@/lib/firebase';
+import { auth, db, collection, addDoc } from '@/lib/firebase';
+import { serverTimestamp } from 'firebase/firestore';
 
 export type AdminAuditAction =
   | 'customer.role.update'
@@ -53,7 +54,9 @@ export async function logAdminAction(payload: LogPayload): Promise<void> {
       before: safeDiff(payload.before) ?? null,
       after: safeDiff(payload.after) ?? null,
       meta: payload.meta ?? null,
-      timestamp: Timestamp.now(),
+      // serverTimestamp() defers the value to Firestore so the timestamp is
+      // authoritative (server clock) and immune to client-clock tampering.
+      timestamp: serverTimestamp(),
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 256) : null,
     });
   } catch (err) {

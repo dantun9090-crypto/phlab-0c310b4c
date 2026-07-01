@@ -4,7 +4,8 @@
 //
 // Writes are best-effort: failures must never break the UI.
 
-import { auth, db, collection, addDoc, Timestamp } from '@/lib/firebase';
+import { auth, db, collection, addDoc } from '@/lib/firebase';
+import { serverTimestamp } from 'firebase/firestore';
 
 export type ToastKind = 'signup' | 'visitor';
 export type ToastOutcome =
@@ -43,7 +44,8 @@ export async function logToastEvent(entry: ToastAuditEntry): Promise<void> {
       ...entry,
       adminUid: user?.uid ?? null,
       adminEmail: user?.email ?? null,
-      timestamp: Timestamp.now(),
+      // serverTimestamp() → Firestore stamps on write; immune to client clock drift.
+      timestamp: serverTimestamp(),
       tzLocal: typeof Intl !== 'undefined'
         ? Intl.DateTimeFormat().resolvedOptions().timeZone
         : null,
