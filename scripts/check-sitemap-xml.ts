@@ -79,42 +79,72 @@ interface UrlEntry {
     | Array<{ "image:loc"?: string }>;
 }
 
-function validateXml(label: string, xml: string): void {
-  const errors: string[] = [];
-  const push = (msg: string) => errors.push(`${label}: ${msg}`);
+interface FeedReport {
+  label: string;
+  ok: boolean;
+  urlCount: number;
+  lastmodChecked: number;
+  imagesChecked: number;
+  errors: string[];
+  duplicates: {
+    field: string;
+    value: string;
+    count: number;
+    indexes: string[];
+  }[];
+  fatal?: { code: string; message: string; line?: number; col?: number };
+}
 
-  // 1) Strict well-formedness — tags balanced, attrs quoted, no stray chars.
+function validateXml(label: string, xml: string): FeedReport {
+  const report: FeedReport = {
+    label,
+    ok: false,
+    urlCount: 0,
+    lastmodChecked: 0,
+    imagesChecked: 0,
+    errors: [],
+    duplicates: [],
+  };
+  const push = (msg: string) => report.errors.push(msg);
+
+  // 1) Strict well-formedness.
   const check = XMLValidator.validate(xml, { allowBooleanAttributes: false });
   if (check !== true) {
     const { code, msg, line, col } = check.err;
-    throw new Error(`${label}: malformed XML [${code}] at ${line}:${col} — ${msg}`);
+    report.fatal = { code, message: msg, line, col };
+    report.errors.push(`malformed XML [${code}] at ${line}:${col} — ${msg}`);
+    return report;
   }
 
-  // 2) Structural sanity — must be a sitemap urlset with >= 1 <url><loc>.
+  // 2) Structural sanity.
   const parser = new XMLParser({
     ignoreAttributes: false,
     isArray: (name) => name === "url" || name === "image:image",
   });
   const doc = parser.parse(xml) as {
-    urlset?: {
-      "@_xmlns"?: string;
-      url?: UrlEntry[];
-    };
+    urlset?: { "@_xmlns"?: string; url?: UrlEntry[] };
   };
   const urlset = doc.urlset;
-  if (!urlset) throw new Error(`${label}: missing <urlset> root element`);
+  if (!urlset) {
+    report.fatal = { code: "NO_URLSET", message: "missing <urlset> root element" };
+    report.errors.push("missing <urlset> root element");
+    return report;
+  }
   if (urlset["@_xmlns"] !== "http://www.sitemaps.org/schemas/sitemap/0.9") {
-    throw new Error(`${label}: <urlset> xmlns is not the sitemap 0.9 schema`);
+    report.fatal = { code: "BAD_XMLNS", message: "<urlset> xmlns is not the sitemap 0.9 schema" };
+    report.errors.push("<urlset> xmlns is not the sitemap 0.9 schema");
+    return report;
   }
   const urls = urlset.url ?? [];
-  if (urls.length === 0) throw new Error(`${label}: zero <url> entries`);
+  report.urlCount = urls.length;
+  if (urls.length === 0) {
+    report.fatal = { code: "EMPTY", message: "zero <url> entries" };
+    report.errors.push("zero <url> entries");
+    return report;
+  }
 
-  // 3) Per-entry field assertions.
-  let imagesChecked = 0;
-  let lastmodChecked = 0;
   const locIndexes = new Map<string, number[]>();
   const imageLocIndexes = new Map<string, string[]>();
-  const lastmodIndexes = new Map<string, number[]>();
 
   urls.forEach((u, i) => {
     const at = `<url> #${i}`;
@@ -131,33 +161,24 @@ function validateXml(label: string, xml: string): void {
     }
 
     if ("lastmod" in u && u.lastmod !== undefined) {
-      lastmodChecked++;
+      report.lastmodChecked++;
       if (typeof u.lastmod !== "string" || u.lastmod.trim() === "") {
         push(`${at} has empty <lastmod>`);
       } else if (!isValidLastmod(u.lastmod)) {
-        push(
-          `${at} <lastmod>="${u.lastmod}" is not W3C Datetime (YYYY-MM-DD or full ISO-8601)`,
-        );
-      } else {
-        const list = lastmodIndexes.get(u.lastmod) ?? [];
-        list.push(i);
-        lastmodIndexes.set(u.lastmod, list);
+        push(`${at} <lastmod>="${u.lastmod}" is not W3C Datetime`);
       }
     }
 
     if ("changefreq" in u && u.changefreq !== undefined) {
       if (typeof u.changefreq !== "string" || !VALID_CHANGEFREQ.has(u.changefreq)) {
-        push(
-          `${at} invalid <changefreq>="${u.changefreq}" (allowed: ${[...VALID_CHANGEFREQ].join(", ")})`,
-        );
+        push(`${at} invalid <changefreq>="${u.changefreq}"`);
       }
     }
 
     if ("priority" in u && u.priority !== undefined) {
-      const n =
-        typeof u.priority === "number" ? u.priority : Number(u.priority);
+      const n = typeof u.priority === "number" ? u.priority : Number(u.priority);
       if (!Number.isFinite(n) || n < 0 || n > 1) {
-        push(`${at} <priority>="${u.priority}" must be a number in [0.0, 1.0]`);
+        push(`${at} <priority>="${u.priority}" must be in [0.0, 1.0]`);
       }
     }
 
@@ -165,10 +186,10 @@ function validateXml(label: string, xml: string): void {
     if (imgs !== undefined) {
       const arr = Array.isArray(imgs) ? imgs : [imgs];
       arr.forEach((img, j) => {
-        imagesChecked++;
+        report.imagesChecked++;
         const iat = `${at} <image:image> #${j}`;
         if (!img || typeof img !== "object") {
-          push(`${iat} is empty (no child elements)`);
+          push(`${iat} is empty`);
           return;
         }
         const iloc = img["image:loc"];
@@ -185,45 +206,25 @@ function validateXml(label: string, xml: string): void {
     }
   });
 
-  // 4) Duplicate detection — no value may repeat within the same feed.
-  //    Each duplicate group is reported with the 0-based <url> indexes
-  //    (and image sub-indexes as "urlIdx.imageIdx") of every occurrence
-  //    so the offending generator call sites are trivial to locate.
-  const reportDupes = <T>(
-    map: Map<string, T[]>,
-    field: string,
-    fmt: (idxs: T[]) => string,
-  ) => {
+  const collectDupes = <T>(map: Map<string, T[]>, field: string) => {
     const dupes = [...map.entries()]
       .filter(([, idxs]) => idxs.length > 1)
       .sort((a, b) => b[1].length - a[1].length);
     for (const [value, idxs] of dupes) {
-      push(
-        `duplicate ${field} "${value}" appears ${idxs.length}× at ${fmt(idxs)}`,
-      );
+      report.duplicates.push({
+        field,
+        value,
+        count: idxs.length,
+        indexes: idxs.map(String),
+      });
+      push(`duplicate ${field} "${value}" appears ${idxs.length}× at [${idxs.join(", ")}]`);
     }
   };
-  reportDupes(locIndexes, "<loc>", (idxs) => `<url> indexes [${idxs.join(", ")}]`);
-  reportDupes(
-    imageLocIndexes,
-    "<image:loc>",
-    (idxs) => `<url>.<image:image> indexes [${idxs.join(", ")}]`,
-  );
-  // Note: <lastmod> is intentionally NOT deduped — many pages legitimately
-  // share the same build/publish timestamp.
+  collectDupes(locIndexes, "<loc>");
+  collectDupes(imageLocIndexes, "<image:loc>");
 
-
-
-  if (errors.length > 0) {
-    const lines = ["", ...errors.map((e) => `  ✗ ${e}`)].join("\n");
-    throw new Error(
-      `${label}: ${errors.length} metadata assertion(s) failed:${lines}`,
-    );
-  }
-
-  console.log(
-    `  ✓ ${label}: well-formed, ${urls.length} <url> (lastmod:${lastmodChecked}, image:${imagesChecked})`,
-  );
+  report.ok = report.errors.length === 0;
+  return report;
 }
 
 async function main() {
@@ -232,17 +233,66 @@ async function main() {
     import("../src/routes/sitemap[.]xml.ts") as Promise<RouteMod>,
     import("../src/routes/bing-feed[.]xml.ts") as Promise<RouteMod>,
   ]);
-  const [sitemapXml, bingXml] = await Promise.all([
-    invokeGet(sitemap, "/sitemap.xml"),
-    invokeGet(bing, "/bing-feed.xml"),
-  ]);
-  validateXml("/sitemap.xml", sitemapXml);
-  validateXml("/bing-feed.xml", bingXml);
+  const reports: FeedReport[] = [];
+  for (const [mod, label] of [
+    [sitemap, "/sitemap.xml"] as const,
+    [bing, "/bing-feed.xml"] as const,
+  ]) {
+    try {
+      const xml = await invokeGet(mod, label);
+      reports.push(validateXml(label, xml));
+    } catch (e) {
+      reports.push({
+        label,
+        ok: false,
+        urlCount: 0,
+        lastmodChecked: 0,
+        imagesChecked: 0,
+        errors: [e instanceof Error ? e.message : String(e)],
+        duplicates: [],
+        fatal: { code: "HANDLER_FAILURE", message: e instanceof Error ? e.message : String(e) },
+      });
+    }
+  }
+
+  for (const r of reports) {
+    if (r.ok) {
+      console.log(
+        `  ✓ ${r.label}: well-formed, ${r.urlCount} <url> (lastmod:${r.lastmodChecked}, image:${r.imagesChecked})`,
+      );
+    } else {
+      console.log(`  ✗ ${r.label}: ${r.errors.length} error(s)`);
+      for (const e of r.errors) console.log(`     ${e}`);
+    }
+  }
+
+  const summary = {
+    tool: "check-sitemap-xml",
+    generatedAt: new Date().toISOString(),
+    ok: reports.every((r) => r.ok),
+    totalErrors: reports.reduce((n, r) => n + r.errors.length, 0),
+    feeds: reports,
+  };
+
+  const jsonOut = process.env.REPORT_JSON;
+  if (jsonOut) {
+    const { writeFileSync, mkdirSync } = await import("node:fs");
+    const { dirname } = await import("node:path");
+    mkdirSync(dirname(jsonOut), { recursive: true });
+    writeFileSync(jsonOut, JSON.stringify(summary, null, 2));
+    console.log(`📄 JSON report written to ${jsonOut}`);
+  }
+
+  if (!summary.ok) {
+    console.error("❌ Sitemap XML validation failed.");
+    process.exit(1);
+  }
   console.log("✅ Both feeds are well-formed XML.");
 }
 
 main().catch((err) => {
-  console.error("❌ Sitemap XML validation failed:");
+  console.error("❌ Sitemap XML validation crashed:");
   console.error(err instanceof Error ? err.message : err);
   process.exit(1);
 });
+
