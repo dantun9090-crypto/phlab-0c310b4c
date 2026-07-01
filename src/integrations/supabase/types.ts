@@ -92,6 +92,48 @@ export type Database = {
         }
         Relationships: []
       }
+      firestore_backups: {
+        Row: {
+          collection_ids: string[]
+          completed_at: string | null
+          error: string | null
+          id: string
+          metadata: Json
+          operation_name: string | null
+          output_uri_prefix: string
+          run_id: string
+          started_at: string
+          status: string
+          triggered_by: string
+        }
+        Insert: {
+          collection_ids?: string[]
+          completed_at?: string | null
+          error?: string | null
+          id?: string
+          metadata?: Json
+          operation_name?: string | null
+          output_uri_prefix: string
+          run_id: string
+          started_at?: string
+          status?: string
+          triggered_by?: string
+        }
+        Update: {
+          collection_ids?: string[]
+          completed_at?: string | null
+          error?: string | null
+          id?: string
+          metadata?: Json
+          operation_name?: string | null
+          output_uri_prefix?: string
+          run_id?: string
+          started_at?: string
+          status?: string
+          triggered_by?: string
+        }
+        Relationships: []
+      }
       monitor_alert_state: {
         Row: {
           alerts_sent: number
