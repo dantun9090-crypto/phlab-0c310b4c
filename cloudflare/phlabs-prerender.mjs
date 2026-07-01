@@ -17,6 +17,39 @@ var WEBHOOK_PREFIXES = [
 ];
 var FIREBASE_AUTH_PREFIXES = ["/__/auth/", "/__/firebase/"];
 var XML_FEED_PATHS = /* @__PURE__ */ new Set(["/sitemap.xml", "/google-merchant-feed.xml"]);
+var EMERGENCY_PRERENDER_FALLBACK_EXACT = /* @__PURE__ */ new Set([
+  "/", "/products", "/research", "/compound", "/contact", "/about",
+  "/resources", "/quality-control", "/lab-reports", "/shipping-policy",
+  "/refund-policy", "/terms-and-conditions", "/privacy-policy", "/cookies"
+]);
+var EMERGENCY_PRERENDER_FALLBACK_PREFIXES = [
+  "/products/", "/research/", "/resources/", "/landing/", "/compare/"
+];
+var APP_SHELL_FALLBACK_EXACT = /* @__PURE__ */ new Set([
+  "/cart", "/checkout", "/payment", "/register", "/login", "/account", "/vip", "/admin"
+]);
+function isEmergencyPrerenderFallbackPath(pathname) {
+  if (EMERGENCY_PRERENDER_FALLBACK_EXACT.has(pathname)) return true;
+  return EMERGENCY_PRERENDER_FALLBACK_PREFIXES.some((p) => pathname.startsWith(p));
+}
+__name(isEmergencyPrerenderFallbackPath, "isEmergencyPrerenderFallbackPath");
+function appShellFallbackHtml(pathname) {
+  const safePath = pathname.replace(/[<>&"']/g, "");
+  return `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>PH Labs UK is reconnecting</title><style>html,body{margin:0;min-height:100%;background:#060f1e;color:#f8fafc;font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}body{display:grid;place-items:center;padding:24px}.card{max-width:520px;background:#0f172a;border:1px solid #243145;border-radius:16px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.35)}h1{font-size:24px;line-height:1.2;margin:0 0 12px}p{margin:0 0 14px;color:#cbd5e1}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}a,button{appearance:none;border:0;border-radius:10px;padding:13px 16px;font-weight:800;font-size:16px;text-decoration:none;cursor:pointer}.primary{background:#10b981;color:#03140d}.secondary{background:#1e293b;color:#e2e8f0}.small{font-size:13px;color:#94a3b8;margin-top:18px}</style></head><body><main class="card"><h1>PH Labs is reconnecting</h1><p>This secure page is temporarily unavailable while our live app server reconnects.</p><p>Public product and research pages are online. Checkout, login and admin require the origin app to be republished.</p><div class="actions"><button class="primary" onclick="location.reload()">Try again</button><a class="secondary" href="/products">Open products</a><a class="secondary" href="mailto:info@phlabs.co.uk">Contact us</a></div><p class="small">Route: ${safePath} · Edge recovery active</p></main><script>try{setTimeout(function(){location.reload()},30000)}catch(e){}</script></body></html>`;
+}
+__name(appShellFallbackHtml, "appShellFallbackHtml");
+function appShellFallbackResponse(url) {
+  const h = new Headers({
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+    "cdn-cache-control": "no-store",
+    "cloudflare-cdn-cache-control": "no-store",
+    "x-robots-tag": "noindex, nofollow",
+    "x-phl-via": "emergency-app-shell-fallback"
+  });
+  return applySecurityHeaders(new Response(appShellFallbackHtml(url.pathname), { status: 200, headers: h }), url);
+}
+__name(appShellFallbackResponse, "appShellFallbackResponse");
 function isBuildAssetPath(pathname) {
   return /^\/(assets|_build)\/[^?#]+\.(js|mjs|css)$/i.test(pathname);
 }
@@ -426,6 +459,26 @@ async function fetchPrerender(request, token) {
   }
 }
 __name(fetchPrerender, "fetchPrerender");
+async function fetchEmergencyPrerenderFallback(request, token, url) {
+  if (!token || request.method !== "GET" || !isEmergencyPrerenderFallbackPath(url.pathname)) return null;
+  try {
+    const pre = await fetchPrerender(request, token);
+    if (!pre || pre.status >= 500 || pre.status === 429) return null;
+    const h = new Headers(pre.headers);
+    h.set("x-prerendered", "true");
+    h.set("x-prerender-cache", "EMERGENCY");
+    h.set("x-phl-via", "emergency-prerender-fallback");
+    h.set("cache-control", "public, max-age=60, s-maxage=60, stale-while-revalidate=3600");
+    h.set("cdn-cache-control", "public, max-age=60, stale-while-revalidate=3600");
+    h.set("cloudflare-cdn-cache-control", "public, max-age=60, stale-while-revalidate=3600");
+    h.delete("set-cookie");
+    h.delete("x-robots-tag");
+    return applySecurityHeaders(new Response(pre.body, { status: pre.status, statusText: pre.statusText, headers: h }), url);
+  } catch (_) {
+    return null;
+  }
+}
+__name(fetchEmergencyPrerenderFallback, "fetchEmergencyPrerenderFallback");
 async function serveStaleOrError(request) {
   try {
     const cache = caches.default;
@@ -717,6 +770,9 @@ var phlabs_prerender_patched_default = {
         return applySecurityHeaders(applyNoStoreHeaders(new Response(res.body, { status: res.status, statusText: res.statusText, headers: h2 })), url);
       }
       if (res.status === 0 || res.status === 521 || res.status === 522 || res.status === 523) {
+        const emergency = await fetchEmergencyPrerenderFallback(request, token, url);
+        if (emergency) return emergency;
+        if (request.method === "GET" && APP_SHELL_FALLBACK_EXACT.has(url.pathname)) return appShellFallbackResponse(url);
         return brandedErrorResponse(503, 30);
       }
       const h = new Headers(res.headers);
@@ -749,6 +805,9 @@ var phlabs_prerender_patched_default = {
       if (assetRecovery) return assetRecovery;
       if (res.status >= 500) {
         noCache(h);
+        const emergency = await fetchEmergencyPrerenderFallback(request, token, url);
+        if (emergency) return emergency;
+        if (request.method === "GET" && APP_SHELL_FALLBACK_EXACT.has(url.pathname)) return appShellFallbackResponse(url);
         return await serveStaleOrError(request);
       }
       const innerCf = res.headers.get("cf-cache-status");
