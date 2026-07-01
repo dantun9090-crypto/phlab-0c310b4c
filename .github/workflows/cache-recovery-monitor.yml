@@ -32,15 +32,21 @@ jobs:
         id: poll
         env:
           HOURS: ${{ github.event.inputs.hours || '1' }}
+          # Hard fallbacks used when the percentile endpoint is unavailable.
           RECOVERY_THRESHOLD: "10"
           CACHE_RESET_THRESHOLD: "1"
           CRITICAL_ROUTE_THRESHOLD: "1"
         run: |
           set -euo pipefail
-          URL="https://phlabs.co.uk/api/public/cache-recovery-stats?hours=${HOURS}"
-          echo "Polling $URL"
-          RESP=$(curl -fsS --max-time 20 "$URL" || echo '{"ok":false}')
+          STATS_URL="https://phlabs.co.uk/api/public/cache-recovery-stats?hours=${HOURS}"
+          THRESH_URL="https://phlabs.co.uk/api/public/cache-recovery-thresholds"
+          echo "Polling $STATS_URL"
+          RESP=$(curl -fsS --max-time 20 "$STATS_URL" || echo '{"ok":false}')
           echo "$RESP" | tee stats.json | head -c 4000
+          echo
+          echo "Polling $THRESH_URL"
+          THRESH=$(curl -fsS --max-time 20 "$THRESH_URL" || echo '{"ok":false}')
+          echo "$THRESH" | tee thresh.json | head -c 2000
           echo
 
           TRIG=$(jq -r '.totals.recoveryTriggered // 0' stats.json)
@@ -48,15 +54,30 @@ jobs:
           FAIL=$(jq -r '.totals.recoveryFailed // 0' stats.json)
           CRIT=$(jq -r '[.criticalRouteRecoveries // {} | to_entries[] | .value] | add // 0' stats.json)
 
+          # Percentile-based suggested thresholds (per-hour) from last 7d.
+          # Multiply by the current lookback window (HOURS) to compare with
+          # our window totals.
+          SUG_TRIG=$(jq -r '.thresholds.recoveryTriggered.suggested // 0' thresh.json)
+          SUG_SHOWN=$(jq -r '.thresholds.cacheResetShown.suggested // 0' thresh.json)
+          SUG_CRIT=$(jq -r '.thresholds.criticalRoute.suggested // 0' thresh.json)
+          # Fall back to fixed thresholds if the endpoint returned nothing useful.
+          [ "$SUG_TRIG" -gt 0 ] || SUG_TRIG=$RECOVERY_THRESHOLD
+          [ "$SUG_SHOWN" -gt 0 ] || SUG_SHOWN=$CACHE_RESET_THRESHOLD
+          [ "$SUG_CRIT" -gt 0 ] || SUG_CRIT=$CRITICAL_ROUTE_THRESHOLD
+          # Scale per-hour suggestions to the actual window.
+          EFF_TRIG=$((SUG_TRIG * HOURS))
+          EFF_SHOWN=$SUG_SHOWN     # any occurrence is meaningful
+          EFF_CRIT=$SUG_CRIT       # any occurrence is meaningful
+
           ALERT_REASONS=""
-          if [ "$SHOWN" -ge "$CACHE_RESET_THRESHOLD" ]; then
-            ALERT_REASONS="${ALERT_REASONS}cache_reset_shown=${SHOWN} "
+          if [ "$SHOWN" -ge "$EFF_SHOWN" ]; then
+            ALERT_REASONS="${ALERT_REASONS}cache_reset_shown=${SHOWN}>=${EFF_SHOWN} "
           fi
-          if [ "$TRIG" -ge "$RECOVERY_THRESHOLD" ]; then
-            ALERT_REASONS="${ALERT_REASONS}recovery_triggered=${TRIG} "
+          if [ "$TRIG" -ge "$EFF_TRIG" ]; then
+            ALERT_REASONS="${ALERT_REASONS}recovery_triggered=${TRIG}>=${EFF_TRIG}(p95-based) "
           fi
-          if [ "$CRIT" -ge "$CRITICAL_ROUTE_THRESHOLD" ]; then
-            ALERT_REASONS="${ALERT_REASONS}critical_route_recovery=${CRIT} "
+          if [ "$CRIT" -ge "$EFF_CRIT" ]; then
+            ALERT_REASONS="${ALERT_REASONS}critical_route_recovery=${CRIT}>=${EFF_CRIT} "
           fi
 
           {
@@ -66,6 +87,8 @@ jobs:
             echo "shown=$SHOWN"
             echo "failed=$FAIL"
             echo "critical=$CRIT"
+            echo "suggested_triggered=$EFF_TRIG"
+            echo "suggested_shown=$EFF_SHOWN"
           } >> "$GITHUB_OUTPUT"
 
       - name: Notify Slack
