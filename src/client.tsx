@@ -487,8 +487,12 @@ window.setTimeout(() => {
           bodyChildCount,
         });
         // Always retain a local sample (per-browser ring buffer, no PII).
+        const nowMs = Date.now();
+        const mountDurationMs = Math.round(typeof performance !== 'undefined' ? performance.now() : 0);
         pushMountSample({
-          ts: Date.now(),
+          ts: nowMs,
+          eventTs: nowMs, // capture original event time for accurate rate math
+          mountDurationMs,
           code: classified.code,
           category: classified.category,
           route: location.pathname,
@@ -496,6 +500,7 @@ window.setTimeout(() => {
           assetHash,
           message: classified.reason,
         });
+
 
         // === Sampling + retention controls ==================================
         const SAMPLE_KEY = "__phl_mount_sample";

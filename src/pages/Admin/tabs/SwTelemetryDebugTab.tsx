@@ -49,26 +49,48 @@ const CODE_COLOR: Record<string, string> = {
   MOUNT_UNKNOWN: '#94a3b8',
 };
 
-function buildTimeline(samples: MountSample[]): TimelineBin[] {
+export type TimeWindowKey = '6h' | '24h' | '7d';
+const WINDOWS: Record<TimeWindowKey, { totalMs: number; bins: number; bucketMs: number; labelFmt: (d: Date) => string }> = {
+  '6h': {
+    totalMs: 6 * 3_600_000,
+    bins: 24,          // 15-min buckets
+    bucketMs: 15 * 60_000,
+    labelFmt: (d) => `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`,
+  },
+  '24h': {
+    totalMs: 24 * 3_600_000,
+    bins: 24,          // 1-hour buckets
+    bucketMs: 3_600_000,
+    labelFmt: (d) => `${d.getHours().toString().padStart(2, '0')}h`,
+  },
+  '7d': {
+    totalMs: 7 * 24 * 3_600_000,
+    bins: 28,          // 6-hour buckets
+    bucketMs: 6 * 3_600_000,
+    labelFmt: (d) => `${d.getMonth() + 1}/${d.getDate()} ${d.getHours().toString().padStart(2, '0')}h`,
+  },
+};
+
+function buildTimeline(samples: MountSample[], windowKey: TimeWindowKey): TimelineBin[] {
+  const cfg = WINDOWS[windowKey];
   const now = Date.now();
-  const HOUR = 3_600_000;
+  const start = now - cfg.totalMs;
   const bins: TimelineBin[] = [];
-  for (let i = 23; i >= 0; i--) {
-    const start = now - i * HOUR;
-    bins.push({
-      hour: start,
-      label: new Date(start).getHours().toString().padStart(2, '0') + 'h',
-      counts: {},
-    });
+  for (let i = cfg.bins - 1; i >= 0; i--) {
+    const t = now - i * cfg.bucketMs;
+    bins.push({ hour: t, label: cfg.labelFmt(new Date(t)), counts: {} });
   }
   for (const s of samples) {
-    const idx = Math.floor((now - s.ts) / HOUR);
-    if (idx < 0 || idx >= 24) continue;
-    const bin = bins[23 - idx];
+    const t = s.eventTs ?? s.ts;
+    if (t < start || t > now) continue;
+    const idx = Math.min(cfg.bins - 1, Math.floor((now - t) / cfg.bucketMs));
+    const bin = bins[cfg.bins - 1 - idx];
+    if (!bin) continue;
     bin.counts[s.code] = (bin.counts[s.code] || 0) + 1;
   }
   return bins;
 }
+
 
 
 
@@ -171,15 +193,44 @@ export default function SwTelemetryDebugTab() {
   const [samples, setSamples] = useState<MountSample[]>(() => loadMountSamples());
   const [filterBuild, setFilterBuild] = useState<string>('');
   const [filterRoute, setFilterRoute] = useState<string>('');
+  const [timeWindow, setTimeWindow] = useState<TimeWindowKey>('24h');
+  const [viewMode, setViewMode] = useState<'raw' | 'rate'>('raw');
   useEffect(() => {
     if (!autoRefresh) return;
     const id = window.setInterval(() => setSamples(loadMountSamples()), 3000);
     return () => window.clearInterval(id);
   }, [autoRefresh]);
 
-  const filteredSamples = useMemo(() => samples.filter(
-    (s) => (!filterBuild || s.buildId === filterBuild) && (!filterRoute || s.route === filterRoute),
-  ), [samples, filterBuild, filterRoute]);
+  // -- Publish-hold banner (canary rollback flag) --------------------------
+  interface PublishHoldDoc {
+    buildId?: string; reason?: string; source?: string; hold?: boolean;
+    bootBadInWindow?: number; failuresInWindow?: number; updatedAt?: string;
+  }
+  const [publishHold, setPublishHold] = useState<{ hold: boolean; current: PublishHoldDoc | null }>({ hold: false, current: null });
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/public/publish-hold', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json() as { hold?: boolean; current?: PublishHoldDoc | null };
+        if (!cancelled) setPublishHold({ hold: !!data.hold, current: data.current ?? null });
+      } catch { /* ignore */ }
+    };
+    void load();
+    const id = window.setInterval(load, 30_000);
+    return () => { cancelled = true; window.clearInterval(id); };
+  }, []);
+
+  const filteredSamples = useMemo(() => {
+    const cfg = WINDOWS[timeWindow];
+    const cutoff = Date.now() - cfg.totalMs;
+    return samples.filter(
+      (s) => (s.eventTs ?? s.ts) >= cutoff
+        && (!filterBuild || s.buildId === filterBuild)
+        && (!filterRoute || s.route === filterRoute),
+    );
+  }, [samples, filterBuild, filterRoute, timeWindow]);
 
   const buildOptions = useMemo(
     () => Array.from(new Set(samples.map((s) => s.buildId))).filter(Boolean),
@@ -196,7 +247,8 @@ export default function SwTelemetryDebugTab() {
     return t;
   }, [filteredSamples]);
 
-  const timeline = useMemo(() => buildTimeline(filteredSamples), [filteredSamples]);
+  const timeline = useMemo(() => buildTimeline(filteredSamples, timeWindow), [filteredSamples, timeWindow]);
+
 
   const downloadCsv = () => {
     const csv = mountSamplesToCsv(filteredSamples);
@@ -226,6 +278,34 @@ export default function SwTelemetryDebugTab() {
           browser session to verify events reach Firestore.
         </p>
       </div>
+
+      {/* Publish-hold / rollback banner — surfaced from /api/public/publish-hold */}
+      {publishHold.hold && publishHold.current && (
+        <div
+          role="alert"
+          className="rounded-xl border-2 border-rose-600 bg-rose-950 p-4 text-rose-100 space-y-2"
+        >
+          <div className="flex items-center gap-2 font-semibold text-rose-200">
+            <span aria-hidden>⛔</span>
+            <span>Publish hold active — rollback recommended</span>
+          </div>
+          <div className="text-sm">
+            Build{' '}
+            <code className="rounded bg-rose-900/60 px-1 py-0.5 text-rose-100">
+              {(publishHold.current.buildId || 'unknown').slice(0, 20)}
+            </code>{' '}
+            has been flagged by <span className="font-semibold">{publishHold.current.source || 'canary'}</span>.
+            Do not re-publish until the underlying failure is resolved.
+          </div>
+          <div className="text-xs text-rose-200/80 grid grid-cols-1 md:grid-cols-2 gap-1">
+            <div>Reason: <span className="text-white">{publishHold.current.reason || 'n/a'}</span></div>
+            <div>Boot-bad in window: <span className="text-white">{publishHold.current.bootBadInWindow ?? 0}</span></div>
+            <div>Failures in window: <span className="text-white">{publishHold.current.failuresInWindow ?? 0}</span></div>
+            <div>Updated: <span className="text-white">{publishHold.current.updatedAt || '—'}</span></div>
+          </div>
+        </div>
+      )}
+
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="rounded-xl border-2 border-slate-700 bg-slate-900 p-4">
@@ -378,6 +458,40 @@ export default function SwTelemetryDebugTab() {
           </div>
         </div>
 
+        {/* Window + view controls */}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-slate-400 uppercase tracking-wide">Window</span>
+          {(['6h', '24h', '7d'] as TimeWindowKey[]).map((w) => (
+            <button
+              key={w}
+              onClick={() => setTimeWindow(w)}
+              className={`rounded px-2 py-1 border min-h-[32px] ${
+                timeWindow === w
+                  ? 'border-emerald-500 bg-emerald-950 text-emerald-200 font-semibold'
+                  : 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              {w}
+            </button>
+          ))}
+          <span className="ml-3 text-slate-400 uppercase tracking-wide">View</span>
+          {(['raw', 'rate'] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setViewMode(v)}
+              className={`rounded px-2 py-1 border min-h-[32px] ${
+                viewMode === v
+                  ? 'border-sky-500 bg-sky-950 text-sky-200 font-semibold'
+                  : 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+              title={v === 'raw' ? 'Raw counts per bucket' : 'Normalized: events per hour per bucket'}
+            >
+              {v === 'raw' ? 'Raw counts' : 'Rate (events/h)'}
+            </button>
+          ))}
+        </div>
+
+
         {/* Totals per code */}
         <div className="flex flex-wrap gap-2 text-xs">
           {TRACKED_CODES.map((c) => (
@@ -389,35 +503,48 @@ export default function SwTelemetryDebugTab() {
           ))}
         </div>
 
-        {/* 24h stacked-bar timeline (inline SVG, no chart lib) */}
+        {/* Stacked-bar timeline (inline SVG, no chart lib). In "rate" mode
+            each bucket is normalized to events per hour. */}
         {(() => {
           const width = 720;
           const height = 140;
-          const padLeft = 28;
+          const padLeft = 32;
           const padBottom = 20;
           const chartH = height - padBottom - 8;
           const chartW = width - padLeft - 8;
-          const maxCount = Math.max(1, ...timeline.map((b) => TRACKED_CODES.reduce((n, c) => n + (b.counts[c] || 0), 0)));
+          const cfg = WINDOWS[timeWindow];
+          const scale = viewMode === 'rate' ? 3_600_000 / cfg.bucketMs : 1;
+          const bucketTotals = timeline.map((b) =>
+            TRACKED_CODES.reduce((n, c) => n + (b.counts[c] || 0), 0) * scale,
+          );
+          const maxCount = Math.max(1, ...bucketTotals);
           const barW = chartW / timeline.length - 2;
+          const yLabel = viewMode === 'rate' ? `${maxCount.toFixed(1)}/h` : String(Math.ceil(maxCount));
           return (
-            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-40 bg-slate-950 rounded border border-slate-800" role="img" aria-label="Mount telemetry per hour (last 24h)">
+            <svg
+              viewBox={`0 0 ${width} ${height}`}
+              className="w-full h-40 bg-slate-950 rounded border border-slate-800"
+              role="img"
+              aria-label={`Mount telemetry ${viewMode === 'rate' ? '(events/h)' : '(raw counts)'} for last ${timeWindow}`}
+            >
               {[0, 0.5, 1].map((f) => (
                 <line key={f} x1={padLeft} x2={width - 8} y1={8 + chartH * (1 - f)} y2={8 + chartH * (1 - f)} stroke="#1e293b" strokeWidth={1} />
               ))}
-              <text x={4} y={12} fill="#64748b" fontSize={10}>{maxCount}</text>
+              <text x={4} y={12} fill="#64748b" fontSize={10}>{yLabel}</text>
               <text x={4} y={height - padBottom - 2} fill="#64748b" fontSize={10}>0</text>
               {timeline.map((bin, i) => {
                 let yCursor = 8 + chartH;
+                const labelStep = Math.max(1, Math.round(timeline.length / 6));
                 return (
                   <g key={i}>
                     {TRACKED_CODES.map((c) => {
-                      const v = bin.counts[c] || 0;
+                      const v = (bin.counts[c] || 0) * scale;
                       if (!v) return null;
                       const h = (v / maxCount) * chartH;
                       yCursor -= h;
                       return <rect key={c} x={padLeft + i * (barW + 2)} y={yCursor} width={barW} height={h} fill={CODE_COLOR[c]} />;
                     })}
-                    {i % 4 === 0 && (
+                    {i % labelStep === 0 && (
                       <text x={padLeft + i * (barW + 2)} y={height - 6} fill="#64748b" fontSize={9}>{bin.label}</text>
                     )}
                   </g>
@@ -426,6 +553,7 @@ export default function SwTelemetryDebugTab() {
             </svg>
           );
         })()}
+
 
         {filteredSamples.length === 0 && (
           <div className="text-xs text-slate-500 italic">

@@ -68,7 +68,16 @@ export function classifyMountError(input: ClassifyInput): ClassifyResult {
 // -----------------------------------------------------------------------------
 
 export interface MountSample {
+  /** Wall-clock time the sample was persisted (client). */
   ts: number;
+  /**
+   * Wall-clock time the underlying event actually fired (may differ from `ts`
+   * if the sample was buffered/flushed later — critical for accurate rate
+   * calculations and ordering audits). Defaults to `ts` when absent.
+   */
+  eventTs?: number;
+  /** ms from navigationStart (performance.now snapshot) to failure detection. */
+  mountDurationMs?: number;
   code: MountErrorCode;
   category: ClassifyResult['category'];
   route: string;
@@ -107,14 +116,35 @@ export function clearMountSamples(): void {
 }
 
 export function mountSamplesToCsv(samples: MountSample[]): string {
-  const header = ['ts_iso', 'code', 'category', 'route', 'buildId', 'assetHash', 'message'];
+  const header = [
+    'ts_iso',            // when the sample was retained
+    'event_ts_iso',      // when the underlying event fired
+    'mount_duration_ms', // ms from navigation start to failure
+    'code',
+    'category',
+    'route',
+    'buildId',
+    'assetHash',
+    'message',
+  ];
   const esc = (v: unknown) => {
     const s = String(v ?? '');
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
-  const rows = samples.map((s) =>
-    [new Date(s.ts).toISOString(), s.code, s.category, s.route, s.buildId, s.assetHash, s.message]
-      .map(esc).join(','),
-  );
+  const rows = samples.map((s) => {
+    const eventTs = s.eventTs ?? s.ts;
+    return [
+      new Date(s.ts).toISOString(),
+      new Date(eventTs).toISOString(),
+      s.mountDurationMs ?? '',
+      s.code,
+      s.category,
+      s.route,
+      s.buildId,
+      s.assetHash,
+      s.message,
+    ].map(esc).join(',');
+  });
   return [header.join(','), ...rows].join('\n');
 }
+

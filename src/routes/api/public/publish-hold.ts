@@ -17,7 +17,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
-import { addDocAdmin, getDocAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
+import { addDocAdmin, getDocAdmin, listDocsAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
 
 const Body = z.object({
   buildId: z.string().trim().min(1).max(120),
@@ -87,18 +87,40 @@ export const Route = createFileRoute("/api/public/publish-hold")({
         }
       },
       GET: async ({ request }) => {
-        // Public read: allow the release pipeline / admin UI to poll status.
+        // Public read: admin UI + release pipeline poll this.
+        // - ?buildId=X       → single doc status
+        // - (no params)      → latest active holds (for the admin banner)
         const url = new URL(request.url);
         const buildId = url.searchParams.get("buildId");
-        if (!buildId) return json({ error: "missing_buildId" }, 400);
-        const docId = buildId.replace(/[^A-Za-z0-9_.-]/g, "_").slice(0, 120);
+        if (buildId) {
+          const docId = buildId.replace(/[^A-Za-z0-9_.-]/g, "_").slice(0, 120);
+          try {
+            const doc = await getDocAdmin("publish_hold", docId);
+            return json({ ok: true, buildId, hold: !!doc?.hold, doc: doc ?? null });
+          } catch {
+            return json({ ok: true, buildId, hold: false, doc: null });
+          }
+        }
         try {
-          const doc = await getDocAdmin("publish_hold", docId);
-          return json({ ok: true, buildId, hold: !!doc?.hold, doc: doc ?? null });
-        } catch {
-          return json({ ok: true, buildId, hold: false, doc: null });
+          const rows = await listDocsAdmin("publish_hold", {
+            orderBy: "updatedAt",
+            direction: "DESCENDING",
+            limit: 10,
+          });
+          const active = rows.filter((r) => r.hold === true);
+          const current = active[0] ?? null;
+          return json({
+            ok: true,
+            hold: !!current,
+            current,
+            active,
+            recent: rows,
+          });
+        } catch (err) {
+          return json({ ok: true, hold: false, current: null, active: [], recent: [], error: String((err as Error).message).slice(0, 200) });
         }
       },
+
     },
   },
 });
