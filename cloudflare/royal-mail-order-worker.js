@@ -39,10 +39,33 @@ const ALLOWED_ORIGINS = new Set([
   'http://localhost:3000',
 ]);
 
+/**
+ * Headers that MUST appear on every response this Worker emits, regardless
+ * of status or code path. They stop any CDN or browser HTTP cache from
+ * serving a response that was computed for a different Origin (which would
+ * effectively leak CORS decisions across sites).
+ *
+ *  - `Vary: Origin, Access-Control-Request-Method, Access-Control-Request-Headers`
+ *    Any downstream cache MUST key by these request headers. If a shared
+ *    cache ever stored one variant, it would still return the correct one
+ *    per origin/preflight combo.
+ *  - `Cache-Control: no-store` + `Pragma: no-cache`
+ *    Belt and braces: this endpoint is a stateful RPC. No cache — private,
+ *    shared, or CDN — is allowed to reuse a response. Combined with `Vary`
+ *    this makes cross-origin leakage impossible even if a middlebox ignores
+ *    one of the two directives.
+ */
+const NO_CACHE_HEADERS = Object.freeze({
+  'Vary': 'Origin, Access-Control-Request-Method, Access-Control-Request-Headers',
+  'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+  'Pragma': 'no-cache',
+  'Expires': '0',
+});
+
 function corsHeadersFor(request) {
   const origin = request.headers.get('Origin');
   const headers = {
-    'Vary': 'Origin',
+    ...NO_CACHE_HEADERS,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, x-phlabs-auth',
     'Access-Control-Max-Age': '86400',
@@ -66,15 +89,19 @@ export default {
     if (request.method === 'OPTIONS') {
       const cors = corsHeadersFor(request);
       // Preflight from a disallowed origin: reply without ACAO so the
-      // browser blocks the follow-up request.
+      // browser blocks the follow-up request. Vary + no-store still apply
+      // so no cache can serve this negative reply to another origin.
       if (!cors['Access-Control-Allow-Origin']) {
-        return new Response(null, { status: 403, headers: { 'Vary': 'Origin' } });
+        return new Response(null, { status: 403, headers: { ...NO_CACHE_HEADERS } });
       }
       return new Response(null, { status: 204, headers: cors });
     }
 
     if (request.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405 });
+      return new Response('Method not allowed', {
+        status: 405,
+        headers: { 'Content-Type': 'text/plain', Allow: 'POST, OPTIONS', ...NO_CACHE_HEADERS },
+      });
     }
 
     // Origin gate for browser callers. Server-to-server callers omit
@@ -83,7 +110,7 @@ export default {
     if (origin && !ALLOWED_ORIGINS.has(origin)) {
       return new Response(JSON.stringify({ error: 'Origin not allowed' }), {
         status: 403,
-        headers: { 'Content-Type': 'application/json', 'Vary': 'Origin' },
+        headers: { 'Content-Type': 'application/json', ...NO_CACHE_HEADERS },
       });
     }
 
