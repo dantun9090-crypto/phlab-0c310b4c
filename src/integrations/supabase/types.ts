@@ -92,6 +92,66 @@ export type Database = {
         }
         Relationships: []
       }
+      monitor_head_get_log: {
+        Row: {
+          alerts: Json
+          assets_ok: number | null
+          assets_total: number | null
+          created_at: string
+          get_attempts: number | null
+          get_status: string | null
+          had_alert: boolean
+          has_module_entry: boolean | null
+          head_attempts: number | null
+          head_status: string | null
+          host: string
+          html_snippet: string | null
+          id: string
+          info: Json
+          missing_bundles: Json
+          run_url: string | null
+          source: string
+        }
+        Insert: {
+          alerts?: Json
+          assets_ok?: number | null
+          assets_total?: number | null
+          created_at?: string
+          get_attempts?: number | null
+          get_status?: string | null
+          had_alert?: boolean
+          has_module_entry?: boolean | null
+          head_attempts?: number | null
+          head_status?: string | null
+          host: string
+          html_snippet?: string | null
+          id?: string
+          info?: Json
+          missing_bundles?: Json
+          run_url?: string | null
+          source?: string
+        }
+        Update: {
+          alerts?: Json
+          assets_ok?: number | null
+          assets_total?: number | null
+          created_at?: string
+          get_attempts?: number | null
+          get_status?: string | null
+          had_alert?: boolean
+          has_module_entry?: boolean | null
+          head_attempts?: number | null
+          head_status?: string | null
+          host?: string
+          html_snippet?: string | null
+          id?: string
+          info?: Json
+          missing_bundles?: Json
+          run_url?: string | null
+          source?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
