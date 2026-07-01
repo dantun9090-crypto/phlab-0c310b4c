@@ -122,7 +122,7 @@ export default function LiveSalesPopup() {
   // Rotation through recent orders. Uses refs so the interval picks up the
   // newest pool without resetting every Firestore snapshot.
   useEffect(() => {
-    if (isHiddenRoute) return;
+    if (!isHomePage) return;
     const tick = () => {
       if (hovered) return;
       if (visibleRef.current) {
