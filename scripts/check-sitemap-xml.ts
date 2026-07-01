@@ -37,7 +37,52 @@ async function invokeGet(mod: RouteMod, label: string): Promise<string> {
   return await res.text();
 }
 
+const VALID_CHANGEFREQ = new Set([
+  "always",
+  "hourly",
+  "daily",
+  "weekly",
+  "monthly",
+  "yearly",
+  "never",
+]);
+
+// W3C Datetime for sitemaps: YYYY-MM-DD or full ISO-8601 with timezone.
+const LASTMOD_RE = /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2}))?$/;
+
+function isValidLastmod(v: unknown): v is string {
+  if (typeof v !== "string" || !LASTMOD_RE.test(v)) return false;
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return false;
+  // Guard against obvious garbage: year must be sane.
+  const y = d.getUTCFullYear();
+  return y >= 2000 && y <= 2100;
+}
+
+function isValidAbsoluteHttpsUrl(v: unknown): v is string {
+  if (typeof v !== "string" || v.trim() === "") return false;
+  try {
+    const u = new URL(v);
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+interface UrlEntry {
+  loc?: string;
+  lastmod?: string;
+  changefreq?: string;
+  priority?: string;
+  "image:image"?:
+    | { "image:loc"?: string }
+    | Array<{ "image:loc"?: string }>;
+}
+
 function validateXml(label: string, xml: string): void {
+  const errors: string[] = [];
+  const push = (msg: string) => errors.push(`${label}: ${msg}`);
+
   // 1) Strict well-formedness — tags balanced, attrs quoted, no stray chars.
   const check = XMLValidator.validate(xml, { allowBooleanAttributes: false });
   if (check !== true) {
@@ -48,12 +93,12 @@ function validateXml(label: string, xml: string): void {
   // 2) Structural sanity — must be a sitemap urlset with >= 1 <url><loc>.
   const parser = new XMLParser({
     ignoreAttributes: false,
-    isArray: (name) => name === "url",
+    isArray: (name) => name === "url" || name === "image:image",
   });
   const doc = parser.parse(xml) as {
     urlset?: {
       "@_xmlns"?: string;
-      url?: Array<{ loc?: string }>;
+      url?: UrlEntry[];
     };
   };
   const urlset = doc.urlset;
@@ -63,11 +108,79 @@ function validateXml(label: string, xml: string): void {
   }
   const urls = urlset.url ?? [];
   if (urls.length === 0) throw new Error(`${label}: zero <url> entries`);
-  const missingLoc = urls.findIndex((u) => !u.loc || typeof u.loc !== "string");
-  if (missingLoc >= 0) {
-    throw new Error(`${label}: <url> at index ${missingLoc} has no <loc>`);
+
+  // 3) Per-entry field assertions.
+  let imagesChecked = 0;
+  let lastmodChecked = 0;
+  urls.forEach((u, i) => {
+    const at = `<url> #${i}`;
+
+    if (!u.loc || typeof u.loc !== "string" || u.loc.trim() === "") {
+      push(`${at} has no <loc>`);
+    } else if (!isValidAbsoluteHttpsUrl(u.loc)) {
+      push(`${at} <loc> is not a valid absolute URL: "${u.loc}"`);
+    }
+
+    if ("lastmod" in u && u.lastmod !== undefined) {
+      lastmodChecked++;
+      if (typeof u.lastmod !== "string" || u.lastmod.trim() === "") {
+        push(`${at} has empty <lastmod>`);
+      } else if (!isValidLastmod(u.lastmod)) {
+        push(
+          `${at} <lastmod>="${u.lastmod}" is not W3C Datetime (YYYY-MM-DD or full ISO-8601)`,
+        );
+      }
+    }
+
+    if ("changefreq" in u && u.changefreq !== undefined) {
+      if (typeof u.changefreq !== "string" || !VALID_CHANGEFREQ.has(u.changefreq)) {
+        push(
+          `${at} invalid <changefreq>="${u.changefreq}" (allowed: ${[...VALID_CHANGEFREQ].join(", ")})`,
+        );
+      }
+    }
+
+    if ("priority" in u && u.priority !== undefined) {
+      // fast-xml-parser may coerce numeric text to a number.
+      const n =
+        typeof u.priority === "number" ? u.priority : Number(u.priority);
+      if (!Number.isFinite(n) || n < 0 || n > 1) {
+        push(`${at} <priority>="${u.priority}" must be a number in [0.0, 1.0]`);
+      }
+    }
+
+    // image:image entries — every <image:image> must contain a non-empty,
+    // absolute <image:loc>. Emitting <image:image/> with no loc is invalid.
+    const imgs = u["image:image"];
+    if (imgs !== undefined) {
+      const arr = Array.isArray(imgs) ? imgs : [imgs];
+      arr.forEach((img, j) => {
+        imagesChecked++;
+        const iat = `${at} <image:image> #${j}`;
+        if (!img || typeof img !== "object") {
+          push(`${iat} is empty (no child elements)`);
+          return;
+        }
+        const iloc = img["image:loc"];
+        if (iloc === undefined || iloc === null || iloc === "") {
+          push(`${iat} missing <image:loc>`);
+        } else if (!isValidAbsoluteHttpsUrl(iloc)) {
+          push(`${iat} <image:loc>="${iloc}" is not a valid absolute URL`);
+        }
+      });
+    }
+  });
+
+  if (errors.length > 0) {
+    const lines = ["", ...errors.map((e) => `  ✗ ${e}`)].join("\n");
+    throw new Error(
+      `${label}: ${errors.length} metadata assertion(s) failed:${lines}`,
+    );
   }
-  console.log(`  ✓ ${label}: well-formed, ${urls.length} <url> entries`);
+
+  console.log(
+    `  ✓ ${label}: well-formed, ${urls.length} <url> (lastmod:${lastmodChecked}, image:${imagesChecked})`,
+  );
 }
 
 async function main() {
