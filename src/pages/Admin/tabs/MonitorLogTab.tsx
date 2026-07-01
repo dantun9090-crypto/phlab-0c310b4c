@@ -272,11 +272,10 @@ export default function MonitorLogTab() {
 
                   {(r.head_headers || r.get_headers) && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {(['HEAD headers', r.head_headers] as const).slice(0, 0)}
-                      {[
+                      {([
                         { label: 'HEAD response headers', h: r.head_headers },
                         { label: 'GET response headers', h: r.get_headers },
-                      ].map(({ label, h }) => h ? (
+                      ] as Array<{ label: string; h: unknown }>).map(({ label, h }) => h ? (
                         <div key={label}>
                           <div className="text-slate-400 text-xs uppercase mb-1">{label}</div>
                           <pre className="bg-slate-900 border border-slate-700 rounded p-3 text-[11px] text-slate-300 overflow-x-auto whitespace-pre-wrap">
