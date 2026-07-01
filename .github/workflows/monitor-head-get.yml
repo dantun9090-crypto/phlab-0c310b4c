@@ -58,17 +58,22 @@ jobs:
             echo ""
             echo "</details>"
           } >> "$GITHUB_STEP_SUMMARY"
-      - name: Notify Slack + email on failure
+      - name: Notify Slack + email on sustained failure
         if: always() && steps.run.outputs.exit != '0' && (github.event.inputs.notify || 'true') == 'true'
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
           ALERT_EMAIL_FROM: ${{ secrets.ALERT_EMAIL_FROM }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          MONITOR_ALERT_MIN_FAILURES: ${{ vars.MONITOR_ALERT_MIN_FAILURES || '2' }}
+          MONITOR_ALERT_WINDOW_MIN: ${{ vars.MONITOR_ALERT_WINDOW_MIN || '30' }}
+          MONITOR_ALERT_COOLDOWN_MIN: ${{ vars.MONITOR_ALERT_COOLDOWN_MIN || '60' }}
           ALERT_TITLE: "phlabs.co.uk HEAD vs GET Monitor FAILED"
           ALERT_LOG_PATH: /tmp/monitor.log
           ALERT_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: node scripts/notify-monitor-alert.mjs
+        run: node scripts/throttle-monitor-alert.mjs
       - name: Enforce alert exit
         if: always()
         run: |
