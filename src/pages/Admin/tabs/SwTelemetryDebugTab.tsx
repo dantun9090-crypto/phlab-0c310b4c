@@ -590,7 +590,24 @@ export default function SwTelemetryDebugTab() {
                       if (!v) return null;
                       const h = (v / maxCount) * chartH;
                       yCursor -= h;
-                      return <rect key={c} x={padLeft + i * (barW + 2)} y={yCursor} width={barW} height={h} fill={CODE_COLOR[c]} />;
+                      const isSelected = drillDown?.hour === bin.hour && drillDown?.code === c;
+                      return (
+                        <rect
+                          key={c}
+                          x={padLeft + i * (barW + 2)}
+                          y={yCursor}
+                          width={barW}
+                          height={h}
+                          fill={CODE_COLOR[c]}
+                          stroke={isSelected ? '#fff' : 'none'}
+                          strokeWidth={isSelected ? 1.5 : 0}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => setDrillDown({ hour: bin.hour, label: bin.label, code: c })}
+                        >
+                          <title>{`${c.replace('MOUNT_', '')} · ${bin.label} · ${bin.counts[c] || 0} event(s) — click to drill down`}</title>
+                        </rect>
+                      );
+
                     })}
                     {i % labelStep === 0 && (
                       <text x={padLeft + i * (barW + 2)} y={height - 6} fill="#64748b" fontSize={9}>{bin.label}</text>
