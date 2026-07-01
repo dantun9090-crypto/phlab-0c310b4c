@@ -571,17 +571,30 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
 
   let rewritten = htmlResponse;
   const buildId = (typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev') as string;
+  const strict = useStrictCsp(hostname);
   if (RewriterCtor) {
     const rewriter: Rewriter = new RewriterCtor();
-    rewritten = rewriter
-      .on("head", {
-        element(el) {
-          el.append(`<meta name="build-id" content="${buildId}">`, { html: true });
-          el.append(`<meta name="release" content="${buildId}">`, { html: true });
-        },
-
-      })
-      .transform(htmlResponse);
+    let r = rewriter.on("head", {
+      element(el) {
+        el.append(`<meta name="build-id" content="${buildId}">`, { html: true });
+        el.append(`<meta name="release" content="${buildId}">`, { html: true });
+      },
+    });
+    if (strict) {
+      // Per-request nonce injection: stamp nonce on every <script> and
+      // <style> element in the response body. Covers TanStack Start's
+      // inline bootstrap payload, our inline boot guards, external
+      // module preloads, and injected style tags. Combined with the
+      // NONCE_PROPAGATOR script in __root.tsx (which mirrors the nonce
+      // onto every runtime-created script/style), 'strict-dynamic'
+      // authorizes every dependent load without 'unsafe-inline'.
+      r = r.on("script", {
+        element(el) { el.setAttribute("nonce", nonce); },
+      }).on("style", {
+        element(el) { el.setAttribute("nonce", nonce); },
+      });
+    }
+    rewritten = r.transform(htmlResponse);
   }
 
   const headers = new Headers(rewritten.headers);
@@ -590,6 +603,15 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   }
   headers.set("content-security-policy", buildCsp(nonce, hostname));
   headers.set("x-build-id", buildId);
+  // HTML bodies now vary by per-request nonce — must not be shared across
+  // requests by intermediate caches. CF edge cache is controlled via
+  // cdn-cache-control (already set above), which honours the nonce-fresh
+  // body but keeps a single edge copy keyed by URL. Public HTML uses SWR
+  // so nonces refresh on each origin revalidation.
+  if (strict) {
+    const existingVary = headers.get("vary");
+    headers.set("vary", existingVary ? `${existingVary}, cookie` : "cookie");
+  }
   return new Response(rewritten.body, {
     status: rewritten.status,
     statusText: rewritten.statusText,
