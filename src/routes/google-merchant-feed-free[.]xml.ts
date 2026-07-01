@@ -243,10 +243,6 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               `    <g:identifier_exists>false</g:identifier_exists>`,
               `    <g:is_bundle>no</g:is_bundle>`,
               `    <g:multipack>1</g:multipack>`,
-              sizeCompact
-                ? `    <g:unit_pricing_measure>${xmlEscape(sizeCompact)}</g:unit_pricing_measure>`
-                : null,
-              `    <g:unit_pricing_base_measure>${baseUnit}</g:unit_pricing_base_measure>`,
               `    <g:shipping>`,
               `      <g:country>GB</g:country>`,
               `      <g:service>Standard</g:service>`,
@@ -263,11 +259,11 @@ export const Route = createFileRoute("/google-merchant-feed-free.xml")({
               isLiquid ? null : `    <g:product_highlight>Lyophilised powder, stable cold-chain dispatch</g:product_highlight>`,
               `    <g:product_highlight>UK fulfilment to qualified laboratories</g:product_highlight>`,
               `    <g:product_highlight>Retention sample held for analytical traceability</g:product_highlight>`,
-              `    <g:custom_label_0>Laboratory Reference Standard</g:custom_label_0>`,
-              `    <g:custom_label_1>In-Vitro Research Only</g:custom_label_1>`,
-              `    <g:custom_label_2>HPLC ≥99% Purity</g:custom_label_2>`,
-              `    <g:custom_label_3>UK Dispatch</g:custom_label_3>`,
-              `    <g:custom_label_4>${xmlEscape(formLabel)}</g:custom_label_4>`,
+              `    <g:custom_label_0>UK-Stock</g:custom_label_0>`,
+              `    <g:custom_label_1>${xmlEscape(formLabel)}</g:custom_label_1>`,
+              `    <g:custom_label_2>${xmlEscape(sizeCompact || "Standard")}</g:custom_label_2>`,
+              `    <g:custom_label_3>Lyophilised</g:custom_label_3>`,
+              `    <g:custom_label_4>New-2026</g:custom_label_4>`,
               `  </item>`,
             ]
               .filter(Boolean)
