@@ -56,20 +56,46 @@ async function checkHost(host) {
   if (!get.res.ok) alerts.push(`GET returned ${get.res.status}`);
 
   const html = await get.res.text().catch(() => "");
-  const m = html.match(/<script[^>]+src=["']([^"']*\/assets\/[^"']+\.js)["']/i);
-  if (!m) {
-    alerts.push("HTML missing /assets/*.js reference");
+
+  // Collect every <script src="/assets/*.js"> tag; note whether it's a
+  // module entry (type="module") so we can require at least one entry.
+  const scriptRe = /<script\b([^>]*?)\bsrc=["']([^"']*\/assets\/[^"']+\.js)["']([^>]*)>/gi;
+  const scripts = [];
+  let match;
+  while ((match = scriptRe.exec(html)) !== null) {
+    const attrs = (match[1] + " " + match[3]).toLowerCase();
+    scripts.push({
+      url: new URL(match[2], host + "/").toString(),
+      isModule: /\btype\s*=\s*["']?module\b/.test(attrs),
+    });
+  }
+
+  if (scripts.length === 0) {
+    alerts.push("HTML missing /assets/*.js references");
   } else {
-    const entryUrl = new URL(m[1], host + "/").toString();
-    const js = await timedFetch(entryUrl);
-    if (!js.res) alerts.push(`entry JS fetch failed: ${js.error}`);
-    else if (!js.res.ok) alerts.push(`entry JS returned ${js.res.status}`);
-    else {
+    if (!scripts.some((s) => s.isModule)) {
+      alerts.push("HTML has no <script type=\"module\"> entry bundle");
+    }
+
+    // Validate every referenced asset in parallel (bounded by browser fetch).
+    const checks = await Promise.all(scripts.map(async (s) => {
+      const js = await timedFetch(s.url);
+      if (!js.res) return { s, err: `fetch failed: ${js.error}` };
+      if (!js.res.ok) return { s, err: `HTTP ${js.res.status}` };
       const body = await js.res.text().catch(() => "");
       const ct = (js.res.headers.get("content-type") || "").toLowerCase();
-      if (body.length < 200) alerts.push(`entry JS too small (${body.length}b)`);
-      else if (ct && !/(javascript|ecmascript)/.test(ct)) alerts.push(`entry JS wrong ct: ${ct}`);
-      else if (/^\s*<!doctype|<html[\s>]/i.test(body.slice(0, 512))) alerts.push("entry JS body is HTML");
+      if (body.length < 50) return { s, err: `too small (${body.length}b)` };
+      if (ct && !/(javascript|ecmascript)/.test(ct)) return { s, err: `wrong ct: ${ct}` };
+      if (/^\s*<!doctype|<html[\s>]/i.test(body.slice(0, 512))) return { s, err: "body is HTML" };
+      return { s, ok: true };
+    }));
+
+    const failed = checks.filter((c) => !c.ok);
+    const okCount = checks.length - failed.length;
+    info.push(`asset bundles: ${okCount}/${checks.length} ok (${scripts.filter((s) => s.isModule).length} module entry)`);
+    for (const f of failed) {
+      const name = f.s.url.split("/assets/")[1] || f.s.url;
+      alerts.push(`asset /assets/${name} — ${f.err}`);
     }
   }
 
