@@ -31,7 +31,7 @@ jobs:
       - name: Run HEAD vs GET monitor
         id: run
         env:
-          MONITOR_HOSTS: ${{ github.event.inputs.hosts || 'https://phlabs.co.uk,https://prohealthpeptides.co.uk' }}
+          MONITOR_HOSTS: ${{ github.event.inputs.hosts || 'https://phlabs.co.uk,https://prohealthpeptides.co.uk' }} # check-domains-allow-line: legacy host monitored intentionally
           MONITOR_SOURCE: ${{ github.event_name == 'workflow_dispatch' && 'ci-manual' || 'ci-cron' }}
           MONITOR_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
