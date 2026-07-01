@@ -254,10 +254,25 @@ async function repairInlineBootScripts(response) {
     "var isAppWorker=function(registration){ return //(?:sw|service-worker).js(?:$|[?#])/i.test(scriptUrl(registration)); };",
     "var isAppWorker=function(registration){ return new RegExp('\\\\/(?:sw|service-worker)\\\\.js(?:$|[?#])','i').test(scriptUrl(registration)); };"
   );
-  if (fixed === html) return new Response(html, { status: response.status, statusText: response.statusText, headers: response.headers });
+  // ---- Build-id ↔ asset-hash correlation headers ----------------------
+  // Extract the meta build-id and the first /assets/*.js filename so
+  // cache-HIT responses can be correlated against the deployed asset
+  // manifest. Mismatch after purge = stale HTML pointing at gone bundle.
+  const buildIdMatch = fixed.match(/<meta[^>]+name=["']build-id["'][^>]+content=["']([^"']+)["']/i);
+  const entryMatch = fixed.match(/<script[^>]+src=["']([^"']*\/assets\/[^"']+\.js)["']/i);
+  const bootBad = /return\s+\/\/service-worker/.test(fixed) || /return\s+\/\/\(\?:sw\|service-worker\)/.test(fixed);
   const h = new Headers(response.headers);
+  if (buildIdMatch) h.set("x-phl-build-id", buildIdMatch[1].slice(0, 64));
+  if (entryMatch) {
+    const asset = (entryMatch[1].split("/").pop() || "").slice(0, 80);
+    const hash = (asset.match(/-([A-Za-z0-9_]{6,})\.js$/) || [, ""])[1] || "";
+    if (hash) h.set("x-phl-asset-hash", hash.slice(0, 32));
+    if (asset) h.set("x-phl-entry", asset);
+  }
+  if (bootBad) h.set("x-phl-boot-bad", "1");
+  if (fixed === html && !buildIdMatch && !entryMatch && !bootBad) return response;
   h.delete("content-length");
-  h.set("x-phl-html-hotfix", "inline-sw-regex");
+  if (fixed !== html) h.set("x-phl-html-hotfix", "inline-sw-regex");
   return new Response(fixed, { status: response.status, statusText: response.statusText, headers: h });
 }
 __name(repairInlineBootScripts, "repairInlineBootScripts");
