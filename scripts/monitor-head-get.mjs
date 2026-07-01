@@ -220,7 +220,7 @@ if (!DISABLE_LOG) {
     ...r.row,
     had_alert: r.alerts.length > 0,
     source: SOURCE.slice(0, 40),
-    run_url: RUN_URL ? String(RUN_URL).slice(0, 500) : null,
+    run_url: RUN_URL ? String(RUN_URL).slice(0, 500) : '',
   }));
   try {
     const res = await fetch(`${SUPA_URL}/rest/v1/monitor_head_get_log`, {
