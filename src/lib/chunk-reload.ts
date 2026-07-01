@@ -6,6 +6,8 @@ import {
   isStaleChunkError,
   markHydrationError,
 } from "@/lib/recovery";
+import { logSwTelemetry, markCacheResetPending } from "@/lib/swTelemetry";
+import { currentBrowser } from "@/lib/browser-info";
 
 // Robust auto-recovery for a frozen / stuck page.
 //
