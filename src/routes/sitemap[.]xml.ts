@@ -20,45 +20,43 @@ interface SitemapEntry {
   priority?: string;
 }
 
-// Static-page lastmod resolves dynamically at request time so Google never
-// sees a frozen date. Per-route overrides below remain hard-coded where we
-// want to signal a meaningful content edit.
-const STATIC_LASTMOD = new Date().toISOString().slice(0, 10);
-
-const staticEntries: SitemapEntry[] = [
-  { path: "/", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "1.0" },
-  { path: "/products", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.9" },
-  { path: "/quality-control", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.8" },
-  { path: "/resources", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
-  { path: "/about", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.6" },
-  { path: "/contact", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.6" },
-  { path: "/shipping-policy", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.4" },
-  { path: "/refund-policy", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.4" },
-  { path: "/terms-and-conditions", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.3" },
-  { path: "/privacy-policy", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.3" },
-  { path: "/cookies", lastmod: STATIC_LASTMOD, changefreq: "yearly", priority: "0.3" },
-  { path: "/research", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
-  { path: "/research/retatrutide-uk", lastmod: "2026-06-26", changefreq: "weekly", priority: "0.9" },
-  { path: "/research/bpc-157-uk", lastmod: "2026-06-26", changefreq: "weekly", priority: "0.9" },
-  { path: "/compound", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
-  { path: "/peptide-calculator", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.7" },
-  { path: "/landing/phlabs", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
-  { path: "/lab-reports", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.6" },
-  { path: "/storage-guide", lastmod: STATIC_LASTMOD, changefreq: "monthly", priority: "0.6" },
-  // /google-merchant-feed.xml is discovered separately by Merchant Center.
-  { path: "/bing-feed.xml", lastmod: STATIC_LASTMOD, changefreq: "daily", priority: "0.2" },
-  // Category landing pages (legacy router /products/category/:slug)
-  { path: "/products/category/neurological", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
-  { path: "/products/category/tissue-repair", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.7" },
-  // Per-peptide hub categories (keyword-led, UK SEO)
-  { path: "/products/category/bpc-157", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
-  { path: "/products/category/retatrutide", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
-  { path: "/products/category/tirzepatide", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
-  { path: "/products/category/tb-500", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
-  { path: "/products/category/ghk-cu", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
-  { path: "/products/category/bacteriostatic-water", lastmod: STATIC_LASTMOD, changefreq: "weekly", priority: "0.8" },
-
-];
+// Static-page lastmod must resolve at REQUEST time inside the handler.
+// Computing it at module scope evaluates once on Worker cold-start; on
+// Cloudflare workerd, module-init timing pins Date to the Unix epoch,
+// which is why the live sitemap was emitting <lastmod>1970-01-01</lastmod>
+// for every static entry. Build the list per request instead.
+function buildStaticEntries(today: string): SitemapEntry[] {
+  return [
+    { path: "/", lastmod: today, changefreq: "weekly", priority: "1.0" },
+    { path: "/products", lastmod: today, changefreq: "weekly", priority: "0.9" },
+    { path: "/quality-control", lastmod: today, changefreq: "monthly", priority: "0.8" },
+    { path: "/resources", lastmod: today, changefreq: "weekly", priority: "0.7" },
+    { path: "/about", lastmod: today, changefreq: "monthly", priority: "0.6" },
+    { path: "/contact", lastmod: today, changefreq: "monthly", priority: "0.6" },
+    { path: "/shipping-policy", lastmod: today, changefreq: "yearly", priority: "0.4" },
+    { path: "/refund-policy", lastmod: today, changefreq: "yearly", priority: "0.4" },
+    { path: "/terms-and-conditions", lastmod: today, changefreq: "yearly", priority: "0.3" },
+    { path: "/privacy-policy", lastmod: today, changefreq: "yearly", priority: "0.3" },
+    { path: "/cookies", lastmod: today, changefreq: "yearly", priority: "0.3" },
+    { path: "/research", lastmod: today, changefreq: "weekly", priority: "0.7" },
+    { path: "/research/retatrutide-uk", lastmod: "2026-06-26", changefreq: "weekly", priority: "0.9" },
+    { path: "/research/bpc-157-uk", lastmod: "2026-06-26", changefreq: "weekly", priority: "0.9" },
+    { path: "/compound", lastmod: today, changefreq: "weekly", priority: "0.7" },
+    { path: "/peptide-calculator", lastmod: today, changefreq: "monthly", priority: "0.7" },
+    { path: "/landing/phlabs", lastmod: today, changefreq: "weekly", priority: "0.7" },
+    { path: "/lab-reports", lastmod: today, changefreq: "monthly", priority: "0.6" },
+    { path: "/storage-guide", lastmod: today, changefreq: "monthly", priority: "0.6" },
+    { path: "/bing-feed.xml", lastmod: today, changefreq: "daily", priority: "0.2" },
+    { path: "/products/category/neurological", lastmod: today, changefreq: "weekly", priority: "0.7" },
+    { path: "/products/category/tissue-repair", lastmod: today, changefreq: "weekly", priority: "0.7" },
+    { path: "/products/category/bpc-157", lastmod: today, changefreq: "weekly", priority: "0.8" },
+    { path: "/products/category/retatrutide", lastmod: today, changefreq: "weekly", priority: "0.8" },
+    { path: "/products/category/tirzepatide", lastmod: today, changefreq: "weekly", priority: "0.8" },
+    { path: "/products/category/tb-500", lastmod: today, changefreq: "weekly", priority: "0.8" },
+    { path: "/products/category/ghk-cu", lastmod: today, changefreq: "weekly", priority: "0.8" },
+    { path: "/products/category/bacteriostatic-water", lastmod: today, changefreq: "weekly", priority: "0.8" },
+  ];
+}
 
 
 
@@ -71,6 +69,9 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
+        const today = new Date().toISOString().slice(0, 10);
+        const STATIC_LASTMOD = today;
+        const staticEntries = buildStaticEntries(today);
         // Dynamic article entries served by the /$ splat route
         const articleEntries: SitemapEntry[] = articles.map((a) => ({
           path: `/resources/${a.slug}`,
