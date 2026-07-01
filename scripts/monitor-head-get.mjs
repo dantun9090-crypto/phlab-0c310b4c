@@ -113,7 +113,7 @@ async function checkHost(host) {
 
     // Validate every referenced asset in parallel (bounded by browser fetch).
     const checks = await Promise.all(scripts.map(async (s) => {
-      const js = await timedFetch(s.url);
+      const js = await fetchWithRetries(s.url, { method: "GET" }, ASSET_TIMEOUT_MS);
       if (!js.res) return { s, err: `fetch failed: ${js.error}` };
       if (!js.res.ok) return { s, err: `HTTP ${js.res.status}` };
       const body = await js.res.text().catch(() => "");
