@@ -493,7 +493,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `    <g:condition>new</g:condition>`,
               `    <g:mpn>${xmlEscape(sku)}</g:mpn>`,
               `    <g:sku>${xmlEscape(sku)}</g:sku>`,
-              hasGtin ? `    <g:gtin>${xmlEscape(p.gtin!)}</g:gtin>` : null,
+              `    <g:identifier_exists>false</g:identifier_exists>`,
               `    <g:item_group_id>${xmlEscape(docId)}</g:item_group_id>`,
               // High-risk SKUs use the Laboratory Chemicals leaf (499954)
               // and skip unit_pricing_measure to avoid the pharma classifier.
@@ -518,13 +518,11 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `    <g:product_highlight>Certificate of Analysis available on request</g:product_highlight>`,
               `    <g:product_highlight>Supplied to qualified UK laboratories</g:product_highlight>`,
               ...MERCHANT_PROMO_IDS.map((pid: string) => `    <g:promotion_id>${xmlEscape(pid)}</g:promotion_id>`),
-              `    <g:custom_label_0>${xmlEscape(customLabel)}</g:custom_label_0>`,
+              `    <g:custom_label_0>UK-Stock</g:custom_label_0>`,
+              `    <g:custom_label_1>${xmlEscape(sizeCompact || "Standard")}</g:custom_label_1>`,
               // Free listings only — paid Shopping ads are paused.
               `    <g:included_destination>Free_listings</g:included_destination>`,
               `    <g:included_destination>Free_local_listings</g:included_destination>`,
-              !highRisk && sizeCompact
-                ? `    <g:unit_pricing_measure>${xmlEscape(sizeCompact)}</g:unit_pricing_measure>`
-                : null,
               `  </item>`,
 
             ]
