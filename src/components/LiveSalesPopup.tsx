@@ -156,7 +156,7 @@ export default function LiveSalesPopup() {
       window.clearTimeout(kickoff);
       if (rotateTimerRef.current) window.clearInterval(rotateTimerRef.current);
     };
-  }, [isHiddenRoute, hovered]);
+  }, [!isHomePage, hovered]);
 
 
 
