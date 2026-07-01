@@ -4,7 +4,8 @@
 //
 // Writes are best-effort: failures must never break the UI.
 
-import { auth, db, collection, addDoc, Timestamp } from '@/lib/firebase';
+import { auth, db, collection, addDoc } from '@/lib/firebase';
+import { serverTimestamp } from 'firebase/firestore';
 
 export type ToastKind = 'signup' | 'visitor';
 export type ToastOutcome =
