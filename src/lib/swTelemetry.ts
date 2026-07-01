@@ -17,6 +17,9 @@ export type SwTelemetryEvent =
   | 'sw_hydration_fallback_shown'
   | 'sw_cache_reset_clicked'
   | 'sw_cache_reset_success'
+  | 'sw_cache_reset_shown'
+  | 'sw_cache_recovery_triggered'
+  | 'sw_cache_recovery_failed'
   | 'sw_build_mismatch'
   | 'sw_hydration_error';
 
