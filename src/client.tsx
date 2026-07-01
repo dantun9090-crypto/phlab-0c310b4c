@@ -475,45 +475,69 @@ window.setTimeout(() => {
     const mountFailed = bootStillVisible || !reactRootMounted || bodyChildCount <= 1;
 
     if (mountFailed) {
-      // === Sampling + retention controls ==================================
-      // 1. Per-session dedupe — one MOUNT-TIMEOUT per tab, ever.
-      // 2. Global sample rate override via localStorage (__phl_mount_sample, 0..1).
-      // 3. Cross-session rate limit — max 1 report per session per hour per build.
-      const SAMPLE_KEY = "__phl_mount_sample";
-      const REPORTED_KEY = "__phl_mount_reported";
-      const LAST_REPORT_KEY = "__phl_mount_last_report_at";
-      const HOUR_MS = 3_600_000;
-      let sampleRate = 1;
-      try {
-        const raw = localStorage.getItem(SAMPLE_KEY);
-        if (raw != null) {
-          const n = Number(raw);
-          if (Number.isFinite(n) && n >= 0 && n <= 1) sampleRate = n;
-        }
-      } catch { /* ignore */ }
-      const alreadyReported = sessionStorage.getItem(REPORTED_KEY) === "1";
-      const lastReportAt = Number(localStorage.getItem(LAST_REPORT_KEY) || "0");
-      const withinRateLimit = Date.now() - lastReportAt < HOUR_MS;
-      const passesSample = Math.random() < sampleRate;
-
-      if (!alreadyReported && !withinRateLimit && passesSample) {
-        try { sessionStorage.setItem(REPORTED_KEY, "1"); } catch { /* ignore */ }
-        try { localStorage.setItem(LAST_REPORT_KEY, String(Date.now())); } catch { /* ignore */ }
-        reportClientError({
-          source: "manual",
-          message: `[MOUNT-TIMEOUT] React did not mount within 5s (bootVisible=${bootStillVisible}, bodyChildren=${bodyChildCount}, rootFound=${reactRootMounted})`,
-          stack: [
-            `url=${location.href}`,
-            `buildId=${document.querySelector('meta[name="build-id"]')?.getAttribute("content") || "n/a"}`,
-            `switchedToCsr=${switchedToCsr}`,
-            `sampleRate=${sampleRate}`,
-            `preHydrationDom=${JSON.stringify(window.__PHL_PRE_HYDRATION_DOM__ || null).slice(0, 500)}`,
-          ].join("\n"),
-          routeId: location.pathname,
+      const buildId = document.querySelector('meta[name="build-id"]')?.getAttribute("content") || "n/a";
+      const assetHash = document.querySelector('meta[name="asset-hash"]')?.getAttribute("content") || "n/a";
+      // Normalize into a stable code so canary/admin charts can correlate.
+      // Lazy import to keep boot path free of extra chunks.
+      void import("@/lib/mount-error-codes").then(({ classifyMountError, pushMountSample }) => {
+        const classified = classifyMountError({
+          message: "[MOUNT-TIMEOUT] React did not mount within 5s",
+          bootStillVisible,
+          reactRootMounted,
+          bodyChildCount,
         });
-      } else {
-        console.info("[MOUNT-TIMEOUT] suppressed", { alreadyReported, withinRateLimit, sampleRate });
-      }
+        // Always retain a local sample (per-browser ring buffer, no PII).
+        pushMountSample({
+          ts: Date.now(),
+          code: classified.code,
+          category: classified.category,
+          route: location.pathname,
+          buildId,
+          assetHash,
+          message: classified.reason,
+        });
+
+        // === Sampling + retention controls ==================================
+        const SAMPLE_KEY = "__phl_mount_sample";
+        const REPORTED_KEY = "__phl_mount_reported";
+        const LAST_REPORT_KEY = "__phl_mount_last_report_at";
+        const HOUR_MS = 3_600_000;
+        let sampleRate = 1;
+        try {
+          const raw = localStorage.getItem(SAMPLE_KEY);
+          if (raw != null) {
+            const n = Number(raw);
+            if (Number.isFinite(n) && n >= 0 && n <= 1) sampleRate = n;
+          }
+        } catch { /* ignore */ }
+        const alreadyReported = sessionStorage.getItem(REPORTED_KEY) === "1";
+        const lastReportAt = Number(localStorage.getItem(LAST_REPORT_KEY) || "0");
+        const withinRateLimit = Date.now() - lastReportAt < HOUR_MS;
+        const passesSample = Math.random() < sampleRate;
+
+        if (!alreadyReported && !withinRateLimit && passesSample) {
+          try { sessionStorage.setItem(REPORTED_KEY, "1"); } catch { /* ignore */ }
+          try { localStorage.setItem(LAST_REPORT_KEY, String(Date.now())); } catch { /* ignore */ }
+          reportClientError({
+            source: "manual",
+            message: `[MOUNT-TIMEOUT] ${classified.code} — ${classified.reason} (bootVisible=${bootStillVisible}, bodyChildren=${bodyChildCount}, rootFound=${reactRootMounted})`,
+            stack: [
+              `code=${classified.code}`,
+              `category=${classified.category}`,
+              `url=${location.href}`,
+              `buildId=${buildId}`,
+              `assetHash=${assetHash}`,
+              `switchedToCsr=${switchedToCsr}`,
+              `sampleRate=${sampleRate}`,
+              `preHydrationDom=${JSON.stringify(window.__PHL_PRE_HYDRATION_DOM__ || null).slice(0, 500)}`,
+            ].join("\n"),
+            routeId: location.pathname,
+          });
+        } else {
+          console.info("[MOUNT-TIMEOUT] suppressed", { alreadyReported, withinRateLimit, sampleRate, code: classified.code });
+        }
+      }).catch(() => { /* never let telemetry throw */ });
     }
   } catch { /* never let telemetry throw */ }
 }, 5000);
+
