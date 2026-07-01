@@ -482,6 +482,44 @@ export default function SwTelemetryDebugTab() {
         </div>
       )}
 
+      {/* Auto-refresh error banners — surfaced when publish-hold or edge fetch
+          fails. Backoff retries fire from fetchWithBackoff; interval keeps
+          polling. */}
+      {holdError && (
+        <div role="alert" className="rounded-lg border-2 border-amber-600 bg-amber-950/60 p-3 text-amber-100 flex flex-wrap items-center justify-between gap-2">
+          <div className="text-sm">
+            <span className="font-semibold">Publish-hold fetch failed:</span> <span className="font-mono">{holdError}</span>
+            {holdRetryAt && (
+              <span className="ml-2 text-xs text-amber-200/80">
+                Retrying in {Math.max(0, Math.ceil((holdRetryAt - Date.now()) / 1000))}s (or on next auto-refresh)
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => { void loadHold(); }}
+            className="rounded border border-amber-500 bg-amber-900 hover:bg-amber-800 px-3 py-1 text-xs font-semibold text-amber-100 min-h-[36px]"
+          >
+            Retry now
+          </button>
+        </div>
+      )}
+      {edgeError && (
+        <div role="alert" className="rounded-lg border-2 border-amber-600 bg-amber-950/60 p-3 text-amber-100 flex flex-wrap items-center justify-between gap-2">
+          <div className="text-sm">
+            <span className="font-semibold">Edge correlation fetch failed:</span> <span className="font-mono">{edgeError}</span>
+          </div>
+          <button
+            onClick={() => { void refreshEdge(); }}
+            disabled={edgeLoading}
+            className="rounded border border-amber-500 bg-amber-900 hover:bg-amber-800 px-3 py-1 text-xs font-semibold text-amber-100 min-h-[36px] disabled:opacity-50"
+          >
+            {edgeLoading ? 'Retrying…' : 'Retry now'}
+          </button>
+        </div>
+      )}
+
+
+
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="rounded-xl border-2 border-slate-700 bg-slate-900 p-4">
