@@ -1,5 +1,5 @@
 /**
- * HEAD vs GET monitor for phlabs.co.uk + prohealthpeptides.co.uk.
+ * HEAD vs GET monitor for phlabs.co.uk + legacy host. check-domains-allow-line
  *
  * Compares HEAD and GET responses for each host and only reports an alert
  * when GET (real browser fetch) fails: non-200 status, missing JS bundle
