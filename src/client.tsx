@@ -464,4 +464,26 @@ window.setTimeout(() => {
   } catch {
     /* ignore */
   }
+  // --- Mount / blank-page telemetry ------------------------------------
+  // If the initial boot loader is still on screen after 5s, React never
+  // mounted successfully — report the exact cause so we can see it in
+  // Firestore/error-monitor sessions instead of guessing from "blank navy".
+  try {
+    const bootStillVisible = !!document.querySelector(".phl-boot");
+    const bodyChildCount = document.body?.childElementCount ?? 0;
+    const reactRootMounted = !!document.querySelector("[data-tanstack-scripts], [data-tsr-scripts], #root, main, header, nav");
+    if (bootStillVisible || !reactRootMounted || bodyChildCount <= 1) {
+      reportClientError({
+        source: "manual",
+        message: `[MOUNT-TIMEOUT] React did not mount within 5s (bootVisible=${bootStillVisible}, bodyChildren=${bodyChildCount}, rootFound=${reactRootMounted})`,
+        stack: [
+          `url=${location.href}`,
+          `buildId=${document.querySelector('meta[name="build-id"]')?.getAttribute("content") || "n/a"}`,
+          `switchedToCsr=${switchedToCsr}`,
+          `preHydrationDom=${JSON.stringify(window.__PHL_PRE_HYDRATION_DOM__ || null).slice(0, 500)}`,
+        ].join("\n"),
+        routeId: location.pathname,
+      });
+    }
+  } catch { /* never let telemetry throw */ }
 }, 5000);
