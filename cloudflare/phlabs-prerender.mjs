@@ -42,9 +42,10 @@ function missingBuildAssetRecoveryResponse(pathname) {
   h.set("content-type", "text/javascript; charset=utf-8");
   return new Response(`(() => {
   try {
-    console.warn('[PHL] Missing stale build asset. Showing manual cache recovery screen.');
+    console.warn('[PHL] Missing stale build asset. Auto-recovering once.');
+    const FLAG = '__phl_missing_asset_auto_recovered_at';
     const clearKeys = ['__phl_reload_window','__phl_hard_reload_in_flight','__phl_route_auto_recovery_done','__phl_reloaded_at','__phl_stale_asset_reload_at','phl_reload_count','__phl_stale_asset_reload_count','__phl_hydration_error_seen'];
-    const reset = async () => {
+    const cleanup = async () => {
       for (const key of clearKeys) {
         try { sessionStorage.removeItem(key); } catch {}
         try { localStorage.removeItem(key); } catch {}
@@ -58,18 +59,28 @@ function missingBuildAssetRecoveryResponse(pathname) {
       try {
         if ('serviceWorker' in navigator) {
           const regs = await navigator.serviceWorker.getRegistrations();
-          await Promise.all(regs.map((reg) => reg.unregister()));
+          await Promise.all(regs.map((reg) => reg.unregister()))
         }
       } catch {}
+    };
+    const go = async () => {
+      await cleanup();
       const url = new URL(location.href);
       url.searchParams.set('sw', 'off');
       url.searchParams.set('_r', String(Date.now()));
       location.replace(url.toString());
     };
+    const now = Date.now();
+    const last = Number(sessionStorage.getItem(FLAG) || '0');
+    if (!last || now - last > 30000) {
+      sessionStorage.setItem(FLAG, String(now));
+      setTimeout(() => { void go(); }, 50);
+      return;
+    }
     const render = () => {
       document.documentElement.setAttribute('lang', 'en-GB');
-      document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs cache reset needed</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">Your browser received an old page after the latest update. Click once to clear the local cache and reopen the site.</p><button id="phl-stale-reset" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;cursor:pointer;font-size:16px">Clear cache & open site</button></div></div>';
-      document.getElementById('phl-stale-reset')?.addEventListener('click', () => { void reset(); });
+      document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs is refreshing</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">The site is loading the newest version. If this message stays here, tap once to reopen.</p><button id="phl-stale-reset" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;cursor:pointer;font-size:16px">Open PH Labs</button></div></div>';
+      document.getElementById('phl-stale-reset')?.addEventListener('click', () => { void go(); });
     };
     if (document.body) render(); else addEventListener('DOMContentLoaded', render, { once: true });
   } catch (error) {
