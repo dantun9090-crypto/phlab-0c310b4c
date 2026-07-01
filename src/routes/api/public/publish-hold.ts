@@ -17,7 +17,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
-import { addDocAdmin, getDocAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
+import { addDocAdmin, getDocAdmin, listDocsAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
 
 const Body = z.object({
   buildId: z.string().trim().min(1).max(120),
