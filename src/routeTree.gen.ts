@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VipRouteImport } from './routes/vip'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as StorageGuideRouteImport } from './routes/storage-guide'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -17,12 +18,14 @@ import { Route as SearchRouteImport } from './routes/search'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as ResearchRouteImport } from './routes/research'
 import { Route as RequestCatalogRouteImport } from './routes/request-catalog'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as QualityControlRouteImport } from './routes/quality-control'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PrivacyRequestsRouteImport } from './routes/privacy-requests'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as PeptideCalculatorRouteImport } from './routes/peptide-calculator'
+import { Route as PaymentRouteImport } from './routes/payment'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LabReportsRouteImport } from './routes/lab-reports'
 import { Route as InstallRouteImport } from './routes/install'
@@ -31,6 +34,8 @@ import { Route as GoogleMerchantFeedFreeDotxmlRouteImport } from './routes/googl
 import { Route as GoogleAdsSafeFeedDotxmlRouteImport } from './routes/google-ads-safe-feed[.]xml'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CheckoutRouteImport } from './routes/checkout'
+import { Route as CartRouteImport } from './routes/cart'
 import { Route as BingFeedDotxmlRouteImport } from './routes/bing-feed[.]xml'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
@@ -96,6 +101,11 @@ import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hook
 import { Route as ApiPublicHooksCompoundQueryHistoryRouteImport } from './routes/api/public/hooks/compound-query-history'
 import { Route as ApiPublicHooksBacklinkWatcherRouteImport } from './routes/api/public/hooks/backlink-watcher'
 
+const VipRoute = VipRouteImport.update({
+  id: '/vip',
+  path: '/vip',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
   id: '/terms-and-conditions',
   path: '/terms-and-conditions',
@@ -136,6 +146,11 @@ const RequestCatalogRoute = RequestCatalogRouteImport.update({
   path: '/request-catalog',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RefundPolicyRoute = RefundPolicyRouteImport.update({
   id: '/refund-policy',
   path: '/refund-policy',
@@ -164,6 +179,11 @@ const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
 const PeptideCalculatorRoute = PeptideCalculatorRouteImport.update({
   id: '/peptide-calculator',
   path: '/peptide-calculator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaymentRoute = PaymentRouteImport.update({
+  id: '/payment',
+  path: '/payment',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -206,6 +226,16 @@ const CookiesRoute = CookiesRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CartRoute = CartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BingFeedDotxmlRoute = BingFeedDotxmlRouteImport.update({
@@ -274,14 +304,14 @@ const ProductsSlugRoute = ProductsSlugRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const PaymentSuccessRoute = PaymentSuccessRouteImport.update({
-  id: '/payment/success',
-  path: '/payment/success',
-  getParentRoute: () => rootRouteImport,
+  id: '/success',
+  path: '/success',
+  getParentRoute: () => PaymentRoute,
 } as any)
 const PaymentCancelRoute = PaymentCancelRouteImport.update({
-  id: '/payment/cancel',
-  path: '/payment/cancel',
-  getParentRoute: () => rootRouteImport,
+  id: '/cancel',
+  path: '/cancel',
+  getParentRoute: () => PaymentRoute,
 } as any)
 const LandingPhlabsRoute = LandingPhlabsRouteImport.update({
   id: '/landing/phlabs',
@@ -299,14 +329,14 @@ const CompareSlugRoute = CompareSlugRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutSuccessRoute = CheckoutSuccessRouteImport.update({
-  id: '/checkout/success',
-  path: '/checkout/success',
-  getParentRoute: () => rootRouteImport,
+  id: '/success',
+  path: '/success',
+  getParentRoute: () => CheckoutRoute,
 } as any)
 const CheckoutCancelRoute = CheckoutCancelRouteImport.update({
-  id: '/checkout/cancel',
-  path: '/checkout/cancel',
-  getParentRoute: () => rootRouteImport,
+  id: '/cancel',
+  path: '/cancel',
+  getParentRoute: () => CheckoutRoute,
 } as any)
 const AdminMerchantFeedPreviewRoute =
   AdminMerchantFeedPreviewRouteImport.update({
@@ -553,6 +583,8 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
   '/cookies': typeof CookiesRoute
   '/google-ads-safe-feed.xml': typeof GoogleAdsSafeFeedDotxmlRoute
@@ -561,12 +593,14 @@ export interface FileRoutesByFullPath {
   '/install': typeof InstallRoute
   '/lab-reports': typeof LabReportsRoute
   '/login': typeof LoginRoute
+  '/payment': typeof PaymentRouteWithChildren
   '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
   '/products': typeof ProductsRoute
   '/quality-control': typeof QualityControlRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/register': typeof RegisterRoute
   '/request-catalog': typeof RequestCatalogRoute
   '/research': typeof ResearchRouteWithChildren
   '/resources': typeof ResourcesRouteWithChildren
@@ -575,6 +609,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/vip': typeof VipRoute
   '/orders-modal': typeof _e2eOrdersModalRoute
   '/payment-options': typeof _e2ePaymentOptionsRoute
   '/watchdog-panel': typeof _e2eWatchdogPanelRoute
@@ -640,6 +675,8 @@ export interface FileRoutesByTo {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
   '/cookies': typeof CookiesRoute
   '/google-ads-safe-feed.xml': typeof GoogleAdsSafeFeedDotxmlRoute
@@ -648,12 +685,14 @@ export interface FileRoutesByTo {
   '/install': typeof InstallRoute
   '/lab-reports': typeof LabReportsRoute
   '/login': typeof LoginRoute
+  '/payment': typeof PaymentRouteWithChildren
   '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
   '/products': typeof ProductsRoute
   '/quality-control': typeof QualityControlRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/register': typeof RegisterRoute
   '/request-catalog': typeof RequestCatalogRoute
   '/resources': typeof ResourcesRouteWithChildren
   '/search': typeof SearchRoute
@@ -661,6 +700,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/vip': typeof VipRoute
   '/orders-modal': typeof _e2eOrdersModalRoute
   '/payment-options': typeof _e2ePaymentOptionsRoute
   '/watchdog-panel': typeof _e2eWatchdogPanelRoute
@@ -728,6 +768,8 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
   '/bing-feed.xml': typeof BingFeedDotxmlRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/contact': typeof ContactRoute
   '/cookies': typeof CookiesRoute
   '/google-ads-safe-feed.xml': typeof GoogleAdsSafeFeedDotxmlRoute
@@ -736,12 +778,14 @@ export interface FileRoutesById {
   '/install': typeof InstallRoute
   '/lab-reports': typeof LabReportsRoute
   '/login': typeof LoginRoute
+  '/payment': typeof PaymentRouteWithChildren
   '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
   '/products': typeof ProductsRoute
   '/quality-control': typeof QualityControlRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/register': typeof RegisterRoute
   '/request-catalog': typeof RequestCatalogRoute
   '/research': typeof ResearchRouteWithChildren
   '/resources': typeof ResourcesRouteWithChildren
@@ -750,6 +794,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/vip': typeof VipRoute
   '/__e2e/orders-modal': typeof _e2eOrdersModalRoute
   '/__e2e/payment-options': typeof _e2ePaymentOptionsRoute
   '/__e2e/watchdog-panel': typeof _e2eWatchdogPanelRoute
@@ -817,6 +862,8 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/bing-feed.xml'
+    | '/cart'
+    | '/checkout'
     | '/contact'
     | '/cookies'
     | '/google-ads-safe-feed.xml'
@@ -825,12 +872,14 @@ export interface FileRouteTypes {
     | '/install'
     | '/lab-reports'
     | '/login'
+    | '/payment'
     | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
     | '/products'
     | '/quality-control'
     | '/refund-policy'
+    | '/register'
     | '/request-catalog'
     | '/research'
     | '/resources'
@@ -839,6 +888,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/storage-guide'
     | '/terms-and-conditions'
+    | '/vip'
     | '/orders-modal'
     | '/payment-options'
     | '/watchdog-panel'
@@ -904,6 +954,8 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/bing-feed.xml'
+    | '/cart'
+    | '/checkout'
     | '/contact'
     | '/cookies'
     | '/google-ads-safe-feed.xml'
@@ -912,12 +964,14 @@ export interface FileRouteTypes {
     | '/install'
     | '/lab-reports'
     | '/login'
+    | '/payment'
     | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
     | '/products'
     | '/quality-control'
     | '/refund-policy'
+    | '/register'
     | '/request-catalog'
     | '/resources'
     | '/search'
@@ -925,6 +979,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/storage-guide'
     | '/terms-and-conditions'
+    | '/vip'
     | '/orders-modal'
     | '/payment-options'
     | '/watchdog-panel'
@@ -991,6 +1046,8 @@ export interface FileRouteTypes {
     | '/account'
     | '/admin'
     | '/bing-feed.xml'
+    | '/cart'
+    | '/checkout'
     | '/contact'
     | '/cookies'
     | '/google-ads-safe-feed.xml'
@@ -999,12 +1056,14 @@ export interface FileRouteTypes {
     | '/install'
     | '/lab-reports'
     | '/login'
+    | '/payment'
     | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
     | '/products'
     | '/quality-control'
     | '/refund-policy'
+    | '/register'
     | '/request-catalog'
     | '/research'
     | '/resources'
@@ -1013,6 +1072,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/storage-guide'
     | '/terms-and-conditions'
+    | '/vip'
     | '/__e2e/orders-modal'
     | '/__e2e/payment-options'
     | '/__e2e/watchdog-panel'
@@ -1080,6 +1140,8 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   AdminRoute: typeof AdminRouteWithChildren
   BingFeedDotxmlRoute: typeof BingFeedDotxmlRoute
+  CartRoute: typeof CartRoute
+  CheckoutRoute: typeof CheckoutRouteWithChildren
   ContactRoute: typeof ContactRoute
   CookiesRoute: typeof CookiesRoute
   GoogleAdsSafeFeedDotxmlRoute: typeof GoogleAdsSafeFeedDotxmlRoute
@@ -1088,12 +1150,14 @@ export interface RootRouteChildren {
   InstallRoute: typeof InstallRoute
   LabReportsRoute: typeof LabReportsRoute
   LoginRoute: typeof LoginRoute
+  PaymentRoute: typeof PaymentRouteWithChildren
   PeptideCalculatorRoute: typeof PeptideCalculatorRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   PrivacyRequestsRoute: typeof PrivacyRequestsRoute
   ProductsRoute: typeof ProductsRoute
   QualityControlRoute: typeof QualityControlRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
+  RegisterRoute: typeof RegisterRoute
   RequestCatalogRoute: typeof RequestCatalogRoute
   ResearchRoute: typeof ResearchRouteWithChildren
   ResourcesRoute: typeof ResourcesRouteWithChildren
@@ -1102,16 +1166,13 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StorageGuideRoute: typeof StorageGuideRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
+  VipRoute: typeof VipRoute
   _e2eOrdersModalRoute: typeof _e2eOrdersModalRoute
   _e2ePaymentOptionsRoute: typeof _e2ePaymentOptionsRoute
   _e2eWatchdogPanelRoute: typeof _e2eWatchdogPanelRoute
-  CheckoutCancelRoute: typeof CheckoutCancelRoute
-  CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   CompareSlugRoute: typeof CompareSlugRoute
   LandingSlugRoute: typeof LandingSlugRoute
   LandingPhlabsRoute: typeof LandingPhlabsRoute
-  PaymentCancelRoute: typeof PaymentCancelRoute
-  PaymentSuccessRoute: typeof PaymentSuccessRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
   ApiConfigPaymentsRoute: typeof ApiConfigPaymentsRoute
   ApiDsrProcessRoute: typeof ApiDsrProcessRoute
@@ -1155,6 +1216,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/vip': {
+      id: '/vip'
+      path: '/vip'
+      fullPath: '/vip'
+      preLoaderRoute: typeof VipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms-and-conditions': {
       id: '/terms-and-conditions'
       path: '/terms-and-conditions'
@@ -1211,6 +1279,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RequestCatalogRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/refund-policy': {
       id: '/refund-policy'
       path: '/refund-policy'
@@ -1251,6 +1326,13 @@ declare module '@tanstack/react-router' {
       path: '/peptide-calculator'
       fullPath: '/peptide-calculator'
       preLoaderRoute: typeof PeptideCalculatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payment': {
+      id: '/payment'
+      path: '/payment'
+      fullPath: '/payment'
+      preLoaderRoute: typeof PaymentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1307,6 +1389,20 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cart': {
+      id: '/cart'
+      path: '/cart'
+      fullPath: '/cart'
+      preLoaderRoute: typeof CartRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bing-feed.xml': {
@@ -1402,17 +1498,17 @@ declare module '@tanstack/react-router' {
     }
     '/payment/success': {
       id: '/payment/success'
-      path: '/payment/success'
+      path: '/success'
       fullPath: '/payment/success'
       preLoaderRoute: typeof PaymentSuccessRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof PaymentRoute
     }
     '/payment/cancel': {
       id: '/payment/cancel'
-      path: '/payment/cancel'
+      path: '/cancel'
       fullPath: '/payment/cancel'
       preLoaderRoute: typeof PaymentCancelRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof PaymentRoute
     }
     '/landing/phlabs': {
       id: '/landing/phlabs'
@@ -1437,17 +1533,17 @@ declare module '@tanstack/react-router' {
     }
     '/checkout/success': {
       id: '/checkout/success'
-      path: '/checkout/success'
+      path: '/success'
       fullPath: '/checkout/success'
       preLoaderRoute: typeof CheckoutSuccessRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CheckoutRoute
     }
     '/checkout/cancel': {
       id: '/checkout/cancel'
-      path: '/checkout/cancel'
+      path: '/cancel'
       fullPath: '/checkout/cancel'
       preLoaderRoute: typeof CheckoutCancelRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof CheckoutRoute
     }
     '/admin/merchant-feed-preview': {
       id: '/admin/merchant-feed-preview'
@@ -1784,6 +1880,33 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface CheckoutRouteChildren {
+  CheckoutCancelRoute: typeof CheckoutCancelRoute
+  CheckoutSuccessRoute: typeof CheckoutSuccessRoute
+}
+
+const CheckoutRouteChildren: CheckoutRouteChildren = {
+  CheckoutCancelRoute: CheckoutCancelRoute,
+  CheckoutSuccessRoute: CheckoutSuccessRoute,
+}
+
+const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
+  CheckoutRouteChildren,
+)
+
+interface PaymentRouteChildren {
+  PaymentCancelRoute: typeof PaymentCancelRoute
+  PaymentSuccessRoute: typeof PaymentSuccessRoute
+}
+
+const PaymentRouteChildren: PaymentRouteChildren = {
+  PaymentCancelRoute: PaymentCancelRoute,
+  PaymentSuccessRoute: PaymentSuccessRoute,
+}
+
+const PaymentRouteWithChildren =
+  PaymentRoute._addFileChildren(PaymentRouteChildren)
+
 interface ResearchRouteChildren {
   ResearchBpc157UkRoute: typeof ResearchBpc157UkRoute
   ResearchRetatrutideUkRoute: typeof ResearchRetatrutideUkRoute
@@ -1822,6 +1945,8 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   AdminRoute: AdminRouteWithChildren,
   BingFeedDotxmlRoute: BingFeedDotxmlRoute,
+  CartRoute: CartRoute,
+  CheckoutRoute: CheckoutRouteWithChildren,
   ContactRoute: ContactRoute,
   CookiesRoute: CookiesRoute,
   GoogleAdsSafeFeedDotxmlRoute: GoogleAdsSafeFeedDotxmlRoute,
@@ -1830,12 +1955,14 @@ const rootRouteChildren: RootRouteChildren = {
   InstallRoute: InstallRoute,
   LabReportsRoute: LabReportsRoute,
   LoginRoute: LoginRoute,
+  PaymentRoute: PaymentRouteWithChildren,
   PeptideCalculatorRoute: PeptideCalculatorRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   PrivacyRequestsRoute: PrivacyRequestsRoute,
   ProductsRoute: ProductsRoute,
   QualityControlRoute: QualityControlRoute,
   RefundPolicyRoute: RefundPolicyRoute,
+  RegisterRoute: RegisterRoute,
   RequestCatalogRoute: RequestCatalogRoute,
   ResearchRoute: ResearchRouteWithChildren,
   ResourcesRoute: ResourcesRouteWithChildren,
@@ -1844,16 +1971,13 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StorageGuideRoute: StorageGuideRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
+  VipRoute: VipRoute,
   _e2eOrdersModalRoute: _e2eOrdersModalRoute,
   _e2ePaymentOptionsRoute: _e2ePaymentOptionsRoute,
   _e2eWatchdogPanelRoute: _e2eWatchdogPanelRoute,
-  CheckoutCancelRoute: CheckoutCancelRoute,
-  CheckoutSuccessRoute: CheckoutSuccessRoute,
   CompareSlugRoute: CompareSlugRoute,
   LandingSlugRoute: LandingSlugRoute,
   LandingPhlabsRoute: LandingPhlabsRoute,
-  PaymentCancelRoute: PaymentCancelRoute,
-  PaymentSuccessRoute: PaymentSuccessRoute,
   ProductsSlugRoute: ProductsSlugRoute,
   ApiConfigPaymentsRoute: ApiConfigPaymentsRoute,
   ApiDsrProcessRoute: ApiDsrProcessRoute,
