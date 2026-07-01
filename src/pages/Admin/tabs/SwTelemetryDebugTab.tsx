@@ -335,6 +335,108 @@ export default function SwTelemetryDebugTab() {
         </label>
       </div>
 
+      {/* -- Mount telemetry: retained samples + chart + CSV -------------- */}
+      <div className="rounded-xl border-2 border-slate-700 bg-slate-900 p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-xs uppercase tracking-wide text-slate-400">Mount telemetry samples</div>
+            <div className="text-sm text-slate-300">
+              Retained locally: <span className="font-semibold text-white">{samples.length}</span>{' '}
+              (filtered: <span className="font-semibold text-white">{filteredSamples.length}</span>)
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={filterBuild}
+              onChange={(e) => setFilterBuild(e.target.value)}
+              className="rounded border-2 border-slate-600 bg-slate-800 text-white text-sm px-2 py-1 min-h-[36px]"
+            >
+              <option value="">All build-ids</option>
+              {buildOptions.map((b) => <option key={b} value={b}>{b.slice(0, 14)}</option>)}
+            </select>
+            <select
+              value={filterRoute}
+              onChange={(e) => setFilterRoute(e.target.value)}
+              className="rounded border-2 border-slate-600 bg-slate-800 text-white text-sm px-2 py-1 min-h-[36px]"
+            >
+              <option value="">All routes</option>
+              {routeOptions.map((r) => <option key={r} value={r}>{r}</option>)}
+            </select>
+            <button
+              onClick={downloadCsv}
+              disabled={filteredSamples.length === 0}
+              className="rounded-lg bg-sky-500 hover:bg-sky-400 disabled:opacity-40 px-3 py-1 text-sm font-semibold text-white min-h-[36px]"
+            >
+              Export CSV
+            </button>
+            <button
+              onClick={() => { clearMountSamples(); setSamples([]); }}
+              className="rounded-lg border-2 border-rose-600 bg-rose-950 hover:bg-rose-900 px-3 py-1 text-sm font-semibold text-rose-200 min-h-[36px]"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
+        {/* Totals per code */}
+        <div className="flex flex-wrap gap-2 text-xs">
+          {TRACKED_CODES.map((c) => (
+            <span key={c} className="inline-flex items-center gap-1 rounded-full border border-slate-700 bg-slate-800 px-2 py-0.5 text-slate-200">
+              <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: CODE_COLOR[c] }} />
+              <span className="font-mono">{c.replace('MOUNT_', '')}</span>
+              <span className="text-slate-400">{codeTotals[c] || 0}</span>
+            </span>
+          ))}
+        </div>
+
+        {/* 24h stacked-bar timeline (inline SVG, no chart lib) */}
+        {(() => {
+          const width = 720;
+          const height = 140;
+          const padLeft = 28;
+          const padBottom = 20;
+          const chartH = height - padBottom - 8;
+          const chartW = width - padLeft - 8;
+          const maxCount = Math.max(1, ...timeline.map((b) => TRACKED_CODES.reduce((n, c) => n + (b.counts[c] || 0), 0)));
+          const barW = chartW / timeline.length - 2;
+          return (
+            <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-40 bg-slate-950 rounded border border-slate-800" role="img" aria-label="Mount telemetry per hour (last 24h)">
+              {[0, 0.5, 1].map((f) => (
+                <line key={f} x1={padLeft} x2={width - 8} y1={8 + chartH * (1 - f)} y2={8 + chartH * (1 - f)} stroke="#1e293b" strokeWidth={1} />
+              ))}
+              <text x={4} y={12} fill="#64748b" fontSize={10}>{maxCount}</text>
+              <text x={4} y={height - padBottom - 2} fill="#64748b" fontSize={10}>0</text>
+              {timeline.map((bin, i) => {
+                let yCursor = 8 + chartH;
+                return (
+                  <g key={i}>
+                    {TRACKED_CODES.map((c) => {
+                      const v = bin.counts[c] || 0;
+                      if (!v) return null;
+                      const h = (v / maxCount) * chartH;
+                      yCursor -= h;
+                      return <rect key={c} x={padLeft + i * (barW + 2)} y={yCursor} width={barW} height={h} fill={CODE_COLOR[c]} />;
+                    })}
+                    {i % 4 === 0 && (
+                      <text x={padLeft + i * (barW + 2)} y={height - 6} fill="#64748b" fontSize={9}>{bin.label}</text>
+                    )}
+                  </g>
+                );
+              })}
+            </svg>
+          );
+        })()}
+
+        {filteredSamples.length === 0 && (
+          <div className="text-xs text-slate-500 italic">
+            No mount telemetry samples retained yet. Trigger the 5s mount-timeout probe in this browser
+            (or wait for real events) — samples land in <code>localStorage.__phl_mount_samples</code>.
+          </div>
+        )}
+      </div>
+
+
+
       <p className="text-xs text-slate-500">
         Note: these stats reflect <em>this</em> browser tab. To verify another visitor's session
         you still need Firestore's <code>sw_telemetry</code> collection or the Purge Incidents tab.
