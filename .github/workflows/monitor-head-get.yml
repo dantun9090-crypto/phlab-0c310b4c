@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
     inputs:
       hosts:
-        description: "Comma-separated hosts to probe (defaults to phlabs.co.uk + prohealthpeptides.co.uk)"
+        description: "Comma-separated hosts to probe (defaults to phlabs.co.uk + legacy host)" # check-domains-allow-line
         required: false
-        default: "https://phlabs.co.uk,https://prohealthpeptides.co.uk"
+        default: "https://phlabs.co.uk,https://prohealthpeptides.co.uk" # check-domains-allow-line: legacy host monitored intentionally
       fail_on_alert:
         description: "Fail the job if a GET alert is raised"
         required: false
