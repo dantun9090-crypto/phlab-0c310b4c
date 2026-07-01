@@ -9,6 +9,7 @@
 
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { currentBrowser } from '@/lib/browser-info';
 
 export type SwTelemetryEvent =
   | 'sw_stale_reload_shown'
@@ -17,6 +18,9 @@ export type SwTelemetryEvent =
   | 'sw_hydration_fallback_shown'
   | 'sw_cache_reset_clicked'
   | 'sw_cache_reset_success'
+  | 'sw_cache_reset_shown'
+  | 'sw_cache_recovery_triggered'
+  | 'sw_cache_recovery_failed'
   | 'sw_build_mismatch'
   | 'sw_hydration_error';
 
@@ -120,12 +124,17 @@ export function getSwTelemetryDebugStats(): SwTelemetryDebugStats {
 
 async function persist(ev: BufferedEvent): Promise<void> {
   try {
+    const b = currentBrowser();
     await addDoc(collection(db, 'sw_telemetry'), {
       event: ev.event,
       clientTs: ev.ts,
       buildId: ev.buildId,
       url: ev.url.slice(0, 500),
       userAgent: ev.ua.slice(0, 300),
+      browserName: b.name,
+      browserVersion: b.version,
+      os: b.os,
+      mobile: b.mobile,
       sessionId: ev.sessionId,
       extra: ev.extra ? JSON.stringify(ev.extra).slice(0, 500) : null,
       createdAt: serverTimestamp(),
