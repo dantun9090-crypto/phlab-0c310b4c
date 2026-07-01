@@ -175,6 +175,46 @@ export default function SwTelemetryDebugTab() {
         </div>
       </div>
 
+      {/* Edge correlation headers — spot build-id/asset mismatches instantly */}
+      <div className={`rounded-xl border-2 p-4 space-y-2 ${edge?.mismatch || edge?.bootBad ? 'border-rose-500 bg-rose-950/40' : 'border-slate-700 bg-slate-900'}`}>
+        <div className="flex items-center justify-between">
+          <div className="text-xs uppercase tracking-wide text-slate-400">Edge correlation (this route)</div>
+          <button
+            onClick={refreshEdge}
+            disabled={edgeLoading}
+            className="text-xs rounded border border-slate-600 bg-slate-800 px-2 py-1 text-white disabled:opacity-50"
+          >
+            {edgeLoading ? 'Fetching…' : 'Re-fetch'}
+          </button>
+        </div>
+        {!edge ? (
+          <div className="text-xs text-slate-500">Loading edge headers…</div>
+        ) : (
+          <>
+            {edge.mismatch && (
+              <div className="rounded bg-rose-600/30 border border-rose-500 px-3 py-2 text-sm font-semibold text-rose-100">
+                ⚠ Build-ID mismatch: HTML edge cache is serving an older build than the running JS. A hard refresh or edge purge is required.
+              </div>
+            )}
+            {edge.bootBad && (
+              <div className="rounded bg-amber-600/30 border border-amber-500 px-3 py-2 text-sm font-semibold text-amber-100">
+                ⚠ Worker flagged x-phl-boot-bad=1 (broken inline SW cleanup script). Check canary and inline-boot-scripts test.
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-xs font-mono">
+              <div><span className="text-slate-400">x-phl-build-id (HTML):</span>{' '}<span className={edge.mismatch ? 'text-rose-300' : 'text-emerald-300'}>{edge.htmlBuildId}</span></div>
+              <div><span className="text-slate-400">runtime __BUILD_ID__:</span>{' '}<span className="text-slate-200">{edge.runtimeBuildId}</span></div>
+              <div><span className="text-slate-400">x-phl-asset-hash:</span>{' '}<span className="text-slate-200">{edge.assetHash}</span></div>
+              <div><span className="text-slate-400">x-phl-entry:</span>{' '}<span className="text-slate-200 break-all">{edge.entry}</span></div>
+              <div><span className="text-slate-400">cache:</span>{' '}<span className="text-slate-200">{edge.cache}</span></div>
+              <div><span className="text-slate-400">status:</span>{' '}<span className="text-slate-200">{edge.status}</span></div>
+              <div className="md:col-span-2 text-slate-500">Fetched {fmtTs(edge.fetchedAt)}</div>
+              {edge.error && <div className="md:col-span-2 text-rose-300">Error: {edge.error}</div>}
+            </div>
+          </>
+        )}
+      </div>
+
       <div className="flex flex-wrap gap-3">
         <button
           onClick={fireTest}
