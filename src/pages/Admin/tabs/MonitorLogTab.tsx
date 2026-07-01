@@ -16,12 +16,18 @@ interface Row {
   get_status: string | null;
   head_attempts: number | null;
   get_attempts: number | null;
+  head_duration_ms: number | null;
+  get_duration_ms: number | null;
+  html_bytes: number | null;
   assets_total: number | null;
   assets_ok: number | null;
   has_module_entry: boolean | null;
   alerts: unknown;
   info: unknown;
   missing_bundles: unknown;
+  asset_samples: unknown;
+  head_headers: unknown;
+  get_headers: unknown;
   html_snippet: string | null;
   had_alert: boolean;
   source: string | null;
