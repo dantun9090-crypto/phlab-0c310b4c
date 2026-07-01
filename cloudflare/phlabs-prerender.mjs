@@ -832,8 +832,8 @@ var phlabs_prerender_patched_default = {
       if (res.status === 0 || res.status === 521 || res.status === 522 || res.status === 523) {
         const emergency = await fetchEmergencyPrerenderFallback(request, token, url);
         if (emergency) return emergency;
-        if (request.method === "GET" && url.pathname === "/sitemap.xml") return emergencySitemapResponse();
-        if (request.method === "GET" && APP_SHELL_FALLBACK_EXACT.has(url.pathname)) return appShellFallbackResponse(url);
+        if (["GET", "HEAD"].includes(request.method) && url.pathname === "/sitemap.xml") return emergencySitemapResponse();
+        if (["GET", "HEAD"].includes(request.method) && APP_SHELL_FALLBACK_EXACT.has(url.pathname)) return appShellFallbackResponse(url);
         return brandedErrorResponse(503, 30);
       }
       const h = new Headers(res.headers);
@@ -868,8 +868,8 @@ var phlabs_prerender_patched_default = {
         noCache(h);
         const emergency = await fetchEmergencyPrerenderFallback(request, token, url);
         if (emergency) return emergency;
-        if (request.method === "GET" && url.pathname === "/sitemap.xml") return emergencySitemapResponse();
-        if (request.method === "GET" && APP_SHELL_FALLBACK_EXACT.has(url.pathname)) return appShellFallbackResponse(url);
+        if (["GET", "HEAD"].includes(request.method) && url.pathname === "/sitemap.xml") return emergencySitemapResponse();
+        if (["GET", "HEAD"].includes(request.method) && APP_SHELL_FALLBACK_EXACT.has(url.pathname)) return appShellFallbackResponse(url);
         return await serveStaleOrError(request);
       }
       const innerCf = res.headers.get("cf-cache-status");
