@@ -803,7 +803,9 @@ export default function SwTelemetryDebugTab() {
         })()}
 
 
-        {/* Drill-down: raw samples for the clicked (bucket, code). */}
+        {/* Drill-down: raw samples for the clicked (bucket, code). Sortable
+            columns, pagination, and per-selection CSV export so large buckets
+            stay usable. */}
         {drillDown && (
           <div className="rounded-lg border border-slate-700 bg-slate-950 p-3 space-y-2">
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -817,45 +819,109 @@ export default function SwTelemetryDebugTab() {
                 {' '}·{' '}
                 <span className="text-white font-semibold">{drillDownSamples.length}</span> sample(s)
               </div>
-              <button
-                onClick={() => setDrillDown(null)}
-                className="rounded border border-slate-600 bg-slate-800 hover:bg-slate-700 px-2 py-1 text-xs text-slate-200 min-h-[32px]"
-              >
-                Clear drill-down
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={downloadDrillDownCsv}
+                  disabled={drillDownSamples.length === 0}
+                  className="rounded-lg bg-sky-500 hover:bg-sky-400 disabled:opacity-40 px-3 py-1 text-xs font-semibold text-white min-h-[32px]"
+                >
+                  Export drill-down CSV
+                </button>
+                <button
+                  onClick={() => setDrillDown(null)}
+                  className="rounded border border-slate-600 bg-slate-800 hover:bg-slate-700 px-2 py-1 text-xs text-slate-200 min-h-[32px]"
+                >
+                  Clear drill-down
+                </button>
+              </div>
             </div>
             {drillDownSamples.length === 0 ? (
               <div className="text-xs text-slate-500 italic">No samples in this bucket (data may have been trimmed).</div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-xs font-mono text-slate-200">
-                  <thead className="text-slate-400 text-left">
-                    <tr>
-                      <th className="py-1 pr-3">Event time</th>
-                      <th className="py-1 pr-3">Duration</th>
-                      <th className="py-1 pr-3">Route</th>
-                      <th className="py-1 pr-3">Build</th>
-                      <th className="py-1 pr-3">Asset</th>
-                      <th className="py-1 pr-3">Message</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {drillDownSamples
-                      .slice()
-                      .sort((a, b) => (b.eventTs ?? b.ts) - (a.eventTs ?? a.ts))
-                      .map((s, idx) => (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs font-mono text-slate-200">
+                    <thead className="text-slate-400 text-left">
+                      <tr>
+                        {([
+                          ['eventTs', 'Event time'],
+                          ['mountDurationMs', 'Duration'],
+                          ['route', 'Route'],
+                          ['code', 'Code'],
+                        ] as [SortKey, string][]).map(([k, label]) => (
+                          <th key={k} className="py-1 pr-3">
+                            <button
+                              onClick={() => toggleSort(k)}
+                              className={`inline-flex items-center gap-1 hover:text-white ${sortKey === k ? 'text-white' : ''}`}
+                              aria-label={`Sort by ${label} ${sortKey === k ? (sortDir === 'asc' ? 'descending' : 'ascending') : 'ascending'}`}
+                            >
+                              {label}
+                              {sortKey === k && <span aria-hidden>{sortDir === 'asc' ? '▲' : '▼'}</span>}
+                            </button>
+                          </th>
+                        ))}
+                        <th className="py-1 pr-3">Build</th>
+                        <th className="py-1 pr-3">Asset</th>
+                        <th className="py-1 pr-3">Message</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagedDrillDown.map((s, idx) => (
                         <tr key={idx} className="border-t border-slate-800">
                           <td className="py-1 pr-3">{new Date(s.eventTs ?? s.ts).toLocaleTimeString()}</td>
                           <td className="py-1 pr-3">{s.mountDurationMs != null ? `${s.mountDurationMs}ms` : '—'}</td>
                           <td className="py-1 pr-3 text-slate-300">{s.route}</td>
+                          <td className="py-1 pr-3 text-slate-300">{s.code.replace('MOUNT_', '')}</td>
                           <td className="py-1 pr-3 text-slate-300">{(s.buildId || '').slice(0, 12)}</td>
                           <td className="py-1 pr-3 text-slate-300">{(s.assetHash || '').slice(0, 10)}</td>
                           <td className="py-1 pr-3 text-slate-400 max-w-[320px] truncate" title={s.message}>{s.message}</td>
                         </tr>
                       ))}
-                  </tbody>
-                </table>
-              </div>
+                    </tbody>
+                  </table>
+                </div>
+                {/* Pagination controls */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs text-slate-300">
+                  <div>
+                    Showing <span className="text-white font-semibold">{page * pageSize + 1}</span>–
+                    <span className="text-white font-semibold">{Math.min(drillDownSamples.length, (page + 1) * pageSize)}</span>{' '}
+                    of <span className="text-white font-semibold">{drillDownSamples.length}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="inline-flex items-center gap-1">
+                      Page size
+                      <select
+                        value={pageSize}
+                        onChange={(e) => setPageSize(Number(e.target.value))}
+                        className="rounded border-2 border-slate-600 bg-slate-800 text-white text-xs px-2 py-1 min-h-[32px]"
+                      >
+                        {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+                      </select>
+                    </label>
+                    <button
+                      onClick={() => setPage(0)}
+                      disabled={page === 0}
+                      className="rounded border border-slate-600 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 px-2 py-1 text-slate-200 min-h-[32px]"
+                    >« First</button>
+                    <button
+                      onClick={() => setPage((p) => Math.max(0, p - 1))}
+                      disabled={page === 0}
+                      className="rounded border border-slate-600 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 px-2 py-1 text-slate-200 min-h-[32px]"
+                    >‹ Prev</button>
+                    <span className="text-slate-400">Page {page + 1} / {totalPages}</span>
+                    <button
+                      onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={page >= totalPages - 1}
+                      className="rounded border border-slate-600 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 px-2 py-1 text-slate-200 min-h-[32px]"
+                    >Next ›</button>
+                    <button
+                      onClick={() => setPage(totalPages - 1)}
+                      disabled={page >= totalPages - 1}
+                      className="rounded border border-slate-600 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 px-2 py-1 text-slate-200 min-h-[32px]"
+                    >Last »</button>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         )}
