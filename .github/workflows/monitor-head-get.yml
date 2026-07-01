@@ -3,6 +3,17 @@ on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
+    inputs:
+      hosts:
+        description: "Comma-separated hosts to probe (defaults to phlabs.co.uk + prohealthpeptides.co.uk)"
+        required: false
+        default: "https://phlabs.co.uk,https://prohealthpeptides.co.uk"
+      fail_on_alert:
+        description: "Fail the job if a GET alert is raised"
+        required: false
+        default: "true"
+        type: choice
+        options: ["true", "false"]
 jobs:
   monitor:
     runs-on: ubuntu-latest
@@ -12,4 +23,38 @@ jobs:
         with:
           node-version: "20"
       - name: Run HEAD vs GET monitor
-        run: node scripts/monitor-head-get.mjs
+        id: run
+        env:
+          MONITOR_HOSTS: ${{ github.event.inputs.hosts || 'https://phlabs.co.uk,https://prohealthpeptides.co.uk' }}
+        run: |
+          set +e
+          node scripts/monitor-head-get.mjs | tee /tmp/monitor.log
+          echo "exit=${PIPESTATUS[0]}" >> "$GITHUB_OUTPUT"
+      - name: Write CI summary
+        if: always()
+        run: |
+          {
+            echo "## HEAD vs GET Monitor"
+            echo ""
+            echo "- Trigger: \`${{ github.event_name }}\`"
+            echo "- Hosts: \`${MONITOR_HOSTS:-default}\`"
+            echo "- Exit code: \`${{ steps.run.outputs.exit }}\`"
+            echo ""
+            echo "<details><summary>Last check output</summary>"
+            echo ""
+            echo '```'
+            cat /tmp/monitor.log 2>/dev/null || echo "(no output captured)"
+            echo '```'
+            echo ""
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          MONITOR_HOSTS: ${{ github.event.inputs.hosts }}
+      - name: Enforce alert exit
+        if: always()
+        run: |
+          if [ "${{ github.event.inputs.fail_on_alert || 'true' }}" = "false" ]; then
+            echo "fail_on_alert=false — ignoring exit code ${{ steps.run.outputs.exit }}"
+            exit 0
+          fi
+          exit ${{ steps.run.outputs.exit }}
