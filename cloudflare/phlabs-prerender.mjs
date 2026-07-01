@@ -485,9 +485,10 @@ async function fetchPrerender(request, token) {
 }
 __name(fetchPrerender, "fetchPrerender");
 async function fetchEmergencyPrerenderFallback(request, token, url) {
-  if (!token || request.method !== "GET" || !isEmergencyPrerenderFallbackPath(url.pathname)) return null;
+  if (!token || !["GET", "HEAD"].includes(request.method) || !isEmergencyPrerenderFallbackPath(url.pathname)) return null;
   try {
-    const pre = await fetchPrerender(request, token);
+    const preRequest = request.method === "HEAD" ? new Request(request.url, { method: "GET", headers: request.headers }) : request;
+    const pre = await fetchPrerender(preRequest, token);
     if (!pre || pre.status >= 500 || pre.status === 429) return null;
     const h = new Headers(pre.headers);
     h.set("x-prerendered", "true");
@@ -498,7 +499,12 @@ async function fetchEmergencyPrerenderFallback(request, token, url) {
     h.set("cloudflare-cdn-cache-control", "public, max-age=60, stale-while-revalidate=3600");
     h.delete("set-cookie");
     h.delete("x-robots-tag");
-    return applySecurityHeaders(new Response(pre.body, { status: pre.status, statusText: pre.statusText, headers: h }), url);
+    // Origin is currently broken and prerender snapshots may reference stale
+    // /assets/index-*.js. If a browser loads that missing JS it can enter the
+    // cache-recovery reload path repeatedly. Keep public content online as a
+    // read-only emergency snapshot and prevent stale boot scripts from running.
+    const body = request.method === "HEAD" ? null : pre.body;
+    return applySecurityHeaders(stripAllScripts(new Response(body, { status: pre.status, statusText: pre.statusText, headers: h })), url);
   } catch (_) {
     return null;
   }
@@ -529,12 +535,26 @@ var StripLovableScripts = class {
     }
   }
 };
+var StripAllScripts = class {
+  static {
+    __name(this, "StripAllScripts");
+  }
+  element(el) {
+    el.remove();
+  }
+};
 function stripLovableInjectedScripts(response) {
   const ct = response.headers.get("content-type") || "";
   if (!ct.includes("text/html")) return response;
   return new HTMLRewriter().on("script[src]", new StripLovableScripts()).transform(response);
 }
 __name(stripLovableInjectedScripts, "stripLovableInjectedScripts");
+function stripAllScripts(response) {
+  const ct = response.headers.get("content-type") || "";
+  if (!ct.includes("text/html")) return response;
+  return new HTMLRewriter().on("script", new StripAllScripts()).transform(response);
+}
+__name(stripAllScripts, "stripAllScripts");
 var _ttlCache = { value: 60, expiresAt: 0 };
 var TTL_CACHE_MS = 6e4;
 var TTL_DEFAULT = 60;
