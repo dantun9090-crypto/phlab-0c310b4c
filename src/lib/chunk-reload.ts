@@ -116,13 +116,58 @@ function showRecoveryToast(reason: string): void {
   } catch { /* ignore */ }
 }
 
-function doReload(reason: string) {
+// --- Remote kill-switch --------------------------------------------------
+// A single Firestore-backed flag (surfaced via /api/public/runtime-flags)
+// lets us disable the entire chunk-reload fallback across all clients
+// within ~60 s if a regression starts causing reload loops or bad UX.
+// We cache the result in sessionStorage for the tab lifetime AND memoize
+// the in-flight promise to avoid stampedes when multiple events fire.
+const KILL_SWITCH_KEY = "__phl_chunk_reload_enabled";
+let killSwitchInFlight: Promise<boolean> | null = null;
+
+async function isChunkReloadEnabled(): Promise<boolean> {
+  try {
+    const cached = sessionStorage.getItem(KILL_SWITCH_KEY);
+    if (cached === "0") return false;
+    if (cached === "1") return true;
+  } catch { /* ignore */ }
+  if (killSwitchInFlight) return killSwitchInFlight;
+  killSwitchInFlight = (async () => {
+    try {
+      const res = await fetch("/api/public/runtime-flags", {
+        method: "GET", cache: "no-store", credentials: "omit",
+      });
+      if (!res.ok) return true; // fail-open: keep recovery working
+      const j = (await res.json()) as { chunkReloadEnabled?: boolean };
+      const enabled = j?.chunkReloadEnabled !== false;
+      try { sessionStorage.setItem(KILL_SWITCH_KEY, enabled ? "1" : "0"); } catch { /* ignore */ }
+      return enabled;
+    } catch {
+      return true; // fail-open
+    } finally {
+      // Allow re-checking after 60s to pick up an updated flag.
+      setTimeout(() => { killSwitchInFlight = null; }, 60_000);
+    }
+  })();
+  return killSwitchInFlight;
+}
+
+async function doReload(reason: string) {
   if (!isOnline()) return;
   if (hasHydrationErrorState()) return;
   if (isCriticalRoute()) {
     // eslint-disable-next-line no-console
     console.warn("[RELOAD BLOCKED] Critical route:", window.location.pathname, "reason:", reason);
     try { logSwTelemetry('sw_cache_recovery_failed', { reason, blocked: 'critical-route', path: window.location.pathname }); } catch {}
+    return;
+  }
+  // Remote kill-switch — if disabled, show a brief non-blocking message and
+  // record the suppression. We must NOT re-surface the old "cache reset
+  // needed" screen when this happens.
+  const enabled = await isChunkReloadEnabled();
+  if (!enabled) {
+    try { logSwTelemetry('sw_cache_recovery_failed', { reason, blocked: 'kill-switch', path: window.location.pathname }); } catch {}
+    try { showRecoveryToast('kill-switch'); } catch {}
     return;
   }
   try {
@@ -248,7 +293,7 @@ function reloadOnce(reason: string, err?: unknown, requireMissingAsset = true) {
               triggerSelfHealPurge(`${reason} → ${assetUrl}`),
               new Promise((r) => setTimeout(r, 3000)),
             ]);
-            doReload(reason);
+            void doReload(reason);
           } else console.warn("[chunk-reload] skipped reload; asset is not missing:", assetUrl, res.status);
         })
         .catch(() => undefined);
@@ -257,7 +302,7 @@ function reloadOnce(reason: string, err?: unknown, requireMissingAsset = true) {
     }
     return;
   }
-  doReload(reason);
+  void doReload(reason);
 }
 
 // Skip the entire auto-recovery install on /compound (and other marketing
