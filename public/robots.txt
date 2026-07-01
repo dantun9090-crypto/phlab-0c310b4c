@@ -202,5 +202,6 @@ User-agent: ZoominfoBot
 Disallow: /
 
 Sitemap: https://phlabs.co.uk/sitemap.xml
+Sitemap: https://phlabs.co.uk/bing-feed.xml
 
 # cache-bust 2026-06-27T22:00:00Z
