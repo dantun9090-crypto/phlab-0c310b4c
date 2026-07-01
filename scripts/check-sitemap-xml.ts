@@ -121,7 +121,13 @@ function validateXml(label: string, xml: string): void {
       push(`${at} has no <loc>`);
     } else if (!isValidAbsoluteHttpsUrl(u.loc)) {
       push(`${at} <loc> is not a valid absolute URL: "${u.loc}"`);
+    } else {
+      const key = u.loc.trim();
+      const list = locIndexes.get(key) ?? [];
+      list.push(i);
+      locIndexes.set(key, list);
     }
+
 
     if ("lastmod" in u && u.lastmod !== undefined) {
       lastmodChecked++;
