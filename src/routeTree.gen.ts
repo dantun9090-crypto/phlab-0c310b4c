@@ -75,6 +75,7 @@ import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicErrorMonitorRouteImport } from './routes/api/public/error-monitor'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as ApiPublicCoaPdfRouteImport } from './routes/api/public/coa-pdf'
+import { Route as ApiPublicCacheRecoveryThresholdsRouteImport } from './routes/api/public/cache-recovery-thresholds'
 import { Route as ApiPublicCacheRecoveryStatsRouteImport } from './routes/api/public/cache-recovery-stats'
 import { Route as ApiPublicCacheConfigRouteImport } from './routes/api/public/cache-config'
 import { Route as ApiPublicAdminErrorsRouteImport } from './routes/api/public/admin-errors'
@@ -437,6 +438,12 @@ const ApiPublicCoaPdfRoute = ApiPublicCoaPdfRouteImport.update({
   path: '/api/public/coa-pdf',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCacheRecoveryThresholdsRoute =
+  ApiPublicCacheRecoveryThresholdsRouteImport.update({
+    id: '/api/public/cache-recovery-thresholds',
+    path: '/api/public/cache-recovery-thresholds',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCacheRecoveryStatsRoute =
   ApiPublicCacheRecoveryStatsRouteImport.update({
     id: '/api/public/cache-recovery-stats',
@@ -649,6 +656,7 @@ export interface FileRoutesByFullPath {
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/cache-recovery-stats': typeof ApiPublicCacheRecoveryStatsRoute
+  '/api/public/cache-recovery-thresholds': typeof ApiPublicCacheRecoveryThresholdsRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
@@ -742,6 +750,7 @@ export interface FileRoutesByTo {
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/cache-recovery-stats': typeof ApiPublicCacheRecoveryStatsRoute
+  '/api/public/cache-recovery-thresholds': typeof ApiPublicCacheRecoveryThresholdsRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
@@ -838,6 +847,7 @@ export interface FileRoutesById {
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/cache-recovery-stats': typeof ApiPublicCacheRecoveryStatsRoute
+  '/api/public/cache-recovery-thresholds': typeof ApiPublicCacheRecoveryThresholdsRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
@@ -934,6 +944,7 @@ export interface FileRouteTypes {
     | '/api/public/admin-errors'
     | '/api/public/cache-config'
     | '/api/public/cache-recovery-stats'
+    | '/api/public/cache-recovery-thresholds'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
     | '/api/public/error-monitor'
@@ -1027,6 +1038,7 @@ export interface FileRouteTypes {
     | '/api/public/admin-errors'
     | '/api/public/cache-config'
     | '/api/public/cache-recovery-stats'
+    | '/api/public/cache-recovery-thresholds'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
     | '/api/public/error-monitor'
@@ -1122,6 +1134,7 @@ export interface FileRouteTypes {
     | '/api/public/admin-errors'
     | '/api/public/cache-config'
     | '/api/public/cache-recovery-stats'
+    | '/api/public/cache-recovery-thresholds'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
     | '/api/public/error-monitor'
@@ -1207,6 +1220,7 @@ export interface RootRouteChildren {
   ApiPublicAdminErrorsRoute: typeof ApiPublicAdminErrorsRoute
   ApiPublicCacheConfigRoute: typeof ApiPublicCacheConfigRoute
   ApiPublicCacheRecoveryStatsRoute: typeof ApiPublicCacheRecoveryStatsRoute
+  ApiPublicCacheRecoveryThresholdsRoute: typeof ApiPublicCacheRecoveryThresholdsRoute
   ApiPublicCoaPdfRoute: typeof ApiPublicCoaPdfRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicErrorMonitorRoute: typeof ApiPublicErrorMonitorRoute
@@ -1705,6 +1719,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCoaPdfRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cache-recovery-thresholds': {
+      id: '/api/public/cache-recovery-thresholds'
+      path: '/api/public/cache-recovery-thresholds'
+      fullPath: '/api/public/cache-recovery-thresholds'
+      preLoaderRoute: typeof ApiPublicCacheRecoveryThresholdsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cache-recovery-stats': {
       id: '/api/public/cache-recovery-stats'
       path: '/api/public/cache-recovery-stats'
@@ -2028,6 +2049,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAdminErrorsRoute: ApiPublicAdminErrorsRoute,
   ApiPublicCacheConfigRoute: ApiPublicCacheConfigRoute,
   ApiPublicCacheRecoveryStatsRoute: ApiPublicCacheRecoveryStatsRoute,
+  ApiPublicCacheRecoveryThresholdsRoute: ApiPublicCacheRecoveryThresholdsRoute,
   ApiPublicCoaPdfRoute: ApiPublicCoaPdfRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicErrorMonitorRoute: ApiPublicErrorMonitorRoute,
