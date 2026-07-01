@@ -6,8 +6,6 @@ import {
   isStaleChunkError,
   markHydrationError,
 } from "@/lib/recovery";
-import { logSwTelemetry, markCacheResetPending } from "@/lib/swTelemetry";
-import { currentBrowser } from "@/lib/browser-info";
 
 // Robust auto-recovery for a frozen / stuck page.
 //
@@ -103,98 +101,26 @@ function isCriticalRoute(): boolean {
   }
 }
 
-function showRecoveryToast(reason: string): void {
-  try {
-    if (document.getElementById('phl-recovery-toast')) return;
-    const el = document.createElement('div');
-    el.id = 'phl-recovery-toast';
-    el.setAttribute('role', 'status');
-    el.setAttribute('aria-live', 'polite');
-    el.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2147483647;background:#0f172a;color:#f0f6ff;border:1px solid #1e293b;border-radius:10px;padding:12px 16px;font:600 14px system-ui,-apple-system,Segoe UI,Roboto,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.4);max-width:90vw;text-align:center';
-    el.textContent = 'Loading the newest version…';
-    document.body?.appendChild(el);
-  } catch { /* ignore */ }
-}
-
-// --- Remote kill-switch --------------------------------------------------
-// A single Firestore-backed flag (surfaced via /api/public/runtime-flags)
-// lets us disable the entire chunk-reload fallback across all clients
-// within ~60 s if a regression starts causing reload loops or bad UX.
-// We cache the result in sessionStorage for the tab lifetime AND memoize
-// the in-flight promise to avoid stampedes when multiple events fire.
-const KILL_SWITCH_KEY = "__phl_chunk_reload_enabled";
-let killSwitchInFlight: Promise<boolean> | null = null;
-
-async function isChunkReloadEnabled(): Promise<boolean> {
-  try {
-    const cached = sessionStorage.getItem(KILL_SWITCH_KEY);
-    if (cached === "0") return false;
-    if (cached === "1") return true;
-  } catch { /* ignore */ }
-  if (killSwitchInFlight) return killSwitchInFlight;
-  killSwitchInFlight = (async () => {
-    try {
-      const res = await fetch("/api/public/runtime-flags", {
-        method: "GET", cache: "no-store", credentials: "omit",
-      });
-      if (!res.ok) return true; // fail-open: keep recovery working
-      const j = (await res.json()) as { chunkReloadEnabled?: boolean };
-      const enabled = j?.chunkReloadEnabled !== false;
-      try { sessionStorage.setItem(KILL_SWITCH_KEY, enabled ? "1" : "0"); } catch { /* ignore */ }
-      return enabled;
-    } catch {
-      return true; // fail-open
-    } finally {
-      // Allow re-checking after 60s to pick up an updated flag.
-      setTimeout(() => { killSwitchInFlight = null; }, 60_000);
-    }
-  })();
-  return killSwitchInFlight;
-}
-
-async function doReload(reason: string) {
+function doReload(reason: string) {
   if (!isOnline()) return;
   if (hasHydrationErrorState()) return;
   if (isCriticalRoute()) {
     // eslint-disable-next-line no-console
     console.warn("[RELOAD BLOCKED] Critical route:", window.location.pathname, "reason:", reason);
-    try { logSwTelemetry('sw_cache_recovery_failed', { reason, blocked: 'critical-route', path: window.location.pathname }); } catch {}
-    return;
-  }
-  // Remote kill-switch — if disabled, show a brief non-blocking message and
-  // record the suppression. We must NOT re-surface the old "cache reset
-  // needed" screen when this happens.
-  const enabled = await isChunkReloadEnabled();
-  if (!enabled) {
-    try { logSwTelemetry('sw_cache_recovery_failed', { reason, blocked: 'kill-switch', path: window.location.pathname }); } catch {}
-    try { showRecoveryToast('kill-switch'); } catch {}
     return;
   }
   try {
     const last = Number(sessionStorage.getItem(RELOAD_KEY) ?? "0");
     const count = Number(sessionStorage.getItem(RELOAD_COUNT_KEY) ?? "0");
-    if (count >= 1) { try { logSwTelemetry('sw_cache_recovery_failed', { reason, blocked: 'loop-guard', count }); } catch {} return; }
-    if (Date.now() - last < COOLDOWN_MS) { try { logSwTelemetry('sw_cache_recovery_failed', { reason, blocked: 'cooldown' }); } catch {} return; }
+    if (count >= 1) return;
+    if (Date.now() - last < COOLDOWN_MS) return; // avoid loops
     sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
     sessionStorage.setItem(RELOAD_COUNT_KEY, String(count + 1));
   } catch {
     /* ignore */
   }
-  const b = currentBrowser();
-  try {
-    logSwTelemetry('sw_cache_recovery_triggered', {
-      reason,
-      browser: b.name,
-      browserVersion: b.version,
-      os: b.os,
-      mobile: b.mobile,
-      path: window.location.pathname,
-    });
-    markCacheResetPending();
-  } catch { /* ignore */ }
-  showRecoveryToast(reason);
-  // Delay slightly so the toast paints AND the telemetry write flushes.
-  setTimeout(() => { void hardReload({ clean: true }); }, 350);
+  // eslint-disable-next-line no-console
+  console.warn("[chunk-reload] automatic reload blocked:", reason);
 }
 
 // Self-heal: when a stale chunk is confirmed missing, fire the public
@@ -293,7 +219,7 @@ function reloadOnce(reason: string, err?: unknown, requireMissingAsset = true) {
               triggerSelfHealPurge(`${reason} → ${assetUrl}`),
               new Promise((r) => setTimeout(r, 3000)),
             ]);
-            void doReload(reason);
+            doReload(reason);
           } else console.warn("[chunk-reload] skipped reload; asset is not missing:", assetUrl, res.status);
         })
         .catch(() => undefined);
@@ -302,7 +228,7 @@ function reloadOnce(reason: string, err?: unknown, requireMissingAsset = true) {
     }
     return;
   }
-  void doReload(reason);
+  doReload(reason);
 }
 
 // Skip the entire auto-recovery install on /compound (and other marketing
