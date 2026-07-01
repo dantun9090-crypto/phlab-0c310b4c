@@ -218,11 +218,30 @@ function generateNonce() {
   return btoa(s).replace(/=+$/, "");
 }
 __name(generateNonce, "generateNonce");
-function rewriteCspNonce(response) {
-  // Nonce removed from origin CSP/HTML. Pass-through; kept as a no-op so
-  // callers don't need to change. Safe even if a stale origin still emits
-  // `__CSP_NONCE__` — those requests will fail CSP rather than leak a placeholder.
-  return response;
+async function rewriteCspNonce(response) {
+  // Rewrite the `__CSP_NONCE__` placeholder emitted by the origin (see
+  // src/server.ts applySecurityHeaders) with a fresh per-request nonce
+  // in both the `content-security-policy` header and the HTML body.
+  // This keeps origin HTML edge-cacheable (single stored body) while
+  // giving every visitor a unique nonce, so strict CSP + 'strict-dynamic'
+  // remains effective across cache hits.
+  const ct = (response.headers.get("content-type") || "").toLowerCase();
+  const csp = response.headers.get("content-security-policy") || "";
+  const needsHeader = NONCE_PLACEHOLDER_RX.test(csp);
+  NONCE_PLACEHOLDER_RX.lastIndex = 0;
+  const isHtml = ct.includes("text/html");
+  if (!needsHeader && !isHtml) return response;
+  const nonce = generateNonce();
+  const headers = new Headers(response.headers);
+  if (needsHeader) {
+    headers.set("content-security-policy", csp.replace(NONCE_PLACEHOLDER_RX, nonce));
+  }
+  if (!isHtml) {
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+  }
+  const body = await response.text();
+  const rewritten = body.replace(NONCE_PLACEHOLDER_RX, nonce);
+  return new Response(rewritten, { status: response.status, statusText: response.statusText, headers });
 }
 
 __name(rewriteCspNonce, "rewriteCspNonce");
