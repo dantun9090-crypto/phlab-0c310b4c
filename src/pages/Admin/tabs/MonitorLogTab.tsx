@@ -257,12 +257,6 @@ export default function MonitorLogTab() {
                     <div><span className="text-slate-500">Source:</span> {r.source ?? '—'}</div>
                     <div className="truncate">
                       <span className="text-slate-500">Run:</span>{' '}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-slate-300">
-                    <div><span className="text-slate-500">HEAD attempts:</span> {r.head_attempts ?? '—'}</div>
-                    <div><span className="text-slate-500">GET attempts:</span> {r.get_attempts ?? '—'}</div>
-                    <div><span className="text-slate-500">Source:</span> {r.source ?? '—'}</div>
-                    <div className="truncate">
-                      <span className="text-slate-500">Run:</span>{' '}
                       {r.run_url
                         ? <a href={r.run_url} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline">open</a>
                         : '—'}
