@@ -293,7 +293,7 @@ function reloadOnce(reason: string, err?: unknown, requireMissingAsset = true) {
               triggerSelfHealPurge(`${reason} → ${assetUrl}`),
               new Promise((r) => setTimeout(r, 3000)),
             ]);
-            doReload(reason);
+            void doReload(reason);
           } else console.warn("[chunk-reload] skipped reload; asset is not missing:", assetUrl, res.status);
         })
         .catch(() => undefined);
