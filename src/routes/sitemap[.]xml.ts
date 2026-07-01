@@ -46,15 +46,8 @@ function buildStaticEntries(today: string): SitemapEntry[] {
     { path: "/landing/phlabs", lastmod: today, changefreq: "weekly", priority: "0.7" },
     { path: "/lab-reports", lastmod: today, changefreq: "monthly", priority: "0.6" },
     { path: "/storage-guide", lastmod: today, changefreq: "monthly", priority: "0.6" },
-    { path: "/bing-feed.xml", lastmod: today, changefreq: "daily", priority: "0.2" },
-    { path: "/products/category/neurological", lastmod: today, changefreq: "weekly", priority: "0.7" },
-    { path: "/products/category/tissue-repair", lastmod: today, changefreq: "weekly", priority: "0.7" },
-    { path: "/products/category/bpc-157", lastmod: today, changefreq: "weekly", priority: "0.8" },
-    { path: "/products/category/retatrutide", lastmod: today, changefreq: "weekly", priority: "0.8" },
-    { path: "/products/category/tirzepatide", lastmod: today, changefreq: "weekly", priority: "0.8" },
-    { path: "/products/category/tb-500", lastmod: today, changefreq: "weekly", priority: "0.8" },
-    { path: "/products/category/ghk-cu", lastmod: today, changefreq: "weekly", priority: "0.8" },
-    { path: "/products/category/bacteriostatic-water", lastmod: today, changefreq: "weekly", priority: "0.8" },
+    // Removed /bing-feed.xml (feed file, not an indexable page) and all
+    // /products/category/* entries (no matching route exists — they were 404s).
   ];
 }
 
