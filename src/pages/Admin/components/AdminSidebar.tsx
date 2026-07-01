@@ -129,6 +129,7 @@ const navGroups = [
       { id: 'infrahealth', label: 'Infrastructure Health', icon: Activity },
       { id: 'purgeincidents', label: 'Purge Incidents', icon: Activity },
       { id: 'swtelemetrydebug', label: 'SW Telemetry Debug', icon: Activity },
+      { id: 'cacherecovery', label: 'Cache Recovery', icon: Activity },
     ],
   },
 ];
