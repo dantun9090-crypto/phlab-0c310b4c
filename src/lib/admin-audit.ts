@@ -54,7 +54,9 @@ export async function logAdminAction(payload: LogPayload): Promise<void> {
       before: safeDiff(payload.before) ?? null,
       after: safeDiff(payload.after) ?? null,
       meta: payload.meta ?? null,
-      timestamp: Timestamp.now(),
+      // serverTimestamp() defers the value to Firestore so the timestamp is
+      // authoritative (server clock) and immune to client-clock tampering.
+      timestamp: serverTimestamp(),
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 256) : null,
     });
   } catch (err) {
