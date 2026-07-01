@@ -279,6 +279,34 @@ export default function SwTelemetryDebugTab() {
         </p>
       </div>
 
+      {/* Publish-hold / rollback banner — surfaced from /api/public/publish-hold */}
+      {publishHold.hold && publishHold.current && (
+        <div
+          role="alert"
+          className="rounded-xl border-2 border-rose-600 bg-rose-950 p-4 text-rose-100 space-y-2"
+        >
+          <div className="flex items-center gap-2 font-semibold text-rose-200">
+            <span aria-hidden>⛔</span>
+            <span>Publish hold active — rollback recommended</span>
+          </div>
+          <div className="text-sm">
+            Build{' '}
+            <code className="rounded bg-rose-900/60 px-1 py-0.5 text-rose-100">
+              {(publishHold.current.buildId || 'unknown').slice(0, 20)}
+            </code>{' '}
+            has been flagged by <span className="font-semibold">{publishHold.current.source || 'canary'}</span>.
+            Do not re-publish until the underlying failure is resolved.
+          </div>
+          <div className="text-xs text-rose-200/80 grid grid-cols-1 md:grid-cols-2 gap-1">
+            <div>Reason: <span className="text-white">{publishHold.current.reason || 'n/a'}</span></div>
+            <div>Boot-bad in window: <span className="text-white">{publishHold.current.bootBadInWindow ?? 0}</span></div>
+            <div>Failures in window: <span className="text-white">{publishHold.current.failuresInWindow ?? 0}</span></div>
+            <div>Updated: <span className="text-white">{publishHold.current.updatedAt || '—'}</span></div>
+          </div>
+        </div>
+      )}
+
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="rounded-xl border-2 border-slate-700 bg-slate-900 p-4">
           <div className="text-xs uppercase tracking-wide text-slate-400">Queue size</div>
