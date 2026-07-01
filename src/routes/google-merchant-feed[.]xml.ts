@@ -519,11 +519,7 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               `    <g:product_highlight>Supplied to qualified UK laboratories</g:product_highlight>`,
               ...MERCHANT_PROMO_IDS.map((pid: string) => `    <g:promotion_id>${xmlEscape(pid)}</g:promotion_id>`),
               `    <g:custom_label_0>${xmlEscape(customLabel)}</g:custom_label_0>`,
-              // Explicitly opt every item into paid Shopping ads + free listings
-              // (Merchant Center defaults to both, but we set them explicitly so
-              // no per-item opt-out sneaks in and every entry is eligible for
-              // Google Ads Shopping / PMax campaigns.)
-              `    <g:included_destination>Shopping_ads</g:included_destination>`,
+              // Free listings only — paid Shopping ads are paused.
               `    <g:included_destination>Free_listings</g:included_destination>`,
               `    <g:included_destination>Free_local_listings</g:included_destination>`,
               !highRisk && sizeCompact
