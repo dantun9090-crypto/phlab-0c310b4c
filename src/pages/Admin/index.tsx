@@ -83,6 +83,7 @@ import BlankWatchdogTab from './tabs/BlankWatchdogTab';
 import InfraHealthTab from './tabs/InfraHealthTab';
 import PurgeIncidentsTab from './tabs/PurgeIncidentsTab';
 import SwTelemetryDebugTab from './tabs/SwTelemetryDebugTab';
+import CacheRecoveryTab from './tabs/CacheRecoveryTab';
 
 type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'merchantfeededitor' | 'bingfeed' | 'indexnow' | 'reindexhook' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'backlinkchanges' | 'googleads' | 'compoundqueries' | 'compoundnegativesaudit' | 'internallinks' | 'webvitals' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'blankwatchdog' | 'healthmonitor' | 'infrahealth' | 'researchincidents' | 'purgeincidents' | 'swtelemetrydebug';
 
