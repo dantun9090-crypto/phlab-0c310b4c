@@ -302,7 +302,7 @@ function reloadOnce(reason: string, err?: unknown, requireMissingAsset = true) {
     }
     return;
   }
-  doReload(reason);
+  void doReload(reason);
 }
 
 // Skip the entire auto-recovery install on /compound (and other marketing
