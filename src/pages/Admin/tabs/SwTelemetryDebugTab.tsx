@@ -84,6 +84,17 @@ async function fetchEdgeCorrelation(): Promise<EdgeCorrelation> {
 export default function SwTelemetryDebugTab() {
   const [stats, setStats] = useState<SwTelemetryDebugStats>(() => getSwTelemetryDebugStats());
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [edge, setEdge] = useState<EdgeCorrelation | null>(null);
+  const [edgeLoading, setEdgeLoading] = useState(false);
+
+  const refreshEdge = async () => {
+    setEdgeLoading(true);
+    try {
+      setEdge(await fetchEdgeCorrelation());
+    } finally {
+      setEdgeLoading(false);
+    }
+  };
 
   useEffect(() => {
     const refresh = () => setStats(getSwTelemetryDebugStats());
@@ -97,6 +108,7 @@ export default function SwTelemetryDebugTab() {
       id = window.setInterval(refresh, 1500);
     }
     refresh();
+    void refreshEdge();
     return () => {
       window.removeEventListener('phl-sw-tel-stats', onEvent);
       if (id) window.clearInterval(id);
