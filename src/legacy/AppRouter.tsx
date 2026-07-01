@@ -128,6 +128,7 @@ const routes = [
       { path: 'privacy-policy',    element: <PrivacyPolicy /> },
       { path: 'cookies',           element: <CookiePolicy /> },
       { path: 'privacy-requests',  element: <PrivacyRequests /> },
+      { path: 'cart',              element: <Checkout /> },
       { path: 'payment',           element: <Payment /> },
       { path: 'checkout',           element: <Checkout /> },
       { path: 'landing/peptides',  element: <Navigate to="/products" replace /> },
