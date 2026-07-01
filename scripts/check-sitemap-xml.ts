@@ -113,6 +113,8 @@ function validateXml(label: string, xml: string): void {
   let imagesChecked = 0;
   let lastmodChecked = 0;
   const locIndexes = new Map<string, number[]>();
+  const imageLocIndexes = new Map<string, string[]>();
+  const lastmodIndexes = new Map<string, number[]>();
 
   urls.forEach((u, i) => {
     const at = `<url> #${i}`;
@@ -128,7 +130,6 @@ function validateXml(label: string, xml: string): void {
       locIndexes.set(key, list);
     }
 
-
     if ("lastmod" in u && u.lastmod !== undefined) {
       lastmodChecked++;
       if (typeof u.lastmod !== "string" || u.lastmod.trim() === "") {
@@ -137,6 +138,10 @@ function validateXml(label: string, xml: string): void {
         push(
           `${at} <lastmod>="${u.lastmod}" is not W3C Datetime (YYYY-MM-DD or full ISO-8601)`,
         );
+      } else {
+        const list = lastmodIndexes.get(u.lastmod) ?? [];
+        list.push(i);
+        lastmodIndexes.set(u.lastmod, list);
       }
     }
 
@@ -149,7 +154,6 @@ function validateXml(label: string, xml: string): void {
     }
 
     if ("priority" in u && u.priority !== undefined) {
-      // fast-xml-parser may coerce numeric text to a number.
       const n =
         typeof u.priority === "number" ? u.priority : Number(u.priority);
       if (!Number.isFinite(n) || n < 0 || n > 1) {
@@ -157,8 +161,6 @@ function validateXml(label: string, xml: string): void {
       }
     }
 
-    // image:image entries — every <image:image> must contain a non-empty,
-    // absolute <image:loc>. Emitting <image:image/> with no loc is invalid.
     const imgs = u["image:image"];
     if (imgs !== undefined) {
       const arr = Array.isArray(imgs) ? imgs : [imgs];
@@ -174,25 +176,45 @@ function validateXml(label: string, xml: string): void {
           push(`${iat} missing <image:loc>`);
         } else if (!isValidAbsoluteHttpsUrl(iloc)) {
           push(`${iat} <image:loc>="${iloc}" is not a valid absolute URL`);
+        } else {
+          const list = imageLocIndexes.get(iloc) ?? [];
+          list.push(`${i}.${j}`);
+          imageLocIndexes.set(iloc, list);
         }
+      });
+    }
   });
 
-  // 4) Duplicate <loc> detection — every entry must be unique. Report ALL
-  //    duplicate groups with their 0-based <url> indexes so the offending
-  //    generator call sites are easy to find.
-  const duplicates = [...locIndexes.entries()]
-    .filter(([, idxs]) => idxs.length > 1)
-    .sort((a, b) => b[1].length - a[1].length);
-  if (duplicates.length > 0) {
-    for (const [loc, idxs] of duplicates) {
+  // 4) Duplicate detection — no value may repeat within the same feed.
+  //    Each duplicate group is reported with the 0-based <url> indexes
+  //    (and image sub-indexes as "urlIdx.imageIdx") of every occurrence
+  //    so the offending generator call sites are trivial to locate.
+  const reportDupes = <T>(
+    map: Map<string, T[]>,
+    field: string,
+    fmt: (idxs: T[]) => string,
+  ) => {
+    const dupes = [...map.entries()]
+      .filter(([, idxs]) => idxs.length > 1)
+      .sort((a, b) => b[1].length - a[1].length);
+    for (const [value, idxs] of dupes) {
       push(
-        `duplicate <loc> "${loc}" appears ${idxs.length}× at <url> indexes [${idxs.join(", ")}]`,
+        `duplicate ${field} "${value}" appears ${idxs.length}× at ${fmt(idxs)}`,
       );
     }
-  }
+  };
+  reportDupes(locIndexes, "<loc>", (idxs) => `<url> indexes [${idxs.join(", ")}]`);
+  reportDupes(
+    imageLocIndexes,
+    "<image:loc>",
+    (idxs) => `<url>.<image:image> indexes [${idxs.join(", ")}]`,
+  );
+  reportDupes(
+    lastmodIndexes,
+    "<lastmod>",
+    (idxs) => `<url> indexes [${idxs.join(", ")}]`,
+  );
 
-    }
-  });
 
   if (errors.length > 0) {
     const lines = ["", ...errors.map((e) => `  ✗ ${e}`)].join("\n");
