@@ -261,6 +261,25 @@ export default function SwTelemetryDebugTab() {
 
   const timeline = useMemo(() => buildTimeline(filteredSamples, timeWindow), [filteredSamples, timeWindow]);
 
+  /**
+   * Samples that fall inside the currently drilled-down (bucket, code).
+   * A bucket represents the interval [bucket.hour - bucketMs, bucket.hour].
+   */
+  const drillDownSamples = useMemo(() => {
+    if (!drillDown) return [];
+    const bucketMs = WINDOWS[timeWindow].bucketMs;
+    const end = drillDown.hour;
+    const start = end - bucketMs;
+    return filteredSamples.filter((s) => {
+      const t = s.eventTs ?? s.ts;
+      return s.code === drillDown.code && t > start && t <= end;
+    });
+  }, [drillDown, filteredSamples, timeWindow]);
+
+  // Clear a stale drill-down whenever the underlying filter/window changes.
+  useEffect(() => { setDrillDown(null); }, [timeWindow, filterBuild, filterRoute]);
+
+
 
   const downloadCsv = () => {
     const csv = mountSamplesToCsv(filteredSamples);
