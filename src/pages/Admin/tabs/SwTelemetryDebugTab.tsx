@@ -28,6 +28,50 @@ function statusColor(s: SwTelemetryDebugStats['lastFlushStatus']): string {
   }
 }
 
+// Bucketize samples into hourly bins for the last 24h, split by code.
+interface TimelineBin { hour: number; label: string; counts: Record<string, number> }
+const TRACKED_CODES: MountErrorCode[] = [
+  'MOUNT_TIMEOUT_BLANK',
+  'MOUNT_TIMEOUT_UNMOUNTED',
+  'MOUNT_PARSE_ERROR',
+  'MOUNT_CHUNK_LOAD_FAILED',
+  'MOUNT_HYDRATION_MISMATCH',
+  'MOUNT_BOOT_BAD',
+  'MOUNT_UNKNOWN',
+];
+const CODE_COLOR: Record<string, string> = {
+  MOUNT_TIMEOUT_BLANK: '#f43f5e',
+  MOUNT_TIMEOUT_UNMOUNTED: '#fb923c',
+  MOUNT_PARSE_ERROR: '#a855f7',
+  MOUNT_CHUNK_LOAD_FAILED: '#f59e0b',
+  MOUNT_HYDRATION_MISMATCH: '#38bdf8',
+  MOUNT_BOOT_BAD: '#ef4444',
+  MOUNT_UNKNOWN: '#94a3b8',
+};
+
+function buildTimeline(samples: MountSample[]): TimelineBin[] {
+  const now = Date.now();
+  const HOUR = 3_600_000;
+  const bins: TimelineBin[] = [];
+  for (let i = 23; i >= 0; i--) {
+    const start = now - i * HOUR;
+    bins.push({
+      hour: start,
+      label: new Date(start).getHours().toString().padStart(2, '0') + 'h',
+      counts: {},
+    });
+  }
+  for (const s of samples) {
+    const idx = Math.floor((now - s.ts) / HOUR);
+    if (idx < 0 || idx >= 24) continue;
+    const bin = bins[23 - idx];
+    bin.counts[s.code] = (bin.counts[s.code] || 0) + 1;
+  }
+  return bins;
+}
+
+
+
 interface EdgeCorrelation {
   fetchedAt: number;
   status: number;
