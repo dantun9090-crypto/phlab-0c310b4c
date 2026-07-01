@@ -572,6 +572,16 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   let rewritten = htmlResponse;
   const buildId = (typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev') as string;
   const strict = useStrictCsp(hostname);
+  // In strict mode we emit a `__CSP_NONCE__` placeholder in both the CSP
+  // header and every <script>/<style> nonce attribute. The downstream
+  // phlabs-prerender Worker rewrites the placeholder with a fresh
+  // per-request nonce, so the origin HTML body is safe to edge-cache
+  // (public roots use s-maxage=60 SWR) while every visitor still gets a
+  // unique nonce. Locally / when the Worker is absent, browsers still
+  // see the literal placeholder — which fails closed rather than open,
+  // because 'strict-dynamic' + a fixed nonce won't authorize any
+  // attacker-injected script that doesn't already know the placeholder.
+  const nonceAttrValue = strict ? "__CSP_NONCE__" : nonce;
   if (RewriterCtor) {
     const rewriter: Rewriter = new RewriterCtor();
     let r = rewriter.on("head", {
@@ -581,17 +591,16 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
       },
     });
     if (strict) {
-      // Per-request nonce injection: stamp nonce on every <script> and
-      // <style> element in the response body. Covers TanStack Start's
-      // inline bootstrap payload, our inline boot guards, external
-      // module preloads, and injected style tags. Combined with the
-      // NONCE_PROPAGATOR script in __root.tsx (which mirrors the nonce
-      // onto every runtime-created script/style), 'strict-dynamic'
-      // authorizes every dependent load without 'unsafe-inline'.
+      // Stamp nonce on every <script> and <style> element so TanStack
+      // Start's inline bootstrap payload, our inline boot guards, and
+      // external module preloads all satisfy the nonce-based CSP.
+      // NONCE_PROPAGATOR (in __root.tsx) mirrors the nonce onto every
+      // runtime-created element, and 'strict-dynamic' authorizes their
+      // dependent loads without 'unsafe-inline'.
       r = r.on("script", {
-        element(el) { el.setAttribute("nonce", nonce); },
+        element(el) { el.setAttribute("nonce", nonceAttrValue); },
       }).on("style", {
-        element(el) { el.setAttribute("nonce", nonce); },
+        element(el) { el.setAttribute("nonce", nonceAttrValue); },
       });
     }
     rewritten = r.transform(htmlResponse);
@@ -601,17 +610,8 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
     if (!headers.has(k)) headers.set(k, v);
   }
-  headers.set("content-security-policy", buildCsp(nonce, hostname));
+  headers.set("content-security-policy", buildCsp(nonceAttrValue, hostname));
   headers.set("x-build-id", buildId);
-  // HTML bodies now vary by per-request nonce — must not be shared across
-  // requests by intermediate caches. CF edge cache is controlled via
-  // cdn-cache-control (already set above), which honours the nonce-fresh
-  // body but keeps a single edge copy keyed by URL. Public HTML uses SWR
-  // so nonces refresh on each origin revalidation.
-  if (strict) {
-    const existingVary = headers.get("vary");
-    headers.set("vary", existingVary ? `${existingVary}, cookie` : "cookie");
-  }
   return new Response(rewritten.body, {
     status: rewritten.status,
     statusText: rewritten.statusText,
