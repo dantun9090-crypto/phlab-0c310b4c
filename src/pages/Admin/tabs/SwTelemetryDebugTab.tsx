@@ -430,6 +430,40 @@ export default function SwTelemetryDebugTab() {
           </div>
         </div>
 
+        {/* Window + view controls */}
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-slate-400 uppercase tracking-wide">Window</span>
+          {(['6h', '24h', '7d'] as TimeWindowKey[]).map((w) => (
+            <button
+              key={w}
+              onClick={() => setTimeWindow(w)}
+              className={`rounded px-2 py-1 border min-h-[32px] ${
+                timeWindow === w
+                  ? 'border-emerald-500 bg-emerald-950 text-emerald-200 font-semibold'
+                  : 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              {w}
+            </button>
+          ))}
+          <span className="ml-3 text-slate-400 uppercase tracking-wide">View</span>
+          {(['raw', 'rate'] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setViewMode(v)}
+              className={`rounded px-2 py-1 border min-h-[32px] ${
+                viewMode === v
+                  ? 'border-sky-500 bg-sky-950 text-sky-200 font-semibold'
+                  : 'border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700'
+              }`}
+              title={v === 'raw' ? 'Raw counts per bucket' : 'Normalized: events per hour per bucket'}
+            >
+              {v === 'raw' ? 'Raw counts' : 'Rate (events/h)'}
+            </button>
+          ))}
+        </div>
+
+
         {/* Totals per code */}
         <div className="flex flex-wrap gap-2 text-xs">
           {TRACKED_CODES.map((c) => (
