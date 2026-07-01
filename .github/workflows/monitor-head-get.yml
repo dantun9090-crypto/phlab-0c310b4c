@@ -32,6 +32,8 @@ jobs:
         id: run
         env:
           MONITOR_HOSTS: ${{ github.event.inputs.hosts || 'https://phlabs.co.uk,https://prohealthpeptides.co.uk' }}
+          MONITOR_SOURCE: ${{ github.event_name == 'workflow_dispatch' && 'ci-manual' || 'ci-cron' }}
+          MONITOR_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set +e
           node scripts/monitor-head-get.mjs | tee /tmp/monitor.log
