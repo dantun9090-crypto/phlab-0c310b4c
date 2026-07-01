@@ -141,7 +141,9 @@ function validateXml(label: string, xml: string): void {
     }
 
     if ("priority" in u && u.priority !== undefined) {
-      const n = typeof u.priority === "string" ? Number(u.priority) : NaN;
+      // fast-xml-parser may coerce numeric text to a number.
+      const n =
+        typeof u.priority === "number" ? u.priority : Number(u.priority);
       if (!Number.isFinite(n) || n < 0 || n > 1) {
         push(`${at} <priority>="${u.priority}" must be a number in [0.0, 1.0]`);
       }
