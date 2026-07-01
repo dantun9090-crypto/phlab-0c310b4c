@@ -620,6 +620,63 @@ export default function SwTelemetryDebugTab() {
         })()}
 
 
+        {/* Drill-down: raw samples for the clicked (bucket, code). */}
+        {drillDown && (
+          <div className="rounded-lg border border-slate-700 bg-slate-950 p-3 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs text-slate-300">
+                Drill-down:{' '}
+                <span className="inline-flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: CODE_COLOR[drillDown.code] }} />
+                  <span className="font-mono text-white">{drillDown.code.replace('MOUNT_', '')}</span>
+                </span>{' '}
+                at <span className="font-mono text-white">{drillDown.label}</span>
+                {' '}·{' '}
+                <span className="text-white font-semibold">{drillDownSamples.length}</span> sample(s)
+              </div>
+              <button
+                onClick={() => setDrillDown(null)}
+                className="rounded border border-slate-600 bg-slate-800 hover:bg-slate-700 px-2 py-1 text-xs text-slate-200 min-h-[32px]"
+              >
+                Clear drill-down
+              </button>
+            </div>
+            {drillDownSamples.length === 0 ? (
+              <div className="text-xs text-slate-500 italic">No samples in this bucket (data may have been trimmed).</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs font-mono text-slate-200">
+                  <thead className="text-slate-400 text-left">
+                    <tr>
+                      <th className="py-1 pr-3">Event time</th>
+                      <th className="py-1 pr-3">Duration</th>
+                      <th className="py-1 pr-3">Route</th>
+                      <th className="py-1 pr-3">Build</th>
+                      <th className="py-1 pr-3">Asset</th>
+                      <th className="py-1 pr-3">Message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {drillDownSamples
+                      .slice()
+                      .sort((a, b) => (b.eventTs ?? b.ts) - (a.eventTs ?? a.ts))
+                      .map((s, idx) => (
+                        <tr key={idx} className="border-t border-slate-800">
+                          <td className="py-1 pr-3">{new Date(s.eventTs ?? s.ts).toLocaleTimeString()}</td>
+                          <td className="py-1 pr-3">{s.mountDurationMs != null ? `${s.mountDurationMs}ms` : '—'}</td>
+                          <td className="py-1 pr-3 text-slate-300">{s.route}</td>
+                          <td className="py-1 pr-3 text-slate-300">{(s.buildId || '').slice(0, 12)}</td>
+                          <td className="py-1 pr-3 text-slate-300">{(s.assetHash || '').slice(0, 10)}</td>
+                          <td className="py-1 pr-3 text-slate-400 max-w-[320px] truncate" title={s.message}>{s.message}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
         {filteredSamples.length === 0 && (
           <div className="text-xs text-slate-500 italic">
             No mount telemetry samples retained yet. Trigger the 5s mount-timeout probe in this browser
@@ -627,6 +684,7 @@ export default function SwTelemetryDebugTab() {
           </div>
         )}
       </div>
+
 
 
 
