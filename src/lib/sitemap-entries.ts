@@ -27,6 +27,8 @@ function buildStaticEntries(today: string): SitemapEntry[] {
     { path: "/research", lastmod: today, changefreq: "weekly", priority: "0.7" },
     { path: "/research/retatrutide-uk", lastmod: "2026-06-26", changefreq: "weekly", priority: "0.9" },
     { path: "/research/bpc-157-uk", lastmod: "2026-06-26", changefreq: "weekly", priority: "0.9" },
+    { path: "/research/bpc-157-vs-tb-500", lastmod: today, changefreq: "weekly", priority: "0.9" },
+    { path: "/resources/peptide-categories-uk-research", lastmod: today, changefreq: "monthly", priority: "0.6" },
     { path: "/compound", lastmod: today, changefreq: "weekly", priority: "0.7" },
     { path: "/peptide-calculator", lastmod: today, changefreq: "monthly", priority: "0.7" },
     { path: "/landing/phlabs", lastmod: today, changefreq: "weekly", priority: "0.7" },
