@@ -270,7 +270,7 @@ export default function MonitorLogTab() {
                     </div>
                   </div>
 
-                  {(r.head_headers || r.get_headers) && (
+                  {(Boolean(r.head_headers) || Boolean(r.get_headers)) && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {([
                         { label: 'HEAD response headers', h: r.head_headers },
