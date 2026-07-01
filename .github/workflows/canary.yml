@@ -10,10 +10,14 @@ on:
         description: "Base URL to canary (default https://phlabs.co.uk)"
         required: false
         default: "https://phlabs.co.uk"
+      force_alert:
+        description: "Force Slack alert regardless of threshold"
+        required: false
+        default: "false"
 
 concurrency:
   group: canary-${{ github.workflow }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   canary:
@@ -23,16 +27,54 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: "20" }
+
+      # Persist a small rolling window of the last N canary outcomes so we can
+      # only alert when failures exceed a threshold within a window — kills
+      # noise from single-run transient blips (DNS, edge cold cache, etc.).
+      - name: Restore canary state
+        id: state-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: .canary-state
+          key: canary-state-v1
+
       - name: Run canary
+        id: run
+        continue-on-error: true
         env:
           CANARY_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
           CANARY_PATHS: "/,/products,/login,/admin"
         run: node scripts/canary-check.mjs
-      - name: Notify Slack on failure
-        if: failure() && env.SLACK_WEBHOOK_URL != ''
+
+      - name: Evaluate rolling failure window
+        id: eval
+        env:
+          # Alert when >= FAIL_THRESHOLD failures occur inside the last WINDOW_RUNS runs.
+          # At */15 crons: 3 fails / 6 runs ≈ 3 failures within ~90 min.
+          FAIL_THRESHOLD: "3"
+          WINDOW_RUNS: "6"
+          RUN_OUTCOME: ${{ steps.run.outcome }}
+          FORCE_ALERT: ${{ github.event.inputs.force_alert }}
+        run: node scripts/canary-window-eval.mjs
+
+      - name: Save canary state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .canary-state
+          key: canary-state-v1-${{ github.run_id }}
+
+      - name: Notify Slack (threshold exceeded)
+        if: steps.eval.outputs.should_alert == 'true' && env.SLACK_WEBHOOK_URL != ''
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           curl -sS -X POST -H 'Content-type: application/json' \
-            --data "{\"text\":\":rotating_light: phlabs.co.uk canary FAILED — see run ${{ github.run_id }}\"}" \
+            --data "{\"text\":\":rotating_light: phlabs.co.uk canary threshold exceeded — ${{ steps.eval.outputs.summary }} — run ${{ github.run_id }}\"}" \
             "$SLACK_WEBHOOK_URL" || true
+
+      - name: Fail job if threshold exceeded
+        if: steps.eval.outputs.should_alert == 'true'
+        run: |
+          echo "Canary failure threshold exceeded: ${{ steps.eval.outputs.summary }}"
+          exit 1

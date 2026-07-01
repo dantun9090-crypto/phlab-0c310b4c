@@ -20,9 +20,81 @@ function statusColor(s: SwTelemetryDebugStats['lastFlushStatus']): string {
   }
 }
 
+interface EdgeCorrelation {
+  fetchedAt: number;
+  status: number;
+  htmlBuildId: string;    // meta build-id in served HTML
+  runtimeBuildId: string; // window.__BUILD_ID__ / meta at hydration
+  assetHash: string;      // x-phl-asset-hash
+  entry: string;          // x-phl-entry
+  cache: string;
+  bootBad: boolean;
+  mismatch: boolean;
+  error?: string;
+}
+
+async function fetchEdgeCorrelation(): Promise<EdgeCorrelation> {
+  const url = location.pathname + (location.search || '');
+  const runtime =
+    (window as unknown as { __BUILD_ID__?: string }).__BUILD_ID__ ||
+    document.querySelector('meta[name="build-id"]')?.getAttribute('content') ||
+    'unknown';
+  try {
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: { 'x-phl-canary': 'admin-debug' },
+      redirect: 'follow',
+    });
+    const htmlBuildId =
+      res.headers.get('x-phl-build-id') ||
+      // fallback: parse first bytes for meta
+      '';
+    const assetHash = res.headers.get('x-phl-asset-hash') || '';
+    const entry = res.headers.get('x-phl-entry') || '';
+    const bootBad = res.headers.get('x-phl-boot-bad') === '1';
+    const cache = res.headers.get('x-phl-cache') || res.headers.get('cf-cache-status') || '—';
+    const mismatch = !!htmlBuildId && htmlBuildId !== runtime;
+    return {
+      fetchedAt: Date.now(),
+      status: res.status,
+      htmlBuildId: htmlBuildId || 'n/a',
+      runtimeBuildId: runtime,
+      assetHash: assetHash || 'n/a',
+      entry: entry || 'n/a',
+      cache,
+      bootBad,
+      mismatch,
+    };
+  } catch (err) {
+    return {
+      fetchedAt: Date.now(),
+      status: 0,
+      htmlBuildId: 'n/a',
+      runtimeBuildId: runtime,
+      assetHash: 'n/a',
+      entry: 'n/a',
+      cache: '—',
+      bootBad: false,
+      mismatch: false,
+      error: String((err as Error)?.message || err).slice(0, 200),
+    };
+  }
+}
+
 export default function SwTelemetryDebugTab() {
   const [stats, setStats] = useState<SwTelemetryDebugStats>(() => getSwTelemetryDebugStats());
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [edge, setEdge] = useState<EdgeCorrelation | null>(null);
+  const [edgeLoading, setEdgeLoading] = useState(false);
+
+  const refreshEdge = async () => {
+    setEdgeLoading(true);
+    try {
+      setEdge(await fetchEdgeCorrelation());
+    } finally {
+      setEdgeLoading(false);
+    }
+  };
 
   useEffect(() => {
     const refresh = () => setStats(getSwTelemetryDebugStats());
@@ -36,6 +108,7 @@ export default function SwTelemetryDebugTab() {
       id = window.setInterval(refresh, 1500);
     }
     refresh();
+    void refreshEdge();
     return () => {
       window.removeEventListener('phl-sw-tel-stats', onEvent);
       if (id) window.clearInterval(id);
@@ -100,6 +173,46 @@ export default function SwTelemetryDebugTab() {
         <div className="text-xs text-slate-400">
           Build:   <span className="font-mono text-slate-300">{stats.buildId || '—'}</span>
         </div>
+      </div>
+
+      {/* Edge correlation headers — spot build-id/asset mismatches instantly */}
+      <div className={`rounded-xl border-2 p-4 space-y-2 ${edge?.mismatch || edge?.bootBad ? 'border-rose-500 bg-rose-950/40' : 'border-slate-700 bg-slate-900'}`}>
+        <div className="flex items-center justify-between">
+          <div className="text-xs uppercase tracking-wide text-slate-400">Edge correlation (this route)</div>
+          <button
+            onClick={refreshEdge}
+            disabled={edgeLoading}
+            className="text-xs rounded border border-slate-600 bg-slate-800 px-2 py-1 text-white disabled:opacity-50"
+          >
+            {edgeLoading ? 'Fetching…' : 'Re-fetch'}
+          </button>
+        </div>
+        {!edge ? (
+          <div className="text-xs text-slate-500">Loading edge headers…</div>
+        ) : (
+          <>
+            {edge.mismatch && (
+              <div className="rounded bg-rose-600/30 border border-rose-500 px-3 py-2 text-sm font-semibold text-rose-100">
+                ⚠ Build-ID mismatch: HTML edge cache is serving an older build than the running JS. A hard refresh or edge purge is required.
+              </div>
+            )}
+            {edge.bootBad && (
+              <div className="rounded bg-amber-600/30 border border-amber-500 px-3 py-2 text-sm font-semibold text-amber-100">
+                ⚠ Worker flagged x-phl-boot-bad=1 (broken inline SW cleanup script). Check canary and inline-boot-scripts test.
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-xs font-mono">
+              <div><span className="text-slate-400">x-phl-build-id (HTML):</span>{' '}<span className={edge.mismatch ? 'text-rose-300' : 'text-emerald-300'}>{edge.htmlBuildId}</span></div>
+              <div><span className="text-slate-400">runtime __BUILD_ID__:</span>{' '}<span className="text-slate-200">{edge.runtimeBuildId}</span></div>
+              <div><span className="text-slate-400">x-phl-asset-hash:</span>{' '}<span className="text-slate-200">{edge.assetHash}</span></div>
+              <div><span className="text-slate-400">x-phl-entry:</span>{' '}<span className="text-slate-200 break-all">{edge.entry}</span></div>
+              <div><span className="text-slate-400">cache:</span>{' '}<span className="text-slate-200">{edge.cache}</span></div>
+              <div><span className="text-slate-400">status:</span>{' '}<span className="text-slate-200">{edge.status}</span></div>
+              <div className="md:col-span-2 text-slate-500">Fetched {fmtTs(edge.fetchedAt)}</div>
+              {edge.error && <div className="md:col-span-2 text-rose-300">Error: {edge.error}</div>}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-3">
