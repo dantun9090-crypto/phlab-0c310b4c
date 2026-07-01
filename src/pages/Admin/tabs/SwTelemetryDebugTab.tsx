@@ -1,9 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   getSwTelemetryDebugStats,
   logSwTelemetry,
   type SwTelemetryDebugStats,
 } from '@/lib/swTelemetry';
+import {
+  clearMountSamples,
+  loadMountSamples,
+  mountSamplesToCsv,
+  type MountErrorCode,
+  type MountSample,
+} from '@/lib/mount-error-codes';
+
 
 function fmtTs(ts: number | null): string {
   if (!ts) return '—';
