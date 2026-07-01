@@ -28,7 +28,9 @@ const {
 
 let log = "";
 try { log = readFileSync(ALERT_LOG_PATH, "utf8"); } catch { log = "(no log captured)"; }
-const trimmed = log.length > 3500 ? log.slice(-3500) : log;
+const throttleSummary = process.env.ALERT_THROTTLE_SUMMARY || "";
+const prefixed = throttleSummary ? `${throttleSummary}\n\n${log}` : log;
+const trimmed = prefixed.length > 3500 ? prefixed.slice(-3500) : prefixed;
 
 const results = [];
 

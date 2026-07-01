@@ -92,6 +92,30 @@ export type Database = {
         }
         Relationships: []
       }
+      monitor_alert_state: {
+        Row: {
+          alerts_sent: number
+          host: string
+          last_alert_at: string
+          last_reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          alerts_sent?: number
+          host: string
+          last_alert_at?: string
+          last_reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          alerts_sent?: number
+          host?: string
+          last_alert_at?: string
+          last_reason?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       monitor_head_get_log: {
         Row: {
           alerts: Json
@@ -343,7 +367,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      record_monitor_alert: {
+        Args: { _host: string; _reason: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
