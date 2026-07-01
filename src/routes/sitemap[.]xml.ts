@@ -69,6 +69,9 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
+        const today = new Date().toISOString().slice(0, 10);
+        const STATIC_LASTMOD = today;
+        const staticEntries = buildStaticEntries(today);
         // Dynamic article entries served by the /$ splat route
         const articleEntries: SitemapEntry[] = articles.map((a) => ({
           path: `/resources/${a.slug}`,
