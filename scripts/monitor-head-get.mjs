@@ -62,6 +62,24 @@ async function fetchWithRetries(url, init, timeoutMs, retries = RETRIES) {
   return { ...last, attempts };
 }
 
+const KEY_HEADERS = [
+  "content-type", "content-length", "content-encoding",
+  "cache-control", "cdn-cache-control", "cf-cache-status",
+  "age", "server", "x-served-by", "x-cache", "x-vercel-cache",
+  "x-firebase-cache", "x-phl-build-id", "x-phl-asset-hash",
+  "x-prerender", "x-prerender-requestid",
+];
+
+function pickHeaders(res) {
+  if (!res || !res.headers) return null;
+  const out = {};
+  for (const h of KEY_HEADERS) {
+    const v = res.headers.get(h);
+    if (v != null) out[h] = String(v).slice(0, 300);
+  }
+  return out;
+}
+
 async function checkHost(host) {
   const alerts = [];
   const info = [];
@@ -71,8 +89,10 @@ async function checkHost(host) {
     fetchWithRetries(host + "/", { method: "GET", headers: { accept: "text/html" } }, GET_TIMEOUT_MS),
   ]);
 
-  if (head.attempts > 1) info.push(`HEAD needed ${head.attempts} attempts`);
-  if (get.attempts > 1)  info.push(`GET needed ${get.attempts} attempts`);
+  if (head.attempts > 1) info.push(`HEAD needed ${head.attempts} attempts (${head.ms}ms)`);
+  else info.push(`HEAD ${head.ms}ms`);
+  if (get.attempts > 1)  info.push(`GET needed ${get.attempts} attempts (${get.ms}ms)`);
+  else info.push(`GET ${get.ms}ms`);
 
   const headStatus = head.res ? String(head.res.status) : `ERR(${head.error})`;
   const getStatus = get.res ? String(get.res.status) : `ERR(${get.error})`;
@@ -83,12 +103,18 @@ async function checkHost(host) {
     get_status: getStatus,
     head_attempts: head.attempts || 1,
     get_attempts: get.attempts || 1,
+    head_duration_ms: head.ms ?? null,
+    get_duration_ms: get.ms ?? null,
+    head_headers: pickHeaders(head.res),
+    get_headers: pickHeaders(get.res),
+    html_bytes: null,
     assets_total: null,
     assets_ok: null,
     has_module_entry: null,
     alerts: [],
     info: [],
     missing_bundles: [],
+    asset_samples: [],
     html_snippet: null,
   };
 
@@ -101,6 +127,7 @@ async function checkHost(host) {
 
   const html = await get.res.text().catch(() => "");
   row.html_snippet = html.slice(0, 2000);
+  row.html_bytes = html.length;
 
   const scriptRe = /<script\b([^>]*?)\bsrc=["']([^"']*\/assets\/[^"']+\.js)["']([^>]*)>/gi;
   const scripts = [];
@@ -127,15 +154,29 @@ async function checkHost(host) {
 
     const checks = await Promise.all(scripts.map(async (s) => {
       const js = await fetchWithRetries(s.url, { method: "GET" }, ASSET_TIMEOUT_MS);
-      if (!js.res) return { s, err: `fetch failed: ${js.error}` };
-      if (!js.res.ok) return { s, err: `HTTP ${js.res.status}` };
+      const sample = {
+        url: s.url,
+        module: s.isModule,
+        duration_ms: js.ms ?? null,
+        attempts: js.attempts || 1,
+        status: js.res ? js.res.status : null,
+        content_type: js.res ? (js.res.headers.get("content-type") || null) : null,
+        cache: js.res ? (js.res.headers.get("cf-cache-status") || js.res.headers.get("x-cache") || null) : null,
+        bytes: null,
+      };
+      if (!js.res) return { s, err: `fetch failed: ${js.error}`, sample };
+      if (!js.res.ok) return { s, err: `HTTP ${js.res.status}`, sample };
       const body = await js.res.text().catch(() => "");
-      const ct = (js.res.headers.get("content-type") || "").toLowerCase();
-      if (body.length < 50) return { s, err: `too small (${body.length}b)` };
-      if (ct && !/(javascript|ecmascript)/.test(ct)) return { s, err: `wrong ct: ${ct}` };
-      if (/^\s*<!doctype|<html[\s>]/i.test(body.slice(0, 512))) return { s, err: "body is HTML" };
-      return { s, ok: true };
+      sample.bytes = body.length;
+      const ct = (sample.content_type || "").toLowerCase();
+      if (body.length < 50) return { s, err: `too small (${body.length}b)`, sample };
+      if (ct && !/(javascript|ecmascript)/.test(ct)) return { s, err: `wrong ct: ${ct}`, sample };
+      if (/^\s*<!doctype|<html[\s>]/i.test(body.slice(0, 512))) return { s, err: "body is HTML", sample };
+      return { s, ok: true, sample };
     }));
+
+    // Keep timing samples for the first 8 assets (bounded to avoid huge rows).
+    row.asset_samples = checks.slice(0, 8).map((c) => c.sample);
 
     const failed = checks.filter((c) => !c.ok);
     row.assets_ok = checks.length - failed.length;
@@ -143,7 +184,7 @@ async function checkHost(host) {
     for (const f of failed) {
       const name = f.s.url.split("/assets/")[1] || f.s.url;
       alerts.push(`asset /assets/${name} — ${f.err}`);
-      row.missing_bundles.push({ url: f.s.url, module: f.s.isModule, error: f.err });
+      row.missing_bundles.push({ url: f.s.url, module: f.s.isModule, error: f.err, duration_ms: f.sample.duration_ms });
     }
   }
 

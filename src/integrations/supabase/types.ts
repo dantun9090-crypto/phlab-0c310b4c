@@ -119,16 +119,22 @@ export type Database = {
       monitor_head_get_log: {
         Row: {
           alerts: Json
+          asset_samples: Json | null
           assets_ok: number | null
           assets_total: number | null
           created_at: string
           get_attempts: number | null
+          get_duration_ms: number | null
+          get_headers: Json | null
           get_status: string | null
           had_alert: boolean
           has_module_entry: boolean | null
           head_attempts: number | null
+          head_duration_ms: number | null
+          head_headers: Json | null
           head_status: string | null
           host: string
+          html_bytes: number | null
           html_snippet: string | null
           id: string
           info: Json
@@ -138,16 +144,22 @@ export type Database = {
         }
         Insert: {
           alerts?: Json
+          asset_samples?: Json | null
           assets_ok?: number | null
           assets_total?: number | null
           created_at?: string
           get_attempts?: number | null
+          get_duration_ms?: number | null
+          get_headers?: Json | null
           get_status?: string | null
           had_alert?: boolean
           has_module_entry?: boolean | null
           head_attempts?: number | null
+          head_duration_ms?: number | null
+          head_headers?: Json | null
           head_status?: string | null
           host: string
+          html_bytes?: number | null
           html_snippet?: string | null
           id?: string
           info?: Json
@@ -157,16 +169,22 @@ export type Database = {
         }
         Update: {
           alerts?: Json
+          asset_samples?: Json | null
           assets_ok?: number | null
           assets_total?: number | null
           created_at?: string
           get_attempts?: number | null
+          get_duration_ms?: number | null
+          get_headers?: Json | null
           get_status?: string | null
           had_alert?: boolean
           has_module_entry?: boolean | null
           head_attempts?: number | null
+          head_duration_ms?: number | null
+          head_headers?: Json | null
           head_status?: string | null
           host?: string
+          html_bytes?: number | null
           html_snippet?: string | null
           id?: string
           info?: Json
