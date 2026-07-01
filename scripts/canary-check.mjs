@@ -84,9 +84,27 @@ for (const p of PATHS) {
         failures.push(`${p} → entry JS ${entryMatch[1]} → HTTP ${js ? js.status : "network"}`);
       } else {
         const body = await js.text();
-        jsStatus = `${js.status} ${body.length}b`;
+        const ctype = (js.headers.get("content-type") || "").toLowerCase();
+        jsStatus = `${js.status} ${body.length}b ${ctype.split(";")[0] || "?"}`;
         if (body.length < 200) failures.push(`${p} → entry JS suspiciously small (${body.length}b)`);
-        if (/^\s*<!doctype/i.test(body)) failures.push(`${p} → entry JS returned HTML (stale asset 404)`);
+        // Content-Type must be JS, not HTML/text.
+        if (ctype && !/(javascript|ecmascript)/.test(ctype)) {
+          failures.push(`${p} → entry JS wrong content-type: ${ctype}`);
+        }
+        // Body must NOT contain HTML markers (stale-asset HTML fallback).
+        for (const re of JS_HTML_MARKERS) {
+          if (re.test(body.slice(0, 2048))) {
+            failures.push(`${p} → entry JS body looks like HTML (stale asset)`);
+            break;
+          }
+        }
+        // Body MUST contain at least one JS-shaped token.
+        const looksLikeJs = JS_VALID_MARKERS.some((re) => re.test(body));
+        if (!looksLikeJs) failures.push(`${p} → entry JS body has no recognisable JS tokens`);
+        // Re-check bad inline patterns inside JS bundle too.
+        for (const { re, why } of BAD) {
+          if (re.test(body)) failures.push(`${p} → bad fragment inside entry JS: ${why}`);
+        }
       }
     } else {
       failures.push(`${p} → no /assets/*.js reference in HTML`);
