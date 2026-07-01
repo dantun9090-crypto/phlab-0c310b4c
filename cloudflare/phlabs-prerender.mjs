@@ -28,6 +28,31 @@ var EMERGENCY_PRERENDER_FALLBACK_PREFIXES = [
 var APP_SHELL_FALLBACK_EXACT = /* @__PURE__ */ new Set([
   "/cart", "/checkout", "/payment", "/register", "/login", "/account", "/vip", "/admin"
 ]);
+var EMERGENCY_SITEMAP_PATHS = [
+  "/", "/products", "/quality-control", "/resources", "/about", "/contact",
+  "/shipping-policy", "/refund-policy", "/terms-and-conditions", "/privacy-policy", "/cookies",
+  "/research", "/research/retatrutide-uk", "/research/bpc-157-uk", "/compound",
+  "/peptide-calculator", "/landing/phlabs", "/lab-reports", "/storage-guide",
+  "/products/category/neurological", "/products/category/tissue-repair", "/products/category/bpc-157",
+  "/products/category/retatrutide", "/products/category/tirzepatide", "/products/category/tb-500",
+  "/products/category/ghk-cu", "/products/category/bacteriostatic-water"
+];
+function emergencySitemapResponse() {
+  const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const urls = EMERGENCY_SITEMAP_PATHS.map((path) => `  <url>\n    <loc>https://${CANONICAL_HOST}${path}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${path === "/" || path === "/products" ? "weekly" : "monthly"}</changefreq>\n  </url>`).join("\n");
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`;
+  return new Response(xml, {
+    status: 200,
+    headers: {
+      "content-type": "application/xml; charset=utf-8",
+      "cache-control": "public, max-age=300, stale-while-revalidate=3600",
+      "cdn-cache-control": "public, max-age=300, stale-while-revalidate=3600",
+      "cloudflare-cdn-cache-control": "public, max-age=300, stale-while-revalidate=3600",
+      "x-phl-via": "emergency-sitemap-fallback"
+    }
+  });
+}
+__name(emergencySitemapResponse, "emergencySitemapResponse");
 function isEmergencyPrerenderFallbackPath(pathname) {
   if (EMERGENCY_PRERENDER_FALLBACK_EXACT.has(pathname)) return true;
   return EMERGENCY_PRERENDER_FALLBACK_PREFIXES.some((p) => pathname.startsWith(p));
@@ -772,6 +797,7 @@ var phlabs_prerender_patched_default = {
       if (res.status === 0 || res.status === 521 || res.status === 522 || res.status === 523) {
         const emergency = await fetchEmergencyPrerenderFallback(request, token, url);
         if (emergency) return emergency;
+        if (request.method === "GET" && url.pathname === "/sitemap.xml") return emergencySitemapResponse();
         if (request.method === "GET" && APP_SHELL_FALLBACK_EXACT.has(url.pathname)) return appShellFallbackResponse(url);
         return brandedErrorResponse(503, 30);
       }
@@ -807,6 +833,7 @@ var phlabs_prerender_patched_default = {
         noCache(h);
         const emergency = await fetchEmergencyPrerenderFallback(request, token, url);
         if (emergency) return emergency;
+        if (request.method === "GET" && url.pathname === "/sitemap.xml") return emergencySitemapResponse();
         if (request.method === "GET" && APP_SHELL_FALLBACK_EXACT.has(url.pathname)) return appShellFallbackResponse(url);
         return await serveStaleOrError(request);
       }
