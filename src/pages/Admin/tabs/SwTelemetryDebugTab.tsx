@@ -20,6 +20,67 @@ function statusColor(s: SwTelemetryDebugStats['lastFlushStatus']): string {
   }
 }
 
+interface EdgeCorrelation {
+  fetchedAt: number;
+  status: number;
+  htmlBuildId: string;    // meta build-id in served HTML
+  runtimeBuildId: string; // window.__BUILD_ID__ / meta at hydration
+  assetHash: string;      // x-phl-asset-hash
+  entry: string;          // x-phl-entry
+  cache: string;
+  bootBad: boolean;
+  mismatch: boolean;
+  error?: string;
+}
+
+async function fetchEdgeCorrelation(): Promise<EdgeCorrelation> {
+  const url = location.pathname + (location.search || '');
+  const runtime =
+    (window as unknown as { __BUILD_ID__?: string }).__BUILD_ID__ ||
+    document.querySelector('meta[name="build-id"]')?.getAttribute('content') ||
+    'unknown';
+  try {
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: { 'x-phl-canary': 'admin-debug' },
+      redirect: 'follow',
+    });
+    const htmlBuildId =
+      res.headers.get('x-phl-build-id') ||
+      // fallback: parse first bytes for meta
+      '';
+    const assetHash = res.headers.get('x-phl-asset-hash') || '';
+    const entry = res.headers.get('x-phl-entry') || '';
+    const bootBad = res.headers.get('x-phl-boot-bad') === '1';
+    const cache = res.headers.get('x-phl-cache') || res.headers.get('cf-cache-status') || '—';
+    const mismatch = !!htmlBuildId && htmlBuildId !== runtime;
+    return {
+      fetchedAt: Date.now(),
+      status: res.status,
+      htmlBuildId: htmlBuildId || 'n/a',
+      runtimeBuildId: runtime,
+      assetHash: assetHash || 'n/a',
+      entry: entry || 'n/a',
+      cache,
+      bootBad,
+      mismatch,
+    };
+  } catch (err) {
+    return {
+      fetchedAt: Date.now(),
+      status: 0,
+      htmlBuildId: 'n/a',
+      runtimeBuildId: runtime,
+      assetHash: 'n/a',
+      entry: 'n/a',
+      cache: '—',
+      bootBad: false,
+      mismatch: false,
+      error: String((err as Error)?.message || err).slice(0, 200),
+    };
+  }
+}
+
 export default function SwTelemetryDebugTab() {
   const [stats, setStats] = useState<SwTelemetryDebugStats>(() => getSwTelemetryDebugStats());
   const [autoRefresh, setAutoRefresh] = useState(true);
