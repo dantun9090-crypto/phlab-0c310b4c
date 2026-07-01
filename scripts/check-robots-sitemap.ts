@@ -193,6 +193,38 @@ function main() {
   }
   console.log("");
 
+  // ---------- optional machine-readable report ----------
+  const jsonOut = process.env.REPORT_JSON;
+  if (jsonOut) {
+    const { writeFileSync, mkdirSync } = require("node:fs") as typeof import("node:fs");
+    const { dirname } = require("node:path") as typeof import("node:path");
+    const summary = {
+      tool: "check-robots-sitemap",
+      generatedAt: new Date().toISOString(),
+      ok: errors.length === 0,
+      totals: { errors: errors.length, warnings: warns.length },
+      canonicalHost,
+      robotsFile: ROBOTS_REL,
+      declared: declared.map((d) => ({
+        raw: d.raw,
+        line: d.line,
+        host: d.url?.host ?? null,
+        pathname: d.url?.pathname ?? null,
+        valid: d.url !== null,
+      })),
+      expected: EXPECTED_SITEMAP_PATHS.map((p) => ({
+        pathname: p,
+        url: `${SITE_URL}${p}`,
+        routeFile: relFromCwd(routeFileFor(p)),
+        routeExists: existsSync(routeFileFor(p)),
+      })),
+      issues,
+    };
+    mkdirSync(dirname(jsonOut), { recursive: true });
+    writeFileSync(jsonOut, JSON.stringify(summary, null, 2));
+    console.log(`📄 JSON report written to ${jsonOut}`);
+  }
+
   if (issues.length === 0) {
     console.log(
       `✅ robots.txt Sitemap directives match ${declared.length} served feed(s) with no drift.`,
@@ -213,3 +245,4 @@ function main() {
 }
 
 main();
+
