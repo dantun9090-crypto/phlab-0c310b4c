@@ -155,11 +155,17 @@ async function fetchEdgeCorrelation(): Promise<EdgeCorrelation> {
   }
 }
 
+export type AutoRefreshSecs = 0 | 5 | 15 | 30 | 60;
+const AUTO_REFRESH_OPTIONS: AutoRefreshSecs[] = [0, 5, 15, 30, 60];
+
 export default function SwTelemetryDebugTab() {
   const [stats, setStats] = useState<SwTelemetryDebugStats>(() => getSwTelemetryDebugStats());
   const [autoRefresh, setAutoRefresh] = useState(true);
+  /** Unified refresh cadence (seconds) for samples + publish-hold + charts. */
+  const [refreshSecs, setRefreshSecs] = useState<AutoRefreshSecs>(15);
   const [edge, setEdge] = useState<EdgeCorrelation | null>(null);
   const [edgeLoading, setEdgeLoading] = useState(false);
+  const [lastAutoRefreshAt, setLastAutoRefreshAt] = useState<number>(() => Date.now());
 
   const refreshEdge = async () => {
     setEdgeLoading(true);
@@ -195,11 +201,8 @@ export default function SwTelemetryDebugTab() {
   const [filterRoute, setFilterRoute] = useState<string>('');
   const [timeWindow, setTimeWindow] = useState<TimeWindowKey>('24h');
   const [viewMode, setViewMode] = useState<'raw' | 'rate'>('raw');
-  useEffect(() => {
-    if (!autoRefresh) return;
-    const id = window.setInterval(() => setSamples(loadMountSamples()), 3000);
-    return () => window.clearInterval(id);
-  }, [autoRefresh]);
+  /** Drill-down selection: click a bar segment to pin a (bucket, code) filter. */
+  const [drillDown, setDrillDown] = useState<{ hour: number; label: string; code: MountErrorCode } | null>(null);
 
   // -- Publish-hold banner (canary rollback flag) --------------------------
   interface PublishHoldDoc {
@@ -207,20 +210,29 @@ export default function SwTelemetryDebugTab() {
     bootBadInWindow?: number; failuresInWindow?: number; updatedAt?: string;
   }
   const [publishHold, setPublishHold] = useState<{ hold: boolean; current: PublishHoldDoc | null }>({ hold: false, current: null });
+
+  const loadHold = async () => {
+    try {
+      const res = await fetch('/api/public/publish-hold', { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json() as { hold?: boolean; current?: PublishHoldDoc | null };
+      setPublishHold({ hold: !!data.hold, current: data.current ?? null });
+    } catch { /* ignore */ }
+  };
+
+  // Unified auto-refresh loop for samples + publish-hold. Cadence is user
+  // controlled via `refreshSecs`. Setting it to 0 disables the timer.
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch('/api/public/publish-hold', { cache: 'no-store' });
-        if (!res.ok) return;
-        const data = await res.json() as { hold?: boolean; current?: PublishHoldDoc | null };
-        if (!cancelled) setPublishHold({ hold: !!data.hold, current: data.current ?? null });
-      } catch { /* ignore */ }
-    };
-    void load();
-    const id = window.setInterval(load, 30_000);
-    return () => { cancelled = true; window.clearInterval(id); };
-  }, []);
+    void loadHold();
+    if (refreshSecs === 0) return;
+    const id = window.setInterval(() => {
+      setSamples(loadMountSamples());
+      setLastAutoRefreshAt(Date.now());
+      void loadHold();
+    }, refreshSecs * 1000);
+    return () => window.clearInterval(id);
+  }, [refreshSecs]);
+
 
   const filteredSamples = useMemo(() => {
     const cfg = WINDOWS[timeWindow];
@@ -248,6 +260,25 @@ export default function SwTelemetryDebugTab() {
   }, [filteredSamples]);
 
   const timeline = useMemo(() => buildTimeline(filteredSamples, timeWindow), [filteredSamples, timeWindow]);
+
+  /**
+   * Samples that fall inside the currently drilled-down (bucket, code).
+   * A bucket represents the interval [bucket.hour - bucketMs, bucket.hour].
+   */
+  const drillDownSamples = useMemo(() => {
+    if (!drillDown) return [];
+    const bucketMs = WINDOWS[timeWindow].bucketMs;
+    const end = drillDown.hour;
+    const start = end - bucketMs;
+    return filteredSamples.filter((s) => {
+      const t = s.eventTs ?? s.ts;
+      return s.code === drillDown.code && t > start && t <= end;
+    });
+  }, [drillDown, filteredSamples, timeWindow]);
+
+  // Clear a stale drill-down whenever the underlying filter/window changes.
+  useEffect(() => { setDrillDown(null); }, [timeWindow, filterBuild, filterRoute]);
+
 
 
   const downloadCsv = () => {
@@ -411,8 +442,25 @@ export default function SwTelemetryDebugTab() {
             checked={autoRefresh}
             onChange={(e) => setAutoRefresh(e.target.checked)}
           />
-          Auto-refresh (1.5s)
+          Fast stats (1.5s)
         </label>
+        <label className="inline-flex items-center gap-2 text-sm text-slate-300">
+          <span>Auto-refresh charts / hold</span>
+          <select
+            value={refreshSecs}
+            onChange={(e) => setRefreshSecs(Number(e.target.value) as AutoRefreshSecs)}
+            className="rounded border-2 border-slate-600 bg-slate-800 text-white text-sm px-2 py-1 min-h-[36px]"
+            aria-label="Auto-refresh interval for mount telemetry and publish-hold banner"
+          >
+            {AUTO_REFRESH_OPTIONS.map((n) => (
+              <option key={n} value={n}>{n === 0 ? 'Off' : `every ${n}s`}</option>
+            ))}
+          </select>
+          {refreshSecs !== 0 && (
+            <span className="text-xs text-slate-500">last {Math.max(0, Math.round((Date.now() - lastAutoRefreshAt) / 1000))}s ago</span>
+          )}
+        </label>
+
       </div>
 
       {/* -- Mount telemetry: retained samples + chart + CSV -------------- */}
@@ -542,7 +590,24 @@ export default function SwTelemetryDebugTab() {
                       if (!v) return null;
                       const h = (v / maxCount) * chartH;
                       yCursor -= h;
-                      return <rect key={c} x={padLeft + i * (barW + 2)} y={yCursor} width={barW} height={h} fill={CODE_COLOR[c]} />;
+                      const isSelected = drillDown?.hour === bin.hour && drillDown?.code === c;
+                      return (
+                        <rect
+                          key={c}
+                          x={padLeft + i * (barW + 2)}
+                          y={yCursor}
+                          width={barW}
+                          height={h}
+                          fill={CODE_COLOR[c]}
+                          stroke={isSelected ? '#fff' : 'none'}
+                          strokeWidth={isSelected ? 1.5 : 0}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => setDrillDown({ hour: bin.hour, label: bin.label, code: c })}
+                        >
+                          <title>{`${c.replace('MOUNT_', '')} · ${bin.label} · ${bin.counts[c] || 0} event(s) — click to drill down`}</title>
+                        </rect>
+                      );
+
                     })}
                     {i % labelStep === 0 && (
                       <text x={padLeft + i * (barW + 2)} y={height - 6} fill="#64748b" fontSize={9}>{bin.label}</text>
@@ -555,6 +620,63 @@ export default function SwTelemetryDebugTab() {
         })()}
 
 
+        {/* Drill-down: raw samples for the clicked (bucket, code). */}
+        {drillDown && (
+          <div className="rounded-lg border border-slate-700 bg-slate-950 p-3 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs text-slate-300">
+                Drill-down:{' '}
+                <span className="inline-flex items-center gap-1">
+                  <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: CODE_COLOR[drillDown.code] }} />
+                  <span className="font-mono text-white">{drillDown.code.replace('MOUNT_', '')}</span>
+                </span>{' '}
+                at <span className="font-mono text-white">{drillDown.label}</span>
+                {' '}·{' '}
+                <span className="text-white font-semibold">{drillDownSamples.length}</span> sample(s)
+              </div>
+              <button
+                onClick={() => setDrillDown(null)}
+                className="rounded border border-slate-600 bg-slate-800 hover:bg-slate-700 px-2 py-1 text-xs text-slate-200 min-h-[32px]"
+              >
+                Clear drill-down
+              </button>
+            </div>
+            {drillDownSamples.length === 0 ? (
+              <div className="text-xs text-slate-500 italic">No samples in this bucket (data may have been trimmed).</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs font-mono text-slate-200">
+                  <thead className="text-slate-400 text-left">
+                    <tr>
+                      <th className="py-1 pr-3">Event time</th>
+                      <th className="py-1 pr-3">Duration</th>
+                      <th className="py-1 pr-3">Route</th>
+                      <th className="py-1 pr-3">Build</th>
+                      <th className="py-1 pr-3">Asset</th>
+                      <th className="py-1 pr-3">Message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {drillDownSamples
+                      .slice()
+                      .sort((a, b) => (b.eventTs ?? b.ts) - (a.eventTs ?? a.ts))
+                      .map((s, idx) => (
+                        <tr key={idx} className="border-t border-slate-800">
+                          <td className="py-1 pr-3">{new Date(s.eventTs ?? s.ts).toLocaleTimeString()}</td>
+                          <td className="py-1 pr-3">{s.mountDurationMs != null ? `${s.mountDurationMs}ms` : '—'}</td>
+                          <td className="py-1 pr-3 text-slate-300">{s.route}</td>
+                          <td className="py-1 pr-3 text-slate-300">{(s.buildId || '').slice(0, 12)}</td>
+                          <td className="py-1 pr-3 text-slate-300">{(s.assetHash || '').slice(0, 10)}</td>
+                          <td className="py-1 pr-3 text-slate-400 max-w-[320px] truncate" title={s.message}>{s.message}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
         {filteredSamples.length === 0 && (
           <div className="text-xs text-slate-500 italic">
             No mount telemetry samples retained yet. Trigger the 5s mount-timeout probe in this browser
@@ -562,6 +684,7 @@ export default function SwTelemetryDebugTab() {
           </div>
         )}
       </div>
+
 
 
 
