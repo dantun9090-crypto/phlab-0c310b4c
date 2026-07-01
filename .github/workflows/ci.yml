@@ -131,6 +131,12 @@ jobs:
       - name: Checkout + Admin Orders regression
         run: bun run test:checkout
 
+      # Sitemap ↔ route-tree drift guard: fails if a route file exists
+      # without a matching sitemap entry (missing) or if sitemap lists a
+      # path with no route file (stale). Blocks merge on drift.
+      - name: Sitemap ↔ routes drift check
+        run: bun run check:sitemap-routes
+
       # Sitemap CI guardrail:
       #   - sitemap policy ↔ route-tree consistency
       #   - sitemap BASE_URL ↔ seo-meta SITE_URL
