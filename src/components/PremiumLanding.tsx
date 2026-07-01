@@ -243,7 +243,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
             All products are intended strictly for laboratory and scientific research use only.
             <span className="gold-text font-medium"> Not for human consumption.</span>
           </span>
-          <span className="text-[10px] uppercase tracking-[0.3em] text-white/50 underline underline-offset-4 hover:text-white/80 transition-colors">
+          <span className="text-[10px] uppercase tracking-[0.3em] text-white/75 underline underline-offset-4 hover:text-white/80 transition-colors">
             Read full disclaimer →
           </span>
         </div>
@@ -251,7 +251,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
 
       {/* ── MARQUEE ── */}
       <section className="border-b border-white/10 bg-[#080e1f] overflow-hidden">
-        <div className="lux-marquee flex whitespace-nowrap py-7 text-[11px] uppercase tracking-[0.55em] text-white/50">
+        <div className="lux-marquee flex whitespace-nowrap py-7 text-[11px] uppercase tracking-[0.55em] text-white/75">
           {Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="flex shrink-0 items-center gap-14 pr-14">
               <span>99%+ Purity</span><span className="gold-text text-lg">◆</span>
@@ -417,7 +417,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
             <span className="gold-text text-5xl leading-none">”</span>
           </blockquote>
           <div className="mx-auto mt-12 h-px w-16 gold-bg" />
-          <p className="mt-7 text-[11px] uppercase tracking-[0.45em] text-white/50">PH Labs · Research Standard</p>
+          <p className="mt-7 text-[11px] uppercase tracking-[0.45em] text-white/75">PH Labs · Research Standard</p>
         </div>
       </section>
 
@@ -592,7 +592,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
               Telegram +44 7826 549934
             </a>
           </div>
-          <p className="mt-8 text-[11px] uppercase tracking-[0.35em] text-white/40">
+          <p className="mt-8 text-[11px] uppercase tracking-[0.35em] text-white/70">
             Restricted to qualified researchers · For research use only
           </p>
         </div>
@@ -673,7 +673,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
 
       {/* ── FOOTER ── */}
       <footer className="border-t border-white/10 py-12 bg-[#060b18]">
-        <div className="mx-auto max-w-7xl px-6 flex flex-col items-center justify-center gap-3 text-[11px] uppercase tracking-[0.35em] text-white/50 text-center">
+        <div className="mx-auto max-w-7xl px-6 flex flex-col items-center justify-center gap-3 text-[11px] uppercase tracking-[0.35em] text-white/75 text-center">
           <span>© {new Date().getFullYear()} PH Labs · United Kingdom</span>
           <span className="gold-text font-medium">For Research Use Only · Not for Human Consumption</span>
         </div>
