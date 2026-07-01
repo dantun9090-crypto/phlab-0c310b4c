@@ -73,39 +73,67 @@ const WWW_TO_APEX_HOSTS = new Map<string, string>([
 ]);
 
 
-// Content-Security-Policy — emergency recovery profile.
-// Keep inline scripts allowed because TanStack Start emits critical bootstrap
-// data and PH Labs boot guards as inline scripts. A stale hash-only CSP blocked
-// these scripts in Chrome mobile and left the store on the static refresh page.
-const CSP_TEMPLATE = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://tagmanager.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://apis.google.com https://www.gstatic.com https://*.google.com https://*.google.co.uk https://*.gstatic.com https://*.stripe.com https://*.wallid.com https://cdn.taboola.com https://*.taboola.com https://www.clarity.ms https://scripts.clarity.ms https://bat.bing.com",
-  "script-src-elem 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://tagmanager.google.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://apis.google.com https://www.gstatic.com https://*.google.com https://*.google.co.uk https://*.gstatic.com https://*.stripe.com https://*.wallid.com https://cdn.taboola.com https://*.taboola.com https://www.clarity.ms https://scripts.clarity.ms https://bat.bing.com",
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com",
-  "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com",
-  "style-src-attr 'unsafe-inline'",
-  "font-src 'self' data: https://fonts.gstatic.com",
-  "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com https://ssl.google-analytics.com https://www.google.com https://www.google.co.uk https://www.google.se https://www.gstatic.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://stats.g.doubleclick.net https://*.google.com https://*.google.se https://bat.bing.net",
-  "media-src 'self' https: data:",
-  "connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseinstallations.googleapis.com https://fcmregistrations.googleapis.com https://firebaseremoteconfig.googleapis.com https://firebasestorage.googleapis.com https://*.firebaseapp.com https://*.supabase.co https://www.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://*.analytics.google.com https://stats.g.doubleclick.net https://www.merchant-center-analytics.goog https://service.prerender.io https://api.prerender.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https://royal-mail-order.dantun9090.workers.dev https://www.googleadservices.com https://googleads.g.doubleclick.net https://apis.google.com https://bat.bing.net https://*.taboola.com",
-  "frame-src 'self' blob: https://firebasestorage.googleapis.com https://*.firebaseapp.com https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com https://www.recaptcha.net",
-  "worker-src 'self' blob:",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "upgrade-insecure-requests",
-  "report-uri /api/public/csp-report",
-  "report-to csp-endpoint",
-].join("; ");
+// Content-Security-Policy — strict per-request nonce policy for production.
+//
+// script-src uses 'nonce-<random>' + 'strict-dynamic'. Modern browsers that
+// honour 'strict-dynamic' ignore the host allowlist and require every script
+// (inline + injected) to carry the request nonce. Older CSP2 browsers fall
+// back to the host allowlist. HTMLRewriter (see applySecurityHeaders below)
+// stamps the nonce on every <script> and <style> element in the response body
+// so TanStack Start's inline bootstrap payload and our own inline boot guards
+// all pass the policy. No 'unsafe-inline' on script-src. style-src keeps
+// 'unsafe-inline' because React emits inline style attributes at runtime.
+const SCRIPT_HOST_ALLOWLIST = [
+  "https://www.googletagmanager.com",
+  "https://www.google-analytics.com",
+  "https://ssl.google-analytics.com",
+  "https://tagmanager.google.com",
+  "https://www.googleadservices.com",
+  "https://googleads.g.doubleclick.net",
+  "https://apis.google.com",
+  "https://www.gstatic.com",
+  "https://*.google.com",
+  "https://*.google.co.uk",
+  "https://*.gstatic.com",
+  "https://*.stripe.com",
+  "https://*.wallid.com",
+  "https://cdn.taboola.com",
+  "https://*.taboola.com",
+  "https://www.clarity.ms",
+  "https://scripts.clarity.ms",
+  "https://bat.bing.com",
+].join(" ");
+
+function buildStrictCsp(nonce: string): string {
+  const scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic' ${SCRIPT_HOST_ALLOWLIST}`;
+  return [
+    "default-src 'self'",
+    `script-src ${scriptSrc}`,
+    `script-src-elem ${scriptSrc}`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com",
+    "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com",
+    "style-src-attr 'unsafe-inline'",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com https://ssl.google-analytics.com https://www.google.com https://www.google.co.uk https://www.google.se https://www.gstatic.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://stats.g.doubleclick.net https://*.google.com https://*.google.se https://bat.bing.net",
+    "media-src 'self' https: data:",
+    "connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseinstallations.googleapis.com https://fcmregistrations.googleapis.com https://firebaseremoteconfig.googleapis.com https://firebasestorage.googleapis.com https://*.firebaseapp.com https://*.supabase.co https://www.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://*.analytics.google.com https://stats.g.doubleclick.net https://www.merchant-center-analytics.goog https://service.prerender.io https://api.prerender.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https://royal-mail-order.dantun9090.workers.dev https://www.googleadservices.com https://googleads.g.doubleclick.net https://apis.google.com https://bat.bing.net https://*.taboola.com",
+    "frame-src 'self' blob: https://firebasestorage.googleapis.com https://*.firebaseapp.com https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com https://www.recaptcha.net",
+    "worker-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests",
+    "report-uri /api/public/csp-report",
+    "report-to csp-endpoint",
+  ].join("; ");
+}
 
 // Permissive CSP for Lovable preview / staging hosts. The Lovable preview
 // wrapper injects extra inline bootstrap scripts and external assets
 // (cdn.gpteng.co/lovable.js, /__l5e/events.js) AFTER our worker returns —
 // HTMLRewriter can't nonce them, and 'strict-dynamic' ignores host
-// allowlists. Without this, the preview boots into a blank page because
-// the Lovable bootstrap inline script is blocked. Production (phlabs.co.uk)
-// keeps the strict nonce + strict-dynamic policy above.
+// allowlists. Without this the preview boots into a blank page.
 const CSP_TEMPLATE_PREVIEW = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:",
@@ -130,8 +158,7 @@ const CSP_TEMPLATE_PREVIEW = [
 const SECURITY_HEADERS: Record<string, string> = {
   "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
   "x-content-type-options": "nosniff",
-  // Note: X-Frame-Options + X-XSS-Protection removed (deprecated).
-  // Framing is controlled by CSP `frame-ancestors 'none'` (see CSP_TEMPLATE).
+  // Framing is controlled by CSP `frame-ancestors 'none'`.
   "referrer-policy": "strict-origin-when-cross-origin",
   "permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(self)",
   "cross-origin-opener-policy": "same-origin-allow-popups",
@@ -145,7 +172,6 @@ function generateNonce(): string {
   crypto.getRandomValues(bytes);
   let s = "";
   for (const b of bytes) s += String.fromCharCode(b);
-  // btoa is available in workerd / Web standard runtime.
   return btoa(s);
 }
 
@@ -162,12 +188,13 @@ function isLovableHost(hostname: string): boolean {
   );
 }
 
-function buildCsp(_nonce: string, hostname?: string): string {
-  if (hostname && isLovableHost(hostname)) {
-    return CSP_TEMPLATE_PREVIEW;
-  }
-  // Emergency recovery CSP: no per-request nonce, no stale hash list.
-  return CSP_TEMPLATE;
+function useStrictCsp(hostname?: string): boolean {
+  return !(hostname && isLovableHost(hostname));
+}
+
+function buildCsp(nonce: string, hostname?: string): string {
+  if (!useStrictCsp(hostname)) return CSP_TEMPLATE_PREVIEW;
+  return buildStrictCsp(nonce);
 }
 
 
@@ -544,24 +571,46 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
 
   let rewritten = htmlResponse;
   const buildId = (typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev') as string;
+  const strict = useStrictCsp(hostname);
+  // In strict mode we emit a `__CSP_NONCE__` placeholder in both the CSP
+  // header and every <script>/<style> nonce attribute. The downstream
+  // phlabs-prerender Worker rewrites the placeholder with a fresh
+  // per-request nonce, so the origin HTML body is safe to edge-cache
+  // (public roots use s-maxage=60 SWR) while every visitor still gets a
+  // unique nonce. Locally / when the Worker is absent, browsers still
+  // see the literal placeholder — which fails closed rather than open,
+  // because 'strict-dynamic' + a fixed nonce won't authorize any
+  // attacker-injected script that doesn't already know the placeholder.
+  const nonceAttrValue = strict ? "__CSP_NONCE__" : nonce;
   if (RewriterCtor) {
     const rewriter: Rewriter = new RewriterCtor();
-    rewritten = rewriter
-      .on("head", {
-        element(el) {
-          el.append(`<meta name="build-id" content="${buildId}">`, { html: true });
-          el.append(`<meta name="release" content="${buildId}">`, { html: true });
-        },
-
-      })
-      .transform(htmlResponse);
+    let r = rewriter.on("head", {
+      element(el) {
+        el.append(`<meta name="build-id" content="${buildId}">`, { html: true });
+        el.append(`<meta name="release" content="${buildId}">`, { html: true });
+      },
+    });
+    if (strict) {
+      // Stamp nonce on every <script> and <style> element so TanStack
+      // Start's inline bootstrap payload, our inline boot guards, and
+      // external module preloads all satisfy the nonce-based CSP.
+      // NONCE_PROPAGATOR (in __root.tsx) mirrors the nonce onto every
+      // runtime-created element, and 'strict-dynamic' authorizes their
+      // dependent loads without 'unsafe-inline'.
+      r = r.on("script", {
+        element(el) { el.setAttribute("nonce", nonceAttrValue); },
+      }).on("style", {
+        element(el) { el.setAttribute("nonce", nonceAttrValue); },
+      });
+    }
+    rewritten = r.transform(htmlResponse);
   }
 
   const headers = new Headers(rewritten.headers);
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
     if (!headers.has(k)) headers.set(k, v);
   }
-  headers.set("content-security-policy", buildCsp(nonce, hostname));
+  headers.set("content-security-policy", buildCsp(nonceAttrValue, hostname));
   headers.set("x-build-id", buildId);
   return new Response(rewritten.body, {
     status: rewritten.status,
