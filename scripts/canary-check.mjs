@@ -120,9 +120,24 @@ for (const p of PATHS) {
 console.log("Canary results for", BASE);
 for (const line of summary) console.log(" ", line);
 
+// Emit GitHub Actions outputs so the window-evaluator can dedupe alerts
+// per build-id and decide whether to recommend a publish hold / rollback.
+const primaryBuild = (() => {
+  const line = summary.find((s) => s.includes("build="));
+  const m = line && line.match(/build=([\w.\-:]+)/);
+  return (m && m[1]) || "unknown";
+})();
+const bootBadCount = failures.filter((f) => /x-phl-boot-bad|bad inline boot|bad fragment inside entry JS/i.test(f)).length;
+if (process.env.GITHUB_OUTPUT) {
+  const { appendFileSync } = await import("node:fs");
+  appendFileSync(process.env.GITHUB_OUTPUT,
+    `build_id=${primaryBuild}\nboot_bad_count=${bootBadCount}\nfailure_count=${failures.length}\n`);
+}
+
 if (failures.length) {
   console.error("\nCANARY FAILURES:");
   for (const f of failures) console.error("  -", f);
   process.exit(1);
 }
 console.log("\nAll canary checks passed.");
+
