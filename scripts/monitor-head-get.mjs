@@ -12,7 +12,7 @@
  */
 
 const HOSTS = (process.env.MONITOR_HOSTS ||
-  "https://phlabs.co.uk,https://prohealthpeptides.co.uk")
+  "https://phlabs.co.uk,https://prohealthpeptides.co.uk") // check-domains-allow-line: legacy host monitored intentionally
   .split(",").map((s) => s.trim()).filter(Boolean);
 
 const num = (v, d) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : d; };
