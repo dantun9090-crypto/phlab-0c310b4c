@@ -231,7 +231,7 @@ export default function LiveSalesPopup() {
     setState((s) => ({ ...s, visible: false }));
   };
 
-  if (isHiddenRoute || !state.order) return null;
+  if (!isHomePage || !state.order) return null;
 
   const { order, visible } = state;
   const text = formatLivePopupText(order);
