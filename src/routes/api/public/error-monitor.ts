@@ -87,6 +87,11 @@ const Body = z.object({
   routeId: z.string().trim().max(300).optional(),
   buildId: z.string().trim().max(120).optional(),
   release: z.string().trim().max(120).optional(),
+  /** Normalized mount/boot error code (see src/lib/mount-error-codes.ts). */
+  code: z.string().trim().max(64).optional(),
+  /** Entry-JS asset hash from Worker header, for build correlation. */
+  assetHash: z.string().trim().max(120).optional(),
+
 
   /** Optional detector metadata (e.g. which DOM markers matched). */
   details: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])).optional(),
