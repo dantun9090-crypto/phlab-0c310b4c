@@ -512,8 +512,12 @@ function isCacheableRoute(pathname: string): boolean {
   return false;
 }
 
-// Public roots that should be edge-cacheable with the unified
-// `public, s-maxage=60, max-age=0, stale-while-revalidate=86400` policy.
+// Public roots that should be edge-cacheable with a SHORT unified policy.
+// SWR window is intentionally tiny (60s) so a fresh publish is never served
+// stale HTML for more than ~2 minutes, even without a manual Cloudflare
+// purge. Long SWR windows here were the root cause of "PH Labs is
+// refreshing" overlays after every deploy — stale HTML referencing hashed
+// JS chunks that no longer existed on origin.
 const PUBLIC_EDGE_CACHEABLE = new Set<string>(["/", "/products", "/compound", "/research"]);
 function isPublicEdgeCacheable(pathname: string): boolean {
   return PUBLIC_EDGE_CACHEABLE.has(pathname);
@@ -531,11 +535,14 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   const publicCacheable = pathname ? isPublicEdgeCacheable(pathname) : false;
 
   if (publicCacheable && stripped.status === 200) {
-    // Public root pages: edge-cacheable, browser revalidates each nav, CF
-    // holds for 60s and may serve stale for 24h while revalidating.
-    htmlHeaders.set("cache-control", "public, s-maxage=60, max-age=0, stale-while-revalidate=86400");
-    htmlHeaders.set("cdn-cache-control", "public, s-maxage=60, max-age=0, stale-while-revalidate=86400");
-    htmlHeaders.set("cloudflare-cdn-cache-control", "public, s-maxage=60, max-age=0, stale-while-revalidate=86400");
+    // Public root pages: edge-cacheable 60s fresh + 60s stale-while-revalidate.
+    // Total worst-case stale window ~120s post-publish — no manual purge
+    // needed. Do NOT raise stale-while-revalidate above ~120s: hashed JS
+    // chunks referenced by old HTML get evicted on new builds and produce
+    // blank pages / the "cache reset needed" overlay.
+    htmlHeaders.set("cache-control", "public, s-maxage=60, max-age=0, stale-while-revalidate=60");
+    htmlHeaders.set("cdn-cache-control", "public, s-maxage=60, max-age=0, stale-while-revalidate=60");
+    htmlHeaders.set("cloudflare-cdn-cache-control", "public, s-maxage=60, max-age=0, stale-while-revalidate=60");
     htmlHeaders.delete("surrogate-control");
     htmlHeaders.delete("pragma");
     htmlHeaders.delete("expires");
