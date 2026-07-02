@@ -20,11 +20,37 @@ interface SentryIssue {
 
 export default function SentryIssuesTab() {
   const call = useServerFn(fetchSentryIssues);
+  const callDetails = useServerFn(fetchSentryIssueDetails);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [issues, setIssues] = useState<SentryIssue[]>([]);
   const [meta, setMeta] = useState<{ orgSlug?: string; projectSlug?: string; statsPeriod?: string } | null>(null);
   const [period, setPeriod] = useState('24h');
+  const [detail, setDetail] = useState<any | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
+
+  async function openDetails(issueId: string) {
+    setDetail({ __placeholder: true, id: issueId });
+    setDetailLoading(true);
+    setDetailError(null);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Not signed in.');
+      const res = await callDetails({ data: { idToken, issueId } });
+      if (!res.ok) {
+        setDetailError(res.error || 'Unknown error');
+        setDetail(null);
+      } else {
+        setDetail(res);
+      }
+    } catch (e: any) {
+      setDetailError(e?.message || String(e));
+      setDetail(null);
+    } finally {
+      setDetailLoading(false);
+    }
+  }
 
   async function load(limitOverride?: number) {
     setLoading(true);
