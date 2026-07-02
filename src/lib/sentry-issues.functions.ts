@@ -113,3 +113,105 @@ export const fetchSentryIssues = createServerFn({ method: "POST" })
       };
     }
   });
+
+const IssueDetailSchema = z.object({
+  idToken: z.string().min(10).max(4096),
+  issueId: z.string().min(1).max(64),
+});
+
+interface StackFrame {
+  filename?: string;
+  function?: string;
+  lineNo?: number;
+  colNo?: number;
+  inApp?: boolean;
+  context?: Array<[number, string]>;
+}
+interface ExceptionEntry {
+  type?: string;
+  value?: string;
+  module?: string;
+  frames: StackFrame[];
+}
+
+export const fetchSentryIssueDetails = createServerFn({ method: "POST" })
+  .validator((d) => IssueDetailSchema.parse(d))
+  .handler(async ({ data }) => {
+    await requireAdmin(data.idToken);
+    const token = process.env.SENTRY_AUTH_TOKEN;
+    if (!token) return { ok: false as const, error: "SENTRY_AUTH_TOKEN not configured on server." };
+
+    try {
+      const [issue, event] = await Promise.all([
+        sentryFetch(`/issues/${encodeURIComponent(data.issueId)}/`, token),
+        sentryFetch(`/issues/${encodeURIComponent(data.issueId)}/events/latest/`, token),
+      ]);
+
+      const exceptions: ExceptionEntry[] = [];
+      const entries: any[] = Array.isArray(event?.entries) ? event.entries : [];
+      for (const entry of entries) {
+        if (entry?.type === "exception" && entry.data?.values) {
+          for (const v of entry.data.values) {
+            const frames: StackFrame[] = (v?.stacktrace?.frames || []).map((f: any) => ({
+              filename: f.filename,
+              function: f.function,
+              lineNo: f.lineNo,
+              colNo: f.colNo,
+              inApp: f.inApp,
+              context: f.context,
+            }));
+            exceptions.push({ type: v.type, value: v.value, module: v.module, frames });
+          }
+        }
+      }
+
+      const tags: Record<string, string> = {};
+      for (const t of event?.tags || []) {
+        if (t?.key && t?.value) tags[String(t.key)] = String(t.value);
+      }
+
+      return {
+        ok: true as const,
+        issue: {
+          id: issue.id,
+          shortId: issue.shortId,
+          title: issue.title,
+          culprit: issue.culprit,
+          level: issue.level,
+          status: issue.status,
+          count: issue.count,
+          userCount: issue.userCount,
+          firstSeen: issue.firstSeen,
+          lastSeen: issue.lastSeen,
+          permalink: issue.permalink,
+          firstRelease: issue.firstRelease
+            ? { version: issue.firstRelease.version, shortVersion: issue.firstRelease.shortVersion }
+            : null,
+          lastRelease: issue.lastRelease
+            ? { version: issue.lastRelease.version, shortVersion: issue.lastRelease.shortVersion }
+            : null,
+        },
+        event: event
+          ? {
+              id: event.id,
+              eventID: event.eventID,
+              dateCreated: event.dateCreated,
+              platform: event.platform,
+              message: event.message,
+              release: event.release?.version || event.tags?.find?.((t: any) => t.key === "release")?.value || null,
+              environment: tags.environment || null,
+              user: event.user
+                ? { id: event.user.id, email: event.user.email, ip_address: event.user.ip_address }
+                : null,
+              exceptions,
+              tags,
+            }
+          : null,
+      };
+    } catch (err) {
+      return {
+        ok: false as const,
+        error: `Details fetch failed: ${err instanceof Error ? err.message : String(err)}`,
+      };
+    }
+  });
