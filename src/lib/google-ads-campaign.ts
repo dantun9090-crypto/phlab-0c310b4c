@@ -367,7 +367,7 @@ export const CAMPAIGN_RESEARCH: Campaign = {
         'Research Lab Stock UK', 'For Research Use Only', 'Institution-Grade Stock',
         'Professional Lab UK', 'Batch Verified Supply', 'UK Laboratory Stock',
         'Research Grade Only', 'Tracked UK Delivery', 'Controlled UK Dispatch',
-        'Lab Procurement UK', 'High-Purity Materials', 'Documented Batches',
+        'Lab Sourcing UK', 'High-Purity Materials', 'Documented Batches',
       ],
       descriptions: [
         'Research materials for UK labs. Professional-grade with full documentation included.',
