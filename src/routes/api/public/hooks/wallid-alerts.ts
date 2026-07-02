@@ -356,7 +356,7 @@ export const Route = createFileRoute("/api/public/hooks/wallid-alerts")({
             : { action: "noop", via: "none" };
 
         // 5. webhook_silence — DEAD-MAN. During business hours (08:00–20:00
-        // UTC), if payments were created in the last 30 min but no real
+        // UTC), if payments were created in the last 15 min but no real
         // webhook landed in that window, Wallid → us delivery is broken.
         // Sends once, auto-resolves when the next real webhook arrives.
         const webhookAgeMin = Number.isFinite(webhookAgeMs)
