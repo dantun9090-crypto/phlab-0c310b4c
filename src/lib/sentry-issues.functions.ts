@@ -10,6 +10,8 @@ const IdTokenSchema = z.object({
   idToken: z.string().min(10).max(4096),
   statsPeriod: z.string().min(1).max(8).optional(),
   limit: z.number().int().min(1).max(100).optional(),
+  environment: z.string().min(1).max(64).optional(),
+  release: z.string().min(1).max(200).optional(),
 });
 
 async function requireAdmin(idToken: string): Promise<void> {
