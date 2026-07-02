@@ -232,7 +232,8 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
               continue;
             }
             console.error("[Wallid webhook] Insert failed", insertErr.message);
-            return json({ error: "Processing error" }, 500);
+            // Retryable — do NOT return 500 (Wallid backs off on 5xx).
+            return retryableResp(`event insert failed: ${insertErr.message}`);
           }
 
           try {
