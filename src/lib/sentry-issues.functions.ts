@@ -132,14 +132,8 @@ export const fetchSentryFilters = createServerFn({ method: "POST" })
     if (!token) return { ok: false as const, error: "SENTRY_AUTH_TOKEN not configured on server." };
 
     try {
-      const projects: Array<{ id: string; slug: string; organization?: { slug?: string } }> =
-        await sentryFetch("/projects/", token);
-      const match = projects.find((p) => String(p.id) === DEFAULT_PROJECT_ID) || projects[0];
-      if (!match?.organization?.slug) {
-        return { ok: false as const, error: "Could not resolve Sentry organization." };
-      }
-      const orgSlug = match.organization.slug;
-      const projectSlug = match.slug;
+      const orgSlug = await resolveOrgSlug(token);
+      const projectSlug = DEFAULT_PROJECT_SLUG;
 
       const [envs, releases] = await Promise.all([
         sentryFetch(`/projects/${orgSlug}/${projectSlug}/environments/`, token).catch(() => []),
