@@ -50,29 +50,41 @@ export const fetchSentryIssues = createServerFn({ method: "POST" })
     const statsPeriod = data.statsPeriod || "24h";
     const limit = data.limit || 25;
 
-    // Discover org + project slug from token
+async function resolveOrgSlug(token: string): Promise<string> {
+  // Prefer /organizations/ (works even when token lacks broad project:read).
+  try {
+    const orgs: Array<{ slug: string }> = await sentryFetch("/organizations/", token);
+    if (Array.isArray(orgs) && orgs[0]?.slug) return orgs[0].slug;
+  } catch {
+    /* fall through */
+  }
+  // Fallback: derive from /projects/
+  const projects: Array<{ id: string; organization?: { slug?: string } }> =
+    await sentryFetch("/projects/", token);
+  const match = projects.find((p) => String(p.id) === DEFAULT_PROJECT_ID) || projects[0];
+  if (!match?.organization?.slug) throw new Error("Could not resolve Sentry organization slug.");
+  return match.organization.slug;
+}
+
+export const fetchSentryIssues = createServerFn({ method: "POST" })
+  .validator((d) => IdTokenSchema.parse(d))
+  .handler(async ({ data }) => {
+    await requireAdmin(data.idToken);
+    const token = process.env.SENTRY_AUTH_TOKEN;
+    if (!token) {
+      return { ok: false, error: "SENTRY_AUTH_TOKEN not configured on server." };
+    }
+    const statsPeriod = data.statsPeriod || "24h";
+    const limit = data.limit || 25;
+
     let orgSlug = "";
-    let projectSlug = "";
+    const projectSlug = DEFAULT_PROJECT_SLUG;
     try {
-      const projects: Array<{
-        id: string;
-        slug: string;
-        organization?: { slug?: string };
-      }> = await sentryFetch("/projects/", token);
-      const match =
-        projects.find((p) => String(p.id) === DEFAULT_PROJECT_ID) || projects[0];
-      if (!match) {
-        return { ok: false, error: "Sentry token has no accessible projects." };
-      }
-      orgSlug = match.organization?.slug || "";
-      projectSlug = match.slug;
-      if (!orgSlug) {
-        return { ok: false, error: "Could not resolve Sentry organization slug." };
-      }
+      orgSlug = await resolveOrgSlug(token);
     } catch (err) {
       return {
         ok: false,
-        error: `Discovery failed: ${err instanceof Error ? err.message : String(err)}`,
+        error: `Org discovery failed: ${err instanceof Error ? err.message : String(err)}`,
       };
     }
 
