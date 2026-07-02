@@ -253,7 +253,7 @@ export const CAMPAIGN_EDITORIAL: Campaign = {
         'PH Labs UK', 'Research Use Only', 'Lab-Grade Standards',
         'UK Dispatch Daily', 'Editorial Lab Supply', 'Documented Batches',
         'Royal Mail Tracked', 'For Qualified Labs', 'Premium UK Stock',
-        'Lab Procurement UK', 'Verified UK Supplier', 'Research Grade Only',
+        'Lab Sourcing UK', 'Verified UK Supplier', 'Research Grade Only',
       ],
       descriptions: [
         'Editorial laboratory supply from a UK-based research stockist. Full documentation on every batch.',
