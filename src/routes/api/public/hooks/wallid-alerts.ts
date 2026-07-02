@@ -388,7 +388,7 @@ export const Route = createFileRoute("/api/public/hooks/wallid-alerts")({
             rate_limit_attackers: attackers.length,
             webhook_silence: webhookSilence,
             webhook_age_min: webhookAgeMin,
-            recent_payments_30min: recentPaymentCount,
+            recent_payments_15min: recentPaymentCount,
             in_business_hours: inBusinessHours,
           },
           results,
