@@ -236,7 +236,7 @@ export const CAMPAIGN_EDITORIAL: Campaign = {
     { text: 'Quality Control', desc1: 'Batch documentation', desc2: 'Verified per order', url: 'https://phlabs.co.uk/landing/phlabs#qc' },
     { text: 'About PH Labs', desc1: 'UK laboratory team', desc2: 'Institution trusted', url: 'https://phlabs.co.uk/about' },
     { text: 'Research Catalogue', desc1: 'Browse standards', desc2: 'Reference standards', url: 'https://phlabs.co.uk/products' },
-    { text: 'Contact', desc1: 'Lab procurement', desc2: 'Bulk enquiries welcome', url: 'https://phlabs.co.uk/contact' },
+    { text: 'Contact', desc1: 'Lab sourcing', desc2: 'Bulk enquiries welcome', url: 'https://phlabs.co.uk/contact' },
   ],
   adGroups: [
     {
