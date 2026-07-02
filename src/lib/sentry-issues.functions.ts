@@ -39,16 +39,6 @@ async function sentryFetch(path: string, token: string): Promise<any> {
   }
 }
 
-export const fetchSentryIssues = createServerFn({ method: "POST" })
-  .validator((d) => IdTokenSchema.parse(d))
-  .handler(async ({ data }) => {
-    await requireAdmin(data.idToken);
-    const token = process.env.SENTRY_AUTH_TOKEN;
-    if (!token) {
-      return { ok: false, error: "SENTRY_AUTH_TOKEN not configured on server." };
-    }
-    const statsPeriod = data.statsPeriod || "24h";
-    const limit = data.limit || 25;
 
 async function resolveOrgSlug(token: string): Promise<string> {
   // Prefer /organizations/ (works even when token lacks broad project:read).
