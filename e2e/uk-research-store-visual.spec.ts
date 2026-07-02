@@ -12,7 +12,7 @@
  * Refresh baselines after intentional design changes with:
  *   bunx playwright test e2e/uk-research-store-visual.spec.ts --update-snapshots
  */
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page, type BrowserContext } from "@playwright/test";
 
 const BASE =
   process.env.RESEARCH_BASE_URL ||
