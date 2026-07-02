@@ -145,6 +145,34 @@ export const Route = createFileRoute("/api/public/hooks/wallid-reconcile")({
             updated += 1;
             results.push({ orderId: row.order_id, from: priorStatus, to: firestoreStatus });
 
+            // Visibility for webhook-delivery failures. If we transitioned
+            // an order but no REAL (non-LOG) Wallid webhook event ever
+            // landed for this payment within 60s of creation, the webhook
+            // path is silently broken — log loudly so the alert cron and
+            // log queries can catch it. LOG rows are heartbeat/scanner
+            // pings, not real deliveries; exclude them.
+            try {
+              const { data: webhookRows } = await supabaseAdmin
+                .from("wallid_webhook_events")
+                .select("event_id, created_at, status")
+                .eq("api_payment_id", row.api_payment_id)
+                .neq("status", "LOG")
+                .limit(1);
+              if (!webhookRows || webhookRows.length === 0) {
+                const ageSec = Math.round(
+                  (Date.now() - Date.parse(String(row.created_at))) / 1000,
+                );
+                console.warn("[Wallid reconcile] RESCUED_WITHOUT_WEBHOOK", {
+                  orderId: row.order_id,
+                  apiPaymentId: row.api_payment_id,
+                  from: priorStatus,
+                  to: firestoreStatus,
+                  ageSec,
+                });
+              }
+            } catch { /* non-blocking diagnostic */ }
+
+
             // First paid transition → enqueue confirmation email.
             if (firestoreStatus === "paid") {
               const customerObj = (prior.customer as Record<string, unknown> | undefined) || {};
