@@ -32,6 +32,7 @@ function buildStaticEntries(today: string): SitemapEntry[] {
     { path: "/compound", lastmod: today, changefreq: "weekly", priority: "0.7" },
     { path: "/peptide-calculator", lastmod: today, changefreq: "monthly", priority: "0.7" },
     { path: "/landing/phlabs", lastmod: today, changefreq: "weekly", priority: "0.7" },
+    { path: "/uk-research-store", lastmod: today, changefreq: "weekly", priority: "0.8" },
     { path: "/lab-reports", lastmod: today, changefreq: "monthly", priority: "0.6" },
     { path: "/storage-guide", lastmod: today, changefreq: "monthly", priority: "0.6" },
   ];
