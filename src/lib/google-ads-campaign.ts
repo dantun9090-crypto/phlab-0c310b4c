@@ -307,17 +307,19 @@ export const CAMPAIGN_EDITORIAL: Campaign = {
   ],
 };
 
-// ─── Campaign 3 — /research ────────────────────────────────────────────────
+// ─── Campaign 3 — /uk-research-store ───────────────────────────────────────
+// NOTE: /research is the site's information hub — NOT a paid landing page.
+// Paid traffic for this campaign lands on the dedicated /uk-research-store page.
 export const CAMPAIGN_RESEARCH: Campaign = {
-  id: 'phlabs-research-uk',
-  name: 'PH Labs — Research Standards UK',
+  id: 'phlabs-uk-research-store',
+  name: 'PH Labs — UK Research Store',
   status: 'PAUSED',
   network: 'Search Network Only',
   locations: ['United Kingdom'],
   languages: ['English'],
   bidStrategy: 'Manual CPC',
   dailyBudget: 30,
-  landingPage: 'https://phlabs.co.uk/research',
+  landingPage: 'https://phlabs.co.uk/uk-research-store',
   trackingTemplate: UTM_TEMPLATE,
   negativeKeywords: NEGATIVE_KEYWORDS,
   callouts: CALLOUTS,
@@ -401,9 +403,9 @@ export const CAMPAIGN_RESEARCH: Campaign = {
   ],
 };
 
-// NOTE: /research is the site's research information hub — NOT a paid landing page.
-// Do not add CAMPAIGN_RESEARCH here. Keep paid traffic on /compound and /landing/phlabs.
-export const CAMPAIGNS: Campaign[] = [CAMPAIGN_COMPOUND, CAMPAIGN_EDITORIAL];
+// /research is the site's information hub — NOT a paid landing page.
+// Paid traffic goes to /compound, /landing/phlabs, and the dedicated /uk-research-store.
+export const CAMPAIGNS: Campaign[] = [CAMPAIGN_COMPOUND, CAMPAIGN_EDITORIAL, CAMPAIGN_RESEARCH];
 
 // ─── CSV builders for Google Ads Editor ───────────────────────────────────
 // Format: Google Ads Editor accepts simple CSV with one row per entity.

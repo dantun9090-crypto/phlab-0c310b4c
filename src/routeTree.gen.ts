@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UkResearchStoreRouteImport } from './routes/uk-research-store'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as StorageGuideRouteImport } from './routes/storage-guide'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -102,6 +103,11 @@ import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hook
 import { Route as ApiPublicHooksCompoundQueryHistoryRouteImport } from './routes/api/public/hooks/compound-query-history'
 import { Route as ApiPublicHooksBacklinkWatcherRouteImport } from './routes/api/public/hooks/backlink-watcher'
 
+const UkResearchStoreRoute = UkResearchStoreRouteImport.update({
+  id: '/uk-research-store',
+  path: '/uk-research-store',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
   id: '/terms-and-conditions',
   path: '/terms-and-conditions',
@@ -614,6 +620,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/uk-research-store': typeof UkResearchStoreRoute
   '/orders-modal': typeof _e2eOrdersModalRoute
   '/payment-options': typeof _e2ePaymentOptionsRoute
   '/watchdog-panel': typeof _e2eWatchdogPanelRoute
@@ -706,6 +713,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/uk-research-store': typeof UkResearchStoreRoute
   '/orders-modal': typeof _e2eOrdersModalRoute
   '/payment-options': typeof _e2ePaymentOptionsRoute
   '/watchdog-panel': typeof _e2eWatchdogPanelRoute
@@ -801,6 +809,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/uk-research-store': typeof UkResearchStoreRoute
   '/__e2e/orders-modal': typeof _e2eOrdersModalRoute
   '/__e2e/payment-options': typeof _e2ePaymentOptionsRoute
   '/__e2e/watchdog-panel': typeof _e2eWatchdogPanelRoute
@@ -896,6 +905,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/storage-guide'
     | '/terms-and-conditions'
+    | '/uk-research-store'
     | '/orders-modal'
     | '/payment-options'
     | '/watchdog-panel'
@@ -988,6 +998,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/storage-guide'
     | '/terms-and-conditions'
+    | '/uk-research-store'
     | '/orders-modal'
     | '/payment-options'
     | '/watchdog-panel'
@@ -1082,6 +1093,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/storage-guide'
     | '/terms-and-conditions'
+    | '/uk-research-store'
     | '/__e2e/orders-modal'
     | '/__e2e/payment-options'
     | '/__e2e/watchdog-panel'
@@ -1177,6 +1189,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StorageGuideRoute: typeof StorageGuideRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
+  UkResearchStoreRoute: typeof UkResearchStoreRoute
   _e2eOrdersModalRoute: typeof _e2eOrdersModalRoute
   _e2ePaymentOptionsRoute: typeof _e2ePaymentOptionsRoute
   _e2eWatchdogPanelRoute: typeof _e2eWatchdogPanelRoute
@@ -1234,6 +1247,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/uk-research-store': {
+      id: '/uk-research-store'
+      path: '/uk-research-store'
+      fullPath: '/uk-research-store'
+      preLoaderRoute: typeof UkResearchStoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/terms-and-conditions': {
       id: '/terms-and-conditions'
       path: '/terms-and-conditions'
@@ -1968,6 +1988,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StorageGuideRoute: StorageGuideRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
+  UkResearchStoreRoute: UkResearchStoreRoute,
   _e2eOrdersModalRoute: _e2eOrdersModalRoute,
   _e2ePaymentOptionsRoute: _e2ePaymentOptionsRoute,
   _e2eWatchdogPanelRoute: _e2eWatchdogPanelRoute,
