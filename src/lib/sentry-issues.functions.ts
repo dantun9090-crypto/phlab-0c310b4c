@@ -119,6 +119,52 @@ export const fetchSentryIssues = createServerFn({ method: "POST" })
     }
   });
 
+const FiltersSchema = z.object({ idToken: z.string().min(10).max(4096) });
+
+export const fetchSentryFilters = createServerFn({ method: "POST" })
+  .validator((d) => FiltersSchema.parse(d))
+  .handler(async ({ data }) => {
+    await requireAdmin(data.idToken);
+    const token = process.env.SENTRY_AUTH_TOKEN;
+    if (!token) return { ok: false as const, error: "SENTRY_AUTH_TOKEN not configured on server." };
+
+    try {
+      const projects: Array<{ id: string; slug: string; organization?: { slug?: string } }> =
+        await sentryFetch("/projects/", token);
+      const match = projects.find((p) => String(p.id) === DEFAULT_PROJECT_ID) || projects[0];
+      if (!match?.organization?.slug) {
+        return { ok: false as const, error: "Could not resolve Sentry organization." };
+      }
+      const orgSlug = match.organization.slug;
+      const projectSlug = match.slug;
+
+      const [envs, releases] = await Promise.all([
+        sentryFetch(`/projects/${orgSlug}/${projectSlug}/environments/`, token).catch(() => []),
+        sentryFetch(
+          `/organizations/${orgSlug}/releases/?project=${DEFAULT_PROJECT_ID}&per_page=25`,
+          token,
+        ).catch(() => []),
+      ]);
+
+      return {
+        ok: true as const,
+        environments: (Array.isArray(envs) ? envs : [])
+          .map((e: any) => e?.name)
+          .filter((n: any): n is string => typeof n === "string" && n.length > 0),
+        releases: (Array.isArray(releases) ? releases : []).map((r: any) => ({
+          version: String(r.version),
+          shortVersion: String(r.shortVersion || r.version),
+          dateCreated: r.dateCreated,
+        })),
+      };
+    } catch (err) {
+      return {
+        ok: false as const,
+        error: `Filters fetch failed: ${err instanceof Error ? err.message : String(err)}`,
+      };
+    }
+  });
+
 const IssueDetailSchema = z.object({
   idToken: z.string().min(10).max(4096),
   issueId: z.string().min(1).max(64),
