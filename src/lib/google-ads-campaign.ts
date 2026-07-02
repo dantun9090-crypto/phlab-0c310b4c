@@ -403,9 +403,9 @@ export const CAMPAIGN_RESEARCH: Campaign = {
   ],
 };
 
-// NOTE: /research is the site's research information hub — NOT a paid landing page.
-// Do not add CAMPAIGN_RESEARCH here. Keep paid traffic on /compound and /landing/phlabs.
-export const CAMPAIGNS: Campaign[] = [CAMPAIGN_COMPOUND, CAMPAIGN_EDITORIAL];
+// /research is the site's information hub — NOT a paid landing page.
+// Paid traffic goes to /compound, /landing/phlabs, and the dedicated /uk-research-store.
+export const CAMPAIGNS: Campaign[] = [CAMPAIGN_COMPOUND, CAMPAIGN_EDITORIAL, CAMPAIGN_RESEARCH];
 
 // ─── CSV builders for Google Ads Editor ───────────────────────────────────
 // Format: Google Ads Editor accepts simple CSV with one row per entity.
