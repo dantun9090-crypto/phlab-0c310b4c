@@ -86,23 +86,42 @@ export const Route = createFileRoute("/uk-research-store")({
 
 function UkResearchStore() {
   return (
-    <main className="min-h-screen bg-[#f7f6f3] text-neutral-900 antialiased">
+    <main className="min-h-screen bg-slate-950 text-white antialiased pb-24 md:pb-0">
       {/* Compliance bar */}
-      <div className="w-full bg-neutral-950 text-white text-center text-[11px] tracking-[0.25em] uppercase py-2 px-4">
+      <div className="w-full bg-black text-emerald-400 text-center text-[11px] tracking-[0.25em] uppercase py-2 px-4 border-b border-emerald-500/20">
         For Research Use Only · Not for Human Consumption · UK Laboratory Supply
       </div>
 
       {/* HERO */}
       <section className="relative overflow-hidden">
-        <div className="mx-auto max-w-6xl px-6 pt-14 pb-16 md:pt-20 md:pb-24 grid md:grid-cols-2 gap-10 items-center">
+        {/* ambient gradients */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-40 -left-40 h-[500px] w-[500px] rounded-full bg-emerald-500/10 blur-[120px]" />
+          <div className="absolute top-20 right-0 h-[400px] w-[400px] rounded-full bg-emerald-400/5 blur-[120px]" />
+          <div
+            className="absolute inset-0 opacity-[0.04]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
+              backgroundSize: "48px 48px",
+            }}
+          />
+        </div>
+
+        <div className="relative mx-auto max-w-6xl px-6 pt-14 pb-16 md:pt-20 md:pb-24 grid md:grid-cols-2 gap-10 items-center">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.4em] text-[#8a6a2e] font-medium">
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] uppercase tracking-[0.3em] text-emerald-300">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               UK Research Store · PH Labs
-            </p>
-            <h1 className="mt-5 font-serif text-4xl sm:text-5xl md:text-6xl font-light leading-[1.05] text-neutral-950">
-              High-purity <em className="text-[#8a6a2e]">reference materials</em> for UK laboratories.
+            </span>
+            <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl font-semibold leading-[1.05] tracking-tight text-white">
+              High-purity{" "}
+              <span className="bg-gradient-to-r from-emerald-400 to-emerald-200 bg-clip-text text-transparent">
+                reference materials
+              </span>{" "}
+              for UK laboratories.
             </h1>
-            <p className="mt-6 text-base md:text-lg text-neutral-700 leading-relaxed max-w-xl">
+            <p className="mt-6 text-base md:text-lg text-slate-300 leading-relaxed max-w-xl">
               Per-batch analytical documentation, same-day UK dispatch and discreet
               tracked shipping — trusted by researchers and institutions across the
               United Kingdom.
@@ -115,8 +134,16 @@ function UkResearchStore() {
                 "Same-day UK dispatch",
                 "Fully tracked shipping",
               ].map((b) => (
-                <li key={b} className="flex items-start gap-2 text-neutral-800">
-                  <span className="mt-1 inline-block h-1.5 w-1.5 rounded-full bg-[#b08a3e]" />
+                <li key={b} className="flex items-start gap-2 text-slate-200">
+                  <svg
+                    className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-400"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
                   {b}
                 </li>
               ))}
@@ -125,55 +152,63 @@ function UkResearchStore() {
             <div className="mt-9 flex flex-wrap gap-3">
               <Link
                 to="/products"
-                className="inline-flex items-center px-8 py-4 rounded-full bg-neutral-950 text-white text-[12px] tracking-[0.2em] uppercase font-medium hover:bg-[#8a6a2e] transition-colors shadow-[0_20px_50px_-20px_rgba(0,0,0,0.5)]"
+                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-semibold transition-all shadow-[0_20px_50px_-15px_rgba(16,185,129,0.6)] hover:shadow-[0_25px_60px_-15px_rgba(16,185,129,0.8)] hover:-translate-y-0.5"
               >
-                Browse Catalogue →
+                Browse Catalogue
+                <span aria-hidden>→</span>
               </Link>
               <Link
                 to="/quality-control"
-                className="inline-flex items-center px-8 py-4 rounded-full border-2 border-[#b08a3e] bg-white text-neutral-900 text-[12px] tracking-[0.2em] uppercase font-medium hover:bg-[#b08a3e]/5 transition-colors"
+                className="inline-flex items-center px-7 py-3.5 rounded-xl border border-slate-700 bg-slate-900/60 backdrop-blur hover:border-emerald-500/50 hover:bg-slate-900 text-white text-sm font-semibold transition-colors"
               >
                 Quality Standards
               </Link>
             </div>
 
-            <p className="mt-6 text-xs text-neutral-500">
+            <p className="mt-6 text-xs text-slate-400">
               Free UK tracked shipping on orders over £75 · Discreet unbranded packaging
             </p>
           </div>
 
           <div className="relative">
-            <div className="rounded-3xl border-2 border-[#b08a3e] bg-white/85 backdrop-blur p-8 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.35)]">
-              <p className="text-[10px] uppercase tracking-[0.4em] text-[#8a6a2e]">Order today</p>
-              <p className="mt-3 font-serif text-2xl font-light">
-                Order before <em>3pm</em> — dispatched today from our UK facility.
-              </p>
-              <div className="mt-6 h-px w-12 bg-[#b08a3e]" />
-              <dl className="mt-6 grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <dt className="text-neutral-500 text-[11px] uppercase tracking-wider">Dispatch</dt>
-                  <dd className="mt-1 font-medium">Same-day (UK)</dd>
+            <div className="relative rounded-2xl border border-slate-800 bg-slate-900/70 backdrop-blur-xl p-8 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.6)]">
+              <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-emerald-500/30 via-transparent to-transparent pointer-events-none opacity-60" />
+              <div className="relative">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <p className="text-[10px] uppercase tracking-[0.4em] text-emerald-300 font-medium">
+                    Dispatching now
+                  </p>
                 </div>
-                <div>
-                  <dt className="text-neutral-500 text-[11px] uppercase tracking-wider">Shipping</dt>
-                  <dd className="mt-1 font-medium">Tracked 24 / 48</dd>
-                </div>
-                <div>
-                  <dt className="text-neutral-500 text-[11px] uppercase tracking-wider">Documentation</dt>
-                  <dd className="mt-1 font-medium">Per-batch record</dd>
-                </div>
-                <div>
-                  <dt className="text-neutral-500 text-[11px] uppercase tracking-wider">Payment</dt>
-                  <dd className="mt-1 font-medium">Card · Open Banking</dd>
-                </div>
-              </dl>
+                <p className="mt-4 text-2xl font-semibold text-white leading-snug">
+                  Order before{" "}
+                  <span className="text-emerald-400">3&nbsp;PM</span> — dispatched
+                  today from our UK facility.
+                </p>
+                <div className="mt-6 h-px w-full bg-gradient-to-r from-emerald-500/40 via-slate-700 to-transparent" />
+                <dl className="mt-6 grid grid-cols-2 gap-5 text-sm">
+                  {[
+                    { k: "Dispatch", v: "Same-day (UK)" },
+                    { k: "Shipping", v: "Tracked 24 / 48" },
+                    { k: "Documentation", v: "Per-batch record" },
+                    { k: "Payment", v: "Card · Open Banking" },
+                  ].map((d) => (
+                    <div key={d.k}>
+                      <dt className="text-slate-400 text-[10px] uppercase tracking-[0.2em]">
+                        {d.k}
+                      </dt>
+                      <dd className="mt-1.5 font-medium text-white">{d.v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* TRUST STRIP */}
-      <section className="border-y border-[#b08a3e]/40 bg-white">
+      <section className="border-y border-slate-800 bg-slate-900/40">
         <div className="mx-auto max-w-6xl px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {[
             { k: "UK", v: "Prepared & dispatched" },
@@ -182,8 +217,12 @@ function UkResearchStore() {
             { k: "Per-batch", v: "Documentation" },
           ].map((s) => (
             <div key={s.k}>
-              <p className="font-serif text-3xl md:text-4xl font-light text-neutral-950">{s.k}</p>
-              <p className="mt-2 text-[11px] uppercase tracking-[0.3em] text-neutral-600">{s.v}</p>
+              <p className="text-3xl md:text-4xl font-semibold bg-gradient-to-b from-white to-slate-400 bg-clip-text text-transparent">
+                {s.k}
+              </p>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.3em] text-slate-400">
+                {s.v}
+              </p>
             </div>
           ))}
         </div>
@@ -192,45 +231,85 @@ function UkResearchStore() {
       {/* WHY PH LABS */}
       <section className="mx-auto max-w-6xl px-6 py-20">
         <div className="max-w-2xl">
-          <p className="text-[11px] uppercase tracking-[0.5em] text-[#8a6a2e]">Why PH Labs</p>
-          <h2 className="mt-4 font-serif text-3xl md:text-4xl font-light">
-            A UK laboratory built for <em>reproducible research</em>.
+          <p className="text-[11px] uppercase tracking-[0.5em] text-emerald-400">
+            Why PH Labs
+          </p>
+          <h2 className="mt-4 text-3xl md:text-4xl font-semibold tracking-tight text-white">
+            A UK laboratory built for{" "}
+            <span className="text-emerald-400">reproducible research</span>.
           </h2>
         </div>
-        <div className="mt-12 grid md:grid-cols-3 gap-8">
+        <div className="mt-12 grid md:grid-cols-3 gap-6">
           {[
             {
               t: "Verified purity",
               d: "Every batch is independently analysed and released against a documented purity threshold before it reaches your bench.",
+              i: (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              ),
             },
             {
               t: "Traceable provenance",
               d: "Per-batch records travel with every shipment, so results can be reproduced and audited by your institution.",
+              i: (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                />
+              ),
             },
             {
-              t: "UK dispatch, discreetly packaged",
+              t: "UK dispatch, discreet",
               d: "Prepared, stored and shipped from the United Kingdom in unbranded outer packaging via fully tracked services.",
+              i: (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                />
+              ),
             },
           ].map((c) => (
-            <div key={c.t} className="rounded-2xl border border-neutral-200 bg-white p-7">
-              <h3 className="font-serif text-xl font-light text-neutral-950">{c.t}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-neutral-600">{c.d}</p>
+            <div
+              key={c.t}
+              className="group relative rounded-2xl border border-slate-800 bg-slate-900/60 p-7 transition-all hover:border-emerald-500/40 hover:bg-slate-900 hover:-translate-y-1"
+            >
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                >
+                  {c.i}
+                </svg>
+              </div>
+              <h3 className="mt-5 text-xl font-semibold text-white">{c.t}</h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-400">{c.d}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* SOCIAL PROOF */}
-      <section className="bg-white border-y border-[#b08a3e]/40">
+      <section className="border-y border-slate-800 bg-gradient-to-b from-slate-900/60 to-slate-950">
         <div className="mx-auto max-w-4xl px-6 py-16 text-center">
-          <p className="text-[11px] uppercase tracking-[0.5em] text-[#8a6a2e]">Researcher feedback</p>
-          <blockquote className="mt-6 font-serif text-2xl md:text-3xl font-light leading-snug text-neutral-950">
-            <span className="text-[#b08a3e] text-4xl align-top">“</span>
+          <p className="text-[11px] uppercase tracking-[0.5em] text-emerald-400">
+            Researcher feedback
+          </p>
+          <blockquote className="mt-6 text-2xl md:text-3xl font-medium leading-snug text-white">
+            <span className="text-emerald-400 text-4xl align-top leading-none">“</span>
             Documentation is thorough, dispatch is fast and the material has behaved
             consistently across repeat orders. Exactly what we want from a UK supplier.
-            <span className="text-[#b08a3e] text-4xl align-top">”</span>
+            <span className="text-emerald-400 text-4xl align-top leading-none">”</span>
           </blockquote>
-          <p className="mt-6 text-[11px] uppercase tracking-[0.3em] text-neutral-500">
+          <p className="mt-6 text-[11px] uppercase tracking-[0.3em] text-slate-400">
             — Verified laboratory customer, England
           </p>
         </div>
@@ -238,22 +317,27 @@ function UkResearchStore() {
 
       {/* FAQ */}
       <section className="mx-auto max-w-4xl px-6 py-20">
-        <p className="text-[11px] uppercase tracking-[0.5em] text-[#8a6a2e] text-center">Questions</p>
-        <h2 className="mt-3 font-serif text-3xl md:text-4xl font-light text-center">
+        <p className="text-[11px] uppercase tracking-[0.5em] text-emerald-400 text-center">
+          Questions
+        </p>
+        <h2 className="mt-3 text-3xl md:text-4xl font-semibold text-center text-white tracking-tight">
           Frequently asked
         </h2>
-        <div className="mt-10 divide-y divide-neutral-200 border-y border-neutral-200">
+        <div className="mt-10 space-y-3">
           {FAQS.map((f) => (
-            <details key={f.q} className="group py-5">
-              <summary className="flex justify-between items-start cursor-pointer list-none">
-                <span className="font-serif text-lg md:text-xl font-light text-neutral-950 pr-6">
+            <details
+              key={f.q}
+              className="group rounded-xl border border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-colors"
+            >
+              <summary className="flex justify-between items-start cursor-pointer list-none p-5">
+                <span className="text-base md:text-lg font-semibold text-white pr-6">
                   {f.q}
                 </span>
-                <span className="text-[#b08a3e] text-2xl leading-none transition-transform group-open:rotate-45">
+                <span className="text-emerald-400 text-2xl leading-none transition-transform group-open:rotate-45 flex-shrink-0">
                   +
                 </span>
               </summary>
-              <p className="mt-3 text-sm md:text-[15px] leading-relaxed text-neutral-600">
+              <p className="px-5 pb-5 text-sm md:text-[15px] leading-relaxed text-slate-400">
                 {f.a}
               </p>
             </details>
@@ -262,26 +346,30 @@ function UkResearchStore() {
       </section>
 
       {/* CTA BAND */}
-      <section className="bg-neutral-950 text-white">
-        <div className="mx-auto max-w-5xl px-6 py-16 text-center">
-          <p className="text-[11px] uppercase tracking-[0.5em] text-[#b08a3e]">Ready to order</p>
-          <h2 className="mt-4 font-serif text-3xl md:text-5xl font-light">
+      <section className="relative overflow-hidden border-y border-emerald-500/20">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-slate-950 to-slate-950" />
+        <div className="absolute -top-20 left-1/2 -translate-x-1/2 h-[400px] w-[600px] rounded-full bg-emerald-500/10 blur-[120px]" />
+        <div className="relative mx-auto max-w-5xl px-6 py-16 text-center">
+          <p className="text-[11px] uppercase tracking-[0.5em] text-emerald-400">
+            Ready to order
+          </p>
+          <h2 className="mt-4 text-3xl md:text-5xl font-semibold text-white tracking-tight">
             Browse the UK research catalogue.
           </h2>
-          <p className="mt-4 text-sm md:text-base text-neutral-300 max-w-xl mx-auto">
+          <p className="mt-4 text-sm md:text-base text-slate-300 max-w-xl mx-auto">
             Same-day dispatch, per-batch documentation, tracked UK shipping. Supplied
             strictly for laboratory research.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               to="/products"
-              className="inline-flex items-center px-10 py-4 rounded-full bg-[#b08a3e] hover:bg-[#8a6a2e] text-white text-[12px] tracking-[0.2em] uppercase font-medium transition-colors"
+              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-semibold transition-all shadow-[0_20px_50px_-15px_rgba(16,185,129,0.6)] hover:-translate-y-0.5"
             >
-              View Catalogue →
+              View Catalogue <span aria-hidden>→</span>
             </Link>
             <Link
               to="/contact"
-              className="inline-flex items-center px-10 py-4 rounded-full border border-white/40 hover:bg-white/10 text-white text-[12px] tracking-[0.2em] uppercase font-medium transition-colors"
+              className="inline-flex items-center px-8 py-3.5 rounded-xl border border-slate-700 bg-slate-900/60 backdrop-blur hover:border-emerald-500/50 hover:bg-slate-900 text-white text-sm font-semibold transition-colors"
             >
               Contact the Team
             </Link>
@@ -290,11 +378,13 @@ function UkResearchStore() {
       </section>
 
       {/* DISCLAIMER */}
-      <section className="bg-[#f7f6f3] py-16">
+      <section className="py-16">
         <div className="mx-auto max-w-3xl px-6 text-center">
-          <p className="text-[11px] uppercase tracking-[0.5em] text-[#8a6a2e]">Legal</p>
-          <h2 className="mt-3 font-serif text-2xl font-light">Research use disclaimer</h2>
-          <p className="mt-5 text-sm leading-relaxed text-neutral-600">
+          <p className="text-[11px] uppercase tracking-[0.5em] text-emerald-400">Legal</p>
+          <h2 className="mt-3 text-2xl font-semibold text-white">
+            Research use disclaimer
+          </h2>
+          <p className="mt-5 text-sm leading-relaxed text-slate-400">
             All items supplied via this website are intended solely for laboratory
             research and scientific purposes. They are not intended for human or
             veterinary use, nor for any non-research application. By accessing this
@@ -307,16 +397,16 @@ function UkResearchStore() {
       </section>
 
       {/* Sticky mobile CTA */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-[#b08a3e]/50 px-4 py-3 flex gap-2 shadow-[0_-10px_30px_-10px_rgba(0,0,0,0.25)]">
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-emerald-500/30 px-4 py-3 flex gap-2 shadow-[0_-10px_30px_-10px_rgba(0,0,0,0.6)]">
         <Link
           to="/products"
-          className="flex-1 inline-flex justify-center items-center px-4 py-3 rounded-full bg-neutral-950 text-white text-[11px] tracking-[0.2em] uppercase font-medium"
+          className="flex-1 inline-flex justify-center items-center px-4 py-3 rounded-xl bg-emerald-500 text-slate-950 text-sm font-semibold"
         >
           Shop catalogue →
         </Link>
         <Link
           to="/contact"
-          className="inline-flex justify-center items-center px-4 py-3 rounded-full border-2 border-[#b08a3e] text-neutral-900 text-[11px] tracking-[0.2em] uppercase font-medium"
+          className="inline-flex justify-center items-center px-5 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-semibold"
         >
           Contact
         </Link>
