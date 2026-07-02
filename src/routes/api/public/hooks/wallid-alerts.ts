@@ -222,8 +222,8 @@ export const Route = createFileRoute("/api/public/hooks/wallid-alerts")({
         const lastWebhookAt = (lastEv?.created_at as string | undefined) ?? null;
 
         // Payment attempts we would have expected a webhook for in the last
-        // 30 min. If any exist AND no webhook landed within 30 min, alert.
-        const silenceWindowMs = 30 * 60_000;
+        // 15 min. If any exist AND no webhook landed within 15 min, alert.
+        const silenceWindowMs = 15 * 60_000;
         const silenceCutoffIso = new Date(nowMs - silenceWindowMs).toISOString();
         const { data: recentPayments } = await supabaseAdmin
           .from("wallid_payments")
