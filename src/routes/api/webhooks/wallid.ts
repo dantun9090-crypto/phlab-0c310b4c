@@ -90,24 +90,30 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
         if (limited) return limited;
 
         const ip = getClientIp(request);
-        const ts = request.headers.get("x-webhook-timestamp") || "";
-        const sig = request.headers.get("x-webhook-signature") || "";
+        const ts = request.headers.get("x-webhook-timestamp") || request.headers.get("x-wallid-timestamp") || "";
+        // Accept every documented Wallid header name — dashboard has toggled between them.
+        const sig =
+          request.headers.get("x-webhook-signature") ||
+          request.headers.get("x-wallid-signature") ||
+          request.headers.get("x-signature") ||
+          "";
+        const sigHeaderName =
+          (request.headers.get("x-webhook-signature") && "x-webhook-signature") ||
+          (request.headers.get("x-wallid-signature") && "x-wallid-signature") ||
+          (request.headers.get("x-signature") && "x-signature") ||
+          "none";
         const eventId = request.headers.get("x-wallid-event-id") || request.headers.get("x-webhook-event-id") || "";
         const eventCount = Number(request.headers.get("x-webhook-event-count") || 0);
         const userAgent = request.headers.get("user-agent") || "";
         const contentLength = Number(request.headers.get("content-length") || 0);
 
-        // Top-of-handler structured log — captures EVERY inbound POST so we
-        // can prove delivery (or its absence) in the log query later.
-        // Signature is truncated so the raw header value doesn't sit in logs
-        // in full; the truncated prefix is enough to correlate with Wallid's
-        // delivery dashboard.
         console.log("[Wallid webhook] rcv", {
           route: "/api/webhooks/wallid",
           receivedAt,
           ip,
           userAgent: userAgent.slice(0, 120),
           ts,
+          sigHeaderName,
           sigPrefix: sig.slice(0, 12),
           eventId,
           eventCount,
@@ -116,8 +122,6 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
 
         const secret = process.env.WALLID_WEBHOOK_SECRET;
         if (!secret) {
-          // Do NOT return 500 — Wallid backs off on 5xx. 503+Retry-After
-          // asks for a normal retry while we alert on the config gap.
           return retryableResp("WALLID_WEBHOOK_SECRET missing");
         }
 
@@ -136,27 +140,64 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
           return textResp("Stale timestamp", 400);
         }
 
-        const ok = await verifyHmacSignature(`${ts}.${rawBody}`, sig, secret);
-        if (!ok) {
-          // Log truncated expected + received so mismatches can be diagnosed
-          // without leaking the shared secret. Both values are one-way hashes.
+        // Try every documented Wallid signing scheme. Logs the winning scheme
+        // so if a non-primary variant matches we know Wallid changed formats.
+        const match = await verifyWallidSignature(ts, rawBody, sig, secret);
+        if (!match) {
+          const provided = sig.startsWith("sha256=") ? sig.slice(7) : sig;
+          const receivedPrefix = provided.slice(0, 12);
           let expectedPrefix = "";
           try {
             expectedPrefix = (await computeHmacHex(`${ts}.${rawBody}`, secret)).slice(0, 12);
           } catch { /* ignore */ }
-          const receivedPrefix = (sig.startsWith("sha256=") ? sig.slice(7) : sig).slice(0, 12);
           console.warn("[Wallid webhook] INVALID_SIGNATURE", {
             route: "/api/webhooks/wallid",
             ip,
             ts,
             eventId,
             eventCount,
+            sigHeaderName,
             receivedPrefix,
             expectedPrefix,
             bodyLen: rawBody.length,
           });
+
+          // Optional deep-debug — enable ONLY for a single deploy to diagnose
+          // encoding mismatches (UTF-8 vs ASCII, JSON whitespace, etc.).
+          // Set WALLID_WEBHOOK_DEBUG=1 in secrets to activate; remove after.
+          if (process.env.WALLID_WEBHOOK_DEBUG === "1") {
+            try {
+              const expectedFull = await computeHmacHex(`${ts}.${rawBody}`, secret);
+              const expectedBodyOnly = await computeHmacHex(rawBody, secret);
+              console.warn("[Wallid webhook] DEBUG_SIG", {
+                ts,
+                bodyLen: rawBody.length,
+                bodyHead: rawBody.slice(0, 200),
+                bodyTail: rawBody.slice(-60),
+                bodyBytes: new TextEncoder().encode(rawBody).length,
+                signedString_tsBody: `${ts}.${rawBody}`.slice(0, 240),
+                receivedFull: provided,
+                expected_tsBody: expectedFull,
+                expected_bodyOnly: expectedBodyOnly,
+              });
+            } catch (e) {
+              console.warn("[Wallid webhook] DEBUG_SIG failed", e);
+            }
+          }
           return textResp("Invalid signature", 400);
         }
+
+        if (match.scheme !== "ts.body") {
+          console.warn("[Wallid webhook] LEGACY_SIGNATURE_MATCH", {
+            scheme: match.scheme,
+            sigHeaderName,
+            ts,
+            eventId,
+            eventCount,
+          });
+        }
+
+
 
         let body: WallidWebhookBody = {};
         try {
