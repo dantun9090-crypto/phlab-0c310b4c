@@ -75,12 +75,19 @@ export default function SentryIssuesTab() {
           <option value="30d">Last 30 days</option>
         </select>
         <button
-          onClick={load}
+          onClick={() => load()}
           disabled={loading}
           className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50 min-h-[44px]"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           {loading ? 'Loading…' : 'Fetch issues'}
+        </button>
+        <button
+          onClick={() => load(20)}
+          disabled={loading}
+          className="inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg font-medium disabled:opacity-50 min-h-[44px]"
+        >
+          Fetch last 20 now
         </button>
         {meta?.orgSlug && (
           <a
