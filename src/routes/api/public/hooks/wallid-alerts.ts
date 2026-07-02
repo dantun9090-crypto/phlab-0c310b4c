@@ -210,16 +210,37 @@ export const Route = createFileRoute("/api/public/hooks/wallid-alerts")({
           }
         }
 
-        // Last webhook timestamp from supabase for context.
+        // Last REAL webhook timestamp (exclude "LOG" heartbeat/scanner rows —
+        // those are cheap public POSTs, not actual Wallid deliveries).
         const { data: lastEv } = await supabaseAdmin
           .from("wallid_webhook_events")
           .select("created_at")
+          .neq("status", "LOG")
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
         const lastWebhookAt = (lastEv?.created_at as string | undefined) ?? null;
 
+        // Payment attempts we would have expected a webhook for in the last
+        // 30 min. If any exist AND no webhook landed within 30 min, alert.
+        const silenceWindowMs = 30 * 60_000;
+        const silenceCutoffIso = new Date(nowMs - silenceWindowMs).toISOString();
+        const { data: recentPayments } = await supabaseAdmin
+          .from("wallid_payments")
+          .select("api_payment_id")
+          .gte("created_at", silenceCutoffIso)
+          .limit(50);
+        const recentPaymentCount = recentPayments?.length ?? 0;
+        const lastWebhookMs = lastWebhookAt ? Date.parse(lastWebhookAt) : 0;
+        const webhookAgeMs = lastWebhookMs ? nowMs - lastWebhookMs : Number.POSITIVE_INFINITY;
+        // Business hours only — night-time silence is expected/quiet.
+        const utcHour = new Date(nowMs).getUTCHours();
+        const inBusinessHours = utcHour >= 8 && utcHour < 20;
+        const webhookSilence =
+          inBusinessHours && recentPaymentCount > 0 && webhookAgeMs > silenceWindowMs ? 1 : 0;
+
         const results: Record<string, unknown> = {};
+
 
         // 1. needs_review — immediate critical.
         results.needs_review = await fireOrResolve(
@@ -334,6 +355,30 @@ export const Route = createFileRoute("/api/public/hooks/wallid-alerts")({
               )
             : { action: "noop", via: "none" };
 
+        // 5. webhook_silence — DEAD-MAN. During business hours (08:00–20:00
+        // UTC), if payments were created in the last 30 min but no real
+        // webhook landed in that window, Wallid → us delivery is broken.
+        // Sends once, auto-resolves when the next real webhook arrives.
+        const webhookAgeMin = Number.isFinite(webhookAgeMs)
+          ? Math.round(webhookAgeMs / 60_000)
+          : -1;
+        results.webhook_silence = await fireOrResolve(
+          "webhook_silence",
+          {
+            severity: "critical",
+            title: `No Wallid webhook in ${webhookAgeMin >= 0 ? `${webhookAgeMin} min` : "recorded history"}`,
+            summary:
+              `We saw ${recentPaymentCount} Wallid payment attempt(s) in the last 30 min but no webhook delivery. ` +
+              `The reconcile cron is still catching payments, but webhook delivery itself is broken — ` +
+              `check the webhook URL in Wallid's dashboard and Cloudflare firewall events for their IPs.`,
+            stuckCount: recentPaymentCount,
+            lastWebhookAt,
+            extra: { webhookAgeMin, recentPayments: recentPaymentCount, windowMin: 30 },
+          },
+          webhookSilence,
+          { immediateAtCount: 1 },
+        );
+
         return json({
           checked: {
             orders: orders.length,
@@ -341,6 +386,10 @@ export const Route = createFileRoute("/api/public/hooks/wallid-alerts")({
             needs_review: reviewOrders.length,
             rescue: rescueCount,
             rate_limit_attackers: attackers.length,
+            webhook_silence: webhookSilence,
+            webhook_age_min: webhookAgeMin,
+            recent_payments_30min: recentPaymentCount,
+            in_business_hours: inBusinessHours,
           },
           results,
         });

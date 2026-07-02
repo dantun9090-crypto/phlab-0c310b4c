@@ -21,6 +21,7 @@ export type WallidAlertType =
   | "needs_review"
   | "rescue_load"
   | "webhook_errors"
+  | "webhook_silence"
   | "rate_limit_attack";
 
 export type WallidAlertSeverity = "info" | "warn" | "critical";
