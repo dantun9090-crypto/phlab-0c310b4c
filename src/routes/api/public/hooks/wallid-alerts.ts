@@ -368,12 +368,12 @@ export const Route = createFileRoute("/api/public/hooks/wallid-alerts")({
             severity: "critical",
             title: `No Wallid webhook in ${webhookAgeMin >= 0 ? `${webhookAgeMin} min` : "recorded history"}`,
             summary:
-              `We saw ${recentPaymentCount} Wallid payment attempt(s) in the last 30 min but no webhook delivery. ` +
+              `We saw ${recentPaymentCount} Wallid payment attempt(s) in the last 15 min but no webhook delivery. ` +
               `The reconcile cron is still catching payments, but webhook delivery itself is broken — ` +
               `check the webhook URL in Wallid's dashboard and Cloudflare firewall events for their IPs.`,
             stuckCount: recentPaymentCount,
             lastWebhookAt,
-            extra: { webhookAgeMin, recentPayments: recentPaymentCount, windowMin: 30 },
+            extra: { webhookAgeMin, recentPayments: recentPaymentCount, windowMin: 15 },
           },
           webhookSilence,
           { immediateAtCount: 1 },
