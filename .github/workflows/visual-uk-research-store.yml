@@ -1,0 +1,82 @@
+name: Visual regression · /uk-research-store
+
+# Runs the Playwright visual + 4px-grid spec for /uk-research-store on every
+# pull request and every push to main. Failure blocks the PR; the diff PNGs
+# and HTML report are uploaded as artifacts for review.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Override base URL (defaults to https://phlabs.co.uk)"
+        required: false
+        default: "https://phlabs.co.uk"
+
+concurrency:
+  group: visual-uk-research-store-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RESEARCH_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run /uk-research-store visual + 4px grid spec
+        run: bunx playwright test e2e/uk-research-store-visual.spec.ts --project=chromium --reporter=line,html
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-uk-research-store
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Comment on PR when the check fails
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = [
+              "Visual regression check for `/uk-research-store` **failed**.",
+              "",
+              `- Run: ${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+              `- Base URL: \`${process.env.RESEARCH_BASE_URL}\``,
+              "",
+              "Download the `playwright-report-uk-research-store` artifact for actual / expected / diff PNGs.",
+              "If the change is intentional, refresh baselines locally with:",
+              "",
+              "```bash",
+              "bunx playwright test e2e/uk-research-store-visual.spec.ts --update-snapshots",
+              "```",
+            ].join("\n");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
