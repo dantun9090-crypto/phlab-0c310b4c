@@ -13,6 +13,7 @@ import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-condi
 import { Route as StorageGuideRouteImport } from './routes/storage-guide'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShippingPolicyRouteImport } from './routes/shipping-policy'
+import { Route as SentryTestRouteImport } from './routes/sentry-test'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as ResearchRouteImport } from './routes/research'
@@ -119,6 +120,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const ShippingPolicyRoute = ShippingPolicyRouteImport.update({
   id: '/shipping-policy',
   path: '/shipping-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SentryTestRoute = SentryTestRouteImport.update({
+  id: '/sentry-test',
+  path: '/sentry-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SearchRoute = SearchRouteImport.update({
@@ -603,6 +609,7 @@ export interface FileRoutesByFullPath {
   '/research': typeof ResearchRouteWithChildren
   '/resources': typeof ResourcesRouteWithChildren
   '/search': typeof SearchRoute
+  '/sentry-test': typeof SentryTestRoute
   '/shipping-policy': typeof ShippingPolicyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/storage-guide': typeof StorageGuideRoute
@@ -694,6 +701,7 @@ export interface FileRoutesByTo {
   '/request-catalog': typeof RequestCatalogRoute
   '/resources': typeof ResourcesRouteWithChildren
   '/search': typeof SearchRoute
+  '/sentry-test': typeof SentryTestRoute
   '/shipping-policy': typeof ShippingPolicyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/storage-guide': typeof StorageGuideRoute
@@ -788,6 +796,7 @@ export interface FileRoutesById {
   '/research': typeof ResearchRouteWithChildren
   '/resources': typeof ResourcesRouteWithChildren
   '/search': typeof SearchRoute
+  '/sentry-test': typeof SentryTestRoute
   '/shipping-policy': typeof ShippingPolicyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/storage-guide': typeof StorageGuideRoute
@@ -882,6 +891,7 @@ export interface FileRouteTypes {
     | '/research'
     | '/resources'
     | '/search'
+    | '/sentry-test'
     | '/shipping-policy'
     | '/sitemap.xml'
     | '/storage-guide'
@@ -973,6 +983,7 @@ export interface FileRouteTypes {
     | '/request-catalog'
     | '/resources'
     | '/search'
+    | '/sentry-test'
     | '/shipping-policy'
     | '/sitemap.xml'
     | '/storage-guide'
@@ -1066,6 +1077,7 @@ export interface FileRouteTypes {
     | '/research'
     | '/resources'
     | '/search'
+    | '/sentry-test'
     | '/shipping-policy'
     | '/sitemap.xml'
     | '/storage-guide'
@@ -1160,6 +1172,7 @@ export interface RootRouteChildren {
   ResearchRoute: typeof ResearchRouteWithChildren
   ResourcesRoute: typeof ResourcesRouteWithChildren
   SearchRoute: typeof SearchRoute
+  SentryTestRoute: typeof SentryTestRoute
   ShippingPolicyRoute: typeof ShippingPolicyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StorageGuideRoute: typeof StorageGuideRoute
@@ -1247,6 +1260,13 @@ declare module '@tanstack/react-router' {
       path: '/shipping-policy'
       fullPath: '/shipping-policy'
       preLoaderRoute: typeof ShippingPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sentry-test': {
+      id: '/sentry-test'
+      path: '/sentry-test'
+      fullPath: '/sentry-test'
+      preLoaderRoute: typeof SentryTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/search': {
@@ -1943,6 +1963,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResearchRoute: ResearchRouteWithChildren,
   ResourcesRoute: ResourcesRouteWithChildren,
   SearchRoute: SearchRoute,
+  SentryTestRoute: SentryTestRoute,
   ShippingPolicyRoute: ShippingPolicyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StorageGuideRoute: StorageGuideRoute,
