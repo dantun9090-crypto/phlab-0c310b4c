@@ -21,6 +21,7 @@ async function requireAdmin(idToken: string): Promise<void> {
 
 // DSN project id → 4511662778286160 (from src/lib/sentry.ts)
 const DEFAULT_PROJECT_ID = "4511662778286160";
+const DEFAULT_PROJECT_SLUG = "javascript-react";
 
 async function sentryFetch(path: string, token: string): Promise<any> {
   const res = await fetch(`https://sentry.io/api/0${path}`, {
