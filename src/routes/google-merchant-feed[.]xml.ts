@@ -519,9 +519,11 @@ export const Route = createFileRoute("/google-merchant-feed.xml")({
               ...MERCHANT_PROMO_IDS.map((pid: string) => `    <g:promotion_id>${xmlEscape(pid)}</g:promotion_id>`),
               `    <g:custom_label_0>UK-Stock</g:custom_label_0>`,
               `    <g:custom_label_1>${xmlEscape(sizeCompact || "Standard")}</g:custom_label_1>`,
-              // Free listings only — paid Shopping ads are paused.
+              // Visible in both free listings and paid Shopping ads.
+              `    <g:included_destination>Shopping_ads</g:included_destination>`,
               `    <g:included_destination>Free_listings</g:included_destination>`,
               `    <g:included_destination>Free_local_listings</g:included_destination>`,
+              `    <g:included_destination>Display_ads</g:included_destination>`,
               `  </item>`,
 
             ]
