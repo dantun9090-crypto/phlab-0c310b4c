@@ -259,7 +259,7 @@ export const CAMPAIGN_EDITORIAL: Campaign = {
         'Editorial laboratory supply from a UK-based research stockist. Full documentation on every batch.',
         'PH Labs supplies UK research institutions, universities and private labs. Research use only.',
         'Premium-grade reference standards and reagents. UK preparation, UK dispatch, tracked delivery.',
-        'Trusted laboratory supplier — institution accounts and bulk procurement welcome.',
+        'Trusted laboratory supplier — institution accounts and bulk orders welcome.',
       ],
     },
     {
