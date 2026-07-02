@@ -152,7 +152,11 @@ export default function SentryIssuesTab() {
             </thead>
             <tbody>
               {issues.map((i) => (
-                <tr key={i.id} className="border-t border-slate-800 hover:bg-slate-800/50">
+                <tr
+                  key={i.id}
+                  onClick={() => openDetails(i.id)}
+                  className="border-t border-slate-800 hover:bg-slate-800/50 cursor-pointer"
+                >
                   <td className="px-4 py-3">
                     <div className="font-medium">{i.title}</div>
                     {i.culprit && <div className="text-xs text-slate-400 mt-0.5">{i.culprit}</div>}
@@ -164,7 +168,7 @@ export default function SentryIssuesTab() {
                   <td className="px-4 py-3 text-xs text-slate-400">
                     {new Date(i.lastSeen).toLocaleString('en-GB')}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                     <a
                       href={i.permalink}
                       target="_blank"
