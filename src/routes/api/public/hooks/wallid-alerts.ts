@@ -210,16 +210,37 @@ export const Route = createFileRoute("/api/public/hooks/wallid-alerts")({
           }
         }
 
-        // Last webhook timestamp from supabase for context.
+        // Last REAL webhook timestamp (exclude "LOG" heartbeat/scanner rows —
+        // those are cheap public POSTs, not actual Wallid deliveries).
         const { data: lastEv } = await supabaseAdmin
           .from("wallid_webhook_events")
           .select("created_at")
+          .neq("status", "LOG")
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
         const lastWebhookAt = (lastEv?.created_at as string | undefined) ?? null;
 
+        // Payment attempts we would have expected a webhook for in the last
+        // 30 min. If any exist AND no webhook landed within 30 min, alert.
+        const silenceWindowMs = 30 * 60_000;
+        const silenceCutoffIso = new Date(nowMs - silenceWindowMs).toISOString();
+        const { data: recentPayments } = await supabaseAdmin
+          .from("wallid_payments")
+          .select("api_payment_id")
+          .gte("created_at", silenceCutoffIso)
+          .limit(50);
+        const recentPaymentCount = recentPayments?.length ?? 0;
+        const lastWebhookMs = lastWebhookAt ? Date.parse(lastWebhookAt) : 0;
+        const webhookAgeMs = lastWebhookMs ? nowMs - lastWebhookMs : Number.POSITIVE_INFINITY;
+        // Business hours only — night-time silence is expected/quiet.
+        const utcHour = new Date(nowMs).getUTCHours();
+        const inBusinessHours = utcHour >= 8 && utcHour < 20;
+        const webhookSilence =
+          inBusinessHours && recentPaymentCount > 0 && webhookAgeMs > silenceWindowMs ? 1 : 0;
+
         const results: Record<string, unknown> = {};
+
 
         // 1. needs_review — immediate critical.
         results.needs_review = await fireOrResolve(
