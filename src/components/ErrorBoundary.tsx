@@ -1,6 +1,7 @@
 import { Component, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import * as Sentry from '@sentry/react';
 import { logSecurityEvent } from '@/lib/security-events';
 import { isHydrationMismatchError, markHydrationError } from '@/lib/recovery';
 
