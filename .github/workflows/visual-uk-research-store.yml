@@ -43,9 +43,21 @@ jobs:
         run: bunx playwright install --with-deps chromium
 
       - name: Run /uk-research-store visual + 4px grid spec
-        run: bunx playwright test e2e/uk-research-store-visual.spec.ts --project=chromium --reporter=line,html
+        # `--output` pins the folder Playwright writes actual/expected/diff
+        # PNGs into on a failed toHaveScreenshot assertion. HTML report is
+        # emitted alongside so reviewers get both the interactive diff viewer
+        # and the raw PNGs in the artifact.
+        run: bunx playwright test e2e/uk-research-store-visual.spec.ts --project=chromium --reporter=line,html --output=test-results
 
-      - name: Upload Playwright report
+      - name: Collect screenshot diff PNGs
+        if: failure()
+        run: |
+          mkdir -p visual-diffs
+          # Playwright names failed-screenshot files *-actual.png / *-expected.png / *-diff.png
+          find test-results -type f \( -name '*-actual.png' -o -name '*-expected.png' -o -name '*-diff.png' \) -print -exec cp --parents {} visual-diffs/ \;
+          echo "Collected diff PNGs:" && find visual-diffs -type f | sort
+
+      - name: Upload Playwright report + diff PNGs
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -53,6 +65,7 @@ jobs:
           path: |
             playwright-report
             test-results
+            visual-diffs
           if-no-files-found: ignore
           retention-days: 14
 
