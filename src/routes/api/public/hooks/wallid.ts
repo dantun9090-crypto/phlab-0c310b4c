@@ -110,14 +110,11 @@ export const Route = createFileRoute("/api/public/hooks/wallid")({
           return textResp("Stale timestamp", 400);
         }
 
-        // Multi-scheme verification (see verifyWallidSignature).
+        // Verify signature (single canonical scheme — see webhook-signature.ts).
         const match = await verifyWallidSignature(ts, rawBody, sig, secret);
         if (!match) {
           console.warn("[Wallid webhook] Invalid signature", { ip, eventCount });
           return textResp("Invalid signature", 400);
-        }
-        if (match.scheme !== "ts.body") {
-          console.warn("[Wallid webhook] LEGACY_SIGNATURE_MATCH", { scheme: match.scheme, ts, eventCount });
         }
 
 
