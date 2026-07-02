@@ -2,7 +2,7 @@ import {
   LayoutDashboard, Package, ShoppingCart, Users, LogOut,
   Database, FileText, Image, Settings,
   Zap, Palette, Megaphone, HardDrive, Radio, FlaskConical,
-  Scale, Rocket, Shield, PanelLeftClose, PanelLeft, Mail, Lock, Star, Eye, Search, ShieldCheck, Map, X, ChevronDown, Tag, Activity, ShoppingBag, CreditCard, Sparkles, TrendingUp, Cloud, Package2, Gift, Send
+  Scale, Rocket, Shield, PanelLeftClose, PanelLeft, Mail, Lock, Star, Eye, Search, ShieldCheck, Map, X, ChevronDown, Tag, Activity, ShoppingBag, CreditCard, Sparkles, TrendingUp, Cloud, Package2, Gift, Send, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { auth, signOut } from '@/lib/firebase';
@@ -130,6 +130,7 @@ const navGroups = [
       { id: 'purgeincidents', label: 'Purge Incidents', icon: Activity },
       { id: 'swtelemetrydebug', label: 'SW Telemetry Debug', icon: Activity },
       { id: 'monitorlog', label: 'Monitor Log (HEAD/GET)', icon: Activity },
+      { id: 'sentryissues', label: 'Sentry Issues', icon: AlertTriangle },
     ],
   },
 ];
