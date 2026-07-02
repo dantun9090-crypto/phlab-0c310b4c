@@ -140,8 +140,9 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
           return textResp("Stale timestamp", 400);
         }
 
-        // Try every documented Wallid signing scheme. Logs the winning scheme
-        // so if a non-primary variant matches we know Wallid changed formats.
+        // Verify Wallid signature (single canonical scheme: HMAC-SHA256 over
+        // `${ts}.${rawBody}`). Multi-scheme fallback removed 2026-07 after
+        // verification stabilised — see webhook-signature.ts to re-add.
         const match = await verifyWallidSignature(ts, rawBody, sig, secret);
         if (!match) {
           const provided = sig.startsWith("sha256=") ? sig.slice(7) : sig;
@@ -161,40 +162,7 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
             expectedPrefix,
             bodyLen: rawBody.length,
           });
-
-          // Optional deep-debug — enable ONLY for a single deploy to diagnose
-          // encoding mismatches (UTF-8 vs ASCII, JSON whitespace, etc.).
-          // Set WALLID_WEBHOOK_DEBUG=1 in secrets to activate; remove after.
-          if (process.env.WALLID_WEBHOOK_DEBUG === "1") {
-            try {
-              const expectedFull = await computeHmacHex(`${ts}.${rawBody}`, secret);
-              const expectedBodyOnly = await computeHmacHex(rawBody, secret);
-              console.warn("[Wallid webhook] DEBUG_SIG", {
-                ts,
-                bodyLen: rawBody.length,
-                bodyHead: rawBody.slice(0, 200),
-                bodyTail: rawBody.slice(-60),
-                bodyBytes: new TextEncoder().encode(rawBody).length,
-                signedString_tsBody: `${ts}.${rawBody}`.slice(0, 240),
-                receivedFull: provided,
-                expected_tsBody: expectedFull,
-                expected_bodyOnly: expectedBodyOnly,
-              });
-            } catch (e) {
-              console.warn("[Wallid webhook] DEBUG_SIG failed", e);
-            }
-          }
           return textResp("Invalid signature", 400);
-        }
-
-        if (match.scheme !== "ts.body") {
-          console.warn("[Wallid webhook] LEGACY_SIGNATURE_MATCH", {
-            scheme: match.scheme,
-            sigHeaderName,
-            ts,
-            eventId,
-            eventCount,
-          });
         }
 
 
