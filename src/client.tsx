@@ -139,7 +139,10 @@ import { RouterProvider } from "@tanstack/react-router";
 import { getRouter } from "./router";
 import { installClientErrorReporter, reportClientError } from "./lib/client-error-reporter";
 import { initSwTelemetry } from "./lib/swTelemetry";
+import { initSentry } from "./lib/sentry";
 
+// Sentry first so it captures errors from every subsequent boot step.
+initSentry();
 installClientErrorReporter();
 initSwTelemetry();
 
