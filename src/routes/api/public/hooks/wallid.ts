@@ -93,8 +93,12 @@ export const Route = createFileRoute("/api/public/hooks/wallid")({
           return textResp("Invalid body", 400);
         }
 
-        const ts = request.headers.get("x-webhook-timestamp") || "";
-        const sig = request.headers.get("x-webhook-signature") || "";
+        const ts = request.headers.get("x-webhook-timestamp") || request.headers.get("x-wallid-timestamp") || "";
+        const sig =
+          request.headers.get("x-webhook-signature") ||
+          request.headers.get("x-wallid-signature") ||
+          request.headers.get("x-signature") ||
+          "";
         const eventCount = Number(request.headers.get("x-webhook-event-count") || 0);
         const ip = getClientIp(request);
 
@@ -106,12 +110,16 @@ export const Route = createFileRoute("/api/public/hooks/wallid")({
           return textResp("Stale timestamp", 400);
         }
 
-        // Verify HMAC over `${timestamp}.${rawBody}`.
-        const ok = await verifyHmacSignature(`${ts}.${rawBody}`, sig, secret);
-        if (!ok) {
+        // Multi-scheme verification (see verifyWallidSignature).
+        const match = await verifyWallidSignature(ts, rawBody, sig, secret);
+        if (!match) {
           console.warn("[Wallid webhook] Invalid signature", { ip, eventCount });
           return textResp("Invalid signature", 400);
         }
+        if (match.scheme !== "ts.body") {
+          console.warn("[Wallid webhook] LEGACY_SIGNATURE_MATCH", { scheme: match.scheme, ts, eventCount });
+        }
+
 
         // Parse body now that signature is verified.
         let body: WallidWebhookBody = {};
