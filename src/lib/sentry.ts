@@ -58,6 +58,18 @@ export function initSentry(): void {
       sendDefaultPii: false,
       beforeSend(event) {
         try {
+          // Drop noise from ephemeral Lovable sandbox previews — only
+          // production (phlabs.co.uk) events matter for alerting.
+          const host =
+            (typeof window !== "undefined" && window.location?.hostname) || "";
+          if (
+            event.environment === "development" &&
+            (/\.lovableproject\.com$/i.test(host) ||
+              /\.lovable\.app$/i.test(host) ||
+              /\.lovable\.dev$/i.test(host))
+          ) {
+            return null;
+          }
           // Drop request cookies / auth headers if present.
           if (event.request) {
             delete event.request.cookies;
@@ -76,6 +88,7 @@ export function initSentry(): void {
         }
         return event;
       },
+
     });
     initialized = true;
   } catch (err) {
