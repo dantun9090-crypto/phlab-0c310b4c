@@ -20,15 +20,36 @@ function download(filename: string, content: string, mime = 'text/csv') {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function downloadZip(files: Record<string, string>, zipName: string) {
-  // tiny "zip-ish" fallback: bundle into a single .txt so user always gets something
-  // — but most users will use the individual CSVs above. We just emit them one by one.
-  for (const [name, content] of Object.entries(files)) {
-    download(name, content);
+async function downloadZip(files: Record<string, string>, zipName: string) {
+  try {
+    const { default: JSZip } = await import('jszip');
+    const zip = new JSZip();
+    for (const [name, content] of Object.entries(files)) {
+      zip.file(name, content);
+    }
+    zip.file(
+      `${zipName}__manifest.txt`,
+      Object.keys(files).map((f) => `- ${f}`).join('\n'),
+    );
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${zipName}__google-ads-import.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (e) {
+    // Fallback: sequential downloads with delay so the browser doesn't block them
+    console.warn('[GoogleAds] ZIP failed, falling back to sequential downloads', e);
+    const entries = Object.entries(files);
+    for (let i = 0; i < entries.length; i++) {
+      const [name, content] = entries[i];
+      download(name, content);
+      await new Promise((r) => setTimeout(r, 400));
+    }
   }
-  // also emit a manifest
-  const manifest = Object.keys(files).map((f) => `- ${f}`).join('\n');
-  download(`${zipName}__manifest.txt`, manifest, 'text/plain');
 }
 
 function CampaignCard({ campaign }: { campaign: Campaign }) {
