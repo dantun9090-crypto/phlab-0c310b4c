@@ -31,10 +31,8 @@ const KILL_MOTION_CSS = `
   html { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif !important; }
 `;
 
-async function prepare(page: Page, context: Page["context"] extends never ? never : Parameters<typeof test>[1] extends never ? never : any) {
-  await context.route(/(fonts\.googleapis\.com|fonts\.gstatic\.com)/, (r: any) =>
-    r.abort(),
-  );
+async function prepare(page: Page, context: BrowserContext) {
+  await context.route(/(fonts\.googleapis\.com|fonts\.gstatic\.com)/, (r) => r.abort());
   await page.addInitScript((css) => {
     const apply = () => {
       const s = document.createElement("style");
