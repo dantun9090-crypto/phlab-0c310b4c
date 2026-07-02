@@ -81,7 +81,15 @@ export default function SentryIssuesTab() {
     try {
       const idToken = await auth.currentUser?.getIdToken();
       if (!idToken) throw new Error('Not signed in.');
-      const res = await call({ data: { idToken, statsPeriod: period, limit: limitOverride ?? 50 } });
+      const res = await call({
+        data: {
+          idToken,
+          statsPeriod: period,
+          limit: limitOverride ?? 50,
+          ...(environment ? { environment } : {}),
+          ...(release ? { release } : {}),
+        },
+      });
       if (!res.ok) {
         setError(res.error || 'Unknown error');
         setIssues([]);
