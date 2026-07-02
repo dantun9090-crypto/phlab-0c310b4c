@@ -235,9 +235,10 @@ export default function GoogleAdsTab() {
       <header className="mb-6">
         <h2 className="text-2xl font-bold text-white">Google Ads — Search Text Campaigns</h2>
         <p className="text-slate-400 text-sm mt-1">
-          Standard <strong className="text-white">Search text ads</strong> (Responsive Search Ads) — no Google Merchant Center required. Two campaigns targeting{' '}
-          <code className="text-emerald-400">/compound</code> and{' '}
-          <code className="text-emerald-400">/landing/phlabs</code>. Download CSVs and import via{' '}
+          Standard <strong className="text-white">Search text ads</strong> (Responsive Search Ads) — no Google Merchant Center required. Three campaigns targeting{' '}
+          <code className="text-emerald-400">/compound</code>,{' '}
+          <code className="text-emerald-400">/landing/phlabs</code> and{' '}
+          <code className="text-emerald-400">/research</code>. Download CSVs and import via{' '}
           Google Ads Editor → File → Import → Choose file. All campaigns ship PAUSED — review and enable.
         </p>
       </header>

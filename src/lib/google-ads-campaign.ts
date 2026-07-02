@@ -1,11 +1,12 @@
 /**
  * PH Labs — Professional Google Ads Search Campaigns (UK)
  *
- * Two production-ready campaigns, one per landing page:
+ * Three production-ready campaigns, one per landing page:
  *   1. "PH Labs — Compound (Research Standards) UK"  → /compound
  *   2. "PH Labs — Editorial Lab Supply UK"           → /landing/phlabs
+ *   3. "PH Labs — Research Standards UK"             → /research
  *
- * Both are policy-safe: no molecule names, no medical claims, no dose words.
+ * All are policy-safe: no molecule names, no medical claims, no dose words.
  * Generate Google Ads Editor CSVs via `buildAdsEditorCsvs()` below and import
  * directly into Google Ads Editor → File → Import.
  */
@@ -235,7 +236,7 @@ export const CAMPAIGN_EDITORIAL: Campaign = {
     { text: 'Quality Control', desc1: 'Batch documentation', desc2: 'Verified per order', url: 'https://phlabs.co.uk/landing/phlabs#qc' },
     { text: 'About PH Labs', desc1: 'UK laboratory team', desc2: 'Institution trusted', url: 'https://phlabs.co.uk/about' },
     { text: 'Research Catalogue', desc1: 'Browse standards', desc2: 'Reference standards', url: 'https://phlabs.co.uk/products' },
-    { text: 'Contact', desc1: 'Lab procurement', desc2: 'Bulk enquiries welcome', url: 'https://phlabs.co.uk/contact' },
+    { text: 'Contact', desc1: 'Lab sourcing', desc2: 'Bulk enquiries welcome', url: 'https://phlabs.co.uk/contact' },
   ],
   adGroups: [
     {
@@ -252,13 +253,13 @@ export const CAMPAIGN_EDITORIAL: Campaign = {
         'PH Labs UK', 'Research Use Only', 'Lab-Grade Standards',
         'UK Dispatch Daily', 'Editorial Lab Supply', 'Documented Batches',
         'Royal Mail Tracked', 'For Qualified Labs', 'Premium UK Stock',
-        'Lab Procurement UK', 'Verified UK Supplier', 'Research Grade Only',
+        'Lab Sourcing UK', 'Verified UK Supplier', 'Research Grade Only',
       ],
       descriptions: [
         'Editorial laboratory supply from a UK-based research stockist. Full documentation on every batch.',
         'PH Labs supplies UK research institutions, universities and private labs. Research use only.',
         'Premium-grade reference standards and reagents. UK preparation, UK dispatch, tracked delivery.',
-        'Trusted laboratory supplier — institution accounts and bulk procurement welcome.',
+        'Trusted laboratory supplier — institution accounts and bulk orders welcome.',
       ],
     },
     {
@@ -306,7 +307,101 @@ export const CAMPAIGN_EDITORIAL: Campaign = {
   ],
 };
 
-export const CAMPAIGNS: Campaign[] = [CAMPAIGN_COMPOUND, CAMPAIGN_EDITORIAL];
+// ─── Campaign 3 — /research ────────────────────────────────────────────────
+export const CAMPAIGN_RESEARCH: Campaign = {
+  id: 'phlabs-research-uk',
+  name: 'PH Labs — Research Standards UK',
+  status: 'PAUSED',
+  network: 'Search Network Only',
+  locations: ['United Kingdom'],
+  languages: ['English'],
+  bidStrategy: 'Manual CPC',
+  dailyBudget: 30,
+  landingPage: 'https://phlabs.co.uk/research',
+  trackingTemplate: UTM_TEMPLATE,
+  negativeKeywords: NEGATIVE_KEYWORDS,
+  callouts: CALLOUTS,
+  structuredSnippets: STRUCTURED_SNIPPETS,
+  sitelinks: [
+    { text: 'Quality Control', desc1: 'Batch docs & verification', desc2: 'Full traceability per order', url: 'https://phlabs.co.uk/quality-control' },
+    { text: 'Research Catalogue', desc1: 'Browse reference standards', desc2: 'Full UK lab range', url: 'https://phlabs.co.uk/products' },
+    { text: 'About PH Labs', desc1: 'UK-based lab supply', desc2: 'Trusted by institutions', url: 'https://phlabs.co.uk/about' },
+    { text: 'Contact', desc1: 'Speak to our team', desc2: 'Bulk & institution enquiries', url: 'https://phlabs.co.uk/contact' },
+  ],
+  adGroups: [
+    {
+      name: 'AG01 — Research Standards UK',
+      maxCpc: 0.70,
+      keywords: [
+        '"research standards uk"', '"laboratory standards uk"',
+        '"analytical research standards"', '"uk research standards"',
+        '"scientific standards uk"', '"reference standards research"',
+        '"lab standards uk"', '[research standards uk]',
+        '[laboratory standards uk]',
+      ],
+      headlines: [
+        'Research Standards UK', 'Laboratory Standards', 'UK Research Supply',
+        'Analytical Standards', 'For Research Use Only', 'Scientific Grade UK',
+        'Institution Trusted', 'Batch Docs Included', 'UK Lab Stock',
+        'High-Purity Standards', 'Research Grade Only', 'Verified UK Supply',
+        'Professional Labs UK', 'Controlled Preparation', 'Documented Standards',
+      ],
+      descriptions: [
+        'Analytical standards prepared under UK lab conditions. Full batch documentation supplied.',
+        'Trusted by UK academic and commercial labs. Scientific-grade materials for qualified researchers.',
+        'Every standard has traceability records and certificates. UK preparation, tracked delivery.',
+        'Professional lab standards for research use. Full docs, institution supply only.',
+      ],
+    },
+    {
+      name: 'AG02 — UK Lab Research Materials',
+      maxCpc: 0.60,
+      keywords: [
+        '"lab research materials uk"', '"research materials uk"',
+        '"laboratory research uk"', '"uk lab research supply"',
+        '"scientific research materials"', '[lab research materials uk]',
+        '[research materials uk]',
+      ],
+      headlines: [
+        'Lab Research Materials', 'UK Research Supply', 'Scientific Materials',
+        'Research Lab Stock UK', 'For Research Use Only', 'Institution-Grade Stock',
+        'Professional Lab UK', 'Batch Verified Supply', 'UK Laboratory Stock',
+        'Research Grade Only', 'Tracked UK Delivery', 'Controlled UK Dispatch',
+        'Lab Sourcing UK', 'High-Purity Materials', 'Documented Batches',
+      ],
+      descriptions: [
+        'Research materials for UK labs. Professional-grade with full documentation included.',
+        'From analytical standards to lab reagents — everything UK labs need. Fast tracked dispatch.',
+        'Supplied to universities and private labs. Scientific research use only.',
+        'UK-based prep and stock. Every batch verified with docs for qualified teams.',
+      ],
+    },
+    {
+      name: 'AG03 — Analytical Research UK',
+      maxCpc: 0.65,
+      keywords: [
+        '"analytical research uk"', '"analytical lab research"',
+        '"research analytical uk"', '"uk analytical standards"',
+        '"analytical research materials"', '[analytical research uk]',
+      ],
+      headlines: [
+        'Analytical Research UK', 'UK Analytical Supply', 'Research Grade Only',
+        'Lab Analysis Materials', 'For Research Use Only', 'Scientific Analysis UK',
+        'Institution-Grade Stock', 'Batch Docs Included', 'UK Laboratory Supply',
+        'High-Purity Research', 'Professional Labs UK', 'Controlled Preparation',
+        'Analytical Standards', 'Verified UK Supply', 'Tracked UK Delivery',
+      ],
+      descriptions: [
+        'Analytical-grade research materials for UK labs. Full docs and batch traceability.',
+        'Prepared under controlled lab conditions for qualified academic and commercial use.',
+        'Every lot supplied with certificates and traceability. UK prep, fast dispatch.',
+        'Professional analytical standards for research use only. UK-based institution supply.',
+      ],
+    },
+  ],
+};
+
+export const CAMPAIGNS: Campaign[] = [CAMPAIGN_COMPOUND, CAMPAIGN_EDITORIAL, CAMPAIGN_RESEARCH];
 
 // ─── CSV builders for Google Ads Editor ───────────────────────────────────
 // Format: Google Ads Editor accepts simple CSV with one row per entity.
