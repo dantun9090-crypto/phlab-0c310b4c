@@ -209,7 +209,7 @@ function UkResearchStore() {
 
       {/* TRUST STRIP */}
       <section className="border-y border-slate-800 bg-slate-900/40">
-        <div className="mx-auto max-w-6xl px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           {[
             { k: "UK", v: "Prepared & dispatched" },
             { k: "≥ 99%", v: "Analytical purity" },
@@ -229,7 +229,7 @@ function UkResearchStore() {
       </section>
 
       {/* WHY PH LABS */}
-      <section className="mx-auto max-w-6xl px-6 py-20">
+      <section className="mx-auto max-w-6xl px-4 sm:px-6 py-16 md:py-20">
         <div className="max-w-2xl">
           <p className="text-[11px] uppercase tracking-[0.5em] text-emerald-400">
             Why PH Labs
@@ -299,7 +299,7 @@ function UkResearchStore() {
 
       {/* SOCIAL PROOF */}
       <section className="border-y border-slate-800 bg-gradient-to-b from-slate-900/60 to-slate-950">
-        <div className="mx-auto max-w-4xl px-6 py-16 text-center">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 py-14 md:py-16 text-center">
           <p className="text-[11px] uppercase tracking-[0.5em] text-emerald-400">
             Researcher feedback
           </p>
@@ -316,7 +316,7 @@ function UkResearchStore() {
       </section>
 
       {/* FAQ */}
-      <section className="mx-auto max-w-4xl px-6 py-20">
+      <section className="mx-auto max-w-4xl px-4 sm:px-6 py-16 md:py-20">
         <p className="text-[11px] uppercase tracking-[0.5em] text-emerald-400 text-center">
           Questions
         </p>
@@ -349,7 +349,7 @@ function UkResearchStore() {
       <section className="relative overflow-hidden border-y border-emerald-500/20">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-slate-950 to-slate-950" />
         <div className="absolute -top-20 left-1/2 -translate-x-1/2 h-[400px] w-[600px] rounded-full bg-emerald-500/10 blur-[120px]" />
-        <div className="relative mx-auto max-w-5xl px-6 py-16 text-center">
+        <div className="relative mx-auto max-w-5xl px-4 sm:px-6 py-14 md:py-16 text-center">
           <p className="text-[11px] uppercase tracking-[0.5em] text-emerald-400">
             Ready to order
           </p>
@@ -379,7 +379,7 @@ function UkResearchStore() {
 
       {/* DISCLAIMER */}
       <section className="py-16">
-        <div className="mx-auto max-w-3xl px-6 text-center">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 text-center">
           <p className="text-[11px] uppercase tracking-[0.5em] text-emerald-400">Legal</p>
           <h2 className="mt-3 text-2xl font-semibold text-white">
             Research use disclaimer
