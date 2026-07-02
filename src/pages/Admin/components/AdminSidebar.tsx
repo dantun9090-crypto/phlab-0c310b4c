@@ -130,6 +130,7 @@ const navGroups = [
       { id: 'purgeincidents', label: 'Purge Incidents', icon: Activity },
       { id: 'swtelemetrydebug', label: 'SW Telemetry Debug', icon: Activity },
       { id: 'monitorlog', label: 'Monitor Log (HEAD/GET)', icon: Activity },
+      { id: 'sentryissues', label: 'Sentry Issues', icon: AlertTriangle },
     ],
   },
 ];
