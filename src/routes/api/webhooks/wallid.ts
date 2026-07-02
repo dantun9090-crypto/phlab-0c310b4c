@@ -81,6 +81,7 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
     handlers: {
       GET: async () => textResp("Method Not Allowed", 405),
       POST: async ({ request }) => {
+        const receivedAt = new Date().toISOString();
         const limited = await enforceRateLimit(request, "/api/webhooks/wallid", {
           limit: 20,
           windowMs: 60_000,
@@ -88,10 +89,36 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
         });
         if (limited) return limited;
 
+        const ip = getClientIp(request);
+        const ts = request.headers.get("x-webhook-timestamp") || "";
+        const sig = request.headers.get("x-webhook-signature") || "";
+        const eventId = request.headers.get("x-wallid-event-id") || request.headers.get("x-webhook-event-id") || "";
+        const eventCount = Number(request.headers.get("x-webhook-event-count") || 0);
+        const userAgent = request.headers.get("user-agent") || "";
+        const contentLength = Number(request.headers.get("content-length") || 0);
+
+        // Top-of-handler structured log — captures EVERY inbound POST so we
+        // can prove delivery (or its absence) in the log query later.
+        // Signature is truncated so the raw header value doesn't sit in logs
+        // in full; the truncated prefix is enough to correlate with Wallid's
+        // delivery dashboard.
+        console.log("[Wallid webhook] rcv", {
+          route: "/api/webhooks/wallid",
+          receivedAt,
+          ip,
+          userAgent: userAgent.slice(0, 120),
+          ts,
+          sigPrefix: sig.slice(0, 12),
+          eventId,
+          eventCount,
+          contentLength,
+        });
+
         const secret = process.env.WALLID_WEBHOOK_SECRET;
         if (!secret) {
-          console.error("[Wallid webhook] WALLID_WEBHOOK_SECRET missing");
-          return textResp("Server misconfigured", 500);
+          // Do NOT return 500 — Wallid backs off on 5xx. 503+Retry-After
+          // asks for a normal retry while we alert on the config gap.
+          return retryableResp("WALLID_WEBHOOK_SECRET missing");
         }
 
         let rawBody = "";
@@ -100,11 +127,6 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
         } catch {
           return textResp("Invalid body", 400);
         }
-
-        const ts = request.headers.get("x-webhook-timestamp") || "";
-        const sig = request.headers.get("x-webhook-signature") || "";
-        const eventCount = Number(request.headers.get("x-webhook-event-count") || 0);
-        const ip = getClientIp(request);
 
         const tsNum = Number(ts);
         if (!ts || !Number.isFinite(tsNum)) {
@@ -116,7 +138,23 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
 
         const ok = await verifyHmacSignature(`${ts}.${rawBody}`, sig, secret);
         if (!ok) {
-          console.warn("[Wallid webhook /api/webhooks/wallid] Invalid signature", { ip, eventCount });
+          // Log truncated expected + received so mismatches can be diagnosed
+          // without leaking the shared secret. Both values are one-way hashes.
+          let expectedPrefix = "";
+          try {
+            expectedPrefix = (await computeHmacHex(`${ts}.${rawBody}`, secret)).slice(0, 12);
+          } catch { /* ignore */ }
+          const receivedPrefix = (sig.startsWith("sha256=") ? sig.slice(7) : sig).slice(0, 12);
+          console.warn("[Wallid webhook] INVALID_SIGNATURE", {
+            route: "/api/webhooks/wallid",
+            ip,
+            ts,
+            eventId,
+            eventCount,
+            receivedPrefix,
+            expectedPrefix,
+            bodyLen: rawBody.length,
+          });
           return textResp("Invalid signature", 400);
         }
 
@@ -129,12 +167,15 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
         }
         const events = Array.isArray(body.events) ? body.events : [];
 
-        console.log("[Wallid webhook /api/webhooks/wallid]", {
+        console.log("[Wallid webhook] verified", {
           ts,
           ip,
           eventCount,
           firstEventId: events[0]?.event_id || events[0]?.id || null,
+          firstStatus: events[0]?.status || events[0]?.type || null,
+          firstPaymentId: events[0]?.api_payment_id || events[0]?.apiPaymentId || null,
         });
+
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
