@@ -39,6 +39,26 @@ function timingSafeEqualBytes(a: Uint8Array, b: Uint8Array): boolean {
 }
 
 /**
+ * Compute the raw HMAC-SHA256 hex digest of `rawBody` under `secret`.
+ * Exposed so webhook handlers can log a TRUNCATED prefix of both the
+ * expected and received signatures when verification fails, without ever
+ * leaking the shared secret. The digest itself is safe to log (it is a
+ * one-way hash of the request body under a secret we control).
+ */
+export async function computeHmacHex(rawBody: string, secret: string): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sigBuf = await crypto.subtle.sign("HMAC", key, enc.encode(rawBody));
+  return bytesToHex(sigBuf);
+}
+
+/**
  * Verify an HMAC-SHA256 signature for a raw webhook body.
  *
  * @param rawBody    The exact request body bytes, as a string.
@@ -56,15 +76,8 @@ export async function verifyHmacSignature(
   const providedBytes = hexToBytes(provided);
   if (providedBytes.length === 0) return false;
 
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sigBuf = await crypto.subtle.sign("HMAC", key, enc.encode(rawBody));
-  const expectedBytes = hexToBytes(bytesToHex(sigBuf));
+  const expectedHex = await computeHmacHex(rawBody, secret);
+  const expectedBytes = hexToBytes(expectedHex);
   return timingSafeEqualBytes(providedBytes, expectedBytes);
 }
+
