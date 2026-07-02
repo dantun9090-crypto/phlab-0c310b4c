@@ -90,50 +90,75 @@ test.describe("/uk-research-store visual + spacing", () => {
     });
   });
 
-  test("all paddings/margins/gaps snap to the 4px grid", async ({ page, context }) => {
-    await prepare(page, context);
-    await page.setViewportSize({ width: 1280, height: 1800 });
-    await loadPage(page);
+  // Grid assertions run at BOTH breakpoints — mobile-only overrides
+  // (e.g. `md:py-20` shrinking to a mobile `py-3.5`) would otherwise
+  // slip past a desktop-only check.
+  const BREAKPOINTS = [
+    { label: "mobile 400", width: 400, height: 900 },
+    { label: "desktop 1280", width: 1280, height: 1800 },
+  ] as const;
 
-    // Primary CTA buttons — the previous py-3.5 (14px) offender lived here.
-    const buttons = page.locator("a.inline-flex");
-    const count = await buttons.count();
-    expect(count).toBeGreaterThan(0);
-    for (let i = 0; i < count; i++) {
-      const box = buttons.nth(i);
-      if (!(await box.isVisible())) continue;
-      const { pt, pb, pl, pr } = await box.evaluate((el) => {
-        const s = getComputedStyle(el as HTMLElement);
-        return { pt: s.paddingTop, pb: s.paddingBottom, pl: s.paddingLeft, pr: s.paddingRight };
-      });
-      assertOnGrid(`button[${i}] padding-top`, pt);
-      assertOnGrid(`button[${i}] padding-bottom`, pb);
-      assertOnGrid(`button[${i}] padding-left`, pl);
-      assertOnGrid(`button[${i}] padding-right`, pr);
-    }
+  for (const bp of BREAKPOINTS) {
+    test(`4px grid — ${bp.label}`, async ({ page, context }) => {
+      await prepare(page, context);
+      await page.setViewportSize({ width: bp.width, height: bp.height });
+      await loadPage(page);
 
-    // Every <section> — vertical rhythm must stay on the grid.
-    const sections = page.locator("main > section");
-    const sCount = await sections.count();
-    expect(sCount).toBeGreaterThan(3);
-    for (let i = 0; i < sCount; i++) {
-      const { pt, pb } = await sections.nth(i).evaluate((el) => {
-        const s = getComputedStyle(el as HTMLElement);
-        return { pt: s.paddingTop, pb: s.paddingBottom };
-      });
-      assertOnGrid(`section[${i}] padding-top`, pt);
-      assertOnGrid(`section[${i}] padding-bottom`, pb);
-    }
+      // Primary CTA buttons — previous py-3.5 (14px) offender lived here.
+      const buttons = page.locator("a.inline-flex");
+      const count = await buttons.count();
+      expect(count).toBeGreaterThan(0);
+      for (let i = 0; i < count; i++) {
+        const box = buttons.nth(i);
+        if (!(await box.isVisible())) continue;
+        const { pt, pb, pl, pr } = await box.evaluate((el) => {
+          const s = getComputedStyle(el as HTMLElement);
+          return { pt: s.paddingTop, pb: s.paddingBottom, pl: s.paddingLeft, pr: s.paddingRight };
+        });
+        assertOnGrid(`[${bp.label}] button[${i}] padding-top`, pt);
+        assertOnGrid(`[${bp.label}] button[${i}] padding-bottom`, pb);
+        assertOnGrid(`[${bp.label}] button[${i}] padding-left`, pl);
+        assertOnGrid(`[${bp.label}] button[${i}] padding-right`, pr);
+      }
 
-    // Hero benefit-list items — the previous mt-0.5 (2px) offender lived on
-    // the checkmark icons inside these <li>s.
-    const bullets = page.locator("main ul li");
-    const bCount = await bullets.count();
-    for (let i = 0; i < Math.min(bCount, 8); i++) {
-      const svg = bullets.nth(i).locator("svg").first();
-      if (!(await svg.count())) continue;
-      const mt = await svg.evaluate((el) => getComputedStyle(el as SVGElement).marginTop);
-      assertOnGrid(`bullet[${i}] svg margin-top`, mt);
-    }
-  });
+      // Every <section> — vertical rhythm must stay on the grid.
+      const sections = page.locator("main > section");
+      const sCount = await sections.count();
+      expect(sCount).toBeGreaterThan(3);
+      for (let i = 0; i < sCount; i++) {
+        const { pt, pb, pl, pr } = await sections.nth(i).evaluate((el) => {
+          const s = getComputedStyle(el as HTMLElement);
+          return { pt: s.paddingTop, pb: s.paddingBottom, pl: s.paddingLeft, pr: s.paddingRight };
+        });
+        assertOnGrid(`[${bp.label}] section[${i}] padding-top`, pt);
+        assertOnGrid(`[${bp.label}] section[${i}] padding-bottom`, pb);
+        assertOnGrid(`[${bp.label}] section[${i}] padding-left`, pl);
+        assertOnGrid(`[${bp.label}] section[${i}] padding-right`, pr);
+      }
+
+      // Grid/flex gaps — column-gap and row-gap must both stay on the grid.
+      const gapNodes = page.locator("main .grid, main .flex");
+      const gCount = await gapNodes.count();
+      for (let i = 0; i < gCount; i++) {
+        const el = gapNodes.nth(i);
+        if (!(await el.isVisible())) continue;
+        const { cg, rg } = await el.evaluate((n) => {
+          const s = getComputedStyle(n as HTMLElement);
+          return { cg: s.columnGap, rg: s.rowGap };
+        });
+        if (cg && cg !== "normal" && cg !== "0px") assertOnGrid(`[${bp.label}] gap[${i}] column-gap`, cg);
+        if (rg && rg !== "normal" && rg !== "0px") assertOnGrid(`[${bp.label}] gap[${i}] row-gap`, rg);
+      }
+
+      // Hero benefit-list checkmarks — previous mt-0.5 (2px) offender.
+      const bullets = page.locator("main ul li");
+      const bCount = await bullets.count();
+      for (let i = 0; i < Math.min(bCount, 8); i++) {
+        const svg = bullets.nth(i).locator("svg").first();
+        if (!(await svg.count())) continue;
+        const mt = await svg.evaluate((el) => getComputedStyle(el as SVGElement).marginTop);
+        assertOnGrid(`[${bp.label}] bullet[${i}] svg margin-top`, mt);
+      }
+    });
+  }
 });
