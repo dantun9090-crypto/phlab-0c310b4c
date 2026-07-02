@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import { auth } from '@/lib/firebase';
-import { fetchSentryIssues } from '@/lib/sentry-issues.functions';
-import { AlertTriangle, ExternalLink, RefreshCw } from 'lucide-react';
+import { fetchSentryIssues, fetchSentryIssueDetails } from '@/lib/sentry-issues.functions';
+import { AlertTriangle, ExternalLink, RefreshCw, X } from 'lucide-react';
 
 interface SentryIssue {
   id: string;
