@@ -108,7 +108,7 @@ function UkResearchStore() {
           />
         </div>
 
-        <div className="relative mx-auto max-w-6xl px-6 pt-14 pb-16 md:pt-20 md:pb-24 grid md:grid-cols-2 gap-10 items-center">
+        <div className="relative mx-auto max-w-6xl px-4 sm:px-6 pt-12 pb-14 md:pt-20 md:pb-24 grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] uppercase tracking-[0.3em] text-emerald-300">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
