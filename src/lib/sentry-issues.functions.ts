@@ -21,6 +21,7 @@ async function requireAdmin(idToken: string): Promise<void> {
 
 // DSN project id → 4511662778286160 (from src/lib/sentry.ts)
 const DEFAULT_PROJECT_ID = "4511662778286160";
+const DEFAULT_PROJECT_SLUG = "javascript-react";
 
 async function sentryFetch(path: string, token: string): Promise<any> {
   const res = await fetch(`https://sentry.io/api/0${path}`, {
@@ -38,6 +39,23 @@ async function sentryFetch(path: string, token: string): Promise<any> {
   }
 }
 
+
+async function resolveOrgSlug(token: string): Promise<string> {
+  // Prefer /organizations/ (works even when token lacks broad project:read).
+  try {
+    const orgs: Array<{ slug: string }> = await sentryFetch("/organizations/", token);
+    if (Array.isArray(orgs) && orgs[0]?.slug) return orgs[0].slug;
+  } catch {
+    /* fall through */
+  }
+  // Fallback: derive from /projects/
+  const projects: Array<{ id: string; organization?: { slug?: string } }> =
+    await sentryFetch("/projects/", token);
+  const match = projects.find((p) => String(p.id) === DEFAULT_PROJECT_ID) || projects[0];
+  if (!match?.organization?.slug) throw new Error("Could not resolve Sentry organization slug.");
+  return match.organization.slug;
+}
+
 export const fetchSentryIssues = createServerFn({ method: "POST" })
   .validator((d) => IdTokenSchema.parse(d))
   .handler(async ({ data }) => {
@@ -49,29 +67,14 @@ export const fetchSentryIssues = createServerFn({ method: "POST" })
     const statsPeriod = data.statsPeriod || "24h";
     const limit = data.limit || 25;
 
-    // Discover org + project slug from token
     let orgSlug = "";
-    let projectSlug = "";
+    const projectSlug = DEFAULT_PROJECT_SLUG;
     try {
-      const projects: Array<{
-        id: string;
-        slug: string;
-        organization?: { slug?: string };
-      }> = await sentryFetch("/projects/", token);
-      const match =
-        projects.find((p) => String(p.id) === DEFAULT_PROJECT_ID) || projects[0];
-      if (!match) {
-        return { ok: false, error: "Sentry token has no accessible projects." };
-      }
-      orgSlug = match.organization?.slug || "";
-      projectSlug = match.slug;
-      if (!orgSlug) {
-        return { ok: false, error: "Could not resolve Sentry organization slug." };
-      }
+      orgSlug = await resolveOrgSlug(token);
     } catch (err) {
       return {
         ok: false,
-        error: `Discovery failed: ${err instanceof Error ? err.message : String(err)}`,
+        error: `Org discovery failed: ${err instanceof Error ? err.message : String(err)}`,
       };
     }
 
@@ -129,14 +132,8 @@ export const fetchSentryFilters = createServerFn({ method: "POST" })
     if (!token) return { ok: false as const, error: "SENTRY_AUTH_TOKEN not configured on server." };
 
     try {
-      const projects: Array<{ id: string; slug: string; organization?: { slug?: string } }> =
-        await sentryFetch("/projects/", token);
-      const match = projects.find((p) => String(p.id) === DEFAULT_PROJECT_ID) || projects[0];
-      if (!match?.organization?.slug) {
-        return { ok: false as const, error: "Could not resolve Sentry organization." };
-      }
-      const orgSlug = match.organization.slug;
-      const projectSlug = match.slug;
+      const orgSlug = await resolveOrgSlug(token);
+      const projectSlug = DEFAULT_PROJECT_SLUG;
 
       const [envs, releases] = await Promise.all([
         sentryFetch(`/projects/${orgSlug}/${projectSlug}/environments/`, token).catch(() => []),
