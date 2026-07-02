@@ -21,14 +21,37 @@ interface SentryIssue {
 export default function SentryIssuesTab() {
   const call = useServerFn(fetchSentryIssues);
   const callDetails = useServerFn(fetchSentryIssueDetails);
+  const callFilters = useServerFn(fetchSentryFilters);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [issues, setIssues] = useState<SentryIssue[]>([]);
   const [meta, setMeta] = useState<{ orgSlug?: string; projectSlug?: string; statsPeriod?: string } | null>(null);
   const [period, setPeriod] = useState('24h');
+  const [environment, setEnvironment] = useState<string>('');
+  const [release, setRelease] = useState<string>('');
+  const [envOptions, setEnvOptions] = useState<string[]>([]);
+  const [releaseOptions, setReleaseOptions] = useState<Array<{ version: string; shortVersion: string }>>([]);
+  const [filtersLoading, setFiltersLoading] = useState(false);
   const [detail, setDetail] = useState<any | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
+
+  async function loadFilters() {
+    setFiltersLoading(true);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Not signed in.');
+      const res = await callFilters({ data: { idToken } });
+      if (res.ok) {
+        setEnvOptions(res.environments);
+        setReleaseOptions(res.releases);
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setFiltersLoading(false);
+    }
+  }
 
   async function openDetails(issueId: string) {
     setDetail({ __placeholder: true, id: issueId });
