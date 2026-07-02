@@ -324,7 +324,7 @@ export default function SentryIssuesTab() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: React.ReactNode }) {
+function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="bg-slate-950 border border-slate-800 rounded-lg p-2">
       <div className="text-[10px] uppercase tracking-wide text-slate-500">{label}</div>
