@@ -21,8 +21,16 @@ export class ErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error: Error) {
+  componentDidCatch(error: Error, info: { componentStack?: string | null }) {
     if (isHydrationMismatchError(error)) markHydrationError();
+    // Ship to Sentry with the React component stack for release-context alerts.
+    try {
+      Sentry.withScope((scope) => {
+        scope.setTag('boundary', 'root');
+        if (info?.componentStack) scope.setContext('react', { componentStack: info.componentStack });
+        Sentry.captureException(error);
+      });
+    } catch { /* never break */ }
     // Detailed logging to Firestore securityEvents (fire-and-forget).
     try {
       logSecurityEvent({
