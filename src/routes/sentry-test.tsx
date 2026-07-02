@@ -22,18 +22,26 @@ function SentryTestPage() {
         </p>
         <button
           onClick={() => {
-            // Log + metric first so the event shows breadcrumbs.
+            const err = new Error(
+              "Sentry test error @ " + new Date().toISOString()
+            );
+            // 1) Explicit capture — guaranteed delivery even if globals miss it.
             try {
-              (Sentry as unknown as { logger?: { info: (m: string, d?: unknown) => void } })
-                .logger?.info?.("User triggered test error", {
-                  action: "test_error_button_click",
-                });
-              (Sentry as unknown as { metrics?: { count: (n: string, v: number) => void } })
-                .metrics?.count?.("test_counter", 1);
-            } catch {
-              /* ignore — old SDK versions */
+              const eventId = Sentry.captureException(err, {
+                tags: { source: "sentry-test-button" },
+              });
+              Sentry.captureMessage("Sentry test button clicked", "info");
+              // eslint-disable-next-line no-console
+              console.info("[sentry-test] captured", eventId);
+            } catch (e) {
+              console.error("[sentry-test] captureException failed", e);
             }
-            throw new Error("This is your first error!");
+            // 2) Also throw async so Sentry's window.onerror handler fires
+            //    (throws inside React synthetic onClick are swallowed).
+            setTimeout(() => {
+              throw err;
+            }, 0);
+            alert("Sent to Sentry. Check your dashboard in ~10 seconds.");
           }}
           className="px-6 py-3 rounded-lg bg-red-600 hover:bg-red-700 font-medium"
         >
