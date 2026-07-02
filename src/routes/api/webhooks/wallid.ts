@@ -16,7 +16,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
-import { verifyHmacSignature } from "@/lib/webhook-signature";
+import { verifyHmacSignature, computeHmacHex } from "@/lib/webhook-signature";
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
 
 interface WallidEvent {
@@ -47,12 +47,25 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-function textResp(body: string, status: number): Response {
+function textResp(body: string, status: number, extraHeaders?: Record<string, string>): Response {
   return new Response(body, {
     status,
-    headers: { "content-type": "text/plain", ...NO_STORE_HEADERS },
+    headers: { "content-type": "text/plain", ...NO_STORE_HEADERS, ...(extraHeaders || {}) },
   });
 }
+
+/**
+ * Retryable error response. Uses HTTP 503 + `Retry-After` so Wallid retries
+ * the delivery on their normal schedule instead of applying the
+ * exponential-backoff / circuit-breaker most vendors trigger on 5xx.
+ * NEVER return a bare 500 from this route: it can silence webhook
+ * delivery entirely, which is exactly the failure mode we hit on 23 Jun.
+ */
+function retryableResp(reason: string): Response {
+  console.error("[Wallid webhook] retryable failure ->", reason);
+  return textResp("Try again later", 503, { "retry-after": "30" });
+}
+
 
 function normaliseStatus(s: string | undefined): "SUCCESS" | "FAILED" | "EXPIRED" | "PENDING" | "OTHER" {
   const u = String(s || "").toUpperCase();
