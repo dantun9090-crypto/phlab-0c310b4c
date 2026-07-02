@@ -136,7 +136,7 @@ function UkResearchStore() {
               ].map((b) => (
                 <li key={b} className="flex items-start gap-2 text-slate-200">
                   <svg
-                    className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-400"
+                    className="mt-1 h-4 w-4 flex-shrink-0 text-emerald-400"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="3"
@@ -152,14 +152,14 @@ function UkResearchStore() {
             <div className="mt-9 flex flex-wrap gap-3">
               <Link
                 to="/products"
-                className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-semibold transition-all shadow-[0_20px_50px_-15px_rgba(16,185,129,0.6)] hover:shadow-[0_25px_60px_-15px_rgba(16,185,129,0.8)] hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 px-7 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-semibold transition-all shadow-[0_20px_50px_-15px_rgba(16,185,129,0.6)] hover:shadow-[0_25px_60px_-15px_rgba(16,185,129,0.8)] hover:-translate-y-0.5"
               >
                 Browse Catalogue
                 <span aria-hidden>→</span>
               </Link>
               <Link
                 to="/quality-control"
-                className="inline-flex items-center px-7 py-3.5 rounded-xl border border-slate-700 bg-slate-900/60 backdrop-blur hover:border-emerald-500/50 hover:bg-slate-900 text-white text-sm font-semibold transition-colors"
+                className="inline-flex items-center px-7 py-4 rounded-xl border border-slate-700 bg-slate-900/60 backdrop-blur hover:border-emerald-500/50 hover:bg-slate-900 text-white text-sm font-semibold transition-colors"
               >
                 Quality Standards
               </Link>
@@ -197,7 +197,7 @@ function UkResearchStore() {
                       <dt className="text-slate-400 text-[10px] uppercase tracking-[0.2em]">
                         {d.k}
                       </dt>
-                      <dd className="mt-1.5 font-medium text-white">{d.v}</dd>
+                      <dd className="mt-2 font-medium text-white">{d.v}</dd>
                     </div>
                   ))}
                 </dl>
@@ -363,13 +363,13 @@ function UkResearchStore() {
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link
               to="/products"
-              className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-semibold transition-all shadow-[0_20px_50px_-15px_rgba(16,185,129,0.6)] hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-semibold transition-all shadow-[0_20px_50px_-15px_rgba(16,185,129,0.6)] hover:-translate-y-0.5"
             >
               View Catalogue <span aria-hidden>→</span>
             </Link>
             <Link
               to="/contact"
-              className="inline-flex items-center px-8 py-3.5 rounded-xl border border-slate-700 bg-slate-900/60 backdrop-blur hover:border-emerald-500/50 hover:bg-slate-900 text-white text-sm font-semibold transition-colors"
+              className="inline-flex items-center px-8 py-4 rounded-xl border border-slate-700 bg-slate-900/60 backdrop-blur hover:border-emerald-500/50 hover:bg-slate-900 text-white text-sm font-semibold transition-colors"
             >
               Contact the Team
             </Link>
