@@ -65,38 +65,33 @@ function assertOnGrid(label: string, value: string, grid = 4) {
 }
 
 test.describe("/uk-research-store visual + spacing", () => {
-  test("desktop 1280 — full page snapshot", async ({ page, context }) => {
-    test.use({ viewport: { width: 1280, height: 1800 }, deviceScaleFactor: 1 });
-    await prepare(page, context);
-    await page.setViewportSize({ width: 1280, height: 1800 });
-    await loadPage(page);
-
-    await expect(page).toHaveScreenshot("uk-research-store-desktop.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-      threshold: 0.25,
-    });
-  });
-
-  test("mobile 400 — full page snapshot", async ({ page, context }) => {
-    await prepare(page, context);
-    await page.setViewportSize({ width: 400, height: 900 });
-    await loadPage(page);
-
-    await expect(page).toHaveScreenshot("uk-research-store-mobile.png", {
-      fullPage: true,
-      maxDiffPixelRatio: 0.02,
-      threshold: 0.25,
-    });
-  });
-
-  // Grid assertions run at BOTH breakpoints — mobile-only overrides
-  // (e.g. `md:py-20` shrinking to a mobile `py-3.5`) would otherwise
-  // slip past a desktop-only check.
+  // Single source of truth for viewports used by BOTH the pixel snapshots
+  // and the 4px-grid assertions. Add a viewport here and it flows into
+  // every check automatically.
   const BREAKPOINTS = [
-    { label: "mobile 400", width: 400, height: 900 },
-    { label: "desktop 1280", width: 1280, height: 1800 },
+    { label: "mobile 400", slug: "mobile", width: 400, height: 900 },
+    { label: "tablet 768", slug: "tablet", width: 768, height: 1400 },
+    { label: "desktop 1280", slug: "desktop", width: 1280, height: 1800 },
   ] as const;
+
+  for (const bp of BREAKPOINTS) {
+    test(`${bp.label} — full page snapshot`, async ({ page, context }) => {
+      await prepare(page, context);
+      await page.setViewportSize({ width: bp.width, height: bp.height });
+      await loadPage(page);
+
+      await expect(page).toHaveScreenshot(`uk-research-store-${bp.slug}.png`, {
+        fullPage: true,
+        maxDiffPixelRatio: 0.02,
+        threshold: 0.25,
+      });
+    });
+  }
+
+  // Grid assertions run at EVERY breakpoint — mobile- or tablet-only
+  // overrides (e.g. `md:py-20` shrinking to `py-3.5` at <768px) would
+  // otherwise slip past a desktop-only check.
+
 
   for (const bp of BREAKPOINTS) {
     test(`4px grid — ${bp.label}`, async ({ page, context }) => {
