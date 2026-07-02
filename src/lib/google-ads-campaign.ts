@@ -1,11 +1,12 @@
 /**
  * PH Labs — Professional Google Ads Search Campaigns (UK)
  *
- * Two production-ready campaigns, one per landing page:
+ * Three production-ready campaigns, one per landing page:
  *   1. "PH Labs — Compound (Research Standards) UK"  → /compound
  *   2. "PH Labs — Editorial Lab Supply UK"           → /landing/phlabs
+ *   3. "PH Labs — Research Standards UK"             → /research
  *
- * Both are policy-safe: no molecule names, no medical claims, no dose words.
+ * All are policy-safe: no molecule names, no medical claims, no dose words.
  * Generate Google Ads Editor CSVs via `buildAdsEditorCsvs()` below and import
  * directly into Google Ads Editor → File → Import.
  */
