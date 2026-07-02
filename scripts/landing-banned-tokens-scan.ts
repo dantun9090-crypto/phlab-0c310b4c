@@ -22,6 +22,7 @@ const FILES = [
   "src/components/LandingPromoStrip.tsx",
   "src/routes/_marketing.compound.tsx",
   "src/routes/landing.phlabs.tsx",
+  "src/routes/uk-research-store.tsx",
 ];
 
 // Bacteriostatic Water is intentionally allowed (laboratory reagent, not a peptide).
