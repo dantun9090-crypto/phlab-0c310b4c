@@ -239,7 +239,7 @@ function UkResearchStore() {
             <span className="text-emerald-400">reproducible research</span>.
           </h2>
         </div>
-        <div className="mt-12 grid md:grid-cols-3 gap-6">
+        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
               t: "Verified purity",
