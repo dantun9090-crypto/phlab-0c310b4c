@@ -19,7 +19,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
-import { verifyHmacSignature } from "@/lib/webhook-signature";
+import { verifyWallidSignature } from "@/lib/webhook-signature";
 import { NO_STORE_HEADERS } from "@/lib/no-store-headers";
 
 interface WallidEvent {
