@@ -18,7 +18,7 @@ import {
   computeHmacHex,
   verifyHmacSignature,
   verifyWallidSignature,
-} from "@/lib/webhook-signature";
+} from "../src/lib/webhook-signature";
 
 const SECRET = "test_secret_do_not_use_in_prod";
 const TS = "1751500000";
