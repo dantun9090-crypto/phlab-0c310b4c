@@ -136,7 +136,7 @@ function isLikelyIndexable(path: string): boolean {
     if (path === prefix || path.startsWith(prefix + "/")) return false;
   }
   // Skip obviously private/utility page routes we don't want in sitemap.
-  if (/^\/(install|request-catalog|privacy-requests|search)$/.test(path)) return false;
+  if (/^\/(install|request-catalog|privacy-requests|search|sentry-test)$/.test(path)) return false;
   return true;
 }
 
