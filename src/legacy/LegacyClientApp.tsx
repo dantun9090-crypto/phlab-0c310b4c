@@ -1,46 +1,39 @@
 import { useEffect, useState, type ComponentType } from "react";
-import { hardReload, isStaleChunkError } from "@/lib/recovery";
+import { safeDynamicImport } from "@/lib/dynamic-import";
+import { DynamicImportFallback } from "@/components/DynamicImportFallback";
 
 type LegacyAppComponent = ComponentType;
 
-function LegacyFallback() {
-  return null;
-}
-
 export default function LegacyClientApp() {
   const [LegacyApp, setLegacyApp] = useState<LegacyAppComponent | null>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    let alive = true;
+    const controller = new AbortController();
 
-    const load = (attempt: number): Promise<void> =>
-      import("./LegacyApp").then(
-        (module) => {
-          if (alive) setLegacyApp(() => module.default);
-        },
-        (err) => {
-          if (!alive) return;
-          if (isStaleChunkError(err)) {
-            if (attempt < 1) {
-              return new Promise<void>((resolve) => {
-                setTimeout(() => resolve(load(attempt + 1)), 400);
-              });
-            }
-            // Stale deploy — self-heal instead of throwing to onunhandledrejection.
-            void hardReload({ clean: true });
-            return;
-          }
-          // Non-stale failure: let Sentry pick it up but don't leave it as an
-          // unhandled rejection.
-          console.error("[LegacyClientApp] dynamic import failed", err);
-        },
-      );
+    void safeDynamicImport(() => import("./LegacyApp"), {
+      label: "LegacyApp",
+      maxRetries: 2,
+      backoffMs: 400,
+      signal: controller.signal,
+    }).then((outcome) => {
+      if (controller.signal.aborted) return;
+      if (outcome.ok) {
+        setLegacyApp(() => outcome.module.default);
+        return;
+      }
+      // "stale" already triggered hardReload; showing the fallback for the
+      // few ms before navigation is harmless. "aborted" only fires when the
+      // component unmounted, so state won't be set anyway.
+      if (outcome.reason === "failed" || outcome.reason === "stale") {
+        setFailed(true);
+      }
+    });
 
-    void load(0);
-    return () => {
-      alive = false;
-    };
+    return () => controller.abort();
   }, []);
 
-  return LegacyApp ? <LegacyApp /> : <LegacyFallback />;
+  if (LegacyApp) return <LegacyApp />;
+  if (failed) return <DynamicImportFallback label="LegacyApp" />;
+  return null;
 }
