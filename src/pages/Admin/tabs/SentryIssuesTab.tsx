@@ -131,6 +131,35 @@ export default function SentryIssuesTab() {
           <option value="14d">Last 14 days</option>
           <option value="30d">Last 30 days</option>
         </select>
+        <select
+          value={environment}
+          onChange={(e) => setEnvironment(e.target.value)}
+          className="bg-slate-800 border-2 border-slate-600 text-white rounded-lg px-3 py-2 min-h-[44px]"
+          title="Environment"
+        >
+          <option value="">All environments</option>
+          {envOptions.map((e) => (
+            <option key={e} value={e}>{e}</option>
+          ))}
+        </select>
+        <select
+          value={release}
+          onChange={(e) => setRelease(e.target.value)}
+          className="bg-slate-800 border-2 border-slate-600 text-white rounded-lg px-3 py-2 min-h-[44px] max-w-[220px]"
+          title="Release"
+        >
+          <option value="">All releases</option>
+          {releaseOptions.map((r) => (
+            <option key={r.version} value={r.version}>{r.shortVersion}</option>
+          ))}
+        </select>
+        <button
+          onClick={loadFilters}
+          disabled={filtersLoading}
+          className="text-xs text-slate-300 hover:text-white underline disabled:opacity-50"
+        >
+          {filtersLoading ? 'Loading…' : envOptions.length || releaseOptions.length ? 'Refresh filters' : 'Load filters'}
+        </button>
         <button
           onClick={() => load()}
           disabled={loading}
