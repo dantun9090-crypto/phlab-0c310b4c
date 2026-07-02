@@ -107,14 +107,13 @@ function decodeBase64(s: string): Uint8Array {
 }
 
 /**
- * Attempt HMAC verification across every scheme Wallid has been observed to use.
- * Returns the label of the first matching scheme, or null.
+ * Verify a Wallid webhook signature.
  *
- * This is defensive: Wallid stopped delivering accepted webhooks on 23 Jun 2026,
- * with all subsequent deliveries returning HTTP 400 Invalid Signature. Root cause
- * is either a rotated secret or a scheme change. Until we confirm which via the
- * Wallid dashboard, we try each documented variant so a scheme change alone
- * cannot silence webhooks.
+ * Wallid signs: `${X-Webhook-Timestamp}.${rawBody}` with HMAC-SHA256 hex,
+ * delivered in the `X-Webhook-Signature` header (optionally `sha256=`-prefixed).
+ * This is the single canonical scheme — the multi-scheme fallback used during
+ * the 23-Jun-2026 incident has been removed now that verification is stable.
+ * To temporarily re-introduce alternates, add candidates back here.
  */
 export interface WallidSchemeResult {
   scheme: string;
@@ -128,19 +127,9 @@ export async function verifyWallidSignature(
   secret: string,
 ): Promise<WallidSchemeResult | null> {
   if (!header || !secret) return null;
-
-  const candidates: Array<{ scheme: string; payload: string }> = [
-    { scheme: "ts.body", payload: `${ts}.${rawBody}` },
-    { scheme: "body", payload: rawBody },
-    { scheme: "ts:body", payload: `${ts}:${rawBody}` },
-    { scheme: "ts|body", payload: `${ts}|${rawBody}` },
-    { scheme: "body.ts", payload: `${rawBody}.${ts}` },
-  ];
-
-  for (const c of candidates) {
-    if (await verifyHmacSignature(c.payload, header, secret)) {
-      return { scheme: c.scheme, expectedHex: await computeHmacHex(c.payload, secret) };
-    }
+  const payload = `${ts}.${rawBody}`;
+  if (await verifyHmacSignature(payload, header, secret)) {
+    return { scheme: "ts.body", expectedHex: await computeHmacHex(payload, secret) };
   }
   return null;
 }
