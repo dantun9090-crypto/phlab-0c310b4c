@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { useServerFn } from '@tanstack/react-start';
 import { auth } from '@/lib/firebase';
-import { fetchSentryIssues, fetchSentryIssueDetails } from '@/lib/sentry-issues.functions';
+import { fetchSentryIssues, fetchSentryIssueDetails, fetchSentryFilters } from '@/lib/sentry-issues.functions';
 import { AlertTriangle, ExternalLink, RefreshCw, X } from 'lucide-react';
 
 interface SentryIssue {
@@ -21,14 +21,37 @@ interface SentryIssue {
 export default function SentryIssuesTab() {
   const call = useServerFn(fetchSentryIssues);
   const callDetails = useServerFn(fetchSentryIssueDetails);
+  const callFilters = useServerFn(fetchSentryFilters);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [issues, setIssues] = useState<SentryIssue[]>([]);
   const [meta, setMeta] = useState<{ orgSlug?: string; projectSlug?: string; statsPeriod?: string } | null>(null);
   const [period, setPeriod] = useState('24h');
+  const [environment, setEnvironment] = useState<string>('');
+  const [release, setRelease] = useState<string>('');
+  const [envOptions, setEnvOptions] = useState<string[]>([]);
+  const [releaseOptions, setReleaseOptions] = useState<Array<{ version: string; shortVersion: string }>>([]);
+  const [filtersLoading, setFiltersLoading] = useState(false);
   const [detail, setDetail] = useState<any | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState<string | null>(null);
+
+  async function loadFilters() {
+    setFiltersLoading(true);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Not signed in.');
+      const res = await callFilters({ data: { idToken } });
+      if (res.ok) {
+        setEnvOptions(res.environments);
+        setReleaseOptions(res.releases);
+      }
+    } catch {
+      /* silent */
+    } finally {
+      setFiltersLoading(false);
+    }
+  }
 
   async function openDetails(issueId: string) {
     setDetail({ __placeholder: true, id: issueId });
@@ -58,7 +81,15 @@ export default function SentryIssuesTab() {
     try {
       const idToken = await auth.currentUser?.getIdToken();
       if (!idToken) throw new Error('Not signed in.');
-      const res = await call({ data: { idToken, statsPeriod: period, limit: limitOverride ?? 50 } });
+      const res = await call({
+        data: {
+          idToken,
+          statsPeriod: period,
+          limit: limitOverride ?? 50,
+          ...(environment ? { environment } : {}),
+          ...(release ? { release } : {}),
+        },
+      });
       if (!res.ok) {
         setError(res.error || 'Unknown error');
         setIssues([]);
@@ -100,6 +131,35 @@ export default function SentryIssuesTab() {
           <option value="14d">Last 14 days</option>
           <option value="30d">Last 30 days</option>
         </select>
+        <select
+          value={environment}
+          onChange={(e) => setEnvironment(e.target.value)}
+          className="bg-slate-800 border-2 border-slate-600 text-white rounded-lg px-3 py-2 min-h-[44px]"
+          title="Environment"
+        >
+          <option value="">All environments</option>
+          {envOptions.map((e) => (
+            <option key={e} value={e}>{e}</option>
+          ))}
+        </select>
+        <select
+          value={release}
+          onChange={(e) => setRelease(e.target.value)}
+          className="bg-slate-800 border-2 border-slate-600 text-white rounded-lg px-3 py-2 min-h-[44px] max-w-[220px]"
+          title="Release"
+        >
+          <option value="">All releases</option>
+          {releaseOptions.map((r) => (
+            <option key={r.version} value={r.version}>{r.shortVersion}</option>
+          ))}
+        </select>
+        <button
+          onClick={loadFilters}
+          disabled={filtersLoading}
+          className="text-xs text-slate-300 hover:text-white underline disabled:opacity-50"
+        >
+          {filtersLoading ? 'Loading…' : envOptions.length || releaseOptions.length ? 'Refresh filters' : 'Load filters'}
+        </button>
         <button
           onClick={() => load()}
           disabled={loading}
