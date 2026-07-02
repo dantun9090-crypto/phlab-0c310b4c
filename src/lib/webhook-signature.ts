@@ -73,11 +73,75 @@ export async function verifyHmacSignature(
 ): Promise<boolean> {
   if (!header || !secret) return false;
   const provided = header.startsWith("sha256=") ? header.slice(7) : header;
-  const providedBytes = hexToBytes(provided);
-  if (providedBytes.length === 0) return false;
 
   const expectedHex = await computeHmacHex(rawBody, secret);
-  const expectedBytes = hexToBytes(expectedHex);
-  return timingSafeEqualBytes(providedBytes, expectedBytes);
+
+  // hex path
+  const providedBytes = hexToBytes(provided);
+  if (providedBytes.length > 0) {
+    const expectedBytes = hexToBytes(expectedHex);
+    if (timingSafeEqualBytes(providedBytes, expectedBytes)) return true;
+  }
+
+  // base64 / base64url fallback — some vendors send base64-encoded digests
+  const b64 = decodeBase64(provided);
+  if (b64.length > 0) {
+    const expectedBytes = hexToBytes(expectedHex);
+    if (timingSafeEqualBytes(b64, expectedBytes)) return true;
+  }
+
+  return false;
+}
+
+function decodeBase64(s: string): Uint8Array {
+  try {
+    const norm = s.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = norm.length % 4 === 0 ? norm : norm + "=".repeat(4 - (norm.length % 4));
+    const bin = atob(pad);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  } catch {
+    return new Uint8Array(0);
+  }
+}
+
+/**
+ * Attempt HMAC verification across every scheme Wallid has been observed to use.
+ * Returns the label of the first matching scheme, or null.
+ *
+ * This is defensive: Wallid stopped delivering accepted webhooks on 23 Jun 2026,
+ * with all subsequent deliveries returning HTTP 400 Invalid Signature. Root cause
+ * is either a rotated secret or a scheme change. Until we confirm which via the
+ * Wallid dashboard, we try each documented variant so a scheme change alone
+ * cannot silence webhooks.
+ */
+export interface WallidSchemeResult {
+  scheme: string;
+  expectedHex: string;
+}
+
+export async function verifyWallidSignature(
+  ts: string,
+  rawBody: string,
+  header: string | null | undefined,
+  secret: string,
+): Promise<WallidSchemeResult | null> {
+  if (!header || !secret) return null;
+
+  const candidates: Array<{ scheme: string; payload: string }> = [
+    { scheme: "ts.body", payload: `${ts}.${rawBody}` },
+    { scheme: "body", payload: rawBody },
+    { scheme: "ts:body", payload: `${ts}:${rawBody}` },
+    { scheme: "ts|body", payload: `${ts}|${rawBody}` },
+    { scheme: "body.ts", payload: `${rawBody}.${ts}` },
+  ];
+
+  for (const c of candidates) {
+    if (await verifyHmacSignature(c.payload, header, secret)) {
+      return { scheme: c.scheme, expectedHex: await computeHmacHex(c.payload, secret) };
+    }
+  }
+  return null;
 }
 
