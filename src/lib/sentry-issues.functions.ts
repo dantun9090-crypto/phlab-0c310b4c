@@ -76,13 +76,16 @@ export const fetchSentryIssues = createServerFn({ method: "POST" })
     }
 
     try {
+      const queryParts = ["is:unresolved"];
+      if (data.release) queryParts.push(`release:"${data.release.replace(/"/g, '\\"')}"`);
       const qs = new URLSearchParams({
         project: DEFAULT_PROJECT_ID,
         statsPeriod,
         limit: String(limit),
-        query: "is:unresolved",
+        query: queryParts.join(" "),
         sort: "freq",
       });
+      if (data.environment) qs.append("environment", data.environment);
       const issues: any[] = await sentryFetch(
         `/organizations/${orgSlug}/issues/?${qs.toString()}`,
         token,
