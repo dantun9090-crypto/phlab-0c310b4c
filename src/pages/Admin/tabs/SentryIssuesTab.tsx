@@ -26,13 +26,13 @@ export default function SentryIssuesTab() {
   const [meta, setMeta] = useState<{ orgSlug?: string; projectSlug?: string; statsPeriod?: string } | null>(null);
   const [period, setPeriod] = useState('24h');
 
-  async function load() {
+  async function load(limitOverride?: number) {
     setLoading(true);
     setError(null);
     try {
       const idToken = await auth.currentUser?.getIdToken();
       if (!idToken) throw new Error('Not signed in.');
-      const res = await call({ data: { idToken, statsPeriod: period, limit: 50 } });
+      const res = await call({ data: { idToken, statsPeriod: period, limit: limitOverride ?? 50 } });
       if (!res.ok) {
         setError(res.error || 'Unknown error');
         setIssues([]);
