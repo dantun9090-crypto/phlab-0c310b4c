@@ -1151,7 +1151,7 @@ export function Layout({ children }: LayoutProps) {
           <div className="container mx-auto px-6 py-8">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 rounded-2xl border border-blue-500/15 bg-gradient-to-r from-blue-900/20 via-[#060f1e]/60 to-indigo-900/20 px-7 py-6">
               <div>
-                <div className="text-[10px] font-bold tracking-[0.18em] uppercase text-blue-400/70 mb-1">Research Updates</div>
+                <div className="text-[10px] font-bold tracking-[0.18em] uppercase text-blue-300 mb-1">Research Updates</div>
                 <div className="text-lg font-bold text-white">Stay at the frontier of peptide science</div>
                 <p className="text-[#5a80a6] text-sm mt-1">New arrivals, HPLC reports, and research breakthroughs.</p>
               </div>
@@ -1241,7 +1241,7 @@ export function Layout({ children }: LayoutProps) {
 
             {/* Products column */}
             <div>
-              <h3 className="text-[11px] font-bold tracking-[0.14em] uppercase text-blue-400/70 mb-5 flex items-center gap-2">
+              <h3 className="text-[11px] font-bold tracking-[0.14em] uppercase text-blue-300 mb-5 flex items-center gap-2">
                 <FlaskConical className="w-3.5 h-3.5" /> Products
               </h3>
               <ul className="space-y-2.5">
@@ -1286,7 +1286,7 @@ export function Layout({ children }: LayoutProps) {
 
             {/* Company column */}
             <div>
-              <h3 className="text-[11px] font-bold tracking-[0.14em] uppercase text-blue-400/70 mb-5 flex items-center gap-2">
+              <h3 className="text-[11px] font-bold tracking-[0.14em] uppercase text-blue-300 mb-5 flex items-center gap-2">
                 <Microscope className="w-3.5 h-3.5" /> Company
               </h3>
               <ul className="space-y-2.5">
@@ -1312,7 +1312,7 @@ export function Layout({ children }: LayoutProps) {
 
             {/* Legal column */}
             <div>
-              <h3 className="text-[11px] font-bold tracking-[0.14em] uppercase text-blue-400/70 mb-5 flex items-center gap-2">
+              <h3 className="text-[11px] font-bold tracking-[0.14em] uppercase text-blue-300 mb-5 flex items-center gap-2">
                 <Dna className="w-3.5 h-3.5" /> Legal
               </h3>
               <ul className="space-y-2.5">
@@ -1348,7 +1348,7 @@ export function Layout({ children }: LayoutProps) {
 
             {/* Contact column */}
             <div>
-              <h3 className="text-[11px] font-bold tracking-[0.14em] uppercase text-blue-400/70 mb-5 flex items-center gap-2">
+              <h3 className="text-[11px] font-bold tracking-[0.14em] uppercase text-blue-300 mb-5 flex items-center gap-2">
                 <Mail className="w-3.5 h-3.5" /> Contact
               </h3>
               <div className="space-y-3 mb-6">
