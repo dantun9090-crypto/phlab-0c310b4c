@@ -44,6 +44,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResearchIndexRouteImport } from './routes/research.index'
 import { Route as ResourcesPeptideCategoriesUkResearchRouteImport } from './routes/resources.peptide-categories-uk-research'
 import { Route as ResourcesSlugRouteImport } from './routes/resources.$slug'
+import { Route as ResearchTirzepatideVsRetatrutideRouteImport } from './routes/research.tirzepatide-vs-retatrutide'
 import { Route as ResearchRetatrutideUkRouteImport } from './routes/research.retatrutide-uk'
 import { Route as ResearchBpc157VsTb500RouteImport } from './routes/research.bpc-157-vs-tb-500'
 import { Route as ResearchBpc157UkRouteImport } from './routes/research.bpc-157-uk'
@@ -281,6 +282,12 @@ const ResourcesSlugRoute = ResourcesSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => ResourcesRoute,
 } as any)
+const ResearchTirzepatideVsRetatrutideRoute =
+  ResearchTirzepatideVsRetatrutideRouteImport.update({
+    id: '/tirzepatide-vs-retatrutide',
+    path: '/tirzepatide-vs-retatrutide',
+    getParentRoute: () => ResearchRoute,
+  } as any)
 const ResearchRetatrutideUkRoute = ResearchRetatrutideUkRouteImport.update({
   id: '/retatrutide-uk',
   path: '/retatrutide-uk',
@@ -644,6 +651,7 @@ export interface FileRoutesByFullPath {
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
+  '/research/tirzepatide-vs-retatrutide': typeof ResearchTirzepatideVsRetatrutideRoute
   '/resources/$slug': typeof ResourcesSlugRoute
   '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
   '/research/': typeof ResearchIndexRoute
@@ -738,6 +746,7 @@ export interface FileRoutesByTo {
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
+  '/research/tirzepatide-vs-retatrutide': typeof ResearchTirzepatideVsRetatrutideRoute
   '/resources/$slug': typeof ResourcesSlugRoute
   '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
   '/research': typeof ResearchIndexRoute
@@ -835,6 +844,7 @@ export interface FileRoutesById {
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
+  '/research/tirzepatide-vs-retatrutide': typeof ResearchTirzepatideVsRetatrutideRoute
   '/resources/$slug': typeof ResourcesSlugRoute
   '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
   '/research/': typeof ResearchIndexRoute
@@ -932,6 +942,7 @@ export interface FileRouteTypes {
     | '/research/bpc-157-uk'
     | '/research/bpc-157-vs-tb-500'
     | '/research/retatrutide-uk'
+    | '/research/tirzepatide-vs-retatrutide'
     | '/resources/$slug'
     | '/resources/peptide-categories-uk-research'
     | '/research/'
@@ -1026,6 +1037,7 @@ export interface FileRouteTypes {
     | '/research/bpc-157-uk'
     | '/research/bpc-157-vs-tb-500'
     | '/research/retatrutide-uk'
+    | '/research/tirzepatide-vs-retatrutide'
     | '/resources/$slug'
     | '/resources/peptide-categories-uk-research'
     | '/research'
@@ -1122,6 +1134,7 @@ export interface FileRouteTypes {
     | '/research/bpc-157-uk'
     | '/research/bpc-157-vs-tb-500'
     | '/research/retatrutide-uk'
+    | '/research/tirzepatide-vs-retatrutide'
     | '/resources/$slug'
     | '/resources/peptide-categories-uk-research'
     | '/research/'
@@ -1503,6 +1516,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/resources/$slug'
       preLoaderRoute: typeof ResourcesSlugRouteImport
       parentRoute: typeof ResourcesRoute
+    }
+    '/research/tirzepatide-vs-retatrutide': {
+      id: '/research/tirzepatide-vs-retatrutide'
+      path: '/tirzepatide-vs-retatrutide'
+      fullPath: '/research/tirzepatide-vs-retatrutide'
+      preLoaderRoute: typeof ResearchTirzepatideVsRetatrutideRouteImport
+      parentRoute: typeof ResearchRoute
     }
     '/research/retatrutide-uk': {
       id: '/research/retatrutide-uk'
@@ -1948,6 +1968,7 @@ interface ResearchRouteChildren {
   ResearchBpc157UkRoute: typeof ResearchBpc157UkRoute
   ResearchBpc157VsTb500Route: typeof ResearchBpc157VsTb500Route
   ResearchRetatrutideUkRoute: typeof ResearchRetatrutideUkRoute
+  ResearchTirzepatideVsRetatrutideRoute: typeof ResearchTirzepatideVsRetatrutideRoute
   ResearchIndexRoute: typeof ResearchIndexRoute
 }
 
@@ -1955,6 +1976,7 @@ const ResearchRouteChildren: ResearchRouteChildren = {
   ResearchBpc157UkRoute: ResearchBpc157UkRoute,
   ResearchBpc157VsTb500Route: ResearchBpc157VsTb500Route,
   ResearchRetatrutideUkRoute: ResearchRetatrutideUkRoute,
+  ResearchTirzepatideVsRetatrutideRoute: ResearchTirzepatideVsRetatrutideRoute,
   ResearchIndexRoute: ResearchIndexRoute,
 }
 

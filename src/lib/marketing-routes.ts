@@ -27,6 +27,7 @@ export const MARKETING_ROUTES: MarketingRoute[] = [
   { path: '/resources/bpc-157-tissue-repair', label: 'Article: BPC-157', minBytes: 8_000, maxBytes: 500_000, tier: 'high' },
   { path: '/resources/ipamorelin-ghrp-research', label: 'Article: Ipamorelin', minBytes: 8_000, maxBytes: 500_000, tier: 'high' },
   { path: '/resources/tirzepatide-vs-retatrutide-research', label: 'Article: Tirzepatide vs Retatrutide', minBytes: 8_000, maxBytes: 500_000, tier: 'high' },
+  { path: '/research/tirzepatide-vs-retatrutide', label: 'Research: Tirzepatide vs Retatrutide', minBytes: 15_000, maxBytes: 500_000, titleContains: 'Tirzepatide vs Retatrutide', tier: 'high' },
   { path: '/products/retatrutide-research-peptide', label: 'Product: Retatrutide', minBytes: 20_000, maxBytes: 800_000, titleContains: 'Retatrutide', tier: 'critical' },
   { path: '/products/tirzepatide-research-peptide', label: 'Product: Tirzepatide', minBytes: 20_000, maxBytes: 800_000, titleContains: 'Tirzepatide', tier: 'critical' },
   { path: '/products/bpc-157', label: 'Product: BPC-157', minBytes: 20_000, maxBytes: 800_000, titleContains: 'BPC', tier: 'high' },

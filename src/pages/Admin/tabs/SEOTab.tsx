@@ -155,6 +155,7 @@ export default function SEOTab() {
     'https://phlabs.co.uk/products?category=accessories',
     'https://phlabs.co.uk/lab-reports',
     'https://phlabs.co.uk/research',
+    'https://phlabs.co.uk/research/tirzepatide-vs-retatrutide',
     'https://phlabs.co.uk/resources',
     'https://phlabs.co.uk/about',
     'https://phlabs.co.uk/contact',
