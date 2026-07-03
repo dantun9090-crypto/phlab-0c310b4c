@@ -12,6 +12,7 @@ const STATIC_PAGES = [
   { path: '/products', label: 'Products', priority: '0.9', changefreq: 'daily' },
   { path: '/lab-reports', label: 'Lab Reports', priority: '0.8', changefreq: 'monthly' },
   { path: '/research', label: 'Research', priority: '0.8', changefreq: 'weekly' },
+  { path: '/research/tirzepatide-vs-retatrutide', label: 'Tirzepatide vs Retatrutide', priority: '0.9', changefreq: 'weekly' },
   { path: '/resources', label: 'Resources', priority: '0.7', changefreq: 'weekly' },
   { path: '/about', label: 'About', priority: '0.6', changefreq: 'monthly' },
   { path: '/contact', label: 'Contact', priority: '0.6', changefreq: 'monthly' },
