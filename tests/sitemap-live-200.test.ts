@@ -1,3 +1,4 @@
+// @vitest-environment node
 /**
  * Live sitemap health check — fetches https://phlabs.co.uk/sitemap.xml
  * and asserts every <loc> URL responds HTTP 200. Runs as part of the
