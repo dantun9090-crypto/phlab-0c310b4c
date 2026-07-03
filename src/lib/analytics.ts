@@ -534,6 +534,18 @@ export function renderGoogleMerchantBadge(opts?: { position?: 'BOTTOM_LEFT' | 'B
         position: opts?.position || 'BOTTOM_RIGHT',
         region: opts?.region || 'GB',
       });
+      // A11y: Google's merchantwidget.js injects an <iframe> with no title,
+      // which trips Lighthouse `frame-title`. Label it once it appears.
+      const setTitle = () => {
+        const el = document.getElementById('merchantwidgetiframe') as HTMLIFrameElement | null;
+        if (el && !el.title) el.title = 'Google Customer Reviews badge';
+        return !!el;
+      };
+      if (!setTitle()) {
+        const obs = new MutationObserver(() => { if (setTitle()) obs.disconnect(); });
+        obs.observe(document.body, { childList: true, subtree: true });
+        setTimeout(() => obs.disconnect(), 15000);
+      }
     } catch (e) {
       log('merchant badge start failed', e);
     }
