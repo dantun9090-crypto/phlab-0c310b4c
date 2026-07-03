@@ -15,7 +15,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const TITLE = "Peptide Reconstitution Calculator UK | PH Labs";
 const DESCRIPTION =
-  "Free research peptide reconstitution calculator. Convert vial mg + BAC water mL into mg/mL, mcg/mL and U-100 syringe units. For in-vitro laboratory research only — not for human consumption.";
+  "Free UK peptide reconstitution calculator. Convert vial mg + BAC water mL to mg/mL, mcg/mL and U-100 units. Research use only.";
 const URL_SELF = "https://phlabs.co.uk/peptide-calculator";
 
 const APP_LD = {
