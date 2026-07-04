@@ -5,7 +5,7 @@ import {
   Megaphone, Gift, Newspaper, Package, RefreshCw, Sparkles, Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db, collection, addDoc, getDocs, Timestamp, query, where, orderBy, limit, deleteDoc, doc } from '@/lib/firebase';
+import { db, collection, addDoc, getDocs, Timestamp, query, where, orderBy, limit, deleteDoc, doc, auth } from '@/lib/firebase';
 
 interface EmailRecord {
   id: string;
