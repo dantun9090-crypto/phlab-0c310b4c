@@ -31,6 +31,37 @@ type WorkerCtx = {
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
+// Per-isolate guard so post-publish-check fires at most once per Worker
+// isolate per unique BUILD_ID. Prior implementation relied on a client-side
+// mount fetch that never ran (Prerender serves static HTML to bots; CF
+// edge-caches HTML for humans) — so `_meta/build_state` fell 4 days stale
+// and every deploy required manual purges. This SSR-side trigger fires on
+// the first real request that reaches a new isolate carrying a new
+// BUILD_ID and awaits the invalidation via ctx.waitUntil so CF keeps the
+// isolate alive until the purge completes.
+let postPublishFiredForBuildId: string | null = null;
+function maybeTriggerPostPublish(request: Request, ctx: WorkerCtx): void {
+  const buildId = typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev";
+  if (postPublishFiredForBuildId === buildId) return;
+  postPublishFiredForBuildId = buildId;
+  const url = new URL(request.url);
+  const origin = `${url.protocol}//${url.host}`;
+  const p = fetch(`${origin}/api/public/post-publish-check`, {
+    headers: { "user-agent": "phlabs-ssr-post-publish/1.0" },
+  })
+    .then(async (r) => {
+      const body = await r.text().catch(() => "");
+      log("info", "post_publish_ssr_trigger", { buildId, status: r.status, body: body.slice(0, 300) });
+    })
+    .catch((e) => {
+      log("warn", "post_publish_ssr_trigger_failed", {
+        buildId,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    });
+  if (ctx?.waitUntil) ctx.waitUntil(p);
+}
+
 async function getServerEntry(): Promise<ServerEntry> {
   if (!serverEntryPromise) {
     serverEntryPromise = import("@tanstack/react-start/server-entry").then(
