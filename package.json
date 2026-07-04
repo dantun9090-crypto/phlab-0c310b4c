@@ -13,7 +13,7 @@
     "check:robots-sitemap": "bun scripts/check-robots-sitemap.ts",
     "check:sitemap-urls-live": "bun scripts/check-sitemap-urls-live.ts",
     "build:post": "bun scripts/generate-sbom.ts && bun scripts/check-dist-domains.ts",
-    "build:dev": "vite build --mode development",
+    "build:dev": "NODE_OPTIONS='--max-old-space-size=8192' vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
