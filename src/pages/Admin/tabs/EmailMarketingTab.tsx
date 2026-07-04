@@ -826,14 +826,28 @@ export default function EmailMarketingTab() {
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden"
               >
-                <div className="bg-white rounded-2xl p-5 space-y-3">
-                  <div className="border-b border-gray-200 pb-3">
-                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Subject</p>
-                    <p className="text-gray-900 text-sm font-semibold mt-0.5">{subject || '(no subject)'}</p>
-                  </div>
-                  <pre className="text-gray-800 text-xs leading-relaxed whitespace-pre-wrap font-sans">
-                    {body || '(empty)'}
-                  </pre>
+                <div className="space-y-3">
+                  {previewSamples.map((s, i) => (
+                    <div key={s.email + i} className="bg-white rounded-2xl p-5 space-y-3">
+                      <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                        <span>Recipient {i + 1}</span>
+                        <span className="text-gray-400 normal-case font-mono truncate max-w-[60%]" title={s.email}>{s.email}</span>
+                      </div>
+                      <div className="text-[10px] text-gray-500">
+                        First name in DB: <span className={`font-mono ${s.rawFirstName === '(missing)' ? 'text-red-500' : 'text-emerald-600'}`}>{s.rawFirstName}</span>
+                      </div>
+                      <div className="border-b border-gray-200 pb-2">
+                        <p className="text-gray-500 text-[10px] font-semibold uppercase tracking-wider">Subject</p>
+                        <p className="text-gray-900 text-sm font-semibold mt-0.5">{s.subject || '(no subject)'}</p>
+                      </div>
+                      <pre className="text-gray-800 text-xs leading-relaxed whitespace-pre-wrap font-sans max-h-72 overflow-y-auto">
+                        {s.body || '(empty)'}
+                      </pre>
+                    </div>
+                  ))}
+                  <p className="text-[#7591b8] text-[10px] px-1">
+                    Substitution uses the same rules as the send route: <span className="font-mono">[First Name]</span>, <span className="font-mono">{'{{firstName}}'}</span>, <span className="font-mono">[Name]</span> etc. Empty first names fall back to <span className="font-mono">there</span>.
+                  </p>
                 </div>
               </motion.div>
             )}
