@@ -71,6 +71,12 @@ interface AlertRow {
   notified: boolean;
 }
 
+interface InfraListResult {
+  ok: boolean;
+  rows: Array<Record<string, unknown> & { id: string }>;
+  error?: string;
+}
+
 function toMillis(v: unknown): number {
   if (!v) return 0;
   if (typeof v === 'number') return v;
@@ -162,7 +168,7 @@ export default function InfraHealthTab() {
     try {
       const idToken = await auth.currentUser?.getIdToken();
       if (!idToken) throw new Error('Sign in as admin first');
-      const res = await listInfraHealthChecks({ data: { idToken, limit: size } });
+      const res = await listInfraHealthChecks({ data: { idToken, limit: size } }) as InfraListResult;
       if (!res.ok) throw new Error(res.error || 'Failed to load health checks');
       setRows(res.rows.map((d) => normalizeHealth(d.id, d as Record<string, unknown>)));
     } catch (e) {
@@ -176,7 +182,7 @@ export default function InfraHealthTab() {
     try {
       const idToken = await auth.currentUser?.getIdToken();
       if (!idToken) throw new Error('Sign in as admin first');
-      const res = await listInfraHealthAlerts({ data: { idToken } });
+      const res = await listInfraHealthAlerts({ data: { idToken } }) as InfraListResult;
       if (!res.ok) throw new Error(res.error || 'Failed to load health alerts');
       const all = res.rows.map((d) => normalizeAlert(d.id, d as Record<string, unknown>));
       setAlerts(all);

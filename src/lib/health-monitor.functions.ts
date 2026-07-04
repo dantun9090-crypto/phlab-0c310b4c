@@ -225,10 +225,37 @@ const InfraListSchema = TokenSchema.extend({
   limit: z.number().int().min(1).max(200).default(50),
 });
 
-type InfraRow = Record<string, unknown> & { id: string };
+type JsonScalar = string | number | boolean | null;
+type JsonValue = JsonScalar | JsonValue[] | { [key: string]: JsonValue };
+type InfraRow = { id: string; [key: string]: JsonValue };
 
 function compactError(e: unknown): string {
   return e instanceof Error ? e.message : String(e);
+}
+
+function toJsonValue(value: unknown): JsonValue {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value;
+  if (Array.isArray(value)) return value.map(toJsonValue);
+  if (typeof value === 'object') {
+    const out: { [key: string]: JsonValue } = {};
+    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+      out[key] = toJsonValue(val);
+    }
+    return out;
+  }
+  return String(value);
+}
+
+function sanitizeInfraRows(rows: Array<Record<string, unknown> & { id: string }>): InfraRow[] {
+  return rows.map((row) => {
+    const out: InfraRow = { id: row.id };
+    for (const [key, value] of Object.entries(row)) {
+      if (key === 'id') continue;
+      out[key] = toJsonValue(value);
+    }
+    return out;
+  });
 }
 
 export const getCacheHealth = createServerFn({ method: 'POST' })
@@ -345,7 +372,7 @@ export const listInfraHealthChecks = createServerFn({ method: 'POST' })
         direction: 'DESCENDING',
         limit: data.limit,
       });
-      return { ok: true, rows };
+      return { ok: true, rows: sanitizeInfraRows(rows) };
     } catch (e) {
       return { ok: false, rows: [], error: compactError(e) };
     }
@@ -361,7 +388,7 @@ export const listInfraHealthAlerts = createServerFn({ method: 'POST' })
         direction: 'DESCENDING',
         limit: 50,
       });
-      return { ok: true, rows };
+      return { ok: true, rows: sanitizeInfraRows(rows) };
     } catch (e) {
       return { ok: false, rows: [], error: compactError(e) };
     }
