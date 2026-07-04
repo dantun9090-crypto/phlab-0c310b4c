@@ -65,6 +65,7 @@ import { Route as _e2eOrdersModalRouteImport } from './routes/__e2e.orders-modal
 import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wallid'
 import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
+import { Route as ApiPublicPublishStatusRouteImport } from './routes/api/public/publish-status'
 import { Route as ApiPublicPublishHoldRouteImport } from './routes/api/public/publish-hold'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
 import { Route as ApiPublicMonitorLogRouteImport } from './routes/api/public/monitor-log'
@@ -391,6 +392,11 @@ const ApiPublicSendMailRoute = ApiPublicSendMailRouteImport.update({
   path: '/api/public/send-mail',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPublishStatusRoute = ApiPublicPublishStatusRouteImport.update({
+  id: '/api/public/publish-status',
+  path: '/api/public/publish-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPublishHoldRoute = ApiPublicPublishHoldRouteImport.update({
   id: '/api/public/publish-hold',
   path: '/api/public/publish-hold',
@@ -687,6 +693,7 @@ export interface FileRoutesByFullPath {
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
+  '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
@@ -784,6 +791,7 @@ export interface FileRoutesByTo {
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
+  '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
@@ -884,6 +892,7 @@ export interface FileRoutesById {
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
+  '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
@@ -984,6 +993,7 @@ export interface FileRouteTypes {
     | '/api/public/monitor-log'
     | '/api/public/post-publish-check'
     | '/api/public/publish-hold'
+    | '/api/public/publish-status'
     | '/api/public/send-mail'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
@@ -1081,6 +1091,7 @@ export interface FileRouteTypes {
     | '/api/public/monitor-log'
     | '/api/public/post-publish-check'
     | '/api/public/publish-hold'
+    | '/api/public/publish-status'
     | '/api/public/send-mail'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
@@ -1180,6 +1191,7 @@ export interface FileRouteTypes {
     | '/api/public/monitor-log'
     | '/api/public/post-publish-check'
     | '/api/public/publish-hold'
+    | '/api/public/publish-status'
     | '/api/public/send-mail'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
@@ -1270,6 +1282,7 @@ export interface RootRouteChildren {
   ApiPublicMonitorLogRoute: typeof ApiPublicMonitorLogRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
   ApiPublicPublishHoldRoute: typeof ApiPublicPublishHoldRoute
+  ApiPublicPublishStatusRoute: typeof ApiPublicPublishStatusRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
   ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
   ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
@@ -1691,6 +1704,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSendMailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/publish-status': {
+      id: '/api/public/publish-status'
+      path: '/api/public/publish-status'
+      fullPath: '/api/public/publish-status'
+      preLoaderRoute: typeof ApiPublicPublishStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/publish-hold': {
       id: '/api/public/publish-hold'
       path: '/api/public/publish-hold'
@@ -2103,6 +2123,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMonitorLogRoute: ApiPublicMonitorLogRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
   ApiPublicPublishHoldRoute: ApiPublicPublishHoldRoute,
+  ApiPublicPublishStatusRoute: ApiPublicPublishStatusRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
   ApiPublicWebVitalsRoute: ApiPublicWebVitalsRoute,
   ApiWebhooksWallidRoute: ApiWebhooksWallidRoute,
