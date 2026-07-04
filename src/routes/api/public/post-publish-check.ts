@@ -164,7 +164,8 @@ async function runInvalidation(buildId: string): Promise<{
 // same Worker isolate. A given buildId can only fire invalidation once;
 // subsequent concurrent calls observe the in-flight promise and return
 // `locked: true` so the caller doesn't double-purge or loop.
-const inFlight = new Map<string, Promise<void>>();
+type InvalidationResult = Awaited<ReturnType<typeof runInvalidation>>;
+const inFlight = new Map<string, Promise<InvalidationResult>>();
 
 export const Route = createFileRoute('/api/public/post-publish-check')({
   server: {
@@ -186,15 +187,16 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
         }
 
         let stored: string | null = null;
+        let buildState: Record<string, unknown> | null = null;
         try {
-          const doc = await getDocAdmin(META_COLLECTION, META_DOC);
-          stored = (doc?.lastBuildId as string | undefined) ?? null;
+          buildState = await getDocAdmin(META_COLLECTION, META_DOC);
+          stored = (buildState?.lastBuildId as string | undefined) ?? null;
         } catch {
           // Firestore unreachable — fail open (no auto-purge this request).
           return Response.json({ ok: false, error: 'firestore_read_failed', buildId: currentBuildId });
         }
 
-        const completedBuildId = (doc?.lastInvalidationBuildId as string | undefined) ?? null;
+        const completedBuildId = (buildState?.lastInvalidationBuildId as string | undefined) ?? null;
         const needsInvalidation = completedBuildId !== currentBuildId;
 
         if (stored === currentBuildId && !needsInvalidation) {
