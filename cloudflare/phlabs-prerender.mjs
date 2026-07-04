@@ -205,7 +205,7 @@ var SECURITY_HEADERS = {
 var PRERENDER_ORIGIN = "https://service.prerender.io";
 var PRERENDER_TIMEOUT_MS = 45e3;
 var PRERENDER_CACHE_TTL = 3600;
-var PRERENDER_SWR_TTL = 86400;
+var PRERENDER_SWR_TTL = 60;
 var LOOP_HEADER = "x-prerender-loop";
 var PRERENDER_RENDERER_RX = /Prerender \(\+https:\/\/github\.com\/prerender\/prerender\)/i;
 var NONCE_PLACEHOLDER = "__CSP_NONCE__";
@@ -703,8 +703,8 @@ var phlabs_prerender_patched_default = {
         if (hit) {
           const h = new Headers(hit.headers);
           h.set("cache-control", "public, max-age=0, must-revalidate");
-          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
-          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
+          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
+          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
           h.set("x-phl-via", `${normalProxyVia};cached=1`);
           h.set("cf-cache-status", "HIT");
           h.set("x-phl-cache", "HIT");
@@ -745,8 +745,8 @@ var phlabs_prerender_patched_default = {
       } else if ((h.get("content-type") || "").includes("text/html")) {
         if (htmlTtl > 0) {
           h.set("cache-control", "public, max-age=0, must-revalidate");
-          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
-          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
+          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
+          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
         } else {
           h.set("cache-control", "no-store, no-cache, must-revalidate, max-age=0");
           h.set("cdn-cache-control", "no-store");

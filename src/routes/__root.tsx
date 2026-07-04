@@ -1087,6 +1087,21 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useEffect(() => {
+    try {
+      const currentBuildId = document.querySelector('meta[name="build-id"]')?.getAttribute('content');
+      const storedBuildId = localStorage.getItem('last_seen_build_id');
+      if (currentBuildId && currentBuildId !== storedBuildId) {
+        localStorage.setItem('last_seen_build_id', currentBuildId);
+        fetch('/api/public/post-publish-check', {
+          method: 'GET',
+          cache: 'no-store',
+          credentials: 'omit',
+          keepalive: true,
+        }).catch(() => {});
+      }
+    } catch {
+      /* ignore */
+    }
     clearStoreCachesForNewBuild();
     (window as unknown as { __PHL_REACT_READY__?: boolean }).__PHL_REACT_READY__ = true;
     initWebVitals();

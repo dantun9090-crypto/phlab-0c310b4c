@@ -56,6 +56,7 @@ import { Route as LandingSlugRouteImport } from './routes/landing.$slug'
 import { Route as CompareSlugRouteImport } from './routes/compare.$slug'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
+import { Route as AdminPurgeRouteImport } from './routes/admin.purge'
 import { Route as AdminPublishStatusRouteImport } from './routes/admin.publish-status'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as AdminHealthRouteImport } from './routes/admin.health'
@@ -348,6 +349,11 @@ const CheckoutCancelRoute = CheckoutCancelRouteImport.update({
   id: '/checkout/cancel',
   path: '/checkout/cancel',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPurgeRoute = AdminPurgeRouteImport.update({
+  id: '/purge',
+  path: '/purge',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminPublishStatusRoute = AdminPublishStatusRouteImport.update({
   id: '/publish-status',
@@ -679,6 +685,7 @@ export interface FileRoutesByFullPath {
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/admin/publish-status': typeof AdminPublishStatusRoute
+  '/admin/purge': typeof AdminPurgeRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/compare/$slug': typeof CompareSlugRoute
@@ -780,6 +787,7 @@ export interface FileRoutesByTo {
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/admin/publish-status': typeof AdminPublishStatusRoute
+  '/admin/purge': typeof AdminPurgeRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/compare/$slug': typeof CompareSlugRoute
@@ -884,6 +892,7 @@ export interface FileRoutesById {
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/admin/publish-status': typeof AdminPublishStatusRoute
+  '/admin/purge': typeof AdminPurgeRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/compare/$slug': typeof CompareSlugRoute
@@ -988,6 +997,7 @@ export interface FileRouteTypes {
     | '/admin/health'
     | '/admin/merchant-feed-preview'
     | '/admin/publish-status'
+    | '/admin/purge'
     | '/checkout/cancel'
     | '/checkout/success'
     | '/compare/$slug'
@@ -1089,6 +1099,7 @@ export interface FileRouteTypes {
     | '/admin/health'
     | '/admin/merchant-feed-preview'
     | '/admin/publish-status'
+    | '/admin/purge'
     | '/checkout/cancel'
     | '/checkout/success'
     | '/compare/$slug'
@@ -1192,6 +1203,7 @@ export interface FileRouteTypes {
     | '/admin/health'
     | '/admin/merchant-feed-preview'
     | '/admin/publish-status'
+    | '/admin/purge'
     | '/checkout/cancel'
     | '/checkout/success'
     | '/compare/$slug'
@@ -1678,6 +1690,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutCancelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/purge': {
+      id: '/admin/purge'
+      path: '/purge'
+      fullPath: '/admin/purge'
+      preLoaderRoute: typeof AdminPurgeRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/publish-status': {
       id: '/admin/publish-status'
       path: '/publish-status'
@@ -2076,6 +2095,7 @@ interface AdminRouteChildren {
   AdminHealthRoute: typeof AdminHealthRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
   AdminPublishStatusRoute: typeof AdminPublishStatusRoute
+  AdminPurgeRoute: typeof AdminPurgeRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -2083,6 +2103,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminHealthRoute: AdminHealthRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
   AdminPublishStatusRoute: AdminPublishStatusRoute,
+  AdminPurgeRoute: AdminPurgeRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)

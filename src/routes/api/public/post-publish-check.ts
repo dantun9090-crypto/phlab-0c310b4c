@@ -83,7 +83,27 @@ async function recachePrerender(): Promise<{ desktop: number; mobile: number; ur
   return { desktop, mobile, urls: urls.length, ok: desktop < 400 && mobile < 400 };
 }
 
-async function runInvalidation(buildId: string): Promise<void> {
+async function markInvalidationComplete(
+  buildId: string,
+  data: Record<string, unknown>,
+): Promise<void> {
+  const existing = await getDocAdmin(META_COLLECTION, META_DOC).catch(() => null);
+  const patch = {
+    ...data,
+    lastInvalidationBuildId: buildId,
+    lastInvalidationAt: new Date().toISOString(),
+  };
+  if (existing) await updateDocAdmin(META_COLLECTION, META_DOC, patch);
+  else await addDocAdmin(META_COLLECTION, { lastBuildId: buildId, updatedAt: new Date().toISOString(), ...patch }, META_DOC);
+}
+
+async function runInvalidation(buildId: string): Promise<{
+  cloudflare: { ok: boolean; status: number; error?: string };
+  prerender: { desktop: number; mobile: number; urls: number; ok: boolean };
+  regression: { ok: boolean; failed: number } | null;
+  auditOk: boolean;
+  durationMs: number;
+}> {
   const started = Date.now();
   const [cf, pr] = await Promise.all([purgeEverything(), recachePrerender()]);
 
@@ -106,6 +126,7 @@ async function runInvalidation(buildId: string): Promise<void> {
   // Best-effort audit log entry — never throws. Use a Date instance (not
   // ISO string) so toFirestoreValue writes a proper timestampValue that
   // `orderBy('createdAt')` can sort against the collection's other rows.
+  let auditOk = false;
   try {
     await addDocAdmin('auditLogs', {
       kind: 'post_publish_auto_invalidation',
@@ -116,16 +137,35 @@ async function runInvalidation(buildId: string): Promise<void> {
       durationMs: Date.now() - started,
       createdAt: new Date(),
     });
-  } catch {
-    /* ignore */
+    auditOk = true;
+  } catch (e) {
+    console.warn('[post-publish-check] auditLogs write failed:', e);
   }
+
+  const durationMs = Date.now() - started;
+  await markInvalidationComplete(buildId, {
+    lastPurgeOk: cf.ok,
+    lastPurgeStatus: cf.status,
+    lastPurgeError: cf.error ?? null,
+    lastRecacheOk: pr.ok,
+    lastRecacheDesktopStatus: pr.desktop,
+    lastRecacheMobileStatus: pr.mobile,
+    lastRecacheUrls: pr.urls,
+    lastAuditOk: auditOk,
+    lastInvalidationDurationMs: durationMs,
+  }).catch((e) => {
+    console.warn('[post-publish-check] build_state completion marker failed:', e);
+  });
+
+  return { cloudflare: cf, prerender: pr, regression, auditOk, durationMs };
 }
 
 // Module-level in-flight lock — dedupes concurrent first-requests in the
 // same Worker isolate. A given buildId can only fire invalidation once;
 // subsequent concurrent calls observe the in-flight promise and return
 // `locked: true` so the caller doesn't double-purge or loop.
-const inFlight = new Map<string, Promise<void>>();
+type InvalidationResult = Awaited<ReturnType<typeof runInvalidation>>;
+const inFlight = new Map<string, Promise<InvalidationResult>>();
 
 export const Route = createFileRoute('/api/public/post-publish-check')({
   server: {
@@ -147,53 +187,67 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
         }
 
         let stored: string | null = null;
+        let buildState: Record<string, unknown> | null = null;
         try {
-          const doc = await getDocAdmin(META_COLLECTION, META_DOC);
-          stored = (doc?.lastBuildId as string | undefined) ?? null;
+          buildState = await getDocAdmin(META_COLLECTION, META_DOC);
+          stored = (buildState?.lastBuildId as string | undefined) ?? null;
         } catch {
           // Firestore unreachable — fail open (no auto-purge this request).
           return Response.json({ ok: false, error: 'firestore_read_failed', buildId: currentBuildId });
         }
 
-        if (stored === currentBuildId) {
-          return Response.json({ ok: true, changed: false, buildId: currentBuildId });
+        const completedBuildId = (buildState?.lastInvalidationBuildId as string | undefined) ?? null;
+        const needsInvalidation = completedBuildId !== currentBuildId;
+
+        if (stored === currentBuildId && !needsInvalidation) {
+          return Response.json({ ok: true, changed: false, invalidated: true, buildId: currentBuildId });
         }
 
-        // Atomically claim this build id BEFORE firing invalidation so two
-        // concurrent first-requests can't both trigger.
-        try {
-          if (stored === null) {
-            await addDocAdmin(META_COLLECTION, { lastBuildId: currentBuildId, updatedAt: new Date().toISOString() }, META_DOC);
-          } else {
-            await updateDocAdmin(META_COLLECTION, META_DOC, {
-              lastBuildId: currentBuildId,
-              previousBuildId: stored,
-              updatedAt: new Date().toISOString(),
+        if (stored !== currentBuildId) {
+          // Atomically claim this build id BEFORE firing invalidation so two
+          // concurrent first-requests can't both trigger.
+          try {
+            if (stored === null) {
+              await addDocAdmin(META_COLLECTION, { lastBuildId: currentBuildId, updatedAt: new Date().toISOString() }, META_DOC);
+            } else {
+              await updateDocAdmin(META_COLLECTION, META_DOC, {
+                lastBuildId: currentBuildId,
+                previousBuildId: stored,
+                updatedAt: new Date().toISOString(),
+              });
+            }
+          } catch (e) {
+            console.error('[post-publish-check] Firestore write failed:', e);
+            return Response.json({
+              ok: false,
+              error: 'firestore_write_failed',
+              buildId: currentBuildId,
             });
           }
-        } catch (e) {
-          console.error('[post-publish-check] Firestore write failed:', e);
-          return Response.json({
-            ok: false,
-            error: 'firestore_write_failed',
-            buildId: currentBuildId,
-          });
         }
 
-        // Fire-and-forget — don't block the HTTP response on Cloudflare /
-        // Prerender round-trips. Worker keeps the promise alive via waitUntil
-        // when available; otherwise we still await briefly so logs surface.
+        // Await the purge/recache/audit work. The previous fire-and-forget path
+        // could be terminated before auditLogs/build_state completion markers
+        // were written, leaving lastBuildId current but no purge proof — which
+        // made later calls return `changed:false` and never retry.
         const work = runInvalidation(currentBuildId).finally(() => {
           inFlight.delete(currentBuildId);
         });
         inFlight.set(currentBuildId, work);
-        // Best-effort: if Cloudflare exposes waitUntil via globalThis, use it.
-        // Otherwise let the runtime keep the task alive.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const ctx = (globalThis as any).__cf_executionContext;
-        if (ctx?.waitUntil) ctx.waitUntil(work);
+        const result = await work;
 
-        return Response.json({ ok: true, changed: true, buildId: currentBuildId, previous: stored });
+        return Response.json({
+          ok: true,
+          changed: stored !== currentBuildId,
+          invalidated: true,
+          retriedMissingCompletion: stored === currentBuildId && needsInvalidation,
+          buildId: currentBuildId,
+          previous: stored,
+          cloudflare: result.cloudflare,
+          prerender: result.prerender,
+          auditOk: result.auditOk,
+          durationMs: result.durationMs,
+        });
       },
     },
   },
