@@ -16,13 +16,13 @@ const SOURCE = readFileSync(SOURCE_PATH, "utf8");
 function getMerchantPromoIds(): string[] {
   const raw = process.env.MERCHANT_PROMO_IDS;
   if (!raw || typeof raw !== "string") {
-    return ["PHL_LAUNCH"];
+    return ["PHL_LAUNCH", "PHL_LAUNCH2"];
   }
   const ids = raw
     .split(",")
     .map((s: string) => s.trim())
     .filter((s: string) => s.length > 0);
-  return ids.length > 0 ? ids : ["PHL_LAUNCH"];
+  return ids.length > 0 ? ids : ["PHL_LAUNCH", "PHL_LAUNCH2"];
 }
 
 describe("merchant feed promo IDs", () => {
