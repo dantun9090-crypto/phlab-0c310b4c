@@ -1259,6 +1259,11 @@ export default function HomePage() {
       {/* SEO link-index — SSR-rendered hub linking to every product + article */}
       <HomeSeoIndex />
 
+      {/* Newsletter capture popup — delayed, cooldown-gated, admin-configurable */}
+      <Suspense fallback={null}>
+        <NewsletterPopup />
+      </Suspense>
+
     </div>
   );
 }
