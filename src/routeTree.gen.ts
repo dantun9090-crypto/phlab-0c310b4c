@@ -105,6 +105,7 @@ import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hook
 import { Route as ApiPublicHooksCompoundQueryHistoryRouteImport } from './routes/api/public/hooks/compound-query-history'
 import { Route as ApiPublicHooksBacklinkWatcherRouteImport } from './routes/api/public/hooks/backlink-watcher'
 import { Route as ApiPublicDiagCacheHeadersRouteImport } from './routes/api/public/diag.cache-headers'
+import { Route as ApiPublicDiagBuildStateRouteImport } from './routes/api/public/diag.build-state'
 
 const UkResearchStoreRoute = UkResearchStoreRouteImport.update({
   id: '/uk-research-store',
@@ -608,6 +609,11 @@ const ApiPublicDiagCacheHeadersRoute =
     path: '/api/public/diag/cache-headers',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicDiagBuildStateRoute = ApiPublicDiagBuildStateRouteImport.update({
+  id: '/api/public/diag/build-state',
+  path: '/api/public/diag/build-state',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -684,6 +690,7 @@ export interface FileRoutesByFullPath {
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
+  '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
@@ -780,6 +787,7 @@ export interface FileRoutesByTo {
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
+  '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
@@ -879,6 +887,7 @@ export interface FileRoutesById {
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
+  '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
@@ -978,6 +987,7 @@ export interface FileRouteTypes {
     | '/api/public/send-mail'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
+    | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/compound-query-history'
@@ -1074,6 +1084,7 @@ export interface FileRouteTypes {
     | '/api/public/send-mail'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
+    | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/compound-query-history'
@@ -1172,6 +1183,7 @@ export interface FileRouteTypes {
     | '/api/public/send-mail'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
+    | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/compound-query-history'
@@ -1261,6 +1273,7 @@ export interface RootRouteChildren {
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
   ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
   ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
+  ApiPublicDiagBuildStateRoute: typeof ApiPublicDiagBuildStateRoute
   ApiPublicDiagCacheHeadersRoute: typeof ApiPublicDiagCacheHeadersRoute
   ApiPublicHooksBacklinkWatcherRoute: typeof ApiPublicHooksBacklinkWatcherRoute
   ApiPublicHooksCompoundQueryHistoryRoute: typeof ApiPublicHooksCompoundQueryHistoryRoute
@@ -1958,6 +1971,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicDiagCacheHeadersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/diag/build-state': {
+      id: '/api/public/diag/build-state'
+      path: '/api/public/diag/build-state'
+      fullPath: '/api/public/diag/build-state'
+      preLoaderRoute: typeof ApiPublicDiagBuildStateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -2086,6 +2106,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
   ApiPublicWebVitalsRoute: ApiPublicWebVitalsRoute,
   ApiWebhooksWallidRoute: ApiWebhooksWallidRoute,
+  ApiPublicDiagBuildStateRoute: ApiPublicDiagBuildStateRoute,
   ApiPublicDiagCacheHeadersRoute: ApiPublicDiagCacheHeadersRoute,
   ApiPublicHooksBacklinkWatcherRoute: ApiPublicHooksBacklinkWatcherRoute,
   ApiPublicHooksCompoundQueryHistoryRoute:
