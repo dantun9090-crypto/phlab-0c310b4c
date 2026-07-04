@@ -902,9 +902,18 @@ export default {
       // Firebase (prohealthpeptides-a0808.firebaseapp.com).
       if (url.pathname.startsWith("/__/auth/") || url.pathname.startsWith("/__/firebase/")) {
         const fbUrl = new URL(url.pathname + url.search, "https://prohealthpeptides-a0808.firebaseapp.com");
+        const fbHeaders = new Headers();
+        const accept = request.headers.get("accept");
+        const acceptLanguage = request.headers.get("accept-language");
+        const userAgent = request.headers.get("user-agent");
+        const contentType = request.headers.get("content-type");
+        if (accept) fbHeaders.set("accept", accept);
+        if (acceptLanguage) fbHeaders.set("accept-language", acceptLanguage);
+        if (userAgent) fbHeaders.set("user-agent", userAgent);
+        if (contentType) fbHeaders.set("content-type", contentType);
         const fbReq = new Request(fbUrl.toString(), {
           method: request.method,
-          headers: request.headers,
+          headers: fbHeaders,
           body: request.body,
           redirect: "manual",
         });
