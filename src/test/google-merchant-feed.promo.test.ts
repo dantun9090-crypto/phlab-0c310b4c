@@ -35,8 +35,8 @@ describe("merchant feed promo IDs", () => {
     else process.env.MERCHANT_PROMO_IDS = originalEnv;
   });
 
-  it("defaults to the documented PHL_LAUNCH promotion ID", () => {
-    expect(getMerchantPromoIds()).toEqual(["PHL_LAUNCH"]);
+  it("defaults to PHL_LAUNCH and PHL_LAUNCH2 promotion IDs", () => {
+    expect(getMerchantPromoIds()).toEqual(["PHL_LAUNCH", "PHL_LAUNCH2"]);
   });
 
   it("honours the MERCHANT_PROMO_IDS env override (comma-separated)", () => {
