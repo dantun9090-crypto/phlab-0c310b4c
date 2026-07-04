@@ -115,7 +115,7 @@ export default function SentryIssuesTab() {
       </div>
       <p className="text-slate-400 text-sm">
         Unresolved errors from the frontend + backend Sentry project. Uses{' '}
-        <code className="text-emerald-400">SENTRY_AUTH_TOKEN</code> on the server; token is never exposed.
+        <code className="text-emerald-400">SENTRY_API_TOKEN</code> on the server; token is never exposed.
       </p>
 
       <div className="flex flex-wrap items-center gap-3">
