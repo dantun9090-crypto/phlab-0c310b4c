@@ -77,6 +77,13 @@ interface InfraListResult {
   error?: string;
 }
 
+interface InfraRunResult {
+  ok: boolean;
+  status: number;
+  overall: string | null;
+  error?: string;
+}
+
 function toMillis(v: unknown): number {
   if (!v) return 0;
   if (typeof v === 'number') return v;
@@ -223,7 +230,7 @@ export default function InfraHealthTab() {
     try {
       const idToken = await auth.currentUser?.getIdToken();
       if (!idToken) throw new Error('Sign in as admin first');
-      const res = await runInfraHealthCheckNow({ data: { idToken } });
+      const res = await runInfraHealthCheckNow({ data: { idToken } }) as InfraRunResult;
       setTriggerMsg(`HTTP ${res.status} — overall: ${res.overall ?? '?'}`);
       await loadAll(pageSize);
       await loadAlerts();

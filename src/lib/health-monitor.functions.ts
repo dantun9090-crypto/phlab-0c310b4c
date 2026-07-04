@@ -401,6 +401,7 @@ export const runInfraHealthCheckNow = createServerFn({ method: 'POST' })
     const res = await fetch(`${ORIGIN}/api/public/health-deep`, { cache: 'no-store' });
     const report = (await res.json().catch(() => null)) as null | Record<string, unknown>;
     if (!report) return { ok: false as const, status: res.status, overall: null, error: 'invalid_health_response' };
+    const overall = typeof report.overall === 'string' ? report.overall : null;
 
     const timestamp = Date.now();
     const row = {
@@ -412,7 +413,7 @@ export const runInfraHealthCheckNow = createServerFn({ method: 'POST' })
     };
     await addDocAdmin('health_checks', row);
 
-    if (report.overall === 'FAIL') {
+    if (overall === 'FAIL') {
       const checks = (report.checks ?? {}) as Record<string, { status?: string; detail?: string }>;
       const failedChecks = Object.entries(checks)
         .filter(([, v]) => v?.status === 'FAIL')
@@ -432,12 +433,12 @@ export const runInfraHealthCheckNow = createServerFn({ method: 'POST' })
       action: 'infra_health.run',
       target: 'health_checks',
       before: null,
-      after: { overall: report.overall ?? null, httpStatus: res.status },
+      after: { overall, httpStatus: res.status },
       timestamp: new Date().toISOString(),
       ip: 'server',
     });
 
-    return { ok: res.ok, status: res.status, overall: report.overall ?? null };
+    return { ok: res.ok, status: res.status, overall };
   });
 
 export const acknowledgeInfraHealthAlert = createServerFn({ method: 'POST' })
