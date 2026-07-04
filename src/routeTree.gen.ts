@@ -71,6 +71,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wallid'
 import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
+import { Route as ApiPublicSentryPeekRouteImport } from './routes/api/public/sentry-peek'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicPublishStatusRouteImport } from './routes/api/public/publish-status'
 import { Route as ApiPublicPublishHoldRouteImport } from './routes/api/public/publish-hold'
@@ -88,7 +89,6 @@ import { Route as ApiPublicCoaPdfRouteImport } from './routes/api/public/coa-pdf
 import { Route as ApiPublicCacheConfigRouteImport } from './routes/api/public/cache-config'
 import { Route as ApiPublicAuditReportRouteImport } from './routes/api/public/audit-report'
 import { Route as ApiPublicAdminErrorsRouteImport } from './routes/api/public/admin-errors'
-import { Route as ApiPublicSentryPeekRouteImport } from './routes/api/public/_sentry-peek'
 import { Route as ApiPaymentsStatusRouteImport } from './routes/api/payments/status'
 import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/create'
 import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/cancel'
@@ -436,6 +436,11 @@ const ApiPublicWebVitalsRoute = ApiPublicWebVitalsRouteImport.update({
   path: '/api/public/web-vitals',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSentryPeekRoute = ApiPublicSentryPeekRouteImport.update({
+  id: '/api/public/sentry-peek',
+  path: '/api/public/sentry-peek',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSendMailRoute = ApiPublicSendMailRouteImport.update({
   id: '/api/public/send-mail',
   path: '/api/public/send-mail',
@@ -521,11 +526,6 @@ const ApiPublicAuditReportRoute = ApiPublicAuditReportRouteImport.update({
 const ApiPublicAdminErrorsRoute = ApiPublicAdminErrorsRouteImport.update({
   id: '/api/public/admin-errors',
   path: '/api/public/admin-errors',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicSentryPeekRoute = ApiPublicSentryPeekRouteImport.update({
-  id: '/api/public/_sentry-peek',
-  path: '/api/public',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPaymentsStatusRoute = ApiPaymentsStatusRouteImport.update({
@@ -752,7 +752,6 @@ export interface FileRoutesByFullPath {
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
-  '/api/public': typeof ApiPublicSentryPeekRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/audit-report': typeof ApiPublicAuditReportRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
@@ -770,6 +769,7 @@ export interface FileRoutesByFullPath {
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/public/sentry-peek': typeof ApiPublicSentryPeekRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
@@ -860,7 +860,6 @@ export interface FileRoutesByTo {
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
-  '/api/public': typeof ApiPublicSentryPeekRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/audit-report': typeof ApiPublicAuditReportRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
@@ -878,6 +877,7 @@ export interface FileRoutesByTo {
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/public/sentry-peek': typeof ApiPublicSentryPeekRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
@@ -971,7 +971,6 @@ export interface FileRoutesById {
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
-  '/api/public/_sentry-peek': typeof ApiPublicSentryPeekRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/audit-report': typeof ApiPublicAuditReportRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
@@ -989,6 +988,7 @@ export interface FileRoutesById {
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/public/sentry-peek': typeof ApiPublicSentryPeekRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
@@ -1082,7 +1082,6 @@ export interface FileRouteTypes {
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/status'
-    | '/api/public'
     | '/api/public/admin-errors'
     | '/api/public/audit-report'
     | '/api/public/cache-config'
@@ -1100,6 +1099,7 @@ export interface FileRouteTypes {
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
+    | '/api/public/sentry-peek'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/api/public/diag/build-state'
@@ -1190,7 +1190,6 @@ export interface FileRouteTypes {
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/status'
-    | '/api/public'
     | '/api/public/admin-errors'
     | '/api/public/audit-report'
     | '/api/public/cache-config'
@@ -1208,6 +1207,7 @@ export interface FileRouteTypes {
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
+    | '/api/public/sentry-peek'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/api/public/diag/build-state'
@@ -1300,7 +1300,6 @@ export interface FileRouteTypes {
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/status'
-    | '/api/public/_sentry-peek'
     | '/api/public/admin-errors'
     | '/api/public/audit-report'
     | '/api/public/cache-config'
@@ -1318,6 +1317,7 @@ export interface FileRouteTypes {
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
+    | '/api/public/sentry-peek'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/api/public/diag/build-state'
@@ -1399,7 +1399,6 @@ export interface RootRouteChildren {
   ApiPaymentsCancelRoute: typeof ApiPaymentsCancelRoute
   ApiPaymentsCreateRoute: typeof ApiPaymentsCreateRoute
   ApiPaymentsStatusRoute: typeof ApiPaymentsStatusRoute
-  ApiPublicSentryPeekRoute: typeof ApiPublicSentryPeekRoute
   ApiPublicAdminErrorsRoute: typeof ApiPublicAdminErrorsRoute
   ApiPublicAuditReportRoute: typeof ApiPublicAuditReportRoute
   ApiPublicCacheConfigRoute: typeof ApiPublicCacheConfigRoute
@@ -1417,6 +1416,7 @@ export interface RootRouteChildren {
   ApiPublicPublishHoldRoute: typeof ApiPublicPublishHoldRoute
   ApiPublicPublishStatusRoute: typeof ApiPublicPublishStatusRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
+  ApiPublicSentryPeekRoute: typeof ApiPublicSentryPeekRoute
   ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
   ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
   ApiPublicDiagBuildStateRoute: typeof ApiPublicDiagBuildStateRoute
@@ -1879,6 +1879,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebVitalsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/sentry-peek': {
+      id: '/api/public/sentry-peek'
+      path: '/api/public/sentry-peek'
+      fullPath: '/api/public/sentry-peek'
+      preLoaderRoute: typeof ApiPublicSentryPeekRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/send-mail': {
       id: '/api/public/send-mail'
       path: '/api/public/send-mail'
@@ -1996,13 +2003,6 @@ declare module '@tanstack/react-router' {
       path: '/api/public/admin-errors'
       fullPath: '/api/public/admin-errors'
       preLoaderRoute: typeof ApiPublicAdminErrorsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/_sentry-peek': {
-      id: '/api/public/_sentry-peek'
-      path: '/api/public'
-      fullPath: '/api/public'
-      preLoaderRoute: typeof ApiPublicSentryPeekRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/payments/status': {
@@ -2313,7 +2313,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPaymentsCancelRoute: ApiPaymentsCancelRoute,
   ApiPaymentsCreateRoute: ApiPaymentsCreateRoute,
   ApiPaymentsStatusRoute: ApiPaymentsStatusRoute,
-  ApiPublicSentryPeekRoute: ApiPublicSentryPeekRoute,
   ApiPublicAdminErrorsRoute: ApiPublicAdminErrorsRoute,
   ApiPublicAuditReportRoute: ApiPublicAuditReportRoute,
   ApiPublicCacheConfigRoute: ApiPublicCacheConfigRoute,
@@ -2331,6 +2330,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPublishHoldRoute: ApiPublicPublishHoldRoute,
   ApiPublicPublishStatusRoute: ApiPublicPublishStatusRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
+  ApiPublicSentryPeekRoute: ApiPublicSentryPeekRoute,
   ApiPublicWebVitalsRoute: ApiPublicWebVitalsRoute,
   ApiWebhooksWallidRoute: ApiWebhooksWallidRoute,
   ApiPublicDiagBuildStateRoute: ApiPublicDiagBuildStateRoute,

@@ -4,7 +4,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/api/public/_sentry-peek")({
+export const Route = createFileRoute("/api/public/sentry-peek")({
   server: {
     handlers: {
       GET: async ({ request }) => {
