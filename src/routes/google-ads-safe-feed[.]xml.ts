@@ -39,6 +39,9 @@ const CATEGORY_PATH =
 const ALLOWED_SLUGS = new Set<string>([
   "bacteriostatic-water-research-compound",
   "bacteriostatic-water",
+  "nad-research-compound",
+  "nad-plus-research-compound",
+  "nad",
 ]);
 
 /**
