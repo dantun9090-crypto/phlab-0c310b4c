@@ -768,8 +768,8 @@ export default {
         if (hit) {
           const h = new Headers(hit.headers);
           h.set("cache-control", "public, max-age=0, must-revalidate");
-          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
-          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
+          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
+          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
           h.set("x-phl-via", "edge-cache-hit");
           h.set("cf-cache-status", "HIT");
           h.set("x-phl-cache", "hit");
@@ -812,10 +812,10 @@ export default {
       } else if ((h.get("content-type") || "").includes("text/html")) {
         if (htmlTtl > 0) {
           // Browser must revalidate every nav so a publish is visible
-          // immediately; edge holds it for htmlTtl + can serve stale 24h.
+          // immediately; edge holds it for htmlTtl + can serve stale briefly.
           h.set("cache-control", "public, max-age=0, must-revalidate");
-          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
-          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=86400`);
+          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
+          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
         } else {
           // Admin disabled the HTML edge cache → force no-store everywhere.
           h.set("cache-control", "no-store, no-cache, must-revalidate, max-age=0");
