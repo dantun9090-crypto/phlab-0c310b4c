@@ -88,7 +88,6 @@ import { Route as ApiPublicCoaPdfRouteImport } from './routes/api/public/coa-pdf
 import { Route as ApiPublicCacheConfigRouteImport } from './routes/api/public/cache-config'
 import { Route as ApiPublicAuditReportRouteImport } from './routes/api/public/audit-report'
 import { Route as ApiPublicAdminErrorsRouteImport } from './routes/api/public/admin-errors'
-import { Route as ApiPublicSentryPeekRouteImport } from './routes/api/public/_sentry-peek'
 import { Route as ApiPaymentsStatusRouteImport } from './routes/api/payments/status'
 import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/create'
 import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/cancel'
@@ -523,11 +522,6 @@ const ApiPublicAdminErrorsRoute = ApiPublicAdminErrorsRouteImport.update({
   path: '/api/public/admin-errors',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicSentryPeekRoute = ApiPublicSentryPeekRouteImport.update({
-  id: '/api/public/_sentry-peek',
-  path: '/api/public',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPaymentsStatusRoute = ApiPaymentsStatusRouteImport.update({
   id: '/api/payments/status',
   path: '/api/payments/status',
@@ -752,7 +746,6 @@ export interface FileRoutesByFullPath {
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
-  '/api/public': typeof ApiPublicSentryPeekRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/audit-report': typeof ApiPublicAuditReportRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
@@ -860,7 +853,6 @@ export interface FileRoutesByTo {
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
-  '/api/public': typeof ApiPublicSentryPeekRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/audit-report': typeof ApiPublicAuditReportRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
@@ -971,7 +963,6 @@ export interface FileRoutesById {
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
-  '/api/public/_sentry-peek': typeof ApiPublicSentryPeekRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/audit-report': typeof ApiPublicAuditReportRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
@@ -1082,7 +1073,6 @@ export interface FileRouteTypes {
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/status'
-    | '/api/public'
     | '/api/public/admin-errors'
     | '/api/public/audit-report'
     | '/api/public/cache-config'
@@ -1190,7 +1180,6 @@ export interface FileRouteTypes {
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/status'
-    | '/api/public'
     | '/api/public/admin-errors'
     | '/api/public/audit-report'
     | '/api/public/cache-config'
@@ -1300,7 +1289,6 @@ export interface FileRouteTypes {
     | '/api/payments/cancel'
     | '/api/payments/create'
     | '/api/payments/status'
-    | '/api/public/_sentry-peek'
     | '/api/public/admin-errors'
     | '/api/public/audit-report'
     | '/api/public/cache-config'
@@ -1399,7 +1387,6 @@ export interface RootRouteChildren {
   ApiPaymentsCancelRoute: typeof ApiPaymentsCancelRoute
   ApiPaymentsCreateRoute: typeof ApiPaymentsCreateRoute
   ApiPaymentsStatusRoute: typeof ApiPaymentsStatusRoute
-  ApiPublicSentryPeekRoute: typeof ApiPublicSentryPeekRoute
   ApiPublicAdminErrorsRoute: typeof ApiPublicAdminErrorsRoute
   ApiPublicAuditReportRoute: typeof ApiPublicAuditReportRoute
   ApiPublicCacheConfigRoute: typeof ApiPublicCacheConfigRoute
@@ -1998,13 +1985,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAdminErrorsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/_sentry-peek': {
-      id: '/api/public/_sentry-peek'
-      path: '/api/public'
-      fullPath: '/api/public'
-      preLoaderRoute: typeof ApiPublicSentryPeekRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/payments/status': {
       id: '/api/payments/status'
       path: '/api/payments/status'
@@ -2313,7 +2293,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPaymentsCancelRoute: ApiPaymentsCancelRoute,
   ApiPaymentsCreateRoute: ApiPaymentsCreateRoute,
   ApiPaymentsStatusRoute: ApiPaymentsStatusRoute,
-  ApiPublicSentryPeekRoute: ApiPublicSentryPeekRoute,
   ApiPublicAdminErrorsRoute: ApiPublicAdminErrorsRoute,
   ApiPublicAuditReportRoute: ApiPublicAuditReportRoute,
   ApiPublicCacheConfigRoute: ApiPublicCacheConfigRoute,
