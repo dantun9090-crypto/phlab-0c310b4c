@@ -239,9 +239,53 @@ export const Route = createFileRoute("/api/public/send-marketing")({
           return json({ ok: true, requeued: enqueued, duplicates, matched: rows.length, failed: failures.length, failures: failures.slice(0, 10) });
         }
 
-        const { subject, html: rawHtml, recipients } = parsed.data;
+        const { subject, html: rawHtml, recipients, dryRun, strict } = parsed.data;
         const campaignId = parsed.data.campaignId || `campaign_${Date.now()}`;
         const { html, text } = normaliseHtml(rawHtml);
+
+        // Placeholder validation — surfaces unresolved / unknown tokens before we
+        // enqueue thousands of emails, and counts how many recipients will fall
+        // back to "there" because they have no firstName in Firestore.
+        const analysis = analysePlaceholders(subject, html);
+        let fallbackFirstNameCount = 0;
+        let fallbackFullNameCount = 0;
+        const fallbackEmailsSample: string[] = [];
+        for (const r of recipients) {
+          const fullName = (r.name || `${r.firstName || ""} ${r.lastName || ""}`).trim();
+          const firstName = (r.firstName || fullName.split(/\s+/)[0] || "").trim();
+          if (!firstName) {
+            fallbackFirstNameCount++;
+            if (fallbackEmailsSample.length < 20) fallbackEmailsSample.push(r.email);
+          }
+          if (!fullName && !firstName) fallbackFullNameCount++;
+        }
+
+        const validation = {
+          knownPlaceholders: analysis.known,
+          unknownPlaceholders: analysis.unknown,
+          hasPersonalisation: analysis.hasPersonalisation,
+          recipientCount: recipients.length,
+          fallbackFirstNameCount,
+          fallbackFullNameCount,
+          fallbackAffectsPct: recipients.length > 0
+            ? Math.round((fallbackFirstNameCount / recipients.length) * 100)
+            : 0,
+          fallbackEmailsSample,
+        };
+
+        if (dryRun) {
+          return json({ ok: true, dryRun: true, validation });
+        }
+
+        if (strict && analysis.unknown.length > 0) {
+          return json({
+            ok: false,
+            error: "unknown_placeholders",
+            detail: `Unknown placeholders will ship as literal text: ${analysis.unknown.join(", ")}`,
+            validation,
+          }, 400);
+        }
+
         const now = new Date();
         let enqueued = 0;
         let duplicates = 0;
@@ -288,7 +332,15 @@ export const Route = createFileRoute("/api/public/send-marketing")({
         }
 
 
-        return json({ ok: true, enqueued, duplicates, failed: failures.length, campaignId, failures: failures.slice(0, 10) });
+        return json({
+          ok: true,
+          enqueued,
+          duplicates,
+          failed: failures.length,
+          campaignId,
+          failures: failures.slice(0, 10),
+          validation,
+        });
       },
     },
   },
