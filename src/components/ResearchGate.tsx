@@ -128,6 +128,78 @@ export default function ResearchGate() {
     };
   }, [showModal, hideGateCompletely]);
 
+  // A11y: Escape-to-close, focus trap, initial focus, restore focus on close.
+  useEffect(() => {
+    if (!showModal || hideGateCompletely) return;
+
+    prevFocusRef.current = (document.activeElement as HTMLElement) || null;
+
+    // Move focus into the modal on the next frame so the card is mounted.
+    const focusTimer = window.setTimeout(() => {
+      ctaRef.current?.focus();
+    }, 0);
+
+    const getFocusable = (): HTMLElement[] => {
+      const root = cardRef.current;
+      if (!root) return [];
+      const sel = [
+        'a[href]',
+        'button:not([disabled])',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        'textarea:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(',');
+      return Array.from(root.querySelectorAll<HTMLElement>(sel))
+        .filter(el => !el.hasAttribute('disabled') && el.tabIndex !== -1 && el.offsetParent !== null);
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowModal(false);
+        notifyGateCleared();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+
+      const focusables = getFocusable();
+      if (focusables.length === 0) {
+        e.preventDefault();
+        cardRef.current?.focus();
+        return;
+      }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      const inside = cardRef.current?.contains(active ?? null);
+
+      if (!inside) {
+        e.preventDefault();
+        first.focus();
+        return;
+      }
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      window.clearTimeout(focusTimer);
+      document.removeEventListener('keydown', onKeyDown, true);
+      // Restore focus to the element that opened the modal.
+      const prev = prevFocusRef.current;
+      if (prev && typeof prev.focus === 'function' && document.contains(prev)) {
+        prev.focus();
+      }
+    };
+  }, [showModal, hideGateCompletely]);
+
   if (hideGateCompletely) return null;
 
   const handleConfirm = () => {
