@@ -172,9 +172,9 @@ function defaultsFor(feedKey: FeedKey): MerchantFeedConfig {
       "human consumption", "injectable", "dosage", "weight loss",
       "anti-aging", "diabetes", "cancer", "clinical",
     ],
-    hardBlockedSlugs: isFree
-      ? [] // Free Listings: allow every catalogue item (incl. tirzepatide).
-      : ["tirzepatide-research-peptide", "tirzepatide"],
+    // Free + paid: allow every catalogue item (incl. tirzepatide) per admin
+    // request 2026-07-04. Google decides final approval per its policies.
+    hardBlockedSlugs: [],
     highRiskTokens: [
       "retatrutide", "bpc-157", "bpc157", "bpc 157",
       "tirzepatide", "semaglutide",
