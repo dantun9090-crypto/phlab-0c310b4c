@@ -386,6 +386,7 @@ export default function ResearchGate() {
       {/* ── Modal ──────────────────────────────────────────────────────────── */}
       {showModal && !isExempt && (
         <div
+          className="rg-modal-overlay"
           role="dialog"
           aria-modal="true"
           aria-label="Research use confirmation"
