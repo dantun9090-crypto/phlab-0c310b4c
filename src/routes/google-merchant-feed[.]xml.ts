@@ -119,10 +119,12 @@ function toDisplayCategory(slug?: string | null): string | null {
  * flag is still respected as a hard block. Tirzepatide is additionally
  * hard-blocked by slug/name regardless of flag state.
  */
-// Per admin request 2026-07-04: Tirzepatide is included in the combined
-// merchant feed (Free_listings + Shopping_ads destinations). Google decides
-// final approval per its own policies.
-const HARD_BLOCKED_SLUGS = new Set<string>([]);
+// Tirzepatide is hard-blocked from the combined merchant feed (GLP-1
+// analogue — Google pharma policy).
+const HARD_BLOCKED_SLUGS = new Set<string>([
+  "tirzepatide-research-peptide",
+  "tirzepatide",
+]);
 
 /**
  * Merchant feed identity overrides. Some compound names (Retatrutide,
@@ -169,7 +171,9 @@ function isAllowedForMerchant(p: {
 }): boolean {
   if (p.excludeFromMerchantFeed === true) return false;
   const slug = (p.slug || "").toLowerCase();
+  const name = (p.name || "").toLowerCase();
   if (HARD_BLOCKED_SLUGS.has(slug)) return false;
+  if (name.includes("tirzepatide")) return false;
   return p.includeInMerchantFeed === true;
 }
 
