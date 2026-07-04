@@ -235,6 +235,7 @@ export default function EmailMarketingTab() {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [loadingSubscribers, setLoadingSubscribers] = useState(false);
+  const [repairingQueue, setRepairingQueue] = useState(false);
 
   useEffect(() => {
     loadCustomers();
@@ -388,6 +389,38 @@ export default function EmailMarketingTab() {
       setMsg({ type: 'error', text: 'Failed to queue campaign: ' + (e?.message || 'unknown error') });
     } finally {
       setSending(false);
+    }
+  };
+
+  const requeuePendingMarketing = async () => {
+    const pendingSubject = recentEmails.find(e => e.status === 'pending')?.subject;
+    if (!pendingSubject) {
+      setMsg({ type: 'error', text: 'No pending marketing campaign found to repair.' });
+      return;
+    }
+    if (!window.confirm(`Requeue pending emails for this campaign?\n\n${pendingSubject}`)) return;
+    setRepairingQueue(true);
+    setMsg(null);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Not signed in as admin');
+      const res = await fetch('/api/public/send-marketing', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ idToken, requeuePending: true, subject: pendingSubject, sinceHours: 72, limit: 1000 }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || !result.ok) throw new Error(result.error || result.detail || `HTTP ${res.status}`);
+      setMsg({
+        type: 'success',
+        text: `Requeued ${result.requeued || 0} stuck email${result.requeued === 1 ? '' : 's'}${result.duplicates ? ` (${result.duplicates} already in send queue)` : ''}.`,
+      });
+      setTimeout(() => setMsg(null), 8000);
+      loadHistory();
+    } catch (e: any) {
+      setMsg({ type: 'error', text: 'Failed to requeue campaign: ' + (e?.message || 'unknown error') });
+    } finally {
+      setRepairingQueue(false);
     }
   };
 
@@ -658,15 +691,15 @@ export default function EmailMarketingTab() {
             <ul className="space-y-2 text-[#9cb8d9] text-xs leading-relaxed">
               <li className="flex items-start gap-2">
                 <span className="w-4 h-4 rounded-full bg-blue-500/20 text-blue-400 text-[10px] flex items-center justify-center shrink-0 mt-0.5 font-bold">1</span>
-                Emails are written to an <span className="text-white font-medium mx-1">emailQueue</span> collection in Firebase.
+                Emails are written to the <span className="text-white font-medium mx-1">mail</span> send queue and tracked in <span className="text-white font-medium mx-1">emailQueue</span> history.
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-4 h-4 rounded-full bg-blue-500/20 text-blue-400 text-[10px] flex items-center justify-center shrink-0 mt-0.5 font-bold">2</span>
-                A Firebase Cloud Function (or SMTP trigger) monitors the queue and sends each email.
+                The SMTP trigger monitors <span className="text-white font-medium mx-1">mail</span> and sends each email.
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-4 h-4 rounded-full bg-blue-500/20 text-blue-400 text-[10px] flex items-center justify-center shrink-0 mt-0.5 font-bold">3</span>
-                Queue items update to <span className="text-green-400 font-medium mx-1">sent</span> or <span className="text-red-400 font-medium mx-1">failed</span> once processed.
+                Delivery status appears in Email Queue &amp; Delivery once the trigger processes each row.
               </li>
             </ul>
           </div>
@@ -684,6 +717,15 @@ export default function EmailMarketingTab() {
                 className="p-1.5 hover:bg-white/5 rounded-lg transition-colors"
               >
                 <RefreshCw className="w-3.5 h-3.5 text-[#9cb8d9]" />
+              </button>
+              <button
+                type="button"
+                onClick={requeuePendingMarketing}
+                disabled={repairingQueue || !recentEmails.some(e => e.status === 'pending')}
+                className="inline-flex items-center gap-1.5 px-2 py-1 text-[10px] font-semibold rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/25 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {repairingQueue ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                Requeue stuck
               </button>
             </div>
 
