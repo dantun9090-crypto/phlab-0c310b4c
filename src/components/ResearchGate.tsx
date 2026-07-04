@@ -108,6 +108,21 @@ export default function ResearchGate() {
     }
   }, [location.pathname]);
 
+  // Lock body scroll while modal is open so the page behind can't scroll and
+  // the modal always sits within the viewport instead of being pushed off.
+  useEffect(() => {
+    if (!showModal || hideGateCompletely) return;
+    const prevOverflow = document.body.style.overflow;
+    const prevPaddingRight = document.body.style.paddingRight;
+    const scrollbarW = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = 'hidden';
+    if (scrollbarW > 0) document.body.style.paddingRight = `${scrollbarW}px`;
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.paddingRight = prevPaddingRight;
+    };
+  }, [showModal, hideGateCompletely]);
+
   if (hideGateCompletely) return null;
 
   const handleConfirm = () => {
