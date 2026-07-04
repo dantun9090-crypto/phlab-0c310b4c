@@ -7,12 +7,31 @@ import { listDocsAdmin } from '@/lib/server/firestore-admin';
 type OrderRow = Record<string, unknown> & { id: string };
 const EXCLUDED_STATUSES = new Set(['cancelled', 'canceled', 'refunded', 'failed', 'expired']);
 
-function json(body: unknown, status = 200): Response {
+// In-memory cache to shield Firestore from repeat polls (survives within a
+// single Worker isolate). TTL matches the response Cache-Control so CF edge
+// + browser cache line up.
+const LIVE_ORDERS_CACHE_TTL_MS = 30_000;
+const liveOrdersCache = new Map<string, { body: string; timestamp: number }>();
+
+function json(body: unknown, status = 200, extraHeaders: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
       'cache-control': 'no-store',
+      'x-robots-tag': 'noindex',
+      ...extraHeaders,
+    },
+  });
+}
+
+function cacheableJson(bodyStr: string, cacheStatus: 'HIT' | 'MISS'): Response {
+  return new Response(bodyStr, {
+    status: 200,
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'public, max-age=30, s-maxage=30',
+      'x-cache': cacheStatus,
       'x-robots-tag': 'noindex',
     },
   });
@@ -74,6 +93,15 @@ export const Route = createFileRoute('/api/public/live-orders')({
         const limit = Math.min(Math.max(Number(url.searchParams.get('limit') || 20), 1), 20);
         const debug = url.searchParams.get('debug') === '1';
 
+        const cacheKey = `limit=${limit}`;
+        const now = Date.now();
+        if (!debug) {
+          const cached = liveOrdersCache.get(cacheKey);
+          if (cached && now - cached.timestamp < LIVE_ORDERS_CACHE_TTL_MS) {
+            return cacheableJson(cached.body, 'HIT');
+          }
+        }
+
         try {
           const rows = await fetchRecentOrderRows();
 
@@ -83,7 +111,13 @@ export const Route = createFileRoute('/api/public/live-orders')({
             .filter((order): order is LiveOrder => Boolean(order))
             .slice(0, limit);
 
-          return json({ orders, count: orders.length, debug: debug ? { scanned: rows.length } : undefined });
+          const bodyStr = JSON.stringify({
+            orders,
+            count: orders.length,
+            debug: debug ? { scanned: rows.length } : undefined,
+          });
+          if (!debug) liveOrdersCache.set(cacheKey, { body: bodyStr, timestamp: now });
+          return cacheableJson(bodyStr, 'MISS');
         } catch (error) {
           console.warn('[live-orders] failed', error instanceof Error ? error.message : String(error));
           return json({ orders: [], count: 0 }, 200);

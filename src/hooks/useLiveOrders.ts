@@ -10,8 +10,8 @@ interface UseLiveOrdersResult {
 // Shared singleton poller so mounting multiple components doesn't create
 // duplicate requests. Orders stay private in Firestore; this hits a sanitized
 // same-origin endpoint that returns only GDPR-safe social-proof fields.
-const POLL_MS = 15_000;
-const MAX_POLL_MS = 60_000;
+const POLL_MS = 30_000;
+const MAX_POLL_MS = 120_000;
 let sharedStop: (() => void) | null = null;
 let sharedOrders: LiveOrder[] = [];
 let sharedListeners: Set<(orders: LiveOrder[], newOrder: LiveOrder | null) => void> = new Set();
