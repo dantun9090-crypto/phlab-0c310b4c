@@ -1,0 +1,119 @@
+name: Edge SWR guard
+
+# Post-publish sanity check: verifies the live Cloudflare edge is serving
+# `Cloudflare-CDN-Cache-Control: ...stale-while-revalidate=60` on the apex
+# and www hosts. If either host still advertises the old 86400s SWR (or
+# any value other than 60), the job FAILS — blocking the deploy from being
+# marked green so we don't silently pin day-old HTML at the edge again.
+#
+# Runs automatically after every push to main (post-publish) and can be
+# dispatched manually to re-verify after a Worker redeploy.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Hourly drift check — catches out-of-band Worker rollbacks.
+    - cron: "17 * * * *"
+
+concurrency:
+  group: edge-swr-guard
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify stale-while-revalidate=60 on live edge
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe edge headers and enforce SWR=60
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          HOSTS=(
+            "https://phlabs.co.uk/"
+            "https://www.phlabs.co.uk/"
+          )
+          EXPECTED_SWR=60
+          # Retry a few times — Cloudflare route propagation after a Worker
+          # deploy can take ~30–60s on the very first request.
+          MAX_ATTEMPTS=6
+          SLEEP_BETWEEN=15
+
+          fail=0
+          summary=""
+
+          for url in "${HOSTS[@]}"; do
+            attempt=0
+            got=""
+            header=""
+            while [ $attempt -lt $MAX_ATTEMPTS ]; do
+              attempt=$((attempt+1))
+              # -L follows the apex→www or www→apex redirect if any so we
+              # measure the final response, not the 301.
+              header=$(curl -sSIL --max-time 15 \
+                -H "cache-control: no-cache" \
+                -A "phlabs-edge-swr-guard/1.0" \
+                "$url" \
+                | tr -d '\r' \
+                | grep -i '^cloudflare-cdn-cache-control:' \
+                | tail -n1 || true)
+              got=$(printf '%s' "$header" \
+                | grep -oiE 'stale-while-revalidate=[0-9]+' \
+                | tail -n1 \
+                | cut -d= -f2 || true)
+              if [ "$got" = "$EXPECTED_SWR" ]; then
+                break
+              fi
+              echo "::warning::[$url] attempt $attempt: got '${header:-<missing header>}' (swr='${got:-none}'), retrying in ${SLEEP_BETWEEN}s"
+              sleep "$SLEEP_BETWEEN"
+            done
+
+            if [ "$got" = "$EXPECTED_SWR" ]; then
+              line="✅ $url — $header"
+              echo "$line"
+            else
+              line="❌ $url — expected stale-while-revalidate=$EXPECTED_SWR, got '${header:-<missing header>}'"
+              echo "::error::$line"
+              fail=1
+            fi
+            summary="${summary}${line}"$'\n'
+          done
+
+          {
+            echo "## Edge SWR guard"
+            echo ""
+            echo "Expected: \`Cloudflare-CDN-Cache-Control: ...stale-while-revalidate=$EXPECTED_SWR\`"
+            echo ""
+            echo '```'
+            printf '%s' "$summary"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ $fail -ne 0 ]; then
+            echo "::error::Edge SWR guard failed — Cloudflare Worker (phlabs-prerender) likely needs redeploy. See cloudflare/phlabs-prerender.mjs."
+            exit 1
+          fi
+
+      - name: Open issue on failure
+        if: failure() && github.event_name != 'workflow_dispatch'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.sha.slice(0, 7);
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 Edge SWR guard failed on ${sha}`,
+              labels: ['infra', 'cloudflare', 'post-deploy'],
+              body: [
+                `Live edge did not advertise \`stale-while-revalidate=60\` on \`Cloudflare-CDN-Cache-Control\`.`,
+                ``,
+                `**Build:** \`${context.sha}\``,
+                `**Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+                ``,
+                `Fix: redeploy the \`phlabs-prerender\` Worker from \`cloudflare/phlabs-prerender.mjs\` (SWR is set to 60 there) and purge the Cloudflare edge cache.`,
+              ].join('\n'),
+            });
