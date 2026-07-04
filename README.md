@@ -333,3 +333,44 @@ bundle and a sanitised `verify-attestations.log` — Rekor UUIDs, log
 indices and internal IDs are redacted — so a reviewer can reproduce
 the failure locally without needing access to the workflow run logs.
 
+
+## Edge SWR Guard
+
+Post-publish + drift monitor that verifies `phlabs.co.uk` (apex + www) advertise
+`Cloudflare-CDN-Cache-Control: ...stale-while-revalidate=60` at the edge. On
+mismatch, the workflow attempts `wrangler rollback` first, falls back to
+`wrangler deploy`, then runs a **scoped** cache purge (only
+`https://phlabs.co.uk/*` and `https://www.phlabs.co.uk/*` — never
+`purge_everything`).
+
+### Files
+- `scripts/probe-swr.sh` — standalone probe. Usage:
+  `scripts/probe-swr.sh https://phlabs.co.uk/ 60`
+  Emits one JSON line; exit `0` = PASS, `1` = MISMATCH/SWR_MISSING, `2` = NETWORK_ERROR.
+- `.github/workflows/edge-swr-guard.yml` — schedule `*/5 * * * *`, on push to
+  `main`, and `workflow_dispatch` with `force_redeploy` input.
+- `.github/workflows/scripts/slack-notify.sh` — Slack sender with graceful
+  degradation (prints payload to logs when `SLACK_WEBHOOK_URL` is unset).
+
+### Required repository secrets
+| Secret | Purpose |
+| --- | --- |
+| `CF_API_TOKEN` | Cloudflare API token (Workers Scripts:Edit + Cache Purge) |
+| `CF_ZONE_ID` | Cloudflare zone id for phlabs.co.uk |
+| `CF_ACCOUNT_ID` | Cloudflare account id |
+| `SLACK_WEBHOOK_URL` | *(optional)* Slack incoming webhook — if missing, payloads log to workflow output |
+
+### State branch
+The retry counter lives in the orphan branch **`state/swr-guard`** in file
+`.swr-guard-state.json`:
+```json
+{ "date": "YYYY-MM-DD", "count": 0, "updated_at": "..." }
+```
+It's created automatically on the first remediation. Counter resets to `0` on
+successful verification or on a new UTC day. Cap: `MAX_AUTO_REDEPLOYS=3` — when
+reached, remediation stops and a red Slack alert is sent.
+
+### Slack colours
+- 🟢 green `#2e7d32` — verify PASS
+- 🟡 amber `#ffb300` — mismatch detected / remediation applied
+- 🔴 red `#d32f2f` — cap reached / remediation failed / verify failed
