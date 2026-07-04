@@ -37,20 +37,9 @@ const ARTICLE_PRODUCT_MAP: Record<string, Array<{ name: string; slug: string; ta
   'ghk-cu-copper-peptide-research': [
     { name: 'GHK-Cu', slug: 'ghk-cu', tagline: 'Copper peptide skin & repair' },
     { name: 'BPC-157', slug: 'bpc-157', tagline: 'Tissue repair research' },
-    { name: 'Epithalon', slug: 'epithalon', tagline: 'Telomere & longevity research' },
-  ],
-  'epithalon-telomere-research': [
-    { name: 'Epithalon', slug: 'epithalon', tagline: 'Telomere & longevity research' },
-    { name: 'NAD+', slug: 'nad-plus', tagline: 'Cellular energy & longevity' },
-  ],
-  'epithalon-telomere-epigenetic-research': [
-    { name: 'Epithalon', slug: 'epithalon', tagline: 'Telomere & longevity research' },
-    { name: 'NAD+', slug: 'nad-plus', tagline: 'Cellular energy & longevity' },
-    { name: 'MOTS-c', slug: 'mots-c', tagline: 'Mitochondrial-derived peptide' },
   ],
   'nad-nicotinamide-adenine-dinucleotide-research': [
     { name: 'NAD+', slug: 'nad-plus', tagline: 'Cellular energy & longevity' },
-    { name: 'Epithalon', slug: 'epithalon', tagline: 'Telomere & longevity research' },
     { name: 'MOTS-c', slug: 'mots-c', tagline: 'Mitochondrial-derived peptide' },
   ],
   'ipamorelin-ghrp-research': [
@@ -76,7 +65,6 @@ const ARTICLE_PRODUCT_MAP: Record<string, Array<{ name: string; slug: string; ta
   'mots-c-mitochondrial-derived-peptide': [
     { name: 'MOTS-c', slug: 'mots-c', tagline: 'Mitochondrial-derived peptide' },
     { name: 'NAD+', slug: 'nad-plus', tagline: 'Cellular energy & longevity' },
-    { name: 'Epithalon', slug: 'epithalon', tagline: 'Telomere & longevity research' },
   ],
   'melanotan-2-melanocortin-research': [
     { name: 'Melanotan 2', slug: 'melanotan-2', tagline: 'Melanocortin photoprotection' },
@@ -113,7 +101,7 @@ const ARTICLE_PRODUCT_MAP: Record<string, Array<{ name: string; slug: string; ta
   ],
   'glow-blend-skin-peptide-research': [
     { name: 'GHK-Cu', slug: 'ghk-cu', tagline: 'Copper peptide skin & repair' },
-    { name: 'Epithalon', slug: 'epithalon', tagline: 'Telomere & longevity research' },
+    { name: 'BPC-157', slug: 'bpc-157', tagline: 'Tissue repair & gut research' },
   ],
   'klow-blend-cognitive-research': [
     { name: 'Selank', slug: 'selank', tagline: 'Anxiolytic nootropic peptide' },

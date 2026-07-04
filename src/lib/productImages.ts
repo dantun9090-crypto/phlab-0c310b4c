@@ -28,8 +28,6 @@ const VIAL_IMAGES: Record<string, string> = {
   // Cellular Aging Studies & Anti-aging
   'nad+':           'https://cdn.wegic.ai/assets/onepage/agent/images/1773539068702.jpg',
   'nad':            'https://cdn.wegic.ai/assets/onepage/agent/images/1773539068702.jpg',
-  'epithalon':      'https://cdn.wegic.ai/assets/onepage/agent/images/1773539572658.jpg',
-  'epitalon':       'https://cdn.wegic.ai/assets/onepage/agent/images/1773539572658.jpg',
   'ss-31':          'https://cdn.wegic.ai/assets/onepage/agent/images/1773539600198.jpg',
   'mots-c':         'https://cdn.wegic.ai/assets/onepage/agent/images/1773539095886.jpg',
   'mots':           'https://cdn.wegic.ai/assets/onepage/agent/images/1773539095886.jpg',

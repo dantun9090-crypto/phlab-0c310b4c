@@ -149,17 +149,6 @@ const PEPTIDE_COMPOUNDS = [
     color: 'amber',
   },
   {
-    name: 'Epithalon',
-    category: 'Longevity / Epigenetics',
-    mechanism: 'Telomerase activation · Pineal melatonin synthesis restoration · Chromatin remodelling',
-    models: 'Aged rats, cell culture telomere assays',
-    keyFinding: 'Lifespan extension in aged rats; telomerase activity increase in somatic cell lines',
-    slug: 'epithalon-telomere-research',
-    productSlug: 'epithalon',
-    icon: Dna,
-    color: 'purple',
-  },
-  {
     name: 'Selank',
     category: 'Cognitive / Anxiolytic',
     mechanism: 'Tuftsin analogue · GABA-A receptor modulation · BDNF upregulation · IL-6 normalisation',
