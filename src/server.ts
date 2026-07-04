@@ -129,15 +129,24 @@ const SCRIPT_HOST_ALLOWLIST = [
   "https://*.gstatic.com",
   "https://*.stripe.com",
   "https://*.wallid.com",
+  "https://*.wallid.io",
   "https://cdn.taboola.com",
   "https://*.taboola.com",
   "https://www.clarity.ms",
   "https://scripts.clarity.ms",
+  "https://*.clarity.ms",
   "https://bat.bing.com",
+  "https://browser.sentry-cdn.com",
+  "https://js.sentry-cdn.com",
 ].join(" ");
 
 function buildStrictCsp(nonce: string): string {
-  const scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic' ${SCRIPT_HOST_ALLOWLIST}`;
+  // 'unsafe-eval' is required by a small number of built vendor chunks
+  // (Firebase / analytics polyfills) that call Function()/eval on Safari
+  // and Firefox. Without it /products renders a black screen on those
+  // engines because hydration and the CSR fallback both throw. Chromium was
+  // masking this by ignoring the eval violation under 'strict-dynamic'.
+  const scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' ${SCRIPT_HOST_ALLOWLIST}`;
   return [
     "default-src 'self'",
     `script-src ${scriptSrc}`,
@@ -146,10 +155,10 @@ function buildStrictCsp(nonce: string): string {
     "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com",
     "style-src-attr 'unsafe-inline'",
     "font-src 'self' data: https://fonts.gstatic.com",
-    "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com https://ssl.google-analytics.com https://www.google.com https://www.google.co.uk https://www.google.se https://www.gstatic.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://stats.g.doubleclick.net https://*.google.com https://*.google.se https://bat.bing.net",
+    "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com https://ssl.google-analytics.com https://www.google.com https://www.google.co.uk https://www.google.se https://www.gstatic.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://stats.g.doubleclick.net https://*.google.com https://*.google.se https://bat.bing.net https://s.clarity.ms https://*.clarity.ms",
     "media-src 'self' https: data:",
-    "connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseinstallations.googleapis.com https://fcmregistrations.googleapis.com https://firebaseremoteconfig.googleapis.com https://firebasestorage.googleapis.com https://*.firebaseapp.com https://*.supabase.co https://www.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://*.analytics.google.com https://stats.g.doubleclick.net https://www.merchant-center-analytics.goog https://service.prerender.io https://api.prerender.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https://royal-mail-order.dantun9090.workers.dev https://www.googleadservices.com https://googleads.g.doubleclick.net https://apis.google.com https://bat.bing.net https://*.taboola.com",
-    "frame-src 'self' blob: https://firebasestorage.googleapis.com https://*.firebaseapp.com https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com https://www.recaptcha.net",
+    "connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseinstallations.googleapis.com https://fcmregistrations.googleapis.com https://firebaseremoteconfig.googleapis.com https://firebasestorage.googleapis.com https://*.firebaseapp.com https://*.googleapis.com https://*.supabase.co https://www.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://region1.analytics.google.com https://analytics.google.com https://*.analytics.google.com https://stats.g.doubleclick.net https://www.merchant-center-analytics.goog https://service.prerender.io https://api.prerender.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https://royal-mail-order.dantun9090.workers.dev https://www.googleadservices.com https://googleads.g.doubleclick.net https://apis.google.com https://bat.bing.net https://*.taboola.com https://s.clarity.ms https://*.clarity.ms https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://o4511662760525824.ingest.de.sentry.io https://*.wallid.io https://*.wallid.com",
+    "frame-src 'self' blob: https://firebasestorage.googleapis.com https://*.firebaseapp.com https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com https://www.recaptcha.net https://*.wallid.io https://*.wallid.com https://*.stripe.com",
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
