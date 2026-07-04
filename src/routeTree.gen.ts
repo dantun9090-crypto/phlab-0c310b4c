@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as Char123indexnowKeyChar125DottxtRouteImport } from './routes/{$indexnowKey}[.]txt'
 import { Route as UkResearchStoreRouteImport } from './routes/uk-research-store'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as StorageGuideRouteImport } from './routes/storage-guide'
@@ -38,7 +39,6 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as MarketingRouteImport } from './routes/_marketing'
-import { Route as IndexnowKeyDottxtRouteImport } from './routes/$indexnowKey[.]txt'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResourcesIndexRouteImport } from './routes/resources.index'
@@ -117,6 +117,12 @@ import { Route as ApiPublicHooksBacklinkWatcherRouteImport } from './routes/api/
 import { Route as ApiPublicDiagCacheHeadersRouteImport } from './routes/api/public/diag.cache-headers'
 import { Route as ApiPublicDiagBuildStateRouteImport } from './routes/api/public/diag.build-state'
 
+const Char123indexnowKeyChar125DottxtRoute =
+  Char123indexnowKeyChar125DottxtRouteImport.update({
+    id: '/{$indexnowKey}.txt',
+    path: '/{$indexnowKey}.txt',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const UkResearchStoreRoute = UkResearchStoreRouteImport.update({
   id: '/uk-research-store',
   path: '/uk-research-store',
@@ -261,11 +267,6 @@ const AboutRoute = AboutRouteImport.update({
 } as any)
 const MarketingRoute = MarketingRouteImport.update({
   id: '/_marketing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexnowKeyDottxtRoute = IndexnowKeyDottxtRouteImport.update({
-  id: '/$indexnowKey.txt',
-  path: '/$indexnowKey.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SplatRoute = SplatRouteImport.update({
@@ -682,7 +683,6 @@ const ApiPublicDiagBuildStateRoute = ApiPublicDiagBuildStateRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
-  '/$indexnowKey.txt': typeof IndexnowKeyDottxtRoute
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
@@ -711,6 +711,7 @@ export interface FileRoutesByFullPath {
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/uk-research-store': typeof UkResearchStoreRoute
+  '/{$indexnowKey}.txt': typeof Char123indexnowKeyChar125DottxtRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/orders-modal': typeof _e2eOrdersModalRoute
@@ -790,7 +791,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
-  '/$indexnowKey.txt': typeof IndexnowKeyDottxtRoute
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/admin': typeof AdminRouteWithChildren
@@ -818,6 +818,7 @@ export interface FileRoutesByTo {
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/uk-research-store': typeof UkResearchStoreRoute
+  '/{$indexnowKey}.txt': typeof Char123indexnowKeyChar125DottxtRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/orders-modal': typeof _e2eOrdersModalRoute
@@ -898,7 +899,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
-  '/$indexnowKey.txt': typeof IndexnowKeyDottxtRoute
   '/_marketing': typeof MarketingRouteWithChildren
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
@@ -928,6 +928,7 @@ export interface FileRoutesById {
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/uk-research-store': typeof UkResearchStoreRoute
+  '/{$indexnowKey}.txt': typeof Char123indexnowKeyChar125DottxtRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/__e2e/orders-modal': typeof _e2eOrdersModalRoute
@@ -1009,7 +1010,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/$'
-    | '/$indexnowKey.txt'
     | '/about'
     | '/account'
     | '/admin'
@@ -1038,6 +1038,7 @@ export interface FileRouteTypes {
     | '/storage-guide'
     | '/terms-and-conditions'
     | '/uk-research-store'
+    | '/{$indexnowKey}.txt'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/orders-modal'
@@ -1117,7 +1118,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/$'
-    | '/$indexnowKey.txt'
     | '/about'
     | '/account'
     | '/admin'
@@ -1145,6 +1145,7 @@ export interface FileRouteTypes {
     | '/storage-guide'
     | '/terms-and-conditions'
     | '/uk-research-store'
+    | '/{$indexnowKey}.txt'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/orders-modal'
@@ -1224,7 +1225,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/$'
-    | '/$indexnowKey.txt'
     | '/_marketing'
     | '/about'
     | '/account'
@@ -1254,6 +1254,7 @@ export interface FileRouteTypes {
     | '/storage-guide'
     | '/terms-and-conditions'
     | '/uk-research-store'
+    | '/{$indexnowKey}.txt'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/__e2e/orders-modal'
@@ -1334,7 +1335,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
-  IndexnowKeyDottxtRoute: typeof IndexnowKeyDottxtRoute
   MarketingRoute: typeof MarketingRouteWithChildren
   AboutRoute: typeof AboutRoute
   AccountRoute: typeof AccountRoute
@@ -1364,6 +1364,7 @@ export interface RootRouteChildren {
   StorageGuideRoute: typeof StorageGuideRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   UkResearchStoreRoute: typeof UkResearchStoreRoute
+  Char123indexnowKeyChar125DottxtRoute: typeof Char123indexnowKeyChar125DottxtRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   _e2eOrdersModalRoute: typeof _e2eOrdersModalRoute
@@ -1431,6 +1432,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/{$indexnowKey}.txt': {
+      id: '/{$indexnowKey}.txt'
+      path: '/{$indexnowKey}.txt'
+      fullPath: '/{$indexnowKey}.txt'
+      preLoaderRoute: typeof Char123indexnowKeyChar125DottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/uk-research-store': {
       id: '/uk-research-store'
       path: '/uk-research-store'
@@ -1632,13 +1640,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof MarketingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/$indexnowKey.txt': {
-      id: '/$indexnowKey.txt'
-      path: '/$indexnowKey.txt'
-      fullPath: '/$indexnowKey.txt'
-      preLoaderRoute: typeof IndexnowKeyDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$': {
@@ -2238,7 +2239,6 @@ const ResearchRouteWithChildren = ResearchRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
-  IndexnowKeyDottxtRoute: IndexnowKeyDottxtRoute,
   MarketingRoute: MarketingRouteWithChildren,
   AboutRoute: AboutRoute,
   AccountRoute: AccountRoute,
@@ -2268,6 +2268,7 @@ const rootRouteChildren: RootRouteChildren = {
   StorageGuideRoute: StorageGuideRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   UkResearchStoreRoute: UkResearchStoreRoute,
+  Char123indexnowKeyChar125DottxtRoute: Char123indexnowKeyChar125DottxtRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
