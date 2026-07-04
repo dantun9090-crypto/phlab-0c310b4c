@@ -314,6 +314,12 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
   const skipNextAutosave = useRef(true); // don't autosave on initial form population
 
   useEffect(() => {
+    skipNextAutosave.current = true;
+    setTouched({});
+    setActiveTab('basics');
+    setAutosaveStatus('idle');
+    setAutosaveError('');
+    setLastSavedAt(null);
     if (product) {
       pendingId.current = product.id;
       setFormData({ ...product, variants: product.variants || [] });
@@ -324,6 +330,59 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
       setBannerUrl('');
     }
   }, [product]);
+
+  // ── Live validation ───────────────────────────────────────────────────────
+  const validation = useMemo(() => validateProduct({
+    name: formData.name || '',
+    slug: (formData as any).slug || '',
+    category: formData.category || '',
+    price: Number(formData.price) || 0,
+    sku: formData.sku || '',
+    stock: Number(formData.stock) || 0,
+    purity: formData.purity || '',
+    visibility: formData.visibility || 'active',
+    description: formData.description || '',
+    variants: formData.variants || [],
+  }), [formData]);
+  const errors: FieldErrors = validation.errors;
+  const errorFor = (key: string): string | null => (touched[key] && errors[key]) ? errors[key] : null;
+  const markTouched = (key: string) => setTouched((t) => t[key] ? t : { ...t, [key]: true });
+
+  // ── Autosave (existing products only) ─────────────────────────────────────
+  // Debounced 2s after any form change. Skips new products (no id yet) and
+  // skips if validation fails on required fields.
+  useEffect(() => {
+    if (!product?.id) return; // only autosave existing products
+    if (skipNextAutosave.current) { skipNextAutosave.current = false; return; }
+    if (!validation.ok) return; // don't autosave broken state
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = setTimeout(async () => {
+      setAutosaveStatus('saving');
+      setAutosaveError('');
+      try {
+        const cleanImages = (formData.images || []).filter(Boolean);
+        const delta = {
+          ...formData,
+          images: cleanImages,
+          imageUrl: cleanImages[0] || formData.imageUrl || '',
+          bannerImageUrl: bannerUrl || '',
+          price: Number(formData.price) || 0,
+          stock: Number(formData.stock) || 0,
+          variants: formData.variants || [],
+        };
+        await updateProduct(product.id, delta as Partial<Product>);
+        setAutosaveStatus('saved');
+        setLastSavedAt(Date.now());
+      } catch (e: any) {
+        setAutosaveStatus('error');
+        setAutosaveError(e?.message || 'Autosave failed');
+      }
+    }, 2000);
+    return () => {
+      if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, bannerUrl, product?.id, validation.ok]);
 
   // ── Image slot handlers ───────────────────────────────────────────────────
   const handleSlotUpload = useCallback(async (file: File, index: number) => {
