@@ -20,7 +20,7 @@ const schema = z.object({
   email: z.string().trim().email('Please enter a valid email').max(255),
   fullName: z.string().trim().min(2, 'Please enter your full name').max(120),
   details: z.string().trim().max(2000).optional().or(z.literal('')),
-  confirm: z.literal(true, { errorMap: () => ({ message: 'You must confirm the request is genuine' }) }),
+  confirm: z.literal(true, { message: 'You must confirm the request is genuine' }),
 });
 
 export default function PrivacyRequests() {
@@ -44,7 +44,7 @@ export default function PrivacyRequests() {
     setError(null);
     const parsed = schema.safeParse({ type, email, fullName, details, confirm });
     if (!parsed.success) {
-      setError(parsed.error.errors[0]?.message ?? 'Please check the form');
+      setError(parsed.error.issues[0]?.message ?? 'Please check the form');
       return;
     }
     setSubmitting(true);

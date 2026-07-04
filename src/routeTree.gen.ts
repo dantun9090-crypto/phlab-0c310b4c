@@ -24,6 +24,7 @@ import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PrivacyRequestsRouteImport } from './routes/privacy-requests'
 import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
 import { Route as PeptideCalculatorRouteImport } from './routes/peptide-calculator'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LabReportsRouteImport } from './routes/lab-reports'
 import { Route as InstallRouteImport } from './routes/install'
@@ -66,6 +67,8 @@ import { Route as MarketingCompoundRouteImport } from './routes/_marketing.compo
 import { Route as _e2eWatchdogPanelRouteImport } from './routes/__e2e.watchdog-panel'
 import { Route as _e2ePaymentOptionsRouteImport } from './routes/__e2e.payment-options'
 import { Route as _e2eOrdersModalRouteImport } from './routes/__e2e.orders-modal'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wallid'
 import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
@@ -90,6 +93,7 @@ import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/cre
 import { Route as ApiPaymentsCancelRouteImport } from './routes/api/payments/cancel'
 import { Route as ApiDsrProcessRouteImport } from './routes/api/dsr/process'
 import { Route as ApiConfigPaymentsRouteImport } from './routes/api/config/payments'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 import { Route as ApiPublicHooksWatchdogRouteImport } from './routes/api/public/hooks/watchdog'
 import { Route as ApiPublicHooksWallidReconcileRouteImport } from './routes/api/public/hooks/wallid-reconcile'
@@ -186,6 +190,11 @@ const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
 const PeptideCalculatorRoute = PeptideCalculatorRouteImport.update({
   id: '/peptide-calculator',
   path: '/peptide-calculator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -403,6 +412,18 @@ const _e2eOrdersModalRoute = _e2eOrdersModalRouteImport.update({
   path: '/orders-modal',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiWebhooksWallidRoute = ApiWebhooksWallidRouteImport.update({
   id: '/api/webhooks/wallid',
   path: '/api/webhooks/wallid',
@@ -525,6 +546,12 @@ const ApiConfigPaymentsRoute = ApiConfigPaymentsRouteImport.update({
   path: '/api/config/payments',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicTelegramWebhookRoute =
   ApiPublicTelegramWebhookRouteImport.update({
     id: '/api/public/telegram/webhook',
@@ -668,6 +695,7 @@ export interface FileRoutesByFullPath {
   '/install': typeof InstallRoute
   '/lab-reports': typeof LabReportsRoute
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
@@ -683,6 +711,8 @@ export interface FileRoutesByFullPath {
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/uk-research-store': typeof UkResearchStoreRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/orders-modal': typeof _e2eOrdersModalRoute
   '/payment-options': typeof _e2ePaymentOptionsRoute
   '/watchdog-panel': typeof _e2eWatchdogPanelRoute
@@ -709,6 +739,7 @@ export interface FileRoutesByFullPath {
   '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
   '/research/': typeof ResearchIndexRoute
   '/resources/': typeof ResourcesIndexRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
@@ -772,6 +803,7 @@ export interface FileRoutesByTo {
   '/install': typeof InstallRoute
   '/lab-reports': typeof LabReportsRoute
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
@@ -786,6 +818,8 @@ export interface FileRoutesByTo {
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/uk-research-store': typeof UkResearchStoreRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/orders-modal': typeof _e2eOrdersModalRoute
   '/payment-options': typeof _e2ePaymentOptionsRoute
   '/watchdog-panel': typeof _e2eWatchdogPanelRoute
@@ -812,6 +846,7 @@ export interface FileRoutesByTo {
   '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
   '/research': typeof ResearchIndexRoute
   '/resources': typeof ResourcesIndexRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
@@ -877,6 +912,7 @@ export interface FileRoutesById {
   '/install': typeof InstallRoute
   '/lab-reports': typeof LabReportsRoute
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
@@ -892,6 +928,8 @@ export interface FileRoutesById {
   '/storage-guide': typeof StorageGuideRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/uk-research-store': typeof UkResearchStoreRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/__e2e/orders-modal': typeof _e2eOrdersModalRoute
   '/__e2e/payment-options': typeof _e2ePaymentOptionsRoute
   '/__e2e/watchdog-panel': typeof _e2eWatchdogPanelRoute
@@ -918,6 +956,7 @@ export interface FileRoutesById {
   '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
   '/research/': typeof ResearchIndexRoute
   '/resources/': typeof ResourcesIndexRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
@@ -983,6 +1022,7 @@ export interface FileRouteTypes {
     | '/install'
     | '/lab-reports'
     | '/login'
+    | '/mcp'
     | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
@@ -998,6 +1038,8 @@ export interface FileRouteTypes {
     | '/storage-guide'
     | '/terms-and-conditions'
     | '/uk-research-store'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/orders-modal'
     | '/payment-options'
     | '/watchdog-panel'
@@ -1024,6 +1066,7 @@ export interface FileRouteTypes {
     | '/resources/peptide-categories-uk-research'
     | '/research/'
     | '/resources/'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/config/payments'
     | '/api/dsr/process'
     | '/api/payments/cancel'
@@ -1087,6 +1130,7 @@ export interface FileRouteTypes {
     | '/install'
     | '/lab-reports'
     | '/login'
+    | '/mcp'
     | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
@@ -1101,6 +1145,8 @@ export interface FileRouteTypes {
     | '/storage-guide'
     | '/terms-and-conditions'
     | '/uk-research-store'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/orders-modal'
     | '/payment-options'
     | '/watchdog-panel'
@@ -1127,6 +1173,7 @@ export interface FileRouteTypes {
     | '/resources/peptide-categories-uk-research'
     | '/research'
     | '/resources'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/config/payments'
     | '/api/dsr/process'
     | '/api/payments/cancel'
@@ -1191,6 +1238,7 @@ export interface FileRouteTypes {
     | '/install'
     | '/lab-reports'
     | '/login'
+    | '/mcp'
     | '/peptide-calculator'
     | '/privacy-policy'
     | '/privacy-requests'
@@ -1206,6 +1254,8 @@ export interface FileRouteTypes {
     | '/storage-guide'
     | '/terms-and-conditions'
     | '/uk-research-store'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/__e2e/orders-modal'
     | '/__e2e/payment-options'
     | '/__e2e/watchdog-panel'
@@ -1232,6 +1282,7 @@ export interface FileRouteTypes {
     | '/resources/peptide-categories-uk-research'
     | '/research/'
     | '/resources/'
+    | '/.mcp/invoke-tool/$tool'
     | '/api/config/payments'
     | '/api/dsr/process'
     | '/api/payments/cancel'
@@ -1297,6 +1348,7 @@ export interface RootRouteChildren {
   InstallRoute: typeof InstallRoute
   LabReportsRoute: typeof LabReportsRoute
   LoginRoute: typeof LoginRoute
+  McpRoute: typeof McpRoute
   PeptideCalculatorRoute: typeof PeptideCalculatorRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   PrivacyRequestsRoute: typeof PrivacyRequestsRoute
@@ -1312,6 +1364,8 @@ export interface RootRouteChildren {
   StorageGuideRoute: typeof StorageGuideRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   UkResearchStoreRoute: typeof UkResearchStoreRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   _e2eOrdersModalRoute: typeof _e2eOrdersModalRoute
   _e2ePaymentOptionsRoute: typeof _e2ePaymentOptionsRoute
   _e2eWatchdogPanelRoute: typeof _e2eWatchdogPanelRoute
@@ -1326,6 +1380,7 @@ export interface RootRouteChildren {
   ResourcesSlugRoute: typeof ResourcesSlugRoute
   ResourcesPeptideCategoriesUkResearchRoute: typeof ResourcesPeptideCategoriesUkResearchRoute
   ResourcesIndexRoute: typeof ResourcesIndexRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiConfigPaymentsRoute: typeof ApiConfigPaymentsRoute
   ApiDsrProcessRoute: typeof ApiDsrProcessRoute
   ApiPaymentsCancelRoute: typeof ApiPaymentsCancelRoute
@@ -1479,6 +1534,13 @@ declare module '@tanstack/react-router' {
       path: '/peptide-calculator'
       fullPath: '/peptide-calculator'
       preLoaderRoute: typeof PeptideCalculatorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -1775,6 +1837,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof _e2eOrdersModalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/webhooks/wallid': {
       id: '/api/webhooks/wallid'
       path: '/api/webhooks/wallid'
@@ -1941,6 +2017,13 @@ declare module '@tanstack/react-router' {
       path: '/api/config/payments'
       fullPath: '/api/config/payments'
       preLoaderRoute: typeof ApiConfigPaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/telegram/webhook': {
@@ -2169,6 +2252,7 @@ const rootRouteChildren: RootRouteChildren = {
   InstallRoute: InstallRoute,
   LabReportsRoute: LabReportsRoute,
   LoginRoute: LoginRoute,
+  McpRoute: McpRoute,
   PeptideCalculatorRoute: PeptideCalculatorRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   PrivacyRequestsRoute: PrivacyRequestsRoute,
@@ -2184,6 +2268,9 @@ const rootRouteChildren: RootRouteChildren = {
   StorageGuideRoute: StorageGuideRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   UkResearchStoreRoute: UkResearchStoreRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   _e2eOrdersModalRoute: _e2eOrdersModalRoute,
   _e2ePaymentOptionsRoute: _e2ePaymentOptionsRoute,
   _e2eWatchdogPanelRoute: _e2eWatchdogPanelRoute,
@@ -2199,6 +2286,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResourcesPeptideCategoriesUkResearchRoute:
     ResourcesPeptideCategoriesUkResearchRoute,
   ResourcesIndexRoute: ResourcesIndexRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiConfigPaymentsRoute: ApiConfigPaymentsRoute,
   ApiDsrProcessRoute: ApiDsrProcessRoute,
   ApiPaymentsCancelRoute: ApiPaymentsCancelRoute,
@@ -2250,3 +2338,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
