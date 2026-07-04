@@ -21,7 +21,7 @@ const PROMO_HEADLINE = "Launch promo — save on your research order";
 const DISMISS_KEY = "phl_landing_promo_dismissed_v2";
 const DISMISS_DAYS = 7;
 
-const STARTER_HREF = "/products/bacteriostatic-water-research-compound";
+const STARTER_SLUG = "bacteriostatic-water-research-compound";
 const STARTER_TITLE = "Bacteriostatic Water — Laboratory Diluent";
 const STARTER_SUB = "0.9% Benzyl Alcohol · Reagent grade · For Research Use Only";
 const STARTER_PRICE = "£6.99";
