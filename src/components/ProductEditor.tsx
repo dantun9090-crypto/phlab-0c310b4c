@@ -1233,7 +1233,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                             placeholder="SKU"
                           />
                         </label>
-                        <label className="min-w-0">
+                        <label className="col-span-3 min-w-0 sm:col-span-1">
                           <span className="mb-1 block text-xs font-medium text-slate-300">Price</span>
                           <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">£</span>
@@ -1247,7 +1247,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                             />
                           </div>
                         </label>
-                        <label className="min-w-0">
+                        <label className="col-span-3 min-w-0 sm:col-span-1">
                           <span className="mb-1 block text-xs font-medium text-slate-300">Stock</span>
                           <input
                             type="number"
@@ -1259,7 +1259,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                         </label>
                       {/* Image slot selector */}
                       {(formData.images?.filter(Boolean).length ?? 0) > 1 && (
-                        <label className="col-span-2 min-w-0 sm:col-span-1">
+                        <label className="col-span-3 min-w-0 sm:col-span-1">
                           <span className="mb-1 block text-xs font-medium text-slate-300">Photo</span>
                           <select
                             value={variant.imageIndex ?? idx}
@@ -1275,7 +1275,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                       )}
                       <button onClick={() => removeVariant(idx)}
                         aria-label="Remove variant"
-                        className="min-w-[48px] min-h-[48px] self-end flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0">
+                        className="col-span-3 min-w-[48px] min-h-[48px] justify-self-end self-end flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0 sm:col-span-1">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                       </div>
