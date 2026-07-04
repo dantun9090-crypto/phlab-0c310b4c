@@ -377,15 +377,38 @@ export default function InventoryTab() {
                       </span>
                     </td>
                     <td className="px-3 sm:px-4 py-3 text-right text-white font-medium text-xs sm:text-sm">
-                      £{Number(product.price || 0).toFixed(2)}
+                      <InlineNumberCell
+                        productId={product.id!}
+                        field="price"
+                        value={Number(product.price || 0)}
+                        format={(n) => `£${n.toFixed(2)}`}
+                        step="0.01"
+                        min={0}
+                        onSaved={(n) => setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, price: n } : p))}
+                      />
                     </td>
                     <td className="px-3 sm:px-4 py-3 text-right">
-                      <span className={`font-medium text-xs sm:text-sm ${(product.stock || 0) <= LOW_STOCK_THRESHOLD ? 'text-red-400' : 'text-green-400'}`}>
-                        {product.stock || 0}
+                      <span className={`inline-flex items-center gap-1 font-medium text-xs sm:text-sm ${(product.stock || 0) <= LOW_STOCK_THRESHOLD ? 'text-red-400' : 'text-green-400'}`}>
+                        <InlineNumberCell
+                          productId={product.id!}
+                          field="stock"
+                          value={Number(product.stock || 0)}
+                          format={(n) => String(n)}
+                          step="1"
+                          min={0}
+                          onSaved={(n) => setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, stock: n } : p))}
+                        />
                         {(product.stock || 0) <= LOW_STOCK_THRESHOLD && (
-                          <AlertTriangle className="inline w-3 h-3 ml-1" />
+                          <AlertTriangle className="w-3 h-3" />
                         )}
                       </span>
+                    </td>
+                    <td className="px-3 sm:px-4 py-3 text-center hidden sm:table-cell">
+                      <InlineVisibility
+                        productId={product.id!}
+                        value={(product.visibility || 'active') as 'active' | 'hidden' | 'out_of_stock'}
+                        onSaved={(v) => setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, visibility: v } : p))}
+                      />
                     </td>
                     <td className="px-3 sm:px-4 py-3 text-right">
                       <div className="flex justify-end gap-1 sm:gap-2">
