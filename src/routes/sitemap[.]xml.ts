@@ -13,17 +13,7 @@ export const Route = createFileRoute("/sitemap.xml")({
   server: {
     handlers: {
       GET: async () => {
-        const candidates = await buildSitemapEntries();
-        console.log("[sitemap] candidates:", candidates.length, candidates.slice(0, 3).map(c => c.path));
-        const origin = requestOrigin();
-        console.log("[sitemap] origin:", origin);
-        // If we can't resolve the request origin (unlikely at runtime),
-        // fall back to unprobed entries rather than shipping an empty
-        // sitemap. isIndexable() upstream already excludes splats/feeds.
-        const entries = origin
-          ? await filterReachable(candidates, origin)
-          : candidates;
-        console.log("[sitemap] entries after filter:", entries.length);
+        const entries = await buildSitemapEntries();
 
         const escapeXml = (s: string) =>
           s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
