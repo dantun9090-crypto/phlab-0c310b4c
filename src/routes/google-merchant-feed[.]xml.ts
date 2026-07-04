@@ -171,7 +171,6 @@ function isAllowedForMerchant(p: {
   const slug = (p.slug || "").toLowerCase();
   const name = (p.name || "").toLowerCase();
   if (HARD_BLOCKED_SLUGS.has(slug)) return false;
-  if (name.includes("tirzepatide")) return false;
   return p.includeInMerchantFeed === true;
 }
 
