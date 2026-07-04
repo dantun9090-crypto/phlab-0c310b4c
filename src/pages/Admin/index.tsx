@@ -550,6 +550,7 @@ export default function AdminPage() {
         case 'swtelemetrydebug': return <SwTelemetryDebugTab />;
         case 'monitorlog': return <MonitorLogTab />;
         case 'sentryissues': return <SentryIssuesTab />;
+        case 'publishstatus': return <PublishStatusTab />;
         default: return <DashboardTab />;
       }
     })();
