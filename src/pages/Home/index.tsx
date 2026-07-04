@@ -63,8 +63,8 @@ const benefits = [
   {
     icon: RefreshCw,
     label: 'Longevity & Anti-Ageing Studies',
-    title: 'Epithalon & MOTS-c',
-    desc: 'Compounds investigated in telomere elongation models, mitochondrial function, and epigenetic longevity pathways.',
+    title: 'MOTS-c & NAD+',
+    desc: 'Compounds investigated in mitochondrial function, cellular energy metabolism, and epigenetic longevity pathways.',
     tag: 'Longevity',
     color: '#f59e0b',
     slug: '/products',
