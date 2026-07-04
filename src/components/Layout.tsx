@@ -642,24 +642,26 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex items-center justify-between h-[64px]">
 
             {/* ── Logo (far left) ── */}
-            <Link to="/" className="flex items-center self-center gap-2.5 sm:gap-3 min-w-0 mr-auto group">
-              <div className="relative shrink-0 flex items-center">
-                <Logo size="lg" />
+            <Link to="/" className="flex flex-col self-center min-w-0 mr-auto group">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <div className="relative shrink-0 flex items-center">
+                  <Logo size="lg" />
+                </div>
+                <div className="flex flex-col leading-[1.05] min-w-0">
+                  <span className="font-extrabold text-white text-[18px] sm:text-[22px] tracking-tight group-hover:text-emerald-300 transition-colors duration-200 truncate">PH Labs</span>
+                  <span className="text-[10px] sm:text-[11px] text-emerald-400/90 font-semibold tracking-[0.22em] uppercase mt-0.5">Research Grade</span>
+                </div>
               </div>
-              <div className="flex flex-col leading-[1.05] min-w-0">
-                <span className="font-extrabold text-white text-[18px] sm:text-[22px] tracking-tight group-hover:text-emerald-300 transition-colors duration-200 truncate">PH Labs</span>
-                <span className="text-[10px] sm:text-[11px] text-emerald-400/90 font-semibold tracking-[0.22em] uppercase mt-0.5">Research Grade</span>
-                {disclaimerVisible && (
-                  <span
-                    id="phl-research-disclaimer"
-                    role="note"
-                    aria-label="Research use disclaimer"
-                    className="mt-1 block max-w-[170px] truncate text-[8px] font-bold uppercase tracking-[0.10em] text-emerald-200/65 sm:max-w-[280px] sm:tracking-[0.12em]"
-                  >
-                    For Laboratory Research Use Only — Not for Human or Veterinary Consumption
-                  </span>
-                )}
-              </div>
+              {disclaimerVisible && (
+                <span
+                  id="phl-research-disclaimer"
+                  role="note"
+                  aria-label="Research use disclaimer"
+                  className="mt-1 block max-w-[200px] truncate text-[8px] font-bold uppercase tracking-[0.10em] text-emerald-200/65 sm:max-w-[320px] sm:tracking-[0.12em]"
+                >
+                  For Laboratory Research Use Only — Not for Human or Veterinary Consumption
+                </span>
+              )}
             </Link>
 
             {/* ── Desktop + Mobile Nav (Navigation component) ── */}
