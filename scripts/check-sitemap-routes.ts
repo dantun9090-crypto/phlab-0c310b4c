@@ -137,6 +137,9 @@ function isLikelyIndexable(path: string): boolean {
   }
   // Skip obviously private/utility page routes we don't want in sitemap.
   if (/^\/(install|request-catalog|privacy-requests|search|sentry-test)$/.test(path)) return false;
+  // MCP server + its OAuth/discovery companion routes are machine endpoints,
+  // not indexable pages.
+  if (path === "/mcp" || path.startsWith("/[.mcp]/") || path.startsWith("/[.well-known]/")) return false;
   return true;
 }
 
