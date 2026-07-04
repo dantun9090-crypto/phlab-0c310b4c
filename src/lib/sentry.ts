@@ -55,8 +55,8 @@ export function initSentry(): void {
         "The network connection was lost",
         "cancelled",
         "The operation couldn’t be completed",
-        // Third-party inline script on legacy prohealthpeptides.co.uk
-        // (301→apex): "Cannot read properties of null (reading 'document')"
+        // Third-party inline script on legacy (301→apex) domain:
+        // "Cannot read properties of null (reading 'document')"
         // originates from an analytics/prerender snippet, not our bundle.
         "Cannot read properties of null (reading 'document')",
         "null is not an object (evaluating 'document')",
