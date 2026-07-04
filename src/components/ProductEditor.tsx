@@ -1,16 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   X, Save, Plus, Trash2, Upload, Eye, Image as ImageIcon,
   Loader2, MoveVertical, Star, ImagePlus, AlertCircle, CheckCircle2,
-  ChevronLeft, ChevronRight, Crown, Link2, FlaskConical, FileText
+  ChevronLeft, ChevronRight, Crown, Link2, FlaskConical, FileText,
+  Package, Images, Layers, Tag,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { updateProduct, addProduct, storage, storageRef, uploadBytesResumable, getDownloadURL } from '@/lib/firebase';
 import type { Product, ProductVariant } from '@/lib/firebase';
 import { getAdminIdToken } from '@/lib/auth-ready';
 import { uploadHplcImageAdmin } from '@/lib/hplc-upload.functions';
 import { uploadCoaPdf } from '@/lib/coa-upload.functions';
 import { MerchantFeedPreview } from './MerchantFeedPreview';
+import { validateProduct, friendlyUploadError, type EditorTab, type FieldErrors } from '@/lib/product-schema';
 
 interface ProductEditorProps {
   product?: Product | null;
