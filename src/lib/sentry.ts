@@ -83,6 +83,58 @@ export function initSentry(): void {
           if (event.request?.url && /\/(checkout|payment|api\/(webhooks|public\/hooks))/i.test(event.request.url)) {
             if (event.request.data) event.request.data = "[redacted]";
           }
+
+          // Hydration-mismatch dedupe & downgrade on /products/*.
+          // Firefox Mobile / Safari occasionally crash into a removeChild /
+          // parentNode-null loop on product pages. CSR fallback recovers,
+          // but Sentry issue 99f7c25b was drowning real alerts. We keep
+          // sending (to know if it persists) but as `warning` and deduped
+          // per (slug + message) within 5 minutes.
+          try {
+            const msg = String(
+              (event.message as string | undefined) ??
+                (event.exception?.values?.[0]?.value as string | undefined) ??
+                "",
+            );
+            const type = String(event.exception?.values?.[0]?.type ?? "");
+            const url = String(
+              event.request?.url ??
+                (typeof location !== "undefined" ? location.href : ""),
+            );
+            const isHydrationSignature =
+              /removeChild|parentNode is null|insertBefore|replaceChild|hydrat|not a child of this node|NotFoundError/i.test(
+                msg,
+              );
+            const isProductRoute = /\/products\//i.test(url);
+            const isReactBundle = /\/assets\/index-[\w-]+\.js/i.test(
+              (event.exception?.values?.[0]?.stacktrace?.frames || [])
+                .map((f) => f.filename ?? "")
+                .join(" "),
+            );
+            if (isHydrationSignature && (isProductRoute || type === "TypeError")) {
+              event.level = "warning";
+              event.tags = { ...(event.tags || {}), "hydration-mismatch": "true" };
+              if (isProductRoute && isReactBundle) {
+                event.fingerprint = [
+                  "hydration-mismatch",
+                  "products",
+                  url.replace(/[?#].*$/, ""),
+                ];
+              }
+              try {
+                const slug = (url.match(/\/products\/([^/?#]+)/i) || [])[1] || "_";
+                const key = `__phl_sentry_hyd_${slug}_${msg.slice(0, 40)}`;
+                const now = Date.now();
+                const last = Number(sessionStorage.getItem(key) || "0");
+                if (now - last < 5 * 60_000) return null;
+                sessionStorage.setItem(key, String(now));
+              } catch {
+                /* ignore */
+              }
+            }
+          } catch {
+            /* never break Sentry */
+          }
         } catch {
           /* never break Sentry */
         }
