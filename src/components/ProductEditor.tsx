@@ -581,6 +581,19 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
 
   // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = async () => {
+    // Mark everything touched so any lingering errors show up in-line
+    if (!validation.ok) {
+      const allTouched: Record<string, boolean> = {};
+      Object.keys(errors).forEach((k) => { allTouched[k] = true; });
+      setTouched((prev) => ({ ...prev, ...allTouched }));
+      // Jump to first tab that has errors so user sees them immediately
+      const firstBadTab = (['basics', 'images', 'variants', 'seo'] as EditorTab[]).find((t) => validation.perTab[t] > 0);
+      if (firstBadTab) setActiveTab(firstBadTab);
+      const totalErrs = Object.keys(errors).length;
+      setSaveMsg({ type: 'error', text: `${totalErrs} field${totalErrs === 1 ? '' : 's'} need attention — see red labels` });
+      toast.error(`${totalErrs} validation error${totalErrs === 1 ? '' : 's'}`);
+      return;
+    }
     if (!formData.name?.trim()) { setSaveMsg({ type: 'error', text: 'Product name is required' }); return; }
     // Auto-sanitize admin copy into laboratory RUO-safe language, then run the
     // compliance guard. Lets editors paste freely while keeping Firestore
