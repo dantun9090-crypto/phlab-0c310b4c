@@ -93,6 +93,15 @@ export const Route = createFileRoute('/api/public/live-orders')({
         const limit = Math.min(Math.max(Number(url.searchParams.get('limit') || 20), 1), 20);
         const debug = url.searchParams.get('debug') === '1';
 
+        const cacheKey = `limit=${limit}`;
+        const now = Date.now();
+        if (!debug) {
+          const cached = liveOrdersCache.get(cacheKey);
+          if (cached && now - cached.timestamp < LIVE_ORDERS_CACHE_TTL_MS) {
+            return cacheableJson(cached.body, 'HIT');
+          }
+        }
+
         try {
           const rows = await fetchRecentOrderRows();
 
@@ -102,7 +111,13 @@ export const Route = createFileRoute('/api/public/live-orders')({
             .filter((order): order is LiveOrder => Boolean(order))
             .slice(0, limit);
 
-          return json({ orders, count: orders.length, debug: debug ? { scanned: rows.length } : undefined });
+          const bodyStr = JSON.stringify({
+            orders,
+            count: orders.length,
+            debug: debug ? { scanned: rows.length } : undefined,
+          });
+          if (!debug) liveOrdersCache.set(cacheKey, { body: bodyStr, timestamp: now });
+          return cacheableJson(bodyStr, 'MISS');
         } catch (error) {
           console.warn('[live-orders] failed', error instanceof Error ? error.message : String(error));
           return json({ orders: [], count: 0 }, 200);
