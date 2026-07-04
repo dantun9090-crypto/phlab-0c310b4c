@@ -18,7 +18,7 @@ export const ARTICLE_INDEX: ArticleIndexEntry[] = [
   { slug: 'tb-500-thymosin-beta-4', title: 'TB-500 and Thymosin Beta-4: Actin Sequestration and Tissue Regeneration Research' },
   { slug: 'retatrutide-vs-tirzepatide-vs-semaglutide', title: 'Retatrutide vs Tirzepatide vs Semaglutide: A Research Comparison' },
   { slug: 'ipamorelin-ghrp-research', title: 'Ipamorelin and the GHRP Class: Growth Hormone Secretagogue Research' },
-  
+  { slug: 'epithalon-telomere-research', title: 'Epithalon (Epitalon): Telomerase Activation and Cellular Ageing Research' },
   { slug: 'peptide-storage-reconstitution', title: 'Peptide Storage and Reconstitution: A Laboratory Protocol Guide' },
   { slug: 'melanotan-2-melanocortin-research', title: 'Melanotan II and Melanocortin Receptor Research' },
   { slug: 'tb-500-thymosin-beta-4-research', title: 'TB-500 and Thymosin Beta-4: Actin Sequestration and Tissue Remodelling Research' },
@@ -26,7 +26,7 @@ export const ARTICLE_INDEX: ArticleIndexEntry[] = [
   { slug: 'ghk-cu-research-guide', title: 'GHK-Cu Peptide: A Technical Research Guide for UK Laboratories' },
   { slug: 'peptide-storage-lyophilisation-science', title: 'Peptide Storage Science: Lyophilisation, Reconstitution, and Stability Maximisation' },
   { slug: 'selank-anxiolytic-nootropic-peptide', title: 'Selank: The Synthetic Tuftsin Analogue at the Frontier of Anxiolytic Peptide Research' },
-  
+  { slug: 'epithalon-telomere-epigenetic-research', title: 'Epithalon: Telomerase Activation, Epigenetic Remodelling, and Longevity Research' },
   { slug: 'semax-cognitive-neuroprotective-research', title: 'Semax: ACTH-Derived Neuropeptide Research in Cognition, BDNF Signalling, and Neuroprotection' },
   { slug: 'cjc-1295-mod-grf-ghrh-research', title: 'CJC-1295 and MOD GRF(1-29): GHRH Analogue Research for GH Pulse Amplification' },
   { slug: 'follistatin-344-myostatin-inhibition-research', title: 'Follistatin-344: Myostatin Inhibition, Muscle Hypertrophy Research, and TGF-beta Superfamily Antagonism' },
