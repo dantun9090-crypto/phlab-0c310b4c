@@ -344,10 +344,19 @@ mismatch, the workflow attempts `wrangler rollback` first, falls back to
 `purge_everything`).
 
 ### Files
-- `scripts/probe-swr.sh` — standalone probe. Usage:
+- `scripts/probe-swr.sh` — standalone SWR probe. Usage:
   `scripts/probe-swr.sh https://phlabs.co.uk/ 60`
   Emits one JSON line; exit `0` = PASS, `1` = MISMATCH/SWR_MISSING, `2` = NETWORK_ERROR.
-- `.github/workflows/edge-swr-guard.yml` — schedule `*/5 * * * *`, on push to
+- `scripts/probe-client-errors.sh` — Firestore `client_exceptions` probe.
+  Usage: `scripts/probe-client-errors.sh <window-min> <threshold>` (default `5 5`).
+  Exit `0` = PASS, `1` = ALERT (≥ threshold events in window), `2` = probe error.
+  Reads Firestore via a service account minted from `FIREBASE_SERVICE_ACCOUNT_JSON`;
+  if the secret is missing it emits PASS with `not_configured` so the pipeline
+  degrades gracefully.
+- `.github/workflows/edge-swr-guard.yml` — runs both probes **in parallel**,
+  triggers remediation if either fails, then runs a post-remediation smoke test
+  against `/`, `/products`, `/about` and rolls back on any HTTP≠200 or
+  `client_exception` string in the response. Schedule `*/5 * * * *`, push to
   `main`, and `workflow_dispatch` with `force_redeploy` input.
 - `.github/workflows/scripts/slack-notify.sh` — Slack sender with graceful
   degradation (prints payload to logs when `SLACK_WEBHOOK_URL` is unset).
@@ -359,6 +368,14 @@ mismatch, the workflow attempts `wrangler rollback` first, falls back to
 | `CF_ZONE_ID` | Cloudflare zone id for phlabs.co.uk |
 | `CF_ACCOUNT_ID` | Cloudflare account id |
 | `SLACK_WEBHOOK_URL` | *(optional)* Slack incoming webhook — if missing, payloads log to workflow output |
+| `FIREBASE_SERVICE_ACCOUNT_JSON` | *(optional)* Service account JSON for the client-error probe. Needs `datastore.user` (Firestore read). Without it the probe is a no-op PASS. |
+| `FIREBASE_PROJECT_ID` | *(optional)* Overrides the `project_id` in the service account JSON. |
+
+### Firestore error-monitoring config
+The probe queries collection `client_exceptions` (override with
+`CLIENT_EXCEPTION_COLLECTION` env in the workflow) filtering
+`createdAt >= now-5min`. Match this to the Admin → Toast/Error Monitoring
+alert threshold (currently: 5 events / 5 minutes).
 
 ### State branch
 The retry counter lives in the orphan branch **`state/swr-guard`** in file

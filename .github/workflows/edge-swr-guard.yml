@@ -67,9 +67,9 @@ jobs:
           fi
           npm i -g wrangler@latest >/dev/null 2>&1
 
-      - name: Chmod probe script
+      - name: Chmod probe scripts
         shell: bash
-        run: chmod +x scripts/probe-swr.sh
+        run: chmod +x scripts/probe-swr.sh scripts/probe-client-errors.sh
 
       # ---- Load retry-counter state from state branch ----
       - name: Load retry state
@@ -90,42 +90,69 @@ jobs:
           echo "today=${today}"  >> "$GITHUB_OUTPUT"
           echo "Current retry counter: ${count}/${MAX_AUTO_REDEPLOYS} (date=${today})"
 
-      # ---- Probe both hosts ----
-      - name: Probe apex + www
+      # ---- Probe SWR (apex + www) and client-errors in parallel ----
+      - name: Run probes in parallel (SWR + client errors)
         id: probe
         shell: bash
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
         run: |
           set +e
           mkdir -p /tmp/swr
+
+          # Fire SWR probes for each host in the background
+          pids=()
+          for host in $HOSTS; do
+            name="$(echo "$host" | sed -E 's~https?://~~; s~/.*$~~')"
+            ( scripts/probe-swr.sh "$host" "$EXPECTED_SWR" > "/tmp/swr/${name}.json" ; echo $? > "/tmp/swr/${name}.rc" ) &
+            pids+=($!)
+          done
+          # Client-error probe in parallel
+          ( scripts/probe-client-errors.sh 5 5 > /tmp/swr/client-errors.json ; echo $? > /tmp/swr/client-errors.rc ) &
+          pids+=($!)
+          for p in "${pids[@]}"; do wait "$p"; done
+
           overall=0
           statuses=()
           for host in $HOSTS; do
             name="$(echo "$host" | sed -E 's~https?://~~; s~/.*$~~')"
-            out="/tmp/swr/${name}.json"
-            scripts/probe-swr.sh "$host" "$EXPECTED_SWR" > "$out"
-            rc=$?
-            status="$(jq -r '.status' "$out")"
-            statuses+=("${name}:${status}")
-            echo "::group::Probe $host ($status, rc=$rc)"
-            cat "$out"
-            echo "::endgroup::"
-            if [ $rc -ne 0 ]; then overall=$rc; fi
+            rc="$(cat /tmp/swr/${name}.rc 2>/dev/null || echo 2)"
+            status="$(jq -r '.status' /tmp/swr/${name}.json 2>/dev/null || echo UNKNOWN)"
+            statuses+=("swr:${name}:${status}")
+            echo "::group::SWR $host ($status, rc=$rc)"; cat /tmp/swr/${name}.json; echo; echo "::endgroup::"
+            [ "$rc" -ne 0 ] && overall=$rc
           done
-          jq -s '.' /tmp/swr/*.json > /tmp/swr/all.json
-          cat /tmp/swr/all.json
-          echo "overall_rc=${overall}" >> "$GITHUB_OUTPUT"
-          echo "summary=$(IFS=,; echo "${statuses[*]}")" >> "$GITHUB_OUTPUT"
+
+          ce_rc="$(cat /tmp/swr/client-errors.rc 2>/dev/null || echo 2)"
+          ce_status="$(jq -r '.status' /tmp/swr/client-errors.json 2>/dev/null || echo UNKNOWN)"
+          ce_count="$(jq -r '.error_count' /tmp/swr/client-errors.json 2>/dev/null || echo 0)"
+          ce_paths="$(jq -c '.sample_paths' /tmp/swr/client-errors.json 2>/dev/null || echo '[]')"
+          statuses+=("client_errors:${ce_status}(${ce_count})")
+          echo "::group::client-errors probe (${ce_status}, rc=$ce_rc)"; cat /tmp/swr/client-errors.json; echo; echo "::endgroup::"
+          [ "$ce_rc" -eq 1 ] && overall=1  # exit 2 = probe error → do NOT trigger remediation
+
+          jq -s '.' /tmp/swr/apex.phlabs.co.uk.json /tmp/swr/www.phlabs.co.uk.json 2>/dev/null > /tmp/swr/all.json || \
+            jq -s '.' /tmp/swr/phlabs.co.uk.json /tmp/swr/www.phlabs.co.uk.json > /tmp/swr/all.json
+
+          echo "overall_rc=${overall}"                     >> "$GITHUB_OUTPUT"
+          echo "summary=$(IFS=,; echo "${statuses[*]}")"   >> "$GITHUB_OUTPUT"
+          echo "client_error_count=${ce_count}"            >> "$GITHUB_OUTPUT"
+          echo "client_error_status=${ce_status}"          >> "$GITHUB_OUTPUT"
+          echo "client_error_paths=${ce_paths}"            >> "$GITHUB_OUTPUT"
+
           if [ "${{ github.event.inputs.force_redeploy }}" = "true" ]; then
-            echo "force=true" >> "$GITHUB_OUTPUT"
-            echo "need_remediate=true" >> "$GITHUB_OUTPUT"
+            echo "force=true"           >> "$GITHUB_OUTPUT"
+            echo "need_remediate=true"  >> "$GITHUB_OUTPUT"
           elif [ $overall -ne 0 ]; then
-            echo "force=false" >> "$GITHUB_OUTPUT"
-            echo "need_remediate=true" >> "$GITHUB_OUTPUT"
+            echo "force=false"          >> "$GITHUB_OUTPUT"
+            echo "need_remediate=true"  >> "$GITHUB_OUTPUT"
           else
-            echo "force=false" >> "$GITHUB_OUTPUT"
+            echo "force=false"          >> "$GITHUB_OUTPUT"
             echo "need_remediate=false" >> "$GITHUB_OUTPUT"
           fi
           exit 0
+
 
       # ---- Slack: initial detection ----
       - name: Notify Slack — probe result
@@ -141,18 +168,25 @@ jobs:
             title="🔧 Manual force_redeploy triggered"
           fi
           probe_json="$(cat /tmp/swr/all.json)"
+          ce_json="$(cat /tmp/swr/client-errors.json 2>/dev/null || echo '{}')"
           payload="$(jq -cn \
             --arg color "$color" \
             --arg title "$title" \
             --arg summary "${{ steps.probe.outputs.summary }}" \
             --arg counter "${COUNTER}/${MAX_AUTO_REDEPLOYS}" \
             --arg run "$RUN_URL" \
+            --arg ce_status "${{ steps.probe.outputs.client_error_status }}" \
+            --arg ce_count "${{ steps.probe.outputs.client_error_count }}" \
+            --arg ce_paths "${{ steps.probe.outputs.client_error_paths }}" \
             --argjson probes "$probe_json" \
+            --argjson client_errors "$ce_json" \
             '{attachments:[{color:$color,title:$title,fields:[
               {title:"Probe summary",value:$summary,short:false},
               {title:"Retry counter",value:$counter,short:true},
               {title:"Run",value:$run,short:true},
-              {title:"Probes",value:($probes|tostring),short:false}
+              {title:"Client errors",value:("\($ce_status) — count=\($ce_count) paths=\($ce_paths)"),short:false},
+              {title:"Probes",value:($probes|tostring),short:false},
+              {title:"Client-error probe",value:($client_errors|tostring),short:false}
             ]}]}')"
           bash .github/workflows/scripts/slack-notify.sh "$payload" "probe-detected"
 
@@ -237,7 +271,7 @@ jobs:
             "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json" \
-            --data '{"files":["https://phlabs.co.uk/","https://www.phlabs.co.uk/"]}' \
+            --data '{"files":["https://phlabs.co.uk/","https://phlabs.co.uk/products","https://phlabs.co.uk/about","https://www.phlabs.co.uk/","https://www.phlabs.co.uk/products","https://www.phlabs.co.uk/about"]}' \
             | tee /tmp/purge.json
           echo
           grep -q '"success":true' /tmp/purge.json || { echo "::error::Scoped purge failed"; exit 1; }
@@ -245,6 +279,40 @@ jobs:
 
           echo "Waiting 30s for propagation…"
           sleep 30
+
+      # ---- Post-remediation smoke test (homepage + products + about) ----
+      - name: Post-remediation smoke test
+        id: smoke
+        if: steps.remediate.outcome == 'success'
+        shell: bash
+        run: |
+          set +e
+          fail=0
+          urls=("https://phlabs.co.uk/" "https://phlabs.co.uk/products" "https://phlabs.co.uk/about")
+          results=()
+          for u in "${urls[@]}"; do
+            code=$(curl -sSL --max-time 20 -o /tmp/body.html -w '%{http_code}' \
+              -H 'cache-control: no-cache' -A 'phlabs-swr-guard-smoke/1.0' "$u")
+            has_ex="no"
+            grep -qiE 'client_exception|Uncaught (Error|TypeError)' /tmp/body.html && has_ex="yes"
+            line="${u} → HTTP ${code} (client_exception=${has_ex})"
+            echo "$line"
+            results+=("$line")
+            if [ "$code" != "200" ] || [ "$has_ex" = "yes" ]; then fail=1; fi
+          done
+          printf '%s\n' "${results[@]}" > /tmp/smoke.txt
+          if [ $fail -ne 0 ]; then
+            echo "::error::Smoke test failed — attempting immediate rollback"
+            (cd "$(mktemp -d)" && \
+              cp "$WORKER_SRC" worker.mjs && \
+              printf 'name = "%s"\nmain = "worker.mjs"\ncompatibility_date = "2025-01-01"\n' "$WORKER_NAME" > wrangler.toml && \
+              CLOUDFLARE_API_TOKEN="${{ secrets.CF_API_TOKEN }}" CLOUDFLARE_ACCOUNT_ID="${{ secrets.CF_ACCOUNT_ID }}" \
+              wrangler rollback --name "$WORKER_NAME" --yes) || echo "::warning::Emergency rollback also failed"
+            echo "verdict=fail" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "verdict=pass" >> "$GITHUB_OUTPUT"
+
 
       - name: Notify Slack — remediation triggered
         if: steps.remediate.outcome != 'skipped'
