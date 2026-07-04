@@ -60,6 +60,7 @@ import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
 import { Route as AdminPurgeRouteImport } from './routes/admin.purge'
 import { Route as AdminPublishStatusRouteImport } from './routes/admin.publish-status'
+import { Route as AdminNewsletterRouteImport } from './routes/admin.newsletter'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as AdminHealthRouteImport } from './routes/admin.health'
 import { Route as AdminAuditReportRouteImport } from './routes/admin.audit-report'
@@ -376,6 +377,11 @@ const AdminPurgeRoute = AdminPurgeRouteImport.update({
 const AdminPublishStatusRoute = AdminPublishStatusRouteImport.update({
   id: '/publish-status',
   path: '/publish-status',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminNewsletterRoute = AdminNewsletterRouteImport.update({
+  id: '/newsletter',
+  path: '/newsletter',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminMerchantFeedPreviewRoute =
@@ -727,6 +733,7 @@ export interface FileRoutesByFullPath {
   '/admin/audit-report': typeof AdminAuditReportRoute
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/admin/newsletter': typeof AdminNewsletterRoute
   '/admin/publish-status': typeof AdminPublishStatusRoute
   '/admin/purge': typeof AdminPurgeRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
@@ -835,6 +842,7 @@ export interface FileRoutesByTo {
   '/admin/audit-report': typeof AdminAuditReportRoute
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/admin/newsletter': typeof AdminNewsletterRoute
   '/admin/publish-status': typeof AdminPublishStatusRoute
   '/admin/purge': typeof AdminPurgeRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
@@ -946,6 +954,7 @@ export interface FileRoutesById {
   '/admin/audit-report': typeof AdminAuditReportRoute
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/admin/newsletter': typeof AdminNewsletterRoute
   '/admin/publish-status': typeof AdminPublishStatusRoute
   '/admin/purge': typeof AdminPurgeRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
@@ -1057,6 +1066,7 @@ export interface FileRouteTypes {
     | '/admin/audit-report'
     | '/admin/health'
     | '/admin/merchant-feed-preview'
+    | '/admin/newsletter'
     | '/admin/publish-status'
     | '/admin/purge'
     | '/checkout/cancel'
@@ -1165,6 +1175,7 @@ export interface FileRouteTypes {
     | '/admin/audit-report'
     | '/admin/health'
     | '/admin/merchant-feed-preview'
+    | '/admin/newsletter'
     | '/admin/publish-status'
     | '/admin/purge'
     | '/checkout/cancel'
@@ -1275,6 +1286,7 @@ export interface FileRouteTypes {
     | '/admin/audit-report'
     | '/admin/health'
     | '/admin/merchant-feed-preview'
+    | '/admin/newsletter'
     | '/admin/publish-status'
     | '/admin/purge'
     | '/checkout/cancel'
@@ -1802,6 +1814,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminPublishStatusRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/newsletter': {
+      id: '/admin/newsletter'
+      path: '/newsletter'
+      fullPath: '/admin/newsletter'
+      preLoaderRoute: typeof AdminNewsletterRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/merchant-feed-preview': {
       id: '/admin/merchant-feed-preview'
       path: '/merchant-feed-preview'
@@ -2220,6 +2239,7 @@ interface AdminRouteChildren {
   AdminAuditReportRoute: typeof AdminAuditReportRoute
   AdminHealthRoute: typeof AdminHealthRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
+  AdminNewsletterRoute: typeof AdminNewsletterRoute
   AdminPublishStatusRoute: typeof AdminPublishStatusRoute
   AdminPurgeRoute: typeof AdminPurgeRoute
 }
@@ -2228,6 +2248,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditReportRoute: AdminAuditReportRoute,
   AdminHealthRoute: AdminHealthRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
+  AdminNewsletterRoute: AdminNewsletterRoute,
   AdminPublishStatusRoute: AdminPublishStatusRoute,
   AdminPurgeRoute: AdminPurgeRoute,
 }
