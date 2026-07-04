@@ -553,7 +553,44 @@ export default function EmailMarketingTab() {
     });
   })();
 
+  // Filtered recipient list for the "preview as recipient" picker.
+  const previewSearchLc = previewSearch.trim().toLowerCase();
+  const previewCandidates = customers
+    .filter(c => c.email)
+    .filter(c => {
+      if (!previewSearchLc) return true;
+      return (
+        c.email.toLowerCase().includes(previewSearchLc) ||
+        (c.firstName || '').toLowerCase().includes(previewSearchLc) ||
+        (c.lastName || '').toLowerCase().includes(previewSearchLc)
+      );
+    })
+    .slice(0, 50);
+
+  const selectedRecipient = customers.find(c => c.id === selectedPreviewId) || previewCandidates[0] || null;
+
+  const selectedPreview = (() => {
+    if (!selectedRecipient) return null;
+    const firstName = (selectedRecipient.firstName || '').trim();
+    const lastName = (selectedRecipient.lastName || '').trim();
+    const fullName = `${firstName} ${lastName}`.trim();
+    const vars = {
+      firstName: firstName || 'there',
+      lastName,
+      fullName: fullName || firstName || 'there',
+      email: selectedRecipient.email,
+    };
+    return {
+      email: selectedRecipient.email,
+      rawFirstName: firstName || '(missing)',
+      rawLastName: lastName || '(missing)',
+      subject: personalisePreview(subject, vars),
+      body: personalisePreview(body, vars),
+    };
+  })();
+
   const selectedTpl = TEMPLATES.find(t => t.id === selectedTemplate);
+
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
