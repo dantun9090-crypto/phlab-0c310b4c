@@ -5,6 +5,7 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 
 // Build-time identifier — changes on every Lovable Publish (new build = new
 // timestamp). Used by /api/public/post-publish-check to detect a fresh
@@ -19,6 +20,7 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    plugins: [mcpPlugin()],
     build: {
       // Hidden source maps: emit .map files for error tracking without
       // exposing a sourceMappingURL in the shipped JS.

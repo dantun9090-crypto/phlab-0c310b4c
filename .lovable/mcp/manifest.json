@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "sdk_version": "0.20.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "phlabs-mcp",
+      "version": "0.1.0",
+      "title": "PH Labs MCP"
+    },
+    "tools": [
+      {
+        "name": "list_products",
+        "title": "List research peptide products",
+        "description": "List PH Labs research-use-only peptide products with title, price (GBP), availability, and product URL. Data is fetched live from the public product feed.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "description": "Maximum number of products to return. Defaults to 50.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "fetch_page",
+        "title": "Fetch a phlabs.co.uk page",
+        "description": "Fetch the HTML of a public page on https://phlabs.co.uk (e.g. '/', '/products', '/resources/some-slug'). Returns raw HTML text.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string",
+              "description": "Path on phlabs.co.uk, must start with '/'. Example: '/products'."
+            }
+          },
+          "required": [
+            "path"
+          ]
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
