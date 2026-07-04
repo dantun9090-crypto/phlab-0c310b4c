@@ -30,6 +30,7 @@ import DayNightToggle from './DayNightToggle';
 import { WhatsAppIcon, FacebookIcon, InstagramIcon, TwitterXIcon, YoutubeIcon } from './SocialIcons';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { initVisitorTracking, trackVisitorPageView } from '@/lib/visitor-tracking';
+import { DisclaimerBanner } from './DisclaimerBanner';
 
 interface SiteSettings {
   whatsappNumber?: string;
