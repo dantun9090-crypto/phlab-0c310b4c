@@ -205,14 +205,32 @@ export const Route = createFileRoute("/api/public/send-marketing")({
 
         for (const r of recipients) {
           try {
-            const result = await enqueueMarketingMail({ to: r.email, subject, html, text, campaignId });
+            const fullName = (r.name || `${r.firstName || ""} ${r.lastName || ""}`).trim();
+            const firstName = (r.firstName || fullName.split(/\s+/)[0] || "").trim();
+            const lastName = (r.lastName || fullName.split(/\s+/).slice(1).join(" ") || "").trim();
+            const vars = {
+              firstName: firstName || "there",
+              lastName,
+              fullName: fullName || firstName || "there",
+              email: r.email,
+            };
+            const personalSubject = personalise(subject, vars);
+            const personalHtml = personalise(html, vars);
+            const personalText = personalise(text, vars);
+            const result = await enqueueMarketingMail({
+              to: r.email,
+              subject: personalSubject,
+              html: personalHtml,
+              text: personalText,
+              campaignId,
+            });
             if (result.duplicate) duplicates++;
             else enqueued++;
             await addDocAdmin("emailQueue", {
               to: r.email,
-              recipientName: r.name || r.email,
-              subject,
-              body: rawHtml,
+              recipientName: fullName || r.email,
+              subject: personalSubject,
+              body: personalHtml,
               status: "queued",
               createdAt: now,
               campaignId,
@@ -224,6 +242,7 @@ export const Route = createFileRoute("/api/public/send-marketing")({
             failures.push({ email: r.email, error: err instanceof Error ? err.message : "unknown" });
           }
         }
+
 
         return json({ ok: true, enqueued, duplicates, failed: failures.length, campaignId, failures: failures.slice(0, 10) });
       },
