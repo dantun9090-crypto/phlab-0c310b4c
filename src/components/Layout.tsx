@@ -880,6 +880,9 @@ export function Layout({ children }: LayoutProps) {
 
       </header>}
 
+      {/* Professional disclaimer banner — full-width amber strip below header */}
+      {disclaimerVisible && <DisclaimerBanner />}
+
       {/* Main content */}
       <main
         className="flex-1"
