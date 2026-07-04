@@ -220,11 +220,40 @@ To unsubscribe, reply with UNSUBSCRIBE.`,
   },
 ];
 
+// Mirror of server-side personalise() in src/routes/api/public/send-marketing.ts
+// Keep both in sync so the admin preview matches actual send output.
+function personalisePreview(
+  template: string,
+  vars: { firstName: string; lastName: string; fullName: string; email: string },
+): string {
+  const map: Record<string, string> = {
+    firstname: vars.firstName,
+    first: vars.firstName,
+    name: vars.firstName || vars.fullName,
+    fullname: vars.fullName,
+    lastname: vars.lastName,
+    last: vars.lastName,
+    email: vars.email,
+  };
+  const key = (raw: string) => raw.toLowerCase().replace(/[\s_-]+/g, '');
+  return template
+    .replace(/\[([a-zA-Z][a-zA-Z\s_-]{0,30})\]/g, (m, k) => {
+      const v = map[key(k)];
+      return v != null && v !== '' ? v : m;
+    })
+    .replace(/\{\{\s*([a-zA-Z][a-zA-Z\s_-]{0,30})\s*\}\}/g, (m, k) => {
+      const v = map[key(k)];
+      return v != null && v !== '' ? v : m;
+    });
+}
+
 export default function EmailMarketingTab() {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [preview, setPreview] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
+  const [testRecipients, setTestRecipients] = useState('');
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [customerCount, setCustomerCount] = useState<number | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
