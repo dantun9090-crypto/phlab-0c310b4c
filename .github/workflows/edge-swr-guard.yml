@@ -67,9 +67,9 @@ jobs:
           fi
           npm i -g wrangler@latest >/dev/null 2>&1
 
-      - name: Chmod probe script
+      - name: Chmod probe scripts
         shell: bash
-        run: chmod +x scripts/probe-swr.sh
+        run: chmod +x scripts/probe-swr.sh scripts/probe-client-errors.sh
 
       # ---- Load retry-counter state from state branch ----
       - name: Load retry state
