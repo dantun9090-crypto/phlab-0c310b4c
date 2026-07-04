@@ -146,6 +146,7 @@ service cloud.firestore {
     match /invoices/{id}        { allow read: if isAdmin(); allow write: if isAdmin(); }
     match /backups/{id}         { allow read: if isAdmin(); allow write: if isAdmin(); }
     match /emailMarketing/{id}  { allow read: if isAdmin(); allow write: if isAdmin(); }
+    match /emailQueue/{id}      { allow read: if isAdmin(); allow write: if isAdmin(); }
 
     // ---------- audit logs (append-only) ----------
     // Any signed-in admin may APPEND a log entry from the admin panel so
