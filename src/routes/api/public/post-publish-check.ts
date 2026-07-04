@@ -103,7 +103,9 @@ async function runInvalidation(buildId: string): Promise<void> {
     console.warn('[post-publish-check] security regression failed:', e);
   }
 
-  // Best-effort audit log entry — never throws.
+  // Best-effort audit log entry — never throws. Use a Date instance (not
+  // ISO string) so toFirestoreValue writes a proper timestampValue that
+  // `orderBy('createdAt')` can sort against the collection's other rows.
   try {
     await addDocAdmin('auditLogs', {
       kind: 'post_publish_auto_invalidation',
@@ -112,7 +114,7 @@ async function runInvalidation(buildId: string): Promise<void> {
       prerender: pr,
       regression,
       durationMs: Date.now() - started,
-      createdAt: new Date().toISOString(),
+      createdAt: new Date(),
     });
   } catch {
     /* ignore */
