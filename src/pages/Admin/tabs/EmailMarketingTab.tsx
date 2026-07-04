@@ -220,11 +220,40 @@ To unsubscribe, reply with UNSUBSCRIBE.`,
   },
 ];
 
+// Mirror of server-side personalise() in src/routes/api/public/send-marketing.ts
+// Keep both in sync so the admin preview matches actual send output.
+function personalisePreview(
+  template: string,
+  vars: { firstName: string; lastName: string; fullName: string; email: string },
+): string {
+  const map: Record<string, string> = {
+    firstname: vars.firstName,
+    first: vars.firstName,
+    name: vars.firstName || vars.fullName,
+    fullname: vars.fullName,
+    lastname: vars.lastName,
+    last: vars.lastName,
+    email: vars.email,
+  };
+  const key = (raw: string) => raw.toLowerCase().replace(/[\s_-]+/g, '');
+  return template
+    .replace(/\[([a-zA-Z][a-zA-Z\s_-]{0,30})\]/g, (m, k) => {
+      const v = map[key(k)];
+      return v != null && v !== '' ? v : m;
+    })
+    .replace(/\{\{\s*([a-zA-Z][a-zA-Z\s_-]{0,30})\s*\}\}/g, (m, k) => {
+      const v = map[key(k)];
+      return v != null && v !== '' ? v : m;
+    });
+}
+
 export default function EmailMarketingTab() {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [preview, setPreview] = useState(false);
   const [sending, setSending] = useState(false);
+  const [sendingTest, setSendingTest] = useState(false);
+  const [testRecipients, setTestRecipients] = useState('');
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [customerCount, setCustomerCount] = useState<number | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -437,6 +466,91 @@ export default function EmailMarketingTab() {
     }
   };
 
+  const handleSendTest = async () => {
+    const emails = testRecipients
+      .split(/[,\s;]+/)
+      .map(s => s.trim().toLowerCase())
+      .filter(s => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s));
+    if (!subject.trim() || !body.trim()) {
+      setMsg({ type: 'error', text: 'Subject and body are required.' });
+      return;
+    }
+    if (emails.length === 0) {
+      setMsg({ type: 'error', text: 'Enter at least one valid test email address.' });
+      return;
+    }
+    setSendingTest(true);
+    setMsg(null);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Not signed in as admin');
+      // Match test emails to a known customer so [First Name] resolves; fall back to the local-part.
+      const recipients = emails.map(email => {
+        const match = customers.find(c => c.email?.toLowerCase() === email);
+        const localGuess = email.split('@')[0].split(/[._-]/)[0];
+        const firstName = match?.firstName || (localGuess ? localGuess[0].toUpperCase() + localGuess.slice(1) : undefined);
+        const lastName = match?.lastName || undefined;
+        return {
+          email,
+          firstName,
+          lastName,
+          name: firstName ? `${firstName} ${lastName || ''}`.trim() : undefined,
+        };
+      });
+      const res = await fetch('/api/public/send-marketing', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          idToken,
+          subject: `[TEST] ${subject.trim()}`,
+          html: body.trim(),
+          recipients,
+        }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || !result.ok) throw new Error(result.error || result.detail || `HTTP ${res.status}`);
+      setMsg({
+        type: 'success',
+        text: `Test sent to ${result.enqueued} address${result.enqueued === 1 ? '' : 'es'}: ${emails.join(', ')}. Arrives within 1–2 min.`,
+      });
+      setTimeout(() => setMsg(null), 10000);
+      loadHistory();
+    } catch (e: any) {
+      setMsg({ type: 'error', text: 'Test send failed: ' + (e?.message || 'unknown error') });
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  // Build 3 personalisation samples from real customers (or synthetic if none) so admin
+  // can see how [First Name] renders per recipient before sending.
+  const previewSamples = (() => {
+    const base = customers.filter(c => c.email).slice(0, 3);
+    const fallback = [
+      { id: 'x1', email: 'anna.kowalska@example.com', firstName: 'Anna', lastName: 'Kowalska' },
+      { id: 'x2', email: 'john@example.com', firstName: 'John', lastName: '' },
+      { id: 'x3', email: 'noname@example.com', firstName: '', lastName: '' },
+    ] as Customer[];
+    const list = base.length > 0 ? base : fallback;
+    return list.map(c => {
+      const firstName = (c.firstName || '').trim();
+      const lastName = (c.lastName || '').trim();
+      const fullName = `${firstName} ${lastName}`.trim();
+      const vars = {
+        firstName: firstName || 'there',
+        lastName,
+        fullName: fullName || firstName || 'there',
+        email: c.email,
+      };
+      return {
+        email: c.email,
+        rawFirstName: firstName || '(missing)',
+        subject: personalisePreview(subject, vars),
+        body: personalisePreview(body, vars),
+      };
+    });
+  })();
+
   const selectedTpl = TEMPLATES.find(t => t.id === selectedTemplate);
 
   return (
@@ -647,6 +761,35 @@ export default function EmailMarketingTab() {
               <p className="text-gray-700 text-xs mt-1">{body.length} characters</p>
             </div>
 
+            {/* Test send — verify [First Name] substitution before broadcasting */}
+            <div className="bg-[#04101f]/60 border border-white/10 rounded-xl p-4 space-y-2">
+              <label className="block text-white text-xs font-semibold flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                Send test to a few addresses
+              </label>
+              <p className="text-[#7591b8] text-[11px]">
+                Comma-separated emails. Subject is prefixed with <span className="text-amber-300 font-mono">[TEST]</span>. Uses the same personalisation pipeline as the real send.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={testRecipients}
+                  onChange={e => setTestRecipients(e.target.value)}
+                  placeholder="you@example.com, other@example.com"
+                  className="flex-1 bg-white border border-gray-300 text-gray-900 text-sm placeholder-gray-400 py-2 px-3 rounded-lg focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={handleSendTest}
+                  disabled={sendingTest || !subject.trim() || !body.trim() || !testRecipients.trim()}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  {sendingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {sendingTest ? 'Sending…' : 'Send test'}
+                </button>
+              </div>
+            </div>
+
             {/* Actions */}
             <div className="flex items-center gap-3 pt-1">
               <button
@@ -683,14 +826,28 @@ export default function EmailMarketingTab() {
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden"
               >
-                <div className="bg-white rounded-2xl p-5 space-y-3">
-                  <div className="border-b border-gray-200 pb-3">
-                    <p className="text-gray-500 text-xs font-semibold uppercase tracking-wider">Subject</p>
-                    <p className="text-gray-900 text-sm font-semibold mt-0.5">{subject || '(no subject)'}</p>
-                  </div>
-                  <pre className="text-gray-800 text-xs leading-relaxed whitespace-pre-wrap font-sans">
-                    {body || '(empty)'}
-                  </pre>
+                <div className="space-y-3">
+                  {previewSamples.map((s, i) => (
+                    <div key={s.email + i} className="bg-white rounded-2xl p-5 space-y-3">
+                      <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                        <span>Recipient {i + 1}</span>
+                        <span className="text-gray-400 normal-case font-mono truncate max-w-[60%]" title={s.email}>{s.email}</span>
+                      </div>
+                      <div className="text-[10px] text-gray-500">
+                        First name in DB: <span className={`font-mono ${s.rawFirstName === '(missing)' ? 'text-red-500' : 'text-emerald-600'}`}>{s.rawFirstName}</span>
+                      </div>
+                      <div className="border-b border-gray-200 pb-2">
+                        <p className="text-gray-500 text-[10px] font-semibold uppercase tracking-wider">Subject</p>
+                        <p className="text-gray-900 text-sm font-semibold mt-0.5">{s.subject || '(no subject)'}</p>
+                      </div>
+                      <pre className="text-gray-800 text-xs leading-relaxed whitespace-pre-wrap font-sans max-h-72 overflow-y-auto">
+                        {s.body || '(empty)'}
+                      </pre>
+                    </div>
+                  ))}
+                  <p className="text-[#7591b8] text-[10px] px-1">
+                    Substitution uses the same rules as the send route: <span className="font-mono">[First Name]</span>, <span className="font-mono">{'{{firstName}}'}</span>, <span className="font-mono">[Name]</span> etc. Empty first names fall back to <span className="font-mono">there</span>.
+                  </p>
                 </div>
               </motion.div>
             )}
