@@ -4,7 +4,7 @@ import {
   Loader2, X, Check,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
+import { toast, Toaster as SonnerToaster } from 'sonner';
 import {
   Product,
   getAllProducts, updateProduct, deleteProduct,
