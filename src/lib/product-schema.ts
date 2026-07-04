@@ -30,7 +30,7 @@ export const productSchema = z.object({
     .optional()
     .or(z.literal('')),
   category: z.string().min(1, 'Pick a category'),
-  price: z.number({ invalid_type_error: 'Price must be a number' }).min(0, 'Price cannot be negative'),
+  price: z.number().min(0, 'Price cannot be negative'),
   sku: z.string().trim().max(60).optional().default(''),
   stock: z.number().int('Stock must be a whole number').min(0, 'Stock cannot be negative'),
   purity: z.string().max(60).optional().default(''),
