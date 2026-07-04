@@ -265,6 +265,8 @@ export default function EmailMarketingTab() {
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [loadingSubscribers, setLoadingSubscribers] = useState(false);
   const [repairingQueue, setRepairingQueue] = useState(false);
+  const [selectedPreviewId, setSelectedPreviewId] = useState<string>('');
+  const [previewSearch, setPreviewSearch] = useState('');
 
   useEffect(() => {
     loadCustomers();
