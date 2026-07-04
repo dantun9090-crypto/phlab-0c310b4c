@@ -101,11 +101,8 @@ export default function ResearchGate() {
         }
         // null or false = don't block on this product page
       });
-    } else {
-      // Non-product pages: show modal on all non-exempt pages
-      const t = setTimeout(() => setShowModal(true), 400);
-      return () => clearTimeout(t);
     }
+    // Non-product pages: rely on the sticky banner only — no blocking modal.
   }, [location.pathname]);
 
   // Lock body scroll while modal is open so the page behind can't scroll and
