@@ -829,6 +829,10 @@ export default {
     const nonce = generateNonce();
     const url = new URL(request.url);
 
+    // Trigger post-publish invalidation on first request per isolate carrying
+    // a new BUILD_ID (fires once, uses ctx.waitUntil so CF completes purge).
+    maybeTriggerPostPublish(request, ctx);
+
     const ip = extractClientIp(request);
     const ray = request.headers.get("cf-ray");
     const country = request.headers.get("cf-ipcountry");
