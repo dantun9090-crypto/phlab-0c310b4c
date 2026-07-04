@@ -48,6 +48,7 @@ import { Route as ResearchTirzepatideVsRetatrutideRouteImport } from './routes/r
 import { Route as ResearchRetatrutideUkRouteImport } from './routes/research.retatrutide-uk'
 import { Route as ResearchBpc157VsTb500RouteImport } from './routes/research.bpc-157-vs-tb-500'
 import { Route as ResearchBpc157UkRouteImport } from './routes/research.bpc-157-uk'
+import { Route as ResearchBpc157Tb500SynergyRouteImport } from './routes/research.bpc-157-tb-500-synergy'
 import { Route as ProductsSlugRouteImport } from './routes/products_.$slug'
 import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentCancelRouteImport } from './routes/payment.cancel'
@@ -310,6 +311,12 @@ const ResearchBpc157UkRoute = ResearchBpc157UkRouteImport.update({
   path: '/bpc-157-uk',
   getParentRoute: () => ResearchRoute,
 } as any)
+const ResearchBpc157Tb500SynergyRoute =
+  ResearchBpc157Tb500SynergyRouteImport.update({
+    id: '/bpc-157-tb-500-synergy',
+    path: '/bpc-157-tb-500-synergy',
+    getParentRoute: () => ResearchRoute,
+  } as any)
 const ProductsSlugRoute = ProductsSlugRouteImport.update({
   id: '/products_/$slug',
   path: '/products/$slug',
@@ -694,6 +701,7 @@ export interface FileRoutesByFullPath {
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/research/bpc-157-tb-500-synergy': typeof ResearchBpc157Tb500SynergyRoute
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
@@ -796,6 +804,7 @@ export interface FileRoutesByTo {
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products/$slug': typeof ProductsSlugRoute
+  '/research/bpc-157-tb-500-synergy': typeof ResearchBpc157Tb500SynergyRoute
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
@@ -901,6 +910,7 @@ export interface FileRoutesById {
   '/payment/cancel': typeof PaymentCancelRoute
   '/payment/success': typeof PaymentSuccessRoute
   '/products_/$slug': typeof ProductsSlugRoute
+  '/research/bpc-157-tb-500-synergy': typeof ResearchBpc157Tb500SynergyRoute
   '/research/bpc-157-uk': typeof ResearchBpc157UkRoute
   '/research/bpc-157-vs-tb-500': typeof ResearchBpc157VsTb500Route
   '/research/retatrutide-uk': typeof ResearchRetatrutideUkRoute
@@ -1006,6 +1016,7 @@ export interface FileRouteTypes {
     | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
+    | '/research/bpc-157-tb-500-synergy'
     | '/research/bpc-157-uk'
     | '/research/bpc-157-vs-tb-500'
     | '/research/retatrutide-uk'
@@ -1108,6 +1119,7 @@ export interface FileRouteTypes {
     | '/payment/cancel'
     | '/payment/success'
     | '/products/$slug'
+    | '/research/bpc-157-tb-500-synergy'
     | '/research/bpc-157-uk'
     | '/research/bpc-157-vs-tb-500'
     | '/research/retatrutide-uk'
@@ -1212,6 +1224,7 @@ export interface FileRouteTypes {
     | '/payment/cancel'
     | '/payment/success'
     | '/products_/$slug'
+    | '/research/bpc-157-tb-500-synergy'
     | '/research/bpc-157-uk'
     | '/research/bpc-157-vs-tb-500'
     | '/research/retatrutide-uk'
@@ -1632,6 +1645,13 @@ declare module '@tanstack/react-router' {
       path: '/bpc-157-uk'
       fullPath: '/research/bpc-157-uk'
       preLoaderRoute: typeof ResearchBpc157UkRouteImport
+      parentRoute: typeof ResearchRoute
+    }
+    '/research/bpc-157-tb-500-synergy': {
+      id: '/research/bpc-157-tb-500-synergy'
+      path: '/bpc-157-tb-500-synergy'
+      fullPath: '/research/bpc-157-tb-500-synergy'
+      preLoaderRoute: typeof ResearchBpc157Tb500SynergyRouteImport
       parentRoute: typeof ResearchRoute
     }
     '/products_/$slug': {
@@ -2109,6 +2129,7 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface ResearchRouteChildren {
+  ResearchBpc157Tb500SynergyRoute: typeof ResearchBpc157Tb500SynergyRoute
   ResearchBpc157UkRoute: typeof ResearchBpc157UkRoute
   ResearchBpc157VsTb500Route: typeof ResearchBpc157VsTb500Route
   ResearchRetatrutideUkRoute: typeof ResearchRetatrutideUkRoute
@@ -2117,6 +2138,7 @@ interface ResearchRouteChildren {
 }
 
 const ResearchRouteChildren: ResearchRouteChildren = {
+  ResearchBpc157Tb500SynergyRoute: ResearchBpc157Tb500SynergyRoute,
   ResearchBpc157UkRoute: ResearchBpc157UkRoute,
   ResearchBpc157VsTb500Route: ResearchBpc157VsTb500Route,
   ResearchRetatrutideUkRoute: ResearchRetatrutideUkRoute,
@@ -2238,13 +2260,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
