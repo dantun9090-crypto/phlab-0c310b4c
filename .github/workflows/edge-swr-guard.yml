@@ -90,42 +90,69 @@ jobs:
           echo "today=${today}"  >> "$GITHUB_OUTPUT"
           echo "Current retry counter: ${count}/${MAX_AUTO_REDEPLOYS} (date=${today})"
 
-      # ---- Probe both hosts ----
-      - name: Probe apex + www
+      # ---- Probe SWR (apex + www) and client-errors in parallel ----
+      - name: Run probes in parallel (SWR + client errors)
         id: probe
         shell: bash
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
         run: |
           set +e
           mkdir -p /tmp/swr
+
+          # Fire SWR probes for each host in the background
+          pids=()
+          for host in $HOSTS; do
+            name="$(echo "$host" | sed -E 's~https?://~~; s~/.*$~~')"
+            ( scripts/probe-swr.sh "$host" "$EXPECTED_SWR" > "/tmp/swr/${name}.json" ; echo $? > "/tmp/swr/${name}.rc" ) &
+            pids+=($!)
+          done
+          # Client-error probe in parallel
+          ( scripts/probe-client-errors.sh 5 5 > /tmp/swr/client-errors.json ; echo $? > /tmp/swr/client-errors.rc ) &
+          pids+=($!)
+          for p in "${pids[@]}"; do wait "$p"; done
+
           overall=0
           statuses=()
           for host in $HOSTS; do
             name="$(echo "$host" | sed -E 's~https?://~~; s~/.*$~~')"
-            out="/tmp/swr/${name}.json"
-            scripts/probe-swr.sh "$host" "$EXPECTED_SWR" > "$out"
-            rc=$?
-            status="$(jq -r '.status' "$out")"
-            statuses+=("${name}:${status}")
-            echo "::group::Probe $host ($status, rc=$rc)"
-            cat "$out"
-            echo "::endgroup::"
-            if [ $rc -ne 0 ]; then overall=$rc; fi
+            rc="$(cat /tmp/swr/${name}.rc 2>/dev/null || echo 2)"
+            status="$(jq -r '.status' /tmp/swr/${name}.json 2>/dev/null || echo UNKNOWN)"
+            statuses+=("swr:${name}:${status}")
+            echo "::group::SWR $host ($status, rc=$rc)"; cat /tmp/swr/${name}.json; echo; echo "::endgroup::"
+            [ "$rc" -ne 0 ] && overall=$rc
           done
-          jq -s '.' /tmp/swr/*.json > /tmp/swr/all.json
-          cat /tmp/swr/all.json
-          echo "overall_rc=${overall}" >> "$GITHUB_OUTPUT"
-          echo "summary=$(IFS=,; echo "${statuses[*]}")" >> "$GITHUB_OUTPUT"
+
+          ce_rc="$(cat /tmp/swr/client-errors.rc 2>/dev/null || echo 2)"
+          ce_status="$(jq -r '.status' /tmp/swr/client-errors.json 2>/dev/null || echo UNKNOWN)"
+          ce_count="$(jq -r '.error_count' /tmp/swr/client-errors.json 2>/dev/null || echo 0)"
+          ce_paths="$(jq -c '.sample_paths' /tmp/swr/client-errors.json 2>/dev/null || echo '[]')"
+          statuses+=("client_errors:${ce_status}(${ce_count})")
+          echo "::group::client-errors probe (${ce_status}, rc=$ce_rc)"; cat /tmp/swr/client-errors.json; echo; echo "::endgroup::"
+          [ "$ce_rc" -eq 1 ] && overall=1  # exit 2 = probe error → do NOT trigger remediation
+
+          jq -s '.' /tmp/swr/apex.phlabs.co.uk.json /tmp/swr/www.phlabs.co.uk.json 2>/dev/null > /tmp/swr/all.json || \
+            jq -s '.' /tmp/swr/phlabs.co.uk.json /tmp/swr/www.phlabs.co.uk.json > /tmp/swr/all.json
+
+          echo "overall_rc=${overall}"                     >> "$GITHUB_OUTPUT"
+          echo "summary=$(IFS=,; echo "${statuses[*]}")"   >> "$GITHUB_OUTPUT"
+          echo "client_error_count=${ce_count}"            >> "$GITHUB_OUTPUT"
+          echo "client_error_status=${ce_status}"          >> "$GITHUB_OUTPUT"
+          echo "client_error_paths=${ce_paths}"            >> "$GITHUB_OUTPUT"
+
           if [ "${{ github.event.inputs.force_redeploy }}" = "true" ]; then
-            echo "force=true" >> "$GITHUB_OUTPUT"
-            echo "need_remediate=true" >> "$GITHUB_OUTPUT"
+            echo "force=true"           >> "$GITHUB_OUTPUT"
+            echo "need_remediate=true"  >> "$GITHUB_OUTPUT"
           elif [ $overall -ne 0 ]; then
-            echo "force=false" >> "$GITHUB_OUTPUT"
-            echo "need_remediate=true" >> "$GITHUB_OUTPUT"
+            echo "force=false"          >> "$GITHUB_OUTPUT"
+            echo "need_remediate=true"  >> "$GITHUB_OUTPUT"
           else
-            echo "force=false" >> "$GITHUB_OUTPUT"
+            echo "force=false"          >> "$GITHUB_OUTPUT"
             echo "need_remediate=false" >> "$GITHUB_OUTPUT"
           fi
           exit 0
+
 
       # ---- Slack: initial detection ----
       - name: Notify Slack — probe result
