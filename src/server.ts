@@ -51,10 +51,11 @@ function maybeTriggerPostPublish(request: Request, ctx: WorkerCtx): void {
   })
     .then(async (r) => {
       const body = await r.text().catch(() => "");
-      log("info", "post_publish_ssr_trigger", { buildId, status: r.status, body: body.slice(0, 300) });
+      log.info({ event: "post_publish_ssr_trigger", buildId, status: r.status, body: body.slice(0, 300) });
     })
     .catch((e) => {
-      log("warn", "post_publish_ssr_trigger_failed", {
+      log.warn({
+        event: "post_publish_ssr_trigger_failed",
         buildId,
         error: e instanceof Error ? e.message : String(e),
       });
