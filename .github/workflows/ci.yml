@@ -146,6 +146,14 @@ jobs:
       - name: Sitemap / canonical / robots consistency
         run: bun run test:sitemap
 
+      # Sitemap XML validation: invokes the /sitemap.xml (and /bing-feed.xml)
+      # route handlers in-process, parses the response body in STRICT mode
+      # with fast-xml-parser, and fails the build if the XML is malformed
+      # or contains zero <url> entries. Guards against a broken feed
+      # shipping to production.
+      - name: Sitemap XML well-formedness + non-empty guard
+        run: bun run check:sitemap-xml
+
       # Runs the EXACT production build that ships to Cloudflare Workers.
       # No --mode development, no dev-only shortcuts.
       # The build script performs environment readiness checks, captures full
