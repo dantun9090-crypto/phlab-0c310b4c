@@ -1197,7 +1197,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                     >
                       <div
                         onDragOver={(e) => handleDragOver(e, idx)}
-                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-3 sm:grid-cols-[auto_auto_minmax(180px,1.5fr)_minmax(120px,1fr)_96px_88px_auto] sm:items-end"
+                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-3 sm:grid-cols-[auto_auto_minmax(180px,1.5fr)_minmax(120px,1fr)_96px_88px_96px_auto] sm:items-end"
                       >
                         <span
                           draggable
