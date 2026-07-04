@@ -43,7 +43,7 @@ function InlineNumberCell({
   const [justSaved, setJustSaved] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffectAlias(() => { if (editing) inputRef.current?.select(); }, [editing]);
+  useEffect(() => { if (editing) inputRef.current?.select(); }, [editing]);
 
   const commit = async () => {
     const parsed = field === 'stock' ? parseInt(draft, 10) : parseFloat(draft);
