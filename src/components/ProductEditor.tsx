@@ -404,17 +404,13 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
       });
     } catch (e: any) {
       console.error('Upload failed:', e);
-      const msg = String(e?.message || e?.code || '');
-      const isPermission = e?.code === 'storage/unauthorized'
-        || msg.includes('permission')
-        || msg.includes('unauthorized')
-        || msg.includes('403')
-        || e?.code === 'storage/unknown';
+      const { code, message } = friendlyUploadError(e);
       setSlotErrors(prev => {
         const n = [...prev];
-        n[index] = isPermission ? 'permission' : (e?.message || 'failed');
+        n[index] = code === 'permission' ? 'permission' : message;
         return n;
       });
+      toast.error(`Photo ${index + 1}: ${message}`);
     } finally {
       setSlotUploading(prev => { const n = [...prev]; n[index] = false; return n; });
     }
