@@ -268,6 +268,17 @@ export default function EmailMarketingTab() {
   const [repairingQueue, setRepairingQueue] = useState(false);
   const [selectedPreviewId, setSelectedPreviewId] = useState<string>('');
   const [previewSearch, setPreviewSearch] = useState('');
+  const [validating, setValidating] = useState(false);
+  const [validation, setValidation] = useState<null | {
+    knownPlaceholders: string[];
+    unknownPlaceholders: string[];
+    hasPersonalisation: boolean;
+    recipientCount: number;
+    fallbackFirstNameCount: number;
+    fallbackFullNameCount: number;
+    fallbackAffectsPct: number;
+    fallbackEmailsSample: string[];
+  }>(null);
 
   useEffect(() => {
     loadCustomers();
