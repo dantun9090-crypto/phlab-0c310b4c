@@ -73,6 +73,7 @@ const navGroups = [
       { id: 'promocodes', label: 'Promo Codes', icon: Tag },
       { id: 'freegift', label: 'Free Gift Promo', icon: Gift },
       { id: 'emailmarketing', label: 'Email Campaigns', icon: Mail },
+      { id: 'newsletter', label: 'Newsletter', icon: Mail },
       { id: 'googleads', label: 'Google Ads Campaigns', icon: Megaphone },
       { id: 'compoundqueries', label: '/compound Queries (GSC)', icon: Search },
       { id: 'emailpreview', label: 'Email Preview', icon: Eye },

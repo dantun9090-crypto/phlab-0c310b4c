@@ -1,5 +1,6 @@
 import { ArrowRight, CheckCircle2, ShieldCheck, Zap, Mail, Microscope, CreditCard, Truck, Flame, Star, Dna, Activity, Brain, RefreshCw, Shield, Snowflake, FileCheck, FlaskConical, ChevronDown, Lock, Loader2 } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+const NewsletterPopup = lazy(() => import('@/components/NewsletterPopup'));
 import { useSSRBanner } from '@/legacy/SSRDataContext';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 
@@ -1257,6 +1258,11 @@ export default function HomePage() {
 
       {/* SEO link-index — SSR-rendered hub linking to every product + article */}
       <HomeSeoIndex />
+
+      {/* Newsletter capture popup — delayed, cooldown-gated, admin-configurable */}
+      <Suspense fallback={null}>
+        <NewsletterPopup />
+      </Suspense>
 
     </div>
   );
