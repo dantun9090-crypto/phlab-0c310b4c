@@ -16,7 +16,6 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShippingPolicyRouteImport } from './routes/shipping-policy'
 import { Route as SentryTestRouteImport } from './routes/sentry-test'
 import { Route as SearchRouteImport } from './routes/search'
-import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as ResearchRouteImport } from './routes/research'
 import { Route as RequestCatalogRouteImport } from './routes/request-catalog'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
@@ -41,6 +40,7 @@ import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as IndexnowKeyDottxtRouteImport } from './routes/$indexnowKey[.]txt'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ResourcesIndexRouteImport } from './routes/resources.index'
 import { Route as ResearchIndexRouteImport } from './routes/research.index'
 import { Route as ResourcesPeptideCategoriesUkResearchRouteImport } from './routes/resources.peptide-categories-uk-research'
 import { Route as ResourcesSlugRouteImport } from './routes/resources.$slug'
@@ -146,11 +146,6 @@ const SentryTestRoute = SentryTestRouteImport.update({
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResourcesRoute = ResourcesRouteImport.update({
-  id: '/resources',
-  path: '/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResearchRoute = ResearchRouteImport.update({
@@ -274,6 +269,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResourcesIndexRoute = ResourcesIndexRouteImport.update({
+  id: '/resources/',
+  path: '/resources/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResearchIndexRoute = ResearchIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -281,14 +281,14 @@ const ResearchIndexRoute = ResearchIndexRouteImport.update({
 } as any)
 const ResourcesPeptideCategoriesUkResearchRoute =
   ResourcesPeptideCategoriesUkResearchRouteImport.update({
-    id: '/peptide-categories-uk-research',
-    path: '/peptide-categories-uk-research',
-    getParentRoute: () => ResourcesRoute,
+    id: '/resources/peptide-categories-uk-research',
+    path: '/resources/peptide-categories-uk-research',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const ResourcesSlugRoute = ResourcesSlugRouteImport.update({
-  id: '/$slug',
-  path: '/$slug',
-  getParentRoute: () => ResourcesRoute,
+  id: '/resources/$slug',
+  path: '/resources/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ResearchTirzepatideVsRetatrutideRoute =
   ResearchTirzepatideVsRetatrutideRouteImport.update({
@@ -676,7 +676,6 @@ export interface FileRoutesByFullPath {
   '/refund-policy': typeof RefundPolicyRoute
   '/request-catalog': typeof RequestCatalogRoute
   '/research': typeof ResearchRouteWithChildren
-  '/resources': typeof ResourcesRouteWithChildren
   '/search': typeof SearchRoute
   '/sentry-test': typeof SentryTestRoute
   '/shipping-policy': typeof ShippingPolicyRoute
@@ -709,6 +708,7 @@ export interface FileRoutesByFullPath {
   '/resources/$slug': typeof ResourcesSlugRoute
   '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
   '/research/': typeof ResearchIndexRoute
+  '/resources/': typeof ResourcesIndexRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
@@ -779,7 +779,6 @@ export interface FileRoutesByTo {
   '/quality-control': typeof QualityControlRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/request-catalog': typeof RequestCatalogRoute
-  '/resources': typeof ResourcesRouteWithChildren
   '/search': typeof SearchRoute
   '/sentry-test': typeof SentryTestRoute
   '/shipping-policy': typeof ShippingPolicyRoute
@@ -812,6 +811,7 @@ export interface FileRoutesByTo {
   '/resources/$slug': typeof ResourcesSlugRoute
   '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
   '/research': typeof ResearchIndexRoute
+  '/resources': typeof ResourcesIndexRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
@@ -885,7 +885,6 @@ export interface FileRoutesById {
   '/refund-policy': typeof RefundPolicyRoute
   '/request-catalog': typeof RequestCatalogRoute
   '/research': typeof ResearchRouteWithChildren
-  '/resources': typeof ResourcesRouteWithChildren
   '/search': typeof SearchRoute
   '/sentry-test': typeof SentryTestRoute
   '/shipping-policy': typeof ShippingPolicyRoute
@@ -918,6 +917,7 @@ export interface FileRoutesById {
   '/resources/$slug': typeof ResourcesSlugRoute
   '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
   '/research/': typeof ResearchIndexRoute
+  '/resources/': typeof ResourcesIndexRoute
   '/api/config/payments': typeof ApiConfigPaymentsRoute
   '/api/dsr/process': typeof ApiDsrProcessRoute
   '/api/payments/cancel': typeof ApiPaymentsCancelRoute
@@ -991,7 +991,6 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/request-catalog'
     | '/research'
-    | '/resources'
     | '/search'
     | '/sentry-test'
     | '/shipping-policy'
@@ -1024,6 +1023,7 @@ export interface FileRouteTypes {
     | '/resources/$slug'
     | '/resources/peptide-categories-uk-research'
     | '/research/'
+    | '/resources/'
     | '/api/config/payments'
     | '/api/dsr/process'
     | '/api/payments/cancel'
@@ -1094,7 +1094,6 @@ export interface FileRouteTypes {
     | '/quality-control'
     | '/refund-policy'
     | '/request-catalog'
-    | '/resources'
     | '/search'
     | '/sentry-test'
     | '/shipping-policy'
@@ -1127,6 +1126,7 @@ export interface FileRouteTypes {
     | '/resources/$slug'
     | '/resources/peptide-categories-uk-research'
     | '/research'
+    | '/resources'
     | '/api/config/payments'
     | '/api/dsr/process'
     | '/api/payments/cancel'
@@ -1199,7 +1199,6 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/request-catalog'
     | '/research'
-    | '/resources'
     | '/search'
     | '/sentry-test'
     | '/shipping-policy'
@@ -1232,6 +1231,7 @@ export interface FileRouteTypes {
     | '/resources/$slug'
     | '/resources/peptide-categories-uk-research'
     | '/research/'
+    | '/resources/'
     | '/api/config/payments'
     | '/api/dsr/process'
     | '/api/payments/cancel'
@@ -1305,7 +1305,6 @@ export interface RootRouteChildren {
   RefundPolicyRoute: typeof RefundPolicyRoute
   RequestCatalogRoute: typeof RequestCatalogRoute
   ResearchRoute: typeof ResearchRouteWithChildren
-  ResourcesRoute: typeof ResourcesRouteWithChildren
   SearchRoute: typeof SearchRoute
   SentryTestRoute: typeof SentryTestRoute
   ShippingPolicyRoute: typeof ShippingPolicyRoute
@@ -1324,6 +1323,9 @@ export interface RootRouteChildren {
   PaymentCancelRoute: typeof PaymentCancelRoute
   PaymentSuccessRoute: typeof PaymentSuccessRoute
   ProductsSlugRoute: typeof ProductsSlugRoute
+  ResourcesSlugRoute: typeof ResourcesSlugRoute
+  ResourcesPeptideCategoriesUkResearchRoute: typeof ResourcesPeptideCategoriesUkResearchRoute
+  ResourcesIndexRoute: typeof ResourcesIndexRoute
   ApiConfigPaymentsRoute: typeof ApiConfigPaymentsRoute
   ApiDsrProcessRoute: typeof ApiDsrProcessRoute
   ApiPaymentsCancelRoute: typeof ApiPaymentsCancelRoute
@@ -1421,13 +1423,6 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/resources': {
-      id: '/resources'
-      path: '/resources'
-      fullPath: '/resources'
-      preLoaderRoute: typeof ResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/research': {
@@ -1598,6 +1593,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/resources/': {
+      id: '/resources/'
+      path: '/resources'
+      fullPath: '/resources/'
+      preLoaderRoute: typeof ResourcesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/research/': {
       id: '/research/'
       path: '/'
@@ -1607,17 +1609,17 @@ declare module '@tanstack/react-router' {
     }
     '/resources/peptide-categories-uk-research': {
       id: '/resources/peptide-categories-uk-research'
-      path: '/peptide-categories-uk-research'
+      path: '/resources/peptide-categories-uk-research'
       fullPath: '/resources/peptide-categories-uk-research'
       preLoaderRoute: typeof ResourcesPeptideCategoriesUkResearchRouteImport
-      parentRoute: typeof ResourcesRoute
+      parentRoute: typeof rootRouteImport
     }
     '/resources/$slug': {
       id: '/resources/$slug'
-      path: '/$slug'
+      path: '/resources/$slug'
       fullPath: '/resources/$slug'
       preLoaderRoute: typeof ResourcesSlugRouteImport
-      parentRoute: typeof ResourcesRoute
+      parentRoute: typeof rootRouteImport
     }
     '/research/tirzepatide-vs-retatrutide': {
       id: '/research/tirzepatide-vs-retatrutide'
@@ -2150,21 +2152,6 @@ const ResearchRouteWithChildren = ResearchRoute._addFileChildren(
   ResearchRouteChildren,
 )
 
-interface ResourcesRouteChildren {
-  ResourcesSlugRoute: typeof ResourcesSlugRoute
-  ResourcesPeptideCategoriesUkResearchRoute: typeof ResourcesPeptideCategoriesUkResearchRoute
-}
-
-const ResourcesRouteChildren: ResourcesRouteChildren = {
-  ResourcesSlugRoute: ResourcesSlugRoute,
-  ResourcesPeptideCategoriesUkResearchRoute:
-    ResourcesPeptideCategoriesUkResearchRoute,
-}
-
-const ResourcesRouteWithChildren = ResourcesRoute._addFileChildren(
-  ResourcesRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
@@ -2190,7 +2177,6 @@ const rootRouteChildren: RootRouteChildren = {
   RefundPolicyRoute: RefundPolicyRoute,
   RequestCatalogRoute: RequestCatalogRoute,
   ResearchRoute: ResearchRouteWithChildren,
-  ResourcesRoute: ResourcesRouteWithChildren,
   SearchRoute: SearchRoute,
   SentryTestRoute: SentryTestRoute,
   ShippingPolicyRoute: ShippingPolicyRoute,
@@ -2209,6 +2195,10 @@ const rootRouteChildren: RootRouteChildren = {
   PaymentCancelRoute: PaymentCancelRoute,
   PaymentSuccessRoute: PaymentSuccessRoute,
   ProductsSlugRoute: ProductsSlugRoute,
+  ResourcesSlugRoute: ResourcesSlugRoute,
+  ResourcesPeptideCategoriesUkResearchRoute:
+    ResourcesPeptideCategoriesUkResearchRoute,
+  ResourcesIndexRoute: ResourcesIndexRoute,
   ApiConfigPaymentsRoute: ApiConfigPaymentsRoute,
   ApiDsrProcessRoute: ApiDsrProcessRoute,
   ApiPaymentsCancelRoute: ApiPaymentsCancelRoute,
@@ -2260,13 +2250,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
