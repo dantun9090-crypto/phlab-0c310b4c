@@ -80,10 +80,11 @@ export function validateProduct(data: unknown): ValidationResult {
   const parsed = productSchema.safeParse(data);
   if (parsed.success) return { ok: true, errors, perTab };
   for (const issue of parsed.error.issues) {
-    const key = issue.path.join('.');
+    const pathParts = issue.path.map((p) => (typeof p === 'symbol' ? String(p) : p));
+    const key = pathParts.join('.');
     if (!errors[key]) {
       errors[key] = issue.message;
-      perTab[tabForPath(issue.path)] += 1;
+      perTab[tabForPath(pathParts as (string | number)[])] += 1;
     }
   }
   return { ok: false, errors, perTab };
