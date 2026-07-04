@@ -12,7 +12,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { listDocsAdmin } from "@/lib/server/firestore-admin";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireFirebaseAdmin } from "@/lib/server/firebase-auth-admin";
 
 type MetricName = "LCP" | "CLS" | "INP" | "FCP" | "TTFB";
 
@@ -47,11 +47,12 @@ function dayKey(iso: string): string {
 }
 
 export const getWebVitalsTrends = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((d: { days?: number } | undefined) => ({
+  .validator((d: { days?: number; idToken?: string } | undefined) => ({
     days: Math.min(Math.max(d?.days ?? 7, 1), 30),
+    idToken: String(d?.idToken ?? ""),
   }))
   .handler(async ({ data }): Promise<VitalsTrends> => {
+    await requireFirebaseAdmin(data.idToken);
     const since = new Date(Date.now() - data.days * 24 * 60 * 60 * 1000);
     const rows = (await listDocsAdmin("web_vitals", {
       orderBy: "createdAt",
@@ -136,12 +137,13 @@ export interface VitalsAlert {
 }
 
 export const getWebVitalsAlerts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((d: { limit?: number; days?: number } | undefined) => ({
+  .validator((d: { limit?: number; days?: number; idToken?: string } | undefined) => ({
     limit: Math.min(Math.max(d?.limit ?? 50, 1), 200),
     days: Math.min(Math.max(d?.days ?? 7, 1), 30),
+    idToken: String(d?.idToken ?? ""),
   }))
   .handler(async ({ data }): Promise<VitalsAlert[]> => {
+    await requireFirebaseAdmin(data.idToken);
     const since = new Date(Date.now() - data.days * 24 * 60 * 60 * 1000);
     const rows = (await listDocsAdmin("web_vitals_alerts", {
       orderBy: "createdAt",

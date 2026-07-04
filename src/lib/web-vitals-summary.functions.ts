@@ -11,7 +11,7 @@
 import { createServerFn } from "@tanstack/react-start";
 
 import { listDocsAdmin } from "@/lib/server/firestore-admin";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireFirebaseAdmin } from "@/lib/server/firebase-auth-admin";
 
 type MetricName = "LCP" | "CLS" | "INP" | "FCP" | "TTFB";
 
@@ -53,11 +53,12 @@ function percentile(sorted: number[], p: number): number {
 }
 
 export const getWebVitalsSummary = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .validator((d: { days?: number } | undefined) => ({
+  .validator((d: { days?: number; idToken?: string } | undefined) => ({
     days: Math.min(Math.max(d?.days ?? 7, 1), 30),
+    idToken: String(d?.idToken ?? ""),
   }))
   .handler(async ({ data }): Promise<VitalsSummary> => {
+    await requireFirebaseAdmin(data.idToken);
     const since = new Date(Date.now() - data.days * 24 * 60 * 60 * 1000);
     const rows = (await listDocsAdmin("web_vitals", {
       orderBy: "createdAt",

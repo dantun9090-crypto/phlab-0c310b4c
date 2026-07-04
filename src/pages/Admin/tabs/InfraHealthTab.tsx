@@ -14,18 +14,13 @@
  * Auto-refresh: 60s. Auth/admin gating handled by parent AdminPage.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { auth } from '@/lib/firebase';
 import {
-  db,
-  auth,
-  collection,
-  query,
-  orderBy,
-  limit,
-  getDocs,
-  doc,
-  updateDoc,
-} from '@/lib/firebase';
-import { serverTimestamp } from 'firebase/firestore';
+  acknowledgeInfraHealthAlert,
+  listInfraHealthAlerts,
+  listInfraHealthChecks,
+  runInfraHealthCheckNow,
+} from '@/lib/health-monitor.functions';
 import {
   CheckCircle2,
   AlertTriangle,
@@ -74,6 +69,19 @@ interface AlertRow {
   failedChecks: string[];
   details: string;
   notified: boolean;
+}
+
+interface InfraListResult {
+  ok: boolean;
+  rows: Array<Record<string, unknown> & { id: string }>;
+  error?: string;
+}
+
+interface InfraRunResult {
+  ok: boolean;
+  status: number;
+  overall: string | null;
+  error?: string;
 }
 
 function toMillis(v: unknown): number {
@@ -165,13 +173,11 @@ export default function InfraHealthTab() {
   const loadAll = useCallback(async (size: number) => {
     setError(null);
     try {
-      const q = query(
-        collection(db, 'health_checks'),
-        orderBy('timestamp', 'desc'),
-        limit(size),
-      );
-      const snap = await getDocs(q);
-      setRows(snap.docs.map((d) => normalizeHealth(d.id, d.data() as Record<string, unknown>)));
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Sign in as admin first');
+      const res = await listInfraHealthChecks({ data: { idToken, limit: size } }) as InfraListResult;
+      if (!res.ok) throw new Error(res.error || 'Failed to load health checks');
+      setRows(res.rows.map((d) => normalizeHealth(d.id, d as Record<string, unknown>)));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -181,13 +187,11 @@ export default function InfraHealthTab() {
 
   const loadAlerts = useCallback(async () => {
     try {
-      const q = query(
-        collection(db, 'health_alerts'),
-        orderBy('timestamp', 'desc'),
-        limit(50),
-      );
-      const snap = await getDocs(q);
-      const all = snap.docs.map((d) => normalizeAlert(d.id, d.data() as Record<string, unknown>));
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Sign in as admin first');
+      const res = await listInfraHealthAlerts({ data: { idToken } }) as InfraListResult;
+      if (!res.ok) throw new Error(res.error || 'Failed to load health alerts');
+      const all = res.rows.map((d) => normalizeAlert(d.id, d as Record<string, unknown>));
       setAlerts(all);
     } catch {
       // collection may not exist yet — silent
@@ -211,12 +215,9 @@ export default function InfraHealthTab() {
 
   const acknowledgeAlert = async (id: string) => {
     try {
-      const uid = auth.currentUser?.uid ?? 'unknown';
-      await updateDoc(doc(db, 'health_alerts', id), {
-        notified: true,
-        acknowledgedAt: serverTimestamp(),
-        acknowledgedBy: uid,
-      });
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Sign in as admin first');
+      await acknowledgeInfraHealthAlert({ data: { idToken, id } });
       setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, notified: true } : a)));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -227,11 +228,12 @@ export default function InfraHealthTab() {
     setTriggering(true);
     setTriggerMsg(null);
     try {
-      const res = await fetch('/api/public/health-deep', { cache: 'no-store' });
-      const j = await res.json().catch(() => null);
-      setTriggerMsg(`HTTP ${res.status} — overall: ${j?.overall ?? '?'}`);
-      // Give cron writer a moment, then reload list
-      setTimeout(() => loadAll(pageSize), 1500);
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Sign in as admin first');
+      const res = await runInfraHealthCheckNow({ data: { idToken } }) as InfraRunResult;
+      setTriggerMsg(`HTTP ${res.status} — overall: ${res.overall ?? '?'}`);
+      await loadAll(pageSize);
+      await loadAlerts();
     } catch (e) {
       setTriggerMsg(e instanceof Error ? e.message : String(e));
     } finally {

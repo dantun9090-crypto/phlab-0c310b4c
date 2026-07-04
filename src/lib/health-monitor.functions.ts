@@ -14,7 +14,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireFirebaseAdmin } from './server/firebase-auth-admin';
-import { listDocsAdmin, updateDocAdmin } from './server/firestore-admin';
+import { addDocAdmin, getDocAdmin, listDocsAdmin, updateDocAdmin } from './server/firestore-admin';
 
 const CF_ZONE_ID = 'ed093ef4578e8e3568e26c3e979558c6';
 const ORIGIN = 'https://phlabs.co.uk';
@@ -221,6 +221,43 @@ export async function purgeCloudflareEverything(): Promise<{
 
 const TokenSchema = z.object({ idToken: z.string().min(20).max(4096) });
 
+const InfraListSchema = TokenSchema.extend({
+  limit: z.number().int().min(1).max(200).default(50),
+});
+
+type JsonScalar = string | number | boolean | null;
+type JsonValue = JsonScalar | JsonValue[] | { [key: string]: JsonValue };
+type InfraRow = { id: string; [key: string]: JsonValue };
+
+function compactError(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
+function toJsonValue(value: unknown): JsonValue {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value;
+  if (Array.isArray(value)) return value.map(toJsonValue);
+  if (typeof value === 'object') {
+    const out: { [key: string]: JsonValue } = {};
+    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+      out[key] = toJsonValue(val);
+    }
+    return out;
+  }
+  return String(value);
+}
+
+function sanitizeInfraRows(rows: Array<Record<string, unknown> & { id: string }>): InfraRow[] {
+  return rows.map((row) => {
+    const out: InfraRow = { id: row.id };
+    for (const [key, value] of Object.entries(row)) {
+      if (key === 'id') continue;
+      out[key] = toJsonValue(value);
+    }
+    return out;
+  });
+}
+
 export const getCacheHealth = createServerFn({ method: 'POST' })
   .validator((input: unknown) => TokenSchema.parse(input))
   .handler(async ({ data }) => {
@@ -321,6 +358,110 @@ export const acknowledgeHealthAlert = createServerFn({ method: 'POST' })
       acknowledged: true,
       acknowledgedAt: new Date().toISOString(),
       acknowledgedBy: user.email ?? user.uid,
+    });
+    return { ok: true as const };
+  });
+
+export const listInfraHealthChecks = createServerFn({ method: 'POST' })
+  .validator((input: unknown) => InfraListSchema.parse(input))
+  .handler(async ({ data }): Promise<{ ok: boolean; rows: InfraRow[]; error?: string }> => {
+    await requireFirebaseAdmin(data.idToken);
+    try {
+      const rows = await listDocsAdmin('health_checks', {
+        orderBy: 'timestamp',
+        direction: 'DESCENDING',
+        limit: data.limit,
+      });
+      return { ok: true, rows: sanitizeInfraRows(rows) };
+    } catch (e) {
+      return { ok: false, rows: [], error: compactError(e) };
+    }
+  });
+
+export const listInfraHealthAlerts = createServerFn({ method: 'POST' })
+  .validator((input: unknown) => TokenSchema.parse(input))
+  .handler(async ({ data }): Promise<{ ok: boolean; rows: InfraRow[]; error?: string }> => {
+    await requireFirebaseAdmin(data.idToken);
+    try {
+      const rows = await listDocsAdmin('health_alerts', {
+        orderBy: 'timestamp',
+        direction: 'DESCENDING',
+        limit: 50,
+      });
+      return { ok: true, rows: sanitizeInfraRows(rows) };
+    } catch (e) {
+      return { ok: false, rows: [], error: compactError(e) };
+    }
+  });
+
+export const runInfraHealthCheckNow = createServerFn({ method: 'POST' })
+  .validator((input: unknown) => TokenSchema.parse(input))
+  .handler(async ({ data }) => {
+    const user = await requireFirebaseAdmin(data.idToken);
+    const res = await fetch(`${ORIGIN}/api/public/health-deep`, { cache: 'no-store' });
+    const report = (await res.json().catch(() => null)) as null | Record<string, unknown>;
+    if (!report) return { ok: false as const, status: res.status, overall: null, error: 'invalid_health_response' };
+    const overall = typeof report.overall === 'string' ? report.overall : null;
+
+    const timestamp = Date.now();
+    const row = {
+      ...report,
+      timestamp,
+      createdAt: new Date().toISOString(),
+      triggeredBy: user.uid,
+      httpStatus: res.status,
+    };
+    await addDocAdmin('health_checks', row);
+
+    if (overall === 'FAIL') {
+      const checks = (report.checks ?? {}) as Record<string, { status?: string; detail?: string }>;
+      const failedChecks = Object.entries(checks)
+        .filter(([, v]) => v?.status === 'FAIL')
+        .map(([k]) => k);
+      await addDocAdmin('health_alerts', {
+        timestamp,
+        createdAt: new Date().toISOString(),
+        failedChecks,
+        details: failedChecks.map((k) => `${k}: ${checks[k]?.detail ?? 'failed'}`).join('\n'),
+        notified: false,
+        source: 'manual_admin_check',
+      });
+    }
+
+    await addDocAdmin('auditLogs', {
+      adminUid: user.uid,
+      action: 'infra_health.run',
+      target: 'health_checks',
+      before: null,
+      after: { overall, httpStatus: res.status },
+      timestamp: new Date().toISOString(),
+      ip: 'server',
+    });
+
+    return { ok: res.ok, status: res.status, overall };
+  });
+
+export const acknowledgeInfraHealthAlert = createServerFn({ method: 'POST' })
+  .validator((input: unknown) =>
+    TokenSchema.extend({ id: z.string().min(1).max(160) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const user = await requireFirebaseAdmin(data.idToken);
+    const before = await getDocAdmin('health_alerts', data.id).catch(() => null);
+    const after = {
+      notified: true,
+      acknowledgedAt: new Date().toISOString(),
+      acknowledgedBy: user.uid,
+    };
+    await updateDocAdmin('health_alerts', data.id, after);
+    await addDocAdmin('auditLogs', {
+      adminUid: user.uid,
+      action: 'infra_health.alert_ack',
+      target: `health_alerts/${data.id}`,
+      before,
+      after,
+      timestamp: new Date().toISOString(),
+      ip: 'server',
     });
     return { ok: true as const };
   });
