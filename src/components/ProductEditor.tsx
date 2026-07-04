@@ -1196,13 +1196,18 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                       className={`p-3 bg-white border border-gray-300 rounded-lg transition-opacity ${draggedVariantIdx === idx ? 'opacity-40' : ''}`}
                     >
                       <div
+                        onDragOver={(e) => handleDragOver(e, idx)}
+                        className="flex items-center gap-2"
+                      >
+                      <span
                         draggable
                         onDragStart={() => handleDragStart(idx)}
-                        onDragOver={(e) => handleDragOver(e, idx)}
                         onDragEnd={handleDragEnd}
-                        className="flex items-center gap-2 cursor-move"
+                        className="cursor-move touch-none p-1 -m-1 shrink-0"
+                        title="Drag to reorder"
                       >
-                      <MoveVertical className="w-4 h-4 text-gray-500 shrink-0" />
+                        <MoveVertical className="w-4 h-4 text-gray-500" />
+                      </span>
                       <div className="flex items-center gap-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-md px-1.5 py-0.5 shrink-0 min-w-[20px] justify-center">
                         {idx + 1}
                       </div>
