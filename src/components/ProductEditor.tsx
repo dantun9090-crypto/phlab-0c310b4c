@@ -789,22 +789,30 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                 <div className="grid md:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1.5">Product Name *</label>
-                    <input type="text" value={formData.name || ''} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                    <input type="text" value={formData.name || ''}
+                      onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                      onBlur={() => markTouched('name')}
                       placeholder="e.g. BPC-157"
-                      className="w-full px-4 py-3 bg-[#1e293b] border-2 border-[#475569] rounded-lg text-[#f8fafc] text-base placeholder-[#94a3b8] focus:outline-none focus:border-[#3b82f6] focus:shadow-[0_0_0_3px_rgba(59,130,246,0.3)] transition-all min-h-[48px]" />
+                      className={`w-full px-4 py-3 bg-[#1e293b] border-2 rounded-lg text-[#f8fafc] text-base placeholder-[#94a3b8] focus:outline-none focus:shadow-[0_0_0_3px_rgba(59,130,246,0.3)] transition-all min-h-[48px] ${errorFor('name') ? 'border-red-500 focus:border-red-500' : 'border-[#475569] focus:border-[#3b82f6]'}`} />
+                    {errorFor('name') && <p className="mt-1 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errorFor('name')}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1.5">Category</label>
                     <select value={formData.category} onChange={e => setFormData(p => ({ ...p, category: e.target.value }))}
+                      onBlur={() => markTouched('category')}
                       className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all capitalize">
                       {CATEGORIES.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
                     </select>
+                    {errorFor('category') && <p className="mt-1 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errorFor('category')}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1.5">Base Price (£)</label>
-                    <input type="number" value={formData.price || ''} onChange={e => setFormData(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
+                    <input type="number" value={formData.price || ''}
+                      onChange={e => setFormData(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
+                      onBlur={() => markTouched('price')}
                       step="0.01" placeholder="0.00"
-                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all" />
+                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${errorFor('price') ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`} />
+                    {errorFor('price') && <p className="mt-1 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errorFor('price')}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1.5">SKU</label>
