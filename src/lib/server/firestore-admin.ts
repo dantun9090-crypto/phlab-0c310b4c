@@ -121,8 +121,15 @@ function objectToFields(obj: Record<string, unknown>): Record<string, any> {
 /**
  * Create a document in the given collection. Uses service-account credentials
  * (bypasses Firestore security rules).
+ *
+ * Retries up to MAX_RETRIES on transient failures (network blip, 5xx). On
+ * final failure for the `auditLogs` collection, writes a fallback entry to
+ * `errorLogs` so silent 4-day outages become visible.
  */
-export async function addDocAdmin(
+const ADD_DOC_MAX_RETRIES = 3;
+const ADD_DOC_BACKOFF_MS = 500;
+
+async function addDocOnce(
   collection: string,
   data: Record<string, unknown>,
   id?: string,
@@ -143,6 +150,52 @@ export async function addDocAdmin(
     throw new Error(`Firestore write failed: ${res.status} ${await res.text()}`);
   }
   return (await res.json()) as { name: string };
+}
+
+export async function addDocAdmin(
+  collection: string,
+  data: Record<string, unknown>,
+  id?: string,
+): Promise<{ name: string }> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= ADD_DOC_MAX_RETRIES; attempt++) {
+    try {
+      const result = await addDocOnce(collection, data, id);
+      if (attempt > 1) {
+        console.log(`[firestore-admin] ${collection} write succeeded on attempt ${attempt}`);
+      }
+      return result;
+    } catch (err) {
+      lastError = err;
+      console.error(
+        `[firestore-admin] ${collection} write attempt ${attempt}/${ADD_DOC_MAX_RETRIES} failed:`,
+        err instanceof Error ? err.message : String(err),
+      );
+      if (attempt < ADD_DOC_MAX_RETRIES) {
+        await new Promise((resolve) => setTimeout(resolve, ADD_DOC_BACKOFF_MS * attempt));
+      }
+    }
+  }
+  console.error(
+    `[firestore-admin] CRITICAL: ${collection} write exhausted ${ADD_DOC_MAX_RETRIES} retries.`,
+    lastError,
+  );
+  // Fallback error log — only for auditLogs (avoid infinite loop if errorLogs itself fails).
+  if (collection === 'auditLogs') {
+    try {
+      await addDocOnce('errorLogs', {
+        type: 'audit_log_failure',
+        collection,
+        dataPreview: JSON.stringify(data).slice(0, 2000),
+        error: lastError instanceof Error ? lastError.message : String(lastError),
+        stack: lastError instanceof Error ? lastError.stack ?? null : null,
+        createdAt: new Date(),
+      });
+    } catch (fallbackErr) {
+      console.error('[firestore-admin] errorLogs fallback also failed:', fallbackErr);
+    }
+  }
+  throw lastError;
 }
 
 /**

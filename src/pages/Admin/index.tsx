@@ -86,8 +86,9 @@ import PurgeIncidentsTab from './tabs/PurgeIncidentsTab';
 import SwTelemetryDebugTab from './tabs/SwTelemetryDebugTab';
 import MonitorLogTab from './tabs/MonitorLogTab';
 import SentryIssuesTab from './tabs/SentryIssuesTab';
+import PublishStatusTab from './tabs/PublishStatusTab';
 
-type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'firestorebackups' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'merchantfeededitor' | 'bingfeed' | 'indexnow' | 'reindexhook' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'backlinkchanges' | 'googleads' | 'compoundqueries' | 'compoundnegativesaudit' | 'internallinks' | 'webvitals' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'blankwatchdog' | 'healthmonitor' | 'infrahealth' | 'researchincidents' | 'purgeincidents' | 'swtelemetrydebug' | 'monitorlog' | 'sentryissues';
+type Tab = 'dashboard' | 'ai' | 'inventory' | 'orders' | 'customers' | 'marketing' | 'database' | 'invoices' | 'banner' | 'settings' | 'tools' | 'themes' | 'backup' | 'firestorebackups' | 'adverts' | 'policies' | 'landing' | 'compliance' | 'auditlog' | 'authevents' | 'visitors' | 'liveactivity' | 'toastaudit' | 'privacyrequests' | 'cartevents' | 'mailhealth' | 'emailmarketing' | 'emailpreview' | 'ipwhitelist' | 'featured' | 'seo' | 'qc' | 'sitemap' | 'sitemapaudit' | 'promocodes' | 'freegift' | 'diagnostics' | 'prerenderstatus' | 'cacherecache' | 'gscmonitor' | 'marketingcoverage' | 'urlmonitor' | 'merchantfeed' | 'merchantfeededitor' | 'bingfeed' | 'indexnow' | 'reindexhook' | 'securityaudit' | 'edgemonitor' | 'securityevents' | 'fena' | 'payments' | 'shopify' | 'semrush' | 'seoopportunities' | 'backlinkoutreach' | 'backlinkchanges' | 'googleads' | 'compoundqueries' | 'compoundnegativesaudit' | 'internallinks' | 'webvitals' | 'royalmail' | 'webhooktest' | 'wallidpreview' | 'wallidbadges' | 'wallidbanks' | 'watchdog' | 'blankwatchdog' | 'healthmonitor' | 'infrahealth' | 'researchincidents' | 'purgeincidents' | 'swtelemetrydebug' | 'monitorlog' | 'sentryissues' | 'publishstatus';
 
 
 // IP whitelist enforcement now lives in src/lib/admin-ip-gate.functions.ts
@@ -173,6 +174,9 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     if (typeof window !== 'undefined' && window.location.pathname === '/admin/health') {
       return 'infrahealth';
+    }
+    if (typeof window !== 'undefined' && window.location.pathname === '/admin/publish-status') {
+      return 'publishstatus';
     }
     return 'dashboard';
   });
@@ -546,6 +550,7 @@ export default function AdminPage() {
         case 'swtelemetrydebug': return <SwTelemetryDebugTab />;
         case 'monitorlog': return <MonitorLogTab />;
         case 'sentryissues': return <SentryIssuesTab />;
+        case 'publishstatus': return <PublishStatusTab />;
         default: return <DashboardTab />;
       }
     })();
@@ -566,7 +571,7 @@ export default function AdminPage() {
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', freegift: 'Free Gift Promo', diagnostics: 'Diagnostics',
     prerenderstatus: 'Prerender Status', cacherecache: 'Cache & Recache', gscmonitor: 'GSC Monitor', marketingcoverage: 'Marketing Coverage', urlmonitor: 'URL Monitor', merchantfeed: 'Merchant Feed', merchantfeededitor: 'Merchant Feed Editor', bingfeed: 'Bing Shopping', indexnow: 'IndexNow', reindexhook: 'Fast Reindex (Compound + Calculator)',
     securityaudit: 'Security Audit', fena: 'Fena Payments', payments: 'Payment Gateways', shopify: 'Shopify', semrush: 'Semrush', seoopportunities: 'SEO Opportunities', backlinkoutreach: 'Backlink Outreach', backlinkchanges: 'Backlink Changes', googleads: 'Google Ads Campaigns', compoundqueries: '/compound Queries', compoundnegativesaudit: 'Compound Negatives Audit', internallinks: 'Internal Links', webvitals: 'Web Vitals',
-    royalmail: 'Royal Mail Labels', webhooktest: 'Webhook Test', wallidpreview: 'Wallid Preview', wallidbadges: 'Wallid Badges', wallidbanks: 'Wallid Banks', watchdog: 'Watchdog', blankwatchdog: 'Blank-Page Watchdog', healthmonitor: 'Health Monitor', infrahealth: 'Infrastructure Health', researchincidents: 'Research Incidents', purgeincidents: 'Purge Incidents', swtelemetrydebug: 'SW Telemetry Debug', monitorlog: 'Monitor Log (HEAD/GET)', sentryissues: 'Sentry Issues',
+    royalmail: 'Royal Mail Labels', webhooktest: 'Webhook Test', wallidpreview: 'Wallid Preview', wallidbadges: 'Wallid Badges', wallidbanks: 'Wallid Banks', watchdog: 'Watchdog', blankwatchdog: 'Blank-Page Watchdog', healthmonitor: 'Health Monitor', infrahealth: 'Infrastructure Health', researchincidents: 'Research Incidents', purgeincidents: 'Purge Incidents', swtelemetrydebug: 'SW Telemetry Debug', monitorlog: 'Monitor Log (HEAD/GET)', sentryissues: 'Sentry Issues', publishstatus: 'Publish Status',
   };
   const activeLabel = TAB_LABELS[activeTab] ?? activeTab;
 

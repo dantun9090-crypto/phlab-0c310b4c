@@ -56,6 +56,7 @@ import { Route as LandingSlugRouteImport } from './routes/landing.$slug'
 import { Route as CompareSlugRouteImport } from './routes/compare.$slug'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
+import { Route as AdminPublishStatusRouteImport } from './routes/admin.publish-status'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as AdminHealthRouteImport } from './routes/admin.health'
 import { Route as MarketingCompoundRouteImport } from './routes/_marketing.compound'
@@ -65,6 +66,7 @@ import { Route as _e2eOrdersModalRouteImport } from './routes/__e2e.orders-modal
 import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wallid'
 import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
+import { Route as ApiPublicPublishStatusRouteImport } from './routes/api/public/publish-status'
 import { Route as ApiPublicPublishHoldRouteImport } from './routes/api/public/publish-hold'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
 import { Route as ApiPublicMonitorLogRouteImport } from './routes/api/public/monitor-log'
@@ -104,6 +106,8 @@ import { Route as ApiPublicHooksFenaProcessRetriesRouteImport } from './routes/a
 import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hooks/fena'
 import { Route as ApiPublicHooksCompoundQueryHistoryRouteImport } from './routes/api/public/hooks/compound-query-history'
 import { Route as ApiPublicHooksBacklinkWatcherRouteImport } from './routes/api/public/hooks/backlink-watcher'
+import { Route as ApiPublicDiagCacheHeadersRouteImport } from './routes/api/public/diag.cache-headers'
+import { Route as ApiPublicDiagBuildStateRouteImport } from './routes/api/public/diag.build-state'
 
 const UkResearchStoreRoute = UkResearchStoreRouteImport.update({
   id: '/uk-research-store',
@@ -343,6 +347,11 @@ const CheckoutCancelRoute = CheckoutCancelRouteImport.update({
   path: '/checkout/cancel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminPublishStatusRoute = AdminPublishStatusRouteImport.update({
+  id: '/publish-status',
+  path: '/publish-status',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMerchantFeedPreviewRoute =
   AdminMerchantFeedPreviewRouteImport.update({
     id: '/merchant-feed-preview',
@@ -387,6 +396,11 @@ const ApiPublicWebVitalsRoute = ApiPublicWebVitalsRouteImport.update({
 const ApiPublicSendMailRoute = ApiPublicSendMailRouteImport.update({
   id: '/api/public/send-mail',
   path: '/api/public/send-mail',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPublishStatusRoute = ApiPublicPublishStatusRouteImport.update({
+  id: '/api/public/publish-status',
+  path: '/api/public/publish-status',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicPublishHoldRoute = ApiPublicPublishHoldRouteImport.update({
@@ -601,6 +615,17 @@ const ApiPublicHooksBacklinkWatcherRoute =
     path: '/api/public/hooks/backlink-watcher',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicDiagCacheHeadersRoute =
+  ApiPublicDiagCacheHeadersRouteImport.update({
+    id: '/api/public/diag/cache-headers',
+    path: '/api/public/diag/cache-headers',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicDiagBuildStateRoute = ApiPublicDiagBuildStateRouteImport.update({
+  id: '/api/public/diag/build-state',
+  path: '/api/public/diag/build-state',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -640,6 +665,7 @@ export interface FileRoutesByFullPath {
   '/compound': typeof MarketingCompoundRoute
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/admin/publish-status': typeof AdminPublishStatusRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/compare/$slug': typeof CompareSlugRoute
@@ -674,9 +700,12 @@ export interface FileRoutesByFullPath {
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
+  '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
+  '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
+  '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
@@ -735,6 +764,7 @@ export interface FileRoutesByTo {
   '/compound': typeof MarketingCompoundRoute
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/admin/publish-status': typeof AdminPublishStatusRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/compare/$slug': typeof CompareSlugRoute
@@ -769,9 +799,12 @@ export interface FileRoutesByTo {
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
+  '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
+  '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
+  '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
@@ -833,6 +866,7 @@ export interface FileRoutesById {
   '/_marketing/compound': typeof MarketingCompoundRoute
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
+  '/admin/publish-status': typeof AdminPublishStatusRoute
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/compare/$slug': typeof CompareSlugRoute
@@ -867,9 +901,12 @@ export interface FileRoutesById {
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
+  '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
+  '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
+  '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
@@ -931,6 +968,7 @@ export interface FileRouteTypes {
     | '/compound'
     | '/admin/health'
     | '/admin/merchant-feed-preview'
+    | '/admin/publish-status'
     | '/checkout/cancel'
     | '/checkout/success'
     | '/compare/$slug'
@@ -965,9 +1003,12 @@ export interface FileRouteTypes {
     | '/api/public/monitor-log'
     | '/api/public/post-publish-check'
     | '/api/public/publish-hold'
+    | '/api/public/publish-status'
     | '/api/public/send-mail'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
+    | '/api/public/diag/build-state'
+    | '/api/public/diag/cache-headers'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/compound-query-history'
     | '/api/public/hooks/fena'
@@ -1026,6 +1067,7 @@ export interface FileRouteTypes {
     | '/compound'
     | '/admin/health'
     | '/admin/merchant-feed-preview'
+    | '/admin/publish-status'
     | '/checkout/cancel'
     | '/checkout/success'
     | '/compare/$slug'
@@ -1060,9 +1102,12 @@ export interface FileRouteTypes {
     | '/api/public/monitor-log'
     | '/api/public/post-publish-check'
     | '/api/public/publish-hold'
+    | '/api/public/publish-status'
     | '/api/public/send-mail'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
+    | '/api/public/diag/build-state'
+    | '/api/public/diag/cache-headers'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/compound-query-history'
     | '/api/public/hooks/fena'
@@ -1123,6 +1168,7 @@ export interface FileRouteTypes {
     | '/_marketing/compound'
     | '/admin/health'
     | '/admin/merchant-feed-preview'
+    | '/admin/publish-status'
     | '/checkout/cancel'
     | '/checkout/success'
     | '/compare/$slug'
@@ -1157,9 +1203,12 @@ export interface FileRouteTypes {
     | '/api/public/monitor-log'
     | '/api/public/post-publish-check'
     | '/api/public/publish-hold'
+    | '/api/public/publish-status'
     | '/api/public/send-mail'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
+    | '/api/public/diag/build-state'
+    | '/api/public/diag/cache-headers'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/compound-query-history'
     | '/api/public/hooks/fena'
@@ -1245,9 +1294,12 @@ export interface RootRouteChildren {
   ApiPublicMonitorLogRoute: typeof ApiPublicMonitorLogRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
   ApiPublicPublishHoldRoute: typeof ApiPublicPublishHoldRoute
+  ApiPublicPublishStatusRoute: typeof ApiPublicPublishStatusRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
   ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
   ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
+  ApiPublicDiagBuildStateRoute: typeof ApiPublicDiagBuildStateRoute
+  ApiPublicDiagCacheHeadersRoute: typeof ApiPublicDiagCacheHeadersRoute
   ApiPublicHooksBacklinkWatcherRoute: typeof ApiPublicHooksBacklinkWatcherRoute
   ApiPublicHooksCompoundQueryHistoryRoute: typeof ApiPublicHooksCompoundQueryHistoryRoute
   ApiPublicHooksFenaRoute: typeof ApiPublicHooksFenaRoute
@@ -1601,6 +1653,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutCancelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/publish-status': {
+      id: '/admin/publish-status'
+      path: '/publish-status'
+      fullPath: '/admin/publish-status'
+      preLoaderRoute: typeof AdminPublishStatusRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/merchant-feed-preview': {
       id: '/admin/merchant-feed-preview'
       path: '/merchant-feed-preview'
@@ -1662,6 +1721,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/send-mail'
       fullPath: '/api/public/send-mail'
       preLoaderRoute: typeof ApiPublicSendMailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/publish-status': {
+      id: '/api/public/publish-status'
+      path: '/api/public/publish-status'
+      fullPath: '/api/public/publish-status'
+      preLoaderRoute: typeof ApiPublicPublishStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/publish-hold': {
@@ -1937,6 +2003,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBacklinkWatcherRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/diag/cache-headers': {
+      id: '/api/public/diag/cache-headers'
+      path: '/api/public/diag/cache-headers'
+      fullPath: '/api/public/diag/cache-headers'
+      preLoaderRoute: typeof ApiPublicDiagCacheHeadersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/diag/build-state': {
+      id: '/api/public/diag/build-state'
+      path: '/api/public/diag/build-state'
+      fullPath: '/api/public/diag/build-state'
+      preLoaderRoute: typeof ApiPublicDiagBuildStateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1955,11 +2035,13 @@ const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
 interface AdminRouteChildren {
   AdminHealthRoute: typeof AdminHealthRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
+  AdminPublishStatusRoute: typeof AdminPublishStatusRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminHealthRoute: AdminHealthRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
+  AdminPublishStatusRoute: AdminPublishStatusRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
@@ -2062,9 +2144,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMonitorLogRoute: ApiPublicMonitorLogRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
   ApiPublicPublishHoldRoute: ApiPublicPublishHoldRoute,
+  ApiPublicPublishStatusRoute: ApiPublicPublishStatusRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
   ApiPublicWebVitalsRoute: ApiPublicWebVitalsRoute,
   ApiWebhooksWallidRoute: ApiWebhooksWallidRoute,
+  ApiPublicDiagBuildStateRoute: ApiPublicDiagBuildStateRoute,
+  ApiPublicDiagCacheHeadersRoute: ApiPublicDiagCacheHeadersRoute,
   ApiPublicHooksBacklinkWatcherRoute: ApiPublicHooksBacklinkWatcherRoute,
   ApiPublicHooksCompoundQueryHistoryRoute:
     ApiPublicHooksCompoundQueryHistoryRoute,
