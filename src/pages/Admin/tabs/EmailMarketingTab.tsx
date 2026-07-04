@@ -866,6 +866,63 @@ export default function EmailMarketingTab() {
                 className="overflow-hidden"
               >
                 <div className="space-y-3">
+                  {/* Preview as a specific recipient */}
+                  <div className="bg-[#0b1a30]/70 border border-white/10 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-emerald-400" />
+                      <h4 className="text-white text-xs font-semibold">Preview as recipient</h4>
+                      <span className="ml-auto text-[10px] text-[#7591b8]">{previewCandidates.length} of {customers.length}</span>
+                    </div>
+                    <input
+                      type="text"
+                      value={previewSearch}
+                      onChange={e => { setPreviewSearch(e.target.value); setSelectedPreviewId(''); }}
+                      placeholder="Search by name or email…"
+                      className="w-full bg-white border border-gray-300 text-gray-900 text-xs placeholder-gray-400 py-2 px-3 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    />
+                    <select
+                      value={selectedRecipient?.id || ''}
+                      onChange={e => setSelectedPreviewId(e.target.value)}
+                      className="w-full bg-white border border-gray-300 text-gray-900 text-xs py-2 px-3 rounded-lg focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                    >
+                      {previewCandidates.length === 0 && <option value="">No customers loaded</option>}
+                      {previewCandidates.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {(c.firstName || '(no first name)')} {c.lastName || ''} — {c.email}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedPreview && (
+                      <div className="grid grid-cols-2 gap-2 text-[10px]">
+                        <div className="bg-[#04101f]/60 rounded-lg px-2 py-1.5">
+                          <p className="text-[#7591b8] uppercase tracking-wider">firstName</p>
+                          <p className={`font-mono mt-0.5 ${selectedPreview.rawFirstName === '(missing)' ? 'text-red-400' : 'text-emerald-300'}`}>{selectedPreview.rawFirstName}</p>
+                        </div>
+                        <div className="bg-[#04101f]/60 rounded-lg px-2 py-1.5">
+                          <p className="text-[#7591b8] uppercase tracking-wider">lastName</p>
+                          <p className={`font-mono mt-0.5 ${selectedPreview.rawLastName === '(missing)' ? 'text-red-400' : 'text-emerald-300'}`}>{selectedPreview.rawLastName}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedPreview && (
+                    <div className="bg-white rounded-2xl p-5 space-y-3">
+                      <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                        <span>Selected recipient</span>
+                        <span className="text-gray-400 normal-case font-mono truncate max-w-[60%]" title={selectedPreview.email}>{selectedPreview.email}</span>
+                      </div>
+                      <div className="border-b border-gray-200 pb-2">
+                        <p className="text-gray-500 text-[10px] font-semibold uppercase tracking-wider">Subject</p>
+                        <p className="text-gray-900 text-sm font-semibold mt-0.5">{selectedPreview.subject || '(no subject)'}</p>
+                      </div>
+                      <pre className="text-gray-800 text-xs leading-relaxed whitespace-pre-wrap font-sans max-h-96 overflow-y-auto">
+                        {selectedPreview.body || '(empty)'}
+                      </pre>
+                    </div>
+                  )}
+
+                  <div className="text-[10px] text-[#7591b8] uppercase tracking-wider px-1 pt-2">First 3 customers (auto-sample)</div>
                   {previewSamples.map((s, i) => (
                     <div key={s.email + i} className="bg-white rounded-2xl p-5 space-y-3">
                       <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-gray-500">
