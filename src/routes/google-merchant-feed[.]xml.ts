@@ -169,7 +169,6 @@ function isAllowedForMerchant(p: {
 }): boolean {
   if (p.excludeFromMerchantFeed === true) return false;
   const slug = (p.slug || "").toLowerCase();
-  const name = (p.name || "").toLowerCase();
   if (HARD_BLOCKED_SLUGS.has(slug)) return false;
   return p.includeInMerchantFeed === true;
 }
