@@ -388,6 +388,47 @@ export default function EmailMarketingTab() {
     setTemplateOpen(false);
   };
 
+  const runValidation = async (): Promise<typeof validation> => {
+    if (!subject.trim() || !body.trim()) {
+      setMsg({ type: 'error', text: 'Subject and body are required.' });
+      return null;
+    }
+    if (!customers.length) {
+      setMsg({ type: 'error', text: 'No customers with email addresses found.' });
+      return null;
+    }
+    setValidating(true);
+    setMsg(null);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Not signed in as admin');
+      const res = await fetch('/api/public/send-marketing', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          idToken,
+          subject: subject.trim(),
+          html: body.trim(),
+          dryRun: true,
+          recipients: customers.map(c => ({
+            email: c.email,
+            firstName: c.firstName || undefined,
+            lastName: c.lastName || undefined,
+          })),
+        }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || !result.ok) throw new Error(result.error || result.detail || `HTTP ${res.status}`);
+      setValidation(result.validation);
+      return result.validation;
+    } catch (e: any) {
+      setMsg({ type: 'error', text: 'Validation failed: ' + (e?.message || 'unknown error') });
+      return null;
+    } finally {
+      setValidating(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!subject.trim() || !body.trim()) {
       setMsg({ type: 'error', text: 'Subject and body are required.' });
@@ -398,13 +439,30 @@ export default function EmailMarketingTab() {
       return;
     }
 
+    // Always validate first — surfaces unknown placeholders and fallback usage
+    // BEFORE we enqueue thousands of emails.
+    const v = await runValidation();
+    if (!v) return;
+
+    const warnings: string[] = [];
+    if (v.unknownPlaceholders.length > 0) {
+      warnings.push(`⚠ Unknown placeholders will ship as literal text:\n  ${v.unknownPlaceholders.join(', ')}`);
+    }
+    if (!v.hasPersonalisation) {
+      warnings.push('⚠ No personalisation placeholders detected — every recipient will get identical content.');
+    }
+    if (v.fallbackFirstNameCount > 0) {
+      warnings.push(`⚠ ${v.fallbackFirstNameCount} of ${v.recipientCount} recipients (${v.fallbackAffectsPct}%) have no firstName and will see the "there" fallback.`);
+    }
+
     const confirmed = window.confirm(
-      `Send email to ${customers.length} customer${customers.length === 1 ? '' : 's'}?\n\nSubject: ${subject}\n\nThis action cannot be undone.`
+      `${warnings.length ? warnings.join('\n\n') + '\n\n' : ''}Send email to ${customers.length} customer${customers.length === 1 ? '' : 's'}?\n\nSubject: ${subject}\n\nThis action cannot be undone.`
     );
     if (!confirmed) return;
 
     setSending(true);
     setMsg(null);
+
 
     try {
       // Enqueue via server route (uses Firebase Admin SDK — bypasses
