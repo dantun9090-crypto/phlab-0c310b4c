@@ -168,18 +168,25 @@ jobs:
             title="🔧 Manual force_redeploy triggered"
           fi
           probe_json="$(cat /tmp/swr/all.json)"
+          ce_json="$(cat /tmp/swr/client-errors.json 2>/dev/null || echo '{}')"
           payload="$(jq -cn \
             --arg color "$color" \
             --arg title "$title" \
             --arg summary "${{ steps.probe.outputs.summary }}" \
             --arg counter "${COUNTER}/${MAX_AUTO_REDEPLOYS}" \
             --arg run "$RUN_URL" \
+            --arg ce_status "${{ steps.probe.outputs.client_error_status }}" \
+            --arg ce_count "${{ steps.probe.outputs.client_error_count }}" \
+            --arg ce_paths "${{ steps.probe.outputs.client_error_paths }}" \
             --argjson probes "$probe_json" \
+            --argjson client_errors "$ce_json" \
             '{attachments:[{color:$color,title:$title,fields:[
               {title:"Probe summary",value:$summary,short:false},
               {title:"Retry counter",value:$counter,short:true},
               {title:"Run",value:$run,short:true},
-              {title:"Probes",value:($probes|tostring),short:false}
+              {title:"Client errors",value:("\($ce_status) — count=\($ce_count) paths=\($ce_paths)"),short:false},
+              {title:"Probes",value:($probes|tostring),short:false},
+              {title:"Client-error probe",value:($client_errors|tostring),short:false}
             ]}]}')"
           bash .github/workflows/scripts/slack-notify.sh "$payload" "probe-detected"
 
