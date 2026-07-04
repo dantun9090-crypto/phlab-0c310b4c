@@ -748,6 +748,41 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
           ) : (
             /* ── Edit ── */
             <>
+              {/* Tab strip */}
+              <div className="flex items-center gap-1 border-b border-white/10 -mx-4 sm:-mx-5 px-4 sm:px-5 pb-0 overflow-x-auto">
+                {([
+                  { id: 'basics' as EditorTab, label: 'Basics', icon: Package },
+                  { id: 'images' as EditorTab, label: 'Images', icon: Images },
+                  { id: 'variants' as EditorTab, label: 'Variants', icon: Layers },
+                  { id: 'seo' as EditorTab, label: 'SEO & Feed', icon: Tag },
+                ]).map((tab) => {
+                  const Icon = tab.icon;
+                  const errCount = validation.perTab[tab.id];
+                  const active = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`relative flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap min-h-[44px] ${
+                        active
+                          ? 'text-white border-blue-500'
+                          : 'text-gray-400 border-transparent hover:text-white hover:border-white/20'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {tab.label}
+                      {errCount > 0 && Object.keys(touched).length > 0 && (
+                        <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full">
+                          {errCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {activeTab === 'basics' && (<>
               {/* Basic Info */}
               <div className="bg-gray-800/40 border border-white/[0.07] rounded-xl p-5 space-y-4">
                 <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wider">Basic Info</h3>
