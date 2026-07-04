@@ -109,6 +109,46 @@ function personalise(
     });
 }
 
+/** Keys the personalise() map above understands. Keep in sync. */
+const KNOWN_PLACEHOLDER_KEYS = new Set([
+  "firstname", "first", "name", "fullname", "lastname", "last", "email",
+]);
+const normaliseKey = (raw: string) => raw.toLowerCase().replace(/[\s_-]+/g, "");
+
+/**
+ * Scan subject+body for placeholder syntax ([X] or {{X}}) and classify each
+ * occurrence as known (personalise() will substitute it) or unknown
+ * (will ship to the recipient as literal text — almost always a bug).
+ * Returns counts so we can warn the admin before we enqueue N thousand emails.
+ */
+function analysePlaceholders(subject: string, body: string): {
+  known: string[];
+  unknown: string[];
+  hasPersonalisation: boolean;
+} {
+  const known = new Set<string>();
+  const unknown = new Set<string>();
+  const scan = (text: string) => {
+    const rx = /\[([a-zA-Z][a-zA-Z\s_-]{0,30})\]|\{\{\s*([a-zA-Z][a-zA-Z\s_-]{0,30})\s*\}\}/g;
+    let m: RegExpExecArray | null;
+    while ((m = rx.exec(text)) !== null) {
+      const raw = (m[1] ?? m[2]) || "";
+      const key = normaliseKey(raw);
+      const display = m[0];
+      if (KNOWN_PLACEHOLDER_KEYS.has(key)) known.add(display);
+      else unknown.add(display);
+    }
+  };
+  scan(subject);
+  scan(body);
+  return {
+    known: [...known],
+    unknown: [...unknown],
+    hasPersonalisation: known.size > 0,
+  };
+}
+
+
 async function enqueueMarketingMail(input: {
   to: string;
   subject: string;
