@@ -196,9 +196,7 @@ export function Layout({ children }: LayoutProps) {
   const researchBannerOffset = isLandingPage ? '0px' : 'var(--rg-banner-h, 0px)';
   const disclaimerVisible = !isCleanPage && !isLandingPage;
   const layoutVars = {
-    // The research disclaimer now lives inside the fixed header under the logo,
-    // so it must not add another row to the global page offset.
-    '--phl-disclaimer-h': '0px',
+    // --phl-disclaimer-h is controlled by DisclaimerBanner component
   } as CSSProperties;
   
   // Check if any cart items have no variant selected
