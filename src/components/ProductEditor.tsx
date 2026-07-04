@@ -1289,23 +1289,42 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
 
         {/* Footer */}
         <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 border-t border-white/10 bg-[#060f1e]/50">
-          <AnimatePresence>
-            {saveMsg && (
-              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-                className={`flex items-center gap-1.5 text-xs sm:text-sm ${saveMsg.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
-                {saveMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-                {saveMsg.text}
-              </motion.div>
+          <div className="flex items-center gap-3 flex-wrap min-h-[24px]">
+            {/* Autosave status (existing products only) */}
+            {product?.id && (
+              <div className="flex items-center gap-1.5 text-xs">
+                {autosaveStatus === 'saving' && (
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" /><span className="text-blue-300">Autosaving…</span></>
+                )}
+                {autosaveStatus === 'saved' && lastSavedAt && (
+                  <><CheckCircle2 className="w-3.5 h-3.5 text-green-400" /><span className="text-green-300">Saved · changes persist on close</span></>
+                )}
+                {autosaveStatus === 'error' && (
+                  <><AlertCircle className="w-3.5 h-3.5 text-red-400" /><span className="text-red-300">Autosave failed: {autosaveError}</span></>
+                )}
+                {autosaveStatus === 'idle' && !validation.ok && (
+                  <span className="text-amber-400/80 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />Fix validation errors to autosave</span>
+                )}
+              </div>
             )}
-          </AnimatePresence>
+            <AnimatePresence>
+              {saveMsg && (
+                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
+                  className={`flex items-center gap-1.5 text-xs sm:text-sm ${saveMsg.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                  {saveMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                  {saveMsg.text}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           <div className="flex items-center gap-2 sm:gap-3 ml-auto w-full sm:w-auto">
             <button onClick={onClose}
               className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl text-xs sm:text-sm font-medium transition-colors">
-              Cancel
+              {product?.id && autosaveStatus === 'saved' ? 'Close' : 'Cancel'}
             </button>
             <button onClick={handleSave} disabled={saving}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium text-xs sm:text-sm transition-all shadow-[0_2px_12px_rgba(37,99,235,0.3)] disabled:opacity-50">
-              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <><Save className="w-4 h-4" /> Save Product</>}
+              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <><Save className="w-4 h-4" /> {product?.id ? 'Save & Close' : 'Create Product'}</>}
             </button>
           </div>
         </div>
