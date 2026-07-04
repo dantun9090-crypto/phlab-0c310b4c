@@ -474,8 +474,47 @@ Combined administration of ipamorelin with CJC-1295 (a long-acting GHRH analogue
     ]
   },
 
+  // ---------------------------------------------
+  // 7. Epithalon
+  // ---------------------------------------------
+  {
+    slug: 'epithalon-telomere-research',
+    title: 'Epithalon (Epitalon): Telomerase Activation and Cellular Ageing Research',
+    subtitle: 'A review of the tetrapeptide Ala-Glu-Asp-Gly, its reported effects on telomerase activity, pineal gland function, and longevity markers in cellular and animal models',
+    category: 'Longevity Research',
+    readTime: 10,
+    publishDate: '2026-01-15',
+    excerpt: 'Epithalon (also Epitalon) is a synthetic tetrapeptide based on a natural substance secreted by the pineal gland. Research in cell culture and rodent models has associated it with telomerase activation, melatonin regulation, and extended lifespan indicators, generating significant interest in the ageing biology field.',
+    keywords: ['epithalon', 'epitalon', 'telomerase', 'telomere', 'pineal gland', 'ageing research', 'AEDG peptide'],
+    relatedSlugs: ['ipamorelin-ghrp-research', 'hplc-testing-explained', 'peptide-storage-reconstitution'],
+    content: [
+      {
+        body: `Epithalon (Ala-Glu-Asp-Gly; AEDG) is a synthetic tetrapeptide derived from epithalamin, a polypeptide extract of the bovine pineal gland first isolated and characterised by Vladimir Khavinson and colleagues at the St. Petersburg Institute of Bioregulation and Gerontology during the 1980s–1990s. Its four amino acid residues correspond to a biologically active fragment of epithalamin believed to mediate the peptide's interaction with nuclear chromatin and gene expression regulatory elements.`
+      },
+      {
+        heading: 'Telomerase Activation in Cell Culture',
+        body: `The most widely cited mechanism attributed to epithalon in research literature is activation of telomerase reverse transcriptase (hTERT). Telomerase is the enzyme responsible for adding TTAGGG hexanucleotide repeats to telomere ends, counteracting the progressive telomere shortening that occurs with each cell division. In normal somatic cells, hTERT expression is silenced post-developmentally, which contributes to the finite replicative capacity (Hayflick limit) of most cell types.
 
-
+Khavinson et al. reported that epithalon (at 0.1–10 nM concentrations in culture) increased hTERT mRNA expression in foetal human fibroblasts, extended their Hayflick limit by 3–7 additional passages, and maintained normal karyotypic stability — a critical distinction from telomerase activation by oncogenic transformation, which is associated with aneuploidy.`
+      },
+      {
+        heading: 'Pineal and Melatonin-Related Effects',
+        body: `As a pineal-derived peptide, epithalon has been studied in the context of age-related pineal function decline. With age, both pineal mass and nocturnal melatonin secretion decrease, contributing to circadian rhythm disruption and immunosenescence. In aged rat cohorts, intraperitoneal epithalon administration restored nocturnal melatonin peak values toward those of young-adult controls. The proposed mechanism is transcriptional upregulation of hydroxyindole-O-methyltransferase (HIOMT) and arylalkylamine N-acetyltransferase (AANAT) — the two rate-limiting enzymes in melatonin biosynthesis — in pinealocytes.`,
+        callout: {
+          type: 'note',
+          text: 'The majority of epithalon research originates from a single research group in St. Petersburg. Independent replication in Western research institutions is limited. Researchers should consider this when evaluating the weight of evidence.'
+        }
+      },
+      {
+        heading: 'Animal Longevity Studies',
+        body: `In longitudinal studies using Drosophila melanogaster, C57BL/6 mice, and SHR rats, chronic epithalon administration (typically by i.p. injection or nasal spray) was associated with statistically significant increases in median lifespan of 12–30% compared to saline controls. Tumour incidence was reduced in several studies, and age-related decline in motor performance and spatial memory was attenuated. Importantly, these findings were obtained in disease-prone or aged animals rather than young healthy specimens, which limits the interpretive scope but suggests potential utility as a research tool in geroscience model systems.`
+      }
+    ],
+    references: [
+      { id: 1, authors: 'Khavinson VKh, Bondarev IE, Butyugov AA.', year: 2003, title: 'Epithalon peptide induces telomerase activity and telomere elongation in human somatic cells', journal: 'Bull Exp Biol Med', doi: '10.1023/A:1025493705728' },
+      { id: 2, authors: 'Anisimov VN, Khavinson VKh, Popovich IG, et al.', year: 2003, title: 'Effect of Epitalon on biomarkers of aging, life span and spontaneous tumor incidence in female Swiss-derived SHR mice', journal: 'Biogerontology', doi: '10.1023/A:1025114230714' },
+    ]
+  },
 
   // ---------------------------------------------
   // 8. Peptide Storage and Reconstitution
@@ -843,8 +882,46 @@ In mouse melanocyte and human primary melanocyte cultures, MT-II at 1–100 nM i
     ]
   },
 
-
-
+  // ---------------------------------------------
+  // 12. Epithalon — Telomere and Epigenetic Research
+  // ---------------------------------------------
+  {
+    slug: 'epithalon-telomere-epigenetic-research',
+    title: 'Epithalon: Telomerase Activation, Epigenetic Remodelling, and Longevity Research',
+    subtitle: 'A scientific review of the synthetic tetrapeptide Epithalon (Ala-Glu-Asp-Gly), its interactions with telomerase, histone acetylation, and findings from long-term ageing models',
+    category: 'Longevity Research',
+    readTime: 10,
+    publishDate: '2026-04-07',
+    excerpt: 'Epithalon (Ala-Glu-Asp-Gly) is a synthetic tetrapeptide developed from the pineal peptide preparation Epithalamin. Preclinical research documents its ability to activate telomerase, elongate telomeres in somatic cells, modulate epigenetic histone marks, and extend lifespan in multiple model organisms.',
+    keywords: ['Epithalon', 'epithalamin', 'telomerase', 'telomere', 'epigenetics', 'longevity', 'ageing research', 'pineal peptide'],
+    relatedSlugs: ['ghk-cu-copper-peptide-research', 'selank-anxiolytic-nootropic-peptide', 'hplc-testing-explained'],
+    content: [
+      {
+        body: `Epithalon (also spelled Epitalon) is the synthetic tetrapeptide Ala-Glu-Asp-Gly, derived from the active fraction of Epithalamin — a polypeptide extract isolated from bovine pineal gland tissue and studied extensively by Vladimir Khavinson and colleagues at the Saint Petersburg Institute of Bioregulation. While Epithalamin showed broad biological activity in early Soviet-era research, Epithalon was synthesised to provide a chemically defined, reproducible analogue for research purposes.`
+      },
+      {
+        heading: 'Telomerase Activation and Telomere Biology',
+        body: `The most widely cited effect of Epithalon in the preclinical literature is its ability to activate telomerase (hTERT) and elongate telomeres in human somatic cells that normally lack telomerase activity. In a 2003 study by Khavinson et al., human fetal fibroblasts treated with Epithalon showed measurable elongation of telomere restriction fragments (TRFs) by Southern blotting, alongside elevated hTERT mRNA expression as assessed by RT-PCR. Importantly, the treated cells did not show signs of malignant transformation over extended culture — a concern when inducing telomerase in somatic cells — though researchers note that long-term safety must be evaluated in any specific research context. This telomere-extending activity has led to significant interest in Epithalon as a tool compound for cellular ageing and replicative senescence research.`
+      },
+      {
+        heading: 'Epigenetic Mechanisms',
+        body: `Beyond telomerase, Epithalon has been studied for epigenetic effects. In heterochromatin-rich regions of human lymphocytes, Epithalon treatment is associated with reduced methylation of histone H1 and H3 at specific lysine residues, and increased acetylation of H4 — epigenetic changes associated with more transcriptionally permissive chromatin states and gene expression patterns resembling younger cells. This chromatin remodelling activity provides a potential molecular basis for observed gene expression changes in aged animal models treated with Epithalon, where genes involved in antioxidant defence, DNA repair, and mitochondrial function showed upregulation.`
+      },
+      {
+        heading: 'In-Vivo Lifespan Data',
+        body: `Long-term Epithalon administration studies in inbred mice and Drosophila melanogaster showed statistically significant lifespan extensions of 12–28% compared to vehicle controls, depending on the study design and starting age at treatment initiation. In aged female rats, Epithalon treatment was associated with partial restoration of oestrous cycle regularity, suppression of spontaneous tumour development, and normalisation of corticosteroid secretion patterns. These findings, while generated primarily by the Khavinson group, have been partially replicated in independent studies and remain an active area of investigation in biogerontology research.`,
+        callout: {
+          type: 'note',
+          text: 'Epithalon research originates largely from Russian preclinical studies. While findings are scientifically interesting, independent replication in Western laboratory contexts is ongoing. Standard research-grade use precautions apply.'
+        }
+      }
+    ],
+    references: [
+      { id: 1, authors: 'Khavinson V, Diomede F, Mironova E, et al.', year: 2020, title: 'AEDG Peptide (Epitalon) Stimulates Gene Expression and Protein Synthesis during Neurogenesis', journal: 'Molecules', doi: '10.3390/molecules25020609' },
+      { id: 2, authors: 'Anisimov VN, Khavinson VKh, Provinciali M, et al.', year: 2006, title: 'Effect of the Peptide Epitalon on the Development of Spontaneous Mammary Tumors', journal: 'Oncology', doi: '10.1159/000094761' },
+      { id: 3, authors: 'Khavinson VKh, Bondarev IE, Butyugov AA.', year: 2003, title: 'Epithalon peptide induces telomerase activity and telomere elongation in human somatic cells', journal: 'Bull Exp Biol Med', doi: '10.1023/a:1025493705728' },
+    ]
+  },
 
   // ---------------------------------------------
   // 13. Semax — Cognitive and Neuroprotective Peptide
@@ -858,7 +935,7 @@ In mouse melanocyte and human primary melanocyte cultures, MT-II at 1–100 nM i
     publishDate: '2026-04-08',
     excerpt: 'Semax is a synthetic heptapeptide analogue of ACTH(4-10) developed by the Institute of Molecular Genetics in Moscow. Research documents significant BDNF and NGF upregulation, neuroprotective effects in ischaemia models, and memory-enhancing properties in rodent studies — all without the corticotropic activity of native ACTH.',
     keywords: ['Semax', 'ACTH analogue', 'BDNF', 'neuroprotection', 'cognitive enhancement', 'ischaemia', 'nootropic peptide'],
-    relatedSlugs: ['selank-anxiolytic-nootropic-peptide', 'mots-c-mitochondrial-derived-peptide', 'ipamorelin-ghrp-research'],
+    relatedSlugs: ['selank-anxiolytic-nootropic-peptide', 'epithalon-telomere-epigenetic-research', 'ipamorelin-ghrp-research'],
     content: [
       {
         body: `Semax (Met-Glu-His-Phe-Pro-Gly-Pro) is a synthetic heptapeptide derived from the core sequence of ACTH(4-7) (Met-Glu-His-Phe), extended by a C-terminal Pro-Gly-Pro tripeptide that confers resistance to enzymatic degradation and modifies pharmacokinetic properties. Crucially, the modifications eliminate the corticotropic activity of native ACTH — Semax does not stimulate cortisol release via the adrenal axis — while preserving and amplifying the neurotrophic and neuroprotective properties mapped to the ACTH(4-10) fragment.`
@@ -1421,7 +1498,7 @@ Standard MC4R/MC3R pharmacology assays include: cAMP HTRF or AlphaScreen assays 
     publishDate: '2026-04-05',
     excerpt: 'GLOW Blend is a research formulation combining five synergistic peptides — GHK-Cu, Epithalon, BPC-157, Thymosin Beta-4, and Melanotan II — each targeting distinct molecular pathways involved in skin homeostasis, collagen remodelling, oxidative defence, tissue repair, and melanogenesis. This review examines the mechanistic basis of each component and the biological rationale for multi-peptide co-administration in dermal biology research.',
     keywords: ['GLOW Blend', 'GHK-Cu', 'Epithalon', 'BPC-157', 'Thymosin Beta-4', 'Melanotan II', 'skin peptides', 'collagen research', 'melanogenesis', 'photoprotection', 'skin biology'],
-    relatedSlugs: ['bpc-157-tissue-repair', 'ghk-cu-copper-peptide-research', 'klow-blend-cognitive-research'],
+    relatedSlugs: ['bpc-157-tissue-repair', 'epithalon-telomere-research', 'klow-blend-cognitive-research'],
     content: [
       {
         body: `Skin is a complex multi-layered organ whose structural integrity and functional resilience depend on a tightly orchestrated interplay of extracellular matrix (ECM) proteins, immune cells, melanocytes, fibroblasts, and keratinocytes. Ageing, ultraviolet (UV) radiation, and chronic inflammation converge on shared molecular targets — collagen degradation, oxidative DNA damage, telomere attrition, and dysregulated melanogenesis — producing the characteristic phenotypes of photoaged and chronologically aged skin. Peptide-based research tools that target these pathways with mechanistic precision have become invaluable for understanding and potentially modulating skin biology at the molecular level.
