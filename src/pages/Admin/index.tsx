@@ -29,6 +29,7 @@ import LandingPageTab from './tabs/LandingPageTab';
 import ComplianceTab from './tabs/ComplianceTab';
 import AuditLogTab from './tabs/AuditLogTab';
 import EmailMarketingTab from './tabs/EmailMarketingTab';
+import NewsletterTab from './tabs/NewsletterTab';
 import EmailPreviewTab from './tabs/EmailPreviewTab';
 import EmailQueueTab from './tabs/EmailQueueTab';
 import IpWhitelistTab from './tabs/IpWhitelistTab';
@@ -186,6 +187,9 @@ export default function AdminPage() {
     }
     if (typeof window !== 'undefined' && window.location.pathname === '/admin/purge') {
       return 'emergencypurge';
+    }
+    if (typeof window !== 'undefined' && window.location.pathname === '/admin/newsletter') {
+      return 'newsletter';
     }
     return 'dashboard';
   });
