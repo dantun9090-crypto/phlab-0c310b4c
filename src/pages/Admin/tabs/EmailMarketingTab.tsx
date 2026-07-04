@@ -617,6 +617,20 @@ export default function EmailMarketingTab() {
     };
   })();
 
+  // Personalisation coverage — how many recipients will get the "there" fallback
+  // because their firstName is missing/blank in Firestore.
+  const emailedCustomers = customers.filter(c => c.email);
+  const missingFirstName = emailedCustomers.filter(c => !(c.firstName || '').trim());
+  const missingLastName = emailedCustomers.filter(c => !(c.lastName || '').trim());
+  const missingBoth = emailedCustomers.filter(
+    c => !(c.firstName || '').trim() && !(c.lastName || '').trim(),
+  );
+  const totalEmailable = emailedCustomers.length;
+  const fallbackPct = totalEmailable > 0
+    ? Math.round((missingFirstName.length / totalEmailable) * 100)
+    : 0;
+  const [showFallbackList, setShowFallbackList] = useState(false);
+
   const selectedTpl = TEMPLATES.find(t => t.id === selectedTemplate);
 
 
