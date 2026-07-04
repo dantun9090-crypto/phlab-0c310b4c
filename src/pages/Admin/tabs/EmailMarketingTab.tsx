@@ -303,17 +303,28 @@ export default function EmailMarketingTab() {
   const loadHistory = async () => {
     setLoadingHistory(true);
     try {
-      const snap = await getDocs(
-        query(collection(db, 'emailQueue'), orderBy('createdAt', 'desc'), limit(10))
-      );
+      const [snap, mailSnap] = await Promise.all([
+        getDocs(query(collection(db, 'emailQueue'), orderBy('createdAt', 'desc'), limit(10))),
+        getDocs(query(collection(db, 'mail'), orderBy('createdAt', 'desc'), limit(250))).catch(() => null),
+      ]);
+      const mailStatus = new Map<string, EmailRecord['status']>();
+      mailSnap?.forEach(d => {
+        const data: any = d.data();
+        if (data.source !== 'admin:marketing') return;
+        const state = String(data.delivery?.state || '').toUpperCase();
+        if (state === 'SUCCESS') mailStatus.set(d.id, 'sent');
+        else if (state === 'ERROR' || data.delivery?.error) mailStatus.set(d.id, 'failed');
+        else mailStatus.set(d.id, 'pending');
+      });
       const list: EmailRecord[] = [];
       snap.forEach(d => {
         const data = d.data();
+        const linkedStatus = typeof data.mailDocId === 'string' ? mailStatus.get(data.mailDocId) : undefined;
         list.push({
           id: d.id,
           subject: data.subject || '(no subject)',
           recipientCount: data.recipientCount || 0,
-          status: data.status || 'pending',
+          status: linkedStatus || data.status || 'pending',
           createdAt: data.createdAt?.toDate?.() || new Date(),
         });
       });
