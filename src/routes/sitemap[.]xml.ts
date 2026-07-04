@@ -1,76 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 // DOMAIN GUARD: jedynym źródłem kanonicznej domeny jest src/lib/seo-meta.ts
 // (SITE_URL + assertCanonicalUrl). Nie hardkoduj "https://phlabs.co.uk" tutaj —
 // zmiana w jednym miejscu musi pociągać sitemap, robots, JSON-LD i canonical.
 // CI: scripts/check-url-consistency.ts + scripts/check-domains.ts.
 import { SITE_URL, assertCanonicalUrl } from "@/lib/seo-meta";
-import { buildSitemapEntries, type SitemapEntry } from "@/lib/sitemap-entries";
+import { buildSitemapEntries } from "@/lib/sitemap-entries";
 
 const BASE_URL = SITE_URL;
-const PROBE_TIMEOUT_MS = 5000;
-const PROBE_CONCURRENCY = 8;
-
-/**
- * Probe each candidate URL against the live origin and keep only ones
- * responding 200. Uses HEAD (with GET fallback) and short-circuits on
- * redirects, 3xx, 4xx, 5xx, or timeouts. Runs against the same origin
- * that served the sitemap request so preview and production stay in
- * sync. Non-page endpoints (splats, feeds, transactional prefixes) are
- * already filtered upstream by isIndexable() in sitemap-entries.
- */
-async function filterReachable(
-  entries: SitemapEntry[],
-  origin: string,
-): Promise<SitemapEntry[]> {
-  async function probe(entry: SitemapEntry): Promise<SitemapEntry | null> {
-    const url = `${origin}${entry.path}`;
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), PROBE_TIMEOUT_MS);
-    try {
-      let res = await fetch(url, {
-        method: "HEAD",
-        redirect: "manual",
-        signal: ctrl.signal,
-        headers: { "user-agent": "phlabs-sitemap-probe" },
-      });
-      // Some routes / prerender rules only answer GET — retry once.
-      if (res.status === 405 || res.status === 501) {
-        res = await fetch(url, {
-          method: "GET",
-          redirect: "manual",
-          signal: ctrl.signal,
-          headers: { "user-agent": "phlabs-sitemap-probe" },
-        });
-      }
-      return res.status === 200 ? entry : null;
-    } catch {
-      return null;
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
-  const out: SitemapEntry[] = [];
-  for (let i = 0; i < entries.length; i += PROBE_CONCURRENCY) {
-    const batch = entries.slice(i, i + PROBE_CONCURRENCY);
-    const results = await Promise.all(batch.map(probe));
-    for (const r of results) if (r) out.push(r);
-  }
-  return out;
-}
-
-function requestOrigin(): string | null {
-  try {
-    const req = getRequest();
-    const proto = req.headers.get("x-forwarded-proto") ?? "https";
-    const host = req.headers.get("host");
-    return host ? `${proto}://${host}` : null;
-  } catch {
-    return null;
-  }
-}
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
