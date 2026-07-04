@@ -109,7 +109,8 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
           </span>
         ))}
         <Link
-          to={STARTER_HREF}
+          to="/products/$slug"
+          params={{ slug: STARTER_SLUG }}
           className={`inline-flex items-center rounded-full px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] font-medium transition-colors ${cta}`}
         >
           Start with {STARTER_PRICE} reagent →
