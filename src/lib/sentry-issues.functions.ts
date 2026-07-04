@@ -60,9 +60,9 @@ export const fetchSentryIssues = createServerFn({ method: "POST" })
   .validator((d) => IdTokenSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin(data.idToken);
-    const token = process.env.SENTRY_AUTH_TOKEN;
+    const token = process.env.SENTRY_API_TOKEN || process.env.SENTRY_AUTH_TOKEN;
     if (!token) {
-      return { ok: false, error: "SENTRY_AUTH_TOKEN not configured on server." };
+      return { ok: false, error: "SENTRY_API_TOKEN (or SENTRY_AUTH_TOKEN) not configured on server." };
     }
     const statsPeriod = data.statsPeriod || "24h";
     const limit = data.limit || 25;
@@ -128,8 +128,8 @@ export const fetchSentryFilters = createServerFn({ method: "POST" })
   .validator((d) => FiltersSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin(data.idToken);
-    const token = process.env.SENTRY_AUTH_TOKEN;
-    if (!token) return { ok: false as const, error: "SENTRY_AUTH_TOKEN not configured on server." };
+    const token = process.env.SENTRY_API_TOKEN || process.env.SENTRY_AUTH_TOKEN;
+    if (!token) return { ok: false as const, error: "SENTRY_API_TOKEN (or SENTRY_AUTH_TOKEN) not configured on server." };
 
     try {
       const orgSlug = await resolveOrgSlug(token);
@@ -186,8 +186,8 @@ export const fetchSentryIssueDetails = createServerFn({ method: "POST" })
   .validator((d) => IssueDetailSchema.parse(d))
   .handler(async ({ data }) => {
     await requireAdmin(data.idToken);
-    const token = process.env.SENTRY_AUTH_TOKEN;
-    if (!token) return { ok: false as const, error: "SENTRY_AUTH_TOKEN not configured on server." };
+    const token = process.env.SENTRY_API_TOKEN || process.env.SENTRY_AUTH_TOKEN;
+    if (!token) return { ok: false as const, error: "SENTRY_API_TOKEN (or SENTRY_AUTH_TOKEN) not configured on server." };
 
     try {
       const [issue, event] = await Promise.all([
