@@ -423,11 +423,24 @@ export default function EmailMarketingTab() {
         throw new Error(result.error || result.detail || `HTTP ${res.status}`);
       }
 
+      const missingFirstName = customers.filter(c => !(c.firstName || '').trim()).length;
+      await logAdminAction({
+        action: 'marketing.campaign.send',
+        target: `marketing/campaign/${Date.now()}`,
+        meta: {
+          subject: subject.trim(),
+          recipientCount: customers.length,
+          enqueued: result.enqueued ?? 0,
+          failed: result.failed ?? 0,
+          fallbackFirstNameCount: missingFirstName,
+        },
+      });
+
       setMsg({
         type: 'success',
-        text: `Campaign queued for ${result.enqueued} recipient${result.enqueued === 1 ? '' : 's'}${result.failed ? ` (${result.failed} failed)` : ''}. Delivery starts within a few minutes.`,
+        text: `Campaign queued for ${result.enqueued} recipient${result.enqueued === 1 ? '' : 's'}${result.failed ? ` (${result.failed} failed)` : ''}. ${missingFirstName} got the "there" fallback (no first name).`,
       });
-      setTimeout(() => setMsg(null), 8000);
+      setTimeout(() => setMsg(null), 10000);
       loadHistory();
 
     } catch (e: any) {
