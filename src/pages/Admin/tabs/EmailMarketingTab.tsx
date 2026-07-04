@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import {
   Mail, Send, Users, FileText, Eye, EyeOff,
   CheckCircle2, AlertCircle, Loader2, ChevronDown,
-  Megaphone, Gift, Newspaper, Package, RefreshCw, Sparkles, Download
+  Megaphone, Gift, Newspaper, Package, RefreshCw, Sparkles, Download, UserX
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db, collection, addDoc, getDocs, Timestamp, query, where, orderBy, limit, deleteDoc, doc, auth } from '@/lib/firebase';
+import { logAdminAction } from '@/lib/admin-audit';
 
 interface EmailRecord {
   id: string;
@@ -422,11 +423,24 @@ export default function EmailMarketingTab() {
         throw new Error(result.error || result.detail || `HTTP ${res.status}`);
       }
 
+      const missingFirstName = customers.filter(c => !(c.firstName || '').trim()).length;
+      await logAdminAction({
+        action: 'marketing.campaign.send',
+        target: `marketing/campaign/${Date.now()}`,
+        meta: {
+          subject: subject.trim(),
+          recipientCount: customers.length,
+          enqueued: result.enqueued ?? 0,
+          failed: result.failed ?? 0,
+          fallbackFirstNameCount: missingFirstName,
+        },
+      });
+
       setMsg({
         type: 'success',
-        text: `Campaign queued for ${result.enqueued} recipient${result.enqueued === 1 ? '' : 's'}${result.failed ? ` (${result.failed} failed)` : ''}. Delivery starts within a few minutes.`,
+        text: `Campaign queued for ${result.enqueued} recipient${result.enqueued === 1 ? '' : 's'}${result.failed ? ` (${result.failed} failed)` : ''}. ${missingFirstName} got the "there" fallback (no first name).`,
       });
-      setTimeout(() => setMsg(null), 8000);
+      setTimeout(() => setMsg(null), 10000);
       loadHistory();
 
     } catch (e: any) {
@@ -455,6 +469,11 @@ export default function EmailMarketingTab() {
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok || !result.ok) throw new Error(result.error || result.detail || `HTTP ${res.status}`);
+      await logAdminAction({
+        action: 'marketing.campaign.requeue',
+        target: `marketing/requeue/${Date.now()}`,
+        meta: { subject: pendingSubject, requeued: result.requeued ?? 0, duplicates: result.duplicates ?? 0 },
+      });
       setMsg({
         type: 'success',
         text: `Requeued ${result.requeued || 0} stuck email${result.requeued === 1 ? '' : 's'}${result.duplicates ? ` (${result.duplicates} already in send queue)` : ''}.`,
@@ -511,6 +530,15 @@ export default function EmailMarketingTab() {
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok || !result.ok) throw new Error(result.error || result.detail || `HTTP ${res.status}`);
+      await logAdminAction({
+        action: 'marketing.campaign.test',
+        target: `marketing/test/${Date.now()}`,
+        meta: {
+          subject: subject.trim(),
+          recipients: emails,
+          enqueued: result.enqueued ?? 0,
+        },
+      });
       setMsg({
         type: 'success',
         text: `Test sent to ${result.enqueued} address${result.enqueued === 1 ? '' : 'es'}: ${emails.join(', ')}. Arrives within 1–2 min.`,
@@ -588,6 +616,20 @@ export default function EmailMarketingTab() {
       body: personalisePreview(body, vars),
     };
   })();
+
+  // Personalisation coverage — how many recipients will get the "there" fallback
+  // because their firstName is missing/blank in Firestore.
+  const emailedCustomers = customers.filter(c => c.email);
+  const missingFirstName = emailedCustomers.filter(c => !(c.firstName || '').trim());
+  const missingLastName = emailedCustomers.filter(c => !(c.lastName || '').trim());
+  const missingBoth = emailedCustomers.filter(
+    c => !(c.firstName || '').trim() && !(c.lastName || '').trim(),
+  );
+  const totalEmailable = emailedCustomers.length;
+  const fallbackPct = totalEmailable > 0
+    ? Math.round((missingFirstName.length / totalEmailable) * 100)
+    : 0;
+  const [showFallbackList, setShowFallbackList] = useState(false);
 
   const selectedTpl = TEMPLATES.find(t => t.id === selectedTemplate);
 
@@ -713,7 +755,90 @@ export default function EmailMarketingTab() {
         )}
       </AnimatePresence>
 
+      {/* Personalisation coverage — highlights recipients who will get the "there" fallback */}
+      <div className="bg-[#0b1a30]/70 border border-white/[0.08] rounded-2xl p-5 space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="text-white font-bold flex items-center gap-2 text-sm">
+              <UserX className="w-4 h-4 text-amber-400" />
+              Personalisation coverage
+            </h2>
+            <p className="text-[#7591b8] text-xs mt-1">
+              How many recipients have a name on file and how many will receive the <span className="font-mono text-amber-300">there</span> fallback.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={loadCustomers}
+            className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+            aria-label="Refresh customer data"
+          >
+            <RefreshCw className="w-4 h-4 text-[#9cb8d9]" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-[#04101f]/60 border border-white/5 rounded-xl p-3">
+            <p className="text-[#7591b8] text-[10px] uppercase tracking-wider">Total recipients</p>
+            <p className="text-white text-xl font-bold mt-1">{totalEmailable}</p>
+          </div>
+          <div className="bg-[#04101f]/60 border border-amber-500/20 rounded-xl p-3">
+            <p className="text-amber-300 text-[10px] uppercase tracking-wider">Missing firstName</p>
+            <p className="text-amber-300 text-xl font-bold mt-1">
+              {missingFirstName.length}
+              <span className="text-amber-300/60 text-xs font-normal ml-1">({fallbackPct}%)</span>
+            </p>
+          </div>
+          <div className="bg-[#04101f]/60 border border-white/5 rounded-xl p-3">
+            <p className="text-[#7591b8] text-[10px] uppercase tracking-wider">Missing lastName</p>
+            <p className="text-white text-xl font-bold mt-1">{missingLastName.length}</p>
+          </div>
+          <div className="bg-[#04101f]/60 border border-red-500/20 rounded-xl p-3">
+            <p className="text-red-300 text-[10px] uppercase tracking-wider">Missing both</p>
+            <p className="text-red-300 text-xl font-bold mt-1">{missingBoth.length}</p>
+          </div>
+        </div>
+
+        {missingFirstName.length > 0 && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowFallbackList(v => !v)}
+              className="flex items-center gap-2 text-xs text-amber-300 hover:text-amber-200 transition-colors"
+            >
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showFallbackList ? 'rotate-180' : ''}`} />
+              {showFallbackList ? 'Hide' : 'Show'} {missingFirstName.length} recipient{missingFirstName.length === 1 ? '' : 's'} that will get the "there" fallback
+            </button>
+            <AnimatePresence>
+              {showFallbackList && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-3 max-h-64 overflow-y-auto space-y-1 bg-[#04101f]/60 rounded-xl border border-white/5 p-2">
+                    {missingFirstName.map(c => (
+                      <div
+                        key={c.id}
+                        className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5"
+                      >
+                        <span className="text-white text-xs font-mono truncate">{c.email}</span>
+                        <span className="text-[10px] text-[#7591b8] shrink-0">
+                          {c.lastName ? `lastName: ${c.lastName}` : 'no name on file'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+
       <div className="grid lg:grid-cols-5 gap-6">
+
 
         {/* Left: compose */}
         <div className="lg:col-span-3 space-y-4">
