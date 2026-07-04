@@ -99,10 +99,12 @@ export default function ResearchGate() {
           const t = setTimeout(() => setShowModal(true), 400);
           return () => clearTimeout(t);
         }
-        // null or false = don't block on this product page
       });
+    } else {
+      // Homepage and other non-exempt pages: show gate modal
+      const t = setTimeout(() => setShowModal(true), 400);
+      return () => clearTimeout(t);
     }
-    // Non-product pages: rely on the sticky banner only — no blocking modal.
   }, [location.pathname]);
 
   // Lock body scroll while modal is open so the page behind can't scroll and
