@@ -1150,7 +1150,9 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                   </div>
                 )}
               </div>
+              </>)}
 
+              {activeTab === 'variants' && (<>
               {/* Variants — max 4 */}
               <div className="bg-gray-800/40 border border-white/[0.07] rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
