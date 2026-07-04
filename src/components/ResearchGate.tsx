@@ -395,6 +395,8 @@ export default function ResearchGate() {
           }}
         >
           <div
+            ref={cardRef}
+            tabIndex={-1}
             className="rg-modal-card"
             onClick={(e) => e.stopPropagation()}
             style={{
