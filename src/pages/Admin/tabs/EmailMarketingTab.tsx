@@ -447,7 +447,11 @@ export default function EmailMarketingTab() {
                 <div className="flex-1 min-w-0">
                   <p className="text-white text-sm font-medium truncate">{sub.email}</p>
                   <p className="text-[#3a5a82] text-[10px] mt-0.5">
-                    {sub.source || 'unknown'} · {sub.subscribedAt ? new Date(sub.subscribedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                    {sub.source || 'unknown'} · {(() => {
+                      const raw = sub.subscribedAt;
+                      const d = raw?.toDate ? raw.toDate() : (raw?.seconds ? new Date(raw.seconds * 1000) : (raw ? new Date(raw) : null));
+                      return d && !isNaN(d.getTime()) ? d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A';
+                    })()}
                   </p>
                   {sub.discountCode && (
                     <p className="text-green-400 text-xs font-semibold mt-1">
