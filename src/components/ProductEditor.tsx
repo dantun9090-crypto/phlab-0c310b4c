@@ -1282,6 +1282,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                   ))}
                 </div>
               </div>
+              </>)}
             </>
           )}
         </div>
