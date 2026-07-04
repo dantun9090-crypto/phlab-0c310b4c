@@ -1035,9 +1035,13 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                   </label>
                 </div>
               </div>
+              </>)}
 
-              <MerchantFeedPreview product={formData as any} baseline={(product as any) || null} />
+              {activeTab === 'seo' && (
+                <MerchantFeedPreview product={formData as any} baseline={(product as any) || null} />
+              )}
 
+              {activeTab === 'images' && (<>
               {/* Product Images — 4 slots */}
               <div className="bg-gray-800/40 border border-white/[0.07] rounded-xl p-5">
                 <div className="flex items-center justify-between mb-3">
