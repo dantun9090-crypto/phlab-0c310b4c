@@ -44,6 +44,37 @@ export function initSentry(): void {
           mask: ['input', 'textarea', '[data-sentry-mask]'],
         }),
       ],
+      // Noise filters — Safari network errors and third-party script errors
+      // fire constantly on iOS Mobile Safari and drown real alerts.
+      ignoreErrors: [
+        // Safari's generic fetch/network failure — not actionable, usually
+        // a dropped connection or user navigation mid-request.
+        "Load failed",
+        "Failed to fetch",
+        "NetworkError when attempting to fetch resource",
+        "The network connection was lost",
+        "cancelled",
+        "The operation couldn’t be completed",
+        // Third-party inline script on legacy prohealthpeptides.co.uk
+        // (301→apex): "Cannot read properties of null (reading 'document')"
+        // originates from an analytics/prerender snippet, not our bundle.
+        "Cannot read properties of null (reading 'document')",
+        "null is not an object (evaluating 'document')",
+        // Safari extensions / iframes noise.
+        "ResizeObserver loop",
+        "Non-Error promise rejection captured",
+      ],
+      denyUrls: [
+        // Anything served from the legacy domain — full 301→apex, we don't
+        // own the injected third-party scripts served there.
+        /prohealthpeptides\.co\.uk/i,
+        // Common third-party script hosts we can't fix from our side.
+        /bat\.bing\.(com|net)/i,
+        /googletagmanager\.com/i,
+        /google-analytics\.com/i,
+        /clarity\.ms/i,
+        /doubleclick\.net/i,
+      ],
       // Performance: sample lightly in prod, full in dev.
       tracesSampleRate: isProd ? 0.1 : 1.0,
       tracePropagationTargets: [
