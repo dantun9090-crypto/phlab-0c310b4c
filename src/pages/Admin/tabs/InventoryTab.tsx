@@ -330,6 +330,7 @@ export default function InventoryTab() {
                 <th className="px-3 sm:px-4 py-3 text-left text-[#9cb8d9] font-medium hidden md:table-cell text-xs sm:text-sm">Category</th>
                 <th className="px-3 sm:px-4 py-3 text-right text-[#9cb8d9] font-medium text-xs sm:text-sm">Price</th>
                 <th className="px-3 sm:px-4 py-3 text-right text-[#9cb8d9] font-medium text-xs sm:text-sm">Stock</th>
+                <th className="px-3 sm:px-4 py-3 text-center text-[#9cb8d9] font-medium hidden sm:table-cell text-xs sm:text-sm">Visibility</th>
                 <th className="px-3 sm:px-4 py-3 text-right text-[#9cb8d9] font-medium text-xs sm:text-sm">Actions</th>
               </tr>
             </thead>
