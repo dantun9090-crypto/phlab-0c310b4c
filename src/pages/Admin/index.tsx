@@ -175,6 +175,9 @@ export default function AdminPage() {
     if (typeof window !== 'undefined' && window.location.pathname === '/admin/health') {
       return 'infrahealth';
     }
+    if (typeof window !== 'undefined' && window.location.pathname === '/admin/publish-status') {
+      return 'publishstatus';
+    }
     return 'dashboard';
   });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
