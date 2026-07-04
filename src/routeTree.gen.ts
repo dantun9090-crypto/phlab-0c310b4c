@@ -71,6 +71,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wallid'
 import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
+import { Route as ApiPublicSendMarketingRouteImport } from './routes/api/public/send-marketing'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicPublishStatusRouteImport } from './routes/api/public/publish-status'
 import { Route as ApiPublicPublishHoldRouteImport } from './routes/api/public/publish-hold'
@@ -435,6 +436,11 @@ const ApiPublicWebVitalsRoute = ApiPublicWebVitalsRouteImport.update({
   path: '/api/public/web-vitals',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSendMarketingRoute = ApiPublicSendMarketingRouteImport.update({
+  id: '/api/public/send-marketing',
+  path: '/api/public/send-marketing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSendMailRoute = ApiPublicSendMailRouteImport.update({
   id: '/api/public/send-mail',
   path: '/api/public/send-mail',
@@ -763,6 +769,7 @@ export interface FileRoutesByFullPath {
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/public/send-marketing': typeof ApiPublicSendMarketingRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
@@ -870,6 +877,7 @@ export interface FileRoutesByTo {
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/public/send-marketing': typeof ApiPublicSendMarketingRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
@@ -980,6 +988,7 @@ export interface FileRoutesById {
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
+  '/api/public/send-marketing': typeof ApiPublicSendMarketingRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
@@ -1090,6 +1099,7 @@ export interface FileRouteTypes {
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
+    | '/api/public/send-marketing'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/api/public/diag/build-state'
@@ -1197,6 +1207,7 @@ export interface FileRouteTypes {
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
+    | '/api/public/send-marketing'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/api/public/diag/build-state'
@@ -1306,6 +1317,7 @@ export interface FileRouteTypes {
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
+    | '/api/public/send-marketing'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/api/public/diag/build-state'
@@ -1404,6 +1416,7 @@ export interface RootRouteChildren {
   ApiPublicPublishHoldRoute: typeof ApiPublicPublishHoldRoute
   ApiPublicPublishStatusRoute: typeof ApiPublicPublishStatusRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
+  ApiPublicSendMarketingRoute: typeof ApiPublicSendMarketingRoute
   ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
   ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
   ApiPublicDiagBuildStateRoute: typeof ApiPublicDiagBuildStateRoute
@@ -1866,6 +1879,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebVitalsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/send-marketing': {
+      id: '/api/public/send-marketing'
+      path: '/api/public/send-marketing'
+      fullPath: '/api/public/send-marketing'
+      preLoaderRoute: typeof ApiPublicSendMarketingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/send-mail': {
       id: '/api/public/send-mail'
       path: '/api/public/send-mail'
@@ -2310,6 +2330,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPublishHoldRoute: ApiPublicPublishHoldRoute,
   ApiPublicPublishStatusRoute: ApiPublicPublishStatusRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
+  ApiPublicSendMarketingRoute: ApiPublicSendMarketingRoute,
   ApiPublicWebVitalsRoute: ApiPublicWebVitalsRoute,
   ApiWebhooksWallidRoute: ApiWebhooksWallidRoute,
   ApiPublicDiagBuildStateRoute: ApiPublicDiagBuildStateRoute,
