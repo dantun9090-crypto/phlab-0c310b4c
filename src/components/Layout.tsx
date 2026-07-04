@@ -652,16 +652,7 @@ export function Layout({ children }: LayoutProps) {
                   <span className="text-[10px] sm:text-[11px] text-emerald-400/90 font-semibold tracking-[0.22em] uppercase mt-0.5">Research Grade</span>
                 </div>
               </div>
-              {disclaimerVisible && (
-                <span
-                  id="phl-research-disclaimer"
-                  role="note"
-                  aria-label="Research use disclaimer"
-                  className="mt-1 block max-w-[200px] truncate text-[8px] font-bold uppercase tracking-[0.10em] text-emerald-200/65 sm:max-w-[320px] sm:tracking-[0.12em]"
-                >
-                  For Laboratory Research Use Only — Not for Human or Veterinary Consumption
-                </span>
-              )}
+              {/* Disclaimer moved to DisclaimerBanner component below header */}
             </Link>
 
             {/* ── Desktop + Mobile Nav (Navigation component) ── */}
