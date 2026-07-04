@@ -525,6 +525,15 @@ export default function EmailMarketingTab() {
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok || !result.ok) throw new Error(result.error || result.detail || `HTTP ${res.status}`);
+      await logAdminAction({
+        action: 'marketing.campaign.test',
+        target: `marketing/test/${Date.now()}`,
+        meta: {
+          subject: subject.trim(),
+          recipients: emails,
+          enqueued: result.enqueued ?? 0,
+        },
+      });
       setMsg({
         type: 'success',
         text: `Test sent to ${result.enqueued} address${result.enqueued === 1 ? '' : 'es'}: ${emails.join(', ')}. Arrives within 1–2 min.`,
