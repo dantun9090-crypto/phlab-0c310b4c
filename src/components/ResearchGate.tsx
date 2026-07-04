@@ -519,7 +519,7 @@ export default function ResearchGate() {
             </p>
 
             {/* Checklist */}
-            <ul style={{
+            <ul className="rg-check-list" style={{
               margin: '0 0 28px',
               padding: 0, listStyle: 'none',
               display: 'flex', flexDirection: 'column', gap: '10px',
