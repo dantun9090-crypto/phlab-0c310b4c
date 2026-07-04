@@ -755,7 +755,90 @@ export default function EmailMarketingTab() {
         )}
       </AnimatePresence>
 
+      {/* Personalisation coverage — highlights recipients who will get the "there" fallback */}
+      <div className="bg-[#0b1a30]/70 border border-white/[0.08] rounded-2xl p-5 space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="text-white font-bold flex items-center gap-2 text-sm">
+              <UserX className="w-4 h-4 text-amber-400" />
+              Personalisation coverage
+            </h2>
+            <p className="text-[#7591b8] text-xs mt-1">
+              How many recipients have a name on file and how many will receive the <span className="font-mono text-amber-300">there</span> fallback.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={loadCustomers}
+            className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+            aria-label="Refresh customer data"
+          >
+            <RefreshCw className="w-4 h-4 text-[#9cb8d9]" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-[#04101f]/60 border border-white/5 rounded-xl p-3">
+            <p className="text-[#7591b8] text-[10px] uppercase tracking-wider">Total recipients</p>
+            <p className="text-white text-xl font-bold mt-1">{totalEmailable}</p>
+          </div>
+          <div className="bg-[#04101f]/60 border border-amber-500/20 rounded-xl p-3">
+            <p className="text-amber-300 text-[10px] uppercase tracking-wider">Missing firstName</p>
+            <p className="text-amber-300 text-xl font-bold mt-1">
+              {missingFirstName.length}
+              <span className="text-amber-300/60 text-xs font-normal ml-1">({fallbackPct}%)</span>
+            </p>
+          </div>
+          <div className="bg-[#04101f]/60 border border-white/5 rounded-xl p-3">
+            <p className="text-[#7591b8] text-[10px] uppercase tracking-wider">Missing lastName</p>
+            <p className="text-white text-xl font-bold mt-1">{missingLastName.length}</p>
+          </div>
+          <div className="bg-[#04101f]/60 border border-red-500/20 rounded-xl p-3">
+            <p className="text-red-300 text-[10px] uppercase tracking-wider">Missing both</p>
+            <p className="text-red-300 text-xl font-bold mt-1">{missingBoth.length}</p>
+          </div>
+        </div>
+
+        {missingFirstName.length > 0 && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowFallbackList(v => !v)}
+              className="flex items-center gap-2 text-xs text-amber-300 hover:text-amber-200 transition-colors"
+            >
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showFallbackList ? 'rotate-180' : ''}`} />
+              {showFallbackList ? 'Hide' : 'Show'} {missingFirstName.length} recipient{missingFirstName.length === 1 ? '' : 's'} that will get the "there" fallback
+            </button>
+            <AnimatePresence>
+              {showFallbackList && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-3 max-h-64 overflow-y-auto space-y-1 bg-[#04101f]/60 rounded-xl border border-white/5 p-2">
+                    {missingFirstName.map(c => (
+                      <div
+                        key={c.id}
+                        className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg hover:bg-white/5"
+                      >
+                        <span className="text-white text-xs font-mono truncate">{c.email}</span>
+                        <span className="text-[10px] text-[#7591b8] shrink-0">
+                          {c.lastName ? `lastName: ${c.lastName}` : 'no name on file'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+      </div>
+
       <div className="grid lg:grid-cols-5 gap-6">
+
 
         {/* Left: compose */}
         <div className="lg:col-span-3 space-y-4">
