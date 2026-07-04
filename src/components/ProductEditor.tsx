@@ -1,16 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   X, Save, Plus, Trash2, Upload, Eye, Image as ImageIcon,
   Loader2, MoveVertical, Star, ImagePlus, AlertCircle, CheckCircle2,
-  ChevronLeft, ChevronRight, Crown, Link2, FlaskConical, FileText
+  ChevronLeft, ChevronRight, Crown, Link2, FlaskConical, FileText,
+  Package, Images, Layers, Tag,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { updateProduct, addProduct, storage, storageRef, uploadBytesResumable, getDownloadURL } from '@/lib/firebase';
 import type { Product, ProductVariant } from '@/lib/firebase';
 import { getAdminIdToken } from '@/lib/auth-ready';
 import { uploadHplcImageAdmin } from '@/lib/hplc-upload.functions';
 import { uploadCoaPdf } from '@/lib/coa-upload.functions';
 import { MerchantFeedPreview } from './MerchantFeedPreview';
+import { validateProduct, friendlyUploadError, type EditorTab, type FieldErrors } from '@/lib/product-schema';
 
 interface ProductEditorProps {
   product?: Product | null;
@@ -301,7 +304,22 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
   const [coaError, setCoaError] = useState('');
   const coaInputRef = useRef<HTMLInputElement>(null);
 
+  // ── Tabs / live validation / autosave ─────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<EditorTab>('basics');
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [autosaveError, setAutosaveError] = useState<string>('');
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipNextAutosave = useRef(true); // don't autosave on initial form population
+
   useEffect(() => {
+    skipNextAutosave.current = true;
+    setTouched({});
+    setActiveTab('basics');
+    setAutosaveStatus('idle');
+    setAutosaveError('');
+    setLastSavedAt(null);
     if (product) {
       pendingId.current = product.id;
       setFormData({ ...product, variants: product.variants || [] });
@@ -312,6 +330,59 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
       setBannerUrl('');
     }
   }, [product]);
+
+  // ── Live validation ───────────────────────────────────────────────────────
+  const validation = useMemo(() => validateProduct({
+    name: formData.name || '',
+    slug: (formData as any).slug || '',
+    category: formData.category || '',
+    price: Number(formData.price) || 0,
+    sku: formData.sku || '',
+    stock: Number(formData.stock) || 0,
+    purity: formData.purity || '',
+    visibility: formData.visibility || 'active',
+    description: formData.description || '',
+    variants: formData.variants || [],
+  }), [formData]);
+  const errors: FieldErrors = validation.errors;
+  const errorFor = (key: string): string | null => (touched[key] && errors[key]) ? errors[key] : null;
+  const markTouched = (key: string) => setTouched((t) => t[key] ? t : { ...t, [key]: true });
+
+  // ── Autosave (existing products only) ─────────────────────────────────────
+  // Debounced 2s after any form change. Skips new products (no id yet) and
+  // skips if validation fails on required fields.
+  useEffect(() => {
+    if (!product?.id) return; // only autosave existing products
+    if (skipNextAutosave.current) { skipNextAutosave.current = false; return; }
+    if (!validation.ok) return; // don't autosave broken state
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = setTimeout(async () => {
+      setAutosaveStatus('saving');
+      setAutosaveError('');
+      try {
+        const cleanImages = (formData.images || []).filter(Boolean);
+        const delta = {
+          ...formData,
+          images: cleanImages,
+          imageUrl: cleanImages[0] || formData.imageUrl || '',
+          bannerImageUrl: bannerUrl || '',
+          price: Number(formData.price) || 0,
+          stock: Number(formData.stock) || 0,
+          variants: formData.variants || [],
+        };
+        await updateProduct(product.id, delta as Partial<Product>);
+        setAutosaveStatus('saved');
+        setLastSavedAt(Date.now());
+      } catch (e: any) {
+        setAutosaveStatus('error');
+        setAutosaveError(e?.message || 'Autosave failed');
+      }
+    }, 2000);
+    return () => {
+      if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, bannerUrl, product?.id, validation.ok]);
 
   // ── Image slot handlers ───────────────────────────────────────────────────
   const handleSlotUpload = useCallback(async (file: File, index: number) => {
@@ -333,17 +404,13 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
       });
     } catch (e: any) {
       console.error('Upload failed:', e);
-      const msg = String(e?.message || e?.code || '');
-      const isPermission = e?.code === 'storage/unauthorized'
-        || msg.includes('permission')
-        || msg.includes('unauthorized')
-        || msg.includes('403')
-        || e?.code === 'storage/unknown';
+      const { code, message } = friendlyUploadError(e);
       setSlotErrors(prev => {
         const n = [...prev];
-        n[index] = isPermission ? 'permission' : (e?.message || 'failed');
+        n[index] = code === 'permission' ? 'permission' : message;
         return n;
       });
+      toast.error(`Photo ${index + 1}: ${message}`);
     } finally {
       setSlotUploading(prev => { const n = [...prev]; n[index] = false; return n; });
     }
@@ -514,6 +581,19 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
 
   // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = async () => {
+    // Mark everything touched so any lingering errors show up in-line
+    if (!validation.ok) {
+      const allTouched: Record<string, boolean> = {};
+      Object.keys(errors).forEach((k) => { allTouched[k] = true; });
+      setTouched((prev) => ({ ...prev, ...allTouched }));
+      // Jump to first tab that has errors so user sees them immediately
+      const firstBadTab = (['basics', 'images', 'variants', 'seo'] as EditorTab[]).find((t) => validation.perTab[t] > 0);
+      if (firstBadTab) setActiveTab(firstBadTab);
+      const totalErrs = Object.keys(errors).length;
+      setSaveMsg({ type: 'error', text: `${totalErrs} field${totalErrs === 1 ? '' : 's'} need attention — see red labels` });
+      toast.error(`${totalErrs} validation error${totalErrs === 1 ? '' : 's'}`);
+      return;
+    }
     if (!formData.name?.trim()) { setSaveMsg({ type: 'error', text: 'Product name is required' }); return; }
     // Auto-sanitize admin copy into laboratory RUO-safe language, then run the
     // compliance guard. Lets editors paste freely while keeping Firestore
@@ -668,28 +748,71 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
           ) : (
             /* ── Edit ── */
             <>
+              {/* Tab strip */}
+              <div className="flex items-center gap-1 border-b border-white/10 -mx-4 sm:-mx-5 px-4 sm:px-5 pb-0 overflow-x-auto">
+                {([
+                  { id: 'basics' as EditorTab, label: 'Basics', icon: Package },
+                  { id: 'images' as EditorTab, label: 'Images', icon: Images },
+                  { id: 'variants' as EditorTab, label: 'Variants', icon: Layers },
+                  { id: 'seo' as EditorTab, label: 'SEO & Feed', icon: Tag },
+                ]).map((tab) => {
+                  const Icon = tab.icon;
+                  const errCount = validation.perTab[tab.id];
+                  const active = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`relative flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap min-h-[44px] ${
+                        active
+                          ? 'text-white border-blue-500'
+                          : 'text-gray-400 border-transparent hover:text-white hover:border-white/20'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {tab.label}
+                      {errCount > 0 && Object.keys(touched).length > 0 && (
+                        <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full">
+                          {errCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {activeTab === 'basics' && (<>
               {/* Basic Info */}
               <div className="bg-gray-800/40 border border-white/[0.07] rounded-xl p-5 space-y-4">
                 <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wider">Basic Info</h3>
                 <div className="grid md:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1.5">Product Name *</label>
-                    <input type="text" value={formData.name || ''} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                    <input type="text" value={formData.name || ''}
+                      onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                      onBlur={() => markTouched('name')}
                       placeholder="e.g. BPC-157"
-                      className="w-full px-4 py-3 bg-[#1e293b] border-2 border-[#475569] rounded-lg text-[#f8fafc] text-base placeholder-[#94a3b8] focus:outline-none focus:border-[#3b82f6] focus:shadow-[0_0_0_3px_rgba(59,130,246,0.3)] transition-all min-h-[48px]" />
+                      className={`w-full px-4 py-3 bg-[#1e293b] border-2 rounded-lg text-[#f8fafc] text-base placeholder-[#94a3b8] focus:outline-none focus:shadow-[0_0_0_3px_rgba(59,130,246,0.3)] transition-all min-h-[48px] ${errorFor('name') ? 'border-red-500 focus:border-red-500' : 'border-[#475569] focus:border-[#3b82f6]'}`} />
+                    {errorFor('name') && <p className="mt-1 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errorFor('name')}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1.5">Category</label>
                     <select value={formData.category} onChange={e => setFormData(p => ({ ...p, category: e.target.value }))}
+                      onBlur={() => markTouched('category')}
                       className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all capitalize">
                       {CATEGORIES.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
                     </select>
+                    {errorFor('category') && <p className="mt-1 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errorFor('category')}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1.5">Base Price (£)</label>
-                    <input type="number" value={formData.price || ''} onChange={e => setFormData(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
+                    <input type="number" value={formData.price || ''}
+                      onChange={e => setFormData(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
+                      onBlur={() => markTouched('price')}
                       step="0.01" placeholder="0.00"
-                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all" />
+                      className={`w-full px-4 py-3 bg-white border rounded-lg text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all ${errorFor('price') ? 'border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-blue-500'}`} />
+                    {errorFor('price') && <p className="mt-1 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errorFor('price')}</p>}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1.5">SKU</label>
@@ -920,9 +1043,13 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                   </label>
                 </div>
               </div>
+              </>)}
 
-              <MerchantFeedPreview product={formData as any} baseline={(product as any) || null} />
+              {activeTab === 'seo' && (
+                <MerchantFeedPreview product={formData as any} baseline={(product as any) || null} />
+              )}
 
+              {activeTab === 'images' && (<>
               {/* Product Images — 4 slots */}
               <div className="bg-gray-800/40 border border-white/[0.07] rounded-xl p-5">
                 <div className="flex items-center justify-between mb-3">
@@ -1031,7 +1158,9 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                   </div>
                 )}
               </div>
+              </>)}
 
+              {activeTab === 'variants' && (<>
               {/* Variants — max 4 */}
               <div className="bg-gray-800/40 border border-white/[0.07] rounded-xl p-5">
                 <div className="flex items-center justify-between mb-4">
@@ -1161,29 +1290,49 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                   ))}
                 </div>
               </div>
+              </>)}
             </>
           )}
         </div>
 
         {/* Footer */}
         <div className="shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 border-t border-white/10 bg-[#060f1e]/50">
-          <AnimatePresence>
-            {saveMsg && (
-              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-                className={`flex items-center gap-1.5 text-xs sm:text-sm ${saveMsg.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
-                {saveMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-                {saveMsg.text}
-              </motion.div>
+          <div className="flex items-center gap-3 flex-wrap min-h-[24px]">
+            {/* Autosave status (existing products only) */}
+            {product?.id && (
+              <div className="flex items-center gap-1.5 text-xs">
+                {autosaveStatus === 'saving' && (
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" /><span className="text-blue-300">Autosaving…</span></>
+                )}
+                {autosaveStatus === 'saved' && lastSavedAt && (
+                  <><CheckCircle2 className="w-3.5 h-3.5 text-green-400" /><span className="text-green-300">Saved · changes persist on close</span></>
+                )}
+                {autosaveStatus === 'error' && (
+                  <><AlertCircle className="w-3.5 h-3.5 text-red-400" /><span className="text-red-300">Autosave failed: {autosaveError}</span></>
+                )}
+                {autosaveStatus === 'idle' && !validation.ok && (
+                  <span className="text-amber-400/80 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />Fix validation errors to autosave</span>
+                )}
+              </div>
             )}
-          </AnimatePresence>
+            <AnimatePresence>
+              {saveMsg && (
+                <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
+                  className={`flex items-center gap-1.5 text-xs sm:text-sm ${saveMsg.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                  {saveMsg.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+                  {saveMsg.text}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
           <div className="flex items-center gap-2 sm:gap-3 ml-auto w-full sm:w-auto">
             <button onClick={onClose}
               className="flex-1 sm:flex-none px-3 sm:px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl text-xs sm:text-sm font-medium transition-colors">
-              Cancel
+              {product?.id && autosaveStatus === 'saved' ? 'Close' : 'Cancel'}
             </button>
             <button onClick={handleSave} disabled={saving}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium text-xs sm:text-sm transition-all shadow-[0_2px_12px_rgba(37,99,235,0.3)] disabled:opacity-50">
-              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <><Save className="w-4 h-4" /> Save Product</>}
+              {saving ? <><Loader2 className="w-4 h-4 animate-spin" /> Saving...</> : <><Save className="w-4 h-4" /> {product?.id ? 'Save & Close' : 'Create Product'}</>}
             </button>
           </div>
         </div>
