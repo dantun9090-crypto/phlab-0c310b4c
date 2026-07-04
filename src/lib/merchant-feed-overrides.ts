@@ -173,7 +173,7 @@ function defaultsFor(feedKey: FeedKey): MerchantFeedConfig {
       "anti-aging", "diabetes", "cancer", "clinical",
     ],
     hardBlockedSlugs: isFree
-      ? ["tirzepatide-research-peptide", "tirzepatide"]
+      ? [] // Free Listings: allow every catalogue item (incl. tirzepatide).
       : ["tirzepatide-research-peptide", "tirzepatide"],
     highRiskTokens: [
       "retatrutide", "bpc-157", "bpc157", "bpc 157",
