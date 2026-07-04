@@ -85,11 +85,6 @@ const ARTICLE_MAP: Record<string, { slug: string; title: string; excerpt: string
     title: 'PT-141 (Bremelanotide): MC4R Pharmacology and CNS Arousal Research',
     excerpt: 'FDA-approved cyclic melanocortin agonist (MC3R/MC4R). Hypothalamic PVN/LHA circuit mechanisms, Phase 3 RECONNECT trial data, and receptor pharmacology assays.',
   },
-  epithalon: {
-    slug: 'epithalon-telomere-research',
-    title: 'Epithalon: Telomerase Activation and Longevity Research',
-    excerpt: 'Tetrapeptide that activates telomerase and restores pineal melatonin synthesis in aged models. Lifespan extension and epigenetic research data.',
-  },
   selank: {
     slug: 'selank-anxiolytic-nootropic-peptide',
     title: 'Selank: Anxiolytic Peptide and Cognitive Research',

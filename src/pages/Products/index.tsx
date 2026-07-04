@@ -58,7 +58,7 @@ const CATEGORY_INTROS: Record<string, { h1: string; intro: string }> = {
   },
   'cellular-aging': {
     h1: 'Longevity Research Peptides UK',
-    intro: 'Telomere and mitochondrial research compounds including Epithalon and MOTS-c. Investigated in senescence and epigenetic longevity models.',
+    intro: 'Mitochondrial and cellular longevity research compounds including MOTS-c and NAD+. Investigated in senescence and epigenetic longevity models.',
   },
   neurological: {
     h1: 'Nootropic Research Compounds UK',

@@ -131,7 +131,7 @@ const CATEGORY_MAP: Record<string, { label: string; color: string }> = {
   'tirzepatide': { label: 'Metabolic', color: '#3b82f6' },
   'retatrutide': { label: 'Metabolic', color: '#3b82f6' },
   'nad': { label: 'Longevity', color: '#f59e0b' },
-  'epithalon': { label: 'Longevity', color: '#f59e0b' },
+  
   'semax': { label: 'Cognitive', color: '#a855f7' },
   'selank': { label: 'Cognitive', color: '#a855f7' },
   'cjc': { label: 'Growth', color: '#06b6d4' },

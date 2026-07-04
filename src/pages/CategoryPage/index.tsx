@@ -46,10 +46,10 @@ const CATEGORY_CONFIG: Record<string, CategoryConfig> = {
   },
   'cellular-aging': {
     label: 'Longevity',
-    description: 'Telomere and mitochondrial research compounds including Epithalon and MOTS-c. Investigated in senescence and epigenetic longevity models.',
+    description: 'Mitochondrial and cellular longevity research compounds including MOTS-c and NAD+. Investigated in senescence and epigenetic longevity models.',
     seoTitle: 'Longevity Research Peptides UK | PH Labs',
-    seoDescription: 'UK supplier of longevity and anti-ageing research peptides — Epithalon, MOTS-c and more. HPLC-tested, ≥99% purity, CoA included. Laboratory research use only.',
-    seoKeywords: 'longevity peptides UK, Epithalon buy UK, MOTS-c research peptide, anti-ageing compounds UK',
+    seoDescription: 'UK supplier of longevity and anti-ageing research compounds — MOTS-c, NAD+ and more. HPLC-tested, ≥99% purity, CoA included. Laboratory research use only.',
+    seoKeywords: 'longevity peptides UK, MOTS-c research peptide, NAD+ research compound UK, anti-ageing compounds UK',
     color: '#f59e0b',
     icon: '⏳',
   },
