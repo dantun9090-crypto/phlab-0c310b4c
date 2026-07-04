@@ -51,7 +51,7 @@ export async function subscribeToNewsletter(
 ): Promise<SubscribeResult> {
   const parsed = emailSchema.safeParse(rawEmail);
   if (!parsed.success) {
-    return { success: false, message: parsed.error.errors[0]?.message ?? 'Invalid email' };
+    return { success: false, message: parsed.error.issues[0]?.message ?? 'Invalid email' };
   }
   const email = parsed.data;
 

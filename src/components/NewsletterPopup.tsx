@@ -125,7 +125,7 @@ export default function NewsletterPopup() {
     setError(null);
     const parsed = emailSchema.safeParse(email);
     if (!parsed.success) {
-      setError(parsed.error.errors[0]?.message ?? 'Invalid email');
+      setError(parsed.error.issues[0]?.message ?? 'Invalid email');
       return;
     }
     setSubmitting(true);

@@ -26,7 +26,10 @@ export type AdminAuditAction =
   | 'ipWhitelist.update'
   | 'marketing.campaign.send'
   | 'marketing.campaign.test'
-  | 'marketing.campaign.requeue';
+  | 'marketing.campaign.requeue'
+  | 'marketing.subscriber.update'
+  | 'marketing.subscriber.delete'
+  | 'marketing.popup.update';
 
 interface LogPayload {
   action: AdminAuditAction;
