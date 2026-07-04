@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 
 const TITLE = "UK Research Store | Lab-Grade Reference Materials | PH Labs";
 const DESCRIPTION =
-  "UK research store supplying high-purity reference materials to qualified laboratories. Per-batch analytical documentation, tracked UK dispatch, discreet packaging. For Research Use Only.";
+  "UK laboratory supply of high-purity reference materials. Per-batch documentation, tracked dispatch. For Research Use Only.";
 const URL = "https://phlabs.co.uk/uk-research-store";
 const OG_IMAGE = "https://phlabs.co.uk/og/compound.jpg";
 
