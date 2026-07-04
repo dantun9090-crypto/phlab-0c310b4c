@@ -17,6 +17,8 @@ import { enqueueMailOnce } from "@/lib/server/enqueue-mail";
 const Recipient = z.object({
   email: z.string().email().max(320),
   name: z.string().max(200).optional(),
+  firstName: z.string().max(100).optional(),
+  lastName: z.string().max(100).optional(),
 });
 
 const SendBody = z.object({
