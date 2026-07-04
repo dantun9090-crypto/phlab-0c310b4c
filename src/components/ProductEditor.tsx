@@ -1162,14 +1162,14 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
 
               {activeTab === 'variants' && (<>
               {/* Variants — max 4 */}
-              <div className="bg-gray-800/40 border border-white/[0.07] rounded-xl p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
+              <div className="bg-gray-800/40 border border-white/[0.07] rounded-xl p-4 sm:p-5">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 mb-4">
+                  <div className="min-w-0">
                     <h3 className="text-sm font-semibold text-white/70 uppercase tracking-wider">Variants</h3>
                     <p className="text-gray-600 text-xs mt-0.5">Up to 4 variants · drag to reorder</p>
                   </div>
                   <button onClick={addVariant} disabled={(formData.variants?.length ?? 0) >= 4}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-xs font-medium transition-colors">
+                    className="shrink-0 min-h-[44px] flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-xs font-medium transition-colors">
                     <Plus className="w-3.5 h-3.5" /> Add Variant
                     {(formData.variants?.length ?? 0) > 0 && (
                       <span className="ml-1 bg-blue-800 text-blue-200 text-[10px] px-1.5 rounded-full">
@@ -1193,65 +1193,96 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                     <motion.div
                       key={variant.id}
                       layout
-                      className={`p-3 bg-white border border-gray-300 rounded-lg transition-opacity ${draggedVariantIdx === idx ? 'opacity-40' : ''}`}
+                      className={`p-3 sm:p-4 bg-slate-900 border border-slate-700 rounded-lg transition-opacity ${draggedVariantIdx === idx ? 'opacity-40' : ''}`}
                     >
                       <div
                         onDragOver={(e) => handleDragOver(e, idx)}
-                        className="flex items-center gap-2"
+                        className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-3 sm:grid-cols-[auto_auto_minmax(180px,1.5fr)_minmax(120px,1fr)_96px_88px_auto] sm:items-end"
                       >
-                      <span
-                        draggable
-                        onDragStart={() => handleDragStart(idx)}
-                        onDragEnd={handleDragEnd}
-                        className="cursor-move touch-none p-1 -m-1 shrink-0"
-                        title="Drag to reorder"
-                      >
-                        <MoveVertical className="w-4 h-4 text-gray-500" />
-                      </span>
-                      <div className="flex items-center gap-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-md px-1.5 py-0.5 shrink-0 min-w-[20px] justify-center">
-                        {idx + 1}
-                      </div>
-                      <input type="text" value={variant.name}
-                        onChange={e => updateVariant(idx, 'name', e.target.value)}
-                        className="flex-1 min-w-0 px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                        placeholder="e.g. 10mg" />
-                      <input type="text" value={variant.sku}
-                        onChange={e => updateVariant(idx, 'sku', e.target.value)}
-                        className="w-24 px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                        placeholder="SKU" />
-                      <div className="relative w-20">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">£</span>
-                        <input type="number" value={variant.price || ''}
-                          onChange={e => updateVariant(idx, 'price', parseFloat(e.target.value) || 0)}
-                          className="w-full pl-7 pr-2 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                          placeholder="0.00" step="0.01" />
-                      </div>
-                      <input type="number" value={variant.stock}
-                        onChange={e => updateVariant(idx, 'stock', parseInt(e.target.value) || 0)}
-                        className="w-16 px-3 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                        placeholder="Qty" />
+                        <span
+                          draggable
+                          onDragStart={() => handleDragStart(idx)}
+                          onDragEnd={handleDragEnd}
+                          className="cursor-move touch-none flex min-h-[48px] items-center justify-center text-slate-500"
+                          title="Drag to reorder"
+                        >
+                          <MoveVertical className="w-4 h-4" />
+                        </span>
+                        <div className="flex min-h-[48px] items-center justify-center rounded-lg bg-blue-600/15 px-2 text-xs font-bold text-blue-300 sm:min-w-[32px]">
+                          {idx + 1}
+                        </div>
+                        <label className="col-span-3 min-w-0 sm:col-span-1">
+                          <span className="mb-1 block text-xs font-medium text-slate-300">MG / size</span>
+                          <input
+                            type="text"
+                            value={variant.name}
+                            onChange={e => updateVariant(idx, 'name', e.target.value)}
+                            onBlur={() => markTouched(`variants.${idx}.name`)}
+                            className={`w-full min-h-[48px] px-4 py-3 bg-slate-800 border-2 rounded-lg text-white text-base placeholder-slate-400 focus:outline-none focus:shadow-[0_0_0_3px_rgba(59,130,246,0.3)] transition-all ${errorFor(`variants.${idx}.name`) ? 'border-red-500 focus:border-red-500' : 'border-slate-600 focus:border-blue-500'}`}
+                            placeholder="e.g. 200mg or 500mg"
+                          />
+                          {errorFor(`variants.${idx}.name`) && <p className="mt-1 text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" />{errorFor(`variants.${idx}.name`)}</p>}
+                        </label>
+                        <label className="col-span-3 min-w-0 sm:col-span-1">
+                          <span className="mb-1 block text-xs font-medium text-slate-300">SKU</span>
+                          <input
+                            type="text"
+                            value={variant.sku}
+                            onChange={e => updateVariant(idx, 'sku', e.target.value)}
+                            className="w-full min-h-[48px] px-4 py-3 bg-slate-800 border-2 border-slate-600 rounded-lg text-white text-base placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.3)] transition-all"
+                            placeholder="SKU"
+                          />
+                        </label>
+                        <label className="min-w-0">
+                          <span className="mb-1 block text-xs font-medium text-slate-300">Price</span>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">£</span>
+                            <input
+                              type="number"
+                              value={variant.price || ''}
+                              onChange={e => updateVariant(idx, 'price', parseFloat(e.target.value) || 0)}
+                              className="w-full min-h-[48px] pl-7 pr-2 py-3 bg-slate-800 border-2 border-slate-600 rounded-lg text-white text-base placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.3)] transition-all"
+                              placeholder="0.00"
+                              step="0.01"
+                            />
+                          </div>
+                        </label>
+                        <label className="min-w-0">
+                          <span className="mb-1 block text-xs font-medium text-slate-300">Stock</span>
+                          <input
+                            type="number"
+                            value={variant.stock}
+                            onChange={e => updateVariant(idx, 'stock', parseInt(e.target.value) || 0)}
+                            className="w-full min-h-[48px] px-3 py-3 bg-slate-800 border-2 border-slate-600 rounded-lg text-white text-base placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.3)] transition-all"
+                            placeholder="Qty"
+                          />
+                        </label>
                       {/* Image slot selector */}
                       {(formData.images?.filter(Boolean).length ?? 0) > 1 && (
-                        <select
-                          value={variant.imageIndex ?? idx}
-                          onChange={e => updateVariant(idx, 'imageIndex', parseInt(e.target.value))}
-                          title="Which photo to show when this variant is selected"
-                          className="w-20 px-2 py-2 bg-white border border-gray-300 rounded-lg text-gray-900 text-xs focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                        >
-                          {(formData.images || []).map((url, si) => url ? (
-                            <option key={si} value={si}>Photo {si + 1}</option>
-                          ) : null)}
-                        </select>
+                        <label className="col-span-2 min-w-0 sm:col-span-1">
+                          <span className="mb-1 block text-xs font-medium text-slate-300">Photo</span>
+                          <select
+                            value={variant.imageIndex ?? idx}
+                            onChange={e => updateVariant(idx, 'imageIndex', parseInt(e.target.value))}
+                            title="Which photo to show when this variant is selected"
+                            className="w-full min-h-[48px] px-2 py-3 bg-slate-800 border-2 border-slate-600 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.3)] transition-all"
+                          >
+                            {(formData.images || []).map((url, si) => url ? (
+                              <option key={si} value={si}>Photo {si + 1}</option>
+                            ) : null)}
+                          </select>
+                        </label>
                       )}
                       <button onClick={() => removeVariant(idx)}
-                        className="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-600 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0">
+                        aria-label="Remove variant"
+                        className="min-w-[48px] min-h-[48px] self-end flex items-center justify-center text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                       </div>
 
                       {/* HPLC test row — per-variant chromatogram + tested toggle */}
-                      <div className="mt-2 pt-2 border-t border-gray-200 flex flex-wrap items-center gap-3">
-                        <label className="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+                      <div className="mt-3 pt-3 border-t border-slate-700 flex flex-wrap items-center gap-3">
+                        <label className="flex items-center gap-2 text-xs font-medium text-slate-300 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={!!variant.hplcTested}
@@ -1260,7 +1291,7 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                           />
                           HPLC tested ≥99%
                         </label>
-                        <label className="text-xs text-blue-700 hover:text-blue-900 cursor-pointer underline">
+                        <label className="text-xs text-blue-300 hover:text-blue-200 cursor-pointer underline">
                           {variant.hplcImageUrl ? 'Replace HPLC photo' : 'Upload HPLC photo'}
                           <input
                             type="file"
@@ -1275,18 +1306,18 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
                         {variant.hplcImageUrl && (
                           <>
                             <a href={variant.hplcImageUrl} target="_blank" rel="noopener noreferrer">
-                              <img src={variant.hplcImageUrl} alt="HPLC chromatogram" className="h-10 w-auto rounded border border-gray-300" />
+                              <img src={variant.hplcImageUrl} alt="HPLC chromatogram" className="h-10 w-auto rounded border border-slate-600" />
                             </a>
                             <button
                               onClick={() => { updateVariant(idx, 'hplcImageUrl', ''); }}
-                              className="text-xs text-red-600 hover:underline"
+                              className="text-xs text-red-400 hover:underline"
                             >
                               Remove
                             </button>
                           </>
                         )}
                         {variant.hplcTestedAt && (
-                          <span className="text-[10px] text-gray-500 ml-auto">
+                          <span className="text-[10px] text-slate-400 ml-auto">
                             Tested {new Date(variant.hplcTestedAt).toLocaleDateString('en-GB')}
                           </span>
                         )}
