@@ -16,13 +16,13 @@ const SOURCE = readFileSync(SOURCE_PATH, "utf8");
 function getMerchantPromoIds(): string[] {
   const raw = process.env.MERCHANT_PROMO_IDS;
   if (!raw || typeof raw !== "string") {
-    return ["PHL_LAUNCH"];
+    return ["PHL_LAUNCH", "PHL_LAUNCH2"];
   }
   const ids = raw
     .split(",")
     .map((s: string) => s.trim())
     .filter((s: string) => s.length > 0);
-  return ids.length > 0 ? ids : ["PHL_LAUNCH"];
+  return ids.length > 0 ? ids : ["PHL_LAUNCH", "PHL_LAUNCH2"];
 }
 
 describe("merchant feed promo IDs", () => {
@@ -35,8 +35,8 @@ describe("merchant feed promo IDs", () => {
     else process.env.MERCHANT_PROMO_IDS = originalEnv;
   });
 
-  it("defaults to the documented PHL_LAUNCH promotion ID", () => {
-    expect(getMerchantPromoIds()).toEqual(["PHL_LAUNCH"]);
+  it("defaults to PHL_LAUNCH and PHL_LAUNCH2 promotion IDs", () => {
+    expect(getMerchantPromoIds()).toEqual(["PHL_LAUNCH", "PHL_LAUNCH2"]);
   });
 
   it("honours the MERCHANT_PROMO_IDS env override (comma-separated)", () => {
@@ -48,19 +48,19 @@ describe("merchant feed promo IDs", () => {
     ]);
   });
 
-  it("falls back to PHL_LAUNCH when env is an empty string", () => {
+  it("falls back to PHL_LAUNCH and PHL_LAUNCH2 when env is an empty string", () => {
     process.env.MERCHANT_PROMO_IDS = "";
-    expect(getMerchantPromoIds()).toEqual(["PHL_LAUNCH"]);
+    expect(getMerchantPromoIds()).toEqual(["PHL_LAUNCH", "PHL_LAUNCH2"]);
   });
 
-  it("falls back to PHL_LAUNCH when env contains only commas and spaces", () => {
+  it("falls back to PHL_LAUNCH and PHL_LAUNCH2 when env contains only commas and spaces", () => {
     process.env.MERCHANT_PROMO_IDS = ", , , ";
-    expect(getMerchantPromoIds()).toEqual(["PHL_LAUNCH"]);
+    expect(getMerchantPromoIds()).toEqual(["PHL_LAUNCH", "PHL_LAUNCH2"]);
   });
 
-  it("falls back to PHL_LAUNCH when env contains only whitespace", () => {
+  it("falls back to PHL_LAUNCH and PHL_LAUNCH2 when env contains only whitespace", () => {
     process.env.MERCHANT_PROMO_IDS = "   ";
-    expect(getMerchantPromoIds()).toEqual(["PHL_LAUNCH"]);
+    expect(getMerchantPromoIds()).toEqual(["PHL_LAUNCH", "PHL_LAUNCH2"]);
   });
 
   it("source emits exactly one <g:promotion_id> template per promo ID inside the per-item builder", () => {

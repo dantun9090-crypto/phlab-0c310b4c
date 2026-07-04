@@ -53,13 +53,13 @@ export const DEFAULT_MERCHANT_PROMO_ID = "PHL_LAUNCH";
 export function getMerchantPromoIds(): string[] {
   const raw = process.env.MERCHANT_PROMO_IDS;
   if (!raw || typeof raw !== "string") {
-    return [DEFAULT_MERCHANT_PROMO_ID];
+    return [DEFAULT_MERCHANT_PROMO_ID, "PHL_LAUNCH2"];
   }
   const ids = raw
     .split(",")
     .map((s: string) => s.trim())
     .filter((s: string) => s.length > 0);
-  return ids.length > 0 ? ids : [DEFAULT_MERCHANT_PROMO_ID];
+  return ids.length > 0 ? ids : [DEFAULT_MERCHANT_PROMO_ID, "PHL_LAUNCH2"];
 }
 
 const MERCHANT_PROMO_IDS: string[] = getMerchantPromoIds();
