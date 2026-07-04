@@ -337,14 +337,14 @@ export default function InventoryTab() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-[#2a4a7a]">
+                  <td colSpan={8} className="text-center py-12 text-[#2a4a7a]">
                     <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
                     Loading inventory...
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-12 text-[#2a4a7a]">No products found.</td>
+                  <td colSpan={8} className="text-center py-12 text-[#2a4a7a]">No products found.</td>
                 </tr>
               ) : (
                 filtered.map((product) => (
