@@ -30,6 +30,7 @@ import ComplianceTab from './tabs/ComplianceTab';
 import AuditLogTab from './tabs/AuditLogTab';
 import EmailMarketingTab from './tabs/EmailMarketingTab';
 import EmailPreviewTab from './tabs/EmailPreviewTab';
+import EmailQueueTab from './tabs/EmailQueueTab';
 import IpWhitelistTab from './tabs/IpWhitelistTab';
 import SEOTab from './tabs/SEOTab';
 import { FeaturedProductsTab } from './tabs/FeaturedProductsTab';
