@@ -23,7 +23,10 @@ export type AdminAuditAction =
   | 'coupon.create'
   | 'coupon.delete'
   | 'settings.update'
-  | 'ipWhitelist.update';
+  | 'ipWhitelist.update'
+  | 'marketing.campaign.send'
+  | 'marketing.campaign.test'
+  | 'marketing.campaign.requeue';
 
 interface LogPayload {
   action: AdminAuditAction;
