@@ -42,7 +42,11 @@ const CURRENCY = "GBP";
 const FEED_REVISION = "prohealth-grok-safe-v4-semrush-20260627";
 
 // Hard block — never list (active pharma trial / disapproved molecules).
-const HARD_BLOCKED_NAMES = ["tirzepatide", "semaglutide"];
+// Free Listings: allow all molecules in current UK catalogue. Semaglutide
+// stays blocked as it's not in inventory and is an active pharma trial name.
+// Tirzepatide is included in Free Listings per admin request (2026-07-04);
+// Google decides final approval per its policies.
+const HARD_BLOCKED_NAMES = ["semaglutide"];
 
 // CAS lookup by molecule keyword (lowercase substring → CAS number).
 const CAS_BY_KEYWORD: Array<[string, string]> = [
