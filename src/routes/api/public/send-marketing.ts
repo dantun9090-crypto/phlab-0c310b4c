@@ -27,6 +27,10 @@ const SendBody = z.object({
   html: z.string().trim().min(1).max(200000),
   recipients: z.array(Recipient).min(1).max(1000),
   campaignId: z.string().max(120).optional(),
+  // dryRun: only analyse placeholders + fallback usage, do NOT enqueue.
+  dryRun: z.boolean().optional(),
+  // strict: refuse to send when unknown placeholders remain unresolved.
+  strict: z.boolean().optional(),
 });
 
 const RequeueBody = z.object({
