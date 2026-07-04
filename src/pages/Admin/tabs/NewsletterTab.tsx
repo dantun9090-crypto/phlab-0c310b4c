@@ -453,6 +453,7 @@ function SettingsPanel() {
       toast.success('Popup settings saved.');
       void logAdminAction({
         action: 'marketing.popup.update',
+        target: 'newsletter_config/popup',
         meta: {
           isEnabled: config.isEnabled,
           delaySeconds: config.delaySeconds,
