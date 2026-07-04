@@ -1036,6 +1036,16 @@ export default function EmailMarketingTab() {
 
               <button
                 type="button"
+                onClick={() => runValidation()}
+                disabled={validating || !subject.trim() || !body.trim() || !customerCount}
+                className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 rounded-xl text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {validating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                {validating ? 'Checking…' : 'Validate placeholders'}
+              </button>
+
+              <button
+                type="button"
                 onClick={handleSend}
                 disabled={sending || !subject.trim() || !body.trim() || !customerCount}
                 className="flex items-center gap-2 px-5 py-2.5 bg-pink-600 hover:bg-pink-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold transition-colors ml-auto"
@@ -1044,6 +1054,55 @@ export default function EmailMarketingTab() {
                 {sending ? 'Queuing...' : `Send to ${customerCount ?? '…'} recipients`}
               </button>
             </div>
+
+            {/* Validation report */}
+            {validation && (
+              <div className={`mt-3 rounded-xl border p-4 space-y-2 text-xs ${
+                validation.unknownPlaceholders.length > 0
+                  ? 'bg-red-500/10 border-red-500/30 text-red-200'
+                  : validation.hasPersonalisation && validation.fallbackFirstNameCount === 0
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'
+                    : 'bg-amber-500/10 border-amber-500/30 text-amber-200'
+              }`}>
+                <div className="flex items-center gap-2 font-semibold">
+                  {validation.unknownPlaceholders.length > 0
+                    ? <><AlertCircle className="w-4 h-4" /> Placeholder issues detected</>
+                    : validation.hasPersonalisation && validation.fallbackFirstNameCount === 0
+                      ? <><CheckCircle2 className="w-4 h-4" /> All placeholders will resolve for every recipient</>
+                      : <><AlertCircle className="w-4 h-4" /> Placeholder warnings</>}
+                </div>
+                <ul className="space-y-1 pl-1">
+                  <li>
+                    Known placeholders:{' '}
+                    {validation.knownPlaceholders.length === 0
+                      ? <span className="italic opacity-70">none (no personalisation)</span>
+                      : validation.knownPlaceholders.map(p => (
+                          <span key={p} className="inline-block font-mono bg-black/20 px-1.5 py-0.5 rounded mr-1">{p}</span>
+                        ))}
+                  </li>
+                  {validation.unknownPlaceholders.length > 0 && (
+                    <li>
+                      Unknown (will ship as literal text):{' '}
+                      {validation.unknownPlaceholders.map(p => (
+                        <span key={p} className="inline-block font-mono bg-red-950/40 border border-red-500/40 px-1.5 py-0.5 rounded mr-1">{p}</span>
+                      ))}
+                    </li>
+                  )}
+                  <li>
+                    Fallback "there" will be used for{' '}
+                    <span className="font-semibold">{validation.fallbackFirstNameCount}</span>{' '}
+                    of <span className="font-semibold">{validation.recipientCount}</span>{' '}
+                    recipients ({validation.fallbackAffectsPct}%).
+                  </li>
+                  {validation.fallbackEmailsSample.length > 0 && (
+                    <li className="opacity-80">
+                      Sample: <span className="font-mono">{validation.fallbackEmailsSample.slice(0, 5).join(', ')}</span>
+                      {validation.fallbackFirstNameCount > 5 && ` +${validation.fallbackFirstNameCount - 5} more`}
+                    </li>
+                  )}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
 
