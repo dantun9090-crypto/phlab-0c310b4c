@@ -264,7 +264,7 @@ jobs:
             "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json" \
-            --data '{"files":["https://phlabs.co.uk/","https://www.phlabs.co.uk/"]}' \
+            --data '{"files":["https://phlabs.co.uk/","https://phlabs.co.uk/products","https://phlabs.co.uk/about","https://www.phlabs.co.uk/","https://www.phlabs.co.uk/products","https://www.phlabs.co.uk/about"]}' \
             | tee /tmp/purge.json
           echo
           grep -q '"success":true' /tmp/purge.json || { echo "::error::Scoped purge failed"; exit 1; }
