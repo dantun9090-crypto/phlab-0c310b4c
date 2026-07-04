@@ -21,7 +21,7 @@ const PROMO_HEADLINE = "Launch promo — save on your research order";
 const DISMISS_KEY = "phl_landing_promo_dismissed_v2";
 const DISMISS_DAYS = 7;
 
-const STARTER_HREF = "/products/bacteriostatic-water-research-compound";
+const STARTER_SLUG = "bacteriostatic-water-research-compound";
 const STARTER_TITLE = "Bacteriostatic Water — Laboratory Diluent";
 const STARTER_SUB = "0.9% Benzyl Alcohol · Reagent grade · For Research Use Only";
 const STARTER_PRICE = "£6.99";
@@ -109,7 +109,8 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
           </span>
         ))}
         <Link
-          to={STARTER_HREF}
+          to="/products/$slug"
+          params={{ slug: STARTER_SLUG }}
           className={`inline-flex items-center rounded-full px-4 py-1.5 text-[11px] uppercase tracking-[0.2em] font-medium transition-colors ${cta}`}
         >
           Start with {STARTER_PRICE} reagent →
@@ -126,7 +127,8 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
 
       {/* Mobile-tappable starter card row (visible only on /landing/phlabs hero) */}
       <Link
-        to={STARTER_HREF}
+        to="/products/$slug"
+        params={{ slug: STARTER_SLUG }}
         className="sr-only"
         aria-label={`${STARTER_TITLE} — ${STARTER_PRICE}. ${STARTER_SUB}`}
       >

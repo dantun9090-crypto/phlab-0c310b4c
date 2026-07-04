@@ -4,7 +4,7 @@
 // secret so the key never lives in the client bundle or repo.
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/$indexnowKey.txt')({
+export const Route = createFileRoute('/{$indexnowKey}.txt')({
   server: {
     handlers: {
       GET: async ({ params }) => {
@@ -13,8 +13,9 @@ export const Route = createFileRoute('/$indexnowKey.txt')({
           return new Response('IndexNow key not configured', { status: 503 });
         }
 
-        // Expected request: /{key}.txt
-        const requested = (params as Record<string, string>)['indexnowKey.txt'];
+        // Expected request: /{key}.txt — `.txt` is a literal suffix, so the
+        // captured param is just the key.
+        const requested = (params as Record<string, string>).indexnowKey;
         if (requested !== key) {
           // Let the SPA / 404 handler take over for anything else.
           return new Response('Not Found', { status: 404 });
