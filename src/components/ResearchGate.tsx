@@ -229,8 +229,28 @@ export default function ResearchGate() {
           outline-offset: 2px;
           border-radius: 4px;
         }
+        .rg-modal-overlay {
+          /* Use dynamic viewport height so mobile browser chrome (URL bar)
+             collapsing/expanding never leaves the modal clipped. */
+          height: 100dvh;
+          min-height: 100svh;
+        }
+        .rg-cta { min-height: 48px; }
+        .rg-dismiss { min-height: 44px; }
         @media (max-width: 480px) {
-          .rg-modal-card { border-radius: 14px !important; }
+          .rg-modal-overlay {
+            padding: max(10px, env(safe-area-inset-top))
+                     max(10px, env(safe-area-inset-right))
+                     max(10px, env(safe-area-inset-bottom))
+                     max(10px, env(safe-area-inset-left)) !important;
+          }
+          .rg-modal-card {
+            border-radius: 14px !important;
+            padding: 20px 18px 18px !important;
+          }
+          .rg-modal-card h2 { font-size: 19px !important; line-height: 1.22 !important; }
+          .rg-modal-card .rg-check-list { gap: 8px !important; margin-bottom: 20px !important; }
+          .rg-modal-card .rg-check-list li span:last-child { font-size: 12.5px !important; }
           .rg-banner-text-full { display: none !important; text-align: center !important; }
           .rg-banner-text-short { display: block !important; }
         }
