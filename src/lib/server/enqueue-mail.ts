@@ -20,6 +20,7 @@ export interface MailPayload {
   to: string;
   message: { subject: string; html: string; text: string };
   source?: string;
+  campaignId?: string;
   cc?: string | string[];
   bcc?: string | string[];
   replyTo?: string;

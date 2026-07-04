@@ -111,16 +111,19 @@ export default function EmailQueueTab() {
           template: data.template?.name || null,
         };
       });
+      const mailStatusById = new Map(mailRows.map((row) => [row.id, row]));
 
       const queueRows: MailRow[] = queueSnap.docs.map((d) => {
         const data: any = d.data() || {};
         const createdAt = toDate(data.createdAt);
-        const sentAt = toDate(data.sentAt) || toDate(data.processedAt);
-        const status: UiStatus =
+        const linkedMail = typeof data.mailDocId === 'string' ? mailStatusById.get(data.mailDocId) : undefined;
+        const sentAt = linkedMail?.sentAt || toDate(data.sentAt) || toDate(data.processedAt);
+        const status: UiStatus = linkedMail?.status || (
           data.status === 'sent' ? 'sent'
           : data.status === 'failed' || data.error ? 'failed'
           : data.status === 'processing' || data.status === 'pending' || !data.status ? 'queued'
-          : 'unknown';
+          : 'unknown'
+        );
         return {
           id: d.id,
           source: 'emailQueue',
@@ -128,10 +131,10 @@ export default function EmailQueueTab() {
           subject: data.subject || data.template || '(no subject)',
           createdAt,
           sentAt,
-          attempts: data.attempts || 0,
-          state: data.status || null,
+          attempts: linkedMail?.attempts || data.attempts || 0,
+          state: linkedMail?.state || data.status || null,
           status,
-          error: data.error || null,
+          error: linkedMail?.error || data.error || null,
           template: data.template || null,
         };
       });
@@ -244,8 +247,8 @@ export default function EmailQueueTab() {
         <div className="inline-flex rounded-lg border border-slate-700 bg-slate-900 p-1">
           {([
             { k: 'all', label: 'All sources' },
-            { k: 'mail', label: 'Transactional (mail)' },
-            { k: 'emailQueue', label: 'Marketing (emailQueue)' },
+            { k: 'mail', label: 'Send queue (mail)' },
+            { k: 'emailQueue', label: 'Marketing history' },
           ] as const).map((s) => (
             <button
               key={s.k}
