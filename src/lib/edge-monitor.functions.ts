@@ -20,6 +20,8 @@ const ORIGIN = 'https://phlabs.co.uk';
 
 const GOOGLEBOT_UA =
   'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html) Chrome/120.0.0.0 Safari/537.36';
+const FIREBASE_API_KEY = 'AIzaSyB5sWYCTkzeFFup0mqyg3PzCIzjP2oGJdM';
+const AUTH_IFRAME_URL = `${ORIGIN}/__/auth/iframe?apiKey=${FIREBASE_API_KEY}&appName=%5BDEFAULT%5D&v=10.12.2`;
 
 export interface Probe {
   id: string;
@@ -83,7 +85,7 @@ export async function runEdgeMonitor(): Promise<MonitorSample> {
     timedFetch(`${ORIGIN}/`, { headers: { 'x-probe-id': 'cf-home' } }),
     timedFetch(`${ORIGIN}/products`, { headers: { 'x-probe-id': 'cf-products' } }),
     timedFetch(`${ORIGIN}/sitemap.xml`, { headers: { 'x-probe-id': 'cf-sitemap' } }),
-    timedFetch(`${ORIGIN}/__/auth/iframe`, { headers: { 'x-probe-id': 'firebase-auth-iframe' } }),
+    timedFetch(AUTH_IFRAME_URL, { headers: { 'x-probe-id': 'firebase-auth-iframe' } }),
     timedFetch(`${ORIGIN}/`, {
       headers: { 'x-probe-id': 'prerender-home', 'User-Agent': GOOGLEBOT_UA, Accept: 'text/html' },
     }),

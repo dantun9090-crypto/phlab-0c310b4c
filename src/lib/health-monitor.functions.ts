@@ -14,7 +14,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { requireFirebaseAdmin } from './server/firebase-auth-admin';
-import { listDocsAdmin, updateDocAdmin } from './server/firestore-admin';
+import { addDocAdmin, getDocAdmin, listDocsAdmin, updateDocAdmin } from './server/firestore-admin';
 
 const CF_ZONE_ID = 'ed093ef4578e8e3568e26c3e979558c6';
 const ORIGIN = 'https://phlabs.co.uk';
@@ -221,6 +221,16 @@ export async function purgeCloudflareEverything(): Promise<{
 
 const TokenSchema = z.object({ idToken: z.string().min(20).max(4096) });
 
+const InfraListSchema = TokenSchema.extend({
+  limit: z.number().int().min(1).max(200).default(50),
+});
+
+type InfraRow = Record<string, unknown> & { id: string };
+
+function compactError(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
 export const getCacheHealth = createServerFn({ method: 'POST' })
   .validator((input: unknown) => TokenSchema.parse(input))
   .handler(async ({ data }) => {
@@ -321,6 +331,109 @@ export const acknowledgeHealthAlert = createServerFn({ method: 'POST' })
       acknowledged: true,
       acknowledgedAt: new Date().toISOString(),
       acknowledgedBy: user.email ?? user.uid,
+    });
+    return { ok: true as const };
+  });
+
+export const listInfraHealthChecks = createServerFn({ method: 'POST' })
+  .validator((input: unknown) => InfraListSchema.parse(input))
+  .handler(async ({ data }): Promise<{ ok: boolean; rows: InfraRow[]; error?: string }> => {
+    await requireFirebaseAdmin(data.idToken);
+    try {
+      const rows = await listDocsAdmin('health_checks', {
+        orderBy: 'timestamp',
+        direction: 'DESCENDING',
+        limit: data.limit,
+      });
+      return { ok: true, rows };
+    } catch (e) {
+      return { ok: false, rows: [], error: compactError(e) };
+    }
+  });
+
+export const listInfraHealthAlerts = createServerFn({ method: 'POST' })
+  .validator((input: unknown) => TokenSchema.parse(input))
+  .handler(async ({ data }): Promise<{ ok: boolean; rows: InfraRow[]; error?: string }> => {
+    await requireFirebaseAdmin(data.idToken);
+    try {
+      const rows = await listDocsAdmin('health_alerts', {
+        orderBy: 'timestamp',
+        direction: 'DESCENDING',
+        limit: 50,
+      });
+      return { ok: true, rows };
+    } catch (e) {
+      return { ok: false, rows: [], error: compactError(e) };
+    }
+  });
+
+export const runInfraHealthCheckNow = createServerFn({ method: 'POST' })
+  .validator((input: unknown) => TokenSchema.parse(input))
+  .handler(async ({ data }) => {
+    const user = await requireFirebaseAdmin(data.idToken);
+    const res = await fetch(`${ORIGIN}/api/public/health-deep`, { cache: 'no-store' });
+    const report = (await res.json().catch(() => null)) as null | Record<string, unknown>;
+    if (!report) return { ok: false as const, status: res.status, overall: null, error: 'invalid_health_response' };
+
+    const timestamp = Date.now();
+    const row = {
+      ...report,
+      timestamp,
+      createdAt: new Date().toISOString(),
+      triggeredBy: user.uid,
+      httpStatus: res.status,
+    };
+    await addDocAdmin('health_checks', row);
+
+    if (report.overall === 'FAIL') {
+      const checks = (report.checks ?? {}) as Record<string, { status?: string; detail?: string }>;
+      const failedChecks = Object.entries(checks)
+        .filter(([, v]) => v?.status === 'FAIL')
+        .map(([k]) => k);
+      await addDocAdmin('health_alerts', {
+        timestamp,
+        createdAt: new Date().toISOString(),
+        failedChecks,
+        details: failedChecks.map((k) => `${k}: ${checks[k]?.detail ?? 'failed'}`).join('\n'),
+        notified: false,
+        source: 'manual_admin_check',
+      });
+    }
+
+    await addDocAdmin('auditLogs', {
+      adminUid: user.uid,
+      action: 'infra_health.run',
+      target: 'health_checks',
+      before: null,
+      after: { overall: report.overall ?? null, httpStatus: res.status },
+      timestamp: new Date().toISOString(),
+      ip: 'server',
+    });
+
+    return { ok: res.ok, status: res.status, overall: report.overall ?? null };
+  });
+
+export const acknowledgeInfraHealthAlert = createServerFn({ method: 'POST' })
+  .validator((input: unknown) =>
+    TokenSchema.extend({ id: z.string().min(1).max(160) }).parse(input),
+  )
+  .handler(async ({ data }) => {
+    const user = await requireFirebaseAdmin(data.idToken);
+    const before = await getDocAdmin('health_alerts', data.id).catch(() => null);
+    const after = {
+      notified: true,
+      acknowledgedAt: new Date().toISOString(),
+      acknowledgedBy: user.uid,
+    };
+    await updateDocAdmin('health_alerts', data.id, after);
+    await addDocAdmin('auditLogs', {
+      adminUid: user.uid,
+      action: 'infra_health.alert_ack',
+      target: `health_alerts/${data.id}`,
+      before,
+      after,
+      timestamp: new Date().toISOString(),
+      ip: 'server',
     });
     return { ok: true as const };
   });

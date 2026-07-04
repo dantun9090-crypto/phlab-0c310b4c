@@ -22,6 +22,7 @@ import {
   type VitalsAlert,
   type DailyVitalsPoint,
 } from "@/lib/web-vitals-trends.functions";
+import { auth } from "@/lib/firebase";
 
 type MetricName = "LCP" | "CLS" | "INP" | "FCP" | "TTFB";
 
@@ -66,10 +67,12 @@ export default function WebVitalsTab() {
     setLoading(true);
     setError(null);
     try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error("Sign in as admin first");
       const [summary, trend, alertRows] = await Promise.all([
-        fetchSummary({ data: { days: d } }),
-        fetchTrends({ data: { days: d } }),
-        fetchAlerts({ data: { days: Math.max(d, 7), limit: 50 } }),
+        fetchSummary({ data: { days: d, idToken } }),
+        fetchTrends({ data: { days: d, idToken } }),
+        fetchAlerts({ data: { days: Math.max(d, 7), limit: 50, idToken } }),
       ]);
       setData(summary);
       setTrends(trend);
