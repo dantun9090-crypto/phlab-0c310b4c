@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useEffect as useEffectAlias } from 'react';
 import {
   Plus, Search, Edit2, Trash2, AlertTriangle,
-  Loader2, X
+  Loader2, X, Check,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import {
   Product,
   getAllProducts, updateProduct, deleteProduct,
@@ -13,6 +14,142 @@ import { ProductEditor } from '@/components/ProductEditor';
 import { submitToIndexNow } from '@/lib/indexnow.functions';
 
 const LOW_STOCK_THRESHOLD = 10;
+
+/**
+ * Inline-editable cell for numeric fields (price / stock).
+ * Click → input opens with current value; Enter or blur saves via updateProduct;
+ * Esc cancels. Shows a spinner during save and a green tick briefly on success.
+ */
+function InlineNumberCell({
+  productId,
+  field,
+  value,
+  format,
+  step,
+  min,
+  onSaved,
+}: {
+  productId: string;
+  field: 'price' | 'stock';
+  value: number;
+  format: (n: number) => string;
+  step: string;
+  min: number;
+  onSaved: (n: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(String(value));
+  const [saving, setSaving] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffectAlias(() => { if (editing) inputRef.current?.select(); }, [editing]);
+
+  const commit = async () => {
+    const parsed = field === 'stock' ? parseInt(draft, 10) : parseFloat(draft);
+    if (isNaN(parsed) || parsed < min) {
+      toast.error(`Invalid ${field}`);
+      setDraft(String(value));
+      setEditing(false);
+      return;
+    }
+    if (parsed === value) { setEditing(false); return; }
+    setSaving(true);
+    try {
+      await updateProduct(productId, { [field]: parsed } as any);
+      onSaved(parsed);
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 1200);
+      toast.success(`${field === 'price' ? 'Price' : 'Stock'} updated`);
+    } catch (e: any) {
+      toast.error(`Save failed: ${e?.message || 'unknown error'}`);
+      setDraft(String(value));
+    } finally {
+      setSaving(false);
+      setEditing(false);
+    }
+  };
+
+  if (!editing) {
+    return (
+      <button
+        type="button"
+        onClick={() => { setDraft(String(value)); setEditing(true); }}
+        className="inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-blue-500/15 transition-colors group cursor-pointer"
+        title={`Click to edit ${field}`}
+      >
+        <span>{format(value)}</span>
+        {justSaved && <Check className="w-3 h-3 text-green-400" />}
+        {!justSaved && <Edit2 className="w-3 h-3 text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity" />}
+      </button>
+    );
+  }
+
+  return (
+    <div className="inline-flex items-center gap-1">
+      <input
+        ref={inputRef}
+        type="number"
+        value={draft}
+        step={step}
+        min={min}
+        disabled={saving}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') commit();
+          if (e.key === 'Escape') { setDraft(String(value)); setEditing(false); }
+        }}
+        onBlur={commit}
+        className="w-20 px-2 py-1 bg-[#1e293b] border-2 border-blue-500 rounded text-white text-sm text-right focus:outline-none"
+      />
+      {saving && <Loader2 className="w-3 h-3 animate-spin text-blue-400" />}
+    </div>
+  );
+}
+
+/** Inline visibility dropdown — saves immediately on change. */
+function InlineVisibility({
+  productId,
+  value,
+  onSaved,
+}: {
+  productId: string;
+  value: 'active' | 'hidden' | 'out_of_stock';
+  onSaved: (v: 'active' | 'hidden' | 'out_of_stock') => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const styles: Record<string, string> = {
+    active: 'bg-emerald-900/40 text-emerald-300 border-emerald-500/30',
+    hidden: 'bg-gray-800 text-gray-400 border-gray-600',
+    out_of_stock: 'bg-red-900/40 text-red-300 border-red-500/30',
+  };
+  return (
+    <select
+      value={value}
+      disabled={saving}
+      onChange={async (e) => {
+        const next = e.target.value as 'active' | 'hidden' | 'out_of_stock';
+        setSaving(true);
+        try {
+          await updateProduct(productId, { visibility: next });
+          onSaved(next);
+          toast.success(`Set to ${next.replace('_', ' ')}`);
+        } catch (err: any) {
+          toast.error(`Save failed: ${err?.message || 'error'}`);
+        } finally {
+          setSaving(false);
+        }
+      }}
+      className={`px-2 py-1 rounded text-xs font-medium border cursor-pointer transition-colors ${styles[value] || styles.active} ${saving ? 'opacity-50' : ''}`}
+    >
+      <option value="active">Active</option>
+      <option value="hidden">Hidden</option>
+      <option value="out_of_stock">Out of stock</option>
+    </select>
+  );
+}
+
+
 
 export default function InventoryTab() {
   const [products, setProducts] = useState<Product[]>([]);
