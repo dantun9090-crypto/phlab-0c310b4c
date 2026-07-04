@@ -466,6 +466,91 @@ export default function EmailMarketingTab() {
     }
   };
 
+  const handleSendTest = async () => {
+    const emails = testRecipients
+      .split(/[,\s;]+/)
+      .map(s => s.trim().toLowerCase())
+      .filter(s => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s));
+    if (!subject.trim() || !body.trim()) {
+      setMsg({ type: 'error', text: 'Subject and body are required.' });
+      return;
+    }
+    if (emails.length === 0) {
+      setMsg({ type: 'error', text: 'Enter at least one valid test email address.' });
+      return;
+    }
+    setSendingTest(true);
+    setMsg(null);
+    try {
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Not signed in as admin');
+      // Match test emails to a known customer so [First Name] resolves; fall back to the local-part.
+      const recipients = emails.map(email => {
+        const match = customers.find(c => c.email?.toLowerCase() === email);
+        const localGuess = email.split('@')[0].split(/[._-]/)[0];
+        const firstName = match?.firstName || (localGuess ? localGuess[0].toUpperCase() + localGuess.slice(1) : undefined);
+        const lastName = match?.lastName || undefined;
+        return {
+          email,
+          firstName,
+          lastName,
+          name: firstName ? `${firstName} ${lastName || ''}`.trim() : undefined,
+        };
+      });
+      const res = await fetch('/api/public/send-marketing', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          idToken,
+          subject: `[TEST] ${subject.trim()}`,
+          html: body.trim(),
+          recipients,
+        }),
+      });
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || !result.ok) throw new Error(result.error || result.detail || `HTTP ${res.status}`);
+      setMsg({
+        type: 'success',
+        text: `Test sent to ${result.enqueued} address${result.enqueued === 1 ? '' : 'es'}: ${emails.join(', ')}. Arrives within 1–2 min.`,
+      });
+      setTimeout(() => setMsg(null), 10000);
+      loadHistory();
+    } catch (e: any) {
+      setMsg({ type: 'error', text: 'Test send failed: ' + (e?.message || 'unknown error') });
+    } finally {
+      setSendingTest(false);
+    }
+  };
+
+  // Build 3 personalisation samples from real customers (or synthetic if none) so admin
+  // can see how [First Name] renders per recipient before sending.
+  const previewSamples = (() => {
+    const base = customers.filter(c => c.email).slice(0, 3);
+    const fallback = [
+      { id: 'x1', email: 'anna.kowalska@example.com', firstName: 'Anna', lastName: 'Kowalska' },
+      { id: 'x2', email: 'john@example.com', firstName: 'John', lastName: '' },
+      { id: 'x3', email: 'noname@example.com', firstName: '', lastName: '' },
+    ] as Customer[];
+    const list = base.length > 0 ? base : fallback;
+    return list.map(c => {
+      const firstName = (c.firstName || '').trim();
+      const lastName = (c.lastName || '').trim();
+      const fullName = `${firstName} ${lastName}`.trim();
+      const vars = {
+        firstName: firstName || 'there',
+        lastName,
+        fullName: fullName || firstName || 'there',
+        email: c.email,
+      };
+      return {
+        email: c.email,
+        rawFirstName: firstName || '(missing)',
+        subject: personalisePreview(subject, vars),
+        body: personalisePreview(body, vars),
+      };
+    });
+  })();
+
   const selectedTpl = TEMPLATES.find(t => t.id === selectedTemplate);
 
   return (
