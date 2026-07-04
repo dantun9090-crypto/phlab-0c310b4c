@@ -577,7 +577,7 @@ export default function AdminPage() {
     qc: 'QC Dashboard', orders: 'Orders', customers: 'Customers',
     compliance: 'Compliance', auditlog: 'Audit Log', authevents: 'Auth Events', visitors: 'Visitors', liveactivity: 'Live Activity', toastaudit: 'Toast Audit', cartevents: 'Cart Events', mailhealth: 'Mail Health', invoices: 'Invoices', banner: 'Promo Banner',
     adverts: 'Adverts', landing: 'Landing Pages', policies: 'Policies',
-    marketing: 'Marketing', emailmarketing: 'Email Campaigns', emailpreview: 'Email Preview',
+    marketing: 'Marketing', emailmarketing: 'Email Campaigns', emailpreview: 'Email Preview', emailqueue: 'Email Queue & Delivery',
     seo: 'SEO Settings', sitemap: 'Sitemap Manager', settings: 'Site Settings',
     tools: 'Tools', themes: 'Themes', database: 'Database', backup: 'Backup', firestorebackups: 'Firestore Backups',
     ipwhitelist: 'IP Whitelist', promocodes: 'Promo Codes', freegift: 'Free Gift Promo', diagnostics: 'Diagnostics',
