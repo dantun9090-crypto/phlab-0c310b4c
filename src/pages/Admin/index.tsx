@@ -513,6 +513,7 @@ export default function AdminPage() {
         case 'emailmarketing': return <EmailMarketingTab />;
 
         case 'emailpreview': return <EmailPreviewTab />;
+        case 'emailqueue': return <EmailQueueTab />;
         case 'ipwhitelist': return <IpWhitelistTab />;
         case 'featured': return <FeaturedProductsTab />;
         case 'seo': return <SEOTab />;
