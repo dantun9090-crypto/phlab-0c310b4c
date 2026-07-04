@@ -352,48 +352,38 @@ export default function EmailMarketingTab() {
     setMsg(null);
 
     try {
-      // The Firebase "Trigger Email" extension only watches the `mail`
-      // collection — writing to `emailQueue` alone means nothing is ever
-      // sent. Enqueue into BOTH: `mail` (actually sends), and `emailQueue`
-      // (audit trail / history UI / EmailQueueTab dashboard).
-      const campaignId = `campaign_${Date.now()}`;
-      const bodyHtml = body.trim();
-      const bodyText = bodyHtml.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+      // Enqueue via server route (uses Firebase Admin SDK — bypasses
+      // client-side Firestore rules that previously failed with
+      // "Missing or insufficient permissions"). Writes to BOTH `mail`
+      // (Trigger Email extension sends) and `emailQueue` (audit trail).
+      const idToken = await auth.currentUser?.getIdToken();
+      if (!idToken) throw new Error('Not signed in as admin');
 
-      const batchWrites = customers.flatMap(c => {
-        const recipientName = c.firstName ? `${c.firstName} ${c.lastName || ''}`.trim() : c.email;
-        return [
-          // 1) Actually send via Trigger Email extension
-          addDoc(collection(db, 'mail'), {
-            to: c.email,
-            message: {
-              subject: subject.trim(),
-              html: bodyHtml,
-              text: bodyText,
-            },
-            createdAt: Timestamp.now(),
-            source: 'admin:marketing',
-            campaignId,
-          }),
-          // 2) Audit row for the Email Marketing history + Email Queue tab
-          addDoc(collection(db, 'emailQueue'), {
-            to: c.email,
-            recipientName,
-            subject: subject.trim(),
-            body: bodyHtml,
-            status: 'queued',
-            createdAt: Timestamp.now(),
-            campaignId,
-            recipientCount: customers.length,
-            source: 'admin:marketing',
-          }),
-        ];
+      const res = await fetch('/api/public/send-marketing', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          idToken,
+          subject: subject.trim(),
+          html: body.trim(),
+          recipients: customers.map(c => ({
+            email: c.email,
+            name: c.firstName ? `${c.firstName} ${c.lastName || ''}`.trim() : undefined,
+          })),
+        }),
       });
-      await Promise.all(batchWrites);
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || !result.ok) {
+        throw new Error(result.error || result.detail || `HTTP ${res.status}`);
+      }
 
-      setMsg({ type: 'success', text: `Campaign queued for ${customers.length} recipient${customers.length === 1 ? '' : 's'}. Delivery starts within a few minutes via the Trigger Email extension.` });
+      setMsg({
+        type: 'success',
+        text: `Campaign queued for ${result.enqueued} recipient${result.enqueued === 1 ? '' : 's'}${result.failed ? ` (${result.failed} failed)` : ''}. Delivery starts within a few minutes.`,
+      });
       setTimeout(() => setMsg(null), 8000);
       loadHistory();
+
     } catch (e: any) {
       setMsg({ type: 'error', text: 'Failed to queue campaign: ' + (e?.message || 'unknown error') });
     } finally {
