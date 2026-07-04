@@ -62,6 +62,10 @@ export default function ResearchGate() {
   // Route param is :id on /products/:id
   const params = useParams<{ id?: string }>();
 
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const ctaRef = useRef<HTMLButtonElement | null>(null);
+  const prevFocusRef = useRef<HTMLElement | null>(null);
+
   // Hydration-safe: read localStorage only after mount so SSR HTML and the
   // first client render match.
   useEffect(() => {
