@@ -527,6 +527,7 @@ export default function ResearchGate() {
 
             {/* ── CTA button ── */}
             <button
+              ref={ctaRef}
               className="rg-cta"
               onClick={handleConfirm}
               onMouseEnter={() => setBtnHover(true)}
