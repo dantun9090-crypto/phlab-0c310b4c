@@ -31,19 +31,19 @@ type WorkerCtx = {
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
-// Per-isolate guard so post-publish-check fires at most once per Worker
-// isolate per unique BUILD_ID. Prior implementation relied on a client-side
-// mount fetch that never ran (Prerender serves static HTML to bots; CF
-// edge-caches HTML for humans) — so `_meta/build_state` fell 4 days stale
-// and every deploy required manual purges. This SSR-side trigger fires on
-// the first real request that reaches a new isolate carrying a new
-// BUILD_ID and awaits the invalidation via ctx.waitUntil so CF keeps the
-// isolate alive until the purge completes.
-let postPublishFiredForBuildId: string | null = null;
+// Per-isolate guard keyed by BUILD_ID. Cloudflare can reuse an isolate across
+// deploys; a single boolean/string gate can therefore suppress the next build's
+// trigger. A Set makes the guard explicitly per-build while still deduping
+// repeat requests inside the same isolate.
+const postPublishCheckedBuildIds = new Set<string>();
 function maybeTriggerPostPublish(request: Request, ctx: WorkerCtx): void {
   const buildId = typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev";
-  if (postPublishFiredForBuildId === buildId) return;
-  postPublishFiredForBuildId = buildId;
+  if (postPublishCheckedBuildIds.has(buildId)) return;
+  postPublishCheckedBuildIds.add(buildId);
+  if (postPublishCheckedBuildIds.size > 12) {
+    const oldest = postPublishCheckedBuildIds.values().next().value;
+    if (oldest) postPublishCheckedBuildIds.delete(oldest);
+  }
   const url = new URL(request.url);
   const origin = `${url.protocol}//${url.host}`;
   const p = fetch(`${origin}/api/public/post-publish-check`, {
