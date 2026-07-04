@@ -76,6 +76,33 @@ function safeMailId(campaignId: string, email: string): string {
     .slice(0, 1400);
 }
 
+function personalise(
+  template: string,
+  vars: { firstName: string; lastName: string; fullName: string; email: string },
+): string {
+  // Replace [First Name], {{firstName}}, {first_name}, etc. — case-insensitive,
+  // tolerant of spaces/underscores/hyphens inside the placeholder.
+  const map: Record<string, string> = {
+    firstname: vars.firstName,
+    first: vars.firstName,
+    name: vars.firstName || vars.fullName,
+    fullname: vars.fullName,
+    lastname: vars.lastName,
+    last: vars.lastName,
+    email: vars.email,
+  };
+  const key = (raw: string) => raw.toLowerCase().replace(/[\s_-]+/g, "");
+  return template
+    .replace(/\[([a-zA-Z][a-zA-Z\s_-]{0,30})\]/g, (m, k) => {
+      const v = map[key(k)];
+      return v != null && v !== "" ? v : m;
+    })
+    .replace(/\{\{\s*([a-zA-Z][a-zA-Z\s_-]{0,30})\s*\}\}/g, (m, k) => {
+      const v = map[key(k)];
+      return v != null && v !== "" ? v : m;
+    });
+}
+
 async function enqueueMarketingMail(input: {
   to: string;
   subject: string;
