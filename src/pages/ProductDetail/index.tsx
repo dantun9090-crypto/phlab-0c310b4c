@@ -1396,8 +1396,8 @@ export default function ProductDetail() {
 
                   {/* Main image */}
                   <div
-                    className="relative flex items-center justify-center w-full px-16"
-                    style={{ maxHeight: 'calc(100vh - 140px)' }}
+                    className="relative flex items-center justify-center w-full px-4 sm:px-16"
+                    style={{ maxHeight: 'calc(100dvh - 140px)' }}
                     onClick={(e) => e.stopPropagation()}
                     onTouchStart={handleTouchStart}
                     onTouchEnd={(e) => handleTouchEnd(e, count)}
@@ -1410,7 +1410,7 @@ export default function ProductDetail() {
                         sizes="100vw"
 
                         alt={`${product.name} — HPLC-tested research peptide UK, image ${selectedImageIdx + 1}`}
-                        className="max-w-full max-h-[calc(100vh-140px)] object-contain rounded-xl select-none"
+                        className="max-w-full max-h-[calc(100dvh-140px)] object-contain rounded-xl select-none"
                         initial={{ opacity: 0, scale: 0.96 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 1.03 }}
