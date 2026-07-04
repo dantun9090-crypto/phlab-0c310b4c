@@ -92,19 +92,10 @@ export default function ResearchGate() {
     setConfirmed(already);
     if (already || isExempt) return;
 
-    if (isProductPage && params.id) {
-      // Per-product gate: only show modal if the product has requiresResearchGate = true
-      fetchProductRequiresGate(params.id).then(requires => {
-        if (requires === true) {
-          const t = setTimeout(() => setShowModal(true), 400);
-          return () => clearTimeout(t);
-        }
-      });
-    } else {
-      // Homepage and other non-exempt pages: show gate modal
-      const t = setTimeout(() => setShowModal(true), 400);
-      return () => clearTimeout(t);
-    }
+    // Unified behaviour: show the research gate on the homepage and on every
+    // product page (and any other non-exempt route). No per-product flag check.
+    const t = setTimeout(() => setShowModal(true), 400);
+    return () => clearTimeout(t);
   }, [location.pathname]);
 
   // Lock body scroll while modal is open so the page behind can't scroll and
