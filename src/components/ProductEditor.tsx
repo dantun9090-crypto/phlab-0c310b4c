@@ -304,6 +304,15 @@ export function ProductEditor({ product, isOpen, onClose, onSave }: ProductEdito
   const [coaError, setCoaError] = useState('');
   const coaInputRef = useRef<HTMLInputElement>(null);
 
+  // ── Tabs / live validation / autosave ─────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<EditorTab>('basics');
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [autosaveStatus, setAutosaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [autosaveError, setAutosaveError] = useState<string>('');
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipNextAutosave = useRef(true); // don't autosave on initial form population
+
   useEffect(() => {
     if (product) {
       pendingId.current = product.id;
