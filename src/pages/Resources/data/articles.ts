@@ -858,7 +858,7 @@ In mouse melanocyte and human primary melanocyte cultures, MT-II at 1–100 nM i
     publishDate: '2026-04-08',
     excerpt: 'Semax is a synthetic heptapeptide analogue of ACTH(4-10) developed by the Institute of Molecular Genetics in Moscow. Research documents significant BDNF and NGF upregulation, neuroprotective effects in ischaemia models, and memory-enhancing properties in rodent studies — all without the corticotropic activity of native ACTH.',
     keywords: ['Semax', 'ACTH analogue', 'BDNF', 'neuroprotection', 'cognitive enhancement', 'ischaemia', 'nootropic peptide'],
-    relatedSlugs: ['selank-anxiolytic-nootropic-peptide', 'epithalon-telomere-epigenetic-research', 'ipamorelin-ghrp-research'],
+    relatedSlugs: ['selank-anxiolytic-nootropic-peptide', 'mots-c-mitochondrial-derived-peptide', 'ipamorelin-ghrp-research'],
     content: [
       {
         body: `Semax (Met-Glu-His-Phe-Pro-Gly-Pro) is a synthetic heptapeptide derived from the core sequence of ACTH(4-7) (Met-Glu-His-Phe), extended by a C-terminal Pro-Gly-Pro tripeptide that confers resistance to enzymatic degradation and modifies pharmacokinetic properties. Crucially, the modifications eliminate the corticotropic activity of native ACTH — Semax does not stimulate cortisol release via the adrenal axis — while preserving and amplifying the neurotrophic and neuroprotective properties mapped to the ACTH(4-10) fragment.`
@@ -1421,7 +1421,7 @@ Standard MC4R/MC3R pharmacology assays include: cAMP HTRF or AlphaScreen assays 
     publishDate: '2026-04-05',
     excerpt: 'GLOW Blend is a research formulation combining five synergistic peptides — GHK-Cu, Epithalon, BPC-157, Thymosin Beta-4, and Melanotan II — each targeting distinct molecular pathways involved in skin homeostasis, collagen remodelling, oxidative defence, tissue repair, and melanogenesis. This review examines the mechanistic basis of each component and the biological rationale for multi-peptide co-administration in dermal biology research.',
     keywords: ['GLOW Blend', 'GHK-Cu', 'Epithalon', 'BPC-157', 'Thymosin Beta-4', 'Melanotan II', 'skin peptides', 'collagen research', 'melanogenesis', 'photoprotection', 'skin biology'],
-    relatedSlugs: ['bpc-157-tissue-repair', 'epithalon-telomere-research', 'klow-blend-cognitive-research'],
+    relatedSlugs: ['bpc-157-tissue-repair', 'ghk-cu-copper-peptide-research', 'klow-blend-cognitive-research'],
     content: [
       {
         body: `Skin is a complex multi-layered organ whose structural integrity and functional resilience depend on a tightly orchestrated interplay of extracellular matrix (ECM) proteins, immune cells, melanocytes, fibroblasts, and keratinocytes. Ageing, ultraviolet (UV) radiation, and chronic inflammation converge on shared molecular targets — collagen degradation, oxidative DNA damage, telomere attrition, and dysregulated melanogenesis — producing the characteristic phenotypes of photoaged and chronologically aged skin. Peptide-based research tools that target these pathways with mechanistic precision have become invaluable for understanding and potentially modulating skin biology at the molecular level.
