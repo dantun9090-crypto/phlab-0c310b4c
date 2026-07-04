@@ -1,64 +1,200 @@
 name: Edge SWR guard
 
-# Post-publish sanity check: verifies the live Cloudflare edge is serving
-# `Cloudflare-CDN-Cache-Control: ...stale-while-revalidate=60` on the apex
-# and www hosts. If either host still advertises the old 86400s SWR (or
-# any value other than 60), the job FAILS — blocking the deploy from being
-# marked green so we don't silently pin day-old HTML at the edge again.
+# Post-publish + drift sanity check for phlabs.co.uk.
+# Verifies live edge advertises `Cloudflare-CDN-Cache-Control: ...stale-while-revalidate=60`
+# on apex and www. If not:
+#   1. Attempts `wrangler rollback --yes` (revert to last known good deployment)
+#   2. Falls back to `wrangler deploy` if rollback fails/unavailable
+#   3. Runs a SCOPED cache purge (only phlabs.co.uk/* + www.phlabs.co.uk/*, never purge_everything)
+#   4. Re-probes and reports
 #
-# Runs automatically after every push to main (post-publish) and can be
-# dispatched manually to re-verify after a Worker redeploy.
+# Retry counter is persisted in branch `state/swr-guard` (file `.swr-guard-state.json`)
+# and capped at MAX_AUTO_REDEPLOYS to prevent runaway loops. Counter resets on
+# success or when the UTC date changes.
+#
+# Slack notifications: pushed to SLACK_WEBHOOK_URL. If the secret is unset the
+# payload is printed to workflow logs instead — the job never fails on missing Slack.
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:
   schedule:
-    # Hourly drift check — catches out-of-band Worker rollbacks.
-    - cron: "17 * * * *"
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      force_redeploy:
+        description: "Bypass probe and force remediation (still respects MAX_AUTO_REDEPLOYS)"
+        required: false
+        default: "false"
+        type: boolean
 
 concurrency:
   group: edge-swr-guard
   cancel-in-progress: false
 
+permissions:
+  contents: write
+  issues: write
+
 jobs:
-  verify:
-    name: Verify stale-while-revalidate=60 on live edge
+  guard:
+    name: Verify SWR=60 on live edge (apex + www)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
       EXPECTED_SWR: "60"
-      CF_ZONE_ID: ed093ef4578e8e3568e26c3e979558c6
-      CF_ACCOUNT_ID: 2e52fa1ba0b76b79976789b02cf9e80a
+      MAX_AUTO_REDEPLOYS: "3"
       WORKER_NAME: phlabs-prerender
       WORKER_SRC: cloudflare/phlabs-prerender.mjs
+      CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+      CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      STATE_BRANCH: state/swr-guard
+      STATE_FILE: .swr-guard-state.json
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      HOSTS: "https://phlabs.co.uk/ https://www.phlabs.co.uk/"
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repo (main)
+        uses: actions/checkout@v4
 
-      - name: Probe edge headers and enforce SWR=60
+      - name: Install tooling (jq + wrangler)
+        shell: bash
+        run: |
+          set -e
+          if ! command -v jq >/dev/null 2>&1; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq jq
+          fi
+          npm i -g wrangler@latest >/dev/null 2>&1
+
+      - name: Chmod probe script
+        shell: bash
+        run: chmod +x scripts/probe-swr.sh
+
+      # ---- Load retry-counter state from state branch ----
+      - name: Load retry state
+        id: state
+        shell: bash
+        run: |
+          set -euo pipefail
+          today="$(date -u +%Y-%m-%d)"
+          count=0
+          if git ls-remote --exit-code --heads origin "${STATE_BRANCH}" >/dev/null 2>&1; then
+            git fetch origin "${STATE_BRANCH}:${STATE_BRANCH}" --depth=1 || true
+            raw="$(git show "${STATE_BRANCH}:${STATE_FILE}" 2>/dev/null || echo '{}')"
+            stored_date="$(printf '%s' "$raw" | jq -r '.date // ""')"
+            stored_count="$(printf '%s' "$raw" | jq -r '.count // 0')"
+            if [ "$stored_date" = "$today" ]; then count="$stored_count"; fi
+          fi
+          echo "count=${count}" >> "$GITHUB_OUTPUT"
+          echo "today=${today}"  >> "$GITHUB_OUTPUT"
+          echo "Current retry counter: ${count}/${MAX_AUTO_REDEPLOYS} (date=${today})"
+
+      # ---- Probe both hosts ----
+      - name: Probe apex + www
         id: probe
         shell: bash
         run: |
-          set -euo pipefail
-          bash .github/workflows/scripts/probe-swr.sh
-          echo "swr_ok=true" >> "$GITHUB_OUTPUT"
+          set +e
+          mkdir -p /tmp/swr
+          overall=0
+          statuses=()
+          for host in $HOSTS; do
+            name="$(echo "$host" | sed -E 's~https?://~~; s~/.*$~~')"
+            out="/tmp/swr/${name}.json"
+            scripts/probe-swr.sh "$host" "$EXPECTED_SWR" > "$out"
+            rc=$?
+            status="$(jq -r '.status' "$out")"
+            statuses+=("${name}:${status}")
+            echo "::group::Probe $host ($status, rc=$rc)"
+            cat "$out"
+            echo "::endgroup::"
+            if [ $rc -ne 0 ]; then overall=$rc; fi
+          done
+          jq -s '.' /tmp/swr/*.json > /tmp/swr/all.json
+          cat /tmp/swr/all.json
+          echo "overall_rc=${overall}" >> "$GITHUB_OUTPUT"
+          echo "summary=$(IFS=,; echo "${statuses[*]}")" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event.inputs.force_redeploy }}" = "true" ]; then
+            echo "force=true" >> "$GITHUB_OUTPUT"
+            echo "need_remediate=true" >> "$GITHUB_OUTPUT"
+          elif [ $overall -ne 0 ]; then
+            echo "force=false" >> "$GITHUB_OUTPUT"
+            echo "need_remediate=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "force=false" >> "$GITHUB_OUTPUT"
+            echo "need_remediate=false" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
 
-      # ---------- Auto-remediation ----------
-      # If the probe fails, redeploy the Worker from source and purge the
-      # edge cache. Then re-probe. If it still fails, the job fails and
-      # the "Open issue on failure" step files a ticket.
-      - name: Auto-remediate — redeploy Worker + purge edge
-        if: failure() && steps.probe.outcome == 'failure'
+      # ---- Slack: initial detection ----
+      - name: Notify Slack — probe result
+        if: steps.probe.outputs.need_remediate == 'true'
         shell: bash
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: 2e52fa1ba0b76b79976789b02cf9e80a
+          COUNTER: ${{ steps.state.outputs.count }}
         run: |
           set -euo pipefail
-          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
-            echo "::error::CLOUDFLARE_API_TOKEN secret is not set — cannot auto-remediate."
-            exit 1
+          color="#ffb300"
+          title="⚠️ Edge SWR mismatch detected"
+          if [ "${{ steps.probe.outputs.force }}" = "true" ]; then
+            title="🔧 Manual force_redeploy triggered"
           fi
+          probe_json="$(cat /tmp/swr/all.json)"
+          payload="$(jq -cn \
+            --arg color "$color" \
+            --arg title "$title" \
+            --arg summary "${{ steps.probe.outputs.summary }}" \
+            --arg counter "${COUNTER}/${MAX_AUTO_REDEPLOYS}" \
+            --arg run "$RUN_URL" \
+            --argjson probes "$probe_json" \
+            '{attachments:[{color:$color,title:$title,fields:[
+              {title:"Probe summary",value:$summary,short:false},
+              {title:"Retry counter",value:$counter,short:true},
+              {title:"Run",value:$run,short:true},
+              {title:"Probes",value:($probes|tostring),short:false}
+            ]}]}')"
+          bash .github/workflows/scripts/slack-notify.sh "$payload" "probe-detected"
+
+      # ---- Enforce max retries BEFORE remediating ----
+      - name: Check retry cap
+        id: cap
+        if: steps.probe.outputs.need_remediate == 'true'
+        shell: bash
+        env:
+          COUNTER: ${{ steps.state.outputs.count }}
+        run: |
+          if [ "$COUNTER" -ge "$MAX_AUTO_REDEPLOYS" ]; then
+            echo "over_cap=true" >> "$GITHUB_OUTPUT"
+            echo "::error::Auto-remediation cap reached (${COUNTER}/${MAX_AUTO_REDEPLOYS}). Manual intervention required."
+          else
+            echo "over_cap=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Notify Slack — cap reached (critical)
+        if: steps.cap.outputs.over_cap == 'true'
+        shell: bash
+        env:
+          COUNTER: ${{ steps.state.outputs.count }}
+        run: |
+          payload="$(jq -cn \
+            --arg counter "${COUNTER}/${MAX_AUTO_REDEPLOYS}" \
+            --arg run "$RUN_URL" \
+            '{attachments:[{color:"#d32f2f",title:"🚨 SWR guard cap reached — manual intervention required",
+              fields:[{title:"Retry counter",value:$counter,short:true},{title:"Run",value:$run,short:true}]}]}')"
+          bash .github/workflows/scripts/slack-notify.sh "$payload" "cap-reached"
+
+      # ---- Remediation: rollback first, fall back to deploy ----
+      - name: Remediate — rollback (preferred) or redeploy
+        id: remediate
+        if: steps.probe.outputs.need_remediate == 'true' && steps.cap.outputs.over_cap == 'false'
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          set +e
+          [ -n "$CLOUDFLARE_API_TOKEN" ] || { echo "::error::CF_API_TOKEN unset"; exit 1; }
 
           workdir="$(mktemp -d)"
           cp "$WORKER_SRC" "$workdir/worker.mjs"
@@ -68,52 +204,185 @@ jobs:
           compatibility_date = "2025-01-01"
           TOML
 
-          echo "::group::Redeploy ${WORKER_NAME}"
-          (cd "$workdir" && npx --yes wrangler@latest deploy)
+          method="unknown"
+          echo "::group::Attempt wrangler rollback"
+          (cd "$workdir" && wrangler rollback --name "$WORKER_NAME" --yes 2>&1) | tee /tmp/rollback.log
+          rb_rc=${PIPESTATUS[0]}
           echo "::endgroup::"
 
-          echo "::group::Purge Cloudflare edge cache (purge_everything)"
+          if [ $rb_rc -eq 0 ]; then
+            method="rollback"
+            echo "✅ Rollback succeeded"
+          else
+            echo "⚠️ Rollback failed/unavailable — falling back to deploy"
+            echo "::group::wrangler deploy"
+            (cd "$workdir" && wrangler deploy 2>&1) | tee /tmp/deploy.log
+            dp_rc=${PIPESTATUS[0]}
+            echo "::endgroup::"
+            if [ $dp_rc -eq 0 ]; then
+              method="deploy"
+              echo "✅ Deploy succeeded"
+            else
+              method="failed"
+              echo "::error::Both rollback and deploy failed"
+              echo "method=${method}" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
+          fi
+          echo "method=${method}" >> "$GITHUB_OUTPUT"
+
+          # ---- Scoped cache purge (NEVER purge_everything) ----
+          echo "::group::Scoped cache purge"
           curl -sS -X POST \
             "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
             -H "Content-Type: application/json" \
-            --data '{"purge_everything":true}' | tee /tmp/purge.json
+            --data '{"files":["https://phlabs.co.uk/","https://www.phlabs.co.uk/"]}' \
+            | tee /tmp/purge.json
           echo
-          grep -q '"success":true' /tmp/purge.json
+          grep -q '"success":true' /tmp/purge.json || { echo "::error::Scoped purge failed"; exit 1; }
           echo "::endgroup::"
 
-          echo "Waiting 30s for Worker route propagation…"
+          echo "Waiting 30s for propagation…"
           sleep 30
 
-      - name: Re-verify after auto-remediation
-        if: failure() && steps.probe.outcome == 'failure'
+      - name: Notify Slack — remediation triggered
+        if: steps.remediate.outcome != 'skipped'
+        shell: bash
+        env:
+          METHOD: ${{ steps.remediate.outputs.method }}
+          COUNTER: ${{ steps.state.outputs.count }}
+        run: |
+          color="#ffb300"; title="🛠 Remediation applied (${METHOD})"
+          if [ "$METHOD" = "failed" ]; then color="#d32f2f"; title="❌ Remediation failed"; fi
+          payload="$(jq -cn \
+            --arg color "$color" --arg title "$title" \
+            --arg method "$METHOD" \
+            --arg counter "${COUNTER}/${MAX_AUTO_REDEPLOYS}" \
+            --arg run "$RUN_URL" \
+            '{attachments:[{color:$color,title:$title,fields:[
+              {title:"Method",value:$method,short:true},
+              {title:"Counter",value:$counter,short:true},
+              {title:"Run",value:$run,short:false}
+            ]}]}')"
+          bash .github/workflows/scripts/slack-notify.sh "$payload" "remediated"
+
+      # ---- Re-probe after remediation ----
+      - name: Re-verify after remediation
+        id: reprobe
+        if: steps.remediate.outcome == 'success'
         shell: bash
         run: |
+          set +e
+          mkdir -p /tmp/swr2
+          overall=0
+          for host in $HOSTS; do
+            name="$(echo "$host" | sed -E 's~https?://~~; s~/.*$~~')"
+            out="/tmp/swr2/${name}.json"
+            scripts/probe-swr.sh "$host" "$EXPECTED_SWR" > "$out"
+            rc=$?
+            echo "::group::Re-probe $host"
+            cat "$out"; echo "::endgroup::"
+            if [ $rc -ne 0 ]; then overall=$rc; fi
+          done
+          jq -s '.' /tmp/swr2/*.json > /tmp/swr2/all.json
+          echo "overall_rc=${overall}" >> "$GITHUB_OUTPUT"
+          if [ $overall -eq 0 ]; then echo "verify=pass" >> "$GITHUB_OUTPUT"; else echo "verify=fail" >> "$GITHUB_OUTPUT"; fi
+          exit 0
+
+      # ---- Persist new retry counter ----
+      - name: Persist retry counter
+        if: always() && steps.probe.outputs.need_remediate == 'true' && steps.cap.outputs.over_cap == 'false'
+        shell: bash
+        env:
+          COUNTER: ${{ steps.state.outputs.count }}
+          TODAY: ${{ steps.state.outputs.today }}
+          VERIFY: ${{ steps.reprobe.outputs.verify }}
+        run: |
           set -euo pipefail
-          bash .github/workflows/scripts/probe-swr.sh
+          if [ "$VERIFY" = "pass" ]; then new=0; else new=$((COUNTER+1)); fi
+          echo "New counter: ${new}/${MAX_AUTO_REDEPLOYS}"
+
+          tmp="$(mktemp -d)"; cd "$tmp"
+          git init -q -b "$STATE_BRANCH"
+          git config user.email "swr-guard@phlabs.co.uk"
+          git config user.name  "swr-guard-bot"
+          jq -cn --arg d "$TODAY" --argjson c "$new" \
+            '{date:$d,count:$c,updated_at:(now|todate)}' > "$STATE_FILE"
+          git add "$STATE_FILE"
+          git commit -q -m "swr-guard: counter=${new} (${TODAY})"
+          git push -q --force "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" \
+            "HEAD:${STATE_BRANCH}"
+
+      - name: Notify Slack — final verify
+        if: steps.reprobe.outcome != 'skipped'
+        shell: bash
+        env:
+          VERIFY: ${{ steps.reprobe.outputs.verify }}
+          METHOD: ${{ steps.remediate.outputs.method }}
+          COUNTER: ${{ steps.state.outputs.count }}
+        run: |
+          if [ "$VERIFY" = "pass" ]; then color="#2e7d32"; title="✅ SWR=60 restored"; else color="#d32f2f"; title="❌ SWR still wrong after remediation"; fi
+          probe="$(cat /tmp/swr2/all.json)"
+          payload="$(jq -cn \
+            --arg color "$color" --arg title "$title" \
+            --arg method "${METHOD:-n/a}" \
+            --arg counter "${COUNTER}/${MAX_AUTO_REDEPLOYS}" \
+            --arg run "$RUN_URL" \
+            --argjson probes "$probe" \
+            '{attachments:[{color:$color,title:$title,fields:[
+              {title:"Method",value:$method,short:true},
+              {title:"Counter",value:$counter,short:true},
+              {title:"Run",value:$run,short:false},
+              {title:"Probes",value:($probes|tostring),short:false}
+            ]}]}')"
+          bash .github/workflows/scripts/slack-notify.sh "$payload" "verify-${VERIFY}"
+
+      # ---- Workflow summary ----
+      - name: Workflow summary
+        if: always()
+        shell: bash
+        env:
+          COUNTER: ${{ steps.state.outputs.count }}
+          PROBE_SUMMARY: ${{ steps.probe.outputs.summary }}
+          NEED: ${{ steps.probe.outputs.need_remediate }}
+          FORCE: ${{ steps.probe.outputs.force }}
+          METHOD: ${{ steps.remediate.outputs.method }}
+          VERIFY: ${{ steps.reprobe.outputs.verify }}
+          OVER_CAP: ${{ steps.cap.outputs.over_cap }}
+        run: |
           {
+            echo "## Edge SWR Guard"
             echo ""
-            echo "### 🛠 Auto-remediation succeeded"
-            echo "Redeployed \`${WORKER_NAME}\` and purged edge cache. Live SWR is now \`${EXPECTED_SWR}\`."
+            echo "| Metric | Value |"
+            echo "| --- | --- |"
+            echo "| Expected SWR | \`${EXPECTED_SWR}\` |"
+            echo "| Probe summary | \`${PROBE_SUMMARY:-n/a}\` |"
+            echo "| Force redeploy | \`${FORCE:-false}\` |"
+            echo "| Remediation needed | \`${NEED:-false}\` |"
+            echo "| Over retry cap | \`${OVER_CAP:-false}\` |"
+            echo "| Remediation method | \`${METHOD:-none}\` |"
+            echo "| Post-verify | \`${VERIFY:-n/a}\` |"
+            echo "| Retry counter (entry) | \`${COUNTER}/${MAX_AUTO_REDEPLOYS}\` |"
+            echo "| Slack configured | \`$([ -n "${SLACK_WEBHOOK_URL:-}" ] && echo yes || echo no)\` |"
+            echo "| Run | ${RUN_URL} |"
+            echo ""
+            if [ -s /tmp/swr/all.json ]; then
+              echo "### Initial probes"; echo '```json'; cat /tmp/swr/all.json; echo '```'
+            fi
+            if [ -s /tmp/swr2/all.json ]; then
+              echo "### Post-remediation probes"; echo '```json'; cat /tmp/swr2/all.json; echo '```'
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Open issue on failure
-        if: failure() && github.event_name != 'workflow_dispatch'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const sha = context.sha.slice(0, 7);
-            await github.rest.issues.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              title: `🚨 Edge SWR guard failed on ${sha}`,
-              labels: ['infra', 'cloudflare', 'post-deploy'],
-              body: [
-                `Live edge did not advertise \`stale-while-revalidate=60\` on \`Cloudflare-CDN-Cache-Control\`.`,
-                ``,
-                `**Build:** \`${context.sha}\``,
-                `**Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-                ``,
-                `Fix: redeploy the \`phlabs-prerender\` Worker from \`cloudflare/phlabs-prerender.mjs\` (SWR is set to 60 there) and purge the Cloudflare edge cache.`,
-              ].join('\n'),
-            });
+      - name: Fail job if unresolved
+        if: always()
+        shell: bash
+        env:
+          NEED: ${{ steps.probe.outputs.need_remediate }}
+          VERIFY: ${{ steps.reprobe.outputs.verify }}
+          OVER_CAP: ${{ steps.cap.outputs.over_cap }}
+        run: |
+          if [ "$OVER_CAP" = "true" ]; then exit 1; fi
+          if [ "$NEED" = "true" ] && [ "$VERIFY" != "pass" ]; then exit 1; fi
+          exit 0
