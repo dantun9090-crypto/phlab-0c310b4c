@@ -59,6 +59,7 @@ import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
 import { Route as AdminPublishStatusRouteImport } from './routes/admin.publish-status'
 import { Route as AdminMerchantFeedPreviewRouteImport } from './routes/admin.merchant-feed-preview'
 import { Route as AdminHealthRouteImport } from './routes/admin.health'
+import { Route as AdminAuditReportRouteImport } from './routes/admin.audit-report'
 import { Route as MarketingCompoundRouteImport } from './routes/_marketing.compound'
 import { Route as _e2eWatchdogPanelRouteImport } from './routes/__e2e.watchdog-panel'
 import { Route as _e2ePaymentOptionsRouteImport } from './routes/__e2e.payment-options'
@@ -80,6 +81,7 @@ import { Route as ApiPublicErrorMonitorRouteImport } from './routes/api/public/e
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as ApiPublicCoaPdfRouteImport } from './routes/api/public/coa-pdf'
 import { Route as ApiPublicCacheConfigRouteImport } from './routes/api/public/cache-config'
+import { Route as ApiPublicAuditReportRouteImport } from './routes/api/public/audit-report'
 import { Route as ApiPublicAdminErrorsRouteImport } from './routes/api/public/admin-errors'
 import { Route as ApiPaymentsStatusRouteImport } from './routes/api/payments/status'
 import { Route as ApiPaymentsCreateRouteImport } from './routes/api/payments/create'
@@ -363,6 +365,11 @@ const AdminHealthRoute = AdminHealthRouteImport.update({
   path: '/health',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminAuditReportRoute = AdminAuditReportRouteImport.update({
+  id: '/audit-report',
+  path: '/audit-report',
+  getParentRoute: () => AdminRoute,
+} as any)
 const MarketingCompoundRoute = MarketingCompoundRouteImport.update({
   id: '/compound',
   path: '/compound',
@@ -468,6 +475,11 @@ const ApiPublicCoaPdfRoute = ApiPublicCoaPdfRouteImport.update({
 const ApiPublicCacheConfigRoute = ApiPublicCacheConfigRouteImport.update({
   id: '/api/public/cache-config',
   path: '/api/public/cache-config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicAuditReportRoute = ApiPublicAuditReportRouteImport.update({
+  id: '/api/public/audit-report',
+  path: '/api/public/audit-report',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicAdminErrorsRoute = ApiPublicAdminErrorsRouteImport.update({
@@ -663,6 +675,7 @@ export interface FileRoutesByFullPath {
   '/payment-options': typeof _e2ePaymentOptionsRoute
   '/watchdog-panel': typeof _e2eWatchdogPanelRoute
   '/compound': typeof MarketingCompoundRoute
+  '/admin/audit-report': typeof AdminAuditReportRoute
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/admin/publish-status': typeof AdminPublishStatusRoute
@@ -687,6 +700,7 @@ export interface FileRoutesByFullPath {
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
+  '/api/public/audit-report': typeof ApiPublicAuditReportRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -762,6 +776,7 @@ export interface FileRoutesByTo {
   '/payment-options': typeof _e2ePaymentOptionsRoute
   '/watchdog-panel': typeof _e2eWatchdogPanelRoute
   '/compound': typeof MarketingCompoundRoute
+  '/admin/audit-report': typeof AdminAuditReportRoute
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/admin/publish-status': typeof AdminPublishStatusRoute
@@ -786,6 +801,7 @@ export interface FileRoutesByTo {
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
+  '/api/public/audit-report': typeof ApiPublicAuditReportRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -864,6 +880,7 @@ export interface FileRoutesById {
   '/__e2e/payment-options': typeof _e2ePaymentOptionsRoute
   '/__e2e/watchdog-panel': typeof _e2eWatchdogPanelRoute
   '/_marketing/compound': typeof MarketingCompoundRoute
+  '/admin/audit-report': typeof AdminAuditReportRoute
   '/admin/health': typeof AdminHealthRoute
   '/admin/merchant-feed-preview': typeof AdminMerchantFeedPreviewRoute
   '/admin/publish-status': typeof AdminPublishStatusRoute
@@ -888,6 +905,7 @@ export interface FileRoutesById {
   '/api/payments/create': typeof ApiPaymentsCreateRoute
   '/api/payments/status': typeof ApiPaymentsStatusRoute
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
+  '/api/public/audit-report': typeof ApiPublicAuditReportRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
@@ -966,6 +984,7 @@ export interface FileRouteTypes {
     | '/payment-options'
     | '/watchdog-panel'
     | '/compound'
+    | '/admin/audit-report'
     | '/admin/health'
     | '/admin/merchant-feed-preview'
     | '/admin/publish-status'
@@ -990,6 +1009,7 @@ export interface FileRouteTypes {
     | '/api/payments/create'
     | '/api/payments/status'
     | '/api/public/admin-errors'
+    | '/api/public/audit-report'
     | '/api/public/cache-config'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
@@ -1065,6 +1085,7 @@ export interface FileRouteTypes {
     | '/payment-options'
     | '/watchdog-panel'
     | '/compound'
+    | '/admin/audit-report'
     | '/admin/health'
     | '/admin/merchant-feed-preview'
     | '/admin/publish-status'
@@ -1089,6 +1110,7 @@ export interface FileRouteTypes {
     | '/api/payments/create'
     | '/api/payments/status'
     | '/api/public/admin-errors'
+    | '/api/public/audit-report'
     | '/api/public/cache-config'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
@@ -1166,6 +1188,7 @@ export interface FileRouteTypes {
     | '/__e2e/payment-options'
     | '/__e2e/watchdog-panel'
     | '/_marketing/compound'
+    | '/admin/audit-report'
     | '/admin/health'
     | '/admin/merchant-feed-preview'
     | '/admin/publish-status'
@@ -1190,6 +1213,7 @@ export interface FileRouteTypes {
     | '/api/payments/create'
     | '/api/payments/status'
     | '/api/public/admin-errors'
+    | '/api/public/audit-report'
     | '/api/public/cache-config'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
@@ -1281,6 +1305,7 @@ export interface RootRouteChildren {
   ApiPaymentsCreateRoute: typeof ApiPaymentsCreateRoute
   ApiPaymentsStatusRoute: typeof ApiPaymentsStatusRoute
   ApiPublicAdminErrorsRoute: typeof ApiPublicAdminErrorsRoute
+  ApiPublicAuditReportRoute: typeof ApiPublicAuditReportRoute
   ApiPublicCacheConfigRoute: typeof ApiPublicCacheConfigRoute
   ApiPublicCoaPdfRoute: typeof ApiPublicCoaPdfRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
@@ -1674,6 +1699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminHealthRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/audit-report': {
+      id: '/admin/audit-report'
+      path: '/audit-report'
+      fullPath: '/admin/audit-report'
+      preLoaderRoute: typeof AdminAuditReportRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_marketing/compound': {
       id: '/_marketing/compound'
       path: '/compound'
@@ -1819,6 +1851,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/cache-config'
       fullPath: '/api/public/cache-config'
       preLoaderRoute: typeof ApiPublicCacheConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/audit-report': {
+      id: '/api/public/audit-report'
+      path: '/api/public/audit-report'
+      fullPath: '/api/public/audit-report'
+      preLoaderRoute: typeof ApiPublicAuditReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/admin-errors': {
@@ -2033,12 +2072,14 @@ const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
 )
 
 interface AdminRouteChildren {
+  AdminAuditReportRoute: typeof AdminAuditReportRoute
   AdminHealthRoute: typeof AdminHealthRoute
   AdminMerchantFeedPreviewRoute: typeof AdminMerchantFeedPreviewRoute
   AdminPublishStatusRoute: typeof AdminPublishStatusRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
+  AdminAuditReportRoute: AdminAuditReportRoute,
   AdminHealthRoute: AdminHealthRoute,
   AdminMerchantFeedPreviewRoute: AdminMerchantFeedPreviewRoute,
   AdminPublishStatusRoute: AdminPublishStatusRoute,
@@ -2131,6 +2172,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPaymentsCreateRoute: ApiPaymentsCreateRoute,
   ApiPaymentsStatusRoute: ApiPaymentsStatusRoute,
   ApiPublicAdminErrorsRoute: ApiPublicAdminErrorsRoute,
+  ApiPublicAuditReportRoute: ApiPublicAuditReportRoute,
   ApiPublicCacheConfigRoute: ApiPublicCacheConfigRoute,
   ApiPublicCoaPdfRoute: ApiPublicCoaPdfRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
