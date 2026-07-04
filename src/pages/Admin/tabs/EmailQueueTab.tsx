@@ -118,11 +118,12 @@ export default function EmailQueueTab() {
         const createdAt = toDate(data.createdAt);
         const linkedMail = typeof data.mailDocId === 'string' ? mailStatusById.get(data.mailDocId) : undefined;
         const sentAt = linkedMail?.sentAt || toDate(data.sentAt) || toDate(data.processedAt);
-        const status: UiStatus = linkedMail?.status ||
+        const status: UiStatus = linkedMail?.status || (
           data.status === 'sent' ? 'sent'
           : data.status === 'failed' || data.error ? 'failed'
           : data.status === 'processing' || data.status === 'pending' || !data.status ? 'queued'
-          : 'unknown';
+          : 'unknown'
+        );
         return {
           id: d.id,
           source: 'emailQueue',
