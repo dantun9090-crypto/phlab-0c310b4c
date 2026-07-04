@@ -474,47 +474,8 @@ Combined administration of ipamorelin with CJC-1295 (a long-acting GHRH analogue
     ]
   },
 
-  // ---------------------------------------------
-  // 7. Epithalon
-  // ---------------------------------------------
-  {
-    slug: 'epithalon-telomere-research',
-    title: 'Epithalon (Epitalon): Telomerase Activation and Cellular Ageing Research',
-    subtitle: 'A review of the tetrapeptide Ala-Glu-Asp-Gly, its reported effects on telomerase activity, pineal gland function, and longevity markers in cellular and animal models',
-    category: 'Longevity Research',
-    readTime: 10,
-    publishDate: '2026-01-15',
-    excerpt: 'Epithalon (also Epitalon) is a synthetic tetrapeptide based on a natural substance secreted by the pineal gland. Research in cell culture and rodent models has associated it with telomerase activation, melatonin regulation, and extended lifespan indicators, generating significant interest in the ageing biology field.',
-    keywords: ['epithalon', 'epitalon', 'telomerase', 'telomere', 'pineal gland', 'ageing research', 'AEDG peptide'],
-    relatedSlugs: ['ipamorelin-ghrp-research', 'hplc-testing-explained', 'peptide-storage-reconstitution'],
-    content: [
-      {
-        body: `Epithalon (Ala-Glu-Asp-Gly; AEDG) is a synthetic tetrapeptide derived from epithalamin, a polypeptide extract of the bovine pineal gland first isolated and characterised by Vladimir Khavinson and colleagues at the St. Petersburg Institute of Bioregulation and Gerontology during the 1980s–1990s. Its four amino acid residues correspond to a biologically active fragment of epithalamin believed to mediate the peptide's interaction with nuclear chromatin and gene expression regulatory elements.`
-      },
-      {
-        heading: 'Telomerase Activation in Cell Culture',
-        body: `The most widely cited mechanism attributed to epithalon in research literature is activation of telomerase reverse transcriptase (hTERT). Telomerase is the enzyme responsible for adding TTAGGG hexanucleotide repeats to telomere ends, counteracting the progressive telomere shortening that occurs with each cell division. In normal somatic cells, hTERT expression is silenced post-developmentally, which contributes to the finite replicative capacity (Hayflick limit) of most cell types.
 
-Khavinson et al. reported that epithalon (at 0.1–10 nM concentrations in culture) increased hTERT mRNA expression in foetal human fibroblasts, extended their Hayflick limit by 3–7 additional passages, and maintained normal karyotypic stability — a critical distinction from telomerase activation by oncogenic transformation, which is associated with aneuploidy.`
-      },
-      {
-        heading: 'Pineal and Melatonin-Related Effects',
-        body: `As a pineal-derived peptide, epithalon has been studied in the context of age-related pineal function decline. With age, both pineal mass and nocturnal melatonin secretion decrease, contributing to circadian rhythm disruption and immunosenescence. In aged rat cohorts, intraperitoneal epithalon administration restored nocturnal melatonin peak values toward those of young-adult controls. The proposed mechanism is transcriptional upregulation of hydroxyindole-O-methyltransferase (HIOMT) and arylalkylamine N-acetyltransferase (AANAT) — the two rate-limiting enzymes in melatonin biosynthesis — in pinealocytes.`,
-        callout: {
-          type: 'note',
-          text: 'The majority of epithalon research originates from a single research group in St. Petersburg. Independent replication in Western research institutions is limited. Researchers should consider this when evaluating the weight of evidence.'
-        }
-      },
-      {
-        heading: 'Animal Longevity Studies',
-        body: `In longitudinal studies using Drosophila melanogaster, C57BL/6 mice, and SHR rats, chronic epithalon administration (typically by i.p. injection or nasal spray) was associated with statistically significant increases in median lifespan of 12–30% compared to saline controls. Tumour incidence was reduced in several studies, and age-related decline in motor performance and spatial memory was attenuated. Importantly, these findings were obtained in disease-prone or aged animals rather than young healthy specimens, which limits the interpretive scope but suggests potential utility as a research tool in geroscience model systems.`
-      }
-    ],
-    references: [
-      { id: 1, authors: 'Khavinson VKh, Bondarev IE, Butyugov AA.', year: 2003, title: 'Epithalon peptide induces telomerase activity and telomere elongation in human somatic cells', journal: 'Bull Exp Biol Med', doi: '10.1023/A:1025493705728' },
-      { id: 2, authors: 'Anisimov VN, Khavinson VKh, Popovich IG, et al.', year: 2003, title: 'Effect of Epitalon on biomarkers of aging, life span and spontaneous tumor incidence in female Swiss-derived SHR mice', journal: 'Biogerontology', doi: '10.1023/A:1025114230714' },
-    ]
-  },
+
 
   // ---------------------------------------------
   // 8. Peptide Storage and Reconstitution
