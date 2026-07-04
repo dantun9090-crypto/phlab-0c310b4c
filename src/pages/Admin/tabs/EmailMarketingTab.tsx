@@ -469,6 +469,11 @@ export default function EmailMarketingTab() {
       });
       const result = await res.json().catch(() => ({}));
       if (!res.ok || !result.ok) throw new Error(result.error || result.detail || `HTTP ${res.status}`);
+      await logAdminAction({
+        action: 'marketing.campaign.requeue',
+        target: `marketing/requeue/${Date.now()}`,
+        meta: { subject: pendingSubject, requeued: result.requeued ?? 0, duplicates: result.duplicates ?? 0 },
+      });
       setMsg({
         type: 'success',
         text: `Requeued ${result.requeued || 0} stuck email${result.requeued === 1 ? '' : 's'}${result.duplicates ? ` (${result.duplicates} already in send queue)` : ''}.`,
