@@ -761,6 +761,35 @@ export default function EmailMarketingTab() {
               <p className="text-gray-700 text-xs mt-1">{body.length} characters</p>
             </div>
 
+            {/* Test send — verify [First Name] substitution before broadcasting */}
+            <div className="bg-[#04101f]/60 border border-white/10 rounded-xl p-4 space-y-2">
+              <label className="block text-white text-xs font-semibold flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                Send test to a few addresses
+              </label>
+              <p className="text-[#7591b8] text-[11px]">
+                Comma-separated emails. Subject is prefixed with <span className="text-amber-300 font-mono">[TEST]</span>. Uses the same personalisation pipeline as the real send.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  value={testRecipients}
+                  onChange={e => setTestRecipients(e.target.value)}
+                  placeholder="you@example.com, other@example.com"
+                  className="flex-1 bg-white border border-gray-300 text-gray-900 text-sm placeholder-gray-400 py-2 px-3 rounded-lg focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-100 transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={handleSendTest}
+                  disabled={sendingTest || !subject.trim() || !body.trim() || !testRecipients.trim()}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed text-slate-950 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  {sendingTest ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {sendingTest ? 'Sending…' : 'Send test'}
+                </button>
+              </div>
+            </div>
+
             {/* Actions */}
             <div className="flex items-center gap-3 pt-1">
               <button
