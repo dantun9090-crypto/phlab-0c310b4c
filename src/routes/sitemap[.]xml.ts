@@ -5,7 +5,7 @@ import type {} from "@tanstack/react-start";
 // zmiana w jednym miejscu musi pociągać sitemap, robots, JSON-LD i canonical.
 // CI: scripts/check-url-consistency.ts + scripts/check-domains.ts.
 import { SITE_URL, assertCanonicalUrl } from "@/lib/seo-meta";
-import { buildSitemapEntries } from "@/lib/sitemap-entries";
+import { buildSitemapEntries, type SitemapEntry } from "@/lib/sitemap-entries";
 
 const BASE_URL = SITE_URL;
 
