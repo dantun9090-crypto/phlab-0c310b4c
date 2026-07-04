@@ -127,7 +127,8 @@ export function LandingPromoStrip({ theme = "dark" }: Props) {
 
       {/* Mobile-tappable starter card row (visible only on /landing/phlabs hero) */}
       <Link
-        to={STARTER_HREF}
+        to="/products/$slug"
+        params={{ slug: STARTER_SLUG }}
         className="sr-only"
         aria-label={`${STARTER_TITLE} — ${STARTER_PRICE}. ${STARTER_SUB}`}
       >
