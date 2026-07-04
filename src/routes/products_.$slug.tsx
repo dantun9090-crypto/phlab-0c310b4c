@@ -10,6 +10,7 @@ import { RESEARCH_CONTENT } from "@/lib/research-content";
 import { PRODUCT_ID_TO_SLUG, resolveSlugFromId } from "@/lib/product-id-slug-map";
 import { DUAL_ENTRY_ALIASES, getDualEntryAliasInfo } from "@/lib/merchant-dual-entries";
 import { PRODUCT_SEO_OVERRIDES } from "@/lib/product-seo-overrides";
+import { skuFor } from "@/lib/product-sku";
 
 const OG_IMAGE_FALLBACK = `${SITE_URL}/og-image.jpg`;
 
@@ -157,6 +158,12 @@ export const Route = createFileRoute("/products_/$slug")({
         }
       : null;
 
+    // Stable short SKU/MPN — matches the Google Merchant XML feeds so
+    // Merchant Center's feed↔landing-page cross-check sees identical values.
+    // Prefers an explicit product.sku set in Firestore, then keyword mapping,
+    // then a deterministic hash of the doc id as a last resort.
+    const stableSku = skuFor(product?.name, product?.id, product?.sku);
+
     const jsonLd: Record<string, any> = {
       "@context": "https://schema.org",
       "@type": "Product",
@@ -165,11 +172,22 @@ export const Route = createFileRoute("/products_/$slug")({
       description: baseDesc.slice(0, 5000),
       image,
       url,
-      sku: product?.id,
-      mpn: product?.id,
+      sku: stableSku,
+      mpn: stableSku,
       brand: { "@type": "Brand", name: "PH Labs", url: SITE_URL },
       manufacturer: { "@type": "Organization", name: "PH Labs UK", url: SITE_URL },
       category: product?.category,
+      // No real GTIN — mirror the XML feeds' <g:identifier_exists>false</g:...>
+      // so Merchant Center doesn't warn about a missing identifier when it
+      // cross-checks the landing page against the feed. schema.org has no
+      // dedicated field for this; Google reads it from a PropertyValue.
+      additionalProperty: [
+        {
+          "@type": "PropertyValue",
+          name: "identifier_exists",
+          value: "false",
+        },
+      ],
       // AggregateRating intentionally omitted — Google penalises self-published
       // ratings without verified third-party source. Stars will be sourced from
       // Google Customer Reviews (renderGoogleCustomerReviewsOptIn on
@@ -183,13 +201,11 @@ export const Route = createFileRoute("/products_/$slug")({
         unitCode: measure.code,
       };
       jsonLd.size = `${measure.value} ${measure.label}`;
-      jsonLd.additionalProperty = [
-        {
-          "@type": "PropertyValue",
-          name: "unit_pricing_measure",
-          value: `${measure.value} ${measure.label}`,
-        },
-      ];
+      jsonLd.additionalProperty.push({
+        "@type": "PropertyValue",
+        name: "unit_pricing_measure",
+        value: `${measure.value} ${measure.label}`,
+      });
     }
     if (product?.price) {
       const inStock = typeof product?.stock === "number" ? product.stock > 0 : true;
