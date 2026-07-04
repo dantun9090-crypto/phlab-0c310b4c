@@ -96,22 +96,14 @@ export default function ResearchGate() {
     setConfirmed(already);
     if (already || isExempt) return;
 
-    // Only show the gate on product pages whose product has
-    // requiresResearchGate = true. No modal on the homepage or any other
-    // route — those rely on the sticky banner only.
-    if (!isProductPage || !params.id) return;
+    // Show gate on homepage AND on every product page (bramka wymagana).
+    const isHome = location.pathname === '/' || location.pathname === '';
+    if (!isHome && !isProductPage) return;
 
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    fetchProductRequiresGate(params.id).then(requires => {
-      if (cancelled || requires !== true) return;
-      timer = setTimeout(() => setShowModal(true), 400);
-    });
-    return () => {
-      cancelled = true;
-      if (timer) clearTimeout(timer);
-    };
+    const timer = setTimeout(() => setShowModal(true), 400);
+    return () => clearTimeout(timer);
   }, [location.pathname]);
+
 
   // Lock body scroll while modal is open so the page behind can't scroll and
   // the modal always sits within the viewport instead of being pushed off.
