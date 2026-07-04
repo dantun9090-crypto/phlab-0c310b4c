@@ -120,6 +120,7 @@ service cloud.firestore {
     match /policies/{id}        { allow read: if true; allow write: if isAdmin(); }
     match /articles/{id}        { allow read: if true; allow write: if isAdmin(); }
     match /featuredProducts/{id}{ allow read: if true; allow write: if isAdmin(); }
+    match /newsletter_config/{id}{ allow read: if true; allow write: if isAdmin(); }
 
     // ---------- admin-only collections ----------
     match /coupons/{id}         { allow read: if isAdmin(); allow write: if isAdmin(); }
