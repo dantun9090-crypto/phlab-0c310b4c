@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import {
   Mail, Send, Users, FileText, Eye, EyeOff,
   CheckCircle2, AlertCircle, Loader2, ChevronDown,
-  Megaphone, Gift, Newspaper, Package, RefreshCw, Sparkles, Download
+  Megaphone, Gift, Newspaper, Package, RefreshCw, Sparkles, Download, UserX
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db, collection, addDoc, getDocs, Timestamp, query, where, orderBy, limit, deleteDoc, doc, auth } from '@/lib/firebase';
+import { logAdminAction } from '@/lib/admin-audit';
 
 interface EmailRecord {
   id: string;
