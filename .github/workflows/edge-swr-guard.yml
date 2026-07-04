@@ -25,77 +25,77 @@ jobs:
   verify:
     name: Verify stale-while-revalidate=60 on live edge
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
+    env:
+      EXPECTED_SWR: "60"
+      CF_ZONE_ID: ed093ef4578e8e3568e26c3e979558c6
+      CF_ACCOUNT_ID: 2e52fa1ba0b76b79976789b02cf9e80a
+      WORKER_NAME: phlabs-prerender
+      WORKER_SRC: cloudflare/phlabs-prerender.mjs
     steps:
+      - uses: actions/checkout@v4
+
       - name: Probe edge headers and enforce SWR=60
+        id: probe
         shell: bash
         run: |
           set -euo pipefail
+          bash .github/workflows/scripts/probe-swr.sh
+          echo "swr_ok=true" >> "$GITHUB_OUTPUT"
 
-          HOSTS=(
-            "https://phlabs.co.uk/"
-            "https://www.phlabs.co.uk/"
-          )
-          EXPECTED_SWR=60
-          # Retry a few times — Cloudflare route propagation after a Worker
-          # deploy can take ~30–60s on the very first request.
-          MAX_ATTEMPTS=6
-          SLEEP_BETWEEN=15
-
-          fail=0
-          summary=""
-
-          for url in "${HOSTS[@]}"; do
-            attempt=0
-            got=""
-            header=""
-            while [ $attempt -lt $MAX_ATTEMPTS ]; do
-              attempt=$((attempt+1))
-              # -L follows the apex→www or www→apex redirect if any so we
-              # measure the final response, not the 301.
-              header=$(curl -sSIL --max-time 15 \
-                -H "cache-control: no-cache" \
-                -A "phlabs-edge-swr-guard/1.0" \
-                "$url" \
-                | tr -d '\r' \
-                | grep -i '^cloudflare-cdn-cache-control:' \
-                | tail -n1 || true)
-              got=$(printf '%s' "$header" \
-                | grep -oiE 'stale-while-revalidate=[0-9]+' \
-                | tail -n1 \
-                | cut -d= -f2 || true)
-              if [ "$got" = "$EXPECTED_SWR" ]; then
-                break
-              fi
-              echo "::warning::[$url] attempt $attempt: got '${header:-<missing header>}' (swr='${got:-none}'), retrying in ${SLEEP_BETWEEN}s"
-              sleep "$SLEEP_BETWEEN"
-            done
-
-            if [ "$got" = "$EXPECTED_SWR" ]; then
-              line="✅ $url — $header"
-              echo "$line"
-            else
-              line="❌ $url — expected stale-while-revalidate=$EXPECTED_SWR, got '${header:-<missing header>}'"
-              echo "::error::$line"
-              fail=1
-            fi
-            summary="${summary}${line}"$'\n'
-          done
-
-          {
-            echo "## Edge SWR guard"
-            echo ""
-            echo "Expected: \`Cloudflare-CDN-Cache-Control: ...stale-while-revalidate=$EXPECTED_SWR\`"
-            echo ""
-            echo '```'
-            printf '%s' "$summary"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          if [ $fail -ne 0 ]; then
-            echo "::error::Edge SWR guard failed — Cloudflare Worker (phlabs-prerender) likely needs redeploy. See cloudflare/phlabs-prerender.mjs."
+      # ---------- Auto-remediation ----------
+      # If the probe fails, redeploy the Worker from source and purge the
+      # edge cache. Then re-probe. If it still fails, the job fails and
+      # the "Open issue on failure" step files a ticket.
+      - name: Auto-remediate — redeploy Worker + purge edge
+        if: failure() && steps.probe.outcome == 'failure'
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: 2e52fa1ba0b76b79976789b02cf9e80a
+        run: |
+          set -euo pipefail
+          if [ -z "${CLOUDFLARE_API_TOKEN:-}" ]; then
+            echo "::error::CLOUDFLARE_API_TOKEN secret is not set — cannot auto-remediate."
             exit 1
           fi
+
+          workdir="$(mktemp -d)"
+          cp "$WORKER_SRC" "$workdir/worker.mjs"
+          cat > "$workdir/wrangler.toml" <<TOML
+          name = "${WORKER_NAME}"
+          main = "worker.mjs"
+          compatibility_date = "2025-01-01"
+          TOML
+
+          echo "::group::Redeploy ${WORKER_NAME}"
+          (cd "$workdir" && npx --yes wrangler@latest deploy)
+          echo "::endgroup::"
+
+          echo "::group::Purge Cloudflare edge cache (purge_everything)"
+          curl -sS -X POST \
+            "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}' | tee /tmp/purge.json
+          echo
+          grep -q '"success":true' /tmp/purge.json
+          echo "::endgroup::"
+
+          echo "Waiting 30s for Worker route propagation…"
+          sleep 30
+
+      - name: Re-verify after auto-remediation
+        if: failure() && steps.probe.outcome == 'failure'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash .github/workflows/scripts/probe-swr.sh
+          {
+            echo ""
+            echo "### 🛠 Auto-remediation succeeded"
+            echo "Redeployed \`${WORKER_NAME}\` and purged edge cache. Live SWR is now \`${EXPECTED_SWR}\`."
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Open issue on failure
         if: failure() && github.event_name != 'workflow_dispatch'
