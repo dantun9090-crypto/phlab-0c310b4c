@@ -1,0 +1,81 @@
+name: Post-deploy Cloudflare purge
+
+# Auto-purges Cloudflare cache after every production deploy of phlabs.co.uk.
+# Triggers on push to main (which is when Lovable publishes) and on manual
+# dispatch. Uses SCOPED purge (never purge_everything) — matches Edge SWR
+# Guard scope.
+#
+# Safeguards:
+#  - Waits 30s to let the new Worker version propagate before purging.
+#  - Purge failure NEVER fails the workflow (deploy already succeeded).
+#  - Only runs for production domain (phlabs.co.uk + www.phlabs.co.uk).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: post-deploy-purge
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  purge:
+    name: Purge Cloudflare edge cache
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+    steps:
+      - name: Wait 30s for deploy propagation
+        run: sleep 30
+
+      - name: Scoped cache purge (phlabs.co.uk + www)
+        shell: bash
+        run: |
+          set +e
+          if [ -z "$CF_API_TOKEN" ] || [ -z "$CF_ZONE_ID" ]; then
+            echo "::warning::CF_API_TOKEN or CF_ZONE_ID not set — skipping purge (deploy not failed)"
+            exit 0
+          fi
+          payload='{"files":[
+            "https://phlabs.co.uk/",
+            "https://phlabs.co.uk/products",
+            "https://phlabs.co.uk/about",
+            "https://www.phlabs.co.uk/",
+            "https://www.phlabs.co.uk/products",
+            "https://www.phlabs.co.uk/about"
+          ]}'
+          resp=$(curl -sS -X POST \
+            "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "$payload")
+          echo "$resp"
+          if echo "$resp" | grep -q '"success":true'; then
+            echo "Cache purged successfully"
+          else
+            echo "::warning::Cache purge failed: $resp"
+          fi
+          exit 0
+
+      - name: Verify propagation
+        shell: bash
+        run: |
+          set +e
+          sleep 15
+          CB=$(date +%s%N)
+          fail=0
+          for path in "/" "/products" "/about"; do
+            url="https://phlabs.co.uk${path}?cb=${CB}"
+            hdrs=$(curl -sSIL --max-time 15 -H 'cache-control: no-cache' \
+              -A 'phlabs-post-deploy-purge/1.0' "$url")
+            cf=$(echo "$hdrs" | grep -i '^cf-cache-status:' | tail -n1 | tr -d '\r')
+            swr=$(echo "$hdrs" | grep -i '^cloudflare-cdn-cache-control:' | tail -n1 | tr -d '\r')
+            echo "${path} → ${cf} | ${swr}"
+          done
+          exit 0
