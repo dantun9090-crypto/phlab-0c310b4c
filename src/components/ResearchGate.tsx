@@ -292,35 +292,50 @@ export default function ResearchGate() {
           role="dialog"
           aria-modal="true"
           aria-label="Research use confirmation"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowModal(false);
+              notifyGateCleared();
+            }
+          }}
           style={{
             position: 'fixed', inset: 0,
             zIndex: 10000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 'max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left))',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            // "safe center" keeps the modal centered when it fits and pins it
+            // to the top when taller than the viewport, so the header is
+            // always reachable without needing to scroll the page underneath.
+            justifyContent: 'safe center',
+            padding: 'max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left))',
             overflowY: 'auto',
-            // Overlay: deep navy, not pure black — feels on-brand
+            overscrollBehavior: 'contain',
+            WebkitOverflowScrolling: 'touch',
             background: 'rgba(3, 8, 18, 0.84)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
           }}
         >
           <div
             className="rg-modal-card"
+            onClick={(e) => e.stopPropagation()}
             style={{
               position: 'relative',
               width: '100%',
               maxWidth: '452px',
-              maxHeight: 'calc(100svh - 24px)',
-              overflowY: 'auto',
-              // Card: matches site card bg (#0b1a30 area)
+              margin: 'auto 0',
               background: 'linear-gradient(162deg, #0c1c32 0%, #070f1d 100%)',
               border: '1px solid rgba(255,255,255,0.07)',
               borderRadius: '20px',
-              padding: 'clamp(28px,5vw,42px) clamp(22px,5vw,38px) clamp(22px,4vw,32px)',
+              padding: 'clamp(22px,4.5vw,38px) clamp(20px,5vw,34px) clamp(20px,4vw,28px)',
               boxShadow: [
                 '0 40px 100px rgba(0,0,0,0.7)',
                 '0 0 0 1px rgba(16,185,129,0.07) inset',
               ].join(', '),
             }}
           >
+
             {/* Top accent line */}
             <div style={{
               position: 'absolute', top: 0, left: '20%', right: '20%',
