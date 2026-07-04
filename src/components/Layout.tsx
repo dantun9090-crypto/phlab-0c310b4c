@@ -30,6 +30,7 @@ import DayNightToggle from './DayNightToggle';
 import { WhatsAppIcon, FacebookIcon, InstagramIcon, TwitterXIcon, YoutubeIcon } from './SocialIcons';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { initVisitorTracking, trackVisitorPageView } from '@/lib/visitor-tracking';
+import { DisclaimerBanner } from './DisclaimerBanner';
 
 interface SiteSettings {
   whatsappNumber?: string;
@@ -195,9 +196,7 @@ export function Layout({ children }: LayoutProps) {
   const researchBannerOffset = isLandingPage ? '0px' : 'var(--rg-banner-h, 0px)';
   const disclaimerVisible = !isCleanPage && !isLandingPage;
   const layoutVars = {
-    // The research disclaimer now lives inside the fixed header under the logo,
-    // so it must not add another row to the global page offset.
-    '--phl-disclaimer-h': '0px',
+    // --phl-disclaimer-h is controlled by DisclaimerBanner component
   } as CSSProperties;
   
   // Check if any cart items have no variant selected
@@ -652,16 +651,7 @@ export function Layout({ children }: LayoutProps) {
                   <span className="text-[10px] sm:text-[11px] text-emerald-400/90 font-semibold tracking-[0.22em] uppercase mt-0.5">Research Grade</span>
                 </div>
               </div>
-              {disclaimerVisible && (
-                <span
-                  id="phl-research-disclaimer"
-                  role="note"
-                  aria-label="Research use disclaimer"
-                  className="mt-1 block max-w-[200px] truncate text-[8px] font-bold uppercase tracking-[0.10em] text-emerald-200/65 sm:max-w-[320px] sm:tracking-[0.12em]"
-                >
-                  For Laboratory Research Use Only — Not for Human or Veterinary Consumption
-                </span>
-              )}
+              {/* Disclaimer moved to DisclaimerBanner component below header */}
             </Link>
 
             {/* ── Desktop + Mobile Nav (Navigation component) ── */}
@@ -890,12 +880,15 @@ export function Layout({ children }: LayoutProps) {
 
       </header>}
 
+      {/* Professional disclaimer banner — full-width amber strip below header */}
+      {disclaimerVisible && <DisclaimerBanner />}
+
       {/* Main content */}
       <main
         className="flex-1"
         style={isAuthPage
           ? { paddingTop: 0 }
-          : { paddingTop: 'calc(var(--rg-banner-h, 34px) + 32px + 64px + env(safe-area-inset-top))' }
+          : { paddingTop: 'calc(var(--rg-banner-h, 34px) + 32px + 64px + var(--phl-disclaimer-h, 0px) + env(safe-area-inset-top))' }
         }
       >
         {children}
