@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/public/sentry-peek")({
         const token = process.env.SENTRY_AUTH_TOKEN;
         const provided = request.headers.get("x-peek-secret");
         if (!secret || !token || provided !== secret) {
-          return new Response("nope", { status: 404 });
+          return Response.json({ hasSecret: !!secret, hasToken: !!token, providedLen: provided?.length || 0 }, { status: 404 });
         }
         const url = new URL(request.url);
         const statsPeriod = url.searchParams.get("statsPeriod") || "30d";
