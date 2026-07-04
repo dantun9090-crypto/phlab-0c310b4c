@@ -380,6 +380,8 @@ export default function EmailMarketingTab() {
           html: body.trim(),
           recipients: customers.map(c => ({
             email: c.email,
+            firstName: c.firstName || undefined,
+            lastName: c.lastName || undefined,
             name: c.firstName ? `${c.firstName} ${c.lastName || ''}`.trim() : undefined,
           })),
         }),
