@@ -843,46 +843,8 @@ In mouse melanocyte and human primary melanocyte cultures, MT-II at 1–100 nM i
     ]
   },
 
-  // ---------------------------------------------
-  // 12. Epithalon — Telomere and Epigenetic Research
-  // ---------------------------------------------
-  {
-    slug: 'epithalon-telomere-epigenetic-research',
-    title: 'Epithalon: Telomerase Activation, Epigenetic Remodelling, and Longevity Research',
-    subtitle: 'A scientific review of the synthetic tetrapeptide Epithalon (Ala-Glu-Asp-Gly), its interactions with telomerase, histone acetylation, and findings from long-term ageing models',
-    category: 'Longevity Research',
-    readTime: 10,
-    publishDate: '2026-04-07',
-    excerpt: 'Epithalon (Ala-Glu-Asp-Gly) is a synthetic tetrapeptide developed from the pineal peptide preparation Epithalamin. Preclinical research documents its ability to activate telomerase, elongate telomeres in somatic cells, modulate epigenetic histone marks, and extend lifespan in multiple model organisms.',
-    keywords: ['Epithalon', 'epithalamin', 'telomerase', 'telomere', 'epigenetics', 'longevity', 'ageing research', 'pineal peptide'],
-    relatedSlugs: ['ghk-cu-copper-peptide-research', 'selank-anxiolytic-nootropic-peptide', 'hplc-testing-explained'],
-    content: [
-      {
-        body: `Epithalon (also spelled Epitalon) is the synthetic tetrapeptide Ala-Glu-Asp-Gly, derived from the active fraction of Epithalamin — a polypeptide extract isolated from bovine pineal gland tissue and studied extensively by Vladimir Khavinson and colleagues at the Saint Petersburg Institute of Bioregulation. While Epithalamin showed broad biological activity in early Soviet-era research, Epithalon was synthesised to provide a chemically defined, reproducible analogue for research purposes.`
-      },
-      {
-        heading: 'Telomerase Activation and Telomere Biology',
-        body: `The most widely cited effect of Epithalon in the preclinical literature is its ability to activate telomerase (hTERT) and elongate telomeres in human somatic cells that normally lack telomerase activity. In a 2003 study by Khavinson et al., human fetal fibroblasts treated with Epithalon showed measurable elongation of telomere restriction fragments (TRFs) by Southern blotting, alongside elevated hTERT mRNA expression as assessed by RT-PCR. Importantly, the treated cells did not show signs of malignant transformation over extended culture — a concern when inducing telomerase in somatic cells — though researchers note that long-term safety must be evaluated in any specific research context. This telomere-extending activity has led to significant interest in Epithalon as a tool compound for cellular ageing and replicative senescence research.`
-      },
-      {
-        heading: 'Epigenetic Mechanisms',
-        body: `Beyond telomerase, Epithalon has been studied for epigenetic effects. In heterochromatin-rich regions of human lymphocytes, Epithalon treatment is associated with reduced methylation of histone H1 and H3 at specific lysine residues, and increased acetylation of H4 — epigenetic changes associated with more transcriptionally permissive chromatin states and gene expression patterns resembling younger cells. This chromatin remodelling activity provides a potential molecular basis for observed gene expression changes in aged animal models treated with Epithalon, where genes involved in antioxidant defence, DNA repair, and mitochondrial function showed upregulation.`
-      },
-      {
-        heading: 'In-Vivo Lifespan Data',
-        body: `Long-term Epithalon administration studies in inbred mice and Drosophila melanogaster showed statistically significant lifespan extensions of 12–28% compared to vehicle controls, depending on the study design and starting age at treatment initiation. In aged female rats, Epithalon treatment was associated with partial restoration of oestrous cycle regularity, suppression of spontaneous tumour development, and normalisation of corticosteroid secretion patterns. These findings, while generated primarily by the Khavinson group, have been partially replicated in independent studies and remain an active area of investigation in biogerontology research.`,
-        callout: {
-          type: 'note',
-          text: 'Epithalon research originates largely from Russian preclinical studies. While findings are scientifically interesting, independent replication in Western laboratory contexts is ongoing. Standard research-grade use precautions apply.'
-        }
-      }
-    ],
-    references: [
-      { id: 1, authors: 'Khavinson V, Diomede F, Mironova E, et al.', year: 2020, title: 'AEDG Peptide (Epitalon) Stimulates Gene Expression and Protein Synthesis during Neurogenesis', journal: 'Molecules', doi: '10.3390/molecules25020609' },
-      { id: 2, authors: 'Anisimov VN, Khavinson VKh, Provinciali M, et al.', year: 2006, title: 'Effect of the Peptide Epitalon on the Development of Spontaneous Mammary Tumors', journal: 'Oncology', doi: '10.1159/000094761' },
-      { id: 3, authors: 'Khavinson VKh, Bondarev IE, Butyugov AA.', year: 2003, title: 'Epithalon peptide induces telomerase activity and telomere elongation in human somatic cells', journal: 'Bull Exp Biol Med', doi: '10.1023/a:1025493705728' },
-    ]
-  },
+
+
 
   // ---------------------------------------------
   // 13. Semax — Cognitive and Neuroprotective Peptide
