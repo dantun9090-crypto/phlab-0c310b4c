@@ -48,6 +48,18 @@ type SubTab = 'subscribers' | 'settings';
 
 const PAGE_SIZE = 10;
 
+function safeHex(value: string | undefined, fallback: string) {
+  if (!value) return fallback;
+  const trimmed = value.trim();
+  return /^#[0-9a-f]{6}$/i.test(trimmed) ? trimmed : fallback;
+}
+
+function colourInputClass(isValid: boolean) {
+  return `mt-1 w-full min-h-[48px] px-3 rounded-lg bg-slate-800 border-2 text-white focus:outline-none ${
+    isValid ? 'border-slate-600 focus:border-emerald-500' : 'border-red-500 focus:border-red-400'
+  }`;
+}
+
 function fmtDate(d: Date | null | undefined) {
   if (!d) return '—';
   return d.toLocaleDateString('en-GB', {
@@ -731,6 +743,11 @@ function SettingsPanel() {
   const [config, setConfig] = useState<PopupConfig>(DEFAULT_POPUP_CONFIG);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const popupBackground = safeHex(config.popupBackground, DEFAULT_POPUP_CONFIG.popupBackground);
+  const popupPanel = safeHex(config.popupPanel, DEFAULT_POPUP_CONFIG.popupPanel);
+  const accentColor = safeHex(config.accentColor, DEFAULT_POPUP_CONFIG.accentColor);
+  const buttonColor = safeHex(config.buttonColor, DEFAULT_POPUP_CONFIG.buttonColor);
+  const buttonTextColor = safeHex(config.buttonTextColor, DEFAULT_POPUP_CONFIG.buttonTextColor);
 
   useEffect(() => {
     (async () => {
@@ -792,6 +809,16 @@ function SettingsPanel() {
           <h3 className="text-lg font-semibold text-white">Content</h3>
 
           <label className="block">
+            <span className="text-sm font-medium text-slate-300">Small label text</span>
+            <input
+              value={config.labelText}
+              onChange={(e) => set('labelText', e.target.value)}
+              placeholder="Newsletter"
+              className="mt-1 w-full min-h-[48px] px-3 rounded-lg bg-slate-800 border-2 border-slate-600 text-white focus:border-emerald-500 focus:outline-none"
+            />
+          </label>
+
+          <label className="block">
             <span className="text-sm font-medium text-slate-300">Headline</span>
             <input
               value={config.headline}
@@ -818,6 +845,54 @@ function SettingsPanel() {
               className="mt-1 w-full min-h-[48px] px-3 rounded-lg bg-slate-800 border-2 border-slate-600 text-white focus:border-emerald-500 focus:outline-none"
             />
           </label>
+
+          <label className="block">
+            <span className="text-sm font-medium text-slate-300">Small print text</span>
+            <input
+              value={config.finePrint}
+              onChange={(e) => set('finePrint', e.target.value)}
+              placeholder="No spam. Unsubscribe anytime."
+              className="mt-1 w-full min-h-[48px] px-3 rounded-lg bg-slate-800 border-2 border-slate-600 text-white focus:border-emerald-500 focus:outline-none"
+            />
+          </label>
+        </div>
+
+        <div className="rounded-lg border border-slate-700 bg-slate-900 p-5 space-y-4">
+          <h3 className="text-lg font-semibold text-white">Colours</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {(
+              [
+                ['popupBackground', 'Image background', popupBackground],
+                ['popupPanel', 'Popup background', popupPanel],
+                ['accentColor', 'Label/accent colour', accentColor],
+                ['buttonColor', 'Button colour', buttonColor],
+                ['buttonTextColor', 'Button text colour', buttonTextColor],
+              ] as const
+            ).map(([key, label, resolved]) => {
+              const raw = config[key] ?? '';
+              const valid = /^#[0-9a-f]{6}$/i.test(raw.trim());
+              return (
+                <label key={key} className="block">
+                  <span className="text-sm font-medium text-slate-300">{label}</span>
+                  <div className="mt-1 flex gap-2">
+                    <input
+                      type="color"
+                      value={resolved}
+                      onChange={(e) => set(key, e.target.value)}
+                      className="h-12 w-14 rounded-lg bg-slate-800 border-2 border-slate-600 p-1"
+                      aria-label={label}
+                    />
+                    <input
+                      value={config[key]}
+                      onChange={(e) => set(key, e.target.value)}
+                      placeholder="#10b981"
+                      className={colourInputClass(valid)}
+                    />
+                  </div>
+                </label>
+              );
+            })}
+          </div>
         </div>
 
         <div className="rounded-lg border border-slate-700 bg-slate-900 p-5 space-y-4">
@@ -901,9 +976,15 @@ function SettingsPanel() {
           Live preview
         </h3>
         <div className="rounded-2xl border border-slate-700 bg-slate-950 p-6 flex items-center justify-center">
-          <div className="w-full max-w-[420px] bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700/50 shadow-2xl overflow-hidden flex flex-col md:flex-row">
+          <div
+            className="w-full max-w-[420px] rounded-2xl border border-slate-700/50 shadow-2xl overflow-hidden flex flex-col md:flex-row"
+            style={{ background: popupPanel }}
+          >
             {config.imageUrl && (
-              <div className="md:w-[140px] w-full flex-shrink-0 bg-slate-950">
+              <div
+                className="md:w-[140px] w-full flex-shrink-0"
+                style={{ background: popupBackground }}
+              >
                 <img
                   src={config.imageUrl}
                   alt=""
@@ -917,9 +998,12 @@ function SettingsPanel() {
                   !config.imageUrl ? 'justify-center' : ''
                 }`}
               >
-                <Mail className="w-4 h-4 text-emerald-500" />
-                <span className="text-[10px] uppercase tracking-wider text-emerald-500 font-semibold">
-                  Newsletter
+                <Mail className="w-4 h-4" style={{ color: accentColor }} />
+                <span
+                  className="text-[10px] uppercase tracking-wider font-semibold"
+                  style={{ color: accentColor }}
+                >
+                  {config.labelText}
                 </span>
               </div>
               <h4 className="text-lg font-bold text-white">{config.headline}</h4>
@@ -928,12 +1012,13 @@ function SettingsPanel() {
                 <div className="w-full min-h-[36px] rounded-md bg-slate-800 border border-slate-600 flex items-center px-3 text-xs text-slate-500">
                   Enter your email address
                 </div>
-                <div className="w-full min-h-[36px] rounded-md bg-emerald-600 text-white text-xs font-semibold flex items-center justify-center">
+                <div
+                  className="w-full min-h-[36px] rounded-md text-xs font-semibold flex items-center justify-center"
+                  style={{ backgroundColor: buttonColor, color: buttonTextColor }}
+                >
                   {config.buttonText}
                 </div>
-                <p className="text-[10px] text-slate-500 text-center">
-                  No spam. Unsubscribe anytime.
-                </p>
+                <p className="text-[10px] text-slate-500 text-center">{config.finePrint}</p>
               </div>
             </div>
           </div>
