@@ -22,6 +22,20 @@ import {
 } from '@/lib/newsletter';
 
 const STORAGE_KEY = 'phlabs_newsletter_seen';
+const DEBUG_KEY = 'phlabs_newsletter_debug';
+
+/** Reads debug flags from URL (?newsletter=preview|reset|debug) and localStorage. */
+function readDebugFlags(): { force: boolean; reset: boolean; persist: boolean } {
+  if (typeof window === 'undefined') return { force: false, reset: false, persist: false };
+  const params = new URLSearchParams(window.location.search);
+  const q = (params.get('newsletter') ?? '').toLowerCase();
+  const persist = window.localStorage.getItem(DEBUG_KEY) === '1';
+  return {
+    force: q === 'preview' || q === 'debug' || persist,
+    reset: q === 'reset' || q === 'preview',
+    persist: q === 'debug' || persist,
+  };
+}
 
 function withinCooldown(cooldownDays: number): boolean {
   if (typeof window === 'undefined') return true;
@@ -42,6 +56,33 @@ function markSeen() {
     window.localStorage.setItem(STORAGE_KEY, String(Date.now()));
   } catch {
     /* ignore */
+  }
+}
+
+/** Public helper — clears the cooldown timestamp so the popup can show again. */
+export function clearNewsletterCooldown() {
+  try {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Public helper — enables/disables persistent debug mode (force-show on every load). */
+export function setNewsletterDebug(enabled: boolean) {
+  try {
+    if (enabled) window.localStorage.setItem(DEBUG_KEY, '1');
+    else window.localStorage.removeItem(DEBUG_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function isNewsletterDebugEnabled(): boolean {
+  try {
+    return window.localStorage.getItem(DEBUG_KEY) === '1';
+  } catch {
+    return false;
   }
 }
 
