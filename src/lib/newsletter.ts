@@ -33,6 +33,8 @@ export interface Subscriber {
   source?: string;
   status?: SubscriberStatus;
   subscribedAt?: Date | null;
+  userAgent?: string;
+  ipHash?: string;
 }
 
 export interface SubscribeResult {
