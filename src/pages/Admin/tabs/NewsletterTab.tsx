@@ -373,6 +373,67 @@ function SubscribersPanel() {
         </button>
       </div>
 
+      {selected.size > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3">
+          <div className="text-sm text-emerald-100 font-medium flex-1">
+            {selected.size} selected
+            {selected.size < filtered.length && (
+              <>
+                {' · '}
+                <button
+                  type="button"
+                  onClick={selectAllFiltered}
+                  className="underline hover:text-white"
+                >
+                  Select all {filtered.length} matching
+                </button>
+              </>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              disabled={bulkBusy}
+              defaultValue=""
+              onChange={(e) => {
+                const v = e.target.value as SubscriberStatus | '';
+                if (v) void bulkUpdateStatus(v);
+                e.target.value = '';
+              }}
+              className="min-h-[36px] px-3 rounded-md bg-slate-800 border border-slate-600 text-white text-sm focus:border-emerald-500 focus:outline-none disabled:opacity-50"
+              aria-label="Bulk status change"
+            >
+              <option value="" disabled>
+                Set status…
+              </option>
+              <option value="active">Mark as Active</option>
+              <option value="unsubscribed">Mark as Unsubscribed</option>
+              <option value="bounced">Mark as Bounced</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => setConfirmBulkDelete(true)}
+              disabled={bulkBusy}
+              className="inline-flex items-center gap-2 px-3 min-h-[36px] rounded-md bg-red-600 hover:bg-red-500 text-white text-sm font-semibold disabled:opacity-50"
+            >
+              {bulkBusy ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              Delete
+            </button>
+            <button
+              type="button"
+              onClick={clearSelection}
+              disabled={bulkBusy}
+              className="px-3 min-h-[36px] rounded-md bg-slate-700 hover:bg-slate-600 text-white text-sm disabled:opacity-50"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-lg border border-slate-700 bg-slate-900 overflow-hidden">
         {loading ? (
           <div className="p-12 flex items-center justify-center text-slate-400">
@@ -388,6 +449,15 @@ function SubscribersPanel() {
             <table className="w-full text-sm">
               <thead className="bg-slate-800/50 text-slate-400 uppercase text-xs">
                 <tr>
+                  <th className="px-4 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={pageAllSelected}
+                      onChange={togglePageAll}
+                      className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                      aria-label="Select all on this page"
+                    />
+                  </th>
                   <th className="text-left px-4 py-3">Email</th>
                   <th className="text-left px-4 py-3">Status</th>
                   <th className="text-left px-4 py-3">Source</th>
@@ -396,44 +466,60 @@ function SubscribersPanel() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {pageRows.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-800/40">
-                    <td className="px-4 py-3 text-white">{r.email}</td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={r.status} />
-                    </td>
-                    <td className="px-4 py-3 text-slate-400">{r.source ?? '—'}</td>
-                    <td className="px-4 py-3 text-slate-400">{fmtDate(r.subscribedAt)}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 justify-end">
-                        <select
-                          value={r.status ?? 'active'}
-                          onChange={(e) =>
-                            changeStatus(r.id, e.target.value as SubscriberStatus)
-                          }
-                          className="min-h-[36px] px-2 rounded-md bg-slate-800 border border-slate-600 text-white text-xs focus:border-emerald-500 focus:outline-none"
-                          aria-label={`Change status for ${r.email}`}
-                        >
-                          <option value="active">Active</option>
-                          <option value="unsubscribed">Unsubscribed</option>
-                          <option value="bounced">Bounced</option>
-                        </select>
-                        <button
-                          onClick={() => setConfirmDeleteId(r.id)}
-                          className="p-2 rounded-md text-red-400 hover:bg-red-500/10"
-                          aria-label={`Delete ${r.email}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {pageRows.map((r) => {
+                  const isSel = selected.has(r.id);
+                  return (
+                    <tr
+                      key={r.id}
+                      className={`hover:bg-slate-800/40 ${isSel ? 'bg-emerald-500/5' : ''}`}
+                    >
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={isSel}
+                          onChange={() => toggleOne(r.id)}
+                          className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                          aria-label={`Select ${r.email}`}
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-white">{r.email}</td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={r.status} />
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">{r.source ?? '—'}</td>
+                      <td className="px-4 py-3 text-slate-400">{fmtDate(r.subscribedAt)}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2 justify-end">
+                          <select
+                            value={r.status ?? 'active'}
+                            onChange={(e) =>
+                              changeStatus(r.id, e.target.value as SubscriberStatus)
+                            }
+                            className="min-h-[36px] px-2 rounded-md bg-slate-800 border border-slate-600 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                            aria-label={`Change status for ${r.email}`}
+                          >
+                            <option value="active">Active</option>
+                            <option value="unsubscribed">Unsubscribed</option>
+                            <option value="bounced">Bounced</option>
+                          </select>
+                          <button
+                            onClick={() => setConfirmDeleteId(r.id)}
+                            className="p-2 rounded-md text-red-400 hover:bg-red-500/10"
+                            aria-label={`Delete ${r.email}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
 
       {filtered.length > PAGE_SIZE && (
         <div className="flex items-center justify-between text-sm text-slate-400">
