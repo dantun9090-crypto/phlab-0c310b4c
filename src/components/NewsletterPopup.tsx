@@ -116,6 +116,12 @@ export default function NewsletterPopup() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+  // Preload outcome — flipped by the warm-up Image() in the boot effect.
+  //   'idle'    — no image configured or preload hasn't started
+  //   'loading' — preloader is fetching
+  //   'ready'   — preloader decoded successfully; safe to render <img>
+  //   'failed'  — preload errored or timed out; render fallback instead
+  const [preloadStatus, setPreloadStatus] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle');
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
