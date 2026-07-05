@@ -97,22 +97,42 @@ export default function NewsletterPopup() {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
+  const [debugForced, setDebugForced] = useState(false);
+
   const close = useCallback(() => {
-    markSeen();
+    // In debug/force mode, don't persist a "seen" marker so the popup
+    // can be reopened for repeated testing.
+    if (!debugForced) markSeen();
     setVisible(false);
     // let fade-out play out before unmount
     window.setTimeout(() => setOpen(false), 250);
-  }, []);
+  }, [debugForced]);
 
   // Boot: fetch config, respect cooldown, respect existing subscriber
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
+    const flags = readDebugFlags();
+    if (flags.reset) clearNewsletterCooldown();
+    if (flags.force) setDebugForced(true);
+    if (flags.force || flags.reset) {
+      // Log once so a tester knows debug mode is active.
+      console.info('[NewsletterPopup] debug mode:', flags);
+    }
+
     (async () => {
       const cfg = await getPopupConfig();
       if (cancelled) return;
       setConfig(cfg);
+
+      if (flags.force) {
+        // Force-show immediately, bypass cooldown + subscribed checks + enabled flag.
+        setOpen(true);
+        requestAnimationFrame(() => setVisible(true));
+        return;
+      }
+
       if (!cfg.isEnabled) return;
       if (withinCooldown(cfg.cooldownDays)) return;
 
