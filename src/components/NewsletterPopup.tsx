@@ -153,10 +153,18 @@ export default function NewsletterPopup() {
       // "image loads slowly after popup opens" flash.
       if (cfg.imageUrl && cfg.imageUrl.trim() && typeof window !== 'undefined') {
         try {
+          // Preload the same responsive candidate the <img> will pick, so
+          // the browser can hit its cache instead of re-fetching a different
+          // width. CF negotiates AVIF/WebP either way.
           const preloader = new window.Image();
           preloader.decoding = 'async';
           (preloader as any).fetchPriority = 'low';
-          preloader.src = cfg.imageUrl;
+          const srcset = cfSrcSet(cfg.imageUrl, POPUP_IMG_WIDTHS, { quality: 82, fit: 'cover' });
+          if (srcset) {
+            (preloader as any).sizes = POPUP_IMG_SIZES;
+            preloader.srcset = srcset;
+          }
+          preloader.src = cfImg(cfg.imageUrl, { width: 480, quality: 82, fit: 'cover' }) || cfg.imageUrl;
         } catch { /* ignore */ }
       }
 
