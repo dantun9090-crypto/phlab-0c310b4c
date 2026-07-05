@@ -76,6 +76,7 @@ import { Route as ApiPublicSendMarketingRouteImport } from './routes/api/public/
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicPublishStatusRouteImport } from './routes/api/public/publish-status'
 import { Route as ApiPublicPublishHoldRouteImport } from './routes/api/public/publish-hold'
+import { Route as ApiPublicPostPublishStatusRouteImport } from './routes/api/public/post-publish-status'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
 import { Route as ApiPublicMonitorLogRouteImport } from './routes/api/public/monitor-log'
 import { Route as ApiPublicMonitorHeadGetRouteImport } from './routes/api/public/monitor-head-get'
@@ -463,6 +464,12 @@ const ApiPublicPublishHoldRoute = ApiPublicPublishHoldRouteImport.update({
   path: '/api/public/publish-hold',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPostPublishStatusRoute =
+  ApiPublicPostPublishStatusRouteImport.update({
+    id: '/api/public/post-publish-status',
+    path: '/api/public/post-publish-status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPostPublishCheckRoute =
   ApiPublicPostPublishCheckRouteImport.update({
     id: '/api/public/post-publish-check',
@@ -779,6 +786,7 @@ export interface FileRoutesByFullPath {
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
+  '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -889,6 +897,7 @@ export interface FileRoutesByTo {
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
+  '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -1002,6 +1011,7 @@ export interface FileRoutesById {
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
+  '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -1115,6 +1125,7 @@ export interface FileRouteTypes {
     | '/api/public/monitor-head-get'
     | '/api/public/monitor-log'
     | '/api/public/post-publish-check'
+    | '/api/public/post-publish-status'
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
@@ -1225,6 +1236,7 @@ export interface FileRouteTypes {
     | '/api/public/monitor-head-get'
     | '/api/public/monitor-log'
     | '/api/public/post-publish-check'
+    | '/api/public/post-publish-status'
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
@@ -1337,6 +1349,7 @@ export interface FileRouteTypes {
     | '/api/public/monitor-head-get'
     | '/api/public/monitor-log'
     | '/api/public/post-publish-check'
+    | '/api/public/post-publish-status'
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
@@ -1437,6 +1450,7 @@ export interface RootRouteChildren {
   ApiPublicMonitorHeadGetRoute: typeof ApiPublicMonitorHeadGetRoute
   ApiPublicMonitorLogRoute: typeof ApiPublicMonitorLogRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
+  ApiPublicPostPublishStatusRoute: typeof ApiPublicPostPublishStatusRoute
   ApiPublicPublishHoldRoute: typeof ApiPublicPublishHoldRoute
   ApiPublicPublishStatusRoute: typeof ApiPublicPublishStatusRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
@@ -1938,6 +1952,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPublishHoldRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/post-publish-status': {
+      id: '/api/public/post-publish-status'
+      path: '/api/public/post-publish-status'
+      fullPath: '/api/public/post-publish-status'
+      preLoaderRoute: typeof ApiPublicPostPublishStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/post-publish-check': {
       id: '/api/public/post-publish-check'
       path: '/api/public/post-publish-check'
@@ -2379,6 +2400,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMonitorHeadGetRoute: ApiPublicMonitorHeadGetRoute,
   ApiPublicMonitorLogRoute: ApiPublicMonitorLogRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
+  ApiPublicPostPublishStatusRoute: ApiPublicPostPublishStatusRoute,
   ApiPublicPublishHoldRoute: ApiPublicPublishHoldRoute,
   ApiPublicPublishStatusRoute: ApiPublicPublishStatusRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
