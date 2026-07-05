@@ -2,8 +2,6 @@ import { createFileRoute } from '@tanstack/react-router';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { listDocsAdmin } from '@/lib/server/firestore-admin';
 
-const POST_PUBLISH_KINDS = new Set(['post_publish_step', 'post_publish_auto_invalidation']);
-
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body, null, 2), {
     status,
@@ -28,16 +26,25 @@ export const Route = createFileRoute('/api/public/post-publish-status')({
         });
         if (limited) return limited;
 
-        const rows = await listDocsAdmin('auditLogs', {
-          orderBy: 'createdAt',
-          direction: 'DESCENDING',
-          limit: 50,
-        }).catch((e) => {
+        const [stepRows, summaryRows] = await Promise.all([
+          listDocsAdmin('auditLogs', {
+            orderBy: 'createdAt',
+            direction: 'DESCENDING',
+            limit: 10,
+            where: { field: 'kind', op: 'EQUAL', value: 'post_publish_step' },
+          }),
+          listDocsAdmin('auditLogs', {
+            orderBy: 'createdAt',
+            direction: 'DESCENDING',
+            limit: 10,
+            where: { field: 'kind', op: 'EQUAL', value: 'post_publish_auto_invalidation' },
+          }),
+        ]).catch((e) => {
           throw new Error(e instanceof Error ? e.message : String(e));
         });
 
-        const entries = rows
-          .filter((row) => POST_PUBLISH_KINDS.has(String(row.kind ?? '')))
+        const entries = [...stepRows, ...summaryRows]
+          .sort((a, b) => String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? '')))
           .slice(0, 10)
           .map((row) => ({
             id: row.id,
