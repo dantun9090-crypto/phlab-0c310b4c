@@ -394,16 +394,29 @@ function SubscribersPanel() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-        <div className="flex flex-1 gap-2 max-w-xl">
-          <div className="relative flex-1">
+        <div className="flex flex-1 flex-wrap gap-2 max-w-3xl">
+          <div className="relative flex-1 min-w-[220px]">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search by email…"
+              placeholder="Search email or domain (e.g. @labco.uk)…"
               className="w-full pl-9 min-h-[42px] rounded-lg bg-slate-800 border-2 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none"
             />
           </div>
+          <select
+            value={domainFilter}
+            onChange={(e) => setDomainFilter(e.target.value)}
+            className="min-h-[42px] px-3 rounded-lg bg-slate-800 border-2 border-slate-600 text-white focus:border-emerald-500 focus:outline-none max-w-[220px]"
+            aria-label="Filter by email domain"
+          >
+            <option value="all">All domains ({domainOptions.length})</option>
+            {domainOptions.map(([d, n]) => (
+              <option key={d} value={d}>
+                @{d} ({n})
+              </option>
+            ))}
+          </select>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as 'all' | SubscriberStatus)}
