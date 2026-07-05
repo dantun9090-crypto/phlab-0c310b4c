@@ -671,6 +671,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
     let r = rewriter.on("head", {
       element(el) {
         el.append(`<meta name="build-id" content="${buildId}">`, { html: true });
+        el.append(`<meta name="build-version" content="${buildId}">`, { html: true });
         el.append(`<meta name="release" content="${buildId}">`, { html: true });
       },
     });
