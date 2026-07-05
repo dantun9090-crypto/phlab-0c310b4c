@@ -133,6 +133,18 @@ export default function NewsletterPopup() {
       if (cancelled) return;
       setConfig(cfg);
 
+      // Warm the browser cache for the popup image during the delay window
+      // so it's already decoded by the time the modal mounts. Avoids the
+      // "image loads slowly after popup opens" flash.
+      if (cfg.imageUrl && cfg.imageUrl.trim() && typeof window !== 'undefined') {
+        try {
+          const preloader = new window.Image();
+          preloader.decoding = 'async';
+          (preloader as any).fetchPriority = 'low';
+          preloader.src = cfg.imageUrl;
+        } catch { /* ignore */ }
+      }
+
       if (flags.force) {
         // Force-show immediately, bypass cooldown + subscribed checks + enabled flag.
         setOpen(true);
