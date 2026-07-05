@@ -24,9 +24,26 @@ const ORIGIN = 'https://phlabs.co.uk';
 const META_COLLECTION = '_meta';
 const META_DOC = 'build_state';
 
-async function purgeEverything(): Promise<{ ok: boolean; status: number; error?: string }> {
+async function logPostPublishStep(
+  buildId: string,
+  message: string,
+  data: Record<string, unknown> = {},
+): Promise<void> {
+  await addDocAdmin('auditLogs', {
+    kind: 'post_publish_step',
+    buildId,
+    message,
+    ...data,
+    createdAt: new Date(),
+  }).catch((e) => {
+    console.warn('[post-publish-check] step audit write failed:', e);
+  });
+}
+
+async function purgeEverything(buildId: string): Promise<{ ok: boolean; status: number; body?: string; error?: string }> {
   const token = process.env.CLOUDFLARE_API_TOKEN;
   if (!token) return { ok: false, status: 0, error: 'CLOUDFLARE_API_TOKEN missing' };
+  await logPostPublishStep(buildId, 'Calling Cloudflare purge_everything...');
   try {
     const res = await fetch(
       `https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache`,
@@ -37,9 +54,49 @@ async function purgeEverything(): Promise<{ ok: boolean; status: number; error?:
         signal: AbortSignal.timeout(15_000),
       },
     );
+    const body = await res.text().catch(() => '');
+    await logPostPublishStep(buildId, `Cloudflare API response status: ${res.status}, body: ${body.slice(0, 1200)}`, {
+      status: res.status,
+      ok: res.ok,
+    });
+    return { ok: res.ok, status: res.status, body: body.slice(0, 2000) };
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    await logPostPublishStep(buildId, `Cloudflare API response status: 0, body: ${error}`, {
+      status: 0,
+      ok: false,
+      error,
+    });
+    return { ok: false, status: 0, error };
+  }
+}
+
+async function forceRefreshWorkerCache(buildId: string): Promise<{ ok: boolean; status: number; error?: string }> {
+  await logPostPublishStep(buildId, 'Calling Worker internal purge...');
+  try {
+    const res = await fetch(`${ORIGIN}/`, {
+      method: 'GET',
+      headers: {
+        'user-agent': 'phlabs-post-publish-force-refresh/1.0',
+        'x-force-refresh': 'true',
+        'cache-control': 'no-cache',
+      },
+      signal: AbortSignal.timeout(15_000),
+    });
+    await res.arrayBuffer().catch(() => new ArrayBuffer(0));
+    await logPostPublishStep(buildId, `Worker purge response: ${res.status}`, {
+      status: res.status,
+      ok: res.ok,
+    });
     return { ok: res.ok, status: res.status };
   } catch (e) {
-    return { ok: false, status: 0, error: e instanceof Error ? e.message : String(e) };
+    const error = e instanceof Error ? e.message : String(e);
+    await logPostPublishStep(buildId, `Worker purge response: 0 ${error}`, {
+      status: 0,
+      ok: false,
+      error,
+    });
+    return { ok: false, status: 0, error };
   }
 }
 
@@ -98,14 +155,16 @@ async function markInvalidationComplete(
 }
 
 async function runInvalidation(buildId: string): Promise<{
-  cloudflare: { ok: boolean; status: number; error?: string };
+  cloudflare: { ok: boolean; status: number; body?: string; error?: string };
+  worker: { ok: boolean; status: number; error?: string };
   prerender: { desktop: number; mobile: number; urls: number; ok: boolean };
   regression: { ok: boolean; failed: number } | null;
   auditOk: boolean;
   durationMs: number;
 }> {
   const started = Date.now();
-  const [cf, pr] = await Promise.all([purgeEverything(), recachePrerender()]);
+  const cf = await purgeEverything(buildId);
+  const [worker, pr] = await Promise.all([forceRefreshWorkerCache(buildId), recachePrerender()]);
 
   // Also run the security regression probe so each deploy is verified.
   let regression: { ok: boolean; failed: number } | null = null;
@@ -132,6 +191,7 @@ async function runInvalidation(buildId: string): Promise<{
       kind: 'post_publish_auto_invalidation',
       buildId,
       cloudflare: cf,
+      worker,
       prerender: pr,
       regression,
       durationMs: Date.now() - started,
@@ -147,6 +207,9 @@ async function runInvalidation(buildId: string): Promise<{
     lastPurgeOk: cf.ok,
     lastPurgeStatus: cf.status,
     lastPurgeError: cf.error ?? null,
+    lastWorkerRefreshOk: worker.ok,
+    lastWorkerRefreshStatus: worker.status,
+    lastWorkerRefreshError: worker.error ?? null,
     lastRecacheOk: pr.ok,
     lastRecacheDesktopStatus: pr.desktop,
     lastRecacheMobileStatus: pr.mobile,
@@ -157,7 +220,7 @@ async function runInvalidation(buildId: string): Promise<{
     console.warn('[post-publish-check] build_state completion marker failed:', e);
   });
 
-  return { cloudflare: cf, prerender: pr, regression, auditOk, durationMs };
+  return { cloudflare: cf, worker, prerender: pr, regression, auditOk, durationMs };
 }
 
 // Module-level in-flight lock — dedupes concurrent first-requests in the
@@ -180,6 +243,7 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
         });
         if (limited) return limited;
         const currentBuildId = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'unknown';
+        await logPostPublishStep(currentBuildId, `post-publish-check started, buildId=${currentBuildId}`);
 
         // Cross-request lock inside this isolate.
         if (inFlight.has(currentBuildId)) {
@@ -189,17 +253,25 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
         let stored: string | null = null;
         let buildState: Record<string, unknown> | null = null;
         try {
+          await logPostPublishStep(currentBuildId, 'Checking _meta/build_state...');
           buildState = await getDocAdmin(META_COLLECTION, META_DOC);
           stored = (buildState?.lastBuildId as string | undefined) ?? null;
         } catch {
           // Firestore unreachable — fail open (no auto-purge this request).
+          await logPostPublishStep(currentBuildId, 'Failed: firestore_read_failed');
           return Response.json({ ok: false, error: 'firestore_read_failed', buildId: currentBuildId });
         }
 
         const completedBuildId = (buildState?.lastInvalidationBuildId as string | undefined) ?? null;
         const needsInvalidation = completedBuildId !== currentBuildId;
+        await logPostPublishStep(
+          currentBuildId,
+          `Previous build: ${stored ?? 'none'}, current build: ${currentBuildId}, changed: ${stored !== currentBuildId}`,
+          { previousBuildId: stored, changed: stored !== currentBuildId, needsInvalidation },
+        );
 
         if (stored === currentBuildId && !needsInvalidation) {
+          await logPostPublishStep(currentBuildId, 'Completed: already invalidated for current build');
           return Response.json({ ok: true, changed: false, invalidated: true, buildId: currentBuildId });
         }
 
@@ -218,6 +290,9 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
             }
           } catch (e) {
             console.error('[post-publish-check] Firestore write failed:', e);
+            await logPostPublishStep(currentBuildId, 'Failed: firestore_write_failed', {
+              error: e instanceof Error ? e.message : String(e),
+            });
             return Response.json({
               ok: false,
               error: 'firestore_write_failed',
@@ -235,6 +310,11 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
         });
         inFlight.set(currentBuildId, work);
         const result = await work;
+        await logPostPublishStep(currentBuildId, `Completed: purge=${result.cloudflare.ok ? 'ok' : 'failed'}, worker=${result.worker.ok ? 'ok' : 'failed'}`, {
+          cloudflare: result.cloudflare,
+          worker: result.worker,
+          prerender: result.prerender,
+        });
 
         return Response.json({
           ok: true,
@@ -244,6 +324,7 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
           buildId: currentBuildId,
           previous: stored,
           cloudflare: result.cloudflare,
+          worker: result.worker,
           prerender: result.prerender,
           auditOk: result.auditOk,
           durationMs: result.durationMs,
