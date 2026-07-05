@@ -1,6 +1,6 @@
 # Google Search Console disavow file for phlabs.co.uk
 # Submit via: https://search.google.com/search-console/disavow-links
-# Updated: 2026-06-26
+# Updated: 2026-07-05
 #
 # Rationale: spam / PBN farms attempting to inject low-quality nofollow
 # referrals to phlabs.co.uk. Identified via Semrush backlink audit
