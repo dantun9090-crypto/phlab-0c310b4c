@@ -158,10 +158,8 @@ export default function NewsletterPopup() {
       // so it's already decoded by the time the modal mounts. Avoids the
       // "image loads slowly after popup opens" flash.
       if (cfg.imageUrl && cfg.imageUrl.trim() && typeof window !== 'undefined') {
+        setPreloadStatus('loading');
         try {
-          // Preload the same responsive candidate the <img> will pick, so
-          // the browser can hit its cache instead of re-fetching a different
-          // width. CF negotiates AVIF/WebP either way.
           const preloader = new window.Image();
           preloader.decoding = 'async';
           (preloader as any).fetchPriority = 'low';
@@ -170,8 +168,25 @@ export default function NewsletterPopup() {
             (preloader as any).sizes = POPUP_IMG_SIZES;
             preloader.srcset = srcset;
           }
+          preloader.onload = () => {
+            if (!cancelled) setPreloadStatus('ready');
+          };
+          preloader.onerror = () => {
+            if (!cancelled) setPreloadStatus('failed');
+          };
           preloader.src = cfImg(cfg.imageUrl, { width: 480, quality: 82, fit: 'cover' }) || cfg.imageUrl;
-        } catch { /* ignore */ }
+
+          // Safety timeout — if the image hasn't decoded by the time the
+          // modal shows, treat it as failed so users don't sit on a
+          // shimmering blank slot. Budget = delaySeconds + 5s cushion.
+          const timeoutMs = Math.max(0, cfg.delaySeconds) * 1000 + 5_000;
+          window.setTimeout(() => {
+            if (cancelled) return;
+            setPreloadStatus((prev) => (prev === 'loading' ? 'failed' : prev));
+          }, timeoutMs);
+        } catch {
+          if (!cancelled) setPreloadStatus('failed');
+        }
       }
 
       if (flags.force) {
