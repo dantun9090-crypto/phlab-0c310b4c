@@ -133,6 +133,18 @@ export default function NewsletterPopup() {
       if (cancelled) return;
       setConfig(cfg);
 
+      // Warm the browser cache for the popup image during the delay window
+      // so it's already decoded by the time the modal mounts. Avoids the
+      // "image loads slowly after popup opens" flash.
+      if (cfg.imageUrl && cfg.imageUrl.trim() && typeof window !== 'undefined') {
+        try {
+          const preloader = new window.Image();
+          preloader.decoding = 'async';
+          (preloader as any).fetchPriority = 'low';
+          preloader.src = cfg.imageUrl;
+        } catch { /* ignore */ }
+      }
+
       if (flags.force) {
         // Force-show immediately, bypass cooldown + subscribed checks + enabled flag.
         setOpen(true);
@@ -230,6 +242,8 @@ export default function NewsletterPopup() {
   })();
 
   return (
+    <>
+    <style>{`@keyframes newsletter-img-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
     <div
       className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
         visible ? 'opacity-100' : 'opacity-0'
@@ -258,13 +272,26 @@ export default function NewsletterPopup() {
         </button>
 
         {hasImage && (
-          <div className="md:w-[180px] w-full flex-shrink-0" style={{ background: popupBackground }}>
+          <div
+            className="md:w-[180px] w-full flex-shrink-0"
+            style={{
+              background: popupBackground,
+              backgroundImage:
+                'linear-gradient(90deg, rgba(30,41,59,0) 0%, rgba(51,65,85,0.5) 50%, rgba(30,41,59,0) 100%)',
+              backgroundSize: '200% 100%',
+              animation: 'newsletter-img-shimmer 1.4s linear infinite',
+            }}
+          >
             {!imageError ? (
               <img
                 src={bustedImageUrl}
                 alt=""
+                width={360}
+                height={480}
                 className="w-full h-40 md:h-full object-cover md:rounded-l-2xl rounded-t-2xl md:rounded-tr-none"
                 loading="eager"
+                decoding="async"
+                fetchPriority="high"
                 onError={() => setImageError(true)}
               />
             ) : (
@@ -355,5 +382,6 @@ export default function NewsletterPopup() {
         </div>
       </div>
     </div>
+    </>
   );
 }
