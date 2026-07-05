@@ -641,7 +641,19 @@ export const setAuthPersistence = async (remember: boolean) => {
       // '1' = explicit opt-in, '0' = explicit opt-out. Absence = default (remembered).
       window.localStorage.setItem(REMEMBER_KEY, remember ? '1' : '0');
     }
-    await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+    if (remember) {
+      // Prefer IndexedDB (survives Chrome mobile app restarts and localStorage
+      // eviction under storage pressure), fall back to localStorage. Matches
+      // the boot-time shim in src/lib/firebase-auth.ts so we don't switch
+      // storage backends mid-flow and lose the session.
+      try {
+        await setPersistence(auth, indexedDBLocalPersistence);
+      } catch {
+        await setPersistence(auth, browserLocalPersistence);
+      }
+    } else {
+      await setPersistence(auth, browserSessionPersistence);
+    }
   } catch (e) {
     console.warn('[auth] setPersistence failed:', e);
   }
