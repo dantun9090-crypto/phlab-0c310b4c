@@ -966,6 +966,13 @@ function DebugPanel() {
     window.open(previewUrl(), '_blank', 'noopener');
   };
 
+  const refreshImage = () => {
+    const ts = Date.now();
+    const url = `${window.location.origin}/?newsletter=preview&imgcb=${ts}`;
+    window.open(url, '_blank', 'noopener');
+    toast.success('Opened popup with a fresh cache-buster on the image.');
+  };
+
   const clearCooldown = () => {
     clearNewsletterCooldown();
     toast.success('Popup cooldown cleared. Reload the homepage to see it again.');
