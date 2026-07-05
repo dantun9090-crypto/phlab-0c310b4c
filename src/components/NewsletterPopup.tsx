@@ -20,6 +20,21 @@ import {
   isEmailSubscribed,
   emailSchema,
 } from '@/lib/newsletter';
+import { cfImgProps, cfSrcSet, cfImg } from '@/lib/cf-image';
+
+/**
+ * Responsive image sizing.
+ *
+ * Popup image slot:
+ *   - mobile: full modal width (max 520px, minus small padding) at h-40
+ *   - desktop (≥768px): fixed 180px column at h-full (~360-480px tall)
+ *
+ * At dpr=3 the mobile slot can consume ~1500px; 720w covers that comfortably
+ * after CF's AVIF/WebP negotiation. Widths chosen so the browser picks the
+ * smallest candidate that still beats the CSS pixel × dpr requirement.
+ */
+const POPUP_IMG_WIDTHS = [240, 360, 480, 720];
+const POPUP_IMG_SIZES = '(min-width: 768px) 180px, min(100vw, 520px)';
 
 const STORAGE_KEY = 'phlabs_newsletter_seen';
 const DEBUG_KEY = 'phlabs_newsletter_debug';
@@ -138,10 +153,18 @@ export default function NewsletterPopup() {
       // "image loads slowly after popup opens" flash.
       if (cfg.imageUrl && cfg.imageUrl.trim() && typeof window !== 'undefined') {
         try {
+          // Preload the same responsive candidate the <img> will pick, so
+          // the browser can hit its cache instead of re-fetching a different
+          // width. CF negotiates AVIF/WebP either way.
           const preloader = new window.Image();
           preloader.decoding = 'async';
           (preloader as any).fetchPriority = 'low';
-          preloader.src = cfg.imageUrl;
+          const srcset = cfSrcSet(cfg.imageUrl, POPUP_IMG_WIDTHS, { quality: 82, fit: 'cover' });
+          if (srcset) {
+            (preloader as any).sizes = POPUP_IMG_SIZES;
+            preloader.srcset = srcset;
+          }
+          preloader.src = cfImg(cfg.imageUrl, { width: 480, quality: 82, fit: 'cover' }) || cfg.imageUrl;
         } catch { /* ignore */ }
       }
 
@@ -229,16 +252,28 @@ export default function NewsletterPopup() {
   const popupBackground = safeColor(config.popupBackground, DEFAULT_POPUP_CONFIG.popupBackground);
   const popupPanel = safeColor(config.popupPanel, DEFAULT_POPUP_CONFIG.popupPanel);
 
-  // In debug/force mode, honour a `?imgcb=<ts>` URL param (or fall back to
-  // Date.now()) to bypass the browser image cache so admins can verify a
-  // freshly-uploaded popup image is live.
-  const bustedImageUrl = (() => {
-    if (!hasImage) return config.imageUrl!;
-    if (!debugForced) return config.imageUrl!;
-    const params = new URLSearchParams(window.location.search);
-    const cb = params.get('imgcb') ?? String(Date.now());
-    const sep = config.imageUrl!.includes('?') ? '&' : '?';
-    return `${config.imageUrl!}${sep}_cb=${encodeURIComponent(cb)}`;
+  // Responsive image props via the Cloudflare `/_img` resizer. Falls back
+  // to the original URL when the source host isn't allow-listed (see
+  // src/lib/cf-image.ts). In debug/force mode, append a `_cb` cache-buster
+  // so freshly-uploaded popup images become visible without a hard refresh.
+  const imgProps = (() => {
+    if (!hasImage) return null;
+    let source = config.imageUrl!;
+    if (debugForced) {
+      const params = new URLSearchParams(window.location.search);
+      const cb = params.get('imgcb') ?? String(Date.now());
+      const sep = source.includes('?') ? '&' : '?';
+      source = `${source}${sep}_cb=${encodeURIComponent(cb)}`;
+    }
+    const base = cfImgProps(source, {
+      widths: POPUP_IMG_WIDTHS,
+      sizes: POPUP_IMG_SIZES,
+      quality: 82,
+      fit: 'cover',
+      fallbackWidth: 480,
+    });
+    // When cf-image can't transform (non-allowlisted host), spread only src.
+    return base;
   })();
 
   return (
@@ -271,7 +306,7 @@ export default function NewsletterPopup() {
           <X className="w-4 h-4" />
         </button>
 
-        {hasImage && (
+        {hasImage && imgProps && (
           <div
             className="md:w-[180px] w-full flex-shrink-0"
             style={{
@@ -284,7 +319,9 @@ export default function NewsletterPopup() {
           >
             {!imageError ? (
               <img
-                src={bustedImageUrl}
+                src={imgProps.src}
+                srcSet={imgProps.srcSet}
+                sizes={imgProps.sizes}
                 alt=""
                 width={360}
                 height={480}
