@@ -116,6 +116,12 @@ export default function NewsletterPopup() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [imageError, setImageError] = useState(false);
+  // Preload outcome — flipped by the warm-up Image() in the boot effect.
+  //   'idle'    — no image configured or preload hasn't started
+  //   'loading' — preloader is fetching
+  //   'ready'   — preloader decoded successfully; safe to render <img>
+  //   'failed'  — preload errored or timed out; render fallback instead
+  const [preloadStatus, setPreloadStatus] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle');
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
@@ -152,10 +158,8 @@ export default function NewsletterPopup() {
       // so it's already decoded by the time the modal mounts. Avoids the
       // "image loads slowly after popup opens" flash.
       if (cfg.imageUrl && cfg.imageUrl.trim() && typeof window !== 'undefined') {
+        setPreloadStatus('loading');
         try {
-          // Preload the same responsive candidate the <img> will pick, so
-          // the browser can hit its cache instead of re-fetching a different
-          // width. CF negotiates AVIF/WebP either way.
           const preloader = new window.Image();
           preloader.decoding = 'async';
           (preloader as any).fetchPriority = 'low';
@@ -164,8 +168,25 @@ export default function NewsletterPopup() {
             (preloader as any).sizes = POPUP_IMG_SIZES;
             preloader.srcset = srcset;
           }
+          preloader.onload = () => {
+            if (!cancelled) setPreloadStatus('ready');
+          };
+          preloader.onerror = () => {
+            if (!cancelled) setPreloadStatus('failed');
+          };
           preloader.src = cfImg(cfg.imageUrl, { width: 480, quality: 82, fit: 'cover' }) || cfg.imageUrl;
-        } catch { /* ignore */ }
+
+          // Safety timeout — if the image hasn't decoded by the time the
+          // modal shows, treat it as failed so users don't sit on a
+          // shimmering blank slot. Budget = delaySeconds + 5s cushion.
+          const timeoutMs = Math.max(0, cfg.delaySeconds) * 1000 + 5_000;
+          window.setTimeout(() => {
+            if (cancelled) return;
+            setPreloadStatus((prev) => (prev === 'loading' ? 'failed' : prev));
+          }, timeoutMs);
+        } catch {
+          if (!cancelled) setPreloadStatus('failed');
+        }
       }
 
       if (flags.force) {
@@ -306,7 +327,7 @@ export default function NewsletterPopup() {
           <X className="w-4 h-4" />
         </button>
 
-        {hasImage && imgProps && (
+        {hasImage && imgProps && (preloadStatus !== 'failed' && !imageError) ? (
           <div
             className="md:w-[180px] w-full flex-shrink-0"
             style={{
@@ -317,28 +338,37 @@ export default function NewsletterPopup() {
               animation: 'newsletter-img-shimmer 1.4s linear infinite',
             }}
           >
-            {!imageError ? (
-              <img
-                src={imgProps.src}
-                srcSet={imgProps.srcSet}
-                sizes={imgProps.sizes}
-                alt=""
-                width={360}
-                height={480}
-                className="w-full h-40 md:h-full object-cover md:rounded-l-2xl rounded-t-2xl md:rounded-tr-none"
-                loading="eager"
-                decoding="async"
-                fetchPriority="high"
-                onError={() => setImageError(true)}
-              />
-            ) : (
-              <div className="w-full h-40 md:h-full flex flex-col items-center justify-center gap-2 px-4 text-center">
-                <ImageOff className="w-8 h-8 text-slate-500" />
-                <span className="text-xs text-slate-500">Image unavailable</span>
-              </div>
-            )}
+            <img
+              src={imgProps.src}
+              srcSet={imgProps.srcSet}
+              sizes={imgProps.sizes}
+              alt=""
+              width={360}
+              height={480}
+              className="w-full h-40 md:h-full object-cover md:rounded-l-2xl rounded-t-2xl md:rounded-tr-none"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              onError={() => setImageError(true)}
+            />
           </div>
-        )}
+        ) : hasImage && (preloadStatus === 'failed' || imageError) ? (
+          // Preload failed OR the <img> errored after mount. Render a
+          // branded gradient panel using popup accent colours instead of
+          // a broken image / blank shimmer. The panel keeps the popup's
+          // two-column layout intact on desktop and hides on mobile so
+          // the copy sits front-and-centre.
+          <div
+            aria-hidden="true"
+            className="hidden md:flex md:w-[180px] flex-shrink-0 items-center justify-center md:rounded-l-2xl"
+            style={{
+              background: `linear-gradient(135deg, ${popupBackground} 0%, ${accentColor}22 60%, ${popupPanel} 100%)`,
+            }}
+          >
+            <Mail className="w-10 h-10 opacity-70" style={{ color: accentColor }} />
+          </div>
+        ) : null}
+
 
         <div className={`flex-1 p-6 md:p-7 ${!hasImage ? 'text-center' : ''}`}>
           {success ? (
