@@ -122,6 +122,7 @@ function SubscribersPanel() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | SubscriberStatus>('all');
+  const [domainFilter, setDomainFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
