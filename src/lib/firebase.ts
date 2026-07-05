@@ -663,11 +663,75 @@ export const setAuthPersistence = async (remember: boolean) => {
 // shim that always loads first on the auth-guard path). Re-applying it here
 // would race with the user's signed-in state if firebase.ts loads later.
 
+/**
+ * Fully sign the user out and clear any persisted Firebase Auth state so
+ * that the next sign-in starts from a clean slate — regardless of whether
+ * the previous session used "Keep me signed in" (indexedDB / localStorage)
+ * or session-only persistence.
+ *
+ * Steps:
+ *  1. Snapshot the current user for the audit log.
+ *  2. Call signOut() — Firebase removes its own auth record from whichever
+ *     backend is currently active.
+ *  3. Belt-and-braces: wipe leftover `firebase:authUser:*` / `firebase:host:*`
+ *     entries from localStorage AND sessionStorage, and drop the Firebase
+ *     IndexedDB store (`firebaseLocalStorageDb`). Prevents a stale token in
+ *     an unused backend from silently re-hydrating on the next page load.
+ *  4. Reset persistence back to the default (indexedDB) so subsequent
+ *     `signInWithEmailAndPassword` / `signInWithPopup` calls made BEFORE
+ *     `setAuthPersistence` runs don't inherit the previous session's mode.
+ *  5. Clear the REMEMBER_KEY flag so the boot-time shim picks the default
+ *     on the next load.
+ *  6. Wait for `authStateReady()` so callers can safely navigate.
+ */
 export const logoutUser = async () => {
   const current = auth.currentUser;
-  try { window.localStorage.removeItem(REMEMBER_KEY); } catch { /* ignore */ }
   logAuthEvent({ type: 'logout', email: current?.email ?? null, uid: current?.uid ?? null });
-  return signOut(auth);
+
+  try {
+    await signOut(auth);
+  } catch (e) {
+    console.warn('[auth] signOut failed:', e);
+  }
+
+  if (typeof window !== 'undefined') {
+    // 1. Remove remember-me preference so next boot uses the default.
+    try { window.localStorage.removeItem(REMEMBER_KEY); } catch { /* ignore */ }
+
+    // 2. Sweep any leftover Firebase auth keys across web-storage backends.
+    const sweep = (store: Storage) => {
+      try {
+        const keys: string[] = [];
+        for (let i = 0; i < store.length; i++) {
+          const k = store.key(i);
+          if (k && (k.startsWith('firebase:authUser:') || k.startsWith('firebase:host:') || k.startsWith('firebase:redirectEvent:'))) {
+            keys.push(k);
+          }
+        }
+        keys.forEach((k) => store.removeItem(k));
+      } catch { /* storage blocked */ }
+    };
+    sweep(window.localStorage);
+    sweep(window.sessionStorage);
+
+    // 3. Drop Firebase's IndexedDB auth store to catch anything signOut left.
+    try {
+      if (typeof indexedDB !== 'undefined' && typeof indexedDB.deleteDatabase === 'function') {
+        indexedDB.deleteDatabase('firebaseLocalStorageDb');
+      }
+    } catch { /* ignore */ }
+  }
+
+  // 4. Reset persistence pointer to the default so the next sign-in doesn't
+  //    inherit the previous session's backend before setAuthPersistence runs.
+  try {
+    await setPersistence(auth, indexedDBLocalPersistence);
+  } catch {
+    try { await setPersistence(auth, browserLocalPersistence); } catch { /* ignore */ }
+  }
+
+  // 5. Ensure the SDK has settled before returning.
+  try { await auth.authStateReady(); } catch { /* ignore */ }
 };
 export const onAuthChange = (callback: (user: FirebaseUser | null) => void) =>
   onAuthStateChanged(auth, callback);
