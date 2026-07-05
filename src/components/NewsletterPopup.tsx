@@ -270,13 +270,26 @@ export default function NewsletterPopup() {
         </button>
 
         {hasImage && (
-          <div className="md:w-[180px] w-full flex-shrink-0" style={{ background: popupBackground }}>
+          <div
+            className="md:w-[180px] w-full flex-shrink-0"
+            style={{
+              background: popupBackground,
+              backgroundImage:
+                'linear-gradient(90deg, rgba(30,41,59,0) 0%, rgba(51,65,85,0.5) 50%, rgba(30,41,59,0) 100%)',
+              backgroundSize: '200% 100%',
+              animation: 'newsletter-img-shimmer 1.4s linear infinite',
+            }}
+          >
             {!imageError ? (
               <img
                 src={bustedImageUrl}
                 alt=""
+                width={360}
+                height={480}
                 className="w-full h-40 md:h-full object-cover md:rounded-l-2xl rounded-t-2xl md:rounded-tr-none"
                 loading="eager"
+                decoding="async"
+                fetchPriority="high"
                 onError={() => setImageError(true)}
               />
             ) : (
