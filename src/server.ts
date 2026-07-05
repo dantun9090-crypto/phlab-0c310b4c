@@ -617,6 +617,9 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
     htmlHeaders.set("cache-control", "public, s-maxage=60, max-age=0, stale-while-revalidate=60");
     htmlHeaders.set("cdn-cache-control", "public, s-maxage=60, max-age=0, stale-while-revalidate=60");
     htmlHeaders.set("cloudflare-cdn-cache-control", "public, s-maxage=60, max-age=0, stale-while-revalidate=60");
+    // Cache-Tag lets us purge just the HTML shell via Cloudflare Enterprise
+    // tag-purge without touching hashed assets. Free plan ignores — harmless.
+    htmlHeaders.set("cache-tag", "page-html");
     htmlHeaders.delete("surrogate-control");
     htmlHeaders.delete("pragma");
     htmlHeaders.delete("expires");
