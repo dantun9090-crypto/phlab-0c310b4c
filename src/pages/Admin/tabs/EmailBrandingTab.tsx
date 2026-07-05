@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { render } from "@react-email/render";
 import { db } from "@/lib/firebase";
-import { logAdminAction } from "@/lib/auditLogger";
+import { logAdminAction } from "@/lib/admin-audit";
 import {
   DEFAULT_EMAIL_BRAND,
   FONT_STACKS,
