@@ -17,6 +17,9 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
+  Bug,
+  Eye,
+  RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
