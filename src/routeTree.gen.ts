@@ -116,6 +116,7 @@ import { Route as ApiPublicHooksFenaProcessRetriesRouteImport } from './routes/a
 import { Route as ApiPublicHooksFenaRouteImport } from './routes/api/public/hooks/fena'
 import { Route as ApiPublicHooksCompoundQueryHistoryRouteImport } from './routes/api/public/hooks/compound-query-history'
 import { Route as ApiPublicHooksBacklinkWatcherRouteImport } from './routes/api/public/hooks/backlink-watcher'
+import { Route as ApiPublicHealthBuildRouteImport } from './routes/api/public/health.build'
 import { Route as ApiPublicDiagCacheHeadersRouteImport } from './routes/api/public/diag.cache-headers'
 import { Route as ApiPublicDiagBuildStateRouteImport } from './routes/api/public/diag.build-state'
 
@@ -680,6 +681,11 @@ const ApiPublicHooksBacklinkWatcherRoute =
     path: '/api/public/hooks/backlink-watcher',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHealthBuildRoute = ApiPublicHealthBuildRouteImport.update({
+  id: '/build',
+  path: '/build',
+  getParentRoute: () => ApiPublicHealthRoute,
+} as any)
 const ApiPublicDiagCacheHeadersRoute =
   ApiPublicDiagCacheHeadersRouteImport.update({
     id: '/api/public/diag/cache-headers',
@@ -766,7 +772,7 @@ export interface FileRoutesByFullPath {
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/firestore-backups': typeof ApiPublicFirestoreBackupsRoute
-  '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/health': typeof ApiPublicHealthRouteWithChildren
   '/api/public/health-deep': typeof ApiPublicHealthDeepRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
@@ -781,6 +787,7 @@ export interface FileRoutesByFullPath {
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
+  '/api/public/health/build': typeof ApiPublicHealthBuildRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
@@ -875,7 +882,7 @@ export interface FileRoutesByTo {
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/firestore-backups': typeof ApiPublicFirestoreBackupsRoute
-  '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/health': typeof ApiPublicHealthRouteWithChildren
   '/api/public/health-deep': typeof ApiPublicHealthDeepRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
@@ -890,6 +897,7 @@ export interface FileRoutesByTo {
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
+  '/api/public/health/build': typeof ApiPublicHealthBuildRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
@@ -987,7 +995,7 @@ export interface FileRoutesById {
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/firestore-backups': typeof ApiPublicFirestoreBackupsRoute
-  '/api/public/health': typeof ApiPublicHealthRoute
+  '/api/public/health': typeof ApiPublicHealthRouteWithChildren
   '/api/public/health-deep': typeof ApiPublicHealthDeepRoute
   '/api/public/img': typeof ApiPublicImgRoute
   '/api/public/live-orders': typeof ApiPublicLiveOrdersRoute
@@ -1002,6 +1010,7 @@ export interface FileRoutesById {
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
+  '/api/public/health/build': typeof ApiPublicHealthBuildRoute
   '/api/public/hooks/backlink-watcher': typeof ApiPublicHooksBacklinkWatcherRoute
   '/api/public/hooks/compound-query-history': typeof ApiPublicHooksCompoundQueryHistoryRoute
   '/api/public/hooks/fena': typeof ApiPublicHooksFenaRoute
@@ -1114,6 +1123,7 @@ export interface FileRouteTypes {
     | '/api/webhooks/wallid'
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
+    | '/api/public/health/build'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/compound-query-history'
     | '/api/public/hooks/fena'
@@ -1223,6 +1233,7 @@ export interface FileRouteTypes {
     | '/api/webhooks/wallid'
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
+    | '/api/public/health/build'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/compound-query-history'
     | '/api/public/hooks/fena'
@@ -1334,6 +1345,7 @@ export interface FileRouteTypes {
     | '/api/webhooks/wallid'
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
+    | '/api/public/health/build'
     | '/api/public/hooks/backlink-watcher'
     | '/api/public/hooks/compound-query-history'
     | '/api/public/hooks/fena'
@@ -1418,7 +1430,7 @@ export interface RootRouteChildren {
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicErrorMonitorRoute: typeof ApiPublicErrorMonitorRoute
   ApiPublicFirestoreBackupsRoute: typeof ApiPublicFirestoreBackupsRoute
-  ApiPublicHealthRoute: typeof ApiPublicHealthRoute
+  ApiPublicHealthRoute: typeof ApiPublicHealthRouteWithChildren
   ApiPublicHealthDeepRoute: typeof ApiPublicHealthDeepRoute
   ApiPublicImgRoute: typeof ApiPublicImgRoute
   ApiPublicLiveOrdersRoute: typeof ApiPublicLiveOrdersRoute
@@ -2206,6 +2218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBacklinkWatcherRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/health/build': {
+      id: '/api/public/health/build'
+      path: '/build'
+      fullPath: '/api/public/health/build'
+      preLoaderRoute: typeof ApiPublicHealthBuildRouteImport
+      parentRoute: typeof ApiPublicHealthRoute
+    }
     '/api/public/diag/cache-headers': {
       id: '/api/public/diag/cache-headers'
       path: '/api/public/diag/cache-headers'
@@ -2277,6 +2296,18 @@ const ResearchRouteWithChildren = ResearchRoute._addFileChildren(
   ResearchRouteChildren,
 )
 
+interface ApiPublicHealthRouteChildren {
+  ApiPublicHealthBuildRoute: typeof ApiPublicHealthBuildRoute
+}
+
+const ApiPublicHealthRouteChildren: ApiPublicHealthRouteChildren = {
+  ApiPublicHealthBuildRoute: ApiPublicHealthBuildRoute,
+}
+
+const ApiPublicHealthRouteWithChildren = ApiPublicHealthRoute._addFileChildren(
+  ApiPublicHealthRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
@@ -2341,7 +2372,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicErrorMonitorRoute: ApiPublicErrorMonitorRoute,
   ApiPublicFirestoreBackupsRoute: ApiPublicFirestoreBackupsRoute,
-  ApiPublicHealthRoute: ApiPublicHealthRoute,
+  ApiPublicHealthRoute: ApiPublicHealthRouteWithChildren,
   ApiPublicHealthDeepRoute: ApiPublicHealthDeepRoute,
   ApiPublicImgRoute: ApiPublicImgRoute,
   ApiPublicLiveOrdersRoute: ApiPublicLiveOrdersRoute,
