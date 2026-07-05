@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   Bug,
   Eye,
+  RefreshCw,
   RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -965,6 +966,13 @@ function DebugPanel() {
     window.open(previewUrl(), '_blank', 'noopener');
   };
 
+  const refreshImage = () => {
+    const ts = Date.now();
+    const url = `${window.location.origin}/?newsletter=preview&imgcb=${ts}`;
+    window.open(url, '_blank', 'noopener');
+    toast.success('Opened popup with a fresh cache-buster on the image.');
+  };
+
   const clearCooldown = () => {
     clearNewsletterCooldown();
     toast.success('Popup cooldown cleared. Reload the homepage to see it again.');
@@ -1009,6 +1017,15 @@ function DebugPanel() {
         >
           <RotateCcw className="w-4 h-4" />
           Clear cooldown
+        </button>
+        <button
+          type="button"
+          onClick={refreshImage}
+          className="inline-flex items-center gap-2 px-3 min-h-[40px] rounded-lg bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-white text-sm font-medium"
+          title="Opens the popup with a fresh cache-busting param on the image URL."
+        >
+          <RefreshCw className="w-4 h-4" />
+          Force-reload popup image
         </button>
         <button
           type="button"

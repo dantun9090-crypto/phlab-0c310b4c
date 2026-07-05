@@ -205,6 +205,18 @@ export default function NewsletterPopup() {
 
   const hasImage = Boolean(config.imageUrl && config.imageUrl.trim());
 
+  // In debug/force mode, honour a `?imgcb=<ts>` URL param (or fall back to
+  // Date.now()) to bypass the browser image cache so admins can verify a
+  // freshly-uploaded popup image is live.
+  const bustedImageUrl = (() => {
+    if (!hasImage) return config.imageUrl!;
+    if (!debugForced) return config.imageUrl!;
+    const params = new URLSearchParams(window.location.search);
+    const cb = params.get('imgcb') ?? String(Date.now());
+    const sep = config.imageUrl!.includes('?') ? '&' : '?';
+    return `${config.imageUrl!}${sep}_cb=${encodeURIComponent(cb)}`;
+  })();
+
   return (
     <div
       className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
@@ -235,7 +247,7 @@ export default function NewsletterPopup() {
         {hasImage && (
           <div className="md:w-[180px] w-full flex-shrink-0 bg-slate-950">
             <img
-              src={config.imageUrl!}
+              src={bustedImageUrl}
               alt=""
               className="w-full h-40 md:h-full object-cover md:rounded-l-2xl rounded-t-2xl md:rounded-tr-none"
               loading="eager"
