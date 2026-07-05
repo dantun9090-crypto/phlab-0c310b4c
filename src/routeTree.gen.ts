@@ -86,6 +86,7 @@ import { Route as ApiPublicHealthDeepRouteImport } from './routes/api/public/hea
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicFirestoreBackupsRouteImport } from './routes/api/public/firestore-backups'
 import { Route as ApiPublicErrorMonitorRouteImport } from './routes/api/public/error-monitor'
+import { Route as ApiPublicEmergencyPurgeRouteImport } from './routes/api/public/emergency-purge'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as ApiPublicCoaPdfRouteImport } from './routes/api/public/coa-pdf'
 import { Route as ApiPublicCacheConfigRouteImport } from './routes/api/public/cache-config'
@@ -517,6 +518,11 @@ const ApiPublicErrorMonitorRoute = ApiPublicErrorMonitorRouteImport.update({
   path: '/api/public/error-monitor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicEmergencyPurgeRoute = ApiPublicEmergencyPurgeRouteImport.update({
+  id: '/api/public/emergency-purge',
+  path: '/api/public/emergency-purge',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
   id: '/api/public/csp-report',
   path: '/api/public/csp-report',
@@ -777,6 +783,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/api/public/emergency-purge': typeof ApiPublicEmergencyPurgeRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/firestore-backups': typeof ApiPublicFirestoreBackupsRoute
   '/api/public/health': typeof ApiPublicHealthRouteWithChildren
@@ -888,6 +895,7 @@ export interface FileRoutesByTo {
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/api/public/emergency-purge': typeof ApiPublicEmergencyPurgeRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/firestore-backups': typeof ApiPublicFirestoreBackupsRoute
   '/api/public/health': typeof ApiPublicHealthRouteWithChildren
@@ -1002,6 +1010,7 @@ export interface FileRoutesById {
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/api/public/emergency-purge': typeof ApiPublicEmergencyPurgeRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/firestore-backups': typeof ApiPublicFirestoreBackupsRoute
   '/api/public/health': typeof ApiPublicHealthRouteWithChildren
@@ -1116,6 +1125,7 @@ export interface FileRouteTypes {
     | '/api/public/cache-config'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
+    | '/api/public/emergency-purge'
     | '/api/public/error-monitor'
     | '/api/public/firestore-backups'
     | '/api/public/health'
@@ -1227,6 +1237,7 @@ export interface FileRouteTypes {
     | '/api/public/cache-config'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
+    | '/api/public/emergency-purge'
     | '/api/public/error-monitor'
     | '/api/public/firestore-backups'
     | '/api/public/health'
@@ -1340,6 +1351,7 @@ export interface FileRouteTypes {
     | '/api/public/cache-config'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
+    | '/api/public/emergency-purge'
     | '/api/public/error-monitor'
     | '/api/public/firestore-backups'
     | '/api/public/health'
@@ -1441,6 +1453,7 @@ export interface RootRouteChildren {
   ApiPublicCacheConfigRoute: typeof ApiPublicCacheConfigRoute
   ApiPublicCoaPdfRoute: typeof ApiPublicCoaPdfRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
+  ApiPublicEmergencyPurgeRoute: typeof ApiPublicEmergencyPurgeRoute
   ApiPublicErrorMonitorRoute: typeof ApiPublicErrorMonitorRoute
   ApiPublicFirestoreBackupsRoute: typeof ApiPublicFirestoreBackupsRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRouteWithChildren
@@ -2022,6 +2035,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicErrorMonitorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/emergency-purge': {
+      id: '/api/public/emergency-purge'
+      path: '/api/public/emergency-purge'
+      fullPath: '/api/public/emergency-purge'
+      preLoaderRoute: typeof ApiPublicEmergencyPurgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/csp-report': {
       id: '/api/public/csp-report'
       path: '/api/public/csp-report'
@@ -2391,6 +2411,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCacheConfigRoute: ApiPublicCacheConfigRoute,
   ApiPublicCoaPdfRoute: ApiPublicCoaPdfRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
+  ApiPublicEmergencyPurgeRoute: ApiPublicEmergencyPurgeRoute,
   ApiPublicErrorMonitorRoute: ApiPublicErrorMonitorRoute,
   ApiPublicFirestoreBackupsRoute: ApiPublicFirestoreBackupsRoute,
   ApiPublicHealthRoute: ApiPublicHealthRouteWithChildren,
