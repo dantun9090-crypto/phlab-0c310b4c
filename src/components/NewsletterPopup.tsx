@@ -382,5 +382,6 @@ export default function NewsletterPopup() {
         </div>
       </div>
     </div>
+    </>
   );
 }
