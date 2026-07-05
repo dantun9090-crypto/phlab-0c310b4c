@@ -19,6 +19,7 @@ interface Props {
   currentUrl?: string | null;
   onUploaded: (url: string) => void | Promise<void>;
   onRemoved?: () => void | Promise<void>;
+  uploadFile?: (file: File, path: string) => Promise<string>;
   maxSizeMB?: number;
   accept?: string;
 }
@@ -35,6 +36,7 @@ export default function ImageUploader({
   currentUrl,
   onUploaded,
   onRemoved,
+  uploadFile,
   maxSizeMB = 2,
   accept = 'image/jpeg,image/png,image/webp',
 }: Props) {
@@ -60,23 +62,31 @@ export default function ImageUploader({
     setProgress(0);
 
     try {
-      const ref = storageRef(storage, path);
-      const task = uploadBytesResumable(ref, file, { contentType: file.type });
-      await new Promise<void>((resolve, reject) => {
-        task.on(
-          'state_changed',
-          (s) => setProgress(Math.round((s.bytesTransferred / s.totalBytes) * 100)),
-          (err) => reject(err),
-          () => resolve(),
-        );
-      });
-      const url = await getDownloadURL(ref);
+      let url: string;
+      if (uploadFile) {
+        url = await uploadFile(file, path);
+        setProgress(100);
+      } else {
+        const ref = storageRef(storage, path);
+        const task = uploadBytesResumable(ref, file, { contentType: file.type });
+        await new Promise<void>((resolve, reject) => {
+          task.on(
+            'state_changed',
+            (s) => setProgress(Math.round((s.bytesTransferred / s.totalBytes) * 100)),
+            (err) => reject(err),
+            () => resolve(),
+          );
+        });
+        url = await getDownloadURL(ref);
+      }
       setPreview(url);
       await onUploaded(url);
       toast.success('Image uploaded.');
     } catch (err) {
       console.error('[ImageUploader] upload failed:', err);
-      toast.error('Upload failed. Please try again.');
+      const msg = String((err as { message?: string; code?: string })?.message || (err as { code?: string })?.code || '');
+      const isPermission = /permission|unauthori[sz]ed|403|not_admin|not signed in/i.test(msg);
+      toast.error(isPermission ? 'Upload blocked. Please sign in as admin and try again.' : 'Upload failed. Please try again.');
       setPreview(currentUrl ?? null);
     } finally {
       setProgress(null);
