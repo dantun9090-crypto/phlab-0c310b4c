@@ -247,12 +247,20 @@ export default function NewsletterPopup() {
 
         {hasImage && (
           <div className="md:w-[180px] w-full flex-shrink-0 bg-slate-950">
-            <img
-              src={bustedImageUrl}
-              alt=""
-              className="w-full h-40 md:h-full object-cover md:rounded-l-2xl rounded-t-2xl md:rounded-tr-none"
-              loading="eager"
-            />
+            {!imageError ? (
+              <img
+                src={bustedImageUrl}
+                alt=""
+                className="w-full h-40 md:h-full object-cover md:rounded-l-2xl rounded-t-2xl md:rounded-tr-none"
+                loading="eager"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div className="w-full h-40 md:h-full flex flex-col items-center justify-center gap-2 px-4 text-center">
+                <ImageOff className="w-8 h-8 text-slate-500" />
+                <span className="text-xs text-slate-500">Image unavailable</span>
+              </div>
+            )}
           </div>
         )}
 
