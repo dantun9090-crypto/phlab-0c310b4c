@@ -122,6 +122,7 @@ function SubscribersPanel() {
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | SubscriberStatus>('all');
+  const [domainFilter, setDomainFilter] = useState<string>('all');
   const [page, setPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -145,14 +146,43 @@ function SubscribersPanel() {
     void load();
   }, []);
 
+  const domainOf = (email: string) => {
+    const at = email.lastIndexOf('@');
+    return at === -1 ? '' : email.slice(at + 1).toLowerCase();
+  };
+
+  const domainOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of rows) {
+      const d = domainOf(r.email);
+      if (!d) continue;
+      counts.set(d, (counts.get(d) ?? 0) + 1);
+    }
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  }, [rows]);
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
+    // Support "@domain" or "domain.tld" as a domain-only query.
+    const domainQuery = needle.startsWith('@')
+      ? needle.slice(1)
+      : /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(needle)
+        ? needle
+        : '';
     return rows.filter((r) => {
       if (statusFilter !== 'all' && (r.status ?? 'active') !== statusFilter) return false;
-      if (needle && !r.email.toLowerCase().includes(needle)) return false;
+      const dom = domainOf(r.email);
+      if (domainFilter !== 'all' && dom !== domainFilter) return false;
+      if (needle) {
+        if (domainQuery) {
+          if (!dom.includes(domainQuery)) return false;
+        } else if (!r.email.toLowerCase().includes(needle)) {
+          return false;
+        }
+      }
       return true;
     });
-  }, [rows, q, statusFilter]);
+  }, [rows, q, statusFilter, domainFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -364,16 +394,29 @@ function SubscribersPanel() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-        <div className="flex flex-1 gap-2 max-w-xl">
-          <div className="relative flex-1">
+        <div className="flex flex-1 flex-wrap gap-2 max-w-3xl">
+          <div className="relative flex-1 min-w-[220px]">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search by email…"
+              placeholder="Search email or domain (e.g. @labco.uk)…"
               className="w-full pl-9 min-h-[42px] rounded-lg bg-slate-800 border-2 border-slate-600 text-white placeholder:text-slate-500 focus:border-emerald-500 focus:outline-none"
             />
           </div>
+          <select
+            value={domainFilter}
+            onChange={(e) => setDomainFilter(e.target.value)}
+            className="min-h-[42px] px-3 rounded-lg bg-slate-800 border-2 border-slate-600 text-white focus:border-emerald-500 focus:outline-none max-w-[220px]"
+            aria-label="Filter by email domain"
+          >
+            <option value="all">All domains ({domainOptions.length})</option>
+            {domainOptions.map(([d, n]) => (
+              <option key={d} value={d}>
+                @{d} ({n})
+              </option>
+            ))}
+          </select>
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as 'all' | SubscriberStatus)}
