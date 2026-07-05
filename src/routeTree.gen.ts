@@ -76,6 +76,7 @@ import { Route as ApiPublicSendMarketingRouteImport } from './routes/api/public/
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicPublishStatusRouteImport } from './routes/api/public/publish-status'
 import { Route as ApiPublicPublishHoldRouteImport } from './routes/api/public/publish-hold'
+import { Route as ApiPublicPostPublishStatusRouteImport } from './routes/api/public/post-publish-status'
 import { Route as ApiPublicPostPublishCheckRouteImport } from './routes/api/public/post-publish-check'
 import { Route as ApiPublicMonitorLogRouteImport } from './routes/api/public/monitor-log'
 import { Route as ApiPublicMonitorHeadGetRouteImport } from './routes/api/public/monitor-head-get'
@@ -85,6 +86,7 @@ import { Route as ApiPublicHealthDeepRouteImport } from './routes/api/public/hea
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiPublicFirestoreBackupsRouteImport } from './routes/api/public/firestore-backups'
 import { Route as ApiPublicErrorMonitorRouteImport } from './routes/api/public/error-monitor'
+import { Route as ApiPublicEmergencyPurgeRouteImport } from './routes/api/public/emergency-purge'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as ApiPublicCoaPdfRouteImport } from './routes/api/public/coa-pdf'
 import { Route as ApiPublicCacheConfigRouteImport } from './routes/api/public/cache-config'
@@ -463,6 +465,12 @@ const ApiPublicPublishHoldRoute = ApiPublicPublishHoldRouteImport.update({
   path: '/api/public/publish-hold',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPostPublishStatusRoute =
+  ApiPublicPostPublishStatusRouteImport.update({
+    id: '/api/public/post-publish-status',
+    path: '/api/public/post-publish-status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPostPublishCheckRoute =
   ApiPublicPostPublishCheckRouteImport.update({
     id: '/api/public/post-publish-check',
@@ -508,6 +516,11 @@ const ApiPublicFirestoreBackupsRoute =
 const ApiPublicErrorMonitorRoute = ApiPublicErrorMonitorRouteImport.update({
   id: '/api/public/error-monitor',
   path: '/api/public/error-monitor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicEmergencyPurgeRoute = ApiPublicEmergencyPurgeRouteImport.update({
+  id: '/api/public/emergency-purge',
+  path: '/api/public/emergency-purge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
@@ -770,6 +783,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/api/public/emergency-purge': typeof ApiPublicEmergencyPurgeRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/firestore-backups': typeof ApiPublicFirestoreBackupsRoute
   '/api/public/health': typeof ApiPublicHealthRouteWithChildren
@@ -779,6 +793,7 @@ export interface FileRoutesByFullPath {
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
+  '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -880,6 +895,7 @@ export interface FileRoutesByTo {
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/api/public/emergency-purge': typeof ApiPublicEmergencyPurgeRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/firestore-backups': typeof ApiPublicFirestoreBackupsRoute
   '/api/public/health': typeof ApiPublicHealthRouteWithChildren
@@ -889,6 +905,7 @@ export interface FileRoutesByTo {
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
+  '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -993,6 +1010,7 @@ export interface FileRoutesById {
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/api/public/emergency-purge': typeof ApiPublicEmergencyPurgeRoute
   '/api/public/error-monitor': typeof ApiPublicErrorMonitorRoute
   '/api/public/firestore-backups': typeof ApiPublicFirestoreBackupsRoute
   '/api/public/health': typeof ApiPublicHealthRouteWithChildren
@@ -1002,6 +1020,7 @@ export interface FileRoutesById {
   '/api/public/monitor-head-get': typeof ApiPublicMonitorHeadGetRoute
   '/api/public/monitor-log': typeof ApiPublicMonitorLogRoute
   '/api/public/post-publish-check': typeof ApiPublicPostPublishCheckRoute
+  '/api/public/post-publish-status': typeof ApiPublicPostPublishStatusRoute
   '/api/public/publish-hold': typeof ApiPublicPublishHoldRoute
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
@@ -1106,6 +1125,7 @@ export interface FileRouteTypes {
     | '/api/public/cache-config'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
+    | '/api/public/emergency-purge'
     | '/api/public/error-monitor'
     | '/api/public/firestore-backups'
     | '/api/public/health'
@@ -1115,6 +1135,7 @@ export interface FileRouteTypes {
     | '/api/public/monitor-head-get'
     | '/api/public/monitor-log'
     | '/api/public/post-publish-check'
+    | '/api/public/post-publish-status'
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
@@ -1216,6 +1237,7 @@ export interface FileRouteTypes {
     | '/api/public/cache-config'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
+    | '/api/public/emergency-purge'
     | '/api/public/error-monitor'
     | '/api/public/firestore-backups'
     | '/api/public/health'
@@ -1225,6 +1247,7 @@ export interface FileRouteTypes {
     | '/api/public/monitor-head-get'
     | '/api/public/monitor-log'
     | '/api/public/post-publish-check'
+    | '/api/public/post-publish-status'
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
@@ -1328,6 +1351,7 @@ export interface FileRouteTypes {
     | '/api/public/cache-config'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
+    | '/api/public/emergency-purge'
     | '/api/public/error-monitor'
     | '/api/public/firestore-backups'
     | '/api/public/health'
@@ -1337,6 +1361,7 @@ export interface FileRouteTypes {
     | '/api/public/monitor-head-get'
     | '/api/public/monitor-log'
     | '/api/public/post-publish-check'
+    | '/api/public/post-publish-status'
     | '/api/public/publish-hold'
     | '/api/public/publish-status'
     | '/api/public/send-mail'
@@ -1428,6 +1453,7 @@ export interface RootRouteChildren {
   ApiPublicCacheConfigRoute: typeof ApiPublicCacheConfigRoute
   ApiPublicCoaPdfRoute: typeof ApiPublicCoaPdfRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
+  ApiPublicEmergencyPurgeRoute: typeof ApiPublicEmergencyPurgeRoute
   ApiPublicErrorMonitorRoute: typeof ApiPublicErrorMonitorRoute
   ApiPublicFirestoreBackupsRoute: typeof ApiPublicFirestoreBackupsRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRouteWithChildren
@@ -1437,6 +1463,7 @@ export interface RootRouteChildren {
   ApiPublicMonitorHeadGetRoute: typeof ApiPublicMonitorHeadGetRoute
   ApiPublicMonitorLogRoute: typeof ApiPublicMonitorLogRoute
   ApiPublicPostPublishCheckRoute: typeof ApiPublicPostPublishCheckRoute
+  ApiPublicPostPublishStatusRoute: typeof ApiPublicPostPublishStatusRoute
   ApiPublicPublishHoldRoute: typeof ApiPublicPublishHoldRoute
   ApiPublicPublishStatusRoute: typeof ApiPublicPublishStatusRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
@@ -1938,6 +1965,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPublishHoldRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/post-publish-status': {
+      id: '/api/public/post-publish-status'
+      path: '/api/public/post-publish-status'
+      fullPath: '/api/public/post-publish-status'
+      preLoaderRoute: typeof ApiPublicPostPublishStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/post-publish-check': {
       id: '/api/public/post-publish-check'
       path: '/api/public/post-publish-check'
@@ -1999,6 +2033,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/error-monitor'
       fullPath: '/api/public/error-monitor'
       preLoaderRoute: typeof ApiPublicErrorMonitorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/emergency-purge': {
+      id: '/api/public/emergency-purge'
+      path: '/api/public/emergency-purge'
+      fullPath: '/api/public/emergency-purge'
+      preLoaderRoute: typeof ApiPublicEmergencyPurgeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/csp-report': {
@@ -2370,6 +2411,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCacheConfigRoute: ApiPublicCacheConfigRoute,
   ApiPublicCoaPdfRoute: ApiPublicCoaPdfRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
+  ApiPublicEmergencyPurgeRoute: ApiPublicEmergencyPurgeRoute,
   ApiPublicErrorMonitorRoute: ApiPublicErrorMonitorRoute,
   ApiPublicFirestoreBackupsRoute: ApiPublicFirestoreBackupsRoute,
   ApiPublicHealthRoute: ApiPublicHealthRouteWithChildren,
@@ -2379,6 +2421,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicMonitorHeadGetRoute: ApiPublicMonitorHeadGetRoute,
   ApiPublicMonitorLogRoute: ApiPublicMonitorLogRoute,
   ApiPublicPostPublishCheckRoute: ApiPublicPostPublishCheckRoute,
+  ApiPublicPostPublishStatusRoute: ApiPublicPostPublishStatusRoute,
   ApiPublicPublishHoldRoute: ApiPublicPublishHoldRoute,
   ApiPublicPublishStatusRoute: ApiPublicPublishStatusRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,

@@ -233,7 +233,10 @@ function applySecurityHeaders(res, url) {
 }
 
 function noCache(headers) {
-  headers.set("cache-control", "no-cache, no-store, must-revalidate");
+  headers.set("cache-control", "no-store, private, no-cache, must-revalidate, max-age=0, s-maxage=0");
+  headers.set("cdn-cache-control", "no-store");
+  headers.set("cloudflare-cdn-cache-control", "no-store");
+  headers.set("surrogate-control", "no-store");
   headers.set("pragma", "no-cache");
   headers.set("expires", "0");
 }
@@ -298,7 +301,7 @@ function applyNoStoreHeaders(response) {
 // search/vip-store/webhook) so we never cache personalised pages.
 const HTML_CACHE_EXCLUDE_PREFIXES = [
   "/admin", "/account", "/cart", "/checkout", "/payment", "/login",
-  "/register", "/api", "/search", "/vip-store", "/webhook", "/__/auth",
+  "/register", "/auth", "/api", "/api/auth", "/api/admin", "/search", "/vip-store", "/webhook", "/__/auth",
   "/__/firebase",
 ];
 function isHtmlCacheable(url) {
@@ -744,8 +747,9 @@ export default {
     //     HTML shell with non-existent /assets/*.js after a publish, so
     //     the post-publish hook auto-purges the zone.
     const htmlTtl = await getHtmlTtlSeconds();
+    const forceRefresh = request.headers.get("x-force-refresh") === "true";
     const htmlCacheable = isGet && !isXmlFeed && isHtmlCacheable(url) && htmlTtl > 0;
-    const cacheOpts = htmlCacheable
+    const cacheOpts = htmlCacheable && !forceRefresh
       ? {
           cacheEverything: true,
           cacheTtl: htmlTtl,
@@ -764,7 +768,7 @@ export default {
       // Use the request URL directly (canonical via redirects upstream).
       cacheKey = new Request(request.url, { method: "GET" });
       try {
-        const hit = await caches.default.match(cacheKey);
+        const hit = forceRefresh ? null : await caches.default.match(cacheKey);
         if (hit) {
           const h = new Headers(hit.headers);
           h.set("cache-control", "public, max-age=0, must-revalidate");
@@ -796,6 +800,7 @@ export default {
 
       // Cache-control by path family.
       const h = new Headers(res.headers);
+      if (forceRefresh) h.set("x-phl-force-refresh", "1");
       if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/webhook/")) {
         noCache(h);
       } else if (isFirebaseAuthHelperPath(url)) {

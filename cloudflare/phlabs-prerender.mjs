@@ -296,7 +296,10 @@ async function repairInlineBootScripts(response) {
 }
 __name(repairInlineBootScripts, "repairInlineBootScripts");
 function noCache(headers) {
-  headers.set("cache-control", "no-cache, no-store, must-revalidate");
+  headers.set("cache-control", "no-store, private, no-cache, must-revalidate, max-age=0, s-maxage=0");
+  headers.set("cdn-cache-control", "no-store");
+  headers.set("cloudflare-cdn-cache-control", "no-store");
+  headers.set("surrogate-control", "no-store");
   headers.set("pragma", "no-cache");
   headers.set("expires", "0");
 }
@@ -348,7 +351,7 @@ __name(applyNoStoreHeaders, "applyNoStoreHeaders");
 // auth / checkout / admin / RPC surfaces.
 var HTML_CACHE_BLOCK_PREFIXES = [
   "/admin", "/account", "/cart", "/checkout", "/payment", "/login",
-  "/register", "/api", "/search", "/vip-store", "/webhook", "/auth",
+  "/register", "/api", "/api/auth", "/api/admin", "/search", "/vip-store", "/webhook", "/auth",
   "/vip", "/__/auth", "/__/firebase", "/_serverFn", "/_server"
 ];
 // Explicit allowlist — exact paths or prefixes safe for anonymous edge cache.
@@ -685,12 +688,13 @@ var phlabs_prerender_patched_default = {
     const normalProxyVia = `normal-proxy;bot=${isBot ? 1 : 0};tok=${token ? 1 : 0};loop=${isLoop ? 1 : 0};gb=${isGooglebot ? 1 : 0}`;
     const isXmlFeed = XML_FEED_PATHS.has(url.pathname);
     const htmlTtl = await getHtmlTtlSeconds();
+    const forceRefresh = request.headers.get("x-force-refresh") === "true";
     const cacheEval = isXmlFeed
       ? { ok: false, reason: "xml-feed" }
       : evaluateHtmlCacheable(request, url, htmlTtl);
     const htmlCacheable = cacheEval.ok;
     const cacheSkipReason = cacheEval.reason;
-    const cacheOpts = htmlCacheable ? {
+    const cacheOpts = htmlCacheable && !forceRefresh ? {
       cacheEverything: true,
       cacheTtl: htmlTtl,
       cacheTtlByStatus: { "200-299": htmlTtl, "301-302": 600, "404": 30, "500-599": 0 }
@@ -699,7 +703,7 @@ var phlabs_prerender_patched_default = {
     if (htmlCacheable) {
       cacheKey = buildCacheKey(url);
       try {
-        const hit = await caches.default.match(cacheKey);
+        const hit = forceRefresh ? null : await caches.default.match(cacheKey);
         if (hit) {
           const h = new Headers(hit.headers);
           h.set("cache-control", "public, max-age=0, must-revalidate");
@@ -728,6 +732,7 @@ var phlabs_prerender_patched_default = {
         return brandedErrorResponse(503, 30);
       }
       const h = new Headers(res.headers);
+      if (forceRefresh) h.set("x-phl-force-refresh", "1");
       if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/webhook/")) {
         noCache(h);
       } else if (isFirebaseAuthHelperPath(url)) {

@@ -33,6 +33,18 @@ interface PublishStatus {
   checkedAt: string;
 }
 
+interface PostPublishStatus {
+  entries: Array<{
+    id: string;
+    kind: string | null;
+    message: string | null;
+    buildId: string | null;
+    ok: boolean | null;
+    status: number | null;
+    createdAt: unknown;
+  }>;
+}
+
 function StatusCard({
   title,
   value,
@@ -63,6 +75,7 @@ function StatusCard({
 
 export default function PublishStatusTab() {
   const [status, setStatus] = useState<PublishStatus | null>(null);
+  const [postPublish, setPostPublish] = useState<PostPublishStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -70,11 +83,16 @@ export default function PublishStatusTab() {
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await fetch('/api/public/publish-status', { cache: 'no-store' });
+        const [res, detailRes] = await Promise.all([
+          fetch('/api/public/publish-status', { cache: 'no-store' }),
+          fetch('/api/public/post-publish-status', { cache: 'no-store' }),
+        ]);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as PublishStatus;
+        const details = detailRes.ok ? ((await detailRes.json()) as PostPublishStatus) : null;
         if (!cancelled) {
           setStatus(data);
+          setPostPublish(details);
           setError(null);
           setLoading(false);
         }
@@ -174,11 +192,28 @@ export default function PublishStatusTab() {
         </pre>
       </div>
 
+      {postPublish && (
+        <div className="mt-6 p-4 rounded-lg border-2 border-slate-700 bg-slate-900">
+          <h2 className="font-semibold text-white mb-2">Post-publish audit trail</h2>
+          <div className="space-y-2 text-xs font-mono text-slate-300">
+            {postPublish.entries.length === 0 && <div className="text-slate-500">No post-publish entries yet.</div>}
+            {postPublish.entries.map((entry) => (
+              <div key={entry.id} className="border border-slate-800 rounded-lg p-2 bg-slate-950/60">
+                <div className="text-slate-500">{String(entry.createdAt ?? '')}</div>
+                <div className="text-white break-all">{entry.message ?? entry.kind ?? 'post-publish event'}</div>
+                <div className="text-slate-400 break-all">build {entry.buildId ?? 'unknown'} · {entry.status ?? ''} {entry.ok === null ? '' : entry.ok ? 'ok' : 'failed'}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="mt-4 text-xs text-slate-500">
         Diagnostic endpoints:{' '}
         <code className="text-slate-300">/api/public/diag/build-state</code>,{' '}
         <code className="text-slate-300">/api/public/diag/cache-headers?path=/</code>,{' '}
-        <code className="text-slate-300">/api/public/publish-status</code>
+        <code className="text-slate-300">/api/public/publish-status</code>,{' '}
+        <code className="text-slate-300">/api/public/post-publish-status</code>
       </div>
     </div>
   );
