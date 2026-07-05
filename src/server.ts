@@ -197,11 +197,41 @@ const CSP_TEMPLATE_PREVIEW = [
 ].join("; ");
 
 const SECURITY_HEADERS: Record<string, string> = {
-  "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+  // 2y HSTS + preload — required for hstspreload.org submission.
+  "strict-transport-security": "max-age=63072000; includeSubDomains; preload",
   "x-content-type-options": "nosniff",
-  // Framing is controlled by CSP `frame-ancestors 'none'`.
+  // Legacy header; modern browsers ignore it but some scanners still flag its absence.
+  "x-xss-protection": "0",
+  // Framing is controlled by CSP `frame-ancestors` (allows Lovable preview).
+  // NOT setting X-Frame-Options: DENY on purpose — it would break the
+  // Lovable in-app preview iframe. CSP frame-ancestors is the modern control.
   "referrer-policy": "strict-origin-when-cross-origin",
-  "permissions-policy": "camera=(), microphone=(), geolocation=(), interest-cohort=(), payment=(self)",
+  // Deny every powerful feature except payment (Stripe/TrueLayer/Fena need it on self).
+  "permissions-policy": [
+    "accelerometer=()",
+    "ambient-light-sensor=()",
+    "autoplay=()",
+    "battery=()",
+    "camera=()",
+    "display-capture=()",
+    "document-domain=()",
+    "encrypted-media=()",
+    "fullscreen=(self)",
+    "geolocation=()",
+    "gyroscope=()",
+    "interest-cohort=()",
+    "magnetometer=()",
+    "microphone=()",
+    "midi=()",
+    "payment=(self)",
+    "picture-in-picture=()",
+    "publickey-credentials-get=(self)",
+    "screen-wake-lock=()",
+    "sync-xhr=()",
+    "usb=()",
+    "web-share=(self)",
+    "xr-spatial-tracking=()",
+  ].join(", "),
   "cross-origin-opener-policy": "same-origin-allow-popups",
   // Reporting API v1 — modern browsers POST violations here as application/reports+json.
   "reporting-endpoints": 'csp-endpoint="/api/public/csp-report"',
@@ -377,6 +407,9 @@ const INTERNAL_HEADER_DENYLIST = [
   "x-powered-by",
   "x-vercel-id",
   "x-render-origin-server",
+  // Strip origin server signature — no stack fingerprinting.
+  "server",
+  "via",
 ];
 function stripInternalHeaders(response: Response): Response {
   let touched = false;
