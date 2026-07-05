@@ -146,14 +146,43 @@ function SubscribersPanel() {
     void load();
   }, []);
 
+  const domainOf = (email: string) => {
+    const at = email.lastIndexOf('@');
+    return at === -1 ? '' : email.slice(at + 1).toLowerCase();
+  };
+
+  const domainOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const r of rows) {
+      const d = domainOf(r.email);
+      if (!d) continue;
+      counts.set(d, (counts.get(d) ?? 0) + 1);
+    }
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  }, [rows]);
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
+    // Support "@domain" or "domain.tld" as a domain-only query.
+    const domainQuery = needle.startsWith('@')
+      ? needle.slice(1)
+      : /^[a-z0-9.-]+\.[a-z]{2,}$/i.test(needle)
+        ? needle
+        : '';
     return rows.filter((r) => {
       if (statusFilter !== 'all' && (r.status ?? 'active') !== statusFilter) return false;
-      if (needle && !r.email.toLowerCase().includes(needle)) return false;
+      const dom = domainOf(r.email);
+      if (domainFilter !== 'all' && dom !== domainFilter) return false;
+      if (needle) {
+        if (domainQuery) {
+          if (!dom.includes(domainQuery)) return false;
+        } else if (!r.email.toLowerCase().includes(needle)) {
+          return false;
+        }
+      }
       return true;
     });
-  }, [rows, q, statusFilter]);
+  }, [rows, q, statusFilter, domainFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
