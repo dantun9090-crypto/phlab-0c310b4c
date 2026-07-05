@@ -902,3 +902,91 @@ function SettingsPanel() {
     </div>
   );
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// Debug panel — testing helpers for the on-site popup
+// ─────────────────────────────────────────────────────────────────────
+function DebugPanel() {
+  const [persistOn, setPersistOn] = useState(false);
+
+  useEffect(() => {
+    setPersistOn(isNewsletterDebugEnabled());
+  }, []);
+
+  const previewUrl = () => {
+    if (typeof window === 'undefined') return '/?newsletter=preview';
+    return `${window.location.origin}/?newsletter=preview`;
+  };
+
+  const openPreview = () => {
+    window.open(previewUrl(), '_blank', 'noopener');
+  };
+
+  const clearCooldown = () => {
+    clearNewsletterCooldown();
+    toast.success('Popup cooldown cleared. Reload the homepage to see it again.');
+  };
+
+  const togglePersist = () => {
+    const next = !persistOn;
+    setNewsletterDebug(next);
+    setPersistOn(next);
+    toast.success(
+      next
+        ? 'Persistent debug ON — popup will force-show on every homepage load in this browser.'
+        : 'Persistent debug OFF.',
+    );
+  };
+
+  return (
+    <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-5 space-y-3">
+      <div className="flex items-center gap-2">
+        <Bug className="w-4 h-4 text-amber-400" />
+        <h3 className="text-sm font-semibold text-amber-200 uppercase tracking-wider">
+          Debug / Testing
+        </h3>
+      </div>
+      <p className="text-xs text-slate-400 leading-relaxed">
+        Bypass the 7-day cooldown and force-show the popup on the homepage. Only affects{' '}
+        <strong>this browser</strong> — real visitors are unaffected.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={openPreview}
+          className="inline-flex items-center gap-2 px-3 min-h-[40px] rounded-lg bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-white text-sm font-medium"
+        >
+          <Eye className="w-4 h-4" />
+          Force-show popup (new tab)
+        </button>
+        <button
+          type="button"
+          onClick={clearCooldown}
+          className="inline-flex items-center gap-2 px-3 min-h-[40px] rounded-lg bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-white text-sm font-medium"
+        >
+          <RotateCcw className="w-4 h-4" />
+          Clear cooldown
+        </button>
+        <button
+          type="button"
+          onClick={togglePersist}
+          className={`inline-flex items-center gap-2 px-3 min-h-[40px] rounded-lg border-2 text-sm font-medium ${
+            persistOn
+              ? 'bg-amber-500/20 border-amber-500 text-amber-100'
+              : 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-white'
+          }`}
+          aria-pressed={persistOn}
+        >
+          <Bug className="w-4 h-4" />
+          Persistent debug: {persistOn ? 'ON' : 'OFF'}
+        </button>
+      </div>
+      <p className="text-[11px] text-slate-500 leading-relaxed">
+        URL flags: <code className="text-slate-400">?newsletter=preview</code> force-shows once,{' '}
+        <code className="text-slate-400">?newsletter=reset</code> clears the cooldown,{' '}
+        <code className="text-slate-400">?newsletter=debug</code> enables persistent mode.
+      </p>
+    </div>
+  );
+}
+
