@@ -20,6 +20,21 @@ import {
   isEmailSubscribed,
   emailSchema,
 } from '@/lib/newsletter';
+import { cfImgProps, cfSrcSet, cfImg } from '@/lib/cf-image';
+
+/**
+ * Responsive image sizing.
+ *
+ * Popup image slot:
+ *   - mobile: full modal width (max 520px, minus small padding) at h-40
+ *   - desktop (≥768px): fixed 180px column at h-full (~360-480px tall)
+ *
+ * At dpr=3 the mobile slot can consume ~1500px; 720w covers that comfortably
+ * after CF's AVIF/WebP negotiation. Widths chosen so the browser picks the
+ * smallest candidate that still beats the CSS pixel × dpr requirement.
+ */
+const POPUP_IMG_WIDTHS = [240, 360, 480, 720];
+const POPUP_IMG_SIZES = '(min-width: 768px) 180px, min(100vw, 520px)';
 
 const STORAGE_KEY = 'phlabs_newsletter_seen';
 const DEBUG_KEY = 'phlabs_newsletter_debug';
