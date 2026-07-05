@@ -38,6 +38,8 @@ import {
 } from '@/lib/newsletter-config';
 import ImageUploader from '@/components/admin/ImageUploader';
 import { logAdminAction } from '@/lib/admin-audit';
+import { getAdminIdToken } from '@/lib/auth-ready';
+import { uploadNewsletterPopupImage } from '@/lib/newsletter-image-upload.functions';
 import {
   clearNewsletterCooldown,
   setNewsletterDebug,
@@ -58,6 +60,15 @@ function colourInputClass(isValid: boolean) {
   return `mt-1 w-full min-h-[48px] px-3 rounded-lg bg-slate-800 border-2 text-white focus:outline-none ${
     isValid ? 'border-slate-600 focus:border-emerald-500' : 'border-red-500 focus:border-red-400'
   }`;
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error('Failed to read image'));
+    reader.onload = () => resolve(String(reader.result || '').split(',').pop() || '');
+    reader.readAsDataURL(file);
+  });
 }
 
 function fmtDate(d: Date | null | undefined) {
@@ -794,6 +805,19 @@ function SettingsPanel() {
     }
   };
 
+  const uploadPopupImage = async (file: File) => {
+    const idToken = await getAdminIdToken();
+    const base64 = await fileToBase64(file);
+    const uploaded = await uploadNewsletterPopupImage({
+      data: {
+        idToken,
+        contentType: file.type as 'image/jpeg' | 'image/png' | 'image/webp',
+        base64,
+      },
+    });
+    return uploaded.url;
+  };
+
   if (loading) {
     return (
       <div className="p-12 flex items-center justify-center text-slate-400">
@@ -953,6 +977,7 @@ function SettingsPanel() {
           <ImageUploader
             pathPrefix="newsletter/popup-image"
             currentUrl={config.imageUrl}
+            uploadFile={(file) => uploadPopupImage(file)}
             onUploaded={(url) => persistImage(url)}
             onRemoved={() => persistImage(null)}
           />
