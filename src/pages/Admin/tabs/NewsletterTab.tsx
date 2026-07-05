@@ -116,6 +116,9 @@ function SubscribersPanel() {
   const [statusFilter, setStatusFilter] = useState<'all' | SubscriberStatus>('all');
   const [page, setPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -150,6 +153,17 @@ function SubscribersPanel() {
     if (page > totalPages) setPage(1);
   }, [totalPages, page]);
 
+  // Prune selections that are no longer visible (filter/search changed).
+  useEffect(() => {
+    setSelected((prev) => {
+      if (prev.size === 0) return prev;
+      const visible = new Set(filtered.map((r) => r.id));
+      const next = new Set<string>();
+      prev.forEach((id) => visible.has(id) && next.add(id));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [filtered]);
+
   const stats = useMemo(() => {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -165,6 +179,33 @@ function SubscribersPanel() {
     }
     return { total, activeThisMonth, unsub };
   }, [rows]);
+
+  const toggleOne = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const pageAllSelected =
+    pageRows.length > 0 && pageRows.every((r) => selected.has(r.id));
+
+  const togglePageAll = () => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (pageAllSelected) pageRows.forEach((r) => next.delete(r.id));
+      else pageRows.forEach((r) => next.add(r.id));
+      return next;
+    });
+  };
+
+  const selectAllFiltered = () => {
+    setSelected(new Set(filtered.map((r) => r.id)));
+  };
+
+  const clearSelection = () => setSelected(new Set());
 
   const changeStatus = async (id: string, status: SubscriberStatus) => {
     try {
@@ -186,6 +227,12 @@ function SubscribersPanel() {
     try {
       await deleteSubscriber(id);
       setRows((prev) => prev.filter((r) => r.id !== id));
+      setSelected((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
       toast.success('Subscriber deleted.');
       void logAdminAction({
         action: 'marketing.subscriber.delete',
@@ -197,6 +244,62 @@ function SubscribersPanel() {
     } finally {
       setConfirmDeleteId(null);
     }
+  };
+
+  const bulkUpdateStatus = async (status: SubscriberStatus) => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    const results = await Promise.allSettled(
+      ids.map((id) => updateSubscriberStatus(id, status)),
+    );
+    const ok: string[] = [];
+    let failed = 0;
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled') ok.push(ids[i]);
+      else failed += 1;
+    });
+    if (ok.length > 0) {
+      setRows((prev) =>
+        prev.map((r) => (ok.includes(r.id) ? { ...r, status } : r)),
+      );
+      toast.success(`Updated ${ok.length} subscriber${ok.length === 1 ? '' : 's'} to ${status}.`);
+      void logAdminAction({
+        action: 'marketing.subscriber.bulk_update',
+        target: `${ok.length} subscribers`,
+        meta: { status, count: ok.length, failed },
+      }).catch(() => {});
+    }
+    if (failed > 0) toast.error(`Failed to update ${failed} subscriber${failed === 1 ? '' : 's'}.`);
+    clearSelection();
+    setBulkBusy(false);
+  };
+
+  const bulkDelete = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    const results = await Promise.allSettled(ids.map((id) => deleteSubscriber(id)));
+    const ok: string[] = [];
+    let failed = 0;
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled') ok.push(ids[i]);
+      else failed += 1;
+    });
+    if (ok.length > 0) {
+      const okSet = new Set(ok);
+      setRows((prev) => prev.filter((r) => !okSet.has(r.id)));
+      toast.success(`Deleted ${ok.length} subscriber${ok.length === 1 ? '' : 's'}.`);
+      void logAdminAction({
+        action: 'marketing.subscriber.bulk_delete',
+        target: `${ok.length} subscribers`,
+        meta: { count: ok.length, failed },
+      }).catch(() => {});
+    }
+    if (failed > 0) toast.error(`Failed to delete ${failed} subscriber${failed === 1 ? '' : 's'}.`);
+    clearSelection();
+    setBulkBusy(false);
+    setConfirmBulkDelete(false);
   };
 
   const exportCsv = () => {
@@ -270,6 +373,67 @@ function SubscribersPanel() {
         </button>
       </div>
 
+      {selected.size > 0 && (
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3">
+          <div className="text-sm text-emerald-100 font-medium flex-1">
+            {selected.size} selected
+            {selected.size < filtered.length && (
+              <>
+                {' · '}
+                <button
+                  type="button"
+                  onClick={selectAllFiltered}
+                  className="underline hover:text-white"
+                >
+                  Select all {filtered.length} matching
+                </button>
+              </>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              disabled={bulkBusy}
+              defaultValue=""
+              onChange={(e) => {
+                const v = e.target.value as SubscriberStatus | '';
+                if (v) void bulkUpdateStatus(v);
+                e.target.value = '';
+              }}
+              className="min-h-[36px] px-3 rounded-md bg-slate-800 border border-slate-600 text-white text-sm focus:border-emerald-500 focus:outline-none disabled:opacity-50"
+              aria-label="Bulk status change"
+            >
+              <option value="" disabled>
+                Set status…
+              </option>
+              <option value="active">Mark as Active</option>
+              <option value="unsubscribed">Mark as Unsubscribed</option>
+              <option value="bounced">Mark as Bounced</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => setConfirmBulkDelete(true)}
+              disabled={bulkBusy}
+              className="inline-flex items-center gap-2 px-3 min-h-[36px] rounded-md bg-red-600 hover:bg-red-500 text-white text-sm font-semibold disabled:opacity-50"
+            >
+              {bulkBusy ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              Delete
+            </button>
+            <button
+              type="button"
+              onClick={clearSelection}
+              disabled={bulkBusy}
+              className="px-3 min-h-[36px] rounded-md bg-slate-700 hover:bg-slate-600 text-white text-sm disabled:opacity-50"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-lg border border-slate-700 bg-slate-900 overflow-hidden">
         {loading ? (
           <div className="p-12 flex items-center justify-center text-slate-400">
@@ -285,6 +449,15 @@ function SubscribersPanel() {
             <table className="w-full text-sm">
               <thead className="bg-slate-800/50 text-slate-400 uppercase text-xs">
                 <tr>
+                  <th className="px-4 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={pageAllSelected}
+                      onChange={togglePageAll}
+                      className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                      aria-label="Select all on this page"
+                    />
+                  </th>
                   <th className="text-left px-4 py-3">Email</th>
                   <th className="text-left px-4 py-3">Status</th>
                   <th className="text-left px-4 py-3">Source</th>
@@ -293,44 +466,60 @@ function SubscribersPanel() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {pageRows.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-800/40">
-                    <td className="px-4 py-3 text-white">{r.email}</td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={r.status} />
-                    </td>
-                    <td className="px-4 py-3 text-slate-400">{r.source ?? '—'}</td>
-                    <td className="px-4 py-3 text-slate-400">{fmtDate(r.subscribedAt)}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2 justify-end">
-                        <select
-                          value={r.status ?? 'active'}
-                          onChange={(e) =>
-                            changeStatus(r.id, e.target.value as SubscriberStatus)
-                          }
-                          className="min-h-[36px] px-2 rounded-md bg-slate-800 border border-slate-600 text-white text-xs focus:border-emerald-500 focus:outline-none"
-                          aria-label={`Change status for ${r.email}`}
-                        >
-                          <option value="active">Active</option>
-                          <option value="unsubscribed">Unsubscribed</option>
-                          <option value="bounced">Bounced</option>
-                        </select>
-                        <button
-                          onClick={() => setConfirmDeleteId(r.id)}
-                          className="p-2 rounded-md text-red-400 hover:bg-red-500/10"
-                          aria-label={`Delete ${r.email}`}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {pageRows.map((r) => {
+                  const isSel = selected.has(r.id);
+                  return (
+                    <tr
+                      key={r.id}
+                      className={`hover:bg-slate-800/40 ${isSel ? 'bg-emerald-500/5' : ''}`}
+                    >
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={isSel}
+                          onChange={() => toggleOne(r.id)}
+                          className="w-4 h-4 rounded border-slate-600 bg-slate-800 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                          aria-label={`Select ${r.email}`}
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-white">{r.email}</td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={r.status} />
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">{r.source ?? '—'}</td>
+                      <td className="px-4 py-3 text-slate-400">{fmtDate(r.subscribedAt)}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2 justify-end">
+                          <select
+                            value={r.status ?? 'active'}
+                            onChange={(e) =>
+                              changeStatus(r.id, e.target.value as SubscriberStatus)
+                            }
+                            className="min-h-[36px] px-2 rounded-md bg-slate-800 border border-slate-600 text-white text-xs focus:border-emerald-500 focus:outline-none"
+                            aria-label={`Change status for ${r.email}`}
+                          >
+                            <option value="active">Active</option>
+                            <option value="unsubscribed">Unsubscribed</option>
+                            <option value="bounced">Bounced</option>
+                          </select>
+                          <button
+                            onClick={() => setConfirmDeleteId(r.id)}
+                            className="p-2 rounded-md text-red-400 hover:bg-red-500/10"
+                            aria-label={`Delete ${r.email}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
+
 
       {filtered.length > PAGE_SIZE && (
         <div className="flex items-center justify-between text-sm text-slate-400">
@@ -388,6 +577,49 @@ function SubscribersPanel() {
                 className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-semibold"
               >
                 Delete permanently
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmBulkDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => !bulkBusy && setConfirmBulkDelete(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-6"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">
+                  Delete {selected.size} subscriber{selected.size === 1 ? '' : 's'}?
+                </h3>
+                <p className="text-sm text-slate-400 mt-1">
+                  This permanently removes the selected subscribers. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmBulkDelete(false)}
+                disabled={bulkBusy}
+                className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void bulkDelete()}
+                disabled={bulkBusy}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-semibold disabled:opacity-50"
+              >
+                {bulkBusy && <Loader2 className="w-4 h-4 animate-spin" />}
+                Delete {selected.size}
               </button>
             </div>
           </div>
