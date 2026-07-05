@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   Bug,
   Eye,
+  RefreshCw,
   RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
