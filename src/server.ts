@@ -999,9 +999,7 @@ export default {
         const fbResp = await fetch(fbReq);
         const headers = new Headers(fbResp.headers);
         headers.delete("x-frame-options");
-        headers.set("cache-control", "no-cache, no-store, must-revalidate");
-        headers.set("pragma", "no-cache");
-        headers.set("expires", "0");
+        for (const [k, v] of Object.entries(STRICT_NO_STORE_HEADERS)) headers.set(k, v);
         return new Response(fbResp.body, {
           status: fbResp.status,
           statusText: fbResp.statusText,
@@ -1035,7 +1033,7 @@ export default {
                 status: 200,
                 headers: {
                   "content-type": "text/html; charset=utf-8",
-                  "cache-control": "no-store",
+                  ...STRICT_NO_STORE_HEADERS,
                   "x-robots-tag": "noindex, nofollow",
                   "referrer-policy": "no-referrer",
                 },
@@ -1043,7 +1041,7 @@ export default {
             );
           }
           if (request.method !== "POST") {
-            return new Response("Method Not Allowed", { status: 405, headers: { "cache-control": "no-store", allow: "GET, POST" } });
+            return new Response("Method Not Allowed", { status: 405, headers: { ...STRICT_NO_STORE_HEADERS, allow: "GET, POST" } });
           }
           // Rate-limit: 3 attempts per IP per hour to prevent brute-forcing ADMIN_GATE_SECRET.
           const ip = request.headers.get("cf-connecting-ip")
@@ -1058,7 +1056,7 @@ export default {
               log.warn({ event: "admin_unlock.rate_limited", ...baseFields, ip });
               return new Response("Too many attempts. Try again later.", {
                 status: 429,
-                headers: { "cache-control": "no-store", "retry-after": String(Math.ceil((WINDOW_MS - (now - bucket.start)) / 1000)) },
+                headers: { ...STRICT_NO_STORE_HEADERS, "retry-after": String(Math.ceil((WINDOW_MS - (now - bucket.start)) / 1000)) },
               });
             }
             bucket.count += 1;
@@ -1087,7 +1085,7 @@ export default {
             token = "";
           }
           if (!token || !ctEq(token, adminGateSecret)) {
-            return new Response("Forbidden", { status: 403, headers: { "cache-control": "no-store", "referrer-policy": "no-referrer" } });
+            return new Response("Forbidden", { status: 403, headers: { ...STRICT_NO_STORE_HEADERS, "referrer-policy": "no-referrer" } });
           }
           adminUnlockAttempts.delete(ip);
           return new Response(null, {
@@ -1095,7 +1093,7 @@ export default {
             headers: {
               location: "/admin",
               "set-cookie": `admin_gate=${encodeURIComponent(adminGateSecret)}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=43200`,
-              "cache-control": "no-store",
+              ...STRICT_NO_STORE_HEADERS,
               "referrer-policy": "no-referrer",
             },
           });
@@ -1115,7 +1113,7 @@ export default {
                 status: 401,
                 headers: {
                   "content-type": "text/html; charset=utf-8",
-                  "cache-control": "no-store",
+                  ...STRICT_NO_STORE_HEADERS,
                   "x-robots-tag": "noindex, nofollow",
                 },
               },
@@ -1134,7 +1132,7 @@ export default {
         dest.protocol = "https:";
         dest.port = "";
         log.info({ event: "worker.redirect", status: 301, reason: "canonical-host", to: dest.toString(), ...baseFields });
-        return Response.redirect(dest.toString(), 301);
+        return applyStrictNoStoreHeaders(Response.redirect(dest.toString(), 301), url.pathname);
       }
       // www of a legacy host → its own apex (NOT canonical phlabs.co.uk).
       const wwwApex = WWW_TO_APEX_HOSTS.get(reqHost);
@@ -1144,7 +1142,7 @@ export default {
         dest.protocol = "https:";
         dest.port = "";
         log.info({ event: "worker.redirect", status: 301, reason: "legacy-www-apex", to: dest.toString(), ...baseFields });
-        return Response.redirect(dest.toString(), 301);
+        return applyStrictNoStoreHeaders(Response.redirect(dest.toString(), 301), url.pathname);
       }
 
       // 1a-pre. Stale hashed-asset guard. If a request for /assets/* or
