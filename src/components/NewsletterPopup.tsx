@@ -368,8 +368,7 @@ export default function NewsletterPopup() {
             <Mail className="w-10 h-10 opacity-70" style={{ color: accentColor }} />
           </div>
         ) : null}
-          </div>
-        )}
+
 
         <div className={`flex-1 p-6 md:p-7 ${!hasImage ? 'text-center' : ''}`}>
           {success ? (
