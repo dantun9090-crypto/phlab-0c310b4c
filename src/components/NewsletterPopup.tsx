@@ -8,7 +8,7 @@
  *  - Locks focus, closes on Escape or backdrop click.
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { X, Loader2, CheckCircle2, Mail } from 'lucide-react';
+import { X, Loader2, CheckCircle2, Mail, ImageOff } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import {
   getPopupConfig,
@@ -94,6 +94,7 @@ export default function NewsletterPopup() {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
@@ -246,12 +247,20 @@ export default function NewsletterPopup() {
 
         {hasImage && (
           <div className="md:w-[180px] w-full flex-shrink-0 bg-slate-950">
-            <img
-              src={bustedImageUrl}
-              alt=""
-              className="w-full h-40 md:h-full object-cover md:rounded-l-2xl rounded-t-2xl md:rounded-tr-none"
-              loading="eager"
-            />
+            {!imageError ? (
+              <img
+                src={bustedImageUrl}
+                alt=""
+                className="w-full h-40 md:h-full object-cover md:rounded-l-2xl rounded-t-2xl md:rounded-tr-none"
+                loading="eager"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div className="w-full h-40 md:h-full flex flex-col items-center justify-center gap-2 px-4 text-center">
+                <ImageOff className="w-8 h-8 text-slate-500" />
+                <span className="text-xs text-slate-500">Image unavailable</span>
+              </div>
+            )}
           </div>
         )}
 
