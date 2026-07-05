@@ -252,16 +252,28 @@ export default function NewsletterPopup() {
   const popupBackground = safeColor(config.popupBackground, DEFAULT_POPUP_CONFIG.popupBackground);
   const popupPanel = safeColor(config.popupPanel, DEFAULT_POPUP_CONFIG.popupPanel);
 
-  // In debug/force mode, honour a `?imgcb=<ts>` URL param (or fall back to
-  // Date.now()) to bypass the browser image cache so admins can verify a
-  // freshly-uploaded popup image is live.
-  const bustedImageUrl = (() => {
-    if (!hasImage) return config.imageUrl!;
-    if (!debugForced) return config.imageUrl!;
-    const params = new URLSearchParams(window.location.search);
-    const cb = params.get('imgcb') ?? String(Date.now());
-    const sep = config.imageUrl!.includes('?') ? '&' : '?';
-    return `${config.imageUrl!}${sep}_cb=${encodeURIComponent(cb)}`;
+  // Responsive image props via the Cloudflare `/_img` resizer. Falls back
+  // to the original URL when the source host isn't allow-listed (see
+  // src/lib/cf-image.ts). In debug/force mode, append a `_cb` cache-buster
+  // so freshly-uploaded popup images become visible without a hard refresh.
+  const imgProps = (() => {
+    if (!hasImage) return null;
+    let source = config.imageUrl!;
+    if (debugForced) {
+      const params = new URLSearchParams(window.location.search);
+      const cb = params.get('imgcb') ?? String(Date.now());
+      const sep = source.includes('?') ? '&' : '?';
+      source = `${source}${sep}_cb=${encodeURIComponent(cb)}`;
+    }
+    const base = cfImgProps(source, {
+      widths: POPUP_IMG_WIDTHS,
+      sizes: POPUP_IMG_SIZES,
+      quality: 82,
+      fit: 'cover',
+      fallbackWidth: 480,
+    });
+    // When cf-image can't transform (non-allowlisted host), spread only src.
+    return base;
   })();
 
   return (
@@ -294,7 +306,7 @@ export default function NewsletterPopup() {
           <X className="w-4 h-4" />
         </button>
 
-        {hasImage && (
+        {hasImage && imgProps && (
           <div
             className="md:w-[180px] w-full flex-shrink-0"
             style={{
@@ -307,7 +319,9 @@ export default function NewsletterPopup() {
           >
             {!imageError ? (
               <img
-                src={bustedImageUrl}
+                src={imgProps.src}
+                srcSet={imgProps.srcSet}
+                sizes={imgProps.sizes}
                 alt=""
                 width={360}
                 height={480}
