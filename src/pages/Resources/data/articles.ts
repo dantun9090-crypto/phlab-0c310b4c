@@ -2557,6 +2557,116 @@ For studies designed to dissect the contribution of GCGR-mediated thermogenesis,
       { id: 6, authors: 'Medicines and Healthcare products Regulatory Agency (MHRA)', year: 2024, title: 'What is a medicine?', journal: 'MHRA Guidance' },
     ]
   },
+  // ---------------------------------------------
+  // Peptide Reconstitution Protocol (UK Research)
+  // ---------------------------------------------
+  {
+    slug: 'peptide-reconstitution-guide',
+    title: 'Peptide Reconstitution Guide for UK Laboratories: Bacteriostatic Water Protocol',
+    subtitle: 'Step-by-step protocol for reconstituting lyophilised research peptides with bacteriostatic water, including volume calculations, sterile technique and post-reconstitution storage.',
+    category: 'Laboratory Protocols',
+    readTime: 10,
+    publishDate: '2026-07-05',
+    seoTitle: 'Peptide Reconstitution Guide (UK): Bacteriostatic Water Protocol',
+    seoDescription: 'Technical protocol for reconstituting lyophilised research peptides in UK laboratories — bacteriostatic water volumes, sterile technique, storage. For Research Use Only.',
+    excerpt: 'A technical protocol for reconstituting lyophilised research peptides in UK laboratories. Covers bacteriostatic water selection, volume calculations for common vial masses, sterile transfer technique, mixing to preserve peptide integrity, and post-reconstitution storage. For Research Use Only. Not for Human Consumption.',
+    keywords: [
+      'peptide reconstitution',
+      'how to reconstitute peptides',
+      'peptide mixing guide',
+      'bacteriostatic water peptide',
+      'reconstitute bpc 157',
+      'reconstitute tb 500',
+      'peptide reconstitution uk',
+      'lyophilised peptide protocol',
+    ],
+    relatedSlugs: [
+      'peptide-storage-lyophilisation-science',
+      'hplc-testing-explained',
+      'peptide-categories-uk-research',
+    ],
+    content: [
+      {
+        body: `This guide describes the standard laboratory protocol for reconstituting lyophilised (freeze-dried) research peptides using bacteriostatic water. It is written for UK laboratory staff working with reference peptides such as <a href="/products/bpc-157" style="color: #10b981; text-decoration: underline;">BPC-157</a>, <a href="/products/tb-500-thymosin-beta-4" style="color: #10b981; text-decoration: underline;">TB-500</a>, <a href="/products/ghk-cu" style="color: #10b981; text-decoration: underline;">GHK-Cu</a>, and other lyophilised research materials. <strong>All peptides discussed are For Research Use Only. Not for Human Consumption.</strong> No dosing, administration, or clinical instructions are provided or implied.`,
+        callout: {
+          type: 'warning',
+          text: 'This is a laboratory reconstitution protocol for handling reference peptides in an in-vitro research context. It is not a medical or dosing instruction. Research peptides are not licensed medicines in the UK under the Human Medicines Regulations 2012.'
+        }
+      },
+      {
+        heading: 'Why Peptides Are Supplied Lyophilised',
+        body: `Research peptides are supplied as lyophilised (freeze-dried) powder because peptides in aqueous solution are subject to hydrolysis, oxidation, aggregation, and microbial contamination. Removing water by sublimation under vacuum yields a stable, amorphous solid that can be stored for extended periods at −20 °C with minimal chemical degradation. Reconstitution — the controlled reintroduction of a defined volume of diluent — returns the peptide to a working solution suitable for downstream analytical or in-vitro use. The underlying stability chemistry is covered in <a href="/resources/peptide-storage-lyophilisation-science" style="color: #10b981; text-decoration: underline;">Peptide Storage Science: Lyophilisation, Reconstitution, and Stability Maximisation</a>.`
+      },
+      {
+        heading: 'Choice of Diluent: Bacteriostatic Water',
+        body: `The standard diluent for the majority of research peptides is bacteriostatic water for injection — sterile water containing 0.9% benzyl alcohol as a bacteriostatic agent. Benzyl alcohol suppresses microbial growth in the vial across multiple withdrawals, which is important because a reconstituted peptide solution is typically drawn from over several days or weeks. For hydrophobic or aggregation-prone peptides, sterile water for injection or dilute acetic acid may be preferred; consult the peptide-specific Certificate of Analysis. PH Labs supplies <a href="/product/bacteriostatic-water-0-9-benzyl-alcohol-lab-diluent" style="color: #10b981; text-decoration: underline;">bacteriostatic water (0.9% benzyl alcohol)</a> as a matched research diluent.`,
+        callout: {
+          type: 'info',
+          text: 'Bacteriostatic water is a research diluent for laboratory reconstitution of lyophilised reference peptides. It is not being supplied for human injection or medical use.'
+        }
+      },
+      {
+        heading: 'Reconstitution Volume: The Concentration Calculation',
+        body: `The reconstitution volume determines the final concentration of the working stock. The relationship is:<br /><br /><strong>Concentration (mg/mL) = Peptide mass in vial (mg) ÷ Diluent volume (mL)</strong><br /><br />Working stocks in the 1–10 mg/mL range are typical for in-vitro assay use. Higher concentrations reduce diluent volume but increase pipetting error at small aliquot volumes; lower concentrations are gentler on the peptide but require larger aliquots. Choose the reconstitution volume to match the downstream assay's pipetting resolution — commonly 2 mL of diluent per 10 mg vial for a 5 mg/mL stock.`,
+        table: {
+          headers: ['Peptide mass in vial', 'Diluent volume', 'Resulting concentration'],
+          rows: [
+            ['2 mg', '1 mL', '2 mg/mL'],
+            ['5 mg', '1 mL', '5 mg/mL'],
+            ['5 mg', '2 mL', '2.5 mg/mL'],
+            ['10 mg', '2 mL', '5 mg/mL'],
+            ['10 mg', '5 mL', '2 mg/mL'],
+            ['15 mg', '3 mL', '5 mg/mL'],
+          ],
+        },
+      },
+      {
+        heading: 'Step-by-Step Reconstitution Protocol',
+        body: `<strong>1. Equilibrate the vial.</strong> Remove the lyophilised peptide vial from −20 °C storage and allow it to reach room temperature (20–25 °C) undisturbed for 20–30 minutes. Reconstituting a cold vial can cause condensation on the powder and accelerated aggregation.<br /><br /><strong>2. Prepare the workspace.</strong> Wipe the working surface with 70% isopropanol. Wipe the rubber septa of both the peptide vial and the bacteriostatic water vial with a fresh 70% isopropanol swab and allow to dry.<br /><br /><strong>3. Draw the diluent.</strong> Using a sterile syringe and needle appropriate for the target volume, draw the calculated volume of bacteriostatic water from its vial. Expel any air bubbles.<br /><br /><strong>4. Transfer with slow wall injection.</strong> Insert the needle into the peptide vial at an angle so that the diluent runs slowly down the inner glass wall rather than jetting directly onto the lyophilised cake. Direct high-velocity impact can shear peptide chains and promote aggregation.<br /><br /><strong>5. Dissolve by gentle rotation.</strong> Do not shake. Rotate the vial slowly between the fingers or invert gently 5–10 times until the powder is fully dissolved. Complete dissolution typically takes 30–120 seconds; larger peptides may take longer.<br /><br /><strong>6. Visual inspection.</strong> The reconstituted solution should be clear and colourless (GHK-Cu is a notable exception — the copper-complexed form is characteristically blue). Cloudiness, particulates, or precipitate indicate aggregation and the vial should not be used for quantitative work.<br /><br /><strong>7. Label the vial.</strong> Record peptide identity, batch number, reconstitution date, diluent volume, and resulting concentration on the vial label. Uniquely identifying every reconstituted vial is a standard laboratory quality practice and is required for traceable data.`
+      },
+      {
+        heading: 'Sterile Technique and Contamination Control',
+        body: `Because bacteriostatic water only suppresses — rather than eliminates — microbial growth, sterile technique during reconstitution is essential. Use a fresh needle for each vial entry, never re-use needles between vials, and swab the septum with 70% isopropanol before every withdrawal. Work in a clean, draft-free area; a laminar flow hood is preferred where available. Contaminated peptide solutions can generate misleading results in cell-based assays and should be discarded.`
+      },
+      {
+        heading: 'Post-Reconstitution Storage',
+        body: `Once reconstituted, the peptide solution should be stored at 2–8 °C (standard laboratory refrigerator) and used within 28–30 days for most peptides. For longer-term storage, dispense the reconstituted stock into small single-use aliquots in low-binding polypropylene tubes and store at −20 °C or −80 °C. Aliquoting is important because each freeze–thaw cycle causes measurable peptide degradation — a single-use aliquot design eliminates this variable. Avoid storing reconstituted peptide solutions in glass under long-term freezing; low-binding polypropylene is the standard.`,
+        table: {
+          headers: ['Storage condition', 'Typical shelf life', 'Notes'],
+          rows: [
+            ['Lyophilised, −20 °C', '24 months+', 'Original supplied form; most stable'],
+            ['Lyophilised, 2–8 °C (short term)', '30–60 days', 'Acceptable during active use'],
+            ['Reconstituted, 2–8 °C', '28–30 days', 'Standard working stock storage'],
+            ['Reconstituted, −20 °C aliquots', '3–6 months', 'Single-use aliquots only'],
+            ['Reconstituted, −80 °C aliquots', '6–12 months', 'Best for scarce or expensive peptides'],
+          ],
+        },
+      },
+      {
+        heading: 'Common Reconstitution Mistakes to Avoid',
+        body: `<strong>Shaking the vial.</strong> Mechanical agitation and foaming denature peptides and promote aggregation. Rotate or invert gently instead.<br /><br /><strong>Reconstituting a cold vial.</strong> Water condensation on the lyophilised cake destabilises the peptide. Always equilibrate to room temperature first.<br /><br /><strong>Using tap or deionised water.</strong> Only pharmaceutical-grade sterile water or bacteriostatic water for injection is acceptable. Deionised laboratory water contains microbial and endotoxin contamination.<br /><br /><strong>Repeated freeze–thaw cycles.</strong> Every freeze–thaw cycle causes measurable degradation. Aliquot the working stock at the point of reconstitution.<br /><br /><strong>Skipping label information.</strong> An unlabelled reconstituted vial has no provenance and no traceable date — the peptide has effectively lost its Certificate of Analysis chain of custody.`
+      },
+      {
+        heading: 'Verifying the Reconstituted Peptide',
+        body: `For quantitative research applications, the reconstituted peptide can be re-verified by reversed-phase HPLC against the supplied Certificate of Analysis chromatogram. Detection of new peaks, loss of the main peak area, or peak broadening indicates degradation or aggregation and the stock should be replaced. The methodology is described in <a href="/resources/hplc-testing-explained" style="color: #10b981; text-decoration: underline;">HPLC Testing Explained</a> and <a href="/resources/how-to-read-hplc-certificate-of-analysis" style="color: #10b981; text-decoration: underline;">How to Read an HPLC Certificate of Analysis</a>. PH Labs supplies batch-specific COAs with every research peptide — see the <a href="/lab-reports" style="color: #10b981; text-decoration: underline;">lab reports library</a> for representative chromatograms.`
+      },
+      {
+        heading: 'Summary',
+        body: `Reconstituting a lyophilised research peptide correctly is a matter of controlled dilution, sterile technique, and post-reconstitution stability management. Bacteriostatic water is the standard diluent; a working stock of 2–5 mg/mL is typical; gentle wall injection preserves peptide integrity; refrigerated storage under 30 days or aliquoted freezer storage under 6 months preserves the stock. Every reconstituted vial should be uniquely labelled with peptide identity, concentration, and date. For the underlying stability chemistry see <a href="/resources/peptide-storage-lyophilisation-science" style="color: #10b981; text-decoration: underline;">Peptide Storage Science</a>; for the analytical verification see <a href="/resources/hplc-testing-explained" style="color: #10b981; text-decoration: underline;">HPLC Testing Explained</a>; for the peptide classes involved see <a href="/resources/peptide-categories-uk-research" style="color: #10b981; text-decoration: underline;">Peptide Categories for UK Research</a>. <strong>All materials are For Research Use Only. Not for Human Consumption.</strong>`,
+        callout: {
+          type: 'warning',
+          text: 'This protocol describes laboratory handling of reference research peptides. It is not medical, dosing, or administration guidance. Research peptides are not licensed for human use in the UK.'
+        }
+      },
+    ],
+    references: [
+      { id: 1, authors: 'Manning MC, Chou DK, Murphy BM, Payne RW, Katayama DS.', year: 2010, title: 'Stability of protein pharmaceuticals: an update', journal: 'Pharm Res', doi: '10.1007/s11095-009-0045-6' },
+      { id: 2, authors: 'Wang W.', year: 2000, title: 'Lyophilization and development of solid protein pharmaceuticals', journal: 'Int J Pharm', doi: '10.1016/S0378-5173(00)00423-3' },
+      { id: 3, authors: 'Bhatnagar BS, Bogner RH, Pikal MJ.', year: 2007, title: 'Protein stability during freezing: separation of stresses and mechanisms of protein stabilization', journal: 'Pharm Dev Technol', doi: '10.1080/10837450701481157' },
+      { id: 4, authors: 'European Pharmacopoeia', year: 2023, title: 'Bacteriostatic water for injections (0169)', journal: 'Ph. Eur. 11th Edition' },
+      { id: 5, authors: 'Medicines and Healthcare products Regulatory Agency (MHRA)', year: 2024, title: 'What is a medicine?', journal: 'MHRA Guidance' },
+    ]
+  },
 ];
 
 // Slug aliases — multiple URLs resolving to the same canonical article.
