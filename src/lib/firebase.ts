@@ -22,6 +22,7 @@ import {
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
+  indexedDBLocalPersistence,
   User as FirebaseUser,
 } from 'firebase/auth';
 import { checkLockout, recordFailure, clearFailures, formatRemaining } from '@/lib/login-lockout';
