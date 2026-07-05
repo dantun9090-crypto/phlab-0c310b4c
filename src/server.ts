@@ -407,6 +407,9 @@ const INTERNAL_HEADER_DENYLIST = [
   "x-powered-by",
   "x-vercel-id",
   "x-render-origin-server",
+  // Strip origin server signature — no stack fingerprinting.
+  "server",
+  "via",
 ];
 function stripInternalHeaders(response: Response): Response {
   let touched = false;
