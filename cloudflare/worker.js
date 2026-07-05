@@ -764,11 +764,11 @@ export default {
     //     explicitly hit caches.default. Use a normalized cache key (no
     //     cookies, GET) so __cf_bm and per-visitor headers can't bust it.
     let cacheKey = null;
-    if (htmlCacheable && !forceRefresh) {
+    if (htmlCacheable) {
       // Use the request URL directly (canonical via redirects upstream).
       cacheKey = new Request(request.url, { method: "GET" });
       try {
-        const hit = await caches.default.match(cacheKey);
+        const hit = forceRefresh ? null : await caches.default.match(cacheKey);
         if (hit) {
           const h = new Headers(hit.headers);
           h.set("cache-control", "public, max-age=0, must-revalidate");
