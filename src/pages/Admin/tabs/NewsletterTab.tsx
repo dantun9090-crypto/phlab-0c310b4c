@@ -303,22 +303,35 @@ function SubscribersPanel() {
   };
 
   const exportCsv = () => {
-    const header = ['email', 'status', 'source', 'subscribedAt'];
+    const header = [
+      'id',
+      'email',
+      'status',
+      'source',
+      'subscribedAt',
+      'userAgent',
+      'ipHash',
+    ];
+    const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
     const csv = [header.join(',')]
       .concat(
         filtered.map((r) =>
           [
+            r.id,
             r.email,
             r.status ?? 'active',
             r.source ?? '',
             r.subscribedAt ? r.subscribedAt.toISOString() : '',
+            r.userAgent ?? '',
+            r.ipHash ?? '',
           ]
-            .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+            .map(esc)
             .join(','),
         ),
       )
       .join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    // Prepend BOM so Excel detects UTF-8 correctly.
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const today = new Date().toISOString().slice(0, 10);
@@ -327,6 +340,7 @@ function SubscribersPanel() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
 
   return (
     <div className="space-y-6">

@@ -33,6 +33,8 @@ export interface Subscriber {
   source?: string;
   status?: SubscriberStatus;
   subscribedAt?: Date | null;
+  userAgent?: string;
+  ipHash?: string;
 }
 
 export interface SubscribeResult {
@@ -121,6 +123,8 @@ export async function getNewsletterSubscribers(): Promise<Subscriber[]> {
       source: (data.source as string) ?? undefined,
       status: (data.status as SubscriberStatus) ?? 'active',
       subscribedAt: toDate(data.subscribedAt),
+      userAgent: typeof data.userAgent === 'string' ? data.userAgent : undefined,
+      ipHash: typeof data.ipHash === 'string' ? data.ipHash : undefined,
     };
   });
 }
