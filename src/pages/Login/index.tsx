@@ -315,26 +315,23 @@ export default function Login() {
                     </div>
                   </div>
 
-                  <label
-                    htmlFor="rememberMe"
-                    className="flex items-center gap-3 text-[#9cb8d9] text-sm mt-1 select-none cursor-pointer py-2 -my-1 active:opacity-80"
-                    onClick={(e) => {
-                      // Belt-and-suspenders: some mobile browsers swallow the
-                      // native input click when an ancestor handler runs first.
-                      const target = e.target as HTMLElement;
-                      if (target.tagName !== 'INPUT') {
-                        e.preventDefault();
-                        setRememberMe(v => !v);
-                      }
-                    }}
-                  >
-                    <input
-                      id="rememberMe"
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={e => setRememberMe(e.target.checked)}
-                      className="w-5 h-5 rounded border-white/30 bg-[#0d1f38] accent-emerald-500 cursor-pointer"
-                    />
+                  <label htmlFor="rememberMe" className="flex items-center gap-3 text-[#9cb8d9] text-sm mt-1 select-none cursor-pointer py-2 -my-1 active:opacity-80 group">
+                    <span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
+                      <input
+                        id="rememberMe"
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={e => setRememberMe(e.target.checked)}
+                        className="sr-only"
+                      />
+                      <span className={`flex h-5 w-5 items-center justify-center rounded border-2 transition-all ${rememberMe ? 'border-emerald-500 bg-emerald-500' : 'border-white/30 bg-[#0d1f38] group-hover:border-white/50'}`} aria-hidden="true">
+                        {rememberMe && (
+                          <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2 6l3 3 5-5" />
+                          </svg>
+                        )}
+                      </span>
+                    </span>
                     <span>Keep me signed in on this device</span>
                   </label>
 
