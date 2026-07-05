@@ -31,7 +31,8 @@ export type AdminAuditAction =
   | 'marketing.subscriber.delete'
   | 'marketing.subscriber.bulk_update'
   | 'marketing.subscriber.bulk_delete'
-  | 'marketing.popup.update';
+  | 'marketing.popup.update'
+  | 'email.brand.update';
 
 interface LogPayload {
   action: AdminAuditAction;
