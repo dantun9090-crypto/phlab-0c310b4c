@@ -831,6 +831,8 @@ function SettingsPanel() {
           />
         </div>
 
+        <DebugPanel />
+
         <button
           onClick={save}
           disabled={saving}
