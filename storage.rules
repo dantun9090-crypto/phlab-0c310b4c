@@ -29,6 +29,10 @@ service firebase.storage {
       allow read: if true;
       allow write: if isAdmin() && isImage() && isUnder10MB();
     }
+    match /newsletter/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin() && isImage() && isUnder10MB();
+    }
     match /public/{allPaths=**} {
       allow read: if true;
       allow write: if isAdmin() && isUnder10MB();
