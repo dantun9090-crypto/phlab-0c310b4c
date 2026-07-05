@@ -22,6 +22,20 @@ import {
 } from '@/lib/newsletter';
 
 const STORAGE_KEY = 'phlabs_newsletter_seen';
+const DEBUG_KEY = 'phlabs_newsletter_debug';
+
+/** Reads debug flags from URL (?newsletter=preview|reset|debug) and localStorage. */
+function readDebugFlags(): { force: boolean; reset: boolean; persist: boolean } {
+  if (typeof window === 'undefined') return { force: false, reset: false, persist: false };
+  const params = new URLSearchParams(window.location.search);
+  const q = (params.get('newsletter') ?? '').toLowerCase();
+  const persist = window.localStorage.getItem(DEBUG_KEY) === '1';
+  return {
+    force: q === 'preview' || q === 'debug' || persist,
+    reset: q === 'reset' || q === 'preview',
+    persist: q === 'debug' || persist,
+  };
+}
 
 function withinCooldown(cooldownDays: number): boolean {
   if (typeof window === 'undefined') return true;
@@ -45,6 +59,33 @@ function markSeen() {
   }
 }
 
+/** Public helper — clears the cooldown timestamp so the popup can show again. */
+export function clearNewsletterCooldown() {
+  try {
+    window.localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Public helper — enables/disables persistent debug mode (force-show on every load). */
+export function setNewsletterDebug(enabled: boolean) {
+  try {
+    if (enabled) window.localStorage.setItem(DEBUG_KEY, '1');
+    else window.localStorage.removeItem(DEBUG_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function isNewsletterDebugEnabled(): boolean {
+  try {
+    return window.localStorage.getItem(DEBUG_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 export default function NewsletterPopup() {
   const [open, setOpen] = useState(false);
   const [visible, setVisible] = useState(false); // controls animation
@@ -56,22 +97,42 @@ export default function NewsletterPopup() {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
+  const [debugForced, setDebugForced] = useState(false);
+
   const close = useCallback(() => {
-    markSeen();
+    // In debug/force mode, don't persist a "seen" marker so the popup
+    // can be reopened for repeated testing.
+    if (!debugForced) markSeen();
     setVisible(false);
     // let fade-out play out before unmount
     window.setTimeout(() => setOpen(false), 250);
-  }, []);
+  }, [debugForced]);
 
   // Boot: fetch config, respect cooldown, respect existing subscriber
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
+    const flags = readDebugFlags();
+    if (flags.reset) clearNewsletterCooldown();
+    if (flags.force) setDebugForced(true);
+    if (flags.force || flags.reset) {
+      // Log once so a tester knows debug mode is active.
+      console.info('[NewsletterPopup] debug mode:', flags);
+    }
+
     (async () => {
       const cfg = await getPopupConfig();
       if (cancelled) return;
       setConfig(cfg);
+
+      if (flags.force) {
+        // Force-show immediately, bypass cooldown + subscribed checks + enabled flag.
+        setOpen(true);
+        requestAnimationFrame(() => setVisible(true));
+        return;
+      }
+
       if (!cfg.isEnabled) return;
       if (withinCooldown(cfg.cooldownDays)) return;
 
