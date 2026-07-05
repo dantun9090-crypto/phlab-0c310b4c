@@ -1020,6 +1020,15 @@ function DebugPanel() {
         </button>
         <button
           type="button"
+          onClick={refreshImage}
+          className="inline-flex items-center gap-2 px-3 min-h-[40px] rounded-lg bg-slate-800 hover:bg-slate-700 border-2 border-slate-600 text-white text-sm font-medium"
+          title="Opens the popup with a fresh cache-busting param on the image URL."
+        >
+          <RefreshCw className="w-4 h-4" />
+          Force-reload popup image
+        </button>
+        <button
+          type="button"
           onClick={togglePersist}
           className={`inline-flex items-center gap-2 px-3 min-h-[40px] rounded-lg border-2 text-sm font-medium ${
             persistOn
