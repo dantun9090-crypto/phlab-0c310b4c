@@ -242,6 +242,8 @@ export default function NewsletterPopup() {
   })();
 
   return (
+    <>
+    <style>{`@keyframes newsletter-img-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
     <div
       className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
         visible ? 'opacity-100' : 'opacity-0'
