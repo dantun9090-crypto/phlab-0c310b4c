@@ -116,6 +116,9 @@ function SubscribersPanel() {
   const [statusFilter, setStatusFilter] = useState<'all' | SubscriberStatus>('all');
   const [page, setPage] = useState(1);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -150,6 +153,17 @@ function SubscribersPanel() {
     if (page > totalPages) setPage(1);
   }, [totalPages, page]);
 
+  // Prune selections that are no longer visible (filter/search changed).
+  useEffect(() => {
+    setSelected((prev) => {
+      if (prev.size === 0) return prev;
+      const visible = new Set(filtered.map((r) => r.id));
+      const next = new Set<string>();
+      prev.forEach((id) => visible.has(id) && next.add(id));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [filtered]);
+
   const stats = useMemo(() => {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -165,6 +179,33 @@ function SubscribersPanel() {
     }
     return { total, activeThisMonth, unsub };
   }, [rows]);
+
+  const toggleOne = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const pageAllSelected =
+    pageRows.length > 0 && pageRows.every((r) => selected.has(r.id));
+
+  const togglePageAll = () => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (pageAllSelected) pageRows.forEach((r) => next.delete(r.id));
+      else pageRows.forEach((r) => next.add(r.id));
+      return next;
+    });
+  };
+
+  const selectAllFiltered = () => {
+    setSelected(new Set(filtered.map((r) => r.id)));
+  };
+
+  const clearSelection = () => setSelected(new Set());
 
   const changeStatus = async (id: string, status: SubscriberStatus) => {
     try {
@@ -186,6 +227,12 @@ function SubscribersPanel() {
     try {
       await deleteSubscriber(id);
       setRows((prev) => prev.filter((r) => r.id !== id));
+      setSelected((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
       toast.success('Subscriber deleted.');
       void logAdminAction({
         action: 'marketing.subscriber.delete',
@@ -197,6 +244,62 @@ function SubscribersPanel() {
     } finally {
       setConfirmDeleteId(null);
     }
+  };
+
+  const bulkUpdateStatus = async (status: SubscriberStatus) => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    const results = await Promise.allSettled(
+      ids.map((id) => updateSubscriberStatus(id, status)),
+    );
+    const ok: string[] = [];
+    let failed = 0;
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled') ok.push(ids[i]);
+      else failed += 1;
+    });
+    if (ok.length > 0) {
+      setRows((prev) =>
+        prev.map((r) => (ok.includes(r.id) ? { ...r, status } : r)),
+      );
+      toast.success(`Updated ${ok.length} subscriber${ok.length === 1 ? '' : 's'} to ${status}.`);
+      void logAdminAction({
+        action: 'marketing.subscriber.bulk_update',
+        target: `${ok.length} subscribers`,
+        meta: { status, count: ok.length, failed },
+      }).catch(() => {});
+    }
+    if (failed > 0) toast.error(`Failed to update ${failed} subscriber${failed === 1 ? '' : 's'}.`);
+    clearSelection();
+    setBulkBusy(false);
+  };
+
+  const bulkDelete = async () => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    const results = await Promise.allSettled(ids.map((id) => deleteSubscriber(id)));
+    const ok: string[] = [];
+    let failed = 0;
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled') ok.push(ids[i]);
+      else failed += 1;
+    });
+    if (ok.length > 0) {
+      const okSet = new Set(ok);
+      setRows((prev) => prev.filter((r) => !okSet.has(r.id)));
+      toast.success(`Deleted ${ok.length} subscriber${ok.length === 1 ? '' : 's'}.`);
+      void logAdminAction({
+        action: 'marketing.subscriber.bulk_delete',
+        target: `${ok.length} subscribers`,
+        meta: { count: ok.length, failed },
+      }).catch(() => {});
+    }
+    if (failed > 0) toast.error(`Failed to delete ${failed} subscriber${failed === 1 ? '' : 's'}.`);
+    clearSelection();
+    setBulkBusy(false);
+    setConfirmBulkDelete(false);
   };
 
   const exportCsv = () => {
