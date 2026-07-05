@@ -24,6 +24,12 @@ import {
 const STORAGE_KEY = 'phlabs_newsletter_seen';
 const DEBUG_KEY = 'phlabs_newsletter_debug';
 
+function safeColor(value: string | undefined, fallback: string) {
+  if (!value) return fallback;
+  const trimmed = value.trim();
+  return /^#[0-9a-f]{6}$/i.test(trimmed) ? trimmed : fallback;
+}
+
 /** Reads debug flags from URL (?newsletter=preview|reset|debug) and localStorage. */
 function readDebugFlags(): { force: boolean; reset: boolean; persist: boolean } {
   if (typeof window === 'undefined') return { force: false, reset: false, persist: false };
@@ -205,6 +211,11 @@ export default function NewsletterPopup() {
   if (!open) return null;
 
   const hasImage = Boolean(config.imageUrl && config.imageUrl.trim());
+  const accentColor = safeColor(config.accentColor, DEFAULT_POPUP_CONFIG.accentColor);
+  const buttonColor = safeColor(config.buttonColor, DEFAULT_POPUP_CONFIG.buttonColor);
+  const buttonTextColor = safeColor(config.buttonTextColor, DEFAULT_POPUP_CONFIG.buttonTextColor);
+  const popupBackground = safeColor(config.popupBackground, DEFAULT_POPUP_CONFIG.popupBackground);
+  const popupPanel = safeColor(config.popupPanel, DEFAULT_POPUP_CONFIG.popupPanel);
 
   // In debug/force mode, honour a `?imgcb=<ts>` URL param (or fall back to
   // Date.now()) to bypass the browser image cache so admins can verify a
@@ -232,9 +243,10 @@ export default function NewsletterPopup() {
         aria-modal="true"
         aria-labelledby="newsletter-popup-title"
         onClick={(e) => e.stopPropagation()}
-        className={`relative w-full max-w-[520px] bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl border border-slate-700/50 shadow-2xl overflow-hidden transition-all duration-300 ${
+        className={`relative w-full max-w-[520px] rounded-2xl border border-slate-700/50 shadow-2xl overflow-hidden transition-all duration-300 ${
           visible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
         } flex flex-col md:flex-row`}
+        style={{ background: popupPanel }}
       >
         <button
           ref={closeBtnRef}
@@ -246,7 +258,7 @@ export default function NewsletterPopup() {
         </button>
 
         {hasImage && (
-          <div className="md:w-[180px] w-full flex-shrink-0 bg-slate-950">
+          <div className="md:w-[180px] w-full flex-shrink-0" style={{ background: popupBackground }}>
             {!imageError ? (
               <img
                 src={bustedImageUrl}
@@ -267,7 +279,7 @@ export default function NewsletterPopup() {
         <div className={`flex-1 p-6 md:p-7 ${!hasImage ? 'text-center' : ''}`}>
           {success ? (
             <div className="flex flex-col items-center justify-center py-4">
-              <CheckCircle2 className="w-12 h-12 text-emerald-500 mb-3" />
+              <CheckCircle2 className="w-12 h-12 mb-3" style={{ color: accentColor }} />
               <h3 id="newsletter-popup-title" className="text-xl font-bold text-white mb-1">
                 You're subscribed!
               </h3>
@@ -278,9 +290,12 @@ export default function NewsletterPopup() {
           ) : (
             <>
               <div className={`flex items-center gap-2 mb-2 ${!hasImage ? 'justify-center' : ''}`}>
-                <Mail className="w-5 h-5 text-emerald-500" />
-                <span className="text-xs uppercase tracking-wider text-emerald-500 font-semibold">
-                  Newsletter
+                <Mail className="w-5 h-5" style={{ color: accentColor }} />
+                <span
+                  className="text-xs uppercase tracking-wider font-semibold"
+                  style={{ color: accentColor }}
+                >
+                  {config.labelText}
                 </span>
               </div>
               <h3
@@ -309,6 +324,7 @@ export default function NewsletterPopup() {
                   placeholder="Enter your email address"
                   disabled={submitting}
                   className="w-full min-h-[44px] px-4 rounded-lg bg-slate-800 border border-slate-600 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 disabled:opacity-60"
+                  style={{ '--tw-ring-color': `${accentColor}33` } as React.CSSProperties}
                   aria-invalid={error ? 'true' : 'false'}
                   aria-describedby={error ? 'newsletter-error' : undefined}
                 />
@@ -320,7 +336,8 @@ export default function NewsletterPopup() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full min-h-[44px] flex items-center justify-center gap-2 rounded-lg font-semibold transition-opacity hover:opacity-90 disabled:opacity-70 disabled:cursor-not-allowed"
+                  style={{ backgroundColor: buttonColor, color: buttonTextColor }}
                 >
                   {submitting ? (
                     <>
@@ -331,9 +348,7 @@ export default function NewsletterPopup() {
                     config.buttonText
                   )}
                 </button>
-                <p className="text-xs text-slate-500 text-center">
-                  No spam. Unsubscribe anytime.
-                </p>
+                <p className="text-xs text-slate-500 text-center">{config.finePrint}</p>
               </form>
             </>
           )}

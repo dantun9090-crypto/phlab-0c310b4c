@@ -5,25 +5,39 @@
 import { db, doc, getDoc, setDoc, Timestamp } from '@/lib/firebase';
 
 export interface PopupConfig {
+  labelText: string;
   headline: string;
   subheadline: string;
+  finePrint: string;
   imageUrl: string | null;
   delaySeconds: number;
   cooldownDays: number;
   isEnabled: boolean;
   buttonText: string;
+  popupBackground: string;
+  popupPanel: string;
+  accentColor: string;
+  buttonColor: string;
+  buttonTextColor: string;
   updatedAt?: unknown;
 }
 
 export const DEFAULT_POPUP_CONFIG: PopupConfig = {
+  labelText: 'Newsletter',
   headline: 'Stay Ahead in Research',
   subheadline:
     'Get exclusive updates on new compounds, restocks, and lab insights — delivered to your inbox.',
+  finePrint: 'No spam. Unsubscribe anytime.',
   imageUrl: null,
   delaySeconds: 4,
   cooldownDays: 7,
   isEnabled: true,
   buttonText: 'Subscribe',
+  popupBackground: '#020617',
+  popupPanel: '#0f172a',
+  accentColor: '#10b981',
+  buttonColor: '#059669',
+  buttonTextColor: '#ffffff',
 };
 
 export async function getPopupConfig(): Promise<PopupConfig> {
