@@ -371,13 +371,22 @@ export default function Register() {
                 </div>
 
                 {/* Remember me */}
-                <label className="flex items-center gap-2 text-[#9cb8d9] text-sm select-none cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={e => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 rounded border-white/20 bg-[#0d1f38] accent-emerald-500"
-                  />
+                <label className="flex items-center gap-2 text-[#9cb8d9] text-sm select-none cursor-pointer group">
+                  <span className="relative flex h-4 w-4 shrink-0 items-center justify-center">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={e => setRememberMe(e.target.checked)}
+                      className="sr-only"
+                    />
+                    <span className={`flex h-4 w-4 items-center justify-center rounded border-2 transition-all ${rememberMe ? 'border-emerald-500 bg-emerald-500' : 'border-white/30 bg-[#0d1f38] group-hover:border-white/50'}`} aria-hidden="true">
+                      {rememberMe && (
+                        <svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth="2.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2 6l3 3 5-5" />
+                        </svg>
+                      )}
+                    </span>
+                  </span>
                   Keep me signed in on this device
                 </label>
 
