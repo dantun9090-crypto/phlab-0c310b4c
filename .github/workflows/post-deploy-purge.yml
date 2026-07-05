@@ -42,14 +42,11 @@ jobs:
             echo "::warning::CF_API_TOKEN or CF_ZONE_ID not set — skipping purge (deploy not failed)"
             exit 0
           fi
-          payload='{"files":[
-            "https://phlabs.co.uk/",
-            "https://phlabs.co.uk/products",
-            "https://phlabs.co.uk/about",
-            "https://www.phlabs.co.uk/",
-            "https://www.phlabs.co.uk/products",
-            "https://www.phlabs.co.uk/about"
-          ]}'
+          # Full purge per project rule (mem://preferences/post-publish-edge-purge):
+          # after every deploy we wipe the entire zone so no route can serve
+          # HTML that references deleted hashed asset chunks. Scoped purges
+          # left stale HTML on non-listed routes (compound, product pages, etc.).
+          payload='{"purge_everything":true}'
           resp=$(curl -sS -X POST \
             "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CF_API_TOKEN}" \
