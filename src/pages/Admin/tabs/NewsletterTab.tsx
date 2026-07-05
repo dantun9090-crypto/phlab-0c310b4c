@@ -36,7 +36,11 @@ import {
   type PopupConfig,
 } from '@/lib/newsletter-config';
 import ImageUploader from '@/components/admin/ImageUploader';
-import { logAdminAction } from '@/lib/admin-audit';
+import {
+  clearNewsletterCooldown,
+  setNewsletterDebug,
+  isNewsletterDebugEnabled,
+} from '@/components/NewsletterPopup';
 
 type SubTab = 'subscribers' | 'settings';
 
