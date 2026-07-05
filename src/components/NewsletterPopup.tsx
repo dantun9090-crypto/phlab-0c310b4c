@@ -8,7 +8,7 @@
  *  - Locks focus, closes on Escape or backdrop click.
  */
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { X, Loader2, CheckCircle2, Mail } from 'lucide-react';
+import { X, Loader2, CheckCircle2, Mail, ImageOff } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import {
   getPopupConfig,
