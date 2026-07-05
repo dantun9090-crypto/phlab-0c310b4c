@@ -25,6 +25,7 @@ export const ARTICLE_INDEX: ArticleIndexEntry[] = [
   { slug: 'ghk-cu-copper-peptide-research', title: 'GHK-Cu: The Copper Tripeptide at the Intersection of Wound Healing, Gene Regulation, and Anti-Ageing Biology' },
   { slug: 'ghk-cu-research-guide', title: 'GHK-Cu Peptide: A Technical Research Guide for UK Laboratories' },
   { slug: 'peptide-storage-lyophilisation-science', title: 'Peptide Storage Science: Lyophilisation, Reconstitution, and Stability Maximisation' },
+  { slug: 'peptide-reconstitution-guide', title: 'Peptide Reconstitution Guide for UK Laboratories: Bacteriostatic Water Protocol' },
   { slug: 'selank-anxiolytic-nootropic-peptide', title: 'Selank: The Synthetic Tuftsin Analogue at the Frontier of Anxiolytic Peptide Research' },
   { slug: 'epithalon-telomere-epigenetic-research', title: 'Epithalon: Telomerase Activation, Epigenetic Remodelling, and Longevity Research' },
   { slug: 'semax-cognitive-neuroprotective-research', title: 'Semax: ACTH-Derived Neuropeptide Research in Cognition, BDNF Signalling, and Neuroprotection' },
