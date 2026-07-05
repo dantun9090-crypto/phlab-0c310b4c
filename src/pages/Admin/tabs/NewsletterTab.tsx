@@ -582,6 +582,49 @@ function SubscribersPanel() {
           </div>
         </div>
       )}
+
+      {confirmBulkDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => !bulkBusy && setConfirmBulkDelete(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-md rounded-2xl bg-slate-900 border border-slate-700 p-6"
+          >
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">
+                  Delete {selected.size} subscriber{selected.size === 1 ? '' : 's'}?
+                </h3>
+                <p className="text-sm text-slate-400 mt-1">
+                  This permanently removes the selected subscribers. This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmBulkDelete(false)}
+                disabled={bulkBusy}
+                className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => void bulkDelete()}
+                disabled={bulkBusy}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-semibold disabled:opacity-50"
+              >
+                {bulkBusy && <Loader2 className="w-4 h-4 animate-spin" />}
+                Delete {selected.size}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
