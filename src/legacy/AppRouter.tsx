@@ -4,6 +4,7 @@ import { Layout } from '@/components/Layout';
 import ScrollToTop from '@/components/ScrollToTop';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { auth, onAuthStateChanged } from '@/lib/firebase-auth';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
 // Public, high-traffic routes — eager so every direct URL paints immediately.
 import Home from '@/pages/Home';
@@ -23,25 +24,27 @@ import NotFound from '@/pages/NotFound';
 
 // Code-split: admin, checkout, payment, auth, account, VIP — not needed for
 // first paint of the public store. Saves ~250–300 KB from the main bundle.
-const Admin = lazy(() => import('@/pages/Admin'));
-const Checkout = lazy(() => import('@/pages/Checkout'));
-const Payment = lazy(() => import('@/pages/Payment'));
-const Account = lazy(() => import('@/pages/Account'));
-const Login = lazy(() => import('@/pages/Login'));
-const Register = lazy(() => import('@/pages/Register'));
-const VipStore = lazy(() => import('@/pages/VipStore'));
+// lazyWithRetry retries a failed dynamic import once (handles the common
+// post-deploy race where an in-flight fetch hits a just-purged chunk).
+const Admin = lazyWithRetry(() => import('@/pages/Admin'));
+const Checkout = lazyWithRetry(() => import('@/pages/Checkout'));
+const Payment = lazyWithRetry(() => import('@/pages/Payment'));
+const Account = lazyWithRetry(() => import('@/pages/Account'));
+const Login = lazyWithRetry(() => import('@/pages/Login'));
+const Register = lazyWithRetry(() => import('@/pages/Register'));
+const VipStore = lazyWithRetry(() => import('@/pages/VipStore'));
 // Code-split: low-traffic content routes. SearchPage and ArticlePage both
 // pull the full ~212 KB articles bundle — keep them out of every page load.
-const SearchPage = lazy(() => import('@/pages/Search'));
-const ArticlePage = lazy(() => import('@/pages/Resources/ArticlePage'));
-const LandingPage = lazy(() => import('@/pages/LandingPage'));
-const StorageGuide = lazy(() => import('@/pages/StorageGuide'));
-const LabReports = lazy(() => import('@/pages/LabReports'));
-const Research = lazy(() => import('@/pages/Research'));
-const Install = lazy(() => import('@/pages/Install'));
-const RequestCatalog = lazy(() => import('@/pages/RequestCatalog'));
-const CategoryPage = lazy(() => import('@/pages/CategoryPage'));
-const PrivacyRequests = lazy(() => import('@/pages/PrivacyRequests'));
+const SearchPage = lazyWithRetry(() => import('@/pages/Search'));
+const ArticlePage = lazyWithRetry(() => import('@/pages/Resources/ArticlePage'));
+const LandingPage = lazyWithRetry(() => import('@/pages/LandingPage'));
+const StorageGuide = lazyWithRetry(() => import('@/pages/StorageGuide'));
+const LabReports = lazyWithRetry(() => import('@/pages/LabReports'));
+const Research = lazyWithRetry(() => import('@/pages/Research'));
+const Install = lazyWithRetry(() => import('@/pages/Install'));
+const RequestCatalog = lazyWithRetry(() => import('@/pages/RequestCatalog'));
+const CategoryPage = lazyWithRetry(() => import('@/pages/CategoryPage'));
+const PrivacyRequests = lazyWithRetry(() => import('@/pages/PrivacyRequests'));
 
 // Minimal spinner shown while lazy chunks load
 function PageLoader() {
