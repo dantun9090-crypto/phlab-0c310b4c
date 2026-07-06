@@ -276,8 +276,12 @@ const PRERENDER_ORIGIN = "https://service.prerender.io";
 // static pages when Prerender.io's cold render exceeded the old budget.
 // 30s matches Prerender.io's own default and Googlebot's tolerance.
 const PRERENDER_TIMEOUT_MS = 30_000;
-const PRERENDER_CACHE_TTL = 3600;
-const PRERENDER_SWR_TTL = 86_400;
+// Prerender.io bot HTML cache — kept inside the post-publish purge budget so
+// bot HTML can never be more stale than human HTML. Full zone purge on every
+// publish (see .github/workflows/post-deploy-purge.yml) clears caches.default
+// too, so the effective ceiling between publishes is 60s fresh + 300s SWR.
+const PRERENDER_CACHE_TTL = 60;
+const PRERENDER_SWR_TTL = 300;
 const LOOP_HEADER = "x-prerender-loop";
 
 // Pliki/ścieżki, dla których nigdy nie wołamy prerendera
