@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Mail, Send, Users, FileText, Eye, EyeOff,
   CheckCircle2, AlertCircle, Loader2, ChevronDown,
   Megaphone, Gift, Newspaper, Package, RefreshCw, Sparkles, Download, UserX
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db, collection, addDoc, getDocs, Timestamp, query, where, orderBy, limit, deleteDoc, doc, auth } from '@/lib/firebase';
+import { db, collection, addDoc, getDocs, Timestamp, query, where, orderBy, limit, deleteDoc, doc, getDoc, auth } from '@/lib/firebase';
 import { logAdminAction } from '@/lib/admin-audit';
+import { wrapCampaignHtml } from '@/lib/email-templates/wrap-campaign';
+import { DEFAULT_EMAIL_BRAND, withDefaults, type EmailBrandConfig } from '@/lib/email-templates/brand-config';
 
 interface EmailRecord {
   id: string;
@@ -280,11 +282,23 @@ export default function EmailMarketingTab() {
     fallbackEmailsSample: string[];
   }>(null);
 
+  const [brand, setBrand] = useState<EmailBrandConfig>(DEFAULT_EMAIL_BRAND);
+
   useEffect(() => {
     loadCustomers();
     loadHistory();
     loadSubscribers();
+    loadBrand();
   }, []);
+
+  const loadBrand = async () => {
+    try {
+      const snap = await getDoc(doc(db, 'emailBrandConfig', 'default'));
+      if (snap.exists()) setBrand(withDefaults(snap.data() as Partial<EmailBrandConfig>));
+    } catch (err) {
+      console.warn('[EmailMarketingTab] brand load failed', err);
+    }
+  };
 
   const loadSubscribers = async () => {
     setLoadingSubscribers(true);
@@ -1158,6 +1172,29 @@ export default function EmailMarketingTab() {
                       </div>
                     )}
                   </div>
+
+                  {/* BRANDED preview — exact HTML recipients will receive
+                      (header + logo + card + footer from Email Branding tab). */}
+                  {(selectedPreview || (subject && body)) && (
+                    <div className="bg-[#0b1a30]/70 border border-emerald-500/30 rounded-2xl p-3">
+                      <div className="flex items-center gap-2 mb-2 px-1">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                        <p className="text-emerald-300 text-[10px] font-semibold uppercase tracking-wider">
+                          Branded preview (what recipients see)
+                        </p>
+                      </div>
+                      <iframe
+                        title="Branded email preview"
+                        srcDoc={wrapCampaignHtml({
+                          brand,
+                          subject: selectedPreview?.subject || subject,
+                          body: selectedPreview?.body || body,
+                        })}
+                        style={{ width: '100%', height: 640, border: 0, background: '#fff', borderRadius: 10 }}
+                      />
+                    </div>
+                  )}
+
 
                   {selectedPreview && (
                     <div className="bg-white rounded-2xl p-5 space-y-3">

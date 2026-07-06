@@ -10,9 +10,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 
-import { addDocAdmin, listDocsAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
+import { addDocAdmin, getDocAdmin, listDocsAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
 import { requireFirebaseAdmin } from "@/lib/server/firebase-auth-admin";
 import { enqueueMailOnce } from "@/lib/server/enqueue-mail";
+import { wrapCampaignHtml, wrapCampaignText } from "@/lib/email-templates/wrap-campaign";
+import { DEFAULT_EMAIL_BRAND, withDefaults, type EmailBrandConfig } from "@/lib/email-templates/brand-config";
 
 const Recipient = z.object({
   email: z.string().email().max(320),
@@ -291,6 +293,16 @@ export const Route = createFileRoute("/api/public/send-marketing")({
         let duplicates = 0;
         const failures: Array<{ email: string; error: string }> = [];
 
+        // Load branded layout config once per request. Falls back to defaults
+        // if the Firestore doc is missing so campaigns never send unstyled.
+        let brand: EmailBrandConfig = DEFAULT_EMAIL_BRAND;
+        try {
+          const brandDoc = await getDocAdmin("emailBrandConfig", "default");
+          brand = withDefaults(brandDoc as Partial<EmailBrandConfig> | null);
+        } catch (err) {
+          console.warn("[send-marketing] brand load failed, using defaults", err);
+        }
+
         for (const r of recipients) {
           try {
             const fullName = (r.name || `${r.firstName || ""} ${r.lastName || ""}`).trim();
@@ -303,13 +315,25 @@ export const Route = createFileRoute("/api/public/send-marketing")({
               email: r.email,
             };
             const personalSubject = personalise(subject, vars);
-            const personalHtml = personalise(html, vars);
-            const personalText = personalise(text, vars);
+            const personalInnerHtml = personalise(html, vars);
+            const personalInnerText = personalise(text, vars);
+            // Wrap the user-authored body in the branded layout (header + logo +
+            // card + footer) so every campaign matches the EmailBranding tab.
+            const brandedHtml = wrapCampaignHtml({
+              brand,
+              subject: personalSubject,
+              body: personalInnerHtml,
+            });
+            const brandedText = wrapCampaignText({
+              brand,
+              subject: personalSubject,
+              body: personalInnerText,
+            });
             const result = await enqueueMarketingMail({
               to: r.email,
               subject: personalSubject,
-              html: personalHtml,
-              text: personalText,
+              html: brandedHtml,
+              text: brandedText,
               campaignId,
             });
             if (result.duplicate) duplicates++;
@@ -318,7 +342,7 @@ export const Route = createFileRoute("/api/public/send-marketing")({
               to: r.email,
               recipientName: fullName || r.email,
               subject: personalSubject,
-              body: personalHtml,
+              body: brandedHtml,
               status: "queued",
               createdAt: now,
               campaignId,
@@ -330,6 +354,7 @@ export const Route = createFileRoute("/api/public/send-marketing")({
             failures.push({ email: r.email, error: err instanceof Error ? err.message : "unknown" });
           }
         }
+
 
 
         return json({
