@@ -282,11 +282,23 @@ export default function EmailMarketingTab() {
     fallbackEmailsSample: string[];
   }>(null);
 
+  const [brand, setBrand] = useState<EmailBrandConfig>(DEFAULT_EMAIL_BRAND);
+
   useEffect(() => {
     loadCustomers();
     loadHistory();
     loadSubscribers();
+    loadBrand();
   }, []);
+
+  const loadBrand = async () => {
+    try {
+      const snap = await getDoc(doc(db, 'emailBrandConfig', 'default'));
+      if (snap.exists()) setBrand(withDefaults(snap.data() as Partial<EmailBrandConfig>));
+    } catch (err) {
+      console.warn('[EmailMarketingTab] brand load failed', err);
+    }
+  };
 
   const loadSubscribers = async () => {
     setLoadingSubscribers(true);
