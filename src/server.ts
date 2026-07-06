@@ -720,7 +720,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   // header and every <script>/<style> nonce attribute. The downstream
   // phlabs-prerender Worker rewrites the placeholder with a fresh
   // per-request nonce, so the origin HTML body is safe to edge-cache
-  // (public roots use s-maxage=60 SWR) while every visitor still gets a
+  // (public roots use s-maxage=30, no SWR — worst-case stale window is 30s
   // unique nonce. Locally / when the Worker is absent, browsers still
   // see the literal placeholder — which fails closed rather than open,
   // because 'strict-dynamic' + a fixed nonce won't authorize any
