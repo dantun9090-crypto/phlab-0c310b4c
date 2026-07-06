@@ -42,6 +42,20 @@ jobs:
       CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
       CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
     steps:
+      - name: Checkout (needed for scripts/verify-edge-cache.sh)
+        uses: actions/checkout@v4
+
+      - name: Capture pre-purge Worker build id
+        # Records which __BUILD_ID__ is currently live BEFORE we purge, so
+        # the structured log for this run can be correlated with the
+        # invalidation.done record in Firestore auditLogs.
+        id: pre
+        run: |
+          hdrs=$(curl -sSI --max-time 15 "https://phlabs.co.uk/" || true)
+          pre=$(echo "$hdrs" | grep -i '^x-build-id:' | tail -n1 | awk '{print $2}' | tr -d '\r')
+          echo "pre_build_id=${pre:-unknown}" >> "$GITHUB_OUTPUT"
+          echo "Pre-purge Worker build id: ${pre:-unknown}"
+
       - name: Wait 90s for Worker deploy propagation
         # Lovable's Worker deploy runs asynchronously from the git push. The
         # old 30s window was landing the purge on the OLD Worker version,
@@ -56,19 +70,26 @@ jobs:
             echo "::warning::CF_API_TOKEN or CF_ZONE_ID not set — skipping purge (deploy not failed)"
             exit 0
           fi
-          # Full purge per mem://preferences/post-publish-edge-purge — scoped
-          # purges left stale HTML on non-listed routes (compound, product
-          # pages, etc.).
+          # Structured, one-line-JSON purge log — mirrors the Worker's
+          # emit_log stage=cf.purge.* schema so a single run can be
+          # reconstructed across the workflow AND the Worker.
           payload='{"purge_everything":true}'
+          started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
           resp=$(curl -sS -X POST \
             "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
             -H "Authorization: Bearer ${CF_API_TOKEN}" \
             -H "Content-Type: application/json" \
             --data "$payload")
-          echo "$resp"
-          if echo "$resp" | grep -q '"success":true'; then
-            echo "Cache purged successfully"
-          else
+          finished=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          ok=false
+          if echo "$resp" | grep -q '"success":true'; then ok=true; fi
+          # Emit structured line matching verify-edge-cache.sh log schema.
+          printf '{"ts":"%s","kind":"edge_cache_verify","runId":"%s","stage":"cf.purge","startedAt":"%s","finishedAt":"%s","ok":%s,"prePurgeBuildId":"%s","response":%s}\n' \
+            "$finished" "${GITHUB_RUN_ID:-local}" "$started" "$finished" "$ok" \
+            "${{ steps.pre.outputs.pre_build_id }}" \
+            "$(echo "$resp" | head -c 800 | jq -Rs . 2>/dev/null || echo '""')" \
+            | tee -a ./edge-cache-verify.ndjson
+          if [ "$ok" = "false" ]; then
             echo "::warning::Cache purge failed: $resp"
           fi
           exit 0
@@ -78,14 +99,36 @@ jobs:
         # route up to 3 times with 10s backoff to absorb tiered-cache
         # propagation, then FAILS the workflow if any route still returns
         # HIT or STALE — that means the purge landed on the old Worker or
-        # the new Worker version isn't serving yet.
+        # the new Worker version isn't serving yet. Appends structured
+        # NDJSON logs to ./edge-cache-verify.ndjson (uploaded as artifact).
         env:
           BASE_URL: https://phlabs.co.uk
           ROUTES: "/ /products /compound /about"
           MAX_RETRIES: "3"
           RETRY_DELAY_SEC: "10"
+          LOG_JSON: ./edge-cache-verify.ndjson
         run: |
           # Let the tiered cache settle before probing.
           sleep 20
           bash scripts/verify-edge-cache.sh
+
+      - name: Upload structured verification logs
+        # Always runs, even on step failure — the failure IS the artifact.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-cache-verify-${{ github.run_id }}
+          path: ./edge-cache-verify.ndjson
+          retention-days: 30
+
+      - name: Print structured log summary
+        if: always()
+        run: |
+          echo "=== Structured NDJSON log (edge-cache-verify.ndjson) ==="
+          if [ -f ./edge-cache-verify.ndjson ]; then
+            cat ./edge-cache-verify.ndjson
+          else
+            echo "(no log file produced)"
+          fi
+
 
