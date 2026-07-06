@@ -1173,6 +1173,29 @@ export default function EmailMarketingTab() {
                     )}
                   </div>
 
+                  {/* BRANDED preview — exact HTML recipients will receive
+                      (header + logo + card + footer from Email Branding tab). */}
+                  {(selectedPreview || (subject && body)) && (
+                    <div className="bg-[#0b1a30]/70 border border-emerald-500/30 rounded-2xl p-3">
+                      <div className="flex items-center gap-2 mb-2 px-1">
+                        <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                        <p className="text-emerald-300 text-[10px] font-semibold uppercase tracking-wider">
+                          Branded preview (what recipients see)
+                        </p>
+                      </div>
+                      <iframe
+                        title="Branded email preview"
+                        srcDoc={wrapCampaignHtml({
+                          brand,
+                          subject: selectedPreview?.subject || subject,
+                          body: selectedPreview?.body || body,
+                        })}
+                        style={{ width: '100%', height: 640, border: 0, background: '#fff', borderRadius: 10 }}
+                      />
+                    </div>
+                  )}
+
+
                   {selectedPreview && (
                     <div className="bg-white rounded-2xl p-5 space-y-3">
                       <div className="flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-gray-500">
