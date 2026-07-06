@@ -31,12 +31,19 @@ const GOOGLE_DESTINATION_IDS = [
   'MC-KJMB7MKB29',
   ...(GOOGLE_ADS_CONVERSION_ID ? [GOOGLE_ADS_CONVERSION_ID] : []),
 ];
-// First-party Cloudflare "Google Tag Gateway" endpoint. Loading gtag.js from our
-// own origin (instead of www.googletagmanager.com) bypasses most ad-blockers and
-// keeps the visitor IP off Google's edge (hideOriginalIp=true on the CF side).
-// Cloudflare auto-injection is disabled (setUpTag=false) so the app is the SOLE
-// loader of the tag — prevents double-tagging.
-const GTAG_GATEWAY_BASE = 'https://phlabs.co.uk/60z6';
+// gtag.js loader.
+//
+// Preferred: Cloudflare "Google Tag Gateway" first-party endpoint
+// (`https://phlabs.co.uk/60z6`) — bypasses ad-blockers and hides visitor IP.
+// That gateway is a per-zone Cloudflare feature; if it is not provisioned,
+// the request 404s and gtag never loads (observed 2026-07-06).
+//
+// Fallback: load directly from `www.googletagmanager.com` (already allowed
+// by our CSP `script-src`). Override via `VITE_GTAG_GATEWAY_BASE` if/when
+// the CF Google Tag Gateway is re-enabled on the zone.
+const GTAG_GATEWAY_BASE =
+  (import.meta.env.VITE_GTAG_GATEWAY_BASE as string | undefined)?.trim() ||
+  'https://www.googletagmanager.com';
 const STORAGE_KEY = 'php_cookie_consent';
 const DEBUG_FLAG_KEY = 'php_ga_debug';
 
