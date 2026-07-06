@@ -1,19 +1,30 @@
 name: Post-deploy Cloudflare purge
 
 # Auto-purges Cloudflare cache after every production deploy of phlabs.co.uk.
-# Triggers on push to main (which is when Lovable publishes) and on manual
-# dispatch. Uses SCOPED purge (never purge_everything) — matches Edge SWR
-# Guard scope.
+# Belt-and-braces layer — the Worker itself also auto-purges on first request
+# under a new __BUILD_ID__ via /api/public/post-publish-check. This workflow
+# is the git-side safety net: it fires when code is pushed to main (Lovable
+# publish, direct git push, or GitHub API dispatch from external tooling).
+#
+# Triggers:
+#  - push to main (Lovable auto-commits every editor edit)
+#  - workflow_dispatch (manual run from Actions tab)
+#  - repository_dispatch: lovable-publish (for external publish hooks)
 #
 # Safeguards:
-#  - Waits 30s to let the new Worker version propagate before purging.
-#  - Purge failure NEVER fails the workflow (deploy already succeeded).
-#  - Only runs for production domain (phlabs.co.uk + www.phlabs.co.uk).
+#  - Waits 90s (was 30s — Lovable Worker propagation p95 is ~60-90s) so the
+#    purge hits the NEW Worker version, not the old one.
+#  - Full purge (purge_everything) — see mem://preferences/post-publish-edge-purge.
+#  - Post-purge probe: hits /, /products, /compound with cache-busting URL
+#    and confirms cf-cache-status transitions to MISS/BYPASS (i.e. the old
+#    edge object is really gone). Non-fatal on failure — never blocks deploy.
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+  repository_dispatch:
+    types: [lovable-publish]
 
 concurrency:
   group: post-deploy-purge
@@ -31,10 +42,13 @@ jobs:
       CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
       CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
     steps:
-      - name: Wait 30s for deploy propagation
-        run: sleep 30
+      - name: Wait 90s for Worker deploy propagation
+        # Lovable's Worker deploy runs asynchronously from the git push. The
+        # old 30s window was landing the purge on the OLD Worker version,
+        # which just re-cached the OLD HTML. 90s covers the observed p95.
+        run: sleep 90
 
-      - name: Scoped cache purge (phlabs.co.uk + www)
+      - name: Full cache purge (purge_everything)
         shell: bash
         run: |
           set +e
@@ -42,10 +56,9 @@ jobs:
             echo "::warning::CF_API_TOKEN or CF_ZONE_ID not set — skipping purge (deploy not failed)"
             exit 0
           fi
-          # Full purge per project rule (mem://preferences/post-publish-edge-purge):
-          # after every deploy we wipe the entire zone so no route can serve
-          # HTML that references deleted hashed asset chunks. Scoped purges
-          # left stale HTML on non-listed routes (compound, product pages, etc.).
+          # Full purge per mem://preferences/post-publish-edge-purge — scoped
+          # purges left stale HTML on non-listed routes (compound, product
+          # pages, etc.).
           payload='{"purge_everything":true}'
           resp=$(curl -sS -X POST \
             "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
@@ -60,19 +73,31 @@ jobs:
           fi
           exit 0
 
-      - name: Verify propagation
+      - name: Confirm edge is serving fresh (MISS probe)
         shell: bash
         run: |
           set +e
-          sleep 15
+          # Give the purge a moment to propagate through Cloudflare's tiered cache.
+          sleep 20
           CB=$(date +%s%N)
           fail=0
-          for path in "/" "/products" "/about"; do
+          for path in "/" "/products" "/compound" "/about"; do
             url="https://phlabs.co.uk${path}?cb=${CB}"
             hdrs=$(curl -sSIL --max-time 15 -H 'cache-control: no-cache' \
               -A 'phlabs-post-deploy-purge/1.0' "$url")
             cf=$(echo "$hdrs" | grep -i '^cf-cache-status:' | tail -n1 | tr -d '\r')
             swr=$(echo "$hdrs" | grep -i '^cloudflare-cdn-cache-control:' | tail -n1 | tr -d '\r')
-            echo "${path} → ${cf} | ${swr}"
+            build=$(echo "$hdrs" | grep -i '^x-build-id:' | tail -n1 | tr -d '\r')
+            echo "${path} → ${cf} | ${swr} | ${build}"
+            # After a purge + cache-buster, cf-cache-status should NOT be HIT.
+            # STALE/HIT here means the purge failed or fired against the old
+            # Worker version — surface as warning, do not fail the workflow.
+            if echo "$cf" | grep -qiE 'HIT|STALE|REVALIDATED'; then
+              echo "::warning::${path} still HIT/STALE after purge — Worker version may still be propagating"
+              fail=$((fail+1))
+            fi
           done
+          if [ "$fail" -gt 0 ]; then
+            echo "::warning::${fail} route(s) not confirmed MISS — worker auto-purge on next visitor request will finish the job"
+          fi
           exit 0
