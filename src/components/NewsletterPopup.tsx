@@ -165,7 +165,7 @@ export default function NewsletterPopup() {
           const preloader = new window.Image();
           preloader.decoding = 'async';
           (preloader as any).fetchPriority = 'low';
-          const srcset = cfSrcSet(cfg.imageUrl, POPUP_IMG_WIDTHS, { quality: 82, fit: 'cover' });
+          const srcset = cfSrcSet(cfg.imageUrl, POPUP_IMG_WIDTHS, { quality: 90, fit: 'cover' });
           if (srcset) {
             (preloader as any).sizes = POPUP_IMG_SIZES;
             preloader.srcset = srcset;
@@ -176,7 +176,7 @@ export default function NewsletterPopup() {
           preloader.onerror = () => {
             if (!cancelled) setPreloadStatus('failed');
           };
-          preloader.src = cfImg(cfg.imageUrl, { width: 480, quality: 82, fit: 'cover' }) || cfg.imageUrl;
+          preloader.src = cfImg(cfg.imageUrl, { width: 480, quality: 90, fit: 'cover' }) || cfg.imageUrl;
 
           // Safety timeout — if the image hasn't decoded by the time the
           // modal shows, treat it as failed so users don't sit on a
@@ -291,7 +291,7 @@ export default function NewsletterPopup() {
     const base = cfImgProps(source, {
       widths: POPUP_IMG_WIDTHS,
       sizes: POPUP_IMG_SIZES,
-      quality: 82,
+      quality: 90,
       fit: 'cover',
       fallbackWidth: 480,
     });
