@@ -33,8 +33,10 @@ import { cfImgProps, cfSrcSet, cfImg } from '@/lib/cf-image';
  * after CF's AVIF/WebP negotiation. Widths chosen so the browser picks the
  * smallest candidate that still beats the CSS pixel × dpr requirement.
  */
-const POPUP_IMG_WIDTHS = [240, 360, 480, 720];
-const POPUP_IMG_SIZES = '(min-width: 768px) 180px, min(100vw, 520px)';
+// Widths cover up to 3x DPR of the largest render size (~520px CSS on mobile
+// → ~1560px physical). Anything smaller than that looks soft on modern phones.
+const POPUP_IMG_WIDTHS = [360, 540, 720, 1080, 1440, 1600];
+const POPUP_IMG_SIZES = '(min-width: 768px) 360px, min(100vw, 520px)';
 
 const STORAGE_KEY = 'phlabs_newsletter_seen';
 const DEBUG_KEY = 'phlabs_newsletter_debug';
