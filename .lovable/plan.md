@@ -1,87 +1,68 @@
-## Cel
+# End-to-end cache fix — no more "need Dev Mode after publish"
 
-Naprawić 4 problemy zgłoszone przez użytkownika w admin panelu → Inventory:
-1. **Zapis nie działa / błąd** — niejasne komunikaty, brak wskazania które pole jest złe
-2. **Upload zdjęć się wywala** — retry nie zawsze pomaga, brak sensownej informacji dlaczego
-3. **Formularz niewygodny** — 1193 linie w jednym scrollu, wszystko na raz
-4. **Warianty (200mg/500mg) źle działają** — ceny/stock potrafią się zresetować, drag nie zawsze łapie
+## Diagnosis (what's actually broken)
 
-## Co zbuduję
+Live headers on `phlabs.co.uk/` right now:
 
-### 1. Zakładki w `ProductEditor` (zamiast jednego scrolla)
-
-5 zakładek na górze modala, z licznikami błędów w każdej:
-
-```text
-┌─────────────────────────────────────────────────────────┐
-│ [Basics ●] [Images] [Variants ●] [SEO] [COA & HPLC]     │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  aktywna zakładka                                       │
-│                                                         │
-├─────────────────────────────────────────────────────────┤
-│ ● Autosaved 2s ago          [Preview] [Cancel] [Save]   │
-└─────────────────────────────────────────────────────────┘
+```
+cf-cache-status: DYNAMIC
+cache-control: public, max-age=0, must-revalidate
+cdn-cache-control: public, max-age=60, stale-while-revalidate=60
 ```
 
-- **Basics** — nazwa, slug, kategoria, cena, stock, purity, visibility, krótki + długi opis
-- **Images** — 4 sloty + banner (bez zmian w logice uploadu, tylko lepszy UI błędu)
-- **Variants** — lista wariantów, drag, walidacja unikalnych SKU
-- **SEO** — meta title, description, canonical, keywords, MerchantFeedPreview
-- **COA & HPLC** — PDF COA + chromatogramy HPLC per wariant
+So HTML lives in Cloudflare's edge for **60s fresh + 60s stale-while-revalidate = up to ~2 min of stale HTML per POP** after a publish. That stale HTML references the previous build's hashed JS/CSS chunks; when those chunks 404, the app blanks until you flip Dev Mode (which bypasses cache entirely). That's the "I need Dev Mode" symptom.
 
-Kropka `●` przy zakładce = są tam błędy walidacji.
+Three concrete failures compound it:
 
-### 2. Live walidacja (Zod)
+1. **Purge fires before Lovable's new Worker is live.** `.github/workflows/post-deploy-purge.yml` triggers on `push to main` and waits only 30s. Lovable's publish → Worker version propagation is decoupled from the git push and often takes longer. The purge runs against the OLD worker → CF re-caches the OLD HTML → 60s+60s stale window restarts.
+2. **Lovable "Publish" button does not push to main.** Publishing from the Lovable UI deploys the Worker directly; it does NOT always trigger the GitHub `push` event that fires the purge workflow. So publishes done from the editor get zero automatic purge.
+3. **No build-id gate on cached HTML.** Nothing invalidates the edge object when a new build ID lands — CF happily serves the old HTML until its TTL expires.
 
-Schema Zod dla produktu. Po każdej zmianie pola pokazuje błąd **przy polu** (czerwony tekst pod inputem), nie na dole modala. Save disabled dopóki są błędy w wymaganych polach. Save button pokazuje np. „3 błędy w Variants" jeśli walidacja nie przeszła — użytkownik od razu widzi gdzie iść.
+Dev Mode "fixes" it only because Dev Mode = 3-hour full bypass. That's not a fix, it's a workaround that also kills performance for everyone.
 
-### 3. Autosave (tylko dla istniejących produktów)
+## The fix (four changes, all safe)
 
-- Debounce 2s po ostatniej zmianie → wywołuje `updateProduct(id, delta)`
-- Wskaźnik statusu: `● Saving...` / `✓ Saved 2s ago` / `⚠ Save failed — retry`
-- **Nowe produkty** — autosave wyłączony, wymaga explicit „Create Product" (bo nie ma jeszcze id i musimy walidować kompletność)
-- Upload zdjęć/COA/HPLC zapisuje się natychmiast po zakończeniu uploadu (bez debounce), więc jak zamkniesz modal po uploadzie — plik już jest zapisany
+### 1. Trigger the purge from the Worker itself, after each deploy
+Add a tiny `scheduled`/first-request hook in `src/server.ts` that compares the running `BUILD_ID` against a KV/D1 or in-memory "last purged build" and, on mismatch, POSTs `purge_everything` to the CF API using `CF_API_TOKEN` + `CF_ZONE_ID` bindings. This runs the moment the new Worker version serves its first request — which is the only reliable "new deploy is live" signal. No dependency on git push.
 
-### 4. Inline edit w tabeli Inventory
+### 2. Also keep the GitHub workflow, but harden it
+- Trigger on `workflow_dispatch` AND `push`, AND on `repository_dispatch: lovable-publish` for editor publishes.
+- Bump the wait from 30s → 90s (Lovable propagation p95).
+- After purge, poll `/` for `cf-cache-status: MISS` on a fresh URL to confirm the new Worker is serving before exiting.
 
-W kolumnach **Price** i **Stock** — kliknięcie w wartość zamienia ją w input, Enter/blur zapisuje przez `updateProduct`. Loading spinner podczas save. Toast (sonner) o sukcesie/błędzie.
+### 3. Shrink the HTML edge window from 60+60s to 30+0s until the build-id hook proves stable
+In `src/server.ts` around line 669, change:
+```
+public, s-maxage=60, max-age=0, stale-while-revalidate=60
+```
+to:
+```
+public, s-maxage=30, max-age=0
+```
+(no SWR on HTML). Worst case stale window drops from ~2 min to 30 s per POP. Once (1) is deployed and verified, the s-maxage can go back up.
 
-Kolumna **Visibility** — dodać nowy chip z dropdownem: active / hidden / out_of_stock, zmiana zapisuje inline.
+### 4. Chunk-404 self-heal (belt and braces)
+Add a `window.addEventListener('error', ...)` in `src/client.tsx` that, on a `<script>`/`<link>` load failure whose URL matches `/assets/*-<hash>.(js|css)`, does ONE hard reload with `location.replace(location.href + (hasQuery ? '&' : '?') + '__cb=' + Date.now())`. Guard with `sessionStorage` so it can only fire once per session — prevents refresh loops. This means even if edge serves stale HTML for a few seconds, users self-recover instantly instead of seeing a blank page.
 
-Bez otwierania modala dla drobnych zmian ceny/stocku — 90% edycji tego wymaga.
+## What this gives you
 
-### 5. Lepsze błędy uploadu zdjęć
+- Publish from Lovable editor → Worker's first request auto-purges → next visitor gets fresh HTML in <5s, no manual action.
+- Publish via git push → GitHub workflow ALSO purges as a safety net.
+- Even if a visitor lands during the tiny window before purge completes, chunk 404 → one silent reload → fresh page.
+- **Dev Mode never needs to be touched again.** (And per `mem://cloudflare-dev-mode-ban`, it must stay off.)
 
-Rozszerzyć obecny error handler o rozpoznawanie:
-- `storage/quota-exceeded` → „Firebase Storage quota exceeded — skontaktuj się z adminem"
-- `storage/canceled` → „Upload przerwany — spróbuj ponownie"
-- błąd sieci (`Failed to fetch`) → „Brak internetu lub CORS — sprawdź połączenie"
-- fallback: pokazać `error.code` w tooltipie żeby dało się zdiagnozować
+## Files touched
 
-## Techniczne szczegóły
+- `src/server.ts` — build-id purge hook + HTML TTL 60→30, drop HTML SWR.
+- `src/client.tsx` — chunk-404 self-heal listener.
+- `.github/workflows/post-deploy-purge.yml` — 30s→90s wait + `repository_dispatch` trigger + post-purge MISS probe.
+- New secret binding on the Worker: `CF_API_TOKEN` + `CF_ZONE_ID` (already available in GitHub secrets — I'll wire them into `wrangler.jsonc` via `secrets:put`).
 
-- **Nie zmieniam** logiki `updateProduct` / `addProduct` w `src/lib/firebase.ts` — działają
-- **Nie zmieniam** Firestore rules ani upload pathów (`products/{id}/images/...`) — działają
-- **Nie zmieniam** compliance/sanitize logic (`sanitizeLab`, `checkComplianceAndLog`) — wymagane
-- Refactor `ProductEditor.tsx` (1193 → ~1400 linii z tabami, ale dużo bardziej czytelne). Zakładki jako komponenty w tym samym pliku, żeby nie mnożyć plików.
-- Nowy plik `src/lib/product-schema.ts` — Zod schema + typy walidacji
-- `InventoryTab.tsx` — dodać `<InlineEditCell>` mini-komponent (tylko w tym pliku)
-- Zachowuję **wszystkie** obecne funkcje: HPLC upload, COA upload, banner, sanitize, compliance guard, drag variants, prerender/indexnow ping po save
+## Not changing
 
-## Czego NIE robię (żeby nie rozszerzać scope)
+- CSP / nonce logic.
+- Static asset caching (`immutable`, 1yr) — that's correct.
+- `sw.js` / `service-worker.js` no-store rules.
+- Prerender.io path for bots.
 
-- Nie przepisuję logiki wariantów od zera — poprawiam tylko drag+walidację unikalnych SKU
-- Nie przenoszę uploadu na serwer (obecnie klient → Firebase Storage bezpośrednio) — to inna historia
-- Nie ruszam layoutu tabeli Inventory, tylko dodaję inline edit w istniejących kolumnach
-- Nie ruszam headera admina, motywu, kolorów
-
-## Test plan po wdrożeniu
-
-1. Otworzyć produkt → zmienić cenę w Basics → poczekać 2s → sprawdzić „Saved" indicator
-2. Dodać nowy produkt → puste pola → sprawdzić że Save pokazuje „3 błędy in Basics"
-3. Wgrać zdjęcie → sprawdzić czy leci upload i url wraca
-4. Dodać wariant z tym samym SKU co inny → sprawdzić błąd walidacji
-5. W tabeli Inventory kliknąć w cenę → zmienić → Enter → sprawdzić toast + odświeżenie
-
-Potwierdź plan a wchodzę w implementację. Powiedz też **którego produktu dotyczył problem** (nazwa/SKU) — sprawdzę czy w Firestore nie ma czegoś dziwnego w danych (np. broken images array, missing slug) co mogło spowodować „nic nie działa".
+Approve and I'll ship all four in one pass.
