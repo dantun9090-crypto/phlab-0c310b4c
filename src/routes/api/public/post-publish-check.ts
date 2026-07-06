@@ -24,21 +24,47 @@ const ORIGIN = 'https://phlabs.co.uk';
 const META_COLLECTION = '_meta';
 const META_DOC = 'build_state';
 
+/**
+ * Structured, one-line-JSON log for every purge/probe step. Emitted to
+ * Worker stdout (visible in Cloudflare's Real-time logs / wrangler tail)
+ * AND persisted to Firestore `auditLogs` for offline triage. Every line
+ * carries `buildId` so a single publish can be reconstructed end-to-end
+ * across concurrent invocations.
+ *
+ * Fields (stable schema — grep-friendly):
+ *   ts        ISO8601 timestamp
+ *   kind      "post_publish_step" (fixed, for log routing)
+ *   buildId   __BUILD_ID__ of the Worker version that ran this step
+ *   stage     short machine tag: "cf.purge.start" | "cf.purge.done" |
+ *             "worker.refresh.start" | "worker.refresh.done" |
+ *             "prerender.recache.done" | "probe.<path>" | "invalidation.done"
+ *   status    HTTP status when applicable, else omitted
+ *   ok        boolean when applicable, else omitted
+ *   ...data   step-specific fields (cfCacheStatus, url, durationMs, error, ...)
+ */
 async function logPostPublishStep(
   buildId: string,
-  message: string,
+  stage: string,
   data: Record<string, unknown> = {},
 ): Promise<void> {
+  const ts = new Date().toISOString();
+  const structured = { ts, kind: 'post_publish_step', buildId, stage, ...data };
+  try {
+    // Single-line JSON so `wrangler tail` / CF logpush stays grep-able.
+    console.log(JSON.stringify(structured));
+  } catch { /* ignore */ }
   await addDocAdmin('auditLogs', {
     kind: 'post_publish_step',
     buildId,
-    message,
+    stage,
+    message: stage,
     ...data,
     createdAt: new Date(),
   }).catch((e) => {
-    console.warn('[post-publish-check] step audit write failed:', e);
+    console.warn(JSON.stringify({ ts, kind: 'post_publish_step_audit_error', buildId, stage, error: e instanceof Error ? e.message : String(e) }));
   });
 }
+
 
 async function purgeEverything(buildId: string): Promise<{ ok: boolean; status: number; body?: string; error?: string }> {
   const token = process.env.CLOUDFLARE_API_TOKEN;
