@@ -399,35 +399,44 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
         });
         if (limited) return limited;
         const currentBuildId = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'unknown';
-        await logPostPublishStep(currentBuildId, `post-publish-check started, buildId=${currentBuildId}`);
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for') || null;
+        await logPostPublishStep(currentBuildId, 'handler.start', {
+          workerBuildId: currentBuildId,
+          cfRay: request.headers.get('cf-ray') || null,
+          cfColo: request.headers.get('cf-ipcountry') || null,
+          clientIp,
+        });
 
         // Cross-request lock inside this isolate.
         if (inFlight.has(currentBuildId)) {
+          await logPostPublishStep(currentBuildId, 'handler.locked_inflight');
           return Response.json({ ok: true, locked: true, changed: false, buildId: currentBuildId });
         }
 
         let stored: string | null = null;
         let buildState: Record<string, unknown> | null = null;
         try {
-          await logPostPublishStep(currentBuildId, 'Checking _meta/build_state...');
+          await logPostPublishStep(currentBuildId, 'build_state.read');
           buildState = await getDocAdmin(META_COLLECTION, META_DOC);
           stored = (buildState?.lastBuildId as string | undefined) ?? null;
-        } catch {
-          // Firestore unreachable — fail open (no auto-purge this request).
-          await logPostPublishStep(currentBuildId, 'Failed: firestore_read_failed');
+        } catch (e) {
+          await logPostPublishStep(currentBuildId, 'build_state.read.error', {
+            error: e instanceof Error ? e.message : String(e),
+          });
           return Response.json({ ok: false, error: 'firestore_read_failed', buildId: currentBuildId });
         }
 
         const completedBuildId = (buildState?.lastInvalidationBuildId as string | undefined) ?? null;
         const needsInvalidation = completedBuildId !== currentBuildId;
-        await logPostPublishStep(
-          currentBuildId,
-          `Previous build: ${stored ?? 'none'}, current build: ${currentBuildId}, changed: ${stored !== currentBuildId}`,
-          { previousBuildId: stored, changed: stored !== currentBuildId, needsInvalidation },
-        );
+        await logPostPublishStep(currentBuildId, 'build_state.compare', {
+          previousBuildId: stored,
+          completedBuildId,
+          changed: stored !== currentBuildId,
+          needsInvalidation,
+        });
 
         if (stored === currentBuildId && !needsInvalidation) {
-          await logPostPublishStep(currentBuildId, 'Completed: already invalidated for current build');
+          await logPostPublishStep(currentBuildId, 'handler.noop_already_invalidated');
           return Response.json({ ok: true, changed: false, invalidated: true, buildId: currentBuildId });
         }
 
@@ -444,9 +453,9 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
                 updatedAt: new Date().toISOString(),
               });
             }
+            await logPostPublishStep(currentBuildId, 'build_state.claim', { previousBuildId: stored });
           } catch (e) {
-            console.error('[post-publish-check] Firestore write failed:', e);
-            await logPostPublishStep(currentBuildId, 'Failed: firestore_write_failed', {
+            await logPostPublishStep(currentBuildId, 'build_state.claim.error', {
               error: e instanceof Error ? e.message : String(e),
             });
             return Response.json({
@@ -457,19 +466,18 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
           }
         }
 
-        // Await the purge/recache/audit work. The previous fire-and-forget path
-        // could be terminated before auditLogs/build_state completion markers
-        // were written, leaving lastBuildId current but no purge proof — which
-        // made later calls return `changed:false` and never retry.
         const work = runInvalidation(currentBuildId).finally(() => {
           inFlight.delete(currentBuildId);
         });
         inFlight.set(currentBuildId, work);
         const result = await work;
-        await logPostPublishStep(currentBuildId, `Completed: purge=${result.cloudflare.ok ? 'ok' : 'failed'}, worker=${result.worker.ok ? 'ok' : 'failed'}`, {
-          cloudflare: result.cloudflare,
-          worker: result.worker,
-          prerender: result.prerender,
+        await logPostPublishStep(currentBuildId, 'handler.done', {
+          cfOk: result.cloudflare.ok,
+          workerOk: result.worker.ok,
+          prerenderOk: result.prerender.ok,
+          probeOk: result.probe.ok,
+          probeFailed: result.probe.failed,
+          durationMs: result.durationMs,
         });
 
         return Response.json({
@@ -482,10 +490,12 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
           cloudflare: result.cloudflare,
           worker: result.worker,
           prerender: result.prerender,
+          probe: result.probe,
           auditOk: result.auditOk,
           durationMs: result.durationMs,
         });
       },
+
     },
   },
 });
