@@ -140,11 +140,15 @@ import { getRouter } from "./router";
 import { installClientErrorReporter, reportClientError } from "./lib/client-error-reporter";
 import { initSwTelemetry } from "./lib/swTelemetry";
 import { initSentry } from "./lib/sentry";
+import { installChunkAutoRecovery } from "./lib/chunk-auto-recovery";
 
 // Sentry first so it captures errors from every subsequent boot step.
 initSentry();
 installClientErrorReporter();
 initSwTelemetry();
+// Auto-recover from stale-chunk failures after a deploy (countdown overlay,
+// once-per-session, then hard reload with cache purge).
+installChunkAutoRecovery();
 
 declare global {
   interface Window {
