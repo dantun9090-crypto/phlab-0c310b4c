@@ -73,31 +73,19 @@ jobs:
           fi
           exit 0
 
-      - name: Confirm edge is serving fresh (MISS probe)
-        shell: bash
+      - name: Verify edge is serving fresh (fails on HIT/STALE)
+        # Runs the end-to-end edge cache verification script. Retries each
+        # route up to 3 times with 10s backoff to absorb tiered-cache
+        # propagation, then FAILS the workflow if any route still returns
+        # HIT or STALE — that means the purge landed on the old Worker or
+        # the new Worker version isn't serving yet.
+        env:
+          BASE_URL: https://phlabs.co.uk
+          ROUTES: "/ /products /compound /about"
+          MAX_RETRIES: "3"
+          RETRY_DELAY_SEC: "10"
         run: |
-          set +e
-          # Give the purge a moment to propagate through Cloudflare's tiered cache.
+          # Let the tiered cache settle before probing.
           sleep 20
-          CB=$(date +%s%N)
-          fail=0
-          for path in "/" "/products" "/compound" "/about"; do
-            url="https://phlabs.co.uk${path}?cb=${CB}"
-            hdrs=$(curl -sSIL --max-time 15 -H 'cache-control: no-cache' \
-              -A 'phlabs-post-deploy-purge/1.0' "$url")
-            cf=$(echo "$hdrs" | grep -i '^cf-cache-status:' | tail -n1 | tr -d '\r')
-            swr=$(echo "$hdrs" | grep -i '^cloudflare-cdn-cache-control:' | tail -n1 | tr -d '\r')
-            build=$(echo "$hdrs" | grep -i '^x-build-id:' | tail -n1 | tr -d '\r')
-            echo "${path} → ${cf} | ${swr} | ${build}"
-            # After a purge + cache-buster, cf-cache-status should NOT be HIT.
-            # STALE/HIT here means the purge failed or fired against the old
-            # Worker version — surface as warning, do not fail the workflow.
-            if echo "$cf" | grep -qiE 'HIT|STALE|REVALIDATED'; then
-              echo "::warning::${path} still HIT/STALE after purge — Worker version may still be propagating"
-              fail=$((fail+1))
-            fi
-          done
-          if [ "$fail" -gt 0 ]; then
-            echo "::warning::${fail} route(s) not confirmed MISS — worker auto-purge on next visitor request will finish the job"
-          fi
-          exit 0
+          bash scripts/verify-edge-cache.sh
+
