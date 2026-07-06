@@ -33,6 +33,14 @@ ROUTES="${ROUTES:-/ /products /compound /about}"
 EXPECTED_BUILD_ID="${EXPECTED_BUILD_ID:-}"
 MAX_RETRIES="${MAX_RETRIES:-3}"
 RETRY_DELAY_SEC="${RETRY_DELAY_SEC:-10}"
+# NDJSON log path — one JSON object per line, one line per probe attempt +
+# summary. Consumed by post-deploy-purge workflow and uploaded as an artifact
+# so we can trace which Worker version served which route on which publish.
+LOG_JSON="${LOG_JSON:-./edge-cache-verify.ndjson}"
+
+# Run id ties every log line in this invocation together (workflow run,
+# manual invocation, etc.). GITHUB_RUN_ID is set inside GitHub Actions.
+RUN_ID="${GITHUB_RUN_ID:-local-$(date +%s)}"
 
 # cf-cache-status values that mean "fresh from origin / new Worker".
 FRESH_RE='^(MISS|BYPASS|DYNAMIC|EXPIRED|REVALIDATED|NONE\/UNKNOWN)$'
@@ -40,9 +48,49 @@ FRESH_RE='^(MISS|BYPASS|DYNAMIC|EXPIRED|REVALIDATED|NONE\/UNKNOWN)$'
 # purged and used a cache-buster.
 STALE_RE='^(HIT|STALE)$'
 
+# Reset log file at start.
+: > "$LOG_JSON"
+
+json_escape() {
+  # Minimal JSON string escape for values we control (headers, paths, ids).
+  # Not for arbitrary bytes — bash-level escaping only.
+  local s="${1-}"
+  s="${s//\\/\\\\}"
+  s="${s//\"/\\\"}"
+  s="${s//$'\n'/\\n}"
+  s="${s//$'\r'/}"
+  s="${s//$'\t'/\\t}"
+  printf '%s' "$s"
+}
+
+emit_log() {
+  # Args: stage path attempt status cf age swr build expected_build ok reason
+  local stage="$1" path="$2" attempt="$3" status="$4" cf="$5" age="$6" swr="$7" build="$8" expected_build="$9" ok="${10}" reason="${11-}"
+  local ts
+  ts=$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%SZ)
+  printf '{"ts":"%s","kind":"edge_cache_verify","runId":"%s","stage":"%s","path":"%s","attempt":%s,"status":%s,"cfCacheStatus":"%s","age":"%s","swr":"%s","servedBuildId":"%s","expectedBuildId":"%s","expectedBuildMatch":"%s","ok":%s,"reason":"%s","baseUrl":"%s"}\n' \
+    "$ts" \
+    "$(json_escape "$RUN_ID")" \
+    "$(json_escape "$stage")" \
+    "$(json_escape "$path")" \
+    "${attempt:-0}" \
+    "${status:-0}" \
+    "$(json_escape "$cf")" \
+    "$(json_escape "$age")" \
+    "$(json_escape "$swr")" \
+    "$(json_escape "$build")" \
+    "$(json_escape "$EXPECTED_BUILD_ID")" \
+    "$(json_escape "$expected_build")" \
+    "${ok:-false}" \
+    "$(json_escape "$reason")" \
+    "$(json_escape "$BASE_URL")" \
+    >> "$LOG_JSON"
+}
+
 fail_count=0
 pass_count=0
 report=()
+
 
 probe_route() {
   local path="$1"
@@ -91,26 +139,27 @@ probe_route() {
   fi
   rm -f "$body_file"
 
-  echo "attempt=${attempt} status=${status:-?} cf=${cf:-?} age=${age:-0} swr=${swr:-?} build=${build:-?} expected_build=${build_ok}"
-
-  # 200 required.
+  # Decide pass/fail + reason string BEFORE returning so we can emit a
+  # single structured log line per attempt.
+  local ok="false"
+  local reason=""
   if [ "$status" != "200" ]; then
-    return 1
+    reason="http_${status:-0}"
+  elif [[ "$cf" =~ $STALE_RE ]]; then
+    reason="stale_cf_${cf}"
+  elif [ "$build_ok" = "MISMATCH" ]; then
+    reason="build_mismatch_${build}_vs_${EXPECTED_BUILD_ID}"
+  else
+    ok="true"
+    if ! [[ "$cf" =~ $FRESH_RE ]] && [ -n "$cf" ]; then
+      reason="unrecognized_cf_${cf}_accepted"
+    fi
   fi
-  # Fresh cache-buster + HIT/STALE = purge didn't work.
-  if [[ "$cf" =~ $STALE_RE ]]; then
-    return 1
-  fi
-  # Accept known-good values; log if unexpected but don't fail (CF adds new
-  # statuses occasionally).
-  if ! [[ "$cf" =~ $FRESH_RE ]] && [ -n "$cf" ]; then
-    echo "  note: unrecognized cf-cache-status='${cf}' — accepting"
-  fi
-  # Build id check.
-  if [ "$build_ok" = "MISMATCH" ]; then
-    return 1
-  fi
-  return 0
+
+  emit_log "probe" "$path" "$attempt" "${status:-0}" "${cf:-}" "${age:-0}" "${swr:-}" "${build:-}" "${build_ok}" "$ok" "$reason"
+  echo "attempt=${attempt} status=${status:-?} cf=${cf:-?} age=${age:-0} swr=${swr:-?} build=${build:-?} expected_build=${build_ok} ok=${ok} reason=${reason:-none}"
+
+  [ "$ok" = "true" ] && return 0 || return 1
 }
 
 echo "=== Edge cache verification ==="
@@ -118,7 +167,11 @@ echo "base_url        = $BASE_URL"
 echo "routes          = $ROUTES"
 echo "expected_build  = ${EXPECTED_BUILD_ID:-<not set>}"
 echo "max_retries     = $MAX_RETRIES"
+echo "run_id          = $RUN_ID"
+echo "log_json        = $LOG_JSON"
 echo
+
+emit_log "start" "*" 0 0 "" "" "" "" "skip" "true" "$(printf 'routes=%s' "$ROUTES")"
 
 for path in $ROUTES; do
   echo "--- ${path}"
@@ -139,9 +192,11 @@ for path in $ROUTES; do
   if $ok; then
     pass_count=$((pass_count + 1))
     report+=("PASS ${path}")
+    emit_log "route.done" "$path" 0 0 "" "" "" "" "skip" "true" "passed"
   else
     fail_count=$((fail_count + 1))
     report+=("FAIL ${path} — ${last_output}")
+    emit_log "route.done" "$path" 0 0 "" "" "" "" "skip" "false" "$(printf 'exhausted_retries: %s' "$last_output")"
   fi
   echo
 done
@@ -151,11 +206,15 @@ for line in "${report[@]}"; do
   echo "  $line"
 done
 echo "passed=${pass_count} failed=${fail_count}"
+echo "structured logs: ${LOG_JSON}"
 
 if [ "$fail_count" -gt 0 ]; then
+  emit_log "summary" "*" 0 0 "" "" "" "" "skip" "false" "$(printf 'passed=%s failed=%s' "$pass_count" "$fail_count")"
   echo "::error::Edge cache verification FAILED for ${fail_count} route(s) — Cloudflare is serving stale HTML or the new Worker version is not live"
   exit 1
 fi
 
+emit_log "summary" "*" 0 0 "" "" "" "" "skip" "true" "$(printf 'passed=%s failed=%s' "$pass_count" "$fail_count")"
 echo "All routes serving fresh from new Worker version."
 exit 0
+
