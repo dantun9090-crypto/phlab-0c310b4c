@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Mail, Send, Users, FileText, Eye, EyeOff,
   CheckCircle2, AlertCircle, Loader2, ChevronDown,
   Megaphone, Gift, Newspaper, Package, RefreshCw, Sparkles, Download, UserX
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db, collection, addDoc, getDocs, Timestamp, query, where, orderBy, limit, deleteDoc, doc, auth } from '@/lib/firebase';
+import { db, collection, addDoc, getDocs, Timestamp, query, where, orderBy, limit, deleteDoc, doc, getDoc, auth } from '@/lib/firebase';
 import { logAdminAction } from '@/lib/admin-audit';
+import { wrapCampaignHtml } from '@/lib/email-templates/wrap-campaign';
+import { DEFAULT_EMAIL_BRAND, withDefaults, type EmailBrandConfig } from '@/lib/email-templates/brand-config';
 
 interface EmailRecord {
   id: string;
