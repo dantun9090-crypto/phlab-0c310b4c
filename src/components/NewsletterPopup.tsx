@@ -331,7 +331,7 @@ export default function NewsletterPopup() {
 
         {hasImage && imgProps && (preloadStatus !== 'failed' && !imageError) ? (
           <div
-            className="md:w-[180px] w-full flex-shrink-0"
+            className="md:w-[180px] w-full flex-shrink-0 relative h-48 md:h-auto md:self-stretch overflow-hidden md:rounded-l-2xl rounded-t-2xl md:rounded-tr-none"
             style={{
               background: popupBackground,
               backgroundImage:
@@ -345,9 +345,7 @@ export default function NewsletterPopup() {
               srcSet={imgProps.srcSet}
               sizes={imgProps.sizes}
               alt=""
-              width={360}
-              height={480}
-              className="w-full h-40 md:h-full object-cover md:rounded-l-2xl rounded-t-2xl md:rounded-tr-none"
+              className="absolute inset-0 w-full h-full object-cover"
               loading="eager"
               decoding="async"
               fetchPriority="high"
@@ -355,6 +353,7 @@ export default function NewsletterPopup() {
             />
           </div>
         ) : hasImage && (preloadStatus === 'failed' || imageError) ? (
+
           // Preload failed OR the <img> errored after mount. Render a
           // branded gradient panel using popup accent colours instead of
           // a broken image / blank shimmer. The panel keeps the popup's
