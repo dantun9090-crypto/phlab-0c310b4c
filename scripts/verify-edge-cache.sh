@@ -33,6 +33,14 @@ ROUTES="${ROUTES:-/ /products /compound /about}"
 EXPECTED_BUILD_ID="${EXPECTED_BUILD_ID:-}"
 MAX_RETRIES="${MAX_RETRIES:-3}"
 RETRY_DELAY_SEC="${RETRY_DELAY_SEC:-10}"
+# NDJSON log path — one JSON object per line, one line per probe attempt +
+# summary. Consumed by post-deploy-purge workflow and uploaded as an artifact
+# so we can trace which Worker version served which route on which publish.
+LOG_JSON="${LOG_JSON:-./edge-cache-verify.ndjson}"
+
+# Run id ties every log line in this invocation together (workflow run,
+# manual invocation, etc.). GITHUB_RUN_ID is set inside GitHub Actions.
+RUN_ID="${GITHUB_RUN_ID:-local-$(date +%s)}"
 
 # cf-cache-status values that mean "fresh from origin / new Worker".
 FRESH_RE='^(MISS|BYPASS|DYNAMIC|EXPIRED|REVALIDATED|NONE\/UNKNOWN)$'
@@ -40,9 +48,49 @@ FRESH_RE='^(MISS|BYPASS|DYNAMIC|EXPIRED|REVALIDATED|NONE\/UNKNOWN)$'
 # purged and used a cache-buster.
 STALE_RE='^(HIT|STALE)$'
 
+# Reset log file at start.
+: > "$LOG_JSON"
+
+json_escape() {
+  # Minimal JSON string escape for values we control (headers, paths, ids).
+  # Not for arbitrary bytes — bash-level escaping only.
+  local s="${1-}"
+  s="${s//\\/\\\\}"
+  s="${s//\"/\\\"}"
+  s="${s//$'\n'/\\n}"
+  s="${s//$'\r'/}"
+  s="${s//$'\t'/\\t}"
+  printf '%s' "$s"
+}
+
+emit_log() {
+  # Args: stage path attempt status cf age swr build expected_build ok reason
+  local stage="$1" path="$2" attempt="$3" status="$4" cf="$5" age="$6" swr="$7" build="$8" expected_build="$9" ok="${10}" reason="${11-}"
+  local ts
+  ts=$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%SZ)
+  printf '{"ts":"%s","kind":"edge_cache_verify","runId":"%s","stage":"%s","path":"%s","attempt":%s,"status":%s,"cfCacheStatus":"%s","age":"%s","swr":"%s","servedBuildId":"%s","expectedBuildId":"%s","expectedBuildMatch":"%s","ok":%s,"reason":"%s","baseUrl":"%s"}\n' \
+    "$ts" \
+    "$(json_escape "$RUN_ID")" \
+    "$(json_escape "$stage")" \
+    "$(json_escape "$path")" \
+    "${attempt:-0}" \
+    "${status:-0}" \
+    "$(json_escape "$cf")" \
+    "$(json_escape "$age")" \
+    "$(json_escape "$swr")" \
+    "$(json_escape "$build")" \
+    "$(json_escape "$EXPECTED_BUILD_ID")" \
+    "$(json_escape "$expected_build")" \
+    "${ok:-false}" \
+    "$(json_escape "$reason")" \
+    "$(json_escape "$BASE_URL")" \
+    >> "$LOG_JSON"
+}
+
 fail_count=0
 pass_count=0
 report=()
+
 
 probe_route() {
   local path="$1"
