@@ -10,9 +10,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 
-import { addDocAdmin, listDocsAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
+import { addDocAdmin, getDocAdmin, listDocsAdmin, updateDocAdmin } from "@/lib/server/firestore-admin";
 import { requireFirebaseAdmin } from "@/lib/server/firebase-auth-admin";
 import { enqueueMailOnce } from "@/lib/server/enqueue-mail";
+import { wrapCampaignHtml, wrapCampaignText } from "@/lib/email-templates/wrap-campaign";
+import { DEFAULT_EMAIL_BRAND, withDefaults, type EmailBrandConfig } from "@/lib/email-templates/brand-config";
 
 const Recipient = z.object({
   email: z.string().email().max(320),
