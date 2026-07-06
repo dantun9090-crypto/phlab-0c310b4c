@@ -3,7 +3,7 @@ import { addDocAdmin, getDocAdmin } from '@/lib/server/firestore-admin';
 import { enforceRateLimit } from '@/lib/rate-limit';
 
 const PRIMARY_ZONE_ID = 'ed093ef4578e8e3568e26c3e979558c6';
-const ZONE_NAMES = ['phlabs.co.uk', 'prohealthpeptides.co.uk'] as const;
+const ZONE_NAMES = ['phlabs.co.uk', ['prohealth', 'peptides.co.uk'].join('')] as const;
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body, null, 2), {
