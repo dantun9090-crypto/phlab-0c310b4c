@@ -149,6 +149,44 @@ export default {
       return new Response("Not found", { status: 404 });
     }
 
+    // Transactional / authenticated paths MUST run on the canonical host so
+    // that session cookies, Wallid return URLs, Firebase Auth state and CSP
+    // nonces all stay on one origin. Serving them from the legacy proxy
+    // caused abandoned Open Banking payments (session/cookie mismatch on
+    // return from the bank). Keep marketing/SEO on the legacy host, punt
+    // everything else to phlabs.co.uk with a 302 (preserve method intent
+    // but allow future scope changes without cached 301s).
+    const TRANSACTIONAL_PREFIXES = [
+      "/checkout",
+      "/cart",
+      "/payment",
+      "/pay",
+      "/account",
+      "/login",
+      "/register",
+      "/signup",
+      "/admin",
+      "/api",
+      "/webhook",
+      "/order",
+      "/orders",
+      "/vip-store",
+    ];
+    const path = url.pathname.toLowerCase();
+    if (TRANSACTIONAL_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`))) {
+      const target = new URL(url.pathname + url.search, MAIN_ORIGIN);
+      return new Response(null, {
+        status: 302,
+        headers: {
+          location: target.toString(),
+          "cache-control": "no-store",
+          "x-prohealth-legacy-redirect": "transactional",
+          ...SECURITY_HEADERS,
+        },
+      });
+    }
+
+
     try {
       return await proxyToMain(request, url);
     } catch {
