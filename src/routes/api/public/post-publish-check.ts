@@ -66,10 +66,14 @@ async function logPostPublishStep(
 }
 
 
-async function purgeEverything(buildId: string): Promise<{ ok: boolean; status: number; body?: string; error?: string }> {
+async function purgeEverything(buildId: string): Promise<{ ok: boolean; status: number; body?: string; error?: string; durationMs: number }> {
+  const started = Date.now();
   const token = process.env.CLOUDFLARE_API_TOKEN;
-  if (!token) return { ok: false, status: 0, error: 'CLOUDFLARE_API_TOKEN missing' };
-  await logPostPublishStep(buildId, 'Calling Cloudflare purge_everything...');
+  if (!token) {
+    await logPostPublishStep(buildId, 'cf.purge.skip', { error: 'CLOUDFLARE_API_TOKEN missing', durationMs: 0 });
+    return { ok: false, status: 0, error: 'CLOUDFLARE_API_TOKEN missing', durationMs: 0 };
+  }
+  await logPostPublishStep(buildId, 'cf.purge.start', { zoneId: CF_ZONE_ID });
   try {
     const res = await fetch(
       `https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache`,
@@ -81,24 +85,25 @@ async function purgeEverything(buildId: string): Promise<{ ok: boolean; status: 
       },
     );
     const body = await res.text().catch(() => '');
-    await logPostPublishStep(buildId, `Cloudflare API response status: ${res.status}, body: ${body.slice(0, 1200)}`, {
+    const durationMs = Date.now() - started;
+    await logPostPublishStep(buildId, 'cf.purge.done', {
       status: res.status,
       ok: res.ok,
+      durationMs,
+      bodyPreview: body.slice(0, 300),
     });
-    return { ok: res.ok, status: res.status, body: body.slice(0, 2000) };
+    return { ok: res.ok, status: res.status, body: body.slice(0, 2000), durationMs };
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
-    await logPostPublishStep(buildId, `Cloudflare API response status: 0, body: ${error}`, {
-      status: 0,
-      ok: false,
-      error,
-    });
-    return { ok: false, status: 0, error };
+    const durationMs = Date.now() - started;
+    await logPostPublishStep(buildId, 'cf.purge.done', { status: 0, ok: false, error, durationMs });
+    return { ok: false, status: 0, error, durationMs };
   }
 }
 
-async function forceRefreshWorkerCache(buildId: string): Promise<{ ok: boolean; status: number; error?: string }> {
-  await logPostPublishStep(buildId, 'Calling Worker internal purge...');
+async function forceRefreshWorkerCache(buildId: string): Promise<{ ok: boolean; status: number; error?: string; durationMs: number }> {
+  const started = Date.now();
+  await logPostPublishStep(buildId, 'worker.refresh.start');
   try {
     const res = await fetch(`${ORIGIN}/`, {
       method: 'GET',
@@ -110,21 +115,119 @@ async function forceRefreshWorkerCache(buildId: string): Promise<{ ok: boolean; 
       signal: AbortSignal.timeout(15_000),
     });
     await res.arrayBuffer().catch(() => new ArrayBuffer(0));
-    await logPostPublishStep(buildId, `Worker purge response: ${res.status}`, {
+    const durationMs = Date.now() - started;
+    await logPostPublishStep(buildId, 'worker.refresh.done', {
       status: res.status,
       ok: res.ok,
+      durationMs,
+      servedBuildId: res.headers.get('x-build-id') ?? null,
     });
-    return { ok: res.ok, status: res.status };
+    return { ok: res.ok, status: res.status, durationMs };
   } catch (e) {
     const error = e instanceof Error ? e.message : String(e);
-    await logPostPublishStep(buildId, `Worker purge response: 0 ${error}`, {
-      status: 0,
-      ok: false,
-      error,
-    });
-    return { ok: false, status: 0, error };
+    const durationMs = Date.now() - started;
+    await logPostPublishStep(buildId, 'worker.refresh.done', { status: 0, ok: false, error, durationMs });
+    return { ok: false, status: 0, error, durationMs };
   }
 }
+
+/**
+ * Post-purge MISS/HIT probe. For each route, GET with a cache-buster and
+ * capture cf-cache-status + x-build-id so we can see, per publish, which
+ * routes were confirmed fresh from the NEW Worker version.
+ *
+ * A HIT/STALE here after purge is a regression — logged with ok:false so
+ * dashboards / alerts can key off `stage=probe.* ok=false`.
+ */
+type ProbeResult = {
+  path: string;
+  url: string;
+  status: number;
+  cfCacheStatus: string | null;
+  servedBuildId: string | null;
+  buildIdMatches: boolean;
+  age: string | null;
+  ok: boolean;
+  reason?: string;
+  durationMs: number;
+};
+
+async function probeRoute(buildId: string, path: string): Promise<ProbeResult> {
+  const started = Date.now();
+  const cb = `${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
+  const url = `${ORIGIN}${path}${path.includes('?') ? '&' : '?'}__probe=${cb}`;
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'user-agent': 'phlabs-post-publish-probe/1.0',
+        'cache-control': 'no-cache',
+        pragma: 'no-cache',
+      },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(15_000),
+    });
+    await res.arrayBuffer().catch(() => new ArrayBuffer(0));
+    const cf = (res.headers.get('cf-cache-status') || '').toUpperCase() || null;
+    const servedBuildId = res.headers.get('x-build-id');
+    const age = res.headers.get('age');
+    const buildIdMatches = servedBuildId === buildId;
+    const stale = cf === 'HIT' || cf === 'STALE';
+    const ok = res.ok && !stale && (servedBuildId ? buildIdMatches : true);
+    const reason = !res.ok
+      ? `http_${res.status}`
+      : stale
+        ? `stale_cf_${cf}`
+        : servedBuildId && !buildIdMatches
+          ? `build_mismatch_served_${servedBuildId}`
+          : undefined;
+    const result: ProbeResult = {
+      path,
+      url,
+      status: res.status,
+      cfCacheStatus: cf,
+      servedBuildId,
+      buildIdMatches,
+      age,
+      ok,
+      reason,
+      durationMs: Date.now() - started,
+    };
+    await logPostPublishStep(buildId, `probe.${path}`, result as unknown as Record<string, unknown>);
+    return result;
+  } catch (e) {
+    const error = e instanceof Error ? e.message : String(e);
+    const result: ProbeResult = {
+      path,
+      url,
+      status: 0,
+      cfCacheStatus: null,
+      servedBuildId: null,
+      buildIdMatches: false,
+      age: null,
+      ok: false,
+      reason: `fetch_error:${error}`,
+      durationMs: Date.now() - started,
+    };
+    await logPostPublishStep(buildId, `probe.${path}`, result as unknown as Record<string, unknown>);
+    return result;
+  }
+}
+
+async function probeAllRoutes(buildId: string): Promise<{ ok: boolean; results: ProbeResult[]; failed: number }> {
+  const paths = ['/', '/products', '/compound', '/about'];
+  await logPostPublishStep(buildId, 'probe.start', { paths });
+  const results = await Promise.all(paths.map((p) => probeRoute(buildId, p)));
+  const failed = results.filter((r) => !r.ok).length;
+  await logPostPublishStep(buildId, 'probe.done', {
+    total: results.length,
+    failed,
+    ok: failed === 0,
+    summary: results.map((r) => ({ path: r.path, cf: r.cfCacheStatus, ok: r.ok, reason: r.reason })),
+  });
+  return { ok: failed === 0, results, failed };
+}
+
 
 async function fetchSitemapUrls(): Promise<string[]> {
   try {
