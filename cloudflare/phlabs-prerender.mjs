@@ -28,6 +28,7 @@ function missingBuildAssetRecoveryResponse(pathname) {
     "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
     "cdn-cache-control": "no-store",
     "cloudflare-cdn-cache-control": "no-store",
+    "clear-site-data": '"cache"',
     "surrogate-control": "no-store",
     "pragma": "no-cache",
     "expires": "0",
@@ -42,9 +43,11 @@ function missingBuildAssetRecoveryResponse(pathname) {
   h.set("content-type", "text/javascript; charset=utf-8");
   return new Response(`(() => {
   try {
-    console.warn('[PHL] Missing stale build asset. Showing manual cache recovery screen.');
+    console.warn('[PHL] Missing stale build asset. Clearing cache and reopening automatically.');
     const clearKeys = ['__phl_reload_window','__phl_hard_reload_in_flight','__phl_route_auto_recovery_done','__phl_reloaded_at','__phl_stale_asset_reload_at','phl_reload_count','__phl_stale_asset_reload_count','__phl_hydration_error_seen'];
+    const recoveryKey = '__phl_missing_asset_auto_reset_at';
     const reset = async () => {
+      try { sessionStorage.setItem(recoveryKey, String(Date.now())); } catch {}
       for (const key of clearKeys) {
         try { sessionStorage.removeItem(key); } catch {}
         try { localStorage.removeItem(key); } catch {}
@@ -68,10 +71,17 @@ function missingBuildAssetRecoveryResponse(pathname) {
     };
     const render = () => {
       document.documentElement.setAttribute('lang', 'en-GB');
-      document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs cache reset needed</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">Your browser received an old page after the latest update. Click once to clear the local cache and reopen the site.</p><button id="phl-stale-reset" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;cursor:pointer;font-size:16px">Clear cache & open site</button></div></div>';
+      document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs is refreshing</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">Clearing an old browser cache and reopening the store.</p><button id="phl-stale-reset" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;cursor:pointer;font-size:16px">Open store now</button></div></div>';
       document.getElementById('phl-stale-reset')?.addEventListener('click', () => { void reset(); });
     };
-    if (document.body) render(); else addEventListener('DOMContentLoaded', render, { once: true });
+    const autoReset = () => {
+      let last = 0;
+      try { last = Number(sessionStorage.getItem(recoveryKey) || 0); } catch {}
+      if (!last || Date.now() - last > 10000) {
+        window.setTimeout(() => { void reset(); }, 150);
+      }
+    };
+    if (document.body) { render(); autoReset(); } else addEventListener('DOMContentLoaded', () => { render(); autoReset(); }, { once: true });
   } catch (error) {
     console.error('[PHL] stale asset recovery failed', error);
   }
