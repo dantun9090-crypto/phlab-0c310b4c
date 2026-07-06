@@ -139,26 +139,27 @@ probe_route() {
   fi
   rm -f "$body_file"
 
-  echo "attempt=${attempt} status=${status:-?} cf=${cf:-?} age=${age:-0} swr=${swr:-?} build=${build:-?} expected_build=${build_ok}"
-
-  # 200 required.
+  # Decide pass/fail + reason string BEFORE returning so we can emit a
+  # single structured log line per attempt.
+  local ok="false"
+  local reason=""
   if [ "$status" != "200" ]; then
-    return 1
+    reason="http_${status:-0}"
+  elif [[ "$cf" =~ $STALE_RE ]]; then
+    reason="stale_cf_${cf}"
+  elif [ "$build_ok" = "MISMATCH" ]; then
+    reason="build_mismatch_${build}_vs_${EXPECTED_BUILD_ID}"
+  else
+    ok="true"
+    if ! [[ "$cf" =~ $FRESH_RE ]] && [ -n "$cf" ]; then
+      reason="unrecognized_cf_${cf}_accepted"
+    fi
   fi
-  # Fresh cache-buster + HIT/STALE = purge didn't work.
-  if [[ "$cf" =~ $STALE_RE ]]; then
-    return 1
-  fi
-  # Accept known-good values; log if unexpected but don't fail (CF adds new
-  # statuses occasionally).
-  if ! [[ "$cf" =~ $FRESH_RE ]] && [ -n "$cf" ]; then
-    echo "  note: unrecognized cf-cache-status='${cf}' — accepting"
-  fi
-  # Build id check.
-  if [ "$build_ok" = "MISMATCH" ]; then
-    return 1
-  fi
-  return 0
+
+  emit_log "probe" "$path" "$attempt" "${status:-0}" "${cf:-}" "${age:-0}" "${swr:-}" "${build:-}" "${build_ok}" "$ok" "$reason"
+  echo "attempt=${attempt} status=${status:-?} cf=${cf:-?} age=${age:-0} swr=${swr:-?} build=${build:-?} expected_build=${build_ok} ok=${ok} reason=${reason:-none}"
+
+  [ "$ok" = "true" ] && return 0 || return 1
 }
 
 echo "=== Edge cache verification ==="
@@ -166,7 +167,11 @@ echo "base_url        = $BASE_URL"
 echo "routes          = $ROUTES"
 echo "expected_build  = ${EXPECTED_BUILD_ID:-<not set>}"
 echo "max_retries     = $MAX_RETRIES"
+echo "run_id          = $RUN_ID"
+echo "log_json        = $LOG_JSON"
 echo
+
+emit_log "start" "*" 0 0 "" "" "" "" "skip" "true" "$(printf 'routes=%s' "$ROUTES")"
 
 for path in $ROUTES; do
   echo "--- ${path}"
@@ -187,9 +192,11 @@ for path in $ROUTES; do
   if $ok; then
     pass_count=$((pass_count + 1))
     report+=("PASS ${path}")
+    emit_log "route.done" "$path" 0 0 "" "" "" "" "skip" "true" "passed"
   else
     fail_count=$((fail_count + 1))
     report+=("FAIL ${path} — ${last_output}")
+    emit_log "route.done" "$path" 0 0 "" "" "" "" "skip" "false" "$(printf 'exhausted_retries: %s' "$last_output")"
   fi
   echo
 done
@@ -199,11 +206,15 @@ for line in "${report[@]}"; do
   echo "  $line"
 done
 echo "passed=${pass_count} failed=${fail_count}"
+echo "structured logs: ${LOG_JSON}"
 
 if [ "$fail_count" -gt 0 ]; then
+  emit_log "summary" "*" 0 0 "" "" "" "" "skip" "false" "$(printf 'passed=%s failed=%s' "$pass_count" "$fail_count")"
   echo "::error::Edge cache verification FAILED for ${fail_count} route(s) — Cloudflare is serving stale HTML or the new Worker version is not live"
   exit 1
 fi
 
+emit_log "summary" "*" 0 0 "" "" "" "" "skip" "true" "$(printf 'passed=%s failed=%s' "$pass_count" "$fail_count")"
 echo "All routes serving fresh from new Worker version."
 exit 0
+
