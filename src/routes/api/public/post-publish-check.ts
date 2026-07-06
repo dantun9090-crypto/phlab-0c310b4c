@@ -284,16 +284,23 @@ async function markInvalidationComplete(
 }
 
 async function runInvalidation(buildId: string): Promise<{
-  cloudflare: { ok: boolean; status: number; body?: string; error?: string };
-  worker: { ok: boolean; status: number; error?: string };
+  cloudflare: { ok: boolean; status: number; body?: string; error?: string; durationMs: number };
+  worker: { ok: boolean; status: number; error?: string; durationMs: number };
   prerender: { desktop: number; mobile: number; urls: number; ok: boolean };
+  probe: { ok: boolean; failed: number; results: ProbeResult[] };
   regression: { ok: boolean; failed: number } | null;
   auditOk: boolean;
   durationMs: number;
 }> {
   const started = Date.now();
+  await logPostPublishStep(buildId, 'invalidation.start', { startedAt: new Date(started).toISOString() });
   const cf = await purgeEverything(buildId);
   const [worker, pr] = await Promise.all([forceRefreshWorkerCache(buildId), recachePrerender()]);
+  await logPostPublishStep(buildId, 'prerender.recache.done', pr as unknown as Record<string, unknown>);
+
+  // Give CF a moment to propagate the purge across tiers before probing.
+  await new Promise((r) => setTimeout(r, 3000));
+  const probe = await probeAllRoutes(buildId);
 
   // Also run the security regression probe so each deploy is verified.
   let regression: { ok: boolean; failed: number } | null = null;
@@ -308,12 +315,9 @@ async function runInvalidation(buildId: string): Promise<{
     else await addDocAdmin('_meta', meta, 'security_regression');
     await addDocAdmin('securityRegressions', { ...report, buildId, createdAt: new Date().toISOString() });
   } catch (e) {
-    console.warn('[post-publish-check] security regression failed:', e);
+    console.warn(JSON.stringify({ ts: new Date().toISOString(), kind: 'post_publish_step', buildId, stage: 'regression.error', error: e instanceof Error ? e.message : String(e) }));
   }
 
-  // Best-effort audit log entry — never throws. Use a Date instance (not
-  // ISO string) so toFirestoreValue writes a proper timestampValue that
-  // `orderBy('createdAt')` can sort against the collection's other rows.
   let auditOk = false;
   try {
     await addDocAdmin('auditLogs', {
@@ -322,13 +326,14 @@ async function runInvalidation(buildId: string): Promise<{
       cloudflare: cf,
       worker,
       prerender: pr,
+      probe,
       regression,
       durationMs: Date.now() - started,
       createdAt: new Date(),
     });
     auditOk = true;
   } catch (e) {
-    console.warn('[post-publish-check] auditLogs write failed:', e);
+    console.warn(JSON.stringify({ ts: new Date().toISOString(), kind: 'post_publish_step', buildId, stage: 'audit.error', error: e instanceof Error ? e.message : String(e) }));
   }
 
   const durationMs = Date.now() - started;
@@ -336,6 +341,7 @@ async function runInvalidation(buildId: string): Promise<{
     lastPurgeOk: cf.ok,
     lastPurgeStatus: cf.status,
     lastPurgeError: cf.error ?? null,
+    lastPurgeDurationMs: cf.durationMs,
     lastWorkerRefreshOk: worker.ok,
     lastWorkerRefreshStatus: worker.status,
     lastWorkerRefreshError: worker.error ?? null,
@@ -343,14 +349,35 @@ async function runInvalidation(buildId: string): Promise<{
     lastRecacheDesktopStatus: pr.desktop,
     lastRecacheMobileStatus: pr.mobile,
     lastRecacheUrls: pr.urls,
+    lastProbeOk: probe.ok,
+    lastProbeFailed: probe.failed,
+    lastProbeResults: probe.results.map((r) => ({
+      path: r.path,
+      cf: r.cfCacheStatus,
+      status: r.status,
+      buildIdMatches: r.buildIdMatches,
+      ok: r.ok,
+      reason: r.reason ?? null,
+    })),
     lastAuditOk: auditOk,
     lastInvalidationDurationMs: durationMs,
   }).catch((e) => {
-    console.warn('[post-publish-check] build_state completion marker failed:', e);
+    console.warn(JSON.stringify({ ts: new Date().toISOString(), kind: 'post_publish_step', buildId, stage: 'build_state.error', error: e instanceof Error ? e.message : String(e) }));
   });
 
-  return { cloudflare: cf, worker, prerender: pr, regression, auditOk, durationMs };
+  await logPostPublishStep(buildId, 'invalidation.done', {
+    durationMs,
+    cfOk: cf.ok,
+    workerOk: worker.ok,
+    prerenderOk: pr.ok,
+    probeOk: probe.ok,
+    probeFailed: probe.failed,
+    regressionOk: regression?.ok ?? null,
+  });
+
+  return { cloudflare: cf, worker, prerender: pr, probe, regression, auditOk, durationMs };
 }
+
 
 // Module-level in-flight lock — dedupes concurrent first-requests in the
 // same Worker isolate. A given buildId can only fire invalidation once;
