@@ -1,0 +1,157 @@
+/**
+ * Auto-recovery for stale-chunk errors after a deploy.
+ *
+ * Trigger: window `error` / `unhandledrejection` whose message matches
+ * `isStaleChunkError` (dynamic import failure, chunk load failure, missing
+ * asset in /assets or /_build).
+ *
+ * Behaviour: show a full-screen countdown overlay (3s) with a "Cancel &
+ * stay here" button. On countdown 0 (or if the user does nothing), clear
+ * app-owned Service Worker registrations + caches, then hard-reload with
+ * `?sw=off&_r=<ts>` so the next paint uses fresh HTML pointing at chunks
+ * that still exist.
+ *
+ * Guard: `sessionStorage.__phl_chunk_recovery === '1'` — runs at most once
+ * per session, so a persistent failure can never loop.
+ *
+ * Skipped when a hydration error was already logged (that has its own
+ * fallback in client.tsx) or when the reload-loop breaker fired.
+ */
+import { isStaleChunkError, hasHydrationErrorState } from "@/lib/recovery";
+
+const GUARD_KEY = "__phl_chunk_recovery";
+const COUNTDOWN_SECONDS = 3;
+const OVERLAY_ID = "phl-chunk-recovery-overlay";
+
+let overlayShown = false;
+
+async function clearAppCachesAndSW(): Promise<void> {
+  try {
+    if ("caches" in window) {
+      const names = await caches.keys();
+      await Promise.all(
+        names
+          .filter((n) => /^(phlabs-|workbox-|precache-|runtime-)/i.test(n))
+          .map((n) => caches.delete(n).catch(() => false)),
+      );
+    }
+  } catch { /* ignore */ }
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(
+        regs
+          .filter((r) => {
+            const url =
+              r.active?.scriptURL ||
+              r.installing?.scriptURL ||
+              r.waiting?.scriptURL ||
+              "";
+            return /\/(?:sw|service-worker)\.js(?:$|[?#])/i.test(url);
+          })
+          .map((r) => r.unregister().catch(() => false)),
+      );
+    }
+  } catch { /* ignore */ }
+}
+
+function reloadClean(): void {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("sw", "off");
+    url.searchParams.set("_r", String(Date.now()));
+    window.location.replace(url.toString());
+  } catch {
+    try { window.location.reload(); } catch { /* give up */ }
+  }
+}
+
+async function performRecovery(): Promise<void> {
+  try { sessionStorage.setItem(GUARD_KEY, "1"); } catch { /* ignore */ }
+  await clearAppCachesAndSW();
+  reloadClean();
+}
+
+function showCountdownOverlay(): void {
+  if (overlayShown) return;
+  overlayShown = true;
+
+  if (!document.body) {
+    // DOM not ready yet — recover immediately without UI.
+    void performRecovery();
+    return;
+  }
+
+  const existing = document.getElementById(OVERLAY_ID);
+  if (existing) existing.remove();
+
+  const wrap = document.createElement("div");
+  wrap.id = OVERLAY_ID;
+  wrap.setAttribute("role", "alert");
+  wrap.setAttribute("aria-live", "assertive");
+  wrap.style.cssText =
+    "position:fixed;inset:0;z-index:2147483647;background:#060f1e;color:#f0f6ff;" +
+    "font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;" +
+    "display:flex;align-items:center;justify-content:center;padding:24px";
+  wrap.innerHTML =
+    '<div style="max-width:460px;text-align:center">' +
+      '<h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs update in progress</h1>' +
+      '<p style="margin:0 0 18px;color:#9fb0c8;font-size:15px;line-height:1.55">' +
+        "We just shipped a new version. Your browser is using an old page file.<br>" +
+        'Reloading in <span id="phl-chunk-count" style="color:#10b981;font-weight:800">' +
+        String(COUNTDOWN_SECONDS) +
+        "</span>s…" +
+      "</p>" +
+      '<button id="phl-chunk-cancel" type="button" style="appearance:none;border:1px solid #1e3a5f;border-radius:8px;background:transparent;color:#9fb0c8;font-weight:600;padding:10px 16px;cursor:pointer;font-size:14px">' +
+        "Cancel &amp; stay here" +
+      "</button>" +
+    "</div>";
+  document.body.appendChild(wrap);
+
+  let remaining = COUNTDOWN_SECONDS;
+  let cancelled = false;
+  const timer = window.setInterval(() => {
+    remaining -= 1;
+    const el = document.getElementById("phl-chunk-count");
+    if (el) el.textContent = String(Math.max(remaining, 0));
+    if (remaining <= 0) {
+      window.clearInterval(timer);
+      if (!cancelled) void performRecovery();
+    }
+  }, 1000);
+
+  document.getElementById("phl-chunk-cancel")?.addEventListener("click", () => {
+    cancelled = true;
+    window.clearInterval(timer);
+    try { wrap.remove(); } catch { /* ignore */ }
+  });
+}
+
+function shouldHandle(err: unknown): boolean {
+  if (!isStaleChunkError(err)) return false;
+  if (hasHydrationErrorState()) return false;
+  try {
+    if (sessionStorage.getItem(GUARD_KEY) === "1") return false;
+  } catch { /* ignore */ }
+  return true;
+}
+
+export function installChunkAutoRecovery(): void {
+  if (typeof window === "undefined") return;
+  const w = window as unknown as { __phlChunkAutoRecoveryInstalled?: boolean };
+  if (w.__phlChunkAutoRecoveryInstalled) return;
+  w.__phlChunkAutoRecoveryInstalled = true;
+
+  const onError = (event: ErrorEvent) => {
+    const err = event.error ?? event.message;
+    if (shouldHandle(err)) showCountdownOverlay();
+  };
+  const onRejection = (event: PromiseRejectionEvent) => {
+    if (shouldHandle(event.reason)) showCountdownOverlay();
+  };
+
+  window.addEventListener("error", onError, true);
+  window.addEventListener("unhandledrejection", onRejection, true);
+}
+
+export const CHUNK_RECOVERY_GUARD_KEY = GUARD_KEY;
