@@ -1,8 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { render } from "@react-email/render";
+import { Upload, Loader2, X as XIcon } from "lucide-react";
+import { toast } from "sonner";
 import { db } from "@/lib/firebase";
 import { logAdminAction } from "@/lib/admin-audit";
+import { getAdminIdToken } from "@/lib/auth-ready";
+import { uploadEmailBrandingImage } from "@/lib/email-branding-image-upload.functions";
 import {
   DEFAULT_EMAIL_BRAND,
   FONT_STACKS,
@@ -10,6 +14,17 @@ import {
   type EmailBrandConfig,
 } from "@/lib/email-templates/brand-config";
 import { TEMPLATE_LIST, getTemplate } from "@/lib/email-templates/registry";
+
+type BrandImageSlot = "body-bg" | "header-bg" | "hero-bg";
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error("read failed"));
+    reader.onload = () => resolve(String(reader.result || "").split(",").pop() || "");
+    reader.readAsDataURL(file);
+  });
+}
 
 /**
  * Email Branding admin tab.
