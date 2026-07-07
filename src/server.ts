@@ -1044,7 +1044,8 @@ export default {
             event: "firebase_auth_proxy.error",
             error: err instanceof Error ? err.message : String(err),
             stack: err instanceof Error ? err.stack : undefined,
-            path: url.pathname,
+            proxyPath: url.pathname,
+
             ...baseFields,
           });
           return new Response("Auth proxy temporarily unavailable", {
