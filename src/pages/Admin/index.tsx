@@ -502,6 +502,7 @@ export default function AdminPage() {
         case 'database': return <DatabaseTab />;
         case 'backup': return <BackupTab />;
         case 'firestorebackups': return <FirestoreBackupsTab />;
+        case 'backupauditlog': return <BackupAuditLogTab />;
         case 'adverts': return <AdvertsTab />;
         case 'policies': return <PoliciesTab />;
         case 'landing': return <LandingPageTab />;
