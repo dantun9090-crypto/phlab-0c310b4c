@@ -214,8 +214,8 @@ var SECURITY_HEADERS = {
 };
 var PRERENDER_ORIGIN = "https://service.prerender.io";
 var PRERENDER_TIMEOUT_MS = 45e3;
-var PRERENDER_CACHE_TTL = 3600;
-var PRERENDER_SWR_TTL = 60;
+var PRERENDER_CACHE_TTL = 60;
+var PRERENDER_SWR_TTL = 0;
 var LOOP_HEADER = "x-prerender-loop";
 var PRERENDER_RENDERER_RX = /Prerender \(\+https:\/\/github\.com\/prerender\/prerender\)/i;
 var NONCE_PLACEHOLDER = "__CSP_NONCE__";
@@ -448,6 +448,11 @@ async function fetchPrerender(request, token) {
 }
 __name(fetchPrerender, "fetchPrerender");
 async function serveStaleOrError(request) {
+  const url = new URL(request.url);
+  // Never serve stale HTML as an error fallback. Old HTML can reference
+  // deleted hashed chunks after a publish; a no-store branded 503 is safer
+  // than pinning a blank shell behind the Worker cache.
+  if (!STATIC_EXT_RX.test(url.pathname)) return brandedErrorResponse(503, 30);
   try {
     const cache = caches.default;
     const stale = await cache.match(request);
@@ -478,13 +483,12 @@ function stripLovableInjectedScripts(response) {
   return new HTMLRewriter().on("script[src]", new StripLovableScripts()).transform(response);
 }
 __name(stripLovableInjectedScripts, "stripLovableInjectedScripts");
-var _ttlCache = { value: 60, expiresAt: 0 };
+var _ttlCache = { value: 30, expiresAt: 0 };
 var TTL_CACHE_MS = 6e4;
-var TTL_DEFAULT = 60;
-var TTL_MIN = 60;
-// Allow 0 from KV as an explicit "disable" signal, but coerce to TTL_MIN below
-// so cold hits still populate caches.default. Other allowed values warm cache
-// for longer when configured.
+var TTL_DEFAULT = 30;
+// Allow 0 from the admin config as an explicit "disable HTML cache" signal.
+// Never coerce 0 back to a positive TTL — that hidden Worker cache layer was
+// able to serve old HTML even when the origin said no-store.
 var TTL_ALLOWED = /* @__PURE__ */ new Set([0, 30, 60, 300, 900]);
 async function getHtmlTtlSeconds() {
   const now = Date.now();
@@ -504,10 +508,11 @@ async function getHtmlTtlSeconds() {
     }
   } catch {
   }
-  // Final guard: KV may return 0/NaN/undefined — never let cacheTtl drop to 0.
+  // Final guard: invalid values fall back to the short deploy-safe default.
   const n = Number(value);
-  if (!Number.isFinite(n) || n <= 0) value = TTL_MIN;
-  else if (n < TTL_MIN) value = TTL_MIN;
+  if (!Number.isFinite(n)) value = TTL_DEFAULT;
+  else if (n === 0) value = 0;
+  else if (n < 30) value = 30;
   else value = n;
   _ttlCache = { value, expiresAt: now + TTL_CACHE_MS };
   return value;
