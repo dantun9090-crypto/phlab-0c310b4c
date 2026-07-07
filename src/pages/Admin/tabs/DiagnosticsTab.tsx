@@ -39,7 +39,7 @@ export default function DiagnosticsTab() {
       try {
         const payload =
           coll === 'emailSubscribers'
-            ? { email: `diag+${Date.now()}@diagnostic.test`, source: '__diagnostic__', createdAt: Timestamp.now() }
+            ? { email: `diag+${Date.now()}@diagnostic.test`, source: '__diagnostic__', subscribedAt: Timestamp.now() }
             : { code: `__DIAG_${Date.now()}`, type: 'percentage', value: 0, isActive: false, source: '__diagnostic__', createdAt: Timestamp.now() };
         const ref = await addDoc(collection(db, coll), payload);
         let cleanup = ' (cleanup failed)';
