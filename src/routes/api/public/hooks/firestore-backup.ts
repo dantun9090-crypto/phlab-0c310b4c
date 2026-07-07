@@ -129,6 +129,20 @@ async function noteFailureAndMaybeAlert(
   } catch {
     /* alert logger must never throw */
   }
+  // Fire out-of-band notification (Slack → Discord → Email). Never blocks.
+  try {
+    await sendBackupAlert({
+      type: "firestore_backup_failure_spike",
+      severity: "critical",
+      title: "Firestore backup failure spike",
+      summary: `${count} failures in the last 15 minutes on /api/public/hooks/firestore-backup.`,
+      ip: ctx.ip,
+      userAgent: ctx.userAgent,
+      count,
+      windowMinutes: 15,
+      reason,
+    });
+  } catch { /* alerts must never throw */ }
 }
 
 export const Route = createFileRoute("/api/public/hooks/firestore-backup")({
