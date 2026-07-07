@@ -32,16 +32,33 @@ function json(v: unknown, status = 200): Response {
   });
 }
 
+function timingSafeStringEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
 function verifyCaller(request: Request): { ok: true } | { ok: false; status: number; msg: string } {
-  // Supabase pg_cron sends `apikey: <anon>`. Any non-empty apikey passes here —
-  // the route lives under /api/public so there's no edge auth, and we don't
-  // want to hard-code the anon key server-side. `x-cron-secret` (matching
-  // CLEANUP_SECRET) is accepted as an alternative for manual curl calls.
+  // Accept ONLY:
+  //   1. `apikey` header matching the Supabase publishable/anon key (pg_cron path)
+  //   2. `x-cron-secret` header matching CLEANUP_SECRET (manual curl / GitHub Actions)
+  // Any other non-empty string must be rejected — otherwise anyone can trigger
+  // Firestore exports and write rows into `firestore_backups`.
+  const expectedApiKeys = [
+    process.env.SUPABASE_PUBLISHABLE_KEY,
+    process.env.SUPABASE_ANON_KEY,
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+  ].filter((v): v is string => typeof v === "string" && v.length > 0);
   const apikey = request.headers.get("apikey");
-  if (apikey && apikey.length > 20) return { ok: true };
+  if (apikey && expectedApiKeys.some((k) => timingSafeStringEqual(apikey, k))) {
+    return { ok: true };
+  }
   const secret = request.headers.get("x-cron-secret");
   const expected = process.env.CLEANUP_SECRET;
-  if (expected && secret === expected) return { ok: true };
+  if (expected && secret && timingSafeStringEqual(secret, expected)) {
+    return { ok: true };
+  }
   return { ok: false, status: 401, msg: "unauthorized" };
 }
 
