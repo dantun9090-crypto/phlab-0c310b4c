@@ -7,7 +7,18 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db, storage, doc, getDoc, setDoc, Timestamp, storageRef, uploadBytesResumable, getDownloadURL, triggerContentCdnInvalidation, bumpMarketingVersion } from '@/lib/firebase';
+import { db, doc, getDoc, setDoc, Timestamp, triggerContentCdnInvalidation, bumpMarketingVersion } from '@/lib/firebase';
+import { getAdminIdToken } from '@/lib/auth-ready';
+import { uploadBannerImage } from '@/lib/banner-image-upload.functions';
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error('Failed to read image'));
+    reader.onload = () => resolve(String(reader.result || '').split(',').pop() || '');
+    reader.readAsDataURL(file);
+  });
+}
 
 interface BannerConfig {
   active: boolean;
