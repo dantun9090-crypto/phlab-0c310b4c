@@ -75,7 +75,7 @@ async function writeAudit(
   ctx: AuditContext,
   outcome: {
     status: number;
-    result: "accepted" | "rejected" | "trigger_failed" | "invalid_body";
+    result: "accepted" | "rejected" | "trigger_failed" | "invalid_body" | "ip_locked";
     authMethod?: "apikey" | "cron_secret" | null;
     authReason?: "missing" | "invalid" | null;
     detail?: string | null;
