@@ -376,7 +376,69 @@ export default function BannerTab() {
                 {imageError && <p className="text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Invalid image URL</p>}
               </div>
             )}
+
+            {/* Upload error details */}
+            {uploadError && (
+              <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs space-y-1">
+                <p className="text-red-300 font-semibold flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5" /> {uploadError.title}
+                </p>
+                <p className="text-red-200/90 font-mono break-all">{uploadError.detail}</p>
+                {uploadError.hint && <p className="text-red-200/70">Hint: {uploadError.hint}</p>}
+                <button
+                  onClick={() => { setUploadError(null); fileInputRef.current?.click(); }}
+                  className="mt-1 px-2.5 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-100 rounded-md">
+                  Retry upload
+                </button>
+              </div>
+            )}
+
+            {/* Post-upload preview + metadata */}
+            {lastUpload && !uploadError && (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-2">
+                <p className="text-emerald-300 text-xs font-semibold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Uploaded — verify below
+                </p>
+                <img
+                  src={lastUpload.url}
+                  alt="Uploaded banner verification"
+                  className="w-full max-h-48 object-contain bg-[#04101f] rounded-lg border border-white/10"
+                  onError={() => setImageError(true)}
+                />
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                  <dt className="text-[#9cb8d9]">File</dt>
+                  <dd className="text-white truncate" title={lastUpload.fileName}>{lastUpload.fileName}</dd>
+                  <dt className="text-[#9cb8d9]">Type</dt>
+                  <dd className="text-white font-mono">{lastUpload.contentType}</dd>
+                  <dt className="text-[#9cb8d9]">Size</dt>
+                  <dd className="text-white font-mono">
+                    {lastUpload.sizeKb} KB
+                    <span className="text-[#2a4a7a]"> (from {lastUpload.originalKb} KB)</span>
+                  </dd>
+                  {lastUpload.width && (
+                    <>
+                      <dt className="text-[#9cb8d9]">Dimensions</dt>
+                      <dd className="text-white font-mono">{lastUpload.width} × {lastUpload.height}px</dd>
+                    </>
+                  )}
+                  <dt className="text-[#9cb8d9]">Path</dt>
+                  <dd className="text-white font-mono truncate" title={lastUpload.path}>{lastUpload.path}</dd>
+                </dl>
+                <div className="flex gap-1.5 pt-1">
+                  <a href={lastUpload.url} target="_blank" rel="noreferrer"
+                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-[#0f2640]/80 hover:bg-[#0f2640] text-[#9cb8d9] hover:text-white rounded-md text-xs">
+                    <ExternalLink className="w-3 h-3" /> Open image
+                  </a>
+                  <button
+                    onClick={() => { navigator.clipboard?.writeText(lastUpload.url); setMsg({ type: 'success', text: 'URL copied' }); }}
+                    className="flex-1 px-2 py-1.5 bg-[#0f2640]/80 hover:bg-[#0f2640] text-[#9cb8d9] hover:text-white rounded-md text-xs">
+                    Copy URL
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
+
 
           {/* Link + Alt text */}
           <div className="bg-[#0b1a30]/60 border border-white/10 rounded-2xl p-5 space-y-3">
