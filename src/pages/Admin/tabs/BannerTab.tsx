@@ -80,7 +80,48 @@ export default function BannerTab() {
   const [uploadMode, setUploadMode] = useState<'url' | 'file'>('file');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStep, setUploadStep] = useState<string>('');
+  const [uploadError, setUploadError] = useState<{ title: string; detail: string; hint?: string } | null>(null);
+  const [lastUpload, setLastUpload] = useState<{
+    url: string;
+    path: string;
+    sizeKb: number;
+    originalKb: number;
+    contentType: string;
+    width?: number;
+    height?: number;
+    fileName: string;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function classifyUploadError(err: any): { title: string; detail: string; hint?: string } {
+    const raw = String(err?.message || err || 'unknown error');
+    const lower = raw.toLowerCase();
+    if (lower.includes('invalid_image_type') || lower.includes('unsupported file type'))
+      return { title: 'Unsupported file type', detail: raw, hint: 'Use JPG, PNG or WebP.' };
+    if (lower.includes('invalid_image_size') || lower.includes('too large') || lower.includes('413'))
+      return { title: 'File too large', detail: raw, hint: 'Max 5 MB after compression. Try a smaller image.' };
+    if (lower.includes('empty')) return { title: 'Empty file', detail: raw };
+    if (lower.includes('svg')) return { title: 'SVG rejected', detail: raw, hint: 'SVGs with scripts are blocked.' };
+    if (lower.includes('unauthorized') || lower.includes('forbidden') || lower.includes('401') || lower.includes('403'))
+      return { title: 'Not authorised', detail: raw, hint: 'Sign in again as an admin and retry.' };
+    if (lower.includes('token') || lower.includes('admin'))
+      return { title: 'Admin token error', detail: raw, hint: 'Refresh the page to re-issue an admin token.' };
+    if (lower.includes('network') || lower.includes('failed to fetch') || lower.includes('load failed'))
+      return { title: 'Network error', detail: raw, hint: 'Check your connection and retry.' };
+    if (lower.includes('storage upload failed') || lower.includes('banner image upload failed'))
+      return { title: 'Firebase Storage rejected the file', detail: raw, hint: 'Check Storage rules for banners/ path.' };
+    return { title: 'Upload failed', detail: raw };
+  }
+
+  function probeImageDimensions(url: string): Promise<{ width: number; height: number } | null> {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  }
 
   useEffect(() => { loadBanner(); }, []);
 
