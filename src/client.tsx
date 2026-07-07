@@ -492,7 +492,11 @@ window.setTimeout(() => {
     const mountFailed = bootStillVisible || !reactRootMounted || bodyChildCount <= 1;
 
     if (mountFailed) {
-      const buildId = document.querySelector('meta[name="build-id"]')?.getAttribute("content") || "n/a";
+      const buildId =
+        (window as unknown as { __BUILD_ID__?: string }).__BUILD_ID__ ||
+        document.querySelector('meta[name="x-build-id"]')?.getAttribute("content") ||
+        document.querySelector('meta[name="build-id"]')?.getAttribute("content") ||
+        "n/a";
       const assetHash = document.querySelector('meta[name="asset-hash"]')?.getAttribute("content") || "n/a";
       // Normalize into a stable code so canary/admin charts can correlate.
       // Lazy import to keep boot path free of extra chunks.
