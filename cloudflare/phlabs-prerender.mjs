@@ -743,6 +743,7 @@ var phlabs_prerender_patched_default = {
       : evaluateHtmlCacheable(request, url, htmlTtl);
     const htmlCacheable = cacheEval.ok;
     const cacheSkipReason = cacheEval.reason;
+    const originBuildId = htmlCacheable ? await getOriginBuildId() : "";
     const cacheOpts = htmlCacheable && !forceRefresh ? {
       cacheEverything: true,
       cacheTtl: htmlTtl,
@@ -750,20 +751,29 @@ var phlabs_prerender_patched_default = {
     } : void 0;
     let cacheKey = null;
     if (htmlCacheable) {
-      cacheKey = buildCacheKey(url);
+      cacheKey = buildCacheKey(url, originBuildId);
       try {
         const hit = forceRefresh ? null : await caches.default.match(cacheKey);
         if (hit) {
+          const cachedBuildId = hit.headers.get("x-phl-origin-build-id") || hit.headers.get("x-build-id") || "unknown";
+          if (originBuildId && originBuildId !== "unknown" && cachedBuildId !== "unknown" && cachedBuildId !== originBuildId) {
+            console.log(JSON.stringify({ tag: "phlabs-prerender", branch: "html-cache-bypass", reason: "build-mismatch", path: url.pathname, cachedBuildId, originBuildId }));
+          } else {
           const h = new Headers(hit.headers);
           h.set("cache-control", "public, max-age=0, must-revalidate");
-          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
-          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
+          h.set("cdn-cache-control", `public, max-age=${htmlTtl}`);
+          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}`);
+          if (originBuildId) {
+            h.set("x-phl-origin-build-id", originBuildId);
+            h.set("x-build-id", originBuildId);
+          }
           h.set("x-phl-via", `${normalProxyVia};cached=1`);
           h.set("cf-cache-status", "HIT");
           h.set("x-phl-cache", "HIT");
           h.delete("age");
           const cachedOut = new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers: h });
           return rewriteCspNonce(await repairInlineBootScripts(applySecurityHeaders(stripLovableInjectedScripts(cachedOut), url)));
+          }
         }
       } catch (_) {
       }
@@ -782,6 +792,7 @@ var phlabs_prerender_patched_default = {
       }
       const h = new Headers(res.headers);
       if (forceRefresh) h.set("x-phl-force-refresh", "1");
+      if (originBuildId) h.set("x-phl-origin-build-id", originBuildId);
       if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/webhook/")) {
         noCache(h);
       } else if (isFirebaseAuthHelperPath(url)) {
@@ -799,8 +810,8 @@ var phlabs_prerender_patched_default = {
       } else if ((h.get("content-type") || "").includes("text/html")) {
         if (htmlTtl > 0) {
           h.set("cache-control", "public, max-age=0, must-revalidate");
-          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
-          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
+          h.set("cdn-cache-control", `public, max-age=${htmlTtl}`);
+          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}`);
         } else {
           h.set("cache-control", "no-store, no-cache, must-revalidate, max-age=0");
           h.set("cdn-cache-control", "no-store");
@@ -830,6 +841,10 @@ var phlabs_prerender_patched_default = {
           const reportingEndpoints = h.get("reporting-endpoints");
           if (reportingEndpoints) cacheHeaders.set("reporting-endpoints", reportingEndpoints);
           cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);
+          if (originBuildId) {
+            cacheHeaders.set("x-phl-origin-build-id", originBuildId);
+            cacheHeaders.set("x-build-id", originBuildId);
+          }
           cacheHeaders.set("x-phl-cached-at", (/* @__PURE__ */ new Date()).toISOString());
           let putErr = "ok";
           const putPromise = caches.default.put(
