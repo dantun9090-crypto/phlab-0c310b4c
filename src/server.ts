@@ -1002,32 +1002,58 @@ export default {
       // musi obsługiwać /__/auth/* i /__/firebase/* przez origin
       // Firebase (prohealthpeptides-a0808.firebaseapp.com).
       if (url.pathname.startsWith("/__/auth/") || url.pathname.startsWith("/__/firebase/")) {
-        const fbUrl = new URL(url.pathname + url.search, "https://prohealthpeptides-a0808.firebaseapp.com");
-        const fbHeaders = new Headers();
-        const accept = request.headers.get("accept");
-        const acceptLanguage = request.headers.get("accept-language");
-        const userAgent = request.headers.get("user-agent");
-        const contentType = request.headers.get("content-type");
-        if (accept) fbHeaders.set("accept", accept);
-        if (acceptLanguage) fbHeaders.set("accept-language", acceptLanguage);
-        if (userAgent) fbHeaders.set("user-agent", userAgent);
-        if (contentType) fbHeaders.set("content-type", contentType);
-        const fbReq = new Request(fbUrl.toString(), {
-          method: request.method,
-          headers: fbHeaders,
-          body: request.body,
-          redirect: "manual",
-        });
-        const fbResp = await fetch(fbReq);
-        const headers = new Headers(fbResp.headers);
-        headers.delete("x-frame-options");
-        for (const [k, v] of Object.entries(STRICT_NO_STORE_HEADERS)) headers.set(k, v);
-        return new Response(fbResp.body, {
-          status: fbResp.status,
-          statusText: fbResp.statusText,
-          headers,
-        });
+        try {
+          const fbUrl = new URL(url.pathname + url.search, "https://prohealthpeptides-a0808.firebaseapp.com");
+          const fbHeaders = new Headers();
+          const accept = request.headers.get("accept");
+          const acceptLanguage = request.headers.get("accept-language");
+          const userAgent = request.headers.get("user-agent");
+          const contentType = request.headers.get("content-type");
+          if (accept) fbHeaders.set("accept", accept);
+          if (acceptLanguage) fbHeaders.set("accept-language", acceptLanguage);
+          if (userAgent) fbHeaders.set("user-agent", userAgent);
+          if (contentType) fbHeaders.set("content-type", contentType);
+          // Force identity so we can buffer + re-serve without content-encoding
+          // mismatches (root cause of intermittent CF 1101 on /__/auth/iframe).
+          fbHeaders.set("accept-encoding", "identity");
+          const hasBody = request.method !== "GET" && request.method !== "HEAD";
+          const fbReq = new Request(fbUrl.toString(), {
+            method: request.method,
+            headers: fbHeaders,
+            body: hasBody ? request.body : null,
+            redirect: "manual",
+          });
+          const fbResp = await fetch(fbReq);
+          // Buffer the body so any streaming error happens INSIDE our try/catch
+          // instead of after the response headers have been flushed (which
+          // would surface as an unrecoverable Cloudflare 1101 error).
+          const buf = await fbResp.arrayBuffer();
+          const headers = new Headers(fbResp.headers);
+          headers.delete("x-frame-options");
+          headers.delete("content-encoding");
+          headers.delete("content-length");
+          headers.delete("transfer-encoding");
+          for (const [k, v] of Object.entries(STRICT_NO_STORE_HEADERS)) headers.set(k, v);
+          return new Response(buf, {
+            status: fbResp.status,
+            statusText: fbResp.statusText,
+            headers,
+          });
+        } catch (err) {
+          log.error({
+            event: "firebase_auth_proxy.error",
+            error: err instanceof Error ? err.message : String(err),
+            stack: err instanceof Error ? err.stack : undefined,
+            path: url.pathname,
+            ...baseFields,
+          });
+          return new Response("Auth proxy temporarily unavailable", {
+            status: 502,
+            headers: { "content-type": "text/plain; charset=utf-8", ...STRICT_NO_STORE_HEADERS },
+          });
+        }
       }
+
 
       // 0c. Admin second-factor gate. When ADMIN_GATE_SECRET is configured,
       // every /admin and /admin/* HTML request must carry an `admin_gate`
