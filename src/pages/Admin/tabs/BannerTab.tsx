@@ -348,11 +348,12 @@ export default function BannerTab() {
                     {uploading ? (
                       <>
                         <Loader2 className="w-6 h-6 text-blue-400 animate-spin" />
-                        <p className="text-[#9cb8d9] text-sm">Uploading… {uploadProgress}%</p>
+                        <p className="text-[#9cb8d9] text-sm">{uploadStep || 'Uploading…'} {uploadProgress}%</p>
                         <div className="w-full bg-[#0f2640] rounded-full h-1.5 mt-1">
                           <div className="bg-blue-500 h-1.5 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
                         </div>
                       </>
+
                     ) : (
                       <>
                         <Upload className="w-6 h-6 text-[#2a4a7a] group-hover:text-blue-400 transition-colors" />
