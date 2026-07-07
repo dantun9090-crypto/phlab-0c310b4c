@@ -214,8 +214,8 @@ var SECURITY_HEADERS = {
 };
 var PRERENDER_ORIGIN = "https://service.prerender.io";
 var PRERENDER_TIMEOUT_MS = 45e3;
-var PRERENDER_CACHE_TTL = 3600;
-var PRERENDER_SWR_TTL = 60;
+var PRERENDER_CACHE_TTL = 60;
+var PRERENDER_SWR_TTL = 0;
 var LOOP_HEADER = "x-prerender-loop";
 var PRERENDER_RENDERER_RX = /Prerender \(\+https:\/\/github\.com\/prerender\/prerender\)/i;
 var NONCE_PLACEHOLDER = "__CSP_NONCE__";
@@ -406,13 +406,15 @@ __name(evaluateHtmlCacheable, "evaluateHtmlCacheable");
 // Build a normalised cache key — strip tracking params so /products?utm_*=…
 // shares the cache entry with /products. Preserves whitelisted query keys.
 var TRACKING_PARAM_RX = /^(utm_|fbclid$|gclid$|gbraid$|wbraid$|msclkid$|mc_(?:eid|cid)$|_hsenc$|_hsmi$|igshid$|ref$|ref_src$|yclid$|hsCtaTracking$|trk$)/i;
-function buildCacheKey(url) {
+var CACHE_BUSTER_PARAM_RX = /^(__cache_verify|__probe|__edge_build_probe|_r|cacheBust|cache_bust)$/i;
+function buildCacheKey(url, buildId) {
   const cleanUrl = new URL(url.toString());
   const drop = [];
   for (const k of cleanUrl.searchParams.keys()) {
-    if (TRACKING_PARAM_RX.test(k)) drop.push(k);
+    if (TRACKING_PARAM_RX.test(k) || CACHE_BUSTER_PARAM_RX.test(k)) drop.push(k);
   }
   for (const k of drop) cleanUrl.searchParams.delete(k);
+  if (buildId) cleanUrl.searchParams.set("__phl_build_id", buildId);
   // Sort remaining params for canonical key.
   const entries = [...cleanUrl.searchParams.entries()].sort(([a], [b]) => a.localeCompare(b));
   cleanUrl.search = "";
@@ -420,6 +422,38 @@ function buildCacheKey(url) {
   return new Request(cleanUrl.toString(), { method: "GET" });
 }
 __name(buildCacheKey, "buildCacheKey");
+var _originBuildIdCache = { value: "", expiresAt: 0 };
+var BUILD_ID_CACHE_MS = 15e3;
+async function getOriginBuildId() {
+  const now = Date.now();
+  if (_originBuildIdCache.expiresAt > now && _originBuildIdCache.value) return _originBuildIdCache.value;
+  let value = "";
+  try {
+    const probeUrl = `https://${CANONICAL_HOST}/?__edge_build_probe=${now}`;
+    const res = await fetch(probeUrl, {
+      method: "GET",
+      headers: {
+        accept: "text/html",
+        "cache-control": "no-cache",
+        pragma: "no-cache",
+        "user-agent": "phlabs-edge-build-probe/1.0",
+        "x-force-refresh": "true"
+      },
+      cf: { cacheTtl: 0, cacheEverything: false },
+      signal: AbortSignal.timeout(4e3)
+    });
+    value = res.headers.get("x-build-id") || res.headers.get("x-phl-build-id") || "";
+    if (!value) {
+      const html = await res.text().catch(() => "");
+      value = (html.match(/<meta[^>]+name=["']build-id["'][^>]+content=["']([^"']+)["']/i) || [, ""])[1] || "";
+    }
+  } catch (_) {
+  }
+  value = (value || "unknown").slice(0, 80);
+  _originBuildIdCache = { value, expiresAt: now + (value === "unknown" ? 5e3 : BUILD_ID_CACHE_MS) };
+  return value;
+}
+__name(getOriginBuildId, "getOriginBuildId");
 function proxyToOrigin(request, _origin, cacheOpts) {
   const init = { redirect: "manual" };
   if (cacheOpts) {
@@ -448,6 +482,11 @@ async function fetchPrerender(request, token) {
 }
 __name(fetchPrerender, "fetchPrerender");
 async function serveStaleOrError(request) {
+  const url = new URL(request.url);
+  // Never serve stale HTML as an error fallback. Old HTML can reference
+  // deleted hashed chunks after a publish; a no-store branded 503 is safer
+  // than pinning a blank shell behind the Worker cache.
+  if (!STATIC_EXT_RX.test(url.pathname)) return brandedErrorResponse(503, 30);
   try {
     const cache = caches.default;
     const stale = await cache.match(request);
@@ -478,13 +517,12 @@ function stripLovableInjectedScripts(response) {
   return new HTMLRewriter().on("script[src]", new StripLovableScripts()).transform(response);
 }
 __name(stripLovableInjectedScripts, "stripLovableInjectedScripts");
-var _ttlCache = { value: 60, expiresAt: 0 };
+var _ttlCache = { value: 30, expiresAt: 0 };
 var TTL_CACHE_MS = 6e4;
-var TTL_DEFAULT = 60;
-var TTL_MIN = 60;
-// Allow 0 from KV as an explicit "disable" signal, but coerce to TTL_MIN below
-// so cold hits still populate caches.default. Other allowed values warm cache
-// for longer when configured.
+var TTL_DEFAULT = 30;
+// Allow 0 from the admin config as an explicit "disable HTML cache" signal.
+// Never coerce 0 back to a positive TTL — that hidden Worker cache layer was
+// able to serve old HTML even when the origin said no-store.
 var TTL_ALLOWED = /* @__PURE__ */ new Set([0, 30, 60, 300, 900]);
 async function getHtmlTtlSeconds() {
   const now = Date.now();
@@ -504,10 +542,11 @@ async function getHtmlTtlSeconds() {
     }
   } catch {
   }
-  // Final guard: KV may return 0/NaN/undefined — never let cacheTtl drop to 0.
+  // Final guard: invalid values fall back to the short deploy-safe default.
   const n = Number(value);
-  if (!Number.isFinite(n) || n <= 0) value = TTL_MIN;
-  else if (n < TTL_MIN) value = TTL_MIN;
+  if (!Number.isFinite(n)) value = TTL_DEFAULT;
+  else if (n === 0) value = 0;
+  else if (n < 30) value = 30;
   else value = n;
   _ttlCache = { value, expiresAt: now + TTL_CACHE_MS };
   return value;
@@ -704,6 +743,7 @@ var phlabs_prerender_patched_default = {
       : evaluateHtmlCacheable(request, url, htmlTtl);
     const htmlCacheable = cacheEval.ok;
     const cacheSkipReason = cacheEval.reason;
+    const originBuildId = htmlCacheable && !forceRefresh && !url.searchParams.has("__edge_build_probe") ? await getOriginBuildId() : "";
     const cacheOpts = htmlCacheable && !forceRefresh ? {
       cacheEverything: true,
       cacheTtl: htmlTtl,
@@ -711,20 +751,29 @@ var phlabs_prerender_patched_default = {
     } : void 0;
     let cacheKey = null;
     if (htmlCacheable) {
-      cacheKey = buildCacheKey(url);
+      cacheKey = buildCacheKey(url, originBuildId);
       try {
         const hit = forceRefresh ? null : await caches.default.match(cacheKey);
         if (hit) {
+          const cachedBuildId = hit.headers.get("x-phl-origin-build-id") || hit.headers.get("x-build-id") || "unknown";
+          if (originBuildId && originBuildId !== "unknown" && cachedBuildId !== "unknown" && cachedBuildId !== originBuildId) {
+            console.log(JSON.stringify({ tag: "phlabs-prerender", branch: "html-cache-bypass", reason: "build-mismatch", path: url.pathname, cachedBuildId, originBuildId }));
+          } else {
           const h = new Headers(hit.headers);
           h.set("cache-control", "public, max-age=0, must-revalidate");
-          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
-          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
+          h.set("cdn-cache-control", `public, max-age=${htmlTtl}`);
+          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}`);
+          if (originBuildId) {
+            h.set("x-phl-origin-build-id", originBuildId);
+            h.set("x-build-id", originBuildId);
+          }
           h.set("x-phl-via", `${normalProxyVia};cached=1`);
           h.set("cf-cache-status", "HIT");
           h.set("x-phl-cache", "HIT");
           h.delete("age");
           const cachedOut = new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers: h });
           return rewriteCspNonce(await repairInlineBootScripts(applySecurityHeaders(stripLovableInjectedScripts(cachedOut), url)));
+          }
         }
       } catch (_) {
       }
@@ -743,6 +792,7 @@ var phlabs_prerender_patched_default = {
       }
       const h = new Headers(res.headers);
       if (forceRefresh) h.set("x-phl-force-refresh", "1");
+      if (originBuildId) h.set("x-phl-origin-build-id", originBuildId);
       if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/webhook/")) {
         noCache(h);
       } else if (isFirebaseAuthHelperPath(url)) {
@@ -760,8 +810,8 @@ var phlabs_prerender_patched_default = {
       } else if ((h.get("content-type") || "").includes("text/html")) {
         if (htmlTtl > 0) {
           h.set("cache-control", "public, max-age=0, must-revalidate");
-          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
-          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
+          h.set("cdn-cache-control", `public, max-age=${htmlTtl}`);
+          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}`);
         } else {
           h.set("cache-control", "no-store, no-cache, must-revalidate, max-age=0");
           h.set("cdn-cache-control", "no-store");
@@ -791,6 +841,10 @@ var phlabs_prerender_patched_default = {
           const reportingEndpoints = h.get("reporting-endpoints");
           if (reportingEndpoints) cacheHeaders.set("reporting-endpoints", reportingEndpoints);
           cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);
+          if (originBuildId) {
+            cacheHeaders.set("x-phl-origin-build-id", originBuildId);
+            cacheHeaders.set("x-build-id", originBuildId);
+          }
           cacheHeaders.set("x-phl-cached-at", (/* @__PURE__ */ new Date()).toISOString());
           let putErr = "ok";
           const putPromise = caches.default.put(

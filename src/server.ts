@@ -960,10 +960,12 @@ export default {
       // 0. Health probe — /_health (public) and /__health (legacy/internal).
       // Returns JSON with version + timestamp, never cached, never prerendered.
       if (url.pathname === "/_health" || url.pathname === "/__health") {
+        const buildId = typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev";
         const body = JSON.stringify({
           status: "ok",
           timestamp: new Date().toISOString(),
           version: "1.0.0",
+          buildId,
         });
         return new Response(body, {
           status: 200,
@@ -971,6 +973,7 @@ export default {
             "content-type": "application/json; charset=utf-8",
             "cache-control": "no-store, no-cache, must-revalidate",
             "x-robots-tag": "noindex, nofollow",
+            "x-build-id": buildId,
           },
         });
       }
