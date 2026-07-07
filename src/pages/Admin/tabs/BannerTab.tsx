@@ -132,31 +132,27 @@ export default function BannerTab() {
     setUploadProgress(0);
     setImageError(false);
     try {
-      // Defence-in-depth: enforce MIME allowlist + 5MB cap + filename
-      // sanitisation BEFORE compression/upload. Storage rules remain the
-      // server-side gate.
-      const { validateImageFile, sanitizeFilename } = await import('@/lib/upload-validation');
+      const { validateImageFile } = await import('@/lib/upload-validation');
       await validateImageFile(original);
-      // Re-encode to WebP ≤ 200 KB before upload — banners were the biggest
-      // single contributor to the 15 MB mobile page weight.
       const { compressToWebp } = await import('@/lib/imageCompress');
       const file = await compressToWebp(original, { maxPx: 1920, quality: 0.85, targetBytes: 200_000 });
-      const safeName = sanitizeFilename(file.name);
-      const path = `banners/${Date.now()}_${safeName}`;
-      const sRef = storageRef(storage, path);
-      const task = uploadBytesResumable(sRef, file);
-      task.on('state_changed',
-        snap => setUploadProgress(Math.round((snap.bytesTransferred / snap.totalBytes) * 100)),
-        err => { setMsg({ type: 'error', text: 'Upload failed: ' + err.message }); setUploading(false); },
-        async () => {
-          const url = await getDownloadURL(task.snapshot.ref);
-          setBanner(prev => ({ ...prev, imageUrl: url }));
-          setUploading(false);
-          setMsg({ type: 'success', text: `Uploaded as WebP (${Math.round(file.size / 1024)} KB)` });
-        }
-      );
+      setUploadProgress(40);
+      const idToken = await getAdminIdToken();
+      const base64 = await fileToBase64(file);
+      setUploadProgress(70);
+      const uploaded = await uploadBannerImage({
+        data: {
+          idToken,
+          contentType: (file.type as 'image/jpeg' | 'image/png' | 'image/webp') || 'image/webp',
+          base64,
+        },
+      });
+      setUploadProgress(100);
+      setBanner(prev => ({ ...prev, imageUrl: uploaded.url }));
+      setMsg({ type: 'success', text: `Uploaded as WebP (${Math.round(file.size / 1024)} KB)` });
     } catch (err: any) {
-      setMsg({ type: 'error', text: 'Upload error: ' + err.message });
+      setMsg({ type: 'error', text: 'Upload failed: ' + (err?.message || 'unknown') });
+    } finally {
       setUploading(false);
     }
   };
