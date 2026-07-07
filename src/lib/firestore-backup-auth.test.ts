@@ -2,6 +2,9 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   verifyBackupCaller,
   noteBackupFailure,
+  noteBadAuth,
+  checkIpLockout,
+  BACKUP_LOCKOUT_CONFIG,
   _resetFailureTrackerForTests,
 } from "./firestore-backup-auth";
 
