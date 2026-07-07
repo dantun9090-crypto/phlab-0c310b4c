@@ -10,7 +10,7 @@
  * and Yahoo. No @react-email dependency so it also works in server
  * routes without pulling React into the Worker bundle.
  */
-import { withDefaults, type EmailBrandConfig } from "./brand-config";
+import { brandGradient, withDefaults, type EmailBrandConfig } from "./brand-config";
 
 function esc(s: string): string {
   return s
