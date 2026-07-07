@@ -1459,6 +1459,20 @@ export default function OrdersTab() {
                     </button>
                   </div>
                 )}
+
+                {/* Payment timeline + manual retry — Wallid reliability layer */}
+                <div className="mt-4 space-y-3">
+                  <PaymentTimeline orderId={selected.id} />
+                  <WebhookRetryCard
+                    orderId={selected.id}
+                    apiPaymentId={
+                      (selected as { paymentRef?: string; apiPaymentId?: string; fenaPaymentId?: string }).paymentRef ||
+                      (selected as { apiPaymentId?: string }).apiPaymentId ||
+                      undefined
+                    }
+                    currentStatus={String((selected as { paymentStatus?: string }).paymentStatus || selected.status || '')}
+                  />
+                </div>
                 </div>
                 </div>
 
