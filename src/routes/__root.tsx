@@ -1031,8 +1031,8 @@ function installCanonicalEnforcer() {
 const CRITICAL_CSS = `
 *,*::before,*::after{box-sizing:border-box;border-width:0;border-style:solid;min-width:0}
 html,body,#root{max-width:100%;overflow-x:hidden;margin:0;background:#060f1e;color:#f0f6ff}
-body{font-family:'Inter Tight',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
-h1,h2,h3{font-family:'Cormorant Garamond',Georgia,serif;margin:0;line-height:1.08;letter-spacing:-.015em}
+body{font-family:'Inter Tight','Inter Tight Fallback',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3{font-family:'Cormorant Garamond','Cormorant Garamond Fallback',Georgia,serif;margin:0;line-height:1.08;letter-spacing:-.015em}
 img,svg,video{display:block;max-width:100%;height:auto}
 header{top:0;z-index:50;min-height:56px;background:rgba(6,15,30,.92);border-bottom:1px solid rgba(255,255,255,.06)}
 @media(min-width:768px){header{min-height:64px}}
