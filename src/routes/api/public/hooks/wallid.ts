@@ -311,9 +311,55 @@ export const Route = createFileRoute("/api/public/hooks/wallid")({
                       }
                     }
                   }
+
+                  // Best-effort: mirror to Firestore webhookEvents + append
+                  // to orders/{id}/paymentTimeline. Read by admin UI + cron.
+                  try {
+                    const reliability = await import("@/lib/payment-reliability.server");
+                    if (apiPaymentId) {
+                      await reliability.recordWebhookEventAdmin(apiPaymentId, {
+                        orderId,
+                        source: "wallid_webhook",
+                        status: "processed",
+                        payload: ev as Record<string, unknown>,
+                      });
+                      await reliability.dequeueRetryAdmin(apiPaymentId);
+                    }
+                    if (transitioned) {
+                      await reliability.writePaymentTimelineAdmin(orderId, {
+                        actor: "wallid_webhook",
+                        eventType:
+                          firestoreStatus === "paid" ? "payment_received"
+                          : firestoreStatus === "failed" || firestoreStatus === "expired" ? "payment_failed"
+                          : "reconciliation_run",
+                        statusFrom: String(prior?.status ?? ""),
+                        statusTo: firestoreStatus,
+                        apiPaymentId: apiPaymentId || undefined,
+                        metadata: { wallidStatus: ev.status || ev.type || null },
+                      });
+                    }
+                  } catch (audErr) {
+                    console.warn(
+                      "[Wallid webhook] audit-trail write skipped:",
+                      audErr instanceof Error ? audErr.message : audErr,
+                    );
+                  }
                 }
               } catch (e) {
                 console.warn("[Wallid webhook] Firestore order update skipped:", e instanceof Error ? e.message : e);
+                // Enqueue for the reconcile cron so we don't lose the delivery.
+                if (apiPaymentId) {
+                  try {
+                    const { enqueueRetryAdmin } = await import("@/lib/payment-reliability.server");
+                    await enqueueRetryAdmin({
+                      orderId,
+                      apiPaymentId,
+                      payload: ev as Record<string, unknown>,
+                      error: e instanceof Error ? e.message : String(e),
+                      source: "wallid_webhook",
+                    });
+                  } catch { /* non-blocking */ }
+                }
               }
             }
 
