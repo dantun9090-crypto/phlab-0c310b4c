@@ -20,7 +20,7 @@ interface ServiceAccount {
 let cachedToken: { token: string; expiresAt: number } | null = null;
 let cachedAccount: ServiceAccount | null = null;
 
-function getServiceAccount(): ServiceAccount {
+export function getServiceAccount(): ServiceAccount {
   if (cachedAccount) return cachedAccount;
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   if (!raw) throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON is not configured");
@@ -49,7 +49,7 @@ function pemToPkcs8(pem: string): ArrayBuffer {
   return buf.buffer;
 }
 
-async function getAccessToken(): Promise<string> {
+export async function getAccessToken(): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   if (cachedToken && cachedToken.expiresAt - 60 > now) return cachedToken.token;
 

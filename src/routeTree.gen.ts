@@ -109,6 +109,7 @@ import { Route as ApiPublicHooksToastAuditCleanupRouteImport } from './routes/ap
 import { Route as ApiPublicHooksSeoHealthDailyRouteImport } from './routes/api/public/hooks/seo-health-daily'
 import { Route as ApiPublicHooksSecurityCleanupRouteImport } from './routes/api/public/hooks/security-cleanup'
 import { Route as ApiPublicHooksReindexRouteImport } from './routes/api/public/hooks/reindex'
+import { Route as ApiPublicHooksReconcilePaymentsRouteImport } from './routes/api/public/hooks/reconcile-payments'
 import { Route as ApiPublicHooksPrerenderRecacheRouteImport } from './routes/api/public/hooks/prerender-recache'
 import { Route as ApiPublicHooksMonitorProductUrlsRouteImport } from './routes/api/public/hooks/monitor-product-urls'
 import { Route as ApiPublicHooksLighthousePsiRouteImport } from './routes/api/public/hooks/lighthouse-psi'
@@ -641,6 +642,12 @@ const ApiPublicHooksReindexRoute = ApiPublicHooksReindexRouteImport.update({
   path: '/api/public/hooks/reindex',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksReconcilePaymentsRoute =
+  ApiPublicHooksReconcilePaymentsRouteImport.update({
+    id: '/api/public/hooks/reconcile-payments',
+    path: '/api/public/hooks/reconcile-payments',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksPrerenderRecacheRoute =
   ApiPublicHooksPrerenderRecacheRouteImport.update({
     id: '/api/public/hooks/prerender-recache',
@@ -812,6 +819,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
+  '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/hooks/reindex': typeof ApiPublicHooksReindexRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/seo-health-daily': typeof ApiPublicHooksSeoHealthDailyRoute
@@ -924,6 +932,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
+  '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/hooks/reindex': typeof ApiPublicHooksReindexRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/seo-health-daily': typeof ApiPublicHooksSeoHealthDailyRoute
@@ -1039,6 +1048,7 @@ export interface FileRoutesById {
   '/api/public/hooks/lighthouse-psi': typeof ApiPublicHooksLighthousePsiRoute
   '/api/public/hooks/monitor-product-urls': typeof ApiPublicHooksMonitorProductUrlsRoute
   '/api/public/hooks/prerender-recache': typeof ApiPublicHooksPrerenderRecacheRoute
+  '/api/public/hooks/reconcile-payments': typeof ApiPublicHooksReconcilePaymentsRoute
   '/api/public/hooks/reindex': typeof ApiPublicHooksReindexRoute
   '/api/public/hooks/security-cleanup': typeof ApiPublicHooksSecurityCleanupRoute
   '/api/public/hooks/seo-health-daily': typeof ApiPublicHooksSeoHealthDailyRoute
@@ -1154,6 +1164,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
+    | '/api/public/hooks/reconcile-payments'
     | '/api/public/hooks/reindex'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/seo-health-daily'
@@ -1266,6 +1277,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
+    | '/api/public/hooks/reconcile-payments'
     | '/api/public/hooks/reindex'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/seo-health-daily'
@@ -1380,6 +1392,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/lighthouse-psi'
     | '/api/public/hooks/monitor-product-urls'
     | '/api/public/hooks/prerender-recache'
+    | '/api/public/hooks/reconcile-payments'
     | '/api/public/hooks/reindex'
     | '/api/public/hooks/security-cleanup'
     | '/api/public/hooks/seo-health-daily'
@@ -1481,6 +1494,7 @@ export interface RootRouteChildren {
   ApiPublicHooksLighthousePsiRoute: typeof ApiPublicHooksLighthousePsiRoute
   ApiPublicHooksMonitorProductUrlsRoute: typeof ApiPublicHooksMonitorProductUrlsRoute
   ApiPublicHooksPrerenderRecacheRoute: typeof ApiPublicHooksPrerenderRecacheRoute
+  ApiPublicHooksReconcilePaymentsRoute: typeof ApiPublicHooksReconcilePaymentsRoute
   ApiPublicHooksReindexRoute: typeof ApiPublicHooksReindexRoute
   ApiPublicHooksSecurityCleanupRoute: typeof ApiPublicHooksSecurityCleanupRoute
   ApiPublicHooksSeoHealthDailyRoute: typeof ApiPublicHooksSeoHealthDailyRoute
@@ -2196,6 +2210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksReindexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/reconcile-payments': {
+      id: '/api/public/hooks/reconcile-payments'
+      path: '/api/public/hooks/reconcile-payments'
+      fullPath: '/api/public/hooks/reconcile-payments'
+      preLoaderRoute: typeof ApiPublicHooksReconcilePaymentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/prerender-recache': {
       id: '/api/public/hooks/prerender-recache'
       path: '/api/public/hooks/prerender-recache'
@@ -2440,6 +2461,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksLighthousePsiRoute: ApiPublicHooksLighthousePsiRoute,
   ApiPublicHooksMonitorProductUrlsRoute: ApiPublicHooksMonitorProductUrlsRoute,
   ApiPublicHooksPrerenderRecacheRoute: ApiPublicHooksPrerenderRecacheRoute,
+  ApiPublicHooksReconcilePaymentsRoute: ApiPublicHooksReconcilePaymentsRoute,
   ApiPublicHooksReindexRoute: ApiPublicHooksReindexRoute,
   ApiPublicHooksSecurityCleanupRoute: ApiPublicHooksSecurityCleanupRoute,
   ApiPublicHooksSeoHealthDailyRoute: ApiPublicHooksSeoHealthDailyRoute,
