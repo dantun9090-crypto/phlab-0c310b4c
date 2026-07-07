@@ -26,10 +26,38 @@ const Body = z.object({
   userAgent: z.string().max(500).optional(),
 });
 
+/**
+ * Strict Origin allowlist. Parse the header as a URL and match ONLY the
+ * hostname — never a substring. This blocks lookalikes such as
+ * `evil-phlabs.co.uk` or `phlabs.co.uk.attacker.com` that the previous
+ * unanchored regex accepted.
+ */
+const ALLOWED_HOST_SUFFIXES = [
+  'phlabs.co.uk',
+  'prohealthpeptides.co.uk', // legacy 301 origin — still issues fetches in cache
+  'lovable.app',
+  'lovable.dev',
+  'lovable.project.com',
+] as const;
+const DEFAULT_ORIGIN = 'https://phlabs.co.uk';
+
+function isAllowedOrigin(origin: string | null): boolean {
+  if (!origin) return false;
+  let host: string;
+  try {
+    const u = new URL(origin);
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return false;
+    host = u.hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  return ALLOWED_HOST_SUFFIXES.some(
+    (suffix) => host === suffix || host.endsWith('.' + suffix),
+  );
+}
+
 function cors(origin: string | null) {
-  const allow = origin && /phlabs\.co\.uk|lovable\.(app|dev|project\.com)/i.test(origin)
-    ? origin
-    : 'https://phlabs.co.uk';
+  const allow = isAllowedOrigin(origin) ? (origin as string) : DEFAULT_ORIGIN;
   return {
     'access-control-allow-origin': allow,
     'access-control-allow-methods': 'POST, OPTIONS',
