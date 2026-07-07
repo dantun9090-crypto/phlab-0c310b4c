@@ -80,6 +80,16 @@ export function wrapCampaignHtml(input: WrapCampaignInput): string {
     ? `<p style="margin:8px 0 0;font-family:${brand.fontFamily};font-size:12px;color:${brand.mutedTextColor};letter-spacing:1px;text-transform:uppercase;">${esc(brand.tagline)}</p>`
     : "";
 
+  const gradient = brandGradient(brand);
+  const bodyBg = brand.bodyBackgroundImageUrl
+    ? `${brand.backgroundColor} url(${esc(brand.bodyBackgroundImageUrl)}) center top / cover no-repeat`
+    : brand.backgroundColor;
+  const headerHasImage = Boolean(brand.headerBackgroundImageUrl);
+  const headerBg = headerHasImage
+    ? `${gradient}, url(${esc(brand.headerBackgroundImageUrl!)}) center/cover no-repeat`
+    : brand.surfaceColor;
+  const headerText = headerHasImage ? "#ffffff" : brand.mutedTextColor;
+
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8">
@@ -88,14 +98,15 @@ export function wrapCampaignHtml(input: WrapCampaignInput): string {
 <meta name="supported-color-schemes" content="light">
 <title>${esc(input.subject)}</title>
 </head>
-<body style="margin:0;padding:0;background:${brand.backgroundColor};font-family:${brand.fontFamily};color:${brand.textColor};-webkit-font-smoothing:antialiased;">
+<body style="margin:0;padding:0;background:${bodyBg};font-family:${brand.fontFamily};color:${brand.textColor};-webkit-font-smoothing:antialiased;">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${esc(preheader)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${brand.backgroundColor};padding:24px 12px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${bodyBg};padding:24px 12px;">
   <tr><td align="center">
-    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:${brand.surfaceColor};border-radius:${radius};overflow:hidden;">
-      <tr><td style="padding:24px 32px;text-align:center;background:${brand.surfaceColor};">
+    <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:${brand.surfaceColor};border-radius:${radius};overflow:hidden;box-shadow:0 4px 24px rgba(15,23,42,0.08);">
+      <tr><td height="4" style="height:4px;line-height:4px;font-size:4px;background:${gradient};">&nbsp;</td></tr>
+      <tr><td style="padding:24px 32px;text-align:center;background:${headerBg};">
         ${logo}
-        ${tagline}
+        ${brand.tagline ? `<p style="margin:8px 0 0;font-family:${brand.fontFamily};font-size:12px;color:${headerText};letter-spacing:1px;text-transform:uppercase;">${esc(brand.tagline)}</p>` : ""}
       </td></tr>
       <tr><td style="padding:24px 32px;background:${brand.surfaceColor};">
         ${bodyHtml}
@@ -106,6 +117,7 @@ export function wrapCampaignHtml(input: WrapCampaignInput): string {
         <p style="margin:0;font-family:${brand.fontFamily};font-size:12px;color:${brand.mutedTextColor};">${esc(brand.companyAddress)}</p>
         ${unsubscribe}
       </td></tr>
+      <tr><td height="4" style="height:4px;line-height:4px;font-size:4px;background:${gradient};">&nbsp;</td></tr>
     </table>
   </td></tr>
 </table>
