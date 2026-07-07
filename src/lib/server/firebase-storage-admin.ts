@@ -280,18 +280,43 @@ export async function uploadNewsletterPopupImageAdmin(input: UploadNewsletterIma
   };
 }
 
-export async function uploadBannerImageAdmin(input: UploadNewsletterImageInput): Promise<UploadStorageImageResult> {
-  const contentType = input.contentType || "image/webp";
-  if (!isAllowedImageType(contentType)) throw new Error("invalid_image_type");
+const BANNER_ALLOWED_CONTENT_TYPES = ["image/webp", "image/jpeg", "image/png"] as const;
+const BANNER_MAX_BYTES = 5 * 1024 * 1024;      // 5 MB
+const BANNER_MIN_WIDTH = 600;
+const BANNER_MIN_HEIGHT = 200;
+const BANNER_MAX_WIDTH = 4000;
+const BANNER_MAX_HEIGHT = 2000;
+const BANNER_MAX_PIXELS = 4000 * 2000;
+
+export async function uploadBannerImageAdmin(input: UploadNewsletterImageInput): Promise<UploadStorageImageResult & { width: number; height: number }> {
+  const contentType = (input.contentType || "image/webp").toLowerCase();
+  if (!BANNER_ALLOWED_CONTENT_TYPES.includes(contentType as (typeof BANNER_ALLOWED_CONTENT_TYPES)[number])) {
+    throw new Error(`invalid_image_type: banner uploads must be one of ${BANNER_ALLOWED_CONTENT_TYPES.join(", ")}`);
+  }
 
   const bytes = base64ToBytes(input.base64);
-  if (bytes.byteLength === 0 || bytes.byteLength > 5 * 1024 * 1024) throw new Error("invalid_image_size");
+  if (bytes.byteLength === 0) throw new Error("invalid_image_size: file is empty");
+  if (bytes.byteLength > BANNER_MAX_BYTES) {
+    throw new Error(`invalid_image_size: ${bytes.byteLength} bytes exceeds ${BANNER_MAX_BYTES} byte limit (5 MB)`);
+  }
+
+  // Header-level dimension + magic-byte check. Rejects MIME spoofing and
+  // absurdly large images before we spend a Storage write.
+  const { assertImageDimensions } = await import("./image-dimensions");
+  const dims = assertImageDimensions(bytes, contentType, {
+    minWidth: BANNER_MIN_WIDTH,
+    minHeight: BANNER_MIN_HEIGHT,
+    maxWidth: BANNER_MAX_WIDTH,
+    maxHeight: BANNER_MAX_HEIGHT,
+    maxPixels: BANNER_MAX_PIXELS,
+  });
 
   const acct = getServiceAccount();
   const token = await getAccessToken();
   const bucket = `${acct.project_id}.firebasestorage.app`;
   const downloadToken = crypto.randomUUID();
   const path = `banners/${Date.now()}.${extFromContentType(contentType)}`;
+
 
   const boundary = `phlabs-${crypto.randomUUID()}`;
   const metadata = {
