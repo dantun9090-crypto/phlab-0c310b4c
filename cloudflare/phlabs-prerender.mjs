@@ -406,13 +406,15 @@ __name(evaluateHtmlCacheable, "evaluateHtmlCacheable");
 // Build a normalised cache key — strip tracking params so /products?utm_*=…
 // shares the cache entry with /products. Preserves whitelisted query keys.
 var TRACKING_PARAM_RX = /^(utm_|fbclid$|gclid$|gbraid$|wbraid$|msclkid$|mc_(?:eid|cid)$|_hsenc$|_hsmi$|igshid$|ref$|ref_src$|yclid$|hsCtaTracking$|trk$)/i;
-function buildCacheKey(url) {
+var CACHE_BUSTER_PARAM_RX = /^(__cache_verify|__probe|__edge_build_probe|_r|cacheBust|cache_bust)$/i;
+function buildCacheKey(url, buildId) {
   const cleanUrl = new URL(url.toString());
   const drop = [];
   for (const k of cleanUrl.searchParams.keys()) {
-    if (TRACKING_PARAM_RX.test(k)) drop.push(k);
+    if (TRACKING_PARAM_RX.test(k) || CACHE_BUSTER_PARAM_RX.test(k)) drop.push(k);
   }
   for (const k of drop) cleanUrl.searchParams.delete(k);
+  if (buildId) cleanUrl.searchParams.set("__phl_build_id", buildId);
   // Sort remaining params for canonical key.
   const entries = [...cleanUrl.searchParams.entries()].sort(([a], [b]) => a.localeCompare(b));
   cleanUrl.search = "";
@@ -420,6 +422,38 @@ function buildCacheKey(url) {
   return new Request(cleanUrl.toString(), { method: "GET" });
 }
 __name(buildCacheKey, "buildCacheKey");
+var _originBuildIdCache = { value: "", expiresAt: 0 };
+var BUILD_ID_CACHE_MS = 15e3;
+async function getOriginBuildId() {
+  const now = Date.now();
+  if (_originBuildIdCache.expiresAt > now && _originBuildIdCache.value) return _originBuildIdCache.value;
+  let value = "";
+  try {
+    const probeUrl = `https://${CANONICAL_HOST}/?__edge_build_probe=${now}`;
+    const res = await fetch(probeUrl, {
+      method: "GET",
+      headers: {
+        accept: "text/html",
+        "cache-control": "no-cache",
+        pragma: "no-cache",
+        "user-agent": "phlabs-edge-build-probe/1.0",
+        "x-force-refresh": "true"
+      },
+      cf: { cacheTtl: 0, cacheEverything: false },
+      signal: AbortSignal.timeout(4e3)
+    });
+    value = res.headers.get("x-build-id") || res.headers.get("x-phl-build-id") || "";
+    if (!value) {
+      const html = await res.text().catch(() => "");
+      value = (html.match(/<meta[^>]+name=["']build-id["'][^>]+content=["']([^"']+)["']/i) || [, ""])[1] || "";
+    }
+  } catch (_) {
+  }
+  value = (value || "unknown").slice(0, 80);
+  _originBuildIdCache = { value, expiresAt: now + (value === "unknown" ? 5e3 : BUILD_ID_CACHE_MS) };
+  return value;
+}
+__name(getOriginBuildId, "getOriginBuildId");
 function proxyToOrigin(request, _origin, cacheOpts) {
   const init = { redirect: "manual" };
   if (cacheOpts) {
