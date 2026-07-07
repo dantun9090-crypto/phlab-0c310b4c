@@ -32,10 +32,14 @@ import {
 import {
   verifyBackupCaller,
   noteBackupFailure,
+  noteBadAuth,
+  checkIpLockout,
+  BACKUP_LOCKOUT_CONFIG,
   type VerifyResult,
 } from "@/lib/firestore-backup-auth";
 import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
 import { addDocAdmin } from "@/lib/server/firestore-admin";
+import { sendBackupAlert } from "@/lib/backup-alerts.server";
 
 const Body = z
   .object({
