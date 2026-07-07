@@ -1,0 +1,37 @@
+name: Wallid Payment Reconcile
+
+# Runs every 5 minutes. Drains the retryQueue and detects stuck orders.
+# Endpoint is auth'd via x-cron-secret header (CRON_SECRET GitHub secret).
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: wallid-reconcile
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: POST reconcile-payments
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "CRON_SECRET is not configured — skipping." >&2
+            exit 0
+          fi
+          resp=$(curl -sS -o /tmp/resp.json -w "%{http_code}" \
+            -X POST "https://phlabs.co.uk/api/public/hooks/reconcile-payments" \
+            -H "content-type: application/json" \
+            -H "x-cron-secret: ${CRON_SECRET}" \
+            --max-time 60 \
+            --data '{}') || resp="000"
+          echo "HTTP $resp"
+          cat /tmp/resp.json || true
+          test "$resp" = "200"
