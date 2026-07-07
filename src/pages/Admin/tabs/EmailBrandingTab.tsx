@@ -463,3 +463,101 @@ function ColorField({ label, value, onChange }: ColorFieldProps) {
     </div>
   );
 }
+
+interface BrandImageUploaderProps {
+  label: string;
+  slot: BrandImageSlot;
+  value: string;
+  onChange: (v: string) => void;
+}
+function BrandImageUploader({ label, slot, value, onChange }: BrandImageUploaderProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFile = async (file: File) => {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Use JPG, PNG or WebP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5 MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const idToken = await getAdminIdToken();
+      const base64 = await fileToBase64(file);
+      const uploaded = await uploadEmailBrandingImage({
+        data: {
+          idToken,
+          contentType: file.type as "image/jpeg" | "image/png" | "image/webp",
+          slot,
+          base64,
+        },
+      });
+      onChange(uploaded.url);
+      toast.success(`${label} uploaded.`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "upload failed";
+      toast.error(`Upload failed: ${message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div>
+      <label className={labelCls}>{label}</label>
+      <div className="flex gap-3 items-start">
+        <div className="w-28 h-20 rounded-lg border-2 border-slate-600 bg-slate-800 overflow-hidden flex items-center justify-center shrink-0">
+          {value ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={value} alt={label} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-xs text-slate-500">No image</span>
+          )}
+        </div>
+        <div className="flex-1 space-y-2">
+          <input
+            type="url"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="Firebase Storage URL"
+            className={inputCls}
+          />
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void handleFile(f);
+              e.target.value = "";
+            }}
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold disabled:opacity-50"
+            >
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              {value ? "Replace" : "Upload"}
+            </button>
+            {value && (
+              <button
+                type="button"
+                onClick={() => onChange("")}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-slate-600 bg-slate-800 text-slate-200 text-sm"
+              >
+                <XIcon className="w-4 h-4" /> Remove
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
