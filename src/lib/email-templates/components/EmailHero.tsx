@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Heading, Section, Text } from "@react-email/components";
-import type { EmailBrandConfig } from "../brand-config";
+import { brandGradient, type EmailBrandConfig } from "../brand-config";
 import { EmailButton } from "./EmailButton";
 
 interface Props {
@@ -20,9 +20,12 @@ export function EmailHero({
   ctaHref,
   backgroundImage,
 }: Props) {
-  const bg = backgroundImage
-    ? `url(${backgroundImage}) center/cover no-repeat, ${brand.secondaryColor}`
-    : `linear-gradient(135deg, ${brand.primaryColor} 0%, ${brand.secondaryColor} 100%)`;
+  // Priority: per-send override → brand hero image → gradient
+  const heroImage = backgroundImage || brand.heroBackgroundImageUrl || "";
+  const gradient = brandGradient(brand);
+  const bg = heroImage
+    ? `${gradient}, url(${heroImage}) center/cover no-repeat`
+    : gradient;
 
   return (
     <Section

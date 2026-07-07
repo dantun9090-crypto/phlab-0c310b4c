@@ -23,11 +23,22 @@ export interface EmailBrandConfig {
   tagline?: string;
   primaryColor: string;
   secondaryColor: string;
+  /** Optional accent (used in dividers, badges, highlights). */
+  accentColor: string;
   backgroundColor: string;
   /** Card / content panel colour. */
   surfaceColor: string;
   textColor: string;
   mutedTextColor: string;
+  /** Gradient stops used for hero + top/bottom bars. */
+  gradientStart: string;
+  gradientEnd: string;
+  /** 0–360 degrees. */
+  gradientAngle: number;
+  /** Optional images loaded from Firebase Storage (public URLs). */
+  bodyBackgroundImageUrl?: string;
+  headerBackgroundImageUrl?: string;
+  heroBackgroundImageUrl?: string;
   fontFamily: string;
   buttonStyle: ButtonStyle;
   /** 0 | 8 | 16 */
@@ -45,10 +56,17 @@ export const DEFAULT_EMAIL_BRAND: EmailBrandConfig = {
   tagline: "Research-Grade Peptides",
   primaryColor: "#10b981",
   secondaryColor: "#0f172a",
+  accentColor: "#3b82f6",
   backgroundColor: "#f8fafc",
   surfaceColor: "#ffffff",
   textColor: "#0f172a",
   mutedTextColor: "#64748b",
+  gradientStart: "#10b981",
+  gradientEnd: "#0f172a",
+  gradientAngle: 135,
+  bodyBackgroundImageUrl: "",
+  headerBackgroundImageUrl: "",
+  heroBackgroundImageUrl: "",
   fontFamily: "Arial, Helvetica, sans-serif",
   buttonStyle: "filled",
   buttonRadius: 8,
@@ -71,6 +89,12 @@ export function withDefaults(
     },
   };
   return merged;
+}
+
+/** Build a CSS gradient string from brand stops. */
+export function brandGradient(brand: EmailBrandConfig): string {
+  const a = Number.isFinite(brand.gradientAngle) ? brand.gradientAngle : 135;
+  return `linear-gradient(${a}deg, ${brand.gradientStart} 0%, ${brand.gradientEnd} 100%)`;
 }
 
 export const FONT_STACKS: Array<{ label: string; value: string }> = [

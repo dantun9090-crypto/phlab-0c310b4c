@@ -1,8 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { render } from "@react-email/render";
+import { Upload, Loader2, X as XIcon } from "lucide-react";
+import { toast } from "sonner";
 import { db } from "@/lib/firebase";
 import { logAdminAction } from "@/lib/admin-audit";
+import { getAdminIdToken } from "@/lib/auth-ready";
+import { uploadEmailBrandingImage } from "@/lib/email-branding-image-upload.functions";
 import {
   DEFAULT_EMAIL_BRAND,
   FONT_STACKS,
@@ -10,6 +14,17 @@ import {
   type EmailBrandConfig,
 } from "@/lib/email-templates/brand-config";
 import { TEMPLATE_LIST, getTemplate } from "@/lib/email-templates/registry";
+
+type BrandImageSlot = "body-bg" | "header-bg" | "hero-bg";
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(reader.error || new Error("read failed"));
+    reader.onload = () => resolve(String(reader.result || "").split(",").pop() || "");
+    reader.readAsDataURL(file);
+  });
+}
 
 /**
  * Email Branding admin tab.
@@ -172,12 +187,88 @@ export default function EmailBrandingTab() {
             <div className="grid grid-cols-2 gap-3">
               <ColorField label="Primary" value={brand.primaryColor} onChange={(v) => update("primaryColor", v)} />
               <ColorField label="Secondary" value={brand.secondaryColor} onChange={(v) => update("secondaryColor", v)} />
+              <ColorField label="Accent" value={brand.accentColor} onChange={(v) => update("accentColor", v)} />
               <ColorField label="Page background" value={brand.backgroundColor} onChange={(v) => update("backgroundColor", v)} />
               <ColorField label="Card surface" value={brand.surfaceColor} onChange={(v) => update("surfaceColor", v)} />
               <ColorField label="Body text" value={brand.textColor} onChange={(v) => update("textColor", v)} />
               <ColorField label="Muted text" value={brand.mutedTextColor} onChange={(v) => update("mutedTextColor", v)} />
             </div>
           </div>
+
+          <div className={cardCls}>
+            <h2 className="text-white font-semibold mb-3">Gradient (hero + accent bars)</h2>
+            <div className="grid grid-cols-2 gap-3">
+              <ColorField label="Gradient start" value={brand.gradientStart} onChange={(v) => update("gradientStart", v)} />
+              <ColorField label="Gradient end" value={brand.gradientEnd} onChange={(v) => update("gradientEnd", v)} />
+            </div>
+            <label className={`${labelCls} mt-3`}>Angle: {brand.gradientAngle}°</label>
+            <input
+              type="range"
+              min={0}
+              max={360}
+              step={5}
+              value={brand.gradientAngle}
+              onChange={(e) => update("gradientAngle", Number(e.target.value))}
+              className="w-full accent-emerald-500"
+            />
+            <div
+              className="mt-3 h-12 rounded-lg border border-slate-700"
+              style={{ background: `linear-gradient(${brand.gradientAngle}deg, ${brand.gradientStart} 0%, ${brand.gradientEnd} 100%)` }}
+              aria-label="Gradient preview"
+            />
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {[
+                { l: "Emerald → Slate", s: "#10b981", e: "#0f172a", a: 135 },
+                { l: "Blue → Indigo", s: "#3b82f6", e: "#1e1b4b", a: 135 },
+                { l: "Rose → Amber", s: "#f43f5e", e: "#f59e0b", a: 120 },
+                { l: "Violet → Fuchsia", s: "#8b5cf6", e: "#d946ef", a: 120 },
+                { l: "Teal → Emerald", s: "#14b8a6", e: "#059669", a: 90 },
+                { l: "Sunset", s: "#ff6b6b", e: "#ffa94d", a: 135 },
+              ].map((p) => (
+                <button
+                  key={p.l}
+                  type="button"
+                  onClick={() => {
+                    update("gradientStart", p.s);
+                    update("gradientEnd", p.e);
+                    update("gradientAngle", p.a);
+                  }}
+                  className="text-xs text-white rounded-md py-2 px-2 border border-slate-700 hover:border-emerald-500"
+                  style={{ background: `linear-gradient(${p.a}deg, ${p.s}, ${p.e})` }}
+                >
+                  {p.l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={cardCls}>
+            <h2 className="text-white font-semibold mb-3">Background Images (Firebase Storage)</h2>
+            <p className="text-xs text-slate-400 mb-3">
+              JPG / PNG / WebP up to 5&nbsp;MB. Uploaded to <code>email-branding/</code>. Leave blank to fall back to the solid colors and gradient above.
+            </p>
+            <div className="space-y-4">
+              <BrandImageUploader
+                label="Page background"
+                slot="body-bg"
+                value={brand.bodyBackgroundImageUrl || ""}
+                onChange={(v) => update("bodyBackgroundImageUrl", v)}
+              />
+              <BrandImageUploader
+                label="Header banner"
+                slot="header-bg"
+                value={brand.headerBackgroundImageUrl || ""}
+                onChange={(v) => update("headerBackgroundImageUrl", v)}
+              />
+              <BrandImageUploader
+                label="Hero background (campaigns)"
+                slot="hero-bg"
+                value={brand.heroBackgroundImageUrl || ""}
+                onChange={(v) => update("heroBackgroundImageUrl", v)}
+              />
+            </div>
+          </div>
+
 
           <div className={cardCls}>
             <h2 className="text-white font-semibold mb-3">Typography & Buttons</h2>
@@ -368,6 +459,104 @@ function ColorField({ label, value, onChange }: ColorFieldProps) {
           className={inputCls}
           maxLength={9}
         />
+      </div>
+    </div>
+  );
+}
+
+interface BrandImageUploaderProps {
+  label: string;
+  slot: BrandImageSlot;
+  value: string;
+  onChange: (v: string) => void;
+}
+function BrandImageUploader({ label, slot, value, onChange }: BrandImageUploaderProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFile = async (file: File) => {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Use JPG, PNG or WebP.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5 MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const idToken = await getAdminIdToken();
+      const base64 = await fileToBase64(file);
+      const uploaded = await uploadEmailBrandingImage({
+        data: {
+          idToken,
+          contentType: file.type as "image/jpeg" | "image/png" | "image/webp",
+          slot,
+          base64,
+        },
+      });
+      onChange(uploaded.url);
+      toast.success(`${label} uploaded.`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "upload failed";
+      toast.error(`Upload failed: ${message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div>
+      <label className={labelCls}>{label}</label>
+      <div className="flex gap-3 items-start">
+        <div className="w-28 h-20 rounded-lg border-2 border-slate-600 bg-slate-800 overflow-hidden flex items-center justify-center shrink-0">
+          {value ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={value} alt={label} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-xs text-slate-500">No image</span>
+          )}
+        </div>
+        <div className="flex-1 space-y-2">
+          <input
+            type="url"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="Firebase Storage URL"
+            className={inputCls}
+          />
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void handleFile(f);
+              e.target.value = "";
+            }}
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold disabled:opacity-50"
+            >
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+              {value ? "Replace" : "Upload"}
+            </button>
+            {value && (
+              <button
+                type="button"
+                onClick={() => onChange("")}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-slate-600 bg-slate-800 text-slate-200 text-sm"
+              >
+                <XIcon className="w-4 h-4" /> Remove
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
