@@ -23,6 +23,7 @@ import ToolsTab from './tabs/ToolsTab';
 import ThemesTab from './tabs/ThemesTab';
 import BackupTab from './tabs/BackupTab';
 import FirestoreBackupsTab from './tabs/FirestoreBackupsTab';
+import BackupAuditLogTab from './tabs/BackupAuditLogTab';
 import AdvertsTab from './tabs/AdvertsTab';
 import PoliciesTab from './tabs/PoliciesTab';
 import LandingPageTab from './tabs/LandingPageTab';
