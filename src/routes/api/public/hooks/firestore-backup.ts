@@ -151,7 +151,30 @@ export const Route = createFileRoute("/api/public/hooks/firestore-backup")({
       POST: async ({ request }) => {
         const ctx = auditContext(request);
 
-        // 1. Bad-auth throttle — checked BEFORE verifying credentials so a
+        // 1a. Per-IP temporary lockout — hard 403 for IPs that have already
+        //     tripped the bad-auth threshold. Cheaper than the bucket check
+        //     and gives the caller a clear `retry-after`.
+        const lockout = checkIpLockout(ctx.ip);
+        if (lockout.locked) {
+          await writeAudit(ctx, {
+            status: 403,
+            result: "ip_locked",
+            detail: `locked_for_${lockout.retryAfterSec}s`,
+          });
+          return new Response(
+            JSON.stringify({ error: "locked", retryAfter: lockout.retryAfterSec }),
+            {
+              status: 403,
+              headers: {
+                "content-type": "application/json",
+                "retry-after": String(lockout.retryAfterSec),
+                "cache-control": "no-store",
+              },
+            },
+          );
+        }
+
+        // 1b. Bad-auth throttle — checked BEFORE verifying credentials so a
         //    probing client cannot burn CPU on repeated 401s. Generous ceiling
         //    for legitimate cron: pg_cron and GitHub Actions call at minute
         //    resolution at worst.
@@ -176,12 +199,42 @@ export const Route = createFileRoute("/api/public/hooks/firestore-backup")({
           CLEANUP_SECRET: process.env.CLEANUP_SECRET,
         });
         if (!auth.ok) {
+          const lock = noteBadAuth(ctx.ip);
           await writeAudit(ctx, {
             status: auth.status,
             result: "rejected",
             authReason: auth.reason,
+            detail: `bad_auth_count=${lock.recentBadAuth}${lock.justLocked ? ":just_locked" : ""}`,
           });
           await noteFailureAndMaybeAlert(ctx, `unauthorized:${auth.reason}`);
+          if (lock.justLocked) {
+            // One-shot alert when an IP first crosses the lockout threshold.
+            try {
+              await addDocAdmin("securityEvents", {
+                type: "firestore_backup_ip_lockout",
+                endpoint: "firestore-backup",
+                ip: ctx.ip,
+                userAgent: ctx.userAgent,
+                recentBadAuth: lock.recentBadAuth,
+                lockoutMinutes: Math.round(BACKUP_LOCKOUT_CONFIG.LOCKOUT_MS / 60_000),
+                severity: "critical",
+                createdAt: new Date(),
+              });
+            } catch { /* never throw */ }
+            try {
+              await sendBackupAlert({
+                type: "firestore_backup_ip_lockout",
+                severity: "critical",
+                title: "Firestore backup IP lockout",
+                summary: `IP ${ctx.ip} exceeded ${BACKUP_LOCKOUT_CONFIG.BAD_AUTH_THRESHOLD} bad-auth attempts and is locked for ${Math.round(BACKUP_LOCKOUT_CONFIG.LOCKOUT_MS / 60_000)} minutes.`,
+                ip: ctx.ip,
+                userAgent: ctx.userAgent,
+                count: lock.recentBadAuth,
+                windowMinutes: Math.round(BACKUP_LOCKOUT_CONFIG.BAD_AUTH_WINDOW_MS / 60_000),
+                reason: `unauthorized:${auth.reason}`,
+              });
+            } catch { /* never throw */ }
+          }
           return json({ error: "unauthorized" }, auth.status);
         }
 
