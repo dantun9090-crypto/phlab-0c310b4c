@@ -2,6 +2,9 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   verifyBackupCaller,
   noteBackupFailure,
+  noteBadAuth,
+  checkIpLockout,
+  BACKUP_LOCKOUT_CONFIG,
   _resetFailureTrackerForTests,
 } from "./firestore-backup-auth";
 
@@ -120,5 +123,61 @@ describe("noteBackupFailure", () => {
     const later = noteBackupFailure(60 * 60 * 1000);
     expect(later.count).toBe(1);
     expect(later.spike).toBe(false);
+  });
+});
+
+describe("noteBadAuth / checkIpLockout", () => {
+  beforeEach(() => _resetFailureTrackerForTests());
+
+  const IP = "203.0.113.9";
+
+  it("does not lock before the threshold", () => {
+    for (let i = 0; i < BACKUP_LOCKOUT_CONFIG.BAD_AUTH_THRESHOLD - 1; i++) {
+      const r = noteBadAuth(IP, 1_000 + i);
+      expect(r.locked).toBe(false);
+      expect(r.justLocked).toBe(false);
+    }
+    expect(checkIpLockout(IP, 2_000).locked).toBe(false);
+  });
+
+  it("locks at the threshold and flags justLocked exactly once", () => {
+    let last;
+    for (let i = 0; i < BACKUP_LOCKOUT_CONFIG.BAD_AUTH_THRESHOLD; i++) {
+      last = noteBadAuth(IP, 1_000 + i);
+    }
+    expect(last!.locked).toBe(true);
+    expect(last!.justLocked).toBe(true);
+    // Subsequent bad-auth events keep locked=true but do NOT re-flag justLocked.
+    const again = noteBadAuth(IP, 5_000);
+    expect(again.locked).toBe(true);
+    expect(again.justLocked).toBe(false);
+  });
+
+  it("checkIpLockout is read-only and reports retry-after", () => {
+    for (let i = 0; i < BACKUP_LOCKOUT_CONFIG.BAD_AUTH_THRESHOLD; i++) {
+      noteBadAuth(IP, 1_000);
+    }
+    const status = checkIpLockout(IP, 1_000);
+    expect(status.locked).toBe(true);
+    expect(status.retryAfterSec).toBeGreaterThan(0);
+    expect(status.retryAfterSec).toBeLessThanOrEqual(
+      Math.ceil(BACKUP_LOCKOUT_CONFIG.LOCKOUT_MS / 1000),
+    );
+  });
+
+  it("expires the lockout after LOCKOUT_MS", () => {
+    for (let i = 0; i < BACKUP_LOCKOUT_CONFIG.BAD_AUTH_THRESHOLD; i++) {
+      noteBadAuth(IP, 1_000);
+    }
+    const past = 1_000 + BACKUP_LOCKOUT_CONFIG.LOCKOUT_MS + 1;
+    expect(checkIpLockout(IP, past).locked).toBe(false);
+  });
+
+  it("tracks IPs independently", () => {
+    for (let i = 0; i < BACKUP_LOCKOUT_CONFIG.BAD_AUTH_THRESHOLD; i++) {
+      noteBadAuth("198.51.100.1", 1_000);
+    }
+    expect(checkIpLockout("198.51.100.1", 1_000).locked).toBe(true);
+    expect(checkIpLockout("198.51.100.2", 1_000).locked).toBe(false);
   });
 });

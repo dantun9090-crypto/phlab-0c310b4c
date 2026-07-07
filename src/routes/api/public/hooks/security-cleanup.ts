@@ -22,7 +22,7 @@ interface ServiceAccount {
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const SCOPE = 'https://www.googleapis.com/auth/datastore';
 
-const COLLECTIONS = ['securityEvents', 'loginAttempts', 'auth_events'] as const;
+const COLLECTIONS = ['securityEvents', 'loginAttempts', 'auth_events', 'backup_audit_log'] as const;
 const TTL_DAYS = 90;
 const TTL_MS = TTL_DAYS * 24 * 60 * 60 * 1000;
 

@@ -84,6 +84,99 @@ export function noteBackupFailure(now: number = Date.now()): {
   return { count: failures.length, spike: failures.length >= FAILURE_THRESHOLD };
 }
 
+/**
+ * Per-IP temporary lockout for repeated bad-auth on this endpoint.
+ *
+ * Counts bad-auth events per IP inside `BAD_AUTH_WINDOW_MS`. If an IP hits
+ * `BAD_AUTH_THRESHOLD` inside the window, it is locked out for
+ * `LOCKOUT_MS`. Runs per-Worker isolate — an attacker hitting many POPs
+ * gets independent counters, so pair with the existing bad-auth rate
+ * limiter (which returns 429) for a broader signal.
+ */
+const BAD_AUTH_WINDOW_MS = 10 * 60 * 1000;
+const BAD_AUTH_THRESHOLD = 5;
+const LOCKOUT_MS = 30 * 60 * 1000;
+const MAX_TRACKED_IPS = 5_000;
+
+interface IpState {
+  events: number[]; // recent bad-auth timestamps inside window
+  lockedUntil: number; // 0 when not locked
+}
+
+const ipStates = new Map<string, IpState>();
+
+function gcIpStates(now: number): void {
+  if (ipStates.size < MAX_TRACKED_IPS) return;
+  let toDrop = Math.ceil(MAX_TRACKED_IPS / 10);
+  for (const [key, s] of ipStates) {
+    if (toDrop-- <= 0) break;
+    if (s.lockedUntil <= now && s.events.every((t) => t < now - BAD_AUTH_WINDOW_MS)) {
+      ipStates.delete(key);
+    }
+  }
+}
+
+export interface LockoutStatus {
+  locked: boolean;
+  lockedUntil: number;
+  retryAfterSec: number;
+  recentBadAuth: number;
+}
+
+/** Read-only check — does NOT record an event. */
+export function checkIpLockout(ip: string, now: number = Date.now()): LockoutStatus {
+  const s = ipStates.get(ip);
+  if (!s) return { locked: false, lockedUntil: 0, retryAfterSec: 0, recentBadAuth: 0 };
+  if (s.lockedUntil > now) {
+    return {
+      locked: true,
+      lockedUntil: s.lockedUntil,
+      retryAfterSec: Math.ceil((s.lockedUntil - now) / 1000),
+      recentBadAuth: s.events.length,
+    };
+  }
+  return { locked: false, lockedUntil: 0, retryAfterSec: 0, recentBadAuth: s.events.length };
+}
+
+/**
+ * Record a bad-auth event for `ip` and return the resulting lockout status.
+ * When the threshold trips, `justLocked=true` so the caller can fire a
+ * one-shot alert instead of re-firing on every subsequent request.
+ */
+export function noteBadAuth(
+  ip: string,
+  now: number = Date.now(),
+): LockoutStatus & { justLocked: boolean } {
+  gcIpStates(now);
+  const cutoff = now - BAD_AUTH_WINDOW_MS;
+  const s = ipStates.get(ip) ?? { events: [], lockedUntil: 0 };
+  while (s.events.length && s.events[0] < cutoff) s.events.shift();
+  s.events.push(now);
+
+  let justLocked = false;
+  if (s.lockedUntil <= now && s.events.length >= BAD_AUTH_THRESHOLD) {
+    s.lockedUntil = now + LOCKOUT_MS;
+    justLocked = true;
+  }
+  ipStates.set(ip, s);
+
+  return {
+    locked: s.lockedUntil > now,
+    lockedUntil: s.lockedUntil,
+    retryAfterSec: s.lockedUntil > now ? Math.ceil((s.lockedUntil - now) / 1000) : 0,
+    recentBadAuth: s.events.length,
+    justLocked,
+  };
+}
+
+export const BACKUP_LOCKOUT_CONFIG = Object.freeze({
+  BAD_AUTH_WINDOW_MS,
+  BAD_AUTH_THRESHOLD,
+  LOCKOUT_MS,
+});
+
 export function _resetFailureTrackerForTests(): void {
   failures.length = 0;
+  ipStates.clear();
 }
+
