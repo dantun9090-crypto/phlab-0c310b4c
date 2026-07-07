@@ -279,3 +279,52 @@ export async function uploadNewsletterPopupImageAdmin(input: UploadNewsletterIma
     size: bytes.byteLength,
   };
 }
+
+export async function uploadBannerImageAdmin(input: UploadNewsletterImageInput): Promise<UploadStorageImageResult> {
+  const contentType = input.contentType || "image/webp";
+  if (!isAllowedImageType(contentType)) throw new Error("invalid_image_type");
+
+  const bytes = base64ToBytes(input.base64);
+  if (bytes.byteLength === 0 || bytes.byteLength > 5 * 1024 * 1024) throw new Error("invalid_image_size");
+
+  const acct = getServiceAccount();
+  const token = await getAccessToken();
+  const bucket = `${acct.project_id}.firebasestorage.app`;
+  const downloadToken = crypto.randomUUID();
+  const path = `banners/${Date.now()}.${extFromContentType(contentType)}`;
+
+  const boundary = `phlabs-${crypto.randomUUID()}`;
+  const metadata = {
+    name: path,
+    contentType,
+    cacheControl: "public, max-age=3600",
+    metadata: { firebaseStorageDownloadTokens: downloadToken },
+  };
+  const fileBytes = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(fileBytes).set(bytes);
+  const body = new Blob([
+    `--${boundary}\r\ncontent-type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n`,
+    `--${boundary}\r\ncontent-type: ${contentType}\r\n\r\n`,
+    fileBytes,
+    `\r\n--${boundary}--`,
+  ]);
+
+  const res = await fetch(
+    `https://storage.googleapis.com/upload/storage/v1/b/${encodeURIComponent(bucket)}/o?uploadType=multipart`,
+    {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${token}`,
+        "content-type": `multipart/related; boundary=${boundary}`,
+      },
+      body,
+    },
+  );
+  if (!res.ok) throw new Error(`Banner image upload failed: ${res.status} ${await res.text()}`);
+
+  return {
+    url: `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media&token=${downloadToken}`,
+    path,
+    size: bytes.byteLength,
+  };
+}
