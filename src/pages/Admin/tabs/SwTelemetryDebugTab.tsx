@@ -111,6 +111,7 @@ async function fetchEdgeCorrelation(): Promise<EdgeCorrelation> {
   const url = location.pathname + (location.search || '');
   const runtime =
     (window as unknown as { __BUILD_ID__?: string }).__BUILD_ID__ ||
+    document.querySelector('meta[name="x-build-id"]')?.getAttribute('content') ||
     document.querySelector('meta[name="build-id"]')?.getAttribute('content') ||
     'unknown';
   try {

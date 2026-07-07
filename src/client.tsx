@@ -1,3 +1,13 @@
+// === Expose build id to runtime =============================================
+// vite.config.ts injects `__BUILD_ID__` at build time via `define`. Attach it
+// to `window` so admin diagnostics, telemetry, and mount-timeout probes can
+// read a stable runtime build id instead of falling back to "unknown".
+try {
+  if (typeof window !== "undefined" && typeof __BUILD_ID__ === "string") {
+    (window as unknown as { __BUILD_ID__?: string }).__BUILD_ID__ = __BUILD_ID__;
+  }
+} catch { /* ignore */ }
+
 // === Reload-loop breaker (runs before React mounts) ========================
 // Only arm this during an actual cache-recovery navigation. Previously this
 // counted every normal page load, so quick refreshes / preview reloads could
@@ -482,7 +492,11 @@ window.setTimeout(() => {
     const mountFailed = bootStillVisible || !reactRootMounted || bodyChildCount <= 1;
 
     if (mountFailed) {
-      const buildId = document.querySelector('meta[name="build-id"]')?.getAttribute("content") || "n/a";
+      const buildId =
+        (window as unknown as { __BUILD_ID__?: string }).__BUILD_ID__ ||
+        document.querySelector('meta[name="x-build-id"]')?.getAttribute("content") ||
+        document.querySelector('meta[name="build-id"]')?.getAttribute("content") ||
+        "n/a";
       const assetHash = document.querySelector('meta[name="asset-hash"]')?.getAttribute("content") || "n/a";
       // Normalize into a stable code so canary/admin charts can correlate.
       // Lazy import to keep boot path free of extra chunks.

@@ -1088,7 +1088,10 @@ function RootComponent() {
 
   useEffect(() => {
     try {
-      const currentBuildId = document.querySelector('meta[name="build-id"]')?.getAttribute('content');
+      const currentBuildId =
+        (window as unknown as { __BUILD_ID__?: string }).__BUILD_ID__ ||
+        document.querySelector('meta[name="x-build-id"]')?.getAttribute('content') ||
+        document.querySelector('meta[name="build-id"]')?.getAttribute('content');
       const storedBuildId = localStorage.getItem('last_seen_build_id');
       if (currentBuildId && currentBuildId !== storedBuildId) {
         localStorage.setItem('last_seen_build_id', currentBuildId);
