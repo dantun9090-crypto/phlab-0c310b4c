@@ -11,9 +11,13 @@ interface Props {
 /**
  * Root wrapper for every branded email. Uses table-based layout via
  * react-email primitives — safe in Outlook, Gmail, Apple Mail, Yahoo.
- * Body background stays `#ffffff` compatible via brand.backgroundColor.
+ * Body may optionally use a background image loaded from Firebase Storage.
  */
 export function EmailLayout({ brand, preview, children }: Props) {
+  const bodyBg = brand.bodyBackgroundImageUrl
+    ? `${brand.backgroundColor} url(${brand.bodyBackgroundImageUrl}) center top / cover no-repeat`
+    : brand.backgroundColor;
+
   return (
     <Html lang="en" dir="ltr">
       <Head>
@@ -23,6 +27,7 @@ export function EmailLayout({ brand, preview, children }: Props) {
       {preview ? <Preview>{preview}</Preview> : null}
       <Body
         style={{
+          background: bodyBg,
           backgroundColor: brand.backgroundColor,
           margin: 0,
           padding: 0,
@@ -33,6 +38,7 @@ export function EmailLayout({ brand, preview, children }: Props) {
       >
         <Section
           style={{
+            background: bodyBg,
             backgroundColor: brand.backgroundColor,
             padding: "24px 12px",
           }}
@@ -44,6 +50,7 @@ export function EmailLayout({ brand, preview, children }: Props) {
               backgroundColor: brand.surfaceColor,
               borderRadius: brand.buttonRadius > 0 ? `${brand.buttonRadius}px` : "0",
               overflow: "hidden",
+              boxShadow: "0 4px 24px rgba(15,23,42,0.08)",
             }}
           >
             {children}
