@@ -167,20 +167,29 @@ export default function BannerTab() {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const original = e.target.files?.[0];
-    if (!original) return;
+    const originalFile = e.target.files?.[0];
+    if (e.target) e.target.value = '';
+    if (!originalFile) return;
     setUploading(true);
     setUploadProgress(0);
+    setUploadStep('Validating file…');
+    setUploadError(null);
     setImageError(false);
     try {
       const { validateImageFile } = await import('@/lib/upload-validation');
-      await validateImageFile(original);
+      await validateImageFile(originalFile);
+      setUploadProgress(15);
+      setUploadStep('Compressing to WebP…');
       const { compressToWebp } = await import('@/lib/imageCompress');
-      const file = await compressToWebp(original, { maxPx: 1920, quality: 0.85, targetBytes: 200_000 });
+      const file = await compressToWebp(originalFile, { maxPx: 1920, quality: 0.85, targetBytes: 200_000 });
       setUploadProgress(40);
+      setUploadStep('Verifying admin token…');
       const idToken = await getAdminIdToken();
+      setUploadProgress(55);
+      setUploadStep('Encoding image…');
       const base64 = await fileToBase64(file);
       setUploadProgress(70);
+      setUploadStep('Uploading to Firebase Storage…');
       const uploaded = await uploadBannerImage({
         data: {
           idToken,
@@ -188,13 +197,32 @@ export default function BannerTab() {
           base64,
         },
       });
+      setUploadProgress(90);
+      setUploadStep('Verifying uploaded image…');
+      const dims = await probeImageDimensions(uploaded.url);
       setUploadProgress(100);
       setBanner(prev => ({ ...prev, imageUrl: uploaded.url }));
-      setMsg({ type: 'success', text: `Uploaded as WebP (${Math.round(file.size / 1024)} KB)` });
+      setLastUpload({
+        url: uploaded.url,
+        path: uploaded.path,
+        sizeKb: Math.round(file.size / 1024),
+        originalKb: Math.round(originalFile.size / 1024),
+        contentType: file.type || 'image/webp',
+        width: dims?.width,
+        height: dims?.height,
+        fileName: originalFile.name,
+      });
+      setMsg({
+        type: 'success',
+        text: `Uploaded ${originalFile.name} → ${Math.round(file.size / 1024)} KB WebP${dims ? ` (${dims.width}×${dims.height})` : ''}`,
+      });
     } catch (err: any) {
-      setMsg({ type: 'error', text: 'Upload failed: ' + (err?.message || 'unknown') });
+      const classified = classifyUploadError(err);
+      setUploadError(classified);
+      setMsg({ type: 'error', text: `${classified.title}: ${classified.detail}` });
     } finally {
       setUploading(false);
+      setUploadStep('');
     }
   };
 
