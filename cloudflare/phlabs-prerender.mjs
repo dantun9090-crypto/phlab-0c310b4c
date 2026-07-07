@@ -743,7 +743,7 @@ var phlabs_prerender_patched_default = {
       : evaluateHtmlCacheable(request, url, htmlTtl);
     const htmlCacheable = cacheEval.ok;
     const cacheSkipReason = cacheEval.reason;
-    const originBuildId = htmlCacheable ? await getOriginBuildId() : "";
+    const originBuildId = htmlCacheable && !forceRefresh && !url.searchParams.has("__edge_build_probe") ? await getOriginBuildId() : "";
     const cacheOpts = htmlCacheable && !forceRefresh ? {
       cacheEverything: true,
       cacheTtl: htmlTtl,
