@@ -3,9 +3,20 @@
  *
  * POST /api/public/hooks/firestore-backup
  *   Body: {} (empty) or { collectionIds?: string[] }
- *   Auth: Supabase `apikey` header (anon/publishable) — this is a pg_cron target.
- *         Optionally accepts `x-cron-secret` matching CLEANUP_SECRET as a
- *         second-factor for manual curl runs.
+ *   Auth: Supabase `apikey` header EXACT match (pg_cron target) OR
+ *         `x-cron-secret` EXACT match against CLEANUP_SECRET (manual curl /
+ *         GitHub Actions). Verification lives in `firestore-backup-auth.ts`
+ *         and is unit-tested — do not inline a looser check here.
+ *
+ * Hardening layered on top of the route:
+ *  - Per-IP rate limits (default bucket for authorised calls; `bad-auth`
+ *    bucket clamps 401 storms so probing traffic can't burn CPU).
+ *  - Audit log entry written to Firestore `backup_audit_log` for every
+ *    request (accepted OR rejected) — includes IP, UA, auth outcome, and
+ *    the resulting HTTP status. Best-effort; never blocks the response.
+ *  - Failure-spike detector emits a `securityEvents` row when 3+ failures
+ *    land inside a 15 minute window (in-isolate counter — see
+ *    `noteBackupFailure`).
  *
  * Also polls any RUNNING backup rows in `firestore_backups` and flips their
  * status to DONE/FAILED. Idempotent — running it more often than the schedule
@@ -18,6 +29,13 @@ import {
   getExportOperation,
   getConfiguredBackupBase,
 } from "@/lib/server/firestore-backup";
+import {
+  verifyBackupCaller,
+  noteBackupFailure,
+  type VerifyResult,
+} from "@/lib/firestore-backup-auth";
+import { enforceRateLimit, getClientIp } from "@/lib/rate-limit";
+import { addDocAdmin } from "@/lib/server/firestore-admin";
 
 const Body = z
   .object({
@@ -32,58 +50,162 @@ function json(v: unknown, status = 200): Response {
   });
 }
 
-function timingSafeStringEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
+interface AuditContext {
+  ip: string;
+  userAgent: string | null;
+  method: string;
+  path: string;
 }
 
-function verifyCaller(request: Request): { ok: true } | { ok: false; status: number; msg: string } {
-  // Accept ONLY:
-  //   1. `apikey` header matching the Supabase publishable/anon key (pg_cron path)
-  //   2. `x-cron-secret` header matching CLEANUP_SECRET (manual curl / GitHub Actions)
-  // Any other non-empty string must be rejected — otherwise anyone can trigger
-  // Firestore exports and write rows into `firestore_backups`.
-  const expectedApiKeys = [
-    process.env.SUPABASE_PUBLISHABLE_KEY,
-    process.env.SUPABASE_ANON_KEY,
-    process.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-  ].filter((v): v is string => typeof v === "string" && v.length > 0);
-  const apikey = request.headers.get("apikey");
-  if (apikey && expectedApiKeys.some((k) => timingSafeStringEqual(apikey, k))) {
-    return { ok: true };
+function auditContext(request: Request): AuditContext {
+  const url = new URL(request.url);
+  return {
+    ip: getClientIp(request),
+    userAgent: request.headers.get("user-agent"),
+    method: request.method,
+    path: url.pathname,
+  };
+}
+
+async function writeAudit(
+  ctx: AuditContext,
+  outcome: {
+    status: number;
+    result: "accepted" | "rejected" | "trigger_failed" | "invalid_body";
+    authMethod?: "apikey" | "cron_secret" | null;
+    authReason?: "missing" | "invalid" | null;
+    detail?: string | null;
+    runId?: string | null;
+  },
+): Promise<void> {
+  try {
+    await addDocAdmin("backup_audit_log", {
+      endpoint: "firestore-backup",
+      ip: ctx.ip,
+      userAgent: ctx.userAgent,
+      method: ctx.method,
+      path: ctx.path,
+      status: outcome.status,
+      result: outcome.result,
+      authMethod: outcome.authMethod ?? null,
+      authReason: outcome.authReason ?? null,
+      detail: outcome.detail ?? null,
+      runId: outcome.runId ?? null,
+      // Actor identity is bounded: only pg_cron (apikey) or the CLEANUP_SECRET
+      // holder (x-cron-secret) can succeed. There is no per-user actor here.
+      actor: outcome.authMethod ?? "unauthenticated",
+      createdAt: new Date(),
+    });
+  } catch {
+    /* audit logging must never break the response */
   }
-  const secret = request.headers.get("x-cron-secret");
-  const expected = process.env.CLEANUP_SECRET;
-  if (expected && secret && timingSafeStringEqual(secret, expected)) {
-    return { ok: true };
+}
+
+async function noteFailureAndMaybeAlert(
+  ctx: AuditContext,
+  reason: string,
+): Promise<void> {
+  const { count, spike } = noteBackupFailure();
+  if (!spike) return;
+  try {
+    await addDocAdmin("securityEvents", {
+      type: "firestore_backup_failure_spike",
+      endpoint: "firestore-backup",
+      ip: ctx.ip,
+      userAgent: ctx.userAgent,
+      recentFailureCount: count,
+      windowMinutes: 15,
+      lastReason: reason,
+      severity: "warn",
+      createdAt: new Date(),
+    });
+    console.error(
+      `[firestore-backup] ALERT: ${count} failures in the last 15m (last=${reason})`,
+    );
+  } catch {
+    /* alert logger must never throw */
   }
-  return { ok: false, status: 401, msg: "unauthorized" };
 }
 
 export const Route = createFileRoute("/api/public/hooks/firestore-backup")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const auth = verifyCaller(request);
-        if (!auth.ok) return json({ error: auth.msg }, auth.status);
+        const ctx = auditContext(request);
+
+        // 1. Bad-auth throttle — checked BEFORE verifying credentials so a
+        //    probing client cannot burn CPU on repeated 401s. Generous ceiling
+        //    for legitimate cron: pg_cron and GitHub Actions call at minute
+        //    resolution at worst.
+        const badAuthLimit = await enforceRateLimit(
+          request,
+          "firestore-backup",
+          { limit: 20, windowMs: 60_000, retryAfterSec: 60, bucketKind: "bad-auth" },
+        );
+        if (badAuthLimit) {
+          await writeAudit(ctx, {
+            status: 429,
+            result: "rejected",
+            detail: "bad_auth_rate_limit",
+          });
+          return badAuthLimit;
+        }
+
+        const auth: VerifyResult = verifyBackupCaller(request, {
+          SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY,
+          SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+          VITE_SUPABASE_PUBLISHABLE_KEY: process.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          CLEANUP_SECRET: process.env.CLEANUP_SECRET,
+        });
+        if (!auth.ok) {
+          await writeAudit(ctx, {
+            status: auth.status,
+            result: "rejected",
+            authReason: auth.reason,
+          });
+          await noteFailureAndMaybeAlert(ctx, `unauthorized:${auth.reason}`);
+          return json({ error: "unauthorized" }, auth.status);
+        }
+
+        // 2. Per-caller throttle for accepted callers — protects downstream
+        //    Google Firestore export API against runaway loops.
+        const runLimit = await enforceRateLimit(
+          request,
+          "firestore-backup-run",
+          { limit: 6, windowMs: 60_000, retryAfterSec: 60 },
+        );
+        if (runLimit) {
+          await writeAudit(ctx, {
+            status: 429,
+            result: "rejected",
+            authMethod: auth.method,
+            detail: "run_rate_limit",
+          });
+          return runLimit;
+        }
 
         let body: z.infer<typeof Body> = {};
         try {
           const text = await request.text();
           body = text ? Body.parse(JSON.parse(text)) : {};
         } catch (e) {
-          return json({ error: "invalid_body", detail: String((e as Error).message) }, 400);
+          const msg = String((e as Error).message);
+          await writeAudit(ctx, {
+            status: 400,
+            result: "invalid_body",
+            authMethod: auth.method,
+            detail: msg,
+          });
+          return json({ error: "invalid_body", detail: msg }, 400);
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-        // 1. Poll open backups first (cheap; keeps the log honest even if the
+        // 3. Poll open backups first (cheap; keeps the log honest even if the
         //    dedicated poll didn't run).
         const polled = await pollRunningBackups(supabaseAdmin);
 
-        // 2. Kick off today's backup.
+        // 4. Kick off today's backup.
         let trigger: Awaited<ReturnType<typeof triggerFirestoreExport>>;
         try {
           trigger = await triggerFirestoreExport({ collectionIds: body.collectionIds });
@@ -98,6 +220,13 @@ export const Route = createFileRoute("/api/public/hooks/firestore-backup")({
             triggered_by: "cron",
             error: msg,
           });
+          await writeAudit(ctx, {
+            status: 502,
+            result: "trigger_failed",
+            authMethod: auth.method,
+            detail: msg,
+          });
+          await noteFailureAndMaybeAlert(ctx, `trigger_failed:${msg.slice(0, 120)}`);
           return json({ error: "trigger_failed", detail: msg, polled }, 502);
         }
 
@@ -113,6 +242,13 @@ export const Route = createFileRoute("/api/public/hooks/firestore-backup")({
           // Log-only — the export itself is already running in Google.
           console.warn("[firestore-backup] log insert failed:", insertErr.message);
         }
+
+        await writeAudit(ctx, {
+          status: 200,
+          result: "accepted",
+          authMethod: auth.method,
+          runId: trigger.runId,
+        });
 
         return json({ ok: true, trigger, polled });
       },
