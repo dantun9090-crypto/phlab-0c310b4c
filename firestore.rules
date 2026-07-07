@@ -419,6 +419,14 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // ---------- backup_audit_log (admin-read, server-written) ----------
+    // Written by /api/public/hooks/firestore-backup via firebase-admin
+    // (bypasses rules) for every accepted or rejected trigger. Never
+    // writable from the client — no anon/authed path may forge entries.
+    match /backup_audit_log/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
 
 
     // ---------- fena webhook events (admin-read diagnostic log) ----------
