@@ -80,7 +80,48 @@ export default function BannerTab() {
   const [uploadMode, setUploadMode] = useState<'url' | 'file'>('file');
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStep, setUploadStep] = useState<string>('');
+  const [uploadError, setUploadError] = useState<{ title: string; detail: string; hint?: string } | null>(null);
+  const [lastUpload, setLastUpload] = useState<{
+    url: string;
+    path: string;
+    sizeKb: number;
+    originalKb: number;
+    contentType: string;
+    width?: number;
+    height?: number;
+    fileName: string;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function classifyUploadError(err: any): { title: string; detail: string; hint?: string } {
+    const raw = String(err?.message || err || 'unknown error');
+    const lower = raw.toLowerCase();
+    if (lower.includes('invalid_image_type') || lower.includes('unsupported file type'))
+      return { title: 'Unsupported file type', detail: raw, hint: 'Use JPG, PNG or WebP.' };
+    if (lower.includes('invalid_image_size') || lower.includes('too large') || lower.includes('413'))
+      return { title: 'File too large', detail: raw, hint: 'Max 5 MB after compression. Try a smaller image.' };
+    if (lower.includes('empty')) return { title: 'Empty file', detail: raw };
+    if (lower.includes('svg')) return { title: 'SVG rejected', detail: raw, hint: 'SVGs with scripts are blocked.' };
+    if (lower.includes('unauthorized') || lower.includes('forbidden') || lower.includes('401') || lower.includes('403'))
+      return { title: 'Not authorised', detail: raw, hint: 'Sign in again as an admin and retry.' };
+    if (lower.includes('token') || lower.includes('admin'))
+      return { title: 'Admin token error', detail: raw, hint: 'Refresh the page to re-issue an admin token.' };
+    if (lower.includes('network') || lower.includes('failed to fetch') || lower.includes('load failed'))
+      return { title: 'Network error', detail: raw, hint: 'Check your connection and retry.' };
+    if (lower.includes('storage upload failed') || lower.includes('banner image upload failed'))
+      return { title: 'Firebase Storage rejected the file', detail: raw, hint: 'Check Storage rules for banners/ path.' };
+    return { title: 'Upload failed', detail: raw };
+  }
+
+  function probeImageDimensions(url: string): Promise<{ width: number; height: number } | null> {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  }
 
   useEffect(() => { loadBanner(); }, []);
 
@@ -126,20 +167,29 @@ export default function BannerTab() {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const original = e.target.files?.[0];
-    if (!original) return;
+    const originalFile = e.target.files?.[0];
+    if (e.target) e.target.value = '';
+    if (!originalFile) return;
     setUploading(true);
     setUploadProgress(0);
+    setUploadStep('Validating file…');
+    setUploadError(null);
     setImageError(false);
     try {
       const { validateImageFile } = await import('@/lib/upload-validation');
-      await validateImageFile(original);
+      await validateImageFile(originalFile);
+      setUploadProgress(15);
+      setUploadStep('Compressing to WebP…');
       const { compressToWebp } = await import('@/lib/imageCompress');
-      const file = await compressToWebp(original, { maxPx: 1920, quality: 0.85, targetBytes: 200_000 });
+      const file = await compressToWebp(originalFile, { maxPx: 1920, quality: 0.85, targetBytes: 200_000 });
       setUploadProgress(40);
+      setUploadStep('Verifying admin token…');
       const idToken = await getAdminIdToken();
+      setUploadProgress(55);
+      setUploadStep('Encoding image…');
       const base64 = await fileToBase64(file);
       setUploadProgress(70);
+      setUploadStep('Uploading to Firebase Storage…');
       const uploaded = await uploadBannerImage({
         data: {
           idToken,
@@ -147,13 +197,32 @@ export default function BannerTab() {
           base64,
         },
       });
+      setUploadProgress(90);
+      setUploadStep('Verifying uploaded image…');
+      const dims = await probeImageDimensions(uploaded.url);
       setUploadProgress(100);
       setBanner(prev => ({ ...prev, imageUrl: uploaded.url }));
-      setMsg({ type: 'success', text: `Uploaded as WebP (${Math.round(file.size / 1024)} KB)` });
+      setLastUpload({
+        url: uploaded.url,
+        path: uploaded.path,
+        sizeKb: Math.round(file.size / 1024),
+        originalKb: Math.round(originalFile.size / 1024),
+        contentType: file.type || 'image/webp',
+        width: dims?.width,
+        height: dims?.height,
+        fileName: originalFile.name,
+      });
+      setMsg({
+        type: 'success',
+        text: `Uploaded ${originalFile.name} → ${Math.round(file.size / 1024)} KB WebP${dims ? ` (${dims.width}×${dims.height})` : ''}`,
+      });
     } catch (err: any) {
-      setMsg({ type: 'error', text: 'Upload failed: ' + (err?.message || 'unknown') });
+      const classified = classifyUploadError(err);
+      setUploadError(classified);
+      setMsg({ type: 'error', text: `${classified.title}: ${classified.detail}` });
     } finally {
       setUploading(false);
+      setUploadStep('');
     }
   };
 
@@ -279,11 +348,12 @@ export default function BannerTab() {
                     {uploading ? (
                       <>
                         <Loader2 className="w-6 h-6 text-blue-400 animate-spin" />
-                        <p className="text-[#9cb8d9] text-sm">Uploading… {uploadProgress}%</p>
+                        <p className="text-[#9cb8d9] text-sm">{uploadStep || 'Uploading…'} {uploadProgress}%</p>
                         <div className="w-full bg-[#0f2640] rounded-full h-1.5 mt-1">
                           <div className="bg-blue-500 h-1.5 rounded-full transition-all" style={{ width: `${uploadProgress}%` }} />
                         </div>
                       </>
+
                     ) : (
                       <>
                         <Upload className="w-6 h-6 text-[#2a4a7a] group-hover:text-blue-400 transition-colors" />
@@ -306,7 +376,69 @@ export default function BannerTab() {
                 {imageError && <p className="text-red-400 text-xs flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Invalid image URL</p>}
               </div>
             )}
+
+            {/* Upload error details */}
+            {uploadError && (
+              <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs space-y-1">
+                <p className="text-red-300 font-semibold flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5" /> {uploadError.title}
+                </p>
+                <p className="text-red-200/90 font-mono break-all">{uploadError.detail}</p>
+                {uploadError.hint && <p className="text-red-200/70">Hint: {uploadError.hint}</p>}
+                <button
+                  onClick={() => { setUploadError(null); fileInputRef.current?.click(); }}
+                  className="mt-1 px-2.5 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-100 rounded-md">
+                  Retry upload
+                </button>
+              </div>
+            )}
+
+            {/* Post-upload preview + metadata */}
+            {lastUpload && !uploadError && (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-2">
+                <p className="text-emerald-300 text-xs font-semibold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Uploaded — verify below
+                </p>
+                <img
+                  src={lastUpload.url}
+                  alt="Uploaded banner verification"
+                  className="w-full max-h-48 object-contain bg-[#04101f] rounded-lg border border-white/10"
+                  onError={() => setImageError(true)}
+                />
+                <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                  <dt className="text-[#9cb8d9]">File</dt>
+                  <dd className="text-white truncate" title={lastUpload.fileName}>{lastUpload.fileName}</dd>
+                  <dt className="text-[#9cb8d9]">Type</dt>
+                  <dd className="text-white font-mono">{lastUpload.contentType}</dd>
+                  <dt className="text-[#9cb8d9]">Size</dt>
+                  <dd className="text-white font-mono">
+                    {lastUpload.sizeKb} KB
+                    <span className="text-[#2a4a7a]"> (from {lastUpload.originalKb} KB)</span>
+                  </dd>
+                  {lastUpload.width && (
+                    <>
+                      <dt className="text-[#9cb8d9]">Dimensions</dt>
+                      <dd className="text-white font-mono">{lastUpload.width} × {lastUpload.height}px</dd>
+                    </>
+                  )}
+                  <dt className="text-[#9cb8d9]">Path</dt>
+                  <dd className="text-white font-mono truncate" title={lastUpload.path}>{lastUpload.path}</dd>
+                </dl>
+                <div className="flex gap-1.5 pt-1">
+                  <a href={lastUpload.url} target="_blank" rel="noreferrer"
+                    className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 bg-[#0f2640]/80 hover:bg-[#0f2640] text-[#9cb8d9] hover:text-white rounded-md text-xs">
+                    <ExternalLink className="w-3 h-3" /> Open image
+                  </a>
+                  <button
+                    onClick={() => { navigator.clipboard?.writeText(lastUpload.url); setMsg({ type: 'success', text: 'URL copied' }); }}
+                    className="flex-1 px-2 py-1.5 bg-[#0f2640]/80 hover:bg-[#0f2640] text-[#9cb8d9] hover:text-white rounded-md text-xs">
+                    Copy URL
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
+
 
           {/* Link + Alt text */}
           <div className="bg-[#0b1a30]/60 border border-white/10 rounded-2xl p-5 space-y-3">
