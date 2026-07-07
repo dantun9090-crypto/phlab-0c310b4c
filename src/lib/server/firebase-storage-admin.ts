@@ -351,6 +351,8 @@ export async function uploadBannerImageAdmin(input: UploadNewsletterImageInput):
     url: `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media&token=${downloadToken}`,
     path,
     size: bytes.byteLength,
+    width: dims.width,
+    height: dims.height,
   };
 }
 
