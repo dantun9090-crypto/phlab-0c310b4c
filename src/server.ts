@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { notifySsrError } from "./lib/ssr-alert";
 import { isGoneLegacyPath, resolveLegacyRedirect } from "./lib/legacy-redirects";
 import { isKnownFirstSegment } from "./lib/known-roots";
 import { extractClientIp, log, truncate } from "./lib/worker-log";
@@ -916,7 +917,13 @@ function isCatastrophicSsrErrorBody(body: string, responseStatus: number): boole
 
 // h3 swallows in-handler throws into a normal 500 Response with body
 // {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
-async function normalizeCatastrophicSsrResponse(response: Response, nonce: string, hostname?: string): Promise<Response> {
+async function normalizeCatastrophicSsrResponse(
+  response: Response,
+  nonce: string,
+  hostname?: string,
+  request?: Request,
+  ctx?: { waitUntil?: (p: Promise<unknown>) => void },
+): Promise<Response> {
   if (response.status < 500) return response;
   const contentType = response.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) return response;
@@ -926,7 +933,18 @@ async function normalizeCatastrophicSsrResponse(response: Response, nonce: strin
     return response;
   }
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
+  const captured = consumeLastCapturedError();
+  const err = captured ?? new Error(`h3 swallowed SSR error: ${body}`);
+  console.error(err);
+  if (request) {
+    notifySsrError({
+      error: err,
+      url: new URL(request.url),
+      method: request.method,
+      ctx,
+      kind: captured ? "renderToReadableStream" : "h3-swallowed",
+    });
+  }
   return brandedErrorResponse(nonce, hostname);
 }
 
@@ -1373,7 +1391,7 @@ export default {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       const htmlTtl = await getHtmlTtlSeconds().catch(() => 0);
-      let normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response, nonce, url.hostname), nonce, url.hostname, url.pathname, htmlTtl);
+      let normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response, nonce, url.hostname, request, ctx), nonce, url.hostname, url.pathname, htmlTtl);
 
       // Fix asset content-types that the static handler mis-detects.
       // `.webmanifest` is served as application/octet-stream by default, which
@@ -1467,6 +1485,7 @@ export default {
         ...baseFields,
       });
       console.error(error);
+      notifySsrError({ error, url, method: request.method, ctx, kind: "worker-catch" });
       // Even on a 500, /sw.js and ?sw=off MUST never be cached — otherwise a
       // single bad deploy can get pinned at the edge or in browsers for hours.
       return applyCacheRecoveryHeaders(brandedErrorResponse(nonce, url.hostname), url);
