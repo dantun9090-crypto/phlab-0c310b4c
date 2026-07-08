@@ -51,12 +51,15 @@ function PeptideCalculatorPage() {
   const [vialMg, setVialMg] = useState<number>(10);
   const [bacMl, setBacMl] = useState<number>(2);
   const [desiredMcg, setDesiredMcg] = useState<number>(250);
+  const [desiredUnit, setDesiredUnit] = useState<"mcg" | "mg">("mcg");
   const [syringeUnits, setSyringeUnits] = useState<number>(100); // U-100 insulin syringe
 
   const { mgPerMl, mcgPerMl, mlForDose, unitsForDose } = useMemo(() => {
     const safeVialMg = Number.isFinite(vialMg) && vialMg > 0 ? vialMg : 0;
     const safeBacMl = Number.isFinite(bacMl) && bacMl > 0 ? bacMl : 0;
-    const safeDesired = Number.isFinite(desiredMcg) && desiredMcg > 0 ? desiredMcg : 0;
+    const desiredInMcg =
+      desiredUnit === "mg" ? (desiredMcg || 0) * 1000 : desiredMcg || 0;
+    const safeDesired = Number.isFinite(desiredInMcg) && desiredInMcg > 0 ? desiredInMcg : 0;
     const concMgPerMl = safeBacMl > 0 ? safeVialMg / safeBacMl : 0;
     const concMcgPerMl = concMgPerMl * 1000;
     const ml = concMcgPerMl > 0 ? safeDesired / concMcgPerMl : 0;
@@ -68,7 +71,7 @@ function PeptideCalculatorPage() {
       mlForDose: ml,
       unitsForDose: units,
     };
-  }, [vialMg, bacMl, desiredMcg, syringeUnits]);
+  }, [vialMg, bacMl, desiredMcg, desiredUnit, syringeUnits]);
 
 
   return (
@@ -114,15 +117,26 @@ function PeptideCalculatorPage() {
             />
           </label>
           <label className="block text-sm">
-            <span className="block text-slate-300">Desired per-aliquot amount (mcg)</span>
-            <input
-              type="number"
-              min={0}
-              step={1}
-              value={desiredMcg}
-              onChange={(e) => setDesiredMcg(parseFloat(e.target.value))}
-              className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
-            />
+            <span className="block text-slate-300">Desired per-aliquot amount</span>
+            <div className="mt-1 flex gap-2">
+              <input
+                type="number"
+                min={0}
+                step={desiredUnit === "mg" ? 0.1 : 1}
+                value={desiredMcg}
+                onChange={(e) => setDesiredMcg(parseFloat(e.target.value))}
+                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-100"
+              />
+              <select
+                value={desiredUnit}
+                onChange={(e) => setDesiredUnit(e.target.value as "mcg" | "mg")}
+                aria-label="Dose unit"
+                className="rounded-md border border-slate-700 bg-slate-950 px-2 py-2 text-slate-100"
+              >
+                <option value="mcg">mcg</option>
+                <option value="mg">mg</option>
+              </select>
+            </div>
           </label>
           <label className="block text-sm">
             <span className="block text-slate-300">Syringe scale (units / mL)</span>
