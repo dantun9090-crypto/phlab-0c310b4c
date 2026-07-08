@@ -1,10 +1,10 @@
 {
   "base": "https://phlabs.co.uk",
-  "generatedAt": "2026-07-08T18:57:07.001Z",
+  "generatedAt": "2026-07-08T18:57:30.125Z",
   "results": [
     {
       "path": "/robots.txt",
-      "url": "https://phlabs.co.uk/robots.txt?__cache_probe=1783537024794w88z4s",
+      "url": "https://phlabs.co.uk/robots.txt?__cache_probe=1783537048040fcvba4",
       "status": 200,
       "contentType": "text/plain; charset=utf-8",
       "cacheControl": "public, max-age=31536000, immutable",
@@ -22,7 +22,7 @@
     },
     {
       "path": "/sitemap.xml",
-      "url": "https://phlabs.co.uk/sitemap.xml?__cache_probe=1783537024795suu98y",
+      "url": "https://phlabs.co.uk/sitemap.xml?__cache_probe=17835370480414o6p7i",
       "status": 200,
       "contentType": "application/xml; charset=utf-8",
       "cacheControl": "public, max-age=300, stale-while-revalidate=3600",
@@ -36,7 +36,7 @@
     },
     {
       "path": "/sitemap-products.xml",
-      "url": "https://phlabs.co.uk/sitemap-products.xml?__cache_probe=178353702479509r6ut",
+      "url": "https://phlabs.co.uk/sitemap-products.xml?__cache_probe=1783537048041dwn4qd",
       "status": 200,
       "contentType": "text/html; charset=utf-8",
       "cacheControl": "public, max-age=300, must-revalidate",
@@ -44,15 +44,13 @@
       "surrogateControl": "no-store",
       "cfCacheStatus": "DYNAMIC",
       "age": 0,
-      "violations": [
-        "content-type \"text/html; charset=utf-8\" does not match /xml/"
-      ],
-      "optionalSkipped": false,
-      "ok": false
+      "violations": [],
+      "optionalSkipped": true,
+      "ok": true
     },
     {
       "path": "/sitemap-articles.xml",
-      "url": "https://phlabs.co.uk/sitemap-articles.xml?__cache_probe=1783537024795fb5at2",
+      "url": "https://phlabs.co.uk/sitemap-articles.xml?__cache_probe=17835370480416c8ep6",
       "status": 200,
       "contentType": "text/html; charset=utf-8",
       "cacheControl": "public, max-age=300, must-revalidate",
@@ -60,11 +58,9 @@
       "surrogateControl": "no-store",
       "cfCacheStatus": "DYNAMIC",
       "age": 0,
-      "violations": [
-        "content-type \"text/html; charset=utf-8\" does not match /xml/"
-      ],
-      "optionalSkipped": false,
-      "ok": false
+      "violations": [],
+      "optionalSkipped": true,
+      "ok": true
     }
   ]
 }
