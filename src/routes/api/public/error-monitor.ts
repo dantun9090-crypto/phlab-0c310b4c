@@ -73,6 +73,7 @@ const EVENT_TYPES = [
   "compound_overlay",
   "client_exception",
   "blank_watchdog",
+  "chunk_load_error",
 ] as const;
 type EventType = (typeof EVENT_TYPES)[number];
 
