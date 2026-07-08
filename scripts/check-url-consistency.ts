@@ -100,16 +100,16 @@ if (!serverHostMatch) {
 }
 
 // 5) robots.txt — Sitemap: dyrektywa
-const robots = read("public/robots.txt");
+const robots = read("src/assets/robots.txt");
 const sitemapDirective = robots.match(/^Sitemap:\s*(\S+)/im);
 if (!sitemapDirective) {
-  fail("public/robots.txt", "brak dyrektywy `Sitemap: ...`");
+  fail("src/assets/robots.txt", "brak dyrektywy `Sitemap: ...`");
 } else {
   const declared = sitemapDirective[1];
   const expected = `${SITE_URL}/sitemap.xml`;
   if (declared !== expected) {
     fail(
-      "public/robots.txt",
+      "src/assets/robots.txt",
       `Sitemap directive ("${declared}") != oczekiwane "${expected}"`,
     );
   }

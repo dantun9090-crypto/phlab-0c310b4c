@@ -18,7 +18,7 @@
 // Import the project's robots.txt as a string at build time so the worker
 // doesn't need filesystem access. Updating public/robots.txt automatically
 // updates the sitemap filter — no drift possible.
-import ROBOTS_TXT_RAW from "../../public/robots.txt?raw";
+import ROBOTS_TXT_RAW from "../assets/robots.txt?raw";
 
 /** Patterns we never want indexed, even if robots.txt forgets to block them. */
 export const TRANSACTIONAL_PREFIXES = [

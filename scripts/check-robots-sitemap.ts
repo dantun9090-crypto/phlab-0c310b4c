@@ -23,7 +23,7 @@ import { SITE_URL } from "../src/lib/seo-meta";
 // XML URL-feed route means adding it here AND to public/robots.txt.
 const EXPECTED_SITEMAP_PATHS = ["/sitemap.xml", "/bing-feed.xml"] as const;
 
-const ROBOTS_REL = "public/robots.txt";
+const ROBOTS_REL = "src/assets/robots.txt";
 const ROBOTS_PATH = resolve(process.cwd(), ROBOTS_REL);
 
 interface Directive {
