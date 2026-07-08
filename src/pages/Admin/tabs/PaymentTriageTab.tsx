@@ -7,6 +7,12 @@ import {
   type TriageListRow,
   type TriageDetail,
 } from '@/lib/payment-triage.functions';
+import {
+  listWebhookAttemptsAdmin,
+  type WebhookAttemptRow,
+  type WebhookAttemptSummary,
+} from '@/lib/webhook-attempts.functions';
+
 
 type StatusFilter = 'all' | 'needs_attention' | 'success' | 'pending' | 'failed';
 
@@ -51,6 +57,9 @@ export default function PaymentTriageTab() {
   const [detail, setDetail] = useState<Record<string, TriageDetail>>({});
   const [detailLoading, setDetailLoading] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const [attempts, setAttempts] = useState<WebhookAttemptRow[]>([]);
+  const [attemptSummary, setAttemptSummary] = useState<WebhookAttemptSummary | null>(null);
+  const [showAttempts, setShowAttempts] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -58,10 +67,15 @@ export default function PaymentTriageTab() {
     try {
       const idToken = await getAdminIdToken();
       if (!idToken) throw new Error('Not signed in');
-      const res = await listPaymentTriageAdmin({
-        data: { idToken, status, search: search.trim() || undefined, limit: 100 },
-      });
-      setRows(res.rows);
+      const [triageRes, attemptsRes] = await Promise.all([
+        listPaymentTriageAdmin({
+          data: { idToken, status, search: search.trim() || undefined, limit: 100 },
+        }),
+        listWebhookAttemptsAdmin({ data: { idToken, limit: 50, windowHours: 24 } }),
+      ]);
+      setRows(triageRes.rows);
+      setAttempts(attemptsRes.rows);
+      setAttemptSummary(attemptsRes.summary);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -78,6 +92,7 @@ export default function PaymentTriageTab() {
     const t = setInterval(() => void load(), 30_000);
     return () => clearInterval(t);
   }, [autoRefresh, load]);
+
 
   async function toggleRow(orderId: string) {
     if (expanded === orderId) {
@@ -143,6 +158,142 @@ export default function PaymentTriageTab() {
         <Stat label="Reconciled by system" value={counts.reconciled} />
         <Stat label="No webhook received" value={counts.noWebhook} tone={counts.noWebhook ? 'warn' : 'ok'} />
       </div>
+
+      {/* Webhook Attempts */}
+      <div className="rounded-lg border border-slate-700 bg-slate-900/60">
+        <button
+          type="button"
+          onClick={() => setShowAttempts((s) => !s)}
+          className="w-full flex items-center justify-between p-3 hover:bg-slate-800/40"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-white font-semibold">Webhook endpoint activity</span>
+            {attemptSummary && (
+              <span className="text-xs text-slate-400">
+                last {attemptSummary.windowHours}h: {attemptSummary.total} attempts ·{' '}
+                <span className="text-emerald-400">{attemptSummary.accepted} ok</span>
+                {attemptSummary.failed > 0 && (
+                  <>
+                    {' '}·{' '}
+                    <span className="text-red-400">{attemptSummary.failed} failed</span>
+                  </>
+                )}
+                {' '}· p95 {attemptSummary.p95Ms}ms · slowest {attemptSummary.slowestMs}ms
+              </span>
+            )}
+            {attemptSummary && attemptSummary.activeAlerts.length > 0 && (
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded border border-red-700 bg-red-900/40 text-red-200">
+                <AlertTriangle className="w-3 h-3" />
+                {attemptSummary.activeAlerts.length} active alert
+                {attemptSummary.activeAlerts.length === 1 ? '' : 's'}
+              </span>
+            )}
+          </div>
+          {showAttempts ? (
+            <ChevronDown className="w-4 h-4 text-slate-400" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-slate-400" />
+          )}
+        </button>
+        {showAttempts && (
+          <div className="border-t border-slate-800 p-3 space-y-3">
+            {attemptSummary && attemptSummary.activeAlerts.length > 0 && (
+              <div className="rounded border border-red-800 bg-red-950/40 p-2 text-xs text-red-100">
+                <div className="font-semibold mb-1">Active alerts (Telegram sent)</div>
+                <ul className="space-y-0.5">
+                  {attemptSummary.activeAlerts.map((a) => (
+                    <li key={a.alertType} className="flex justify-between">
+                      <span className="font-mono">{a.alertType}</span>
+                      <span className="text-red-200">
+                        {a.count}× since {a.sinceIso ? fmtDate(a.sinceIso) : '—'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {attemptSummary && attemptSummary.breakdown.length > 0 && (
+              <div className="flex flex-wrap gap-1 text-xs">
+                {attemptSummary.breakdown.map((b) => (
+                  <span
+                    key={b.outcome}
+                    className={`px-2 py-0.5 rounded border ${
+                      b.outcome === 'accepted'
+                        ? 'border-emerald-700 bg-emerald-950/40 text-emerald-200'
+                        : b.outcome === 'rate_limited'
+                          ? 'border-slate-700 bg-slate-800 text-slate-300'
+                          : 'border-red-700 bg-red-950/40 text-red-200'
+                    }`}
+                  >
+                    {b.outcome}: {b.count}
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="max-h-80 overflow-auto">
+              <table className="w-full text-xs">
+                <thead className="text-slate-400 uppercase text-[10px] sticky top-0 bg-slate-900">
+                  <tr>
+                    <th className="text-left px-2 py-1">Received</th>
+                    <th className="text-left px-2 py-1">Outcome</th>
+                    <th className="text-left px-2 py-1">HTTP</th>
+                    <th className="text-left px-2 py-1">Dur</th>
+                    <th className="text-left px-2 py-1">Events</th>
+                    <th className="text-left px-2 py-1">IP</th>
+                    <th className="text-left px-2 py-1">Error</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attempts.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="text-center text-slate-500 py-4">
+                        No webhook attempts logged yet.
+                      </td>
+                    </tr>
+                  )}
+                  {attempts.map((a) => (
+                    <tr
+                      key={a.id}
+                      className={`border-t border-slate-800 ${
+                        a.outcome !== 'accepted' && a.outcome !== 'rate_limited' ? 'bg-red-950/20' : ''
+                      }`}
+                    >
+                      <td className="px-2 py-1 text-slate-400">{fmtDate(a.receivedAt)}</td>
+                      <td className="px-2 py-1">
+                        <span
+                          className={`px-1.5 py-0.5 rounded border text-[10px] ${
+                            a.outcome === 'accepted'
+                              ? 'border-emerald-700 bg-emerald-950/40 text-emerald-200'
+                              : a.outcome === 'rate_limited'
+                                ? 'border-slate-700 bg-slate-800 text-slate-300'
+                                : 'border-red-700 bg-red-950/40 text-red-200'
+                          }`}
+                        >
+                          {a.outcome}
+                        </span>
+                      </td>
+                      <td className="px-2 py-1 text-slate-300">{a.httpStatus}</td>
+                      <td
+                        className={`px-2 py-1 ${
+                          a.durationMs > 2000 ? 'text-amber-300' : 'text-slate-400'
+                        }`}
+                      >
+                        {a.durationMs}ms
+                      </td>
+                      <td className="px-2 py-1 text-slate-400">{a.eventCount ?? '—'}</td>
+                      <td className="px-2 py-1 text-slate-500 font-mono">{a.ip ?? '—'}</td>
+                      <td className="px-2 py-1 text-red-300 max-w-[280px] truncate" title={a.errorMessage ?? ''}>
+                        {a.errorMessage ?? ''}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+
 
       {/* Filters */}
       <div className="flex gap-3 flex-wrap items-center">

@@ -350,6 +350,60 @@ export type Database = {
         }
         Relationships: []
       }
+      wallid_webhook_attempts: {
+        Row: {
+          content_length: number | null
+          duration_ms: number
+          error_message: string | null
+          event_count: number | null
+          event_id_header: string | null
+          http_status: number
+          id: string
+          ip: string | null
+          notes: Json | null
+          outcome: string
+          received_at: string
+          route: string
+          sig_header_name: string | null
+          timestamp_header: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          content_length?: number | null
+          duration_ms: number
+          error_message?: string | null
+          event_count?: number | null
+          event_id_header?: string | null
+          http_status: number
+          id?: string
+          ip?: string | null
+          notes?: Json | null
+          outcome: string
+          received_at?: string
+          route?: string
+          sig_header_name?: string | null
+          timestamp_header?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          content_length?: number | null
+          duration_ms?: number
+          error_message?: string | null
+          event_count?: number | null
+          event_id_header?: string | null
+          http_status?: number
+          id?: string
+          ip?: string | null
+          notes?: Json | null
+          outcome?: string
+          received_at?: string
+          route?: string
+          sig_header_name?: string | null
+          timestamp_header?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       wallid_webhook_duplicates: {
         Row: {
           api_payment_id: string | null
