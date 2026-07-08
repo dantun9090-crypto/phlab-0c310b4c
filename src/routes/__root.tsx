@@ -1108,6 +1108,8 @@ function RootComponent() {
     initWebVitals();
     installErrorMonitor();
     installBfcacheMonitor();
+    installClientErrorReporter();
+    installChunkAutoRecovery();
     const stableLoadTimer = window.setTimeout(() => {
       try {
         localStorage.removeItem('phl_reload_count');
