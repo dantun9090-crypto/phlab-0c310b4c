@@ -1,0 +1,372 @@
+{
+  "base": "https://phlabs.co.uk",
+  "generatedAt": "2026-07-08T18:59:22.192Z",
+  "results": [
+    {
+      "path": "/",
+      "kind": "html-shell",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "cdnCacheControl": "public, max-age=60, stale-while-revalidate=60",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [
+        "cdn-cache-control must be no-store (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "ok": false
+    },
+    {
+      "path": "/products",
+      "kind": "html-shell",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "cdnCacheControl": "public, max-age=60, stale-while-revalidate=60",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [
+        "cdn-cache-control must be no-store (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "ok": false
+    },
+    {
+      "path": "/compound",
+      "kind": "html-shell",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "cdnCacheControl": "public, max-age=60, stale-while-revalidate=60",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [
+        "cdn-cache-control must be no-store (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "ok": false
+    },
+    {
+      "path": "/research",
+      "kind": "html-shell",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "cdnCacheControl": "public, max-age=60, stale-while-revalidate=60",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [
+        "cdn-cache-control must be no-store (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "ok": false
+    },
+    {
+      "path": "/resources",
+      "kind": "html-shell",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "cdnCacheControl": "public, max-age=60, stale-while-revalidate=60",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [
+        "cdn-cache-control must be no-store (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "ok": false
+    },
+    {
+      "path": "/about",
+      "kind": "html-shell",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "cdnCacheControl": "public, max-age=60, stale-while-revalidate=60",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [
+        "cdn-cache-control must be no-store (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "ok": false
+    },
+    {
+      "path": "/contact",
+      "kind": "html-shell",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "cdnCacheControl": "public, max-age=60, stale-while-revalidate=60",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [
+        "cdn-cache-control must be no-store (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "ok": false
+    },
+    {
+      "path": "/peptide-calculator",
+      "kind": "html-shell",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "cdnCacheControl": "public, max-age=60, stale-while-revalidate=60",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [
+        "cdn-cache-control must be no-store (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "ok": false
+    },
+    {
+      "path": "/downloads",
+      "kind": "html-shell",
+      "method": "HEAD",
+      "status": 404,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "cdnCacheControl": "public, max-age=60, stale-while-revalidate=60",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [
+        "unexpected status 404"
+      ],
+      "ok": false
+    },
+    {
+      "path": "/landing/phlabs",
+      "kind": "html-shell",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "cdnCacheControl": "public, max-age=60, stale-while-revalidate=60",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [
+        "cdn-cache-control must be no-store (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "ok": false
+    },
+    {
+      "path": "/downloads/protocol-library.pdf",
+      "kind": "dynamic-asset",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "application/pdf",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "cdnCacheControl": "",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [
+        "cdn-cache-control missing",
+        "cache-control has 'immutable' (\"public, max-age=31536000, immutable\")",
+        "browser max-age=31536000 > 300"
+      ],
+      "ok": false
+    },
+    {
+      "path": "/downloads/PH-Labs-Research-Catalogue.pdf",
+      "kind": "dynamic-asset",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "cdnCacheControl": "no-store",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "dynamic-asset",
+      "optionalSkipped": false,
+      "violations": [],
+      "ok": true
+    },
+    {
+      "path": "/robots.txt",
+      "kind": "dynamic-asset",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/plain; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "cdnCacheControl": "",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [
+        "cdn-cache-control missing",
+        "cache-control has 'immutable' (\"public, max-age=31536000, immutable\")",
+        "browser max-age=31536000 > 300"
+      ],
+      "ok": false
+    },
+    {
+      "path": "/sitemap.xml",
+      "kind": "dynamic-asset",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "application/xml; charset=utf-8",
+      "cacheControl": "public, max-age=300, stale-while-revalidate=3600",
+      "cdnCacheControl": "no-store",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "",
+      "phlPolicy": "dynamic-asset",
+      "optionalSkipped": false,
+      "violations": [],
+      "ok": true
+    },
+    {
+      "path": "/sitemap-products.xml",
+      "kind": "dynamic-asset",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "cdnCacheControl": "no-store",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "dynamic-asset",
+      "optionalSkipped": true,
+      "violations": [],
+      "ok": true
+    },
+    {
+      "path": "/sitemap-articles.xml",
+      "kind": "dynamic-asset",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "cdnCacheControl": "no-store",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "dynamic-asset",
+      "optionalSkipped": true,
+      "violations": [],
+      "ok": true
+    },
+    {
+      "path": "/admin",
+      "kind": "sensitive",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+      "cdnCacheControl": "no-store",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [],
+      "ok": true
+    },
+    {
+      "path": "/auth",
+      "kind": "sensitive",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=0, must-revalidate",
+      "cdnCacheControl": "public, max-age=60, stale-while-revalidate=60",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [
+        "cdn-cache-control not uncacheable: \"public, max-age=60, stale-while-revalidate=60\""
+      ],
+      "ok": false
+    },
+    {
+      "path": "/api/auth/callback",
+      "kind": "sensitive",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+      "cdnCacheControl": "no-store",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [],
+      "ok": true
+    },
+    {
+      "path": "/api/admin/health",
+      "kind": "sensitive",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+      "cdnCacheControl": "no-store",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "1783532552375-z9kt3m",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [],
+      "ok": true
+    },
+    {
+      "path": "/assets/styles-BAu-fWoK.css",
+      "kind": "immutable-asset",
+      "method": "HEAD",
+      "status": 200,
+      "contentType": "text/css; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "cdnCacheControl": "",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "buildId": "",
+      "phlPolicy": "",
+      "optionalSkipped": false,
+      "violations": [],
+      "ok": true
+    }
+  ]
+}
