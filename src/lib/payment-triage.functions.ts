@@ -42,8 +42,10 @@ export interface TriageListRow {
 
 export interface TriageDetail extends TriageListRow {
   paymentLink: string | null;
-  metadata: Record<string, unknown> | null;
-  orderDoc: Record<string, unknown> | null;
+  /** JSON-encoded metadata blob from wallid_payments. */
+  metadataJson: string | null;
+  /** JSON-encoded Firestore order doc. */
+  orderDocJson: string | null;
   webhookEvents: Array<{
     id: string;
     eventId: string;
@@ -52,7 +54,8 @@ export interface TriageDetail extends TriageListRow {
     occurredAt: string | null;
     processedAt: string | null;
     errorMessage: string | null;
-    raw: unknown;
+    /** JSON-encoded raw payload. */
+    rawJson: string | null;
   }>;
   duplicates: Array<{
     id: string;
@@ -69,9 +72,11 @@ export interface TriageDetail extends TriageListRow {
     statusFrom: string;
     statusTo: string;
     apiPaymentId: string | null;
-    metadata: Record<string, unknown> | null;
+    /** JSON-encoded metadata map. */
+    metadataJson: string | null;
   }>;
 }
+
 
 // ---------- helpers ----------------------------------------------------
 
