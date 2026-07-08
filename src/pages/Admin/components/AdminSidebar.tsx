@@ -44,6 +44,8 @@ const navGroups = [
       { id: 'cartevents', label: 'Cart Events', icon: ShoppingCart },
       { id: 'invoices', label: 'Invoices', icon: FileText },
       { id: 'payments', label: 'Payment Gateways', icon: CreditCard },
+      { id: 'paymenttriage', label: 'Payment Triage', icon: Activity },
+
       { id: 'fena', label: 'Fena Payments', icon: CreditCard },
       { id: 'wallidpreview', label: 'Wallid Preview', icon: Eye },
       { id: 'wallidbadges', label: 'Wallid Badges', icon: Eye },
