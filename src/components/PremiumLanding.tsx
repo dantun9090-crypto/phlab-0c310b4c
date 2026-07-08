@@ -3,10 +3,43 @@ import { LandingPromoStrip } from "@/components/LandingPromoStrip";
 import { LandingTrustStrip } from "@/components/LandingTrustStrip";
 import { trackCtaClick, trackEvent } from "@/lib/analytics";
 
-/* ───── Luxury background assets ───── */
-const HERO_IMG = "/og/luxury/hero.jpg";
-const MOLECULAR_IMG = "/og/luxury/molecular.jpg";
-const DETAIL_IMG = "/og/luxury/detail.jpg";
+/* ───── Luxury background assets (responsive AVIF/WebP with JPG fallback) ───── */
+const HERO_BASE = "/og/luxury/hero";
+const MOLECULAR_BASE = "/og/luxury/molecular";
+const DETAIL_BASE = "/og/luxury/detail";
+const RESP_SIZES = "100vw";
+const buildSrcSet = (base: string, ext: string) =>
+  `${base}-768.${ext} 768w, ${base}-1280.${ext} 1280w, ${base}-1920.${ext} 1920w`;
+
+type BgImgProps = {
+  base: string;
+  fallback: string;
+  className: string;
+  eager?: boolean;
+  width: number;
+  height: number;
+};
+
+function BgPicture({ base, fallback, className, eager, width, height }: BgImgProps) {
+  return (
+    <picture>
+      <source type="image/avif" srcSet={buildSrcSet(base, "avif")} sizes={RESP_SIZES} />
+      <source type="image/webp" srcSet={buildSrcSet(base, "webp")} sizes={RESP_SIZES} />
+      <img
+        src={fallback}
+        alt=""
+        aria-hidden="true"
+        width={width}
+        height={height}
+        loading={eager ? "eager" : "lazy"}
+        fetchPriority={eager ? "high" : "auto"}
+        decoding="async"
+        className={className}
+      />
+    </picture>
+  );
+}
+
 
 /* ───── Direct-contact channels (qualified researchers) ───── */
 const PH_PHONE_E164 = "447826549934";
@@ -132,16 +165,15 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
       {/* ── HERO ── */}
       <section className="relative overflow-hidden min-h-[85vh] sm:min-h-[92vh] lg:min-h-[96vh] flex items-center">
         <div className="absolute inset-0 overflow-hidden">
-          <img
-            src={HERO_IMG}
-            alt=""
-            aria-hidden="true"
+          <BgPicture
+            base={HERO_BASE}
+            fallback="/og/luxury/hero.jpg"
+            eager
             width={1920}
             height={1080}
-            fetchPriority="high"
-            decoding="async"
             className="lux-ken absolute inset-0 h-full w-full object-cover"
           />
+
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#060b18]/90 via-[#060b18]/60 to-[#060b18]" />
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-[#060b18]/85 via-transparent to-[#060b18]/70" />
           <div aria-hidden="true" className="absolute inset-0 lux-shimmer" />
@@ -295,16 +327,14 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
 
       {/* ── WHAT WE OFFER ── */}
       <section id="offer" className="relative border-b border-white/10 py-28 sm:py-36 lg:py-44 overflow-hidden">
-        <img
-          src={MOLECULAR_IMG}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          decoding="async"
+        <BgPicture
+          base={MOLECULAR_BASE}
+          fallback="/og/luxury/molecular.jpg"
           width={1920}
           height={1080}
           className="absolute inset-0 h-full w-full object-cover opacity-25"
         />
+
         <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#060b18] via-[#060b18]/88 to-[#060b18]" />
         <div className="relative mx-auto max-w-4xl px-6 text-center">
           <p className="text-[11px] uppercase tracking-[0.55em] gold-text">§ 02 — What We Offer</p>
@@ -396,16 +426,14 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
 
       {/* ── INTENDED USE ── */}
       <section id="intended-use" className="relative overflow-hidden border-b border-white/10 py-32 sm:py-44 lg:py-52">
-        <img
-          src={DETAIL_IMG}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          decoding="async"
+        <BgPicture
+          base={DETAIL_BASE}
+          fallback="/og/luxury/detail.jpg"
           width={1920}
           height={1200}
           className="lux-ken absolute inset-0 h-full w-full object-cover opacity-35"
         />
+
         <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#060b18]/85 via-[#060b18]/70 to-[#060b18]" />
         <div className="relative mx-auto max-w-4xl px-6 text-center">
           <p className="text-[11px] uppercase tracking-[0.55em] gold-text">§ 03 — Intended Use</p>

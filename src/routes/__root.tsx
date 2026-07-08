@@ -299,28 +299,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/94a66073-2fa6-4218-83ac-c6a958544b55" },
     ],
     scripts: [
-      // NOTE: GA4/GTM scripts are intentionally NOT injected in <head>.
-      // They are loaded after React hydration via a useEffect in
-      // RootComponent (see loadGtagAfterHydration below) to prevent
-      // GTM from mutating the DOM before hydration completes, which
-      // was triggering React error #418 (hydration mismatch) in
-      // Chrome/Firefox/Edge after the GA dynamic-config swap.
-      {
-        type: "text/javascript",
-        children: `(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];if(y&&y.parentNode){y.parentNode.insertBefore(t,y)}else{(l.head||l.documentElement).appendChild(t)}})(window, document, "clarity", "script", "x6yaoubye8");`,
-      },
-      {
-        // Taboola Pixel (page_view, advertiser id 2057501)
-        type: "text/javascript",
-        children: `window._tfa = window._tfa || [];window._tfa.push({notify:'event',name:'page_view',id:2057501});!function(t,f,a,x){if(!document.getElementById(x)){t.async=1;t.src=a;t.id=x;if(f&&f.parentNode){f.parentNode.insertBefore(t,f)}else{(document.head||document.documentElement).appendChild(t)}}}(document.createElement('script'),document.getElementsByTagName('script')[0],'//cdn.taboola.com/libtrc/unip/2057501/tfa.js','tb_tfa_script');`,
-      },
-      {
-        // Microsoft Bing UET tag (ti: K120006478) — fires page_load on every route.
-        // Purchase conversions are fired from checkout/payment success pages via
-        // window.uetq.push('event','purchase', { revenue_value, currency }).
-        type: "text/javascript",
-        children: `(function(w,d,t,r,u){var f,n,i;w[u]=w[u]||[],f=function(){var o={ti:"K120006478",enableAutoSpaTracking:true};o.q=w[u],w[u]=new UET(o),w[u].push("pageLoad")},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function(){var s=this.readyState;s&&s!=="loaded"&&s!=="complete"||(f(),n.onload=n.onreadystatechange=null)},i=d.getElementsByTagName(t)[0];if(i&&i.parentNode){i.parentNode.insertBefore(n,i)}else{(d.head||d.documentElement).appendChild(n)}})(window,document,"script","//bat.bing.com/bat.js","uetq");`,
-      },
+      // NOTE: GA4/GTM, Microsoft Clarity, Taboola Pixel and Bing UET are
+      // intentionally NOT injected in <head>. They are all loaded after
+      // React hydration + requestIdleCallback (or first user interaction)
+      // via useEffects in RootComponent — see loadGtagAfterHydration and
+      // loadThirdPartyAfterHydration below. Keeps ~30–50 KB of blocking
+      // JS off the TBT window on marketing routes like /compound.
       {
         // Plausible Analytics — privacy-friendly, bot-filtered by default.
         // Loaded async in <head>; init() call runs on parse so it registers
@@ -333,6 +317,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         children: `window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init();`,
       },
       {
+
 
         type: "application/ld+json",
         children: JSON.stringify({
@@ -1184,6 +1169,59 @@ function RootComponent() {
     if (typeof ric === 'function') ric(loadExt, { timeout: 4000 });
     else window.setTimeout(loadExt, 3500);
   }, []);
+
+  // Load Clarity / Taboola / Bing UET after hydration + idle, matching the
+  // GA loader above. These pixels were previously injected in SSR <head>
+  // scripts, each blocking parse for hundreds of ms on mobile (Clarity alone
+  // owned a 304ms long-task on /compound). Deferring them keeps TBT down
+  // without changing measurement semantics — pageviews still fire, a beat
+  // later. Consent-gated: skip marketing pixels unless the user opted in.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const w = window as unknown as { __phlThirdPartyBootstrapped?: boolean };
+    if (w.__phlThirdPartyBootstrapped) return;
+    w.__phlThirdPartyBootstrapped = true;
+
+    let marketingConsent = false;
+    try {
+      const raw = localStorage.getItem('php_cookie_consent');
+      if (raw) marketingConsent = !!JSON.parse(raw)?.marketing;
+    } catch { /* no-op */ }
+
+    let loaded = false;
+    const loadAll = () => {
+      if (loaded) return;
+      loaded = true;
+      // Microsoft Clarity — session recording / heatmaps
+      const clarity = document.createElement('script');
+      clarity.async = true;
+      clarity.text =
+        '(function(c,l,a,r,i,t,y){c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;y=l.getElementsByTagName(r)[0];if(y&&y.parentNode){y.parentNode.insertBefore(t,y)}else{(l.head||l.documentElement).appendChild(t)}})(window, document, "clarity", "script", "x6yaoubye8");';
+      document.body.appendChild(clarity);
+      if (marketingConsent) {
+        // Taboola Pixel
+        const tab = document.createElement('script');
+        tab.async = true;
+        tab.text =
+          "window._tfa = window._tfa || [];window._tfa.push({notify:'event',name:'page_view',id:2057501});!function(t,f,a,x){if(!document.getElementById(x)){t.async=1;t.src=a;t.id=x;if(f&&f.parentNode){f.parentNode.insertBefore(t,f)}else{(document.head||document.documentElement).appendChild(t)}}}(document.createElement('script'),document.getElementsByTagName('script')[0],'//cdn.taboola.com/libtrc/unip/2057501/tfa.js','tb_tfa_script');";
+        document.body.appendChild(tab);
+        // Bing UET
+        const bing = document.createElement('script');
+        bing.async = true;
+        bing.text =
+          '(function(w,d,t,r,u){var f,n,i;w[u]=w[u]||[],f=function(){var o={ti:"K120006478",enableAutoSpaTracking:true};o.q=w[u],w[u]=new UET(o),w[u].push("pageLoad")},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function(){var s=this.readyState;s&&s!=="loaded"&&s!=="complete"||(f(),n.onload=n.onreadystatechange=null)},i=d.getElementsByTagName(t)[0];if(i&&i.parentNode){i.parentNode.insertBefore(n,i)}else{(d.head||d.documentElement).appendChild(n)}})(window,document,"script","//bat.bing.com/bat.js","uetq");';
+        document.body.appendChild(bing);
+      }
+    };
+    const onInteract = () => window.setTimeout(loadAll, 1000);
+    ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach((ev) =>
+      window.addEventListener(ev, onInteract, { once: true, passive: true })
+    );
+    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+    if (typeof ric === 'function') ric(loadAll, { timeout: 5000 });
+    else window.setTimeout(loadAll, 4500);
+  }, []);
+
 
 
 

@@ -50,13 +50,32 @@ export const Route = createFileRoute("/_marketing/compound")({
     ],
     links: [
       { rel: "canonical", href: URL },
+      // Preload the AVIF hero variant that matches the mobile viewport we
+      // actually render (<=768px). Full 1920 variant is served via <picture>
+      // srcset only for wider screens; preloading the small mobile file gets
+      // LCP text painting far sooner on 4G devices.
       {
         rel: "preload",
         as: "image",
-        href: "/og/luxury/hero.jpg",
+        href: "/og/luxury/hero-768.avif",
+        type: "image/avif",
+        imagesrcset:
+          "/og/luxury/hero-768.avif 768w, /og/luxury/hero-1280.avif 1280w, /og/luxury/hero-1920.avif 1920w",
+        imagesizes: "100vw",
         fetchpriority: "high",
       },
+      // Preload the Cormorant Garamond 400 woff2 used by the hero <h1> so
+      // the LCP text can paint without waiting for the Google Fonts CSS
+      // round-trip. Weight 400 is the file the hero uses.
+      {
+        rel: "preload",
+        as: "font",
+        type: "font/woff2",
+        href: "https://fonts.gstatic.com/s/cormorantgaramond/v16/co3bmX5slCNuHLi8bLeY9MK7whWMhyjornFLsS6V7w.woff2",
+        crossOrigin: "anonymous",
+      },
     ],
+
     scripts: [
       {
         type: "application/ld+json",
