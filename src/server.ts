@@ -667,21 +667,17 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   const publicCacheable = pathname ? isPublicEdgeCacheable(pathname) : false;
 
   if (publicCacheable && stripped.status === 200) {
-    // Public root pages: edge-cacheable 30s fresh, NO stale-while-revalidate.
-    // Combined with the auto-purge-on-new-BUILD_ID hook (see
-    // src/routes/api/public/post-publish-check.ts) and the client-side
-    // chunk-404 self-heal (see src/lib/chunk-reload.ts), the worst-case
-    // stale window post-publish is now ~30s per POP instead of ~120s.
-    // Removing SWR closes the window where CF serves stale HTML that
-    // references evicted hashed JS chunks — which was the "need Dev Mode
-    // after publish" symptom.
-    htmlHeaders.set("cache-control", "public, s-maxage=30, max-age=0, must-revalidate");
-    htmlHeaders.set("cdn-cache-control", "public, s-maxage=30, max-age=0");
-    htmlHeaders.set("cloudflare-cdn-cache-control", "public, s-maxage=30, max-age=0");
-    // Cache-Tag lets us purge just the HTML shell via Cloudflare Enterprise
-    // tag-purge without touching hashed assets. Free plan ignores — harmless.
+    // HTML shells: never cached at the edge — user repeatedly hit stale
+    // HTML after publish requiring a manual Cloudflare purge. The stale
+    // shell pointed at evicted hashed JS/CSS chunks → blank page until
+    // purge. Hashed assets stay `immutable` 1yr, so origin cost is fine.
+    // Browsers still get `must-revalidate, max-age=0` so a hard reload
+    // always fetches the latest shell.
+    htmlHeaders.set("cache-control", "public, max-age=0, must-revalidate");
+    htmlHeaders.set("cdn-cache-control", "no-store");
+    htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
+    htmlHeaders.set("surrogate-control", "no-store");
     htmlHeaders.set("cache-tag", "page-html");
-    htmlHeaders.delete("surrogate-control");
     htmlHeaders.delete("pragma");
     htmlHeaders.delete("expires");
   } else {
