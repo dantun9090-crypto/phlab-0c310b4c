@@ -17,6 +17,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ShippingPolicyRouteImport } from './routes/shipping-policy'
 import { Route as SentryTestRouteImport } from './routes/sentry-test'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
 import { Route as ResearchRouteImport } from './routes/research'
 import { Route as RequestCatalogRouteImport } from './routes/request-catalog'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
@@ -163,6 +164,11 @@ const SentryTestRoute = SentryTestRouteImport.update({
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResearchRoute = ResearchRouteImport.update({
@@ -749,6 +755,7 @@ export interface FileRoutesByFullPath {
   '/refund-policy': typeof RefundPolicyRoute
   '/request-catalog': typeof RequestCatalogRoute
   '/research': typeof ResearchRouteWithChildren
+  '/robots.txt': typeof RobotsDottxtRoute
   '/search': typeof SearchRoute
   '/sentry-test': typeof SentryTestRoute
   '/shipping-policy': typeof ShippingPolicyRoute
@@ -863,6 +870,7 @@ export interface FileRoutesByTo {
   '/quality-control': typeof QualityControlRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/request-catalog': typeof RequestCatalogRoute
+  '/robots.txt': typeof RobotsDottxtRoute
   '/search': typeof SearchRoute
   '/sentry-test': typeof SentryTestRoute
   '/shipping-policy': typeof ShippingPolicyRoute
@@ -980,6 +988,7 @@ export interface FileRoutesById {
   '/refund-policy': typeof RefundPolicyRoute
   '/request-catalog': typeof RequestCatalogRoute
   '/research': typeof ResearchRouteWithChildren
+  '/robots.txt': typeof RobotsDottxtRoute
   '/search': typeof SearchRoute
   '/sentry-test': typeof SentryTestRoute
   '/shipping-policy': typeof ShippingPolicyRoute
@@ -1097,6 +1106,7 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/request-catalog'
     | '/research'
+    | '/robots.txt'
     | '/search'
     | '/sentry-test'
     | '/shipping-policy'
@@ -1211,6 +1221,7 @@ export interface FileRouteTypes {
     | '/quality-control'
     | '/refund-policy'
     | '/request-catalog'
+    | '/robots.txt'
     | '/search'
     | '/sentry-test'
     | '/shipping-policy'
@@ -1327,6 +1338,7 @@ export interface FileRouteTypes {
     | '/refund-policy'
     | '/request-catalog'
     | '/research'
+    | '/robots.txt'
     | '/search'
     | '/sentry-test'
     | '/shipping-policy'
@@ -1444,6 +1456,7 @@ export interface RootRouteChildren {
   RefundPolicyRoute: typeof RefundPolicyRoute
   RequestCatalogRoute: typeof RequestCatalogRoute
   ResearchRoute: typeof ResearchRouteWithChildren
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
   SearchRoute: typeof SearchRoute
   SentryTestRoute: typeof SentryTestRoute
   ShippingPolicyRoute: typeof ShippingPolicyRoute
@@ -1577,6 +1590,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/research': {
@@ -2418,6 +2438,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundPolicyRoute: RefundPolicyRoute,
   RequestCatalogRoute: RequestCatalogRoute,
   ResearchRoute: ResearchRouteWithChildren,
+  RobotsDottxtRoute: RobotsDottxtRoute,
   SearchRoute: SearchRoute,
   SentryTestRoute: SentryTestRoute,
   ShippingPolicyRoute: ShippingPolicyRoute,
