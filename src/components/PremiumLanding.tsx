@@ -327,16 +327,14 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
 
       {/* ── WHAT WE OFFER ── */}
       <section id="offer" className="relative border-b border-white/10 py-28 sm:py-36 lg:py-44 overflow-hidden">
-        <img
-          src={MOLECULAR_IMG}
-          alt=""
-          aria-hidden="true"
-          loading="lazy"
-          decoding="async"
+        <BgPicture
+          base={MOLECULAR_BASE}
+          fallback="/og/luxury/molecular.jpg"
           width={1920}
           height={1080}
           className="absolute inset-0 h-full w-full object-cover opacity-25"
         />
+
         <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-[#060b18] via-[#060b18]/88 to-[#060b18]" />
         <div className="relative mx-auto max-w-4xl px-6 text-center">
           <p className="text-[11px] uppercase tracking-[0.55em] gold-text">§ 02 — What We Offer</p>
