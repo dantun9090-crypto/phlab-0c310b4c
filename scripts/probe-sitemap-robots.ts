@@ -118,6 +118,8 @@ interface Result {
   age: number;
   violations: string[];
   optionalSkipped: boolean;
+  optional: boolean;
+  source?: string;
   ok: boolean;
 }
 
