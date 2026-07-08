@@ -310,6 +310,9 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
               metadata: { retryAttempt: attemptCount, source: "cron" },
             });
             await reliability.dequeueRetryAdmin(apiPaymentId);
+            if (firestoreStatus === "paid" && prior) {
+              await sendPaymentConfirmedEmail(orderId, apiPaymentId, prior);
+            }
             results.processed += 1;
           } catch (e) {
             results.failed += 1;
