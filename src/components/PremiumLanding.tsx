@@ -3,10 +3,43 @@ import { LandingPromoStrip } from "@/components/LandingPromoStrip";
 import { LandingTrustStrip } from "@/components/LandingTrustStrip";
 import { trackCtaClick, trackEvent } from "@/lib/analytics";
 
-/* ───── Luxury background assets ───── */
-const HERO_IMG = "/og/luxury/hero.jpg";
-const MOLECULAR_IMG = "/og/luxury/molecular.jpg";
-const DETAIL_IMG = "/og/luxury/detail.jpg";
+/* ───── Luxury background assets (responsive AVIF/WebP with JPG fallback) ───── */
+const HERO_BASE = "/og/luxury/hero";
+const MOLECULAR_BASE = "/og/luxury/molecular";
+const DETAIL_BASE = "/og/luxury/detail";
+const RESP_SIZES = "100vw";
+const buildSrcSet = (base: string, ext: string) =>
+  `${base}-768.${ext} 768w, ${base}-1280.${ext} 1280w, ${base}-1920.${ext} 1920w`;
+
+type BgImgProps = {
+  base: string;
+  fallback: string;
+  className: string;
+  eager?: boolean;
+  width: number;
+  height: number;
+};
+
+function BgPicture({ base, fallback, className, eager, width, height }: BgImgProps) {
+  return (
+    <picture>
+      <source type="image/avif" srcSet={buildSrcSet(base, "avif")} sizes={RESP_SIZES} />
+      <source type="image/webp" srcSet={buildSrcSet(base, "webp")} sizes={RESP_SIZES} />
+      <img
+        src={fallback}
+        alt=""
+        aria-hidden="true"
+        width={width}
+        height={height}
+        loading={eager ? "eager" : "lazy"}
+        fetchPriority={eager ? "high" : "auto"}
+        decoding="async"
+        className={className}
+      />
+    </picture>
+  );
+}
+
 
 /* ───── Direct-contact channels (qualified researchers) ───── */
 const PH_PHONE_E164 = "447826549934";
