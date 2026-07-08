@@ -34,7 +34,7 @@ const Body = z.object({
  */
 const ALLOWED_HOST_SUFFIXES = [
   'phlabs.co.uk',
-  'phlabs.co.uk', // legacy 301 origin — still issues fetches in cache
+
   'lovable.app',
   'lovable.dev',
   'lovable.project.com',
