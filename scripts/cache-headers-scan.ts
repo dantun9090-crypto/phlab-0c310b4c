@@ -223,7 +223,7 @@ function renderMarkdown(results: Probe[]): string {
   lines.push(`- Violations: **${failed.length}**`);
   lines.push(`- Generated: ${new Date().toISOString()}`);
   lines.push("");
-  for (const kind of ["public", "sensitive"] as const) {
+  for (const kind of ["html-shell", "sensitive"] as const) {
     lines.push(`## ${kind} paths`);
     lines.push("");
     lines.push("| Path | Status | cache-control | cdn-cache-control | surrogate-control | cf-cache-status | OK |");
