@@ -250,7 +250,7 @@ function renderMarkdown(results: Probe[]): string {
 
 async function main() {
   const work: Promise<Probe>[] = [
-    ...PUBLIC_PATHS.map((p) => probe(p, "public")),
+    ...HTML_SHELL_PATHS.map((p) => probe(p, "html-shell")),
     ...SENSITIVE_PATHS.map((p) => probe(p, "sensitive")),
   ];
   const results = await Promise.all(work);
