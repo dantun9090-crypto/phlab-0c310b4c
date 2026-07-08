@@ -329,17 +329,18 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
             }
 
             try {
-              if (apiPaymentId) {
-                await supabaseAdmin
-                  .from("wallid_payments")
-                  .update({ status, metadata: { lastEvent: ev } as never })
-                  .eq("api_payment_id", apiPaymentId);
-              } else if (orderId) {
-                await supabaseAdmin
-                  .from("wallid_payments")
-                  .update({ status, metadata: { lastEvent: ev } as never })
-                  .eq("order_id", orderId);
-              } else {
+              // Guarded against downgrades + out-of-order deliveries so
+              // repeat callbacks can't flip SUCCESS back to PENDING.
+              const { applyWallidPaymentUpdate } = await import("@/lib/server/wallid-idempotency");
+              const guardRes = await applyWallidPaymentUpdate({
+                supabaseAdmin,
+                apiPaymentId,
+                orderId,
+                status,
+                occurredAt,
+                event: ev as Record<string, unknown>,
+              });
+              if (!guardRes.applied && guardRes.reason === "no_identifier") {
                 console.error("[Wallid webhook] Refusing UPDATE — no api_payment_id or order_id", eventId);
               }
 
