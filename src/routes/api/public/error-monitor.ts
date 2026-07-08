@@ -230,6 +230,7 @@ function alertSubject(type: EventType, count: number, windowMin: number): string
     compound_overlay: "/compound overlay detected",
     client_exception: "client JS exception",
     blank_watchdog: "blank-page fallback shown",
+    chunk_load_error: "stale chunk / missing asset after deploy",
   };
   return `[PH Labs] ${labels[type]}: ${count} in ${windowMin}m`;
 }
