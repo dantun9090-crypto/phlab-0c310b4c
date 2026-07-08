@@ -390,6 +390,18 @@ export const Route = createFileRoute('/api/public/post-publish-check')({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        const requestUrl = new URL(request.url);
+        if (requestUrl.hostname !== 'phlabs.co.uk') {
+          return Response.json({
+            ok: true,
+            changed: false,
+            invalidated: false,
+            skipped: 'non_production_host',
+            host: requestUrl.hostname,
+            buildId: typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'unknown',
+          });
+        }
+
         // Per-IP rate limit — endpoint is public and triggers Firestore reads
         // on every call. Matches the pattern used by other /api/public/* routes.
         const limited = await enforceRateLimit(request, '/api/public/post-publish-check', {
