@@ -81,17 +81,13 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
     handlers: {
       GET: async () => textResp("Method Not Allowed", 405),
       POST: async ({ request }) => {
+        const startedAt = Date.now();
         const receivedAt = new Date().toISOString();
-        const limited = await enforceRateLimit(request, "/api/webhooks/wallid", {
-          limit: 20,
-          windowMs: 60_000,
-          retryAfterSec: 60,
-        });
-        if (limited) return limited;
 
+        // Common context captured up-front so every early return can
+        // still write a full attempt log + alert.
         const ip = getClientIp(request);
         const ts = request.headers.get("x-webhook-timestamp") || request.headers.get("x-wallid-timestamp") || "";
-        // Accept every documented Wallid header name — dashboard has toggled between them.
         const sig =
           request.headers.get("x-webhook-signature") ||
           request.headers.get("x-wallid-signature") ||
@@ -102,10 +98,79 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
           (request.headers.get("x-wallid-signature") && "x-wallid-signature") ||
           (request.headers.get("x-signature") && "x-signature") ||
           "none";
-        const eventId = request.headers.get("x-wallid-event-id") || request.headers.get("x-webhook-event-id") || "";
+        const eventIdHeader = request.headers.get("x-wallid-event-id") || request.headers.get("x-webhook-event-id") || "";
         const eventCount = Number(request.headers.get("x-webhook-event-count") || 0);
         const userAgent = request.headers.get("user-agent") || "";
         const contentLength = Number(request.headers.get("content-length") || 0);
+
+        // Helper to close out every code path with a logged attempt row.
+        const finish = async (
+          resp: Response,
+          outcome: import("@/lib/server/webhook-alerts").WebhookOutcome,
+          extras?: { errorMessage?: string | null; alertHeadline?: string; alertMeta?: Record<string, unknown> },
+        ): Promise<Response> => {
+          const durationMs = Date.now() - startedAt;
+          try {
+            const { logWebhookAttempt, alertWebhookIssue, clearWebhookAlert } = await import(
+              "@/lib/server/webhook-alerts"
+            );
+            await logWebhookAttempt({
+              ip,
+              userAgent,
+              sigHeaderName,
+              timestampHeader: ts || null,
+              eventIdHeader: eventIdHeader || null,
+              eventCount: eventCount || null,
+              contentLength: contentLength || null,
+              outcome,
+              httpStatus: resp.status,
+              durationMs,
+              errorMessage: extras?.errorMessage ?? null,
+            });
+
+            const isFailure =
+              outcome === "invalid_signature" ||
+              outcome === "event_insert_failed" ||
+              outcome === "retryable_error" ||
+              outcome === "no_secret" ||
+              outcome === "handler_exception";
+
+            if (isFailure) {
+              await alertWebhookIssue(
+                `webhook_${outcome}`,
+                extras?.alertHeadline ?? `Wallid webhook returned ${resp.status} (${outcome})`,
+                {
+                  ip,
+                  durationMs,
+                  eventCount,
+                  sigHeaderName,
+                  contentLength,
+                  ...(extras?.alertMeta ?? {}),
+                },
+              );
+            } else if (outcome === "accepted") {
+              // Any successful delivery clears the "webhook is broken"
+              // banner so we don't alert-storm the next transient blip.
+              await Promise.all([
+                clearWebhookAlert("webhook_invalid_signature"),
+                clearWebhookAlert("webhook_event_insert_failed"),
+                clearWebhookAlert("webhook_retryable_error"),
+                clearWebhookAlert("webhook_no_secret"),
+                clearWebhookAlert("webhook_handler_exception"),
+              ]);
+            }
+          } catch (e) {
+            console.warn("[Wallid webhook] finish logging failed:", e instanceof Error ? e.message : e);
+          }
+          return resp;
+        };
+
+        const limited = await enforceRateLimit(request, "/api/webhooks/wallid", {
+          limit: 20,
+          windowMs: 60_000,
+          retryAfterSec: 60,
+        });
+        if (limited) return finish(limited, "rate_limited");
 
         console.log("[Wallid webhook] rcv", {
           route: "/api/webhooks/wallid",
@@ -115,34 +180,39 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
           ts,
           sigHeaderName,
           sigPrefix: sig.slice(0, 12),
-          eventId,
+          eventId: eventIdHeader,
           eventCount,
           contentLength,
         });
 
         const secret = process.env.WALLID_WEBHOOK_SECRET;
         if (!secret) {
-          return retryableResp("WALLID_WEBHOOK_SECRET missing");
+          return finish(
+            retryableResp("WALLID_WEBHOOK_SECRET missing"),
+            "no_secret",
+            { errorMessage: "WALLID_WEBHOOK_SECRET missing", alertHeadline: "Webhook secret is not configured" },
+          );
         }
 
         let rawBody = "";
         try {
           rawBody = await request.text();
         } catch {
-          return textResp("Invalid body", 400);
+          return finish(textResp("Invalid body", 400), "invalid_body", { errorMessage: "request.text() failed" });
         }
 
         const tsNum = Number(ts);
         if (!ts || !Number.isFinite(tsNum)) {
-          return textResp("Missing or invalid X-Webhook-Timestamp", 400);
+          return finish(
+            textResp("Missing or invalid X-Webhook-Timestamp", 400),
+            "missing_timestamp",
+            { errorMessage: `ts=${ts}` },
+          );
         }
         if (Math.abs(Date.now() / 1000 - tsNum) > 300) {
-          return textResp("Stale timestamp", 400);
+          return finish(textResp("Stale timestamp", 400), "stale_timestamp", { errorMessage: `ts=${ts}` });
         }
 
-        // Verify Wallid signature (single canonical scheme: HMAC-SHA256 over
-        // `${ts}.${rawBody}`). Multi-scheme fallback removed 2026-07 after
-        // verification stabilised — see webhook-signature.ts to re-add.
         const match = await verifyWallidSignature(ts, rawBody, sig, secret);
         if (!match) {
           const provided = sig.startsWith("sha256=") ? sig.slice(7) : sig;
@@ -155,24 +225,30 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
             route: "/api/webhooks/wallid",
             ip,
             ts,
-            eventId,
+            eventId: eventIdHeader,
             eventCount,
             sigHeaderName,
             receivedPrefix,
             expectedPrefix,
             bodyLen: rawBody.length,
           });
-          return textResp("Invalid signature", 400);
+          return finish(
+            textResp("Invalid signature", 400),
+            "invalid_signature",
+            {
+              errorMessage: `sig mismatch (received=${receivedPrefix} expected=${expectedPrefix})`,
+              alertHeadline: "Invalid webhook signature — Wallid secret may be rotated or misconfigured.",
+              alertMeta: { receivedPrefix, expectedPrefix, sigHeaderName },
+            },
+          );
         }
-
-
 
         let body: WallidWebhookBody = {};
         try {
           const parsed = JSON.parse(rawBody);
           body = Array.isArray(parsed) ? { events: parsed } : parsed;
         } catch {
-          return textResp("Invalid JSON", 400);
+          return finish(textResp("Invalid JSON", 400), "invalid_json", { errorMessage: "JSON.parse failed" });
         }
         const events = Array.isArray(body.events) ? body.events : [];
 
@@ -184,7 +260,6 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
           firstStatus: events[0]?.status || events[0]?.type || null,
           firstPaymentId: events[0]?.api_payment_id || events[0]?.apiPaymentId || null,
         });
-
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -198,204 +273,219 @@ export const Route = createFileRoute("/api/webhooks/wallid")({
           /* non-blocking */
         }
 
-        let processed = 0;
-        for (const ev of events) {
-          const eventId = String(ev.event_id || ev.id || "").trim();
-          if (!eventId) continue;
+        try {
+          let processed = 0;
+          for (const ev of events) {
+            const eventId = String(ev.event_id || ev.id || "").trim();
+            if (!eventId) continue;
 
-          const apiPaymentId = String(ev.api_payment_id || ev.apiPaymentId || "").trim() || null;
-          const orderId = String(ev.order_id || ev.orderId || "").trim() || null;
-          const status = normaliseStatus(ev.status || ev.type);
-          const occurredAt = ev.occurred_at || ev.occurredAt
-            ? new Date(ev.occurred_at || ev.occurredAt!).toISOString()
-            : null;
+            const apiPaymentId = String(ev.api_payment_id || ev.apiPaymentId || "").trim() || null;
+            const orderId = String(ev.order_id || ev.orderId || "").trim() || null;
+            const status = normaliseStatus(ev.status || ev.type);
+            const occurredAt = ev.occurred_at || ev.occurredAt
+              ? new Date(ev.occurred_at || ev.occurredAt!).toISOString()
+              : null;
 
-          const { error: insertErr } = await supabaseAdmin
-            .from("wallid_webhook_events")
-            .insert({
-              event_id: eventId,
-              api_payment_id: apiPaymentId,
-              order_id: orderId,
-              status,
-              occurred_at: occurredAt,
-              raw: ev as never,
-            });
+            const { error: insertErr } = await supabaseAdmin
+              .from("wallid_webhook_events")
+              .insert({
+                event_id: eventId,
+                api_payment_id: apiPaymentId,
+                order_id: orderId,
+                status,
+                occurred_at: occurredAt,
+                raw: ev as never,
+              });
 
-          if (insertErr) {
-            if ((insertErr as { code?: string }).code === "23505") {
-              try {
-                const { data: orig } = await supabaseAdmin
-                  .from("wallid_webhook_events")
-                  .select("processed_at")
-                  .eq("event_id", eventId)
-                  .maybeSingle();
-                await supabaseAdmin.from("wallid_webhook_duplicates").insert({
-                  event_id: eventId,
-                  api_payment_id: apiPaymentId,
-                  order_id: orderId,
-                  original_processed_at: (orig?.processed_at as string | undefined) ?? null,
-                  ip,
-                  payload_summary: { status, occurredAt } as never,
-                });
-              } catch { /* non-blocking */ }
-              continue;
-            }
-            console.error("[Wallid webhook] Insert failed", insertErr.message);
-            // Retryable — do NOT return 500 (Wallid backs off on 5xx).
-            return retryableResp(`event insert failed: ${insertErr.message}`);
-          }
-
-          try {
-            // CRITICAL: must have at least one identifier or we'd UPDATE the
-            // entire wallid_payments table.
-            if (apiPaymentId) {
-              await supabaseAdmin
-                .from("wallid_payments")
-                .update({ status, metadata: { lastEvent: ev } as never })
-                .eq("api_payment_id", apiPaymentId);
-            } else if (orderId) {
-              await supabaseAdmin
-                .from("wallid_payments")
-                .update({ status, metadata: { lastEvent: ev } as never })
-                .eq("order_id", orderId);
-            } else {
-              console.error("[Wallid webhook] Refusing UPDATE — no api_payment_id or order_id", eventId);
-            }
-
-            if (orderId) {
-              try {
-                const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
-                const firestoreStatus =
-                  status === "SUCCESS" ? "paid"
-                  : status === "FAILED" ? "failed"
-                  : status === "EXPIRED" ? "expired"
-                  : status === "OTHER" ? "needs_review"
-                  : null;
-                if (status === "OTHER") {
-                  console.error("[Wallid webhook /api/webhooks/wallid] UNKNOWN status — flagging for review:", {
-                    eventId, orderId, apiPaymentId, rawStatus: ev.status || ev.type,
+            if (insertErr) {
+              if ((insertErr as { code?: string }).code === "23505") {
+                try {
+                  const { data: orig } = await supabaseAdmin
+                    .from("wallid_webhook_events")
+                    .select("processed_at")
+                    .eq("event_id", eventId)
+                    .maybeSingle();
+                  await supabaseAdmin.from("wallid_webhook_duplicates").insert({
+                    event_id: eventId,
+                    api_payment_id: apiPaymentId,
+                    order_id: orderId,
+                    original_processed_at: (orig?.processed_at as string | undefined) ?? null,
+                    ip,
+                    payload_summary: { status, occurredAt } as never,
                   });
-                }
-                if (firestoreStatus) {
-                  // ATOMIC: snapshot-isolated transition. needs_review is
-                  // included in allowFrom so a later SUCCESS still flips it.
-                  const { transitioned, prior } = await transitionDocStatusAdmin(
-                    "orders",
-                    orderId,
-                    {
-                      allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", "needs_review", ""],
-                      updates: {
-                        status: firestoreStatus,
-                        paymentProvider: "wallid",
-                        paymentRef: ev.payment_ref || ev.paymentRef || apiPaymentId || null,
-                        paymentUpdatedAt: new Date(),
-                        ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
-                        ...(status === "FAILED" || status === "EXPIRED"
-                          ? { paymentFailureReason: ev.reason || status }
-                          : {}),
-                        ...(firestoreStatus === "needs_review"
-                          ? { paymentFailureReason: `Unknown Wallid status: ${ev.status || ev.type || "n/a"}` }
-                          : {}),
-                      },
-                    },
-                  );
+                } catch { /* non-blocking */ }
+                continue;
+              }
+              console.error("[Wallid webhook] Insert failed", insertErr.message);
+              return finish(
+                retryableResp(`event insert failed: ${insertErr.message}`),
+                "event_insert_failed",
+                {
+                  errorMessage: insertErr.message,
+                  alertHeadline: "Webhook event insert into Supabase failed — Wallid will retry.",
+                  alertMeta: { eventId, apiPaymentId, orderId },
+                },
+              );
+            }
 
-                  if (transitioned && firestoreStatus === "paid" && prior) {
-                    const customerObj = (prior.customer as Record<string, unknown> | undefined) || {};
-                    const to = String(prior.customerEmail ?? prior.email ?? customerObj.email ?? "");
-                    if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
-                      try {
-                        const { paymentConfirmedEmail } = await import("@/templates/paymentConfirmedEmail");
-                        const firstName =
-                          String(
-                            (prior.firstName as string) ||
-                              (customerObj.firstName as string) ||
-                              (prior.customerName as string) ||
-                              "",
-                          ).split(" ")[0] || "there";
-                        const amount = Number(
-                          (prior.totalAmount as number) ??
-                            (prior.total as number) ??
-                            0,
-                        );
-                        const reference = String(prior.orderNumber ?? orderId);
-                        const { subject, html, text } = paymentConfirmedEmail({
-                          firstName,
-                          orderNumber: reference,
-                          amount,
-                          paymentMethod: "Open Banking (Wallid)",
-                          paidAt: new Date(),
-                        });
-                        const { enqueueMailOnce } = await import("@/lib/server/enqueue-mail");
-                        await enqueueMailOnce(`payment-confirmed:${orderId}`, {
-                          to,
-                          message: { subject, html, text },
-                          source: "wallid:webhook",
-                        });
-                      } catch (mailErr) {
-                        console.warn("[Wallid webhook] Mail enqueue failed:", mailErr instanceof Error ? mailErr.message : mailErr);
+            try {
+              if (apiPaymentId) {
+                await supabaseAdmin
+                  .from("wallid_payments")
+                  .update({ status, metadata: { lastEvent: ev } as never })
+                  .eq("api_payment_id", apiPaymentId);
+              } else if (orderId) {
+                await supabaseAdmin
+                  .from("wallid_payments")
+                  .update({ status, metadata: { lastEvent: ev } as never })
+                  .eq("order_id", orderId);
+              } else {
+                console.error("[Wallid webhook] Refusing UPDATE — no api_payment_id or order_id", eventId);
+              }
+
+              if (orderId) {
+                try {
+                  const { transitionDocStatusAdmin } = await import("@/lib/server/firestore-admin");
+                  const firestoreStatus =
+                    status === "SUCCESS" ? "paid"
+                    : status === "FAILED" ? "failed"
+                    : status === "EXPIRED" ? "expired"
+                    : status === "OTHER" ? "needs_review"
+                    : null;
+                  if (status === "OTHER") {
+                    console.error("[Wallid webhook /api/webhooks/wallid] UNKNOWN status — flagging for review:", {
+                      eventId, orderId, apiPaymentId, rawStatus: ev.status || ev.type,
+                    });
+                  }
+                  if (firestoreStatus) {
+                    const { transitioned, prior } = await transitionDocStatusAdmin(
+                      "orders",
+                      orderId,
+                      {
+                        allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", "needs_review", ""],
+                        updates: {
+                          status: firestoreStatus,
+                          paymentProvider: "wallid",
+                          paymentRef: ev.payment_ref || ev.paymentRef || apiPaymentId || null,
+                          paymentUpdatedAt: new Date(),
+                          ...(firestoreStatus === "paid" ? { paidAt: new Date() } : {}),
+                          ...(status === "FAILED" || status === "EXPIRED"
+                            ? { paymentFailureReason: ev.reason || status }
+                            : {}),
+                          ...(firestoreStatus === "needs_review"
+                            ? { paymentFailureReason: `Unknown Wallid status: ${ev.status || ev.type || "n/a"}` }
+                            : {}),
+                        },
+                      },
+                    );
+
+                    if (transitioned && firestoreStatus === "paid" && prior) {
+                      const customerObj = (prior.customer as Record<string, unknown> | undefined) || {};
+                      const to = String(prior.customerEmail ?? prior.email ?? customerObj.email ?? "");
+                      if (to && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) {
+                        try {
+                          const { paymentConfirmedEmail } = await import("@/templates/paymentConfirmedEmail");
+                          const firstName =
+                            String(
+                              (prior.firstName as string) ||
+                                (customerObj.firstName as string) ||
+                                (prior.customerName as string) ||
+                                "",
+                            ).split(" ")[0] || "there";
+                          const amount = Number(
+                            (prior.totalAmount as number) ??
+                              (prior.total as number) ??
+                              0,
+                          );
+                          const reference = String(prior.orderNumber ?? orderId);
+                          const { subject, html, text } = paymentConfirmedEmail({
+                            firstName,
+                            orderNumber: reference,
+                            amount,
+                            paymentMethod: "Open Banking (Wallid)",
+                            paidAt: new Date(),
+                          });
+                          const { enqueueMailOnce } = await import("@/lib/server/enqueue-mail");
+                          await enqueueMailOnce(`payment-confirmed:${orderId}`, {
+                            to,
+                            message: { subject, html, text },
+                            source: "wallid:webhook",
+                          });
+                        } catch (mailErr) {
+                          console.warn("[Wallid webhook] Mail enqueue failed:", mailErr instanceof Error ? mailErr.message : mailErr);
+                        }
                       }
                     }
-                  }
 
-                  // Best-effort: mirror to Firestore webhookEvents + append
-                  // timeline event for the admin UI + reconcile cron.
-                  try {
-                    const reliability = await import("@/lib/payment-reliability.server");
-                    if (apiPaymentId) {
-                      await reliability.recordWebhookEventAdmin(apiPaymentId, {
-                        orderId,
-                        source: "wallid_webhook",
-                        status: "processed",
-                        payload: ev as Record<string, unknown>,
-                      });
-                      await reliability.dequeueRetryAdmin(apiPaymentId);
+                    try {
+                      const reliability = await import("@/lib/payment-reliability.server");
+                      if (apiPaymentId) {
+                        await reliability.recordWebhookEventAdmin(apiPaymentId, {
+                          orderId,
+                          source: "wallid_webhook",
+                          status: "processed",
+                          payload: ev as Record<string, unknown>,
+                        });
+                        await reliability.dequeueRetryAdmin(apiPaymentId);
+                      }
+                      if (transitioned) {
+                        await reliability.writePaymentTimelineAdmin(orderId, {
+                          actor: "wallid_webhook",
+                          eventType:
+                            firestoreStatus === "paid" ? "payment_received"
+                            : firestoreStatus === "failed" || firestoreStatus === "expired" ? "payment_failed"
+                            : "reconciliation_run",
+                          statusFrom: String(prior?.status ?? ""),
+                          statusTo: firestoreStatus,
+                          apiPaymentId: apiPaymentId || undefined,
+                          metadata: { wallidStatus: ev.status || ev.type || null },
+                        });
+                      }
+                    } catch (audErr) {
+                      console.warn(
+                        "[Wallid webhook] audit-trail write skipped:",
+                        audErr instanceof Error ? audErr.message : audErr,
+                      );
                     }
-                    if (transitioned) {
-                      await reliability.writePaymentTimelineAdmin(orderId, {
-                        actor: "wallid_webhook",
-                        eventType:
-                          firestoreStatus === "paid" ? "payment_received"
-                          : firestoreStatus === "failed" || firestoreStatus === "expired" ? "payment_failed"
-                          : "reconciliation_run",
-                        statusFrom: String(prior?.status ?? ""),
-                        statusTo: firestoreStatus,
-                        apiPaymentId: apiPaymentId || undefined,
-                        metadata: { wallidStatus: ev.status || ev.type || null },
-                      });
-                    }
-                  } catch (audErr) {
-                    console.warn(
-                      "[Wallid webhook] audit-trail write skipped:",
-                      audErr instanceof Error ? audErr.message : audErr,
-                    );
                   }
-                }
-              } catch (e) {
-                console.warn("[Wallid webhook] Firestore order update skipped:", e instanceof Error ? e.message : e);
-                if (apiPaymentId) {
-                  try {
-                    const { enqueueRetryAdmin } = await import("@/lib/payment-reliability.server");
-                    await enqueueRetryAdmin({
-                      orderId,
-                      apiPaymentId,
-                      payload: ev as Record<string, unknown>,
-                      error: e instanceof Error ? e.message : String(e),
-                      source: "wallid_webhook",
-                    });
-                  } catch { /* non-blocking */ }
+                } catch (e) {
+                  console.warn("[Wallid webhook] Firestore order update skipped:", e instanceof Error ? e.message : e);
+                  if (apiPaymentId) {
+                    try {
+                      const { enqueueRetryAdmin } = await import("@/lib/payment-reliability.server");
+                      await enqueueRetryAdmin({
+                        orderId,
+                        apiPaymentId,
+                        payload: ev as Record<string, unknown>,
+                        error: e instanceof Error ? e.message : String(e),
+                        source: "wallid_webhook",
+                      });
+                    } catch { /* non-blocking */ }
+                  }
                 }
               }
+
+              processed += 1;
+            } catch (e) {
+              console.error("[Wallid webhook] Event apply failed:", e);
             }
-
-            processed += 1;
-          } catch (e) {
-            console.error("[Wallid webhook] Event apply failed:", e);
           }
-        }
 
-        return json({ received: true, processed });
+          return finish(json({ received: true, processed }), "accepted");
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          console.error("[Wallid webhook] Handler exception:", msg);
+          return finish(
+            retryableResp(`handler exception: ${msg}`),
+            "handler_exception",
+            {
+              errorMessage: msg,
+              alertHeadline: "Wallid webhook handler threw an exception — check logs.",
+            },
+          );
+        }
       },
     },
   },
 });
+
