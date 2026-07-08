@@ -1,0 +1,66 @@
+{
+  "base": "https://phlabs.co.uk",
+  "generatedAt": "2026-07-08T18:57:30.125Z",
+  "results": [
+    {
+      "path": "/robots.txt",
+      "url": "https://phlabs.co.uk/robots.txt?__cache_probe=1783537048040fcvba4",
+      "status": 200,
+      "contentType": "text/plain; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "cdnCacheControl": "",
+      "surrogateControl": "",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "violations": [
+        "cdn-cache-control missing — CF will apply its own cache TTL",
+        "cache-control has 'immutable' — stale robots/sitemap will pin in browsers (\"public, max-age=31536000, immutable\")",
+        "cache-control max-age=31536000 exceeds 3600s ceiling"
+      ],
+      "optionalSkipped": false,
+      "ok": false
+    },
+    {
+      "path": "/sitemap.xml",
+      "url": "https://phlabs.co.uk/sitemap.xml?__cache_probe=17835370480414o6p7i",
+      "status": 200,
+      "contentType": "application/xml; charset=utf-8",
+      "cacheControl": "public, max-age=300, stale-while-revalidate=3600",
+      "cdnCacheControl": "no-store",
+      "surrogateControl": "no-store",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "violations": [],
+      "optionalSkipped": false,
+      "ok": true
+    },
+    {
+      "path": "/sitemap-products.xml",
+      "url": "https://phlabs.co.uk/sitemap-products.xml?__cache_probe=1783537048041dwn4qd",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "cdnCacheControl": "no-store",
+      "surrogateControl": "no-store",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "violations": [],
+      "optionalSkipped": true,
+      "ok": true
+    },
+    {
+      "path": "/sitemap-articles.xml",
+      "url": "https://phlabs.co.uk/sitemap-articles.xml?__cache_probe=17835370480416c8ep6",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "cdnCacheControl": "no-store",
+      "surrogateControl": "no-store",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "violations": [],
+      "optionalSkipped": true,
+      "ok": true
+    }
+  ]
+}
