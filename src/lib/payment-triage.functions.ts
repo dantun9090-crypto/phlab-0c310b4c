@@ -306,6 +306,7 @@ export const getPaymentTriageDetailAdmin = createServerFn({ method: "POST" })
             }
             return null;
           };
+          const meta = val(f.metadata) as Record<string, unknown> | null;
           return [{
             id: r.document.name.split("/").pop() ?? "",
             timestamp: (val(f.timestamp) as string) ?? null,
@@ -314,8 +315,9 @@ export const getPaymentTriageDetailAdmin = createServerFn({ method: "POST" })
             statusFrom: String(val(f.statusFrom) ?? ""),
             statusTo: String(val(f.statusTo) ?? ""),
             apiPaymentId: (val(f.apiPaymentId) as string) ?? null,
-            metadata: (val(f.metadata) as Record<string, unknown>) ?? null,
+            metadataJson: meta ? JSON.stringify(meta) : null,
           }];
+
         });
       }
     } catch {
