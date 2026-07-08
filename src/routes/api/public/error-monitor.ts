@@ -73,6 +73,7 @@ const EVENT_TYPES = [
   "compound_overlay",
   "client_exception",
   "blank_watchdog",
+  "chunk_load_error",
 ] as const;
 type EventType = (typeof EVENT_TYPES)[number];
 
@@ -123,6 +124,10 @@ const DEFAULT_THRESHOLDS: Record<EventType, number> = {
   compound_overlay: 1,
   client_exception: 5,
   blank_watchdog: 3,
+  // A single chunk-load failure indicates a stale HTML shell against a new
+  // build (or a Cloudflare cache holding an evicted asset). Alert on the
+  // first event — the fix requires human intervention (edge purge / rule).
+  chunk_load_error: 1,
 };
 
 const DEFAULT_WINDOW_MIN = 5;
@@ -155,6 +160,7 @@ async function loadSettings(): Promise<MonitorSettings> {
       compound_overlay: Number(t.compound_overlay ?? DEFAULT_THRESHOLDS.compound_overlay),
       client_exception: Number(t.client_exception ?? DEFAULT_THRESHOLDS.client_exception),
       blank_watchdog: Number(t.blank_watchdog ?? DEFAULT_THRESHOLDS.blank_watchdog),
+      chunk_load_error: Number(t.chunk_load_error ?? DEFAULT_THRESHOLDS.chunk_load_error),
     },
     alertEmail: typeof doc?.alertEmail === "string" ? doc.alertEmail : DEFAULT_ALERT_EMAIL,
     slackWebhookUrl:
@@ -224,6 +230,7 @@ function alertSubject(type: EventType, count: number, windowMin: number): string
     compound_overlay: "/compound overlay detected",
     client_exception: "client JS exception",
     blank_watchdog: "blank-page fallback shown",
+    chunk_load_error: "stale chunk / missing asset after deploy",
   };
   return `[PH Labs] ${labels[type]}: ${count} in ${windowMin}m`;
 }
