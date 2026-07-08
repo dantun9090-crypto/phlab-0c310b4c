@@ -1,0 +1,365 @@
+{
+  "base": "https://phlabs.co.uk",
+  "generatedAt": "2026-07-08T17:35:52.390Z",
+  "ttlCeilingSeconds": 3600,
+  "results": [
+    {
+      "path": "/",
+      "kind": "html-shell",
+      "url": "https://phlabs.co.uk/",
+      "status": 200,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": "public, max-age=60, stale-while-revalidate=60",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=FQsJBiM6T1OHPy6g4RZgDrgle6YN1GfA_b85_zO.5qs-1783532152.0543044-1.0.1.1-6JcdC76ql5VM76oRchnJrAJX9.o7eA_GzmmK57Twxh7R687gpg18SBxo45ByXOpSBhuUOVDej2.tQRkC7jzrtpccWQEWuld9UJmE0k1F11pAawgJCCzm9grGyKYmjZjf; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:52 GMT"
+      },
+      "violations": [
+        "cdn-cache-control must be \"no-store\" on HTML shell (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:52.346Z",
+      "ok": false
+    },
+    {
+      "path": "/products",
+      "kind": "html-shell",
+      "url": "https://phlabs.co.uk/products",
+      "status": 200,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": "public, max-age=60, stale-while-revalidate=60",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=4_WhjHCa4AbpDzjQQAhOf7bc.K77gbO.dNRVF2RyAYc-1783532152.0532446-1.0.1.1-EKdoN_jZQK0kNlnZaT2HON6ENbiaaR6Z89iNmJl3iNWGLH0E3etrEuD4vVJ6WvvbD9Tx11j8cGyyy3Uf2qZ4ZZm0OpuOqror57plcjs_mI230N3f0AJS2FYouSwBI4bP; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:52 GMT"
+      },
+      "violations": [
+        "cdn-cache-control must be \"no-store\" on HTML shell (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:52.312Z",
+      "ok": false
+    },
+    {
+      "path": "/compound",
+      "kind": "html-shell",
+      "url": "https://phlabs.co.uk/compound",
+      "status": 200,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": "public, max-age=60, stale-while-revalidate=60",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=qcbrD6IIN8cTyTuhiPUOIJkM29OuDUz7E2U9CTJLU9o-1783532151.4570065-1.0.1.1-SWbZR6Af4kWl4.9Xndcn.1l1Ubi3whW1C2f2cCI8XC10kdrx6CEjeCROLVv2LptVSuGlcdZGWdogT0fTZHZnu5tdb6r5v7HWFtlYf07HFyywkgAmZ7XixsBVkCw4QfWo; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:51 GMT"
+      },
+      "violations": [
+        "cdn-cache-control must be \"no-store\" on HTML shell (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:51.683Z",
+      "ok": false
+    },
+    {
+      "path": "/research",
+      "kind": "html-shell",
+      "url": "https://phlabs.co.uk/research",
+      "status": 200,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": "public, max-age=60, stale-while-revalidate=60",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=F8EDMf2I2yeM_Rcu6ZyLJF6Ew5Ysy38PKOsHEuY3Blg-1783532150.2423062-1.0.1.1-GM1Nzcqw6.qTdts3zgl1RoHWqAZm2bRtBuJyrSUjPwrvFn3j3sW2rAmzGDMWs2l5rCUPXyHPqEuzEmb9llwTamZ5lSfrgn7TEz_75aBgV8HLnqGJdvlBhrjzMVE5U9.8; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:50 GMT"
+      },
+      "violations": [
+        "cdn-cache-control must be \"no-store\" on HTML shell (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:50.307Z",
+      "ok": false
+    },
+    {
+      "path": "/landing/phlabs",
+      "kind": "html-shell",
+      "url": "https://phlabs.co.uk/landing/phlabs",
+      "status": 200,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": "public, max-age=60, stale-while-revalidate=60",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=W3cRMbi2wtrJpzaojGZHD_Ui_dvn1f0HbF1Uae3LvYQ-1783532152.0530012-1.0.1.1-.XIMUCvIGeKyJyigbYCY_UtCFO42rfGhzgA2fsw6ZV.3vjj1bn.vcms3uhovr30i3w097_7zBiAAjgUO1uGxpeA7ZDLVvqZouJEN3Et8Vn3cyWrGTRDgdY_EIn3CDGUm; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:52 GMT"
+      },
+      "violations": [
+        "cdn-cache-control must be \"no-store\" on HTML shell (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:52.359Z",
+      "ok": false
+    },
+    {
+      "path": "/about",
+      "kind": "html-shell",
+      "url": "https://phlabs.co.uk/about",
+      "status": 200,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": "public, max-age=60, stale-while-revalidate=60",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=T9ivShIe1JVv.hpG6rhz0HwFnIoCJoe3PJLwqYSMNoE-1783532151.4773593-1.0.1.1-mlFdi_ZYcnsYiS0XXx60qZIe4iJwz_APC3C8ZUkYFjBMvDRHwCwrq263KnD3.Sr89L7Yd.98h._LMxwqqm6iiGJhSMWks7eg4uZWJUMdMt7fsjMWGViZLhOIxSbeu2NK; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:51 GMT"
+      },
+      "violations": [
+        "cdn-cache-control must be \"no-store\" on HTML shell (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:51.678Z",
+      "ok": false
+    },
+    {
+      "path": "/contact",
+      "kind": "html-shell",
+      "url": "https://phlabs.co.uk/contact",
+      "status": 200,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": "public, max-age=60, stale-while-revalidate=60",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=8fPrg_dGVsnPA7tvj6HQoaMgcjkWpVB7F1vc0.zhGwQ-1783532152.0430963-1.0.1.1-yZQ8Btjmg_iyE24QojxDIe0y1_1XAFf4CuJOFjo79ouL0nLIAyzWetyxukSVVy2lLBYdA0icDeCxSpGZ8udpdDb3pmdRXogG1n.BvLtVSBP5u0W2Rya14Nk7HZry_z8U; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:52 GMT"
+      },
+      "violations": [
+        "cdn-cache-control must be \"no-store\" on HTML shell (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:52.330Z",
+      "ok": false
+    },
+    {
+      "path": "/resources",
+      "kind": "html-shell",
+      "url": "https://phlabs.co.uk/resources",
+      "status": 200,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": "public, max-age=60, stale-while-revalidate=60",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=kGI9ZedvNEX3ekccUhZMifmNUS.vhud6EnIMtaI6UwE-1783532151.3163629-1.0.1.1-iBD1LOJuL0DEBrEw8g9OOAE9ZNcIfmv8V2h.T2GbQljWArdN7DxZIW2OLJ13hfufVueZwKjGyE2lE4dbVicqOoE85nk_wa1NIbEhRLzMUnuYI3ouq2LnURdz2rD8Djcm; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:51 GMT"
+      },
+      "violations": [
+        "cdn-cache-control must be \"no-store\" on HTML shell (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:51.412Z",
+      "ok": false
+    },
+    {
+      "path": "/peptide-calculator",
+      "kind": "html-shell",
+      "url": "https://phlabs.co.uk/peptide-calculator",
+      "status": 200,
+      "headers": {
+        "cache-control": "public, max-age=0, must-revalidate",
+        "cdn-cache-control": "public, max-age=60, stale-while-revalidate=60",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=._H0w49Ip_FwCw52W6mvMC6xPeemFDKUz_WYAYtxnbA-1783532151.4116483-1.0.1.1-xzJos1vb_Ac4BpOyqDfKjzqyX6DAsBxKij.LxYT3PP.n6TZ54x_.EMVKS5dCvYVxa2rz_BAr5bTo67qz3O8C021PZQB5pjENzLnwhZ8DK4hWwUJ2B06kHNBJ6vxXc7n4; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:51 GMT"
+      },
+      "violations": [
+        "cdn-cache-control must be \"no-store\" on HTML shell (got \"public, max-age=60, stale-while-revalidate=60\")"
+      ],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:51.609Z",
+      "ok": false
+    },
+    {
+      "path": "/admin",
+      "kind": "sensitive",
+      "url": "https://phlabs.co.uk/admin",
+      "status": 200,
+      "headers": {
+        "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+        "cdn-cache-control": "no-store",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=deK4zKWDq8z6sSF__hSIIqxQ0x3Smgat7IvY3I9l0qI-1783532151.3978152-1.0.1.1-LFBBkbCuQJplCBNtEnzdWXdFPDfrFG3p6xqoJWRv2HbM1ohF0GVfcjJrGZ_0ixxxW_VrdOuoSM4zl_BZ27bwTUQq8TuLHdl4r546QHS2KdBhhKt7iBfK6Sw.KPgf8CFW; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:51 GMT"
+      },
+      "violations": [],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:51.628Z",
+      "ok": true
+    },
+    {
+      "path": "/cart",
+      "kind": "sensitive",
+      "url": "https://phlabs.co.uk/cart",
+      "status": 200,
+      "headers": {
+        "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+        "cdn-cache-control": "no-store",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=AysWhspHK00an6jyFvvpeWbthyUhohxok1v1wQ426sk-1783532151.4764106-1.0.1.1-o5IkGHJRtXK1cDg2ABC0Z.TXUfvkdSlFC2sjt8TPU8_mSrcdxeau1eX2df8U2BzQikEXy8i0gYVrpYQqAUXkGHhSEnulhsmqxVX4J60UrpJ5a14WDDsAKWPZE5pQzD8c; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:51 GMT"
+      },
+      "violations": [],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:51.682Z",
+      "ok": true
+    },
+    {
+      "path": "/checkout",
+      "kind": "sensitive",
+      "url": "https://phlabs.co.uk/checkout",
+      "status": 200,
+      "headers": {
+        "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+        "cdn-cache-control": "no-store",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=G1l5ZGOjQYMjnq1D6WMhZ5jEOd4D5T3QiQ2rqBfZ2FA-1783532150.247478-1.0.1.1-t8POkWgLCc8Ak3DOqy0EhBrql5kK.LJ7YH.idowqV2THWKTh9OQucV1MajsjbwLMGLB.op4Jb4XwU.iIDCsJqMV.AuhE.OgW3ShVoeovwuAmgSkMo2nelvc2BKasuq1i; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:50 GMT"
+      },
+      "violations": [],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:50.400Z",
+      "ok": true
+    },
+    {
+      "path": "/account",
+      "kind": "sensitive",
+      "url": "https://phlabs.co.uk/account",
+      "status": 200,
+      "headers": {
+        "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+        "cdn-cache-control": "no-store",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=azkwgsxSrlfjl0rG9ZehkUy5_rBHWV_KiAN5H6ko4Cg-1783532152.0415094-1.0.1.1-_Qxh2zS7NzqNaOR9vrfwb4vi34p.5p9mRGPzvafjWiDg36CuHdc2OF3E1OXe_pJiiOwEFgTP3ZFJXJSdzYvJ4wFnc8PUk5uW9G64ddVzbVsPGs6NfUDNqAKawLrnNBof; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:52 GMT"
+      },
+      "violations": [],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:52.390Z",
+      "ok": true
+    },
+    {
+      "path": "/login",
+      "kind": "sensitive",
+      "url": "https://phlabs.co.uk/login",
+      "status": 200,
+      "headers": {
+        "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+        "cdn-cache-control": "no-store",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=bFKdHbr7ETZtCzEvqHDWRS4OGBKIT2iGVTgnOfOqV2Q-1783532150.2478702-1.0.1.1-hTh.Q7ykA61mmOHc1rq3kYF.ot2LazyddbnAcqpAPdZlh_d0zykPR0YjO8sLylr.LUd3VPuK9RthExxQHyXd_XGl_ksV7gOGMNr3txfrtRE3xsPvbqO4j7ELCQrIuE1K; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:50 GMT"
+      },
+      "violations": [],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:50.336Z",
+      "ok": true
+    },
+    {
+      "path": "/register",
+      "kind": "sensitive",
+      "url": "https://phlabs.co.uk/register",
+      "status": 200,
+      "headers": {
+        "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+        "cdn-cache-control": "no-store",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=ThorKWSfftSDHK88ShtfYFWv0aZ_jC2O_kwNn2gus1Y-1783532151.5123832-1.0.1.1-kZDS1iyXEZX1Z8A3fnsElVaELPYhfNZoOBCOdpkdlGKDwMReXEo.Yw8iOKK4yUdju.PJHIBnuWEh63c6_ncbWL_SI3AXJkphZgvjoiFKcRJU8ippRnecPvAsum28z7Lf; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:51 GMT"
+      },
+      "violations": [],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:51.592Z",
+      "ok": true
+    },
+    {
+      "path": "/payment",
+      "kind": "sensitive",
+      "url": "https://phlabs.co.uk/payment",
+      "status": 200,
+      "headers": {
+        "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+        "cdn-cache-control": "no-store",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=o37uDBgPnkQCS7RLrd3c3wNvbM8a3ZF4FGuYSH1Qijw-1783532151.4503756-1.0.1.1-udnw6k8.0qPpxSIwUCBJS5rNSuakOBoSBNQeomvEHsoueWwm8XfHedD9JDibpCxyNibiDucYTqpQiYMg_1PkRvxw27XzYK3_Bwm4xMVoCBK0RwbVwLveTKcbKoHmFC0X; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:51 GMT"
+      },
+      "violations": [],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:51.622Z",
+      "ok": true
+    },
+    {
+      "path": "/vip",
+      "kind": "sensitive",
+      "url": "https://phlabs.co.uk/vip",
+      "status": 200,
+      "headers": {
+        "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+        "cdn-cache-control": "no-store",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "x-build-id": "1783524202047-fqdhta",
+        "vary": "accept-encoding",
+        "set-cookie": "__cf_bm=9CV2K4m4jlBl3R2x5tor14CDldUopLz2mw5PFCcpkg8-1783532151.3955646-1.0.1.1-w0EDSPlZZCGH47rRP3DC5GJtTiOG0T7Fw7XSs6LvP0zE7fm.hXOJtgto.DgCz0aYJK3W7CkMQjWoKi2ejvfB157s1bLDJ6osSuwcwuVdkkv2u69lhMnpK0_zwJHf0lCw; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:51 GMT"
+      },
+      "violations": [],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:51.606Z",
+      "ok": true
+    },
+    {
+      "path": "/api/public/cache-config",
+      "kind": "sensitive",
+      "url": "https://phlabs.co.uk/api/public/cache-config",
+      "status": 200,
+      "headers": {
+        "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+        "cdn-cache-control": "no-store",
+        "surrogate-control": "no-store",
+        "cf-cache-status": "DYNAMIC",
+        "set-cookie": "__cf_bm=nyY25oEbxpOjYRLg0zsrFqM5pudGbUkq6GQzlL2X5b8-1783532151.4043202-1.0.1.1-FynX2bzFZFlACesTY3E_0h4UDyCPx2m6Towy34yg_VoB5lBk1E8U4.YsuMxFB_ZCBZvqSrPDVaO.EGLjRRguPp3saaj5ZkzmY5N8UU65aoIIDDb9kVC3GgxI09Yl1EVO; HttpOnly; SameSite=None; Secure; Path=/; Domain=phlabs.co.uk; Expires=Wed, 08 Jul 2026 18:05:51 GMT"
+      },
+      "violations": [],
+      "warnings": [],
+      "fetchedAt": "2026-07-08T17:35:51.470Z",
+      "ok": true
+    }
+  ]
+}
