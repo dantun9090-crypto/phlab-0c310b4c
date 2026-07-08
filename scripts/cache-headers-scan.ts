@@ -29,7 +29,13 @@ const BASE = process.env.CACHE_SCAN_BASE_URL || process.env.TEST_BASE_URL || "ht
 const OUT_DIR = process.env.CACHE_SCAN_OUT_DIR || "cache-headers-report";
 const TTL_CEILING = 3600;
 
-const PUBLIC_PATHS = [
+// HTML shells MUST NEVER be edge-cached. A cached shell after a Lovable
+// publish points at hashed JS/CSS chunks that have been evicted from the
+// new build, producing blank pages until a manual Cloudflare purge — the
+// exact regression fixed in src/server.ts (max-age=0, must-revalidate +
+// cdn-cache-control: no-store + cloudflare-cdn-cache-control: no-store).
+// This scanner is the CI guardrail that prevents that ever regressing.
+const HTML_SHELL_PATHS = [
   "/",
   "/products",
   "/compound",
@@ -38,6 +44,7 @@ const PUBLIC_PATHS = [
   "/about",
   "/contact",
   "/resources",
+  "/peptide-calculator",
 ];
 
 const SENSITIVE_PATHS = [
@@ -52,7 +59,7 @@ const SENSITIVE_PATHS = [
   "/api/public/cache-config",
 ];
 
-type Kind = "public" | "sensitive";
+type Kind = "html-shell" | "sensitive";
 
 interface Probe {
   path: string;
