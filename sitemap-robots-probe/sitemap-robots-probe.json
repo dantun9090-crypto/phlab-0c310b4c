@@ -1,0 +1,70 @@
+{
+  "base": "https://phlabs.co.uk",
+  "generatedAt": "2026-07-08T18:57:07.001Z",
+  "results": [
+    {
+      "path": "/robots.txt",
+      "url": "https://phlabs.co.uk/robots.txt?__cache_probe=1783537024794w88z4s",
+      "status": 200,
+      "contentType": "text/plain; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "cdnCacheControl": "",
+      "surrogateControl": "",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "violations": [
+        "cdn-cache-control missing — CF will apply its own cache TTL",
+        "cache-control has 'immutable' — stale robots/sitemap will pin in browsers (\"public, max-age=31536000, immutable\")",
+        "cache-control max-age=31536000 exceeds 3600s ceiling"
+      ],
+      "optionalSkipped": false,
+      "ok": false
+    },
+    {
+      "path": "/sitemap.xml",
+      "url": "https://phlabs.co.uk/sitemap.xml?__cache_probe=1783537024795suu98y",
+      "status": 200,
+      "contentType": "application/xml; charset=utf-8",
+      "cacheControl": "public, max-age=300, stale-while-revalidate=3600",
+      "cdnCacheControl": "no-store",
+      "surrogateControl": "no-store",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "violations": [],
+      "optionalSkipped": false,
+      "ok": true
+    },
+    {
+      "path": "/sitemap-products.xml",
+      "url": "https://phlabs.co.uk/sitemap-products.xml?__cache_probe=178353702479509r6ut",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "cdnCacheControl": "no-store",
+      "surrogateControl": "no-store",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "violations": [
+        "content-type \"text/html; charset=utf-8\" does not match /xml/"
+      ],
+      "optionalSkipped": false,
+      "ok": false
+    },
+    {
+      "path": "/sitemap-articles.xml",
+      "url": "https://phlabs.co.uk/sitemap-articles.xml?__cache_probe=1783537024795fb5at2",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "cacheControl": "public, max-age=300, must-revalidate",
+      "cdnCacheControl": "no-store",
+      "surrogateControl": "no-store",
+      "cfCacheStatus": "DYNAMIC",
+      "age": 0,
+      "violations": [
+        "content-type \"text/html; charset=utf-8\" does not match /xml/"
+      ],
+      "optionalSkipped": false,
+      "ok": false
+    }
+  ]
+}
