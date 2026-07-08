@@ -329,8 +329,12 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
         }
 
         // ---- 2) stuck-order sweep ----------------------------------
+        // Runs every cron tick. Catches orders where Wallid processed
+        // the payment but our webhook never landed (network, edge cold
+        // start, signature drift, etc.). 3-minute cutoff so recovery
+        // happens within ~5-8 min of the customer paying, not 30+.
         try {
-          const cutoff = new Date(Date.now() - 30 * 60_000);
+          const cutoff = new Date(Date.now() - 3 * 60_000);
           const stuck = await listDocsAdmin("orders", {
             orderBy: "createdAt",
             direction: "ASCENDING",
@@ -341,11 +345,15 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
 
           for (const order of stuck) {
             const orderId = String(order.id);
-            const apiPaymentId =
+            let apiPaymentId =
               String((order as { paymentRef?: string; apiPaymentId?: string }).paymentRef ||
                 (order as { apiPaymentId?: string }).apiPaymentId || "");
+            // Order doc may not have paymentRef yet if the webhook
+            // never ran — look it up from wallid_payments by order_id.
+            if (!apiPaymentId) {
+              apiPaymentId = (await lookupApiPaymentIdForOrder(orderId)) || "";
+            }
             if (!apiPaymentId) continue;
-            if ((order as { lastWebhookAt?: unknown }).lastWebhookAt) continue;
 
             const providerStatus = await queryWallidPaymentStatus(apiPaymentId);
             if (!providerStatus || providerStatus.toLowerCase() === "pending") continue;
@@ -360,7 +368,7 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
             if (!firestoreStatus) continue;
 
             const priorStatus = String(order.status ?? "").toLowerCase();
-            const { transitioned } = await transitionDocStatusAdmin("orders", orderId, {
+            const { transitioned, prior } = await transitionDocStatusAdmin("orders", orderId, {
               allowFrom: ["pending", "pending_payment", "awaiting_payment", "processing_payment", ""],
               updates: {
                 status: firestoreStatus,
@@ -372,6 +380,18 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
               },
             });
             if (!transitioned) continue;
+
+            // Mirror the provider status onto the supabase row so
+            // admin views reflect reality.
+            try {
+              const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+              await supabaseAdmin
+                .from("wallid_payments")
+                .update({ status: providerStatus.toUpperCase() })
+                .eq("api_payment_id", apiPaymentId);
+            } catch (e) {
+              console.warn("[reconcile] wallid_payments mirror failed:", e);
+            }
 
             await reliability.recordWebhookEventAdmin(apiPaymentId, {
               orderId,
@@ -387,12 +407,18 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
               apiPaymentId,
               metadata: { reason: "Stuck order detected via cron", providerStatus },
             });
+
+            if (firestoreStatus === "paid" && prior) {
+              await sendPaymentConfirmedEmail(orderId, apiPaymentId, prior);
+            }
+
             results.stuck += 1;
             results.processed += 1;
           }
         } catch (e) {
           console.warn("[reconcile] stuck-order sweep failed:", e);
         }
+
 
         return json({ ok: true, ...results });
       },
