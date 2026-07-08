@@ -1492,6 +1492,7 @@ export default {
       }
 
       normalized = applyStrictNoStoreHeaders(applyCacheRecoveryHeaders(normalized, url), url.pathname);
+      normalized = applyDynamicAssetCacheHeaders(normalized, url);
 
       if (normalized.status === 404) {
         const recovery = missingBuildAssetRecoveryResponse(url.pathname);
