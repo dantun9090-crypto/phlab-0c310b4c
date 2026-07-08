@@ -281,7 +281,18 @@ function renderMarkdown(results: Result[]): string {
 }
 
 async function main() {
-  const results = await Promise.all(TARGETS.map(probe));
+  // 1. Auto-discover any additional sitemap files referenced from the
+  //    root sitemap or sitemap index — this future-proofs the probe
+  //    against splits like /sitemap-blog.xml, /sitemap-categories.xml, etc.
+  const seedPaths = new Set(SEED_TARGETS.map((t) => t.path));
+  const discovered = await discoverAdditionalSitemaps(seedPaths);
+  const targets = [...SEED_TARGETS, ...discovered];
+  console.log(
+    `sitemap/robots cache probe: probing ${targets.length} paths ` +
+      `(${SEED_TARGETS.length} seed + ${discovered.length} discovered)`,
+  );
+
+  const results = await Promise.all(targets.map(probe));
 
   mkdirSync(OUT_DIR, { recursive: true });
   const jsonPath = join(OUT_DIR, "sitemap-robots-probe.json");
