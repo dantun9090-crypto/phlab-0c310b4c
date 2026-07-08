@@ -1,0 +1,110 @@
+name: Cache headers regression (Playwright)
+
+# Post-deploy regression: after every publish (and on a 30-min cron as a
+# safety net), run the Playwright suite that asserts the expected
+# cache-control / cdn-cache-control / cf-cache-status for each dynamic
+# route category on the LIVE edge. This is the last line of defence
+# against the "blank page after publish" regression — the origin can
+# emit the right headers while a Cloudflare cache rule or the
+# phlabs-prerender Worker silently rewrites them.
+#
+# Categories asserted (see e2e/cache-headers-regression.spec.ts):
+#   - html-shell        → uncacheable browser+CDN, cf-cache-status ≠ HIT
+#   - dynamic-asset     → CDN no-store, browser max-age ≤ 300, no immutable
+#   - sensitive         → strict no-store everywhere
+#   - immutable-asset   → public + max-age ≥ 1y + immutable
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_run:
+    workflows: ["Release", "Post-deploy security check", "HTML shell no-cache guard"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Base URL to probe (default https://phlabs.co.uk)"
+        required: false
+        default: "https://phlabs.co.uk"
+
+jobs:
+  cache-headers-regression:
+    name: Cache headers must match per-category contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    env:
+      TEST_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright chromium
+        run: bunx playwright install --with-deps chromium
+
+      # Give CF/origin a moment after a fresh deploy so we assert on the
+      # newly-published edge, not the version still propagating.
+      - name: Wait for edge propagation
+        if: github.event_name == 'push' || github.event_name == 'workflow_run'
+        run: sleep 90
+
+      - name: Run cache-headers regression
+        id: pw
+        run: |
+          set +e
+          bunx playwright test e2e/cache-headers-regression.spec.ts \
+            --project=chromium \
+            --reporter=list,html
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cache-headers-regression-report-${{ github.sha }}
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Open issue on regression
+        if: steps.pw.outputs.exit_code != '0' && github.event_name != 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.sha.slice(0, 7);
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Cache-headers regression on ${sha}`,
+              labels: ['regression', 'cache', 'post-deploy', 'critical'],
+              body: [
+                `A dynamic-route cache-header contract failed on the live edge.`,
+                ``,
+                `See the \`cache-headers-regression-report-${context.sha}\` artifact`,
+                `for the failing category, path, and observed headers.`,
+                ``,
+                `Fix path:`,
+                `1. Purge Cloudflare (\`purge_everything\` on zone ed093ef4578e8e3568e26c3e979558c6).`,
+                `2. Re-run this workflow to confirm the origin is emitting the`,
+                `   expected headers (src/server.ts: applySecurityHeaders,`,
+                `   applyDynamicAssetCacheHeaders, applyStrictNoStoreHeaders).`,
+                `3. If the origin is correct but CF still overrides, inspect`,
+                `   the phlabs-prerender Worker and the "phlabs cache" ruleset.`,
+                ``,
+                `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              ].join('\n'),
+            });
+
+      - name: Fail on regression
+        if: steps.pw.outputs.exit_code != '0'
+        run: exit 1
