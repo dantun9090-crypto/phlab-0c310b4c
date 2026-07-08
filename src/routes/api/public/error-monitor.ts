@@ -124,6 +124,10 @@ const DEFAULT_THRESHOLDS: Record<EventType, number> = {
   compound_overlay: 1,
   client_exception: 5,
   blank_watchdog: 3,
+  // A single chunk-load failure indicates a stale HTML shell against a new
+  // build (or a Cloudflare cache holding an evicted asset). Alert on the
+  // first event — the fix requires human intervention (edge purge / rule).
+  chunk_load_error: 1,
 };
 
 const DEFAULT_WINDOW_MIN = 5;
