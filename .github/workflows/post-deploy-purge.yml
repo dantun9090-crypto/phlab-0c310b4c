@@ -211,4 +211,98 @@ jobs:
           path: ./edge-cache-verify.ndjson
           retention-days: 30
 
+  robots_sitemap_purge_probe:
+    # Robots/sitemap-specific purge + probe. The primary `purge` job runs
+    # purge_everything, but /robots.txt has historically been served with
+    # `cache-control: immutable` by the static-asset handler on old builds
+    # and pinned in browsers/CDN tiers. This job explicitly purges the
+    # robots + sitemap URLs by path (belt-and-braces after purge_everything)
+    # and re-runs scripts/probe-sitemap-robots.ts to confirm the live edge
+    # now returns the no-store contract. Failure opens a regression issue
+    # via the sitemap-robots-cache-probe workflow's `workflow_run` trigger.
+    name: Purge /robots.txt + /sitemap*.xml and re-probe
+    needs: purge
+    # Run even if the primary purge job failed — robots/sitemap freshness
+    # is SEO-critical and worth retrying regardless of the HTML edge check.
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+      CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      PROBE_BASE_URL: https://phlabs.co.uk
+      PROBE_OUT_DIR: sitemap-robots-probe
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Targeted purge (/robots.txt + /sitemap*.xml, apex + www)
+        shell: bash
+        run: |
+          set +e
+          if [ -z "$CF_API_TOKEN" ] || [ -z "$CF_ZONE_ID" ]; then
+            echo "::warning::CF_API_TOKEN or CF_ZONE_ID not set — skipping robots/sitemap purge"
+            exit 0
+          fi
+          started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          payload=$(cat <<'JSON'
+          {"files":[
+            "https://phlabs.co.uk/robots.txt",
+            "https://phlabs.co.uk/sitemap.xml",
+            "https://phlabs.co.uk/sitemap-index.xml",
+            "https://phlabs.co.uk/sitemap-products.xml",
+            "https://phlabs.co.uk/sitemap-articles.xml",
+            "https://www.phlabs.co.uk/robots.txt",
+            "https://www.phlabs.co.uk/sitemap.xml",
+            "https://www.phlabs.co.uk/sitemap-index.xml",
+            "https://www.phlabs.co.uk/sitemap-products.xml",
+            "https://www.phlabs.co.uk/sitemap-articles.xml"
+          ]}
+          JSON
+          )
+          resp=$(curl -sS -X POST \
+            "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
+            -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "$payload")
+          finished=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          ok=false
+          if echo "$resp" | grep -q '"success":true'; then ok=true; fi
+          printf '{"ts":"%s","kind":"edge_cache_verify","runId":"%s","stage":"cf.purge.robots_sitemap","startedAt":"%s","finishedAt":"%s","ok":%s,"response":%s}\n' \
+            "$finished" "${GITHUB_RUN_ID:-local}" "$started" "$finished" "$ok" \
+            "$(echo "$resp" | head -c 800 | jq -Rs . 2>/dev/null || echo '""')" \
+            | tee -a ./robots-sitemap-purge.ndjson
+          if [ "$ok" = "false" ]; then
+            echo "::warning::robots/sitemap targeted purge failed: $resp"
+          fi
+
+      - name: Wait 20s for edge propagation
+        run: sleep 20
+
+      - name: Re-run sitemap/robots cache probe
+        id: probe
+        run: |
+          set +e
+          bun run scripts/probe-sitemap-robots.ts
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+
+      - name: Upload probe report + purge log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: post-deploy-robots-sitemap-${{ github.run_id }}
+          path: |
+            sitemap-robots-probe/
+            robots-sitemap-purge.ndjson
+          retention-days: 30
+
+      - name: Fail if probe reports drift
+        if: steps.probe.outputs.exit_code != '0'
+        run: |
+          echo "::error::/robots.txt or /sitemap*.xml is still not compliant after post-deploy purge — see sitemap-robots-probe artifact"
+          exit 1
+
+
 
