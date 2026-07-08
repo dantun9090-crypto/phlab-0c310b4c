@@ -57,6 +57,9 @@ export default function PaymentTriageTab() {
   const [detail, setDetail] = useState<Record<string, TriageDetail>>({});
   const [detailLoading, setDetailLoading] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(false);
+  const [attempts, setAttempts] = useState<WebhookAttemptRow[]>([]);
+  const [attemptSummary, setAttemptSummary] = useState<WebhookAttemptSummary | null>(null);
+  const [showAttempts, setShowAttempts] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -64,10 +67,15 @@ export default function PaymentTriageTab() {
     try {
       const idToken = await getAdminIdToken();
       if (!idToken) throw new Error('Not signed in');
-      const res = await listPaymentTriageAdmin({
-        data: { idToken, status, search: search.trim() || undefined, limit: 100 },
-      });
-      setRows(res.rows);
+      const [triageRes, attemptsRes] = await Promise.all([
+        listPaymentTriageAdmin({
+          data: { idToken, status, search: search.trim() || undefined, limit: 100 },
+        }),
+        listWebhookAttemptsAdmin({ data: { idToken, limit: 50, windowHours: 24 } }),
+      ]);
+      setRows(triageRes.rows);
+      setAttempts(attemptsRes.rows);
+      setAttemptSummary(attemptsRes.summary);
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally {
@@ -84,6 +92,7 @@ export default function PaymentTriageTab() {
     const t = setInterval(() => void load(), 30_000);
     return () => clearInterval(t);
   }, [autoRefresh, load]);
+
 
   async function toggleRow(orderId: string) {
     if (expanded === orderId) {
