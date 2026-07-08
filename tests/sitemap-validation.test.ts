@@ -18,7 +18,7 @@ import {
 import { KNOWN_PUBLIC_ROUTES } from "../src/lib/sitemap-audit.functions";
 
 const ROBOTS = readFileSync(
-  resolve(process.cwd(), "public/robots.txt"),
+  resolve(process.cwd(), "src/assets/robots.txt"),
   "utf8",
 );
 

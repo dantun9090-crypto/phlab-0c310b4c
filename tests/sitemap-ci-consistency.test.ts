@@ -28,7 +28,7 @@ const SITEMAP_SRC = readFileSync(
   "utf8",
 );
 const ROBOTS_TXT = readFileSync(
-  resolve(process.cwd(), "public/robots.txt"),
+  resolve(process.cwd(), "src/assets/robots.txt"),
   "utf8",
 );
 
