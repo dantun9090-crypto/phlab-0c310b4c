@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import LegacyApp from "@/legacy/LegacyApp";
+import { LegacyMount as LegacyClientMount } from "@/lib/legacy-mount";
 import { SEO_LIMITS, SITE_URL, canonicalUrl, clamp, metaForPath } from "@/lib/seo-meta";
 import { ARTICLE_INDEX as articles } from "@/pages/Resources/data/articles-index";
 import { KNOWN_ROOTS } from "@/lib/known-roots";
@@ -126,6 +126,9 @@ export const Route = createFileRoute("/$")({
 });
 
 function LegacyMount() {
+  // Client-only mount: keeps firebase/auth (EmailAuthProvider et al.) out
+  // of the SSR worker bundle where those symbols are undefined. See
+  // src/routes/account.tsx for the same pattern.
   const splat = Route.useParams()._splat ?? "";
-  return <LegacyApp initialPath={`/${splat}`} />;
+  return <LegacyClientMount path={`/${splat}`} />;
 }
