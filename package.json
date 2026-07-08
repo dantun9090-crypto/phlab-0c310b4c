@@ -12,6 +12,7 @@
     "check:sitemap-xml": "bun scripts/check-sitemap-xml.ts",
     "check:robots-sitemap": "bun scripts/check-robots-sitemap.ts",
     "probe:sitemap-robots": "bun scripts/probe-sitemap-robots.ts",
+    "probe:cache-drift": "bun scripts/head-probe-cache-drift.ts",
     "check:sitemap-urls-live": "bun scripts/check-sitemap-urls-live.ts",
     "build:post": "bun scripts/generate-sbom.ts && bun scripts/check-dist-domains.ts",
     "build:dev": "NODE_OPTIONS='--max-old-space-size=8192' vite build --mode development",
