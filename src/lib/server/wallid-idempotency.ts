@@ -132,22 +132,3 @@ export async function applyWallidPaymentUpdate(args: ApplyArgs): Promise<ApplyRe
   return { applied: !updErr, currentStatus };
 }
 
-/**
- * Stamp `processed_at` on the event row once fan-out completes. Read by
- * the admin triage UI + reconciliation cron to distinguish
- * "received but never processed" from "fully applied".
- */
-export async function markEventProcessed(
-  supabaseAdmin: SupabaseClient,
-  eventId: string,
-): Promise<void> {
-  try {
-    await supabaseAdmin
-      .from("wallid_webhook_events")
-      .update({ processed_at: new Date().toISOString() })
-      .eq("event_id", eventId)
-      .is("processed_at", null);
-  } catch (e) {
-    console.warn("[wallid-idempotency] markEventProcessed failed:", e instanceof Error ? e.message : e);
-  }
-}
