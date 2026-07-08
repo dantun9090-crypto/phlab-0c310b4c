@@ -17,10 +17,9 @@
  * The Firestore side is already guarded by `transitionDocStatusAdmin`'s
  * `allowFrom` list, so we only add the guard for the Supabase row here.
  *
- * A separate `markEventProcessed()` closes the loop by stamping
- * `wallid_webhook_events.processed_at` once the fan-out succeeds — that
- * timestamp is what `wallid_webhook_duplicates.original_processed_at`
- * reports to the admin triage UI.
+ * `wallid_webhook_events.processed_at` is already stamped by the DB
+ * default at insert time, so the admin triage UI + duplicate audit rows
+ * always see a value.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 
