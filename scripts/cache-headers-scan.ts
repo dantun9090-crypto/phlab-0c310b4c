@@ -29,7 +29,13 @@ const BASE = process.env.CACHE_SCAN_BASE_URL || process.env.TEST_BASE_URL || "ht
 const OUT_DIR = process.env.CACHE_SCAN_OUT_DIR || "cache-headers-report";
 const TTL_CEILING = 3600;
 
-const PUBLIC_PATHS = [
+// HTML shells MUST NEVER be edge-cached. A cached shell after a Lovable
+// publish points at hashed JS/CSS chunks that have been evicted from the
+// new build, producing blank pages until a manual Cloudflare purge — the
+// exact regression fixed in src/server.ts (max-age=0, must-revalidate +
+// cdn-cache-control: no-store + cloudflare-cdn-cache-control: no-store).
+// This scanner is the CI guardrail that prevents that ever regressing.
+const HTML_SHELL_PATHS = [
   "/",
   "/products",
   "/compound",
@@ -38,6 +44,7 @@ const PUBLIC_PATHS = [
   "/about",
   "/contact",
   "/resources",
+  "/peptide-calculator",
 ];
 
 const SENSITIVE_PATHS = [
@@ -52,7 +59,7 @@ const SENSITIVE_PATHS = [
   "/api/public/cache-config",
 ];
 
-type Kind = "public" | "sensitive";
+type Kind = "html-shell" | "sensitive";
 
 interface Probe {
   path: string;
@@ -154,30 +161,43 @@ async function probe(path: string, kind: Kind): Promise<Probe> {
       // informational only
     }
   } else {
+    // html-shell: MUST NEVER be edge-cached. Guards against the stale-shell
+    // → blank-page regression on every deploy.
     if (status !== 200 && status !== 301 && status !== 302) {
       violations.push(`unexpected status ${status}`);
     }
     if (status === 200) {
-      if (!cc && !cdn) violations.push("no cache-control / cdn-cache-control set");
-      const browserTtl = Math.max(
-        parseDirective(cc, "max-age") ?? 0,
-        parseDirective(cc, "s-maxage") ?? 0,
-      );
-      const cdnTtl = Math.max(
-        parseDirective(cdn, "max-age") ?? 0,
-        parseDirective(cdn, "s-maxage") ?? 0,
-      );
-      const effective = Math.max(browserTtl, cdnTtl);
-      if (/\bno-store\b/i.test(cc) && !cdn) {
-        warnings.push("browser no-store with no CDN tier — every request hits origin");
+      if (!cc) violations.push("missing cache-control on HTML shell");
+      // Browser cache-control must be non-cacheable (no-store OR max-age=0
+      // + must-revalidate).
+      if (cc && !isUncacheable(cc)) {
+        violations.push(`cache-control caches HTML shell in browser: "${cc}"`);
       }
-      if (effective > TTL_CEILING) {
-        violations.push(`effective TTL ${effective}s exceeds ${TTL_CEILING}s ceiling`);
+      // CDN tier (Cloudflare) MUST be no-store. Anything else lets CF hold
+      // the shell across a deploy and serve it against evicted chunks.
+      const cdnHeader = cdn || surrogate;
+      if (!/\bno-store\b/i.test(cdnHeader)) {
+        violations.push(
+          `cdn-cache-control must be "no-store" on HTML shell (got "${cdnHeader || "unset"}")`,
+        );
       }
-      if (cf && !["HIT", "MISS", "DYNAMIC", "BYPASS", "EXPIRED", "REVALIDATED", "UPDATING", "STALE", "NONE/UNKNOWN"].includes(cf)) {
-        warnings.push(`unusual cf-cache-status=${cf}`);
+      // s-maxage anywhere on the shell means CF will cache it.
+      const sMaxCc = parseDirective(cc, "s-maxage") ?? 0;
+      const sMaxCdn = parseDirective(cdn, "s-maxage") ?? 0;
+      if (sMaxCc > 0 || sMaxCdn > 0) {
+        violations.push(`s-maxage>0 on HTML shell (cc=${sMaxCc}, cdn=${sMaxCdn})`);
+      }
+      // If CF ever reports HIT/REVALIDATED/STALE/UPDATING on a shell,
+      // it's already caching it — the exact failure mode.
+      if (["HIT", "REVALIDATED", "UPDATING", "STALE"].includes(cf)) {
+        violations.push(`cf-cache-status=${cf} — HTML shell is being edge-cached`);
+      }
+      const age = Number(headers["age"] || "0");
+      if (age > 0) {
+        violations.push(`age=${age}s — HTML shell served from edge cache`);
       }
     }
+    void TTL_CEILING;
   }
 
   return {
@@ -203,7 +223,7 @@ function renderMarkdown(results: Probe[]): string {
   lines.push(`- Violations: **${failed.length}**`);
   lines.push(`- Generated: ${new Date().toISOString()}`);
   lines.push("");
-  for (const kind of ["public", "sensitive"] as const) {
+  for (const kind of ["html-shell", "sensitive"] as const) {
     lines.push(`## ${kind} paths`);
     lines.push("");
     lines.push("| Path | Status | cache-control | cdn-cache-control | surrogate-control | cf-cache-status | OK |");
@@ -230,7 +250,7 @@ function renderMarkdown(results: Probe[]): string {
 
 async function main() {
   const work: Promise<Probe>[] = [
-    ...PUBLIC_PATHS.map((p) => probe(p, "public")),
+    ...HTML_SHELL_PATHS.map((p) => probe(p, "html-shell")),
     ...SENSITIVE_PATHS.map((p) => probe(p, "sensitive")),
   ];
   const results = await Promise.all(work);
