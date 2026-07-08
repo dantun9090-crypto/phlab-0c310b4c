@@ -1,0 +1,103 @@
+name: HTML shell no-cache guard
+
+# CI guardrail: HTML shells MUST NEVER be edge-cached. A stale shell after
+# a Lovable publish points at hashed JS/CSS chunks evicted from the new
+# build → blank pages until a manual Cloudflare purge. This job probes the
+# critical shell routes against the live edge after every push to main and
+# on a 15-min schedule, failing loudly if any shell starts being cached.
+#
+# Enforcement rules (see scripts/cache-headers-scan.ts):
+#   - cache-control must be no-store OR max-age=0, must-revalidate
+#   - cdn-cache-control (or surrogate-control) MUST include no-store
+#   - no s-maxage>0 on browser or CDN tier
+#   - cf-cache-status MUST NOT be HIT / REVALIDATED / STALE / UPDATING
+#   - age header MUST be 0 or absent
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_run:
+    workflows: ["Release", "Post-deploy security check"]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Base URL to probe (default https://phlabs.co.uk)"
+        required: false
+        default: "https://phlabs.co.uk"
+
+jobs:
+  html-shell-guard:
+    name: HTML shell must not be edge-cached
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # Give Cloudflare/origin a moment after a fresh deploy so we're
+      # probing the newly published shell, not the one still propagating.
+      - name: Wait for edge propagation
+        if: github.event_name == 'push' || github.event_name == 'workflow_run'
+        run: sleep 90
+
+      - name: Probe HTML shell cache headers
+        id: scan
+        env:
+          CACHE_SCAN_BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+          CACHE_SCAN_OUT_DIR: cache-headers-report
+        run: |
+          set +e
+          bun run scripts/cache-headers-scan.ts
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+        continue-on-error: true
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-shell-cache-report-${{ github.sha }}
+          path: cache-headers-report/
+          retention-days: 30
+
+      - name: Open issue on regression
+        if: steps.scan.outputs.exit_code != '0' && github.event_name != 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.sha.slice(0, 7);
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `HTML shell cache regression on ${sha}`,
+              labels: ['regression', 'cache', 'post-deploy', 'critical'],
+              body: [
+                `An HTML shell route is being edge-cached on the live site.`,
+                ``,
+                `This is the exact regression that causes blank pages after a`,
+                `Lovable publish: the cached shell references hashed asset`,
+                `chunks that have been evicted from the new build.`,
+                ``,
+                `Fix path:`,
+                `1. Purge the Cloudflare edge for phlabs.co.uk immediately.`,
+                `2. Confirm src/server.ts still emits \`cdn-cache-control: no-store\``,
+                `   and \`cloudflare-cdn-cache-control: no-store\` on HTML shells.`,
+                `3. Check for a new Cloudflare cache rule accidentally matching HTML.`,
+                ``,
+                `Download the \`html-shell-cache-report-${context.sha}\` artifact for the full report.`,
+                ``,
+                `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              ].join('\n'),
+            });
+
+      - name: Fail on regression
+        if: steps.scan.outputs.exit_code != '0'
+        run: exit 1
