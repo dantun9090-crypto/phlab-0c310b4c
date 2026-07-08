@@ -593,6 +593,51 @@ function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
   );
 }
 
+// Dynamic non-HTML assets that MUST NOT be cached at the Cloudflare edge.
+// The browser may hold a short copy (5 min) but every hit must revalidate
+// with the origin so a re-uploaded file (e.g. an updated protocol PDF or a
+// regenerated sitemap) is picked up on the next request without a manual
+// Cloudflare purge. Applies regardless of file extension — the whole
+// /downloads/* namespace is treated as user-editable content, not static
+// build output. Hashed build assets live under /assets/ or /_build/ and are
+// unaffected (they stay `immutable`, 1 year).
+const DYNAMIC_ASSET_PREFIXES = ["/downloads/"];
+const DYNAMIC_ASSET_EXACT = new Set<string>([
+  "/robots.txt",
+  "/sitemap.xml",
+  "/sitemap-products.xml",
+  "/sitemap-articles.xml",
+  "/sitemap-index.xml",
+]);
+function isDynamicAssetPath(pathname: string): boolean {
+  if (DYNAMIC_ASSET_EXACT.has(pathname)) return true;
+  if (/^\/sitemap[-a-z0-9]*\.xml$/i.test(pathname)) return true;
+  for (const p of DYNAMIC_ASSET_PREFIXES) {
+    if (pathname.startsWith(p)) return true;
+  }
+  return false;
+}
+function applyDynamicAssetCacheHeaders(response: Response, url: URL): Response {
+  if (!isDynamicAssetPath(url.pathname)) return response;
+  const headers = new Headers(response.headers);
+  // Browser: 5 min soft cache, must-revalidate on every use.
+  // CDN (Cloudflare + any upstream surrogate): no-store, so the edge never
+  // pins a stale copy after content is re-uploaded.
+  headers.set("cache-control", "public, max-age=300, must-revalidate");
+  headers.set("cdn-cache-control", "no-store");
+  headers.set("cloudflare-cdn-cache-control", "no-store");
+  headers.set("surrogate-control", "no-store");
+  headers.delete("pragma");
+  headers.delete("expires");
+  headers.delete("age");
+  headers.set("x-phl-cache-policy", "dynamic-asset");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 // HTML routes that must NEVER be edge-cached (sensitive / dynamic per user).
 // Anything not matching these gets the admin-controlled TTL (default Off/0).
 // SAFETY: TTL is short (Off/24h/7d/14d/30d) so the window for stale-HTML-vs-new-chunks
