@@ -33,6 +33,14 @@ function parseTs(v: unknown): number | null {
   return null;
 }
 
+function asBoolean(v: unknown): boolean | null {
+  return typeof v === 'boolean' ? v : null;
+}
+
+function asNumber(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
 export const Route = createFileRoute('/api/public/publish-status')({
   server: {
     handlers: {
@@ -46,19 +54,17 @@ export const Route = createFileRoute('/api/public/publish-status')({
 
         const currentBuildId = typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'unknown';
 
-        const [buildState, auditRows, errorRows] = await Promise.all([
+        const [buildState, recentAuditRows, recentErrorRows] = await Promise.all([
           getDocAdmin('_meta', 'build_state').catch(() => null),
           listDocsAdmin('auditLogs', {
             orderBy: 'createdAt',
             direction: 'DESCENDING',
-            limit: 1,
-            where: { field: 'kind', op: 'EQUAL', value: 'post_publish_auto_invalidation' },
+            limit: 100,
           }).catch(() => [] as Array<Record<string, unknown> & { id: string }>),
           listDocsAdmin('errorLogs', {
             orderBy: 'createdAt',
             direction: 'DESCENDING',
-            limit: 5,
-            where: { field: 'type', op: 'EQUAL', value: 'audit_log_failure' },
+            limit: 50,
           }).catch(() => [] as Array<Record<string, unknown> & { id: string }>),
         ]);
 
@@ -66,9 +72,21 @@ export const Route = createFileRoute('/api/public/publish-status')({
         const updatedAtMs = parseTs(buildState?.updatedAt);
         const buildMatch = lastBuildId !== null && lastBuildId === currentBuildId;
 
-        const lastAudit = auditRows[0] ?? null;
+        const lastAudit = recentAuditRows.find((row) => row.kind === 'post_publish_auto_invalidation') ?? null;
+        const errorRows = recentErrorRows.filter((row) => row.type === 'audit_log_failure').slice(0, 5);
         const cf = (lastAudit?.cloudflare as { ok?: boolean; status?: number } | undefined) ?? null;
         const pr = (lastAudit?.prerender as { ok?: boolean; urls?: number } | undefined) ?? null;
+        const buildStatePurgeRequested = buildState?.lastPurgeOk !== undefined || buildState?.lastPurgeStatus !== undefined;
+        const lastPurgeRequested = cf !== null || buildStatePurgeRequested;
+        const lastPurgeOk = cf?.ok ?? asBoolean(buildState?.lastPurgeOk) ?? false;
+        const lastPurgeStatus = cf?.status ?? asNumber(buildState?.lastPurgeStatus) ?? null;
+        const buildStateRecacheRequested = buildState?.lastRecacheOk !== undefined || buildState?.lastRecacheUrls !== undefined;
+        const lastRecacheRequested = pr !== null || buildStateRecacheRequested;
+        const lastRecacheOk = pr?.ok ?? asBoolean(buildState?.lastRecacheOk) ?? false;
+        const lastRecacheUrls = pr?.urls ?? asNumber(buildState?.lastRecacheUrls) ?? null;
+        const lastInvalidationBuildId = (buildState?.lastInvalidationBuildId as string | undefined) ?? null;
+        const lastInvalidationAt = buildState?.lastInvalidationAt ?? null;
+        const lastCheckTime = parseTs(lastAudit?.createdAt) ?? parseTs(lastInvalidationAt);
 
         return json({
           currentBuildId,
@@ -78,22 +96,22 @@ export const Route = createFileRoute('/api/public/publish-status')({
             lastBuildId,
             previousBuildId: buildState?.previousBuildId ?? null,
             updatedAt: updatedAtMs ? new Date(updatedAtMs).toISOString() : null,
-            lastInvalidationBuildId: buildState?.lastInvalidationBuildId ?? null,
-            lastInvalidationAt: buildState?.lastInvalidationAt ?? null,
+            lastInvalidationBuildId,
+            lastInvalidationAt,
             lastPurgeOk: buildState?.lastPurgeOk ?? null,
             lastPurgeStatus: buildState?.lastPurgeStatus ?? null,
             lastRecacheOk: buildState?.lastRecacheOk ?? null,
             lastAuditOk: buildState?.lastAuditOk ?? null,
           },
-          lastCheckTime: parseTs(lastAudit?.createdAt),
-          lastCheckSuccess: !!lastAudit,
-          lastCheckBuildId: lastAudit?.buildId ?? null,
-          lastPurgeRequested: cf !== null,
-          lastPurgeOk: cf?.ok === true,
-          lastPurgeStatus: cf?.status ?? null,
-          lastRecacheRequested: pr !== null,
-          lastRecacheOk: pr?.ok === true,
-          lastRecacheUrls: pr?.urls ?? null,
+          lastCheckTime,
+          lastCheckSuccess: !!lastAudit || lastInvalidationBuildId === currentBuildId,
+          lastCheckBuildId: lastAudit?.buildId ?? lastInvalidationBuildId,
+          lastPurgeRequested,
+          lastPurgeOk,
+          lastPurgeStatus,
+          lastRecacheRequested,
+          lastRecacheOk,
+          lastRecacheUrls,
           recentAuditFailures: errorRows.length,
           recentAuditFailureSample: errorRows.slice(0, 3).map((r) => ({
             id: r.id,

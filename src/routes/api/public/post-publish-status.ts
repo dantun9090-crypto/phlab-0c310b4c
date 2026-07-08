@@ -26,24 +26,24 @@ export const Route = createFileRoute('/api/public/post-publish-status')({
         });
         if (limited) return limited;
 
-        const [stepRows, summaryRows] = await Promise.all([
-          listDocsAdmin('auditLogs', {
+        let rows: Array<Record<string, unknown> & { id: string }> = [];
+        let readError: string | null = null;
+        try {
+          // Avoid `where kind == ...` + `orderBy createdAt` here: Firestore
+          // needs a composite index for that shape and this diagnostic route
+          // must keep working during cache incidents. Read recent rows and
+          // filter in memory instead.
+          rows = await listDocsAdmin('auditLogs', {
             orderBy: 'createdAt',
             direction: 'DESCENDING',
-            limit: 10,
-            where: { field: 'kind', op: 'EQUAL', value: 'post_publish_step' },
-          }),
-          listDocsAdmin('auditLogs', {
-            orderBy: 'createdAt',
-            direction: 'DESCENDING',
-            limit: 10,
-            where: { field: 'kind', op: 'EQUAL', value: 'post_publish_auto_invalidation' },
-          }),
-        ]).catch((e) => {
-          throw new Error(e instanceof Error ? e.message : String(e));
-        });
+            limit: 100,
+          });
+        } catch (e) {
+          readError = e instanceof Error ? e.message : String(e);
+        }
 
-        const entries = [...stepRows, ...summaryRows]
+        const entries = rows
+          .filter((row) => row.kind === 'post_publish_step' || row.kind === 'post_publish_auto_invalidation')
           .sort((a, b) => String(b.createdAt ?? '').localeCompare(String(a.createdAt ?? '')))
           .slice(0, 10)
           .map((row) => ({
@@ -64,10 +64,11 @@ export const Route = createFileRoute('/api/public/post-publish-status')({
           }));
 
         return json({
-          ok: true,
+          ok: readError === null,
           currentBuildId: typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'unknown',
           count: entries.length,
           entries,
+          readError,
           checkedAt: new Date().toISOString(),
         });
       },

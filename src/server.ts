@@ -37,6 +37,8 @@ let serverEntryPromise: Promise<ServerEntry> | undefined;
 // repeat requests inside the same isolate.
 const postPublishCheckedBuildIds = new Set<string>();
 function maybeTriggerPostPublish(request: Request, ctx: WorkerCtx): void {
+  const url = new URL(request.url);
+  if (url.hostname !== "phlabs.co.uk") return;
   const buildId = typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev";
   if (postPublishCheckedBuildIds.has(buildId)) return;
   postPublishCheckedBuildIds.add(buildId);
@@ -44,7 +46,6 @@ function maybeTriggerPostPublish(request: Request, ctx: WorkerCtx): void {
     const oldest = postPublishCheckedBuildIds.values().next().value;
     if (oldest) postPublishCheckedBuildIds.delete(oldest);
   }
-  const url = new URL(request.url);
   const origin = `${url.protocol}//${url.host}`;
   const p = fetch(`${origin}/api/public/post-publish-check`, {
     headers: { "user-agent": "phlabs-ssr-post-publish/1.0" },
