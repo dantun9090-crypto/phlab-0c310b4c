@@ -30,6 +30,8 @@ import DayNightToggle from "@/components/DayNightToggle";
 import { initWebVitals } from "@/lib/web-vitals";
 import { installErrorMonitor } from "@/lib/error-monitor";
 import { installBfcacheMonitor } from "@/lib/bfcache-monitor";
+import { installClientErrorReporter } from "@/lib/client-error-reporter";
+import { installChunkAutoRecovery } from "@/lib/chunk-auto-recovery";
 void _clearClientCaches;
 
 function NotFoundComponent() {
