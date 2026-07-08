@@ -1,0 +1,34 @@
+[
+  {
+    "name": "minScore",
+    "expected": 0.85,
+    "actual": 0.56,
+    "values": [
+      0.56,
+      0.55,
+      0.5
+    ],
+    "operator": ">=",
+    "passed": false,
+    "auditProperty": "performance",
+    "auditId": "categories",
+    "level": "error",
+    "url": "https://phlabs.co.uk/compound"
+  },
+  {
+    "name": "minScore",
+    "expected": 0.9,
+    "actual": 0.75,
+    "values": [
+      0.75,
+      0.75,
+      0.75
+    ],
+    "operator": ">=",
+    "passed": false,
+    "auditProperty": "best-practices",
+    "auditId": "categories",
+    "level": "warn",
+    "url": "https://phlabs.co.uk/compound"
+  }
+]
