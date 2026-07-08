@@ -64,6 +64,24 @@ service cloud.firestore {
       allow read:   if isAdmin() || isOrderOwner();
       allow update: if isAdmin() || (isOrderOwner() && ownerNoteOnlyUpdate());
       allow delete: if isAdmin();
+
+      // Payment audit trail — admin panel PaymentTimeline reads via client SDK;
+      // server writes bypass rules via service account, but the admin
+      // "Force Reconciliation" control also appends here client-side.
+      match /paymentTimeline/{eventId} {
+        allow read:   if isAdmin();
+        allow create: if isAdmin();
+        allow update, delete: if false;
+      }
+    }
+
+    // ---------- retryQueue ----------
+    // Rows created/consumed by the reconcile cron via the service account.
+    // Admin panel "Force Reconciliation" enqueues client-side.
+    match /retryQueue/{apiPaymentId} {
+      allow read:   if isAdmin();
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
 

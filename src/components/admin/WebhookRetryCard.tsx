@@ -44,18 +44,21 @@ export default function WebhookRetryCard({
     setLoading(true);
     setMessage(null);
     try {
+      // Merge-write only the fields needed to (re)schedule the run — do NOT
+      // clobber an existing `payload` or reset `attemptCount` on a live retry
+      // row queued by the webhook path. `source: manual_retry` signals the
+      // cron drain loop to poll the provider (and to dequeue even when the
+      // provider still reports no terminal status) so the row can't jam.
       await setDoc(
         doc(db, "retryQueue", apiPaymentId),
         {
           orderId,
           apiPaymentId,
-          payload: {},
           nextAttemptAt: Timestamp.now(),
-          attemptCount: 0,
           maxAttempts: 5,
           lastError: "manual retry",
-          createdAt: Timestamp.now(),
           source: "manual_retry",
+          manualRetryAt: Timestamp.now(),
         },
         { merge: true },
       );

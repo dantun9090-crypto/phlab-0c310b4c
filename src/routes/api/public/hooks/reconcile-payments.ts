@@ -97,16 +97,33 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
           const orderId = String(item.orderId || "");
           const payload = (item.payload as Record<string, unknown>) || {};
           const attemptCount = Number(item.attemptCount ?? 1);
+          const source = String((item as { source?: string }).source || "");
+          const isManualRetry = source === "manual_retry";
+
+          // Exhausted attempts: dequeue so we don't scan it forever.
           if (attemptCount >= 5) {
             results.skipped += 1;
+            try {
+              await reliability.dequeueRetryAdmin(apiPaymentId);
+            } catch (e) {
+              console.warn("[reconcile] dequeue (max attempts) failed:", e);
+            }
             continue;
           }
 
-          const rawStatus = String(
+          let rawStatus = String(
             (payload as { status?: string; type?: string }).status ||
               (payload as { type?: string }).type ||
               "",
           );
+
+          // Manual retries have no webhook payload — poll the provider
+          // directly so we still have a chance to resolve the row.
+          if (!rawStatus && (isManualRetry || Object.keys(payload).length === 0)) {
+            const providerStatus = await queryWallidPaymentStatus(apiPaymentId);
+            if (providerStatus) rawStatus = providerStatus.toLowerCase();
+          }
+
           const newStatus = mapWallidStatusToInternal(rawStatus);
           const firestoreStatus =
             newStatus === "paid" ? "paid"
@@ -117,6 +134,45 @@ export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
 
           if (!firestoreStatus) {
             results.skipped += 1;
+            // Manual retries with no actionable status must be dequeued —
+            // otherwise nextAttemptAt <= now matches on every cron tick and
+            // starves real webhook-failure retries.
+            if (isManualRetry) {
+              try {
+                await reliability.dequeueRetryAdmin(apiPaymentId);
+                await reliability.writePaymentTimelineAdmin(orderId, {
+                  actor: "cron_job",
+                  eventType: "reconciliation_run",
+                  statusFrom: "",
+                  statusTo: "",
+                  apiPaymentId,
+                  metadata: {
+                    source: "cron",
+                    result: "manual_retry_no_status",
+                    reason: "Provider returned no terminal status",
+                  },
+                });
+              } catch (e) {
+                console.warn("[reconcile] manual-retry dequeue failed:", e);
+              }
+            } else {
+              // Webhook-sourced row with unrecognised status — bump the
+              // counter and back off so we don't rescan every 5 minutes.
+              const nextAttempt = attemptCount + 1;
+              const backoffMin =
+                RETRY_BACKOFF_MINUTES[
+                  Math.min(nextAttempt - 1, RETRY_BACKOFF_MINUTES.length - 1)
+                ];
+              try {
+                await updateDocAdmin("retryQueue", apiPaymentId, {
+                  attemptCount: nextAttempt,
+                  nextAttemptAt: new Date(Date.now() + backoffMin * 60_000),
+                  lastError: `unmapped status: ${rawStatus || "(empty)"}`,
+                });
+              } catch (e) {
+                console.warn("[reconcile] unmapped-status backoff failed:", e);
+              }
+            }
             continue;
           }
 
