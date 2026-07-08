@@ -41,16 +41,81 @@ function json(body: unknown, status = 200): Response {
 }
 
 /**
- * Stub — replace with a real Wallid status GET when we wire the
- * outbound API client in. Returns the provider-level status string
- * (lowercased) or null when unknown.
- *
- * TODO: implement using WALLID_KEY_ID + WALLID_KEY_SECRET (see
- * scripts/wallid-status.mjs for the exact request shape).
+ * Fetch the current provider status for a Wallid payment. Returns the
+ * raw status string (e.g. "SUCCESS", "FAILED", "PENDING") or null if
+ * the call fails / the payment is unknown.
  */
-async function queryWallidPaymentStatus(_apiPaymentId: string): Promise<string | null> {
-  return null;
+async function queryWallidPaymentStatus(apiPaymentId: string): Promise<string | null> {
+  if (!apiPaymentId) return null;
+  try {
+    const { getWallidStatus } = await import("@/lib/wallid.server");
+    const r = await getWallidStatus(apiPaymentId);
+    return r.status ? String(r.status) : null;
+  } catch (e) {
+    console.warn("[reconcile] Wallid status fetch failed:", e instanceof Error ? e.message : e);
+    return null;
+  }
 }
+
+/**
+ * Look up the latest Wallid api_payment_id for an order from Supabase
+ * when the Firestore order doc has no paymentRef yet (webhook never
+ * fired, so we never wrote it back). Returns null if none found.
+ */
+async function lookupApiPaymentIdForOrder(orderId: string): Promise<string | null> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("wallid_payments")
+      .select("api_payment_id")
+      .eq("order_id", orderId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return data?.api_payment_id ? String(data.api_payment_id) : null;
+  } catch (e) {
+    console.warn("[reconcile] wallid_payments lookup failed:", e instanceof Error ? e.message : e);
+    return null;
+  }
+}
+
+async function sendPaymentConfirmedEmail(
+  orderId: string,
+  apiPaymentId: string,
+  prior: Record<string, unknown>,
+): Promise<void> {
+  const customerObj = (prior.customer as Record<string, unknown> | undefined) || {};
+  const to = String(prior.customerEmail ?? prior.email ?? customerObj.email ?? "");
+  if (!to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return;
+  try {
+    const { paymentConfirmedEmail } = await import("@/templates/paymentConfirmedEmail");
+    const firstName =
+      String(
+        (prior.firstName as string) ||
+          (customerObj.firstName as string) ||
+          (prior.customerName as string) ||
+          "",
+      ).split(" ")[0] || "there";
+    const amount = Number((prior.totalAmount as number) ?? (prior.total as number) ?? 0);
+    const reference = String(prior.orderNumber ?? orderId);
+    const { subject, html, text } = paymentConfirmedEmail({
+      firstName,
+      orderNumber: reference,
+      amount,
+      paymentMethod: "Open Banking (Wallid)",
+      paidAt: new Date(),
+    });
+    const { enqueueMailOnce } = await import("@/lib/server/enqueue-mail");
+    await enqueueMailOnce(`payment-confirmed:${orderId}`, {
+      to,
+      message: { subject, html, text },
+      source: `wallid:reconcile:${apiPaymentId}`,
+    });
+  } catch (mailErr) {
+    console.warn("[reconcile] Mail enqueue failed:", mailErr instanceof Error ? mailErr.message : mailErr);
+  }
+}
+
 
 export const Route = createFileRoute("/api/public/hooks/reconcile-payments")({
   server: {
