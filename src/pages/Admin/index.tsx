@@ -61,6 +61,8 @@ import EdgeMonitorTab from './tabs/EdgeMonitorTab';
 import SecurityEventsTab from './tabs/SecurityEventsTab';
 import FenaTab from './tabs/FenaTab';
 import PaymentsTab from './tabs/PaymentsTab';
+import PaymentTriageTab from './tabs/PaymentTriageTab';
+
 import AIAssistantTab from './tabs/AIAssistantTab';
 import ShopifyTab from './tabs/ShopifyTab';
 import SemrushTab from './tabs/SemrushTab';
@@ -520,6 +522,8 @@ export default function AdminPage() {
         case 'mailhealth': return <MailHealthTab />;
         case 'fena': return <FenaTab />;
         case 'payments': return <PaymentsTab />;
+        case 'paymenttriage': return <PaymentTriageTab />;
+
         case 'emailmarketing': return <EmailMarketingTab />;
         case 'emailbranding': return <EmailBrandingTab />;
 
