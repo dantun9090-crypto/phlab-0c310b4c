@@ -337,8 +337,9 @@ export const getPaymentTriageDetailAdmin = createServerFn({ method: "POST" })
       errorMessage: (e as { error_message?: string }).error_message
         ? String((e as { error_message?: string }).error_message)
         : null,
-      raw: e.raw ?? null,
+      rawJson: e.raw != null ? JSON.stringify(e.raw) : null,
     }));
+
 
     const duplicates = (dupesRes.data ?? []).map((d) => ({
       id: String(d.id),
