@@ -5,7 +5,7 @@ import { describe, it, expect } from "vitest";
 // pulls in TanStack + Firestore-admin).
 const ALLOWED_HOST_SUFFIXES = [
   "phlabs.co.uk",
-  "prohealthpeptides.co.uk",
+  "phlabs.co.uk",
   "lovable.app",
   "lovable.dev",
   "lovable.project.com",
