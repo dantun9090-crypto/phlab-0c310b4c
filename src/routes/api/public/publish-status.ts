@@ -33,6 +33,14 @@ function parseTs(v: unknown): number | null {
   return null;
 }
 
+function asBoolean(v: unknown): boolean | null {
+  return typeof v === 'boolean' ? v : null;
+}
+
+function asNumber(v: unknown): number | null {
+  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
 export const Route = createFileRoute('/api/public/publish-status')({
   server: {
     handlers: {
@@ -70,12 +78,12 @@ export const Route = createFileRoute('/api/public/publish-status')({
         const pr = (lastAudit?.prerender as { ok?: boolean; urls?: number } | undefined) ?? null;
         const buildStatePurgeRequested = buildState?.lastPurgeOk !== undefined || buildState?.lastPurgeStatus !== undefined;
         const lastPurgeRequested = cf !== null || buildStatePurgeRequested;
-        const lastPurgeOk = cf?.ok ?? buildState?.lastPurgeOk ?? false;
-        const lastPurgeStatus = cf?.status ?? buildState?.lastPurgeStatus ?? null;
+        const lastPurgeOk = cf?.ok ?? asBoolean(buildState?.lastPurgeOk) ?? false;
+        const lastPurgeStatus = cf?.status ?? asNumber(buildState?.lastPurgeStatus) ?? null;
         const buildStateRecacheRequested = buildState?.lastRecacheOk !== undefined || buildState?.lastRecacheUrls !== undefined;
         const lastRecacheRequested = pr !== null || buildStateRecacheRequested;
-        const lastRecacheOk = pr?.ok ?? buildState?.lastRecacheOk ?? false;
-        const lastRecacheUrls = pr?.urls ?? buildState?.lastRecacheUrls ?? null;
+        const lastRecacheOk = pr?.ok ?? asBoolean(buildState?.lastRecacheOk) ?? false;
+        const lastRecacheUrls = pr?.urls ?? asNumber(buildState?.lastRecacheUrls) ?? null;
         const lastInvalidationBuildId = (buildState?.lastInvalidationBuildId as string | undefined) ?? null;
         const lastInvalidationAt = buildState?.lastInvalidationAt ?? null;
         const lastCheckTime = parseTs(lastAudit?.createdAt) ?? parseTs(lastInvalidationAt);
