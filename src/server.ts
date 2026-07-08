@@ -1439,6 +1439,15 @@ export default {
         if (recovery) normalized = recovery;
       }
 
+      // Hard noindex for non-canonical hosts (e.g. *.lovable.app,
+      // *.lovableproject.com) so Google/Bing never index the preview or
+      // published-preview subdomain as duplicate content of phlabs.co.uk.
+      if (reqHost !== CANONICAL_HOST && (reqHost.endsWith(".lovable.app") || reqHost.endsWith(".lovableproject.com"))) {
+        const h = new Headers(normalized.headers);
+        h.set("x-robots-tag", "noindex, nofollow");
+        normalized = new Response(normalized.body, { status: normalized.status, statusText: normalized.statusText, headers: h });
+      }
+
       const ms = Date.now() - start;
       log.info({
         event: "worker.request",
