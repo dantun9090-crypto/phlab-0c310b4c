@@ -35,17 +35,76 @@ const BROWSER_MAX_AGE_CEILING = 3600;
 interface Target {
   path: string;
   expectedContentType: RegExp;
+  /**
+   * Optional targets tolerate a 404 or SPA-fallback (200 HTML) response —
+   * useful for split sitemaps that may not exist yet. If they DO return
+   * XML/200, the full no-store contract is still enforced.
+   */
+  optional: boolean;
+  /** Human note for the report (e.g. "discovered from sitemap index"). */
+  source?: string;
 }
 
-// robots.txt + every sitemap variant we might ship. The scanner tolerates
-// 404 on optional split sitemaps (products/articles) so we can add them
-// without a coordinated CI change.
-const TARGETS: Target[] = [
-  { path: "/robots.txt", expectedContentType: /text\/plain/ },
-  { path: "/sitemap.xml", expectedContentType: /xml/ },
-  { path: "/sitemap-products.xml", expectedContentType: /xml/ },
-  { path: "/sitemap-articles.xml", expectedContentType: /xml/ },
+// Seed targets — always probed. robots.txt is mandatory; the root
+// sitemap is mandatory; the historically-planned split variants are
+// optional so we can ship them without a coordinated CI change.
+const SEED_TARGETS: Target[] = [
+  { path: "/robots.txt", expectedContentType: /text\/plain/, optional: false, source: "seed" },
+  { path: "/sitemap.xml", expectedContentType: /xml/, optional: false, source: "seed" },
+  { path: "/sitemap-index.xml", expectedContentType: /xml/, optional: true, source: "seed" },
+  { path: "/sitemap-products.xml", expectedContentType: /xml/, optional: true, source: "seed" },
+  { path: "/sitemap-articles.xml", expectedContentType: /xml/, optional: true, source: "seed" },
 ];
+
+/**
+ * Fetch the root sitemap + sitemap index (if any), extract every
+ * `<sitemap><loc>` and `<url><loc>` URL that matches this origin and looks
+ * like a sitemap file, and return them as additional optional targets.
+ *
+ * This is how we auto-cover FUTURE split sitemaps: as soon as the sitemap
+ * index references `/sitemap-blog.xml`, the next probe run picks it up and
+ * enforces the same no-store contract on it without a code change here.
+ */
+async function discoverAdditionalSitemaps(seenPaths: Set<string>): Promise<Target[]> {
+  const seeds = ["/sitemap-index.xml", "/sitemap.xml"];
+  const found = new Map<string, Target>();
+  for (const seed of seeds) {
+    try {
+      const res = await fetch(`${BASE}${seed}?__discover=${Date.now()}`, {
+        headers: { "user-agent": "phlabs-sitemap-robots-probe/1.0" },
+        redirect: "manual",
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (res.status !== 200) continue;
+      const ct = res.headers.get("content-type") || "";
+      if (!/xml/i.test(ct)) continue;
+      const body = await res.text();
+      // Match every <loc>...</loc> — works for both <sitemapindex> and <urlset>.
+      const locs = [...body.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)].map((m) => m[1]);
+      for (const raw of locs) {
+        let u: URL;
+        try {
+          u = new URL(raw, BASE);
+        } catch {
+          continue;
+        }
+        // Same-origin sitemap-shaped paths only.
+        if (u.origin !== new URL(BASE).origin) continue;
+        if (!/^\/sitemap[-a-z0-9_]*\.xml$/i.test(u.pathname)) continue;
+        if (seenPaths.has(u.pathname) || found.has(u.pathname)) continue;
+        found.set(u.pathname, {
+          path: u.pathname,
+          expectedContentType: /xml/,
+          optional: true,
+          source: `discovered via ${seed}`,
+        });
+      }
+    } catch {
+      // Discovery is best-effort — a network blip must not fail the probe.
+    }
+  }
+  return [...found.values()];
+}
 
 interface Result {
   path: string;
