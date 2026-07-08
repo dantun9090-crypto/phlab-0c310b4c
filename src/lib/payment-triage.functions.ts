@@ -374,9 +374,10 @@ export const getPaymentTriageDetailAdmin = createServerFn({ method: "POST" })
       reconciledByCron: Boolean(orderDoc && (orderDoc as { lastReconciledAt?: unknown }).lastReconciledAt),
       needsAttention: computeNeedsAttention(providerStatus, orderStatus),
       paymentLink: payment.payment_link ? String(payment.payment_link) : null,
-      metadata: (payment.metadata as Record<string, unknown>) ?? null,
-      orderDoc,
+      metadataJson: payment.metadata != null ? JSON.stringify(payment.metadata) : null,
+      orderDocJson: orderDoc ? JSON.stringify(orderDoc) : null,
       webhookEvents,
+
       duplicates,
       timeline,
     };
