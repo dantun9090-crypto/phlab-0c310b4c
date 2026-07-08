@@ -160,6 +160,7 @@ async function loadSettings(): Promise<MonitorSettings> {
       compound_overlay: Number(t.compound_overlay ?? DEFAULT_THRESHOLDS.compound_overlay),
       client_exception: Number(t.client_exception ?? DEFAULT_THRESHOLDS.client_exception),
       blank_watchdog: Number(t.blank_watchdog ?? DEFAULT_THRESHOLDS.blank_watchdog),
+      chunk_load_error: Number(t.chunk_load_error ?? DEFAULT_THRESHOLDS.chunk_load_error),
     },
     alertEmail: typeof doc?.alertEmail === "string" ? doc.alertEmail : DEFAULT_ALERT_EMAIL,
     slackWebhookUrl:
