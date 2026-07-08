@@ -235,10 +235,16 @@ export function installChunkAutoRecovery(): void {
 
   const onError = (event: ErrorEvent) => {
     const err = event.error ?? event.message;
-    if (shouldHandle(err)) showCountdownOverlay();
+    if (shouldHandle(err)) {
+      void reportChunkMismatch(err);
+      showCountdownOverlay();
+    }
   };
   const onRejection = (event: PromiseRejectionEvent) => {
-    if (shouldHandle(event.reason)) showCountdownOverlay();
+    if (shouldHandle(event.reason)) {
+      void reportChunkMismatch(event.reason);
+      showCountdownOverlay();
+    }
   };
 
   window.addEventListener("error", onError, true);
