@@ -26,6 +26,7 @@ function buildStaticEntries(today: string): SitemapEntry[] {
     { path: "/cookies", lastmod: today, changefreq: "yearly", priority: "0.3" },
     { path: "/research", lastmod: today, changefreq: "weekly", priority: "0.7" },
     { path: "/research/retatrutide-uk", lastmod: "2026-06-26", changefreq: "weekly", priority: "0.9" },
+    { path: "/research/retatrutide-comprehensive-guide", lastmod: today, changefreq: "weekly", priority: "0.9" },
     { path: "/research/bpc-157-uk", lastmod: "2026-06-26", changefreq: "weekly", priority: "0.9" },
     { path: "/research/bpc-157-vs-tb-500", lastmod: today, changefreq: "weekly", priority: "0.9" },
     { path: "/research/bpc-157-tb-500-synergy", lastmod: today, changefreq: "weekly", priority: "0.9" },
