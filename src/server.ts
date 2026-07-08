@@ -1485,6 +1485,7 @@ export default {
         ...baseFields,
       });
       console.error(error);
+      notifySsrError({ error, url, method: request.method, ctx, kind: "worker-catch" });
       // Even on a 500, /sw.js and ?sw=off MUST never be cached — otherwise a
       // single bad deploy can get pinned at the edge or in browsers for hours.
       return applyCacheRecoveryHeaders(brandedErrorResponse(nonce, url.hostname), url);
