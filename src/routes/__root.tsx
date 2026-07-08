@@ -322,6 +322,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         children: `(function(w,d,t,r,u){var f,n,i;w[u]=w[u]||[],f=function(){var o={ti:"K120006478",enableAutoSpaTracking:true};o.q=w[u],w[u]=new UET(o),w[u].push("pageLoad")},n=d.createElement(t),n.src=r,n.async=1,n.onload=n.onreadystatechange=function(){var s=this.readyState;s&&s!=="loaded"&&s!=="complete"||(f(),n.onload=n.onreadystatechange=null)},i=d.getElementsByTagName(t)[0];if(i&&i.parentNode){i.parentNode.insertBefore(n,i)}else{(d.head||d.documentElement).appendChild(n)}})(window,document,"script","//bat.bing.com/bat.js","uetq");`,
       },
       {
+        // Plausible Analytics — privacy-friendly, bot-filtered by default.
+        // Loaded async in <head>; init() call runs on parse so it registers
+        // the first pageview before hydration completes.
+        src: "https://plausible.io/js/pa-7Z1K0cwecuaO5JrCx4qN4.js",
+        async: true,
+      },
+      {
+        type: "text/javascript",
+        children: `window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init();`,
+      },
+      {
 
         type: "application/ld+json",
         children: JSON.stringify({
