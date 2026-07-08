@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { LegacyMount as LegacyClientMount } from "@/lib/legacy-mount";
 import { SEO_LIMITS, SITE_URL, canonicalUrl, clamp, metaForPath } from "@/lib/seo-meta";
 import { ARTICLE_INDEX as articles } from "@/pages/Resources/data/articles-index";
 import { KNOWN_ROOTS } from "@/lib/known-roots";
+import { DynamicImportFallback } from "@/components/DynamicImportFallback";
 
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
