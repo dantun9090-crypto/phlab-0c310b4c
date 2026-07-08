@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { LegacyMount as LegacyClientMount } from "@/lib/legacy-mount";
 import { SEO_LIMITS, SITE_URL, canonicalUrl, clamp, metaForPath } from "@/lib/seo-meta";
 import { ARTICLE_INDEX as articles } from "@/pages/Resources/data/articles-index";
 import { KNOWN_ROOTS } from "@/lib/known-roots";
+import { DynamicImportFallback } from "@/components/DynamicImportFallback";
 
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
@@ -123,6 +124,8 @@ export const Route = createFileRoute("/$")({
 
 
   component: LegacyMount,
+  errorComponent: SplatErrorBoundary,
+  notFoundComponent: SplatNotFound,
 });
 
 function LegacyMount() {
@@ -131,4 +134,60 @@ function LegacyMount() {
   // src/routes/account.tsx for the same pattern.
   const splat = Route.useParams()._splat ?? "";
   return <LegacyClientMount path={`/${splat}`} />;
+}
+
+/**
+ * Errors thrown while resolving/rendering the splat route (lazy chunk load
+ * failures, legacy SPA bootstrap throws, unexpected loader errors) land
+ * here instead of bubbling to the router default. Renders a branded,
+ * dependency-light fallback so SSR always returns a usable HTML shell —
+ * never a blank page or the raw framework error screen — and gives the
+ * user a retry action. Also logs to console so the SSR error-capture
+ * pipeline (src/lib/error-capture.ts → src/lib/ssr-alert.ts) can pick it
+ * up and alert on catastrophic failures.
+ */
+function SplatErrorBoundary({ error, reset }: { error: Error; reset: () => void }) {
+  const router = useRouter();
+  const splat = Route.useParams()._splat ?? "";
+  console.error("[splat.errorComponent]", { path: `/${splat}`, error });
+  return (
+    <DynamicImportFallback
+      label={`splat:/${splat}`}
+      onRetry={() => {
+        void router.invalidate();
+        reset();
+      }}
+    />
+  );
+}
+
+/**
+ * Splat-level not-found — reached when a loader inside the legacy SPA
+ * throws notFound(). Keeps the branded shell instead of falling through
+ * to the root notFoundComponent, so the metadata emitted by head()
+ * (including prerender-status-code: 404 for unknown roots) stays intact.
+ */
+function SplatNotFound() {
+  const splat = Route.useParams()._splat ?? "";
+  return (
+    <div
+      role="alert"
+      aria-live="polite"
+      className="min-h-[60vh] flex items-center justify-center px-4 py-16 bg-slate-950 text-white"
+    >
+      <div className="max-w-md w-full text-center rounded-2xl border border-slate-800 bg-slate-900/60 p-8">
+        <h1 className="text-2xl font-semibold">Page not found</h1>
+        <p className="mt-3 text-sm text-slate-400 leading-relaxed">
+          We couldn't find <span className="font-mono text-slate-300">/{splat}</span>.
+          It may have moved or been retired.
+        </p>
+        <a
+          href="/"
+          className="mt-6 inline-flex items-center gap-2 px-6 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-semibold transition-colors min-h-[48px]"
+        >
+          Return home
+        </a>
+      </div>
+    </div>
+  );
 }
