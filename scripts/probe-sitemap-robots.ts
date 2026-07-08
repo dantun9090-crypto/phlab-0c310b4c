@@ -262,11 +262,11 @@ function renderMarkdown(results: Result[]): string {
   lines.push(`- Violations: **${failed.length}**`);
   lines.push(`- Generated: ${new Date().toISOString()}`);
   lines.push("");
-  lines.push("| Path | Status | content-type | cache-control | cdn-cache-control | cf-cache-status | Age | OK |");
-  lines.push("|---|---|---|---|---|---|---|---|");
+  lines.push("| Path | Source | Status | content-type | cache-control | cdn-cache-control | cf-cache-status | Age | OK |");
+  lines.push("|---|---|---|---|---|---|---|---|---|");
   for (const r of results) {
     lines.push(
-      `| \`${r.path}\` | ${r.status ?? "ERR"} | \`${r.contentType || "-"}\` | \`${r.cacheControl || "-"}\` | \`${r.cdnCacheControl || "-"}\` | \`${r.cfCacheStatus || "-"}\` | ${r.age} | ${r.optionalSkipped ? "⚪️ skip" : r.ok ? "✅" : "❌"} |`,
+      `| \`${r.path}\` | ${r.source || "-"} | ${r.status ?? "ERR"} | \`${r.contentType || "-"}\` | \`${r.cacheControl || "-"}\` | \`${r.cdnCacheControl || "-"}\` | \`${r.cfCacheStatus || "-"}\` | ${r.age} | ${r.optionalSkipped ? "⚪️ skip" : r.ok ? "✅" : "❌"} |`,
     );
   }
   if (failed.length) {
