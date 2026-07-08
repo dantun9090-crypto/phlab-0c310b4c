@@ -16,10 +16,11 @@ name: Edge SWR guard
 # payload is printed to workflow logs instead — the job never fails on missing Slack.
 
 on:
-  push:
-    branches: [main]
-  schedule:
-    - cron: "*/5 * * * *"
+  # Schedule + push triggers disabled 2026-07-08: HTML shells are now
+  # `no-store` at the edge (see src/server.ts) to eliminate the recurring
+  # "need manual Cloudflare purge after publish" issue. The SWR=60
+  # expectation is no longer applicable. Kept as manual-dispatch only in
+  # case we ever re-enable HTML edge caching.
   workflow_dispatch:
     inputs:
       force_redeploy:
