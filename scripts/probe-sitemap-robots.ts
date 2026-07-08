@@ -161,6 +161,8 @@ async function probe(target: Target): Promise<Result> {
       age: 0,
       violations,
       optionalSkipped: false,
+      optional: target.optional,
+      source: target.source,
       ok: false,
     };
   }
@@ -172,11 +174,11 @@ async function probe(target: Target): Promise<Result> {
   const cf = (h.get("cf-cache-status") || "").toUpperCase();
   const age = Number(h.get("age") || "0") || 0;
 
-  // Optional sitemap variants: tolerate "not shipped" — either a real 404
-  // or the SPA fallback returning the HTML shell on 200 (TanStack catch-all).
-  const isOptional = target.path === "/sitemap-products.xml" || target.path === "/sitemap-articles.xml";
+  // Optional targets tolerate "not shipped" — either a real 404 or the
+  // SPA fallback returning the HTML shell on 200 (TanStack catch-all).
+  // Any other response falls through to the full no-store contract check.
   const isSpaFallback = status === 200 && /text\/html/i.test(contentType);
-  if (isOptional && (status === 404 || isSpaFallback)) {
+  if (target.optional && (status === 404 || isSpaFallback)) {
     return {
       path: target.path,
       url,
@@ -189,6 +191,8 @@ async function probe(target: Target): Promise<Result> {
       age,
       violations,
       optionalSkipped: true,
+      optional: true,
+      source: target.source,
       ok: true,
     };
   }
@@ -242,6 +246,8 @@ async function probe(target: Target): Promise<Result> {
     age,
     violations,
     optionalSkipped: false,
+    optional: target.optional,
+    source: target.source,
     ok: violations.length === 0,
   };
 }
