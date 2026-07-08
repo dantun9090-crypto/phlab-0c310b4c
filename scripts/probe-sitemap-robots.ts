@@ -111,9 +111,11 @@ async function probe(target: Target): Promise<Result> {
   const cf = (h.get("cf-cache-status") || "").toUpperCase();
   const age = Number(h.get("age") || "0") || 0;
 
-  // Optional sitemap variants: tolerate 404 (site simply doesn't split them).
+  // Optional sitemap variants: tolerate "not shipped" — either a real 404
+  // or the SPA fallback returning the HTML shell on 200 (TanStack catch-all).
   const isOptional = target.path === "/sitemap-products.xml" || target.path === "/sitemap-articles.xml";
-  if (status === 404 && isOptional) {
+  const isSpaFallback = status === 200 && /text\/html/i.test(contentType);
+  if (isOptional && (status === 404 || isSpaFallback)) {
     return {
       path: target.path,
       url,
