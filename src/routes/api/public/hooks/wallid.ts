@@ -204,19 +204,18 @@ export const Route = createFileRoute("/api/public/hooks/wallid")({
           // 2c. Apply to our wallid_payments row + downstream order updates.
           try {
             // Locate the payment row by api_payment_id (preferred) or order_id.
-            // CRITICAL: must have at least one identifier or we'd UPDATE the
-            // entire wallid_payments table.
-            if (apiPaymentId) {
-              await supabaseAdmin
-                .from("wallid_payments")
-                .update({ status, metadata: { lastEvent: ev } as never })
-                .eq("api_payment_id", apiPaymentId);
-            } else if (orderId) {
-              await supabaseAdmin
-                .from("wallid_payments")
-                .update({ status, metadata: { lastEvent: ev } as never })
-                .eq("order_id", orderId);
-            } else {
+            // Guarded against downgrades + out-of-order deliveries so
+            // repeat callbacks can't flip SUCCESS back to PENDING.
+            const { applyWallidPaymentUpdate } = await import("@/lib/server/wallid-idempotency");
+            const guardRes = await applyWallidPaymentUpdate({
+              supabaseAdmin,
+              apiPaymentId,
+              orderId,
+              status,
+              occurredAt,
+              event: ev as Record<string, unknown>,
+            });
+            if (!guardRes.applied && guardRes.reason === "no_identifier") {
               console.error("[Wallid webhook] Refusing UPDATE — no api_payment_id or order_id", eventId);
             }
 
