@@ -11,6 +11,7 @@
     "check:sitemap-routes": "bun scripts/check-sitemap-routes.ts",
     "check:sitemap-xml": "bun scripts/check-sitemap-xml.ts",
     "check:robots-sitemap": "bun scripts/check-robots-sitemap.ts",
+    "probe:sitemap-robots": "bun scripts/probe-sitemap-robots.ts",
     "check:sitemap-urls-live": "bun scripts/check-sitemap-urls-live.ts",
     "build:post": "bun scripts/generate-sbom.ts && bun scripts/check-dist-domains.ts",
     "build:dev": "NODE_OPTIONS='--max-old-space-size=8192' vite build --mode development",
