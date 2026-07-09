@@ -11,11 +11,12 @@
  *   2. NO repeated top-level GET requests to the same document URL are
  *      observed during the window (catches client-side `location.reload()`
  *      loops even when Playwright collapses them into one nav event).
- *   3. The document response for the route returns a sane Cache-Control
- *      header: must NOT be `no-store`, must include either a finite
- *      `max-age` (>0, ≤1h) or `stale-while-revalidate`.
- *   4. The hero H1 is still visible at the end of the window — the
- *      latest content is being served, not a blank shell.
+ *   3. The document response for the route returns the deploy-safe HTML
+ *      cache contract: browser may use `max-age=0, must-revalidate`, but the
+ *      CDN tier must be `no-store` and Cloudflare must not replay a HIT/STALE
+ *      shell across deploys.
+ *   4. No recovery/fallback wall is visible at the end of the window — the
+ *      latest content is being served, not a blank shell or reload prompt.
  *
  * On failure, structured diagnostics (per-route GET log, cache-control
  * header, load/nav counts, console errors) are written to
@@ -44,6 +45,14 @@ type GetLogEntry = {
   fromCache?: boolean;
 };
 
+type DocumentHeaders = {
+  cacheControl?: string;
+  cdnCacheControl?: string;
+  surrogateControl?: string;
+  cfCacheStatus?: string;
+  age?: string;
+};
+
 function normalize(url: string): string {
   // Strip hash + trailing slash for repeat-detection. Leave query intact —
   // cache-busted reloads typically append ?_=ts and we want to flag those
@@ -57,31 +66,46 @@ function normalize(url: string): string {
   }
 }
 
-function validateCacheControl(header: string | undefined): string | null {
-  if (!header) return "missing Cache-Control header";
-  const h = header.toLowerCase();
-  if (h.includes("no-store")) return `forbidden directive: no-store (${header})`;
+function validateCacheHeaders(headers: DocumentHeaders): string | null {
+  const cacheControl = headers.cacheControl;
+  if (!cacheControl) return "missing Cache-Control header";
+  const h = cacheControl.toLowerCase();
   const maxAgeMatch = h.match(/(?:^|,\s*)max-age\s*=\s*(\d+)/);
+  const maxAge = maxAgeMatch ? Number(maxAgeMatch[1]) : null;
+  const hasMustRevalidate = /must-revalidate/.test(h);
   const hasSwr = /stale-while-revalidate\s*=\s*\d+/.test(h);
-  if (!maxAgeMatch && !hasSwr) {
-    return `must include max-age or stale-while-revalidate (${header})`;
+  const browserOk = h.includes("no-store") || (maxAge === 0 && hasMustRevalidate) || (maxAge !== null && maxAge > 0 && maxAge <= 3600) || hasSwr;
+  if (!browserOk) return `browser cache-control is not bounded/revalidated (${cacheControl})`;
+
+  const cdnHeader = (headers.cdnCacheControl || headers.surrogateControl || "").toLowerCase();
+  if (!cdnHeader.includes("no-store")) return `CDN cache header must include no-store (${cdnHeader || "missing"})`;
+
+  const cf = (headers.cfCacheStatus || "").toUpperCase();
+  if (["HIT", "STALE", "REVALIDATED", "UPDATING"].includes(cf)) {
+    return `Cloudflare replayed cached HTML (${cf})`;
   }
-  if (maxAgeMatch) {
-    const v = Number(maxAgeMatch[1]);
-    if (v <= 0) return `max-age must be > 0 (${header})`;
-    if (v > 3600 && !hasSwr) {
-      return `max-age ${v}s > 3600s without stale-while-revalidate (${header})`;
-    }
-  }
+
+  const age = Number(headers.age || "0") || 0;
+  if (age !== 0) return `HTML Age header must be 0 (${age})`;
   return null;
 }
+
+const FALLBACK_TEXTS = [
+  /Taking longer than usual/i,
+  /Refresh needed/i,
+  /Update available/i,
+  /PH Labs update in progress/i,
+  /Please refresh/i,
+  /Something went wrong/i,
+  /Loading PH Labs/i,
+];
 
 test.describe("cache stability — page must not auto-refresh", () => {
   test.beforeAll(() => {
     mkdirSync(DIAG_DIR, { recursive: true });
   });
 
-  for (const path of ["/compound", "/research", "/"]) {
+  for (const path of ["/", "/products", "/about", "/contact", "/compound", "/research"]) {
     test(`${path} stays put for ${OBSERVATION_MS / 1000}s after load`, async ({ page }, testInfo) => {
       const documentUrl = `${BASE}${path}`;
       const getLog: GetLogEntry[] = [];
@@ -89,7 +113,7 @@ test.describe("cache stability — page must not auto-refresh", () => {
       const consoleErrors: string[] = [];
       let loadCount = 0;
       let unloadCount = 0;
-      let primaryCacheControl: string | undefined;
+      let primaryHeaders: DocumentHeaders = {};
       let primaryStatus: number | undefined;
 
       page.on("load", () => {
@@ -118,8 +142,15 @@ test.describe("cache stability — page must not auto-refresh", () => {
         if (res.request().resourceType() !== "document") return;
         const url = normalize(res.url());
         const target = normalize(documentUrl);
-        if (url === target && primaryCacheControl === undefined) {
-          primaryCacheControl = res.headers()["cache-control"];
+        if (url === target && primaryHeaders.cacheControl === undefined) {
+          const headers = res.headers();
+          primaryHeaders = {
+            cacheControl: headers["cache-control"],
+            cdnCacheControl: headers["cdn-cache-control"] || headers["cloudflare-cdn-cache-control"],
+            surrogateControl: headers["surrogate-control"],
+            cfCacheStatus: headers["cf-cache-status"],
+            age: headers["age"],
+          };
           primaryStatus = res.status();
         }
       });
@@ -134,7 +165,7 @@ test.describe("cache stability — page must not auto-refresh", () => {
       // Repeated top-level GETs to the same document URL = reload loop.
       const targetNorm = normalize(documentUrl);
       const repeatedDocGets = documentGets.filter((g) => normalize(g.url) === targetNorm);
-      const cacheControlError = validateCacheControl(primaryCacheControl);
+      const cacheControlError = validateCacheHeaders(primaryHeaders);
 
       const diag = {
         route: path,
@@ -145,7 +176,7 @@ test.describe("cache stability — page must not auto-refresh", () => {
         primaryDocument: {
           url: documentUrl,
           status: primaryStatus,
-          cacheControl: primaryCacheControl,
+          ...primaryHeaders,
           cacheControlError,
         },
         repeatedDocumentGets: repeatedDocGets,
@@ -194,6 +225,9 @@ test.describe("cache stability — page must not auto-refresh", () => {
 
       // 4. Latest content still visible.
       await expect(page.locator("h1").first()).toBeVisible();
+      for (const re of FALLBACK_TEXTS) {
+        await expect(page.getByText(re), `${path}: recovery/fallback wall visible: ${re}`).toHaveCount(0);
+      }
     });
   }
 });
