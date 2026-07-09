@@ -1398,12 +1398,27 @@ export default function CheckoutPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label htmlFor="city" className="block text-xs font-medium text-gray-300 mb-1">City / Town <span className="text-red-400">*</span></label>
-                        <input id="city" type="text" autoComplete="address-level2" value={form.city} onChange={e => setField('city', e.target.value)} placeholder="London" style={inputStyle(!!errors.city)} />
+                        <input id="city" type="text" autoComplete="address-level2" value={form.city} onChange={e => setField('city', e.target.value)} placeholder={form.country === 'Germany' ? 'Berlin' : 'London'} style={inputStyle(!!errors.city)} />
                         {errors.city && <p className="text-red-400 text-xs mt-1">{errors.city}</p>}
                       </div>
                       <div>
-                        <label htmlFor="postcode" className="block text-xs font-medium text-gray-300 mb-1">Postcode <span className="text-red-400">*</span></label>
-                        <input id="postcode" type="text" autoComplete="postal-code" value={form.postcode} onChange={e => setField('postcode', e.target.value.toUpperCase())} placeholder="SW1A 1AA" style={inputStyle(!!errors.postcode)} />
+                        <label htmlFor="postcode" className="block text-xs font-medium text-gray-300 mb-1">
+                          {form.country === 'Germany' ? 'PLZ (Postleitzahl)' : form.country === 'Ireland' ? 'Eircode' : 'Postcode'} <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                          id="postcode"
+                          type="text"
+                          autoComplete="postal-code"
+                          value={form.postcode}
+                          onChange={e => {
+                            const raw = e.target.value;
+                            // Only uppercase for alphanumeric postcodes; German PLZ is digits only.
+                            setField('postcode', form.country === 'Germany' ? raw.replace(/\D/g, '').slice(0, 5) : raw.toUpperCase());
+                          }}
+                          placeholder={form.country === 'Germany' ? '10115' : form.country === 'Ireland' ? 'D02 XY45' : 'SW1A 1AA'}
+                          inputMode={form.country === 'Germany' ? 'numeric' : 'text'}
+                          style={inputStyle(!!errors.postcode)}
+                        />
                         {errors.postcode && <p className="text-red-400 text-xs mt-1">{errors.postcode}</p>}
                       </div>
                     </div>
@@ -1413,10 +1428,16 @@ export default function CheckoutPage() {
                       <select
                         id="country"
                         value={form.country}
-                        onChange={e => setField('country', e.target.value)}
+                        onChange={e => {
+                          const next = e.target.value;
+                          // Reset postcode when switching country families to avoid stale format errors.
+                          setForm(prev => ({ ...prev, country: next, postcode: '' }));
+                          setErrors(prev => ({ ...prev, postcode: '', country: '' }));
+                        }}
                         style={{ ...inputStyle(!!errors.country), appearance: 'none' }}
                       >
                         <option value="United Kingdom">United Kingdom</option>
+                        <option value="Germany">Germany (Deutschland)</option>
                         <option value="Ireland">Ireland</option>
                         <option value="Other">Other</option>
                       </select>
