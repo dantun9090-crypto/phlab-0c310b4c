@@ -163,8 +163,6 @@ async function probe(target: Target): Promise<Result> {
   const baseHost = new URL(BASE).hostname;
   const isLegacyHost = LEGACY_REDIRECT_HOSTS.has(baseHost);
 
-  let status: number | null = null;
-  let h: Headers | null = null;
 
   try {
     const res = await fetch(url, {
