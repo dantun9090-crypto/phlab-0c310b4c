@@ -552,7 +552,11 @@ export default function CheckoutPage() {
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Enter a valid email';
       if (form.phone.trim()) {
         const digits = form.phone.replace(/[\s()\-+]/g, '');
-        if (!/^(44)?0?[1-9]\d{8,9}$/.test(digits)) e.phone = 'Enter a valid UK phone number';
+        if (form.country === 'United Kingdom') {
+          if (!/^(44)?0?[1-9]\d{8,9}$/.test(digits)) e.phone = 'Enter a valid UK phone number';
+        } else {
+          if (!/^\d{6,15}$/.test(digits)) e.phone = 'Enter a valid phone number';
+        }
       }
       if (form.createAccount && !firebaseUser) {
         if (!form.password) e.password = 'Password is required';
@@ -563,7 +567,19 @@ export default function CheckoutPage() {
       if (!form.address.trim()) e.address = 'Required';
       if (!form.city.trim()) e.city = 'Required';
       if (!form.postcode.trim()) e.postcode = 'Required';
-      else if (!/^[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}$/i.test(form.postcode.trim())) e.postcode = 'Enter a valid UK postcode';
+      else {
+        const pc = form.postcode.trim();
+        const country = form.country;
+        if (country === 'United Kingdom') {
+          if (!/^[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}$/i.test(pc)) e.postcode = 'Enter a valid UK postcode';
+        } else if (country === 'Germany') {
+          if (!/^\d{5}$/.test(pc)) e.postcode = 'Enter a valid German postcode (5 digits)';
+        } else if (country === 'Ireland') {
+          if (!/^[A-Z]\d{2}\s?[A-Z0-9]{4}$/i.test(pc)) e.postcode = 'Enter a valid Eircode';
+        } else {
+          if (pc.length < 3 || pc.length > 12) e.postcode = 'Enter a valid postcode';
+        }
+      }
       if (!form.country.trim()) e.country = 'Required';
       if (!form.shippingMethod) e.shippingMethod = 'Please choose a shipping method';
     }
@@ -613,11 +629,11 @@ export default function CheckoutPage() {
         firstName: 'Please enter your first name.',
         lastName: 'Please enter your last name.',
         email: 'Please enter a valid email address.',
-        phone: 'Please enter a valid UK phone number.',
+        phone: 'Please enter a valid phone number.',
         password: 'Please set a password (min 8 characters).',
         address: 'Please enter your street address.',
         city: 'Please enter your city.',
-        postcode: 'Please enter a valid UK postcode.',
+        postcode: 'Please enter a valid postcode for your country.',
         country: 'Please choose your country.',
         shippingMethod: 'Please choose a shipping method.',
       };
@@ -656,7 +672,7 @@ export default function CheckoutPage() {
         phone: form.phone,
         firstName: form.firstName,
         lastName: form.lastName,
-        country: 'GB',
+        country: form.country === 'Germany' ? 'DE' : form.country === 'Ireland' ? 'IE' : form.country === 'United Kingdom' ? 'GB' : 'GB',
         postalCode: form.postcode,
       });
       trackAddPaymentInfo(
@@ -1382,12 +1398,27 @@ export default function CheckoutPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label htmlFor="city" className="block text-xs font-medium text-gray-300 mb-1">City / Town <span className="text-red-400">*</span></label>
-                        <input id="city" type="text" autoComplete="address-level2" value={form.city} onChange={e => setField('city', e.target.value)} placeholder="London" style={inputStyle(!!errors.city)} />
+                        <input id="city" type="text" autoComplete="address-level2" value={form.city} onChange={e => setField('city', e.target.value)} placeholder={form.country === 'Germany' ? 'Berlin' : 'London'} style={inputStyle(!!errors.city)} />
                         {errors.city && <p className="text-red-400 text-xs mt-1">{errors.city}</p>}
                       </div>
                       <div>
-                        <label htmlFor="postcode" className="block text-xs font-medium text-gray-300 mb-1">Postcode <span className="text-red-400">*</span></label>
-                        <input id="postcode" type="text" autoComplete="postal-code" value={form.postcode} onChange={e => setField('postcode', e.target.value.toUpperCase())} placeholder="SW1A 1AA" style={inputStyle(!!errors.postcode)} />
+                        <label htmlFor="postcode" className="block text-xs font-medium text-gray-300 mb-1">
+                          {form.country === 'Germany' ? 'PLZ (Postleitzahl)' : form.country === 'Ireland' ? 'Eircode' : 'Postcode'} <span className="text-red-400">*</span>
+                        </label>
+                        <input
+                          id="postcode"
+                          type="text"
+                          autoComplete="postal-code"
+                          value={form.postcode}
+                          onChange={e => {
+                            const raw = e.target.value;
+                            // Only uppercase for alphanumeric postcodes; German PLZ is digits only.
+                            setField('postcode', form.country === 'Germany' ? raw.replace(/\D/g, '').slice(0, 5) : raw.toUpperCase());
+                          }}
+                          placeholder={form.country === 'Germany' ? '10115' : form.country === 'Ireland' ? 'D02 XY45' : 'SW1A 1AA'}
+                          inputMode={form.country === 'Germany' ? 'numeric' : 'text'}
+                          style={inputStyle(!!errors.postcode)}
+                        />
                         {errors.postcode && <p className="text-red-400 text-xs mt-1">{errors.postcode}</p>}
                       </div>
                     </div>
@@ -1397,10 +1428,16 @@ export default function CheckoutPage() {
                       <select
                         id="country"
                         value={form.country}
-                        onChange={e => setField('country', e.target.value)}
+                        onChange={e => {
+                          const next = e.target.value;
+                          // Reset postcode when switching country families to avoid stale format errors.
+                          setForm(prev => ({ ...prev, country: next, postcode: '' }));
+                          setErrors(prev => ({ ...prev, postcode: '', country: '' }));
+                        }}
                         style={{ ...inputStyle(!!errors.country), appearance: 'none' }}
                       >
                         <option value="United Kingdom">United Kingdom</option>
+                        <option value="Germany">Germany (Deutschland)</option>
                         <option value="Ireland">Ireland</option>
                         <option value="Other">Other</option>
                       </select>
