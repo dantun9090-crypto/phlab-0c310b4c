@@ -232,18 +232,16 @@ test.describe('Checkout — Germany', () => {
     // Analytics — Enhanced Conversions payload cached at pay-button click.
     // Assert the ISO-3166 alpha-2 country ("DE"), the German PLZ ("10115"),
     // and the city ("Berlin") reach the analytics layer alongside the order.
-    const cached = await expect.poll(async () => {
-      const raw = await page.evaluate(() => sessionStorage.getItem('php_ec_userdata'));
-      return raw ? JSON.parse(raw) : null;
+    await expect.poll(async () => {
+      return await page.evaluate(() => sessionStorage.getItem('php_ec_userdata'));
     }, { timeout: 5_000 }).not.toBeNull();
     const ec = await page.evaluate(() => {
       const raw = sessionStorage.getItem('php_ec_userdata');
-      return raw ? JSON.parse(raw) : null;
+      return raw ? JSON.parse(raw) as Record<string, string> : null;
     });
     expect(ec?.country).toBe('DE');
     expect(ec?.postalCode).toBe('10115');
     expect(ec?.city).toBe('Berlin');
-    void cached;
   });
 
   test('Step 2 blocks a German street line missing the house number OR the street name', async ({ page }) => {
