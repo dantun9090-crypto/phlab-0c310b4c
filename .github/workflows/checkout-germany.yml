@@ -12,11 +12,24 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+
+      # Cache Bun's global module store keyed on the lockfile so unchanged
+      # deps skip network fetches on every PR run.
+      - name: Cache Bun install store
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lockb', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
       - name: Install deps
         run: bun install --frozen-lockfile
+
       - name: Run server-schema suite
         run: bunx vitest run tests/create-order-schema-germany.test.ts
 
@@ -40,17 +53,46 @@ jobs:
         with:
           node-version: 20
 
+      # Bun deps cache — shared across matrix legs (same lockfile → same key).
+      - name: Cache Bun install store
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('bun.lockb', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
       - name: Install deps
         run: bun install --frozen-lockfile
 
+      # Cache the Playwright browser binaries per browser+version so cold
+      # `playwright install` only downloads when the pinned version changes.
+      # Keyed on the resolved @playwright/test version from bun.lockb — bump
+      # the lockfile and the cache invalidates automatically.
+      - name: Resolve Playwright version
+        id: pw
+        run: |
+          VERSION="$(node -p "require('./node_modules/@playwright/test/package.json').version")"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Cache Playwright browsers
+        id: pw-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ matrix.browser }}-${{ hashFiles('bun.lockb', 'package.json') }}
+          key: ${{ runner.os }}-playwright-${{ steps.pw.outputs.version }}-${{ matrix.browser }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-${{ steps.pw.outputs.version }}-
 
-      - name: Install Playwright browser (${{ matrix.browser }}) + system deps
-        run: bunx playwright install --with-deps ${{ matrix.browser }}
+      # On cache hit: only install the OS-level shared libraries (fast).
+      # On cache miss: download the browser binary and its OS deps.
+      - name: Install Playwright browser (${{ matrix.browser }})
+        run: |
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" = "true" ]; then
+            bunx playwright install-deps ${{ matrix.browser }}
+          else
+            bunx playwright install --with-deps ${{ matrix.browser }}
+          fi
 
       - name: Run Germany checkout spec on ${{ matrix.browser }}
         run: bunx playwright test e2e/checkout-germany.spec.ts --project=${{ matrix.browser }}
