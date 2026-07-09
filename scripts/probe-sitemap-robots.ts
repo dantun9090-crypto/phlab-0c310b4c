@@ -25,12 +25,37 @@
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
-const BASE =
-  process.env.PROBE_BASE_URL ||
-  process.env.TEST_BASE_URL ||
-  "https://phlabs.co.uk";
+// CLI arg parsing: --domain=host or --domain host, --retries=N, --retry-delay=SEC.
+// Falls back to env vars for CI compatibility.
+function parseCliArg(name: string): string | undefined {
+  const argv = process.argv.slice(2);
+  const eqIdx = argv.findIndex((a) => a.startsWith(`--${name}=`));
+  if (eqIdx >= 0) return argv[eqIdx].slice(`--${name}=`.length);
+  const spaceIdx = argv.findIndex((a) => a === `--${name}`);
+  if (spaceIdx >= 0 && argv[spaceIdx + 1]) return argv[spaceIdx + 1];
+  return undefined;
+}
+
+const CLI_DOMAIN = parseCliArg("domain");
+const BASE = CLI_DOMAIN
+  ? (CLI_DOMAIN.startsWith("http") ? CLI_DOMAIN : `https://${CLI_DOMAIN}`).replace(/\/+$/, "")
+  : (process.env.PROBE_BASE_URL ||
+     process.env.PROBE_DOMAIN ||
+     process.env.TEST_BASE_URL ||
+     "https://phlabs.co.uk").replace(/\/+$/, "");
 const OUT_DIR = process.env.PROBE_OUT_DIR || "sitemap-robots-probe";
 const BROWSER_MAX_AGE_CEILING = 3600;
+const MAX_RETRIES = Number(parseCliArg("retries") ?? process.env.PROBE_RETRIES ?? "3");
+const RETRY_DELAY_MS = Number(parseCliArg("retry-delay") ?? process.env.PROBE_RETRY_DELAY_SEC ?? "10") * 1000;
+
+// Legacy hosts that intentionally 301 to the canonical apex. A 301 on
+// robots/sitemap from these hosts is CORRECT — not drift. See
+// REDIRECT_HOSTS in src/server.ts.
+const LEGACY_REDIRECT_HOSTS = new Set([
+  "prohealthpeptides.co.uk",
+  "www.prohealthpeptides.co.uk",
+  "www.phlabs.co.uk",
+]);
 
 interface Target {
   path: string;
