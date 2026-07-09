@@ -281,6 +281,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "google-site-verification", content: "tYtU-dRlfAq14D7lyPTYf8noiJH-b0LifcvvrGi8AZw" },
+      // Allow large image previews in Google SERPs (image thumbnails, Discover,
+      // shopping surfaces). Default is "standard" which caps preview size and
+      // hurts CTR on product/landing pages. Paired with max-snippet:-1 (no
+      // snippet length cap) and max-video-preview:-1. Leaf routes with
+      // noindex (e.g. /account, /admin/*) override this entirely via meta
+      // dedupe by name — this rule only applies to indexable pages.
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
       // Sitewide defaults — Lovable's publish dialog reads these to know the
       // site has proper website info. Leaf routes (index, products,
       // products_.$slug, $) override title/description/og:title/og:description/
