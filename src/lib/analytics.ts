@@ -402,6 +402,7 @@ export interface PurchaseExtras {
     lastName?: string;
     country?: string; // ISO-3166 alpha-2
     postalCode?: string;
+    city?: string; // unhashed per Google Enhanced Conversions spec
   };
 }
 
@@ -425,6 +426,7 @@ async function buildUserData(u: NonNullable<PurchaseExtras['userData']>): Promis
     if (u.lastName) out.sha256_last_name = await sha256Hex(u.lastName);
     if (u.country) out.country = u.country.toUpperCase().slice(0, 2);
     if (u.postalCode) out.postal_code = u.postalCode.toUpperCase().replace(/\s+/g, '');
+    if (u.city) out.city = u.city.trim();
   } catch { /* ignore — crypto subtle unavailable */ }
   return out;
 }
