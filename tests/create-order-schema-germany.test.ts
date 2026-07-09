@@ -14,7 +14,7 @@
  * malformed German address can never land in Firestore.
  */
 import { describe, it, expect } from 'vitest';
-import { createOrderInputSchema } from '@/lib/create-order.server';
+import { createOrderInputSchema } from '../src/lib/create-order.server';
 
 const baseValidInput = {
   items: [{ productId: 'pt-141', productName: 'PT-141', quantity: 1 }],
