@@ -1,0 +1,90 @@
+name: Deploy Cloudflare Worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cloudflare/phlabs-prerender.mjs'
+      - '.github/workflows/deploy-worker.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Prerender Worker
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Deploy Worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        working-directory: cloudflare
+        # Deploy by name — preserves existing route bindings configured in the CF dashboard
+        # (phlabs.co.uk/* on the phlabs zone; legacy domain proxies stay on the `phlab` worker).
+        run: npx --yes wrangler@3 deploy phlabs-prerender.mjs --name phlabs-prerender --compatibility-date 2025-09-24 --compatibility-flags nodejs_compat
+
+      - name: Purge Cloudflare Cache (phlabs.co.uk)
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_PHLABS }}
+        run: |
+          curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}'
+          echo
+          echo "Cache purged for phlabs.co.uk"
+
+      - name: Purge Cloudflare Cache (prohealthpeptides.co.uk)
+        if: ${{ secrets.CLOUDFLARE_ZONE_ID_PROHEALTH != '' }}
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_PROHEALTH }}
+        run: |
+          curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}'
+          echo
+          echo "Cache purged for prohealthpeptides.co.uk"
+
+      - name: Wait for edge propagation
+        run: sleep 10
+
+      - name: Smoke test /__health (phlabs.co.uk)
+        run: |
+          echo "GET https://phlabs.co.uk/__health"
+          body=$(curl -sS -f https://phlabs.co.uk/__health)
+          echo "$body"
+          echo "$body" | grep -q '"status":"ok"' || { echo "health payload missing status ok"; exit 1; }
+
+      - name: Smoke test /__health (prohealthpeptides.co.uk)
+        run: |
+          echo "GET https://prohealthpeptides.co.uk/__health"
+          curl -sS -f -o /dev/null -w "HTTP %{http_code}\n" https://prohealthpeptides.co.uk/__health || echo "prohealth /__health not served by prerender worker (expected — legacy zone redirects to apex)"
+
+      - name: Verify x-build-id header
+        run: |
+          BUILD_ID=$(curl -sSI https://phlabs.co.uk/ | awk 'tolower($1)=="x-build-id:"{print $2}' | tr -d '\r')
+          echo "Current build ID: '$BUILD_ID'"
+          if [ -z "$BUILD_ID" ]; then
+            echo "ERROR: x-build-id header missing on https://phlabs.co.uk/"
+            exit 1
+          fi
+          echo "Build ID verified: $BUILD_ID"
+
+      - name: Verify CF-Cache-Build-ID header (worker-injected)
+        run: |
+          CF_BID=$(curl -sSI https://phlabs.co.uk/ | awk 'tolower($1)=="cf-cache-build-id:"{print $2}' | tr -d '\r')
+          echo "CF-Cache-Build-ID: '$CF_BID'"
+          if [ -z "$CF_BID" ]; then
+            echo "WARN: CF-Cache-Build-ID missing — new worker may not have been deployed. Check wrangler output above."
+            exit 1
+          fi
