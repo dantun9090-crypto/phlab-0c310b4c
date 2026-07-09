@@ -1,0 +1,105 @@
+name: Googlebot prerender monitor
+
+# Daily (and post-deploy) check that Googlebot receives fully prerendered HTML
+# from phlabs-prerender Worker → Prerender.io, not a 15 KB JS shell.
+#
+# For each critical route, requires all of:
+#   • HTTP 200
+#   • `x-prerendered: true` header  (Worker's prerender branch)
+#   • body size ≥ 30 KB              (shell alone is <20 KB)
+#   • body contains <title> and <h1>
+#
+# Fails the job and opens a GitHub issue if any check breaks — catches
+# a broken PRERENDER_TOKEN, Worker route unbinding, or Prerender.io outage
+# within 24 h even if no deploy happened.
+
+on:
+  workflow_run:
+    workflows: ["Release", "Deploy Cloudflare Worker"]
+    types: [completed]
+  schedule:
+    - cron: "17 6 * * *"   # 06:17 UTC daily
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Base URL (default https://phlabs.co.uk)"
+        required: false
+        default: "https://phlabs.co.uk"
+
+jobs:
+  probe:
+    name: Googlebot HTML full-render probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    env:
+      BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+      MIN_SIZE_BYTES: "30000"
+      GBOT_UA: "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"
+
+    steps:
+      - name: Wait for edge propagation
+        if: github.event_name == 'workflow_run'
+        run: sleep 45
+
+      - name: Probe critical routes as Googlebot
+        run: |
+          set -euo pipefail
+          routes=( "/" "/products" "/about" "/contact" "/products/bpc-157" )
+          fail=0
+          for path in "${routes[@]}"; do
+            echo "── GET $BASE_URL$path"
+            body=$(mktemp); hdrs=$(mktemp)
+            code=$(curl -sS -o "$body" -D "$hdrs" -w "%{http_code}" --max-time 30 \
+              -A "$GBOT_UA" "$BASE_URL$path")
+            size=$(wc -c <"$body" | tr -d ' ')
+            has_pre=$(awk 'tolower($1)=="x-prerendered:"{print $2}' "$hdrs" | tr -d '\r')
+            has_title=$(grep -oc "<title>[^<]\+</title>" "$body" || true)
+            has_h1=$(grep -oc "<h1[^>]*>" "$body" || true)
+            echo "  status=$code size=$size x-prerendered=$has_pre title=$has_title h1=$has_h1"
+
+            [ "$code" = "200" ] || { echo "::error::$path status $code (expected 200)"; fail=1; }
+            [ "$has_pre" = "true" ] || { echo "::error::$path missing x-prerendered:true header — Worker or PRERENDER_TOKEN broken"; fail=1; }
+            [ "$size" -ge "$MIN_SIZE_BYTES" ] || { echo "::error::$path body $size B < $MIN_SIZE_BYTES B — empty shell, Prerender.io not returning content"; fail=1; }
+            [ "$has_title" -ge 1 ] || { echo "::error::$path missing <title>"; fail=1; }
+            [ "$has_h1" -ge 1 ] || { echo "::error::$path missing <h1>"; fail=1; }
+            rm -f "$body" "$hdrs"
+          done
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::One or more Googlebot prerender probes failed against $BASE_URL"
+            exit 1
+          fi
+          echo "✅ All 5 routes returned fully-rendered HTML to Googlebot"
+
+      - name: Open issue on failure
+        if: failure() && github.event_name != 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.sha.slice(0, 7);
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Googlebot prerender broken (${sha})`,
+              labels: ['regression', 'seo', 'prerender', 'critical'],
+              body: [
+                `Googlebot prerender probe failed against \`${process.env.BASE_URL}\`.`,
+                ``,
+                `One or more of \`/\`, \`/products\`, \`/about\`, \`/contact\`, \`/products/bpc-157\` returned:`,
+                `- no \`x-prerendered: true\` header, or`,
+                `- body < 30 KB (empty JS shell), or`,
+                `- missing \`<title>\` / \`<h1>\`.`,
+                ``,
+                `**Google is indexing blank pages until this is fixed.**`,
+                ``,
+                `Diagnose:`,
+                `1. Confirm the \`phlabs-prerender\` Worker is bound to \`phlabs.co.uk/*\`.`,
+                `2. Confirm the Worker's \`PRERENDER_TOKEN\` secret is set and valid.`,
+                `3. Force a recache: \`curl -X POST https://api.prerender.io/recache -H "X-Prerender-Token: $TOKEN" -d '{"url":"https://phlabs.co.uk/"}'\`.`,
+                `4. Check Cloudflare Worker logs for the \`phlabs-prerender\` tag.`,
+                ``,
+                `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              ].join('\n'),
+            });
