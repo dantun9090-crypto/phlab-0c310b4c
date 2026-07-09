@@ -57,6 +57,7 @@ export function buildProfessionalInvoiceEmail(rawOpts: InvoiceEmailOptions): str
     address: rawOpts.address ? esc(rawOpts.address) : rawOpts.address,
     city: rawOpts.city ? esc(rawOpts.city) : rawOpts.city,
     postcode: rawOpts.postcode ? esc(rawOpts.postcode) : rawOpts.postcode,
+    country: rawOpts.country ? esc(rawOpts.country) : rawOpts.country,
     couponCode: rawOpts.couponCode ? esc(rawOpts.couponCode) : rawOpts.couponCode,
     bankTransferRef: rawOpts.bankTransferRef ? esc(rawOpts.bankTransferRef) : rawOpts.bankTransferRef,
     bankName: rawOpts.bankName ? esc(rawOpts.bankName) : rawOpts.bankName,
