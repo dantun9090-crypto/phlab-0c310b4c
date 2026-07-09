@@ -21,6 +21,29 @@ jobs:
         with:
           node-version: '20'
 
+      # Snapshot the currently-live Worker script BEFORE deploying so we can
+      # re-upload it verbatim if smoke tests fail. Uses the CF API directly
+      # (wrangler has no "download current script" command). Failure here is
+      # non-fatal — worst case rollback is unavailable this run.
+      - name: Snapshot current Worker (for rollback)
+        id: snapshot
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          mkdir -p /tmp/rollback
+          HTTP=$(curl -sS -o /tmp/rollback/phlabs-prerender.mjs -w "%{http_code}" \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/workers/scripts/phlabs-prerender" \
+            -H "Authorization: Bearer $CF_API_TOKEN")
+          echo "snapshot HTTP $HTTP"
+          if [ "$HTTP" = "200" ] && [ -s /tmp/rollback/phlabs-prerender.mjs ]; then
+            echo "have_snapshot=true" >> "$GITHUB_OUTPUT"
+            echo "Snapshot saved ($(wc -c < /tmp/rollback/phlabs-prerender.mjs) bytes)"
+          else
+            echo "have_snapshot=false" >> "$GITHUB_OUTPUT"
+            echo "WARN: no snapshot available — rollback will be skipped if smoke tests fail"
+          fi
+
       - name: Deploy Worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -29,6 +52,7 @@ jobs:
         # Deploy by name — preserves existing route bindings configured in the CF dashboard
         # (phlabs.co.uk/* on the phlabs zone; legacy domain proxies stay on the `phlab` worker).
         run: npx --yes wrangler@3 deploy phlabs-prerender.mjs --name phlabs-prerender --compatibility-date 2025-09-24 --compatibility-flags nodejs_compat
+
 
       - name: Purge Cloudflare Cache (phlabs.co.uk)
         env:
@@ -90,3 +114,49 @@ jobs:
             echo "WARN: CF-Cache-Build-ID missing — new worker may not have been deployed. Check wrangler output above."
             exit 1
           fi
+
+      # ── Automatic rollback ────────────────────────────────────────────
+      # If any step above failed (deploy itself, /__health, x-build-id,
+      # or cf-cache-build-id), re-upload the snapshot taken before deploy
+      # so the edge returns to the last known-good Worker within seconds.
+      - name: Rollback Worker on failure
+        if: failure() && steps.snapshot.outputs.have_snapshot == 'true'
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          echo "::warning::Smoke tests failed — rolling back phlabs-prerender to previous version"
+          METADATA='{"main_module":"phlabs-prerender.mjs","compatibility_date":"2025-09-24","compatibility_flags":["nodejs_compat"]}'
+          HTTP=$(curl -sS -o /tmp/rollback-response.json -w "%{http_code}" -X PUT \
+            "https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/workers/scripts/phlabs-prerender" \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
+            -F "metadata=$METADATA;type=application/json" \
+            -F "phlabs-prerender.mjs=@/tmp/rollback/phlabs-prerender.mjs;type=application/javascript+module")
+          echo "rollback HTTP $HTTP"
+          cat /tmp/rollback-response.json
+          [ "$HTTP" = "200" ] || { echo "::error::rollback upload failed"; exit 1; }
+
+      - name: Purge cache after rollback
+        if: failure() && steps.snapshot.outputs.have_snapshot == 'true'
+        env:
+          CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_PHLABS }}
+        run: |
+          curl -sS -X POST "https://api.cloudflare.com/client/v4/zones/$CF_ZONE_ID/purge_cache" \
+            -H "Authorization: Bearer $CF_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data '{"purge_everything":true}'
+          echo
+          echo "Edge cache purged after rollback"
+
+      - name: Verify rollback restored /__health
+        if: failure() && steps.snapshot.outputs.have_snapshot == 'true'
+        run: |
+          sleep 10
+          echo "GET https://phlabs.co.uk/__health (post-rollback)"
+          body=$(curl -sS -f --max-time 20 https://phlabs.co.uk/__health)
+          echo "$body"
+          echo "$body" | grep -q '"status":"ok"' \
+            || { echo "::error::rollback did NOT restore /__health — manual intervention required"; exit 1; }
+          echo "::notice::Rollback successful — previous Worker version restored"
