@@ -1027,7 +1027,9 @@ export default function CheckoutPage() {
 
   // ── Step summary labels ──
   const step1Summary = form.firstName ? `${form.firstName} ${form.lastName} · ${form.email}` : null;
-  const step2Summary = form.address ? `${form.address}, ${form.city} ${form.postcode}` : null;
+  const step2Summary = form.address
+    ? formatShippingAddressInline({ address: form.address, city: form.city, postcode: form.postcode, country: form.country })
+    : null;
 
   return (
     <section id="checkout" className="min-h-screen bg-[#060f1e] pt-20 pb-16">
