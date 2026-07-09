@@ -229,4 +229,57 @@ test.describe('Checkout — Germany', () => {
     expect(customer?.city).toBe('Berlin');
     expect(customer?.address).toMatch(/Musterstraße\s*12/);
   });
+
+  test('Step 2 blocks a German street line missing the house number OR the street name', async ({ page }) => {
+    // Fail loudly if the client accidentally lets an invalid street reach
+    // the order API — the whole point of this test is that Step 2 catches
+    // it BEFORE any /_serverFn call fires.
+    let orderCallHit = false;
+    await page.route('**/_serverFn/**', async (route) => {
+      if (/create-?[Oo]rder|createOrder/.test(route.request().url())) {
+        orderCallHit = true;
+      }
+      return route.fallback();
+    });
+
+    await page.goto('/checkout');
+    await fillContactStep(page);
+
+    await page.locator('select#country').selectOption({ label: 'Germany (Deutschland)' });
+    await page.getByLabel(/city/i).fill('Berlin');
+    await page.locator('input#postcode').fill('10115');
+    await page.getByText(/Standard 1–3 Day Delivery/i).first().click();
+
+    const streetInput = page.getByLabel(/street|address/i).first();
+    const advance = page.getByRole('button', { name: /continue|next/i }).first();
+    const stepThreeHeading = page.getByRole('heading', { name: /confirm|review|payment|age/i });
+    const streetError = page.getByText(/street name and house number|Musterstraße 12/i);
+
+    // Case A — street name only, no house number ("Musterstraße").
+    await streetInput.fill('Musterstraße');
+    await advance.click();
+    await expect(streetError).toBeVisible();
+    await expect(stepThreeHeading).toHaveCount(0);
+
+    // Case B — house number only, no street name ("12").
+    await streetInput.fill('12');
+    await advance.click();
+    await expect(streetError).toBeVisible();
+    await expect(stepThreeHeading).toHaveCount(0);
+
+    // Case C — punctuation-only, still no letters and no digits.
+    await streetInput.fill('---');
+    await advance.click();
+    await expect(streetError).toBeVisible();
+    await expect(stepThreeHeading).toHaveCount(0);
+
+    // Sanity: fixing the address (adds a house number) lets Step 2 pass.
+    await streetInput.fill('Musterstraße 12');
+    await advance.click();
+    await expect(page.getByLabel(/18 or older|18\+/i)).toBeVisible({ timeout: 5000 });
+
+    // The order-create endpoint must NEVER have been called during the
+    // invalid attempts above.
+    expect(orderCallHit).toBe(false);
+  });
 });
