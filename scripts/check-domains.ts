@@ -36,6 +36,13 @@ const GUARD_FILES = new Set<string>([
   "scripts/check-dist-domains.ts",
   "scripts/check-domains.test.ts",
   ".github/workflows/domain-guard.yml",
+  // Legitimate references to the legacy domain:
+  //  - post-deploy-purge.yml targets legacy hosts in CF purge payloads
+  //    and probes them to confirm the 301→apex contract still holds.
+  //  - probe-sitemap-robots.ts declares legacy hosts as expected-301 so
+  //    a redirect from them counts as PASS, not drift.
+  ".github/workflows/post-deploy-purge.yml",
+  "scripts/probe-sitemap-robots.ts",
 ]);
 
 const FORBIDDEN: { pattern: RegExp; label: string; hint: string }[] = [
