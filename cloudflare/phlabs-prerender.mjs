@@ -519,11 +519,11 @@ function stripLovableInjectedScripts(response) {
 __name(stripLovableInjectedScripts, "stripLovableInjectedScripts");
 var _ttlCache = { value: 30, expiresAt: 0 };
 var TTL_CACHE_MS = 6e4;
-var TTL_DEFAULT = 30;
+var TTL_DEFAULT = 60;
 // Allow 0 from the admin config as an explicit "disable HTML cache" signal.
 // Never coerce 0 back to a positive TTL — that hidden Worker cache layer was
 // able to serve old HTML even when the origin said no-store.
-var TTL_ALLOWED = /* @__PURE__ */ new Set([0, 30, 60, 300, 900]);
+var TTL_ALLOWED = /* @__PURE__ */ new Set([0, 30, 60]);
 async function getHtmlTtlSeconds() {
   const now = Date.now();
   if (_ttlCache.expiresAt > now) return _ttlCache.value;
@@ -547,7 +547,7 @@ async function getHtmlTtlSeconds() {
   if (!Number.isFinite(n)) value = TTL_DEFAULT;
   else if (n === 0) value = 0;
   else if (n < 30) value = 30;
-  else value = n;
+  else value = Math.min(n, 60);
   _ttlCache = { value, expiresAt: now + TTL_CACHE_MS };
   return value;
 }
@@ -649,10 +649,12 @@ var phlabs_prerender_patched_default = {
       return Response.redirect("https://phlabs.app/", 301);
     }
     if (url.pathname === "/_health" || url.pathname === "/__health") {
+      const buildId = await getOriginBuildId();
       return jsonResponse({
         status: "ok",
         timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-        version: "1.0.0"
+        version: "1.0.0",
+        buildId
       });
     }
     if (request.method === "OPTIONS") {
@@ -755,17 +757,20 @@ var phlabs_prerender_patched_default = {
       try {
         const hit = forceRefresh ? null : await caches.default.match(cacheKey);
         if (hit) {
-          const cachedBuildId = hit.headers.get("x-phl-origin-build-id") || hit.headers.get("x-build-id") || "unknown";
+          const cachedBuildId = hit.headers.get("CF-Cache-Build-ID") || hit.headers.get("x-phl-origin-build-id") || hit.headers.get("x-build-id") || "unknown";
           if (originBuildId && originBuildId !== "unknown" && cachedBuildId !== "unknown" && cachedBuildId !== originBuildId) {
             console.log(JSON.stringify({ tag: "phlabs-prerender", branch: "html-cache-bypass", reason: "build-mismatch", path: url.pathname, cachedBuildId, originBuildId }));
+            ctx.waitUntil(caches.default.delete(cacheKey).catch(() => {
+            }));
           } else {
           const h = new Headers(hit.headers);
-          h.set("cache-control", "public, max-age=0, must-revalidate");
+          h.set("cache-control", "public, max-age=60, must-revalidate");
           h.set("cdn-cache-control", `public, max-age=${htmlTtl}`);
           h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}`);
           if (originBuildId) {
             h.set("x-phl-origin-build-id", originBuildId);
             h.set("x-build-id", originBuildId);
+            h.set("CF-Cache-Build-ID", originBuildId);
           }
           h.set("x-phl-via", `${normalProxyVia};cached=1`);
           h.set("cf-cache-status", "HIT");
@@ -792,7 +797,11 @@ var phlabs_prerender_patched_default = {
       }
       const h = new Headers(res.headers);
       if (forceRefresh) h.set("x-phl-force-refresh", "1");
-      if (originBuildId) h.set("x-phl-origin-build-id", originBuildId);
+      if (originBuildId) {
+        h.set("x-phl-origin-build-id", originBuildId);
+        h.set("x-build-id", originBuildId);
+        h.set("CF-Cache-Build-ID", originBuildId);
+      }
       if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/webhook/")) {
         noCache(h);
       } else if (isFirebaseAuthHelperPath(url)) {
@@ -809,7 +818,7 @@ var phlabs_prerender_patched_default = {
 
       } else if ((h.get("content-type") || "").includes("text/html")) {
         if (htmlTtl > 0) {
-          h.set("cache-control", "public, max-age=0, must-revalidate");
+          h.set("cache-control", "public, max-age=60, must-revalidate");
           h.set("cdn-cache-control", `public, max-age=${htmlTtl}`);
           h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}`);
         } else {
@@ -844,6 +853,7 @@ var phlabs_prerender_patched_default = {
           if (originBuildId) {
             cacheHeaders.set("x-phl-origin-build-id", originBuildId);
             cacheHeaders.set("x-build-id", originBuildId);
+            cacheHeaders.set("CF-Cache-Build-ID", originBuildId);
           }
           cacheHeaders.set("x-phl-cached-at", (/* @__PURE__ */ new Date()).toISOString());
           let putErr = "ok";
