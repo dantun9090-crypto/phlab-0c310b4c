@@ -912,6 +912,7 @@ export default function CheckoutPage() {
           address: form.address,
           city: form.city,
           postcode: form.postcode,
+          country: form.country,
           paymentMethod: 'bank_transfer',
           bankTransferRef: btRef,
           bankName: siteSettings.bankTransferName,
