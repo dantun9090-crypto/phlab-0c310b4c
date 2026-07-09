@@ -124,17 +124,24 @@ export function buildProfessionalInvoiceEmail(rawOpts: InvoiceEmailOptions): str
     </div>
   ` : '';
 
-  // Address block
-  const addressBlock = (opts.address || opts.city || opts.postcode) ? `
+  // Address block — country-aware ordering (DIN 5008 for Germany: PLZ Ort).
+  // Values are already HTML-escaped above; the helper only reorders lines.
+  const addressBlock = (opts.address || opts.city || opts.postcode) ? (() => {
+    const lines = formatShippingAddressLines({
+      firstName: opts.firstName,
+      address: opts.address,
+      city: opts.city,
+      postcode: opts.postcode,
+      country: opts.country,
+    });
+    return `
     <div style="margin-bottom:24px;">
       <p style="color:${DIMMED};font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin:0 0 8px 0;">Shipping Address</p>
       <p style="color:${MUTED};font-size:13px;margin:0;line-height:1.7;">
-        ${opts.firstName}<br>
-        ${opts.address ? opts.address + '<br>' : ''}
-        ${opts.city ? opts.city + (opts.postcode ? ', ' : '') : ''}${opts.postcode || ''}
+        ${lines.join('<br>')}
       </p>
-    </div>
-  ` : '';
+    </div>`;
+  })() : '';
 
   return `<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
