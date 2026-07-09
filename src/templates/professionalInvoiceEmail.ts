@@ -1,3 +1,5 @@
+import { formatShippingAddressLines } from '@/lib/format-address';
+
 export interface InvoiceEmailOptions {
   firstName: string;
   orderId: string;
