@@ -672,7 +672,7 @@ export default function CheckoutPage() {
         phone: form.phone,
         firstName: form.firstName,
         lastName: form.lastName,
-        country: 'GB',
+        country: form.country === 'Germany' ? 'DE' : form.country === 'Ireland' ? 'IE' : form.country === 'United Kingdom' ? 'GB' : 'GB',
         postalCode: form.postcode,
       });
       trackAddPaymentInfo(
