@@ -1011,6 +1011,31 @@ export default function CheckoutPage() {
             <div className="flex justify-between border-t border-white/10 pt-2 mt-2"><span className="text-gray-400">Amount due</span><span className="text-amber-400 font-bold">£{confirmedTotal || total}</span></div>
           </div>
 
+          {form.address && (
+            <div className="bg-[#0b1a30] border border-white/10 rounded-xl p-4 mb-6 text-left text-sm">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[10px] uppercase tracking-wider text-emerald-400/80 font-semibold">Delivery Address</p>
+                {form.country && form.country !== 'United Kingdom' && (
+                  <span className="text-[10px] uppercase tracking-wider text-gray-500">
+                    {shortPostcodeLabel(form.country)} {form.postcode}
+                  </span>
+                )}
+              </div>
+              <address className="not-italic text-white leading-relaxed">
+                {formatShippingAddressLines({
+                  firstName: form.firstName,
+                  lastName: form.lastName,
+                  address: form.address,
+                  city: form.city,
+                  postcode: form.postcode,
+                  country: form.country,
+                }).map((line, i) => (
+                  <div key={i}>{line}</div>
+                ))}
+              </address>
+            </div>
+          )}
+
           <div className="space-y-3">
             <Link to="/products" className="block w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-medium transition-colors text-center">
               Continue Shopping
