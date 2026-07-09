@@ -229,6 +229,28 @@ async function probe(target: Target): Promise<Result> {
     };
   }
 
+  // Legacy redirect hosts: 301/308 to canonical is the CORRECT contract —
+  // skip cache-header enforcement (redirects don't need no-store; the
+  // canonical host is what browsers cache).
+  if (isLegacyHost && (status === 301 || status === 308)) {
+    return {
+      path: target.path,
+      url,
+      status,
+      contentType,
+      cacheControl: cc,
+      cdnCacheControl: cdn,
+      surrogateControl: surrogate,
+      cfCacheStatus: cf,
+      age,
+      violations,
+      optionalSkipped: true,
+      optional: target.optional,
+      source: (target.source ?? "") + " (legacy 301 → apex, skipped)",
+      ok: true,
+    };
+  }
+
   if (status !== 200) violations.push(`unexpected status ${status}`);
   if (contentType && !target.expectedContentType.test(contentType)) {
     violations.push(`content-type "${contentType}" does not match ${target.expectedContentType}`);
