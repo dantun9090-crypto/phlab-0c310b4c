@@ -37,18 +37,47 @@ const itemSchema = z.object({
   quantity: z.number().int().min(1).max(99),
 });
 
+const UK_POSTCODE_RE = /^[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}$/i;
+const DE_POSTCODE_RE = /^\d{5}$/;
+const IE_EIRCODE_RE = /^[A-Z]\d{2}\s?[A-Z0-9]{4}$/i;
+
+const customerSchema = z.object({
+  firstName: z.string().trim().min(1).max(80),
+  lastName:  z.string().trim().min(1).max(80),
+  email:     z.string().trim().email().max(320),
+  phone:     z.string().trim().max(40).optional().default(''),
+  address:   z.string().trim().min(4, 'Street address is required').max(200),
+  city:      z.string().trim().min(1).max(80),
+  postcode:  z.string().trim().min(1).max(20),
+  country:   z.string().trim().min(1).max(80),
+}).superRefine((c, ctx) => {
+  const pc = c.postcode;
+  if (c.country === 'United Kingdom') {
+    if (!UK_POSTCODE_RE.test(pc)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['postcode'], message: 'Enter a valid UK postcode' });
+    }
+  } else if (c.country === 'Germany') {
+    if (!DE_POSTCODE_RE.test(pc)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['postcode'], message: 'Enter a valid German postcode (PLZ, 5 digits)' });
+    }
+    // German addresses must include a street name AND a house number.
+    if (!/\d/.test(c.address) || !/[A-Za-zÄÖÜäöüß]/.test(c.address)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['address'], message: 'Enter street name and house number (e.g. Musterstraße 12)' });
+    }
+  } else if (c.country === 'Ireland') {
+    if (!IE_EIRCODE_RE.test(pc)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['postcode'], message: 'Enter a valid Eircode' });
+    }
+  } else {
+    if (pc.length < 3 || pc.length > 12) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['postcode'], message: 'Enter a valid postcode' });
+    }
+  }
+});
+
 export const createOrderInputSchema = z.object({
   items: z.array(itemSchema).min(1).max(50),
-  customer: z.object({
-    firstName: z.string().min(1).max(80),
-    lastName:  z.string().min(1).max(80),
-    email:     z.string().email().max(320),
-    phone:     z.string().max(40).optional().default(''),
-    address:   z.string().min(1).max(200),
-    city:      z.string().min(1).max(80),
-    postcode:  z.string().min(1).max(20),
-    country:   z.string().min(1).max(80),
-  }),
+  customer: customerSchema,
   shippingMethod: z.enum(['standard', 'next_day_12']),
   paymentMethod: z.enum(['bank_transfer', 'pay_by_bank', 'wallid']),
   ageVerified: z.literal(true),
