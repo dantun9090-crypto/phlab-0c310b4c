@@ -238,17 +238,28 @@ jobs:
     # is SEO-critical and worth retrying regardless of the HTML edge check.
     if: always()
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
+    permissions:
+      contents: read
+      issues: write
     env:
       CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
       CF_ZONE_ID_PROHEALTH: ${{ secrets.CF_ZONE_ID_PROHEALTH }}
       CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
       PROBE_OUT_DIR: sitemap-robots-probe
+      PROBE_REPORTS_DIR: reports
+      # Manual dispatch inputs → env (default to "both"/"retry_on" for
+      # push/repository_dispatch runs where inputs are unset).
+      TARGET_DOMAIN: ${{ github.event.inputs.target_domain || 'both' }}
+      RUN_MODE: ${{ github.event.inputs.run_mode || 'retry_on' }}
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
+
+      - name: Prepare reports directory
+        run: mkdir -p reports sitemap-robots-probe
 
       - name: Targeted purge — /robots.txt + /sitemap*.xml (both domains, apex + www)
         shell: bash
@@ -320,46 +331,160 @@ jobs:
           JSON
           )
 
-          purge_zone "$CF_ZONE_ID" "phlabs.co.uk" "$phlabs_payload"
-          purge_zone "$CF_ZONE_ID_PROHEALTH" "prohealthpeptides.co.uk" "$prohealth_payload"
+          if [ "$TARGET_DOMAIN" = "both" ] || [ "$TARGET_DOMAIN" = "phlabs.co.uk" ]; then
+            purge_zone "$CF_ZONE_ID" "phlabs.co.uk" "$phlabs_payload"
+          else
+            echo "TARGET_DOMAIN=$TARGET_DOMAIN — skipping phlabs.co.uk purge"
+          fi
+          if [ "$TARGET_DOMAIN" = "both" ] || [ "$TARGET_DOMAIN" = "prohealthpeptides.co.uk" ]; then
+            purge_zone "$CF_ZONE_ID_PROHEALTH" "prohealthpeptides.co.uk" "$prohealth_payload"
+          else
+            echo "TARGET_DOMAIN=$TARGET_DOMAIN — skipping prohealthpeptides.co.uk purge"
+          fi
 
       - name: Wait 15s for edge propagation
         run: sleep 15
 
-      - name: Re-run sitemap/robots cache probe (both domains, with retry)
+      - name: Re-run sitemap/robots cache probe (with retry / drift diff)
         id: probe
         env:
-          # Probe script's own retry loop: 3 attempts, 10s linear backoff.
-          PROBE_RETRIES: "3"
+          # retry_off → 1 attempt only; retry_on → 3 attempts / 10s backoff.
+          PROBE_RETRIES: ${{ github.event.inputs.run_mode == 'retry_off' && '1' || '3' }}
           PROBE_RETRY_DELAY_SEC: "10"
         run: |
           set +e
           rc=0
-          echo "::group::probe phlabs.co.uk"
-          bun run scripts/probe-sitemap-robots.ts --domain phlabs.co.uk
-          [ $? -ne 0 ] && rc=1
-          echo "::endgroup::"
-          echo "::group::probe prohealthpeptides.co.uk (legacy 301 → apex tolerated)"
-          bun run scripts/probe-sitemap-robots.ts --domain prohealthpeptides.co.uk
-          [ $? -ne 0 ] && rc=1
-          echo "::endgroup::"
+          if [ "$TARGET_DOMAIN" = "both" ] || [ "$TARGET_DOMAIN" = "phlabs.co.uk" ]; then
+            echo "::group::probe phlabs.co.uk"
+            bun run scripts/probe-sitemap-robots.ts --domain phlabs.co.uk
+            [ $? -ne 0 ] && rc=1
+            echo "::endgroup::"
+          fi
+          if [ "$TARGET_DOMAIN" = "both" ] || [ "$TARGET_DOMAIN" = "prohealthpeptides.co.uk" ]; then
+            echo "::group::probe prohealthpeptides.co.uk (legacy 301 → apex tolerated)"
+            bun run scripts/probe-sitemap-robots.ts --domain prohealthpeptides.co.uk
+            [ $? -ne 0 ] && rc=1
+            echo "::endgroup::"
+          fi
           echo "exit_code=$rc" >> "$GITHUB_OUTPUT"
 
-      - name: Upload probe report + purge log
+      - name: Emit job step summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "# 🤖 Robots & Sitemap Probe (run mode: ${RUN_MODE}, target: ${TARGET_DOMAIN})"
+            echo ""
+            if [ -f reports/probe-summary.md ]; then
+              cat reports/probe-summary.md
+            else
+              echo "_probe-summary.md not generated — probe likely failed to start._"
+            fi
+            echo ""
+            echo "**Artifact:** [Download full report](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}#artifacts)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload probe report + detailed logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: post-deploy-robots-sitemap-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             sitemap-robots-probe/
+            reports/
             robots-sitemap-purge.ndjson
           retention-days: 7
+
+      - name: Open GitHub issue on drift
+        if: steps.probe.outputs.exit_code != '0'
+        uses: actions/github-script@v7
+        env:
+          TARGET_DOMAIN: ${{ github.event.inputs.target_domain || 'both' }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const target = process.env.TARGET_DOMAIN || 'both';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const artifactsUrl = `${runUrl}#artifacts`;
+
+            // Collect drift-diff-*.json files if present.
+            const drifts = [];
+            const reportsDir = 'reports';
+            if (fs.existsSync(reportsDir)) {
+              for (const f of fs.readdirSync(reportsDir)) {
+                if (/^drift-diff-.*\.json$/.test(f)) {
+                  try {
+                    const raw = fs.readFileSync(path.join(reportsDir, f), 'utf8');
+                    drifts.push({ file: f, json: JSON.parse(raw) });
+                  } catch (e) {
+                    drifts.push({ file: f, json: { parse_error: String(e) } });
+                  }
+                }
+              }
+            }
+
+            const failingUrls = drifts.flatMap((d) =>
+              Array.isArray(d.json) ? d.json.map((e) => e.url) : []
+            );
+            const domains = [...new Set(drifts.map((d) => d.file.replace(/^drift-diff-|\.json$/g, '')))];
+
+            // Best-effort label creation — never fail the step over it.
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'cache-drift',
+                color: 'B60205',
+                description: 'Robots/sitemap edge-cache drift detected by post-deploy probe.',
+              });
+            } catch (e) { /* label exists or forbidden — ignore */ }
+
+            const ts = new Date().toISOString();
+            const domainLabel = domains.length ? domains.join(', ') : target;
+            const title = `[Cache Drift] robots/sitemap probe failed — ${domainLabel} — ${ts}`;
+
+            const body = [
+              `**Workflow run:** ${runUrl}`,
+              `**Artifacts:** ${artifactsUrl}`,
+              `**Target domain(s):** ${target}`,
+              `**Failing URLs:**`,
+              ...(failingUrls.length ? failingUrls.map((u) => `- ${u}`) : ['- (see artifact — no structured drift file produced)']),
+              ``,
+              `<details><summary>Raw drift report JSON</summary>`,
+              ``,
+              '```json',
+              JSON.stringify(drifts, null, 2).slice(0, 60000),
+              '```',
+              ``,
+              `</details>`,
+            ].join('\n');
+
+            try {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['cache-drift'],
+              });
+            } catch (e) {
+              // Retry without label if label attach fails.
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+              });
+            }
 
       - name: Fail if probe reports drift
         if: steps.probe.outputs.exit_code != '0'
         run: |
           echo "::error::/robots.txt or /sitemap*.xml is still not compliant after post-deploy purge — see post-deploy-robots-sitemap artifact"
           exit 1
+
 
 
 
