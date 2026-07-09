@@ -142,7 +142,7 @@ test.describe("cache stability — page must not auto-refresh", () => {
         if (res.request().resourceType() !== "document") return;
         const url = normalize(res.url());
         const target = normalize(documentUrl);
-        if (url === target && primaryCacheControl === undefined) {
+        if (url === target && primaryHeaders.cacheControl === undefined) {
           const headers = res.headers();
           primaryHeaders = {
             cacheControl: headers["cache-control"],
