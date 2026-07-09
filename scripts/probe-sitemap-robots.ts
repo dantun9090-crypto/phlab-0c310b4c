@@ -17,16 +17,25 @@
  * from the `postbuild:probe` npm script and from the
  * `sitemap-robots-cache-probe` GitHub workflow on every push to main.
  *
+ * Diagnostics artifacts (all under $PROBE_REPORTS_DIR, default `reports/`):
+ *   - probe-detailed-log.jsonl — one JSON line per HTTP attempt
+ *   - probe-detailed-log.md    — human-readable attempt table
+ *   - probe-summary.md         — one row per (domain, url) with PASS/FAIL
+ *   - drift-diff-<host>.json   — expected vs. fetched diff on drift
+ *   - drift-diff-<host>.md     — human-readable diff on drift
+ *
  * Exit codes:
  *   0 — every path passes
  *   1 — one or more paths violate the contract
  *   2 — network / unexpected error
  */
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, appendFileSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { createHash } from "node:crypto";
 
-// CLI arg parsing: --domain=host or --domain host, --retries=N, --retry-delay=SEC.
-// Falls back to env vars for CI compatibility.
+// ---------------------------------------------------------------------------
+// CLI + env config
+// ---------------------------------------------------------------------------
 function parseCliArg(name: string): string | undefined {
   const argv = process.argv.slice(2);
   const eqIdx = argv.findIndex((a) => a.startsWith(`--${name}=`));
@@ -44,8 +53,10 @@ const BASE = CLI_DOMAIN
      process.env.TEST_BASE_URL ||
      "https://phlabs.co.uk").replace(/\/+$/, "");
 const OUT_DIR = process.env.PROBE_OUT_DIR || "sitemap-robots-probe";
+const REPORTS_DIR = process.env.PROBE_REPORTS_DIR || "reports";
+const DIST_DIR = process.env.PROBE_DIST_DIR || "dist";
 const BROWSER_MAX_AGE_CEILING = 3600;
-const MAX_RETRIES = Number(parseCliArg("retries") ?? process.env.PROBE_RETRIES ?? "3");
+const MAX_RETRIES = Math.max(1, Number(parseCliArg("retries") ?? process.env.PROBE_RETRIES ?? "3"));
 const RETRY_DELAY_MS = Number(parseCliArg("retry-delay") ?? process.env.PROBE_RETRY_DELAY_SEC ?? "10") * 1000;
 
 // Legacy hosts that intentionally 301 to the canonical apex. A 301 on
@@ -57,22 +68,18 @@ const LEGACY_REDIRECT_HOSTS = new Set([
   "www.phlabs.co.uk",
 ]);
 
+const HOST_SLUG = new URL(BASE).hostname.replace(/[^a-z0-9]+/gi, "-");
+
+// ---------------------------------------------------------------------------
+// Targets + auto-discovery
+// ---------------------------------------------------------------------------
 interface Target {
   path: string;
   expectedContentType: RegExp;
-  /**
-   * Optional targets tolerate a 404 or SPA-fallback (200 HTML) response —
-   * useful for split sitemaps that may not exist yet. If they DO return
-   * XML/200, the full no-store contract is still enforced.
-   */
   optional: boolean;
-  /** Human note for the report (e.g. "discovered from sitemap index"). */
   source?: string;
 }
 
-// Seed targets — always probed. robots.txt is mandatory; the root
-// sitemap is mandatory; the historically-planned split variants are
-// optional so we can ship them without a coordinated CI change.
 const SEED_TARGETS: Target[] = [
   { path: "/robots.txt", expectedContentType: /text\/plain/, optional: false, source: "seed" },
   { path: "/sitemap.xml", expectedContentType: /xml/, optional: false, source: "seed" },
@@ -81,15 +88,6 @@ const SEED_TARGETS: Target[] = [
   { path: "/sitemap-articles.xml", expectedContentType: /xml/, optional: true, source: "seed" },
 ];
 
-/**
- * Fetch the root sitemap + sitemap index (if any), extract every
- * `<sitemap><loc>` and `<url><loc>` URL that matches this origin and looks
- * like a sitemap file, and return them as additional optional targets.
- *
- * This is how we auto-cover FUTURE split sitemaps: as soon as the sitemap
- * index references `/sitemap-blog.xml`, the next probe run picks it up and
- * enforces the same no-store contract on it without a code change here.
- */
 async function discoverAdditionalSitemaps(seenPaths: Set<string>): Promise<Target[]> {
   const seeds = ["/sitemap-index.xml", "/sitemap.xml"];
   const found = new Map<string, Target>();
@@ -104,16 +102,10 @@ async function discoverAdditionalSitemaps(seenPaths: Set<string>): Promise<Targe
       const ct = res.headers.get("content-type") || "";
       if (!/xml/i.test(ct)) continue;
       const body = await res.text();
-      // Match every <loc>...</loc> — works for both <sitemapindex> and <urlset>.
       const locs = [...body.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)].map((m) => m[1]);
       for (const raw of locs) {
         let u: URL;
-        try {
-          u = new URL(raw, BASE);
-        } catch {
-          continue;
-        }
-        // Same-origin sitemap-shaped paths only.
+        try { u = new URL(raw, BASE); } catch { continue; }
         if (u.origin !== new URL(BASE).origin) continue;
         if (!/^\/sitemap[-a-z0-9_]*\.xml$/i.test(u.pathname)) continue;
         if (seenPaths.has(u.pathname) || found.has(u.pathname)) continue;
@@ -124,11 +116,32 @@ async function discoverAdditionalSitemaps(seenPaths: Set<string>): Promise<Targe
           source: `discovered via ${seed}`,
         });
       }
-    } catch {
-      // Discovery is best-effort — a network blip must not fail the probe.
-    }
+    } catch { /* best-effort */ }
   }
   return [...found.values()];
+}
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+interface RedirectHop { status: number; location: string; }
+
+interface AttemptLog {
+  timestamp: string;
+  domain: string;
+  url: string;
+  path: string;
+  attempt_number: number;
+  http_status_code: number | null;
+  cf_cache_status: string;
+  cdn_cache_control: string;
+  cache_control: string;
+  age: string;
+  content_type: string;
+  redirect_chain: RedirectHop[];
+  pass_or_fail: "PASS" | "FAIL" | "SKIP";
+  violations: string[];
+  error_message: string | null;
 }
 
 interface Result {
@@ -146,6 +159,9 @@ interface Result {
   optional: boolean;
   source?: string;
   ok: boolean;
+  attempts: number;
+  redirectChain: RedirectHop[];
+  body?: string;
 }
 
 function parseDirective(header: string, name: string): number | null {
@@ -153,100 +169,127 @@ function parseDirective(header: string, name: string): number | null {
   return m ? Number(m[1]) : null;
 }
 
-async function probe(target: Target): Promise<Result> {
+// ---------------------------------------------------------------------------
+// Detailed per-attempt logging
+// ---------------------------------------------------------------------------
+mkdirSync(REPORTS_DIR, { recursive: true });
+const DETAILED_JSONL = join(REPORTS_DIR, "probe-detailed-log.jsonl");
+const DETAILED_MD = join(REPORTS_DIR, "probe-detailed-log.md");
+
+function logAttempt(entry: AttemptLog) {
+  try { appendFileSync(DETAILED_JSONL, JSON.stringify(entry) + "\n"); } catch {}
+  try {
+    const line =
+      `| ${entry.timestamp} | \`${entry.domain}\` | \`${entry.path}\` | ${entry.attempt_number} | ` +
+      `${entry.http_status_code ?? "ERR"} | ${entry.cf_cache_status || "-"} | ` +
+      `\`${entry.cdn_cache_control || "-"}\` | \`${entry.cache_control || "-"}\` | ` +
+      `${entry.age || "-"} | ${entry.pass_or_fail} |\n`;
+    if (!existsSync(DETAILED_MD)) {
+      writeFileSync(
+        DETAILED_MD,
+        "# Probe detailed log\n\n" +
+          "| ts | domain | path | attempt | status | cf-cache | cdn-cache-control | cache-control | age | verdict |\n" +
+          "|---|---|---|---|---|---|---|---|---|---|\n",
+      );
+    }
+    appendFileSync(DETAILED_MD, line);
+  } catch {}
+}
+
+// ---------------------------------------------------------------------------
+// Probe (single attempt)
+// ---------------------------------------------------------------------------
+async function probe(target: Target, attemptNumber: number): Promise<Result> {
   const url = `${BASE}${target.path}?__cache_probe=${Date.now()}${Math.random().toString(36).slice(2, 8)}`;
   const violations: string[] = [];
+  const redirectChain: RedirectHop[] = [];
   let status: number | null = null;
   let h: Headers | null = null;
+  let body = "";
+  let errorMessage: string | null = null;
 
-  // Legacy redirect hosts: a 301 is the correct answer.
   const baseHost = new URL(BASE).hostname;
   const isLegacyHost = LEGACY_REDIRECT_HOSTS.has(baseHost);
 
+  const makeResult = (extra: Partial<Result>): Result => ({
+    path: target.path,
+    url,
+    status,
+    contentType: h?.get("content-type") || "",
+    cacheControl: h?.get("cache-control") || "",
+    cdnCacheControl: h?.get("cdn-cache-control") || h?.get("cloudflare-cdn-cache-control") || "",
+    surrogateControl: h?.get("surrogate-control") || "",
+    cfCacheStatus: (h?.get("cf-cache-status") || "").toUpperCase(),
+    age: Number(h?.get("age") || "0") || 0,
+    violations,
+    optionalSkipped: false,
+    optional: target.optional,
+    source: target.source,
+    ok: false,
+    attempts: attemptNumber,
+    redirectChain,
+    body,
+    ...extra,
+  });
 
   try {
-    const res = await fetch(url, {
-      method: "GET",
-      headers: {
-        "user-agent": "phlabs-sitemap-robots-probe/1.0",
-        "cache-control": "no-cache",
-        pragma: "no-cache",
-      },
-      redirect: "manual",
-      signal: AbortSignal.timeout(15_000),
-    });
-    status = res.status;
-    h = res.headers;
+    // Follow up to 3 redirects manually so we can record the chain.
+    let currentUrl = url;
+    for (let hop = 0; hop < 4; hop++) {
+      const res = await fetch(currentUrl, {
+        method: "GET",
+        headers: {
+          "user-agent": "phlabs-sitemap-robots-probe/1.0",
+          "cache-control": "no-cache",
+          pragma: "no-cache",
+        },
+        redirect: "manual",
+        signal: AbortSignal.timeout(15_000),
+      });
+      status = res.status;
+      h = res.headers;
+      if (status >= 300 && status < 400) {
+        const loc = h.get("location") || "";
+        redirectChain.push({ status, location: loc });
+        if (!loc || hop === 3) break;
+        currentUrl = new URL(loc, currentUrl).toString();
+        continue;
+      }
+      try { body = await res.text(); } catch { body = ""; }
+      break;
+    }
   } catch (err) {
-    violations.push(`network error: ${(err as Error).message}`);
-    return {
-      path: target.path,
-      url,
-      status,
-      contentType: "",
-      cacheControl: "",
-      cdnCacheControl: "",
-      surrogateControl: "",
-      cfCacheStatus: "",
-      age: 0,
-      violations,
-      optionalSkipped: false,
-      optional: target.optional,
-      source: target.source,
-      ok: false,
-    };
+    errorMessage = (err as Error).message;
+    violations.push(`network error: ${errorMessage}`);
+    const r = makeResult({ ok: false });
+    logAttempt(buildAttemptLog(target, r, attemptNumber, "FAIL", errorMessage));
+    return r;
   }
 
-  const contentType = h.get("content-type") || "";
-  const cc = h.get("cache-control") || "";
-  const cdn = h.get("cdn-cache-control") || h.get("cloudflare-cdn-cache-control") || "";
-  const surrogate = h.get("surrogate-control") || "";
-  const cf = (h.get("cf-cache-status") || "").toUpperCase();
-  const age = Number(h.get("age") || "0") || 0;
+  const contentType = h!.get("content-type") || "";
+  const cc = h!.get("cache-control") || "";
+  const cdn = h!.get("cdn-cache-control") || h!.get("cloudflare-cdn-cache-control") || "";
+  const surrogate = h!.get("surrogate-control") || "";
+  const cf = (h!.get("cf-cache-status") || "").toUpperCase();
+  const age = Number(h!.get("age") || "0") || 0;
 
-  // Optional targets tolerate "not shipped" — either a real 404 or the
-  // SPA fallback returning the HTML shell on 200 (TanStack catch-all).
-  // Any other response falls through to the full no-store contract check.
+  // Optional targets tolerate "not shipped": true 404 or SPA HTML fallback.
   const isSpaFallback = status === 200 && /text\/html/i.test(contentType);
   if (target.optional && (status === 404 || isSpaFallback)) {
-    return {
-      path: target.path,
-      url,
-      status,
-      contentType,
-      cacheControl: cc,
-      cdnCacheControl: cdn,
-      surrogateControl: surrogate,
-      cfCacheStatus: cf,
-      age,
-      violations,
-      optionalSkipped: true,
-      optional: true,
-      source: target.source,
-      ok: true,
-    };
+    const r = makeResult({ ok: true, optionalSkipped: true });
+    logAttempt(buildAttemptLog(target, r, attemptNumber, "SKIP", null));
+    return r;
   }
 
-  // Legacy redirect hosts: 301/308 to canonical is the CORRECT contract —
-  // skip cache-header enforcement (redirects don't need no-store; the
-  // canonical host is what browsers cache).
+  // Legacy redirect hosts: 301/308 → canonical apex is CORRECT.
   if (isLegacyHost && (status === 301 || status === 308)) {
-    return {
-      path: target.path,
-      url,
-      status,
-      contentType,
-      cacheControl: cc,
-      cdnCacheControl: cdn,
-      surrogateControl: surrogate,
-      cfCacheStatus: cf,
-      age,
-      violations,
-      optionalSkipped: true,
-      optional: target.optional,
-      source: (target.source ?? "") + " (legacy 301 → apex, skipped)",
+    const r = makeResult({
       ok: true,
-    };
+      optionalSkipped: true,
+      source: (target.source ?? "") + " (legacy 301 → apex, skipped)",
+    });
+    logAttempt(buildAttemptLog(target, r, attemptNumber, "SKIP", null));
+    return r;
   }
 
   if (status !== 200) violations.push(`unexpected status ${status}`);
@@ -254,56 +297,176 @@ async function probe(target: Target): Promise<Result> {
     violations.push(`content-type "${contentType}" does not match ${target.expectedContentType}`);
   }
 
-  // The one non-negotiable: CDN MUST be no-store.
   const cdnHeader = cdn || surrogate;
-  if (!cdnHeader) {
-    violations.push("cdn-cache-control missing — CF will apply its own cache TTL");
-  } else if (!/\bno-store\b/i.test(cdnHeader)) {
-    violations.push(`cdn-cache-control not no-store: "${cdnHeader}"`);
-  }
+  if (!cdnHeader) violations.push("cdn-cache-control missing — CF will apply its own cache TTL");
+  else if (!/\bno-store\b/i.test(cdnHeader)) violations.push(`cdn-cache-control not no-store: "${cdnHeader}"`);
 
-  // Browser: short max-age is fine, but no immutable, no s-maxage.
   if (cc) {
-    if (/\bimmutable\b/i.test(cc)) {
-      violations.push(`cache-control has 'immutable' — stale robots/sitemap will pin in browsers ("${cc}")`);
-    }
+    if (/\bimmutable\b/i.test(cc)) violations.push(`cache-control has 'immutable' ("${cc}")`);
     const maxAge = parseDirective(cc, "max-age");
     if (maxAge !== null && maxAge > BROWSER_MAX_AGE_CEILING) {
       violations.push(`cache-control max-age=${maxAge} exceeds ${BROWSER_MAX_AGE_CEILING}s ceiling`);
     }
     const sMax = parseDirective(cc, "s-maxage") ?? 0;
-    if (sMax > 0) {
-      violations.push(`cache-control s-maxage=${sMax} — CF may hold response despite CDN no-store`);
-    }
+    if (sMax > 0) violations.push(`cache-control s-maxage=${sMax} — CF may hold response despite CDN no-store`);
   } else {
     violations.push("cache-control missing");
   }
 
-  if (["HIT", "REVALIDATED", "STALE", "UPDATING"].includes(cf)) {
-    violations.push(`cf-cache-status=${cf} — served from CF cache`);
-  }
-  if (age > 0) {
-    violations.push(`age=${age}s — served from CF cache`);
-  }
+  if (["HIT", "REVALIDATED", "STALE", "UPDATING"].includes(cf)) violations.push(`cf-cache-status=${cf} — served from CF cache`);
+  if (age > 0) violations.push(`age=${age}s — served from CF cache`);
 
+  const r = makeResult({ ok: violations.length === 0 });
+  logAttempt(buildAttemptLog(target, r, attemptNumber, r.ok ? "PASS" : "FAIL", null));
+  return r;
+}
+
+function buildAttemptLog(
+  target: Target,
+  r: Result,
+  attemptNumber: number,
+  verdict: "PASS" | "FAIL" | "SKIP",
+  errorMessage: string | null,
+): AttemptLog {
   return {
+    timestamp: new Date().toISOString(),
+    domain: new URL(BASE).hostname,
+    url: r.url,
     path: target.path,
-    url,
-    status,
-    contentType,
-    cacheControl: cc,
-    cdnCacheControl: cdn,
-    surrogateControl: surrogate,
-    cfCacheStatus: cf,
-    age,
-    violations,
-    optionalSkipped: false,
-    optional: target.optional,
-    source: target.source,
-    ok: violations.length === 0,
+    attempt_number: attemptNumber,
+    http_status_code: r.status,
+    cf_cache_status: r.cfCacheStatus,
+    cdn_cache_control: r.cdnCacheControl,
+    cache_control: r.cacheControl,
+    age: String(r.age || ""),
+    content_type: r.contentType,
+    redirect_chain: r.redirectChain,
+    pass_or_fail: verdict,
+    violations: r.violations,
+    error_message: errorMessage,
   };
 }
 
+// ---------------------------------------------------------------------------
+// Drift diff — expected (dist/ or origin nocache) vs. fetched (edge)
+// ---------------------------------------------------------------------------
+function sha256(s: string): string {
+  return "sha256:" + createHash("sha256").update(s).digest("hex");
+}
+
+async function loadExpected(path: string): Promise<{ content: string; source: string } | null> {
+  // 1. Try local dist file (post-build).
+  const distCandidates = [
+    join(DIST_DIR, path.replace(/^\/+/, "")),
+    join(DIST_DIR, "public", path.replace(/^\/+/, "")),
+  ];
+  for (const p of distCandidates) {
+    if (existsSync(p)) {
+      try { return { content: readFileSync(p, "utf8"), source: `dist: ${p}` }; } catch {}
+    }
+  }
+  // 2. Fallback: fetch from origin with cache-bust.
+  try {
+    const res = await fetch(`${BASE}${path}?nocache=${Date.now()}`, {
+      headers: {
+        "user-agent": "phlabs-sitemap-robots-probe/1.0",
+        "cache-control": "no-cache",
+        pragma: "no-cache",
+      },
+      redirect: "follow",
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (res.ok) return { content: await res.text(), source: `origin nocache: ${BASE}${path}?nocache=1` };
+  } catch {}
+  return null;
+}
+
+function diffLines(expected: string, fetched: string, max = 40): string[] {
+  const a = expected.split(/\r?\n/);
+  const b = fetched.split(/\r?\n/);
+  const setA = new Set(a);
+  const setB = new Set(b);
+  const out: string[] = [];
+  for (const line of a) if (!setB.has(line)) { out.push(`- ${line}`); if (out.length >= max) return out; }
+  for (const line of b) if (!setA.has(line)) { out.push(`+ ${line}`); if (out.length >= max) return out; }
+  return out;
+}
+
+interface DriftEntry {
+  url: string;
+  timestamp: string;
+  expected_content_hash: string | null;
+  fetched_content_hash: string;
+  expected_content_preview: string | null;
+  fetched_content_preview: string;
+  expected_source: string | null;
+  redirect_chain: RedirectHop[];
+  header_diff: {
+    expected_cdn_cache_control: string;
+    actual_cdn_cache_control: string;
+    expected_cache_control_max_age_lte: number;
+    actual_cache_control: string;
+    actual_cf_cache_status: string;
+  };
+  content_diff_lines: string[];
+  violations: string[];
+}
+
+async function buildDriftDiff(failed: Result[]): Promise<DriftEntry[]> {
+  const entries: DriftEntry[] = [];
+  for (const r of failed) {
+    const expected = await loadExpected(r.path);
+    const fetchedBody = r.body ?? "";
+    entries.push({
+      url: r.url,
+      timestamp: new Date().toISOString(),
+      expected_content_hash: expected ? sha256(expected.content) : null,
+      fetched_content_hash: sha256(fetchedBody),
+      expected_content_preview: expected ? expected.content.slice(0, 500) : null,
+      fetched_content_preview: fetchedBody.slice(0, 500),
+      expected_source: expected?.source ?? null,
+      redirect_chain: r.redirectChain,
+      header_diff: {
+        expected_cdn_cache_control: "no-store",
+        actual_cdn_cache_control: r.cdnCacheControl || "(missing)",
+        expected_cache_control_max_age_lte: BROWSER_MAX_AGE_CEILING,
+        actual_cache_control: r.cacheControl || "(missing)",
+        actual_cf_cache_status: r.cfCacheStatus || "(none)",
+      },
+      content_diff_lines: expected ? diffLines(expected.content, fetchedBody) : [],
+      violations: r.violations,
+    });
+  }
+  return entries;
+}
+
+function renderDriftMd(entries: DriftEntry[]): string {
+  const lines: string[] = [`# Drift diff — ${new URL(BASE).hostname}`, ""];
+  for (const e of entries) {
+    lines.push(`## ❌ ${e.url}`);
+    lines.push("");
+    lines.push(`- Redirect chain: ${e.redirect_chain.length ? JSON.stringify(e.redirect_chain) : "(none)"}`);
+    lines.push(`- Expected source: ${e.expected_source ?? "(unavailable)"}`);
+    lines.push(`- Expected hash: \`${e.expected_content_hash ?? "n/a"}\``);
+    lines.push(`- Fetched hash:  \`${e.fetched_content_hash}\``);
+    lines.push(`- Header diff:`);
+    lines.push("  ```json");
+    lines.push("  " + JSON.stringify(e.header_diff, null, 2).replace(/\n/g, "\n  "));
+    lines.push("  ```");
+    if (e.content_diff_lines.length) {
+      lines.push(`- Content diff (first ${e.content_diff_lines.length} lines):`);
+      lines.push("  ```diff");
+      for (const l of e.content_diff_lines) lines.push("  " + l);
+      lines.push("  ```");
+    }
+    lines.push("");
+  }
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// Standard markdown report (per-domain)
+// ---------------------------------------------------------------------------
 function renderMarkdown(results: Result[]): string {
   const failed = results.filter((r) => !r.ok);
   const lines: string[] = [];
@@ -332,53 +495,93 @@ function renderMarkdown(results: Result[]): string {
   return lines.join("\n");
 }
 
+// ---------------------------------------------------------------------------
+// Cross-domain summary (appended per invocation — one row per (domain, path))
+// ---------------------------------------------------------------------------
+const SUMMARY_MD = join(REPORTS_DIR, "probe-summary.md");
+function appendSummary(results: Result[], attemptsUsed: number) {
+  const host = new URL(BASE).hostname;
+  const failed = results.filter((r) => !r.ok);
+  const status = failed.length === 0 ? "✅ PASS" : "❌ FAIL";
+  const passCount = results.filter((r) => r.ok && !r.optionalSkipped).length;
+  const skipCount = results.filter((r) => r.optionalSkipped).length;
+  const total = results.length;
+
+  let details: string;
+  if (failed.length === 0) {
+    details = `${passCount}/${total - skipCount} URLs clean, ${attemptsUsed - 1} retries needed`;
+  } else {
+    details = failed
+      .map((r) => `${r.path}: ${r.violations[0] ?? "drift"} (after ${r.attempts} attempts)`)
+      .join("; ");
+  }
+
+  if (!existsSync(SUMMARY_MD)) {
+    writeFileSync(
+      SUMMARY_MD,
+      "## 🤖 Robots & Sitemap Probe Results\n\n" +
+        "| Domain | Status | Details |\n" +
+        "|--------|--------|---------|\n",
+    );
+  }
+  appendFileSync(SUMMARY_MD, `| ${host} | ${status} | ${details} |\n`);
+}
+
+// ---------------------------------------------------------------------------
+// Main
+// ---------------------------------------------------------------------------
 async function main() {
-  // 1. Auto-discover any additional sitemap files referenced from the
-  //    root sitemap or sitemap index — this future-proofs the probe
-  //    against splits like /sitemap-blog.xml, /sitemap-categories.xml, etc.
   const seedPaths = new Set(SEED_TARGETS.map((t) => t.path));
   const discovered = await discoverAdditionalSitemaps(seedPaths);
   const targets = [...SEED_TARGETS, ...discovered];
   console.log(
-    `sitemap/robots cache probe: probing ${targets.length} paths ` +
-      `(${SEED_TARGETS.length} seed + ${discovered.length} discovered)`,
+    `sitemap/robots cache probe (${BASE}): ${targets.length} paths ` +
+      `(${SEED_TARGETS.length} seed + ${discovered.length} discovered), max ${MAX_RETRIES} attempt(s)`,
   );
 
-  // Retry loop: on any failure, wait RETRY_DELAY_MS and re-probe just the
-  // failed targets up to MAX_RETRIES times. Passes short-circuit immediately.
-  let results = await Promise.all(targets.map(probe));
-  for (let attempt = 1; attempt < MAX_RETRIES; attempt++) {
-    const failedIdx = results
-      .map((r, i) => (!r.ok ? i : -1))
-      .filter((i) => i >= 0);
+  // First attempt.
+  let results = await Promise.all(targets.map((t) => probe(t, 1)));
+  let attemptsUsed = 1;
+  for (let attempt = 2; attempt <= MAX_RETRIES; attempt++) {
+    const failedIdx = results.map((r, i) => (!r.ok ? i : -1)).filter((i) => i >= 0);
     if (failedIdx.length === 0) break;
     console.log(
-      `sitemap/robots cache probe: attempt ${attempt}/${MAX_RETRIES - 1} — ` +
+      `sitemap/robots cache probe: attempt ${attempt}/${MAX_RETRIES} — ` +
         `${failedIdx.length} paths failed, retrying in ${RETRY_DELAY_MS / 1000}s`,
     );
     await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
-    const retried = await Promise.all(failedIdx.map((i) => probe(targets[i])));
+    const retried = await Promise.all(failedIdx.map((i) => probe(targets[i], attempt)));
     for (let j = 0; j < failedIdx.length; j++) results[failedIdx[j]] = retried[j];
+    attemptsUsed = attempt;
   }
 
+  // Per-domain report (legacy OUT_DIR location, kept for existing consumers).
   mkdirSync(OUT_DIR, { recursive: true });
-  const hostSlug = new URL(BASE).hostname.replace(/[^a-z0-9]+/gi, "-");
-  const jsonPath = join(OUT_DIR, `sitemap-robots-probe-${hostSlug}.json`);
-  const mdPath = join(OUT_DIR, `sitemap-robots-probe-${hostSlug}.md`);
+  const jsonPath = join(OUT_DIR, `sitemap-robots-probe-${HOST_SLUG}.json`);
+  const mdPath = join(OUT_DIR, `sitemap-robots-probe-${HOST_SLUG}.md`);
   writeFileSync(
     jsonPath,
-    JSON.stringify({ base: BASE, generatedAt: new Date().toISOString(), results }, null, 2),
+    JSON.stringify({ base: BASE, generatedAt: new Date().toISOString(), attemptsUsed, results }, null, 2),
   );
   writeFileSync(mdPath, renderMarkdown(results));
 
+  // Cross-domain summary (append).
+  appendSummary(results, attemptsUsed);
+
+  // Drift diff on failure.
+  const failed = results.filter((r) => !r.ok);
+  if (failed.length) {
+    const drift = await buildDriftDiff(failed);
+    writeFileSync(join(REPORTS_DIR, `drift-diff-${HOST_SLUG}.json`), JSON.stringify(drift, null, 2));
+    writeFileSync(join(REPORTS_DIR, `drift-diff-${HOST_SLUG}.md`), renderDriftMd(drift));
+  }
+
   if (process.env.GITHUB_STEP_SUMMARY) {
     try {
-      const { appendFileSync } = await import("node:fs");
       appendFileSync(process.env.GITHUB_STEP_SUMMARY, renderMarkdown(results) + "\n");
     } catch {}
   }
 
-  const failed = results.filter((r) => !r.ok);
   console.log(`sitemap/robots cache probe: ${results.length} paths, ${failed.length} violations`);
   console.log(`  report: ${jsonPath}`);
   console.log(`  report: ${mdPath}`);
