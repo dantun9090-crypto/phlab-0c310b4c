@@ -486,6 +486,54 @@ const FORCE_SW_CLEANUP = `
 `;
 
 
+const EMERGENCY_STALE_RELOAD = `
+(function(){
+  try{
+    var qs=new URLSearchParams(location.search);
+    if(qs.has('__fresh')) return;
+    var blocked=/^\/(?:admin|auth|login|account|cart|checkout|payment|register)(?:\/|$)/i.test(location.pathname||'');
+    if(blocked) return;
+    var reloading=false;
+    var forceFresh=function(reason){
+      if(reloading) return;
+      reloading=true;
+      try{ console.warn('[PHL] Stale cache detected — forcing fresh load:', reason); }catch(e){}
+      try{
+        if(navigator.serviceWorker&&navigator.serviceWorker.ready){
+          navigator.serviceWorker.ready.then(function(reg){ try{ if(reg&&reg.active) reg.active.postMessage({type:'CLEAR_CACHE_AND_RELOAD'}); }catch(e){} }).catch(function(){});
+        }
+      }catch(e){}
+      var finish=function(){
+        try{
+          var u=new URL(location.href);
+          u.searchParams.set('__fresh','1');
+          u.searchParams.set('t',String(Date.now()));
+          location.replace(u.toString());
+        }catch(e){ location.href=location.pathname+'?__fresh=1&t='+Date.now(); }
+      };
+      try{
+        var p=[];
+        if(window.caches&&caches.keys){ p.push(caches.keys().then(function(keys){ return Promise.all(keys.map(function(k){ return caches.delete(k).catch(function(){}); })); })); }
+        if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){ p.push(navigator.serviceWorker.getRegistrations().then(function(regs){ return Promise.all(regs.map(function(r){ return r.unregister().catch(function(){}); })); })); }
+        Promise.all(p).catch(function(){}).then(finish);
+        setTimeout(finish,1500);
+      }catch(e){ finish(); }
+    };
+    setTimeout(function(){
+      try{
+        var root=document.getElementById('root')||document.getElementById('app');
+        if(root&&root.children&&root.children.length===0) forceFresh('blank-root');
+      }catch(e){}
+    },3000);
+    window.addEventListener('error',function(e){
+      var t=e&&e.target;
+      if(t&&t.tagName==='SCRIPT') forceFresh('script-load-failed');
+    },true);
+  }catch(e){}
+})();
+`;
+
+
 const BOOT_WATCHDOG = `
 (function(){
   try{
@@ -1057,6 +1105,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
           }}
         />
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: FORCE_SW_CLEANUP }} />
+        <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: EMERGENCY_STALE_RELOAD }} />
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: STALE_ASSET_RECOVERY }} />
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
         <HeadContent />

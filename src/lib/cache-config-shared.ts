@@ -13,11 +13,9 @@ export const CACHE_TTL_OPTIONS = [
   { value: 0, label: 'Off (no cache)' },
   { value: 30, label: '30 seconds' },
   { value: 60, label: '1 minute (recommended)' },
-  { value: 300, label: '5 minutes' },
-  { value: 900, label: '15 minutes' },
 ] as const;
 
-export const DEFAULT_HTML_TTL_SECONDS = 0;
+export const DEFAULT_HTML_TTL_SECONDS = 60;
 
 export function isValidHtmlTtl(n: unknown): n is number {
   return (

@@ -148,8 +148,8 @@ const PRERENDER_ORIGIN = "https://service.prerender.io";
 // 45s — fresh (uncached) prerender renders of the homepage take ~18s; 25s
 // was too tight and caused AbortError fallback to origin SSR on first crawl.
 const PRERENDER_TIMEOUT_MS = 45_000;
-const PRERENDER_CACHE_TTL = 3600;
-const PRERENDER_SWR_TTL = 86_400;
+const PRERENDER_CACHE_TTL = 60;
+const PRERENDER_SWR_TTL = 0;
 const LOOP_HEADER = "x-prerender-loop";
 const PRERENDER_RENDERER_RX = /Prerender \(\+https:\/\/github\.com\/prerender\/prerender\)/i;
 
@@ -278,6 +278,52 @@ function normalizePublicUrl(url) {
   return u.toString();
 }
 
+function buildCacheKey(url, buildId) {
+  const cleanUrl = new URL(url.toString());
+  if (buildId) cleanUrl.searchParams.set("__phl_build_id", buildId);
+  const entries = [...cleanUrl.searchParams.entries()].sort(([a], [b]) => a.localeCompare(b));
+  cleanUrl.search = "";
+  for (const [k, v] of entries) cleanUrl.searchParams.append(k, v);
+  return new Request(cleanUrl.toString(), { method: "GET" });
+}
+
+let _originBuildIdCache = { value: "", expiresAt: 0 };
+const BUILD_ID_CACHE_MS = 15_000;
+
+async function getOriginBuildId() {
+  const now = Date.now();
+  if (_originBuildIdCache.expiresAt > now && _originBuildIdCache.value) return _originBuildIdCache.value;
+  let value = "";
+  try {
+    const probeUrl = `https://${CANONICAL_HOST}/?__edge_build_probe=${now}`;
+    const res = await fetch(probeUrl, {
+      method: "GET",
+      headers: {
+        accept: "text/html",
+        "cache-control": "no-cache",
+        pragma: "no-cache",
+        "user-agent": "phlabs-edge-build-probe/1.0",
+        "x-force-refresh": "true",
+      },
+      cf: { cacheTtl: 0, cacheEverything: false },
+      signal: AbortSignal.timeout(4_000),
+    });
+    value = res.headers.get("x-build-id") || res.headers.get("x-phl-build-id") || "";
+    if (!value) {
+      const html = await res.text().catch(() => "");
+      value =
+        (html.match(/<meta[^>]+name=["']build-id["'][^>]+content=["']([^"']+)["']/i) || [, ""])[1] ||
+        (html.match(/<meta[^>]+name=["']x-build-id["'][^>]+content=["']([^"']+)["']/i) || [, ""])[1] ||
+        "";
+    }
+  } catch (_) {
+    // keep unknown
+  }
+  value = (value || "unknown").slice(0, 80);
+  _originBuildIdCache = { value, expiresAt: now + (value === "unknown" ? 5_000 : BUILD_ID_CACHE_MS) };
+  return value;
+}
+
 function isServiceWorkerPath(url) {
   return url.pathname === "/sw.js" || url.pathname === "/service-worker.js";
 }
@@ -379,10 +425,10 @@ function stripLovableInjectedScripts(response) {
 // The admin panel writes `siteSettings/cacheConfig.htmlTtlSeconds` in
 // Firestore; origin exposes it at /api/public/cache-config. We fetch it
 // once per cold start (60s in-memory cache) so per-request overhead is 0.
-let _ttlCache = { value: 0, expiresAt: 0 };
+let _ttlCache = { value: 60, expiresAt: 0 };
 const TTL_CACHE_MS = 60_000;
-const TTL_DEFAULT = 0;
-const TTL_ALLOWED = new Set([0, 86400, 604800, 1209600, 2592000]);
+const TTL_DEFAULT = 60;
+const TTL_ALLOWED = new Set([0, 30, 60]);
 
 async function getHtmlTtlSeconds() {
   const now = Date.now();
@@ -403,6 +449,11 @@ async function getHtmlTtlSeconds() {
   } catch {
     // keep default
   }
+  const n = Number(value);
+  if (!Number.isFinite(n)) value = TTL_DEFAULT;
+  else if (n === 0) value = 0;
+  else if (n < 30) value = 30;
+  else value = Math.min(n, 60);
   _ttlCache = { value, expiresAt: now + TTL_CACHE_MS };
   return value;
 }
@@ -581,10 +632,12 @@ export default {
 
     // 2. Health endpoint — never hits origin, never prerendered.
     if (url.pathname === "/_health" || url.pathname === "/__health") {
+      const buildId = await getOriginBuildId();
       return jsonResponse({
         status: "ok",
         timestamp: new Date().toISOString(),
         version: "1.0.0",
+        buildId,
       });
     }
 
@@ -749,6 +802,7 @@ export default {
     const htmlTtl = await getHtmlTtlSeconds();
     const forceRefresh = request.headers.get("x-force-refresh") === "true";
     const htmlCacheable = isGet && !isXmlFeed && isHtmlCacheable(url) && htmlTtl > 0;
+    const originBuildId = htmlCacheable && !forceRefresh && !url.searchParams.has("__edge_build_probe") ? await getOriginBuildId() : "";
     const cacheOpts = htmlCacheable && !forceRefresh
       ? {
           cacheEverything: true,
@@ -765,21 +819,31 @@ export default {
     //     cookies, GET) so __cf_bm and per-visitor headers can't bust it.
     let cacheKey = null;
     if (htmlCacheable) {
-      // Use the request URL directly (canonical via redirects upstream).
-      cacheKey = new Request(request.url, { method: "GET" });
+      cacheKey = buildCacheKey(url, originBuildId);
       try {
         const hit = forceRefresh ? null : await caches.default.match(cacheKey);
         if (hit) {
+          const cachedBuildId = hit.headers.get("CF-Cache-Build-ID") || hit.headers.get("x-phl-origin-build-id") || hit.headers.get("x-build-id") || "unknown";
+          if (originBuildId && originBuildId !== "unknown" && cachedBuildId !== "unknown" && cachedBuildId !== originBuildId) {
+            phlog.log("phl.html.cache", { hit: true, bypass: "build-mismatch", cachedBuildId, originBuildId });
+            ctx.waitUntil(caches.default.delete(cacheKey).catch(() => {}));
+          } else {
           const h = new Headers(hit.headers);
-          h.set("cache-control", "public, max-age=0, must-revalidate");
+          h.set("cache-control", "public, max-age=60, must-revalidate");
           h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
           h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
+          if (originBuildId) {
+            h.set("x-phl-origin-build-id", originBuildId);
+            h.set("x-build-id", originBuildId);
+            h.set("CF-Cache-Build-ID", originBuildId);
+          }
           h.set("x-phl-via", "edge-cache-hit");
           h.set("cf-cache-status", "HIT");
           h.set("x-phl-cache", "hit");
           h.delete("age");
           const cachedOut = new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers: h });
           return rewriteCspNonce(applySecurityHeaders(stripLovableInjectedScripts(cachedOut), url));
+          }
         }
       } catch (_) { /* fall through */ }
     }
@@ -801,6 +865,11 @@ export default {
       // Cache-control by path family.
       const h = new Headers(res.headers);
       if (forceRefresh) h.set("x-phl-force-refresh", "1");
+      if (originBuildId) {
+        h.set("x-phl-origin-build-id", originBuildId);
+        h.set("x-build-id", originBuildId);
+        h.set("CF-Cache-Build-ID", originBuildId);
+      }
       if (url.pathname.startsWith("/api/") || url.pathname.startsWith("/webhook/")) {
         noCache(h);
       } else if (isFirebaseAuthHelperPath(url)) {
@@ -818,7 +887,7 @@ export default {
         if (htmlTtl > 0) {
           // Browser must revalidate every nav so a publish is visible
           // immediately; edge holds it for htmlTtl + can serve stale briefly.
-          h.set("cache-control", "public, max-age=0, must-revalidate");
+          h.set("cache-control", "public, max-age=60, must-revalidate");
           h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
           h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
         } else {
@@ -870,6 +939,11 @@ export default {
           const reportingEndpoints = h.get("reporting-endpoints");
           if (reportingEndpoints) cacheHeaders.set("reporting-endpoints", reportingEndpoints);
           cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);
+          if (originBuildId) {
+            cacheHeaders.set("x-phl-origin-build-id", originBuildId);
+            cacheHeaders.set("x-build-id", originBuildId);
+            cacheHeaders.set("CF-Cache-Build-ID", originBuildId);
+          }
           cacheHeaders.set("x-phl-cached-at", new Date().toISOString());
           let putErr = "ok";
           const putPromise = caches.default.put(
