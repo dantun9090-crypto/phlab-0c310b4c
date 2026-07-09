@@ -25,12 +25,37 @@
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 
-const BASE =
-  process.env.PROBE_BASE_URL ||
-  process.env.TEST_BASE_URL ||
-  "https://phlabs.co.uk";
+// CLI arg parsing: --domain=host or --domain host, --retries=N, --retry-delay=SEC.
+// Falls back to env vars for CI compatibility.
+function parseCliArg(name: string): string | undefined {
+  const argv = process.argv.slice(2);
+  const eqIdx = argv.findIndex((a) => a.startsWith(`--${name}=`));
+  if (eqIdx >= 0) return argv[eqIdx].slice(`--${name}=`.length);
+  const spaceIdx = argv.findIndex((a) => a === `--${name}`);
+  if (spaceIdx >= 0 && argv[spaceIdx + 1]) return argv[spaceIdx + 1];
+  return undefined;
+}
+
+const CLI_DOMAIN = parseCliArg("domain");
+const BASE = CLI_DOMAIN
+  ? (CLI_DOMAIN.startsWith("http") ? CLI_DOMAIN : `https://${CLI_DOMAIN}`).replace(/\/+$/, "")
+  : (process.env.PROBE_BASE_URL ||
+     process.env.PROBE_DOMAIN ||
+     process.env.TEST_BASE_URL ||
+     "https://phlabs.co.uk").replace(/\/+$/, "");
 const OUT_DIR = process.env.PROBE_OUT_DIR || "sitemap-robots-probe";
 const BROWSER_MAX_AGE_CEILING = 3600;
+const MAX_RETRIES = Number(parseCliArg("retries") ?? process.env.PROBE_RETRIES ?? "3");
+const RETRY_DELAY_MS = Number(parseCliArg("retry-delay") ?? process.env.PROBE_RETRY_DELAY_SEC ?? "10") * 1000;
+
+// Legacy hosts that intentionally 301 to the canonical apex. A 301 on
+// robots/sitemap from these hosts is CORRECT — not drift. See
+// REDIRECT_HOSTS in src/server.ts.
+const LEGACY_REDIRECT_HOSTS = new Set([
+  "prohealthpeptides.co.uk",
+  "www.prohealthpeptides.co.uk",
+  "www.phlabs.co.uk",
+]);
 
 interface Target {
   path: string;
@@ -134,6 +159,11 @@ async function probe(target: Target): Promise<Result> {
   let status: number | null = null;
   let h: Headers | null = null;
 
+  // Legacy redirect hosts: a 301 is the correct answer.
+  const baseHost = new URL(BASE).hostname;
+  const isLegacyHost = LEGACY_REDIRECT_HOSTS.has(baseHost);
+
+
   try {
     const res = await fetch(url, {
       method: "GET",
@@ -193,6 +223,28 @@ async function probe(target: Target): Promise<Result> {
       optionalSkipped: true,
       optional: true,
       source: target.source,
+      ok: true,
+    };
+  }
+
+  // Legacy redirect hosts: 301/308 to canonical is the CORRECT contract —
+  // skip cache-header enforcement (redirects don't need no-store; the
+  // canonical host is what browsers cache).
+  if (isLegacyHost && (status === 301 || status === 308)) {
+    return {
+      path: target.path,
+      url,
+      status,
+      contentType,
+      cacheControl: cc,
+      cdnCacheControl: cdn,
+      surrogateControl: surrogate,
+      cfCacheStatus: cf,
+      age,
+      violations,
+      optionalSkipped: true,
+      optional: target.optional,
+      source: (target.source ?? "") + " (legacy 301 → apex, skipped)",
       ok: true,
     };
   }
@@ -292,11 +344,27 @@ async function main() {
       `(${SEED_TARGETS.length} seed + ${discovered.length} discovered)`,
   );
 
-  const results = await Promise.all(targets.map(probe));
+  // Retry loop: on any failure, wait RETRY_DELAY_MS and re-probe just the
+  // failed targets up to MAX_RETRIES times. Passes short-circuit immediately.
+  let results = await Promise.all(targets.map(probe));
+  for (let attempt = 1; attempt < MAX_RETRIES; attempt++) {
+    const failedIdx = results
+      .map((r, i) => (!r.ok ? i : -1))
+      .filter((i) => i >= 0);
+    if (failedIdx.length === 0) break;
+    console.log(
+      `sitemap/robots cache probe: attempt ${attempt}/${MAX_RETRIES - 1} — ` +
+        `${failedIdx.length} paths failed, retrying in ${RETRY_DELAY_MS / 1000}s`,
+    );
+    await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+    const retried = await Promise.all(failedIdx.map((i) => probe(targets[i])));
+    for (let j = 0; j < failedIdx.length; j++) results[failedIdx[j]] = retried[j];
+  }
 
   mkdirSync(OUT_DIR, { recursive: true });
-  const jsonPath = join(OUT_DIR, "sitemap-robots-probe.json");
-  const mdPath = join(OUT_DIR, "sitemap-robots-probe.md");
+  const hostSlug = new URL(BASE).hostname.replace(/[^a-z0-9]+/gi, "-");
+  const jsonPath = join(OUT_DIR, `sitemap-robots-probe-${hostSlug}.json`);
+  const mdPath = join(OUT_DIR, `sitemap-robots-probe-${hostSlug}.md`);
   writeFileSync(
     jsonPath,
     JSON.stringify({ base: BASE, generatedAt: new Date().toISOString(), results }, null, 2),

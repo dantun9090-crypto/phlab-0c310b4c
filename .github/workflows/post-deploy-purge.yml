@@ -229,8 +229,8 @@ jobs:
     timeout-minutes: 5
     env:
       CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+      CF_ZONE_ID_PROHEALTH: ${{ secrets.CF_ZONE_ID_PROHEALTH }}
       CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-      PROBE_BASE_URL: https://phlabs.co.uk
       PROBE_OUT_DIR: sitemap-robots-probe
     steps:
       - uses: actions/checkout@v4
@@ -238,71 +238,117 @@ jobs:
         with:
           bun-version: latest
 
-      - name: Targeted purge (/robots.txt + /sitemap*.xml, apex + www)
+      - name: Targeted purge — /robots.txt + /sitemap*.xml (both domains, apex + www)
         shell: bash
         run: |
           set +e
-          if [ -z "$CF_API_TOKEN" ] || [ -z "$CF_ZONE_ID" ]; then
-            echo "::warning::CF_API_TOKEN or CF_ZONE_ID not set — skipping robots/sitemap purge"
+          if [ -z "$CF_API_TOKEN" ]; then
+            echo "::warning::CF_API_TOKEN not set — skipping targeted purge"
             exit 0
           fi
-          started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          payload=$(cat <<'JSON'
+
+          purge_zone() {
+            local zone="$1"; local label="$2"; local payload="$3"
+            [ -z "$zone" ] && { echo "::warning::zone id for ${label} not set — skipping"; return 0; }
+            local started; started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            local resp; resp=$(curl -sS -X POST \
+              "https://api.cloudflare.com/client/v4/zones/${zone}/purge_cache" \
+              -H "Authorization: Bearer ${CF_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data "$payload")
+            local finished; finished=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+            local ok=false
+            if echo "$resp" | grep -q '"success":true'; then ok=true; fi
+            printf '{"ts":"%s","kind":"edge_cache_verify","runId":"%s","stage":"cf.purge.robots_sitemap","zone":"%s","startedAt":"%s","finishedAt":"%s","ok":%s,"response":%s}\n' \
+              "$finished" "${GITHUB_RUN_ID:-local}" "$label" "$started" "$finished" "$ok" \
+              "$(echo "$resp" | head -c 800 | jq -Rs . 2>/dev/null || echo '""')" \
+              | tee -a ./robots-sitemap-purge.ndjson
+            if [ "$ok" = "false" ]; then
+              echo "::warning::${label} targeted purge failed: $resp"
+            fi
+          }
+
+          phlabs_payload=$(cat <<'JSON'
           {"files":[
             "https://phlabs.co.uk/robots.txt",
             "https://phlabs.co.uk/sitemap.xml",
             "https://phlabs.co.uk/sitemap-index.xml",
+            "https://phlabs.co.uk/sitemap-0.xml",
+            "https://phlabs.co.uk/sitemap-1.xml",
             "https://phlabs.co.uk/sitemap-products.xml",
             "https://phlabs.co.uk/sitemap-articles.xml",
             "https://www.phlabs.co.uk/robots.txt",
             "https://www.phlabs.co.uk/sitemap.xml",
             "https://www.phlabs.co.uk/sitemap-index.xml",
+            "https://www.phlabs.co.uk/sitemap-0.xml",
+            "https://www.phlabs.co.uk/sitemap-1.xml",
             "https://www.phlabs.co.uk/sitemap-products.xml",
             "https://www.phlabs.co.uk/sitemap-articles.xml"
           ]}
           JSON
           )
-          resp=$(curl -sS -X POST \
-            "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
-            -H "Authorization: Bearer ${CF_API_TOKEN}" \
-            -H "Content-Type: application/json" \
-            --data "$payload")
-          finished=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          ok=false
-          if echo "$resp" | grep -q '"success":true'; then ok=true; fi
-          printf '{"ts":"%s","kind":"edge_cache_verify","runId":"%s","stage":"cf.purge.robots_sitemap","startedAt":"%s","finishedAt":"%s","ok":%s,"response":%s}\n' \
-            "$finished" "${GITHUB_RUN_ID:-local}" "$started" "$finished" "$ok" \
-            "$(echo "$resp" | head -c 800 | jq -Rs . 2>/dev/null || echo '""')" \
-            | tee -a ./robots-sitemap-purge.ndjson
-          if [ "$ok" = "false" ]; then
-            echo "::warning::robots/sitemap targeted purge failed: $resp"
-          fi
 
-      - name: Wait 20s for edge propagation
-        run: sleep 20
+          prohealth_payload=$(cat <<'JSON'
+          {"files":[
+            "https://prohealthpeptides.co.uk/robots.txt",
+            "https://prohealthpeptides.co.uk/sitemap.xml",
+            "https://prohealthpeptides.co.uk/sitemap-index.xml",
+            "https://prohealthpeptides.co.uk/sitemap-0.xml",
+            "https://prohealthpeptides.co.uk/sitemap-1.xml",
+            "https://prohealthpeptides.co.uk/sitemap-products.xml",
+            "https://prohealthpeptides.co.uk/sitemap-articles.xml",
+            "https://www.prohealthpeptides.co.uk/robots.txt",
+            "https://www.prohealthpeptides.co.uk/sitemap.xml",
+            "https://www.prohealthpeptides.co.uk/sitemap-index.xml",
+            "https://www.prohealthpeptides.co.uk/sitemap-0.xml",
+            "https://www.prohealthpeptides.co.uk/sitemap-1.xml",
+            "https://www.prohealthpeptides.co.uk/sitemap-products.xml",
+            "https://www.prohealthpeptides.co.uk/sitemap-articles.xml"
+          ]}
+          JSON
+          )
 
-      - name: Re-run sitemap/robots cache probe
+          purge_zone "$CF_ZONE_ID" "phlabs.co.uk" "$phlabs_payload"
+          purge_zone "$CF_ZONE_ID_PROHEALTH" "prohealthpeptides.co.uk" "$prohealth_payload"
+
+      - name: Wait 15s for edge propagation
+        run: sleep 15
+
+      - name: Re-run sitemap/robots cache probe (both domains, with retry)
         id: probe
+        env:
+          # Probe script's own retry loop: 3 attempts, 10s linear backoff.
+          PROBE_RETRIES: "3"
+          PROBE_RETRY_DELAY_SEC: "10"
         run: |
           set +e
-          bun run scripts/probe-sitemap-robots.ts
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          rc=0
+          echo "::group::probe phlabs.co.uk"
+          bun run scripts/probe-sitemap-robots.ts --domain phlabs.co.uk
+          [ $? -ne 0 ] && rc=1
+          echo "::endgroup::"
+          echo "::group::probe prohealthpeptides.co.uk (legacy 301 → apex tolerated)"
+          bun run scripts/probe-sitemap-robots.ts --domain prohealthpeptides.co.uk
+          [ $? -ne 0 ] && rc=1
+          echo "::endgroup::"
+          echo "exit_code=$rc" >> "$GITHUB_OUTPUT"
 
       - name: Upload probe report + purge log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: post-deploy-robots-sitemap-${{ github.run_id }}
+          name: post-deploy-robots-sitemap-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             sitemap-robots-probe/
             robots-sitemap-purge.ndjson
-          retention-days: 30
+          retention-days: 7
 
       - name: Fail if probe reports drift
         if: steps.probe.outputs.exit_code != '0'
         run: |
-          echo "::error::/robots.txt or /sitemap*.xml is still not compliant after post-deploy purge — see sitemap-robots-probe artifact"
+          echo "::error::/robots.txt or /sitemap*.xml is still not compliant after post-deploy purge — see post-deploy-robots-sitemap artifact"
           exit 1
+
 
 
 
