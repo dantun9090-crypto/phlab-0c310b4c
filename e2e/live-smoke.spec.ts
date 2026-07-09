@@ -12,13 +12,18 @@ import { test, expect, request } from "@playwright/test";
 
 const BASE = (process.env.SMOKE_BASE_URL || "https://phlabs.co.uk").replace(/\/+$/, "");
 
-const CRITICAL_ROUTES = ["/", "/login", "/cart", "/products", "/compound"];
+const CRITICAL_ROUTES = ["/", "/login", "/cart", "/products", "/about", "/contact", "/compound"];
 
 const FALLBACK_TEXTS = [
   /Please refresh/i,
   /could not initialise cleanly/i,
   /Something went wrong/i,
   /Loading issue detected/i,
+  /Taking longer than usual/i,
+  /Refresh needed/i,
+  /Update available/i,
+  /PH Labs update in progress/i,
+  /Loading PH Labs/i,
 ];
 
 test.describe("live smoke", () => {
