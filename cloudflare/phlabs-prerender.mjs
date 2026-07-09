@@ -366,7 +366,7 @@ var HTML_CACHE_BLOCK_PREFIXES = [
 ];
 // Explicit allowlist — exact paths or prefixes safe for anonymous edge cache.
 var HTML_CACHE_ALLOW_EXACT = new Set([
-  "/", "/products", "/compound", "/about", "/contact", "/sitemap.xml", "/robots.txt"
+  "/", "/products", "/compound", "/about", "/contact", "/uk-research-store", "/sitemap.xml", "/robots.txt"
 ]);
 var HTML_CACHE_ALLOW_PREFIXES = [
   "/products/", "/compound/", "/landing/", "/research/", "/blog/", "/resources/"
