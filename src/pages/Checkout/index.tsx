@@ -629,11 +629,11 @@ export default function CheckoutPage() {
         firstName: 'Please enter your first name.',
         lastName: 'Please enter your last name.',
         email: 'Please enter a valid email address.',
-        phone: 'Please enter a valid UK phone number.',
+        phone: 'Please enter a valid phone number.',
         password: 'Please set a password (min 8 characters).',
         address: 'Please enter your street address.',
         city: 'Please enter your city.',
-        postcode: 'Please enter a valid UK postcode.',
+        postcode: 'Please enter a valid postcode for your country.',
         country: 'Please choose your country.',
         shippingMethod: 'Please choose a shipping method.',
       };
