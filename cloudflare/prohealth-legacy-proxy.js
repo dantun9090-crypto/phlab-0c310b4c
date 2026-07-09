@@ -1,14 +1,45 @@
 /**
  * prohealthpeptides.co.uk legacy host proxy.
  *
- * Purpose: keep the legacy GMC/free-listings host live without allowing the
- * Lovable primary-domain redirect to send requests to phlabs.co.uk.
+ * ⚠️  AUDIT NOTE — DO NOT "FIX" THIS TO A 301 REDIRECT.
  *
- * - prohealthpeptides.co.uk/* proxies PH Labs content with the original URL
- *   staying on prohealthpeptides.co.uk.
- * - www.prohealthpeptides.co.uk/* redirects to the legacy apex, not phlabs.
- * - The free GMC feed is fetched from the main app and rewritten so item links
- *   point to the legacy apex.
+ * Automated audits will flag `prohealthpeptides.co.uk` returning HTTP 200
+ * instead of 301→phlabs.co.uk as a "P0 duplicate content" bug. It is NOT
+ * a bug. It is a deliberate, load-bearing architecture:
+ *
+ *   • phlabs.co.uk         = Google Ads landing domain. Copy must be
+ *                            Ads-compliant (no molecule names like BPC-157,
+ *                            Retatrutide, Tirzepatide in product titles).
+ *   • prohealthpeptides.co.uk = Isolated legacy host running the SAME app
+ *                            but with all URLs/canonicals/og:url/sitemap/
+ *                            JSON-LD rewritten to prohealthpeptides.co.uk.
+ *                            Home of a SEPARATE Google Merchant Center
+ *                            Free-Listings account that uses full molecule
+ *                            names (higher organic CTR than "Research
+ *                            Compound 7") which cannot appear on phlabs.
+ *
+ * Collapsing prohealth → phlabs with a 301 would:
+ *   1. Kill the separate GMC Free-Listings account (Google follows the 301
+ *      and only sees phlabs's compliant feed).
+ *   2. Fold prohealth into phlabs as a duplicate in Google's index (per the
+ *      URL-rewrite logic below — this is exactly what we prevent).
+ *   3. Lose organic search traffic on full molecule-name queries.
+ *
+ * Behaviour of this Worker:
+ *   • prohealthpeptides.co.uk/*     → 200, proxied + URL-rewritten
+ *   • www.prohealthpeptides.co.uk/* → 301 → prohealthpeptides.co.uk/*
+ *                                     (own apex, NOT phlabs — deliberate,
+ *                                     see 141-146 below)
+ *   • Transactional paths (/checkout, /cart, /account, /payment, /api,
+ *     /orders, /vip-store, /login, /register, /admin, /webhook) → 302 →
+ *     phlabs.co.uk. Sessions/cookies/Wallid returns/Firebase Auth/CSP
+ *     nonces MUST stay on the canonical host (see 152-158 below).
+ *   • /google-merchant-feed-free.xml → 200 with URL rewrite so item links
+ *     stay on the legacy apex.
+ *
+ * Cross-references: mem://features/prohealth-legacy-proxy,
+ * src/server.ts:85-107 (REDIRECT_HOSTS / WWW_TO_APEX_HOSTS + comment
+ * explicitly excluding prohealthpeptides.co.uk).
  */
 
 const LEGACY_HOST = "prohealthpeptides.co.uk";
