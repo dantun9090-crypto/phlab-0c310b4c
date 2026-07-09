@@ -14,8 +14,8 @@
 //     by previous versions so we never serve stale chunks.
 //
 // Result: the browser sees a controlling SW with a fetch handler (required
-// for installability) but the SW intercepts nothing, so stale-cache blank
-// pages are impossible.
+// for installability), but navigations are always network-first and never
+// served from HTML cache, so stale-cache blank pages are avoided.
 
 const SW_VERSION = 'phlabs-install-only-v1';
 

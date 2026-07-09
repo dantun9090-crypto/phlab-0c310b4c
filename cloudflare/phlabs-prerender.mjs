@@ -517,7 +517,7 @@ function stripLovableInjectedScripts(response) {
   return new HTMLRewriter().on("script[src]", new StripLovableScripts()).transform(response);
 }
 __name(stripLovableInjectedScripts, "stripLovableInjectedScripts");
-var _ttlCache = { value: 30, expiresAt: 0 };
+var _ttlCache = { value: 60, expiresAt: 0 };
 var TTL_CACHE_MS = 6e4;
 var TTL_DEFAULT = 60;
 // Allow 0 from the admin config as an explicit "disable HTML cache" signal.
