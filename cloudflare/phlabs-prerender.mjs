@@ -44,10 +44,17 @@ function missingBuildAssetRecoveryResponse(pathname) {
   return new Response(`(() => {
   try {
     console.warn('[PHL] Missing stale build asset. Clearing cache and reopening automatically.');
-    const clearKeys = ['__phl_reload_window','__phl_hard_reload_in_flight','__phl_route_auto_recovery_done','__phl_reloaded_at','__phl_stale_asset_reload_at','phl_reload_count','__phl_stale_asset_reload_count','__phl_hydration_error_seen'];
+    const clearKeys = ['__phl_reload_window','__phl_hard_reload_in_flight','__phl_route_auto_recovery_done','__phl_reloaded_at','__phl_stale_asset_reload_at','phl_reload_count','__phl_stale_asset_reload_count','__phl_hydration_error_seen','__phl_chunk_recovery','__phl_chunk_reported'];
     const recoveryKey = '__phl_missing_asset_auto_reset_at';
+    const recoveryCountKey = '__phl_missing_asset_auto_reset_count';
     const reset = async () => {
-      try { sessionStorage.setItem(recoveryKey, String(Date.now())); } catch {}
+      let count = 0;
+      try { count = Number(sessionStorage.getItem(recoveryCountKey) || 0) || 0; } catch {}
+      count += 1;
+      try {
+        sessionStorage.setItem(recoveryKey, String(Date.now()));
+        sessionStorage.setItem(recoveryCountKey, String(count));
+      } catch {}
       for (const key of clearKeys) {
         try { sessionStorage.removeItem(key); } catch {}
         try { localStorage.removeItem(key); } catch {}
@@ -65,8 +72,16 @@ function missingBuildAssetRecoveryResponse(pathname) {
         }
       } catch {}
       const url = new URL(location.href);
+      // If a stale cached HTML shell keeps requesting an old hashed asset,
+      // do not leave Chrome on the recovery screen. Second+ recovery attempts
+      // go to the canonical home shell with all loop guards disabled.
+      if (count > 1) {
+        url.pathname = '/';
+        url.hash = '';
+      }
       url.searchParams.set('nocache', '1');
       url.searchParams.set('sw', 'off');
+      url.searchParams.set('phl_loop_disabled', '1');
       url.searchParams.set('_r', String(Date.now()));
       location.replace(url.toString());
     };
@@ -76,11 +91,7 @@ function missingBuildAssetRecoveryResponse(pathname) {
       document.getElementById('phl-stale-reset')?.addEventListener('click', () => { void reset(); });
     };
     const autoReset = () => {
-      let last = 0;
-      try { last = Number(sessionStorage.getItem(recoveryKey) || 0); } catch {}
-      if (!last || Date.now() - last > 3000) {
-        window.setTimeout(() => { void reset(); }, 150);
-      }
+      window.setTimeout(() => { void reset(); }, 150);
     };
     if (document.body) { render(); autoReset(); } else addEventListener('DOMContentLoaded', () => { render(); autoReset(); }, { once: true });
   } catch (error) {
