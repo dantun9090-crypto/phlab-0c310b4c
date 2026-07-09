@@ -346,7 +346,22 @@ async function main() {
       `(${SEED_TARGETS.length} seed + ${discovered.length} discovered)`,
   );
 
-  const results = await Promise.all(targets.map(probe));
+  // Retry loop: on any failure, wait RETRY_DELAY_MS and re-probe just the
+  // failed targets up to MAX_RETRIES times. Passes short-circuit immediately.
+  let results = await Promise.all(targets.map(probe));
+  for (let attempt = 1; attempt < MAX_RETRIES; attempt++) {
+    const failedIdx = results
+      .map((r, i) => (!r.ok ? i : -1))
+      .filter((i) => i >= 0);
+    if (failedIdx.length === 0) break;
+    console.log(
+      `sitemap/robots cache probe: attempt ${attempt}/${MAX_RETRIES - 1} — ` +
+        `${failedIdx.length} paths failed, retrying in ${RETRY_DELAY_MS / 1000}s`,
+    );
+    await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+    const retried = await Promise.all(failedIdx.map((i) => probe(targets[i])));
+    for (let j = 0; j < failedIdx.length; j++) results[failedIdx[j]] = retried[j];
+  }
 
   mkdirSync(OUT_DIR, { recursive: true });
   const jsonPath = join(OUT_DIR, "sitemap-robots-probe.json");
