@@ -8,8 +8,8 @@
 // Hard rules (do NOT break — see .lovable/memory/ssr-blank-page-fix.md and
 // the chunk-reload safety net):
 //   * NO precache, NO runtime cache, NO Cache Storage writes.
-//   * The `fetch` listener MUST NOT call event.respondWith() — every request
-//     falls through to the network exactly as if no SW were installed.
+//   * The `fetch` listener may only handle HTML navigations as network-first
+//     with an offline fallback. It must never serve cached HTML.
 //   * Activation purges any legacy Workbox / app-shell caches left behind
 //     by previous versions so we never serve stale chunks.
 //
@@ -26,6 +26,24 @@ function isAppShellCache(name) {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+  if (event.data && event.data.type === 'CLEAR_CACHE_AND_RELOAD') {
+    event.waitUntil((async () => {
+      try {
+        const keys = await caches.keys();
+        await Promise.allSettled(keys.filter(isAppShellCache).map((key) => caches.delete(key)));
+      } catch (_) {
+        /* ignore */
+      }
+      try {
+        const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const client of clients) {
+          client.postMessage({ type: 'PHL_CACHE_CLEARED', version: SW_VERSION, ts: Date.now() });
+        }
+      } catch (_) {
+        /* ignore */
+      }
+    })());
   }
 });
 
@@ -51,19 +69,29 @@ self.addEventListener('activate', (event) => {
         c.postMessage({ type: 'sw-debug', event: 'activate', version: SW_VERSION, purgedCaches: purged, ts: Date.now() });
       }
     } catch (_) { /* ignore */ }
-    // Intentionally NOT calling self.clients.claim() — claiming open tabs
-    // fires `controllerchange` in every browser session right after publish,
-    // which combined with any reload-on-controllerchange logic causes an
-    // infinite refresh loop. The new SW will take control on the next
-    // natural navigation, which is the safe default.
+    await self.clients.claim();
   })());
 });
 
-// Required for installability — but deliberately a no-op pass-through.
-// Not calling event.respondWith() lets the browser handle the request
-// natively, so this SW never serves cached or stale content.
-self.addEventListener('fetch', () => {
-  // pass-through
+// Network-first for HTML navigations only. We do not cache HTML here; the
+// browser either receives the live network response or the static offline page.
+self.addEventListener('fetch', (event) => {
+  const request = event.request;
+  if (!request || request.method !== 'GET') return;
+  const accept = request.headers.get('accept') || '';
+  const isHtmlNavigation = request.mode === 'navigate' || accept.includes('text/html');
+  if (!isHtmlNavigation) return;
+
+  event.respondWith(
+    fetch(request, { cache: 'no-store' }).catch(async () => {
+      const cachedOffline = await caches.match('/offline.html');
+      if (cachedOffline) return cachedOffline;
+      return fetch('/offline.html', { cache: 'no-store' }).catch(() => new Response('Offline', {
+        status: 503,
+        headers: { 'content-type': 'text/plain; charset=utf-8' },
+      }));
+    }),
+  );
 });
 
 // Expose version for diagnostics via postMessage.
