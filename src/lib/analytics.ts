@@ -402,6 +402,7 @@ export interface PurchaseExtras {
     lastName?: string;
     country?: string; // ISO-3166 alpha-2
     postalCode?: string;
+    city?: string; // unhashed per Google Enhanced Conversions spec
   };
 }
 
