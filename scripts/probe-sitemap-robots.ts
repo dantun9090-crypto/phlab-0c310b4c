@@ -364,8 +364,9 @@ async function main() {
   }
 
   mkdirSync(OUT_DIR, { recursive: true });
-  const jsonPath = join(OUT_DIR, "sitemap-robots-probe.json");
-  const mdPath = join(OUT_DIR, "sitemap-robots-probe.md");
+  const hostSlug = new URL(BASE).hostname.replace(/[^a-z0-9]+/gi, "-");
+  const jsonPath = join(OUT_DIR, `sitemap-robots-probe-${hostSlug}.json`);
+  const mdPath = join(OUT_DIR, `sitemap-robots-probe-${hostSlug}.md`);
   writeFileSync(
     jsonPath,
     JSON.stringify({ base: BASE, generatedAt: new Date().toISOString(), results }, null, 2),
