@@ -566,6 +566,15 @@ export default function CheckoutPage() {
     }
     if (step === 2) {
       if (!form.address.trim()) e.address = 'Required';
+      else if (form.country === 'Germany') {
+        // Mirror the server-side `superRefine` rule so Step 2 blocks the
+        // shopper before we ever call the order API. German addresses need
+        // BOTH a street name (letters incl. umlauts/ß) AND a house number.
+        const addr = form.address.trim();
+        if (!/[A-Za-zÄÖÜäöüß]/.test(addr) || !/\d/.test(addr)) {
+          e.address = 'Enter street name and house number (e.g. Musterstraße 12)';
+        }
+      }
       if (!form.city.trim()) e.city = 'Required';
       if (!form.postcode.trim()) e.postcode = 'Required';
       else {
