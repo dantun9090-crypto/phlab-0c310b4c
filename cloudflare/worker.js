@@ -278,6 +278,52 @@ function normalizePublicUrl(url) {
   return u.toString();
 }
 
+function buildCacheKey(url, buildId) {
+  const cleanUrl = new URL(url.toString());
+  if (buildId) cleanUrl.searchParams.set("__phl_build_id", buildId);
+  const entries = [...cleanUrl.searchParams.entries()].sort(([a], [b]) => a.localeCompare(b));
+  cleanUrl.search = "";
+  for (const [k, v] of entries) cleanUrl.searchParams.append(k, v);
+  return new Request(cleanUrl.toString(), { method: "GET" });
+}
+
+let _originBuildIdCache = { value: "", expiresAt: 0 };
+const BUILD_ID_CACHE_MS = 15_000;
+
+async function getOriginBuildId() {
+  const now = Date.now();
+  if (_originBuildIdCache.expiresAt > now && _originBuildIdCache.value) return _originBuildIdCache.value;
+  let value = "";
+  try {
+    const probeUrl = `https://${CANONICAL_HOST}/?__edge_build_probe=${now}`;
+    const res = await fetch(probeUrl, {
+      method: "GET",
+      headers: {
+        accept: "text/html",
+        "cache-control": "no-cache",
+        pragma: "no-cache",
+        "user-agent": "phlabs-edge-build-probe/1.0",
+        "x-force-refresh": "true",
+      },
+      cf: { cacheTtl: 0, cacheEverything: false },
+      signal: AbortSignal.timeout(4_000),
+    });
+    value = res.headers.get("x-build-id") || res.headers.get("x-phl-build-id") || "";
+    if (!value) {
+      const html = await res.text().catch(() => "");
+      value =
+        (html.match(/<meta[^>]+name=["']build-id["'][^>]+content=["']([^"']+)["']/i) || [, ""])[1] ||
+        (html.match(/<meta[^>]+name=["']x-build-id["'][^>]+content=["']([^"']+)["']/i) || [, ""])[1] ||
+        "";
+    }
+  } catch (_) {
+    // keep unknown
+  }
+  value = (value || "unknown").slice(0, 80);
+  _originBuildIdCache = { value, expiresAt: now + (value === "unknown" ? 5_000 : BUILD_ID_CACHE_MS) };
+  return value;
+}
+
 function isServiceWorkerPath(url) {
   return url.pathname === "/sw.js" || url.pathname === "/service-worker.js";
 }
@@ -756,6 +802,7 @@ export default {
     const htmlTtl = await getHtmlTtlSeconds();
     const forceRefresh = request.headers.get("x-force-refresh") === "true";
     const htmlCacheable = isGet && !isXmlFeed && isHtmlCacheable(url) && htmlTtl > 0;
+    const originBuildId = htmlCacheable && !forceRefresh && !url.searchParams.has("__edge_build_probe") ? await getOriginBuildId() : "";
     const cacheOpts = htmlCacheable && !forceRefresh
       ? {
           cacheEverything: true,
@@ -772,8 +819,7 @@ export default {
     //     cookies, GET) so __cf_bm and per-visitor headers can't bust it.
     let cacheKey = null;
     if (htmlCacheable) {
-      // Use the request URL directly (canonical via redirects upstream).
-      cacheKey = new Request(request.url, { method: "GET" });
+      cacheKey = buildCacheKey(url, originBuildId);
       try {
         const hit = forceRefresh ? null : await caches.default.match(cacheKey);
         if (hit) {
