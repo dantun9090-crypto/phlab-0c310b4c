@@ -684,6 +684,7 @@ export default function CheckoutPage() {
         lastName: form.lastName,
         country: form.country === 'Germany' ? 'DE' : form.country === 'Ireland' ? 'IE' : form.country === 'United Kingdom' ? 'GB' : 'GB',
         postalCode: form.postcode,
+        city: form.city,
       });
       trackAddPaymentInfo(
         cartToGaItems(),
