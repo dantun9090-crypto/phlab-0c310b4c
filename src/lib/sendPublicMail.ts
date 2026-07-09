@@ -35,6 +35,7 @@ export type SendMailInput =
       address?: string;
       city?: string;
       postcode?: string;
+      country?: string;
       paymentMethod?: "card" | "bank_transfer";
       bankTransferRef?: string;
       bankName?: string;
