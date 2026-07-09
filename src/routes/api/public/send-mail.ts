@@ -329,6 +329,7 @@ export const Route = createFileRoute("/api/public/send-mail")({
                 address: typeof customer.address === "string" ? customer.address : undefined,
                 city: typeof customer.city === "string" ? customer.city : undefined,
                 postcode: typeof customer.postcode === "string" ? customer.postcode : undefined,
+                country: typeof customer.country === "string" ? customer.country : undefined,
                 paymentMethod,
                 bankTransferRef:
                   typeof order.bankTransferReference === "string"
