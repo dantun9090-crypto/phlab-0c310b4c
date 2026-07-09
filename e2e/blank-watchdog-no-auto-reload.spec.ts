@@ -17,6 +17,9 @@ test("blank watchdog shows manual fallback only and does not auto-reload", async
   });
 
   await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
+  await page.waitForFunction(() =>
+    Boolean((window as unknown as { __phlBlankWatchdog?: { forceFallback?: () => void } }).__phlBlankWatchdog?.forceFallback),
+  );
 
   await page.evaluate(() => {
     document.body.innerHTML = "";
