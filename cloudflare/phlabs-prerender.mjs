@@ -65,6 +65,7 @@ function missingBuildAssetRecoveryResponse(pathname) {
         }
       } catch {}
       const url = new URL(location.href);
+      url.searchParams.set('nocache', '1');
       url.searchParams.set('sw', 'off');
       url.searchParams.set('_r', String(Date.now()));
       location.replace(url.toString());
@@ -77,7 +78,7 @@ function missingBuildAssetRecoveryResponse(pathname) {
     const autoReset = () => {
       let last = 0;
       try { last = Number(sessionStorage.getItem(recoveryKey) || 0); } catch {}
-      if (!last || Date.now() - last > 10000) {
+      if (!last || Date.now() - last > 3000) {
         window.setTimeout(() => { void reset(); }, 150);
       }
     };
