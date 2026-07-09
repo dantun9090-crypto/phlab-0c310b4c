@@ -159,6 +159,13 @@ async function probe(target: Target): Promise<Result> {
   let status: number | null = null;
   let h: Headers | null = null;
 
+  // Legacy redirect hosts: a 301 is the correct answer.
+  const baseHost = new URL(BASE).hostname;
+  const isLegacyHost = LEGACY_REDIRECT_HOSTS.has(baseHost);
+
+  let status: number | null = null;
+  let h: Headers | null = null;
+
   try {
     const res = await fetch(url, {
       method: "GET",
