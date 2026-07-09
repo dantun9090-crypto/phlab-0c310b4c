@@ -36,3 +36,6 @@ playwright-report/
 test-results/
 .playwright/
 
+
+# Probe reports (per-run CI artifacts)
+reports/
