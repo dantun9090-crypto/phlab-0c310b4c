@@ -16,6 +16,7 @@ export interface InvoiceEmailOptions {
   address?: string;
   city?: string;
   postcode?: string;
+  country?: string;
   couponCode?: string;
   paymentMethod?: 'card' | 'bank_transfer';
   bankTransferRef?: string;
