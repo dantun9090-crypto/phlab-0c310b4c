@@ -23,8 +23,20 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      run_mode:
+        description: "Probe retry behaviour"
+        type: choice
+        default: retry_on
+        options: [retry_on, retry_off]
+      target_domain:
+        description: "Domain(s) to purge + probe"
+        type: choice
+        default: both
+        options: [both, phlabs.co.uk, prohealthpeptides.co.uk]
   repository_dispatch:
     types: [lovable-publish]
+
 
 concurrency:
   group: post-deploy-purge
