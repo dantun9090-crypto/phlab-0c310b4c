@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import LegacyApp from "@/legacy/LegacyApp";
+import { LegacyMount } from "@/lib/legacy-mount";
 import { canonicalUrl } from "@/lib/seo-meta";
 
 const TITLE = "Sign in · PH Labs";
@@ -24,5 +24,7 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginMount() {
-  return <LegacyApp initialPath="/login" />;
+  // Client-only mount: keeps firebase/auth (EmailAuthProvider et al.) out of
+  // the SSR worker bundle where those symbols are undefined. See /account.
+  return <LegacyMount path="/login" />;
 }
