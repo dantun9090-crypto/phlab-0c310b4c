@@ -54,6 +54,61 @@ test.describe('Checkout — Germany', () => {
     await seedCart(page);
   });
 
+  test('switching UK → Germany clears the postcode, relabels to PLZ, and blocks submit until a valid 5-digit PLZ is entered', async ({ page }) => {
+    await page.goto('/checkout');
+    await fillContactStep(page);
+
+    const country = page.locator('select#country');
+    const postcode = page.locator('input#postcode');
+    const postcodeLabel = page.locator('label[for="postcode"]');
+    const advance = page.getByRole('button', { name: /continue|next/i }).first();
+
+    // 1. Start on United Kingdom (default). Fill a valid UK address.
+    await expect(country).toHaveValue('United Kingdom');
+    await expect(postcodeLabel).toContainText(/^Postcode/);
+    await page.getByLabel(/street|address/i).first().fill('10 Downing Street');
+    await page.getByLabel(/city/i).fill('London');
+    await postcode.fill('SW1A 2AA');
+    await expect(postcode).toHaveValue('SW1A 2AA');
+
+    // 2. Switch to Germany — postcode MUST clear and label MUST become PLZ.
+    await country.selectOption({ label: 'Germany (Deutschland)' });
+    await expect(postcode).toHaveValue('');
+    await expect(postcodeLabel).toContainText('PLZ (Postleitzahl)');
+    await expect(postcode).toHaveAttribute('inputmode', 'numeric');
+    await expect(postcode).toHaveAttribute('placeholder', '10115');
+
+    // 3. Empty PLZ → advance blocked, "Required" error surfaces.
+    await advance.click();
+    await expect(postcode).toBeFocused().catch(() => { /* focus is best-effort across browsers */ });
+    const postcodeErr = page.locator('label[for="postcode"] + input + p, #postcode ~ p').first();
+    await expect(postcodeErr).toBeVisible();
+    // Must NOT have advanced to Step 3.
+    await expect(page.getByRole('heading', { name: /confirm|review|payment|age/i })).toHaveCount(0);
+
+    // 4. Too-short PLZ ("123") → advance still blocked with the DE-specific copy.
+    await postcode.fill('123');
+    await advance.click();
+    await expect(page.getByText(/valid German postcode|5 digits|PLZ/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /confirm|review|payment|age/i })).toHaveCount(0);
+
+    // 5. Non-digits are stripped in real time.
+    await postcode.fill('ABC12de');
+    await expect(postcode).toHaveValue('12');
+
+    // 6. Valid 5-digit PLZ + shipping selected → advance succeeds and PLZ is preserved.
+    await postcode.fill('10115');
+    await expect(postcode).toHaveValue('10115');
+    await page.getByText(/Standard 1–3 Day Delivery/i).first().click();
+    await advance.click();
+
+    // Step 3 has rendered (age / terms visible).
+    await expect(page.getByLabel(/18 or older|18\+/i)).toBeVisible({ timeout: 5000 });
+    // Going back to the address step, the German PLZ we entered is still there.
+    await page.getByRole('button', { name: /delivery address|edit address|address/i }).first().click().catch(() => { /* accordion may auto-scroll */ });
+    await expect(page.locator('input#postcode')).toHaveValue('10115');
+    await expect(page.locator('label[for="postcode"]')).toContainText('PLZ (Postleitzahl)');
+
   test('country dropdown exposes Germany and switches the postcode field', async ({ page }) => {
     await page.goto('/checkout');
     await fillContactStep(page);
