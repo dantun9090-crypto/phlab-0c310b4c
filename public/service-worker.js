@@ -10,6 +10,14 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+  if (event.data && event.data.type === 'CLEAR_CACHE_AND_RELOAD') {
+    event.waitUntil((async () => {
+      try {
+        const keys = await caches.keys();
+        await Promise.allSettled(keys.filter(isAppShellCache).map((key) => caches.delete(key)));
+      } catch (_) { /* ignore */ }
+    })());
+  }
 });
 
 function isAppShellCache(name) {

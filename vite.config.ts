@@ -25,6 +25,13 @@ export default defineConfig({
       // Hidden source maps: emit .map files for error tracking without
       // exposing a sourceMappingURL in the shipped JS.
       sourcemap: "hidden",
+      rollupOptions: {
+        output: {
+          entryFileNames: `assets/[name]-[hash]-${BUILD_ID}.js`,
+          chunkFileNames: `assets/[name]-[hash]-${BUILD_ID}.js`,
+          assetFileNames: `assets/[name]-[hash]-${BUILD_ID}[extname]`,
+        },
+      },
     },
     define: {
       __BUILD_ID__: JSON.stringify(BUILD_ID),
