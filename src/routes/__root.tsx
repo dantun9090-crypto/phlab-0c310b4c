@@ -489,6 +489,12 @@ const FORCE_SW_CLEANUP = `
 const EMERGENCY_STALE_RELOAD = `
 (function(){
   try{
+    // Safety note: this used to auto-navigate after a 3s "blank root" check.
+    // On slow networks that false-positive created a reload loop and blocked
+    // customers from entering the store. Blank-page handling now lives in
+    // BOOT_WATCHDOG below, which shows a manual recovery UI instead of forcing
+    // navigation. This guard is kept only for a verified same-origin JS chunk
+    // load failure, and even then it only clears caches + reloads once.
     var qs=new URLSearchParams(location.search);
     if(qs.has('__fresh')) return;
     var blocked=/^\/(?:admin|auth|login|account|cart|checkout|payment|register)(?:\/|$)/i.test(location.pathname||'');
@@ -497,7 +503,7 @@ const EMERGENCY_STALE_RELOAD = `
     var forceFresh=function(reason){
       if(reloading) return;
       reloading=true;
-      try{ console.warn('[PHL] Stale cache detected — forcing fresh load:', reason); }catch(e){}
+      try{ console.warn('[PHL] Stale script detected — forcing one clean load:', reason); }catch(e){}
       try{
         if(navigator.serviceWorker&&navigator.serviceWorker.ready){
           navigator.serviceWorker.ready.then(function(reg){ try{ if(reg&&reg.active) reg.active.postMessage({type:'CLEAR_CACHE_AND_RELOAD'}); }catch(e){} }).catch(function(){});
@@ -519,15 +525,18 @@ const EMERGENCY_STALE_RELOAD = `
         setTimeout(finish,1500);
       }catch(e){ finish(); }
     };
-    setTimeout(function(){
-      try{
-        var root=document.getElementById('root')||document.getElementById('app');
-        if(root&&root.children&&root.children.length===0) forceFresh('blank-root');
-      }catch(e){}
-    },3000);
     window.addEventListener('error',function(e){
       var t=e&&e.target;
-      if(t&&t.tagName==='SCRIPT') forceFresh('script-load-failed');
+      if(!t||t.tagName!=='SCRIPT') return;
+      var src='';
+      try{ src=String(t.src||''); }catch(_e){}
+      if(!src) return;
+      try{
+        var u=new URL(src,location.href);
+        if(u.origin!==location.origin) return;
+        if(!/^\/(?:assets|_build)\/[^?#]+\.(?:js|mjs)(?:[?#]|$)/i.test(u.pathname+u.search)) return;
+        forceFresh('script-load-failed');
+      }catch(_e){}
     },true);
   }catch(e){}
 })();
