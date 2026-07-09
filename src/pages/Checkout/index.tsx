@@ -563,7 +563,19 @@ export default function CheckoutPage() {
       if (!form.address.trim()) e.address = 'Required';
       if (!form.city.trim()) e.city = 'Required';
       if (!form.postcode.trim()) e.postcode = 'Required';
-      else if (!/^[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}$/i.test(form.postcode.trim())) e.postcode = 'Enter a valid UK postcode';
+      else {
+        const pc = form.postcode.trim();
+        const country = form.country;
+        if (country === 'United Kingdom') {
+          if (!/^[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}$/i.test(pc)) e.postcode = 'Enter a valid UK postcode';
+        } else if (country === 'Germany') {
+          if (!/^\d{5}$/.test(pc)) e.postcode = 'Enter a valid German postcode (5 digits)';
+        } else if (country === 'Ireland') {
+          if (!/^[A-Z]\d{2}\s?[A-Z0-9]{4}$/i.test(pc)) e.postcode = 'Enter a valid Eircode';
+        } else {
+          if (pc.length < 3 || pc.length > 12) e.postcode = 'Enter a valid postcode';
+        }
+      }
       if (!form.country.trim()) e.country = 'Required';
       if (!form.shippingMethod) e.shippingMethod = 'Please choose a shipping method';
     }
