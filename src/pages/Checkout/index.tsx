@@ -552,7 +552,11 @@ export default function CheckoutPage() {
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Enter a valid email';
       if (form.phone.trim()) {
         const digits = form.phone.replace(/[\s()\-+]/g, '');
-        if (!/^(44)?0?[1-9]\d{8,9}$/.test(digits)) e.phone = 'Enter a valid UK phone number';
+        if (form.country === 'United Kingdom') {
+          if (!/^(44)?0?[1-9]\d{8,9}$/.test(digits)) e.phone = 'Enter a valid UK phone number';
+        } else {
+          if (!/^\d{6,15}$/.test(digits)) e.phone = 'Enter a valid phone number';
+        }
       }
       if (form.createAccount && !firebaseUser) {
         if (!form.password) e.password = 'Password is required';
