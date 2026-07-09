@@ -1,0 +1,91 @@
+name: Visual parity · preview vs live
+
+# Compares the ephemeral preview build against the published live site on
+# the four key routes (/, /products, /about, /contact). Meant to be run
+# right before or right after clicking Publish — surfaces any layout drift
+# between what you see in preview and what actually ships.
+#
+# Trigger it manually (Actions → Run workflow) and paste the current preview
+# URL, or let the schedule verify prod vs the newest preview each night.
+
+on:
+  workflow_dispatch:
+    inputs:
+      preview_url:
+        description: 'Preview URL to snapshot (e.g. https://id-preview--<id>.lovable.app)'
+        required: true
+        default: 'https://id-preview--1f12c255-a30a-4bea-bbab-28d9e6f70804.lovable.app'
+      live_url:
+        description: 'Live URL to compare against'
+        required: false
+        default: 'https://phlabs.co.uk'
+      threshold:
+        description: 'Max acceptable pixel diff ratio (0-1)'
+        required: false
+        default: '0.02'
+
+concurrency:
+  group: preview-vs-live-visual
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  visual-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PREVIEW_URL: ${{ github.event.inputs.preview_url }}
+      LIVE_URL: ${{ github.event.inputs.live_url || 'https://phlabs.co.uk' }}
+      VISUAL_DIFF_THRESHOLD: ${{ github.event.inputs.threshold || '0.02' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run preview-vs-live visual spec
+        run: bunx playwright test e2e/preview-vs-live-visual.spec.ts --project=chromium --reporter=line,html --output=test-results
+
+      - name: Upload diff artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: preview-vs-live-diffs
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Open issue on regression
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Visual drift: preview ≠ live on /, /products, /about or /contact`,
+              labels: ['regression', 'visual', 'post-deploy'],
+              body: [
+                'Automated preview-vs-live visual parity check failed.',
+                '',
+                `- Preview: ${process.env.PREVIEW_URL}`,
+                `- Live: ${process.env.LIVE_URL}`,
+                `- Threshold: ${process.env.VISUAL_DIFF_THRESHOLD}`,
+                `- Run: ${run}`,
+                '',
+                'Download the `preview-vs-live-diffs` artifact from the run — each failing route has `-preview.png`, `-live.png`, and `-diff.png`. If the diff is expected (intentional redesign), re-run after publishing so live catches up, or raise the threshold input on the workflow_dispatch.',
+              ].join('\n'),
+            });
