@@ -108,6 +108,7 @@ test.describe('Checkout — Germany', () => {
     await page.getByRole('button', { name: /delivery address|edit address|address/i }).first().click().catch(() => { /* accordion may auto-scroll */ });
     await expect(page.locator('input#postcode')).toHaveValue('10115');
     await expect(page.locator('label[for="postcode"]')).toContainText('PLZ (Postleitzahl)');
+  });
 
   test('country dropdown exposes Germany and switches the postcode field', async ({ page }) => {
     await page.goto('/checkout');
