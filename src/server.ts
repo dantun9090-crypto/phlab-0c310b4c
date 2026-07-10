@@ -846,6 +846,97 @@ const COA_ALLOWED_BUCKETS = new Set([
   "prohealthpeptides-a0808.appspot.com",
 ]);
 
+const IMAGE_ALLOWED_HOSTS = new Set([
+  "firebasestorage.googleapis.com",
+  "storage.googleapis.com",
+  "lh3.googleusercontent.com",
+  "cdn.wegic.ai",
+]);
+const IMAGE_ALLOWED_BUCKETS = new Set([
+  "prohealthpeptides-a0808.firebasestorage.app",
+  "prohealthpeptides-a0808.appspot.com",
+]);
+
+function getAllowedImageSource(raw: string | null): URL | null {
+  if (!raw || raw.length > 2500) return null;
+  let source: URL;
+  try {
+    source = new URL(raw);
+  } catch {
+    return null;
+  }
+
+  const host = source.hostname.toLowerCase();
+  if (source.protocol !== "https:" || !IMAGE_ALLOWED_HOSTS.has(host)) return null;
+
+  if (host === "firebasestorage.googleapis.com") {
+    const parts = source.pathname.split("/");
+    if (parts[1] !== "v0" || parts[2] !== "b" || parts[4] !== "o") return null;
+    const bucket = decodeURIComponent(parts[3] || "");
+    if (!IMAGE_ALLOWED_BUCKETS.has(bucket)) return null;
+    source.searchParams.set("alt", "media");
+  }
+
+  if (host === "storage.googleapis.com") {
+    const bucket = decodeURIComponent(source.pathname.split("/")[1] || "");
+    if (!IMAGE_ALLOWED_BUCKETS.has(bucket)) return null;
+  }
+
+  return source;
+}
+
+function imageProxyError(message: string, status: number): Response {
+  return new Response(message, {
+    status,
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+      "x-robots-tag": "noindex, nofollow",
+    },
+  });
+}
+
+function imageProxyHeaders(upstream: Response): Headers {
+  const headers = new Headers(upstream.headers);
+  headers.set("cache-control", "public, max-age=31536000, immutable");
+  headers.set("x-phl-via", "image-proxy");
+  headers.set("x-content-type-options", "nosniff");
+  headers.delete("set-cookie");
+  headers.delete("content-security-policy");
+  return headers;
+}
+
+async function handleImageProxy(request: Request, url: URL): Promise<Response> {
+  const source = getAllowedImageSource(url.searchParams.get("u"));
+  if (!source) return imageProxyError("Invalid image URL", 400);
+
+  let upstream: Response;
+  try {
+    upstream = await fetch(source.toString(), {
+      method: "GET",
+      headers: { accept: request.headers.get("accept") || "image/avif,image/webp,image/*,*/*" },
+      signal: AbortSignal.timeout(20_000),
+    });
+  } catch {
+    return imageProxyError("Image temporarily unavailable", 502);
+  }
+
+  if (!upstream.ok) {
+    return imageProxyError("Image unavailable", upstream.status === 404 ? 404 : 502);
+  }
+
+  const contentType = (upstream.headers.get("content-type") || "").toLowerCase();
+  if (!contentType.startsWith("image/")) {
+    return imageProxyError("Source is not an image", 415);
+  }
+
+  return new Response(request.method === "HEAD" ? null : upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: imageProxyHeaders(upstream),
+  });
+}
+
 function sanitizeCoaFilename(value: string | null): string {
   const cleaned = (value || "certificate-of-analysis.pdf")
     .replace(/[\r\n\x00]/g, "")
@@ -1056,6 +1147,19 @@ export default {
             "x-build-id": buildId,
           },
         });
+      }
+
+      // 0a. Same-origin image proxy for Firebase/product images. This must run
+      // before trailing-slash normalization; product markup emits /_img/?u=…
+      // and normalizing that path turns image requests into the SPA HTML shell.
+      if (url.pathname === "/_img" || url.pathname === "/_img/") {
+        if (request.method !== "GET" && request.method !== "HEAD") {
+          return new Response("Method Not Allowed", {
+            status: 405,
+            headers: { allow: "GET, HEAD", "cache-control": "no-store" },
+          });
+        }
+        return handleImageProxy(request, url);
       }
 
       // 0.5. Hard reset endpoint — deterministic browser-level wipe used by
