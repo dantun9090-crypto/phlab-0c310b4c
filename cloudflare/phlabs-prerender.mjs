@@ -726,7 +726,12 @@ var phlabs_prerender_patched_default = {
         if (pre && pre.status < 500 && pre.status !== 429) {
           const h = new Headers(pre.headers);
           h.set("x-prerendered", "true");
-          h.set("x-prerender-cache", "MISS");
+          // Pass through Prerender.io's own cache header if present; only
+          // stamp MISS as a fallback when upstream didn't report one. The
+          // old unconditional MISS masked real HITs after /recache warmed
+          // the URL, making the header useless for monitoring.
+          if (!h.has("x-prerender-cache")) h.set("x-prerender-cache", "MISS");
+
           h.set("x-phl-via", "prerender");
           h.delete("x-robots-tag");
           h.set("cache-control", `public, max-age=${PRERENDER_CACHE_TTL}, s-maxage=${PRERENDER_CACHE_TTL}, stale-while-revalidate=${PRERENDER_SWR_TTL}`);
