@@ -312,11 +312,24 @@ function getCsrRootElement(): HTMLElement {
   return root;
 }
 
+function openFreshPage(): void {
+  try {
+    const url = new URL(location.href);
+    url.searchParams.set("nocache", "1");
+    url.searchParams.set("sw", "off");
+    url.searchParams.set("phl_loop_disabled", "1");
+    url.searchParams.set("_r", String(Date.now()));
+    location.replace(url.toString());
+  } catch {
+    location.href = `/?nocache=1&sw=off&phl_loop_disabled=1&_r=${Date.now()}`;
+  }
+}
+
 function showStaticFallback(error: unknown): void {
   try {
     document.body.innerHTML =
       '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Please refresh</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">The page could not initialise cleanly.</p><button id="phl-root-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer">Refresh</button></div></div>';
-    document.getElementById("phl-root-refresh")?.addEventListener("click", () => location.reload());
+    document.getElementById("phl-root-refresh")?.addEventListener("click", openFreshPage);
   } catch {
     /* ignore */
   }
@@ -359,7 +372,7 @@ class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasEr
             <button type="button" onClick={() => this.setState({ hasError: false, error: undefined })} style={{ appearance: "none", border: "1px solid #1f2d44", borderRadius: 8, background: "transparent", color: "#f0f6ff", fontWeight: 600, padding: "10px 14px", cursor: "pointer" }}>
               Try again
             </button>
-            <button type="button" onClick={() => location.reload()} style={{ appearance: "none", border: 0, borderRadius: 8, background: "#10b981", color: "#03140d", fontWeight: 700, padding: "10px 14px", cursor: "pointer" }}>
+            <button type="button" onClick={openFreshPage} style={{ appearance: "none", border: 0, borderRadius: 8, background: "#10b981", color: "#03140d", fontWeight: 700, padding: "10px 14px", cursor: "pointer" }}>
               Refresh
             </button>
           </div>

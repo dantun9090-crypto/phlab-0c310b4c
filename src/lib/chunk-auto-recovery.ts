@@ -149,11 +149,13 @@ async function clearAppCachesAndSW(): Promise<void> {
 function reloadClean(): void {
   try {
     const url = new URL(window.location.href);
+    url.searchParams.set("nocache", "1");
     url.searchParams.set("sw", "off");
+    url.searchParams.set("phl_loop_disabled", "1");
     url.searchParams.set("_r", String(Date.now()));
     window.location.replace(url.toString());
   } catch {
-    try { window.location.reload(); } catch { /* give up */ }
+    window.location.href = `/?nocache=1&sw=off&phl_loop_disabled=1&_r=${Date.now()}`;
   }
 }
 
