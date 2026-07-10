@@ -17,7 +17,7 @@
 // for installability), but navigations are always network-first and never
 // served from HTML cache, so stale-cache blank pages are avoided.
 
-const SW_VERSION = 'phlabs-install-only-v1';
+const SW_VERSION = 'phlabs-install-only-v2-nuke-2026-07-10';
 
 function isAppShellCache(name) {
   return /^(phlabs-offline-|workbox-|precache-|runtime-)/i.test(name) || /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/i.test(name);
