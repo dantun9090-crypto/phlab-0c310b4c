@@ -532,7 +532,7 @@ const EMERGENCY_STALE_RELOAD = `
       try{
         var u=new URL(src,location.href);
         if(u.origin!==location.origin) return;
-        if(!/^\/(?:assets|_build)\/[^?#]+\.(?:js|mjs)(?:[?#]|$)/i.test(u.pathname+u.search)) return;
+        if(!new RegExp('^/(?:assets|_build)/[^?#]+\\\\.(?:js|mjs)(?:[?#]|$)','i').test(u.pathname+u.search)) return;
         forceFresh('script-load-failed');
       }catch(_e){}
     },true);
