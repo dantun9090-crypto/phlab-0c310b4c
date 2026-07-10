@@ -59,7 +59,7 @@ export const Route = createFileRoute("/")({
             const isFirebase = /^https:\/\/(firebasestorage|storage)\.googleapis\.com\//.test(src);
             const widths = [640, 960, 1280, 1600, 1920];
             const enc = (w: number) =>
-              `/_img/?u=${encodeURIComponent(src)}&w=${w}&f=auto&q=80`;
+              `/_img?u=${encodeURIComponent(src)}&w=${w}&f=auto&q=80`;
             return [{
               rel: "preload",
               as: "image",
