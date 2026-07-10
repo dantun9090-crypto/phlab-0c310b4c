@@ -17,7 +17,7 @@
 // for installability), but navigations are always network-first and never
 // served from HTML cache, so stale-cache blank pages are avoided.
 
-const SW_VERSION = 'phlabs-install-only-v1';
+const SW_VERSION = 'phlabs-install-only-v2-nuke-2026-07-10';
 
 function isAppShellCache(name) {
   return /^(phlabs-offline-|workbox-|precache-|runtime-)/i.test(name) || /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/i.test(name);
@@ -86,23 +86,36 @@ self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const purged = [];
     try {
+      // One-time full nuke: v2 rollout — wipe EVERY Cache Storage bucket so
+      // returning visitors on the normal browser get an incognito-equivalent
+      // fresh state after a deploy. SW owns no long-lived cache of its own,
+      // so this is safe.
       const keys = await caches.keys();
-      const toPurge = keys.filter(isAppShellCache);
-      await Promise.allSettled(toPurge.map((key) => caches.delete(key)));
-      purged.push(...toPurge);
+      await Promise.allSettled(keys.map((key) => caches.delete(key)));
+      purged.push(...keys);
     } catch (_) {
       /* ignore */
     }
-    // Defensive: scan remaining caches and evict any cached fallback HTML.
     const removedFallback = await purgeFallbackEntries();
-    // Broadcast activation for [SW-DEBUG] client logger.
+    await self.clients.claim();
+    // Force every controlled tab to reload ONCE so it fetches fresh HTML
+    // and fresh hashed assets from origin. Guarded by a URL flag so we do
+    // not loop.
     try {
-      const clients = await self.clients.matchAll({ includeUncontrolled: true });
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
       for (const c of clients) {
-        c.postMessage({ type: 'sw-debug', event: 'activate', version: SW_VERSION, purgedCaches: purged, removedFallback, ts: Date.now() });
+        try {
+          c.postMessage({ type: 'sw-debug', event: 'activate', version: SW_VERSION, purgedCaches: purged, removedFallback, ts: Date.now() });
+        } catch (_) { /* ignore */ }
+        try {
+          const u = new URL(c.url);
+          if (!u.searchParams.has('__phl_sw_reload')) {
+            u.searchParams.set('__phl_sw_reload', '1');
+            await c.navigate(u.toString());
+          }
+        } catch (_) { /* ignore */ }
       }
     } catch (_) { /* ignore */ }
-    await self.clients.claim();
   })());
 });
 
