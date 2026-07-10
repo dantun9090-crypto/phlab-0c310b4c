@@ -1529,7 +1529,7 @@ export default function CheckoutPage() {
                           );
                         })}
                       </div>
-                      {!nextDayEligibility.qualifies && (
+                      {isUkAddress && !nextDayEligibility.qualifies && (
                         <p className="text-xs text-amber-300/80 mt-2">
                           Next Day by 12 PM not available for this order. Order before 11:30 AM Mon–Fri (UK time, excl. bank holidays).
                         </p>
