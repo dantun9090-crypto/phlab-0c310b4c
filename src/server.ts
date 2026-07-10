@@ -691,10 +691,11 @@ function isCacheableHtmlPath(pathname: string): boolean {
   return true;
 }
 
-// Mirrors the phlabs-prerender Worker's HTML_CACHE_ALLOW_* lists. When true,
-// the origin emits `__CSP_NONCE__` placeholders so the Worker can rewrite a
-// fresh nonce per request and safely store a single shared HTML body in
-// caches.default. Must stay in lock-step with cloudflare/phlabs-prerender.mjs.
+// Mirrors the phlabs-prerender Worker's HTML_CACHE_ALLOW_* lists. The
+// Worker hashes every inline <script> in the origin HTML at cache MISS and
+// rewrites the CSP header with 'sha256-...' + 'strict-dynamic', so a single
+// shared body is safe in caches.default. Must stay in lock-step with
+// cloudflare/phlabs-prerender.mjs.
 const CACHEABLE_ROUTE_EXACT = new Set<string>([
   "/", "/products", "/compound", "/sitemap.xml", "/robots.txt",
 ]);
@@ -780,17 +781,15 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   let rewritten = htmlResponse;
   const buildId = (typeof __BUILD_ID__ === 'string' ? __BUILD_ID__ : 'dev') as string;
   const strict = useStrictCsp(hostname);
-  // In strict mode we emit a `__CSP_NONCE__` placeholder in both the CSP
-  // header and every <script>/<style> nonce attribute. The downstream
-  // phlabs-prerender Worker rewrites the placeholder with a fresh
-  // per-request nonce, so the origin HTML body is safe to edge-cache
-  // (public roots use s-maxage=30, no SWR — worst-case stale window is 30s
-  // per POP) while every visitor still gets a unique nonce. Locally / when
-  // the Worker is absent, browsers still see the literal placeholder —
-  // which fails closed rather than open,
-  // because 'strict-dynamic' + a fixed nonce won't authorize any
-  // attacker-injected script that doesn't already know the placeholder.
-  const nonceAttrValue = strict ? "__CSP_NONCE__" : nonce;
+  // Hash-at-cache-miss CSP: origin emits a real per-request nonce in both
+  // the CSP header and every <script>/<style> nonce attribute. The
+  // downstream phlabs-prerender Worker discards this nonce, SHA-256 hashes
+  // every inline <script> at cache MISS, and rewrites the CSP header with
+  // 'sha256-...' + 'strict-dynamic'. This lets a single HTML body serve
+  // from edge cache while CSP enforcement stays byte-exact. When the
+  // Worker is absent (local dev / direct-to-origin) the nonce still works
+  // for a single request — no placeholder leak, no fail-open.
+  const nonceAttrValue = nonce;
   if (RewriterCtor) {
     const rewriter: Rewriter = new RewriterCtor();
     let r = rewriter.on("head", {
