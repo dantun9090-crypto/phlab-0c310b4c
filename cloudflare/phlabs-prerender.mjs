@@ -918,6 +918,9 @@ var phlabs_prerender_patched_default = {
             putErr = (e && e.message || "err").slice(0, 40);
           }
           h.set("x-phl-cache", `MISS;put=${putErr}`);
+          h.set("x-phl-put-size", String(buf.byteLength));
+          h.set("x-phl-put-key", matchKeyUrl);
+          h.set("x-phl-match-key", matchKeyUrl);
           const liveOut = new Response(buf, { status: res.status, statusText: res.statusText, headers: h });
           return rewriteCspNonce(await repairInlineBootScripts(applySecurityHeaders(liveOut, url)));
         } catch (e) {
