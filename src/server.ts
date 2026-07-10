@@ -587,26 +587,24 @@ function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
       const target = '/api/public/hardreset?next=' + encodeURIComponent(nextPath) + '&_r=' + Date.now();
       location.replace(target);
     };
-    // Safe single-shot recovery: never overwrite document.body, never
-    // loop. If we've already tried to recover in this session, let the app
-    // load normally so the user isn't trapped on a refresh screen.
-    const PHL_RECOVERED = 'phl_recovered';
-    try {
-      const already = sessionStorage.getItem(PHL_RECOVERED);
-      const qs = new URLSearchParams(location.search);
-      if (already || qs.has('__fresh') || qs.has('nocache')) {
-        try { sessionStorage.removeItem(PHL_RECOVERED); } catch {}
-        console.warn('[PHL] stale-asset recovery already attempted; skipping to avoid loop');
-        return;
-      }
-      sessionStorage.setItem(PHL_RECOVERED, '1');
-      const u = new URL(location.href);
-      u.searchParams.set('nocache', '1');
-      u.searchParams.set('__fresh', '1');
-      location.replace(u.toString());
-    } catch (e) {
-      console.error('[PHL] safe recovery redirect failed', e);
-    }
+    const render = () => {
+      document.documentElement.setAttribute('lang', 'en-GB');
+      try {
+        if (!document.querySelector('meta[data-phl-fallback-refresh]')) {
+          const m = document.createElement('meta');
+          m.setAttribute('http-equiv', 'refresh');
+          m.setAttribute('content', '5;url=/?nocache=1&__fresh=1');
+          m.setAttribute('data-phl-fallback-refresh', '1');
+          document.head.appendChild(m);
+        }
+      } catch {}
+      document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs is refreshing</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">Clearing an old browser cache and reopening the store.</p><button id="phl-stale-reset" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;cursor:pointer;font-size:16px">Open store now</button></div></div>';
+      document.getElementById('phl-stale-reset')?.addEventListener('click', () => { void reset(); });
+    };
+    const autoReset = () => {
+      window.setTimeout(() => { void reset(); }, 150);
+    };
+    if (document.body) { render(); autoReset(); } else addEventListener('DOMContentLoaded', () => { render(); autoReset(); }, { once: true });
   } catch (error) {
     console.error('[PHL] stale asset recovery failed', error);
   }
@@ -1069,22 +1067,16 @@ export default {
       // (auth session survives). The response is a minimal HTML page that
       // meta-refreshes and JS-redirects to `/` (or a whitelisted `next`).
       if (url.pathname === "/api/public/hardreset") {
-        // Safe hardreset: 302 straight to next with recovery params, no HTML
-        // shell, no JS location.replace, no loop. Clear-Site-Data still fires
-        // (browsers apply it before following the redirect) so caches/SW/
-        // storage get wiped exactly once.
         const nextParam = url.searchParams.get("next") || "/";
-        const isSafe = /^\/[A-Za-z0-9\-._~!$&'()*+,;=:@/?%#]*$/.test(nextParam) && !nextParam.startsWith("//");
-        const nextPath = isSafe ? nextParam : "/";
-        const target = new URL(nextPath, url.origin);
-        // Strip any prior recovery bust param so we don't accumulate junk.
-        target.searchParams.delete("_r");
-        target.searchParams.set("nocache", "1");
-        target.searchParams.set("__fresh", "1");
-        return new Response(null, {
-          status: 302,
+        const safeNext = /^\/[A-Za-z0-9\-._~!$&'()*+,;=:@/?%#]*$/.test(nextParam) && !nextParam.startsWith("//")
+          ? nextParam
+          : "/";
+        const nextEsc = safeNext.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+        const body = `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PH Labs — refreshing</title><meta http-equiv="refresh" content="0;url=${nextEsc}"><style>html,body{margin:0;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}div{max-width:420px;text-align:center}h1{font-size:20px;margin:0 0 10px;font-weight:800}p{margin:0 0 18px;color:#9fb0c8;font-size:14px;line-height:1.5}a{display:inline-block;background:#10b981;color:#03140d;font-weight:800;padding:12px 18px;border-radius:8px;text-decoration:none}</style></head><body><main><div><h1>PH Labs is refreshing…</h1><p>Clearing your browser cache and reopening the store.</p><a href="${nextEsc}">Open store now</a></div></main><script>try{location.replace(${JSON.stringify(safeNext)})}catch(e){location.href=${JSON.stringify(safeNext)}}</script></body></html>`;
+        return new Response(body, {
+          status: 200,
           headers: {
-            location: target.pathname + target.search,
+            "content-type": "text/html; charset=utf-8",
             "clear-site-data": '"cache", "storage", "executionContexts"',
             "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
             "cdn-cache-control": "no-store",
@@ -1094,7 +1086,7 @@ export default {
             "expires": "0",
             "x-robots-tag": "noindex, nofollow",
             "referrer-policy": "no-referrer",
-            "x-phl-via": "hardreset-302",
+            "x-phl-via": "hardreset",
           },
         });
       }
