@@ -135,7 +135,16 @@ function HydrationRecoveryScreen() {
           <button
             onClick={() => {
               clearHydrationError();
-              window.location.reload();
+              try {
+                const url = new URL(window.location.href);
+                url.searchParams.set("nocache", "1");
+                url.searchParams.set("sw", "off");
+                url.searchParams.set("phl_loop_disabled", "1");
+                url.searchParams.set("_r", String(Date.now()));
+                window.location.replace(url.toString());
+              } catch {
+                window.location.href = `/?nocache=1&sw=off&phl_loop_disabled=1&_r=${Date.now()}`;
+              }
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
@@ -774,7 +783,7 @@ const BOOT_WATCHDOG = `
         div.innerHTML='<div style="max-width:440px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Taking longer than usual</h1><p style="margin:0 0 18px;color:#9fb0c8;font-size:14px;line-height:1.55">The page has not finished loading. This is usually a slow connection or a stale cache. Try refreshing manually.</p><button id="phl-blank-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer;min-height:44px">Refresh page</button> <a href="/?sw=off" style="display:inline-block;margin-left:8px;color:#9fb0c8;text-decoration:underline;min-height:44px;line-height:44px">Clear &amp; reload</a></div>';
         document.body.appendChild(div);
         var btn=document.getElementById('phl-blank-refresh');
-        if(btn) btn.addEventListener('click',function(){ try{ sessionStorage.removeItem(ATTEMPTS_KEY); sessionStorage.removeItem(LAST_KEY); }catch(e){} location.reload(); });
+        if(btn) btn.addEventListener('click',function(){ try{ sessionStorage.removeItem(ATTEMPTS_KEY); sessionStorage.removeItem(LAST_KEY); }catch(e){} try{ var u=new URL(location.href); u.searchParams.set('nocache','1'); u.searchParams.set('sw','off'); u.searchParams.set('phl_loop_disabled','1'); u.searchParams.set('_r',String(Date.now())); location.replace(u.toString()); }catch(_e){ location.href='/?nocache=1&sw=off&phl_loop_disabled=1&_r='+Date.now(); } });
       }catch(e){}
     };
     // Public test/admin hook: trigger the full fallback pipeline on demand.
@@ -882,9 +891,12 @@ const STALE_ASSET_RECOVERY = `
       var done=function(){
         try{
           var u=new URL(location.href);
+          u.searchParams.set('nocache', '1');
+          u.searchParams.set('sw', 'off');
+          u.searchParams.set('phl_loop_disabled', '1');
           u.searchParams.set('_r', String(Date.now()));
           location.replace(u.toString());
-        }catch(e){ location.reload(); }
+        }catch(e){ location.href='/?nocache=1&sw=off&phl_loop_disabled=1&_r='+Date.now(); }
       };
       var pending=0,finished=false;
       var tick=function(){ if(!finished&&pending<=0){ finished=true; done(); } };

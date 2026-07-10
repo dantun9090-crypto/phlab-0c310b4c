@@ -2,6 +2,19 @@ import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
+function openFreshPage() {
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("nocache", "1");
+    url.searchParams.set("sw", "off");
+    url.searchParams.set("phl_loop_disabled", "1");
+    url.searchParams.set("_r", String(Date.now()));
+    window.location.replace(url.toString());
+  } catch {
+    window.location.href = `/?nocache=1&sw=off&phl_loop_disabled=1&_r=${Date.now()}`;
+  }
+}
+
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error("[ROUTER DEFAULT ERROR]", error);
   return (
@@ -19,7 +32,7 @@ function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => vo
           </button>
           <button
             type="button"
-            onClick={() => window.location.reload()}
+            onClick={openFreshPage}
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground"
           >
             Refresh
