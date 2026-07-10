@@ -247,50 +247,17 @@ export default {
       return response;
     }
 
-    // ── 3. BROWSER branch: origin -> hash-CSP -> cache ──────────────────────
-    const cacheKey = new Request(url.toString(), { method: "GET" });
-    const cache = caches.default;
-    let cached = await cache.match(cacheKey);
-    let cacheStatus = "HIT";
-    let originFetchMs = 0;
-    let hashComputeMs = 0;
-
-    if (!cached) {
-      cacheStatus = "MISS";
-      const originStart = Date.now();
-      const originRes = await fetch(request);
-      originFetchMs = Date.now() - originStart;
-
-      if (!originRes.ok && originRes.status !== 404) {
-        return new Response("Origin error: " + originRes.status, { status: 502 });
-      }
-
-      const body = await originRes.text();
-
-      if (body.includes("__CSP_NONCE__")) {
-        console.error("[PHL-CRIT] Origin HTML still contains __CSP_NONCE__");
-        return new Response("CSP nonce migration incomplete — fix src/server.ts first", { status: 500 });
-      }
-
-      const hashStart = Date.now();
-      const response = await buildHashCspResponse(body, originRes.status, originRes.statusText);
-      hashComputeMs = Date.now() - hashStart;
-      response.headers.set("Cache-Control", "public, max-age=" + CACHE_TTL.html + ", s-maxage=" + CACHE_TTL.html + ", stale-while-revalidate=86400");
-      response.headers.set("X-PHL-Via", "hash-csp;bot=0;cache=" + cacheStatus + ";origin=" + originFetchMs + "ms;hash=" + hashComputeMs + "ms;total=" + (Date.now() - startTime) + "ms");
-      response.headers.set("X-PHL-Cache", cacheStatus + ";ttl=" + CACHE_TTL.html);
-      response.headers.set("CF-Cache-Status", cacheStatus);
-      ctx.waitUntil(cache.put(cacheKey, response.clone()));
-      return response;
-    }
-
-    const response = new Response(cached.body, {
-      status: cached.status,
-      statusText: cached.statusText,
-      headers: cached.headers,
+    // ── 3. BROWSER branch: pass-through (origin serves SSR + nonce CSP) ─────
+    // Note: origin at phlab.lovable.app 302-redirects back to phlabs.co.uk on
+    // direct fetches, so we cannot cache/rewrite here without a loop. Browsers
+    // keep using origin's per-request nonce CSP; hash-CSP applies to bots only.
+    const passRes = await fetch(request);
+    const out = new Response(passRes.body, {
+      status: passRes.status,
+      statusText: passRes.statusText,
+      headers: passRes.headers,
     });
-    response.headers.set("X-PHL-Via", "hash-csp;bot=0;cache=" + cacheStatus + ";origin=0ms;hash=0ms;total=" + (Date.now() - startTime) + "ms");
-    response.headers.set("X-PHL-Cache", cacheStatus + ";ttl=" + CACHE_TTL.html);
-    response.headers.set("CF-Cache-Status", cacheStatus);
-    return response;
+    out.headers.set("X-PHL-Via", "passthrough;bot=0;total=" + (Date.now() - startTime) + "ms");
+    return out;
   },
 };
