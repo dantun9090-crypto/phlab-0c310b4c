@@ -488,6 +488,10 @@ window.setTimeout(() => {
   try {
     sessionStorage.removeItem("__phl_reload_window");
     sessionStorage.removeItem("__phl_hard_reload_in_flight");
+    // React mounted successfully — clear the stale-asset auto-recovery
+    // loop guard so a future genuine stale-asset event can retry cleanly.
+    sessionStorage.removeItem("__phl_missing_asset_auto_reset_at");
+    sessionStorage.removeItem("__phl_missing_asset_auto_reset_count");
   } catch {
     /* ignore */
   }
