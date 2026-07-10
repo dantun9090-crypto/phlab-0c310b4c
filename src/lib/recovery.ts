@@ -179,8 +179,6 @@ function stripRecoveryParams(url: URL): void {
   url.searchParams.delete("_r");
   url.searchParams.delete("sw");
   url.searchParams.delete("stale_recovery");
-  url.searchParams.delete("nocache");
-  url.searchParams.delete("phl_loop_disabled");
 }
 
 export function isOnline(): boolean {
@@ -216,13 +214,10 @@ export async function hardReload(options: HardReloadOptions = {}): Promise<void>
       url.hash = "";
     }
     stripRecoveryParams(url);
-    url.searchParams.set("nocache", "1");
-    url.searchParams.set("sw", "off");
-    url.searchParams.set("phl_loop_disabled", "1");
-    url.searchParams.set("_r", String(Date.now()));
+    if (options.clean) url.searchParams.set("sw", "off");
     window.location.replace(url.toString());
   } catch {
-    window.location.href = `/?nocache=1&sw=off&phl_loop_disabled=1&_r=${Date.now()}`;
+    try { window.location.reload(); } catch { /* give up */ }
   }
 }
 

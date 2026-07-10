@@ -157,7 +157,7 @@ function buildStrictCsp(nonce: string): string {
     "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com",
     "style-src-attr 'unsafe-inline'",
     "font-src 'self' data: https://fonts.gstatic.com",
-    "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://cdn.wegic.ai https://www.google-analytics.com https://www.googletagmanager.com https://ssl.google-analytics.com https://www.google.com https://www.google.co.uk https://www.google.se https://www.gstatic.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://stats.g.doubleclick.net https://*.google.com https://*.google.se https://bat.bing.net https://bat.bing.com https://*.bing.com https://s.clarity.ms https://*.clarity.ms",
+    "img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com https://ssl.google-analytics.com https://www.google.com https://www.google.co.uk https://www.google.se https://www.gstatic.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://stats.g.doubleclick.net https://*.google.com https://*.google.se https://bat.bing.net https://bat.bing.com https://*.bing.com https://s.clarity.ms https://*.clarity.ms",
     "media-src 'self' https: data:",
     "connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseinstallations.googleapis.com https://fcmregistrations.googleapis.com https://firebaseremoteconfig.googleapis.com https://firebasestorage.googleapis.com https://*.firebaseapp.com https://*.googleapis.com https://*.supabase.co https://www.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://region1.analytics.google.com https://analytics.google.com https://*.analytics.google.com https://stats.g.doubleclick.net https://www.merchant-center-analytics.goog https://service.prerender.io https://api.prerender.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https://royal-mail-order.dantun9090.workers.dev https://www.googleadservices.com https://googleads.g.doubleclick.net https://apis.google.com https://bat.bing.net https://bat.bing.com https://*.bing.com https://*.taboola.com https://s.clarity.ms https://*.clarity.ms https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://o4511662760525824.ingest.de.sentry.io https://*.wallid.io https://*.wallid.com",
     "frame-src 'self' blob: https://firebasestorage.googleapis.com https://*.firebaseapp.com https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com https://www.recaptcha.net https://*.wallid.io https://*.wallid.com https://*.stripe.com",
@@ -542,44 +542,71 @@ function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
     return new Response("/* missing stale PH Labs build stylesheet — safe empty fallback */\n", { status: 200, headers });
   }
   headers.set("content-type", "text/javascript; charset=utf-8");
-  // NON-DESTRUCTIVE recovery: never overwrites document.body (that used to
-  // wipe out SSR-rendered content and put the browser into a visible
-  // "refreshing" loop). Instead:
-  //   1. First hit in a session: fire a single silent cache-buster nav.
-  //   2. Subsequent hits: do nothing — the app boots with whatever the
-  //      SSR shell + still-valid chunks provide. The blank-watchdog in
-  //      __root.tsx handles the manual fallback if the page truly fails.
   return new Response(
     `(() => {
   try {
-    var KEY = '__phl_missing_asset_auto_reset_count';
-    var count = 0;
-    try { count = Number(sessionStorage.getItem(KEY) || 0) || 0; } catch (e) {}
-    console.warn('[PHL] stale build asset shim loaded (attempt ' + (count + 1) + ')');
-    if (count >= 1) {
-      // Loop guard: never auto-navigate twice in a session. The user's
-      // current page keeps whatever SSR content it already rendered.
-      return;
-    }
-    try { sessionStorage.setItem(KEY, String(count + 1)); } catch (e) {}
-    // Skip the bounce if we're already on a cache-buster URL — that means
-    // we JUST came back from a recovery navigation and the origin still
-    // returned this shim, so another bounce would loop.
-    try {
-      var here = new URL(location.href);
-      if (here.searchParams.has('__fresh') || here.searchParams.has('nocache')) return;
-    } catch (e) {}
-    // One-shot cache-buster navigation. No DOM takeover, no visible
-    // "refreshing" screen — just a silent bounce to a fresh origin fetch.
-    try {
-      var url = new URL(location.href);
-      url.searchParams.set('nocache', '1');
-      url.searchParams.set('__fresh', '1');
-      url.searchParams.set('_r', String(Date.now()));
-      location.replace(url.toString());
-    } catch (e) {}
+    console.warn('[PHL] Missing stale build asset. Clearing cache and reopening automatically.');
+    const clearKeys = ['__phl_reload_window','__phl_hard_reload_in_flight','__phl_route_auto_recovery_done','__phl_reloaded_at','__phl_stale_asset_reload_at','phl_reload_count','__phl_stale_asset_reload_count','__phl_hydration_error_seen','__phl_chunk_recovery','__phl_chunk_reported'];
+    const recoveryKey = '__phl_missing_asset_auto_reset_at';
+    const recoveryCountKey = '__phl_missing_asset_auto_reset_count';
+    const reset = async () => {
+      let count = 0;
+      try { count = Number(sessionStorage.getItem(recoveryCountKey) || 0) || 0; } catch {}
+      count += 1;
+      try {
+        sessionStorage.setItem(recoveryKey, String(Date.now()));
+        sessionStorage.setItem(recoveryCountKey, String(count));
+      } catch {}
+      for (const key of clearKeys) {
+        try { sessionStorage.removeItem(key); } catch {}
+        try { localStorage.removeItem(key); } catch {}
+      }
+      try {
+        if ('caches' in window) {
+          const names = await caches.keys();
+          await Promise.all(names.filter((name) => /^(phlabs-|workbox-|precache-|runtime-)/i.test(name)).map((name) => caches.delete(name)));
+        }
+      } catch {}
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((reg) => reg.unregister()));
+        }
+      } catch {}
+      const currentUrl = new URL(location.href);
+      // Second+ recovery attempts: always return to the canonical home shell.
+      const nextPath = count > 1 ? '/' : (currentUrl.pathname + (currentUrl.search || ''));
+      // Route through the server hard-reset endpoint. Its response sets
+      // Clear-Site-Data: "cache","storage","executionContexts", which the
+      // browser applies before it follows the meta-refresh/JS redirect to
+      // \`next\`. That deterministically unregisters every service worker,
+      // wipes every Cache Storage bucket, and evicts the HTTP cache for
+      // this origin — fixing devices where the client-side unregister/
+      // caches.delete loop kept looping on the "PH Labs is refreshing"
+      // screen because old caches survived the scoped cleanup.
+      const target = '/api/public/hardreset?next=' + encodeURIComponent(nextPath) + '&_r=' + Date.now();
+      location.replace(target);
+    };
+    const render = () => {
+      document.documentElement.setAttribute('lang', 'en-GB');
+      try {
+        if (!document.querySelector('meta[data-phl-fallback-refresh]')) {
+          const m = document.createElement('meta');
+          m.setAttribute('http-equiv', 'refresh');
+          m.setAttribute('content', '5;url=/?nocache=1&__fresh=1');
+          m.setAttribute('data-phl-fallback-refresh', '1');
+          document.head.appendChild(m);
+        }
+      } catch {}
+      document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs is refreshing</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">Clearing an old browser cache and reopening the store.</p><button id="phl-stale-reset" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;cursor:pointer;font-size:16px">Open store now</button></div></div>';
+      document.getElementById('phl-stale-reset')?.addEventListener('click', () => { void reset(); });
+    };
+    const autoReset = () => {
+      window.setTimeout(() => { void reset(); }, 150);
+    };
+    if (document.body) { render(); autoReset(); } else addEventListener('DOMContentLoaded', () => { render(); autoReset(); }, { once: true });
   } catch (error) {
-    console.error('[PHL] stale asset shim failed', error);
+    console.error('[PHL] stale asset recovery failed', error);
   }
 })();
 `,
@@ -819,97 +846,6 @@ const COA_ALLOWED_BUCKETS = new Set([
   "prohealthpeptides-a0808.appspot.com",
 ]);
 
-const IMAGE_ALLOWED_HOSTS = new Set([
-  "firebasestorage.googleapis.com",
-  "storage.googleapis.com",
-  "lh3.googleusercontent.com",
-  "cdn.wegic.ai",
-]);
-const IMAGE_ALLOWED_BUCKETS = new Set([
-  "prohealthpeptides-a0808.firebasestorage.app",
-  "prohealthpeptides-a0808.appspot.com",
-]);
-
-function getAllowedImageSource(raw: string | null): URL | null {
-  if (!raw || raw.length > 2500) return null;
-  let source: URL;
-  try {
-    source = new URL(raw);
-  } catch {
-    return null;
-  }
-
-  const host = source.hostname.toLowerCase();
-  if (source.protocol !== "https:" || !IMAGE_ALLOWED_HOSTS.has(host)) return null;
-
-  if (host === "firebasestorage.googleapis.com") {
-    const parts = source.pathname.split("/");
-    if (parts[1] !== "v0" || parts[2] !== "b" || parts[4] !== "o") return null;
-    const bucket = decodeURIComponent(parts[3] || "");
-    if (!IMAGE_ALLOWED_BUCKETS.has(bucket)) return null;
-    source.searchParams.set("alt", "media");
-  }
-
-  if (host === "storage.googleapis.com") {
-    const bucket = decodeURIComponent(source.pathname.split("/")[1] || "");
-    if (!IMAGE_ALLOWED_BUCKETS.has(bucket)) return null;
-  }
-
-  return source;
-}
-
-function imageProxyError(message: string, status: number): Response {
-  return new Response(message, {
-    status,
-    headers: {
-      "content-type": "text/plain; charset=utf-8",
-      "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
-      "x-robots-tag": "noindex, nofollow",
-    },
-  });
-}
-
-function imageProxyHeaders(upstream: Response): Headers {
-  const headers = new Headers(upstream.headers);
-  headers.set("cache-control", "public, max-age=31536000, immutable");
-  headers.set("x-phl-via", "image-proxy");
-  headers.set("x-content-type-options", "nosniff");
-  headers.delete("set-cookie");
-  headers.delete("content-security-policy");
-  return headers;
-}
-
-async function handleImageProxy(request: Request, url: URL): Promise<Response> {
-  const source = getAllowedImageSource(url.searchParams.get("u"));
-  if (!source) return imageProxyError("Invalid image URL", 400);
-
-  let upstream: Response;
-  try {
-    upstream = await fetch(source.toString(), {
-      method: "GET",
-      headers: { accept: request.headers.get("accept") || "image/avif,image/webp,image/*,*/*" },
-      signal: AbortSignal.timeout(20_000),
-    });
-  } catch {
-    return imageProxyError("Image temporarily unavailable", 502);
-  }
-
-  if (!upstream.ok) {
-    return imageProxyError("Image unavailable", upstream.status === 404 ? 404 : 502);
-  }
-
-  const contentType = (upstream.headers.get("content-type") || "").toLowerCase();
-  if (!contentType.startsWith("image/")) {
-    return imageProxyError("Source is not an image", 415);
-  }
-
-  return new Response(request.method === "HEAD" ? null : upstream.body, {
-    status: upstream.status,
-    statusText: upstream.statusText,
-    headers: imageProxyHeaders(upstream),
-  });
-}
-
 function sanitizeCoaFilename(value: string | null): string {
   const cleaned = (value || "certificate-of-analysis.pdf")
     .replace(/[\r\n\x00]/g, "")
@@ -1122,34 +1058,26 @@ export default {
         });
       }
 
-      // 0a. Same-origin image proxy for Firebase/product images. This must run
-      // before trailing-slash normalization; product markup emits /_img/?u=…
-      // and normalizing that path turns image requests into the SPA HTML shell.
-      if (url.pathname === "/_img" || url.pathname === "/_img/") {
-        if (request.method !== "GET" && request.method !== "HEAD") {
-          return new Response("Method Not Allowed", {
-            status: 405,
-            headers: { allow: "GET, HEAD", "cache-control": "no-store" },
-          });
-        }
-        return handleImageProxy(request, url);
-      }
-
-      // 0.5. Hard reset endpoint — legacy browser-cache recovery hook.
-      // This must never render an interstitial page: older browsers can pin
-      // that HTML in history/cache and strand users on a blank recovery view.
-      // Return a direct no-store redirect with cache-only clearing headers.
+      // 0.5. Hard reset endpoint — deterministic browser-level wipe used by
+      // the stale-asset recovery screen ("PH Labs is refreshing"). Returns
+      // `Clear-Site-Data: "cache", "storage", "executionContexts"` which the
+      // browser applies BEFORE the follow-up navigation, unregistering ALL
+      // service workers, clearing ALL Cache Storage buckets, and evicting
+      // the HTTP cache for this origin. We deliberately do NOT clear cookies
+      // (auth session survives). The response is a minimal HTML page that
+      // meta-refreshes and JS-redirects to `/` (or a whitelisted `next`).
       if (url.pathname === "/api/public/hardreset") {
         const nextParam = url.searchParams.get("next") || "/";
         const safeNext = /^\/[A-Za-z0-9\-._~!$&'()*+,;=:@/?%#]*$/.test(nextParam) && !nextParam.startsWith("//")
           ? nextParam
           : "/";
-        return new Response(null, {
-          status: 303,
-          statusText: "See Other",
+        const nextEsc = safeNext.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+        const body = `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PH Labs — refreshing</title><meta http-equiv="refresh" content="0;url=${nextEsc}"><style>html,body{margin:0;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}div{max-width:420px;text-align:center}h1{font-size:20px;margin:0 0 10px;font-weight:800}p{margin:0 0 18px;color:#9fb0c8;font-size:14px;line-height:1.5}a{display:inline-block;background:#10b981;color:#03140d;font-weight:800;padding:12px 18px;border-radius:8px;text-decoration:none}</style></head><body><main><div><h1>PH Labs is refreshing…</h1><p>Clearing your browser cache and reopening the store.</p><a href="${nextEsc}">Open store now</a></div></main><script>try{location.replace(${JSON.stringify(safeNext)})}catch(e){location.href=${JSON.stringify(safeNext)}}</script></body></html>`;
+        return new Response(body, {
+          status: 200,
           headers: {
-            location: safeNext,
-            "clear-site-data": '"cache"',
+            "content-type": "text/html; charset=utf-8",
+            "clear-site-data": '"cache", "storage", "executionContexts"',
             "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
             "cdn-cache-control": "no-store",
             "cloudflare-cdn-cache-control": "no-store",
@@ -1359,16 +1287,8 @@ export default {
       // 1. Canonical host redirect (legacy brand domains → phlabs.co.uk).
       // phlabs.co.uk is intentionally served directly until the hosting-level
       // www → apex redirect is removed; otherwise production loops.
-      //
-      // Bypass: the phlabs-prerender Cloudflare Worker sends `X-PHL-Worker: 1`
-      // on origin subrequests. It's already at the canonical host and needs
-      // the SSR HTML body — not a 301 back to itself (which would cause an
-      // infinite Worker→origin→Worker loop). Skip all host-normalization
-      // redirects when this header is present so the Worker gets stable,
-      // cacheable SSR HTML for the exact URL it asked for.
       const reqHost = url.hostname.toLowerCase();
-      const isWorkerSubrequest = request.headers.get("x-phl-worker") === "1";
-      if (!isWorkerSubrequest && REDIRECT_HOSTS.has(reqHost)) {
+      if (REDIRECT_HOSTS.has(reqHost)) {
         const dest = new URL(url.toString());
         dest.hostname = CANONICAL_HOST;
         dest.protocol = "https:";
@@ -1378,7 +1298,7 @@ export default {
       }
       // www of a legacy host → its own apex (NOT canonical phlabs.co.uk).
       const wwwApex = WWW_TO_APEX_HOSTS.get(reqHost);
-      if (!isWorkerSubrequest && wwwApex) {
+      if (wwwApex) {
         const dest = new URL(url.toString());
         dest.hostname = wwwApex;
         dest.protocol = "https:";
@@ -1386,7 +1306,6 @@ export default {
         log.info({ event: "worker.redirect", status: 301, reason: "legacy-www-apex", to: dest.toString(), ...baseFields });
         return applyStrictNoStoreHeaders(Response.redirect(dest.toString(), 301), url.pathname);
       }
-
 
       // 1a-pre. Stale hashed-asset guard. If a request for /assets/* or
       // /_build/* reaches the Worker, the static-asset binding already

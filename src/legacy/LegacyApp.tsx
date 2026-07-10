@@ -30,7 +30,13 @@ export default function LegacyApp({
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted) {
+    return (
+      <div className="phl-boot" aria-live="polite">
+        Loading PH Labs…
+      </div>
+    );
+  }
 
   const router = getLegacyRouter(initialPath);
 

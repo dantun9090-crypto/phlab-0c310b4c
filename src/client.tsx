@@ -102,13 +102,17 @@ try {
     arr.push(now);
     sessionStorage.setItem(KEY, JSON.stringify(arr));
     if (arr.length >= THRESHOLD) {
+
       sessionStorage.removeItem(KEY);
-      for (const key of [KEY, ...RECOVERY_KEYS, "phl_reload_count", "__phl_stale_asset_reload_count"]) {
-        try { sessionStorage.removeItem(key); } catch { /* ignore */ }
-        try { localStorage.removeItem(key); } catch { /* ignore */ }
-      }
-      void (async () => {
+      document.documentElement.innerHTML =
+        '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Recovering — PH Labs</title><style>html,body{margin:0;min-height:100%;background:#060f1e;color:#f0f6ff;font-family:system-ui,sans-serif}.box{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}.card{max-width:440px;text-align:center}h1{margin:0 0 12px;font-size:22px}p{margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55}button{appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 18px;cursor:pointer;font-size:14px}</style></head><body><div class="box"><div class="card"><h1>⚠️ Loading issue detected</h1><p>Automatic recovery has been stopped to prevent refresh loops. Click once to clear local cache, then the page will open normally.</p><button id="phl-cc">Clear cache and open site</button></div></div></body>';
+      const btn = document.getElementById("phl-cc");
+      btn?.addEventListener("click", async () => {
         try {
+          for (const key of [KEY, ...RECOVERY_KEYS, "phl_reload_count", "__phl_stale_asset_reload_count"]) {
+            sessionStorage.removeItem(key);
+            localStorage.removeItem(key);
+          }
           if ("caches" in window) {
             const keys = await caches.keys();
             await Promise.all(
@@ -125,9 +129,12 @@ try {
                 .map((r) => r.unregister()),
             );
           }
-        } catch { /* ignore */ }
-      })();
-      return;
+        } catch {
+          /* ignore */
+        }
+        location.replace(location.pathname + location.search + location.hash);
+      });
+      throw new Error("PHL_RELOAD_LOOP_BREAKER");
     }
   } catch (e) {
     if (e instanceof Error && e.message === "PHL_RELOAD_LOOP_BREAKER") throw e;
@@ -289,36 +296,20 @@ function prepareDocumentForCsr(): void {
   try {
     document.documentElement.setAttribute("lang", "en-GB");
     document.documentElement.innerHTML =
-      '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google" content="notranslate"><title>PH Labs UK</title><style>html,body,#phl-csr-root{margin:0;min-height:100%;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}</style></head><body><div id="phl-csr-root"></div></body>';
+      '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google" content="notranslate"><title>PH Labs UK</title><style>html,body{margin:0;min-height:100%;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.phl-boot{display:flex;min-height:100vh;align-items:center;justify-content:center;color:#9fb0c8;font-size:14px}</style></head><body><div class="phl-boot" aria-live="polite">Loading PH Labs…</div></body>';
   } catch (error) {
     console.error("[HYDRATION FALLBACK] Could not wipe SSR DOM", error);
   }
 }
 
-function getCsrRootElement(): HTMLElement {
-  let root = document.getElementById("phl-csr-root");
-  if (!root) {
-    root = document.createElement("div");
-    root.id = "phl-csr-root";
-    document.body.appendChild(root);
-  }
-  return root;
-}
-
-function openFreshPage(): void {
-  try {
-    const url = new URL(location.href);
-    url.searchParams.set("nocache", "1");
-    url.searchParams.set("sw", "off");
-    url.searchParams.set("phl_loop_disabled", "1");
-    url.searchParams.set("_r", String(Date.now()));
-    location.replace(url.toString());
-  } catch {
-    location.href = `/?nocache=1&sw=off&phl_loop_disabled=1&_r=${Date.now()}`;
-  }
-}
-
 function showStaticFallback(error: unknown): void {
+  try {
+    document.body.innerHTML =
+      '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Please refresh</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">The page could not initialise cleanly.</p><button id="phl-root-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer">Refresh</button></div></div>';
+    document.getElementById("phl-root-refresh")?.addEventListener("click", () => location.reload());
+  } catch {
+    /* ignore */
+  }
   console.error("[ROOT ERROR BOUNDARY] Static fallback rendered", error);
 }
 
@@ -358,7 +349,7 @@ class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasEr
             <button type="button" onClick={() => this.setState({ hasError: false, error: undefined })} style={{ appearance: "none", border: "1px solid #1f2d44", borderRadius: 8, background: "transparent", color: "#f0f6ff", fontWeight: 600, padding: "10px 14px", cursor: "pointer" }}>
               Try again
             </button>
-            <button type="button" onClick={openFreshPage} style={{ appearance: "none", border: 0, borderRadius: 8, background: "#10b981", color: "#03140d", fontWeight: 700, padding: "10px 14px", cursor: "pointer" }}>
+            <button type="button" onClick={() => location.reload()} style={{ appearance: "none", border: 0, borderRadius: 8, background: "#10b981", color: "#03140d", fontWeight: 700, padding: "10px 14px", cursor: "pointer" }}>
               Refresh
             </button>
           </div>
@@ -416,7 +407,7 @@ function renderCsr(error: unknown): void {
     }
 
     try {
-      createRoot(getCsrRootElement(), {
+      createRoot(document, {
         onUncaughtError: (rootError, info) => {
           console.error("[ROOT ERROR BOUNDARY] uncaught", rootError, info?.componentStack || "");
           showStaticFallback(rootError);
@@ -487,10 +478,6 @@ window.setTimeout(() => {
   try {
     sessionStorage.removeItem("__phl_reload_window");
     sessionStorage.removeItem("__phl_hard_reload_in_flight");
-    // React mounted successfully — clear the stale-asset auto-recovery
-    // loop guard so a future genuine stale-asset event can retry cleanly.
-    sessionStorage.removeItem("__phl_missing_asset_auto_reset_at");
-    sessionStorage.removeItem("__phl_missing_asset_auto_reset_count");
   } catch {
     /* ignore */
   }

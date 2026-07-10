@@ -24,7 +24,7 @@ function isAppShellCache(name) {
 }
 
 // Defensive purge: scan every Cache Storage bucket for any entry whose body
-// contains the legacy visible recovery fallback marker and delete it. Belt-
+// contains the "PH Labs is refreshing" fallback marker and delete it. Belt-
 // and-braces safety net — this SW never writes HTML, but other origins/tools
 // (Workbox leftovers, extensions) might have, and we must never serve the
 // fallback from cache to a returning visitor.
@@ -44,7 +44,7 @@ async function purgeFallbackEntries() {
           const ct = (res.headers.get('content-type') || '').toLowerCase();
           if (!ct.includes('text/html') && !ct.includes('text/plain') && ct !== '') continue;
           const body = await res.clone().text();
-          if (body.includes('PH Labs is ' + 'refreshing')) {
+          if (body.includes('PH Labs is refreshing')) {
             await cache.delete(req);
             removed.push(name + ' :: ' + req.url);
           }

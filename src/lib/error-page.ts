@@ -87,7 +87,7 @@ export function renderErrorPage(): string {
       <h1>Temporary Error</h1>
       <p>Our laboratory systems are updating. Please retry in 30 seconds.</p>
       <div class="actions">
-        <button class="btn btn-primary" type="button" onclick="setTimeout(function(){try{var u=new URL(location.href);u.searchParams.set('nocache','1');u.searchParams.set('sw','off');u.searchParams.set('phl_loop_disabled','1');u.searchParams.set('_r',String(Date.now()));location.replace(u.toString());}catch(e){location.href='/?nocache=1&amp;sw=off&amp;phl_loop_disabled=1&amp;_r='+Date.now();}},2000)">Retry</button>
+        <button class="btn btn-primary" type="button" onclick="setTimeout(function(){location.reload();},2000)">Retry</button>
         <a class="btn btn-secondary" href="/">Go home</a>
       </div>
       <p class="meta">Still stuck? Email <a href="mailto:info@phlabs.co.uk">info@phlabs.co.uk</a>.</p>

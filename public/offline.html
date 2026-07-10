@@ -38,22 +38,11 @@
     <span class="badge"><span class="dot"></span> Offline</span>
     <h1>You're offline</h1>
     <p>We can't reach PH Labs right now. Check your connection and try again — your cart and account will be waiting.</p>
-    <button class="btn" onclick="openFresh()">Try again</button>
+    <button class="btn" onclick="location.reload()">Try again</button>
     <div class="muted">For Research Use Only. Not for Human Consumption.</div>
   </main>
   <script>
-    function openFresh() {
-      try {
-        var url = new URL(location.href);
-        url.searchParams.set('nocache', '1');
-        url.searchParams.set('sw', 'off');
-        url.searchParams.set('_r', String(Date.now()));
-        location.replace(url.toString());
-      } catch (e) {
-        location.href = '/?nocache=1&sw=off&_r=' + Date.now();
-      }
-    }
-    window.addEventListener('online', openFresh);
+    window.addEventListener('online', function () { location.reload(); });
   </script>
 </body>
 </html>
