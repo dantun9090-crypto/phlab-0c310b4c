@@ -542,90 +542,44 @@ function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
     return new Response("/* missing stale PH Labs build stylesheet — safe empty fallback */\n", { status: 200, headers });
   }
   headers.set("content-type", "text/javascript; charset=utf-8");
+  // NON-DESTRUCTIVE recovery: never overwrites document.body (that used to
+  // wipe out SSR-rendered content and put the browser into a visible
+  // "refreshing" loop). Instead:
+  //   1. First hit in a session: fire a single silent cache-buster nav.
+  //   2. Subsequent hits: do nothing — the app boots with whatever the
+  //      SSR shell + still-valid chunks provide. The blank-watchdog in
+  //      __root.tsx handles the manual fallback if the page truly fails.
   return new Response(
     `(() => {
   try {
-    console.warn('[PHL] Missing stale build asset. Clearing cache and reopening automatically.');
-    const clearKeys = ['__phl_reload_window','__phl_hard_reload_in_flight','__phl_route_auto_recovery_done','__phl_reloaded_at','__phl_stale_asset_reload_at','phl_reload_count','__phl_stale_asset_reload_count','__phl_hydration_error_seen','__phl_chunk_recovery','__phl_chunk_reported'];
-    const recoveryKey = '__phl_missing_asset_auto_reset_at';
-    const recoveryCountKey = '__phl_missing_asset_auto_reset_count';
-    const MAX_AUTO_RESETS = 2;
-    const reset = async () => {
-      let count = 0;
-      try { count = Number(sessionStorage.getItem(recoveryCountKey) || 0) || 0; } catch {}
-      count += 1;
-      try {
-        sessionStorage.setItem(recoveryKey, String(Date.now()));
-        sessionStorage.setItem(recoveryCountKey, String(count));
-      } catch {}
-      for (const key of clearKeys) {
-        try { sessionStorage.removeItem(key); } catch {}
-        try { localStorage.removeItem(key); } catch {}
-      }
-      try {
-        if ('caches' in window) {
-          const names = await caches.keys();
-          await Promise.all(names.filter((name) => /^(phlabs-|workbox-|precache-|runtime-)/i.test(name)).map((name) => caches.delete(name)));
-        }
-      } catch {}
-      try {
-        if ('serviceWorker' in navigator) {
-          const regs = await navigator.serviceWorker.getRegistrations();
-          await Promise.all(regs.map((reg) => reg.unregister()));
-        }
-      } catch {}
-      const currentUrl = new URL(location.href);
-      // Second+ recovery attempts: always return to the canonical home shell.
-      const basePath = count > 1 ? '/' : (currentUrl.pathname + (currentUrl.search || ''));
-      // Force a fresh origin fetch by appending cache-buster params. Without
-      // these, Cloudflare's edge cache can keep serving the same stale HTML
-      // shell that referenced the missing /assets/*.js, which would put the
-      // browser straight back on this recovery screen — the classic loop.
-      const sep = basePath.includes('?') ? '&' : '?';
-      const nextPath = basePath + sep + 'nocache=1&__fresh=1&_r=' + Date.now();
-      // Route through the server hard-reset endpoint. Its response sets
-      // Clear-Site-Data: "cache","storage","executionContexts", which the
-      // browser applies before it follows the meta-refresh/JS redirect to
-      // \`next\`. That deterministically unregisters every service worker,
-      // wipes every Cache Storage bucket, and evicts the HTTP cache for
-      // this origin.
-      const target = '/api/public/hardreset?next=' + encodeURIComponent(nextPath) + '&_r=' + Date.now();
-      location.replace(target);
-    };
-    const render = (looped) => {
-      document.documentElement.setAttribute('lang', 'en-GB');
-      // Only inject the meta-refresh fallback when we are still allowed to
-      // auto-recover. Once the loop guard fires we MUST NOT auto-navigate.
-      try {
-        if (!looped && !document.querySelector('meta[data-phl-fallback-refresh]')) {
-          const m = document.createElement('meta');
-          m.setAttribute('http-equiv', 'refresh');
-          m.setAttribute('content', '5;url=/?nocache=1&__fresh=1');
-          m.setAttribute('data-phl-fallback-refresh', '1');
-          document.head.appendChild(m);
-        }
-      } catch {}
-      const headline = looped ? 'Please refresh manually' : 'PH Labs is refreshing';
-      const sub = looped
-        ? 'We tried to clear an old cache automatically but the page kept reloading. Please close this tab and reopen phlabs.co.uk, or clear your browser cache.'
-        : 'Clearing an old browser cache and reopening the store.';
-      document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">' + headline + '</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">' + sub + '</p><button id="phl-stale-reset" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;cursor:pointer;font-size:16px">Open store now</button></div></div>';
-      document.getElementById('phl-stale-reset')?.addEventListener('click', () => { void reset(); });
-    };
-    let priorCount = 0;
-    try { priorCount = Number(sessionStorage.getItem(recoveryCountKey) || 0) || 0; } catch {}
-    const looped = priorCount >= MAX_AUTO_RESETS;
-    const autoReset = () => {
-      if (looped) {
-        console.error('[PHL] Stale-asset auto-recovery cap reached (' + priorCount + '). Loop guard engaged — no more auto-reloads.');
-        return;
-      }
-      window.setTimeout(() => { void reset(); }, 150);
-    };
-    if (document.body) { render(looped); autoReset(); } else addEventListener('DOMContentLoaded', () => { render(looped); autoReset(); }, { once: true });
-
+    var KEY = '__phl_missing_asset_auto_reset_count';
+    var count = 0;
+    try { count = Number(sessionStorage.getItem(KEY) || 0) || 0; } catch (e) {}
+    console.warn('[PHL] stale build asset shim loaded (attempt ' + (count + 1) + ')');
+    if (count >= 1) {
+      // Loop guard: never auto-navigate twice in a session. The user's
+      // current page keeps whatever SSR content it already rendered.
+      return;
+    }
+    try { sessionStorage.setItem(KEY, String(count + 1)); } catch (e) {}
+    // Skip the bounce if we're already on a cache-buster URL — that means
+    // we JUST came back from a recovery navigation and the origin still
+    // returned this shim, so another bounce would loop.
+    try {
+      var here = new URL(location.href);
+      if (here.searchParams.has('__fresh') || here.searchParams.has('nocache')) return;
+    } catch (e) {}
+    // One-shot cache-buster navigation. No DOM takeover, no visible
+    // "refreshing" screen — just a silent bounce to a fresh origin fetch.
+    try {
+      var url = new URL(location.href);
+      url.searchParams.set('nocache', '1');
+      url.searchParams.set('__fresh', '1');
+      url.searchParams.set('_r', String(Date.now()));
+      location.replace(url.toString());
+    } catch (e) {}
   } catch (error) {
-    console.error('[PHL] stale asset recovery failed', error);
+    console.error('[PHL] stale asset shim failed', error);
   }
 })();
 `,
