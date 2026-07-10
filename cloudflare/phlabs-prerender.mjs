@@ -80,34 +80,9 @@ function isCrawler(request) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CSP DIRECTIVES — Exact match to production src/server.ts (lines 145-173)
+// CSP DIRECTIVES — Mirrors production src/server.ts strict CSP.
 // ═══════════════════════════════════════════════════════════════════════════════
 const CSP_BASE = `default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com; style-src-attr 'unsafe-inline'; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://www.google-analytics.com https://www.googletagmanager.com https://ssl.google-analytics.com https://www.google.com https://www.google.co.uk https://www.google.se https://www.gstatic.com https://www.googleadservices.com https://googleads.g.doubleclick.net https://stats.g.doubleclick.net https://*.google.com https://*.google.se https://bat.bing.net https://bat.bing.com https://*.bing.com https://s.clarity.ms https://*.clarity.ms; media-src 'self' https: data:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseappcheck.googleapis.com https://content-firebaseappcheck.googleapis.com https://firebaseinstallations.googleapis.com https://fcmregistrations.googleapis.com https://firebaseremoteconfig.googleapis.com https://firebasestorage.googleapis.com https://*.firebaseapp.com https://*.googleapis.com https://*.supabase.co https://www.googleapis.com https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://region1.analytics.google.com https://analytics.google.com https://*.analytics.google.com https://stats.g.doubleclick.net https://www.merchant-center-analytics.goog https://service.prerender.io https://api.prerender.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://www.recaptcha.net https://royal-mail-order.dantun9090.workers.dev https://www.googleadservices.com https://googleads.g.doubleclick.net https://apis.google.com https://bat.bing.net https://bat.bing.com https://*.bing.com https://*.taboola.com https://s.clarity.ms https://*.clarity.ms https://*.ingest.sentry.io https://*.ingest.de.sentry.io https://o4511662760525824.ingest.de.sentry.io https://*.wallid.io https://*.wallid.com; frame-src 'self' blob: https://firebasestorage.googleapis.com https://*.firebaseapp.com https://www.google.com https://www.google.com/recaptcha/ https://recaptcha.google.com https://www.recaptcha.net https://*.wallid.io https://*.wallid.com https://*.stripe.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests; report-uri /api/public/csp-report; report-to csp-endpoint`;
-
-const EXTERNAL_SCRIPTS = [
-  "https://www.googletagmanager.com",
-  "https://www.google-analytics.com",
-  "https://ssl.google-analytics.com",
-  "https://tagmanager.google.com",
-  "https://www.googleadservices.com",
-  "https://googleads.g.doubleclick.net",
-  "https://apis.google.com",
-  "https://www.gstatic.com",
-  "https://*.google.com",
-  "https://*.google.co.uk",
-  "https://*.gstatic.com",
-  "https://*.stripe.com",
-  "https://*.wallid.com",
-  "https://*.wallid.io",
-  "https://cdn.taboola.com",
-  "https://*.taboola.com",
-  "https://www.clarity.ms",
-  "https://scripts.clarity.ms",
-  "https://*.clarity.ms",
-  "https://bat.bing.com",
-  "https://browser.sentry-cdn.com",
-  "https://js.sentry-cdn.com",
-];
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // HELPERS
@@ -127,9 +102,70 @@ async function sha256b64(text) {
 
 async function buildCspHeader(hashes) {
   const hashList = hashes.join(" ");
-  const scriptSrc = "script-src 'self' " + hashList + " 'strict-dynamic' 'unsafe-eval' " + EXTERNAL_SCRIPTS.join(" ");
-  const scriptSrcElem = "script-src-elem 'self' " + hashList + " 'strict-dynamic' 'unsafe-eval' " + EXTERNAL_SCRIPTS.join(" ");
+  const scriptSrc = "script-src " + hashList + " 'strict-dynamic' 'unsafe-eval'";
+  const scriptSrcElem = "script-src-elem " + hashList + " 'strict-dynamic'";
   return CSP_BASE + "; " + scriptSrc + "; " + scriptSrcElem;
+}
+
+function stripHostingInjectedScriptsFromHtml(html) {
+  return html
+    .replace(/<script\b[^>]*\bsrc=["']https:\/\/plausible\.io\/js\/[^"']+["'][^>]*><\/script>/gi, "")
+    .replace(/<script\b[^>]*\bsrc=["']\/~flock\.js["'][^>]*><\/script>/gi, "")
+    .replace(/<script\b[^>]*\bsrc=["']\/__l5e\/events\.js["'][^>]*><\/script>/gi, "")
+    .replace(
+      "var blocked=/^/(?:admin|auth|login|account|cart|checkout|payment|register)(?:/|$)/i.test(location.pathname||'');",
+      "var blocked=new RegExp('^/(?:admin|auth|login|account|cart|checkout|payment|register)(?:/|$)','i').test(location.pathname||'');",
+    );
+}
+
+function simplifyStrictDynamicCsp(headers) {
+  const csp = headers.get("Content-Security-Policy") || headers.get("content-security-policy") || "";
+  if (!csp || !csp.includes("strict-dynamic")) return;
+  const nonce = (csp.match(/'nonce-([^']+)'/) || [])[1];
+  if (!nonce) return;
+  const scriptSrc = "script-src 'nonce-" + nonce + "' 'strict-dynamic' 'unsafe-eval'";
+  const scriptSrcElem = "script-src-elem 'nonce-" + nonce + "' 'strict-dynamic'";
+  const directives = csp
+    .split(";")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .filter((part) => !part.toLowerCase().startsWith("script-src ") && !part.toLowerCase().startsWith("script-src-elem "));
+  directives.splice(1, 0, scriptSrc, scriptSrcElem);
+  headers.set("Content-Security-Policy", directives.join("; "));
+}
+
+function normalizeAssetContentType(path, headers) {
+  const lower = path.toLowerCase();
+  if (lower.endsWith(".css")) headers.set("Content-Type", "text/css; charset=utf-8");
+  else if (lower.endsWith(".js") || lower.endsWith(".mjs")) headers.set("Content-Type", "text/javascript; charset=utf-8");
+  else if (lower.endsWith(".json") || lower.endsWith(".webmanifest")) headers.set("Content-Type", "application/json; charset=utf-8");
+  else if (lower.endsWith(".svg")) headers.set("Content-Type", "image/svg+xml; charset=utf-8");
+  headers.set("X-Content-Type-Options", "nosniff");
+}
+
+async function buildBrowserResponse(response) {
+  const type = response.headers.get("Content-Type") || "";
+  const headers = new Headers(response.headers);
+  simplifyStrictDynamicCsp(headers);
+  if (!type.includes("text/html")) {
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
+  const body = stripHostingInjectedScriptsFromHtml(await response.text());
+  headers.delete("Content-Length");
+  headers.delete("content-length");
+  headers.delete("Content-Encoding");
+  headers.delete("content-encoding");
+  headers.set("Content-Type", "text/html; charset=utf-8");
+  headers.set("X-Content-Type-Options", "nosniff");
+  return new Response(body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }
 
 async function extractScriptHashes(html) {
@@ -177,6 +213,7 @@ export default {
       });
       if (path.startsWith("/assets/") || path.startsWith("/_img/") || path.startsWith("/_fonts/")) {
         cloned.headers.set("Cache-Control", "public, max-age=" + CACHE_TTL.static + ", immutable");
+        normalizeAssetContentType(path, cloned.headers);
       }
       return cloned;
     }
@@ -210,7 +247,7 @@ export default {
         if (!prerenderRes.ok) {
           console.warn("[PHL-WARN] Prerender.io returned " + prerenderRes.status + " — falling back to origin");
           const originRes = await fetch(request);
-          const body = await originRes.text();
+          const body = stripHostingInjectedScriptsFromHtml(await originRes.text());
           const hashStart = Date.now();
           const response = await buildHashCspResponse(body, originRes.status, originRes.statusText);
           hashComputeMs = Date.now() - hashStart;
@@ -220,7 +257,7 @@ export default {
           return response;
         }
 
-        const body = await prerenderRes.text();
+        const body = stripHostingInjectedScriptsFromHtml(await prerenderRes.text());
 
         if (body.includes("__CSP_NONCE__")) {
           console.error("[PHL-CRIT] Prerendered HTML contains __CSP_NONCE__");
@@ -251,7 +288,7 @@ export default {
     // Note: origin at phlab.lovable.app 302-redirects back to phlabs.co.uk on
     // direct fetches, so we cannot cache/rewrite here without a loop. Browsers
     // keep using origin's per-request nonce CSP; hash-CSP applies to bots only.
-    const passRes = await fetch(request);
+    const passRes = await buildBrowserResponse(await fetch(request));
     const out = new Response(passRes.body, {
       status: passRes.status,
       statusText: passRes.statusText,

@@ -313,18 +313,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // React hydration + requestIdleCallback (or first user interaction)
       // via useEffects in RootComponent — see loadGtagAfterHydration and
       // loadThirdPartyAfterHydration below. Keeps ~30–50 KB of blocking
-      // JS off the TBT window on marketing routes like /compound.
-      {
-        // Plausible Analytics — privacy-friendly, bot-filtered by default.
-        // Loaded async in <head>; init() call runs on parse so it registers
-        // the first pageview before hydration completes.
-        src: "https://plausible.io/js/pa-7Z1K0cwecuaO5JrCx4qN4.js",
-        async: true,
-      },
-      {
-        type: "text/javascript",
-        children: `window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init();`,
-      },
+      // JS off the TBT window on marketing routes like /compound. Plausible is
+      // not injected here because Firefox Enhanced Tracking Protection blocks
+      // plausible.io and creates customer-visible console noise.
       {
 
 
@@ -504,7 +495,7 @@ const EMERGENCY_STALE_RELOAD = `
     // load failure, and even then it only clears caches + reloads once.
     var qs=new URLSearchParams(location.search);
     if(qs.has('__fresh')) return;
-    var blocked=/^\/(?:admin|auth|login|account|cart|checkout|payment|register)(?:\/|$)/i.test(location.pathname||'');
+    var blocked=new RegExp('^/(?:admin|auth|login|account|cart|checkout|payment|register)(?:/|$)','i').test(location.pathname||'');
     if(blocked) return;
     var reloading=false;
     var forceFresh=function(reason){

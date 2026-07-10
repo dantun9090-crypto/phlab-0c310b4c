@@ -109,38 +109,15 @@ const WWW_TO_APEX_HOSTS = new Map<string, string>([
 
 // Content-Security-Policy — strict per-request nonce policy for production.
 //
-// script-src uses 'nonce-<random>' + 'strict-dynamic'. Modern browsers that
-// honour 'strict-dynamic' ignore the host allowlist and require every script
-// (inline + injected) to carry the request nonce. Older CSP2 browsers fall
-// back to the host allowlist. HTMLRewriter (see applySecurityHeaders below)
-// stamps the nonce on every <script> and <style> element in the response body
-// so TanStack Start's inline bootstrap payload and our own inline boot guards
-// all pass the policy. No 'unsafe-inline' on script-src. style-src keeps
-// 'unsafe-inline' because React emits inline style attributes at runtime.
-const SCRIPT_HOST_ALLOWLIST = [
-  "https://www.googletagmanager.com",
-  "https://www.google-analytics.com",
-  "https://ssl.google-analytics.com",
-  "https://tagmanager.google.com",
-  "https://www.googleadservices.com",
-  "https://googleads.g.doubleclick.net",
-  "https://apis.google.com",
-  "https://www.gstatic.com",
-  "https://*.google.com",
-  "https://*.google.co.uk",
-  "https://*.gstatic.com",
-  "https://*.stripe.com",
-  "https://*.wallid.com",
-  "https://*.wallid.io",
-  "https://cdn.taboola.com",
-  "https://*.taboola.com",
-  "https://www.clarity.ms",
-  "https://scripts.clarity.ms",
-  "https://*.clarity.ms",
-  "https://bat.bing.com",
-  "https://browser.sentry-cdn.com",
-  "https://js.sentry-cdn.com",
-].join(" ");
+// script-src uses 'nonce-<random>' + 'strict-dynamic'. Modern browsers then
+// trust only nonce-bearing bootstrap scripts and the scripts they load. Host
+// allowlists are intentionally omitted here because they are ignored under
+// 'strict-dynamic' and create noisy console warnings in Firefox/Chromium.
+// HTMLRewriter (see applySecurityHeaders below) stamps the nonce on every
+// <script> and <style> element in the response body so TanStack Start's inline
+// bootstrap payload and our own inline boot guards all pass the policy. No
+// 'unsafe-inline' on script-src. style-src keeps 'unsafe-inline' because React
+// emits inline style attributes at runtime.
 
 function buildStrictCsp(nonce: string): string {
   // 'unsafe-eval' is required by a small number of built vendor chunks
@@ -148,11 +125,12 @@ function buildStrictCsp(nonce: string): string {
   // and Firefox. Without it /products renders a black screen on those
   // engines because hydration and the CSR fallback both throw. Chromium was
   // masking this by ignoring the eval violation under 'strict-dynamic'.
-  const scriptSrc = `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval' ${SCRIPT_HOST_ALLOWLIST}`;
+  const scriptSrc = `'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`;
+  const scriptSrcElem = `'nonce-${nonce}' 'strict-dynamic'`;
   return [
     "default-src 'self'",
     `script-src ${scriptSrc}`,
-    `script-src-elem ${scriptSrc}`,
+    `script-src-elem ${scriptSrcElem}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com",
     "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://tagmanager.google.com",
     "style-src-attr 'unsafe-inline'",
