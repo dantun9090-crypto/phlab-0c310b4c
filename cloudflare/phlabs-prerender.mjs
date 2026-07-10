@@ -258,14 +258,7 @@ export default {
     if (!cached) {
       cacheStatus = "MISS";
       const originStart = Date.now();
-      const originUrl = new URL(path + url.search, ORIGIN);
-      const originRes = await fetch(originUrl, {
-        method: request.method,
-        headers: {
-          ...Object.fromEntries(request.headers),
-          "X-Forwarded-Host": PROXY_HOST,
-        },
-      });
+      const originRes = await fetch(request);
       originFetchMs = Date.now() - originStart;
 
       if (!originRes.ok && originRes.status !== 404) {
