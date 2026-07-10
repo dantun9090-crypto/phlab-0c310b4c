@@ -1026,7 +1026,7 @@ const STALE_ASSET_RECOVERY = `
         }catch(e){}
       };
       // Fire 8s after DOMContentLoaded (or now, if already loaded).
-      var schedule=function(){ setTimeout(resetIfClean,8000); };
+      var schedule=function(){ setTimeout(resetIfClean,3000); };
       if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',schedule,{once:true});
       else schedule();
     }catch(e){}
