@@ -278,8 +278,8 @@ export const Route = createFileRoute("/api/public/send-mail")({
               // orders (Germany, Ireland, "Other", …) get a generic
               // international message — a UK-timezone date would be
               // misleading once customs / international carriers are involved.
-              const shopperCountry = typeof order.customer?.country === 'string'
-                ? order.customer.country
+              const shopperCountry = typeof (customer as { country?: unknown }).country === 'string'
+                ? ((customer as { country: string }).country)
                 : '';
               const isUkOrder = shopperCountry === 'United Kingdom';
               let deliveryMessage: string | undefined;
