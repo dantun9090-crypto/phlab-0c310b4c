@@ -109,6 +109,7 @@ async function buildCspHeader(hashes) {
 
 function stripHostingInjectedScriptsFromHtml(html) {
   return html
+    .replace(/<script\b[^>]*\bsrc=["']https:\/\/plausible\.io\/js\/[^"']+["'][^>]*><\/script>/gi, "")
     .replace(/<script\b[^>]*\bsrc=["']\/~flock\.js["'][^>]*><\/script>/gi, "")
     .replace(/<script\b[^>]*\bsrc=["']\/__l5e\/events\.js["'][^>]*><\/script>/gi, "")
     .replace(
@@ -154,6 +155,10 @@ async function buildBrowserResponse(response) {
     });
   }
   const body = stripHostingInjectedScriptsFromHtml(await response.text());
+  headers.delete("Content-Length");
+  headers.delete("content-length");
+  headers.delete("Content-Encoding");
+  headers.delete("content-encoding");
   headers.set("Content-Type", "text/html; charset=utf-8");
   headers.set("X-Content-Type-Options", "nosniff");
   return new Response(body, {
