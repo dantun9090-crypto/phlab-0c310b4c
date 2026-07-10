@@ -169,11 +169,7 @@ export default {
 
     // ── 1. Proxy routes pass through ────────────────────────────────────────
     if (isProxyRoute(path)) {
-      const originUrl = new URL(path + url.search, ORIGIN);
-      const response = await fetch(originUrl, {
-        method: request.method,
-        headers: request.headers,
-      });
+      const response = await fetch(request);
       const cloned = new Response(response.body, {
         status: response.status,
         statusText: response.statusText,
@@ -183,6 +179,11 @@ export default {
         cloned.headers.set("Cache-Control", "public, max-age=" + CACHE_TTL.static + ", immutable");
       }
       return cloned;
+    }
+
+    // Non-GET/HEAD: pass through unchanged, no caching, no CSP rewrite
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      return fetch(request);
     }
 
     // ── 2. BOT branch: Prerender.io -> hash-CSP -> cache separately ─────────
