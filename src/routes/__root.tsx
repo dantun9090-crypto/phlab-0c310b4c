@@ -773,18 +773,10 @@ const BOOT_WATCHDOG = `
       diagnostics.fallbackShown=true;
       try{ var fn=window.__phlSwTelemetry; if(typeof fn==='function') fn('sw_hydration_fallback_shown',{ elapsed: payload&&payload.elapsed||0, reason: (payload&&payload.reason)||'' }); }catch(_e){}
       uploadSnapshot(payload);
-      try{
-        if(!document.body) return;
-        if(hasPaint()) return;
-        var div=document.createElement('div');
-        div.id='phl-blank-fallback';
-        div.setAttribute('role','alert');
-        div.style.cssText='position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px';
-        div.innerHTML='<div style="max-width:440px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Taking longer than usual</h1><p style="margin:0 0 18px;color:#9fb0c8;font-size:14px;line-height:1.55">The page has not finished loading. This is usually a slow connection or a stale cache. Try refreshing manually.</p><button id="phl-blank-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer;min-height:44px">Refresh page</button> <a href="/?sw=off" style="display:inline-block;margin-left:8px;color:#9fb0c8;text-decoration:underline;min-height:44px;line-height:44px">Clear &amp; reload</a></div>';
-        document.body.appendChild(div);
-        var btn=document.getElementById('phl-blank-refresh');
-        if(btn) btn.addEventListener('click',function(){ try{ sessionStorage.removeItem(ATTEMPTS_KEY); sessionStorage.removeItem(LAST_KEY); }catch(e){} try{ var u=new URL(location.href); u.searchParams.set('nocache','1'); u.searchParams.set('sw','off'); u.searchParams.set('phl_loop_disabled','1'); u.searchParams.set('_r',String(Date.now())); location.replace(u.toString()); }catch(_e){ location.href='/?nocache=1&sw=off&phl_loop_disabled=1&_r='+Date.now(); } });
-      }catch(e){}
+      // Visible refresh/interstitial screen intentionally REMOVED — the app
+      // must load normally without any "refreshing" / "Taking longer than
+      // usual" overlay. Telemetry above still captures the incident so we
+      // can diagnose real stuck-hydration issues from logs.
     };
     // Public test/admin hook: trigger the full fallback pipeline on demand.
     try{ diagnostics.forceFallback=function(){
