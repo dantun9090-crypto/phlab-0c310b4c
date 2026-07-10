@@ -136,6 +136,11 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   // Derive authoritative shipping + total. Never trust any client total.
   // Next-day shipping is ALWAYS paid (not eligible for free-over-£50 or free-shipping coupons).
   const isNextDay = input.shippingMethod === 'next_day_12';
+  // Next Day by 12 PM is a UK-only Royal Mail service. Reject any attempt to
+  // book it for a non-UK address — the fulfilment side cannot honour it.
+  if (isNextDay && input.customer.country !== 'United Kingdom') {
+    throw new Error('Next Day by 12 PM shipping is only available for UK delivery addresses.');
+  }
   const isFreeShipping = !isNextDay && validation.subtotal >= FREE_SHIPPING_THRESHOLD;
   const baseCost = isFreeShipping ? 0 : baseShipping;
   const shippingDisc = isNextDay ? 0 : validation.shippingDiscount;
