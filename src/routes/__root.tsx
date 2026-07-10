@@ -970,11 +970,12 @@ const STALE_ASSET_RECOVERY = `
             try{
               if(onRecoveryUrl()){ showLimit(); return; }
               var count=readCount();
-              if(count>=1){ showLimit(); return; }
+              if(count>=STALE_THRESHOLD){ showLimit(); return; }
               count=count+1;
               sessionStorage.setItem(KEY,String(Date.now()));
               sessionStorage.setItem(COUNT,String(count));
               sessionStorage.setItem(LEGACY_COUNT,String(count));
+              if(count<STALE_THRESHOLD){ try{ console.warn('[phlabs] stale asset 404 ('+count+'/'+STALE_THRESHOLD+'), soft-recovering:', src); }catch(e){} return; }
             }catch(e){ showLimit(); return; }
             try{ console.warn('[phlabs] stale build asset 404, forcing clean reload:', src); }catch(e){}
             // Force-fire the auto-purge again (bypass throttle) — this visitor
