@@ -850,10 +850,20 @@ const STALE_ASSET_RECOVERY = `
         sessionStorage.setItem(HYDRATION,String(Date.now()));
         try{ var fn=window.__phlSwTelemetry; if(typeof fn==='function') fn('sw_hydration_error',{ path: location.pathname }); }catch(_e){}
         try{ if(window.__phlHydrationFallback){ window.__phlHydrationFallback(new Error('Hydration mismatch detected by stale asset guard')); return; } }catch(e){}
-        if(!document.body) return;
-        document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:440px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Refresh needed</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">The page did not initialise cleanly. Click to clear cached files and reload.</p><button id="phl-hydration-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer;min-height:44px">Refresh &amp; clear cache</button><a href="/" style="display:inline-block;margin-left:10px;color:#9fb0c8;text-decoration:underline">Go home</a></div></div>';
-        var btn=document.getElementById('phl-hydration-refresh');
-        if(btn) btn.addEventListener('click',hardReloadClean);
+        // Safe single-shot recovery — never overwrite document.body.
+        try{
+          var qs=new URLSearchParams(location.search);
+          if(sessionStorage.getItem('phl_recovered')||qs.has('__fresh')||qs.has('nocache')){
+            try{ sessionStorage.removeItem('phl_recovered'); }catch(_e){}
+            console.error('[PHL] hydration recovery already attempted; not looping');
+            return;
+          }
+          sessionStorage.setItem('phl_recovered','1');
+          var u=new URL(location.href);
+          u.searchParams.set('nocache','1');
+          u.searchParams.set('__fresh','1');
+          location.replace(u.toString());
+        }catch(e){}
       }catch(e){}
     };
     var hasHydration=function(){ try{ return !!sessionStorage.getItem(HYDRATION); }catch(e){ return false; } };
@@ -911,11 +921,19 @@ const STALE_ASSET_RECOVERY = `
     var showLimit=function(){
       try{ console.error('[STALE_ASSET] Automatic reload blocked'); }catch(e){}
       emit('sw_stale_reload_shown',{ path: location.pathname });
+      // Safe single-shot recovery — never overwrite document.body.
       try{
-        if(!document.body){ document.addEventListener('DOMContentLoaded',showLimit,{once:true}); return; }
-        document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Update available</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">A fresh version is available. Click to clear cached files and reload.</p><button id="phl-stale-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer;min-height:44px">Refresh &amp; clear cache</button></div></div>';
-        var btn=document.getElementById('phl-stale-refresh');
-        if(btn) btn.addEventListener('click',function(){ emit('sw_stale_reload_accepted'); hardReloadClean(); });
+        var qs=new URLSearchParams(location.search);
+        if(sessionStorage.getItem('phl_recovered')||qs.has('__fresh')||qs.has('nocache')){
+          try{ sessionStorage.removeItem('phl_recovered'); }catch(_e){}
+          console.error('[PHL] stale-build recovery already attempted; not looping');
+          return;
+        }
+        sessionStorage.setItem('phl_recovered','1');
+        var u=new URL(location.href);
+        u.searchParams.set('nocache','1');
+        u.searchParams.set('__fresh','1');
+        location.replace(u.toString());
       }catch(e){}
     };
 
