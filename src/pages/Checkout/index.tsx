@@ -441,8 +441,12 @@ export default function CheckoutPage() {
   ) : 0;
   const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
   const nextDayEligibility = checkNextDayEligibility();
+  // Next Day by 12 PM is a UK-only Royal Mail service — never offer it to
+  // non-UK addresses (e.g. Germany), even if within the UK cut-off window.
+  const isUkAddress = form.country === 'United Kingdom';
+  const nextDayAvailable = isUkAddress && nextDayEligibility.qualifies;
   // Hide Next Day entirely when ineligible — never show a disabled placeholder.
-  const visibleShippingOptions = nextDayEligibility.qualifies
+  const visibleShippingOptions = nextDayAvailable
     ? SHIPPING_OPTIONS_ALL
     : SHIPPING_OPTIONS_ALL.filter(o => o.id !== 'next_day_12');
   // Default to Standard ONLY when the order qualifies for free standard
@@ -451,12 +455,13 @@ export default function CheckoutPage() {
     if (!form.shippingMethod && isFreeShipping) {
       setForm(prev => prev.shippingMethod ? prev : { ...prev, shippingMethod: 'standard' });
     }
-    // If Next Day was previously selected but is no longer eligible (cut-off
-    // passed mid-session), clear the selection so the user re-picks.
-    if (form.shippingMethod === 'next_day_12' && !nextDayEligibility.qualifies) {
+    // If Next Day was previously selected but is no longer available (cut-off
+    // passed mid-session, or country switched away from UK), clear it so the
+    // user re-picks.
+    if (form.shippingMethod === 'next_day_12' && !nextDayAvailable) {
       setForm(prev => ({ ...prev, shippingMethod: isFreeShipping ? 'standard' : '' }));
     }
-  }, [isFreeShipping, nextDayEligibility.qualifies, form.shippingMethod]);
+  }, [isFreeShipping, nextDayAvailable, form.shippingMethod]);
 
   const selectedShippingOpt = form.shippingMethod
     ? visibleShippingOptions.find(o => o.id === form.shippingMethod)
