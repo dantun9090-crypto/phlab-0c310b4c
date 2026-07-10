@@ -121,47 +121,6 @@ function OfflineScreen() {
   );
 }
 
-function HydrationRecoveryScreen() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Refresh needed
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page did not initialise cleanly. Automatic reloads have been stopped so your browser does not loop.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => {
-              clearHydrationError();
-              try {
-                const url = new URL(window.location.href);
-                url.searchParams.set("nocache", "1");
-                url.searchParams.set("sw", "off");
-                url.searchParams.set("phl_loop_disabled", "1");
-                url.searchParams.set("_r", String(Date.now()));
-                window.location.replace(url.toString());
-              } catch {
-                window.location.href = `/?nocache=1&sw=off&phl_loop_disabled=1&_r=${Date.now()}`;
-              }
-            }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Refresh page
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Go home
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 class RootHydrationBoundary extends Component<
   { children: ReactNode },
   { hasError: boolean; error?: Error }
@@ -179,7 +138,7 @@ class RootHydrationBoundary extends Component<
   }
 
   render() {
-    if (this.state.hasError) return <HydrationRecoveryScreen />;
+    if (this.state.hasError) return this.props.children;
     return this.props.children;
   }
 }
@@ -211,16 +170,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   // Offline path: don't show the generic "didn't load" copy; we know why.
   if (offline) return <OfflineScreen />;
 
-  if (isHydrationError) return <HydrationRecoveryScreen />;
+  if (isHydrationError) return null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Refreshing latest store
+          Store temporarily unavailable
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          We detected an old browser copy and are clearing it automatically.
+          Please try again in a moment.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -245,7 +204,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Reload store
+            Try again
           </button>
           <a
             href="/"
@@ -851,10 +810,6 @@ const STALE_ASSET_RECOVERY = `
         sessionStorage.setItem(HYDRATION,String(Date.now()));
         try{ var fn=window.__phlSwTelemetry; if(typeof fn==='function') fn('sw_hydration_error',{ path: location.pathname }); }catch(_e){}
         try{ if(window.__phlHydrationFallback){ window.__phlHydrationFallback(new Error('Hydration mismatch detected by stale asset guard')); return; } }catch(e){}
-        if(!document.body) return;
-        document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:440px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Refresh needed</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">The page did not initialise cleanly. Click to clear cached files and reload.</p><button id="phl-hydration-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer;min-height:44px">Refresh &amp; clear cache</button><a href="/" style="display:inline-block;margin-left:10px;color:#9fb0c8;text-decoration:underline">Go home</a></div></div>';
-        var btn=document.getElementById('phl-hydration-refresh');
-        if(btn) btn.addEventListener('click',hardReloadClean);
       }catch(e){}
     };
     var hasHydration=function(){ try{ return !!sessionStorage.getItem(HYDRATION); }catch(e){ return false; } };
@@ -914,13 +869,7 @@ const STALE_ASSET_RECOVERY = `
     };
     var showLimit=function(){
       try{ console.error('[STALE_ASSET] Automatic reload blocked'); }catch(e){}
-      emit('sw_stale_reload_shown',{ path: location.pathname });
-      try{
-        if(!document.body){ document.addEventListener('DOMContentLoaded',showLimit,{once:true}); return; }
-        document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Update available</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">A fresh version is available. Click to clear cached files and reload.</p><button id="phl-stale-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer;min-height:44px">Refresh &amp; clear cache</button></div></div>';
-        var btn=document.getElementById('phl-stale-refresh');
-        if(btn) btn.addEventListener('click',function(){ emit('sw_stale_reload_accepted'); hardReloadClean(); });
-      }catch(e){}
+      emit('sw_stale_reload_blocked',{ path: location.pathname });
     };
 
     var readCount=function(){

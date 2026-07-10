@@ -20,7 +20,6 @@
 import { isStaleChunkError, hasHydrationErrorState } from "@/lib/recovery";
 
 const GUARD_KEY = "__phl_chunk_recovery";
-const COUNTDOWN_SECONDS = 3;
 const OVERLAY_ID = "phl-chunk-recovery-overlay";
 const REPORTED_KEY = "__phl_chunk_reported";
 
@@ -165,59 +164,12 @@ async function performRecovery(): Promise<void> {
   reloadClean();
 }
 
-function showCountdownOverlay(): void {
+function recoverWithoutOverlay(): void {
   if (overlayShown) return;
   overlayShown = true;
-
-  if (!document.body) {
-    // DOM not ready yet — recover immediately without UI.
-    void performRecovery();
-    return;
-  }
-
-  const existing = document.getElementById(OVERLAY_ID);
-  if (existing) existing.remove();
-
-  const wrap = document.createElement("div");
-  wrap.id = OVERLAY_ID;
-  wrap.setAttribute("role", "alert");
-  wrap.setAttribute("aria-live", "assertive");
-  wrap.style.cssText =
-    "position:fixed;inset:0;z-index:2147483647;background:#060f1e;color:#f0f6ff;" +
-    "font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;" +
-    "display:flex;align-items:center;justify-content:center;padding:24px";
-  wrap.innerHTML =
-    '<div style="max-width:460px;text-align:center">' +
-      '<h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs update in progress</h1>' +
-      '<p style="margin:0 0 18px;color:#9fb0c8;font-size:15px;line-height:1.55">' +
-        "We just shipped a new version. Your browser is using an old page file.<br>" +
-        'Reloading in <span id="phl-chunk-count" style="color:#10b981;font-weight:800">' +
-        String(COUNTDOWN_SECONDS) +
-        "</span>s…" +
-      "</p>" +
-      '<button id="phl-chunk-cancel" type="button" style="appearance:none;border:1px solid #1e3a5f;border-radius:8px;background:transparent;color:#9fb0c8;font-weight:600;padding:10px 16px;cursor:pointer;font-size:14px">' +
-        "Cancel &amp; stay here" +
-      "</button>" +
-    "</div>";
-  document.body.appendChild(wrap);
-
-  let remaining = COUNTDOWN_SECONDS;
-  let cancelled = false;
-  const timer = window.setInterval(() => {
-    remaining -= 1;
-    const el = document.getElementById("phl-chunk-count");
-    if (el) el.textContent = String(Math.max(remaining, 0));
-    if (remaining <= 0) {
-      window.clearInterval(timer);
-      if (!cancelled) void performRecovery();
-    }
-  }, 1000);
-
-  document.getElementById("phl-chunk-cancel")?.addEventListener("click", () => {
-    cancelled = true;
-    window.clearInterval(timer);
-    try { wrap.remove(); } catch { /* ignore */ }
-  });
+  const existing = typeof document !== "undefined" ? document.getElementById(OVERLAY_ID) : null;
+  try { existing?.remove(); } catch { /* ignore */ }
+  void performRecovery();
 }
 
 function shouldHandle(err: unknown): boolean {
@@ -239,13 +191,13 @@ export function installChunkAutoRecovery(): void {
     const err = event.error ?? event.message;
     if (shouldHandle(err)) {
       void reportChunkMismatch(err);
-      showCountdownOverlay();
+      recoverWithoutOverlay();
     }
   };
   const onRejection = (event: PromiseRejectionEvent) => {
     if (shouldHandle(event.reason)) {
       void reportChunkMismatch(event.reason);
-      showCountdownOverlay();
+      recoverWithoutOverlay();
     }
   };
 
