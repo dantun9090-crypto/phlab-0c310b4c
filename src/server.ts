@@ -573,19 +573,19 @@ function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
           await Promise.all(regs.map((reg) => reg.unregister()));
         }
       } catch {}
-      const url = new URL(location.href);
-      // If a stale cached HTML shell keeps requesting an old hashed asset,
-      // do not leave Chrome on the recovery screen. Second+ recovery attempts
-      // go to the canonical home shell with all loop guards disabled.
-      if (count > 1) {
-        url.pathname = '/';
-        url.hash = '';
-      }
-      url.searchParams.set('nocache', '1');
-      url.searchParams.set('sw', 'off');
-      url.searchParams.set('phl_loop_disabled', '1');
-      url.searchParams.set('_r', String(Date.now()));
-      location.replace(url.toString());
+      const currentUrl = new URL(location.href);
+      // Second+ recovery attempts: always return to the canonical home shell.
+      const nextPath = count > 1 ? '/' : (currentUrl.pathname + (currentUrl.search || ''));
+      // Route through the server hard-reset endpoint. Its response sets
+      // Clear-Site-Data: "cache","storage","executionContexts", which the
+      // browser applies before it follows the meta-refresh/JS redirect to
+      // \`next\`. That deterministically unregisters every service worker,
+      // wipes every Cache Storage bucket, and evicts the HTTP cache for
+      // this origin — fixing devices where the client-side unregister/
+      // caches.delete loop kept looping on the "PH Labs is refreshing"
+      // screen because old caches survived the scoped cleanup.
+      const target = '/api/public/hardreset?next=' + encodeURIComponent(nextPath) + '&_r=' + Date.now();
+      location.replace(target);
     };
     const render = () => {
       document.documentElement.setAttribute('lang', 'en-GB');
