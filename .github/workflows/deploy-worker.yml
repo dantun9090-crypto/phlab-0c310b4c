@@ -1,12 +1,21 @@
 name: Deploy Cloudflare Worker
 
 on:
+  # Fire on ANY push to main. The path-filtered trigger was unreliable because
+  # Lovable's auto-commit sometimes batches worker changes with other files in
+  # ways that don't match the `paths:` filter, so the worker never redeployed.
+  # `wrangler deploy` on an unchanged script is a cheap no-op (~15s), so
+  # over-firing is safe. Concurrency below dedupes back-to-back pushes.
   push:
     branches: [main]
-    paths:
-      - 'cloudflare/phlabs-prerender.mjs'
-      - '.github/workflows/deploy-worker.yml'
   workflow_dispatch:
+  repository_dispatch:
+    types: [lovable-publish, deploy-worker]
+
+concurrency:
+  group: deploy-cloudflare-worker
+  cancel-in-progress: false
+
 
 jobs:
   deploy:
