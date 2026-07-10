@@ -1287,8 +1287,16 @@ export default {
       // 1. Canonical host redirect (legacy brand domains → phlabs.co.uk).
       // phlabs.co.uk is intentionally served directly until the hosting-level
       // www → apex redirect is removed; otherwise production loops.
+      //
+      // Bypass: the phlabs-prerender Cloudflare Worker sends `X-PHL-Worker: 1`
+      // on origin subrequests. It's already at the canonical host and needs
+      // the SSR HTML body — not a 301 back to itself (which would cause an
+      // infinite Worker→origin→Worker loop). Skip all host-normalization
+      // redirects when this header is present so the Worker gets stable,
+      // cacheable SSR HTML for the exact URL it asked for.
       const reqHost = url.hostname.toLowerCase();
-      if (REDIRECT_HOSTS.has(reqHost)) {
+      const isWorkerSubrequest = request.headers.get("x-phl-worker") === "1";
+      if (!isWorkerSubrequest && REDIRECT_HOSTS.has(reqHost)) {
         const dest = new URL(url.toString());
         dest.hostname = CANONICAL_HOST;
         dest.protocol = "https:";
@@ -1298,7 +1306,7 @@ export default {
       }
       // www of a legacy host → its own apex (NOT canonical phlabs.co.uk).
       const wwwApex = WWW_TO_APEX_HOSTS.get(reqHost);
-      if (wwwApex) {
+      if (!isWorkerSubrequest && wwwApex) {
         const dest = new URL(url.toString());
         dest.hostname = wwwApex;
         dest.protocol = "https:";
@@ -1306,6 +1314,7 @@ export default {
         log.info({ event: "worker.redirect", status: 301, reason: "legacy-www-apex", to: dest.toString(), ...baseFields });
         return applyStrictNoStoreHeaders(Response.redirect(dest.toString(), 301), url.pathname);
       }
+
 
       // 1a-pre. Stale hashed-asset guard. If a request for /assets/* or
       // /_build/* reaches the Worker, the static-asset binding already
