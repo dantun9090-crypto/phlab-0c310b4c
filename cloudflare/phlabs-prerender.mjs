@@ -71,19 +71,15 @@ function missingBuildAssetRecoveryResponse(pathname) {
           await Promise.all(regs.map((reg) => reg.unregister()));
         }
       } catch {}
-      const url = new URL(location.href);
-      // If a stale cached HTML shell keeps requesting an old hashed asset,
-      // do not leave Chrome on the recovery screen. Second+ recovery attempts
-      // go to the canonical home shell with all loop guards disabled.
-      if (count > 1) {
-        url.pathname = '/';
-        url.hash = '';
-      }
-      url.searchParams.set('nocache', '1');
-      url.searchParams.set('sw', 'off');
-      url.searchParams.set('phl_loop_disabled', '1');
-      url.searchParams.set('_r', String(Date.now()));
-      location.replace(url.toString());
+      const currentUrl = new URL(location.href);
+      const nextPath = count > 1 ? '/' : (currentUrl.pathname + (currentUrl.search || ''));
+      // Route via server-side hard-reset endpoint. Its Clear-Site-Data
+      // response header wipes ALL Cache Storage, unregisters ALL service
+      // workers, and evicts the browser HTTP cache for this origin before
+      // the follow-up navigation to \`next\` — deterministic exit from the
+      // "PH Labs is refreshing" screen.
+      const target = '/api/public/hardreset?next=' + encodeURIComponent(nextPath) + '&_r=' + Date.now();
+      location.replace(target);
     };
     const render = () => {
       document.documentElement.setAttribute('lang', 'en-GB');
