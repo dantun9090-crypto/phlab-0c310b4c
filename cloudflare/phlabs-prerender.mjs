@@ -720,18 +720,26 @@ var phlabs_prerender_patched_default = {
     if (isBot && isGet && !isStatic && token && !isLoop && !PRERENDER_RENDERER_RX.test(ua)) {
       let preStatus = "skipped";
       let preErr = "";
+      const t0 = Date.now();
       try {
         const pre = await fetchPrerender(request, token);
+        const preMs = Date.now() - t0;
         preStatus = pre ? String(pre.status) : "null";
         if (pre && pre.status < 500 && pre.status !== 429) {
           const h = new Headers(pre.headers);
           h.set("x-prerendered", "true");
-          // Pass through Prerender.io's own cache header if present; only
-          // stamp MISS as a fallback when upstream didn't report one. The
-          // old unconditional MISS masked real HITs after /recache warmed
-          // the URL, making the header useless for monitoring.
-          if (!h.has("x-prerender-cache")) h.set("x-prerender-cache", "MISS");
-
+          // Prerender.io does NOT expose a cache-hit header, so infer from
+          // upstream latency: a cold render takes 3-10s, a cache hit
+          // returns in <1.2s. Threshold picked to match observed p95 of
+          // warm cache hits from CF-AMS → Prerender.io.
+          //  - Upstream returns "x-prerender-cache" (rare / future): pass it through.
+          //  - Fast response (< PRERENDER_HIT_MS): HIT.
+          //  - Slow response: MISS (cold render).
+          if (!h.has("x-prerender-cache")) {
+            const PRERENDER_HIT_MS = 1500;
+            h.set("x-prerender-cache", preMs < PRERENDER_HIT_MS ? "HIT" : "MISS");
+          }
+          h.set("x-prerender-upstream-ms", String(preMs));
           h.set("x-phl-via", "prerender");
           h.delete("x-robots-tag");
           h.set("cache-control", `public, max-age=${PRERENDER_CACHE_TTL}, s-maxage=${PRERENDER_CACHE_TTL}, stale-while-revalidate=${PRERENDER_SWR_TTL}`);
@@ -739,6 +747,7 @@ var phlabs_prerender_patched_default = {
           const out = applySecurityHeaders(new Response(pre.body, { status: pre.status, statusText: pre.statusText, headers: h }), url);
           return out;
         }
+
       } catch (e) {
         preErr = e && (e.name || e.message) ? String(e.name || e.message).slice(0, 60) : "err";
       }
