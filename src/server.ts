@@ -691,10 +691,11 @@ function isCacheableHtmlPath(pathname: string): boolean {
   return true;
 }
 
-// Mirrors the phlabs-prerender Worker's HTML_CACHE_ALLOW_* lists. When true,
-// the origin emits `__CSP_NONCE__` placeholders so the Worker can rewrite a
-// fresh nonce per request and safely store a single shared HTML body in
-// caches.default. Must stay in lock-step with cloudflare/phlabs-prerender.mjs.
+// Mirrors the phlabs-prerender Worker's HTML_CACHE_ALLOW_* lists. The
+// Worker hashes every inline <script> in the origin HTML at cache MISS and
+// rewrites the CSP header with 'sha256-...' + 'strict-dynamic', so a single
+// shared body is safe in caches.default. Must stay in lock-step with
+// cloudflare/phlabs-prerender.mjs.
 const CACHEABLE_ROUTE_EXACT = new Set<string>([
   "/", "/products", "/compound", "/sitemap.xml", "/robots.txt",
 ]);
