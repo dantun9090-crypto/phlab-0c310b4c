@@ -1,12 +1,11 @@
 // cloudflare/phlabs-prerender.mjs
-// Hash-at-cache-miss, serve-raw-on-HIT. ALL HTML routes use this path.
-// Bot/prerender branch: UA sniff -> Prerender.io -> hash-CSP -> cache separately.
-// TTFB: ~50-80ms cache HIT (browser), ~75ms (prerender).
+// Hash-CSP for ALL routes: browsers (via origin bypass) + bots (via Prerender.io).
+// No passthrough fallback. TTFB: ~50-80ms on cache HIT for all traffic.
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ORIGIN & ROUTING
 // ═══════════════════════════════════════════════════════════════════════════════
-const ORIGIN = "https://phlabs-prod.web.app";
+const ORIGIN = "https://phlab.lovable.app";
 const PROXY_HOST = "phlabs.co.uk";
 const PRERENDER_SERVICE = "https://service.prerender.io";
 
@@ -31,47 +30,15 @@ const CACHE_TTL = {
 // BOT DETECTION
 // ═══════════════════════════════════════════════════════════════════════════════
 const CRAWLER_UAS = [
-  /googlebot/i,
-  /bingbot/i,
-  /slurp/i,
-  /duckduckbot/i,
-  /baiduspider/i,
-  /yandexbot/i,
-  /facebot/i,
-  /facebookexternalhit/i,
-  /twitterbot/i,
-  /linkedinbot/i,
-  /embedly/i,
-  /quora link preview/i,
-  /showyoubot/i,
-  /outbrain/i,
-  /pinterest/i,
-  /slackbot/i,
-  /vkshare/i,
-  /w3c_validator/i,
-  /redditbot/i,
-  /applebot/i,
-  /whatsapp/i,
-  /flipboard/i,
-  /tumblr/i,
-  /bitlybot/i,
-  /skypeuripreview/i,
-  /nuzzel/i,
-  /discordbot/i,
-  /google page speed/i,
-  /qwantify/i,
-  /pinterestbot/i,
-  /msnbot/i,
-  /adidxbot/i,
-  /blekkobot/i,
-  /ahrefsbot/i,
-  /semrushbot/i,
-  /moz/i,
-  /screaming frog/i,
-  /sitebulb/i,
-  /deepcrawl/i,
-  /bot/i,
-  /crawler/i,
+  /googlebot/i, /bingbot/i, /slurp/i, /duckduckbot/i, /baiduspider/i,
+  /yandexbot/i, /facebot/i, /facebookexternalhit/i, /twitterbot/i,
+  /linkedinbot/i, /embedly/i, /quora link preview/i, /showyoubot/i,
+  /outbrain/i, /pinterest/i, /slackbot/i, /vkshare/i, /w3c_validator/i,
+  /redditbot/i, /applebot/i, /whatsapp/i, /flipboard/i, /tumblr/i,
+  /bitlybot/i, /skypeuripreview/i, /nuzzel/i, /discordbot/i,
+  /google page speed/i, /qwantify/i, /pinterestbot/i, /msnbot/i,
+  /adidxbot/i, /blekkobot/i, /ahrefsbot/i, /semrushbot/i, /moz/i,
+  /screaming frog/i, /sitebulb/i, /deepcrawl/i, /bot/i, /crawler/i,
 ];
 
 function isCrawler(request) {
@@ -158,7 +125,7 @@ async function buildHashCspResponse(body, status, statusText) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MAIN HANDLER
+// MAIN HANDLER — ALL HTML routes use hash-CSP
 // ═══════════════════════════════════════════════════════════════════════════════
 export default {
   async fetch(request, env, ctx) {
@@ -169,7 +136,11 @@ export default {
 
     // ── 1. Proxy routes pass through ────────────────────────────────────────
     if (isProxyRoute(path)) {
-      const response = await fetch(request);
+      const originUrl = new URL(path + url.search, ORIGIN);
+      const response = await fetch(originUrl, {
+        method: request.method,
+        headers: request.headers,
+      });
       const cloned = new Response(response.body, {
         status: response.status,
         statusText: response.statusText,
@@ -181,12 +152,21 @@ export default {
       return cloned;
     }
 
-    // Non-GET/HEAD: pass through unchanged, no caching, no CSP rewrite
+    // Non-GET/HEAD: pass through unchanged
     if (request.method !== "GET" && request.method !== "HEAD") {
-      return fetch(request);
+      const originUrl = new URL(path + url.search, ORIGIN);
+      return fetch(originUrl, {
+        method: request.method,
+        headers: {
+          ...Object.fromEntries(request.headers),
+          "X-Forwarded-Host": PROXY_HOST,
+          "X-PHL-Worker": "1",
+        },
+        body: request.body,
+      });
     }
 
-    // ── 2. BOT branch: Prerender.io -> hash-CSP -> cache separately ─────────
+    // ── 2. BOT branch: Prerender.io -> hash-CSP -> cache ────────────────────
     if (isBot) {
       const cacheKey = new Request(url.toString() + "?__prerender=1", { method: "GET" });
       const cache = caches.default;
@@ -209,7 +189,13 @@ export default {
 
         if (!prerenderRes.ok) {
           console.warn("[PHL-WARN] Prerender.io returned " + prerenderRes.status + " — falling back to origin");
-          const originRes = await fetch(request);
+          const originUrl = new URL(path + url.search, ORIGIN);
+          const originRes = await fetch(originUrl, {
+            headers: {
+              "X-Forwarded-Host": PROXY_HOST,
+              "X-PHL-Worker": "1",
+            },
+          });
           const body = await originRes.text();
           const hashStart = Date.now();
           const response = await buildHashCspResponse(body, originRes.status, originRes.statusText);
@@ -247,17 +233,66 @@ export default {
       return response;
     }
 
-    // ── 3. BROWSER branch: pass-through (origin serves SSR + nonce CSP) ─────
-    // Note: origin at phlab.lovable.app 302-redirects back to phlabs.co.uk on
-    // direct fetches, so we cannot cache/rewrite here without a loop. Browsers
-    // keep using origin's per-request nonce CSP; hash-CSP applies to bots only.
-    const passRes = await fetch(request);
-    const out = new Response(passRes.body, {
-      status: passRes.status,
-      statusText: passRes.statusText,
-      headers: passRes.headers,
+    // ── 3. BROWSER branch: origin (with bypass) -> hash-CSP -> cache ──────────
+    const cacheKey = new Request(url.toString(), { method: "GET" });
+    const cache = caches.default;
+    let cached = await cache.match(cacheKey);
+    let cacheStatus = "HIT";
+    let originFetchMs = 0;
+    let hashComputeMs = 0;
+
+    if (!cached) {
+      cacheStatus = "MISS";
+      const originStart = Date.now();
+      const originUrl = new URL(path + url.search, ORIGIN);
+      const originRes = await fetch(originUrl, {
+        method: request.method,
+        headers: {
+          ...Object.fromEntries(request.headers),
+          "X-Forwarded-Host": PROXY_HOST,
+          "X-PHL-Worker": "1",
+        },
+        redirect: "manual",
+      });
+      originFetchMs = Date.now() - originStart;
+
+      // Safety: abort if we got a redirect (bypass not working)
+      if (originRes.status === 301 || originRes.status === 302) {
+        console.error("[PHL-CRIT] Origin returned " + originRes.status + " — X-PHL-Worker bypass not working");
+        return new Response("Origin bypass failed — check Lovable edge config", { status: 502 });
+      }
+
+      if (!originRes.ok && originRes.status !== 404) {
+        return new Response("Origin error: " + originRes.status, { status: 502 });
+      }
+
+      const body = await originRes.text();
+
+      // Safety: abort if origin still emits __CSP_NONCE__
+      if (body.includes("__CSP_NONCE__")) {
+        console.error("[PHL-CRIT] Origin HTML still contains __CSP_NONCE__");
+        return new Response("CSP nonce migration incomplete — fix src/server.ts first", { status: 500 });
+      }
+
+      const hashStart = Date.now();
+      const response = await buildHashCspResponse(body, originRes.status, originRes.statusText);
+      hashComputeMs = Date.now() - hashStart;
+      response.headers.set("Cache-Control", "public, max-age=" + CACHE_TTL.html + ", s-maxage=" + CACHE_TTL.html + ", stale-while-revalidate=86400");
+      response.headers.set("X-PHL-Via", "hash-csp;bot=0;cache=" + cacheStatus + ";origin=" + originFetchMs + "ms;hash=" + hashComputeMs + "ms;total=" + (Date.now() - startTime) + "ms");
+      response.headers.set("X-PHL-Cache", cacheStatus + ";ttl=" + CACHE_TTL.html);
+      response.headers.set("CF-Cache-Status", cacheStatus);
+      ctx.waitUntil(cache.put(cacheKey, response.clone()));
+      return response;
+    }
+
+    const response = new Response(cached.body, {
+      status: cached.status,
+      statusText: cached.statusText,
+      headers: cached.headers,
     });
-    out.headers.set("X-PHL-Via", "passthrough;bot=0;total=" + (Date.now() - startTime) + "ms");
-    return out;
+    response.headers.set("X-PHL-Via", "hash-csp;bot=0;cache=" + cacheStatus + ";origin=0ms;hash=0ms;total=" + (Date.now() - startTime) + "ms");
+    response.headers.set("X-PHL-Cache", cacheStatus + ";ttl=" + CACHE_TTL.html);
+    response.headers.set("CF-Cache-Status", cacheStatus);
+    return response;
   },
 };
