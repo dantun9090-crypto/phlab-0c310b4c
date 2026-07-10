@@ -296,10 +296,20 @@ function prepareDocumentForCsr(): void {
   try {
     document.documentElement.setAttribute("lang", "en-GB");
     document.documentElement.innerHTML =
-      '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google" content="notranslate"><title>PH Labs UK</title><style>html,body{margin:0;min-height:100%;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.phl-boot{display:flex;min-height:100vh;align-items:center;justify-content:center;color:#9fb0c8;font-size:14px}</style></head><body><div class="phl-boot" aria-live="polite">Loading PH Labs…</div></body>';
+      '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google" content="notranslate"><title>PH Labs UK</title><style>html,body,#phl-csr-root{margin:0;min-height:100%;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.phl-boot{display:flex;min-height:100vh;align-items:center;justify-content:center;color:#9fb0c8;font-size:14px}</style></head><body><div id="phl-csr-root"><div class="phl-boot" aria-live="polite">Loading PH Labs…</div></div></body>';
   } catch (error) {
     console.error("[HYDRATION FALLBACK] Could not wipe SSR DOM", error);
   }
+}
+
+function getCsrRootElement(): HTMLElement {
+  let root = document.getElementById("phl-csr-root");
+  if (!root) {
+    root = document.createElement("div");
+    root.id = "phl-csr-root";
+    document.body.appendChild(root);
+  }
+  return root;
 }
 
 function showStaticFallback(error: unknown): void {
@@ -407,7 +417,7 @@ function renderCsr(error: unknown): void {
     }
 
     try {
-      createRoot(document, {
+      createRoot(getCsrRootElement(), {
         onUncaughtError: (rootError, info) => {
           console.error("[ROOT ERROR BOUNDARY] uncaught", rootError, info?.componentStack || "");
           showStaticFallback(rootError);
