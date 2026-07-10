@@ -957,7 +957,7 @@ const STALE_ASSET_RECOVERY = `
       try{
         var last=Number(sessionStorage.getItem(KEY)||'0');
         var count=readCount();
-        if(count>=1||onRecoveryUrl()){ showLimit(); return; }
+        if(count>=STALE_THRESHOLD||onRecoveryUrl()){ showLimit(); return; }
         if(last&&Date.now()-last<30000) return;
       }catch(e){}
       // Verify the asset is actually missing before forcing a reload.
