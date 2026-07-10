@@ -3,19 +3,6 @@ import * as Sentry from '@sentry/react';
 import { logSecurityEvent } from '@/lib/security-events';
 import { isHydrationMismatchError, markHydrationError } from '@/lib/recovery';
 
-function openFreshPage() {
-  try {
-    const url = new URL(window.location.href);
-    url.searchParams.set('nocache', '1');
-    url.searchParams.set('sw', 'off');
-    url.searchParams.set('phl_loop_disabled', '1');
-    url.searchParams.set('_r', String(Date.now()));
-    window.location.replace(url.toString());
-  } catch {
-    window.location.href = `/?nocache=1&sw=off&phl_loop_disabled=1&_r=${Date.now()}`;
-  }
-}
-
 interface Props {
   children: ReactNode;
 }
@@ -54,10 +41,6 @@ export class ErrorBoundary extends Component<Props, State> {
     // Dev-only console echo
     if (import.meta.env.DEV) console.error('Error caught by boundary:', error);
   }
-
-  handleRetry = () => {
-    openFreshPage();
-  };
 
   render() {
     if (this.state.hasError) {
