@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_marketing/compound")({
     meta: [
       { title: TITLE },
       { name: "description", content: DESCRIPTION },
-      { name: "robots", content: "index,follow" },
+      { name: "robots", content: "index,follow,max-image-preview:large" },
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESCRIPTION },
       { property: "og:type", content: "website" },

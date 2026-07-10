@@ -25,9 +25,9 @@ function buildStaticEntries(today: string): SitemapEntry[] {
     { path: "/privacy-policy", lastmod: today, changefreq: "yearly", priority: "0.3" },
     { path: "/cookies", lastmod: today, changefreq: "yearly", priority: "0.3" },
     { path: "/research", lastmod: today, changefreq: "weekly", priority: "0.7" },
-    { path: "/research/retatrutide-uk", lastmod: "2026-06-26", changefreq: "weekly", priority: "0.9" },
+    { path: "/research/retatrutide-uk", lastmod: today, changefreq: "weekly", priority: "0.9" },
     { path: "/research/retatrutide-comprehensive-guide", lastmod: today, changefreq: "weekly", priority: "0.9" },
-    { path: "/research/bpc-157-uk", lastmod: "2026-06-26", changefreq: "weekly", priority: "0.9" },
+    { path: "/research/bpc-157-uk", lastmod: today, changefreq: "weekly", priority: "0.9" },
     { path: "/research/bpc-157-vs-tb-500", lastmod: today, changefreq: "weekly", priority: "0.9" },
     { path: "/research/bpc-157-tb-500-synergy", lastmod: today, changefreq: "weekly", priority: "0.9" },
     { path: "/research/tirzepatide-vs-retatrutide", lastmod: today, changefreq: "weekly", priority: "0.9" },
@@ -52,6 +52,7 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
 
   const articleEntries: SitemapEntry[] = articles.map((a) => ({
     path: `/resources/${a.slug}`,
+    lastmod: today,
     changefreq: "monthly",
     priority: "0.6",
   }));
