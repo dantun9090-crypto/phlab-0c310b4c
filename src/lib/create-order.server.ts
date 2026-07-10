@@ -113,12 +113,25 @@ async function hashPaymentToken(token: string): Promise<string> {
 }
 
 export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrderResult> {
+  // ── Sync contract with the Checkout UI ─────────────────────────────
+  // The UI in src/pages/Checkout/index.tsx hides `next_day_12` when EITHER
+  //   (a) `country !== 'United Kingdom'`  (isUkAddress === false), OR
+  //   (b) `checkNextDayEligibility().qualifies === false` (past 11:30 cut-off,
+  //       weekend, or UK bank holiday).
+  // Every branch that hides the option client-side MUST also reject the
+  // option here — otherwise a hand-crafted request could pay £7.99 for a
+  // Next Day promise the fulfilment side cannot honour. Enforced BEFORE
+  // cart re-validation so a bad request never touches Firestore.
   const isNextDay = input.shippingMethod === 'next_day_12';
-  // Next Day by 12 PM is a UK-only Royal Mail service. Reject any attempt to
-  // book it for a non-UK address — the fulfilment side cannot honour it.
-  // Enforced BEFORE cart re-validation so a bad request never touches Firestore.
-  if (isNextDay && input.customer.country !== 'United Kingdom') {
-    throw new Error('Next Day by 12 PM shipping is only available for UK delivery addresses.');
+  const nowAtOrder = new Date();
+  const eligibility = checkNextDayEligibility(nowAtOrder);
+  if (isNextDay) {
+    if (input.customer.country !== 'United Kingdom') {
+      throw new Error('Next Day by 12 PM shipping is only available for UK delivery addresses.');
+    }
+    if (!eligibility.qualifies) {
+      throw new Error('Next Day by 12 PM is no longer available — the 11:30 AM cut-off has passed or the next working day is a UK bank holiday. Please select Standard 1–3 Day Delivery.');
+    }
   }
 
   const baseShipping = SHIPPING_OPTIONS[input.shippingMethod].price;
@@ -149,11 +162,11 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   const shippingCost = +Math.max(0, baseCost - shippingDisc).toFixed(2);
   const totalAmount  = +Math.max(0, validation.subtotal - validation.discount + shippingCost).toFixed(2);
 
-  // Server-side guard: re-verify Next Day eligibility at order time (defence
-  // in depth — client UI hides the option but never trust the client).
-  const nowAtOrder = new Date();
-  const eligibility = checkNextDayEligibility(nowAtOrder);
+  // Both guards above already rejected any missed-cutoff next-day request,
+  // so this flag is retained only as a defence-in-depth breadcrumb on the
+  // written order document (always false for accepted orders today).
   const nextDayMissedCutoff = isNextDay && !eligibility.qualifies;
+
 
   // Resolve userId from id token (optional — guest checkout allowed).
   let userId: string | null = null;
