@@ -274,16 +274,27 @@ export const Route = createFileRoute("/api/public/send-mail")({
               const total = Number(order.totalAmount ?? order.total ?? 0);
               const shippingLabel = typeof order.shippingLabel === "string" ? order.shippingLabel : undefined;
               // Build delivery message from authoritative server-stamped fields.
+              // UK orders get a specific dated window in Europe/London. Non-UK
+              // orders (Germany, Ireland, "Other", …) get a generic
+              // international message — a UK-timezone date would be
+              // misleading once customs / international carriers are involved.
+              const shopperCountry = typeof (customer as { country?: unknown }).country === 'string'
+                ? ((customer as { country: string }).country)
+                : '';
+              const isUkOrder = shopperCountry === 'United Kingdom';
               let deliveryMessage: string | undefined;
               const fmtDate = (k: string) => {
                 const [y, m, d] = k.split("-").map(Number);
                 if (!y || !m || !d) return k;
                 return new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", weekday: "long", day: "numeric", month: "long" }).format(new Date(Date.UTC(y, m - 1, d, 12)));
               };
-              if (order.shippingMethod === "next_day_12" && typeof order.expectedDeliveryDate === "string") {
+              if (order.shippingMethod === "next_day_12" && typeof order.expectedDeliveryDate === "string" && isUkOrder) {
                 deliveryMessage = `Your order qualifies for <strong>Next Day delivery by 12 PM</strong>. Expected delivery: <strong>${fmtDate(order.expectedDeliveryDate)}</strong> before 12:00 PM.`;
-              } else if (typeof order.expectedDeliveryFrom === "string" && typeof order.expectedDeliveryTo === "string") {
+              } else if (isUkOrder && typeof order.expectedDeliveryFrom === "string" && typeof order.expectedDeliveryTo === "string") {
                 deliveryMessage = `Your order will be dispatched within 1–3 business days. Expected delivery: <strong>${fmtDate(order.expectedDeliveryFrom)} – ${fmtDate(order.expectedDeliveryTo)}</strong>.`;
+              } else if (!isUkOrder) {
+                const destination = shopperCountry ? ` to <strong>${shopperCountry}</strong>` : '';
+                deliveryMessage = `Your order will be dispatched from the UK within 1–3 business days. International delivery${destination} typically takes 5–10 business days after dispatch, depending on customs clearance in your country. Local public holidays may extend this window.`;
               }
 
               // Bank-transfer details: fetch from the trusted
