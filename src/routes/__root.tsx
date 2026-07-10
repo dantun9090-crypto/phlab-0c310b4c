@@ -121,47 +121,6 @@ function OfflineScreen() {
   );
 }
 
-function HydrationRecoveryScreen() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Refresh needed
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page did not initialise cleanly. Automatic reloads have been stopped so your browser does not loop.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => {
-              clearHydrationError();
-              try {
-                const url = new URL(window.location.href);
-                url.searchParams.set("nocache", "1");
-                url.searchParams.set("sw", "off");
-                url.searchParams.set("phl_loop_disabled", "1");
-                url.searchParams.set("_r", String(Date.now()));
-                window.location.replace(url.toString());
-              } catch {
-                window.location.href = `/?nocache=1&sw=off&phl_loop_disabled=1&_r=${Date.now()}`;
-              }
-            }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Refresh page
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Go home
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 class RootHydrationBoundary extends Component<
   { children: ReactNode },
   { hasError: boolean; error?: Error }
@@ -179,7 +138,7 @@ class RootHydrationBoundary extends Component<
   }
 
   render() {
-    if (this.state.hasError) return <HydrationRecoveryScreen />;
+    if (this.state.hasError) return this.props.children;
     return this.props.children;
   }
 }
@@ -211,16 +170,20 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   // Offline path: don't show the generic "didn't load" copy; we know why.
   if (offline) return <OfflineScreen />;
 
-  if (isHydrationError) return <HydrationRecoveryScreen />;
+  if (isHydrationError) {
+    clearHydrationError();
+    reset();
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Refreshing latest store
+          Store temporarily unavailable
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          We detected an old browser copy and are clearing it automatically.
+          Please try again in a moment.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -245,7 +208,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Reload store
+            Try again
           </button>
           <a
             href="/"
