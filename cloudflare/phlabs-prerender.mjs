@@ -110,7 +110,27 @@ async function buildCspHeader(hashes) {
 function stripHostingInjectedScriptsFromHtml(html) {
   return html
     .replace(/<script\b[^>]*\bsrc=["']\/~flock\.js["'][^>]*><\/script>/gi, "")
-    .replace(/<script\b[^>]*\bsrc=["']\/__l5e\/events\.js["'][^>]*><\/script>/gi, "");
+    .replace(/<script\b[^>]*\bsrc=["']\/__l5e\/events\.js["'][^>]*><\/script>/gi, "")
+    .replace(
+      "var blocked=/^/(?:admin|auth|login|account|cart|checkout|payment|register)(?:/|$)/i.test(location.pathname||'');",
+      "var blocked=new RegExp('^/(?:admin|auth|login|account|cart|checkout|payment|register)(?:/|$)','i').test(location.pathname||'');",
+    );
+}
+
+function simplifyStrictDynamicCsp(headers) {
+  const csp = headers.get("Content-Security-Policy") || headers.get("content-security-policy") || "";
+  if (!csp || !csp.includes("strict-dynamic")) return;
+  const nonce = (csp.match(/'nonce-([^']+)'/) || [])[1];
+  if (!nonce) return;
+  const scriptSrc = "script-src 'nonce-" + nonce + "' 'strict-dynamic' 'unsafe-eval'";
+  const scriptSrcElem = "script-src-elem 'nonce-" + nonce + "' 'strict-dynamic'";
+  const directives = csp
+    .split(";")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .filter((part) => !part.toLowerCase().startsWith("script-src ") && !part.toLowerCase().startsWith("script-src-elem "));
+  directives.splice(1, 0, scriptSrc, scriptSrcElem);
+  headers.set("Content-Security-Policy", directives.join("; "));
 }
 
 function normalizeAssetContentType(path, headers) {
@@ -122,17 +142,25 @@ function normalizeAssetContentType(path, headers) {
   headers.set("X-Content-Type-Options", "nosniff");
 }
 
-function stripHostingInjectedScripts(response) {
+async function buildBrowserResponse(response) {
   const type = response.headers.get("Content-Type") || "";
-  if (!type.includes("text/html") || typeof HTMLRewriter === "undefined") return response;
-  return new HTMLRewriter()
-    .on("script[src]", {
-      element(el) {
-        const src = el.getAttribute("src") || "";
-        if (src.startsWith("/~flock") || src.startsWith("/__l5e/")) el.remove();
-      },
-    })
-    .transform(response);
+  const headers = new Headers(response.headers);
+  simplifyStrictDynamicCsp(headers);
+  if (!type.includes("text/html")) {
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
+  const body = stripHostingInjectedScriptsFromHtml(await response.text());
+  headers.set("Content-Type", "text/html; charset=utf-8");
+  headers.set("X-Content-Type-Options", "nosniff");
+  return new Response(body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }
 
 async function extractScriptHashes(html) {
@@ -255,7 +283,7 @@ export default {
     // Note: origin at phlab.lovable.app 302-redirects back to phlabs.co.uk on
     // direct fetches, so we cannot cache/rewrite here without a loop. Browsers
     // keep using origin's per-request nonce CSP; hash-CSP applies to bots only.
-    const passRes = stripHostingInjectedScripts(await fetch(request));
+    const passRes = await buildBrowserResponse(await fetch(request));
     const out = new Response(passRes.body, {
       status: passRes.status,
       statusText: passRes.statusText,
