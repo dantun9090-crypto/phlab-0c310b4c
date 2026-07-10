@@ -827,6 +827,21 @@ const STALE_ASSET_RECOVERY = `
     var LEGACY_COUNT='__phl_stale_asset_reload_count';
     var HYDRATION='__phl_hydration_error_seen';
     var PURGE_FIRED='__phl_preemptive_purge_at';
+    var STALE_THRESHOLD=3; // require 3 confirmed 404s before showing wall
+    // Any recovery reload (?_r=…) or explicit cache-reset lands with a fresh
+    // querystring — treat that as proof the previous incident is over and
+    // wipe the counter so a single transient 404 later can't re-trigger.
+    try{
+      var _qs=new URLSearchParams(location.search);
+      if(_qs.get('_r')||sessionStorage.getItem('phl-sw-cache-reset-pending')){
+        sessionStorage.removeItem(KEY);
+        sessionStorage.removeItem(COUNT);
+        sessionStorage.removeItem(LEGACY_COUNT);
+        sessionStorage.removeItem(PURGE_FIRED);
+        sessionStorage.removeItem('phl-sw-cache-reset-pending');
+        localStorage.removeItem('phl_reload_count');
+      }
+    }catch(e){}
     var ASSET_RE=new RegExp('/(assets|_build)/[^?#]+\\\\.(?:js|mjs|css)(?:[?#]|$)','i');
     // Preemptive post-publish auto-purge: fire BEFORE any chunks load. The
     // server compares __BUILD_ID__ vs the last value in Firestore — only the
@@ -942,7 +957,7 @@ const STALE_ASSET_RECOVERY = `
       try{
         var last=Number(sessionStorage.getItem(KEY)||'0');
         var count=readCount();
-        if(count>=1||onRecoveryUrl()){ showLimit(); return; }
+        if(count>=STALE_THRESHOLD||onRecoveryUrl()){ showLimit(); return; }
         if(last&&Date.now()-last<30000) return;
       }catch(e){}
       // Verify the asset is actually missing before forcing a reload.
@@ -955,11 +970,12 @@ const STALE_ASSET_RECOVERY = `
             try{
               if(onRecoveryUrl()){ showLimit(); return; }
               var count=readCount();
-              if(count>=1){ showLimit(); return; }
+              if(count>=STALE_THRESHOLD){ showLimit(); return; }
               count=count+1;
               sessionStorage.setItem(KEY,String(Date.now()));
               sessionStorage.setItem(COUNT,String(count));
               sessionStorage.setItem(LEGACY_COUNT,String(count));
+              if(count<STALE_THRESHOLD){ try{ console.warn('[phlabs] stale asset 404 ('+count+'/'+STALE_THRESHOLD+'), soft-recovering:', src); }catch(e){} return; }
             }catch(e){ showLimit(); return; }
             try{ console.warn('[phlabs] stale build asset 404, forcing clean reload:', src); }catch(e){}
             // Force-fire the auto-purge again (bypass throttle) — this visitor
@@ -1010,7 +1026,7 @@ const STALE_ASSET_RECOVERY = `
         }catch(e){}
       };
       // Fire 8s after DOMContentLoaded (or now, if already loaded).
-      var schedule=function(){ setTimeout(resetIfClean,8000); };
+      var schedule=function(){ setTimeout(resetIfClean,3000); };
       if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',schedule,{once:true});
       else schedule();
     }catch(e){}
