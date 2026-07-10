@@ -1470,7 +1470,7 @@ export function Layout({ children }: LayoutProps) {
           {/* ── Bottom bar ── */}
           <div className="flex flex-col md:flex-row justify-between items-center gap-3">
             <p className="text-[#7a9ec2] text-xs">
-              © 2026 PH Labs Ltd. All rights reserved. Registered in England &amp; Wales.
+              © 2026 PH Labs Ltd. All rights reserved. Registered in England &amp; Wales, United Kingdom.
               {siteSettings.companyRegNumber && <> Company No. {siteSettings.companyRegNumber}.</>}
               {siteSettings.companyAddress && <> {siteSettings.companyAddress}.</>}
             </p>
