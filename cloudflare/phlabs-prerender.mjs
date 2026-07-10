@@ -791,8 +791,10 @@ var phlabs_prerender_patched_default = {
       cacheTtlByStatus: { "200-299": htmlTtl, "301-302": 600, "404": 30, "500-599": 0 }
     } : void 0;
     let cacheKey = null;
+    let matchKeyUrl = "";
     if (htmlCacheable) {
       cacheKey = buildCacheKey(url, originBuildId);
+      matchKeyUrl = new URL(cacheKey.url).pathname + new URL(cacheKey.url).search;
       try {
         const hit = forceRefresh ? null : await caches.default.match(cacheKey);
         if (hit) {
@@ -814,6 +816,7 @@ var phlabs_prerender_patched_default = {
           h.set("x-phl-via", `${normalProxyVia};cached=1`);
           h.set("cf-cache-status", "HIT");
           h.set("x-phl-cache", "HIT");
+          h.set("x-phl-match-key", matchKeyUrl);
           h.delete("age");
           const cachedOut = new Response(hit.body, { status: hit.status, statusText: hit.statusText, headers: h });
           return rewriteCspNonce(await repairInlineBootScripts(applySecurityHeaders(stripLovableInjectedScripts(cachedOut), url)));
@@ -822,6 +825,7 @@ var phlabs_prerender_patched_default = {
       } catch (_) {
       }
     }
+
 
     try {
       const res = await proxyToOrigin(request, origin, cacheOpts);
@@ -914,6 +918,9 @@ var phlabs_prerender_patched_default = {
             putErr = (e && e.message || "err").slice(0, 40);
           }
           h.set("x-phl-cache", `MISS;put=${putErr}`);
+          h.set("x-phl-put-size", String(buf.byteLength));
+          h.set("x-phl-put-key", matchKeyUrl);
+          h.set("x-phl-match-key", matchKeyUrl);
           const liveOut = new Response(buf, { status: res.status, statusText: res.statusText, headers: h });
           return rewriteCspNonce(await repairInlineBootScripts(applySecurityHeaders(liveOut, url)));
         } catch (e) {
