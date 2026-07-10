@@ -66,7 +66,7 @@ const CRAWLER_UAS = [
   /blekkobot/i,
   /ahrefsbot/i,
   /semrushbot/i,
-  /moz/i,
+  /rogerbot/i,
   /screaming frog/i,
   /sitebulb/i,
   /deepcrawl/i,
