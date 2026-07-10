@@ -18,7 +18,9 @@ on:
     workflows: ["Release", "Deploy Cloudflare Worker"]
     types: [completed]
   schedule:
-    - cron: "17 6 * * *"   # 06:17 UTC daily
+    - cron: "17 6 * * *"   # 06:17 UTC daily — Googlebot probe
+    - cron: "0 3 * * *"    # 03:00 UTC daily — Prerender.io recache warm
+
   workflow_dispatch:
     inputs:
       base_url:
