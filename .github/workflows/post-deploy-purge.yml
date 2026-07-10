@@ -485,6 +485,51 @@ jobs:
           echo "::error::/robots.txt or /sitemap*.xml is still not compliant after post-deploy purge — see post-deploy-robots-sitemap artifact"
           exit 1
 
+  prerender_recache:
+    # After edge purge, warm Prerender.io's cache for the critical routes so
+    # the next Googlebot hit returns x-prerender-cache: HIT (~75ms) instead
+    # of MISS (fresh origin fetch, ~500-800ms). Non-fatal — never blocks
+    # deploy if Prerender.io is slow or the token is missing.
+    name: Warm Prerender.io cache for key routes
+    needs: purge
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      PRERENDER_TOKEN: ${{ secrets.PRERENDER_TOKEN }}
+    steps:
+      - name: POST /recache for each key URL (desktop + mobile)
+        shell: bash
+        run: |
+          set +e
+          if [ -z "$PRERENDER_TOKEN" ]; then
+            echo "::warning::PRERENDER_TOKEN not set — skipping Prerender.io recache"
+            exit 0
+          fi
+          urls=(
+            "https://phlabs.co.uk/"
+            "https://phlabs.co.uk/products"
+            "https://phlabs.co.uk/products/bpc-157"
+            "https://phlabs.co.uk/compound"
+            "https://phlabs.co.uk/about"
+            "https://phlabs.co.uk/contact"
+          )
+          for u in "${urls[@]}"; do
+            for device in desktop mobile; do
+              code=$(curl -sS -o /tmp/recache-body -w "%{http_code}" --max-time 20 \
+                -X POST https://api.prerender.io/recache \
+                -H "Content-Type: application/json" \
+                --data "$(jq -n --arg t "$PRERENDER_TOKEN" --arg u "$u" --arg d "$device" \
+                  '{prerenderToken:$t, url:$u, adaptiveType:$d}')")
+              echo "recache $device $u → HTTP $code"
+              if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+                echo "::warning::recache $device $u returned $code: $(head -c 200 /tmp/recache-body)"
+              fi
+            done
+          done
+          echo "Prerender.io recache complete for ${#urls[@]} URLs"
+
+
 
 
 
