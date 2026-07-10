@@ -421,12 +421,25 @@ var TRACKING_PARAM_RX = /^(utm_|fbclid$|gclid$|gbraid$|wbraid$|msclkid$|mc_(?:ei
 var CACHE_BUSTER_PARAM_RX = /^(__cache_verify|__probe|__edge_build_probe|_r|cacheBust|cache_bust)$/i;
 function buildCacheKey(url, buildId) {
   const cleanUrl = new URL(url.toString());
+  // Force canonical scheme+host so put/match always agree, regardless of
+  // how the incoming request was constructed.
+  cleanUrl.protocol = "https:";
+  cleanUrl.hostname = CANONICAL_HOST;
+  cleanUrl.port = "";
+  cleanUrl.hash = "";
   const drop = [];
   for (const k of cleanUrl.searchParams.keys()) {
     if (TRACKING_PARAM_RX.test(k) || CACHE_BUSTER_PARAM_RX.test(k)) drop.push(k);
   }
   for (const k of drop) cleanUrl.searchParams.delete(k);
-  if (buildId) cleanUrl.searchParams.set("__phl_build_id", buildId);
+  // Only include buildId when we actually have a real one. Otherwise the
+  // key would flip between "unknown" and real values as the probe races,
+  // producing put/match key mismatches (perpetual MISS + put=ok).
+  if (buildId && buildId !== "unknown") {
+    cleanUrl.searchParams.set("__phl_build_id", buildId);
+  } else {
+    cleanUrl.searchParams.delete("__phl_build_id");
+  }
   // Sort remaining params for canonical key.
   const entries = [...cleanUrl.searchParams.entries()].sort(([a], [b]) => a.localeCompare(b));
   cleanUrl.search = "";
