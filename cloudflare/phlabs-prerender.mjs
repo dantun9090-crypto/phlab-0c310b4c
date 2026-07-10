@@ -209,10 +209,7 @@ export default {
 
         if (!prerenderRes.ok) {
           console.warn("[PHL-WARN] Prerender.io returned " + prerenderRes.status + " — falling back to origin");
-          const originUrl = new URL(path + url.search, ORIGIN);
-          const originRes = await fetch(originUrl, {
-            headers: { "X-Forwarded-Host": PROXY_HOST },
-          });
+          const originRes = await fetch(request);
           const body = await originRes.text();
           const hashStart = Date.now();
           const response = await buildHashCspResponse(body, originRes.status, originRes.statusText);
