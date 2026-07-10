@@ -888,7 +888,12 @@ var phlabs_prerender_patched_default = {
           if (cspForCache) cacheHeaders.set("content-security-policy", cspForCache);
           const reportingEndpoints = h.get("reporting-endpoints");
           if (reportingEndpoints) cacheHeaders.set("reporting-endpoints", reportingEndpoints);
+          // Cache-Control MUST be public + positive max-age or Workers cache
+          // silently drops the put. No Set-Cookie, no Vary, no private.
           cacheHeaders.set("cache-control", `public, max-age=${htmlTtl}, s-maxage=${htmlTtl}`);
+          // Defense in depth — cacheHeaders is fresh, but be explicit.
+          cacheHeaders.delete("set-cookie");
+          cacheHeaders.delete("vary");
           if (originBuildId) {
             cacheHeaders.set("x-phl-origin-build-id", originBuildId);
             cacheHeaders.set("x-build-id", originBuildId);
@@ -896,14 +901,19 @@ var phlabs_prerender_patched_default = {
           }
           cacheHeaders.set("x-phl-cached-at", (/* @__PURE__ */ new Date()).toISOString());
           let putErr = "ok";
-          const putPromise = caches.default.put(
-            cacheKey,
-            new Response(buf, { status: 200, headers: cacheHeaders })
-          ).catch((e) => {
+          // AWAIT the put — waitUntil doesn't guarantee completion before the
+          // next request arrives 2s later, so subsequent hits perpetually MISS.
+          // The buffer is already in memory (arrayBuffer above), so this is a
+          // sub-ms operation.
+          try {
+            await caches.default.put(
+              cacheKey,
+              new Response(buf, { status: 200, headers: cacheHeaders })
+            );
+          } catch (e) {
             putErr = (e && e.message || "err").slice(0, 40);
-          });
-          ctx.waitUntil(putPromise);
-          h.set("x-phl-cache", `miss;put=${putErr}`);
+          }
+          h.set("x-phl-cache", `MISS;put=${putErr}`);
           const liveOut = new Response(buf, { status: res.status, statusText: res.statusText, headers: h });
           return rewriteCspNonce(await repairInlineBootScripts(applySecurityHeaders(liveOut, url)));
         } catch (e) {
