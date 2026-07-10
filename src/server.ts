@@ -589,6 +589,15 @@ function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
     };
     const render = () => {
       document.documentElement.setAttribute('lang', 'en-GB');
+      try {
+        if (!document.querySelector('meta[data-phl-fallback-refresh]')) {
+          const m = document.createElement('meta');
+          m.setAttribute('http-equiv', 'refresh');
+          m.setAttribute('content', '5;url=/?nocache=1&__fresh=1');
+          m.setAttribute('data-phl-fallback-refresh', '1');
+          document.head.appendChild(m);
+        }
+      } catch {}
       document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs is refreshing</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">Clearing an old browser cache and reopening the store.</p><button id="phl-stale-reset" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;cursor:pointer;font-size:16px">Open store now</button></div></div>';
       document.getElementById('phl-stale-reset')?.addEventListener('click', () => { void reset(); });
     };
