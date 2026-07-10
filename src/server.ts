@@ -549,6 +549,7 @@ function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
     const clearKeys = ['__phl_reload_window','__phl_hard_reload_in_flight','__phl_route_auto_recovery_done','__phl_reloaded_at','__phl_stale_asset_reload_at','phl_reload_count','__phl_stale_asset_reload_count','__phl_hydration_error_seen','__phl_chunk_recovery','__phl_chunk_reported'];
     const recoveryKey = '__phl_missing_asset_auto_reset_at';
     const recoveryCountKey = '__phl_missing_asset_auto_reset_count';
+    const MAX_AUTO_RESETS = 2;
     const reset = async () => {
       let count = 0;
       try { count = Number(sessionStorage.getItem(recoveryCountKey) || 0) || 0; } catch {}
@@ -575,22 +576,28 @@ function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
       } catch {}
       const currentUrl = new URL(location.href);
       // Second+ recovery attempts: always return to the canonical home shell.
-      const nextPath = count > 1 ? '/' : (currentUrl.pathname + (currentUrl.search || ''));
+      const basePath = count > 1 ? '/' : (currentUrl.pathname + (currentUrl.search || ''));
+      // Force a fresh origin fetch by appending cache-buster params. Without
+      // these, Cloudflare's edge cache can keep serving the same stale HTML
+      // shell that referenced the missing /assets/*.js, which would put the
+      // browser straight back on this recovery screen — the classic loop.
+      const sep = basePath.includes('?') ? '&' : '?';
+      const nextPath = basePath + sep + 'nocache=1&__fresh=1&_r=' + Date.now();
       // Route through the server hard-reset endpoint. Its response sets
       // Clear-Site-Data: "cache","storage","executionContexts", which the
       // browser applies before it follows the meta-refresh/JS redirect to
       // \`next\`. That deterministically unregisters every service worker,
       // wipes every Cache Storage bucket, and evicts the HTTP cache for
-      // this origin — fixing devices where the client-side unregister/
-      // caches.delete loop kept looping on the "PH Labs is refreshing"
-      // screen because old caches survived the scoped cleanup.
+      // this origin.
       const target = '/api/public/hardreset?next=' + encodeURIComponent(nextPath) + '&_r=' + Date.now();
       location.replace(target);
     };
-    const render = () => {
+    const render = (looped) => {
       document.documentElement.setAttribute('lang', 'en-GB');
+      // Only inject the meta-refresh fallback when we are still allowed to
+      // auto-recover. Once the loop guard fires we MUST NOT auto-navigate.
       try {
-        if (!document.querySelector('meta[data-phl-fallback-refresh]')) {
+        if (!looped && !document.querySelector('meta[data-phl-fallback-refresh]')) {
           const m = document.createElement('meta');
           m.setAttribute('http-equiv', 'refresh');
           m.setAttribute('content', '5;url=/?nocache=1&__fresh=1');
@@ -598,13 +605,25 @@ function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
           document.head.appendChild(m);
         }
       } catch {}
-      document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs is refreshing</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">Clearing an old browser cache and reopening the store.</p><button id="phl-stale-reset" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;cursor:pointer;font-size:16px">Open store now</button></div></div>';
+      const headline = looped ? 'Please refresh manually' : 'PH Labs is refreshing';
+      const sub = looped
+        ? 'We tried to clear an old cache automatically but the page kept reloading. Please close this tab and reopen phlabs.co.uk, or clear your browser cache.'
+        : 'Clearing an old browser cache and reopening the store.';
+      document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">' + headline + '</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">' + sub + '</p><button id="phl-stale-reset" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;cursor:pointer;font-size:16px">Open store now</button></div></div>';
       document.getElementById('phl-stale-reset')?.addEventListener('click', () => { void reset(); });
     };
+    let priorCount = 0;
+    try { priorCount = Number(sessionStorage.getItem(recoveryCountKey) || 0) || 0; } catch {}
+    const looped = priorCount >= MAX_AUTO_RESETS;
     const autoReset = () => {
+      if (looped) {
+        console.error('[PHL] Stale-asset auto-recovery cap reached (' + priorCount + '). Loop guard engaged — no more auto-reloads.');
+        return;
+      }
       window.setTimeout(() => { void reset(); }, 150);
     };
-    if (document.body) { render(); autoReset(); } else addEventListener('DOMContentLoaded', () => { render(); autoReset(); }, { once: true });
+    if (document.body) { render(looped); autoReset(); } else addEventListener('DOMContentLoaded', () => { render(looped); autoReset(); }, { once: true });
+
   } catch (error) {
     console.error('[PHL] stale asset recovery failed', error);
   }
