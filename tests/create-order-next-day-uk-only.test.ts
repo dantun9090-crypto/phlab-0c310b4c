@@ -124,20 +124,29 @@ describe('runCreateOrder — Next Day by 12 PM is UK-only', () => {
   });
 
   it('allows next_day_12 for a UK customer (guard does not over-match)', async () => {
-    // Reaching runValidateCart means the guard correctly let the UK order
-    // through. We stop the flow at validation to avoid mocking every
-    // downstream Firestore write for this focused test.
-    runValidateCartMock.mockResolvedValueOnce({
-      ok: false,
-      errors: ['validation-stop-for-test'],
-      items: [],
-      subtotal: 0,
-      discount: 0,
-      shippingDiscount: 0,
-      coupon: null,
-    });
-    await expect(runCreateOrder(baseInput())).rejects.toThrow('validation-stop-for-test');
-    expect(runValidateCartMock).toHaveBeenCalledTimes(1);
+    // Freeze the clock inside the UK cut-off window on a working day so
+    // the eligibility guard doesn't reject before we reach validation.
+    // Mon 2027-01-04 09:00 London (winter → UTC=GMT), a plain working day.
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(Date.UTC(2027, 0, 4, 9, 0, 0)));
+    try {
+      // Reaching runValidateCart means the guard correctly let the UK
+      // order through. We stop the flow at validation to avoid mocking
+      // every downstream Firestore write for this focused test.
+      runValidateCartMock.mockResolvedValueOnce({
+        ok: false,
+        errors: ['validation-stop-for-test'],
+        items: [],
+        subtotal: 0,
+        discount: 0,
+        shippingDiscount: 0,
+        coupon: null,
+      });
+      await expect(runCreateOrder(baseInput())).rejects.toThrow('validation-stop-for-test');
+      expect(runValidateCartMock).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('allows standard shipping for a non-UK customer', async () => {
