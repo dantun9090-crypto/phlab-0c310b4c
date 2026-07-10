@@ -303,25 +303,10 @@ function prepareDocumentForCsr(): void {
 }
 
 function showStaticFallback(error: unknown): void {
-  // Safe single-shot recovery — never overwrite document.body. First
-  // failure: silently redirect once with cache-bust params. Second failure
-  // in the same session: leave a minimal message in #root and stop.
   try {
-    const qs = new URLSearchParams(location.search);
-    const already = sessionStorage.getItem("phl_recovered");
-    if (!already && !qs.has("__fresh") && !qs.has("nocache")) {
-      sessionStorage.setItem("phl_recovered", "1");
-      const u = new URL(location.href);
-      u.searchParams.set("nocache", "1");
-      u.searchParams.set("__fresh", "1");
-      location.replace(u.toString());
-      return;
-    }
-    try { sessionStorage.removeItem("phl_recovered"); } catch { /* ignore */ }
-    const root = document.getElementById("root");
-    if (root) {
-      root.textContent = "Failed to load. Please clear your browser cache and reload.";
-    }
+    document.body.innerHTML =
+      '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Please refresh</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">The page could not initialise cleanly.</p><button id="phl-root-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer">Refresh</button></div></div>';
+    document.getElementById("phl-root-refresh")?.addEventListener("click", () => location.reload());
   } catch {
     /* ignore */
   }
