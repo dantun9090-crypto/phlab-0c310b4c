@@ -200,13 +200,21 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     : (isFreeShipping ? 'Free Delivery (order over £50)' : SHIPPING_OPTIONS.standard.label);
 
   // Compute expected delivery + cut-off stamps for fulfilment.
-  const cutoffInstant = getCutoffInstant(nowAtOrder);
+  // getStandardDeliveryWindow() is UK-only (Europe/London working days,
+  // UK bank holidays), so we only stamp it for UK addresses. Non-UK
+  // (Germany, Ireland, "Other", …) orders leave the window null — customs
+  // and international carriers make a fixed 1–3 day UK-timezone promise
+  // impossible to honour — and downstream emails/UI fall back to a
+  // generic international message keyed off customer.country.
+  const isUkAddress = input.customer.country === 'United Kingdom';
+  const cutoffInstant = isUkAddress ? getCutoffInstant(nowAtOrder) : null;
   let expectedDeliveryDate: string | null = null;
   let expectedDeliveryFrom: string | null = null;
   let expectedDeliveryTo: string | null = null;
   if (isNextDay && eligibility.qualifies && eligibility.expectedDeliveryDate) {
+    // Guarded above: next_day_12 is UK-only, so this only fires for UK.
     expectedDeliveryDate = eligibility.expectedDeliveryDate;
-  } else {
+  } else if (isUkAddress) {
     const window = getStandardDeliveryWindow(nowAtOrder);
     expectedDeliveryFrom = window.from;
     expectedDeliveryTo = window.to;
