@@ -170,11 +170,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   // Offline path: don't show the generic "didn't load" copy; we know why.
   if (offline) return <OfflineScreen />;
 
-  if (isHydrationError) {
-    clearHydrationError();
-    reset();
-    return null;
-  }
+  if (isHydrationError) return null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -814,10 +810,6 @@ const STALE_ASSET_RECOVERY = `
         sessionStorage.setItem(HYDRATION,String(Date.now()));
         try{ var fn=window.__phlSwTelemetry; if(typeof fn==='function') fn('sw_hydration_error',{ path: location.pathname }); }catch(_e){}
         try{ if(window.__phlHydrationFallback){ window.__phlHydrationFallback(new Error('Hydration mismatch detected by stale asset guard')); return; } }catch(e){}
-        if(!document.body) return;
-        document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:440px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Refresh needed</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">The page did not initialise cleanly. Click to clear cached files and reload.</p><button id="phl-hydration-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer;min-height:44px">Refresh &amp; clear cache</button><a href="/" style="display:inline-block;margin-left:10px;color:#9fb0c8;text-decoration:underline">Go home</a></div></div>';
-        var btn=document.getElementById('phl-hydration-refresh');
-        if(btn) btn.addEventListener('click',hardReloadClean);
       }catch(e){}
     };
     var hasHydration=function(){ try{ return !!sessionStorage.getItem(HYDRATION); }catch(e){ return false; } };
@@ -877,13 +869,7 @@ const STALE_ASSET_RECOVERY = `
     };
     var showLimit=function(){
       try{ console.error('[STALE_ASSET] Automatic reload blocked'); }catch(e){}
-      emit('sw_stale_reload_shown',{ path: location.pathname });
-      try{
-        if(!document.body){ document.addEventListener('DOMContentLoaded',showLimit,{once:true}); return; }
-        document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Update available</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">A fresh version is available. Click to clear cached files and reload.</p><button id="phl-stale-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer;min-height:44px">Refresh &amp; clear cache</button></div></div>';
-        var btn=document.getElementById('phl-stale-refresh');
-        if(btn) btn.addEventListener('click',function(){ emit('sw_stale_reload_accepted'); hardReloadClean(); });
-      }catch(e){}
+      emit('sw_stale_reload_blocked',{ path: location.pathname });
     };
 
     var readCount=function(){

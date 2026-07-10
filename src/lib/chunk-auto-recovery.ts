@@ -20,7 +20,6 @@
 import { isStaleChunkError, hasHydrationErrorState } from "@/lib/recovery";
 
 const GUARD_KEY = "__phl_chunk_recovery";
-const COUNTDOWN_SECONDS = 3;
 const OVERLAY_ID = "phl-chunk-recovery-overlay";
 const REPORTED_KEY = "__phl_chunk_reported";
 
