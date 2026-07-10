@@ -1036,6 +1036,21 @@ export default {
         });
       }
 
+      // 0.1. Same-origin image proxy for Firebase/Google-hosted storefront
+      // images. This keeps `/_img?...` working in the sandbox and on the
+      // custom domain even when the edge image-resize Worker is bypassed.
+      if (url.pathname === "/_img" || url.pathname === "/_img/") {
+        const response = await handleImageProxy(request, url);
+        if (request.method === "HEAD") {
+          return new Response(null, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+          });
+        }
+        return response;
+      }
+
       // 0.5. Hard reset endpoint — deterministic browser-level wipe used by
       // the stale-asset recovery screen ("PH Labs is refreshing"). Returns
       // `Clear-Site-Data: "cache", "storage", "executionContexts"` which the

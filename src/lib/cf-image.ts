@@ -44,7 +44,7 @@ export function cfImg(src: string | undefined | null, opts: CfImageOpts = {}): s
   params.set("f", opts.format || "auto");
   params.set("q", String(opts.quality ?? 90));
   if (opts.fit) params.set("fit", opts.fit);
-  return `/_img/?${params.toString()}`;
+  return `/_img?${params.toString()}`;
 }
 
 /** Build a responsive srcset string for a set of widths. */
