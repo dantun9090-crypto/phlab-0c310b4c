@@ -11,6 +11,7 @@ import { Component, useEffect, useState, type ReactNode } from "react";
 
 import { PageTransition } from "@/components/PageTransition";
 import appCss from "../styles.css?url";
+import logoUrl from "@/assets/logo.webp";
 import "@/lib/chunk-reload";
 import "@/lib/sw-register";
 import {
