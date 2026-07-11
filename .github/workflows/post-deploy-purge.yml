@@ -466,7 +466,7 @@ jobs:
 
       - name: Open GitHub issue on drift
         if: steps.probe.outputs.exit_code != '0' && env.DRY_RUN != 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           TARGET_DOMAIN: ${{ github.event.inputs.target_domain || 'both' }}
         with:
