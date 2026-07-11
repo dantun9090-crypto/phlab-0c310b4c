@@ -132,6 +132,11 @@ jobs:
         run: |
           # Let the tiered cache settle before probing.
           sleep 20
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "::notice::DRY-RUN — running verify probe read-only; HITs are expected because purge was skipped, so failures are downgraded to warnings."
+            bash scripts/verify-edge-cache.sh || echo "::warning::verify-edge-cache.sh reported HIT/STALE under dry-run (expected — no purge was sent)"
+            exit 0
+          fi
           bash scripts/verify-edge-cache.sh
 
       - name: Upload structured verification logs
