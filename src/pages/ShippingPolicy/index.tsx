@@ -124,7 +124,7 @@ export default function ShippingPolicy() {
           <h1 className="text-3xl md:text-4xl font-bold text-[#f0f6ff] mb-3">Shipping Policy</h1>
           <p className="text-[#9cb8d9] text-sm">Last updated: May 2026</p>
           <p className="text-[#8caad4] mt-4 max-w-xl mx-auto text-sm leading-relaxed">
-            All orders are dispatched from the UK. Research compounds are shipped for laboratory use only in compliant, discreet packaging.
+            All orders are dispatched from the UK to mainland UK, Germany and Poland. Research compounds are shipped for laboratory use only in compliant, discreet packaging.
           </p>
         </div>
 
