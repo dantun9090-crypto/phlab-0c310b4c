@@ -1051,6 +1051,11 @@ export default function ProductDetail() {
             For Research Use Only — Not For Human Consumption
           </span>
         </div>
+        <div className="container mx-auto px-4 md:px-6 pb-2 flex items-center justify-center gap-2 text-center">
+          <span className="text-amber-100/85 text-[10px] sm:text-xs font-medium leading-snug">
+            Ships sealed with a tamper-evident closure. Once opened, vials cannot be returned under the sealed-goods hygiene exemption (UK CCR 2013 Reg. 28(3)). Defective or damaged items are always fully refunded.
+          </span>
+        </div>
       </div>
 
       {/* ── Slim research / stock bar ── */}
