@@ -11,7 +11,7 @@ const PROXY_HOST = "phlabs.co.uk";
 const PRERENDER_SERVICE = "https://service.prerender.io";
 
 const PROXY_ROUTES = [
-  "/_img/",
+  "/_img",
   "/_fonts/",
   "/_api/",
   "/api/",

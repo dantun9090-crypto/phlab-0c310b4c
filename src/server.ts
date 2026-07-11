@@ -824,6 +824,107 @@ const COA_ALLOWED_BUCKETS = new Set([
   "prohealthpeptides-a0808.appspot.com",
 ]);
 
+const IMAGE_PROXY_ALLOWED_HOSTS = new Set([
+  "firebasestorage.googleapis.com",
+  "storage.googleapis.com",
+  "lh3.googleusercontent.com",
+]);
+const IMAGE_PROXY_ALLOWED_BUCKETS = new Set([
+  "prohealthpeptides-a0808.firebasestorage.app",
+  "prohealthpeptides-a0808.appspot.com",
+]);
+
+function getAllowedImageSource(raw: string | null): URL | null {
+  if (!raw || raw.length > 3000) return null;
+  let source: URL;
+  try {
+    source = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (source.protocol !== "https:" || !IMAGE_PROXY_ALLOWED_HOSTS.has(source.hostname.toLowerCase())) return null;
+
+  if (source.hostname.toLowerCase() === "firebasestorage.googleapis.com") {
+    const parts = source.pathname.split("/");
+    if (parts[1] !== "v0" || parts[2] !== "b" || parts[4] !== "o") return null;
+    const bucket = decodeURIComponent(parts[3] || "");
+    if (!IMAGE_PROXY_ALLOWED_BUCKETS.has(bucket)) return null;
+    const objectName = decodeURIComponent(parts.slice(5).join("/"));
+    if (
+      objectName.split("/").some((part) => part === "" || part === "..") ||
+      !/^(products|banners|articles|public|newsletter)\//i.test(objectName) ||
+      !/\.(avif|gif|jpe?g|png|webp|svg)$/i.test(objectName)
+    ) {
+      return null;
+    }
+    source.searchParams.set("alt", "media");
+  }
+
+  return source;
+}
+
+function imageProxyError(message: string, status: number): Response {
+  return new Response(message, {
+    status,
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+      "x-robots-tag": "noindex, nofollow",
+    },
+  });
+}
+
+function imageProxyHeaders(upstream: Response): Headers {
+  const headers = new Headers({
+    "content-type": upstream.headers.get("content-type") || "image/jpeg",
+    "cache-control": "public, max-age=31536000, immutable",
+    "x-content-type-options": "nosniff",
+    "access-control-allow-origin": "*",
+  });
+  for (const name of ["accept-ranges", "content-range", "content-length", "last-modified", "etag"]) {
+    const value = upstream.headers.get(name);
+    if (value) headers.set(name, value);
+  }
+  return headers;
+}
+
+async function handleImageProxy(request: Request, url: URL): Promise<Response> {
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return new Response("Method Not Allowed", {
+      status: 405,
+      headers: { allow: "GET, HEAD", "cache-control": "no-store" },
+    });
+  }
+  const source = getAllowedImageSource(url.searchParams.get("u"));
+  if (!source) return imageProxyError("Invalid image URL", 400);
+
+  const upstreamHeaders = new Headers({ accept: request.headers.get("accept") || "image/avif,image/webp,image/*,*/*" });
+  const range = request.headers.get("range");
+  if (range) upstreamHeaders.set("range", range);
+
+  let upstream: Response;
+  try {
+    upstream = await fetch(source.toString(), {
+      method: request.method === "HEAD" ? "HEAD" : "GET",
+      headers: upstreamHeaders,
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch {
+    return imageProxyError("Image unavailable", 502);
+  }
+  if (!upstream.ok && upstream.status !== 206) {
+    return imageProxyError("Image unavailable", upstream.status === 404 ? 404 : 502);
+  }
+  const contentType = (upstream.headers.get("content-type") || "").toLowerCase();
+  if (!contentType.startsWith("image/")) return imageProxyError("Not an image", 415);
+
+  return new Response(request.method === "HEAD" ? null : upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: imageProxyHeaders(upstream),
+  });
+}
+
 function sanitizeCoaFilename(value: string | null): string {
   const cleaned = (value || "certificate-of-analysis.pdf")
     .replace(/[\r\n\x00]/g, "")
@@ -1034,6 +1135,21 @@ export default {
             "x-build-id": buildId,
           },
         });
+      }
+
+      // 0.1. Same-origin image proxy for Firebase/Google-hosted storefront
+      // images. This keeps `/_img?...` working in the sandbox and on the
+      // custom domain even when the edge image-resize Worker is bypassed.
+      if (url.pathname === "/_img" || url.pathname === "/_img/") {
+        const response = await handleImageProxy(request, url);
+        if (request.method === "HEAD") {
+          return new Response(null, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+          });
+        }
+        return response;
       }
 
       // 0.5. Hard reset endpoint — deterministic browser-level wipe used by
