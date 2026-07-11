@@ -96,6 +96,7 @@ import SentryIssuesTab from './tabs/SentryIssuesTab';
 import PublishStatusTab from './tabs/PublishStatusTab';
 import AuditReportTab from './tabs/AuditReportTab';
 import EmergencyPurgeTab from './tabs/EmergencyPurgeTab';
+import CloudflareStatusTab from './tabs/CloudflareStatusTab';
 import CloudflareAnalyticsTab from './tabs/CloudflareAnalyticsTab';
 import CloudflareVsAnalyticsTab from './tabs/CloudflareVsAnalyticsTab';
 
