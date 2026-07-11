@@ -1,15 +1,16 @@
 # Google Search Console disavow file for phlabs.co.uk
 # Submit via: https://search.google.com/search-console/disavow-links
-# Updated: 2026-07-05
+# Updated: 2026-07-11
 #
 # Rationale: spam / PBN farms attempting to inject low-quality nofollow
 # referrals to phlabs.co.uk. Identified via Semrush backlink audit
-# (Authority Score 2/100 across all 10 referring domains, identical anchor
-# "phlabs.co.uk", thin .shop TLDs, single referring IP cluster).
+# (Authority Score <= 11/100, scraper anchors including Google Merchant
+# srsltid params, Korean-cluster PBN network with shared IP ranges).
 #
 # Format: one domain: line per referring domain (Google recommends
 # disavowing at the domain level for PBN-style networks).
 
+# --- Round 1 (2026-07-05): .shop SEO PBN ring
 domain:seo-growth-authority-boost-hub.shop
 domain:seo-growth-optimization-hub.shop
 domain:seopxl-optimization-lab.shop
@@ -20,3 +21,17 @@ domain:seopxl-ranking-boost-lab.shop
 domain:seopxl-traffic-growth-lab.shop
 domain:8coint.com
 domain:toplikevideo.com
+
+# --- Round 2 (2026-07-11): Korean scraper cluster + Merchant-feed farms
+# Top 10 refdomains from Semrush, all AS <= 11/100, scraping Google
+# Shopping catalogue URLs with ?srsltid= parameters. 1,556 backlinks total.
+domain:solgnu.com
+domain:mong9editor.com
+domain:printstudio.tech
+domain:curry-pot.com
+domain:winningkpi.com
+domain:yunseulday.com
+domain:panwest.co.kr
+domain:uxcorp.net
+domain:opendialogue.health
+domain:wadopp.com
