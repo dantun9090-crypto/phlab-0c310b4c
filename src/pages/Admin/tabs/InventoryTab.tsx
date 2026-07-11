@@ -24,6 +24,7 @@ function InlineNumberCell({
   productId,
   field,
   value,
+  variants,
   format,
   step,
   min,
@@ -32,10 +33,11 @@ function InlineNumberCell({
   productId: string;
   field: 'price' | 'stock';
   value: number;
+  variants?: Product['variants'];
   format: (n: number) => string;
   step: string;
   min: number;
-  onSaved: (n: number) => void;
+  onSaved: (n: number, patch?: Partial<Product>) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(value));
@@ -56,8 +58,35 @@ function InlineNumberCell({
     if (parsed === value) { setEditing(false); return; }
     setSaving(true);
     try {
-      await updateProduct(productId, { [field]: parsed } as any);
-      onSaved(parsed);
+      // CRITICAL: when the product has variants, the customer-facing
+      // stock/price is derived from variants[] (sum of stock, min of price)
+      // by src/lib/firestore-rest.ts. Writing only the root field is
+      // invisible to the storefront. So also propagate the change into
+      // variants[] whenever they exist.
+      const patch: any = { [field]: parsed };
+      if (variants && variants.length > 0) {
+        if (field === 'stock') {
+          const oldSum = variants.reduce((s, v: any) => s + (Number(v?.stock) || 0), 0);
+          let running = 0;
+          patch.variants = variants.map((v: any, i: number) => {
+            let next: number;
+            if (oldSum > 0) {
+              next = i === variants.length - 1
+                ? Math.max(0, parsed - running)
+                : Math.round((Number(v?.stock) || 0) / oldSum * parsed);
+            } else {
+              const each = Math.floor(parsed / variants.length);
+              next = i === variants.length - 1 ? parsed - each * (variants.length - 1) : each;
+            }
+            running += next;
+            return { ...v, stock: next };
+          });
+        } else {
+          patch.variants = variants.map((v: any) => ({ ...v, price: parsed }));
+        }
+      }
+      await updateProduct(productId, patch);
+      onSaved(parsed, patch);
       setJustSaved(true);
       setTimeout(() => setJustSaved(false), 1200);
       toast.success(`${field === 'price' ? 'Price' : 'Stock'} updated`);
@@ -69,6 +98,7 @@ function InlineNumberCell({
       setEditing(false);
     }
   };
+
 
   if (!editing) {
     return (
@@ -192,13 +222,32 @@ export default function InventoryTab() {
     if (bulkSelected.length === 0) return;
     setSaving(true);
     try {
+      const priceNum = bulkPrice ? Number(bulkPrice) : null;
+      const stockNum = bulkStock ? Number(bulkStock) : null;
       await Promise.all(
-        bulkSelected.map((id) =>
-          updateProduct(id, {
-            ...(bulkPrice ? { price: Number(bulkPrice) } : {}),
-            ...(bulkStock ? { stock: Number(bulkStock) } : {}),
-          })
-        )
+        bulkSelected.map((id) => {
+          const p = products.find((x) => x.id === id);
+          const variants = p?.variants;
+          const patch: any = {};
+          if (priceNum != null) patch.price = priceNum;
+          if (stockNum != null) patch.stock = stockNum;
+          // Propagate to variants[] so storefront (which derives display
+          // price/stock from variants) actually reflects the change.
+          if (variants && variants.length > 0) {
+            patch.variants = variants.map((v: any, i: number) => {
+              const next: any = { ...v };
+              if (priceNum != null) next.price = priceNum;
+              if (stockNum != null) {
+                const each = Math.floor(stockNum / variants.length);
+                next.stock = i === variants.length - 1
+                  ? stockNum - each * (variants.length - 1)
+                  : each;
+              }
+              return next;
+            });
+          }
+          return updateProduct(id, patch);
+        })
       );
       await loadProducts();
       setBulkSelected([]);
@@ -209,6 +258,7 @@ export default function InventoryTab() {
       setSaving(false);
     }
   };
+
 
   // Silently trigger Prerender.io recache for a product URL after save.
   // Token is read from localStorage (admin-only, never persisted to Firestore)
@@ -382,10 +432,11 @@ export default function InventoryTab() {
                         productId={product.id!}
                         field="price"
                         value={Number(product.price || 0)}
+                        variants={product.variants}
                         format={(n) => `£${n.toFixed(2)}`}
                         step="0.01"
                         min={0}
-                        onSaved={(n) => setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, price: n } : p))}
+                        onSaved={(n, patch) => setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, price: n, ...(patch?.variants ? { variants: patch.variants } : {}) } : p))}
                       />
                     </td>
                     <td className="px-3 sm:px-4 py-3 text-right">
@@ -394,11 +445,13 @@ export default function InventoryTab() {
                           productId={product.id!}
                           field="stock"
                           value={Number(product.stock || 0)}
+                          variants={product.variants}
                           format={(n) => String(n)}
                           step="1"
                           min={0}
-                          onSaved={(n) => setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, stock: n } : p))}
+                          onSaved={(n, patch) => setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, stock: n, ...(patch?.variants ? { variants: patch.variants } : {}) } : p))}
                         />
+
                         {(product.stock || 0) <= LOW_STOCK_THRESHOLD && (
                           <AlertTriangle className="w-3 h-3" />
                         )}
