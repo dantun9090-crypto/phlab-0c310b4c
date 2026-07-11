@@ -831,9 +831,12 @@ export default {
             ctx.waitUntil(caches.default.delete(cacheKey).catch(() => {}));
           } else {
           const h = new Headers(hit.headers);
-          h.set("cache-control", "public, max-age=60, must-revalidate");
-          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
-          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
+          h.set("cache-control", "no-store, private, no-cache, must-revalidate, max-age=0, s-maxage=0");
+          h.set("cdn-cache-control", "no-store");
+          h.set("cloudflare-cdn-cache-control", "no-store");
+          h.set("surrogate-control", "no-store");
+          h.set("pragma", "no-cache");
+          h.set("expires", "0");
           if (originBuildId) {
             h.set("x-phl-origin-build-id", originBuildId);
             h.set("x-build-id", originBuildId);
