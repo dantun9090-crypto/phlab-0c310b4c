@@ -169,8 +169,9 @@ body.modal-open {
 /* ── Design tokens ───────────────────────────────────────── */
 @layer base {
   :root {
-    /* Pre-set banner height to avoid CLS shift when ResearchGate mounts */
-    --rg-banner-h: 34px;
+    /* 0px SSR default — ResearchGate.tsx sets the real height on mount.
+       Kept at 0 so returning visitors (gate dismissed) don't shift. */
+    --rg-banner-h: 0px;
     /* Navy core — deeper, richer */
     --color-navy-950: #010608;
     --color-navy-900: #040c18;
