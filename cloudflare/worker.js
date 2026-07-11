@@ -421,14 +421,15 @@ function stripLovableInjectedScripts(response) {
     .transform(response);
 }
 
-// ---------- admin-controlled cache TTL ----------
-// The admin panel writes `siteSettings/cacheConfig.htmlTtlSeconds` in
-// Firestore; origin exposes it at /api/public/cache-config. We fetch it
-// once per cold start (60s in-memory cache) so per-request overhead is 0.
-let _ttlCache = { value: 60, expiresAt: 0 };
+// ---------- HTML cache TTL ----------
+// Browser-visible HTML edge caching is disabled. Returning customers were
+// seeing stale route documents with missing hashed chunks after deploys, so
+// human HTML is now always no-store/no-cache. Prerender bot cache remains
+// separate and is purged/recached by the publish flow.
+let _ttlCache = { value: 0, expiresAt: 0 };
 const TTL_CACHE_MS = 60_000;
-const TTL_DEFAULT = 60;
-const TTL_ALLOWED = new Set([0, 30, 60]);
+const TTL_DEFAULT = 0;
+const TTL_ALLOWED = new Set([0]);
 
 async function getHtmlTtlSeconds() {
   const now = Date.now();
@@ -787,9 +788,10 @@ export default {
     }
 
 
-    // 6. Normal proxy → origin. We pass `cf.cacheEverything` only for safe
-    //    public HTML routes. XML feeds must stay uncached so Merchant Center
-    //    and sitemap crawlers always see fresh backend data.
+    // 6. Normal proxy → origin. Human HTML caching is disabled so returning
+    //    browsers never get stale route documents after a deploy. XML feeds
+    //    also stay uncached so Merchant Center and sitemap crawlers always
+    //    see fresh backend data.
     const normalProxyVia = `normal-proxy;bot=${isBot ? 1 : 0};tok=${token ? 1 : 0};loop=${isLoop ? 1 : 0};gb=${isGooglebot ? 1 : 0}`;
     const isXmlFeed = XML_FEED_PATHS.has(url.pathname);
     // HTML edge TTL is admin-controlled (see getHtmlTtlSeconds above).
@@ -884,18 +886,13 @@ export default {
         h.set("cloudflare-cdn-cache-control", "no-store");
         h.set("content-type", "application/xml; charset=utf-8");
       } else if ((h.get("content-type") || "").includes("text/html")) {
-        if (htmlTtl > 0) {
-          // Browser must revalidate every nav so a publish is visible
-          // immediately; edge holds it for htmlTtl + can serve stale briefly.
-          h.set("cache-control", "public, max-age=60, must-revalidate");
-          h.set("cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
-          h.set("cloudflare-cdn-cache-control", `public, max-age=${htmlTtl}, stale-while-revalidate=60`);
-        } else {
-          // Admin disabled the HTML edge cache → force no-store everywhere.
-          h.set("cache-control", "no-store, no-cache, must-revalidate, max-age=0");
-          h.set("cdn-cache-control", "no-store");
-          h.set("cloudflare-cdn-cache-control", "no-store");
-        }
+        // Human HTML is never stored at browser/CDN layers.
+        h.set("cache-control", "no-store, private, no-cache, must-revalidate, max-age=0, s-maxage=0");
+        h.set("cdn-cache-control", "no-store");
+        h.set("cloudflare-cdn-cache-control", "no-store");
+        h.set("surrogate-control", "no-store");
+        h.set("pragma", "no-cache");
+        h.set("expires", "0");
       }
 
 

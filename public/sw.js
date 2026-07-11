@@ -1,23 +1,11 @@
-// PH Labs — install-only service worker.
+// PH Labs — Service Worker kill switch.
 //
-// Purpose: satisfy Chromium's PWA installability heuristic so the
-// `beforeinstallprompt` event fires and the in-page Install button on
-// /install can prompt the native install dialog on Android Chrome / Edge /
-// Brave and desktop Chromium.
-//
-// Hard rules (do NOT break — see .lovable/memory/ssr-blank-page-fix.md and
-// the chunk-reload safety net):
-//   * NO precache, NO runtime cache, NO Cache Storage writes.
-//   * The `fetch` listener may only handle HTML navigations as network-first
-//     with an offline fallback. It must never serve cached HTML.
-//   * Activation purges any legacy Workbox / app-shell caches left behind
-//     by previous versions so we never serve stale chunks.
-//
-// Result: the browser sees a controlling SW with a fetch handler (required
-// for installability), but navigations are always network-first and never
-// served from HTML cache, so stale-cache blank pages are avoided.
+// This project no longer uses a runtime Service Worker. Old visitors may still
+// have /sw.js installed, so this file activates immediately, clears PH Labs /
+// Workbox cache buckets, unregisters itself, and deliberately does NOT handle
+// fetch events or call clients.claim().
 
-const SW_VERSION = 'phlabs-install-only-v1';
+const SW_VERSION = 'phlabs-kill-switch-v2';
 
 function isAppShellCache(name) {
   return /^(phlabs-offline-|workbox-|precache-|runtime-)/i.test(name) || /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/i.test(name);
@@ -95,36 +83,16 @@ self.addEventListener('activate', (event) => {
     }
     // Defensive: scan remaining caches and evict any cached fallback HTML.
     const removedFallback = await purgeFallbackEntries();
-    // Broadcast activation for [SW-DEBUG] client logger.
+    // Broadcast activation for diagnostics only. Do not claim or navigate
+    // clients: either can create refresh loops for returning visitors.
     try {
       const clients = await self.clients.matchAll({ includeUncontrolled: true });
       for (const c of clients) {
         c.postMessage({ type: 'sw-debug', event: 'activate', version: SW_VERSION, purgedCaches: purged, removedFallback, ts: Date.now() });
       }
     } catch (_) { /* ignore */ }
-    await self.clients.claim();
+    try { await self.registration.unregister(); } catch (_) { /* ignore */ }
   })());
-});
-
-// Network-first for HTML navigations only. We do not cache HTML here; the
-// browser either receives the live network response or the static offline page.
-self.addEventListener('fetch', (event) => {
-  const request = event.request;
-  if (!request || request.method !== 'GET') return;
-  const accept = request.headers.get('accept') || '';
-  const isHtmlNavigation = request.mode === 'navigate' || accept.includes('text/html');
-  if (!isHtmlNavigation) return;
-
-  event.respondWith(
-    fetch(request, { cache: 'no-store' }).catch(async () => {
-      const cachedOffline = await caches.match('/offline.html');
-      if (cachedOffline) return cachedOffline;
-      return fetch('/offline.html', { cache: 'no-store' }).catch(() => new Response('Offline', {
-        status: 503,
-        headers: { 'content-type': 'text/plain; charset=utf-8' },
-      }));
-    }),
-  );
 });
 
 // Expose version for diagnostics via postMessage.
