@@ -267,6 +267,7 @@ jobs:
       # push/repository_dispatch runs where inputs are unset).
       TARGET_DOMAIN: ${{ github.event.inputs.target_domain || 'both' }}
       RUN_MODE: ${{ github.event.inputs.run_mode || 'retry_on' }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
