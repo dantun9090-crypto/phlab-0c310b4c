@@ -21,6 +21,34 @@ interface VitalRecord {
   rating: Rating;
   id: string;
   path: string;
+  /**
+   * Short debug string identifying the DOM element most responsible for
+   * this metric. For LCP it's the LCP candidate; for CLS it's the biggest
+   * layout-shift source in the worst session window. Used to catch the
+   * "logo flash" regression — if `debugTarget` starts to log `img.site-logo`
+   * or similar on CLS records, the header logo is shifting again.
+   */
+  debugTarget?: string;
+}
+
+function describeNode(node: Node | null | undefined): string {
+  if (!node || !(node instanceof Element)) return "";
+  const tag = node.tagName.toLowerCase();
+  const id = node.id ? `#${node.id}` : "";
+  const cls =
+    typeof node.className === "string" && node.className
+      ? "." + node.className.trim().split(/\s+/).slice(0, 3).join(".")
+      : "";
+  const attrs: string[] = [];
+  const dt = node.getAttribute("data-testid");
+  if (dt) attrs.push(`[data-testid=${dt}]`);
+  if (tag === "img") {
+    const src = (node as HTMLImageElement).currentSrc || node.getAttribute("src") || "";
+    if (src) attrs.push(`[src=${src.split("/").pop()?.slice(0, 40)}]`);
+    const alt = node.getAttribute("alt");
+    if (alt) attrs.push(`[alt=${alt.slice(0, 20)}]`);
+  }
+  return `${tag}${id}${cls}${attrs.join("")}`.slice(0, 200);
 }
 
 const THRESHOLDS: Record<VitalRecord["name"], [number, number]> = {
