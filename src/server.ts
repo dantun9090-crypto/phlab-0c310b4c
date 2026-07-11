@@ -4,7 +4,7 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { notifySsrError } from "./lib/ssr-alert";
 import { isGoneLegacyPath, resolveLegacyRedirect } from "./lib/legacy-redirects";
-import { isKnownFirstSegment } from "./lib/known-roots";
+
 import { extractClientIp, log, truncate } from "./lib/worker-log";
 import { getHtmlTtlSeconds } from "./lib/server/cache-config-server";
 
@@ -1584,10 +1584,13 @@ export default {
         !STATIC_EXT.test(url.pathname);
       if (isHtml200) {
         const peek = await normalized.clone().text();
+        // Trust the SSR sentinel unconditionally — the route component
+        // that emitted the meta owns the 404 decision (including deep
+        // paths under known roots like /products/foo/bar).
         const sentinel404 =
           /<meta[^>]+name=["']prerender-status-code["'][^>]+content=["']404["']/i.test(
             peek,
-          ) && !isKnownFirstSegment(url.pathname);
+          );
         if (sentinel404) {
           const h = new Headers(normalized.headers);
           h.set("x-robots-tag", "noindex, follow");

@@ -109,7 +109,20 @@ export const Route = createFileRoute("/$")({
 
     // Signal 404 for unknown top-level paths so Prerender.io serves a real
     // 404 to crawlers (fixes Prerender 404 Checker red-flagging the domain).
-    const isUnknown = !KNOWN_ROOTS.has(firstSeg);
+    // Also signal 404 for deep sub-paths under content roots that have
+    // dedicated leaf routes (e.g. /products/:slug). Anything that reaches
+    // this splat under those roots did NOT match a real route and is a
+    // soft-404 in disguise (e.g. /products/foo/bar rendered a fake product
+    // shell with 200). See src/server.ts — the sentinel is trusted
+    // unconditionally and downgraded to a real HTTP 404.
+    const HAS_LEAF_ROUTES = new Set([
+      "products", "product", "compare", "landing",
+      "resources", "research", "blog",
+    ]);
+    const segments = splat.split("/").filter(Boolean);
+    const deepMissingLeaf =
+      HAS_LEAF_ROUTES.has(firstSeg) && segments.length > 1;
+    const isUnknown = !KNOWN_ROOTS.has(firstSeg) || deepMissingLeaf;
     if (isUnknown) {
       meta.push({ name: "prerender-status-code", content: "404" });
       meta.push({ name: "robots", content: "noindex, follow" });
