@@ -164,8 +164,19 @@ export function installImageErrorAutoReset(): void {
   const errors: ProbeResult[] = [];
   (window as unknown as { __phlImageErrors?: ProbeResult[] }).__phlImageErrors = errors;
 
+  const CONFIRM_MSG =
+    "Zresetować pamięć podręczną?\n\n" +
+    "• Wyczyści Service Worker, Cache Storage i lokalne dane strony.\n" +
+    "• Wszystkie obrazki i strony zostaną pobrane ponownie ze świeżej wersji.\n" +
+    "• Zajmie to kilka sekund i strona przeładuje się automatycznie.";
+
+  const confirmReset = (): boolean => {
+    try { return window.confirm(CONFIRM_MSG); } catch { return true; }
+  };
+
   const trigger = (): void => {
     if (alreadyReset) return;
+    if (!confirmReset()) return;
     try { sessionStorage.setItem(SESSION_FLAG, "1"); } catch { /* ignore */ }
     const next = window.location.pathname + window.location.search + window.location.hash;
     const url = `/cache-reset?next=${encodeURIComponent(next || "/")}`;
@@ -176,6 +187,25 @@ export function installImageErrorAutoReset(): void {
     });
     window.location.replace(url);
   };
+
+  // Global click gate: any <a href="/cache-reset..."> anywhere on the page
+  // (footer link, diagnostics panel, blank-page fallback overlays, etc.)
+  // must prompt for confirmation first.
+  document.addEventListener("click", (ev: MouseEvent) => {
+    if (ev.defaultPrevented) return;
+    if (ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+    const a = (ev.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+    if (!a) return;
+    const href = a.getAttribute("href") || "";
+    if (!href.startsWith("/cache-reset")) return;
+    if (a.dataset.phlConfirmed === "1") return;
+    ev.preventDefault();
+    if (confirmReset()) {
+      a.dataset.phlConfirmed = "1";
+      a.click();
+    }
+  }, true);
+
 
   const withCacheBust = (src: string): string => {
     try {
