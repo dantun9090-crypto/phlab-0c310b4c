@@ -20,7 +20,7 @@ export function LoadingFallback() {
           If this stays here, refresh once to fetch the latest store version.
         </p>
         <a
-          href="/?sw=off"
+          href="/cache-reset?next=/"
           className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-lg border border-slate-700 bg-slate-900 px-4 text-sm font-semibold text-white"
         >
           Reload store
