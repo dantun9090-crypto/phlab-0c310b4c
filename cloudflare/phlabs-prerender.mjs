@@ -205,13 +205,25 @@ export default {
 
     // ── 1. Proxy routes pass through ────────────────────────────────────────
     if (isProxyRoute(path)) {
-      const response = await fetch(request);
+      // Build assets are content-addressed and may legitimately disappear when
+      // the hosting platform evicts an older deployment. Never let Cloudflare
+      // store a 404 for /assets/*.js|css as immutable, otherwise stale HTML can
+      // poison the edge with `Not Found` bodies that browsers keep executing.
+      const assetRequest = path.startsWith("/assets/") || path.startsWith("/_build/");
+      const response = await fetch(request, assetRequest ? { cf: { cacheTtlByStatus: { "200-299": CACHE_TTL.static, "404": 0, "410": 0, "500-599": 0 } } } : undefined);
       const cloned = new Response(response.body, {
         status: response.status,
         statusText: response.statusText,
         headers: response.headers,
       });
-      if (path.startsWith("/assets/") || path.startsWith("/_img/") || path.startsWith("/_fonts/")) {
+      if (assetRequest && cloned.status >= 400) {
+        cloned.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        cloned.headers.set("CDN-Cache-Control", "no-store");
+        cloned.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+        cloned.headers.set("X-Robots-Tag", "noindex, nofollow");
+        cloned.headers.set("X-PHL-Via", "asset-miss-no-store");
+        normalizeAssetContentType(path, cloned.headers);
+      } else if (path.startsWith("/assets/") || path.startsWith("/_img/") || path.startsWith("/_fonts/")) {
         cloned.headers.set("Cache-Control", "public, max-age=" + CACHE_TTL.static + ", immutable");
         normalizeAssetContentType(path, cloned.headers);
       }
