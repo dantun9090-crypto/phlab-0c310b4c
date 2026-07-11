@@ -1,0 +1,101 @@
+# Lighthouse regression gate — BLOCKS the PR / post-deploy pipeline when
+# Core Web Vitals regress. This is the CI/CD gate the team relies on to
+# stop a bad build reaching returning customers:
+#
+#   * CLS  < 0.10   (error) — hard regression block
+#   * LCP  ≤ 2500ms (error) — "good" threshold, no regression allowed
+#   * FCP  ≤ 1800ms desktop / 2000ms mobile (error)
+#   * TBT  ≤ 200ms  desktop / 300ms mobile (error)
+#   * Perf ≥ 0.85 desktop / 0.75 mobile (error)
+#   * SEO  ≥ 0.95 (error)
+#
+# Thresholds live in .lighthouserc.desktop.json + .lighthouserc.mobile.json.
+# Both profiles audit /, /products, /compound and /research in the same
+# run, and the job is marked required in branch protection so a red
+# Lighthouse = merge blocked = no deploy.
+#
+# On main (post-deploy) the job additionally re-audits the live site so
+# any edge / cache / prerender regression that only appears in production
+# is caught within minutes and paged via the failed workflow.
+name: Lighthouse regression gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "cloudflare/**"
+      - "vite.config.ts"
+      - ".lighthouserc*.json"
+      - ".github/workflows/lighthouse-regression-gate.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Hourly canary against production so an edge/prerender regression
+    # that ships out-of-band still trips the alarm within the hour.
+    - cron: "27 * * * *"
+
+concurrency:
+  group: lighthouse-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: Lighthouse gate (${{ matrix.profile }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [desktop, mobile]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Lighthouse CI
+        run: npm i -g @lhci/cli@0.14.x
+
+      - name: Run Lighthouse CI (${{ matrix.profile }})
+        # `autorun` runs collect + assert. `assert` failures exit non-zero,
+        # which fails the job — that is the regression gate.
+        run: lhci autorun --config=.lighthouserc.${{ matrix.profile }}.json
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-gate-${{ matrix.profile }}-${{ github.run_id }}
+          path: .lighthouseci/
+          retention-days: 30
+
+      - name: Summarise CWV
+        if: always()
+        run: |
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const dir = ".lighthouseci";
+            if (!fs.existsSync(dir)) { console.log("No LHCI output"); process.exit(0); }
+            const files = fs.readdirSync(dir).filter(f => f.startsWith("lhr-") && f.endsWith(".json"));
+            const rows = [];
+            for (const f of files) {
+              const r = JSON.parse(fs.readFileSync(path.join(dir, f), "utf8"));
+              const a = r.audits || {};
+              rows.push({
+                url: r.finalUrl || r.requestedUrl,
+                LCP_ms: Math.round(a["largest-contentful-paint"]?.numericValue ?? 0),
+                CLS: Number((a["cumulative-layout-shift"]?.numericValue ?? 0).toFixed(3)),
+                FCP_ms: Math.round(a["first-contentful-paint"]?.numericValue ?? 0),
+                TBT_ms: Math.round(a["total-blocking-time"]?.numericValue ?? 0),
+                perf: Math.round((r.categories?.performance?.score ?? 0) * 100),
+              });
+            }
+            console.table(rows);
+          '
