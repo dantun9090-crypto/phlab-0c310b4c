@@ -201,9 +201,19 @@ export function installImageErrorAutoReset(): void {
     if (a.dataset.phlConfirmed === "1") return;
     ev.preventDefault();
     if (confirmReset()) {
+      // Rewrite `next` to the CURRENT path so the user lands back exactly
+      // where they clicked from, regardless of what the static href said.
+      const here = window.location.pathname + window.location.search + window.location.hash;
+      let target = href;
+      try {
+        const u = new URL(href, window.location.origin);
+        u.searchParams.set("next", here || "/");
+        target = u.pathname + u.search + u.hash;
+      } catch { /* keep original href */ }
       a.dataset.phlConfirmed = "1";
-      a.click();
+      window.location.assign(target);
     }
+
   }, true);
 
 
