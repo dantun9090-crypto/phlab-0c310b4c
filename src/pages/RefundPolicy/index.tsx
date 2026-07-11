@@ -10,7 +10,12 @@ export default function RefundPolicy() {
     canonical: 'https://phlabs.co.uk/refund-policy',
   });
 
-  // Inject MerchantReturnPolicy schema for Google Merchant Center
+  // Inject MerchantReturnPolicy schema for Google Merchant Center.
+  // Values mirror the return policy configured in Merchant Center
+  // (Countries: GB + PL, 14-day window, ReturnByMail, customer pays
+  // return shipping for non-defective returns, full refund, 3-day
+  // refund processing) so the on-page schema and the GMC policy match
+  // exactly — mismatches cause product disapprovals.
   useEffect(() => {
     const schema = {
       '@context': 'https://schema.org',
@@ -18,14 +23,25 @@ export default function RefundPolicy() {
       '@id': 'https://phlabs.co.uk/refund-policy#return-policy',
       name: 'PH Labs Return Policy',
       url: 'https://phlabs.co.uk/refund-policy',
-      applicableCountry: 'GB',
+      applicableCountry: ['GB', 'PL'],
       returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
       merchantReturnDays: 14,
       returnMethod: 'https://schema.org/ReturnByMail',
-      returnFees: 'https://schema.org/FreeReturn',
+      returnFees: 'https://schema.org/ReturnShippingFees',
+      returnShippingFeesAmount: {
+        '@type': 'MonetaryAmount',
+        value: 0,
+        currency: 'GBP',
+      },
       refundType: 'https://schema.org/FullRefund',
+      itemCondition: 'https://schema.org/NewCondition',
       inStoreReturnsOffered: false,
-      description: 'We only accept returns for items that are defective or damaged upon arrival. Contact us within 14 days of delivery.',
+      customerRemorseReturnFees: 'https://schema.org/ReturnShippingFees',
+      customerRemorseReturnLabelSource: 'https://schema.org/ReturnLabelCustomerResponsibility',
+      itemDefectReturnFees: 'https://schema.org/FreeReturn',
+      itemDefectReturnLabelSource: 'https://schema.org/ReturnLabelInBox',
+      refundProcessingTime: 'P3D',
+      description: 'Returns accepted within 14 days for both defective and non-defective items in new condition. Customer covers return postage for change-of-mind returns; PH Labs covers postage for defective items. Exchanges not offered. Refunds processed within 3 business days of receipt.',
     };
     const el = document.createElement('script');
     el.type = 'application/ld+json';
