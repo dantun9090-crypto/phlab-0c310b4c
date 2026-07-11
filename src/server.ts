@@ -509,7 +509,95 @@ function safeResetNext(url: URL): string {
 function browserCacheResetResponse(url: URL): Response {
   const next = safeResetNext(url);
   const nextEsc = escapeHtml(next);
-  const body = `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><title>PH Labs — cache reset</title><style>html,body{margin:0;min-height:100%;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}.card{width:min(100%,460px);text-align:center}h1{font-size:22px;line-height:1.2;margin:0 0 10px;font-weight:800}p{margin:0 0 18px;color:#9fb0c8;font-size:14px;line-height:1.55}.status{min-height:22px;margin:0 0 18px;color:#c8dcf0;font-size:13px}button,a{appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:13px 18px;cursor:pointer;font-size:15px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:46px}.secondary{margin-top:12px;background:transparent;color:#9fb0c8;text-decoration:underline;font-weight:700;padding:8px}</style></head><body><main><div class="card"><h1>PH Labs cache reset</h1><p>This clears old page files, image/cache storage and service workers for this browser.</p><div id="status" class="status">Cleaning browser cache…</div><button id="open" type="button" disabled>Open fresh store</button><br><a class="secondary" href="${nextEsc}" rel="nofollow">Skip and open store</a></div></main><script>(function(){var next=${JSON.stringify(next)};var status=document.getElementById('status');var btn=document.getElementById('open');function setStatus(t){try{status.textContent=t;}catch(e){}}function settle(p){return Promise.resolve(p).catch(function(){})}function deleteDb(name){return new Promise(function(resolve){try{var r=indexedDB.deleteDatabase(name);r.onsuccess=r.onerror=r.onblocked=function(){resolve()}}catch(e){resolve()}})}async function clearIndexedDb(){try{if(!('indexedDB' in window))return;if(indexedDB.databases){var dbs=await indexedDB.databases();await Promise.all((dbs||[]).map(function(db){return db&&db.name?deleteDb(db.name):Promise.resolve()}));return}await Promise.all(['firebaseLocalStorageDb','firestore/[DEFAULT]/prohealthpeptides-a0808/main','firestore/[DEFAULT]/phlabs.co.uk/main','phlabs','workbox-expiration'].map(deleteDb))}catch(e){}}async function clearStorage(){try{try{localStorage.clear()}catch(e){}try{sessionStorage.clear()}catch(e){}if('caches' in window&&caches.keys){var keys=await caches.keys();await Promise.all(keys.map(function(k){return settle(caches.delete(k))}))}await clearIndexedDb();if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){var regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(function(r){return settle(r.unregister())}))}if(navigator.serviceWorker&&navigator.serviceWorker.controller){try{navigator.serviceWorker.controller.postMessage({type:'PHL_NUKE_ALL_CACHES'})}catch(e){}}}catch(e){}}async function run(){await clearStorage();setStatus('Done. Open the fresh store now.');try{btn.disabled=false;btn.addEventListener('click',function(){location.replace(next)});setTimeout(function(){location.replace(next)},900)}catch(e){location.href=next}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();})();</script></body></html>`;
+  const body = `<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>PH Labs — cache reset</title>
+<style>
+html,body{margin:0;min-height:100%;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{width:min(100%,460px);text-align:center}
+h1{font-size:22px;line-height:1.2;margin:0 0 10px;font-weight:800}
+p{margin:0 0 18px;color:#9fb0c8;font-size:14px;line-height:1.55}
+.status{min-height:22px;margin:0 0 18px;color:#c8dcf0;font-size:13px}
+button,a{appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:13px 18px;cursor:pointer;font-size:15px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:46px}
+.secondary{margin-top:12px;background:transparent;color:#9fb0c8;text-decoration:underline;font-weight:700;padding:8px}
+#toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-12px);opacity:0;transition:opacity .25s,transform .25s;background:#10b981;color:#03140d;padding:12px 18px;border-radius:8px;font-weight:700;font-size:14px;box-shadow:0 10px 25px rgba(0,0,0,.35);max-width:min(90vw,420px);text-align:center;pointer-events:none;z-index:9999}
+#toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+<div id="toast">Clearing browser cache…</div>
+<main>
+<div class="card">
+<h1>PH Labs cache reset</h1>
+<p>This clears old page files, image/cache storage and service workers for this browser.</p>
+<div id="status" class="status">Cleaning browser cache…</div>
+<button id="open" type="button" disabled>Open fresh store</button>
+<br>
+<a class="secondary" href="${nextEsc}" rel="nofollow">Skip and open store</a>
+</div>
+</main>
+<script>
+(function(){
+  var next=${JSON.stringify(next)};
+  var status=document.getElementById('status');
+  var btn=document.getElementById('open');
+  var toast=document.getElementById('toast');
+  function setStatus(t){ try{ status.textContent=t; }catch(e){} }
+  function showToast(t){ try{ if(toast){ toast.textContent=t; toast.className='visible'; } }catch(e){} }
+  function hideToast(){ try{ if(toast){ toast.className=''; } }catch(e){} }
+  function settle(p){ return Promise.resolve(p).catch(function(){}); }
+  function deleteDb(name){ return new Promise(function(resolve){ try{ var r=indexedDB.deleteDatabase(name); r.onsuccess=r.onerror=r.onblocked=function(){ resolve(); }; }catch(e){ resolve(); } }); }
+  async function clearIndexedDb(){
+    try{
+      if(!('indexedDB' in window)) return;
+      if(indexedDB.databases){
+        var dbs=await indexedDB.databases();
+        await Promise.all((dbs||[]).map(function(db){ return db&&db.name ? deleteDb(db.name) : Promise.resolve(); }));
+        return;
+      }
+      await Promise.all(['firebaseLocalStorageDb','firestore/[DEFAULT]/prohealthpeptides-a0808/main','firestore/[DEFAULT]/phlabs.co.uk/main','phlabs','workbox-expiration'].map(deleteDb));
+    }catch(e){}
+  }
+  async function clearStorage(){
+    try{
+      try{ localStorage.clear(); }catch(e){}
+      try{ sessionStorage.clear(); }catch(e){}
+      if('caches' in window && caches.keys){
+        var keys=await caches.keys();
+        await Promise.all(keys.map(function(k){ return settle(caches.delete(k)); }));
+      }
+      await clearIndexedDb();
+      if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations){
+        var regs=await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(function(r){ return settle(r.unregister()); }));
+      }
+      if(navigator.serviceWorker && navigator.serviceWorker.controller){
+        try{ navigator.serviceWorker.controller.postMessage({type:'PHL_NUKE_ALL_CACHES'}); }catch(e){}
+      }
+    }catch(e){}
+  }
+  async function run(){
+    showToast('Clearing browser cache…');
+    await clearStorage();
+    setStatus('Done. Open the fresh store now.');
+    showToast('Cache cleared. The page will reload now.');
+    try{
+      btn.disabled=false;
+      btn.addEventListener('click',function(){ location.replace(next); });
+      setTimeout(function(){ location.replace(next); },1400);
+    }catch(e){ location.href=next; }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run,{once:true});
+  else run();
+})();
+</script>
+</body>
+</html>`;
   return new Response(body, {
     status: 200,
     headers: {
