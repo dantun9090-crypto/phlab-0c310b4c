@@ -165,6 +165,32 @@ jobs:
             echo "(no log file produced)"
           fi
 
+      - name: Notify Slack on purge/verify failure
+        # Fires when the Cloudflare API purge_everything call reported
+        # ok=false OR any prior step (including verify-edge-cache.sh)
+        # failed. Skipped under DRY_RUN. Falls back to a workflow-log
+        # notice if SLACK_WEBHOOK_URL isn't configured — never fails.
+        if: always() && env.DRY_RUN != 'true' && (failure() || steps.cf_purge.outputs.purge_ok == 'false')
+        shell: bash
+        run: |
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          purge_ok='${{ steps.cf_purge.outputs.purge_ok }}'
+          [ -z "$purge_ok" ] && purge_ok="unknown"
+          purge_resp=$(printf '%s' '${{ steps.cf_purge.outputs.purge_resp }}' | head -c 400)
+          if [ "$purge_ok" != "true" ]; then
+            headline="Cloudflare purge_everything FAILED"
+            detail="Purge API response: \`${purge_resp:-<no response>}\`"
+          else
+            headline="Edge cache verify FAILED after purge"
+            detail="\`verify-edge-cache.sh\` still saw HIT/STALE on / /products /compound /about — the purge landed on the wrong Worker version or the new build isn't serving."
+          fi
+          text="🚨 *${headline}* on \`phlabs.co.uk\`
+Trigger: \`${GITHUB_EVENT_NAME}\` · Build (pre-purge): \`${{ steps.pre.outputs.pre_build_id }}\` · Purge API ok: \`${purge_ok}\`
+${detail}
+<${run_url}|Open workflow run> · artifact: \`edge-cache-verify-${GITHUB_RUN_ID}\`"
+          payload=$(jq -n --arg t "$text" '{text:$t}')
+          bash .github/workflows/scripts/slack-notify.sh "$payload" "post-deploy-purge:failure"
+
   fallback_purge:
     # Second-chance purge. Runs ONLY when the primary `purge` job's MISS/HIT
     # verification failed AND the trigger was a repository_dispatch publish
