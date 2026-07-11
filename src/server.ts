@@ -1126,19 +1126,18 @@ export default {
 
       // 0.5. Hard reset endpoint — deterministic browser-level wipe used by
       // the stale-asset recovery screen ("PH Labs is refreshing"). Returns
-      // `Clear-Site-Data: "cache", "storage", "executionContexts"` which the
-      // browser applies BEFORE the follow-up navigation, unregistering ALL
-      // service workers, clearing ALL Cache Storage buckets, and evicting
-      // the HTTP cache for this origin. We deliberately do NOT clear cookies
-      // (auth session survives). The response is a minimal HTML page that
-      // meta-refreshes and JS-redirects to `/` (or a whitelisted `next`).
+      // `Clear-Site-Data: "cache", "storage", "executionContexts"` which
+      // unregisters service workers, clears Cache Storage, and evicts the HTTP
+      // cache for this origin. We deliberately do NOT clear cookies (auth
+      // session survives). The response is manual-only: no meta refresh and no
+      // JS redirect, so stale browsers cannot get trapped in a refresh loop.
       if (url.pathname === "/api/public/hardreset") {
         const nextParam = url.searchParams.get("next") || "/";
         const safeNext = /^\/[A-Za-z0-9\-._~!$&'()*+,;=:@/?%#]*$/.test(nextParam) && !nextParam.startsWith("//")
           ? nextParam
           : "/";
         const nextEsc = safeNext.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
-        const body = `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PH Labs — refreshing</title><meta http-equiv="refresh" content="0;url=${nextEsc}"><style>html,body{margin:0;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}div{max-width:420px;text-align:center}h1{font-size:20px;margin:0 0 10px;font-weight:800}p{margin:0 0 18px;color:#9fb0c8;font-size:14px;line-height:1.5}a{display:inline-block;background:#10b981;color:#03140d;font-weight:800;padding:12px 18px;border-radius:8px;text-decoration:none}</style></head><body><main><div><h1>PH Labs is refreshing…</h1><p>Clearing your browser cache and reopening the store.</p><a href="${nextEsc}">Open store now</a></div></main><script>try{location.replace(${JSON.stringify(safeNext)})}catch(e){location.href=${JSON.stringify(safeNext)}}</script></body></html>`;
+        const body = `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PH Labs — update ready</title><style>html,body{margin:0;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}div{max-width:420px;text-align:center}h1{font-size:20px;margin:0 0 10px;font-weight:800}p{margin:0 0 18px;color:#9fb0c8;font-size:14px;line-height:1.5}a{display:inline-block;background:#10b981;color:#03140d;font-weight:800;padding:12px 18px;border-radius:8px;text-decoration:none}</style></head><body><main><div><h1>PH Labs update ready</h1><p>Your browser cache was cleared. Automatic refreshing has been stopped.</p><a href="${nextEsc}">Open fresh store</a></div></main></body></html>`;
         return new Response(body, {
           status: 200,
           headers: {
