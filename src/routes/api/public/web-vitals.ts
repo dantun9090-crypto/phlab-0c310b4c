@@ -133,6 +133,7 @@ export const Route = createFileRoute("/api/public/web-vitals")({
             device: v.device ?? "desktop",
             conn: v.conn ?? "unknown",
             build: v.build ?? "",
+            debugTarget: v.debugTarget ?? "",
             createdAt: new Date().toISOString(),
           });
 
