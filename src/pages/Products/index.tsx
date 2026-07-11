@@ -619,6 +619,9 @@ export default function Products() {
                 <div ref={sortRef} className="relative">
                   <button
                     onClick={() => setSortOpen(v => !v)}
+                    aria-label={`Sort products — currently ${sortLabel}`}
+                    aria-expanded={sortOpen}
+                    aria-haspopup="listbox"
                     className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
                     style={{ background: '#0b1a30', border: '1px solid rgba(255,255,255,0.07)', color: '#9cb8d9', minWidth: 160 }}
                   >
