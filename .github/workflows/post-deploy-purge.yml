@@ -507,6 +507,10 @@ jobs:
       - name: Fail if probe reports drift
         if: steps.probe.outputs.exit_code != '0'
         run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "::notice::DRY-RUN — probe reported drift; not failing the workflow (no purge was sent, so HITs are expected)"
+            exit 0
+          fi
           echo "::error::/robots.txt or /sitemap*.xml is still not compliant after post-deploy purge — see post-deploy-robots-sitemap artifact"
           exit 1
 
