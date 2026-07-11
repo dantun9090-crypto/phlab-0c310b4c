@@ -34,6 +34,11 @@ on:
         type: choice
         default: both
         options: [both, phlabs.co.uk, prohealthpeptides.co.uk]
+      dry_run:
+        description: "Dry-run: skip real purge/recache POSTs, only log intent + run read-only verify (no issue open, no fail on HIT)"
+        type: choice
+        default: "false"
+        options: ["false", "true"]
   repository_dispatch:
     types: [lovable-publish]
 
