@@ -1251,7 +1251,7 @@ export default function HomePage() {
             className="flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm text-white"
             style={{ background: 'linear-gradient(135deg, #0ea572, #059669)', boxShadow: '0 4px 16px rgba(16,185,129,0.4)', flexShrink: 0 }}
           >
-            Shop Peptides <ArrowRight className="w-4 h-4" />
+            Shop Now <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>
