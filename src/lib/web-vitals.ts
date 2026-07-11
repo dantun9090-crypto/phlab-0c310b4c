@@ -190,21 +190,27 @@ export function initWebVitals() {
   // LCP — keep latest until page hidden
   let lcpValue = 0;
   let lcpId = "";
-  const lcpPo = observe<PerformanceEntry & { renderTime: number; loadTime: number }>(
+  let lcpTarget = "";
+  const lcpPo = observe<PerformanceEntry & { renderTime: number; loadTime: number; element?: Element }>(
     "largest-contentful-paint",
     (entries) => {
       const last = entries[entries.length - 1];
       lcpValue = last.renderTime || last.loadTime || last.startTime;
       lcpId = String(last.startTime);
+      lcpTarget = describeNode(last.element ?? null);
     },
   );
 
-  // CLS — sum session windows
+  // CLS — sum session windows. Track the single biggest shift source in the
+  // worst window so we can see which element caused the layout jump
+  // (regression signal for the header-logo flash bug).
   let clsValue = 0;
   let clsEntries: PerformanceEntry[] = [];
+  let clsWorstTarget = "";
+  let clsWorstShift = 0;
   let sessionValue = 0;
   let sessionEntries: PerformanceEntry[] = [];
-  observe<PerformanceEntry & { hadRecentInput: boolean; value: number }>(
+  observe<PerformanceEntry & { hadRecentInput: boolean; value: number; sources?: Array<{ node?: Node | null }> }>(
     "layout-shift",
     (entries) => {
       for (const entry of entries) {
@@ -224,6 +230,12 @@ export function initWebVitals() {
         if (sessionValue > clsValue) {
           clsValue = sessionValue;
           clsEntries = sessionEntries.slice();
+        }
+        if (entry.value > clsWorstShift) {
+          clsWorstShift = entry.value;
+          const src = entry.sources?.[0]?.node ?? null;
+          const desc = describeNode(src);
+          if (desc) clsWorstTarget = desc;
         }
       }
     },
@@ -267,8 +279,8 @@ export function initWebVitals() {
 
   // Flush LCP/CLS/INP when page becomes hidden (PWA-safe finalization)
   const flush = () => {
-    if (lcpValue) report("LCP", lcpValue, lcpId);
-    report("CLS", clsValue, String(clsEntries.length));
+    if (lcpValue) report("LCP", lcpValue, lcpId, lcpTarget || undefined);
+    report("CLS", clsValue, String(clsEntries.length), clsWorstTarget || undefined);
     if (inpValue) report("INP", inpValue, inpId);
     try {
       lcpPo?.disconnect();
@@ -276,6 +288,7 @@ export function initWebVitals() {
       /* ignore */
     }
   };
+
 
   addEventListener(
     "visibilitychange",
