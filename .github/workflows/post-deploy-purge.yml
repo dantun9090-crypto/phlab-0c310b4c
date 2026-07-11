@@ -276,10 +276,8 @@ jobs:
         shell: bash
         run: |
           run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          text="🚨 *Fallback per-URL purge FAILED* on \`phlabs.co.uk\`
-Trigger: \`${GITHUB_EVENT_NAME}:${GITHUB_EVENT_ACTION:-}\`
-Second-chance purge or verify did not recover after the primary purge failed — Worker deploy is likely stuck.
-<${run_url}|Open workflow run> · artifact: \`edge-cache-verify-fallback-${GITHUB_RUN_ID}\`"
+          text=$(printf '🚨 *Fallback per-URL purge FAILED* on `phlabs.co.uk`\nTrigger: `%s:%s`\nSecond-chance purge or verify did not recover after the primary purge failed — Worker deploy is likely stuck.\n<%s|Open workflow run> · artifact: `edge-cache-verify-fallback-%s`' \
+            "$GITHUB_EVENT_NAME" "${GITHUB_EVENT_ACTION:-}" "$run_url" "$GITHUB_RUN_ID")
           payload=$(jq -n --arg t "$text" '{text:$t}')
           bash .github/workflows/scripts/slack-notify.sh "$payload" "post-deploy-purge:fallback-failure"
 
