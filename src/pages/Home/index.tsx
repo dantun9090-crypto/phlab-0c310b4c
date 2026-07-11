@@ -1129,10 +1129,10 @@ export default function HomePage() {
 
           <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-5 will-fade">
             {[
-              { icon: FlaskConical, step: '01', title: 'Browse Catalogue', desc: 'Select from 14+ analytically verified compounds. Full purity data visible on every product page.', color: '#10b981' },
-              { icon: CreditCard, step: '02', title: 'Secure Checkout', desc: 'SSL-secured payment via UK Open Banking. No account required for guest checkout.', color: '#3b82f6' },
-              { icon: Snowflake, step: '03', title: 'Cold-Pack Dispatch', desc: 'Thermal packaging maintains compound integrity from warehouse to your laboratory.', color: '#06b6d4' },
-              { icon: FileCheck, step: '04', title: 'CoA Documentation', desc: 'HPLC trace and mass spectrometry data included with every order.', color: '#a855f7' },
+              { icon: FlaskConical, step: '01', title: 'Browse Catalogue', desc: 'Choose from over fourteen analytically verified research compounds, each with full purity data available directly on the product page.', color: '#10b981' },
+              { icon: CreditCard, step: '02', title: 'Secure Checkout', desc: 'Complete payment through SSL-secured UK Open Banking, with a fast guest checkout that requires no account registration.', color: '#3b82f6' },
+              { icon: Snowflake, step: '03', title: 'Insulated Cold-Chain Shipping', desc: 'Thermal packaging maintains compound integrity from our warehouse through to your laboratory bench.', color: '#06b6d4' },
+              { icon: FileCheck, step: '04', title: 'Batch Documentation Pack', desc: 'HPLC trace, mass spectrometry data and batch identifiers are included with every research order.', color: '#a855f7' },
             ].map(({ icon: Icon, step, title, desc, color }) => (
               <div key={step} className="relative rounded-2xl p-6 flex flex-col gap-4" style={{
                 background: 'rgba(255,255,255,0.025)',
