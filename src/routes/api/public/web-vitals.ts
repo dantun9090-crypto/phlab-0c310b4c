@@ -68,6 +68,13 @@ const Body = z.object({
   build: z.string().trim().max(40).optional(),
   /** Coarse connection hint from navigator.connection.effectiveType. */
   conn: z.enum(["4g", "3g", "2g", "slow-2g", "unknown"]).optional(),
+  /**
+   * Short DOM-selector-ish string identifying the element most responsible
+   * for this metric. For CLS this is the biggest layout-shift source; for
+   * LCP this is the LCP candidate. Lets the admin tab spot regressions
+   * like the header-logo flash (e.g. `img.site-logo` re-appearing here).
+   */
+  debugTarget: z.string().trim().max(200).optional(),
 });
 
 function json(body: unknown, status = 200, origin: string | null = null): Response {
@@ -126,6 +133,7 @@ export const Route = createFileRoute("/api/public/web-vitals")({
             device: v.device ?? "desktop",
             conn: v.conn ?? "unknown",
             build: v.build ?? "",
+            debugTarget: v.debugTarget ?? "",
             createdAt: new Date().toISOString(),
           });
 
@@ -152,6 +160,7 @@ export const Route = createFileRoute("/api/public/web-vitals")({
                 device: v.device ?? "desktop",
                 conn: v.conn ?? "unknown",
                 build: v.build ?? "",
+                debugTarget: v.debugTarget ?? "",
                 createdAt: new Date().toISOString(),
               });
             } catch (alertErr) {

@@ -21,6 +21,34 @@ interface VitalRecord {
   rating: Rating;
   id: string;
   path: string;
+  /**
+   * Short debug string identifying the DOM element most responsible for
+   * this metric. For LCP it's the LCP candidate; for CLS it's the biggest
+   * layout-shift source in the worst session window. Used to catch the
+   * "logo flash" regression — if `debugTarget` starts to log `img.site-logo`
+   * or similar on CLS records, the header logo is shifting again.
+   */
+  debugTarget?: string;
+}
+
+function describeNode(node: Node | null | undefined): string {
+  if (!node || !(node instanceof Element)) return "";
+  const tag = node.tagName.toLowerCase();
+  const id = node.id ? `#${node.id}` : "";
+  const cls =
+    typeof node.className === "string" && node.className
+      ? "." + node.className.trim().split(/\s+/).slice(0, 3).join(".")
+      : "";
+  const attrs: string[] = [];
+  const dt = node.getAttribute("data-testid");
+  if (dt) attrs.push(`[data-testid=${dt}]`);
+  if (tag === "img") {
+    const src = (node as HTMLImageElement).currentSrc || node.getAttribute("src") || "";
+    if (src) attrs.push(`[src=${src.split("/").pop()?.slice(0, 40)}]`);
+    const alt = node.getAttribute("alt");
+    if (alt) attrs.push(`[alt=${alt.slice(0, 20)}]`);
+  }
+  return `${tag}${id}${cls}${attrs.join("")}`.slice(0, 200);
 }
 
 const THRESHOLDS: Record<VitalRecord["name"], [number, number]> = {
@@ -80,6 +108,7 @@ function sendBeacon(rec: VitalRecord) {
       device: deviceClass(),
       conn: connectionClass(),
       build: (window as Window & { __PHLABS_BUILD_ID__?: string }).__PHLABS_BUILD_ID__ ?? "",
+      debugTarget: rec.debugTarget,
     });
     const url = "/api/public/web-vitals";
     if (navigator.sendBeacon) {
@@ -98,18 +127,19 @@ function sendBeacon(rec: VitalRecord) {
   }
 }
 
-function report(name: VitalRecord["name"], value: number, id: string) {
+function report(name: VitalRecord["name"], value: number, id: string, debugTarget?: string) {
   const rec: VitalRecord = {
     name,
     value: Math.round(name === "CLS" ? value * 1000 : value),
     rating: rate(name, value),
     id,
     path: location.pathname,
+    debugTarget,
   };
 
   window.__phlabsVitals = { ...(window.__phlabsVitals ?? {}), [name]: rec };
 
-  const tag = `[web-vitals] ${name} ${rec.value}${name === "CLS" ? "" : "ms"} (${rec.rating})`;
+  const tag = `[web-vitals] ${name} ${rec.value}${name === "CLS" ? "" : "ms"} (${rec.rating})${debugTarget ? ` → ${debugTarget}` : ""}`;
   if (rec.rating === "poor") {
     // eslint-disable-next-line no-console
     console.warn(tag, rec);
@@ -125,6 +155,7 @@ function report(name: VitalRecord["name"], value: number, id: string) {
       metric_rating: rec.rating,
       metric_id: id,
       page_path: rec.path,
+      debug_target: debugTarget,
     });
   } catch {
     /* ignore */
@@ -159,21 +190,27 @@ export function initWebVitals() {
   // LCP — keep latest until page hidden
   let lcpValue = 0;
   let lcpId = "";
-  const lcpPo = observe<PerformanceEntry & { renderTime: number; loadTime: number }>(
+  let lcpTarget = "";
+  const lcpPo = observe<PerformanceEntry & { renderTime: number; loadTime: number; element?: Element }>(
     "largest-contentful-paint",
     (entries) => {
       const last = entries[entries.length - 1];
       lcpValue = last.renderTime || last.loadTime || last.startTime;
       lcpId = String(last.startTime);
+      lcpTarget = describeNode(last.element ?? null);
     },
   );
 
-  // CLS — sum session windows
+  // CLS — sum session windows. Track the single biggest shift source in the
+  // worst window so we can see which element caused the layout jump
+  // (regression signal for the header-logo flash bug).
   let clsValue = 0;
   let clsEntries: PerformanceEntry[] = [];
+  let clsWorstTarget = "";
+  let clsWorstShift = 0;
   let sessionValue = 0;
   let sessionEntries: PerformanceEntry[] = [];
-  observe<PerformanceEntry & { hadRecentInput: boolean; value: number }>(
+  observe<PerformanceEntry & { hadRecentInput: boolean; value: number; sources?: Array<{ node?: Node | null }> }>(
     "layout-shift",
     (entries) => {
       for (const entry of entries) {
@@ -193,6 +230,12 @@ export function initWebVitals() {
         if (sessionValue > clsValue) {
           clsValue = sessionValue;
           clsEntries = sessionEntries.slice();
+        }
+        if (entry.value > clsWorstShift) {
+          clsWorstShift = entry.value;
+          const src = entry.sources?.[0]?.node ?? null;
+          const desc = describeNode(src);
+          if (desc) clsWorstTarget = desc;
         }
       }
     },
@@ -236,8 +279,8 @@ export function initWebVitals() {
 
   // Flush LCP/CLS/INP when page becomes hidden (PWA-safe finalization)
   const flush = () => {
-    if (lcpValue) report("LCP", lcpValue, lcpId);
-    report("CLS", clsValue, String(clsEntries.length));
+    if (lcpValue) report("LCP", lcpValue, lcpId, lcpTarget || undefined);
+    report("CLS", clsValue, String(clsEntries.length), clsWorstTarget || undefined);
     if (inpValue) report("INP", inpValue, inpId);
     try {
       lcpPo?.disconnect();
@@ -245,6 +288,7 @@ export function initWebVitals() {
       /* ignore */
     }
   };
+
 
   addEventListener(
     "visibilitychange",
