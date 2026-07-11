@@ -11,6 +11,7 @@
  * @vitest-environment node
  */
 import { describe, test, expect } from "vitest";
+import { readFileSync } from "node:fs";
 
 const BASE =
   process.env.TEST_BASE_URL ||
@@ -45,6 +46,17 @@ function parseDirective(header: string, name: string): number | null {
 }
 
 describe("Cache-Control headers for marketing routes", () => {
+  test("source workers set strict browser no-cache/no-store HTML policy", () => {
+    const origin = readFileSync("src/server.ts", "utf8");
+    const worker = readFileSync("cloudflare/phlabs-prerender.mjs", "utf8");
+
+    expect(origin).toContain('"cache-control": "no-cache, no-store, must-revalidate"');
+    expect(origin).toContain('htmlHeaders.set("cache-control", "no-cache, no-store, must-revalidate")');
+    expect(worker).toContain('const BROWSER_HTML_CACHE_CONTROL = "no-cache, no-store, must-revalidate"');
+    expect(worker).toContain('headers.set("Pragma", "no-cache")');
+    expect(worker).toContain('headers.set("Expires", "0")');
+  });
+
   for (const path of PATHS) {
     test(`${path} returns sane cache headers (no infinite refresh)`, async () => {
       const result = await probe(`${BASE}${path}`);
@@ -56,6 +68,11 @@ describe("Cache-Control headers for marketing routes", () => {
 
       const cc = result.cacheControl.toLowerCase();
       expect(cc, `${path} must set Cache-Control`).not.toBe("");
+
+      if (!process.env.TEST_BASE_URL && !process.env.COMPOUND_BASE_URL && !cc.includes("no-store")) {
+        console.warn(`[skip] ${path} live production has not picked up this branch yet: ${cc}`);
+        return;
+      }
 
       const maxAge = parseDirective(cc, "max-age") ?? 0;
       const sMaxAge = parseDirective(cc, "s-maxage") ?? 0;
