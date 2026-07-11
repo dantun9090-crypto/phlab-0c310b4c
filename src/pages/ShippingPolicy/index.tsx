@@ -35,8 +35,8 @@ export default function ShippingPolicy() {
             {[
               { label: 'UK Standard', time: '1–3 working days', price: 'Free over £50', sub: '£3.99 under £50' },
               { label: 'UK Next Day by 12 PM', time: 'Next working day', price: '£7.99', sub: 'Order before 11:30 AM Mon–Fri' },
-              { label: 'Germany — Tracked', time: '5–8 working days', price: '£20 flat', sub: 'Deutsche Post / DHL last-mile' },
-              { label: 'Poland — Tracked', time: '5–8 working days', price: '£20 flat', sub: 'Poczta Polska last-mile' },
+              { label: 'Germany — Tracked', time: '7–14 working days', price: 'Free over £200', sub: '£20 flat under £200' },
+              { label: 'Poland — Tracked', time: '7–14 working days', price: 'Free over £200', sub: '£20 flat under £200' },
             ].map((opt, i) => (
               <div key={i} className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <p className="font-bold text-[#e4f0ff] mb-1">{opt.label}</p>
@@ -47,7 +47,7 @@ export default function ShippingPolicy() {
             ))}
           </div>
           <p className="text-[#9cb8d9] leading-relaxed">UK orders placed Monday–Friday before 11:30 AM are typically dispatched the same working day. Orders placed after the cut-off, on weekends, or on UK bank holidays are dispatched the next working day.</p>
-          <p className="text-[#9cb8d9] leading-relaxed">Germany and Poland orders are dispatched from the UK by tracked international mail. Transit is typically 5–8 working days after dispatch and may be extended by customs clearance. Any import duties, VAT, or handling fees levied by the destination country are the recipient&rsquo;s responsibility.</p>
+          <p className="text-[#9cb8d9] leading-relaxed">Germany and Poland orders are dispatched from the UK by tracked international mail. Transit is typically 7–14 working days after dispatch and may be extended by customs clearance. Any import duties, VAT, or handling fees levied by the destination country are the recipient&rsquo;s responsibility.</p>
         </div>
       ),
     },
