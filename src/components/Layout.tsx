@@ -1477,6 +1477,14 @@ export function Layout({ children }: LayoutProps) {
             </p>
             <p className="text-[#7a9ec2] text-xs text-center md:text-right">
               For laboratory research use only. Not for human or veterinary consumption.
+              {" · "}
+              <a
+                href="/cache-reset?next=/"
+                className="underline hover:text-white"
+                title="Clear service worker, cache and site storage, then reload"
+              >
+                Reset cache
+              </a>
             </p>
           </div>
         </div>
