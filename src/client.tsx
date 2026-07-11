@@ -209,7 +209,12 @@ function markHydrationCrash(error: unknown): void {
   } catch {
     /* ignore */
   }
-  console.error("[HYDRATION FALLBACK] Switched to CSR due to:", error);
+  const text = errorText(error);
+  if (/SSR hydration disabled by flag/i.test(text)) {
+    console.info("[HYDRATION FALLBACK] CSR boot enabled by config");
+  } else {
+    console.error("[HYDRATION FALLBACK] Switched to CSR due to:", error);
+  }
 }
 
 function capturePreHydrationDom(): void {
