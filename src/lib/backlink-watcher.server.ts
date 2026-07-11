@@ -304,6 +304,8 @@ export async function runBacklinkWatcher(opts: {
   triggeredBy: 'cron' | 'manual';
 }): Promise<BacklinkWatcherResult> {
   const snapshot = await fetchSnapshot();
+  // Fire-and-forget competitor watches — never blocks the main run.
+  await Promise.allSettled(COMPETITOR_DOMAINS.map((d) => runCompetitorWatch(d)));
 
   let previous: BacklinkSnapshot | null = null;
   try {
