@@ -422,7 +422,3 @@ jobs:
       - name: Run checkout + admin orders regression
         if: steps.changes.outputs.checkout == 'true'
         run: bun run test:checkout
-
-
-
-
