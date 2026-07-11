@@ -397,7 +397,7 @@ const INTERNAL_HEADER_DENYLIST = [
 ];
 
 const STRICT_NO_STORE_HEADERS: Record<string, string> = {
-  "cache-control": "no-store, private, no-cache, must-revalidate, max-age=0, s-maxage=0",
+  "cache-control": "no-cache, no-store, must-revalidate",
   "cdn-cache-control": "no-store",
   "cloudflare-cdn-cache-control": "no-store",
   "surrogate-control": "no-store",
@@ -808,7 +808,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
     // Public HTML must also be no-store. Returning customers were stuck on
     // stale route documents after deploys, so even the homepage/products shell
     // must re-fetch from the origin/CDN every navigation.
-    htmlHeaders.set("cache-control", "no-store, private, no-cache, must-revalidate, max-age=0, s-maxage=0");
+    htmlHeaders.set("cache-control", "no-cache, no-store, must-revalidate");
     htmlHeaders.set("cdn-cache-control", "no-store");
     htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
     htmlHeaders.set("surrogate-control", "no-store");
@@ -818,7 +818,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   } else {
 
     // All other routes (auth/checkout/admin/api/dynamic) — never cache.
-    htmlHeaders.set("cache-control", "private, no-store, no-cache, must-revalidate, max-age=0");
+    htmlHeaders.set("cache-control", "no-cache, no-store, must-revalidate");
     htmlHeaders.set("cdn-cache-control", "no-store");
     htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
     htmlHeaders.set("surrogate-control", "no-store");
