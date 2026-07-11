@@ -103,9 +103,10 @@ export default function RefundPolicy() {
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
             {[
               ['Countries', 'United Kingdom, Poland'],
-              ['Returns', 'Accepted for defective and non-defective items'],
+              ['Returns', 'Accepted — sealed & unopened items within 14 days; defective items within 14 days'],
+              ['Sealed-goods exemption', 'Opened vials cannot be returned (CCR 2013 Reg. 28(3))'],
               ['Exchanges', 'Not accepted'],
-              ['Product condition', 'New only'],
+              ['Product condition', 'New, sealed, tamper-evident closure intact'],
               ['Return window', '14 days from delivery'],
               ['Return method', 'By post'],
               ['Return label (change of mind)', 'Customer responsibility'],
