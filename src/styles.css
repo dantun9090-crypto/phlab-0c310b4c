@@ -554,3 +554,21 @@ html {
 body {
   overflow-x: clip;
 }
+
+/* Recharts overrides for shadcn Chart component.
+   Moved out of arbitrary Tailwind variants because encoding attribute
+   selectors like [stroke='#ccc'] inside a class name required escaping
+   the single-quotes as \', which Firefox rejects (spec-invalid), causing
+   "Ruleset ignored due to bad selector" warnings for every chart rule. */
+[data-chart] .recharts-cartesian-axis-tick text { fill: var(--color-muted-foreground); }
+[data-chart] .recharts-cartesian-grid line[stroke="#ccc"] { stroke: color-mix(in oklab, var(--color-border) 50%, transparent); }
+[data-chart] .recharts-curve.recharts-tooltip-cursor { stroke: var(--color-border); }
+[data-chart] .recharts-dot[stroke="#fff"] { stroke: transparent; }
+[data-chart] .recharts-layer { outline: none; }
+[data-chart] .recharts-polar-grid [stroke="#ccc"] { stroke: var(--color-border); }
+[data-chart] .recharts-radial-bar-background-sector,
+[data-chart] .recharts-rectangle.recharts-tooltip-cursor { fill: var(--color-muted); }
+[data-chart] .recharts-reference-line [stroke="#ccc"] { stroke: var(--color-border); }
+[data-chart] .recharts-sector[stroke="#fff"] { stroke: transparent; }
+[data-chart] .recharts-sector { outline: none; }
+[data-chart] .recharts-surface { outline: none; }
