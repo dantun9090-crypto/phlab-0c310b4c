@@ -689,7 +689,7 @@ export default function CheckoutPage() {
         phone: form.phone,
         firstName: form.firstName,
         lastName: form.lastName,
-        country: form.country === 'Germany' ? 'DE' : form.country === 'Ireland' ? 'IE' : form.country === 'United Kingdom' ? 'GB' : 'GB',
+        country: form.country === 'Germany' ? 'DE' : form.country === 'Poland' ? 'PL' : form.country === 'Ireland' ? 'IE' : form.country === 'United Kingdom' ? 'GB' : 'GB',
         postalCode: form.postcode,
         city: form.city,
       });
