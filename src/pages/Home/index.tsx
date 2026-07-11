@@ -584,7 +584,7 @@ export default function HomePage() {
               {/* CTAs */}
               <div className="flex flex-wrap gap-4">
                 <Link to="/products"
-                  aria-label="Browse the full PH Labs research peptide catalogue"
+                  aria-label="Peptide catalogue"
                   className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-sm text-white transition-all duration-300"
                   style={{
                     background: 'linear-gradient(135deg, #0ea572 0%, #10b981 50%, #059669 100%)',
@@ -596,7 +596,7 @@ export default function HomePage() {
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link to="/lab-reports"
-                  aria-label="View HPLC lab reports and certificates of analysis"
+                  aria-label="Lab reports and CoA"
                   className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-semibold text-sm transition-all duration-300"
                   style={{
                     background: 'rgba(255,255,255,0.04)',
@@ -607,7 +607,7 @@ export default function HomePage() {
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = '#a8c8e8'; }}
                 >
                   <FileCheck className="w-4 h-4" />
-                  View Lab Reports
+                  Lab Reports
                 </Link>
               </div>
             </div>
@@ -872,7 +872,7 @@ export default function HomePage() {
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(16,185,129,0.18)'}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(16,185,129,0.1)'}
             >
-              View Lab Reports <ArrowRight className="w-4 h-4" />
+              See Certificates <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
@@ -1214,7 +1214,7 @@ export default function HomePage() {
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 36px rgba(16,185,129,0.55)'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 28px rgba(16,185,129,0.35)'}
               >
-                Browse Full Catalogue <ArrowRight className="w-4 h-4" />
+                Shop All Peptides <ArrowRight className="w-4 h-4" />
               </Link>
               <Link to="/contact"
                 className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-semibold text-sm transition-all duration-300"
@@ -1222,7 +1222,7 @@ export default function HomePage() {
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = '#e4f0ff'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = '#8db4d8'; }}
               >
-                Contact Our Team
+                Contact Us
               </Link>
             </div>
           </div>
@@ -1251,7 +1251,7 @@ export default function HomePage() {
             className="flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm text-white"
             style={{ background: 'linear-gradient(135deg, #0ea572, #059669)', boxShadow: '0 4px 16px rgba(16,185,129,0.4)', flexShrink: 0 }}
           >
-            Shop Peptides <ArrowRight className="w-4 h-4" />
+            Shop Now <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>
