@@ -575,6 +575,7 @@ export default function AdminPage() {
         case 'purgeincidents': return <PurgeIncidentsTab />;
         case 'swtelemetrydebug': return <SwTelemetryDebugTab />;
         case 'monitorlog': return <MonitorLogTab />;
+        case 'staleassets': return <StaleAssetsTab />;
         case 'sentryissues': return <SentryIssuesTab />;
         case 'publishstatus': return <PublishStatusTab />;
         case 'auditreport': return <AuditReportTab />;
