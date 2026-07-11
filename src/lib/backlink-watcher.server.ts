@@ -18,9 +18,15 @@ import { enqueueMailOnce } from '@/lib/server/enqueue-mail';
 const GATEWAY = 'https://connector-gateway.lovable.dev/semrush';
 const TELEGRAM_GATEWAY = 'https://connector-gateway.lovable.dev/telegram';
 const TARGET_DOMAIN = 'phlabs.co.uk';
+// Competitor / watch-only domains: snapshotted + diffed each run so we get
+// alerted when a new peptide competitor starts picking up refdomains
+// (usually a signal they're buying links or getting scraped/mentioned).
+const COMPETITOR_DOMAINS = ['ph-labs.uk'];
 const ALERT_EMAIL = 'info@phlabs.co.uk';
 const SNAPSHOT_COLLECTION = 'backlink_snapshots';
 const LATEST_DOC = 'latest';
+const latestDocId = (domain: string) =>
+  domain === TARGET_DOMAIN ? LATEST_DOC : `latest-${domain.replace(/[^a-z0-9]/gi, '-')}`;
 
 // Heuristics for "obviously spammy" referring domains. Match conservatively —
 // false positives just trigger an alert, they don't auto-disavow.
