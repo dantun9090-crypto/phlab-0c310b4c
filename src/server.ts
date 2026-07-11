@@ -578,7 +578,7 @@ function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
     };
     const openFresh = async () => {
       await clear();
-      location.href = '/?sw=off';
+      location.href = '/cache-reset?next=/';
     };
     const render = () => {
       document.documentElement.setAttribute('lang', 'en-GB');

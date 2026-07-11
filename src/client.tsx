@@ -132,7 +132,7 @@ try {
         } catch {
           /* ignore */
         }
-        location.replace(location.pathname + location.search + location.hash);
+        location.replace("/cache-reset?next=" + encodeURIComponent(location.pathname + location.search + location.hash));
       });
       throw new Error("PHL_RELOAD_LOOP_BREAKER");
     }
