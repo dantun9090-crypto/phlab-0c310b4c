@@ -222,7 +222,9 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
 
   const shippingLabel = isNextDay
     ? SHIPPING_OPTIONS.next_day_12.label
-    : (isFreeShipping ? 'Free Delivery (order over £50)' : SHIPPING_OPTIONS.standard.label);
+    : isEuInternational
+      ? 'EU Tracked Delivery (Germany / Poland)'
+      : (isFreeShipping ? 'Free Delivery (order over £50)' : SHIPPING_OPTIONS.standard.label);
 
   // Compute expected delivery + cut-off stamps for fulfilment.
   // getStandardDeliveryWindow() is UK-only (Europe/London working days,
