@@ -439,10 +439,14 @@ export default function CheckoutPage() {
         ? Math.min(appliedCoupon.value, subtotal)
         : 0
   ) : 0;
-  const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
+  // Flat £20 EU postage for Germany + Poland. Free-over-£50 does NOT apply
+  // internationally — customs and cross-border carriage make a flat fee the
+  // only workable price.
+  const isEuInternational = form.country === 'Germany' || form.country === 'Poland';
+  const isFreeShipping = !isEuInternational && subtotal >= FREE_SHIPPING_THRESHOLD;
   const nextDayEligibility = checkNextDayEligibility();
   // Next Day by 12 PM is a UK-only Royal Mail service — never offer it to
-  // non-UK addresses (e.g. Germany), even if within the UK cut-off window.
+  // non-UK addresses (e.g. Germany, Poland), even if within the UK cut-off window.
   const isUkAddress = form.country === 'United Kingdom';
   const nextDayAvailable = isUkAddress && nextDayEligibility.qualifies;
   // Hide Next Day entirely when ineligible — never show a disabled placeholder.
@@ -467,12 +471,16 @@ export default function CheckoutPage() {
     ? visibleShippingOptions.find(o => o.id === form.shippingMethod)
     : undefined;
   // No shipping cost charged until the user picks a method.
+  // For EU international (Germany/Poland) the standard rate is a flat £20
+  // regardless of order value or coupon.
   const baseShipping = !selectedShippingOpt
     ? 0
     : selectedShippingOpt.id === 'standard'
-      ? (isFreeShipping ? 0 : selectedShippingOpt.price)
+      ? (isEuInternational
+          ? SHIPPING_CONFIG.internationalPrice
+          : (isFreeShipping ? 0 : selectedShippingOpt.price))
       : selectedShippingOpt.price;
-  const couponFreeShipping = appliedCoupon?.type === 'free_shipping' && selectedShippingOpt?.id === 'standard';
+  const couponFreeShipping = appliedCoupon?.type === 'free_shipping' && selectedShippingOpt?.id === 'standard' && !isEuInternational;
   const shippingCost = couponFreeShipping ? 0 : baseShipping;
   const originalTotal = subtotal + baseShipping;
   const total = Math.max(0, subtotal - discount + shippingCost).toFixed(2);
@@ -589,6 +597,8 @@ export default function CheckoutPage() {
           if (!/^[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}$/i.test(pc)) e.postcode = 'Enter a valid UK postcode';
         } else if (country === 'Germany') {
           if (!/^\d{5}$/.test(pc)) e.postcode = 'Enter a valid German postcode (5 digits)';
+        } else if (country === 'Poland') {
+          if (!/^\d{2}-?\d{3}$/.test(pc)) e.postcode = 'Enter a valid Polish postcode (NN-NNN)';
         } else if (country === 'Ireland') {
           if (!/^[A-Z]\d{2}\s?[A-Z0-9]{4}$/i.test(pc)) e.postcode = 'Enter a valid Eircode';
         } else {
@@ -687,7 +697,7 @@ export default function CheckoutPage() {
         phone: form.phone,
         firstName: form.firstName,
         lastName: form.lastName,
-        country: form.country === 'Germany' ? 'DE' : form.country === 'Ireland' ? 'IE' : form.country === 'United Kingdom' ? 'GB' : 'GB',
+        country: form.country === 'Germany' ? 'DE' : form.country === 'Poland' ? 'PL' : form.country === 'Ireland' ? 'IE' : form.country === 'United Kingdom' ? 'GB' : 'GB',
         postalCode: form.postcode,
         city: form.city,
       });
@@ -1442,12 +1452,12 @@ export default function CheckoutPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label htmlFor="city" className="block text-xs font-medium text-gray-300 mb-1">City / Town <span className="text-red-400">*</span></label>
-                        <input id="city" type="text" autoComplete="address-level2" value={form.city} onChange={e => setField('city', e.target.value)} placeholder={form.country === 'Germany' ? 'Berlin' : 'London'} style={inputStyle(!!errors.city)} />
+                        <input id="city" type="text" autoComplete="address-level2" value={form.city} onChange={e => setField('city', e.target.value)} placeholder={form.country === 'Germany' ? 'Berlin' : form.country === 'Poland' ? 'Warszawa' : 'London'} style={inputStyle(!!errors.city)} />
                         {errors.city && <p className="text-red-400 text-xs mt-1">{errors.city}</p>}
                       </div>
                       <div>
                         <label htmlFor="postcode" className="block text-xs font-medium text-gray-300 mb-1">
-                          {form.country === 'Germany' ? 'PLZ (Postleitzahl)' : form.country === 'Ireland' ? 'Eircode' : 'Postcode'} <span className="text-red-400">*</span>
+                          {form.country === 'Germany' ? 'PLZ (Postleitzahl)' : form.country === 'Poland' ? 'Kod pocztowy' : form.country === 'Ireland' ? 'Eircode' : 'Postcode'} <span className="text-red-400">*</span>
                         </label>
                         <input
                           id="postcode"
@@ -1456,11 +1466,18 @@ export default function CheckoutPage() {
                           value={form.postcode}
                           onChange={e => {
                             const raw = e.target.value;
-                            // Only uppercase for alphanumeric postcodes; German PLZ is digits only.
-                            setField('postcode', form.country === 'Germany' ? raw.replace(/\D/g, '').slice(0, 5) : raw.toUpperCase());
+                            if (form.country === 'Germany') {
+                              setField('postcode', raw.replace(/\D/g, '').slice(0, 5));
+                            } else if (form.country === 'Poland') {
+                              // NN-NNN format — keep digits + optional single dash.
+                              const digits = raw.replace(/\D/g, '').slice(0, 5);
+                              setField('postcode', digits.length > 2 ? `${digits.slice(0, 2)}-${digits.slice(2)}` : digits);
+                            } else {
+                              setField('postcode', raw.toUpperCase());
+                            }
                           }}
-                          placeholder={form.country === 'Germany' ? '10115' : form.country === 'Ireland' ? 'D02 XY45' : 'SW1A 1AA'}
-                          inputMode={form.country === 'Germany' ? 'numeric' : 'text'}
+                          placeholder={form.country === 'Germany' ? '10115' : form.country === 'Poland' ? '00-001' : form.country === 'Ireland' ? 'D02 XY45' : 'SW1A 1AA'}
+                          inputMode={form.country === 'Germany' || form.country === 'Poland' ? 'numeric' : 'text'}
                           style={inputStyle(!!errors.postcode)}
                         />
                         {errors.postcode && <p className="text-red-400 text-xs mt-1">{errors.postcode}</p>}
@@ -1482,6 +1499,7 @@ export default function CheckoutPage() {
                       >
                         <option value="United Kingdom">United Kingdom</option>
                         <option value="Germany">Germany (Deutschland)</option>
+                        <option value="Poland">Poland (Polska)</option>
                         <option value="Ireland">Ireland</option>
                         <option value="Other">Other</option>
                       </select>

@@ -12,7 +12,7 @@ export default function RefundPolicy() {
 
   // Inject MerchantReturnPolicy schema for Google Merchant Center.
   // Values mirror the return policy configured in Merchant Center
-  // (Countries: GB + PL, 14-day window, ReturnByMail, customer pays
+  // (Countries: GB + PL + DE, 14-day window, ReturnByMail, customer pays
   // return shipping for non-defective returns, full refund, 3-day
   // refund processing) so the on-page schema and the GMC policy match
   // exactly — mismatches cause product disapprovals.
@@ -23,7 +23,7 @@ export default function RefundPolicy() {
       '@id': 'https://phlabs.co.uk/refund-policy#return-policy',
       name: 'PH Labs Return Policy',
       url: 'https://phlabs.co.uk/refund-policy',
-      applicableCountry: ['GB', 'PL'],
+      applicableCountry: ['GB', 'PL', 'DE'],
       returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
       merchantReturnDays: 14,
       returnMethod: 'https://schema.org/ReturnByMail',
@@ -90,7 +90,7 @@ export default function RefundPolicy() {
         </div>
 
         {/* Google Merchant Center summary — mirrors the return policy
-            configured in Merchant Center for GB + PL so the on-page
+            configured in Merchant Center for GB + PL + DE so the on-page
             details and the feed policy match exactly. */}
         <section
           className="mb-10 rounded-2xl p-6"
@@ -102,7 +102,7 @@ export default function RefundPolicy() {
           </h2>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
             {[
-              ['Countries', 'United Kingdom, Poland'],
+              ['Countries', 'United Kingdom, Poland, Germany'],
               ['Returns', 'Accepted — sealed & unopened items within 14 days; defective items within 14 days'],
               ['Sealed-goods exemption', 'Opened vials cannot be returned (CCR 2013 Reg. 28(3))'],
               ['Exchanges', 'Not accepted'],

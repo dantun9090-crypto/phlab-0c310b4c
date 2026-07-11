@@ -39,6 +39,7 @@ const itemSchema = z.object({
 
 const UK_POSTCODE_RE = /^[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}$/i;
 const DE_POSTCODE_RE = /^\d{5}$/;
+const PL_POSTCODE_RE = /^\d{2}-?\d{3}$/;
 const IE_EIRCODE_RE = /^[A-Z]\d{2}\s?[A-Z0-9]{4}$/i;
 
 const customerSchema = z.object({
@@ -63,6 +64,10 @@ const customerSchema = z.object({
     // German addresses must include a street name AND a house number.
     if (!/\d/.test(c.address) || !/[A-Za-zÄÖÜäöüß]/.test(c.address)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['address'], message: 'Enter street name and house number (e.g. Musterstraße 12)' });
+    }
+  } else if (c.country === 'Poland') {
+    if (!PL_POSTCODE_RE.test(pc)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['postcode'], message: 'Enter a valid Polish postcode (NN-NNN)' });
     }
   } else if (c.country === 'Ireland') {
     if (!IE_EIRCODE_RE.test(pc)) {
@@ -134,7 +139,13 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     }
   }
 
-  const baseShipping = SHIPPING_OPTIONS[input.shippingMethod].price;
+  // EU international dispatch (Germany, Poland) is a flat £20 tracked-mail
+  // rate. Free-over-£50 and free-shipping coupons do NOT apply on EU orders.
+  const isEuInternational =
+    input.customer.country === 'Germany' || input.customer.country === 'Poland';
+  const baseShipping = isEuInternational && input.shippingMethod === 'standard'
+    ? SHIPPING_CONFIG.internationalPrice
+    : SHIPPING_OPTIONS[input.shippingMethod].price;
 
   // Authoritative re-pricing — server reads product_stock, applies coupon.
   const validation: ValidateCartResult = await runValidateCart({
@@ -156,9 +167,10 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
 
   // Derive authoritative shipping + total. Never trust any client total.
   // Next-day shipping is ALWAYS paid (not eligible for free-over-£50 or free-shipping coupons).
-  const isFreeShipping = !isNextDay && validation.subtotal >= FREE_SHIPPING_THRESHOLD;
+  // EU international is also excluded from free-over-£50 and free-shipping coupons.
+  const isFreeShipping = !isNextDay && !isEuInternational && validation.subtotal >= FREE_SHIPPING_THRESHOLD;
   const baseCost = isFreeShipping ? 0 : baseShipping;
-  const shippingDisc = isNextDay ? 0 : validation.shippingDiscount;
+  const shippingDisc = (isNextDay || isEuInternational) ? 0 : validation.shippingDiscount;
   const shippingCost = +Math.max(0, baseCost - shippingDisc).toFixed(2);
   const totalAmount  = +Math.max(0, validation.subtotal - validation.discount + shippingCost).toFixed(2);
 
@@ -210,7 +222,9 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
 
   const shippingLabel = isNextDay
     ? SHIPPING_OPTIONS.next_day_12.label
-    : (isFreeShipping ? 'Free Delivery (order over £50)' : SHIPPING_OPTIONS.standard.label);
+    : isEuInternational
+      ? 'EU Tracked Delivery (Germany / Poland)'
+      : (isFreeShipping ? 'Free Delivery (order over £50)' : SHIPPING_OPTIONS.standard.label);
 
   // Compute expected delivery + cut-off stamps for fulfilment.
   // getStandardDeliveryWindow() is UK-only (Europe/London working days,

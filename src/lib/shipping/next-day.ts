@@ -13,7 +13,18 @@ export const SHIPPING_CONFIG = {
   nextDayPrice: 7.99,
   standardPrice: 3.99,
   freeThreshold: 50,
+  // Flat tracked-mail postage to EU delivery countries we currently ship to
+  // (Germany, Poland). Free-over-£50 threshold does NOT apply here — customs
+  // and cross-border carriage make a flat fee the only workable price.
+  internationalPrice: 20,
 } as const;
+
+// EU countries we currently dispatch to (aside from the UK). Kept in sync
+// with the country dropdown in Checkout and the shipping/refund policy pages.
+export const EU_SHIP_COUNTRIES: ReadonlySet<string> = new Set([
+  'Germany',
+  'Poland',
+]);
 
 // England & Wales bank holidays. Keep extending yearly.
 const UK_BANK_HOLIDAYS: ReadonlySet<string> = new Set([
