@@ -140,7 +140,7 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   }
 
   // EU international dispatch (Germany, Poland) is a flat £20 tracked-mail
-  // rate. Free-over-£50 and free-shipping coupons do NOT apply on EU orders.
+  // rate, waived on orders ≥ £200. Mirrors the "Delivery EU" policy in GMC.
   const isEuInternational =
     input.customer.country === 'Germany' || input.customer.country === 'Poland';
   const baseShipping = isEuInternational && input.shippingMethod === 'standard'
@@ -166,9 +166,11 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   }
 
   // Derive authoritative shipping + total. Never trust any client total.
-  // Next-day shipping is ALWAYS paid (not eligible for free-over-£50 or free-shipping coupons).
-  // EU international is also excluded from free-over-£50 and free-shipping coupons.
-  const isFreeShipping = !isNextDay && !isEuInternational && validation.subtotal >= FREE_SHIPPING_THRESHOLD;
+  // Next-day shipping is ALWAYS paid (not eligible for free thresholds or coupons).
+  // UK standard: free ≥ £50. EU standard (DE/PL): free ≥ £200.
+  const isFreeUkShipping = !isNextDay && !isEuInternational && validation.subtotal >= FREE_SHIPPING_THRESHOLD;
+  const isFreeEuShipping = !isNextDay && isEuInternational && validation.subtotal >= SHIPPING_CONFIG.internationalFreeThreshold;
+  const isFreeShipping = isFreeUkShipping || isFreeEuShipping;
   const baseCost = isFreeShipping ? 0 : baseShipping;
   const shippingDisc = (isNextDay || isEuInternational) ? 0 : validation.shippingDiscount;
   const shippingCost = +Math.max(0, baseCost - shippingDisc).toFixed(2);
@@ -223,8 +225,8 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
   const shippingLabel = isNextDay
     ? SHIPPING_OPTIONS.next_day_12.label
     : isEuInternational
-      ? 'EU Tracked Delivery (Germany / Poland)'
-      : (isFreeShipping ? 'Free Delivery (order over £50)' : SHIPPING_OPTIONS.standard.label);
+      ? (isFreeEuShipping ? 'Free EU Tracked Delivery (order over £200)' : 'EU Tracked Delivery (Germany / Poland)')
+      : (isFreeUkShipping ? 'Free Delivery (order over £50)' : SHIPPING_OPTIONS.standard.label);
 
   // Compute expected delivery + cut-off stamps for fulfilment.
   // getStandardDeliveryWindow() is UK-only (Europe/London working days,

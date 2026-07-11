@@ -35,8 +35,8 @@ export default function ShippingPolicy() {
             {[
               { label: 'UK Standard', time: '1–3 working days', price: 'Free over £50', sub: '£3.99 under £50' },
               { label: 'UK Next Day by 12 PM', time: 'Next working day', price: '£7.99', sub: 'Order before 11:30 AM Mon–Fri' },
-              { label: 'Germany — Tracked', time: '5–8 working days', price: '£20 flat', sub: 'Deutsche Post / DHL last-mile' },
-              { label: 'Poland — Tracked', time: '5–8 working days', price: '£20 flat', sub: 'Poczta Polska last-mile' },
+              { label: 'Germany — Tracked', time: '7–14 working days', price: 'Free over £200', sub: '£20 flat under £200' },
+              { label: 'Poland — Tracked', time: '7–14 working days', price: 'Free over £200', sub: '£20 flat under £200' },
             ].map((opt, i) => (
               <div key={i} className="rounded-2xl p-4" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <p className="font-bold text-[#e4f0ff] mb-1">{opt.label}</p>
@@ -47,7 +47,7 @@ export default function ShippingPolicy() {
             ))}
           </div>
           <p className="text-[#9cb8d9] leading-relaxed">UK orders placed Monday–Friday before 11:30 AM are typically dispatched the same working day. Orders placed after the cut-off, on weekends, or on UK bank holidays are dispatched the next working day.</p>
-          <p className="text-[#9cb8d9] leading-relaxed">Germany and Poland orders are dispatched from the UK by tracked international mail. Transit is typically 5–8 working days after dispatch and may be extended by customs clearance. Any import duties, VAT, or handling fees levied by the destination country are the recipient&rsquo;s responsibility.</p>
+          <p className="text-[#9cb8d9] leading-relaxed">Germany and Poland orders are dispatched from the UK by tracked international mail. Transit is typically 7–14 working days after dispatch and may be extended by customs clearance. Any import duties, VAT, or handling fees levied by the destination country are the recipient&rsquo;s responsibility.</p>
         </div>
       ),
     },
@@ -75,11 +75,11 @@ export default function ShippingPolicy() {
           <div className="rounded-2xl px-5 py-4 flex items-center gap-4" style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.2)' }}>
             <Truck className="w-8 h-8 text-emerald-400 shrink-0" />
             <div>
-              <p className="text-emerald-300 font-bold text-base">Free UK Standard Delivery on orders over £50</p>
-              <p className="text-[#9cb8d9] text-xs mt-0.5">Applied automatically at UK checkout. No code required.</p>
+              <p className="text-emerald-300 font-bold text-base">Free UK Standard over £50 · Free EU Tracked (DE/PL) over £200</p>
+              <p className="text-[#9cb8d9] text-xs mt-0.5">Applied automatically at checkout. No code required.</p>
             </div>
           </div>
-          <p className="text-[#9cb8d9] leading-relaxed">UK orders below £50 are subject to a £3.99 standard delivery charge. Next Day by 12 PM is £7.99 regardless of order value. Germany and Poland are a flat £20 tracked international rate — the free-over-£50 threshold does not apply to EU delivery.</p>
+          <p className="text-[#9cb8d9] leading-relaxed">UK orders below £50 are subject to a £3.99 standard delivery charge. Next Day by 12 PM is £7.99 regardless of order value. Germany and Poland are a flat £20 tracked international rate, waived automatically on orders over £200 — matching our &ldquo;Delivery EU&rdquo; policy in Google Merchant Center.</p>
         </div>
       ),
     },

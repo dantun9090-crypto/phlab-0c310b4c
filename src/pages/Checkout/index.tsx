@@ -439,11 +439,12 @@ export default function CheckoutPage() {
         ? Math.min(appliedCoupon.value, subtotal)
         : 0
   ) : 0;
-  // Flat £20 EU postage for Germany + Poland. Free-over-£50 does NOT apply
-  // internationally — customs and cross-border carriage make a flat fee the
-  // only workable price.
+  // EU international shipping (Germany, Poland) — matches the "Delivery EU"
+  // policy in Google Merchant Center: £20 flat, free over £200.
   const isEuInternational = form.country === 'Germany' || form.country === 'Poland';
-  const isFreeShipping = !isEuInternational && subtotal >= FREE_SHIPPING_THRESHOLD;
+  const isFreeEuShipping = isEuInternational && subtotal >= SHIPPING_CONFIG.internationalFreeThreshold;
+  const isFreeUkShipping = !isEuInternational && subtotal >= FREE_SHIPPING_THRESHOLD;
+  const isFreeShipping = isFreeUkShipping || isFreeEuShipping;
   const nextDayEligibility = checkNextDayEligibility();
   // Next Day by 12 PM is a UK-only Royal Mail service — never offer it to
   // non-UK addresses (e.g. Germany, Poland), even if within the UK cut-off window.
@@ -454,7 +455,7 @@ export default function CheckoutPage() {
     ? SHIPPING_OPTIONS_ALL
     : SHIPPING_OPTIONS_ALL.filter(o => o.id !== 'next_day_12');
   // Default to Standard ONLY when the order qualifies for free standard
-  // shipping (>= £50). Otherwise the user must explicitly choose.
+  // shipping (UK ≥ £50, or EU ≥ £200). Otherwise the user must explicitly choose.
   useEffect(() => {
     if (!form.shippingMethod && isFreeShipping) {
       setForm(prev => prev.shippingMethod ? prev : { ...prev, shippingMethod: 'standard' });
@@ -471,14 +472,14 @@ export default function CheckoutPage() {
     ? visibleShippingOptions.find(o => o.id === form.shippingMethod)
     : undefined;
   // No shipping cost charged until the user picks a method.
-  // For EU international (Germany/Poland) the standard rate is a flat £20
-  // regardless of order value or coupon.
+  // For EU international (Germany/Poland) the standard rate is a flat £20,
+  // waived automatically on orders over £200.
   const baseShipping = !selectedShippingOpt
     ? 0
     : selectedShippingOpt.id === 'standard'
       ? (isEuInternational
-          ? SHIPPING_CONFIG.internationalPrice
-          : (isFreeShipping ? 0 : selectedShippingOpt.price))
+          ? (isFreeEuShipping ? 0 : SHIPPING_CONFIG.internationalPrice)
+          : (isFreeUkShipping ? 0 : selectedShippingOpt.price))
       : selectedShippingOpt.price;
   const couponFreeShipping = appliedCoupon?.type === 'free_shipping' && selectedShippingOpt?.id === 'standard' && !isEuInternational;
   const shippingCost = couponFreeShipping ? 0 : baseShipping;

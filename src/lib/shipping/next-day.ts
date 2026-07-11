@@ -14,9 +14,10 @@ export const SHIPPING_CONFIG = {
   standardPrice: 3.99,
   freeThreshold: 50,
   // Flat tracked-mail postage to EU delivery countries we currently ship to
-  // (Germany, Poland). Free-over-£50 threshold does NOT apply here — customs
-  // and cross-border carriage make a flat fee the only workable price.
+  // (Germany, Poland). Matches the "Delivery EU" policy configured in Google
+  // Merchant Center: £20 flat, free over £200, 7–14 working days transit.
   internationalPrice: 20,
+  internationalFreeThreshold: 200,
 } as const;
 
 // EU countries we currently dispatch to (aside from the UK). Kept in sync
