@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 export default function ShippingPolicy() {
   useSEO('shipping-policy', {
     title: 'Shipping Policy | PH Labs UK',
-    metaDescription: 'Shipping information for PH Labs Ltd. UK delivery, dispatch times, packaging standards and research-use compliance.',
+    metaDescription: 'Shipping information for PH Labs Ltd. UK, Germany and Poland delivery, dispatch times, packaging standards and research-use compliance.',
     canonical: 'https://phlabs.co.uk/shipping-policy',
   });
 
