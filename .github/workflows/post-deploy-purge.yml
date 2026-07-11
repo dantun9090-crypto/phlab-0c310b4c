@@ -554,10 +554,8 @@ jobs:
         run: |
           run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           target='${{ github.event.inputs.target_domain || ''both'' }}'
-          text="🚨 *robots.txt / sitemap*.xml still non-compliant* after targeted purge
-Target: \`${target}\` · Trigger: \`${GITHUB_EVENT_NAME}\`
-The post-purge probe still sees stale/cacheable headers on /robots.txt or /sitemap*.xml — SEO-critical.
-<${run_url}|Open workflow run> · artifact: \`post-deploy-robots-sitemap-${GITHUB_RUN_ID}\`"
+          text=$(printf '🚨 *robots.txt / sitemap*.xml still non-compliant* after targeted purge\nTarget: `%s` · Trigger: `%s`\nThe post-purge probe still sees stale/cacheable headers on /robots.txt or /sitemap*.xml — SEO-critical.\n<%s|Open workflow run> · artifact: `post-deploy-robots-sitemap-%s`' \
+            "$target" "$GITHUB_EVENT_NAME" "$run_url" "$GITHUB_RUN_ID")
           payload=$(jq -n --arg t "$text" '{text:$t}')
           bash .github/workflows/scripts/slack-notify.sh "$payload" "post-deploy-purge:sitemap-drift"
 
