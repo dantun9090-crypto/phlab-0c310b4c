@@ -439,10 +439,14 @@ export default function CheckoutPage() {
         ? Math.min(appliedCoupon.value, subtotal)
         : 0
   ) : 0;
-  const isFreeShipping = subtotal >= FREE_SHIPPING_THRESHOLD;
+  // Flat £20 EU postage for Germany + Poland. Free-over-£50 does NOT apply
+  // internationally — customs and cross-border carriage make a flat fee the
+  // only workable price.
+  const isEuInternational = form.country === 'Germany' || form.country === 'Poland';
+  const isFreeShipping = !isEuInternational && subtotal >= FREE_SHIPPING_THRESHOLD;
   const nextDayEligibility = checkNextDayEligibility();
   // Next Day by 12 PM is a UK-only Royal Mail service — never offer it to
-  // non-UK addresses (e.g. Germany), even if within the UK cut-off window.
+  // non-UK addresses (e.g. Germany, Poland), even if within the UK cut-off window.
   const isUkAddress = form.country === 'United Kingdom';
   const nextDayAvailable = isUkAddress && nextDayEligibility.qualifies;
   // Hide Next Day entirely when ineligible — never show a disabled placeholder.
@@ -467,12 +471,16 @@ export default function CheckoutPage() {
     ? visibleShippingOptions.find(o => o.id === form.shippingMethod)
     : undefined;
   // No shipping cost charged until the user picks a method.
+  // For EU international (Germany/Poland) the standard rate is a flat £20
+  // regardless of order value or coupon.
   const baseShipping = !selectedShippingOpt
     ? 0
     : selectedShippingOpt.id === 'standard'
-      ? (isFreeShipping ? 0 : selectedShippingOpt.price)
+      ? (isEuInternational
+          ? SHIPPING_CONFIG.internationalPrice
+          : (isFreeShipping ? 0 : selectedShippingOpt.price))
       : selectedShippingOpt.price;
-  const couponFreeShipping = appliedCoupon?.type === 'free_shipping' && selectedShippingOpt?.id === 'standard';
+  const couponFreeShipping = appliedCoupon?.type === 'free_shipping' && selectedShippingOpt?.id === 'standard' && !isEuInternational;
   const shippingCost = couponFreeShipping ? 0 : baseShipping;
   const originalTotal = subtotal + baseShipping;
   const total = Math.max(0, subtotal - discount + shippingCost).toFixed(2);
