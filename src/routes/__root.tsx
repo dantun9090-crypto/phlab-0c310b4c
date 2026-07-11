@@ -818,6 +818,7 @@ const STALE_ASSET_RECOVERY = `
     var LEGACY_COUNT='__phl_stale_asset_reload_count';
     var HYDRATION='__phl_hydration_error_seen';
     var PURGE_FIRED='__phl_preemptive_purge_at';
+    var AUTO_HARDRESET='__phl_stale_auto_hardreset_at';
     var STALE_THRESHOLD=3; // require 3 confirmed 404s before showing wall
     // Any recovery reload (?_r=…) or explicit cache-reset lands with a fresh
     // querystring — treat that as proof the previous incident is over and
@@ -829,6 +830,7 @@ const STALE_ASSET_RECOVERY = `
         sessionStorage.removeItem(COUNT);
         sessionStorage.removeItem(LEGACY_COUNT);
         sessionStorage.removeItem(PURGE_FIRED);
+        sessionStorage.removeItem(AUTO_HARDRESET);
         sessionStorage.removeItem('phl-sw-cache-reset-pending');
         localStorage.removeItem('phl_reload_count');
       }
@@ -870,6 +872,7 @@ const STALE_ASSET_RECOVERY = `
         sessionStorage.removeItem(LEGACY_COUNT);
         sessionStorage.removeItem(HYDRATION);
         sessionStorage.removeItem(PURGE_FIRED);
+        sessionStorage.removeItem(AUTO_HARDRESET);
         sessionStorage.removeItem('__phl_boot_reload_at');
         sessionStorage.removeItem('__phl_boot_reload_count');
         sessionStorage.removeItem('__phl_route_err_reload_at');
@@ -914,6 +917,16 @@ const STALE_ASSET_RECOVERY = `
       setTimeout(function(){ if(!finished){ finished=true; done(); } },1500);
       tick();
     };
+    var requestHardReset=function(reason){
+      try{
+        var last=Number(sessionStorage.getItem(AUTO_HARDRESET)||'0');
+        if(last&&Date.now()-last<60000) return false;
+        sessionStorage.setItem(AUTO_HARDRESET,String(Date.now()));
+        try{ console.warn('[STALE_ASSET] Hard reset recovery:',reason); }catch(_e){}
+      }catch(e){}
+      hardReloadClean();
+      return true;
+    };
     var showLimit=function(){
       try{ console.error('[STALE_ASSET] Automatic reload blocked'); }catch(e){}
       emit('sw_stale_reload_shown',{ path: location.pathname });
@@ -922,6 +935,7 @@ const STALE_ASSET_RECOVERY = `
         document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Update available</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">A fresh version is available. Click to clear cached files and reload.</p><button id="phl-stale-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer;min-height:44px">Refresh &amp; clear cache</button></div></div>';
         var btn=document.getElementById('phl-stale-refresh');
         if(btn) btn.addEventListener('click',function(){ emit('sw_stale_reload_accepted'); hardReloadClean(); });
+        setTimeout(function(){ requestHardReset('stale-limit'); },250);
       }catch(e){}
     };
 
@@ -947,8 +961,6 @@ const STALE_ASSET_RECOVERY = `
       }catch(e){}
       try{
         var last=Number(sessionStorage.getItem(KEY)||'0');
-        var count=readCount();
-        if(count>=STALE_THRESHOLD||onRecoveryUrl()){ showLimit(); return; }
         if(last&&Date.now()-last<30000) return;
       }catch(e){}
       // Verify the asset is actually missing before forcing a reload.
@@ -957,16 +969,24 @@ const STALE_ASSET_RECOVERY = `
       try{
         fetch(src,{method:'HEAD',cache:'no-store',credentials:'omit'}).then(function(res){
           if(hasHydration()) return;
+          if(res && res.ok){
+            // The network now has the asset, but the original script/link load
+            // still failed. That means this browser can be holding an old cached
+            // 404/opaque error for the hashed file. Clear browser storage and
+            // reopen once instead of leaving the customer on a stuck shell.
+            requestHardReset('cached-asset-load-error');
+            return;
+          }
           if(res && (res.status===404||res.status===410)){
             try{
-              if(onRecoveryUrl()){ showLimit(); return; }
+              if(onRecoveryUrl()){ if(!requestHardReset('recovery-url-asset-404')) showLimit(); return; }
               var count=readCount();
-              if(count>=STALE_THRESHOLD){ showLimit(); return; }
+              if(count>=STALE_THRESHOLD){ if(!requestHardReset('asset-404-limit')) showLimit(); return; }
               count=count+1;
               sessionStorage.setItem(KEY,String(Date.now()));
               sessionStorage.setItem(COUNT,String(count));
               sessionStorage.setItem(LEGACY_COUNT,String(count));
-              if(count<STALE_THRESHOLD){ try{ console.warn('[phlabs] stale asset 404 ('+count+'/'+STALE_THRESHOLD+'), soft-recovering:', src); }catch(e){} return; }
+              if(count<STALE_THRESHOLD){ try{ console.warn('[phlabs] stale asset 404 ('+count+'/'+STALE_THRESHOLD+'), clearing browser cache:', src); }catch(e){} requestHardReset('asset-404'); return; }
             }catch(e){ showLimit(); return; }
             try{ console.warn('[phlabs] stale build asset 404, forcing clean reload:', src); }catch(e){}
             // Force-fire the auto-purge again (bypass throttle) — this visitor
@@ -976,8 +996,7 @@ const STALE_ASSET_RECOVERY = `
               sessionStorage.removeItem(PURGE_FIRED);
               fetch('/api/public/post-publish-check',{method:'GET',cache:'no-store',credentials:'omit',keepalive:true}).catch(function(){});
             }catch(e){}
-
-            showLimit();
+            if(!requestHardReset('asset-404-threshold')) showLimit();
           }
         }).catch(function(){});
       }catch(e){}
