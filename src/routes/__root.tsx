@@ -363,7 +363,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // in RootShell's <head> so first paint isn't unstyled while this
       // downloads. Inline script in `scripts` above swaps media back to
       // "all" the moment the sheet has parsed.
-      { rel: "preload", as: "style", href: appCss },
+      //
+      // NOTE: no `<link rel="preload" as="style">` for the same href — the
+      // `media="print"` stylesheet below already triggers the fetch at high
+      // priority, and adding a duplicate preload produces a "preloaded but
+      // not used within a few seconds" console warning in Chromium because
+      // the preload and stylesheet requests dedupe *after* the preload's
+      // usage window closes. One fetch, no warning.
       { rel: "stylesheet", href: appCss, media: "print", id: "appcss" },
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", type: "image/png", sizes: "16x16", href: "/icon-16.png" },
