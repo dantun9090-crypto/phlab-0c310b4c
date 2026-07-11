@@ -108,6 +108,7 @@ function sendBeacon(rec: VitalRecord) {
       device: deviceClass(),
       conn: connectionClass(),
       build: (window as Window & { __PHLABS_BUILD_ID__?: string }).__PHLABS_BUILD_ID__ ?? "",
+      debugTarget: rec.debugTarget,
     });
     const url = "/api/public/web-vitals";
     if (navigator.sendBeacon) {
@@ -126,18 +127,19 @@ function sendBeacon(rec: VitalRecord) {
   }
 }
 
-function report(name: VitalRecord["name"], value: number, id: string) {
+function report(name: VitalRecord["name"], value: number, id: string, debugTarget?: string) {
   const rec: VitalRecord = {
     name,
     value: Math.round(name === "CLS" ? value * 1000 : value),
     rating: rate(name, value),
     id,
     path: location.pathname,
+    debugTarget,
   };
 
   window.__phlabsVitals = { ...(window.__phlabsVitals ?? {}), [name]: rec };
 
-  const tag = `[web-vitals] ${name} ${rec.value}${name === "CLS" ? "" : "ms"} (${rec.rating})`;
+  const tag = `[web-vitals] ${name} ${rec.value}${name === "CLS" ? "" : "ms"} (${rec.rating})${debugTarget ? ` → ${debugTarget}` : ""}`;
   if (rec.rating === "poor") {
     // eslint-disable-next-line no-console
     console.warn(tag, rec);
@@ -153,6 +155,7 @@ function report(name: VitalRecord["name"], value: number, id: string) {
       metric_rating: rec.rating,
       metric_id: id,
       page_path: rec.path,
+      debug_target: debugTarget,
     });
   } catch {
     /* ignore */
