@@ -257,10 +257,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "google", content: "notranslate" },
-      // Do NOT add Cache-Control/Pragma/Expires http-equiv tags here. Real
-      // cache policy belongs in response headers; meta no-store conflicted
-      // with Cloudflare edge HTML caching and amplified stale-shell recovery
-      // after publishes.
       // Build marker — helps confirm which build a stale tab is running.
       { name: "x-build-id", content: typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev" },
       { name: "author", content: "PH Labs UK" },
@@ -372,11 +368,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // the preload and stylesheet requests dedupe *after* the preload's
       // usage window closes. One fetch, no warning.
       { rel: "stylesheet", href: appCss, media: "print", id: "appcss" },
-      // Preload the header logo — it's the LCP element on nearly every route
-      // and, without an explicit high-priority hint, browsers fetched it after
-      // the JS bundle, letting it flash at native resolution before the CSS
-      // sizing kicked in. `fetchPriority: high` + hashed href = warning-free.
-      { rel: "preload", as: "image", href: logoUrl, fetchPriority: "high" } as unknown as { rel: string; href: string },
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", type: "image/png", sizes: "16x16", href: "/icon-16.png" },
       { rel: "icon", type: "image/png", sizes: "32x32", href: "/icon-32.png" },
@@ -1151,8 +1142,11 @@ html,body,#root{max-width:100%;overflow-x:hidden;margin:0;background:#060f1e;col
 body{font-family:'Inter Tight','Inter Tight Fallback',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
 h1,h2,h3{font-family:'Cormorant Garamond','Cormorant Garamond Fallback',Georgia,serif;margin:0;line-height:1.08;letter-spacing:-.015em}
 img,svg,video{display:block;max-width:100%;height:auto}
-header{top:0;z-index:50;min-height:56px;background:rgba(6,15,30,.92);border-bottom:1px solid rgba(255,255,255,.06)}
+header{top:0;z-index:50;min-height:64px;background:rgba(6,15,30,.92);border-bottom:1px solid rgba(255,255,255,.06)}
 @media(min-width:768px){header{min-height:64px}}
+.site-header,.navbar{min-height:64px}
+.site-logo,.site-logo img,.site-logo svg{max-height:48px!important;width:auto!important;height:auto!important;display:block}
+.site-logo-wrap{height:48px;width:48px;display:flex;align-items:center;justify-content:center;flex:0 0 48px}
 [data-phl-banner]{min-height:32px}
 [data-phl-research-banner]{min-height:34px}
 .phl-boot{display:flex;align-items:center;justify-content:center;min-height:60vh;color:#9fb0c8;font-size:14px}
@@ -1162,6 +1156,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en-GB" suppressHydrationWarning style={{ backgroundColor: "#060f1e" }}>
       <head suppressHydrationWarning>
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
+        <link rel="preload" as="image" href={logoUrl} type="image/webp" fetchPriority="high" />
+        <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: CRITICAL_CSS }} />
         {/* These must run before HeadContent, because HeadContent emits
             modulepreload links for hashed bundles. Old service workers can
             otherwise intercept those requests before cleanup starts. */}
@@ -1180,10 +1179,6 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: STALE_ASSET_RECOVERY }} />
         <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: BOOT_WATCHDOG }} />
         <HeadContent />
-        {/* Inline critical CSS — covers boot bg, header skeleton + banner
-            reserved heights so the page paints styled before the deferred
-            appCss arrives. Keep this synchronous and BEFORE any scripts. */}
-        <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: CRITICAL_CSS }} />
         {/* No-JS fallback: if scripts are disabled the media=print swap
             never fires, so reload the main sheet as a blocking stylesheet. */}
         <noscript>

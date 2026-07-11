@@ -2,13 +2,18 @@
 //
 // This project no longer uses a runtime Service Worker. Old visitors may still
 // have /sw.js installed, so this file activates immediately, clears PH Labs /
-// Workbox cache buckets, unregisters itself, and deliberately does NOT handle
-// fetch events or call clients.claim().
+// Workbox cache buckets, refreshes controlled windows once, unregisters itself,
+// and deliberately does NOT keep a fetch handler installed.
 
-const SW_VERSION = 'phlabs-kill-switch-v2';
+const BUILD_ID = 'phlabs-kill-switch-v3';
+const SW_VERSION = BUILD_ID;
 
 function isAppShellCache(name) {
   return /^(phlabs-offline-|workbox-|precache-|runtime-)/i.test(name) || /(^|-)precache-v\d+-|(^|-)runtime-|(^|-)googleAnalytics-/i.test(name);
+}
+
+function isStaleAppShellCache(name) {
+  return isAppShellCache(name) && !name.includes(BUILD_ID);
 }
 
 // Defensive purge: scan every Cache Storage bucket for any entry whose body
@@ -75,7 +80,7 @@ self.addEventListener('activate', (event) => {
     const purged = [];
     try {
       const keys = await caches.keys();
-      const toPurge = keys.filter(isAppShellCache);
+      const toPurge = keys.filter(isStaleAppShellCache);
       await Promise.allSettled(toPurge.map((key) => caches.delete(key)));
       purged.push(...toPurge);
     } catch (_) {
@@ -83,12 +88,14 @@ self.addEventListener('activate', (event) => {
     }
     // Defensive: scan remaining caches and evict any cached fallback HTML.
     const removedFallback = await purgeFallbackEntries();
-    // Broadcast activation for diagnostics only. Do not claim or navigate
-    // clients: either can create refresh loops for returning visitors.
+    // Claim/navigate once so returning visitors leave any stale controlled
+    // app-shell immediately. The worker then unregisters in finally.
     try {
-      const clients = await self.clients.matchAll({ includeUncontrolled: true });
+      await self.clients.claim();
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
       for (const c of clients) {
         c.postMessage({ type: 'sw-debug', event: 'activate', version: SW_VERSION, purgedCaches: purged, removedFallback, ts: Date.now() });
+        try { await c.navigate(c.url); } catch (_) { /* ignore */ }
       }
     } catch (_) { /* ignore */ }
     try { await self.registration.unregister(); } catch (_) { /* ignore */ }

@@ -634,16 +634,16 @@ export function Layout({ children }: LayoutProps) {
           PREMIUM NAVBAR — hidden on auth pages
       ═══════════════════════════════════════════════════════════════ */}
       {!isAuthPage && <header
-        className="fixed left-0 right-0 z-50 border-b border-white/[0.06]"
+        className="site-header fixed left-0 right-0 z-50 border-b border-white/[0.06]"
         style={{ background: '#030a14', top: `calc(${researchBannerOffset} + 32px)`, paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)' }}
       >
         <div className="w-full pl-4 pr-4 sm:pl-4 sm:pr-6">
-          <div className="flex items-center justify-between h-[64px]">
+          <div className="navbar flex items-center justify-between h-[64px]">
 
             {/* ── Logo (far left) ── */}
             <Link to="/" className="flex flex-col self-center min-w-0 mr-auto group">
               <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                <div className="relative shrink-0 flex items-center">
+                <div className="site-logo-wrap relative shrink-0 flex items-center" style={{ height: '48px', width: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Logo size="lg" />
                 </div>
                 <div className="flex flex-col leading-[1.05] min-w-0">

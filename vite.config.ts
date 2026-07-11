@@ -12,6 +12,10 @@ import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 // deployment and fire Cloudflare purge + Prerender recache exactly once.
 const BUILD_ID = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+// No runtime PWA/app-shell Service Worker is registered. The static /sw.js and
+// /service-worker.js files are kill-switch replacements only, used to evict old
+// Workbox/app-shell caches from returning browsers after deploys.
+
 // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
 export default defineConfig({
@@ -27,14 +31,15 @@ export default defineConfig({
       sourcemap: "hidden",
       rollupOptions: {
         output: {
-          entryFileNames: `assets/[name]-[hash]-${BUILD_ID}.js`,
-          chunkFileNames: `assets/[name]-[hash]-${BUILD_ID}.js`,
-          assetFileNames: `assets/[name]-[hash]-${BUILD_ID}[extname]`,
+          entryFileNames: "assets/[name]-[hash].js",
+          chunkFileNames: "assets/[name]-[hash].js",
+          assetFileNames: "assets/[name]-[hash][extname]",
         },
       },
     },
     define: {
       __BUILD_ID__: JSON.stringify(BUILD_ID),
+      "import.meta.env.VITE_BUILD_ID": JSON.stringify(BUILD_ID),
     },
   },
 });
