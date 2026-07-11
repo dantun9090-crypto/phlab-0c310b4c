@@ -805,19 +805,16 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   const publicCacheable = pathname ? isPublicEdgeCacheable(pathname) : false;
 
   if (publicCacheable && stripped.status === 200) {
-    // HTML shells: never cached at the edge — user repeatedly hit stale
-    // HTML after publish requiring a manual Cloudflare purge. The stale
-    // shell pointed at evicted hashed JS/CSS chunks → blank page until
-    // purge. Hashed assets stay `immutable` 1yr, so origin cost is fine.
-    // Browsers still get `must-revalidate, max-age=0` so a hard reload
-    // always fetches the latest shell.
-    htmlHeaders.set("cache-control", "public, max-age=0, must-revalidate");
+    // Public HTML must also be no-store. Returning customers were stuck on
+    // stale route documents after deploys, so even the homepage/products shell
+    // must re-fetch from the origin/CDN every navigation.
+    htmlHeaders.set("cache-control", "no-store, private, no-cache, must-revalidate, max-age=0, s-maxage=0");
     htmlHeaders.set("cdn-cache-control", "no-store");
     htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
     htmlHeaders.set("surrogate-control", "no-store");
+    htmlHeaders.set("pragma", "no-cache");
+    htmlHeaders.set("expires", "0");
     htmlHeaders.set("cache-tag", "page-html");
-    htmlHeaders.delete("pragma");
-    htmlHeaders.delete("expires");
   } else {
 
     // All other routes (auth/checkout/admin/api/dynamic) — never cache.
