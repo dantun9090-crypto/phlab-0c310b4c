@@ -80,7 +80,7 @@ export default function MarketingAdvertSlot({ adverts, placement, variant = 'ban
                     widths: isCompact ? [320, 480, 640] : [640, 960, 1280, 1600],
                     sizes: isCompact ? '(max-width: 1024px) 100vw, 320px' : '100vw',
                   })}
-                  alt={ad.altText || ad.title || 'PH Labs promotional advert'}
+                  alt={ad.altText || [ad.title, ad.subtitle].filter(Boolean).join(' — ') || `PH Labs research peptides — ${placement.replace(/_/g, ' ')} feature`}
                   width={isCompact ? 480 : 1600}
                   height={isCompact ? 360 : 300}
                   className={`w-full object-cover ${isCompact ? 'h-44' : isCard ? 'h-64' : 'h-48 md:h-72'}`}
