@@ -147,8 +147,11 @@ function normalizeAssetContentType(path, headers) {
 
 function applyBrowserHtmlNoCache(headers) {
   headers.set("Cache-Control", BROWSER_HTML_CACHE_CONTROL);
+  headers.set("CDN-Cache-Control", "no-store");
+  headers.set("Cloudflare-CDN-Cache-Control", "no-store");
   headers.set("Pragma", "no-cache");
   headers.set("Expires", "0");
+  headers.set("Vary", "Cookie, Authorization");
 }
 
 function withBrowserHtmlNoCache(response) {
