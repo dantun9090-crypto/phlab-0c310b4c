@@ -1584,10 +1584,13 @@ export default {
         !STATIC_EXT.test(url.pathname);
       if (isHtml200) {
         const peek = await normalized.clone().text();
+        // Trust the SSR sentinel unconditionally — the route component
+        // that emitted the meta owns the 404 decision (including deep
+        // paths under known roots like /products/foo/bar).
         const sentinel404 =
           /<meta[^>]+name=["']prerender-status-code["'][^>]+content=["']404["']/i.test(
             peek,
-          ) && !isKnownFirstSegment(url.pathname);
+          );
         if (sentinel404) {
           const h = new Headers(normalized.headers);
           h.set("x-robots-tag", "noindex, follow");
