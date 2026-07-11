@@ -273,6 +273,18 @@ ${detail}
           path: ./edge-cache-verify.ndjson
           retention-days: 30
 
+      - name: Notify Slack on fallback purge failure
+        if: failure() && env.DRY_RUN != 'true'
+        shell: bash
+        run: |
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          text="🚨 *Fallback per-URL purge FAILED* on \`phlabs.co.uk\`
+Trigger: \`${GITHUB_EVENT_NAME}:${GITHUB_EVENT_ACTION:-}\`
+Second-chance purge or verify did not recover after the primary purge failed — Worker deploy is likely stuck.
+<${run_url}|Open workflow run> · artifact: \`edge-cache-verify-fallback-${GITHUB_RUN_ID}\`"
+          payload=$(jq -n --arg t "$text" '{text:$t}')
+          bash .github/workflows/scripts/slack-notify.sh "$payload" "post-deploy-purge:fallback-failure"
+
   robots_sitemap_purge_probe:
     # Robots/sitemap-specific purge + probe. The primary `purge` job runs
     # purge_everything, but /robots.txt has historically been served with
