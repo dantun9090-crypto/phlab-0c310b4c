@@ -151,6 +151,9 @@ import { installClientErrorReporter, reportClientError } from "./lib/client-erro
 import { initSwTelemetry } from "./lib/swTelemetry";
 import { initSentry } from "./lib/sentry";
 import { installChunkAutoRecovery } from "./lib/chunk-auto-recovery";
+import { installImageErrorAutoReset } from "./lib/image-error-auto-reset";
+
+try { installImageErrorAutoReset(); } catch { /* ignore */ }
 
 // Sentry first so it captures errors from every subsequent boot step.
 initSentry();
