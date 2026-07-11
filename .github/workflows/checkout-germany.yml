@@ -51,7 +51,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       # Bun deps cache — shared across matrix legs (same lockfile → same key).
       - name: Cache Bun install store

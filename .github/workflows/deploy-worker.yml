@@ -28,7 +28,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
       # Snapshot the currently-live Worker script BEFORE deploying so we can
       # re-upload it verbatim if smoke tests fail. Uses the CF API directly
