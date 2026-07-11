@@ -980,7 +980,7 @@ const STALE_ASSET_RECOVERY = `
               sessionStorage.setItem(LEGACY_COUNT,String(count));
               if(count<STALE_THRESHOLD){ try{ console.warn('[phlabs] stale asset 404 ('+count+'/'+STALE_THRESHOLD+'), automatic reload disabled:', src); }catch(e){} if(!requestHardReset('asset-404')) showLimit(); return; }
             }catch(e){ showLimit(); return; }
-            try{ console.warn('[phlabs] stale build asset 404, forcing clean reload:', src); }catch(e){}
+            try{ console.warn('[phlabs] stale build asset 404, showing manual recovery:', src); }catch(e){}
             // Force-fire the auto-purge again (bypass throttle) — this visitor
             // is provably on a stale build, so we want CF + Prerender purged
             // before the reload navigates back to a freshly cached HTML.
