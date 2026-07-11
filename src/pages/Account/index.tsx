@@ -10,11 +10,13 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   auth, db, storage, getUserOrders, logoutUser, Order, redeemReferralBalance,
   doc, getDoc, updateDoc, deleteDoc, onAuthStateChanged, FirebaseUser,
-  deleteUser, EmailAuthProvider, reauthenticateWithCredential, updatePassword,
+  deleteUser, reauthenticateWithCredential, updatePassword,
   sendEmailVerification, collection, addDoc, getDocs, query, where, orderBy,
   storageRef, uploadBytes, getDownloadURL, deleteObject,
 } from '@/lib/firebase';
+import { EmailAuthProvider } from 'firebase/auth';
 import { serverTimestamp } from 'firebase/firestore';
+
 import { revokeMyRefreshTokens } from '@/lib/revoke-refresh-tokens.functions';
 import { logSecurityEvent } from '@/lib/security-events';
 import { OrderTrackingBar } from '@/components/OrderTrackingBar';
