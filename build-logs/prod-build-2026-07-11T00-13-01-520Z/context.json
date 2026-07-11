@@ -1,0 +1,42 @@
+{
+  "runId": "2026-07-11T00-13-01-520Z",
+  "cwd": "/dev-server",
+  "bunVersion": "1.3.3",
+  "nodeVersion": "v24.3.0",
+  "platform": "linux",
+  "arch": "x64",
+  "buildId": null,
+  "github": {
+    "repository": null,
+    "ref": null,
+    "runId": null,
+    "runAttempt": null
+  },
+  "files": {
+    "packageJson": true,
+    "bunLock": true,
+    "nodeModules": true,
+    "viteConfig": true,
+    "serverEntry": true
+  },
+  "retry": {
+    "maxAttempts": 3,
+    "transientPatterns": [
+      "/Temporary infrastructure issue/i",
+      "/preparing the build environment/i",
+      "/ECONNRESET/i",
+      "/ECONNREFUSED/i",
+      "/ETIMEDOUT/i",
+      "/EAI_AGAIN/i",
+      "/ENOTFOUND/i",
+      "/network\\s+error/i",
+      "/fetch\\s+failed/i",
+      "/socket\\s+hang\\s+up/i",
+      "/TLS connection/i",
+      "/HTTP\\s+(408|425|429|500|502|503|504)/i",
+      "/npm registry/i",
+      "/registry\\.npmjs\\.org/i",
+      "/bunfig/i"
+    ]
+  }
+}
