@@ -989,10 +989,12 @@ const STALE_ASSET_RECOVERY = `
             // still failed. That means this browser can be holding an old cached
             // 404/opaque error for the hashed file. Clear browser storage and
             // reopen once instead of leaving the customer on a stuck shell.
+            reportStale(src,res.status,'script-load-failed-asset-ok');
             showLimit();
             return;
           }
           if(res && (res.status===404||res.status===410)){
+            reportStale(src,res.status,'asset-404');
             try{
               if(onRecoveryUrl()){ if(!requestHardReset('recovery-url-asset-404')) showLimit(); return; }
               var count=readCount();
