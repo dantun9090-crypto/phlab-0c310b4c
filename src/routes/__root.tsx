@@ -29,6 +29,7 @@ import { clearStoreCachesForNewBuild } from "@/lib/build-cache";
 import { PageviewBeacon } from "@/components/PageviewBeacon";
 import DayNightToggle from "@/components/DayNightToggle";
 import { initWebVitals } from "@/lib/web-vitals";
+import { initCachePolicyVerifier } from "@/lib/cache-policy-verifier";
 import { installErrorMonitor } from "@/lib/error-monitor";
 import { installBfcacheMonitor } from "@/lib/bfcache-monitor";
 import { installClientErrorReporter } from "@/lib/client-error-reporter";
