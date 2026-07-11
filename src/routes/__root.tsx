@@ -843,6 +843,29 @@ const STALE_ASSET_RECOVERY = `
     // origin under load. The stale-asset 404 path below still triggers the
     // purge on demand when a visitor is provably on an old build.
 
+    // Beacon to admin log — fire-and-forget POST so admins can spot stale
+    // asset 404s in the panel within seconds of a bad publish.
+    var reportStale=function(src,status,reason){
+      try{
+        var body=JSON.stringify({
+          src:String(src||'').slice(0,600),
+          status:Number(status||0),
+          reason:String(reason||'').slice(0,80),
+          host:location.host,
+          referer:(location.pathname+location.search).slice(0,600),
+          count:readCount ? readCount() : 0,
+          buildId:(window.__PHL_BUILD_ID__||document.documentElement.getAttribute('data-build-id')||''),
+          ua:(navigator.userAgent||'').slice(0,400)
+        });
+        if(navigator.sendBeacon){
+          try{ navigator.sendBeacon('/api/public/stale-asset-report', new Blob([body],{type:'application/json'})); return; }catch(_e){}
+        }
+        fetch('/api/public/stale-asset-report',{method:'POST',headers:{'content-type':'application/json'},body:body,keepalive:true,credentials:'omit',cache:'no-store'}).catch(function(){});
+      }catch(e){}
+    };
+
+
+
 
     var isHydration=function(x){
       var msg='';
