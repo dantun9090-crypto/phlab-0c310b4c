@@ -23,7 +23,7 @@ export default function RefundPolicy() {
       '@id': 'https://phlabs.co.uk/refund-policy#return-policy',
       name: 'PH Labs Return Policy',
       url: 'https://phlabs.co.uk/refund-policy',
-      applicableCountry: ['GB', 'PL'],
+      applicableCountry: ['GB', 'PL', 'DE'],
       returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
       merchantReturnDays: 14,
       returnMethod: 'https://schema.org/ReturnByMail',
