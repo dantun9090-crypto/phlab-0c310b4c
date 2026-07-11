@@ -19,7 +19,7 @@ const sizeDimensions = {
 
 export function Logo({ className = '', size = 'md' }: LogoProps) {
   const { width, height } = sizeDimensions[size];
-  
+
   return (
     <img
       src={logoSrc}
@@ -27,8 +27,18 @@ export function Logo({ className = '', size = 'md' }: LogoProps) {
       width={width}
       height={height}
       className={`${sizeClasses[size]} ${className}`}
-      style={{ objectFit: 'contain' }}
+      // Inline aspect-ratio + max dimensions reserve the exact box before the
+      // Tailwind bundle applies `h-8 w-8` / `h-10 w-10`, so the logo can never
+      // flash at its native resolution during first paint (LCP/CLS fix).
+      style={{
+        objectFit: 'contain',
+        aspectRatio: `${width} / ${height}`,
+        maxWidth: `${width}px`,
+        maxHeight: `${height}px`,
+      }}
       loading="eager"
+      fetchPriority="high"
+      decoding="async"
     />
   );
 }
