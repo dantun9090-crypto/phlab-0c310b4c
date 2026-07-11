@@ -134,6 +134,7 @@ const navGroups = [
       { id: 'purgeincidents', label: 'Purge Incidents', icon: Activity },
       { id: 'swtelemetrydebug', label: 'SW Telemetry Debug', icon: Activity },
       { id: 'monitorlog', label: 'Monitor Log (HEAD/GET)', icon: Activity },
+      { id: 'staleassets', label: 'Stale Asset 404s', icon: AlertTriangle },
       { id: 'sentryissues', label: 'Sentry Issues', icon: AlertTriangle },
       { id: 'emergencypurge', label: 'Emergency Purge', icon: Cloud },
     ],
