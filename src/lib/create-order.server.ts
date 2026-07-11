@@ -39,6 +39,7 @@ const itemSchema = z.object({
 
 const UK_POSTCODE_RE = /^[A-Z]{1,2}[0-9][0-9A-Z]?\s*[0-9][A-Z]{2}$/i;
 const DE_POSTCODE_RE = /^\d{5}$/;
+const PL_POSTCODE_RE = /^\d{2}-?\d{3}$/;
 const IE_EIRCODE_RE = /^[A-Z]\d{2}\s?[A-Z0-9]{4}$/i;
 
 const customerSchema = z.object({
@@ -63,6 +64,10 @@ const customerSchema = z.object({
     // German addresses must include a street name AND a house number.
     if (!/\d/.test(c.address) || !/[A-Za-zÄÖÜäöüß]/.test(c.address)) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['address'], message: 'Enter street name and house number (e.g. Musterstraße 12)' });
+    }
+  } else if (c.country === 'Poland') {
+    if (!PL_POSTCODE_RE.test(pc)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['postcode'], message: 'Enter a valid Polish postcode (NN-NNN)' });
     }
   } else if (c.country === 'Ireland') {
     if (!IE_EIRCODE_RE.test(pc)) {
