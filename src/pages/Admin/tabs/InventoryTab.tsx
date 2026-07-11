@@ -412,10 +412,11 @@ export default function InventoryTab() {
                         productId={product.id!}
                         field="price"
                         value={Number(product.price || 0)}
+                        variants={product.variants}
                         format={(n) => `£${n.toFixed(2)}`}
                         step="0.01"
                         min={0}
-                        onSaved={(n) => setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, price: n } : p))}
+                        onSaved={(n, patch) => setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, price: n, ...(patch?.variants ? { variants: patch.variants } : {}) } : p))}
                       />
                     </td>
                     <td className="px-3 sm:px-4 py-3 text-right">
@@ -424,11 +425,13 @@ export default function InventoryTab() {
                           productId={product.id!}
                           field="stock"
                           value={Number(product.stock || 0)}
+                          variants={product.variants}
                           format={(n) => String(n)}
                           step="1"
                           min={0}
-                          onSaved={(n) => setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, stock: n } : p))}
+                          onSaved={(n, patch) => setProducts((prev) => prev.map((p) => p.id === product.id ? { ...p, stock: n, ...(patch?.variants ? { variants: patch.variants } : {}) } : p))}
                         />
+
                         {(product.stock || 0) <= LOW_STOCK_THRESHOLD && (
                           <AlertTriangle className="w-3 h-3" />
                         )}
