@@ -1222,7 +1222,7 @@ export default function HomePage() {
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLElement).style.color = '#e4f0ff'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = '#8db4d8'; }}
               >
-                Contact Our Team
+                Contact Us
               </Link>
             </div>
           </div>
