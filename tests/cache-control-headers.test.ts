@@ -1,12 +1,10 @@
 /**
- * Cache-Control header sanity test for the prerendered marketing pages.
+ * Cache-Control header sanity test for public marketing pages.
  *
  * Goal: prevent the "endless client-side refresh" failure mode by asserting
  * that:
- *   - /compound and /research return a finite TTL (max-age > 0 OR
- *     s-maxage > 0) so the browser/CDN actually cache the HTML, AND
- *   - either `stale-while-revalidate` is set OR the TTL is short enough
- *     (<= 10 minutes) that a stale build cannot pin the user indefinitely.
+ *   - /compound and /research do not return long-lived HTML caching, and
+ *   - the browser/CDN must revalidate or refetch the HTML on every visit.
  *
  * Self-skips offline (CI may run without network egress).
  *
@@ -59,34 +57,17 @@ describe("Cache-Control headers for marketing routes", () => {
       const cc = result.cacheControl.toLowerCase();
       expect(cc, `${path} must set Cache-Control`).not.toBe("");
 
-      // Forbid no-store on prerendered marketing HTML — that disables the
-      // edge cache entirely and is what causes the refresh-loop symptom.
-      expect(cc).not.toMatch(/\bno-store\b/);
-
       const maxAge = parseDirective(cc, "max-age") ?? 0;
       const sMaxAge = parseDirective(cc, "s-maxage") ?? 0;
-      const swr = parseDirective(cc, "stale-while-revalidate") ?? 0;
+      const cdn = result.cdnCacheControl.toLowerCase();
+      const surrogate = result.surrogate.toLowerCase();
 
-      // Must cache somewhere with a finite, non-zero TTL.
-      expect(
-        Math.max(maxAge, sMaxAge) > 0,
-        `${path} must have a non-zero TTL (got "${cc}")`,
-      ).toBe(true);
+      expect(cc, `${path} must not cache HTML in the browser`).toMatch(/\b(no-store|no-cache|must-revalidate)\b/);
+      expect(maxAge, `${path} browser HTML max-age must be 0`).toBe(0);
+      expect(sMaxAge, `${path} shared HTML s-maxage must be 0`).toBe(0);
 
-      // Either set stale-while-revalidate, or keep the TTL short enough
-      // (<= 10 min) that a stale build can't trap the user.
-      const ttl = Math.max(maxAge, sMaxAge);
-      expect(
-        swr > 0 || ttl <= 600,
-        `${path}: need stale-while-revalidate OR ttl <= 600s (got max-age=${maxAge}, s-maxage=${sMaxAge}, swr=${swr})`,
-      ).toBe(true);
-
-      // Hard ceiling — never let a stale HTML response sit at the edge for
-      // more than 1 hour without revalidation, even with SWR.
-      expect(
-        ttl <= 3600,
-        `${path}: TTL ${ttl}s exceeds 1h ceiling`,
-      ).toBe(true);
+      if (cdn) expect(cdn, `${path} CDN HTML cache must be disabled`).toMatch(/\bno-store\b/);
+      if (surrogate) expect(surrogate, `${path} surrogate HTML cache must be disabled`).toMatch(/\bno-store\b/);
     });
   }
 });
