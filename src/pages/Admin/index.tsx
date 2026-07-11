@@ -91,6 +91,7 @@ import InfraHealthTab from './tabs/InfraHealthTab';
 import PurgeIncidentsTab from './tabs/PurgeIncidentsTab';
 import SwTelemetryDebugTab from './tabs/SwTelemetryDebugTab';
 import MonitorLogTab from './tabs/MonitorLogTab';
+import StaleAssetsTab from './tabs/StaleAssetsTab';
 import SentryIssuesTab from './tabs/SentryIssuesTab';
 import PublishStatusTab from './tabs/PublishStatusTab';
 import AuditReportTab from './tabs/AuditReportTab';
