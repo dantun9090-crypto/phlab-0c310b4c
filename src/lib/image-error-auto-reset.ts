@@ -160,6 +160,7 @@ export function installImageErrorAutoReset(): void {
 
   const broken = new Map<string, number>();
   const seen = new Set<string>();
+  const retried = new Set<string>(); // original srcs we've already cache-busted once
   const errors: ProbeResult[] = [];
   (window as unknown as { __phlImageErrors?: ProbeResult[] }).__phlImageErrors = errors;
 
@@ -176,14 +177,60 @@ export function installImageErrorAutoReset(): void {
     window.location.replace(url);
   };
 
+  const withCacheBust = (src: string): string => {
+    try {
+      const u = new URL(src, window.location.href);
+      u.searchParams.set("_cb", Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+      return u.toString();
+    } catch {
+      const sep = src.includes("?") ? "&" : "?";
+      return `${src}${sep}_cb=${Date.now().toString(36)}`;
+    }
+  };
+
+  /** Strip a previously-added `_cb` param so we identify the "original" src. */
+  const stripCacheBust = (src: string): string => {
+    try {
+      const u = new URL(src, window.location.href);
+      u.searchParams.delete("_cb");
+      return u.toString();
+    } catch {
+      return src;
+    }
+  };
+
+  const tryRefetch = (el: HTMLImageElement, src: string): boolean => {
+    const original = stripCacheBust(src);
+    if (retried.has(original)) return false;
+    retried.add(original);
+    const fresh = withCacheBust(original);
+    // eslint-disable-next-line no-console
+    console.info(`[image-retry] cache-busting broken image once before counting\n  URL: ${original}`);
+    // Force a re-request. Clearing srcset first avoids the browser re-picking
+    // the failed candidate. crossOrigin toggle nudges some CDN caches.
+    try { el.removeAttribute("srcset"); } catch { /* ignore */ }
+    // Yield a tick so the current error event fully settles before we reassign.
+    setTimeout(() => {
+      try { el.src = fresh; } catch { /* ignore */ }
+    }, 0);
+    return true;
+  };
+
   const onError = (ev: Event): void => {
     const t = ev.target as (HTMLImageElement | HTMLSourceElement | null);
     if (!t) return;
-    const src = (t as HTMLImageElement).currentSrc
+    const rawSrc = (t as HTMLImageElement).currentSrc
       || (t as HTMLImageElement).src
       || (t as HTMLSourceElement).srcset
       || "";
-    if (!src || !isFirebaseImage(src)) return;
+    if (!rawSrc || !isFirebaseImage(rawSrc)) return;
+
+    // First failure for this image → silently retry once with cache-bust,
+    // don't log/count yet. If the retry also fails we fall through to
+    // normal diagnostics + threshold accounting below.
+    if (t instanceof HTMLImageElement && tryRefetch(t, rawSrc)) return;
+
+    const src = stripCacheBust(rawSrc);
     if (seen.has(src)) return;
     seen.add(src);
 
@@ -194,7 +241,7 @@ export function installImageErrorAutoReset(): void {
     void probe(src).then((r) => {
       errors.push(r);
       // eslint-disable-next-line no-console
-      console.warn(`[image-error] ${r.status} ${r.reason}\n  URL: ${r.url}`);
+      console.warn(`[image-error] ${r.status} ${r.reason} (after cache-bust retry)\n  URL: ${r.url}`);
       renderEntry(r);
       if (!alreadyReset && broken.size >= THRESHOLD) trigger();
     });
@@ -202,3 +249,4 @@ export function installImageErrorAutoReset(): void {
 
   window.addEventListener("error", onError, true);
 }
+
