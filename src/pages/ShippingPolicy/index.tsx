@@ -18,7 +18,7 @@ export default function ShippingPolicy() {
       title: 'Delivery Regions',
       content: (
         <div className="space-y-3 text-[#9cb8d9] leading-relaxed text-sm">
-          <p>We currently dispatch to <strong className="text-[#c8daf0]">mainland UK only</strong> (England, Scotland, Wales). We do not ship to Northern Ireland, the Channel Islands, Republic of Ireland, or any international destination at this time.</p>
+          <p>We dispatch to <strong className="text-[#c8daf0]">mainland UK</strong> (England, Scotland, Wales) and, by tracked international mail, to <strong className="text-[#c8daf0]">Germany</strong> and <strong className="text-[#c8daf0]">Poland</strong>. We do not ship to Northern Ireland, the Channel Islands, the Republic of Ireland, or any other international destination at this time.</p>
           <p>All orders are dispatched from our UK fulfilment centre.</p>
         </div>
       ),
