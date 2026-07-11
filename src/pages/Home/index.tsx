@@ -872,7 +872,7 @@ export default function HomePage() {
               onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = 'rgba(16,185,129,0.18)'}
               onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = 'rgba(16,185,129,0.1)'}
             >
-              View Lab Reports <ArrowRight className="w-4 h-4" />
+              See Certificates <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
