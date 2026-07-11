@@ -128,15 +128,15 @@ function looksSpammy(domain: string): boolean {
   return SPAM_PATTERNS.some((re) => re.test(domain));
 }
 
-async function fetchSnapshot(): Promise<BacklinkSnapshot> {
+async function fetchSnapshot(target: string = TARGET_DOMAIN): Promise<BacklinkSnapshot> {
   const [overviewRes, refdomainsRes] = await Promise.all([
     gwGet('/backlinks/backlinks_overview', {
-      target: TARGET_DOMAIN,
+      target,
       target_type: 'root_domain',
       export_columns: 'ascore,total,domains_num,urls_num,ips_num,follows_num,nofollows_num',
     }),
     gwGet('/backlinks/backlinks_refdomains', {
-      target: TARGET_DOMAIN,
+      target,
       target_type: 'root_domain',
       display_limit: 200,
       export_columns: 'domain_ascore,domain,backlinks_num,ip,country,first_seen,last_seen',
@@ -154,7 +154,7 @@ async function fetchSnapshot(): Promise<BacklinkSnapshot> {
 
   return {
     fetchedAt: new Date().toISOString(),
-    target: TARGET_DOMAIN,
+    target,
     ascore: toNum(ov.ascore),
     total: toNum(ov.total),
     domains_num: toNum(ov.domains_num),
@@ -162,6 +162,55 @@ async function fetchSnapshot(): Promise<BacklinkSnapshot> {
     nofollows_num: toNum(ov.nofollows_num),
     refdomains: refs,
   };
+}
+
+/**
+ * Snapshot + diff a competitor domain. Fires a Telegram-only alert (no email
+ * spam) when a competitor picks up ANY new refdomains — that's the signal
+ * we care about (someone just linked to them / a PBN is warming up).
+ * Errors are swallowed so a competitor lookup never breaks the main run.
+ */
+async function runCompetitorWatch(domain: string): Promise<void> {
+  try {
+    const snap = await fetchSnapshot(domain);
+    const latestId = latestDocId(domain);
+    let previous: BacklinkSnapshot | null = null;
+    try {
+      const prev = await getDocAdmin(SNAPSHOT_COLLECTION, latestId);
+      if (prev && Array.isArray((prev as any).refdomains)) {
+        previous = prev as unknown as BacklinkSnapshot;
+      }
+    } catch { /* first run */ }
+
+    const diff = previous ? computeDiff(snap, previous) : null;
+    const runDocId = `run-${domain.replace(/[^a-z0-9]/gi, '-')}-${snap.fetchedAt.replace(/[:.]/g, '-')}`;
+    await addDocAdmin(SNAPSHOT_COLLECTION, {
+      ...snap,
+      diff,
+      competitor: true,
+      triggeredBy: 'cron',
+    }, runDocId).catch(() => {});
+    try {
+      await updateDocAdmin(SNAPSHOT_COLLECTION, latestId, snap as unknown as Record<string, unknown>);
+    } catch {
+      await addDocAdmin(SNAPSHOT_COLLECTION, snap as unknown as Record<string, unknown>, latestId).catch(() => {});
+    }
+
+    if (diff && (diff.newDomains.length > 0 || (diff.ascoreDelta != null && diff.ascoreDelta >= 2))) {
+      const lines = [
+        `<b>🕵️ Competitor Backlink Watch — ${domain}</b>`,
+        `AS: <b>${snap.ascore ?? '-'}</b> (Δ ${diff.ascoreDelta ?? 0}) · RefDomains: <b>${snap.domains_num ?? '-'}</b> (Δ ${diff.domainsDelta ?? 0})`,
+      ];
+      if (diff.newDomains.length) {
+        lines.push(`\n+ <b>${diff.newDomains.length} new referring domain(s):</b>`);
+        diff.newDomains.slice(0, 10).forEach((r) =>
+          lines.push(`• <code>${r.domain}</code> (AS ${r.ascore ?? '-'}, ${r.country ?? '?'})`));
+      }
+      await sendTelegram(lines.join('\n'));
+    }
+  } catch (e) {
+    console.error(`[backlink-watcher] competitor ${domain} failed`, e);
+  }
 }
 
 function computeDiff(current: BacklinkSnapshot, previous: BacklinkSnapshot): BacklinkDiff {
