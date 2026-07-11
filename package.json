@@ -144,7 +144,7 @@
     "@types/pngjs": "^6.0.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "@types/three": "^0.184.1",
+    "@types/three": "^0.185.1",
     "@vitejs/plugin-react": "^5.0.4",
     "axe-core": "^4.12.1",
     "eslint": "^9.32.0",
