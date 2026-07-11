@@ -1452,12 +1452,12 @@ export default function CheckoutPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label htmlFor="city" className="block text-xs font-medium text-gray-300 mb-1">City / Town <span className="text-red-400">*</span></label>
-                        <input id="city" type="text" autoComplete="address-level2" value={form.city} onChange={e => setField('city', e.target.value)} placeholder={form.country === 'Germany' ? 'Berlin' : 'London'} style={inputStyle(!!errors.city)} />
+                        <input id="city" type="text" autoComplete="address-level2" value={form.city} onChange={e => setField('city', e.target.value)} placeholder={form.country === 'Germany' ? 'Berlin' : form.country === 'Poland' ? 'Warszawa' : 'London'} style={inputStyle(!!errors.city)} />
                         {errors.city && <p className="text-red-400 text-xs mt-1">{errors.city}</p>}
                       </div>
                       <div>
                         <label htmlFor="postcode" className="block text-xs font-medium text-gray-300 mb-1">
-                          {form.country === 'Germany' ? 'PLZ (Postleitzahl)' : form.country === 'Ireland' ? 'Eircode' : 'Postcode'} <span className="text-red-400">*</span>
+                          {form.country === 'Germany' ? 'PLZ (Postleitzahl)' : form.country === 'Poland' ? 'Kod pocztowy' : form.country === 'Ireland' ? 'Eircode' : 'Postcode'} <span className="text-red-400">*</span>
                         </label>
                         <input
                           id="postcode"
@@ -1466,11 +1466,18 @@ export default function CheckoutPage() {
                           value={form.postcode}
                           onChange={e => {
                             const raw = e.target.value;
-                            // Only uppercase for alphanumeric postcodes; German PLZ is digits only.
-                            setField('postcode', form.country === 'Germany' ? raw.replace(/\D/g, '').slice(0, 5) : raw.toUpperCase());
+                            if (form.country === 'Germany') {
+                              setField('postcode', raw.replace(/\D/g, '').slice(0, 5));
+                            } else if (form.country === 'Poland') {
+                              // NN-NNN format — keep digits + optional single dash.
+                              const digits = raw.replace(/\D/g, '').slice(0, 5);
+                              setField('postcode', digits.length > 2 ? `${digits.slice(0, 2)}-${digits.slice(2)}` : digits);
+                            } else {
+                              setField('postcode', raw.toUpperCase());
+                            }
                           }}
-                          placeholder={form.country === 'Germany' ? '10115' : form.country === 'Ireland' ? 'D02 XY45' : 'SW1A 1AA'}
-                          inputMode={form.country === 'Germany' ? 'numeric' : 'text'}
+                          placeholder={form.country === 'Germany' ? '10115' : form.country === 'Poland' ? '00-001' : form.country === 'Ireland' ? 'D02 XY45' : 'SW1A 1AA'}
+                          inputMode={form.country === 'Germany' || form.country === 'Poland' ? 'numeric' : 'text'}
                           style={inputStyle(!!errors.postcode)}
                         />
                         {errors.postcode && <p className="text-red-400 text-xs mt-1">{errors.postcode}</p>}
@@ -1492,6 +1499,7 @@ export default function CheckoutPage() {
                       >
                         <option value="United Kingdom">United Kingdom</option>
                         <option value="Germany">Germany (Deutschland)</option>
+                        <option value="Poland">Poland (Polska)</option>
                         <option value="Ireland">Ireland</option>
                         <option value="Other">Other</option>
                       </select>
