@@ -139,7 +139,13 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
     }
   }
 
-  const baseShipping = SHIPPING_OPTIONS[input.shippingMethod].price;
+  // EU international dispatch (Germany, Poland) is a flat £20 tracked-mail
+  // rate. Free-over-£50 and free-shipping coupons do NOT apply on EU orders.
+  const isEuInternational =
+    input.customer.country === 'Germany' || input.customer.country === 'Poland';
+  const baseShipping = isEuInternational && input.shippingMethod === 'standard'
+    ? SHIPPING_CONFIG.internationalPrice
+    : SHIPPING_OPTIONS[input.shippingMethod].price;
 
   // Authoritative re-pricing — server reads product_stock, applies coupon.
   const validation: ValidateCartResult = await runValidateCart({
@@ -161,9 +167,10 @@ export async function runCreateOrder(input: CreateOrderInput): Promise<CreateOrd
 
   // Derive authoritative shipping + total. Never trust any client total.
   // Next-day shipping is ALWAYS paid (not eligible for free-over-£50 or free-shipping coupons).
-  const isFreeShipping = !isNextDay && validation.subtotal >= FREE_SHIPPING_THRESHOLD;
+  // EU international is also excluded from free-over-£50 and free-shipping coupons.
+  const isFreeShipping = !isNextDay && !isEuInternational && validation.subtotal >= FREE_SHIPPING_THRESHOLD;
   const baseCost = isFreeShipping ? 0 : baseShipping;
-  const shippingDisc = isNextDay ? 0 : validation.shippingDiscount;
+  const shippingDisc = (isNextDay || isEuInternational) ? 0 : validation.shippingDiscount;
   const shippingCost = +Math.max(0, baseCost - shippingDisc).toFixed(2);
   const totalAmount  = +Math.max(0, validation.subtotal - validation.discount + shippingCost).toFixed(2);
 
