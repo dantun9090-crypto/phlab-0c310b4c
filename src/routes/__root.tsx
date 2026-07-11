@@ -969,6 +969,14 @@ const STALE_ASSET_RECOVERY = `
       try{
         fetch(src,{method:'HEAD',cache:'no-store',credentials:'omit'}).then(function(res){
           if(hasHydration()) return;
+          if(res && res.ok){
+            // The network now has the asset, but the original script/link load
+            // still failed. That means this browser can be holding an old cached
+            // 404/opaque error for the hashed file. Clear browser storage and
+            // reopen once instead of leaving the customer on a stuck shell.
+            requestHardReset('cached-asset-load-error');
+            return;
+          }
           if(res && (res.status===404||res.status===410)){
             try{
               if(onRecoveryUrl()){ if(!requestHardReset('recovery-url-asset-404')) showLimit(); return; }
