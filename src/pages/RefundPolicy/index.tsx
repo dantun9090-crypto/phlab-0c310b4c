@@ -41,7 +41,7 @@ export default function RefundPolicy() {
       itemDefectReturnFees: 'https://schema.org/FreeReturn',
       itemDefectReturnLabelSource: 'https://schema.org/ReturnLabelInBox',
       refundProcessingTime: 'P3D',
-      description: 'Returns accepted within 14 days for both defective and non-defective items in new condition. Customer covers return postage for change-of-mind returns; PH Labs covers postage for defective items. Exchanges not offered. Refunds processed within 3 business days of receipt.',
+      description: 'Returns accepted within 14 days for sealed, unopened items in new condition. Under UK Consumer Contracts Regulations 2013 Regulation 28(3), sterile research peptides supplied in tamper-evident sealed vials are exempt from the 14-day right to cancel once the seal is broken (health-protection and hygiene exemption). Defective, damaged, or mis-shipped items remain fully returnable at PH Labs\u2019 cost. Customer covers return postage for change-of-mind returns of unopened items. Exchanges not offered. Refunds processed within 3 business days of receipt.',
     };
     const el = document.createElement('script');
     el.type = 'application/ld+json';
@@ -103,9 +103,10 @@ export default function RefundPolicy() {
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
             {[
               ['Countries', 'United Kingdom, Poland'],
-              ['Returns', 'Accepted for defective and non-defective items'],
+              ['Returns', 'Accepted — sealed & unopened items within 14 days; defective items within 14 days'],
+              ['Sealed-goods exemption', 'Opened vials cannot be returned (CCR 2013 Reg. 28(3))'],
               ['Exchanges', 'Not accepted'],
-              ['Product condition', 'New only'],
+              ['Product condition', 'New, sealed, tamper-evident closure intact'],
               ['Return window', '14 days from delivery'],
               ['Return method', 'By post'],
               ['Return label (change of mind)', 'Customer responsibility'],
@@ -150,6 +151,31 @@ export default function RefundPolicy() {
               </div>
             </div>
           </section>
+
+          {/* Sealed-Goods Hygiene Exemption — CCR 2013 Reg. 28(3) */}
+          <section className="rounded-2xl p-6" style={{ background: '#0b1a30', border: '1px solid rgba(245,158,11,0.25)' }}>
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(245,158,11,0.1)' }}>
+                <ShieldCheck className="w-5 h-5 text-amber-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-[#f0f6ff] font-bold text-lg mb-3">Sealed-Goods Hygiene Exemption (CCR 2013 Reg. 28(3))</h2>
+                <p className="text-[#9cb8d9] text-sm leading-relaxed mb-3">
+                  Every research compound is supplied in a <strong className="text-[#c8daf0]">single-use, sterile vial fitted with a tamper-evident closure</strong>. Because sterility cannot be re-established once the seal is broken, opened vials are excluded from the 14-day right to cancel under UK Consumer Contracts Regulations 2013 Regulation 28(3) — the same health-protection and hygiene exemption applied to sealed cosmetics, supplements, and sterile laboratory consumables.
+                </p>
+                <ul className="space-y-2 text-sm text-[#8caad4] mb-3">
+                  <li className="flex gap-2"><span className="text-amber-400">•</span><span><strong className="text-[#c8daf0]">Sealed &amp; unopened vial:</strong> full refund within the 14-day cooling-off period. Customer covers return postage.</span></li>
+                  <li className="flex gap-2"><span className="text-amber-400">•</span><span><strong className="text-[#c8daf0]">Seal broken / tamper strip missing / vial opened:</strong> not eligible for return under the sealed-goods exemption.</span></li>
+                  <li className="flex gap-2"><span className="text-amber-400">•</span><span><strong className="text-[#c8daf0]">Defective, damaged, or mis-shipped:</strong> unaffected by this exemption — full refund and return postage covered by PH Labs.</span></li>
+                </ul>
+                <p className="text-[#8caad4] text-xs leading-relaxed">
+                  By placing an order you acknowledge, at checkout, that opened sterile vials cannot be returned under this exemption. Your other statutory rights, including under the UK Consumer Rights Act 2015 for defective goods, are unaffected.
+                </p>
+              </div>
+            </div>
+          </section>
+
+
 
 
           {/* Our Commitment */}
