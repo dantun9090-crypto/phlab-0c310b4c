@@ -1772,8 +1772,10 @@ export default function CheckoutPage() {
                         I confirm I am a qualified researcher and that these products will be used for{' '}
                         <strong className="text-white">in-vitro laboratory research only</strong>.{' '}
                         I understand they are <strong className="text-white">Not For Human Or Veterinary Consumption</strong>,
-                        are not drugs, food or supplements, and I agree to the{' '}
-                        <Link to="/terms-of-service" target="_blank" className="text-emerald-400 hover:text-emerald-300 underline font-medium">Terms & Conditions</Link>{' '}
+                        are not drugs, food or supplements. I also understand that vials ship sealed with a tamper-evident closure and that{' '}
+                        <strong className="text-white">opened vials cannot be returned</strong> under the sealed-goods hygiene exemption (UK CCR 2013 Reg. 28(3)); defective or damaged items remain fully refundable. I agree to the{' '}
+                        <Link to="/terms-of-service" target="_blank" className="text-emerald-400 hover:text-emerald-300 underline font-medium">Terms & Conditions</Link>,{' '}
+                        <Link to="/refund-policy" target="_blank" className="text-emerald-400 hover:text-emerald-300 underline">Refund Policy</Link>{' '}
                         and{' '}
                         <Link to="/privacy-policy" target="_blank" className="text-emerald-400 hover:text-emerald-300 underline">Privacy Policy</Link>.
                       </span>
