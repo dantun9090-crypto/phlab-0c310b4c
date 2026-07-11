@@ -41,7 +41,7 @@ export default function RefundPolicy() {
       itemDefectReturnFees: 'https://schema.org/FreeReturn',
       itemDefectReturnLabelSource: 'https://schema.org/ReturnLabelInBox',
       refundProcessingTime: 'P3D',
-      description: 'Returns accepted within 14 days for both defective and non-defective items in new condition. Customer covers return postage for change-of-mind returns; PH Labs covers postage for defective items. Exchanges not offered. Refunds processed within 3 business days of receipt.',
+      description: 'Returns accepted within 14 days for sealed, unopened items in new condition. Under UK Consumer Contracts Regulations 2013 Regulation 28(3), sterile research peptides supplied in tamper-evident sealed vials are exempt from the 14-day right to cancel once the seal is broken (health-protection and hygiene exemption). Defective, damaged, or mis-shipped items remain fully returnable at PH Labs\u2019 cost. Customer covers return postage for change-of-mind returns of unopened items. Exchanges not offered. Refunds processed within 3 business days of receipt.',
     };
     const el = document.createElement('script');
     el.type = 'application/ld+json';
