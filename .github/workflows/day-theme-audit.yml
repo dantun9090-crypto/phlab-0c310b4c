@@ -91,7 +91,7 @@ jobs:
 
       - name: Upload Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: day-theme-audit-report
           path: |
@@ -103,7 +103,7 @@ jobs:
 
       - name: Upload regenerated snapshots
         if: ${{ github.event.inputs.update_snapshots == 'true' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: day-theme-snapshots
           path: e2e/day-theme-audit.spec.ts-snapshots/

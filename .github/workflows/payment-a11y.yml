@@ -71,7 +71,7 @@ jobs:
         run: bunx playwright test e2e/payment-options-domain-guard.spec.ts --project=${{ matrix.project }}
       - name: Upload Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-a11y-${{ matrix.project }}
           path: playwright-report
@@ -98,7 +98,7 @@ jobs:
         run: bunx playwright test e2e/payment-options-visual.spec.ts --project=chromium
       - name: Upload visual diff artifacts on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-visual-diff
           path: |

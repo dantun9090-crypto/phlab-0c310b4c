@@ -47,7 +47,7 @@ jobs:
 
       - name: Upload production build logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-build-logs-${{ github.sha }}-${{ github.run_attempt }}
           path: build-logs
@@ -260,7 +260,7 @@ jobs:
       # release, so a human can reproduce the failure without re-running.
       - name: Upload verification debug bundle (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: attestation-debug-release-${{ github.sha }}
           path: |

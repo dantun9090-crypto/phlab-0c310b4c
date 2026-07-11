@@ -80,7 +80,7 @@ jobs:
 
       - name: Upload Playwright report (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-${{ github.sha }}
           path: |
@@ -95,7 +95,7 @@ jobs:
       # are diagnosable from the CI run alone.
       - name: Upload cache-stability diagnostics (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cache-stability-diag-${{ github.sha }}
           path: test-results/cache-stability/**/*.json
@@ -163,7 +163,7 @@ jobs:
 
       - name: Upload production build logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: production-build-logs-${{ github.sha }}-${{ github.run_attempt }}
           path: build-logs
@@ -285,7 +285,7 @@ jobs:
       # shipped on this build AND which commit produced them.
       - name: Upload SBOM + signature + attestations
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-${{ github.sha }}
           path: |
@@ -367,7 +367,7 @@ jobs:
       # collide with the build-side `sbom-${{ github.sha }}` artifact.
       - name: Upload attestation debug bundle (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: attestation-debug-ci-${{ github.sha }}
           path: |

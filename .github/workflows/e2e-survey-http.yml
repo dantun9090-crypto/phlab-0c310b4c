@@ -88,7 +88,7 @@ jobs:
 
       - name: Upload E2E failure report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-survey-report
           path: ${{ github.workspace }}/e2e-report
@@ -96,7 +96,7 @@ jobs:
 
       - name: Upload server log on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: server-log
           path: server.log
