@@ -10,7 +10,12 @@ export default function RefundPolicy() {
     canonical: 'https://phlabs.co.uk/refund-policy',
   });
 
-  // Inject MerchantReturnPolicy schema for Google Merchant Center
+  // Inject MerchantReturnPolicy schema for Google Merchant Center.
+  // Values mirror the return policy configured in Merchant Center
+  // (Countries: GB + PL, 14-day window, ReturnByMail, customer pays
+  // return shipping for non-defective returns, full refund, 3-day
+  // refund processing) so the on-page schema and the GMC policy match
+  // exactly — mismatches cause product disapprovals.
   useEffect(() => {
     const schema = {
       '@context': 'https://schema.org',
@@ -18,14 +23,25 @@ export default function RefundPolicy() {
       '@id': 'https://phlabs.co.uk/refund-policy#return-policy',
       name: 'PH Labs Return Policy',
       url: 'https://phlabs.co.uk/refund-policy',
-      applicableCountry: 'GB',
+      applicableCountry: ['GB', 'PL'],
       returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
       merchantReturnDays: 14,
       returnMethod: 'https://schema.org/ReturnByMail',
-      returnFees: 'https://schema.org/FreeReturn',
+      returnFees: 'https://schema.org/ReturnShippingFees',
+      returnShippingFeesAmount: {
+        '@type': 'MonetaryAmount',
+        value: 0,
+        currency: 'GBP',
+      },
       refundType: 'https://schema.org/FullRefund',
+      itemCondition: 'https://schema.org/NewCondition',
       inStoreReturnsOffered: false,
-      description: 'We only accept returns for items that are defective or damaged upon arrival. Contact us within 14 days of delivery.',
+      customerRemorseReturnFees: 'https://schema.org/ReturnShippingFees',
+      customerRemorseReturnLabelSource: 'https://schema.org/ReturnLabelCustomerResponsibility',
+      itemDefectReturnFees: 'https://schema.org/FreeReturn',
+      itemDefectReturnLabelSource: 'https://schema.org/ReturnLabelInBox',
+      refundProcessingTime: 'P3D',
+      description: 'Returns accepted within 14 days for both defective and non-defective items in new condition. Customer covers return postage for change-of-mind returns; PH Labs covers postage for defective items. Exchanges not offered. Refunds processed within 3 business days of receipt.',
     };
     const el = document.createElement('script');
     el.type = 'application/ld+json';
@@ -73,8 +89,41 @@ export default function RefundPolicy() {
           </p>
         </div>
 
+        {/* Google Merchant Center summary — mirrors the return policy
+            configured in Merchant Center for GB + PL so the on-page
+            details and the feed policy match exactly. */}
+        <section
+          className="mb-10 rounded-2xl p-6"
+          style={{ background: '#0b1a30', border: '1px solid rgba(16,185,129,0.2)' }}
+          aria-labelledby="gmc-return-summary"
+        >
+          <h2 id="gmc-return-summary" className="text-[#f0f6ff] font-bold text-lg mb-4">
+            Return policy at a glance
+          </h2>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+            {[
+              ['Countries', 'United Kingdom, Poland'],
+              ['Returns', 'Accepted for defective and non-defective items'],
+              ['Exchanges', 'Not accepted'],
+              ['Product condition', 'New only'],
+              ['Return window', '14 days from delivery'],
+              ['Return method', 'By post'],
+              ['Return label (change of mind)', 'Customer responsibility'],
+              ['Return label (defective)', 'Provided by PH Labs — free'],
+              ['Restocking fees', 'None'],
+              ['Refund processing time', '3 business days after receipt'],
+            ].map(([label, value]) => (
+              <div key={label} className="flex flex-col">
+                <dt className="text-[#8caad4] text-xs uppercase tracking-wide">{label}</dt>
+                <dd className="text-[#f0f6ff] mt-0.5">{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
         {/* Sections */}
         <div className="space-y-5">
+
 
           {/* Statutory Right to Cancel (CCR 2013) */}
           <section className="rounded-2xl p-6" style={{ background: '#0b1a30', border: '1px solid rgba(34,211,238,0.2)' }}>
