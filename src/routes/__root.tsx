@@ -1222,6 +1222,7 @@ function RootComponent() {
     clearStoreCachesForNewBuild();
     (window as unknown as { __PHL_REACT_READY__?: boolean }).__PHL_REACT_READY__ = true;
     initWebVitals();
+    initCachePolicyVerifier();
     installErrorMonitor();
     installBfcacheMonitor();
     installClientErrorReporter();
