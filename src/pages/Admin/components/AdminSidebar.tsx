@@ -136,6 +136,7 @@ const navGroups = [
       { id: 'monitorlog', label: 'Monitor Log (HEAD/GET)', icon: Activity },
       { id: 'staleassets', label: 'Stale Asset 404s', icon: AlertTriangle },
       { id: 'sentryissues', label: 'Sentry Issues', icon: AlertTriangle },
+      { id: 'cloudflarestatus', label: 'Cloudflare Status', icon: Cloud },
       { id: 'emergencypurge', label: 'Emergency Purge', icon: Cloud },
     ],
   },
