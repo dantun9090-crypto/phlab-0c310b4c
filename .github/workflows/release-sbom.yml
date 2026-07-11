@@ -1,0 +1,277 @@
+name: Release SBOM assets
+
+# Publishes the signed SBOM bundle (CycloneDX SBOM + cosign signature
+# + cosign certificate + SLSA Provenance attestation + CycloneDX
+# attestation + SHA-256) as **GitHub Release assets** every time a
+# release is published, so anyone can verify the bill of materials of
+# a tagged build without needing access to the CI run artifacts (which
+# expire after 90/180 days).
+#
+# Trigger:
+#   - release.published — assets get attached to that release
+#   - workflow_dispatch — manual rebuild + re-attach to the latest
+#     release (or to a release you pass via input)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to attach assets to (defaults to latest)"
+        required: false
+        type: string
+
+jobs:
+  release-sbom:
+    name: Build, sign, attest, publish SBOM to release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write    # upload release assets
+      id-token: write    # cosign keyless OIDC
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install deps (frozen)
+        run: bun install --frozen-lockfile
+
+      - name: Build (production, retry + diagnostics)
+        run: bun run build
+        env:
+          BUILD_ID: ${{ github.sha }}
+
+      - name: Upload production build logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-build-logs-${{ github.sha }}-${{ github.run_attempt }}
+          path: build-logs
+          if-no-files-found: ignore
+          retention-days: 30
+
+      - name: Generate SBOM
+        run: bun run sbom
+        env:
+          BUILD_ID: ${{ github.sha }}
+
+      # Reject a malformed CycloneDX SBOM BEFORE signing — once it's
+      # signed + attested + uploaded to the release we can't take it back.
+      - name: Validate CycloneDX SBOM structure (pre-sign)
+        run: bun run sbom:validate dist/sbom.cdx.json
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: v2.4.1
+
+      - name: Sign SBOM (cosign keyless)
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign sign-blob \
+            --yes \
+            --output-signature dist/sbom.cdx.json.sig \
+            --output-certificate dist/sbom.cdx.json.pem \
+            dist/sbom.cdx.json
+
+      - name: Generate SLSA provenance predicate
+        env:
+          BUILD_ID: ${{ github.sha }}
+        run: bun run sbom:provenance
+
+      - name: Attest SBOM (SLSA provenance)
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign attest-blob \
+            --yes \
+            --predicate dist/sbom.cdx.json.provenance.json \
+            --type slsaprovenance1 \
+            --output-attestation dist/sbom.cdx.json.provenance.intoto.jsonl \
+            --output-certificate dist/sbom.cdx.json.provenance.pem \
+            dist/sbom.cdx.json
+
+      - name: Attest SBOM (CycloneDX)
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign attest-blob \
+            --yes \
+            --predicate dist/sbom.cdx.json \
+            --type cyclonedx \
+            --output-attestation dist/sbom.cdx.json.cyclonedx.intoto.jsonl \
+            --output-certificate dist/sbom.cdx.json.cyclonedx.pem \
+            dist/sbom.cdx.json
+
+      # Same verification used by CI / security-scan so the release also
+      # produces a green "Attestation verify" Check on the release run.
+      - name: Verify attestations
+        run: bash scripts/verify-attestations.sh dist release
+
+      # Resolve which release tag to attach to. release.published gives
+      # github.event.release.tag_name; workflow_dispatch can override
+      # via input, otherwise fall back to the most recent release.
+      - name: Resolve target release tag
+        id: tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ inputs.tag }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [ -n "${EVENT_TAG:-}" ]; then
+            TAG="$EVENT_TAG"
+          elif [ -n "${INPUT_TAG:-}" ]; then
+            TAG="$INPUT_TAG"
+          else
+            TAG="$(gh release list --limit 1 --json tagName --jq '.[0].tagName')"
+          fi
+          if [ -z "$TAG" ]; then
+            echo "::error::No release tag found to attach SBOM assets to."
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Attaching SBOM assets to release: $TAG"
+
+      - name: Stage release assets
+        run: |
+          mkdir -p release-assets
+          cp dist/sbom.cdx.json                          release-assets/
+          cp dist/sbom.cdx.json.sha256                   release-assets/
+          cp dist/sbom.cdx.json.sig                      release-assets/
+          cp dist/sbom.cdx.json.pem                      release-assets/
+          cp dist/sbom.cdx.json.provenance.json          release-assets/
+          cp dist/sbom.cdx.json.provenance.intoto.jsonl  release-assets/
+          cp dist/sbom.cdx.json.provenance.pem           release-assets/
+          cp dist/sbom.cdx.json.cyclonedx.intoto.jsonl   release-assets/
+          cp dist/sbom.cdx.json.cyclonedx.pem            release-assets/
+          ls -la release-assets/
+
+      - name: Upload SBOM bundle to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          gh release upload "$TAG" release-assets/* --clobber
+
+      - name: Release summary
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          {
+            echo "## SBOM published to release \`$TAG\`"
+            echo
+            echo "Verify locally:"
+            echo
+            echo '```bash'
+            echo "gh release download \"$TAG\" --repo ${GITHUB_REPOSITORY} \\"
+            echo "  --pattern 'sbom.cdx.json*' --dir ./sbom"
+            echo "bash scripts/verify-attestations.sh ./sbom release"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+
+  # Confirms the release is *actually* verifiable end-to-end by
+  # downloading the SBOM bundle from the published GitHub Release (NOT
+  # from the previous job's artifacts) and re-running every cosign
+  # check. This is the gate that decides whether the release counts
+  # as "successful": if any attestation does not verify against the
+  # signed-and-published bundle, this job fails red and the release run
+  # is marked failed, surfacing the cosign error on the Check page.
+  attestation-verify-release:
+    name: Attestation verify (release)
+    runs-on: ubuntu-latest
+    needs: release-sbom
+    timeout-minutes: 5
+    permissions:
+      contents: write   # update README badge + re-upload report
+      id-token: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: v2.4.1
+
+      - name: Download SBOM bundle from the published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-sbom.outputs.tag }}
+        run: |
+          mkdir -p release-bundle
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern 'sbom.cdx.json*' \
+            --dir release-bundle
+          ls -la release-bundle
+
+      # Re-run CycloneDX structural validation against the asset we
+      # actually pulled from the release — catches tampering or upload
+      # corruption that would slip past a cosign signature on stale bytes.
+      - name: Validate CycloneDX SBOM (post-download)
+        run: bun run sbom:validate release-bundle/sbom.cdx.json
+
+      - name: Verify SBOM signature + SLSA Provenance + CycloneDX attestations
+        run: bash scripts/verify-attestations.sh release-bundle release
+
+      # End-to-end OFFLINE verifier — produces the JSON verification
+      # report, pins strict phlab identity, and appends a rich summary
+      # to the Check page via $GITHUB_STEP_SUMMARY.
+      - name: End-to-end offline verification + JSON report
+        id: verify
+        env:
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.release-sbom.outputs.tag }}
+        run: |
+          bash scripts/verify-release-sbom.sh --offline release-bundle "$GH_REPO" "$TAG"
+          cp release-bundle/sbom-verification-report.json sbom-verification-report.json
+
+      - name: Update README + Release notes with verification badge
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-sbom.outputs.tag }}
+        run: |
+          bash scripts/update-release-badge.sh \
+            sbom-verification-report.json \
+            "$TAG" \
+            --update-release-notes "$GITHUB_REPOSITORY"
+
+      - name: Attach verification report to the release
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.release-sbom.outputs.tag }}
+        run: |
+          gh release upload "$TAG" sbom-verification-report.json --clobber
+
+      # If verification failed, surface the sanitised cosign log, the
+      # JSON report and the exact bundle that was downloaded from the
+      # release, so a human can reproduce the failure without re-running.
+      - name: Upload verification debug bundle (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: attestation-debug-release-${{ github.sha }}
+          path: |
+            release-bundle/sbom.cdx.json
+            release-bundle/sbom.cdx.json.sha256
+            release-bundle/sbom.cdx.json.sig
+            release-bundle/sbom.cdx.json.pem
+            release-bundle/sbom.cdx.json.provenance.intoto.jsonl
+            release-bundle/sbom.cdx.json.provenance.pem
+            release-bundle/sbom.cdx.json.cyclonedx.intoto.jsonl
+            release-bundle/sbom.cdx.json.cyclonedx.pem
+            release-bundle/verify-attestations.log
+            release-bundle/sbom-verification-report.json
+          retention-days: 30
