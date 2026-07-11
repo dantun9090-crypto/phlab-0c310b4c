@@ -617,106 +617,16 @@ export default function ProductDetail() {
       canonical.href = productUrl;
       document.head.appendChild(canonical);
     }
-    const schema = {
-      '@context': 'https://schema.org',
-      '@type': 'Product',
-      name: visibleProductName,
-      description: sanitizeLabClamp(product.description || `Research-grade ${product.name}. HPLC purity tested. For laboratory use only.`, 300),
-      image: productImage ? (Array.isArray(product.images) && product.images.length > 0 
-        ? product.images.slice(0, 5).map(img => img) 
-        : [productImage]) : undefined,
-      sku: productSku,
-      mpn: productSku,
-      brand: { '@type': 'Brand', name: 'PH Labs' },
-      category: product.category || 'Research Peptides',
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: '4.9',
-        reviewCount: '47',
-        bestRating: '5',
-        worstRating: '1',
-      },
-      review: [
-        {
-          '@type': 'Review',
-          author: { '@type': 'Person', name: 'Sylwia' },
-          datePublished: '2026-01-01',
-          reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
-          reviewBody: 'I\'ve been ordering from this site for a while now and can honestly say I highly recommend it. The products always arrive well packaged, delivery is fast, and the quality is consistently excellent. Customer service is also great — any questions are answered quickly and professionally. It\'s clear they really care about their customers and the standard they provide. Very reliable and trustworthy — I\'ll definitely continue ordering.'
-        },
-        {
-          '@type': 'Review',
-          author: { '@type': 'Person', name: 'customer' },
-          datePublished: '2026-03-01',
-          reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
-          reviewBody: 'Outstanding service from start to finish. Living in the UK, I\'ve often dealt with long wait times from international sellers, but my order here arrived the very next day via Tracked 24. The packaging was discreet and extremely secure, ensuring the temperature stability of the peptides during transit. No customs headaches or hidden fees—just a seamless, professional experience. Highly recommended for anyone needing a reliable domestic source.'
-        },
-        {
-          '@type': 'Review',
-          author: { '@type': 'Person', name: 'Chris bryant' },
-          datePublished: '2026-03-20',
-          reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' },
-          reviewBody: 'Purchased from this site and my experience was incredible. Delivery was mega fast compared to other sites I have used. Huge stock levels and great customer service. Will be using this as my go to site.'
-        }
-      ],
-      offers: hasMultipleVariants ? {
-        '@type': 'AggregateOffer',
-        url: productUrl,
-        priceCurrency: 'GBP',
-        lowPrice: (Number.isFinite(lowPrice) ? lowPrice : 0).toFixed(2),
-        highPrice: (Number.isFinite(highPrice) ? highPrice : 0).toFixed(2),
-        offerCount: variants.length,
-        offers: variants.map((v, idx) => {
-          const vPrice = Number(v?.price ?? 0);
-          const vStock = Number(v?.stock ?? 0);
-          const vName = typeof v?.name === 'string' && v.name.trim() ? v.name.trim() : `Option ${idx + 1}`;
-          const vSku = (typeof v?.sku === 'string' && v.sku) || `${product.id}-v${idx + 1}`;
-          return {
-            '@type': 'Offer',
-            url: productUrl,
-            priceCurrency: 'GBP',
-            price: (Number.isFinite(vPrice) && vPrice >= 0 ? vPrice : 0).toFixed(2),
-            itemCondition: 'https://schema.org/NewCondition',
-            availability: Number.isFinite(vStock) && vStock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-            sku: vSku,
-            name: `${visibleProductName} — ${vName}`,
-          };
-        }),
-        seller: { '@type': 'Organization', name: 'PH Labs', url: 'https://phlabs.co.uk' },
-      } : {
-        '@type': 'Offer',
-        url: productUrl,
-        priceCurrency: 'GBP',
-        price: (Number.isFinite(price) && price >= 0 ? price : 0).toFixed(2),
-        priceValidUntil: `${new Date().getFullYear() + 1}-12-31`,
-        itemCondition: 'https://schema.org/NewCondition',
-        availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-        seller: { '@type': 'Organization', name: 'PH Labs', url: 'https://phlabs.co.uk' },
-        shippingDetails: {
-          '@type': 'OfferShippingDetails',
-          shippingRate: { '@type': 'MonetaryAmount', currency: 'GBP', value: '0' },
-          shippingDestination: { '@type': 'DefinedRegion', addressCountry: 'GB' },
-          deliveryTime: {
-            '@type': 'ShippingDeliveryTime',
-            handlingTime: { '@type': 'QuantitativeValue', minValue: 0, maxValue: 1, unitCode: 'DAY' },
-            transitTime: { '@type': 'QuantitativeValue', minValue: 1, maxValue: 3, unitCode: 'DAY' }
-          }
-        },
-        hasMerchantReturnPolicy: {
-          '@type': 'MerchantReturnPolicy',
-          applicableCountry: 'GB',
-          returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted'
-        }
-      },
-      // AggregateRating removed — Google penalises fake reviews. Add real customer reviews via Trustpilot integration or verified review platform.
-    };
-    const script = document.createElement('script');
-    script.type = 'application/ld+json';
-    script.id = 'product-schema';
-    script.textContent = JSON.stringify(schema);
-    const existing = document.getElementById('product-schema');
-    if (existing) existing.remove();
-    document.head.appendChild(script);
+    // Product JSON-LD is emitted server-side by src/routes/products_.$slug.tsx
+    // (single source of truth). We intentionally do NOT inject a duplicate
+    // Product block here — two Product blocks on the same URL caused Google
+    // Search Console to warn "Missing field review/aggregateRating" against
+    // whichever block lacked them, and self-published reviews/ratings risk
+    // a Google manual action. Real ratings will come from Google Customer
+    // Reviews once the verified feed is live. Remove any stale duplicate
+    // that a previous build injected.
+    const staleProductSchema = document.getElementById('product-schema');
+    if (staleProductSchema) staleProductSchema.remove();
 
     // ══ Organization Schema (Collection Template requirement) ══
     const orgSchema = {
