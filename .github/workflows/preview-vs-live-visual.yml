@@ -41,7 +41,7 @@ jobs:
       LIVE_URL: ${{ github.event.inputs.live_url || 'https://phlabs.co.uk' }}
       VISUAL_DIFF_THRESHOLD: ${{ github.event.inputs.threshold || '0.02' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: oven-sh/setup-bun@v2
         with:

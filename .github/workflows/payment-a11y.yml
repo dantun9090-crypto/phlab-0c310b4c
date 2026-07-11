@@ -37,7 +37,7 @@ jobs:
     name: Vitest (PaymentMethodOptions)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
@@ -58,7 +58,7 @@ jobs:
     env:
       TEST_BASE_URL: https://id-preview--1f12c255-a30a-4bea-bbab-28d9e6f70804.lovable.app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
@@ -87,7 +87,7 @@ jobs:
     env:
       TEST_BASE_URL: https://id-preview--1f12c255-a30a-4bea-bbab-28d9e6f70804.lovable.app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest

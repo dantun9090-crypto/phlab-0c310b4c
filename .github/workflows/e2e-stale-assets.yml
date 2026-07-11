@@ -33,7 +33,7 @@ jobs:
       TARGET_URL: http://localhost:8080
       E2E_REPORT_DIR: ${{ github.workspace }}/e2e-stale-report
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: oven-sh/setup-bun@v2
         with:

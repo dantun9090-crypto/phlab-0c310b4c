@@ -37,7 +37,7 @@ jobs:
       # transparency log so the SBOM signature is publicly auditable.
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
 
       - uses: oven-sh/setup-bun@v2
@@ -83,7 +83,7 @@ jobs:
 
       - name: Cache Bun install store
         id: bun_cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.bun/install/cache
@@ -99,7 +99,7 @@ jobs:
 
       - name: Cache SBOM (CycloneDX)
         id: sbom_cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: dist/sbom.cdx.json
           key: ${{ steps.keys.outputs.sbom_key }}
@@ -378,7 +378,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
@@ -386,7 +386,7 @@ jobs:
           cosign-release: v2.4.1
 
       - name: Download SBOM bundle artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: sbom-${{ github.sha }}
           path: sbom-bundle
@@ -425,7 +425,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -450,7 +450,7 @@ jobs:
           cp dist/sbom.cdx.json dist/security-audit.json fresh/
 
       - name: Download cached-run determinism inputs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: determinism-cached-${{ github.sha }}
           path: cached

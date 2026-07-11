@@ -57,7 +57,7 @@ jobs:
       HOSTS: "https://phlabs.co.uk/ https://www.phlabs.co.uk/"
     steps:
       - name: Checkout repo (main)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install tooling (jq + wrangler)
         shell: bash
