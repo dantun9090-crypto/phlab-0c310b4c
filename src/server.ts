@@ -410,7 +410,23 @@ function isNeverCacheRoute(pathname: string): boolean {
     pathname === "/admin" ||
     pathname.startsWith("/admin/") ||
     pathname === "/admin-unlock" ||
+    pathname === "/account" ||
+    pathname.startsWith("/account/") ||
+    pathname === "/cart" ||
+    pathname.startsWith("/cart/") ||
+    pathname === "/checkout" ||
+    pathname.startsWith("/checkout/") ||
+    pathname === "/payment" ||
+    pathname.startsWith("/payment/") ||
     pathname === "/login" ||
+    pathname === "/register" ||
+    pathname.startsWith("/register/") ||
+    pathname === "/search" ||
+    pathname.startsWith("/search/") ||
+    pathname === "/vip-store" ||
+    pathname.startsWith("/vip-store/") ||
+    pathname === "/vip" ||
+    pathname.startsWith("/vip/") ||
     pathname.startsWith("/auth/") ||
     pathname === "/auth" ||
     pathname.startsWith("/api/auth/") ||
@@ -418,7 +434,9 @@ function isNeverCacheRoute(pathname: string): boolean {
     pathname.startsWith("/api/admin/") ||
     pathname === "/api/admin" ||
     pathname.startsWith("/__/auth/") ||
-    pathname === "/__/auth"
+    pathname === "/__/auth" ||
+    pathname.startsWith("/__/firebase/") ||
+    pathname === "/__/firebase"
   );
 }
 

@@ -146,9 +146,18 @@ function normalizeAssetContentType(path, headers) {
 }
 
 function applyBrowserHtmlNoCache(headers) {
-  headers.set("Cache-Control", BROWSER_HTML_CACHE_CONTROL);
+  headers.set("Cache-Control", BROWSER_HTML_CACHE_CONTROL + ", proxy-revalidate, max-age=0, s-maxage=0");
+  headers.set("CDN-Cache-Control", "no-store");
+  headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+  headers.set("Surrogate-Control", "no-store");
   headers.set("Pragma", "no-cache");
   headers.set("Expires", "0");
+  headers.delete("Age");
+  headers.delete("age");
+  headers.delete("ETag");
+  headers.delete("etag");
+  headers.delete("Last-Modified");
+  headers.delete("last-modified");
 }
 
 function withBrowserHtmlNoCache(response) {
@@ -236,13 +245,22 @@ export default {
         statusText: response.statusText,
         headers: response.headers,
       });
+      if (path.startsWith("/api/") || path.startsWith("/_api/")) {
+        applyBrowserHtmlNoCache(cloned.headers);
+      }
       if (assetRequest && cloned.status >= 400) {
         cloned.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
         cloned.headers.set("CDN-Cache-Control", "no-store");
         cloned.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+        cloned.headers.set("Surrogate-Control", "no-store");
         cloned.headers.set("X-Robots-Tag", "noindex, nofollow");
         cloned.headers.set("X-PHL-Via", "asset-miss-no-store");
         normalizeAssetContentType(path, cloned.headers);
+      } else if (path === "/robots.txt" || path === "/sitemap.xml" || path.startsWith("/sitemap-")) {
+        cloned.headers.set("Cache-Control", "public, max-age=300, must-revalidate");
+        cloned.headers.set("CDN-Cache-Control", "no-store");
+        cloned.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+        cloned.headers.set("Surrogate-Control", "no-store");
       } else if (path.startsWith("/assets/") || path.startsWith("/_img/") || path.startsWith("/_fonts/")) {
         cloned.headers.set("Cache-Control", "public, max-age=" + CACHE_TTL.static + ", immutable");
         normalizeAssetContentType(path, cloned.headers);
