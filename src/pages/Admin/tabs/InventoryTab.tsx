@@ -222,13 +222,32 @@ export default function InventoryTab() {
     if (bulkSelected.length === 0) return;
     setSaving(true);
     try {
+      const priceNum = bulkPrice ? Number(bulkPrice) : null;
+      const stockNum = bulkStock ? Number(bulkStock) : null;
       await Promise.all(
-        bulkSelected.map((id) =>
-          updateProduct(id, {
-            ...(bulkPrice ? { price: Number(bulkPrice) } : {}),
-            ...(bulkStock ? { stock: Number(bulkStock) } : {}),
-          })
-        )
+        bulkSelected.map((id) => {
+          const p = products.find((x) => x.id === id);
+          const variants = p?.variants;
+          const patch: any = {};
+          if (priceNum != null) patch.price = priceNum;
+          if (stockNum != null) patch.stock = stockNum;
+          // Propagate to variants[] so storefront (which derives display
+          // price/stock from variants) actually reflects the change.
+          if (variants && variants.length > 0) {
+            patch.variants = variants.map((v: any, i: number) => {
+              const next: any = { ...v };
+              if (priceNum != null) next.price = priceNum;
+              if (stockNum != null) {
+                const each = Math.floor(stockNum / variants.length);
+                next.stock = i === variants.length - 1
+                  ? stockNum - each * (variants.length - 1)
+                  : each;
+              }
+              return next;
+            });
+          }
+          return updateProduct(id, patch);
+        })
       );
       await loadProducts();
       setBulkSelected([]);
@@ -239,6 +258,7 @@ export default function InventoryTab() {
       setSaving(false);
     }
   };
+
 
   // Silently trigger Prerender.io recache for a product URL after save.
   // Token is read from localStorage (admin-only, never persisted to Firestore)
