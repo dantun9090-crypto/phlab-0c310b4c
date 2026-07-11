@@ -487,41 +487,37 @@ const FORCE_SW_CLEANUP = `
 const EMERGENCY_STALE_RELOAD = `
 (function(){
   try{
-    // Safety note: this used to auto-navigate after a 3s "blank root" check.
-    // On slow networks that false-positive created a reload loop and blocked
-    // customers from entering the store. Blank-page handling now lives in
-    // BOOT_WATCHDOG below, which shows a manual recovery UI instead of forcing
-    // navigation. This guard is kept only for a verified same-origin JS chunk
-    // load failure, and even then it only clears caches + reloads once.
+    // Safety note: this guard must never auto-navigate. During stale deploys,
+    // old cached HTML can reference several missing chunks; forcing a reload for
+    // each missing script created the "refreshing like crazy" loop. We now show
+    // a manual recovery screen only.
     var qs=new URLSearchParams(location.search);
     if(qs.has('__fresh')) return;
     var blocked=new RegExp('^/(?:admin|auth|login|account|cart|checkout|payment|register)(?:/|$)','i').test(location.pathname||'');
     if(blocked) return;
-    var reloading=false;
-    var forceFresh=function(reason){
-      if(reloading) return;
-      reloading=true;
-      try{ console.warn('[PHL] Stale script detected — forcing one clean load:', reason); }catch(e){}
+    var shown=false;
+    var showManualRecovery=function(reason){
+      if(shown) return;
+      shown=true;
+      try{ console.warn('[PHL] Stale script detected — automatic reload disabled:', reason); }catch(e){}
       try{
         if(navigator.serviceWorker&&navigator.serviceWorker.ready){
           navigator.serviceWorker.ready.then(function(reg){ try{ if(reg&&reg.active) reg.active.postMessage({type:'CLEAR_CACHE_AND_RELOAD'}); }catch(e){} }).catch(function(){});
         }
       }catch(e){}
-      var finish=function(){
-        try{
-          var u=new URL(location.href);
-          u.searchParams.set('__fresh','1');
-          u.searchParams.set('t',String(Date.now()));
-          location.replace(u.toString());
-        }catch(e){ location.href=location.pathname+'?__fresh=1&t='+Date.now(); }
-      };
       try{
         var p=[];
         if(window.caches&&caches.keys){ p.push(caches.keys().then(function(keys){ return Promise.all(keys.map(function(k){ return caches.delete(k).catch(function(){}); })); })); }
         if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){ p.push(navigator.serviceWorker.getRegistrations().then(function(regs){ return Promise.all(regs.map(function(r){ return r.unregister().catch(function(){}); })); })); }
-        Promise.all(p).catch(function(){}).then(finish);
-        setTimeout(finish,1500);
-      }catch(e){ finish(); }
+        Promise.all(p).catch(function(){});
+      }catch(e){}
+      var render=function(){
+        try{
+          if(!document.body){ document.addEventListener('DOMContentLoaded',render,{once:true}); return; }
+          document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs update ready</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">Your browser has an old page file. Automatic refreshing has been stopped.</p><a href="/?sw=off" style="display:inline-block;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;border-radius:8px;text-decoration:none">Open fresh store</a></div></div>';
+        }catch(e){}
+      };
+      render();
     };
     window.addEventListener('error',function(e){
       var t=e&&e.target;
@@ -533,7 +529,7 @@ const EMERGENCY_STALE_RELOAD = `
         var u=new URL(src,location.href);
         if(u.origin!==location.origin) return;
         if(!new RegExp('^/(?:assets|_build)/[^?#]+\\\\.(?:js|mjs)(?:[?#]|$)','i').test(u.pathname+u.search)) return;
-        forceFresh('script-load-failed');
+        showManualRecovery('script-load-failed');
       }catch(_e){}
     },true);
   }catch(e){}
@@ -919,13 +915,10 @@ const STALE_ASSET_RECOVERY = `
     };
     var requestHardReset=function(reason){
       try{
-        var last=Number(sessionStorage.getItem(AUTO_HARDRESET)||'0');
-        if(last&&Date.now()-last<60000) return false;
         sessionStorage.setItem(AUTO_HARDRESET,String(Date.now()));
-        try{ console.warn('[STALE_ASSET] Hard reset recovery:',reason); }catch(_e){}
+        try{ console.warn('[STALE_ASSET] Automatic hard reset disabled:',reason); }catch(_e){}
       }catch(e){}
-      hardReloadClean();
-      return true;
+      return false;
     };
     var showLimit=function(){
       try{ console.error('[STALE_ASSET] Automatic reload blocked'); }catch(e){}
@@ -935,7 +928,6 @@ const STALE_ASSET_RECOVERY = `
         document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Update available</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">A fresh version is available. Click to clear cached files and reload.</p><button id="phl-stale-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer;min-height:44px">Refresh &amp; clear cache</button></div></div>';
         var btn=document.getElementById('phl-stale-refresh');
         if(btn) btn.addEventListener('click',function(){ emit('sw_stale_reload_accepted'); hardReloadClean(); });
-        setTimeout(function(){ requestHardReset('stale-limit'); },250);
       }catch(e){}
     };
 
@@ -974,7 +966,7 @@ const STALE_ASSET_RECOVERY = `
             // still failed. That means this browser can be holding an old cached
             // 404/opaque error for the hashed file. Clear browser storage and
             // reopen once instead of leaving the customer on a stuck shell.
-            requestHardReset('cached-asset-load-error');
+            showLimit();
             return;
           }
           if(res && (res.status===404||res.status===410)){
@@ -986,7 +978,7 @@ const STALE_ASSET_RECOVERY = `
               sessionStorage.setItem(KEY,String(Date.now()));
               sessionStorage.setItem(COUNT,String(count));
               sessionStorage.setItem(LEGACY_COUNT,String(count));
-              if(count<STALE_THRESHOLD){ try{ console.warn('[phlabs] stale asset 404 ('+count+'/'+STALE_THRESHOLD+'), clearing browser cache:', src); }catch(e){} requestHardReset('asset-404'); return; }
+              if(count<STALE_THRESHOLD){ try{ console.warn('[phlabs] stale asset 404 ('+count+'/'+STALE_THRESHOLD+'), automatic reload disabled:', src); }catch(e){} if(!requestHardReset('asset-404')) showLimit(); return; }
             }catch(e){ showLimit(); return; }
             try{ console.warn('[phlabs] stale build asset 404, forcing clean reload:', src); }catch(e){}
             // Force-fire the auto-purge again (bypass throttle) — this visitor

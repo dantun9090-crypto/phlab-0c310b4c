@@ -5,11 +5,9 @@
  * `isStaleChunkError` (dynamic import failure, chunk load failure, missing
  * asset in /assets or /_build).
  *
- * Behaviour: show a full-screen countdown overlay (3s) with a "Cancel &
- * stay here" button. On countdown 0 (or if the user does nothing), clear
- * app-owned Service Worker registrations + caches, then hard-reload with
- * `?sw=off&_r=<ts>` so the next paint uses fresh HTML pointing at chunks
- * that still exist.
+ * Behaviour: show a full-screen manual recovery overlay. This used to reload
+ * automatically after a countdown, but multiple missing chunks after a publish
+ * could chain into a visible refresh loop. Recovery is now user-triggered only.
  *
  * Guard: `sessionStorage.__phl_chunk_recovery === '1'` — runs at most once
  * per session, so a persistent failure can never loop.
@@ -20,7 +18,6 @@
 import { isStaleChunkError, hasHydrationErrorState } from "@/lib/recovery";
 
 const GUARD_KEY = "__phl_chunk_recovery";
-const COUNTDOWN_SECONDS = 3;
 const OVERLAY_ID = "phl-chunk-recovery-overlay";
 const REPORTED_KEY = "__phl_chunk_reported";
 
@@ -168,8 +165,7 @@ function showCountdownOverlay(): void {
   overlayShown = true;
 
   if (!document.body) {
-    // DOM not ready yet — recover immediately without UI.
-    void performRecovery();
+    document.addEventListener("DOMContentLoaded", showCountdownOverlay, { once: true });
     return;
   }
 
@@ -188,33 +184,16 @@ function showCountdownOverlay(): void {
     '<div style="max-width:460px;text-align:center">' +
       '<h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs update in progress</h1>' +
       '<p style="margin:0 0 18px;color:#9fb0c8;font-size:15px;line-height:1.55">' +
-        "We just shipped a new version. Your browser is using an old page file.<br>" +
-        'Reloading in <span id="phl-chunk-count" style="color:#10b981;font-weight:800">' +
-        String(COUNTDOWN_SECONDS) +
-        "</span>s…" +
+        "Your browser is using an old page file. Automatic refreshing has been stopped." +
       "</p>" +
-      '<button id="phl-chunk-cancel" type="button" style="appearance:none;border:1px solid #1e3a5f;border-radius:8px;background:transparent;color:#9fb0c8;font-weight:600;padding:10px 16px;cursor:pointer;font-size:14px">' +
-        "Cancel &amp; stay here" +
+      '<button id="phl-chunk-refresh" type="button" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;cursor:pointer;font-size:16px">' +
+        "Open fresh store" +
       "</button>" +
     "</div>";
   document.body.appendChild(wrap);
 
-  let remaining = COUNTDOWN_SECONDS;
-  let cancelled = false;
-  const timer = window.setInterval(() => {
-    remaining -= 1;
-    const el = document.getElementById("phl-chunk-count");
-    if (el) el.textContent = String(Math.max(remaining, 0));
-    if (remaining <= 0) {
-      window.clearInterval(timer);
-      if (!cancelled) void performRecovery();
-    }
-  }, 1000);
-
-  document.getElementById("phl-chunk-cancel")?.addEventListener("click", () => {
-    cancelled = true;
-    window.clearInterval(timer);
-    try { wrap.remove(); } catch { /* ignore */ }
+  document.getElementById("phl-chunk-refresh")?.addEventListener("click", () => {
+    void performRecovery();
   });
 }
 
