@@ -1,6 +1,9 @@
 {
   "_comment": "Triaged advisories accepted as not actionable (already mitigated by overrides/resolutions in package.json, false positive against patched version, or non-applicable Windows-only / dev-only attack surface). REMOVE an entry from this list only after confirming the underlying package has shipped a real patch AND your overrides resolve to that patched version. Add new entries by their GHSA / CVE id, with a one-line reason.",
   "ignore": [
+    { "id": "GHSA-4x5r-pxfx-6jf8", "reason": "@babel/core arbitrary file read via sourceMappingURL — dev/build-time only, source is trusted repo code; not exploitable in Worker runtime." },
+    { "id": "GHSA-848j-6mx2-7j84", "reason": "elliptic risky primitive — used transitively by build/signing tooling; production signing uses Web Crypto (ECDSA P-521). No user-supplied input reaches elliptic at runtime." },
+    { "id": "GHSA-g7r4-m6w7-qqqr", "reason": "esbuild Windows-only dev server file read — builds run on Linux CI/Workers; dev server never exposed publicly." },
     { "id": "GHSA-2mjp-6q6p-2qxm", "reason": "baseline: triaged 2026-06-24 — present at scan-bootstrap time; review on next bump." },
     { "id": "GHSA-4992-7rv2-5pvq", "reason": "baseline: triaged 2026-06-24 — present at scan-bootstrap time; review on next bump." },
     { "id": "GHSA-58qx-3vcg-4xpx", "reason": "ws ≥8.18.0 pinned via overrides — OSV range may overlap older nested copies; rebuild verifies no exploitable path." },
