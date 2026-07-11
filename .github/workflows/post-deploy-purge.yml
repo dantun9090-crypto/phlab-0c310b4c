@@ -59,6 +59,7 @@ jobs:
       CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
       CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
       DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Checkout (needed for scripts/verify-edge-cache.sh)
         uses: actions/checkout@v4
@@ -81,6 +82,7 @@ jobs:
         run: sleep 90
 
       - name: Full cache purge (purge_everything)
+        id: cf_purge
         shell: bash
         run: |
           set +e
@@ -114,6 +116,11 @@ jobs:
           if [ "$ok" = "false" ]; then
             echo "::warning::Cache purge failed: $resp"
           fi
+          echo "purge_ok=$ok" >> "$GITHUB_OUTPUT"
+          echo "purge_resp<<PURGE_EOF" >> "$GITHUB_OUTPUT"
+          echo "$resp" | head -c 500 >> "$GITHUB_OUTPUT"
+          echo "" >> "$GITHUB_OUTPUT"
+          echo "PURGE_EOF" >> "$GITHUB_OUTPUT"
           exit 0
 
       - name: Verify edge is serving fresh (fails on HIT/STALE)
@@ -158,6 +165,30 @@ jobs:
             echo "(no log file produced)"
           fi
 
+      - name: Notify Slack on purge/verify failure
+        # Fires when the Cloudflare API purge_everything call reported
+        # ok=false OR any prior step (including verify-edge-cache.sh)
+        # failed. Skipped under DRY_RUN. Falls back to a workflow-log
+        # notice if SLACK_WEBHOOK_URL isn't configured — never fails.
+        if: always() && env.DRY_RUN != 'true' && (failure() || steps.cf_purge.outputs.purge_ok == 'false')
+        shell: bash
+        run: |
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          purge_ok='${{ steps.cf_purge.outputs.purge_ok }}'
+          [ -z "$purge_ok" ] && purge_ok="unknown"
+          purge_resp=$(printf '%s' '${{ steps.cf_purge.outputs.purge_resp }}' | head -c 400)
+          if [ "$purge_ok" != "true" ]; then
+            headline="Cloudflare purge_everything FAILED"
+            detail="Purge API response: \`${purge_resp:-<no response>}\`"
+          else
+            headline="Edge cache verify FAILED after purge"
+            detail="\`verify-edge-cache.sh\` still saw HIT/STALE on / /products /compound /about — the purge landed on the wrong Worker version or the new build isn't serving."
+          fi
+          text=$(printf '🚨 *%s* on `phlabs.co.uk`\nTrigger: `%s` · Build (pre-purge): `%s` · Purge API ok: `%s`\n%s\n<%s|Open workflow run> · artifact: `edge-cache-verify-%s`' \
+            "$headline" "$GITHUB_EVENT_NAME" "${{ steps.pre.outputs.pre_build_id }}" "$purge_ok" "$detail" "$run_url" "$GITHUB_RUN_ID")
+          payload=$(jq -n --arg t "$text" '{text:$t}')
+          bash .github/workflows/scripts/slack-notify.sh "$payload" "post-deploy-purge:failure"
+
   fallback_purge:
     # Second-chance purge. Runs ONLY when the primary `purge` job's MISS/HIT
     # verification failed AND the trigger was a repository_dispatch publish
@@ -178,6 +209,8 @@ jobs:
     env:
       CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
       CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -238,6 +271,16 @@ jobs:
           path: ./edge-cache-verify.ndjson
           retention-days: 30
 
+      - name: Notify Slack on fallback purge failure
+        if: failure() && env.DRY_RUN != 'true'
+        shell: bash
+        run: |
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          text=$(printf '🚨 *Fallback per-URL purge FAILED* on `phlabs.co.uk`\nTrigger: `%s:%s`\nSecond-chance purge or verify did not recover after the primary purge failed — Worker deploy is likely stuck.\n<%s|Open workflow run> · artifact: `edge-cache-verify-fallback-%s`' \
+            "$GITHUB_EVENT_NAME" "${GITHUB_EVENT_ACTION:-}" "$run_url" "$GITHUB_RUN_ID")
+          payload=$(jq -n --arg t "$text" '{text:$t}')
+          bash .github/workflows/scripts/slack-notify.sh "$payload" "post-deploy-purge:fallback-failure"
+
   robots_sitemap_purge_probe:
     # Robots/sitemap-specific purge + probe. The primary `purge` job runs
     # purge_everything, but /robots.txt has historically been served with
@@ -268,6 +311,7 @@ jobs:
       TARGET_DOMAIN: ${{ github.event.inputs.target_domain || 'both' }}
       RUN_MODE: ${{ github.event.inputs.run_mode || 'retry_on' }}
       DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -503,6 +547,17 @@ jobs:
                 body,
               });
             }
+
+      - name: Notify Slack on robots/sitemap drift
+        if: steps.probe.outputs.exit_code != '0' && env.DRY_RUN != 'true'
+        shell: bash
+        run: |
+          run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          target='${{ github.event.inputs.target_domain || ''both'' }}'
+          text=$(printf '🚨 *robots.txt / sitemap*.xml still non-compliant* after targeted purge\nTarget: `%s` · Trigger: `%s`\nThe post-purge probe still sees stale/cacheable headers on /robots.txt or /sitemap*.xml — SEO-critical.\n<%s|Open workflow run> · artifact: `post-deploy-robots-sitemap-%s`' \
+            "$target" "$GITHUB_EVENT_NAME" "$run_url" "$GITHUB_RUN_ID")
+          payload=$(jq -n --arg t "$text" '{text:$t}')
+          bash .github/workflows/scripts/slack-notify.sh "$payload" "post-deploy-purge:sitemap-drift"
 
       - name: Fail if probe reports drift
         if: steps.probe.outputs.exit_code != '0'
