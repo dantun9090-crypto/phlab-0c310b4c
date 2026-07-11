@@ -12,7 +12,7 @@ export default function RefundPolicy() {
 
   // Inject MerchantReturnPolicy schema for Google Merchant Center.
   // Values mirror the return policy configured in Merchant Center
-  // (Countries: GB + PL, 14-day window, ReturnByMail, customer pays
+  // (Countries: GB + PL + DE, 14-day window, ReturnByMail, customer pays
   // return shipping for non-defective returns, full refund, 3-day
   // refund processing) so the on-page schema and the GMC policy match
   // exactly — mismatches cause product disapprovals.
