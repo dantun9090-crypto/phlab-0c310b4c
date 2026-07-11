@@ -1214,7 +1214,7 @@ export default function HomePage() {
                 onMouseEnter={e => (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 36px rgba(16,185,129,0.55)'}
                 onMouseLeave={e => (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 28px rgba(16,185,129,0.35)'}
               >
-                Browse Full Catalogue <ArrowRight className="w-4 h-4" />
+                Shop All Peptides <ArrowRight className="w-4 h-4" />
               </Link>
               <Link to="/contact"
                 className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl font-semibold text-sm transition-all duration-300"
