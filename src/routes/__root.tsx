@@ -372,6 +372,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // the preload and stylesheet requests dedupe *after* the preload's
       // usage window closes. One fetch, no warning.
       { rel: "stylesheet", href: appCss, media: "print", id: "appcss" },
+      // Preload the header logo — it's the LCP element on nearly every route
+      // and, without an explicit high-priority hint, browsers fetched it after
+      // the JS bundle, letting it flash at native resolution before the CSS
+      // sizing kicked in. `fetchPriority: high` + hashed href = warning-free.
+      { rel: "preload", as: "image", href: logoUrl, fetchPriority: "high" } as unknown as { rel: string; href: string },
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", type: "image/png", sizes: "16x16", href: "/icon-16.png" },
       { rel: "icon", type: "image/png", sizes: "32x32", href: "/icon-32.png" },
