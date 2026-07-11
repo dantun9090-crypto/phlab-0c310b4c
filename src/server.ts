@@ -496,6 +496,39 @@ function applyCacheRecoveryHeaders(response: Response, url: URL): Response {
   });
 }
 
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
+}
+
+function safeResetNext(url: URL): string {
+  const raw = url.searchParams.get("next") || "/";
+  if (/^\/[A-Za-z0-9\-._~!$&'()*+,;=:@/?%#]*$/.test(raw) && !raw.startsWith("//")) return raw;
+  return "/";
+}
+
+function browserCacheResetResponse(url: URL): Response {
+  const next = safeResetNext(url);
+  const nextEsc = escapeHtml(next);
+  const body = `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><title>PH Labs — cache reset</title><style>html,body{margin:0;min-height:100%;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}.card{width:min(100%,460px);text-align:center}h1{font-size:22px;line-height:1.2;margin:0 0 10px;font-weight:800}p{margin:0 0 18px;color:#9fb0c8;font-size:14px;line-height:1.55}.status{min-height:22px;margin:0 0 18px;color:#c8dcf0;font-size:13px}button,a{appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:13px 18px;cursor:pointer;font-size:15px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-height:46px}.secondary{margin-top:12px;background:transparent;color:#9fb0c8;text-decoration:underline;font-weight:700;padding:8px}</style></head><body><main><div class="card"><h1>PH Labs cache reset</h1><p>This clears old page files, image/cache storage and service workers for this browser.</p><div id="status" class="status">Cleaning browser cache…</div><button id="open" type="button" disabled>Open fresh store</button><br><a class="secondary" href="${nextEsc}" rel="nofollow">Skip and open store</a></div></main><script>(function(){var next=${JSON.stringify(next)};var status=document.getElementById('status');var btn=document.getElementById('open');function setStatus(t){try{status.textContent=t;}catch(e){}}function settle(p){return Promise.resolve(p).catch(function(){})}function deleteDb(name){return new Promise(function(resolve){try{var r=indexedDB.deleteDatabase(name);r.onsuccess=r.onerror=r.onblocked=function(){resolve()}}catch(e){resolve()}})}async function clearIndexedDb(){try{if(!('indexedDB' in window))return;if(indexedDB.databases){var dbs=await indexedDB.databases();await Promise.all((dbs||[]).map(function(db){return db&&db.name?deleteDb(db.name):Promise.resolve()}));return}await Promise.all(['firebaseLocalStorageDb','firestore/[DEFAULT]/prohealthpeptides-a0808/main','firestore/[DEFAULT]/phlabs.co.uk/main','phlabs','workbox-expiration'].map(deleteDb))}catch(e){}}async function clearStorage(){try{try{localStorage.clear()}catch(e){}try{sessionStorage.clear()}catch(e){}if('caches' in window&&caches.keys){var keys=await caches.keys();await Promise.all(keys.map(function(k){return settle(caches.delete(k))}))}await clearIndexedDb();if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){var regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.map(function(r){return settle(r.unregister())}))}if(navigator.serviceWorker&&navigator.serviceWorker.controller){try{navigator.serviceWorker.controller.postMessage({type:'PHL_NUKE_ALL_CACHES'})}catch(e){}}}catch(e){}}async function run(){await clearStorage();setStatus('Done. Open the fresh store now.');try{btn.disabled=false;btn.addEventListener('click',function(){location.replace(next)});setTimeout(function(){location.replace(next)},900)}catch(e){location.href=next}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();})();</script></body></html>`;
+  return new Response(body, {
+    status: 200,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "clear-site-data": '"cache", "storage", "executionContexts"',
+      "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
+      "cdn-cache-control": "no-store",
+      "cloudflare-cdn-cache-control": "no-store",
+      "surrogate-control": "no-store",
+      "pragma": "no-cache",
+      "expires": "0",
+      "x-robots-tag": "noindex, nofollow",
+      "referrer-policy": "no-referrer",
+      "vary": "*",
+      "x-phl-via": "browser-cache-reset",
+    },
+  });
+}
+
 function isBuildAssetPath(pathname: string): boolean {
   return /^\/(assets|_build)\/[^?#]+\.(js|mjs|css)$/i.test(pathname);
 }
@@ -1088,6 +1121,17 @@ export default {
     };
 
     try {
+      // 0. Browser cache reset. Keep this before SSR so `/?sw=off` never loads
+      // the app bundle; it returns a standalone no-store page with
+      // Clear-Site-Data plus JS fallbacks for browsers without header support.
+      if ((request.method === "GET" || request.method === "HEAD") && (url.searchParams.get("sw") === "off" || url.pathname === "/api/public/hardreset" || url.pathname === "/cache-reset")) {
+        const reset = browserCacheResetResponse(url);
+        if (request.method === "HEAD") {
+          return new Response(null, { status: reset.status, statusText: reset.statusText, headers: reset.headers });
+        }
+        return reset;
+      }
+
       // 0. Health probe — /_health (public) and /__health (legacy/internal).
       // Returns JSON with version + timestamp, never cached, never prerendered.
       if (url.pathname === "/_health" || url.pathname === "/__health") {
@@ -1122,38 +1166,6 @@ export default {
           });
         }
         return response;
-      }
-
-      // 0.5. Hard reset endpoint — deterministic browser-level wipe used by
-      // the stale-asset recovery screen ("PH Labs is refreshing"). Returns
-      // `Clear-Site-Data: "cache", "storage", "executionContexts"` which
-      // unregisters service workers, clears Cache Storage, and evicts the HTTP
-      // cache for this origin. We deliberately do NOT clear cookies (auth
-      // session survives). The response is manual-only: no meta refresh and no
-      // JS redirect, so stale browsers cannot get trapped in a refresh loop.
-      if (url.pathname === "/api/public/hardreset") {
-        const nextParam = url.searchParams.get("next") || "/";
-        const safeNext = /^\/[A-Za-z0-9\-._~!$&'()*+,;=:@/?%#]*$/.test(nextParam) && !nextParam.startsWith("//")
-          ? nextParam
-          : "/";
-        const nextEsc = safeNext.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
-        const body = `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PH Labs — update ready</title><style>html,body{margin:0;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}main{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}div{max-width:420px;text-align:center}h1{font-size:20px;margin:0 0 10px;font-weight:800}p{margin:0 0 18px;color:#9fb0c8;font-size:14px;line-height:1.5}a{display:inline-block;background:#10b981;color:#03140d;font-weight:800;padding:12px 18px;border-radius:8px;text-decoration:none}</style></head><body><main><div><h1>PH Labs update ready</h1><p>Your browser cache was cleared. Automatic refreshing has been stopped.</p><a href="${nextEsc}">Open fresh store</a></div></main></body></html>`;
-        return new Response(body, {
-          status: 200,
-          headers: {
-            "content-type": "text/html; charset=utf-8",
-            "clear-site-data": '"cache", "storage", "executionContexts"',
-            "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
-            "cdn-cache-control": "no-store",
-            "cloudflare-cdn-cache-control": "no-store",
-            "surrogate-control": "no-store",
-            "pragma": "no-cache",
-            "expires": "0",
-            "x-robots-tag": "noindex, nofollow",
-            "referrer-policy": "no-referrer",
-            "x-phl-via": "hardreset",
-          },
-        });
       }
 
       // 0a. COA PDF proxy — load Firebase Storage PDFs from the same origin so
