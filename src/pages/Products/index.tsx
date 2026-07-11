@@ -561,6 +561,8 @@ export default function Products() {
                 {/* Mobile filter toggle */}
                 <button
                   onClick={() => setSidebarOpen(true)}
+                  aria-label="Open filters"
+                  aria-expanded={sidebarOpen}
                   className="lg:hidden flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
                   style={{ background: '#0b1a30', border: '1px solid rgba(255,255,255,0.07)', color: '#9cb8d9' }}
                 >
