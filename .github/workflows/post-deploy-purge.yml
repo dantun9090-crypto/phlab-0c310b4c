@@ -526,6 +526,7 @@ jobs:
     timeout-minutes: 5
     env:
       PRERENDER_TOKEN: ${{ secrets.PRERENDER_TOKEN }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
     steps:
       - name: POST /recache for each key URL (desktop + mobile)
         shell: bash
@@ -543,6 +544,15 @@ jobs:
             "https://phlabs.co.uk/about"
             "https://phlabs.co.uk/contact"
           )
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "::notice::DRY-RUN — would POST /recache for ${#urls[@]} URLs × 2 devices = $(( ${#urls[@]} * 2 )) calls to api.prerender.io"
+            for u in "${urls[@]}"; do
+              for device in desktop mobile; do
+                echo "dry-run recache $device $u"
+              done
+            done
+            exit 0
+          fi
           for u in "${urls[@]}"; do
             for device in desktop mobile; do
               code=$(curl -sS -o /tmp/recache-body -w "%{http_code}" --max-time 20 \
