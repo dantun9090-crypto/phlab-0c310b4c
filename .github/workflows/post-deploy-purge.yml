@@ -149,7 +149,7 @@ jobs:
       - name: Upload structured verification logs
         # Always runs, even on step failure — the failure IS the artifact.
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: edge-cache-verify-${{ github.run_id }}
           path: ./edge-cache-verify.ndjson
@@ -265,7 +265,7 @@ jobs:
 
       - name: Upload fallback verification logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: edge-cache-verify-fallback-${{ github.run_id }}
           path: ./edge-cache-verify.ndjson
@@ -455,7 +455,7 @@ jobs:
 
       - name: Upload probe report + detailed logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: post-deploy-robots-sitemap-${{ github.run_id }}-${{ github.run_attempt }}
           path: |

@@ -96,7 +96,7 @@ jobs:
 
       - name: Upload Playwright HTML report (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-${{ matrix.browser }}
           path: playwright-report
@@ -105,7 +105,7 @@ jobs:
 
       - name: Upload screenshots / videos / traces (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-test-results-${{ matrix.browser }}
           # test-results/ holds per-test trace.zip, screenshots, videos.
@@ -115,7 +115,7 @@ jobs:
 
       - name: Upload server log (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: server-log-${{ matrix.browser }}
           path: server.log

@@ -46,7 +46,7 @@ jobs:
 
       - name: Upload Playwright report + traces + videos + JSON bundles
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: reindex-hook-artifacts
           path: |

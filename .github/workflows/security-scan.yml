@@ -124,7 +124,7 @@ jobs:
       - name: Upload security-scan JSON + log artifact
         id: upload_audit
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: security-audit-${{ github.sha }}
           path: |
@@ -332,7 +332,7 @@ jobs:
 
       - name: Upload SBOM + signature + attestations artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-${{ github.sha }}
           path: |
@@ -353,7 +353,7 @@ jobs:
       # downstream verification keys stay scoped.
       - name: Upload cached-run determinism inputs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: determinism-cached-${{ github.sha }}
           path: |
@@ -396,7 +396,7 @@ jobs:
 
       - name: Upload attestation debug bundle (on failure)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: attestation-debug-security-scan-${{ github.sha }}
           path: |
