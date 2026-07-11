@@ -4,7 +4,7 @@ import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { notifySsrError } from "./lib/ssr-alert";
 import { isGoneLegacyPath, resolveLegacyRedirect } from "./lib/legacy-redirects";
-import { isKnownFirstSegment } from "./lib/known-roots";
+
 import { extractClientIp, log, truncate } from "./lib/worker-log";
 import { getHtmlTtlSeconds } from "./lib/server/cache-config-server";
 
