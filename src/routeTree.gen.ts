@@ -93,6 +93,7 @@ import { Route as ApiPublicErrorMonitorRouteImport } from './routes/api/public/e
 import { Route as ApiPublicEmergencyPurgeRouteImport } from './routes/api/public/emergency-purge'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as ApiPublicCoaPdfRouteImport } from './routes/api/public/coa-pdf'
+import { Route as ApiPublicCloudflareSecretsStatusRouteImport } from './routes/api/public/cloudflare-secrets-status'
 import { Route as ApiPublicCacheConfigRouteImport } from './routes/api/public/cache-config'
 import { Route as ApiPublicAuditReportRouteImport } from './routes/api/public/audit-report'
 import { Route as ApiPublicAdminErrorsRouteImport } from './routes/api/public/admin-errors'
@@ -560,6 +561,12 @@ const ApiPublicCoaPdfRoute = ApiPublicCoaPdfRouteImport.update({
   path: '/api/public/coa-pdf',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCloudflareSecretsStatusRoute =
+  ApiPublicCloudflareSecretsStatusRouteImport.update({
+    id: '/api/public/cloudflare-secrets-status',
+    path: '/api/public/cloudflare-secrets-status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCacheConfigRoute = ApiPublicCacheConfigRouteImport.update({
   id: '/api/public/cache-config',
   path: '/api/public/cache-config',
@@ -816,6 +823,7 @@ export interface FileRoutesByFullPath {
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/audit-report': typeof ApiPublicAuditReportRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
+  '/api/public/cloudflare-secrets-status': typeof ApiPublicCloudflareSecretsStatusRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/emergency-purge': typeof ApiPublicEmergencyPurgeRoute
@@ -933,6 +941,7 @@ export interface FileRoutesByTo {
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/audit-report': typeof ApiPublicAuditReportRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
+  '/api/public/cloudflare-secrets-status': typeof ApiPublicCloudflareSecretsStatusRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/emergency-purge': typeof ApiPublicEmergencyPurgeRoute
@@ -1053,6 +1062,7 @@ export interface FileRoutesById {
   '/api/public/admin-errors': typeof ApiPublicAdminErrorsRoute
   '/api/public/audit-report': typeof ApiPublicAuditReportRoute
   '/api/public/cache-config': typeof ApiPublicCacheConfigRoute
+  '/api/public/cloudflare-secrets-status': typeof ApiPublicCloudflareSecretsStatusRoute
   '/api/public/coa-pdf': typeof ApiPublicCoaPdfRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/api/public/emergency-purge': typeof ApiPublicEmergencyPurgeRoute
@@ -1173,6 +1183,7 @@ export interface FileRouteTypes {
     | '/api/public/admin-errors'
     | '/api/public/audit-report'
     | '/api/public/cache-config'
+    | '/api/public/cloudflare-secrets-status'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
     | '/api/public/emergency-purge'
@@ -1290,6 +1301,7 @@ export interface FileRouteTypes {
     | '/api/public/admin-errors'
     | '/api/public/audit-report'
     | '/api/public/cache-config'
+    | '/api/public/cloudflare-secrets-status'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
     | '/api/public/emergency-purge'
@@ -1409,6 +1421,7 @@ export interface FileRouteTypes {
     | '/api/public/admin-errors'
     | '/api/public/audit-report'
     | '/api/public/cache-config'
+    | '/api/public/cloudflare-secrets-status'
     | '/api/public/coa-pdf'
     | '/api/public/csp-report'
     | '/api/public/emergency-purge'
@@ -1515,6 +1528,7 @@ export interface RootRouteChildren {
   ApiPublicAdminErrorsRoute: typeof ApiPublicAdminErrorsRoute
   ApiPublicAuditReportRoute: typeof ApiPublicAuditReportRoute
   ApiPublicCacheConfigRoute: typeof ApiPublicCacheConfigRoute
+  ApiPublicCloudflareSecretsStatusRoute: typeof ApiPublicCloudflareSecretsStatusRoute
   ApiPublicCoaPdfRoute: typeof ApiPublicCoaPdfRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicEmergencyPurgeRoute: typeof ApiPublicEmergencyPurgeRoute
@@ -2151,6 +2165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCoaPdfRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cloudflare-secrets-status': {
+      id: '/api/public/cloudflare-secrets-status'
+      path: '/api/public/cloudflare-secrets-status'
+      fullPath: '/api/public/cloudflare-secrets-status'
+      preLoaderRoute: typeof ApiPublicCloudflareSecretsStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cache-config': {
       id: '/api/public/cache-config'
       path: '/api/public/cache-config'
@@ -2515,6 +2536,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAdminErrorsRoute: ApiPublicAdminErrorsRoute,
   ApiPublicAuditReportRoute: ApiPublicAuditReportRoute,
   ApiPublicCacheConfigRoute: ApiPublicCacheConfigRoute,
+  ApiPublicCloudflareSecretsStatusRoute: ApiPublicCloudflareSecretsStatusRoute,
   ApiPublicCoaPdfRoute: ApiPublicCoaPdfRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicEmergencyPurgeRoute: ApiPublicEmergencyPurgeRoute,
