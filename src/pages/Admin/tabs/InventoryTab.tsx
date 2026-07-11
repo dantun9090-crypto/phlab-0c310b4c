@@ -24,6 +24,7 @@ function InlineNumberCell({
   productId,
   field,
   value,
+  variants,
   format,
   step,
   min,
@@ -32,10 +33,11 @@ function InlineNumberCell({
   productId: string;
   field: 'price' | 'stock';
   value: number;
+  variants?: Product['variants'];
   format: (n: number) => string;
   step: string;
   min: number;
-  onSaved: (n: number) => void;
+  onSaved: (n: number, patch?: Partial<Product>) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(value));
@@ -56,8 +58,35 @@ function InlineNumberCell({
     if (parsed === value) { setEditing(false); return; }
     setSaving(true);
     try {
-      await updateProduct(productId, { [field]: parsed } as any);
-      onSaved(parsed);
+      // CRITICAL: when the product has variants, the customer-facing
+      // stock/price is derived from variants[] (sum of stock, min of price)
+      // by src/lib/firestore-rest.ts. Writing only the root field is
+      // invisible to the storefront. So also propagate the change into
+      // variants[] whenever they exist.
+      const patch: any = { [field]: parsed };
+      if (variants && variants.length > 0) {
+        if (field === 'stock') {
+          const oldSum = variants.reduce((s, v: any) => s + (Number(v?.stock) || 0), 0);
+          let running = 0;
+          patch.variants = variants.map((v: any, i: number) => {
+            let next: number;
+            if (oldSum > 0) {
+              next = i === variants.length - 1
+                ? Math.max(0, parsed - running)
+                : Math.round((Number(v?.stock) || 0) / oldSum * parsed);
+            } else {
+              const each = Math.floor(parsed / variants.length);
+              next = i === variants.length - 1 ? parsed - each * (variants.length - 1) : each;
+            }
+            running += next;
+            return { ...v, stock: next };
+          });
+        } else {
+          patch.variants = variants.map((v: any) => ({ ...v, price: parsed }));
+        }
+      }
+      await updateProduct(productId, patch);
+      onSaved(parsed, patch);
       setJustSaved(true);
       setTimeout(() => setJustSaved(false), 1200);
       toast.success(`${field === 'price' ? 'Price' : 'Stock'} updated`);
@@ -69,6 +98,7 @@ function InlineNumberCell({
       setEditing(false);
     }
   };
+
 
   if (!editing) {
     return (
