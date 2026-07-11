@@ -34,6 +34,11 @@ on:
         type: choice
         default: both
         options: [both, phlabs.co.uk, prohealthpeptides.co.uk]
+      dry_run:
+        description: "Dry-run: skip real purge/recache POSTs, only log intent + run read-only verify (no issue open, no fail on HIT)"
+        type: choice
+        default: "false"
+        options: ["false", "true"]
   repository_dispatch:
     types: [lovable-publish]
 
@@ -53,6 +58,7 @@ jobs:
     env:
       CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
       CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
     steps:
       - name: Checkout (needed for scripts/verify-edge-cache.sh)
         uses: actions/checkout@v4
@@ -82,22 +88,26 @@ jobs:
             echo "::warning::CF_API_TOKEN or CF_ZONE_ID not set — skipping purge (deploy not failed)"
             exit 0
           fi
-          # Structured, one-line-JSON purge log — mirrors the Worker's
-          # emit_log stage=cf.purge.* schema so a single run can be
-          # reconstructed across the workflow AND the Worker.
           payload='{"purge_everything":true}'
           started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          resp=$(curl -sS -X POST \
-            "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
-            -H "Authorization: Bearer ${CF_API_TOKEN}" \
-            -H "Content-Type: application/json" \
-            --data "$payload")
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "::notice::DRY-RUN — would POST purge_everything to zone ${CF_ZONE_ID}"
+            resp='{"success":true,"dry_run":true,"skipped":"cf.purge","payload":"purge_everything"}'
+            stage="cf.purge.dry_run"
+            ok=true
+          else
+            resp=$(curl -sS -X POST \
+              "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/purge_cache" \
+              -H "Authorization: Bearer ${CF_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data "$payload")
+            stage="cf.purge"
+            ok=false
+            if echo "$resp" | grep -q '"success":true'; then ok=true; fi
+          fi
           finished=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-          ok=false
-          if echo "$resp" | grep -q '"success":true'; then ok=true; fi
-          # Emit structured line matching verify-edge-cache.sh log schema.
-          printf '{"ts":"%s","kind":"edge_cache_verify","runId":"%s","stage":"cf.purge","startedAt":"%s","finishedAt":"%s","ok":%s,"prePurgeBuildId":"%s","response":%s}\n' \
-            "$finished" "${GITHUB_RUN_ID:-local}" "$started" "$finished" "$ok" \
+          printf '{"ts":"%s","kind":"edge_cache_verify","runId":"%s","stage":"%s","startedAt":"%s","finishedAt":"%s","ok":%s,"prePurgeBuildId":"%s","response":%s}\n' \
+            "$finished" "${GITHUB_RUN_ID:-local}" "$stage" "$started" "$finished" "$ok" \
             "${{ steps.pre.outputs.pre_build_id }}" \
             "$(echo "$resp" | head -c 800 | jq -Rs . 2>/dev/null || echo '""')" \
             | tee -a ./edge-cache-verify.ndjson
@@ -122,6 +132,11 @@ jobs:
         run: |
           # Let the tiered cache settle before probing.
           sleep 20
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "::notice::DRY-RUN — running verify probe read-only; HITs are expected because purge was skipped, so failures are downgraded to warnings."
+            bash scripts/verify-edge-cache.sh || echo "::warning::verify-edge-cache.sh reported HIT/STALE under dry-run (expected — no purge was sent)"
+            exit 0
+          fi
           bash scripts/verify-edge-cache.sh
 
       - name: Upload structured verification logs
@@ -252,6 +267,7 @@ jobs:
       # push/repository_dispatch runs where inputs are unset).
       TARGET_DOMAIN: ${{ github.event.inputs.target_domain || 'both' }}
       RUN_MODE: ${{ github.event.inputs.run_mode || 'retry_on' }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -274,16 +290,25 @@ jobs:
             local zone="$1"; local label="$2"; local payload="$3"
             [ -z "$zone" ] && { echo "::warning::zone id for ${label} not set — skipping"; return 0; }
             local started; started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-            local resp; resp=$(curl -sS -X POST \
-              "https://api.cloudflare.com/client/v4/zones/${zone}/purge_cache" \
-              -H "Authorization: Bearer ${CF_API_TOKEN}" \
-              -H "Content-Type: application/json" \
-              --data "$payload")
+            local resp stage ok
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "::notice::DRY-RUN — would POST targeted purge to zone ${zone} (${label}); $(echo "$payload" | jq -r '.files | length') URLs"
+              resp='{"success":true,"dry_run":true,"skipped":"cf.purge.robots_sitemap"}'
+              stage="cf.purge.robots_sitemap.dry_run"
+              ok=true
+            else
+              resp=$(curl -sS -X POST \
+                "https://api.cloudflare.com/client/v4/zones/${zone}/purge_cache" \
+                -H "Authorization: Bearer ${CF_API_TOKEN}" \
+                -H "Content-Type: application/json" \
+                --data "$payload")
+              stage="cf.purge.robots_sitemap"
+              ok=false
+              if echo "$resp" | grep -q '"success":true'; then ok=true; fi
+            fi
             local finished; finished=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-            local ok=false
-            if echo "$resp" | grep -q '"success":true'; then ok=true; fi
-            printf '{"ts":"%s","kind":"edge_cache_verify","runId":"%s","stage":"cf.purge.robots_sitemap","zone":"%s","startedAt":"%s","finishedAt":"%s","ok":%s,"response":%s}\n' \
-              "$finished" "${GITHUB_RUN_ID:-local}" "$label" "$started" "$finished" "$ok" \
+            printf '{"ts":"%s","kind":"edge_cache_verify","runId":"%s","stage":"%s","zone":"%s","startedAt":"%s","finishedAt":"%s","ok":%s,"response":%s}\n' \
+              "$finished" "${GITHUB_RUN_ID:-local}" "$stage" "$label" "$started" "$finished" "$ok" \
               "$(echo "$resp" | head -c 800 | jq -Rs . 2>/dev/null || echo '""')" \
               | tee -a ./robots-sitemap-purge.ndjson
             if [ "$ok" = "false" ]; then
@@ -396,7 +421,7 @@ jobs:
           retention-days: 7
 
       - name: Open GitHub issue on drift
-        if: steps.probe.outputs.exit_code != '0'
+        if: steps.probe.outputs.exit_code != '0' && env.DRY_RUN != 'true'
         uses: actions/github-script@v7
         env:
           TARGET_DOMAIN: ${{ github.event.inputs.target_domain || 'both' }}
@@ -482,6 +507,10 @@ jobs:
       - name: Fail if probe reports drift
         if: steps.probe.outputs.exit_code != '0'
         run: |
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "::notice::DRY-RUN — probe reported drift; not failing the workflow (no purge was sent, so HITs are expected)"
+            exit 0
+          fi
           echo "::error::/robots.txt or /sitemap*.xml is still not compliant after post-deploy purge — see post-deploy-robots-sitemap artifact"
           exit 1
 
@@ -497,6 +526,7 @@ jobs:
     timeout-minutes: 5
     env:
       PRERENDER_TOKEN: ${{ secrets.PRERENDER_TOKEN }}
+      DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
     steps:
       - name: POST /recache for each key URL (desktop + mobile)
         shell: bash
@@ -514,6 +544,15 @@ jobs:
             "https://phlabs.co.uk/about"
             "https://phlabs.co.uk/contact"
           )
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "::notice::DRY-RUN — would POST /recache for ${#urls[@]} URLs × 2 devices = $(( ${#urls[@]} * 2 )) calls to api.prerender.io"
+            for u in "${urls[@]}"; do
+              for device in desktop mobile; do
+                echo "dry-run recache $device $u"
+              done
+            done
+            exit 0
+          fi
           for u in "${urls[@]}"; do
             for device in desktop mobile; do
               code=$(curl -sS -o /tmp/recache-body -w "%{http_code}" --max-time 20 \
