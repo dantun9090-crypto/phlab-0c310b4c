@@ -27,6 +27,8 @@ const CACHE_TTL = {
   static: 2592000,  // 30 days for assets
 };
 
+const BROWSER_HTML_CACHE_CONTROL = "no-cache, no-store, must-revalidate";
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // BOT DETECTION
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -143,6 +145,22 @@ function normalizeAssetContentType(path, headers) {
   headers.set("X-Content-Type-Options", "nosniff");
 }
 
+function applyBrowserHtmlNoCache(headers) {
+  headers.set("Cache-Control", BROWSER_HTML_CACHE_CONTROL);
+  headers.set("Pragma", "no-cache");
+  headers.set("Expires", "0");
+}
+
+function withBrowserHtmlNoCache(response) {
+  const headers = new Headers(response.headers);
+  applyBrowserHtmlNoCache(headers);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 async function buildBrowserResponse(response) {
   const type = response.headers.get("Content-Type") || "";
   const headers = new Headers(response.headers);
@@ -161,6 +179,7 @@ async function buildBrowserResponse(response) {
   headers.delete("content-encoding");
   headers.set("Content-Type", "text/html; charset=utf-8");
   headers.set("X-Content-Type-Options", "nosniff");
+  applyBrowserHtmlNoCache(headers);
   return new Response(body, {
     status: response.status,
     statusText: response.statusText,
@@ -190,6 +209,7 @@ async function buildHashCspResponse(body, status, statusText) {
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   headers.set("Permissions-Policy", "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()");
+  applyBrowserHtmlNoCache(headers);
   return new Response(body, { status, statusText, headers });
 }
 
@@ -263,9 +283,12 @@ export default {
           const hashStart = Date.now();
           const response = await buildHashCspResponse(body, originRes.status, originRes.statusText);
           hashComputeMs = Date.now() - hashStart;
-          response.headers.set("Cache-Control", "public, max-age=" + CACHE_TTL.prerender + ", s-maxage=" + CACHE_TTL.prerender);
-          response.headers.set("X-PHL-Via", "hash-csp;bot=1;prerender=FAIL;cache=" + cacheStatus + ";origin=" + prerenderFetchMs + "ms;hash=" + hashComputeMs + "ms;total=" + (Date.now() - startTime) + "ms");
-          ctx.waitUntil(cache.put(cacheKey, response.clone()));
+          const cacheHeaders = new Headers(response.headers);
+          cacheHeaders.set("Cache-Control", "public, max-age=" + CACHE_TTL.prerender + ", s-maxage=" + CACHE_TTL.prerender);
+          cacheHeaders.set("X-PHL-Via", "hash-csp;bot=1;prerender=FAIL;cache=" + cacheStatus + ";origin=" + prerenderFetchMs + "ms;hash=" + hashComputeMs + "ms;total=" + (Date.now() - startTime) + "ms");
+          ctx.waitUntil(cache.put(cacheKey, new Response(response.clone().body, { status: response.status, statusText: response.statusText, headers: cacheHeaders })));
+          response.headers.set("X-PHL-Via", cacheHeaders.get("X-PHL-Via"));
+          applyBrowserHtmlNoCache(response.headers);
           return response;
         }
 
@@ -279,10 +302,14 @@ export default {
         const hashStart = Date.now();
         const response = await buildHashCspResponse(body, prerenderRes.status, prerenderRes.statusText);
         hashComputeMs = Date.now() - hashStart;
-        response.headers.set("Cache-Control", "public, max-age=" + CACHE_TTL.prerender + ", s-maxage=" + CACHE_TTL.prerender);
+        const cacheHeaders = new Headers(response.headers);
+        cacheHeaders.set("Cache-Control", "public, max-age=" + CACHE_TTL.prerender + ", s-maxage=" + CACHE_TTL.prerender);
+        cacheHeaders.set("X-Prerendered", "true");
+        cacheHeaders.set("X-PHL-Via", "hash-csp;bot=1;prerender=OK;cache=" + cacheStatus + ";origin=" + prerenderFetchMs + "ms;hash=" + hashComputeMs + "ms;total=" + (Date.now() - startTime) + "ms");
         response.headers.set("X-Prerendered", "true");
-        response.headers.set("X-PHL-Via", "hash-csp;bot=1;prerender=OK;cache=" + cacheStatus + ";origin=" + prerenderFetchMs + "ms;hash=" + hashComputeMs + "ms;total=" + (Date.now() - startTime) + "ms");
-        ctx.waitUntil(cache.put(cacheKey, response.clone()));
+        response.headers.set("X-PHL-Via", cacheHeaders.get("X-PHL-Via"));
+        applyBrowserHtmlNoCache(response.headers);
+        ctx.waitUntil(cache.put(cacheKey, new Response(response.clone().body, { status: response.status, statusText: response.statusText, headers: cacheHeaders })));
         return response;
       }
 
@@ -293,7 +320,7 @@ export default {
       });
       response.headers.set("X-PHL-Via", "hash-csp;bot=1;prerender=OK;cache=" + cacheStatus + ";origin=0ms;hash=0ms;total=" + (Date.now() - startTime) + "ms");
       response.headers.set("CF-Cache-Status", cacheStatus);
-      return response;
+      return withBrowserHtmlNoCache(response);
     }
 
     // ── 3. BROWSER branch: pass-through (origin serves SSR + nonce CSP) ─────

@@ -26,15 +26,18 @@ export function Logo({ className = '', size = 'md' }: LogoProps) {
       alt="PH Labs Logo"
       width={width}
       height={height}
-      className={`${sizeClasses[size]} ${className}`}
+      className={`site-logo ${sizeClasses[size]} ${className}`}
       // Inline aspect-ratio + max dimensions reserve the exact box before the
       // Tailwind bundle applies `h-8 w-8` / `h-10 w-10`, so the logo can never
       // flash at its native resolution during first paint (LCP/CLS fix).
       style={{
         objectFit: 'contain',
         aspectRatio: `${width} / ${height}`,
+        width: `${width}px`,
+        height: `${height}px`,
         maxWidth: `${width}px`,
         maxHeight: `${height}px`,
+        display: 'block',
       }}
       loading="eager"
       fetchPriority="high"
