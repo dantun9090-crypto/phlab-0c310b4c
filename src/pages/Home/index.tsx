@@ -596,7 +596,7 @@ export default function HomePage() {
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link to="/lab-reports"
-                  aria-label="View HPLC lab reports and certificates of analysis"
+                  aria-label="Lab reports and CoA"
                   className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-semibold text-sm transition-all duration-300"
                   style={{
                     background: 'rgba(255,255,255,0.04)',
