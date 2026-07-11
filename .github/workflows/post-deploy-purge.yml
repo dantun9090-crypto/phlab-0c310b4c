@@ -184,10 +184,8 @@ jobs:
             headline="Edge cache verify FAILED after purge"
             detail="\`verify-edge-cache.sh\` still saw HIT/STALE on / /products /compound /about — the purge landed on the wrong Worker version or the new build isn't serving."
           fi
-          text="🚨 *${headline}* on \`phlabs.co.uk\`
-Trigger: \`${GITHUB_EVENT_NAME}\` · Build (pre-purge): \`${{ steps.pre.outputs.pre_build_id }}\` · Purge API ok: \`${purge_ok}\`
-${detail}
-<${run_url}|Open workflow run> · artifact: \`edge-cache-verify-${GITHUB_RUN_ID}\`"
+          text=$(printf '🚨 *%s* on `phlabs.co.uk`\nTrigger: `%s` · Build (pre-purge): `%s` · Purge API ok: `%s`\n%s\n<%s|Open workflow run> · artifact: `edge-cache-verify-%s`' \
+            "$headline" "$GITHUB_EVENT_NAME" "${{ steps.pre.outputs.pre_build_id }}" "$purge_ok" "$detail" "$run_url" "$GITHUB_RUN_ID")
           payload=$(jq -n --arg t "$text" '{text:$t}')
           bash .github/workflows/scripts/slack-notify.sh "$payload" "post-deploy-purge:failure"
 
