@@ -82,6 +82,7 @@ jobs:
         run: sleep 90
 
       - name: Full cache purge (purge_everything)
+        id: cf_purge
         shell: bash
         run: |
           set +e
