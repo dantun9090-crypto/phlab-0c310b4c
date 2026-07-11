@@ -116,6 +116,11 @@ jobs:
           if [ "$ok" = "false" ]; then
             echo "::warning::Cache purge failed: $resp"
           fi
+          echo "purge_ok=$ok" >> "$GITHUB_OUTPUT"
+          echo "purge_resp<<PURGE_EOF" >> "$GITHUB_OUTPUT"
+          echo "$resp" | head -c 500 >> "$GITHUB_OUTPUT"
+          echo "" >> "$GITHUB_OUTPUT"
+          echo "PURGE_EOF" >> "$GITHUB_OUTPUT"
           exit 0
 
       - name: Verify edge is serving fresh (fails on HIT/STALE)
