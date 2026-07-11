@@ -607,7 +607,7 @@ export default function HomePage() {
                   onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color = '#a8c8e8'; }}
                 >
                   <FileCheck className="w-4 h-4" />
-                  View Lab Reports
+                  Lab Reports
                 </Link>
               </div>
             </div>
