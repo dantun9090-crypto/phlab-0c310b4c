@@ -1,24 +1,28 @@
-// Auto cache reset when Firebase Storage images repeatedly fail to load in a
-// normal browser session. Symptom this fixes: images show fine in incognito
-// but are missing in a returning browser because of a stale service worker,
-// stale IndexedDB Firestore cache, or an expired image download token that
-// was cached by an old SW.
+// Auto cache reset + diagnostics for broken Firebase Storage images.
 //
-// Strategy:
-//   1) Listen to image `error` events (capture phase) globally.
-//   2) Only count images hosted on firebasestorage.googleapis.com /
-//      *.firebasestorage.app (the ones that can be broken by stale token/SW).
-//   3) When >= THRESHOLD unique broken images accumulate within WINDOW_MS,
-//      navigate once to /cache-reset?next=<current-path>, which wipes SW +
-//      Cache Storage + IndexedDB + storage and reloads the app.
-//   4) Guard with a sessionStorage flag so we do this at most once per tab
-//      session — never in a loop.
-//   5) Never run in iframes, dev, or preview hosts.
+// Two jobs:
+//   1) LOG every failing <img> load from firebasestorage.googleapis.com /
+//      *.firebasestorage.app to the console AND to a small floating UI
+//      panel bottom-left. Each entry probes the URL with fetch() to
+//      capture the real HTTP status (403 = expired token / rules block,
+//      404 = missing object, 0 = CORS/blocker/adblock).
+//   2) After >= THRESHOLD unique broken images within WINDOW_MS, redirect
+//      once per tab session to /cache-reset?next=<current-path>.
+//
+// Never runs in iframes, dev, or Lovable preview hosts.
 
 const THRESHOLD = 3;
 const WINDOW_MS = 15_000;
 const SESSION_FLAG = "__phl_image_auto_reset_done";
 const IMG_HOST_RE = /(?:^|\.)firebasestorage\.(?:googleapis\.com|app)$/i;
+const PANEL_ID = "__phl-img-error-panel";
+
+type ProbeResult = {
+  url: string;
+  status: number | "network";
+  reason: string;
+  at: number;
+};
 
 function isPreviewOrDev(): boolean {
   try {
@@ -43,26 +47,132 @@ function isFirebaseImage(url: string): boolean {
   }
 }
 
+function reasonForStatus(status: number | "network"): string {
+  if (status === "network") return "Network/CORS blocked (adblock, Brave Shields, DNS, or offline)";
+  if (status === 403) return "403 Forbidden — expired download token or Storage rules deny";
+  if (status === 404) return "404 Not Found — object deleted or wrong path";
+  if (status === 401) return "401 Unauthorized — missing/invalid auth";
+  if (status === 429) return "429 Too Many Requests — rate limited";
+  if (status >= 500) return `${status} Server error at Firebase Storage`;
+  if (status >= 400) return `${status} client error`;
+  if (status >= 200 && status < 300) return `HTTP ${status} — image loaded via fetch (likely SW / decode issue in the <img> tag)`;
+  return `HTTP ${status}`;
+}
+
+function ensurePanel(): HTMLElement | null {
+  if (typeof document === "undefined") return null;
+  let el = document.getElementById(PANEL_ID);
+  if (el) return el;
+  el = document.createElement("div");
+  el.id = PANEL_ID;
+  el.setAttribute("role", "region");
+  el.setAttribute("aria-label", "Image load diagnostics");
+  el.style.cssText = [
+    "position:fixed",
+    "left:12px",
+    "bottom:12px",
+    "z-index:2147483647",
+    "max-width:min(420px,calc(100vw - 24px))",
+    "max-height:50vh",
+    "overflow:auto",
+    "background:#0b1220",
+    "color:#e5e7eb",
+    "border:1px solid #ef4444",
+    "border-radius:10px",
+    "box-shadow:0 10px 30px rgba(0,0,0,.4)",
+    "font:12px/1.4 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif",
+    "padding:10px 12px",
+  ].join(";");
+
+  const header = document.createElement("div");
+  header.style.cssText = "display:flex;align-items:center;gap:8px;margin-bottom:6px";
+  header.innerHTML =
+    '<strong style="color:#fca5a5">Image load errors</strong>' +
+    '<span id="__phl-img-count" style="color:#94a3b8">0</span>' +
+    '<span style="flex:1"></span>' +
+    '<a id="__phl-img-reset" href="/cache-reset?next=/" ' +
+    'style="color:#93c5fd;text-decoration:underline">Reset cache</a>' +
+    '<button id="__phl-img-close" aria-label="Close" ' +
+    'style="background:transparent;border:0;color:#94a3b8;font-size:14px;cursor:pointer;padding:0 4px">✕</button>';
+  el.appendChild(header);
+
+  const list = document.createElement("ol");
+  list.id = "__phl-img-list";
+  list.style.cssText = "margin:0;padding:0 0 0 18px;list-style:decimal";
+  el.appendChild(list);
+
+  document.body.appendChild(el);
+
+  header.querySelector<HTMLButtonElement>("#__phl-img-close")?.addEventListener("click", () => {
+    el?.remove();
+  });
+  return el;
+}
+
+function renderEntry(r: ProbeResult): void {
+  const panel = ensurePanel();
+  if (!panel) return;
+  const list = panel.querySelector<HTMLOListElement>("#__phl-img-list");
+  const count = panel.querySelector<HTMLSpanElement>("#__phl-img-count");
+  if (!list) return;
+  const li = document.createElement("li");
+  li.style.cssText = "margin:4px 0;word-break:break-all";
+  const short = r.url.length > 120 ? r.url.slice(0, 117) + "…" : r.url;
+  li.innerHTML =
+    `<div><strong style="color:#fecaca">${r.status}</strong> — ${escapeHtml(r.reason)}</div>` +
+    `<div><a href="${escapeAttr(r.url)}" target="_blank" rel="noopener" ` +
+    `style="color:#93c5fd;text-decoration:underline">${escapeHtml(short)}</a></div>`;
+  list.appendChild(li);
+  if (count) count.textContent = String(list.children.length);
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] || c
+  ));
+}
+function escapeAttr(s: string): string { return escapeHtml(s); }
+
+async function probe(url: string): Promise<ProbeResult> {
+  const at = Date.now();
+  try {
+    // GET with Range: bytes=0-0 avoids downloading the whole image but still
+    // triggers auth/token/CORS checks and yields the real status code.
+    const res = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+      credentials: "omit",
+      headers: { Range: "bytes=0-0" },
+    });
+    return { url, status: res.status, reason: reasonForStatus(res.status), at };
+  } catch {
+    return { url, status: "network", reason: reasonForStatus("network"), at };
+  }
+}
+
 export function installImageErrorAutoReset(): void {
   if (typeof window === "undefined" || typeof document === "undefined") return;
   if (isPreviewOrDev()) return;
-  try {
-    if (sessionStorage.getItem(SESSION_FLAG) === "1") return;
-  } catch { /* ignore */ }
+
+  const alreadyReset = (() => {
+    try { return sessionStorage.getItem(SESSION_FLAG) === "1"; } catch { return false; }
+  })();
 
   const broken = new Map<string, number>();
+  const seen = new Set<string>();
+  const errors: ProbeResult[] = [];
+  (window as unknown as { __phlImageErrors?: ProbeResult[] }).__phlImageErrors = errors;
 
   const trigger = (): void => {
+    if (alreadyReset) return;
     try { sessionStorage.setItem(SESSION_FLAG, "1"); } catch { /* ignore */ }
     const next = window.location.pathname + window.location.search + window.location.hash;
     const url = `/cache-reset?next=${encodeURIComponent(next || "/")}`;
-    try {
-      // eslint-disable-next-line no-console
-      console.warn("[image-auto-reset] repeated image load failures — resetting cache", {
-        count: broken.size,
-        sample: Array.from(broken.keys()).slice(0, 3),
-      });
-    } catch { /* ignore */ }
+    // eslint-disable-next-line no-console
+    console.warn("[image-auto-reset] repeated image load failures — resetting cache", {
+      count: broken.size,
+      sample: Array.from(broken.keys()).slice(0, 3),
+    });
     window.location.replace(url);
   };
 
@@ -74,15 +184,20 @@ export function installImageErrorAutoReset(): void {
       || (t as HTMLSourceElement).srcset
       || "";
     if (!src || !isFirebaseImage(src)) return;
+    if (seen.has(src)) return;
+    seen.add(src);
 
     const now = Date.now();
-    // Purge stale entries outside the window.
-    for (const [k, ts] of broken) {
-      if (now - ts > WINDOW_MS) broken.delete(k);
-    }
+    for (const [k, ts] of broken) if (now - ts > WINDOW_MS) broken.delete(k);
     broken.set(src, now);
 
-    if (broken.size >= THRESHOLD) trigger();
+    void probe(src).then((r) => {
+      errors.push(r);
+      // eslint-disable-next-line no-console
+      console.warn(`[image-error] ${r.status} ${r.reason}\n  URL: ${r.url}`);
+      renderEntry(r);
+      if (!alreadyReset && broken.size >= THRESHOLD) trigger();
+    });
   };
 
   window.addEventListener("error", onError, true);
