@@ -75,6 +75,7 @@ import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]
 import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wallid'
 import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
 import { Route as ApiPublicStaleAssetReportRouteImport } from './routes/api/public/stale-asset-report'
+import { Route as ApiPublicStaleAssetLogRouteImport } from './routes/api/public/stale-asset-log'
 import { Route as ApiPublicSendMarketingRouteImport } from './routes/api/public/send-marketing'
 import { Route as ApiPublicSendMailRouteImport } from './routes/api/public/send-mail'
 import { Route as ApiPublicPublishStatusRouteImport } from './routes/api/public/publish-status'
@@ -466,6 +467,11 @@ const ApiPublicStaleAssetReportRoute =
     path: '/api/public/stale-asset-report',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicStaleAssetLogRoute = ApiPublicStaleAssetLogRouteImport.update({
+  id: '/api/public/stale-asset-log',
+  path: '/api/public/stale-asset-log',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSendMarketingRoute = ApiPublicSendMarketingRouteImport.update({
   id: '/api/public/send-marketing',
   path: '/api/public/send-marketing',
@@ -827,6 +833,7 @@ export interface FileRoutesByFullPath {
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/send-marketing': typeof ApiPublicSendMarketingRoute
+  '/api/public/stale-asset-log': typeof ApiPublicStaleAssetLogRoute
   '/api/public/stale-asset-report': typeof ApiPublicStaleAssetReportRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
@@ -943,6 +950,7 @@ export interface FileRoutesByTo {
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/send-marketing': typeof ApiPublicSendMarketingRoute
+  '/api/public/stale-asset-log': typeof ApiPublicStaleAssetLogRoute
   '/api/public/stale-asset-report': typeof ApiPublicStaleAssetReportRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
@@ -1062,6 +1070,7 @@ export interface FileRoutesById {
   '/api/public/publish-status': typeof ApiPublicPublishStatusRoute
   '/api/public/send-mail': typeof ApiPublicSendMailRoute
   '/api/public/send-marketing': typeof ApiPublicSendMarketingRoute
+  '/api/public/stale-asset-log': typeof ApiPublicStaleAssetLogRoute
   '/api/public/stale-asset-report': typeof ApiPublicStaleAssetReportRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
@@ -1181,6 +1190,7 @@ export interface FileRouteTypes {
     | '/api/public/publish-status'
     | '/api/public/send-mail'
     | '/api/public/send-marketing'
+    | '/api/public/stale-asset-log'
     | '/api/public/stale-asset-report'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
@@ -1297,6 +1307,7 @@ export interface FileRouteTypes {
     | '/api/public/publish-status'
     | '/api/public/send-mail'
     | '/api/public/send-marketing'
+    | '/api/public/stale-asset-log'
     | '/api/public/stale-asset-report'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
@@ -1415,6 +1426,7 @@ export interface FileRouteTypes {
     | '/api/public/publish-status'
     | '/api/public/send-mail'
     | '/api/public/send-marketing'
+    | '/api/public/stale-asset-log'
     | '/api/public/stale-asset-report'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
@@ -1520,6 +1532,7 @@ export interface RootRouteChildren {
   ApiPublicPublishStatusRoute: typeof ApiPublicPublishStatusRoute
   ApiPublicSendMailRoute: typeof ApiPublicSendMailRoute
   ApiPublicSendMarketingRoute: typeof ApiPublicSendMarketingRoute
+  ApiPublicStaleAssetLogRoute: typeof ApiPublicStaleAssetLogRoute
   ApiPublicStaleAssetReportRoute: typeof ApiPublicStaleAssetReportRoute
   ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
   ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
@@ -2010,6 +2023,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/stale-asset-report'
       fullPath: '/api/public/stale-asset-report'
       preLoaderRoute: typeof ApiPublicStaleAssetReportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/stale-asset-log': {
+      id: '/api/public/stale-asset-log'
+      path: '/api/public/stale-asset-log'
+      fullPath: '/api/public/stale-asset-log'
+      preLoaderRoute: typeof ApiPublicStaleAssetLogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/send-marketing': {
@@ -2512,6 +2532,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPublishStatusRoute: ApiPublicPublishStatusRoute,
   ApiPublicSendMailRoute: ApiPublicSendMailRoute,
   ApiPublicSendMarketingRoute: ApiPublicSendMarketingRoute,
+  ApiPublicStaleAssetLogRoute: ApiPublicStaleAssetLogRoute,
   ApiPublicStaleAssetReportRoute: ApiPublicStaleAssetReportRoute,
   ApiPublicWebVitalsRoute: ApiPublicWebVitalsRoute,
   ApiWebhooksWallidRoute: ApiWebhooksWallidRoute,
