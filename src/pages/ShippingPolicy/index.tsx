@@ -75,11 +75,11 @@ export default function ShippingPolicy() {
           <div className="rounded-2xl px-5 py-4 flex items-center gap-4" style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.2)' }}>
             <Truck className="w-8 h-8 text-emerald-400 shrink-0" />
             <div>
-              <p className="text-emerald-300 font-bold text-base">Free Standard Delivery on orders over £50</p>
-              <p className="text-[#9cb8d9] text-xs mt-0.5">Applied automatically at checkout. No code required.</p>
+              <p className="text-emerald-300 font-bold text-base">Free UK Standard Delivery on orders over £50</p>
+              <p className="text-[#9cb8d9] text-xs mt-0.5">Applied automatically at UK checkout. No code required.</p>
             </div>
           </div>
-          <p className="text-[#9cb8d9] leading-relaxed">Orders below £50 are subject to a £3.99 standard delivery charge. Express delivery is £6.99 regardless of order value.</p>
+          <p className="text-[#9cb8d9] leading-relaxed">UK orders below £50 are subject to a £3.99 standard delivery charge. Next Day by 12 PM is £7.99 regardless of order value. Germany and Poland are a flat £20 tracked international rate — the free-over-£50 threshold does not apply to EU delivery.</p>
         </div>
       ),
     },
