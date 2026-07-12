@@ -802,39 +802,20 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   if (!contentType.includes("text/html")) return stripped;
 
   const htmlHeaders = new Headers(stripped.headers);
-  // Public HTML routes (/, /products, /products/*, /compound, /compound/*,
-  // /research/*, /landing/*, /blog/*, /resources/*) — public + identical for
-  // all users → edge-cacheable with short s-maxage + long SWR window.
-  // Post-publish automation calls Cloudflare `purge_everything` (see
-  // .github/workflows/post-deploy-*.yml) so fresh deploys invalidate the
-  // cached HTML immediately; the SWR window only serves stale copies when
-  // origin is unreachable. TTFB drops from ~1.8s to ~150ms on cache HIT.
-  const publicCacheable = pathname ? isCacheableRoute(pathname) : false;
+  // HTML shells MUST NEVER be edge-cached. A cached shell survives a Lovable
+  // publish and points at hashed JS/CSS chunks evicted from the new build →
+  // blank pages until manual purge. Contract enforced by
+  // .github/workflows/html-shell-no-cache.yml + e2e/cache-headers-regression.
+  // Speed wins come from CSP-hash caching of assets, not from caching HTML.
+  htmlHeaders.set("cache-control", "no-cache, no-store, must-revalidate");
+  htmlHeaders.set("cdn-cache-control", "no-store");
+  htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
+  htmlHeaders.set("surrogate-control", "no-store");
+  htmlHeaders.set("pragma", "no-cache");
+  htmlHeaders.set("expires", "0");
+  htmlHeaders.delete("cache-tag");
+  void pathname;
 
-  if (publicCacheable && stripped.status === 200) {
-    htmlHeaders.set("cache-control", "public, s-maxage=60, stale-while-revalidate=86400");
-    htmlHeaders.set("cdn-cache-control", "public, max-age=60, stale-while-revalidate=86400");
-    htmlHeaders.set("cloudflare-cdn-cache-control", "public, max-age=60, stale-while-revalidate=86400");
-    htmlHeaders.delete("surrogate-control");
-    htmlHeaders.delete("pragma");
-    htmlHeaders.delete("expires");
-    htmlHeaders.set("cache-tag", "page-html");
-    const existingVary = htmlHeaders.get("vary");
-    if (!existingVary) {
-      htmlHeaders.set("vary", "Accept-Encoding");
-    } else if (!/\baccept-encoding\b/i.test(existingVary)) {
-      htmlHeaders.set("vary", `${existingVary}, Accept-Encoding`);
-    }
-  } else {
-    // Sensitive / per-user / API HTML (auth, checkout, admin, cart, account,
-    // /api/*, etc.) — never cache at browser or edge.
-    htmlHeaders.set("cache-control", "no-cache, no-store, must-revalidate");
-    htmlHeaders.set("cdn-cache-control", "no-store");
-    htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
-    htmlHeaders.set("surrogate-control", "no-store");
-    htmlHeaders.set("pragma", "no-cache");
-    htmlHeaders.set("expires", "0");
-  }
 
   htmlHeaders.delete("age");
 
