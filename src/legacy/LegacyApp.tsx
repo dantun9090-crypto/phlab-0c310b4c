@@ -23,12 +23,12 @@ export default function LegacyApp({
   initialPath?: string;
   initialBanner?: SSRBanner | null;
 }) {
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(() => typeof document !== "undefined");
 
   useEffect(() => {
     if (!browserRouter) browserRouter = createLegacyRouter("/");
-    setMounted(true);
-  }, []);
+    if (!mounted) setMounted(true);
+  }, [mounted]);
 
   if (!mounted) {
     return (
