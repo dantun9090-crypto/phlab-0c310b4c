@@ -23,6 +23,14 @@
   Content-Type: application/manifest+json; charset=utf-8
   Cache-Control: public, max-age=3600
 
+# User-editable downloads must revalidate at the browser and never stick at
+# the CDN edge, so re-uploaded PDFs become visible without a manual purge.
+/downloads/*
+  Cache-Control: public, max-age=300, must-revalidate
+  CDN-Cache-Control: no-store
+  Cloudflare-CDN-Cache-Control: no-store
+  Surrogate-Control: no-store
+
 # Hashed Vite build output — filename-based cache-busting means these are
 # safe to cache forever. Critical: HTML shells must NOT be cached (handled
 # in src/server.ts) so a new build's HTML always points at fresh hashed
@@ -61,4 +69,3 @@
   Pragma: no-cache
   Expires: 0
   Vary: *
-

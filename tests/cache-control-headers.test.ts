@@ -52,9 +52,23 @@ describe("Cache-Control headers for marketing routes", () => {
 
     expect(origin).toContain('"cache-control": "no-cache, no-store, must-revalidate"');
     expect(origin).toContain('htmlHeaders.set("cache-control", "no-cache, no-store, must-revalidate")');
+    expect(origin).not.toContain('htmlHeaders.set("cache-control", "public, s-maxage=60, stale-while-revalidate=86400")');
     expect(worker).toContain('const BROWSER_HTML_CACHE_CONTROL = "no-cache, no-store, must-revalidate"');
     expect(worker).toContain('headers.set("Pragma", "no-cache")');
     expect(worker).toContain('headers.set("Expires", "0")');
+  });
+
+  test("source static header rules keep downloads dynamic and hashed assets immutable", () => {
+    const worker = readFileSync("cloudflare/phlabs-prerender.mjs", "utf8");
+    const staticHeaders = readFileSync("public/_headers", "utf8");
+
+    expect(worker).toContain("static: 31536000");
+    expect(staticHeaders).toContain("/downloads/*");
+    expect(staticHeaders).toContain("Cache-Control: public, max-age=300, must-revalidate");
+    expect(staticHeaders).toContain("CDN-Cache-Control: no-store");
+    expect(staticHeaders).toContain("Cloudflare-CDN-Cache-Control: no-store");
+    expect(staticHeaders).toContain("/assets/*");
+    expect(staticHeaders).toContain("Cache-Control: public, max-age=31536000, immutable");
   });
 
   for (const path of PATHS) {

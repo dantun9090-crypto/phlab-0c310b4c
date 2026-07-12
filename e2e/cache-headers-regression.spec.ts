@@ -95,7 +95,6 @@ const HTML_SHELLS = [
   "/about",
   "/contact",
   "/peptide-calculator",
-  "/downloads",
   "/landing/phlabs",
 ];
 
