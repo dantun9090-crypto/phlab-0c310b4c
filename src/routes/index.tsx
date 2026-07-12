@@ -22,9 +22,13 @@ const HOME_FAQS: { q: string; a: string }[] = [
 ];
 
 export const Route = createFileRoute("/")({
-  // Fetch active promo banner on the server so we can preload the LCP image.
-  // Returns null on any error — never blocks SSR.
-  loader: async () => ({ banner: await fetchPromoBanner() }),
+  // Home is human-facing: skip the Firebase promo-banner fetch in the SSR
+  // loader so Worker TTFB isn't gated by Firestore RTT. The banner is
+  // fetched client-side in src/pages/Home/index.tsx (refetchBannerAndSettings)
+  // and bots receive the fully-rendered page via the phlabs-prerender Worker
+  // (Prerender.io executes JS, so SEO is unaffected).
+  loader: async () => ({ banner: null as Awaited<ReturnType<typeof fetchPromoBanner>> | null }),
+
   // Public content routes must SSR a non-empty body. Do not disable SSR
   // here or wrap the route in deferred loading with an empty fallback; that combination
   // caused staging to stick on the boot loader after publishes.
