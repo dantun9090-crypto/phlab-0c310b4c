@@ -68,8 +68,14 @@ export default function CloudflareStatusTab() {
     let cancelled = false;
     const load = async () => {
       try {
+        const u = auth.currentUser;
+        if (!u) throw new Error('Sign in as admin first');
+        const idToken = await u.getIdToken();
         const res = await fetch('/api/public/cloudflare-secrets-status', {
+          method: 'POST',
           cache: 'no-store',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ idToken }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const body = (await res.json()) as CfStatus;
@@ -92,6 +98,7 @@ export default function CloudflareStatusTab() {
       clearInterval(id);
     };
   }, []);
+
 
   if (loading) return <div className="p-6 text-slate-300">Loading Cloudflare status…</div>;
   if (error) return <div className="p-6 text-red-400">Failed to load: {error}</div>;
