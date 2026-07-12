@@ -31,6 +31,56 @@ const CACHE_TTL = {
 const BROWSER_HTML_CACHE_CONTROL = "no-cache, no-store, must-revalidate";
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// WORKER-INTERNAL HTML WARM CACHE (Task 1.1)
+// ─────────────────────────────────────────────────────────────────────────────
+// Per-isolate in-memory cache for sanitized browser HTML shells. Serves TTFB
+// ~5–30ms on hit while keeping the CDN/browser contract at no-store — the
+// CDN never sees the cached bytes, only this Worker isolate does. Hits are
+// bounded by isolate lifetime (typically minutes) and WARM_TTL_MS.
+//
+// SAFETY: Only cache successful (2xx) text/html responses on GET. Never cache
+// authenticated / sensitive paths — those are excluded by prefix below.
+// ═══════════════════════════════════════════════════════════════════════════════
+const WARM_TTL_MS = 60_000;
+const WARM_MAX_ENTRIES = 64;
+const WARM_SKIP_PREFIXES = [
+  "/admin", "/auth", "/login", "/logout", "/account",
+  "/cart", "/checkout", "/payment", "/register", "/api/",
+];
+/** @type {Map<string, { body: ArrayBuffer, contentType: string, expiresAt: number }>} */
+const htmlWarmCache = new Map();
+
+function warmCacheKey(url) {
+  // Key on pathname only — HTML shells are identical across query strings for
+  // our routes, and query-string variance would blow the cache with tracking
+  // params (utm_*, gclid, fbclid). Skip if the path is sensitive.
+  return url.pathname;
+}
+
+function warmCacheGet(key) {
+  const hit = htmlWarmCache.get(key);
+  if (!hit) return null;
+  if (Date.now() > hit.expiresAt) {
+    htmlWarmCache.delete(key);
+    return null;
+  }
+  return hit;
+}
+
+function warmCacheSet(key, body, contentType) {
+  if (htmlWarmCache.size >= WARM_MAX_ENTRIES) {
+    // Simple FIFO eviction — delete oldest.
+    const firstKey = htmlWarmCache.keys().next().value;
+    if (firstKey !== undefined) htmlWarmCache.delete(firstKey);
+  }
+  htmlWarmCache.set(key, { body, contentType, expiresAt: Date.now() + WARM_TTL_MS });
+}
+
+function warmCacheEligible(path) {
+  return !WARM_SKIP_PREFIXES.some((p) => path.startsWith(p));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // BOT DETECTION
 // ═══════════════════════════════════════════════════════════════════════════════
 const CRAWLER_UAS = [
@@ -364,13 +414,34 @@ export default {
     // Note: origin at phlab.lovable.app 302-redirects back to phlabs.co.uk on
     // direct fetches, so we cannot cache/rewrite here without a loop. Browsers
     // keep using origin's per-request nonce CSP; hash-CSP applies to bots only.
+    //
+    // Task 1.1: Worker-internal warm cache. On HIT we serve the sanitized
+    // body bytes from isolate memory (TTFB ~5–30ms) but STILL emit strict
+    // no-store headers so the CDN and browser never cache the shell — the
+    // regression contract in e2e/cache-headers-regression.spec.ts is preserved.
+    const wKey = warmCacheKey(url);
+    const wEligible = warmCacheEligible(path);
+    if (wEligible) {
+      const warm = warmCacheGet(wKey);
+      if (warm) {
+        console.log("[PHL Worker] htmlWarmCache hit for " + path);
+        const headers = new Headers();
+        headers.set("Content-Type", warm.contentType);
+        headers.set("X-Content-Type-Options", "nosniff");
+        applyBrowserHtmlNoCache(headers);
+        headers.set("X-PHL-Via", "warm-hit;bot=0;total=" + (Date.now() - startTime) + "ms");
+        return new Response(warm.body, { status: 200, headers });
+      }
+      console.log("[PHL Worker] htmlWarmCache miss for " + path);
+    }
+
     const passRes = await buildBrowserResponse(await fetch(request));
     const out = new Response(passRes.body, {
       status: passRes.status,
       statusText: passRes.statusText,
       headers: passRes.headers,
     });
-    out.headers.set("X-PHL-Via", "passthrough;bot=0;total=" + (Date.now() - startTime) + "ms");
+    out.headers.set("X-PHL-Via", "passthrough;bot=0;warm=" + (wEligible ? "miss" : "skip") + ";total=" + (Date.now() - startTime) + "ms");
     // Mirror origin build id into cf-cache-build-id so the post-deploy health
     // check can confirm this Worker is on-path and its build tag reached the
     // browser through Cloudflare's cache layer.
@@ -391,6 +462,22 @@ export default {
       out.headers.delete("Pragma");
       out.headers.delete("Expires");
       out.headers.delete("Age");
+    }
+
+    // Populate the warm cache on successful HTML pass-through. We tee the
+    // body: one stream to the browser, one buffered into isolate memory.
+    const ctype = out.headers.get("Content-Type") || "";
+    if (wEligible && out.status === 200 && ctype.includes("text/html") && out.body) {
+      const [a, b] = out.body.tee();
+      ctx.waitUntil((async () => {
+        try {
+          const buf = await new Response(b).arrayBuffer();
+          warmCacheSet(wKey, buf, ctype);
+        } catch (e) {
+          console.warn("[PHL Worker] warm cache populate failed: " + (e && e.message));
+        }
+      })());
+      return new Response(a, { status: out.status, statusText: out.statusText, headers: out.headers });
     }
     return out;
   },
