@@ -607,7 +607,10 @@ button,a{appearance:none;border:0;border-radius:8px;background:#10b981;color:#03
     status: 200,
     headers: {
       "content-type": "text/html; charset=utf-8",
-      "clear-site-data": '"cache", "storage", "executionContexts"',
+      // Do NOT include "executionContexts": Chrome Android can reload the
+      // reset page before its JS redirects, which looks like an endless
+      // refresh / stuck page. Cache+storage are enough for stale app cleanup.
+      "clear-site-data": '"cache", "storage"',
       "cache-control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
       "cdn-cache-control": "no-store",
       "cloudflare-cdn-cache-control": "no-store",
@@ -1251,7 +1254,7 @@ export default {
       // 0. Browser cache reset. Keep this before SSR so `/?sw=off` never loads
       // the app bundle; it returns a standalone no-store page with
       // Clear-Site-Data plus JS fallbacks for browsers without header support.
-      if ((request.method === "GET" || request.method === "HEAD") && (url.searchParams.get("sw") === "off" || url.pathname === "/api/public/hardreset" || url.pathname === "/cache-reset")) {
+      if ((request.method === "GET" || request.method === "HEAD") && (url.searchParams.get("sw") === "off" || url.searchParams.get("phl_sw_cleanup") === "1" || url.searchParams.has("_bust") || url.pathname === "/api/public/hardreset" || url.pathname === "/cache-reset")) {
         const reset = browserCacheResetResponse(url);
         if (request.method === "HEAD") {
           return new Response(null, { status: reset.status, statusText: reset.statusText, headers: reset.headers });
