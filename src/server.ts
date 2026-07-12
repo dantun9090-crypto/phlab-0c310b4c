@@ -399,6 +399,7 @@ const INTERNAL_HEADER_DENYLIST = [
 const HTML_NO_STORE_CACHE_CONTROL = "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
 const DOWNLOAD_NO_STORE_CACHE_CONTROL = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
 const IMMUTABLE_BUILD_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable";
+const HASHED_STATIC_ASSET_RE = /(?:^|\/)[^/?#]+(?:[-._][a-f0-9]{8,}|-[A-Za-z0-9_-]{8,})\.(?:js|mjs|css|woff2?|ttf|otf)$/i;
 
 const STRICT_NO_STORE_HEADERS: Record<string, string> = {
   "cache-control": HTML_NO_STORE_CACHE_CONTROL,
@@ -627,7 +628,10 @@ function isBuildAssetPath(pathname: string): boolean {
 
 function isImmutableBuildAssetPath(pathname: string): boolean {
   if (pathname.startsWith("/downloads/")) return false;
-  return /^\/(assets|_build)\/[^?#]+\.(js|mjs|css|woff2)$/i.test(pathname);
+  if (pathname.startsWith("/api/") || pathname.startsWith("/hooks/")) return false;
+  if (pathname === "/robots.txt" || /^\/sitemap[-a-z0-9]*\.xml$/i.test(pathname)) return false;
+  if (!HASHED_STATIC_ASSET_RE.test(pathname)) return false;
+  return /^\/(assets|_build|fonts|_fonts)\//i.test(pathname);
 }
 
 function applyImmutableBuildAssetCacheHeaders(response: Response, url: URL): Response {
