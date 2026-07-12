@@ -68,11 +68,24 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setStatus(u && !u.isAnonymous ? 'authed' : 'anon');
+    let unsub: (() => void) | undefined;
+    let cancelled = false;
+    // Dynamic import keeps Firebase Auth (~170 KB) out of the main bundle
+    // — RequireAuth only wraps /admin and /account, which are already
+    // lazy-loaded routes, so the auth SDK now loads on demand instead of
+    // on every homepage visit.
+    void import('@/lib/firebase-auth').then(({ auth, onAuthStateChanged }) => {
+      if (cancelled) return;
+      unsub = onAuthStateChanged(auth, (u) => {
+        setStatus(u && !u.isAnonymous ? 'authed' : 'anon');
+      });
     });
-    return unsub;
+    return () => {
+      cancelled = true;
+      if (unsub) unsub();
+    };
   }, []);
+
 
   if (status === 'loading') return <PageLoader />;
   if (status === 'anon') {
