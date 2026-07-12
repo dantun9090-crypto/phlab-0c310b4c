@@ -250,9 +250,19 @@ export default function InventoryTab() {
           // Propagate to variants[] so storefront (which derives display
           // price/stock from variants) actually reflects the change.
           if (variants && variants.length > 0) {
+            const prices = variants.map((v: any) => Number(v?.price) || 0).filter((n) => n > 0);
+            const oldMin = prices.length ? Math.min(...prices) : 0;
+            const factor = priceNum != null && oldMin > 0 && priceNum > 0 ? priceNum / oldMin : null;
             patch.variants = variants.map((v: any, i: number) => {
               const next: any = { ...v };
-              if (priceNum != null) next.price = priceNum;
+              if (priceNum != null) {
+                if (factor != null) {
+                  const cur = Number(v?.price) || 0;
+                  next.price = cur > 0 ? Math.round(cur * factor * 100) / 100 : priceNum;
+                } else {
+                  next.price = priceNum;
+                }
+              }
               if (stockNum != null) {
                 const each = Math.floor(stockNum / variants.length);
                 next.stock = i === variants.length - 1
