@@ -466,6 +466,7 @@ export default {
       });
       response.headers.set("X-PHL-Via", "hash-csp;bot=1;prerender=OK;cache=" + cacheStatus + ";origin=0ms;hash=0ms;total=" + (Date.now() - startTime) + "ms");
       response.headers.set("CF-Cache-Status", cacheStatus);
+      response.headers.set("Server-Timing", `cf-cache;desc="${cacheStatus}", origin;dur=0, csp-hash;dur=0, worker;dur=${Date.now() - startTime}`);
       return withBrowserHtmlNoCache(response, path);
     }
 
