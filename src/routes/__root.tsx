@@ -306,6 +306,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/94a66073-2fa6-4218-83ac-c6a958544b55" },
     ],
     scripts: [
+      // PH Labs Cache Guard — runs before hydration on every SSR/prerender
+      // response. Detects a new BUILD_ID vs the one stored in localStorage,
+      // purges caches + service workers + localStorage, and hard-reloads
+      // with a cache-busting query. Also recovers stale bfcache images and
+      // chunk-load errors. Inline so it executes before any deferred JS.
+      {
+        children: `(function(){'use strict';var BUILD_ID=${JSON.stringify(
+          typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev",
+        )};var K='phlabs_build_id_v3';try{var last=localStorage.getItem(K);if(last&&last!==BUILD_ID){try{var ks=Object.keys(localStorage);for(var i=0;i<ks.length;i++){if(ks[i]!==K)localStorage.removeItem(ks[i]);}}catch(e){}try{sessionStorage.clear();}catch(e){}if('caches' in window){caches.keys().then(function(n){return Promise.all(n.map(function(x){return caches.delete(x);}));}).catch(function(){});}if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){x.unregister();});}).catch(function(){});}localStorage.setItem(K,BUILD_ID);if(location.search.indexOf('_bust=')===-1){var s=location.search?'&':'?';location.replace(location.pathname+location.search+s+'_bust='+BUILD_ID+'&_t='+Date.now()+location.hash);return;}}if(!last)localStorage.setItem(K,BUILD_ID);}catch(e){}window.__PHL_RELOADING__=false;window.addEventListener('error',function(e){var m=((e&&e.message)||'').toLowerCase();var chunk=m.indexOf('chunk')!==-1||m.indexOf('loading')!==-1||m.indexOf('failed to fetch')!==-1||m.indexOf('dynamically imported')!==-1||m.indexOf('unexpected token')!==-1;if(chunk&&!window.__PHL_RELOADING__){window.__PHL_RELOADING__=true;location.href=location.pathname+'?_r='+Date.now()+location.hash;}});window.addEventListener('pageshow',function(e){if(e.persisted){var imgs=document.querySelectorAll('img');var stale=0;imgs.forEach(function(img){if(!img.complete||img.naturalWidth===0){stale++;var src=img.src.split('?')[0];img.src=src+'?_rc='+Date.now();}});if(stale>0)console.warn('[PHL] Recovered '+stale+' bfcache images.');}});try{console.log('[PHL] Cache guard active. Build:',BUILD_ID);}catch(e){}})();`,
+      },
       // NOTE: GA4/GTM, Microsoft Clarity, Taboola Pixel and Bing UET are
       // intentionally NOT injected in <head>. They are all loaded after
       // React hydration + requestIdleCallback (or first user interaction)
