@@ -6,20 +6,13 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { auth, onAuthStateChanged } from '@/lib/firebase-auth';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
-// Public, high-traffic routes — eager so every direct URL paints immediately.
+// Home stays eager — it is the LCP path served from `/`. Every other public
+// route is code-split so a homepage visit does NOT pay for Products,
+// ProductDetail, Contact, About, policy pages, etc. This is the single
+// biggest win for mobile main-bundle size (~810 KB unused JS reported by
+// PSI). NotFound is kept eager because it is a tiny stub and used as the
+// catch-all fallback.
 import Home from '@/pages/Home';
-import Products from '@/pages/Products';
-import ProductDetail from '@/pages/ProductDetail';
-
-import Contact from '@/pages/Contact';
-import About from '@/pages/About';
-import QualityControl from '@/pages/QualityControl';
-import Resources from '@/pages/Resources';
-import RefundPolicy from '@/pages/RefundPolicy';
-import ShippingPolicy from '@/pages/ShippingPolicy';
-import Terms from '@/pages/Terms';
-import PrivacyPolicy from '@/pages/PrivacyPolicy';
-import CookiePolicy from '@/pages/CookiePolicy';
 import NotFound from '@/pages/NotFound';
 
 // Code-split: admin, checkout, payment, auth, account, VIP — not needed for
@@ -33,6 +26,19 @@ const Account = lazyWithRetry(() => import('@/pages/Account'));
 const Login = lazyWithRetry(() => import('@/pages/Login'));
 const Register = lazyWithRetry(() => import('@/pages/Register'));
 const VipStore = lazyWithRetry(() => import('@/pages/VipStore'));
+// Code-split: previously eager public routes. Home visitors on mobile no
+// longer download JS for these until they navigate.
+const Products = lazyWithRetry(() => import('@/pages/Products'));
+const ProductDetail = lazyWithRetry(() => import('@/pages/ProductDetail'));
+const Contact = lazyWithRetry(() => import('@/pages/Contact'));
+const About = lazyWithRetry(() => import('@/pages/About'));
+const QualityControl = lazyWithRetry(() => import('@/pages/QualityControl'));
+const Resources = lazyWithRetry(() => import('@/pages/Resources'));
+const RefundPolicy = lazyWithRetry(() => import('@/pages/RefundPolicy'));
+const ShippingPolicy = lazyWithRetry(() => import('@/pages/ShippingPolicy'));
+const Terms = lazyWithRetry(() => import('@/pages/Terms'));
+const PrivacyPolicy = lazyWithRetry(() => import('@/pages/PrivacyPolicy'));
+const CookiePolicy = lazyWithRetry(() => import('@/pages/CookiePolicy'));
 // Code-split: low-traffic content routes. SearchPage and ArticlePage both
 // pull the full ~212 KB articles bundle — keep them out of every page load.
 const SearchPage = lazyWithRetry(() => import('@/pages/Search'));
@@ -45,6 +51,7 @@ const Install = lazyWithRetry(() => import('@/pages/Install'));
 const RequestCatalog = lazyWithRetry(() => import('@/pages/RequestCatalog'));
 const CategoryPage = lazyWithRetry(() => import('@/pages/CategoryPage'));
 const PrivacyRequests = lazyWithRetry(() => import('@/pages/PrivacyRequests'));
+
 
 // Minimal spinner shown while lazy chunks load
 function PageLoader() {
