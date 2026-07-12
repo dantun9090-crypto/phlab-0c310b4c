@@ -693,13 +693,29 @@ function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
       await clear();
       location.href = '/cache-reset?next=/';
     };
+    const hasRenderedApp = () => {
+      try {
+        if (window.__PHL_REACT_READY__) return true;
+        const body = document.body;
+        if (!body) return false;
+        // If React already mounted meaningful content, do NOT wipe it with
+        // the recovery screen — that caused a visible flicker where the
+        // painted page was replaced by "update ready" mid-session.
+        if (body.querySelector('header, nav, main, footer, [data-phl-app-ready], [role="main"], [role="banner"], #root > *')) return true;
+        const text = (body.innerText || body.textContent || '').replace(/\\s+/g, ' ').trim();
+        if (text.length > 80) return true;
+        return false;
+      } catch { return false; }
+    };
     const render = () => {
       document.documentElement.setAttribute('lang', 'en-GB');
       if (!document.body || document.getElementById('phl-stale-reset-screen')) return;
+      if (hasRenderedApp()) { void clear(); return; }
       document.body.innerHTML = '<div id="phl-stale-reset-screen" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs update ready</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">Your browser has an old page file. Automatic refreshing has been stopped.</p><button id="phl-stale-reset" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;cursor:pointer;font-size:16px">Open fresh store</button></div></div>';
       document.getElementById('phl-stale-reset')?.addEventListener('click', () => { void openFresh(); });
       void clear();
     };
+
     if (document.body) render(); else addEventListener('DOMContentLoaded', render, { once: true });
   } catch (error) {
     console.error('[PHL] stale asset recovery failed', error);
