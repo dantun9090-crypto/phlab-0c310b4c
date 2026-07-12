@@ -328,7 +328,7 @@ export default {
       // poison the edge with `Not Found` bodies that browsers keep executing.
       const assetRequest = path.startsWith("/assets/") || path.startsWith("/_build/") || path.startsWith("/fonts/") || path.startsWith("/_fonts/");
       const downloadRequest = path.startsWith("/downloads/");
-      const response = await fetch(
+      let response = await fetch(
         request,
         assetRequest
           ? { cf: { cacheTtlByStatus: { "200-299": CACHE_TTL.static, "404": 0, "410": 0, "500-599": 0 } } }
@@ -336,6 +336,14 @@ export default {
             ? { cf: { cacheTtl: 0, cacheTtlByStatus: { "200-299": 0, "300-399": 0, "400-499": 0, "500-599": 0 } } }
             : undefined,
       );
+      if (downloadRequest && response.status === 404) {
+        const fallbackUrl = new URL(request.url);
+        fallbackUrl.pathname = "/" + path.split("/").pop();
+        fallbackUrl.search = url.search;
+        response = await fetch(new Request(fallbackUrl.toString(), request), {
+          cf: { cacheTtl: 0, cacheTtlByStatus: { "200-299": 0, "300-399": 0, "400-499": 0, "500-599": 0 } },
+        });
+      }
       const cloned = new Response(response.body, {
         status: response.status,
         statusText: response.statusText,
