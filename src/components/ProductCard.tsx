@@ -117,8 +117,8 @@ export function ProductCard({
           <img
             {...cfImgProps(imgUrl, { widths: [280, 400, 600, 800], sizes: '(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 400px', quality: 90, fallbackWidth: 400 })}
             alt={getProductAlt(name, product.category)}
-            loading={isAboveFold ? "eager" : "lazy"}
-            fetchPriority={isAboveFold ? "high" : "auto"}
+            loading={index === 0 ? "eager" : "lazy"}
+            fetchPriority="auto"
             width="288"
             height="216"
             decoding="async"
