@@ -5,7 +5,7 @@ import { useSSRBanner } from '@/legacy/SSRDataContext';
 import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 
 import { Link } from 'react-router-dom';
-import { AnimatedBackground } from '@/components/AnimatedBackground';
+const AnimatedBackground = lazy(() => import('@/components/AnimatedBackground').then(m => ({ default: m.AnimatedBackground })));
 import HomeSeoIndex from '@/components/HomeSeoIndex';
 import MarketingAdvertSlot from '@/components/MarketingAdvertSlot';
 import { getProductImage } from '@/lib/productImages';
@@ -512,7 +512,7 @@ export default function HomePage() {
           paddingBottom: '4rem',
         }}
       >
-        <AnimatedBackground variant="blue" />
+        <Suspense fallback={null}><AnimatedBackground variant="blue" /></Suspense>
 
         {/* Radial glow accent — pointer-events off, composited layer after LCP */}
         <div className="absolute pointer-events-none" style={{
