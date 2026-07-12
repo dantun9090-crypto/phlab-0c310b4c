@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import cataloguePdfUrl from "@/assets/downloads/PH-Labs-Research-Catalogue.pdf?url";
-import protocolLibraryPdfUrl from "@/assets/downloads/protocol-library.pdf?url";
 
 const DOWNLOAD_NO_STORE_CACHE_CONTROL =
   "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
@@ -12,7 +11,7 @@ const DOWNLOADS: Record<string, { url: string; filename: string }> = {
     filename: "PH-Labs-Research-Catalogue.pdf",
   },
   "protocol-library.pdf": {
-    url: protocolLibraryPdfUrl,
+    url: "/protocol-library.pdf",
     filename: "protocol-library.pdf",
   },
 };
