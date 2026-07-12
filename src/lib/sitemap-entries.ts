@@ -38,6 +38,7 @@ function buildStaticEntries(today: string): SitemapEntry[] {
     { path: "/uk-research-store", lastmod: today, changefreq: "weekly", priority: "0.8" },
     { path: "/lab-reports", lastmod: today, changefreq: "monthly", priority: "0.6" },
     { path: "/storage-guide", lastmod: today, changefreq: "monthly", priority: "0.6" },
+    { path: "/downloads", lastmod: today, changefreq: "monthly", priority: "0.5" },
   ];
 }
 
