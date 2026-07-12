@@ -44,6 +44,7 @@ import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ResourcesIndexRouteImport } from './routes/resources.index'
 import { Route as ResearchIndexRouteImport } from './routes/research.index'
+import { Route as DownloadsIndexRouteImport } from './routes/downloads.index'
 import { Route as ResourcesPeptideCategoriesUkResearchRouteImport } from './routes/resources.peptide-categories-uk-research'
 import { Route as ResourcesSlugRouteImport } from './routes/resources.$slug'
 import { Route as ResearchTirzepatideVsRetatrutideRouteImport } from './routes/research.tirzepatide-vs-retatrutide'
@@ -304,6 +305,11 @@ const ResearchIndexRoute = ResearchIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ResearchRoute,
+} as any)
+const DownloadsIndexRoute = DownloadsIndexRouteImport.update({
+  id: '/downloads/',
+  path: '/downloads/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ResourcesPeptideCategoriesUkResearchRoute =
   ResourcesPeptideCategoriesUkResearchRouteImport.update({
@@ -812,6 +818,7 @@ export interface FileRoutesByFullPath {
   '/research/tirzepatide-vs-retatrutide': typeof ResearchTirzepatideVsRetatrutideRoute
   '/resources/$slug': typeof ResourcesSlugRoute
   '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
+  '/downloads/': typeof DownloadsIndexRoute
   '/research/': typeof ResearchIndexRoute
   '/resources/': typeof ResourcesIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -930,6 +937,7 @@ export interface FileRoutesByTo {
   '/research/tirzepatide-vs-retatrutide': typeof ResearchTirzepatideVsRetatrutideRoute
   '/resources/$slug': typeof ResourcesSlugRoute
   '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
+  '/downloads': typeof DownloadsIndexRoute
   '/research': typeof ResearchIndexRoute
   '/resources': typeof ResourcesIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -1051,6 +1059,7 @@ export interface FileRoutesById {
   '/research/tirzepatide-vs-retatrutide': typeof ResearchTirzepatideVsRetatrutideRoute
   '/resources/$slug': typeof ResourcesSlugRoute
   '/resources/peptide-categories-uk-research': typeof ResourcesPeptideCategoriesUkResearchRoute
+  '/downloads/': typeof DownloadsIndexRoute
   '/research/': typeof ResearchIndexRoute
   '/resources/': typeof ResourcesIndexRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -1172,6 +1181,7 @@ export interface FileRouteTypes {
     | '/research/tirzepatide-vs-retatrutide'
     | '/resources/$slug'
     | '/resources/peptide-categories-uk-research'
+    | '/downloads/'
     | '/research/'
     | '/resources/'
     | '/.mcp/invoke-tool/$tool'
@@ -1290,6 +1300,7 @@ export interface FileRouteTypes {
     | '/research/tirzepatide-vs-retatrutide'
     | '/resources/$slug'
     | '/resources/peptide-categories-uk-research'
+    | '/downloads'
     | '/research'
     | '/resources'
     | '/.mcp/invoke-tool/$tool'
@@ -1410,6 +1421,7 @@ export interface FileRouteTypes {
     | '/research/tirzepatide-vs-retatrutide'
     | '/resources/$slug'
     | '/resources/peptide-categories-uk-research'
+    | '/downloads/'
     | '/research/'
     | '/resources/'
     | '/.mcp/invoke-tool/$tool'
@@ -1518,6 +1530,7 @@ export interface RootRouteChildren {
   ProductsSlugRoute: typeof ProductsSlugRoute
   ResourcesSlugRoute: typeof ResourcesSlugRoute
   ResourcesPeptideCategoriesUkResearchRoute: typeof ResourcesPeptideCategoriesUkResearchRoute
+  DownloadsIndexRoute: typeof DownloadsIndexRoute
   ResourcesIndexRoute: typeof ResourcesIndexRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiConfigPaymentsRoute: typeof ApiConfigPaymentsRoute
@@ -1821,6 +1834,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/research/'
       preLoaderRoute: typeof ResearchIndexRouteImport
       parentRoute: typeof ResearchRoute
+    }
+    '/downloads/': {
+      id: '/downloads/'
+      path: '/downloads'
+      fullPath: '/downloads/'
+      preLoaderRoute: typeof DownloadsIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/resources/peptide-categories-uk-research': {
       id: '/resources/peptide-categories-uk-research'
@@ -2526,6 +2546,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResourcesSlugRoute: ResourcesSlugRoute,
   ResourcesPeptideCategoriesUkResearchRoute:
     ResourcesPeptideCategoriesUkResearchRoute,
+  DownloadsIndexRoute: DownloadsIndexRoute,
   ResourcesIndexRoute: ResourcesIndexRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiConfigPaymentsRoute: ApiConfigPaymentsRoute,

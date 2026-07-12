@@ -22,9 +22,10 @@ const PROXY_ROUTES = [
 ];
 
 const CACHE_TTL = {
-  html: 86400,      // 24h for browser HTML
-  prerender: 60,    // 60s for prerendered HTML (keep bot cache fresh after deploys)
-  static: 2592000,  // 30 days for assets
+  html: 86400,       // 24h for browser HTML
+  prerender: 60,     // 60s for prerendered HTML (keep bot cache fresh after deploys)
+  static: 31536000,  // 1 year for hashed immutable assets — required by
+                     // e2e/cache-headers-regression.spec.ts (max-age >= 31536000)
 };
 
 const BROWSER_HTML_CACHE_CONTROL = "no-cache, no-store, must-revalidate";
@@ -376,6 +377,20 @@ export default {
     const bid = out.headers.get("x-build-id") || out.headers.get("x-phl-build-id") || "";
     if (bid && !out.headers.get("cf-cache-build-id")) {
       out.headers.set("cf-cache-build-id", bid);
+    }
+    // /downloads/* is user-editable content (PDFs, catalogue). The origin's
+    // static asset binding serves these with default headers and no
+    // cdn-cache-control, which fails the dynamic-asset contract in
+    // e2e/cache-headers-regression.spec.ts. Force CDN no-store + short
+    // browser cache so a re-uploaded PDF is picked up on next request.
+    if (path.startsWith("/downloads/") && out.status === 200) {
+      out.headers.set("Cache-Control", "public, max-age=300, must-revalidate");
+      out.headers.set("CDN-Cache-Control", "no-store");
+      out.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+      out.headers.set("Surrogate-Control", "no-store");
+      out.headers.delete("Pragma");
+      out.headers.delete("Expires");
+      out.headers.delete("Age");
     }
     return out;
   },
