@@ -1035,10 +1035,12 @@ export function Layout({ children }: LayoutProps) {
                       );
                     })}
                     {/* Recently Viewed in cart */}
-                    <RecentlyViewedProducts
-                      items={getRecentlyViewed()}
-                      variant="compact"
-                    />
+                    <Suspense fallback={null}>
+                      <RecentlyViewedProducts
+                        items={getRecentlyViewed()}
+                        variant="compact"
+                      />
+                    </Suspense>
                   </div>
                 )
               }
