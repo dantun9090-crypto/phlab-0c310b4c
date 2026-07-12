@@ -1,18 +1,31 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { z } from 'zod';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { getDocAdmin, listDocsAdmin } from '@/lib/server/firestore-admin';
+import { requireFirebaseAdmin } from '@/lib/server/firebase-auth-admin';
 
 /**
- * Cloudflare secrets + last-purge diagnostic feed for the admin
- * `Cloudflare Status` tab. Returns ONLY presence booleans for each
- * required secret (never the values) plus the last purge / verify
- * result cached in Firestore `_meta/build_state` and the most recent
- * `post_publish_auto_invalidation` audit row.
+ * Admin-only Cloudflare secrets + last-purge diagnostic feed for the
+ * `Cloudflare Status` admin tab.
+ *
+ * Returns presence booleans for each required secret (never the values)
+ * plus the last purge / verify result cached in Firestore
+ * `_meta/build_state` and the most recent `post_publish_auto_invalidation`
+ * audit row.
+ *
+ * Access model: POST with `{ idToken }`, verified via
+ * `requireFirebaseAdmin` (Firebase ID token + `customers/{uid}.isAdmin`).
+ * Anonymous callers get 401; non-admin callers get 403. This endpoint
+ * used to be an unauthenticated GET — it leaked configured-secret
+ * presence, secret-name sources, character lengths, and recent purge
+ * audit metadata to any internet visitor, so it is now gated.
  */
 
-function json(body: unknown): Response {
+const Body = z.object({ idToken: z.string().min(10).max(4096) });
+
+function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
-    status: 200,
+    status,
     headers: {
       'content-type': 'application/json; charset=utf-8',
       'cache-control': 'no-store',
@@ -43,13 +56,30 @@ function present(name: string): { present: boolean; length: number } {
 export const Route = createFileRoute('/api/public/cloudflare-secrets-status')({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      POST: async ({ request }) => {
         const limited = await enforceRateLimit(request, 'cf-secrets-status', {
           limit: 30,
           windowMs: 60_000,
           retryAfterSec: 60,
         });
         if (limited) return limited;
+
+        let body: z.infer<typeof Body>;
+        try {
+          body = Body.parse(await request.json());
+        } catch (e) {
+          return json({ error: 'invalid_body', detail: String((e as Error).message) }, 400);
+        }
+
+        try {
+          await requireFirebaseAdmin(body.idToken);
+        } catch (e) {
+          const msg = (e as Error).message;
+          return json(
+            { error: msg === 'not_admin' ? 'forbidden' : 'unauthorized' },
+            msg === 'not_admin' ? 403 : 401,
+          );
+        }
 
         // Presence-only — never leak values.
         const cfApiToken = present('CF_API_TOKEN');
