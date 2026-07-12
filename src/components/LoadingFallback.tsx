@@ -1,4 +1,52 @@
+import { useState } from "react";
+
+async function clearCachesAndReload(setBusy: (b: boolean) => void) {
+  setBusy(true);
+  try {
+    if ("serviceWorker" in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(
+        regs.map(async (r) => {
+          try {
+            if (r.waiting) r.waiting.postMessage({ type: "SKIP_WAITING" });
+          } catch {}
+          try {
+            await r.unregister();
+          } catch {}
+        }),
+      );
+    }
+  } catch {}
+  try {
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k).catch(() => false)));
+    }
+  } catch {}
+  try {
+    const keep = new Set(["theme", "currency"]);
+    Object.keys(localStorage).forEach((k) => {
+      if (!keep.has(k)) {
+        try {
+          localStorage.removeItem(k);
+        } catch {}
+      }
+    });
+  } catch {}
+  try {
+    sessionStorage.clear();
+  } catch {}
+  setTimeout(() => {
+    try {
+      window.location.reload();
+    } catch {
+      window.location.href = "/";
+    }
+  }, 300);
+}
+
 export function LoadingFallback() {
+  const [busy, setBusy] = useState(false);
   return (
     <div
       className="min-h-screen bg-[#060f1e] px-6 pt-24 flex items-center justify-center text-[#f0f6ff]"
@@ -19,12 +67,14 @@ export function LoadingFallback() {
         <p className="mt-2 text-xs leading-5 text-slate-400">
           If this stays here, refresh once to fetch the latest store version.
         </p>
-        <a
-          href="/cache-reset?next=/"
-          className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-lg border border-slate-700 bg-slate-900 px-4 text-sm font-semibold text-white"
+        <button
+          type="button"
+          onClick={() => void clearCachesAndReload(setBusy)}
+          disabled={busy}
+          className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-lg border border-slate-700 bg-slate-900 px-4 text-sm font-semibold text-white disabled:opacity-70"
         >
-          Reload store
-        </a>
+          {busy ? "Clearing…" : "Reload store"}
+        </button>
       </div>
     </div>
   );

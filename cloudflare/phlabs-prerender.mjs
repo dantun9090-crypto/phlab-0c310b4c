@@ -320,7 +320,25 @@ export default {
     const startTime = Date.now();
     const isBot = isCrawler(request);
 
-    // ── 1. Proxy routes pass through ────────────────────────────────────────
+    // ── 0. Legacy /cache-reset URL — the in-page popup now clears caches
+    //    inline via window.__phlHardReloadClean, so /cache-reset is only
+    //    ever hit by returning users on stale HTML. Bounce them back to
+    //    the requested `next=` target (default `/`) with a cache-bust
+    //    marker so the follow-up request skips any lingering edge cache.
+    if (path === "/cache-reset") {
+      const rawNext = url.searchParams.get("next") || "/";
+      const safeNext = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+      const sep = safeNext.includes("?") ? "&" : "?";
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: `${safeNext}${sep}__cf=1`,
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+          "Server-Timing": `cache-reset;dur=${Date.now() - startTime}`,
+        },
+      });
+    }
+
     if (isProxyRoute(path)) {
       // Build assets are content-addressed and may legitimately disappear when
       // the hosting platform evicts an older deployment. Never let Cloudflare
