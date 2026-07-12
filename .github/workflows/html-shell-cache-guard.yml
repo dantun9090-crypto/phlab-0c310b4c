@@ -1,17 +1,21 @@
-name: HTML shell no-cache guard
+name: HTML shell cache guard
 
-# CI guardrail: HTML shells MUST NEVER be edge-cached. A stale shell after
-# a Lovable publish points at hashed JS/CSS chunks evicted from the new
-# build → blank pages until a manual Cloudflare purge. This job probes the
-# critical shell routes against the live edge after every push to main and
-# on a 15-min schedule, failing loudly if any shell starts being cached.
+# CI guardrail (post-policy-flip 2026-07): Cloudflare Cache Rule 3
+# intentionally caches public HTML shells at the edge for 4h. This job
+# probes the critical shell routes against the live edge after every
+# push to main and on a 15-min schedule, failing loudly if:
+#   - a public HTML shell stops being edge-cached (cf-cache-status !=
+#     HIT/REVALIDATED/UPDATING/STALE on the warm probe), OR
+#   - a sensitive path (/admin, /cart, /checkout, /account, /login,
+#     /register, /payment, /vip, /api/*) starts being edge-cached.
 #
 # Enforcement rules (see scripts/cache-headers-scan.ts):
-#   - cache-control must be no-store OR max-age=0, must-revalidate
-#   - cdn-cache-control (or surrogate-control) MUST include no-store
-#   - no s-maxage>0 on browser or CDN tier
-#   - cf-cache-status MUST NOT be HIT / REVALIDATED / STALE / UPDATING
-#   - age header MUST be 0 or absent
+#   - html-shell paths: cf-cache-status MUST be HIT / REVALIDATED /
+#     UPDATING / STALE on the second (warm) probe. DYNAMIC or MISS fails.
+#   - sensitive paths: cache-control / cdn-cache-control / surrogate-
+#     control must all be uncacheable, s-maxage=0, cf-cache-status MUST
+#     NOT be HIT / REVALIDATED / STALE / UPDATING.
+
 
 on:
   push:
