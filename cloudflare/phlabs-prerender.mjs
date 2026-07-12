@@ -414,13 +414,34 @@ export default {
     // Note: origin at phlab.lovable.app 302-redirects back to phlabs.co.uk on
     // direct fetches, so we cannot cache/rewrite here without a loop. Browsers
     // keep using origin's per-request nonce CSP; hash-CSP applies to bots only.
+    //
+    // Task 1.1: Worker-internal warm cache. On HIT we serve the sanitized
+    // body bytes from isolate memory (TTFB ~5–30ms) but STILL emit strict
+    // no-store headers so the CDN and browser never cache the shell — the
+    // regression contract in e2e/cache-headers-regression.spec.ts is preserved.
+    const wKey = warmCacheKey(url);
+    const wEligible = warmCacheEligible(path);
+    if (wEligible) {
+      const warm = warmCacheGet(wKey);
+      if (warm) {
+        console.log("[PHL Worker] htmlWarmCache hit for " + path);
+        const headers = new Headers();
+        headers.set("Content-Type", warm.contentType);
+        headers.set("X-Content-Type-Options", "nosniff");
+        applyBrowserHtmlNoCache(headers);
+        headers.set("X-PHL-Via", "warm-hit;bot=0;total=" + (Date.now() - startTime) + "ms");
+        return new Response(warm.body, { status: 200, headers });
+      }
+      console.log("[PHL Worker] htmlWarmCache miss for " + path);
+    }
+
     const passRes = await buildBrowserResponse(await fetch(request));
     const out = new Response(passRes.body, {
       status: passRes.status,
       statusText: passRes.statusText,
       headers: passRes.headers,
     });
-    out.headers.set("X-PHL-Via", "passthrough;bot=0;total=" + (Date.now() - startTime) + "ms");
+    out.headers.set("X-PHL-Via", "passthrough;bot=0;warm=" + (wEligible ? "miss" : "skip") + ";total=" + (Date.now() - startTime) + "ms");
     // Mirror origin build id into cf-cache-build-id so the post-deploy health
     // check can confirm this Worker is on-path and its build tag reached the
     // browser through Cloudflare's cache layer.
