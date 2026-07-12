@@ -1219,7 +1219,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
-        <link rel="preload" as="image" href={logoUrl} type="image/webp" fetchPriority="high" />
+        {/* Logo is NOT the LCP element — keep its preload but at low priority so
+            it never contends with the banner-image high-priority preload wired
+            in src/routes/index.tsx. */}
+        <link rel="preload" as="image" href={logoUrl} type="image/webp" fetchPriority="low" />
+
         <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: CRITICAL_CSS }} />
         {/* These must run before HeadContent, because HeadContent emits
             modulepreload links for hashed bundles. Old service workers can
