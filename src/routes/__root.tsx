@@ -942,6 +942,7 @@ const STALE_ASSET_RECOVERY = `
       setTimeout(function(){ if(!finished){ finished=true; done(); } },1500);
       tick();
     };
+    try{ window.__phlHardReloadClean = hardReloadClean; }catch(_e){}
     var requestHardReset=function(reason){
       try{
         sessionStorage.setItem(AUTO_HARDRESET,String(Date.now()));
