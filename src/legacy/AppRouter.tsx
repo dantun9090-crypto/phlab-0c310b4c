@@ -3,8 +3,8 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { Layout } from '@/components/Layout';
 import ScrollToTop from '@/components/ScrollToTop';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { auth, onAuthStateChanged } from '@/lib/firebase-auth';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
+
 
 // Home stays eager — it is the LCP path served from `/`. Every other public
 // route is code-split so a homepage visit does NOT pay for Products,
