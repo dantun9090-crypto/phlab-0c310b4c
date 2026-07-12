@@ -231,18 +231,21 @@ export default function ResearchGate() {
         .rg-dismiss { min-height: 44px; }
         @media (max-width: 480px) {
           .rg-modal-overlay {
-            padding: max(10px, env(safe-area-inset-top))
-                     max(10px, env(safe-area-inset-right))
-                     max(10px, env(safe-area-inset-bottom))
-                     max(10px, env(safe-area-inset-left)) !important;
+            padding: max(8px, env(safe-area-inset-top))
+                     max(8px, env(safe-area-inset-right))
+                     max(8px, env(safe-area-inset-bottom))
+                     max(8px, env(safe-area-inset-left)) !important;
           }
           .rg-modal-card {
-            border-radius: 14px !important;
-            padding: 20px 18px 18px !important;
+            max-width: 362px !important;
+            border-radius: 12px !important;
+            padding: 16px 14px 14px !important;
           }
-          .rg-modal-card h2 { font-size: 19px !important; line-height: 1.22 !important; }
-          .rg-modal-card .rg-check-list { gap: 8px !important; margin-bottom: 20px !important; }
-          .rg-modal-card .rg-check-list li span:last-child { font-size: 12.5px !important; }
+          .rg-modal-card h2 { font-size: 15.2px !important; line-height: 1.22 !important; }
+          .rg-modal-card .rg-check-list { gap: 6px !important; margin-bottom: 16px !important; }
+          .rg-modal-card .rg-check-list li span:last-child { font-size: 10px !important; }
+          .rg-cta { min-height: 40px !important; font-size: 13px !important; }
+          .rg-dismiss { min-height: 36px !important; font-size: 12px !important; }
           .rg-banner-text-full { display: none !important; text-align: center !important; }
           .rg-banner-text-short { display: block !important; }
         }
