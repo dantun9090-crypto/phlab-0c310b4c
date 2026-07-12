@@ -947,15 +947,77 @@ const STALE_ASSET_RECOVERY = `
       }catch(e){}
       return false;
     };
-    var showLimit=function(){
-      try{ console.error('[STALE_ASSET] Automatic reload blocked'); }catch(e){}
-      emit('sw_stale_reload_shown',{ path: location.pathname });
+    // Track when the tab was last hidden — Chrome Android fires pageshow/visibilitychange
+    // aggressively when returning from background, which previously caused false-positive
+    // "Update available" popups on every resume.
+    var __phlLastHiddenAt=0;
+    try{
+      document.addEventListener('visibilitychange',function(){
+        if(document.visibilityState==='hidden') __phlLastHiddenAt=Date.now();
+      },true);
+    }catch(e){}
+    var UPDATE_SHOWN_KEY='phl_sw_update_shown';
+    var isChromeAndroid=function(){
       try{
-        if(!document.body){ document.addEventListener('DOMContentLoaded',showLimit,{once:true}); return; }
+        var ua=(navigator.userAgent||'');
+        return /Android/i.test(ua) && /Chrome\//i.test(ua) && !/EdgA|OPR|SamsungBrowser|FBAV|FBAN/i.test(ua);
+      }catch(e){ return false; }
+    };
+    var getCurrentBuildId=function(){
+      try{ return String(window.__PHL_BUILD_ID__||document.documentElement.getAttribute('data-build-id')||''); }
+      catch(e){ return ''; }
+    };
+    var swLog=function(waitingBuild,isNew,skipReason){
+      try{ console.log('[PHL SW] Update check — currentBuild:',getCurrentBuildId()||'(unknown)','waitingBuild:',waitingBuild||'(unknown)','isNew:',!!isNew,'skipReason:',skipReason||'(none)'); }catch(e){}
+    };
+    var renderUpdateWall=function(){
+      try{
+        if(!document.body){ document.addEventListener('DOMContentLoaded',renderUpdateWall,{once:true}); return; }
+        try{ sessionStorage.setItem(UPDATE_SHOWN_KEY,'1'); }catch(e){}
         document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:700">Update available</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:14px;line-height:1.55">A fresh version is available. Click to clear cached files and reload.</p><button id="phl-stale-refresh" style="appearance:none;border:0;border-radius:8px;background:#10b981;color:#03140d;font-weight:700;padding:12px 16px;cursor:pointer;min-height:44px">Refresh &amp; clear cache</button></div></div>';
         var btn=document.getElementById('phl-stale-refresh');
-        if(btn) btn.addEventListener('click',function(){ emit('sw_stale_reload_accepted'); hardReloadClean(); });
+        if(btn) btn.addEventListener('click',function(){
+          emit('sw_stale_reload_accepted');
+          // Nudge any waiting SW to activate immediately before the hard reload.
+          try{
+            if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations){
+              navigator.serviceWorker.getRegistrations().then(function(regs){
+                regs.forEach(function(r){ try{ if(r.waiting) r.waiting.postMessage({type:'SKIP_WAITING'}); }catch(_e){} });
+              }).catch(function(){});
+            }
+          }catch(_e){}
+          hardReloadClean();
+        });
       }catch(e){}
+    };
+    var showLimit=function(){
+      // Prerender / SSR guard — never render the wall server-side.
+      if(typeof window==='undefined') return;
+      // Session debounce: once shown in this tab, never again.
+      try{
+        if(sessionStorage.getItem(UPDATE_SHOWN_KEY)==='1'){ swLog('','','already-shown-this-session'); return; }
+      }catch(e){}
+      // Skip when the tab has just resumed from background — Chrome Android
+      // re-runs pageshow/asset checks and would otherwise false-positive.
+      if(__phlLastHiddenAt && (Date.now()-__phlLastHiddenAt)<3000){
+        swLog('','','recent-visibility-hidden');
+        return;
+      }
+      try{ console.error('[STALE_ASSET] Automatic reload blocked'); }catch(e){}
+      emit('sw_stale_reload_shown',{ path: location.pathname });
+      var reveal=function(){
+        // Re-check debounce + visibility right before rendering (5s later on Android).
+        try{ if(sessionStorage.getItem(UPDATE_SHOWN_KEY)==='1'){ swLog('','','already-shown-this-session'); return; } }catch(e){}
+        if(__phlLastHiddenAt && (Date.now()-__phlLastHiddenAt)<3000){ swLog('','','recent-visibility-hidden'); return; }
+        swLog('',true,'');
+        renderUpdateWall();
+      };
+      if(isChromeAndroid()){
+        swLog('',true,'chrome-android-delayed-5s');
+        setTimeout(reveal,5000);
+      }else{
+        reveal();
+      }
     };
 
     var readCount=function(){
