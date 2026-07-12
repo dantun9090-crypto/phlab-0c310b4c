@@ -11,7 +11,9 @@ import { Component, useEffect, useState, type ReactNode } from "react";
 
 import { PageTransition } from "@/components/PageTransition";
 import appCss from "../styles.css?url";
-import logoUrl from "@/assets/logo.webp";
+// logoUrl import removed — the previous data:URL preload of the inlined
+// logo wasted ~3 KB per SSR response (preloading a data URL is a no-op).
+
 import "@/lib/chunk-reload";
 import "@/lib/sw-register";
 import {
