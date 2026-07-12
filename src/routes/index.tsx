@@ -154,12 +154,13 @@ function HomeSsrShell({ banner }: { banner: Awaited<ReturnType<typeof fetchPromo
   const bannerVisible = banner?.active !== false && banner?.isActive !== false && !!banner?.imageUrl;
   const bannerImage = bannerVisible
     ? cfImgProps(banner.imageUrl, {
-        widths: [480, 640, 960, 1280, 1600],
+        widths: [360, 480, 640, 960, 1280, 1600],
         sizes: "100vw",
         quality: 82,
-        fallbackWidth: 960,
+        fallbackWidth: 640,
       })
     : null;
+
 
   return (
     <main
