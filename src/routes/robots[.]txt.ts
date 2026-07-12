@@ -41,8 +41,6 @@ export const Route = createFileRoute("/robots.txt")({
             "cloudflare-cdn-cache-control": "no-store",
             "surrogate-control": "no-store",
             "x-content-type-options": "nosniff",
-            // robots.txt itself is a directive file, not a page to index.
-            "x-robots-tag": "noindex",
           },
         });
       },

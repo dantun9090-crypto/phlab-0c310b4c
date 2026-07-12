@@ -16,6 +16,7 @@ const PROXY_ROUTES = [
   "/_api/",
   "/api/",
   "/assets/",
+  "/_build/",
   "/favicon.ico",
   "/robots.txt",
   "/sitemap.xml",
@@ -318,8 +319,8 @@ export default {
         cloned.headers.set("X-Robots-Tag", "noindex, nofollow");
         cloned.headers.set("X-PHL-Via", "asset-miss-no-store");
         normalizeAssetContentType(path, cloned.headers);
-      } else if (path.startsWith("/assets/") || path.startsWith("/_img/") || path.startsWith("/_fonts/")) {
-        cloned.headers.set("Cache-Control", "public, max-age=" + CACHE_TTL.static + ", immutable");
+      } else if (path.startsWith("/assets/") || path.startsWith("/_build/") || path.startsWith("/_img/") || path.startsWith("/_fonts/")) {
+        cloned.headers.set("Cache-Control", IMMUTABLE_BUILD_ASSET_CACHE_CONTROL);
         normalizeAssetContentType(path, cloned.headers);
       }
       return cloned;
@@ -363,7 +364,7 @@ export default {
           cacheHeaders.set("X-PHL-Via", "hash-csp;bot=1;prerender=FAIL;cache=" + cacheStatus + ";origin=" + prerenderFetchMs + "ms;hash=" + hashComputeMs + "ms;total=" + (Date.now() - startTime) + "ms");
           ctx.waitUntil(cache.put(cacheKey, new Response(response.clone().body, { status: response.status, statusText: response.statusText, headers: cacheHeaders })));
           response.headers.set("X-PHL-Via", cacheHeaders.get("X-PHL-Via"));
-          applyBrowserHtmlNoCache(response.headers);
+          applyBrowserHtmlNoCache(response.headers, path);
           return response;
         }
 
@@ -383,7 +384,7 @@ export default {
         cacheHeaders.set("X-PHL-Via", "hash-csp;bot=1;prerender=OK;cache=" + cacheStatus + ";origin=" + prerenderFetchMs + "ms;hash=" + hashComputeMs + "ms;total=" + (Date.now() - startTime) + "ms");
         response.headers.set("X-Prerendered", "true");
         response.headers.set("X-PHL-Via", cacheHeaders.get("X-PHL-Via"));
-        applyBrowserHtmlNoCache(response.headers);
+        applyBrowserHtmlNoCache(response.headers, path);
         ctx.waitUntil(cache.put(cacheKey, new Response(response.clone().body, { status: response.status, statusText: response.statusText, headers: cacheHeaders })));
         return response;
       }
@@ -395,7 +396,7 @@ export default {
       });
       response.headers.set("X-PHL-Via", "hash-csp;bot=1;prerender=OK;cache=" + cacheStatus + ";origin=0ms;hash=0ms;total=" + (Date.now() - startTime) + "ms");
       response.headers.set("CF-Cache-Status", cacheStatus);
-      return withBrowserHtmlNoCache(response);
+      return withBrowserHtmlNoCache(response, path);
     }
 
     // ── 3. BROWSER branch: pass-through (origin serves SSR + nonce CSP) ─────
@@ -423,7 +424,7 @@ export default {
       console.log("[PHL Worker] htmlWarmCache miss for " + path);
     }
 
-    const passRes = await buildBrowserResponse(await fetch(request));
+    const passRes = await buildBrowserResponse(await fetch(request), path);
     const out = new Response(passRes.body, {
       status: passRes.status,
       statusText: passRes.statusText,
@@ -443,13 +444,15 @@ export default {
     // e2e/cache-headers-regression.spec.ts. Force CDN no-store + short
     // browser cache so a re-uploaded PDF is picked up on next request.
     if (path.startsWith("/downloads/") && out.status === 200) {
-      out.headers.set("Cache-Control", "public, max-age=300, must-revalidate");
+      out.headers.set("Cache-Control", DOWNLOAD_NO_STORE_CACHE_CONTROL);
       out.headers.set("CDN-Cache-Control", "no-store");
       out.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
       out.headers.set("Surrogate-Control", "no-store");
-      out.headers.delete("Pragma");
-      out.headers.delete("Expires");
+      out.headers.set("Pragma", "no-cache");
+      out.headers.set("Expires", "0");
       out.headers.delete("Age");
+      out.headers.delete("ETag");
+      out.headers.delete("Last-Modified");
     }
 
     // Populate the warm cache on successful HTML pass-through. We tee the

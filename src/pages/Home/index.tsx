@@ -739,7 +739,7 @@ export default function HomePage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 will-fade">
-              {enrichedFeatured.slice(0, 6).map((p: any, i: number) => (
+              {enrichedFeatured.slice(0, 5).map((p: any, i: number) => (
                 <Link to={`/products/${p.slug}`} key={i}
                   className="group relative rounded-2xl overflow-hidden flex flex-col transition-all duration-300"
                   style={{
@@ -752,7 +752,7 @@ export default function HomePage() {
                   {/* Image area */}
                   <div className="relative overflow-hidden" style={{ aspectRatio: '4/3', background: '#040d1a' }}>
                     {p.image ? (
-                      <img {...cfImgProps(p.image, { widths: [400, 600, 800, 1200, 1600], sizes: '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw', quality: 92 })} alt={`${p.name} research peptide vial`} loading="lazy" width="400" height="300" decoding="async" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }} className="transition-transform duration-700 group-hover:scale-105" />
+                      <img {...cfImgProps(p.image, { widths: [400, 600, 800, 1200, 1600], sizes: '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw', quality: 92 })} alt={`${p.name} research peptide vial`} loading={i < 2 ? "eager" : "lazy"} fetchPriority={i < 2 ? "high" : "auto"} width="400" height="300" decoding="async" style={{ display: 'block', width: '100%', height: '100%', objectFit: 'contain' }} className="transition-transform duration-700 group-hover:scale-105" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <FlaskConical style={{ width: 48, height: 48, color: 'rgba(16,185,129,0.3)' }} />
