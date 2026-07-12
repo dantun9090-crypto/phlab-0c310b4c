@@ -13,6 +13,7 @@ const PRERENDER_SERVICE = "https://service.prerender.io";
 const PROXY_ROUTES = [
   "/_img",
   "/_fonts/",
+  "/fonts/",
   "/_api/",
   "/api/",
   "/assets/",
@@ -33,6 +34,7 @@ const CACHE_TTL = {
 const HTML_NO_STORE_CACHE_CONTROL = "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
 const DOWNLOAD_NO_STORE_CACHE_CONTROL = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
 const IMMUTABLE_BUILD_ASSET_CACHE_CONTROL = "public, max-age=" + CACHE_TTL.static + ", immutable";
+const HASHED_STATIC_ASSET_RE = /(?:^|\/)[^/?#]+(?:[-._][a-f0-9]{8,}|-[A-Za-z0-9_-]{8,})\.(?:js|mjs|css|woff2?|ttf|otf)$/i;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // WORKER-INTERNAL HTML WARM CACHE (Task 1.1)
@@ -200,6 +202,21 @@ function normalizeAssetContentType(path, headers) {
   headers.set("X-Content-Type-Options", "nosniff");
 }
 
+function isImmutableStaticAssetPath(path) {
+  if (
+    path.startsWith("/downloads/") ||
+    path.startsWith("/api/") ||
+    path.startsWith("/_api/") ||
+    path.startsWith("/hooks/") ||
+    path === "/robots.txt" ||
+    /^\/sitemap[-a-z0-9]*\.xml$/i.test(path) ||
+    !HASHED_STATIC_ASSET_RE.test(path)
+  ) {
+    return false;
+  }
+  return path.startsWith("/assets/") || path.startsWith("/_build/") || path.startsWith("/fonts/") || path.startsWith("/_fonts/");
+}
+
 function hasPositiveHtmlCacheAge(headers) {
   const combined = [
     headers.get("Cache-Control") || headers.get("cache-control") || "",
@@ -212,7 +229,7 @@ function hasPositiveHtmlCacheAge(headers) {
 
 function applyBrowserHtmlNoCache(headers, path) {
   if (path && hasPositiveHtmlCacheAge(headers)) {
-    console.log("[PHL Worker] Stripped positive cache age on HTML for " + path);
+    console.log("[PHL Worker] Stripped cache headers on HTML for " + path);
   }
   headers.set("Cache-Control", HTML_NO_STORE_CACHE_CONTROL);
   headers.set("CDN-Cache-Control", "no-store");
@@ -306,7 +323,7 @@ export default {
       // the hosting platform evicts an older deployment. Never let Cloudflare
       // store a 404 for /assets/*.js|css as immutable, otherwise stale HTML can
       // poison the edge with `Not Found` bodies that browsers keep executing.
-      const assetRequest = path.startsWith("/assets/") || path.startsWith("/_build/");
+      const assetRequest = path.startsWith("/assets/") || path.startsWith("/_build/") || path.startsWith("/fonts/") || path.startsWith("/_fonts/");
       const response = await fetch(request, assetRequest ? { cf: { cacheTtlByStatus: { "200-299": CACHE_TTL.static, "404": 0, "410": 0, "500-599": 0 } } } : undefined);
       const cloned = new Response(response.body, {
         status: response.status,
@@ -341,7 +358,7 @@ export default {
         cloned.headers.set("X-Robots-Tag", "noindex, nofollow");
         cloned.headers.set("X-PHL-Via", "asset-miss-no-store");
         normalizeAssetContentType(path, cloned.headers);
-      } else if (path.startsWith("/assets/") || path.startsWith("/_build/") || path.startsWith("/_img/") || path.startsWith("/_fonts/")) {
+      } else if (isImmutableStaticAssetPath(path)) {
         cloned.headers.set("Cache-Control", IMMUTABLE_BUILD_ASSET_CACHE_CONTROL);
         normalizeAssetContentType(path, cloned.headers);
       }

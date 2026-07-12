@@ -58,6 +58,7 @@ import { Route as PaymentSuccessRouteImport } from './routes/payment.success'
 import { Route as PaymentCancelRouteImport } from './routes/payment.cancel'
 import { Route as LandingPhlabsRouteImport } from './routes/landing.phlabs'
 import { Route as LandingSlugRouteImport } from './routes/landing.$slug'
+import { Route as DownloadsFileRouteImport } from './routes/downloads.$file'
 import { Route as CompareSlugRouteImport } from './routes/compare.$slug'
 import { Route as CheckoutSuccessRouteImport } from './routes/checkout.success'
 import { Route as CheckoutCancelRouteImport } from './routes/checkout.cancel'
@@ -378,6 +379,11 @@ const LandingPhlabsRoute = LandingPhlabsRouteImport.update({
 const LandingSlugRoute = LandingSlugRouteImport.update({
   id: '/landing/$slug',
   path: '/landing/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadsFileRoute = DownloadsFileRouteImport.update({
+  id: '/downloads/$file',
+  path: '/downloads/$file',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompareSlugRoute = CompareSlugRouteImport.update({
@@ -805,6 +811,7 @@ export interface FileRoutesByFullPath {
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/compare/$slug': typeof CompareSlugRoute
+  '/downloads/$file': typeof DownloadsFileRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
   '/payment/cancel': typeof PaymentCancelRoute
@@ -924,6 +931,7 @@ export interface FileRoutesByTo {
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/compare/$slug': typeof CompareSlugRoute
+  '/downloads/$file': typeof DownloadsFileRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
   '/payment/cancel': typeof PaymentCancelRoute
@@ -1046,6 +1054,7 @@ export interface FileRoutesById {
   '/checkout/cancel': typeof CheckoutCancelRoute
   '/checkout/success': typeof CheckoutSuccessRoute
   '/compare/$slug': typeof CompareSlugRoute
+  '/downloads/$file': typeof DownloadsFileRoute
   '/landing/$slug': typeof LandingSlugRoute
   '/landing/phlabs': typeof LandingPhlabsRoute
   '/payment/cancel': typeof PaymentCancelRoute
@@ -1168,6 +1177,7 @@ export interface FileRouteTypes {
     | '/checkout/cancel'
     | '/checkout/success'
     | '/compare/$slug'
+    | '/downloads/$file'
     | '/landing/$slug'
     | '/landing/phlabs'
     | '/payment/cancel'
@@ -1287,6 +1297,7 @@ export interface FileRouteTypes {
     | '/checkout/cancel'
     | '/checkout/success'
     | '/compare/$slug'
+    | '/downloads/$file'
     | '/landing/$slug'
     | '/landing/phlabs'
     | '/payment/cancel'
@@ -1408,6 +1419,7 @@ export interface FileRouteTypes {
     | '/checkout/cancel'
     | '/checkout/success'
     | '/compare/$slug'
+    | '/downloads/$file'
     | '/landing/$slug'
     | '/landing/phlabs'
     | '/payment/cancel'
@@ -1523,6 +1535,7 @@ export interface RootRouteChildren {
   CheckoutCancelRoute: typeof CheckoutCancelRoute
   CheckoutSuccessRoute: typeof CheckoutSuccessRoute
   CompareSlugRoute: typeof CompareSlugRoute
+  DownloadsFileRoute: typeof DownloadsFileRoute
   LandingSlugRoute: typeof LandingSlugRoute
   LandingPhlabsRoute: typeof LandingPhlabsRoute
   PaymentCancelRoute: typeof PaymentCancelRoute
@@ -1931,6 +1944,13 @@ declare module '@tanstack/react-router' {
       path: '/landing/$slug'
       fullPath: '/landing/$slug'
       preLoaderRoute: typeof LandingSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/downloads/$file': {
+      id: '/downloads/$file'
+      path: '/downloads/$file'
+      fullPath: '/downloads/$file'
+      preLoaderRoute: typeof DownloadsFileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compare/$slug': {
@@ -2538,6 +2558,7 @@ const rootRouteChildren: RootRouteChildren = {
   CheckoutCancelRoute: CheckoutCancelRoute,
   CheckoutSuccessRoute: CheckoutSuccessRoute,
   CompareSlugRoute: CompareSlugRoute,
+  DownloadsFileRoute: DownloadsFileRoute,
   LandingSlugRoute: LandingSlugRoute,
   LandingPhlabsRoute: LandingPhlabsRoute,
   PaymentCancelRoute: PaymentCancelRoute,
