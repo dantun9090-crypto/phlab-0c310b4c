@@ -814,7 +814,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   htmlHeaders.set("pragma", "no-cache");
   htmlHeaders.set("expires", "0");
   htmlHeaders.delete("cache-tag");
-  void pathname;
+  void _pathname;
 
 
   htmlHeaders.delete("age");
