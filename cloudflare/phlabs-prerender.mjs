@@ -370,6 +370,13 @@ export default {
       headers: passRes.headers,
     });
     out.headers.set("X-PHL-Via", "passthrough;bot=0;total=" + (Date.now() - startTime) + "ms");
+    // Mirror origin build id into cf-cache-build-id so the post-deploy health
+    // check can confirm this Worker is on-path and its build tag reached the
+    // browser through Cloudflare's cache layer.
+    const bid = out.headers.get("x-build-id") || out.headers.get("x-phl-build-id") || "";
+    if (bid && !out.headers.get("cf-cache-build-id")) {
+      out.headers.set("cf-cache-build-id", bid);
+    }
     return out;
   },
 };
