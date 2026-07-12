@@ -24,7 +24,7 @@ function isAllowedOrigin(origin: string | null): boolean {
   if (ALLOWED_ORIGINS.has(origin)) return true;
   try {
     const host = new URL(origin).hostname.toLowerCase();
-    if (host.endsWith(".lovable.app") || host.endsWith(".lovable.dev")) return true;
+    if (host.endsWith(".lovable.app") || host.endsWith(".lovable.dev") || host.endsWith(".lovableproject.com")) return true;
     if (host === "localhost") return true;
   } catch {
     return false;
