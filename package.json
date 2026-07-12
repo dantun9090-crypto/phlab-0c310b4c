@@ -14,7 +14,7 @@
     "probe:sitemap-robots": "bun scripts/probe-sitemap-robots.ts",
     "probe:cache-drift": "bun scripts/head-probe-cache-drift.ts",
     "check:sitemap-urls-live": "bun scripts/check-sitemap-urls-live.ts",
-    "build:post": "bun scripts/generate-sbom.ts && bun scripts/check-dist-domains.ts",
+    "build:post": "bun scripts/generate-sbom.ts && bun scripts/check-dist-domains.ts && bun scripts/emit-csp-style-hash.ts",
     "build:dev": "NODE_OPTIONS='--max-old-space-size=8192' vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",

@@ -426,8 +426,11 @@ export default {
           const cacheHeaders = new Headers(response.headers);
           cacheHeaders.set("Cache-Control", "public, max-age=" + CACHE_TTL.prerender + ", s-maxage=" + CACHE_TTL.prerender);
           cacheHeaders.set("X-PHL-Via", "hash-csp;bot=1;prerender=FAIL;cache=" + cacheStatus + ";origin=" + prerenderFetchMs + "ms;hash=" + hashComputeMs + "ms;total=" + (Date.now() - startTime) + "ms");
+          const timingFail = `cf-cache;desc="${cacheStatus}", origin;dur=${prerenderFetchMs}, csp-hash;dur=${hashComputeMs}, worker;dur=${Date.now() - startTime}`;
+          cacheHeaders.set("Server-Timing", timingFail);
           ctx.waitUntil(cache.put(cacheKey, new Response(response.clone().body, { status: response.status, statusText: response.statusText, headers: cacheHeaders })));
           response.headers.set("X-PHL-Via", cacheHeaders.get("X-PHL-Via"));
+          response.headers.set("Server-Timing", timingFail);
           applyBrowserHtmlNoCache(response.headers, path);
           return response;
         }
@@ -446,8 +449,11 @@ export default {
         cacheHeaders.set("Cache-Control", "public, max-age=" + CACHE_TTL.prerender + ", s-maxage=" + CACHE_TTL.prerender);
         cacheHeaders.set("X-Prerendered", "true");
         cacheHeaders.set("X-PHL-Via", "hash-csp;bot=1;prerender=OK;cache=" + cacheStatus + ";origin=" + prerenderFetchMs + "ms;hash=" + hashComputeMs + "ms;total=" + (Date.now() - startTime) + "ms");
+        const timing = `cf-cache;desc="${cacheStatus}", origin;dur=${prerenderFetchMs}, csp-hash;dur=${hashComputeMs}, worker;dur=${Date.now() - startTime}`;
+        cacheHeaders.set("Server-Timing", timing);
         response.headers.set("X-Prerendered", "true");
         response.headers.set("X-PHL-Via", cacheHeaders.get("X-PHL-Via"));
+        response.headers.set("Server-Timing", timing);
         applyBrowserHtmlNoCache(response.headers, path);
         ctx.waitUntil(cache.put(cacheKey, new Response(response.clone().body, { status: response.status, statusText: response.statusText, headers: cacheHeaders })));
         return response;
@@ -460,6 +466,7 @@ export default {
       });
       response.headers.set("X-PHL-Via", "hash-csp;bot=1;prerender=OK;cache=" + cacheStatus + ";origin=0ms;hash=0ms;total=" + (Date.now() - startTime) + "ms");
       response.headers.set("CF-Cache-Status", cacheStatus);
+      response.headers.set("Server-Timing", `cf-cache;desc="${cacheStatus}", origin;dur=0, csp-hash;dur=0, worker;dur=${Date.now() - startTime}`);
       return withBrowserHtmlNoCache(response, path);
     }
 
@@ -482,19 +489,25 @@ export default {
         headers.set("Content-Type", warm.contentType);
         headers.set("X-Content-Type-Options", "nosniff");
         applyBrowserHtmlNoCache(headers);
-        headers.set("X-PHL-Via", "warm-hit;bot=0;total=" + (Date.now() - startTime) + "ms");
+        const total = Date.now() - startTime;
+        headers.set("X-PHL-Via", "warm-hit;bot=0;total=" + total + "ms");
+        headers.set("Server-Timing", `warm-cache;desc="HIT", origin;dur=0, worker;dur=${total}`);
         return new Response(warm.body, { status: 200, headers });
       }
       console.log("[PHL Worker] htmlWarmCache miss for " + path);
     }
 
-    const passRes = await buildBrowserResponse(await fetch(request), path);
+    const originStart = Date.now();
+    const originRes = await fetch(request);
+    const originMs = Date.now() - originStart;
+    const passRes = await buildBrowserResponse(originRes, path);
     const out = new Response(passRes.body, {
       status: passRes.status,
       statusText: passRes.statusText,
       headers: passRes.headers,
     });
-    out.headers.set("X-PHL-Via", "passthrough;bot=0;warm=" + (wEligible ? "miss" : "skip") + ";total=" + (Date.now() - startTime) + "ms");
+    out.headers.set("X-PHL-Via", "passthrough;bot=0;warm=" + (wEligible ? "miss" : "skip") + ";origin=" + originMs + "ms;total=" + (Date.now() - startTime) + "ms");
+    out.headers.set("Server-Timing", `warm-cache;desc="${wEligible ? "MISS" : "SKIP"}", origin;dur=${originMs}, worker;dur=${Date.now() - startTime}`);
     // Mirror origin build id into cf-cache-build-id so the post-deploy health
     // check can confirm this Worker is on-path and its build tag reached the
     // browser through Cloudflare's cache layer.
