@@ -1,17 +1,21 @@
-name: HTML shell no-cache guard
+name: HTML shell cache guard
 
-# CI guardrail: HTML shells MUST NEVER be edge-cached. A stale shell after
-# a Lovable publish points at hashed JS/CSS chunks evicted from the new
-# build → blank pages until a manual Cloudflare purge. This job probes the
-# critical shell routes against the live edge after every push to main and
-# on a 15-min schedule, failing loudly if any shell starts being cached.
+# CI guardrail (post-policy-flip 2026-07): Cloudflare Cache Rule 3
+# intentionally caches public HTML shells at the edge for 4h. This job
+# probes the critical shell routes against the live edge after every
+# push to main and on a 15-min schedule, failing loudly if:
+#   - a public HTML shell stops being edge-cached (cf-cache-status !=
+#     HIT/REVALIDATED/UPDATING/STALE on the warm probe), OR
+#   - a sensitive path (/admin, /cart, /checkout, /account, /login,
+#     /register, /payment, /vip, /api/*) starts being edge-cached.
 #
 # Enforcement rules (see scripts/cache-headers-scan.ts):
-#   - cache-control must be no-store OR max-age=0, must-revalidate
-#   - cdn-cache-control (or surrogate-control) MUST include no-store
-#   - no s-maxage>0 on browser or CDN tier
-#   - cf-cache-status MUST NOT be HIT / REVALIDATED / STALE / UPDATING
-#   - age header MUST be 0 or absent
+#   - html-shell paths: cf-cache-status MUST be HIT / REVALIDATED /
+#     UPDATING / STALE on the second (warm) probe. DYNAMIC or MISS fails.
+#   - sensitive paths: cache-control / cdn-cache-control / surrogate-
+#     control must all be uncacheable, s-maxage=0, cf-cache-status MUST
+#     NOT be HIT / REVALIDATED / STALE / UPDATING.
+
 
 on:
   push:
@@ -80,17 +84,22 @@ jobs:
               title: `HTML shell cache regression on ${sha}`,
               labels: ['regression', 'cache', 'post-deploy', 'critical'],
               body: [
-                `An HTML shell route is being edge-cached on the live site.`,
+                `An HTML shell cache-policy check failed on the live site.`,
                 ``,
-                `This is the exact regression that causes blank pages after a`,
-                `Lovable publish: the cached shell references hashed asset`,
-                `chunks that have been evicted from the new build.`,
+                `Either a public HTML shell stopped being edge-cached (Cache`,
+                `Rule 3 not matching → cf-cache-status DYNAMIC/MISS on warm`,
+                `probe), or a sensitive path started being edge-cached.`,
                 ``,
                 `Fix path:`,
-                `1. Purge the Cloudflare edge for phlabs.co.uk immediately.`,
-                `2. Confirm src/server.ts still emits \`cdn-cache-control: no-store\``,
-                `   and \`cloudflare-cdn-cache-control: no-store\` on HTML shells.`,
-                `3. Check for a new Cloudflare cache rule accidentally matching HTML.`,
+                `1. If a public shell shows DYNAMIC: verify the phlabs-prerender`,
+                `   Worker is passing non-bot traffic through unchanged, and`,
+                `   that Cache Rule 3 (edge TTL 14400s) still matches the path.`,
+                `2. If a sensitive path shows HIT: purge the Cloudflare edge`,
+                `   immediately and check for a cache rule accidentally`,
+                `   matching /admin, /cart, /checkout, /account, /login,`,
+                `   /register, /payment, /vip, or /api/*.`,
+                `3. Confirm src/server.ts still emits \`cache-control: no-store\``,
+                `   on HTML shells (origin invariant; CF Rule 3 overrides at edge).`,
                 ``,
                 `Download the \`html-shell-cache-report-${context.sha}\` artifact for the full report.`,
                 ``,
@@ -101,3 +110,4 @@ jobs:
       - name: Fail on regression
         if: steps.scan.outputs.exit_code != '0'
         run: exit 1
+
