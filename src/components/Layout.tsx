@@ -15,7 +15,9 @@ import type { Product } from '@/lib/firebase';
 // to keep it off the critical path of every page render.
 type ArticleLite = { title: string; subtitle?: string; slug: string };
 import { CookieConsent } from '@/components/CookieConsent';
-import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
+// Lazy: pulls framer-motion (~40 KB gz). Only rendered inside the cart drawer,
+// which is closed at first paint — keep it off the LCP critical path.
+const RecentlyViewedProducts = lazy(() => import('@/components/RecentlyViewedProducts'));
 import { getRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { migrateStoredCart } from '@/lib/cart-migration';
 import { initAnalytics, trackPageView, trackAddToCart, trackBeginCheckout, renderGoogleMerchantBadge } from '@/lib/analytics';
