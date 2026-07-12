@@ -17,6 +17,7 @@ const PROXY_ROUTES = [
   "/api/",
   "/assets/",
   "/_build/",
+  "/downloads/",
   "/favicon.ico",
   "/robots.txt",
   "/sitemap.xml",
@@ -312,7 +313,28 @@ export default {
         statusText: response.statusText,
         headers: response.headers,
       });
-      if (assetRequest && cloned.status >= 400) {
+      if (path.startsWith("/downloads/")) {
+        cloned.headers.set("Cache-Control", DOWNLOAD_NO_STORE_CACHE_CONTROL);
+        cloned.headers.set("CDN-Cache-Control", "no-store");
+        cloned.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+        cloned.headers.set("Surrogate-Control", "no-store");
+        cloned.headers.set("Pragma", "no-cache");
+        cloned.headers.set("Expires", "0");
+        cloned.headers.delete("Age");
+        cloned.headers.delete("ETag");
+        cloned.headers.delete("Last-Modified");
+        normalizeAssetContentType(path, cloned.headers);
+      } else if (path === "/robots.txt") {
+        cloned.headers.set("Content-Type", "text/plain; charset=utf-8");
+        cloned.headers.set("Cache-Control", "public, max-age=300, must-revalidate");
+        cloned.headers.set("CDN-Cache-Control", "no-store");
+        cloned.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+        cloned.headers.set("Surrogate-Control", "no-store");
+        cloned.headers.delete("X-Robots-Tag");
+        cloned.headers.delete("x-robots-tag");
+        cloned.headers.delete("Age");
+        cloned.headers.set("X-Content-Type-Options", "nosniff");
+      } else if (assetRequest && cloned.status >= 400) {
         cloned.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
         cloned.headers.set("CDN-Cache-Control", "no-store");
         cloned.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
