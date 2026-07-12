@@ -396,8 +396,12 @@ const INTERNAL_HEADER_DENYLIST = [
   "via",
 ];
 
+const HTML_NO_STORE_CACHE_CONTROL = "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
+const DOWNLOAD_NO_STORE_CACHE_CONTROL = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
+const IMMUTABLE_BUILD_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable";
+
 const STRICT_NO_STORE_HEADERS: Record<string, string> = {
-  "cache-control": "no-cache, no-store, must-revalidate",
+  "cache-control": HTML_NO_STORE_CACHE_CONTROL,
   "cdn-cache-control": "no-store",
   "cloudflare-cdn-cache-control": "no-store",
   "surrogate-control": "no-store",
@@ -621,6 +625,23 @@ function isBuildAssetPath(pathname: string): boolean {
   return /^\/(assets|_build)\/[^?#]+\.(js|mjs|css)$/i.test(pathname);
 }
 
+function isImmutableBuildAssetPath(pathname: string): boolean {
+  if (pathname.startsWith("/downloads/")) return false;
+  return /^\/(assets|_build)\/[^?#]+\.(js|mjs|css|woff2)$/i.test(pathname);
+}
+
+function applyImmutableBuildAssetCacheHeaders(response: Response, url: URL): Response {
+  if (response.status !== 200 || !isImmutableBuildAssetPath(url.pathname)) return response;
+  const headers = new Headers(response.headers);
+  headers.set("cache-control", IMMUTABLE_BUILD_ASSET_CACHE_CONTROL);
+  headers.delete("age");
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 function missingBuildAssetRecoveryResponse(pathname: string): Response | null {
   if (!isBuildAssetPath(pathname)) return null;
   const isScript = /\.(js|mjs)$/i.test(pathname);
@@ -712,16 +733,26 @@ function isDynamicAssetPath(pathname: string): boolean {
 function applyDynamicAssetCacheHeaders(response: Response, url: URL): Response {
   if (!isDynamicAssetPath(url.pathname)) return response;
   const headers = new Headers(response.headers);
-  // Browser: 5 min soft cache, must-revalidate on every use.
-  // CDN (Cloudflare + any upstream surrogate): no-store, so the edge never
-  // pins a stale copy after content is re-uploaded.
-  headers.set("cache-control", "public, max-age=300, must-revalidate");
+
+  if (url.pathname.startsWith("/downloads/")) {
+    headers.set("cache-control", DOWNLOAD_NO_STORE_CACHE_CONTROL);
+    headers.set("pragma", "no-cache");
+    headers.set("expires", "0");
+    headers.delete("etag");
+    headers.delete("last-modified");
+  } else {
+    // Browser: 5 min soft cache, must-revalidate on every use.
+    // CDN (Cloudflare + any upstream surrogate): no-store, so the edge never
+    // pins a stale copy after content is re-uploaded.
+    headers.set("cache-control", "public, max-age=300, must-revalidate");
+    headers.delete("pragma");
+    headers.delete("expires");
+  }
   headers.set("cdn-cache-control", "no-store");
   headers.set("cloudflare-cdn-cache-control", "no-store");
   headers.set("surrogate-control", "no-store");
-  headers.delete("pragma");
-  headers.delete("expires");
   headers.delete("age");
+  if (url.pathname === "/robots.txt") headers.delete("x-robots-tag");
   headers.set("x-phl-cache-policy", "dynamic-asset");
   return new Response(response.body, {
     status: response.status,
@@ -807,7 +838,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   // blank pages until manual purge. Contract enforced by
   // .github/workflows/html-shell-no-cache.yml + e2e/cache-headers-regression.
   // Speed wins come from CSP-hash caching of assets, not from caching HTML.
-  htmlHeaders.set("cache-control", "no-cache, no-store, must-revalidate");
+  htmlHeaders.set("cache-control", HTML_NO_STORE_CACHE_CONTROL);
   htmlHeaders.set("cdn-cache-control", "no-store");
   htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
   htmlHeaders.set("surrogate-control", "no-store");
@@ -1682,10 +1713,7 @@ export default {
         if (sentinel404) {
           const h = new Headers(normalized.headers);
           h.set("x-robots-tag", "noindex, follow");
-          h.set(
-            "cache-control",
-            "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0",
-          );
+          h.set("cache-control", HTML_NO_STORE_CACHE_CONTROL);
           h.set("cdn-cache-control", "no-store");
           h.set("cloudflare-cdn-cache-control", "no-store");
           h.set("surrogate-control", "no-store");
@@ -1702,6 +1730,7 @@ export default {
 
       normalized = applyStrictNoStoreHeaders(applyCacheRecoveryHeaders(normalized, url), url.pathname);
       normalized = applyDynamicAssetCacheHeaders(normalized, url);
+      normalized = applyImmutableBuildAssetCacheHeaders(normalized, url);
 
       if (normalized.status === 404) {
         const recovery = missingBuildAssetRecoveryResponse(url.pathname);
