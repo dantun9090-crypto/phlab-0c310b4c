@@ -178,10 +178,10 @@ const HYDRATION_ERROR_FLAG = "__phl_hydration_error_seen";
 // ENABLE_SSR_HYDRATION: master flag. false = CSR for everyone.
 // SSR_HYDRATION_ROUTES: when ENABLE_SSR_HYDRATION = true,
 //   only these paths hydrate via SSR. Empty array = ALL routes.
-// Flip ENABLE_SSR_HYDRATION ONLY after user confirms
-// "mutations = 0" on Chrome + Firefox over 10 hard reloads.
+// Keep homepage SSR hydrated instead of wiping the server HTML into CSR.
+// The home route now renders a stable SSR shell and upgrades LegacyApp after mount.
 // ============================================================
-const ENABLE_SSR_HYDRATION = false;
+const ENABLE_SSR_HYDRATION = true;
 const SSR_HYDRATION_ROUTES: string[] = ["/"];
 
 function shouldHydrateCurrentRoute(): boolean {

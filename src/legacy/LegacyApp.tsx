@@ -8,6 +8,12 @@ import "@/legacy-styles.css";
 
 let browserRouter: ReturnType<typeof createLegacyRouter> | null = null;
 
+export function primeLegacyRouter() {
+  if (typeof document !== "undefined" && !browserRouter) {
+    browserRouter = createLegacyRouter("/");
+  }
+}
+
 function getLegacyRouter(initialPath: string) {
   if (typeof document === "undefined") {
     return createLegacyRouter(initialPath);
@@ -23,12 +29,12 @@ export default function LegacyApp({
   initialPath?: string;
   initialBanner?: SSRBanner | null;
 }) {
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted] = useState(() => typeof document !== "undefined");
 
   useEffect(() => {
-    if (!browserRouter) browserRouter = createLegacyRouter("/");
-    setMounted(true);
-  }, []);
+    primeLegacyRouter();
+    if (!mounted) setMounted(true);
+  }, [mounted]);
 
   if (!mounted) {
     return (

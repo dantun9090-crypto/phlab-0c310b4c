@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import LegacyApp from "@/legacy/LegacyApp";
+import LegacyClientApp from "@/legacy/LegacyClientApp";
 import { fetchPromoBanner } from "@/lib/firestore-rest";
+import { cfImgProps } from "@/lib/cf-image";
 
 const HOME_TITLE = "PHLabs — Pro Peptide Research Lab | Lab-Grade Compounds";
 const HOME_DESCRIPTION =
@@ -134,9 +135,119 @@ export const Route = createFileRoute("/")({
 
 function LegacyMount() {
   const { banner } = Route.useLoaderData();
-  // NOTE: no sr-only <h1> here — the visible hero H1 inside LegacyApp is the
-  // single canonical H1. Bots get the fully-rendered HTML via Prerender.io,
-  // so an extra SSR-only H1 would just create a duplicate-H1 SEO violation.
-  return <LegacyApp initialPath="/" initialBanner={banner ?? null} />;
+  return (
+    <LegacyClientApp
+      initialPath="/"
+      initialBanner={banner ?? null}
+      fallback={<HomeSsrShell banner={banner ?? null} />}
+    />
+  );
+}
+
+function HomeSsrShell({ banner }: { banner: Awaited<ReturnType<typeof fetchPromoBanner>> | null }) {
+  const bannerVisible = banner?.active !== false && banner?.isActive !== false && !!banner?.imageUrl;
+  const bannerImage = bannerVisible
+    ? cfImgProps(banner.imageUrl, {
+        widths: [480, 640, 960, 1280, 1600],
+        sizes: "100vw",
+        quality: 82,
+        fallbackWidth: 960,
+      })
+    : null;
+
+  return (
+    <main
+      className="phl-home-ssr"
+      data-phl-app-ready="ssr-home"
+      style={{ minHeight: "100vh", background: "#020617", color: "#f0f8ff" }}
+    >
+      <section
+        id="hero"
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          padding: "88px 16px 40px",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
+        <div style={{ width: "min(1280px, 100%)", margin: "0 auto" }}>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "5px 12px",
+              borderRadius: 999,
+              background: "rgba(16,185,129,0.10)",
+              border: "1px solid rgba(16,185,129,0.25)",
+              color: "#4ade80",
+              fontSize: 11,
+              fontWeight: 800,
+              textTransform: "uppercase",
+              marginBottom: 18,
+            }}
+          >
+            UK Laboratory Reagent Supplier · Research Use Only
+          </div>
+
+          <h1
+            style={{
+              maxWidth: 820,
+              fontSize: "clamp(34px, 9vw, 72px)",
+              fontWeight: 900,
+              lineHeight: 1.04,
+              margin: 0,
+              color: "#f0f8ff",
+            }}
+          >
+            <span style={{ display: "block" }}>Pro Peptide Research Lab</span>
+            <span style={{ display: "block", color: "#10b981" }}>For In-Vitro Research</span>
+            <span style={{ display: "block", color: "#c9d8f0", fontWeight: 500, fontSize: "0.56em" }}>
+              HPLC-Verified ≥99% Purity · CoA Per Batch
+            </span>
+          </h1>
+
+          <p style={{ maxWidth: 620, margin: "18px 0 0", color: "#9cb8d9", fontSize: 17, lineHeight: 1.7 }}>
+            PH Labs supplies high-purity amino acid compounds and analytical-grade laboratory reagents for qualified UK researchers. For Research Use Only. Not for Human Consumption.
+          </p>
+
+          {bannerImage ? (
+            <div style={{ marginTop: 28, width: "100%" }}>
+              <img
+                {...bannerImage}
+                alt={banner?.altText || "PH Labs research peptides homepage banner"}
+                width={1600}
+                height={banner?.heightPx || 360}
+                fetchPriority="high"
+                decoding="async"
+                style={{
+                  width: "100%",
+                  height: "auto",
+                  aspectRatio: "16 / 9",
+                  objectFit: "cover",
+                  borderRadius: 8,
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  background: "#0f172a",
+                }}
+              />
+            </div>
+          ) : (
+            <div
+              aria-hidden="true"
+              style={{
+                marginTop: 28,
+                width: "100%",
+                aspectRatio: "16 / 9",
+                maxHeight: 360,
+                borderRadius: 8,
+                background: "linear-gradient(90deg, rgba(15,23,42,0.72), rgba(30,41,59,0.72), rgba(15,23,42,0.72))",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}
+            />
+          )}
+        </div>
+      </section>
+    </main>
+  );
 }
 

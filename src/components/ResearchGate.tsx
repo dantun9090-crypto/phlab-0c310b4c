@@ -405,9 +405,12 @@ export default function ResearchGate() {
             overflowY: 'auto',
             overscrollBehavior: 'contain',
             WebkitOverflowScrolling: 'touch',
-            background: 'rgba(3, 8, 18, 0.84)',
-            backdropFilter: 'blur(4px)',
-            WebkitBackdropFilter: 'blur(4px)',
+            // Full-screen backdrop blur is expensive on Android Chrome/WebView
+            // and delays first paint behind the compliance gate. Keep the same
+            // dark overlay without forcing the GPU to blur the whole page.
+            background: 'rgba(3, 8, 18, 0.90)',
+            backdropFilter: 'none',
+            WebkitBackdropFilter: 'none',
           }}
         >
           <div

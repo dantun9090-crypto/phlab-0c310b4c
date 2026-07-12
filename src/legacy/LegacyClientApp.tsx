@@ -1,10 +1,22 @@
-import { useEffect, useState, type ComponentType } from "react";
+import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import { safeDynamicImport } from "@/lib/dynamic-import";
 import { DynamicImportFallback } from "@/components/DynamicImportFallback";
+import type { SSRBanner } from "./SSRDataContext";
 
-type LegacyAppComponent = ComponentType;
+type LegacyAppComponent = ComponentType<{
+  initialPath?: string;
+  initialBanner?: SSRBanner | null;
+}>;
 
-export default function LegacyClientApp() {
+export default function LegacyClientApp({
+  initialPath = "/",
+  initialBanner = null,
+  fallback = null,
+}: {
+  initialPath?: string;
+  initialBanner?: SSRBanner | null;
+  fallback?: ReactNode;
+}) {
   const [LegacyApp, setLegacyApp] = useState<LegacyAppComponent | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -19,6 +31,7 @@ export default function LegacyClientApp() {
     }).then((outcome) => {
       if (controller.signal.aborted) return;
       if (outcome.ok) {
+        outcome.module.primeLegacyRouter?.();
         setLegacyApp(() => outcome.module.default);
         return;
       }
@@ -33,7 +46,7 @@ export default function LegacyClientApp() {
     return () => controller.abort();
   }, []);
 
-  if (LegacyApp) return <LegacyApp />;
+  if (LegacyApp) return <LegacyApp initialPath={initialPath} initialBanner={initialBanner} />;
   if (failed) return <DynamicImportFallback label="LegacyApp" />;
-  return null;
+  return <>{fallback}</>;
 }
