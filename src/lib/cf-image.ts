@@ -42,7 +42,9 @@ export function cfImg(src: string | undefined | null, opts: CfImageOpts = {}): s
   params.set("u", src);
   if (opts.width) params.set("w", String(Math.round(opts.width)));
   params.set("f", opts.format || "auto");
-  params.set("q", String(opts.quality ?? 90));
+  // q=85 is the project-wide default (AVIF/WebP at 85 is visually
+  // indistinguishable from 90 and ~15-25% smaller — matters on mobile).
+  params.set("q", String(opts.quality ?? 85));
   if (opts.fit) params.set("fit", opts.fit);
   return `/_img?${params.toString()}`;
 }
@@ -67,12 +69,20 @@ export function cfImgProps(
     sizes?: string;
     quality?: number;
     fit?: CfImageOpts["fit"];
-    /** Width used for the fallback `src`. Defaults to widest. */
+    /** Width used for the fallback `src`. Defaults to a mid-size candidate
+     *  (not the widest) so bots and legacy clients that ignore srcset
+     *  don't pay for the 1600/1920 hero variant on a phone. */
     fallbackWidth?: number;
   } = {},
 ): { src: string; srcSet?: string; sizes?: string } {
-  const widths = opts.widths ?? [400, 600, 900, 1200, 1600];
-  const fallback = opts.fallbackWidth ?? widths[widths.length - 1];
+  // Include narrow-mobile widths (360, 480) so 360 CSS-px viewports at
+  // DPR=1/2 don't over-fetch. Modern devices at DPR=3 still pick 1280+
+  // via srcset — the browser matches the smallest candidate ≥ CSS×DPR.
+  const widths = opts.widths ?? [360, 480, 640, 900, 1200, 1600];
+  // Fallback is the middle candidate, not the widest. Real browsers
+  // will use srcset anyway; this only affects legacy/no-srcset consumers.
+  const midIdx = Math.floor(widths.length / 2);
+  const fallback = opts.fallbackWidth ?? widths[midIdx];
   if (!src || !canTransform(src)) return { src: src || "" };
   return {
     src: cfImg(src, { width: fallback, quality: opts.quality, fit: opts.fit }),

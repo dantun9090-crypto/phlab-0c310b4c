@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect, useRef, useMemo, useCallback, type CSSProperties } from 'react';
+import { ReactNode, useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense, type CSSProperties } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, X, Plus, Minus, Trash2, User as UserIcon,
@@ -15,7 +15,9 @@ import type { Product } from '@/lib/firebase';
 // to keep it off the critical path of every page render.
 type ArticleLite = { title: string; subtitle?: string; slug: string };
 import { CookieConsent } from '@/components/CookieConsent';
-import RecentlyViewedProducts from '@/components/RecentlyViewedProducts';
+// Lazy: pulls framer-motion (~40 KB gz). Only rendered inside the cart drawer,
+// which is closed at first paint — keep it off the LCP critical path.
+const RecentlyViewedProducts = lazy(() => import('@/components/RecentlyViewedProducts'));
 import { getRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { migrateStoredCart } from '@/lib/cart-migration';
 import { initAnalytics, trackPageView, trackAddToCart, trackBeginCheckout, renderGoogleMerchantBadge } from '@/lib/analytics';
@@ -1033,10 +1035,12 @@ export function Layout({ children }: LayoutProps) {
                       );
                     })}
                     {/* Recently Viewed in cart */}
-                    <RecentlyViewedProducts
-                      items={getRecentlyViewed()}
-                      variant="compact"
-                    />
+                    <Suspense fallback={null}>
+                      <RecentlyViewedProducts
+                        items={getRecentlyViewed()}
+                        variant="compact"
+                      />
+                    </Suspense>
                   </div>
                 )
               }
