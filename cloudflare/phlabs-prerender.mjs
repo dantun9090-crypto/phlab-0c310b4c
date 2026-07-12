@@ -489,19 +489,25 @@ export default {
         headers.set("Content-Type", warm.contentType);
         headers.set("X-Content-Type-Options", "nosniff");
         applyBrowserHtmlNoCache(headers);
-        headers.set("X-PHL-Via", "warm-hit;bot=0;total=" + (Date.now() - startTime) + "ms");
+        const total = Date.now() - startTime;
+        headers.set("X-PHL-Via", "warm-hit;bot=0;total=" + total + "ms");
+        headers.set("Server-Timing", `warm-cache;desc="HIT", origin;dur=0, worker;dur=${total}`);
         return new Response(warm.body, { status: 200, headers });
       }
       console.log("[PHL Worker] htmlWarmCache miss for " + path);
     }
 
-    const passRes = await buildBrowserResponse(await fetch(request), path);
+    const originStart = Date.now();
+    const originRes = await fetch(request);
+    const originMs = Date.now() - originStart;
+    const passRes = await buildBrowserResponse(originRes, path);
     const out = new Response(passRes.body, {
       status: passRes.status,
       statusText: passRes.statusText,
       headers: passRes.headers,
     });
-    out.headers.set("X-PHL-Via", "passthrough;bot=0;warm=" + (wEligible ? "miss" : "skip") + ";total=" + (Date.now() - startTime) + "ms");
+    out.headers.set("X-PHL-Via", "passthrough;bot=0;warm=" + (wEligible ? "miss" : "skip") + ";origin=" + originMs + "ms;total=" + (Date.now() - startTime) + "ms");
+    out.headers.set("Server-Timing", `warm-cache;desc="${wEligible ? "MISS" : "SKIP"}", origin;dur=${originMs}, worker;dur=${Date.now() - startTime}`);
     // Mirror origin build id into cf-cache-build-id so the post-deploy health
     // check can confirm this Worker is on-path and its build tag reached the
     // browser through Cloudflare's cache layer.
