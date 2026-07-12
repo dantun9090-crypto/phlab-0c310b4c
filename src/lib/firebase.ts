@@ -15,13 +15,14 @@ import {
   signInWithPopup,
   signInWithRedirect,
   getRedirectResult,
-  deleteUser,
-  // EmailAuthProvider intentionally NOT imported here — it triggered
-  // "EmailAuthProvider is not defined" ReferenceErrors during SSR of routes
-  // that import from @/lib/firebase (checkout.success, payment.success, etc.)
-  // because firebase/auth's Worker/SSR export shape does not expose it.
-  // Consumers (src/pages/Account/index.tsx) import it directly from
-  // 'firebase/auth' in client-only code paths.
+  // deleteUser intentionally NOT imported here — firebase/auth's Worker/SSR
+  // export shape does not expose it, triggering "deleteUser is not defined"
+  // ReferenceErrors during SSR of routes that import from @/lib/firebase
+  // (Account, checkout.success, payment.success, etc.). Consumers
+  // (src/pages/Account/index.tsx) import it directly from 'firebase/auth'
+  // in client-only code paths.
+  // EmailAuthProvider intentionally NOT imported here — same reason as above.
+  // Consumers import it directly from 'firebase/auth' in client-only paths.
 
   reauthenticateWithCredential,
   updatePassword,
@@ -1648,7 +1649,7 @@ export const saveOrder = async (userId: string, orderData: any) => {
   );
 };
 
-export { Timestamp, doc, getDoc, getDocFromServer, getDocs, getDocsFromServer, collection, query, where, orderBy, limit, deleteDoc, updateDoc, onSnapshot, writeBatch, runTransaction, addDoc, setDoc, onAuthStateChanged, signInAnonymously, signOut, deleteUser, reauthenticateWithCredential, updatePassword, sendEmailVerification, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, storageRef, uploadBytesResumable, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata };
+export { Timestamp, doc, getDoc, getDocFromServer, getDocs, getDocsFromServer, collection, query, where, orderBy, limit, deleteDoc, updateDoc, onSnapshot, writeBatch, runTransaction, addDoc, setDoc, onAuthStateChanged, signInAnonymously, signOut, reauthenticateWithCredential, updatePassword, sendEmailVerification, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, storageRef, uploadBytesResumable, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata };
 export type { FirebaseUser };
 
 // ==================== FIREBASE STORAGE UPLOADS ====================
