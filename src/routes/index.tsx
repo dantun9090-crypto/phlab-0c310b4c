@@ -58,19 +58,25 @@ export const Route = createFileRoute("/")({
         ? (() => {
             const src = loaderData.banner.imageUrl as string;
             const isFirebase = /^https:\/\/(firebasestorage|storage)\.googleapis\.com\//.test(src);
-            const widths = [640, 960, 1280, 1600, 1920];
+            // Include narrow-mobile widths (360, 480) so 360-420 CSS-px
+            // viewports at DPR=1/2 don't over-fetch the 1280 variant.
+            // Modern DPR=3 phones still pick 1280 via srcset. Fallback
+            // href points at 640 (mid-mobile) so legacy clients that
+            // ignore imagesrcset don't pay for the widest source.
+            const widths = [360, 480, 640, 960, 1280, 1600];
             const enc = (w: number) =>
               `/_img?u=${encodeURIComponent(src)}&w=${w}&f=auto&q=85`;
             return [{
               rel: "preload",
               as: "image",
-              href: isFirebase ? enc(1280) : src,
+              href: isFirebase ? enc(640) : src,
               imageSrcSet: isFirebase ? widths.map(w => `${enc(w)} ${w}w`).join(", ") : undefined,
               imageSizes: isFirebase ? "100vw" : undefined,
               fetchPriority: "high",
             } as const];
           })()
         : []),
+
 
     ],
     scripts: [
