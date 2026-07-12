@@ -85,9 +85,11 @@ const NEVER_CF_HIT = ["HIT", "REVALIDATED", "STALE", "UPDATING"];
 
 // ---------------------------------------------------------------------------
 // 1. HTML shells — must never be edge-cached.
+//    NOTE: "/" (home page) is intentionally absent from this list.  It is
+//    now a static SSG route served by phlabs-prerender.mjs with a hash-CSP
+//    and Cache-Control: public, max-age=86400.  See section 1a below.
 // ---------------------------------------------------------------------------
 const HTML_SHELLS = [
-  "/",
   "/products",
   "/compound",
   "/research",
@@ -124,6 +126,36 @@ test.describe("cache headers · HTML shells (must not edge-cache)", () => {
       expect(h.age, `age must be 0 (was ${h.age})`).toBe(0);
     });
   }
+});
+
+// ---------------------------------------------------------------------------
+// 1a. Static SSG home page — must be publicly cacheable with hash-CSP.
+//     "/" is prerendered at build time; phlabs-prerender.mjs computes
+//     SHA-256 hashes for every inline <script> and caches the result in
+//     caches.default for CACHE_TTL.html (86400 s).  The browser gets
+//     Cache-Control: public, max-age=86400 and CF-Cache-Status: HIT once
+//     the Worker cache is warm (populated after post-deploy purge + warm).
+// ---------------------------------------------------------------------------
+test.describe("cache headers · static SSG home page (must be cacheable)", () => {
+  test("home page / is publicly cacheable", async ({ request }) => {
+    const h = await head(request, "/");
+    expect(h.status, "home page status").toBe(200);
+    expect(h.contentType, "home page content-type").toMatch(/text\/html/);
+
+    // Cache-Control must allow public caching (contain "public").
+    expect(h.cacheControl.toLowerCase(), `cache-control must be public (${h.cacheControl})`).toContain("public");
+
+    // Must have a positive max-age (browsers can cache).
+    const ma = parseDirective(h.cacheControl, "max-age") ?? 0;
+    expect(ma, `max-age must be > 0 (was ${ma})`).toBeGreaterThan(0);
+
+    // CSP must use SHA-256 hashes (no per-request nonce) so the static HTML
+    // body is byte-identical across requests and safe to cache.
+    const csp = (await request.get(bust("/"), { maxRedirects: 0, failOnStatusCode: false }))
+      .headers()["content-security-policy"] || "";
+    expect(csp, "CSP must contain sha256 hash").toContain("sha256-");
+    expect(csp, "CSP must not rely on a per-request nonce").not.toMatch(/'nonce-[A-Za-z0-9+/]+=*'/);
+  });
 });
 
 // ---------------------------------------------------------------------------

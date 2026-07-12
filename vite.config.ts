@@ -22,6 +22,16 @@ export default defineConfig({
   tanstackStart: {
     client: { entry: "client" },
     server: { entry: "server" },
+    // Pre-render the home page at build time so Cloudflare Pages serves a
+    // static index.html instead of running the SSR Worker per-request.
+    // Only "/" is listed — autoStaticPathsDiscovery is off so other routes
+    // (products, compound, landing, …) remain server-rendered as before.
+    prerender: {
+      enabled: true,
+      crawlLinks: false,
+      autoStaticPathsDiscovery: false,
+    },
+    pages: [{ path: "/" }],
   },
   vite: {
     plugins: [mcpPlugin()],

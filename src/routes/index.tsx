@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import LegacyApp from "@/legacy/LegacyApp";
-import { fetchPromoBanner } from "@/lib/firestore-rest";
 
 const HOME_TITLE = "PHLabs — Pro Peptide Research Lab | Lab-Grade Compounds";
 const HOME_DESCRIPTION =
@@ -21,9 +20,9 @@ const HOME_FAQS: { q: string; a: string }[] = [
 ];
 
 export const Route = createFileRoute("/")({
-  // Fetch active promo banner on the server so we can preload the LCP image.
-  // Returns null on any error — never blocks SSR.
-  loader: async () => ({ banner: await fetchPromoBanner() }),
+  // Home page is SSG-prerendered at build time — no per-request data needed.
+  // Banner is fetched client-side by src/pages/Home/index.tsx after hydration.
+  loader: () => ({ banner: null }),
   // Public content routes must SSR a non-empty body. Do not disable SSR
   // here or wrap the route in deferred loading with an empty fallback; that combination
   // caused staging to stick on the boot loader after publishes.

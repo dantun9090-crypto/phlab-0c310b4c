@@ -40,6 +40,15 @@ const IMMUTABLE_BUILD_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable
 const HASHED_STATIC_ASSET_RE = /(?:^|\/)[^/?#]+(?:[-._][a-f0-9]{8,}|-[A-Za-z0-9_-]{8,})\.(?:js|mjs|css|woff2?|ttf|otf)$/i;
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// STATIC SSG PATHS — home page is prerendered at build time and served from
+// caches.default with a hash-CSP (no per-request nonce).  This gives
+// cf-cache-status: HIT for browsers on repeated requests and eliminates the
+// Firestore banner fetch that was blocking SSR.  The set is intentionally
+// small: only routes where the HTML body is truly static (no per-request data).
+// ═══════════════════════════════════════════════════════════════════════════════
+const BROWSER_STATIC_CACHEABLE_PATHS = new Set(["/"]);
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // WORKER-INTERNAL HTML WARM CACHE (Task 1.1)
 // ─────────────────────────────────────────────────────────────────────────────
 // Per-isolate in-memory cache for sanitized browser HTML shells. Serves TTFB
@@ -310,6 +319,26 @@ async function buildHashCspResponse(body, status, statusText) {
   return new Response(body, { status, statusText, headers });
 }
 
+// Like buildHashCspResponse but WITHOUT the no-store directives.  Used for
+// SSG-prerendered paths (currently only "/") so the browser and the Worker's
+// caches.default can both hold the response for CACHE_TTL.html seconds.
+async function buildStaticBrowserHashCspResponse(body, status, statusText) {
+  const hashes = await extractScriptHashes(body);
+  const headers = new Headers();
+  headers.set("Content-Type", "text/html; charset=utf-8");
+  headers.set("Content-Security-Policy", await buildCspHeader(hashes));
+  headers.set("X-Frame-Options", "DENY");
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("Permissions-Policy", "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()");
+  headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  // Vary on Accept-Encoding only — no Cookie/Authorization variance since this
+  // path is genuinely public and identical for every user.
+  headers.set("Vary", "Accept-Encoding");
+  return new Response(body, { status, statusText, headers });
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // MAIN HANDLER
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -492,6 +521,79 @@ export default {
     // Note: origin at phlab.lovable.app 302-redirects back to phlabs.co.uk on
     // direct fetches, so we cannot cache/rewrite here without a loop. Browsers
     // keep using origin's per-request nonce CSP; hash-CSP applies to bots only.
+    //
+    // ── 3a. SSG static paths — hash-CSP + caches.default (24 h) ────────────
+    // Paths in BROWSER_STATIC_CACHEABLE_PATHS are pre-rendered at build time.
+    // Their HTML body is identical for every request, so we can safely:
+    //   - hash all inline <script> elements once (at cache MISS)
+    //   - store the result in caches.default (shared CF edge cache) for 24 h
+    //   - return Cache-Control: public, max-age=86400 to browsers
+    // On cache HIT the Worker sets CF-Cache-Status: HIT (no origin fetch).
+    // The post-deploy purge workflow (purge_everything:true) invalidates the
+    // entry on every new deploy, so stale HTML is never served for more than
+    // the time between deploy and purge completion (~seconds).
+    if (BROWSER_STATIC_CACHEABLE_PATHS.has(path)) {
+      // Normalise the cache key to pathname only — ignore query params such as
+      // cache-busters (?__cache_check=…) so every variant shares one entry.
+      const staticCacheKey = new Request(url.origin + url.pathname + "?__browser_static=1", { method: "GET" });
+      const cache = caches.default;
+      const cached = await cache.match(staticCacheKey);
+      const total = () => Date.now() - startTime;
+
+      if (cached) {
+        const response = new Response(cached.body, {
+          status: cached.status,
+          statusText: cached.statusText,
+          headers: cached.headers,
+        });
+        response.headers.set("CF-Cache-Status", "HIT");
+        response.headers.set("X-PHL-Via", `hash-csp;bot=0;static=1;cache=HIT;total=${total()}ms`);
+        response.headers.set("Server-Timing", `cf-cache;desc="HIT", origin;dur=0, csp-hash;dur=0, worker;dur=${total()}`);
+        return response;
+      }
+
+      // Cache MISS — fetch the static HTML from Pages origin, hash inline
+      // scripts, build hash-CSP, and populate caches.default.
+      const originStart = Date.now();
+      const originRes = await fetch(request);
+      const originMs = Date.now() - originStart;
+
+      if (!originRes.ok) {
+        // Origin error — fall back to no-store passthrough so the browser
+        // still gets a response, just without caching guarantees.
+        const body = stripHostingInjectedScriptsFromHtml(await originRes.text());
+        const fallback = await buildHashCspResponse(body, originRes.status, originRes.statusText);
+        fallback.headers.set("X-PHL-Via", `hash-csp;bot=0;static=1;cache=MISS;origin-error=${originRes.status};total=${total()}ms`);
+        return fallback;
+      }
+
+      const body = stripHostingInjectedScriptsFromHtml(await originRes.text());
+      if (body.includes("__CSP_NONCE__")) {
+        console.error("[PHL-CRIT] Static HTML contains __CSP_NONCE__ — aborting static cache");
+        return new Response("Static HTML CSP nonce leak", { status: 500 });
+      }
+
+      const hashStart = Date.now();
+      const response = await buildStaticBrowserHashCspResponse(body, originRes.status, originRes.statusText);
+      const hashMs = Date.now() - hashStart;
+
+      // Store in caches.default with the full 24 h TTL.
+      const cacheHeaders = new Headers(response.headers);
+      cacheHeaders.set("Cache-Control", `public, max-age=${CACHE_TTL.html}, s-maxage=${CACHE_TTL.html}`);
+      cacheHeaders.set("X-PHL-Via", `hash-csp;bot=0;static=1;cache=MISS;origin=${originMs}ms;hash=${hashMs}ms;total=${total()}ms`);
+      cacheHeaders.set("Server-Timing", `cf-cache;desc="MISS", origin;dur=${originMs}, csp-hash;dur=${hashMs}, worker;dur=${total()}`);
+      ctx.waitUntil(cache.put(staticCacheKey, new Response(response.clone().body, { status: response.status, statusText: response.statusText, headers: cacheHeaders })));
+
+      // Send to browser with browser-facing 24 h cache (no cdn-cache-control:
+      // no-store, so CF can also cache if the Worker is somehow not on path).
+      response.headers.set("Cache-Control", `public, max-age=${CACHE_TTL.html}`);
+      response.headers.set("CF-Cache-Status", "MISS");
+      response.headers.set("X-PHL-Via", cacheHeaders.get("X-PHL-Via"));
+      response.headers.set("Server-Timing", cacheHeaders.get("Server-Timing"));
+      return response;
+    }
+
+    // ── 3b. Dynamic SSR paths — warm cache + no-store passthrough ────────────
     //
     // Task 1.1: Worker-internal warm cache. On HIT we serve the sanitized
     // body bytes from isolate memory (TTFB ~5–30ms) but STILL emit strict

@@ -35,8 +35,11 @@ const TTL_CEILING = 3600;
 // exact regression fixed in src/server.ts (max-age=0, must-revalidate +
 // cdn-cache-control: no-store + cloudflare-cdn-cache-control: no-store).
 // This scanner is the CI guardrail that prevents that ever regressing.
+//
+// NOTE: "/" is intentionally absent — it is now a static SSG path served
+// by phlabs-prerender.mjs with a hash-CSP and Cache-Control: public,
+// max-age=86400.  It is checked separately in STATIC_SSG_PATHS below.
 const HTML_SHELL_PATHS = [
-  "/",
   "/products",
   "/compound",
   "/research",
@@ -46,6 +49,11 @@ const HTML_SHELL_PATHS = [
   "/resources",
   "/peptide-calculator",
 ];
+
+// Static SSG paths — pre-rendered at build time, served from caches.default
+// with hash-CSP (no per-request nonce).  These MUST have a positive max-age
+// (publicly cacheable) and must NOT use a per-request nonce in the CSP.
+const STATIC_SSG_PATHS = ["/"];
 
 const SENSITIVE_PATHS = [
   "/admin",
@@ -59,7 +67,7 @@ const SENSITIVE_PATHS = [
   "/api/public/cache-config",
 ];
 
-type Kind = "html-shell" | "sensitive";
+type Kind = "html-shell" | "sensitive" | "static-ssg";
 
 interface Probe {
   path: string;
@@ -95,6 +103,7 @@ function pickHeaders(h: Headers): Record<string, string> {
     "x-build-id",
     "vary",
     "set-cookie",
+    "content-security-policy",
   ];
   const out: Record<string, string> = {};
   for (const k of want) {
@@ -160,6 +169,31 @@ async function probe(path: string, kind: Kind): Promise<Probe> {
     if (headers["set-cookie"] && /Path=\//i.test(headers["set-cookie"])) {
       // informational only
     }
+  } else if (kind === "static-ssg") {
+    // Static SSG paths must be publicly cacheable with a positive max-age
+    // and must use hash-CSP (no per-request nonce in CSP header).
+    if (status !== 200) {
+      violations.push(`unexpected status ${status} (expected 200)`);
+    }
+    if (status === 200) {
+      if (!cc) violations.push("missing cache-control on static SSG path");
+      if (cc && !/\bpublic\b/i.test(cc)) {
+        violations.push(`cache-control must contain "public" on static SSG path (got "${cc}")`);
+      }
+      const ma = parseDirective(cc, "max-age") ?? 0;
+      if (ma <= 0) {
+        violations.push(`max-age must be > 0 on static SSG path (got max-age=${ma})`);
+      }
+      // CSP must use sha256 hashes — a per-request nonce makes the HTML body
+      // unique per request and defeats caching.
+      const csp = headers["content-security-policy"] || "";
+      if (!csp.includes("sha256-")) {
+        violations.push(`CSP must include sha256 hash on static SSG path (got "${csp.slice(0, 120)}")`);
+      }
+      if (/'nonce-[A-Za-z0-9+/]+=*'/.test(csp)) {
+        violations.push("CSP contains per-request nonce — static SSG HTML cannot be cached");
+      }
+    }
   } else {
     // html-shell: MUST NEVER be edge-cached. Guards against the stale-shell
     // → blank-page regression on every deploy.
@@ -223,7 +257,7 @@ function renderMarkdown(results: Probe[]): string {
   lines.push(`- Violations: **${failed.length}**`);
   lines.push(`- Generated: ${new Date().toISOString()}`);
   lines.push("");
-  for (const kind of ["html-shell", "sensitive"] as const) {
+  for (const kind of ["html-shell", "static-ssg", "sensitive"] as const) {
     lines.push(`## ${kind} paths`);
     lines.push("");
     lines.push("| Path | Status | cache-control | cdn-cache-control | surrogate-control | cf-cache-status | OK |");
@@ -251,6 +285,7 @@ function renderMarkdown(results: Probe[]): string {
 async function main() {
   const work: Promise<Probe>[] = [
     ...HTML_SHELL_PATHS.map((p) => probe(p, "html-shell")),
+    ...STATIC_SSG_PATHS.map((p) => probe(p, "static-ssg")),
     ...SENSITIVE_PATHS.map((p) => probe(p, "sensitive")),
   ];
   const results = await Promise.all(work);

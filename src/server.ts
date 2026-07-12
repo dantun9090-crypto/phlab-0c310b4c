@@ -803,7 +803,7 @@ function isCacheableHtmlPath(pathname: string): boolean {
 // shared body is safe in caches.default. Must stay in lock-step with
 // cloudflare/phlabs-prerender.mjs.
 const CACHEABLE_ROUTE_EXACT = new Set<string>([
-  "/", "/products", "/compound", "/sitemap.xml", "/robots.txt",
+  "/products", "/compound", "/sitemap.xml", "/robots.txt",
 ]);
 const CACHEABLE_ROUTE_PREFIXES = [
   "/products/", "/compound/", "/landing/", "/research/", "/blog/", "/resources/",
@@ -823,7 +823,7 @@ function isCacheableRoute(pathname: string): boolean {
 // purge. Long SWR windows here were the root cause of "PH Labs is
 // refreshing" overlays after every deploy — stale HTML referencing hashed
 // JS chunks that no longer existed on origin.
-const PUBLIC_EDGE_CACHEABLE = new Set<string>(["/", "/products", "/compound", "/research"]);
+const PUBLIC_EDGE_CACHEABLE = new Set<string>(["/products", "/compound", "/research"]);
 function isPublicEdgeCacheable(pathname: string): boolean {
   return PUBLIC_EDGE_CACHEABLE.has(pathname);
 }

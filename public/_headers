@@ -1,3 +1,11 @@
+# Static prerendered home page — served by phlabs-prerender.mjs with hash-CSP
+# and Cache-Control: public, max-age=86400. This _headers entry is a fallback
+# for any request that reaches CF Pages directly (bypassing the Worker), e.g.
+# in local dev or if the Worker route is temporarily removed.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+  X-Content-Type-Options: nosniff
+
 /sw.js
   Cache-Control: no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0
   CDN-Cache-Control: no-store
