@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { auth } from '@/lib/firebase';
+
 
 /**
  * Cloudflare Status admin tab — checks presence of purge-related secrets
