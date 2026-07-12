@@ -1,4 +1,4 @@
-import { ReactNode, useState, useEffect, useRef, useMemo, useCallback, type CSSProperties } from 'react';
+import { ReactNode, useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense, type CSSProperties } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   ShoppingCart, X, Plus, Minus, Trash2, User as UserIcon,
