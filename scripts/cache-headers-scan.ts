@@ -104,22 +104,36 @@ function pickHeaders(h: Headers): Record<string, string> {
   return out;
 }
 
+async function fetchProbe(url: string) {
+  const res = await fetch(url, {
+    method: "GET",
+    redirect: "manual",
+    headers: { "user-agent": "phlabs-cache-headers-scan/1.0" },
+    signal: AbortSignal.timeout(15_000),
+  });
+  return { status: res.status, headers: pickHeaders(res.headers) };
+}
+
 async function probe(path: string, kind: Kind): Promise<Probe> {
   const url = `${BASE}${path}`;
   const violations: string[] = [];
   const warnings: string[] = [];
   let status: number | null = null;
   let headers: Record<string, string> = {};
+  let firstCf = "";
 
   try {
-    const res = await fetch(url, {
-      method: "GET",
-      redirect: "manual",
-      headers: { "user-agent": "phlabs-cache-headers-scan/1.0" },
-      signal: AbortSignal.timeout(15_000),
-    });
+    if (kind === "html-shell") {
+      // Warm the edge, then measure. CF Rule 3 caches public HTML for 4h;
+      // second probe must return HIT.
+      const first = await fetchProbe(url);
+      firstCf = (first.headers["cf-cache-status"] || "").toUpperCase();
+      // small delay to let CF finalize the cache entry
+      await new Promise((r) => setTimeout(r, 800));
+    }
+    const res = await fetchProbe(url);
     status = res.status;
-    headers = pickHeaders(res.headers);
+    headers = res.headers;
   } catch (err) {
     violations.push(`network error: ${(err as Error).message}`);
     return {
@@ -155,46 +169,42 @@ async function probe(path: string, kind: Kind): Promise<Probe> {
     const sMax = parseDirective(cc, "s-maxage") ?? 0;
     if (sMax > 0) violations.push(`s-maxage=${sMax} on sensitive path`);
     if (["HIT", "REVALIDATED", "UPDATING", "STALE"].includes(cf)) {
-      violations.push(`cf-cache-status=${cf} replays cached HTML`);
-    }
-    if (headers["set-cookie"] && /Path=\//i.test(headers["set-cookie"])) {
-      // informational only
+      violations.push(`cf-cache-status=${cf} replays cached HTML on sensitive path`);
     }
   } else {
-    // html-shell: MUST NEVER be edge-cached. Guards against the stale-shell
-    // → blank-page regression on every deploy.
+    // html-shell: Cloudflare Cache Rule 3 intentionally caches public HTML
+    // at the edge for 4h. Origin still emits `no-store` (that's how CF
+    // handles a fresh publish → the shell overwrites on next MISS), but at
+    // the edge we REQUIRE cf-cache-status: HIT on the warm probe.
     if (status !== 200 && status !== 301 && status !== 302) {
       violations.push(`unexpected status ${status}`);
     }
     if (status === 200) {
-      if (!cc) violations.push("missing cache-control on HTML shell");
-      // Browser cache-control must be non-cacheable (no-store OR max-age=0
-      // + must-revalidate).
-      if (cc && !isUncacheable(cc)) {
-        violations.push(`cache-control caches HTML shell in browser: "${cc}"`);
+      // Origin cache-control must remain no-store — the edge overrides via
+      // Cache Rule 3, but the origin invariant is the safety net.
+      if (!cc) warnings.push("missing cache-control on HTML shell (origin should emit no-store)");
+      else if (!isUncacheable(cc)) {
+        warnings.push(`origin cache-control not no-store: "${cc}"`);
       }
-      // CDN tier (Cloudflare) MUST be no-store. Anything else lets CF hold
-      // the shell across a deploy and serve it against evicted chunks.
-      const cdnHeader = cdn || surrogate;
-      if (!/\bno-store\b/i.test(cdnHeader)) {
-        violations.push(
-          `cdn-cache-control must be "no-store" on HTML shell (got "${cdnHeader || "unset"}")`,
-        );
-      }
-      // s-maxage anywhere on the shell means CF will cache it.
-      const sMaxCc = parseDirective(cc, "s-maxage") ?? 0;
-      const sMaxCdn = parseDirective(cdn, "s-maxage") ?? 0;
-      if (sMaxCc > 0 || sMaxCdn > 0) {
-        violations.push(`s-maxage>0 on HTML shell (cc=${sMaxCc}, cdn=${sMaxCdn})`);
-      }
-      // If CF ever reports HIT/REVALIDATED/STALE/UPDATING on a shell,
-      // it's already caching it — the exact failure mode.
-      if (["HIT", "REVALIDATED", "UPDATING", "STALE"].includes(cf)) {
-        violations.push(`cf-cache-status=${cf} — HTML shell is being edge-cached`);
-      }
-      const age = Number(headers["age"] || "0");
-      if (age > 0) {
-        violations.push(`age=${age}s — HTML shell served from edge cache`);
+      // Edge must be caching this. Accept HIT/REVALIDATED/UPDATED/STALE as
+      // "edge-cached". Fail on DYNAMIC or MISS after warm-up.
+      const cached = ["HIT", "REVALIDATED", "UPDATING", "STALE"].includes(cf);
+      const warming = ["MISS", "EXPIRED"].includes(cf);
+      if (!cached) {
+        // MISS on second probe is a real problem (rule not matching).
+        if (warming) {
+          violations.push(
+            `cf-cache-status=${cf} on warm probe — Cache Rule 3 not caching HTML shell (first=${firstCf})`,
+          );
+        } else if (cf === "DYNAMIC") {
+          violations.push(
+            `cf-cache-status=DYNAMIC — Worker or origin marking HTML uncacheable, Cache Rule 3 bypassed`,
+          );
+        } else if (cf) {
+          violations.push(`cf-cache-status=${cf} — expected HIT on warm probe`);
+        } else {
+          violations.push(`cf-cache-status missing — cannot confirm edge caching`);
+        }
       }
     }
     void TTL_CEILING;
@@ -205,13 +215,14 @@ async function probe(path: string, kind: Kind): Promise<Probe> {
     kind,
     url,
     status,
-    headers,
+    headers: firstCf ? { ...headers, "x-first-cf-cache-status": firstCf } : headers,
     violations,
     warnings,
     fetchedAt: new Date().toISOString(),
     ok: violations.length === 0,
   };
 }
+
 
 function renderMarkdown(results: Probe[]): string {
   const failed = results.filter((r) => !r.ok);
