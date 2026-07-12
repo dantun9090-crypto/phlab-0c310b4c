@@ -8,6 +8,12 @@ import "@/legacy-styles.css";
 
 let browserRouter: ReturnType<typeof createLegacyRouter> | null = null;
 
+export function primeLegacyRouter() {
+  if (typeof document !== "undefined" && !browserRouter) {
+    browserRouter = createLegacyRouter("/");
+  }
+}
+
 function getLegacyRouter(initialPath: string) {
   if (typeof document === "undefined") {
     return createLegacyRouter(initialPath);
@@ -26,7 +32,7 @@ export default function LegacyApp({
   const [mounted, setMounted] = useState(() => typeof document !== "undefined");
 
   useEffect(() => {
-    if (!browserRouter) browserRouter = createLegacyRouter("/");
+    primeLegacyRouter();
     if (!mounted) setMounted(true);
   }, [mounted]);
 
