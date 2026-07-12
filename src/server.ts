@@ -119,14 +119,7 @@ const WWW_TO_APEX_HOSTS = new Map<string, string>([
 // 'unsafe-inline' on script-src. style-src keeps 'unsafe-inline' because React
 // emits inline style attributes at runtime.
 
-function buildStrictCsp(nonce: string): string {
-  // 'unsafe-eval' is required by a small number of built vendor chunks
-  // (Firebase / analytics polyfills) that call Function()/eval on Safari
-  // and Firefox. Without it /products renders a black screen on those
-  // engines because hydration and the CSR fallback both throw. Chromium was
-  // masking this by ignoring the eval violation under 'strict-dynamic'.
-  const scriptSrc = `'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`;
-  const scriptSrcElem = `'nonce-${nonce}' 'strict-dynamic'`;
+function buildStrictCspWithScriptSources(scriptSrc: string, scriptSrcElem: string): string {
   return [
     "default-src 'self'",
     `script-src ${scriptSrc}`,
@@ -148,6 +141,17 @@ function buildStrictCsp(nonce: string): string {
     "report-uri /api/public/csp-report",
     "report-to csp-endpoint",
   ].join("; ");
+}
+
+function buildStrictCsp(nonce: string): string {
+  // 'unsafe-eval' is required by a small number of built vendor chunks
+  // (Firebase / analytics polyfills) that call Function()/eval on Safari
+  // and Firefox. Without it /products renders a black screen on those
+  // engines because hydration and the CSR fallback both throw. Chromium was
+  // masking this by ignoring the eval violation under 'strict-dynamic'.
+  const scriptSrc = `'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`;
+  const scriptSrcElem = `'nonce-${nonce}' 'strict-dynamic'`;
+  return buildStrictCspWithScriptSources(scriptSrc, scriptSrcElem);
 }
 
 // Permissive CSP for Lovable preview / staging hosts. The Lovable preview
@@ -246,6 +250,41 @@ function useStrictCsp(hostname?: string): boolean {
 function buildCsp(nonce: string, hostname?: string): string {
   if (!useStrictCsp(hostname)) return CSP_TEMPLATE_PREVIEW;
   return buildStrictCsp(nonce);
+}
+
+const HOME_STATIC_PATH = "/";
+
+function isStaticHomePath(pathname?: string): boolean {
+  return pathname === HOME_STATIC_PATH;
+}
+
+async function sha256Base64Utf8(value: string): Promise<string> {
+  const encoded = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", encoded);
+  const bytes = new Uint8Array(digest);
+  let binary = "";
+  for (const b of bytes) binary += String.fromCharCode(b);
+  return btoa(binary);
+}
+
+async function extractInlineScriptHashes(html: string): Promise<string[]> {
+  const hashes: string[] = [];
+  const regex = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+  let match: RegExpExecArray | null = null;
+  while ((match = regex.exec(html)) !== null) {
+    const body = match[1]?.trim() ?? "";
+    if (!body) continue;
+    hashes.push(`'sha256-${await sha256Base64Utf8(body)}'`);
+  }
+  return hashes;
+}
+
+function buildStaticHomeCsp(hashes: string[], hostname?: string): string {
+  if (!useStrictCsp(hostname)) return CSP_TEMPLATE_PREVIEW;
+  const hashList = hashes.join(" ");
+  const scriptSrc = `'self' ${hashList} 'strict-dynamic' 'unsafe-eval'`.trim();
+  const scriptSrcElem = `'self' ${hashList} 'strict-dynamic'`.trim();
+  return buildStrictCspWithScriptSources(scriptSrc, scriptSrcElem);
 }
 
 
@@ -828,8 +867,40 @@ function isPublicEdgeCacheable(pathname: string): boolean {
   return PUBLIC_EDGE_CACHEABLE.has(pathname);
 }
 
+async function applyStaticHomeSecurityHeaders(response: Response, hostname?: string): Promise<Response> {
+  const stripped = stripInternalHeaders(response);
+  const contentType = stripped.headers.get("content-type") ?? "";
+  if (!contentType.includes("text/html")) return stripped;
 
-function applySecurityHeaders(response: Response, nonce: string, hostname?: string, _pathname?: string, _htmlTtl: number = 0): Response {
+  const htmlHeaders = new Headers(stripped.headers);
+  htmlHeaders.set("cache-control", HTML_NO_STORE_CACHE_CONTROL);
+  htmlHeaders.set("cdn-cache-control", "no-store");
+  htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
+  htmlHeaders.set("surrogate-control", "no-store");
+  htmlHeaders.set("pragma", "no-cache");
+  htmlHeaders.set("expires", "0");
+  htmlHeaders.delete("cache-tag");
+  htmlHeaders.delete("age");
+
+  const html = await stripped.text();
+  const hashes = await extractInlineScriptHashes(html);
+
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
+    if (!htmlHeaders.has(k)) htmlHeaders.set(k, v);
+  }
+  htmlHeaders.set("content-security-policy", buildStaticHomeCsp(hashes, hostname));
+  const buildId = (typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev") as string;
+  htmlHeaders.set("x-build-id", buildId);
+
+  return new Response(html, {
+    status: stripped.status,
+    statusText: stripped.statusText,
+    headers: htmlHeaders,
+  });
+}
+
+
+function applySecurityHeaders(response: Response, nonce: string, hostname?: string, pathname?: string, _htmlTtl: number = 0): Response {
   const stripped = stripInternalHeaders(response);
   const contentType = stripped.headers.get("content-type") ?? "";
   // Only decorate HTML — leaving JSON/XML/asset responses untouched avoids
@@ -849,7 +920,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   htmlHeaders.set("pragma", "no-cache");
   htmlHeaders.set("expires", "0");
   htmlHeaders.delete("cache-tag");
-  void _pathname;
+  const isHomePath = isStaticHomePath(pathname);
 
 
   htmlHeaders.delete("age");
@@ -860,8 +931,8 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
     headers: htmlHeaders,
   });
 
-  // HTMLRewriter: only append build-id meta. Per-request nonce injection
-  // removed so HTML bodies are identical across requests and edge-cacheable.
+  // HTMLRewriter path for SSR routes (non-home): append build-id markers and
+  // stamp per-request nonce on <script>/<style> for strict nonce CSP.
   type RwElement = {
     setAttribute: (k: string, v: string) => void;
     append: (html: string, opts?: { html: boolean }) => void;
@@ -884,7 +955,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   // Worker is absent (local dev / direct-to-origin) the nonce still works
   // for a single request — no placeholder leak, no fail-open.
   const nonceAttrValue = nonce;
-  if (RewriterCtor) {
+  if (RewriterCtor && !isHomePath) {
     const rewriter: Rewriter = new RewriterCtor();
     let r = rewriter.on("head", {
       element(el) {
@@ -1673,7 +1744,10 @@ export default {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       const htmlTtl = await getHtmlTtlSeconds().catch(() => 0);
-      let normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response, nonce, url.hostname, request, ctx), nonce, url.hostname, url.pathname, htmlTtl);
+      const normalizedInput = await normalizeCatastrophicSsrResponse(response, nonce, url.hostname, request, ctx);
+      let normalized = isStaticHomePath(url.pathname)
+        ? await applyStaticHomeSecurityHeaders(normalizedInput, url.hostname)
+        : applySecurityHeaders(normalizedInput, nonce, url.hostname, url.pathname, htmlTtl);
 
       // Fix asset content-types that the static handler mis-detects.
       // `.webmanifest` is served as application/octet-stream by default, which

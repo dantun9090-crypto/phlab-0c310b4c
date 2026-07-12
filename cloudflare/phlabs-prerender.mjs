@@ -86,7 +86,7 @@ function warmCacheSet(key, body, contentType) {
 }
 
 function warmCacheEligible(path) {
-  return !WARM_SKIP_PREFIXES.some((p) => path.startsWith(p));
+  return path !== "/" && !WARM_SKIP_PREFIXES.some((p) => path.startsWith(p));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -486,6 +486,24 @@ export default {
       response.headers.set("CF-Cache-Status", cacheStatus);
       response.headers.set("Server-Timing", `cf-cache;desc="${cacheStatus}", origin;dur=0, csp-hash;dur=0, worker;dur=${Date.now() - startTime}`);
       return withBrowserHtmlNoCache(response, path);
+    }
+
+    // Browser home route is now SSG: serve /index.html directly from static
+    // asset storage instead of proxying to origin SSR.
+    if (path === "/") {
+      const staticUrl = new URL(request.url);
+      staticUrl.pathname = "/index.html";
+      staticUrl.search = "";
+      const staticReq = new Request(staticUrl.toString(), request);
+      const staticRes = await fetch(staticReq, { cf: { cacheTtl: CACHE_TTL.html } });
+      const headers = new Headers(staticRes.headers);
+      headers.set("X-PHL-Via", "static-home;bot=0;total=" + (Date.now() - startTime) + "ms");
+      headers.set("Server-Timing", `static-home;dur=${Date.now() - startTime}`);
+      return new Response(staticRes.body, {
+        status: staticRes.status,
+        statusText: staticRes.statusText,
+        headers,
+      });
     }
 
     // ── 3. BROWSER branch: pass-through (origin serves SSR + nonce CSP) ─────

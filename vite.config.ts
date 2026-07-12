@@ -22,6 +22,9 @@ export default defineConfig({
   tanstackStart: {
     client: { entry: "client" },
     server: { entry: "server" },
+    prerender: {
+      routes: ["/"],
+    },
   },
   vite: {
     plugins: [mcpPlugin()],
