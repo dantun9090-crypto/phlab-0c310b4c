@@ -28,7 +28,9 @@ const CACHE_TTL = {
                      // e2e/cache-headers-regression.spec.ts (max-age >= 31536000)
 };
 
-const BROWSER_HTML_CACHE_CONTROL = "no-cache, no-store, must-revalidate";
+const HTML_NO_STORE_CACHE_CONTROL = "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
+const DOWNLOAD_NO_STORE_CACHE_CONTROL = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
+const IMMUTABLE_BUILD_ASSET_CACHE_CONTROL = "public, max-age=" + CACHE_TTL.static + ", immutable";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // WORKER-INTERNAL HTML WARM CACHE (Task 1.1)
@@ -45,7 +47,7 @@ const WARM_TTL_MS = 60_000;
 const WARM_MAX_ENTRIES = 64;
 const WARM_SKIP_PREFIXES = [
   "/admin", "/auth", "/login", "/logout", "/account",
-  "/cart", "/checkout", "/payment", "/register", "/api/",
+  "/cart", "/checkout", "/payment", "/register", "/api/", "/downloads/",
 ];
 /** @type {Map<string, { body: ArrayBuffer, contentType: string, expiresAt: number }>} */
 const htmlWarmCache = new Map();
@@ -196,47 +198,33 @@ function normalizeAssetContentType(path, headers) {
   headers.set("X-Content-Type-Options", "nosniff");
 }
 
-function applyBrowserHtmlNoCache(headers) {
-  headers.set("Cache-Control", BROWSER_HTML_CACHE_CONTROL);
+function hasPositiveHtmlCacheAge(headers) {
+  const combined = [
+    headers.get("Cache-Control") || headers.get("cache-control") || "",
+    headers.get("CDN-Cache-Control") || headers.get("cdn-cache-control") || "",
+    headers.get("Cloudflare-CDN-Cache-Control") || headers.get("cloudflare-cdn-cache-control") || "",
+    headers.get("Surrogate-Control") || headers.get("surrogate-control") || "",
+  ].join(",").toLowerCase();
+  return /(?:^|,)\s*(?:s-maxage|max-age)\s*=\s*[1-9]\d*/.test(combined) || /(?:^|,)\s*stale-while-revalidate(?:\s*=|\b)/.test(combined);
+}
+
+function applyBrowserHtmlNoCache(headers, path) {
+  if (path && hasPositiveHtmlCacheAge(headers)) {
+    console.log("[PHL Worker] Stripped positive cache age on HTML for " + path);
+  }
+  headers.set("Cache-Control", HTML_NO_STORE_CACHE_CONTROL);
   headers.set("CDN-Cache-Control", "no-store");
   headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+  headers.set("Surrogate-Control", "no-store");
   headers.set("Pragma", "no-cache");
   headers.set("Expires", "0");
+  headers.delete("Age");
   headers.set("Vary", "Cookie, Authorization");
 }
 
-// Public HTML pages (/, /products, /compound/*, /research/*, /landing/*, ...) —
-// origin marks them cacheable via `cdn-cache-control: public, ...`. We honour
-// that at the edge with short s-maxage + long SWR so repeat visits get
-// TTFB ~50-150ms (edge HIT) instead of ~1.8s (origin round-trip).
-function applyBrowserHtmlPublicCache(headers) {
-  headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=86400");
-  headers.set("CDN-Cache-Control", "public, max-age=60, stale-while-revalidate=86400");
-  headers.set("Cloudflare-CDN-Cache-Control", "public, max-age=60, stale-while-revalidate=86400");
-  headers.delete("Pragma");
-  headers.delete("Expires");
-  headers.delete("Surrogate-Control");
-  const existingVary = headers.get("Vary") || "";
-  if (!existingVary) {
-    headers.set("Vary", "Accept-Encoding");
-  } else if (!/\baccept-encoding\b/i.test(existingVary)) {
-    headers.set("Vary", existingVary + ", Accept-Encoding");
-  }
-}
-
-// Origin (src/server.ts) sets `cdn-cache-control: public, max-age=…` on public
-// HTML routes and `no-store` on sensitive routes (auth/checkout/admin/api).
-// Use that signal — no need to duplicate the route list in the Worker.
-function originMarksHtmlCacheable(originHeaders) {
-  const cdn = (originHeaders.get("CDN-Cache-Control") || originHeaders.get("cdn-cache-control") || "").toLowerCase();
-  if (!cdn) return false;
-  if (/\bno-store\b|\bno-cache\b|\bprivate\b/.test(cdn)) return false;
-  return /\bpublic\b/.test(cdn) || /\bmax-age\s*=\s*[1-9]/.test(cdn);
-}
-
-function withBrowserHtmlNoCache(response) {
+function withBrowserHtmlNoCache(response, path) {
   const headers = new Headers(response.headers);
-  applyBrowserHtmlNoCache(headers);
+  applyBrowserHtmlNoCache(headers, path);
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -244,7 +232,7 @@ function withBrowserHtmlNoCache(response) {
   });
 }
 
-async function buildBrowserResponse(response) {
+async function buildBrowserResponse(response, path) {
   const type = response.headers.get("Content-Type") || "";
   const headers = new Headers(response.headers);
   simplifyStrictDynamicCsp(headers);
@@ -266,7 +254,7 @@ async function buildBrowserResponse(response) {
   // survives a deploy and is served against evicted hashed chunks, producing
   // the "blank page after publish" regression. Contract enforced by
   // e2e/cache-headers-regression.spec.ts.
-  applyBrowserHtmlNoCache(headers);
+  applyBrowserHtmlNoCache(headers, path);
   return new Response(body, {
     status: response.status,
     statusText: response.statusText,
