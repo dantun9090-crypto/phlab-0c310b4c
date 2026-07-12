@@ -82,7 +82,23 @@ function InlineNumberCell({
             return { ...v, stock: next };
           });
         } else {
-          patch.variants = variants.map((v: any) => ({ ...v, price: parsed }));
+          // Preserve the variant price ladder: scale each variant price
+          // proportionally so min(variants.price) matches `parsed`. Prevents
+          // a routine root-price edit from flattening £30/£50/£80 → £30/£30/£30.
+          const prices = variants.map((v: any) => Number(v?.price) || 0).filter((n) => n > 0);
+          const oldMin = prices.length ? Math.min(...prices) : 0;
+          if (oldMin > 0 && parsed > 0) {
+            const factor = parsed / oldMin;
+            patch.variants = variants.map((v: any) => {
+              const cur = Number(v?.price) || 0;
+              const next = cur > 0 ? Math.round(cur * factor * 100) / 100 : parsed;
+              return { ...v, price: next };
+            });
+          } else {
+            // No usable ladder to scale — fall back to setting each variant
+            // to `parsed` (previous behavior for degenerate data).
+            patch.variants = variants.map((v: any) => ({ ...v, price: parsed }));
+          }
         }
       }
       await updateProduct(productId, patch);
