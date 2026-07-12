@@ -51,7 +51,7 @@ test.describe("live smoke", () => {
   });
 
   test("homepage carries CSP, cache-control, and build id headers", async () => {
-    const ctx = await request.newContext();
+    const ctx = await request.newContext({ extraHTTPHeaders: { "user-agent": REAL_CHROME_UA } });
     const res = await ctx.get(`${BASE}/`, { timeout: 30_000 });
     expect(res.ok(), `GET / HTTP ${res.status()}`).toBeTruthy();
 
