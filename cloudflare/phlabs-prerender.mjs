@@ -31,6 +31,56 @@ const CACHE_TTL = {
 const BROWSER_HTML_CACHE_CONTROL = "no-cache, no-store, must-revalidate";
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// WORKER-INTERNAL HTML WARM CACHE (Task 1.1)
+// ─────────────────────────────────────────────────────────────────────────────
+// Per-isolate in-memory cache for sanitized browser HTML shells. Serves TTFB
+// ~5–30ms on hit while keeping the CDN/browser contract at no-store — the
+// CDN never sees the cached bytes, only this Worker isolate does. Hits are
+// bounded by isolate lifetime (typically minutes) and WARM_TTL_MS.
+//
+// SAFETY: Only cache successful (2xx) text/html responses on GET. Never cache
+// authenticated / sensitive paths — those are excluded by prefix below.
+// ═══════════════════════════════════════════════════════════════════════════════
+const WARM_TTL_MS = 60_000;
+const WARM_MAX_ENTRIES = 64;
+const WARM_SKIP_PREFIXES = [
+  "/admin", "/auth", "/login", "/logout", "/account",
+  "/cart", "/checkout", "/payment", "/register", "/api/",
+];
+/** @type {Map<string, { body: ArrayBuffer, contentType: string, expiresAt: number }>} */
+const htmlWarmCache = new Map();
+
+function warmCacheKey(url) {
+  // Key on pathname only — HTML shells are identical across query strings for
+  // our routes, and query-string variance would blow the cache with tracking
+  // params (utm_*, gclid, fbclid). Skip if the path is sensitive.
+  return url.pathname;
+}
+
+function warmCacheGet(key) {
+  const hit = htmlWarmCache.get(key);
+  if (!hit) return null;
+  if (Date.now() > hit.expiresAt) {
+    htmlWarmCache.delete(key);
+    return null;
+  }
+  return hit;
+}
+
+function warmCacheSet(key, body, contentType) {
+  if (htmlWarmCache.size >= WARM_MAX_ENTRIES) {
+    // Simple FIFO eviction — delete oldest.
+    const firstKey = htmlWarmCache.keys().next().value;
+    if (firstKey !== undefined) htmlWarmCache.delete(firstKey);
+  }
+  htmlWarmCache.set(key, { body, contentType, expiresAt: Date.now() + WARM_TTL_MS });
+}
+
+function warmCacheEligible(path) {
+  return !WARM_SKIP_PREFIXES.some((p) => path.startsWith(p));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // BOT DETECTION
 // ═══════════════════════════════════════════════════════════════════════════════
 const CRAWLER_UAS = [
