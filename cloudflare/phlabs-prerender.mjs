@@ -446,8 +446,11 @@ export default {
         cacheHeaders.set("Cache-Control", "public, max-age=" + CACHE_TTL.prerender + ", s-maxage=" + CACHE_TTL.prerender);
         cacheHeaders.set("X-Prerendered", "true");
         cacheHeaders.set("X-PHL-Via", "hash-csp;bot=1;prerender=OK;cache=" + cacheStatus + ";origin=" + prerenderFetchMs + "ms;hash=" + hashComputeMs + "ms;total=" + (Date.now() - startTime) + "ms");
+        const timing = `cf-cache;desc="${cacheStatus}", origin;dur=${prerenderFetchMs}, csp-hash;dur=${hashComputeMs}, worker;dur=${Date.now() - startTime}`;
+        cacheHeaders.set("Server-Timing", timing);
         response.headers.set("X-Prerendered", "true");
         response.headers.set("X-PHL-Via", cacheHeaders.get("X-PHL-Via"));
+        response.headers.set("Server-Timing", timing);
         applyBrowserHtmlNoCache(response.headers, path);
         ctx.waitUntil(cache.put(cacheKey, new Response(response.clone().body, { status: response.status, statusText: response.statusText, headers: cacheHeaders })));
         return response;
