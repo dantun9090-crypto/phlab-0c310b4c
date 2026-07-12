@@ -3,11 +3,8 @@
 // Bot/prerender branch: UA sniff -> Prerender.io -> hash-CSP -> cache separately.
 // TTFB: ~50-80ms cache HIT (browser), ~75ms (prerender).
 //
-// Deploy version: 2026-07-12.02 — force redeploy so cache-headers-regression
-// tests see the fixed /downloads/* (no-store) + /assets/* (max-age=31536000,
-// immutable) headers. Commit 408d857 landed the source changes but the live
-// Worker still returned max-age=604800 for PDFs and max-age=2592000 for
-// hashed assets, indicating deploy-worker.yml did not re-run.
+// Deploy version: 2026-07-12.03 — force redeploy of exact cache-header
+// contract for /downloads/*, immutable build assets, and HTML shells.
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ORIGIN & ROUTING
@@ -39,7 +36,7 @@ const CACHE_TTL = {
 
 const HTML_NO_STORE_CACHE_CONTROL = "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
 const DOWNLOAD_NO_STORE_CACHE_CONTROL = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
-const IMMUTABLE_BUILD_ASSET_CACHE_CONTROL = "public, max-age=" + CACHE_TTL.static + ", immutable";
+const IMMUTABLE_BUILD_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASHED_STATIC_ASSET_RE = /(?:^|\/)[^/?#]+(?:[-._][a-f0-9]{8,}|-[A-Za-z0-9_-]{8,})\.(?:js|mjs|css|woff2?|ttf|otf)$/i;
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -330,7 +327,15 @@ export default {
       // store a 404 for /assets/*.js|css as immutable, otherwise stale HTML can
       // poison the edge with `Not Found` bodies that browsers keep executing.
       const assetRequest = path.startsWith("/assets/") || path.startsWith("/_build/") || path.startsWith("/fonts/") || path.startsWith("/_fonts/");
-      const response = await fetch(request, assetRequest ? { cf: { cacheTtlByStatus: { "200-299": CACHE_TTL.static, "404": 0, "410": 0, "500-599": 0 } } } : undefined);
+      const downloadRequest = path.startsWith("/downloads/");
+      const response = await fetch(
+        request,
+        assetRequest
+          ? { cf: { cacheTtlByStatus: { "200-299": CACHE_TTL.static, "404": 0, "410": 0, "500-599": 0 } } }
+          : downloadRequest
+            ? { cf: { cacheTtl: 0, cacheTtlByStatus: { "200-299": 0, "300-399": 0, "400-499": 0, "500-599": 0 } } }
+            : undefined,
+      );
       const cloned = new Response(response.body, {
         status: response.status,
         statusText: response.statusText,
@@ -366,6 +371,12 @@ export default {
         normalizeAssetContentType(path, cloned.headers);
       } else if (isImmutableStaticAssetPath(path)) {
         cloned.headers.set("Cache-Control", IMMUTABLE_BUILD_ASSET_CACHE_CONTROL);
+        cloned.headers.delete("CDN-Cache-Control");
+        cloned.headers.delete("Cloudflare-CDN-Cache-Control");
+        cloned.headers.delete("Surrogate-Control");
+        cloned.headers.delete("Pragma");
+        cloned.headers.delete("Expires");
+        cloned.headers.delete("Age");
         normalizeAssetContentType(path, cloned.headers);
       }
       return cloned;
