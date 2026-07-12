@@ -1,0 +1,77 @@
+# Cache Guard presence check — blocks merge if the pre-rendered homepage HTML
+# does NOT contain the PH Labs Cache Guard bootstrap script + a BUILD_ID.
+#
+# The guard is what evicts stale localStorage / caches / service workers on
+# every new deploy (see src/routes/__root.tsx `scripts:` entry). If a route
+# refactor accidentally drops it from the head() output, returning visitors
+# stay on the old bundle forever — this job catches that in CI.
+name: Cache Guard — pre-render check
+
+on:
+  pull_request:
+    paths:
+      - "src/routes/__root.tsx"
+      - "src/server.ts"
+      - "cloudflare/phlabs-prerender.mjs"
+      - "vite.config.ts"
+      - ".github/workflows/cache-guard-check.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Hourly canary against production so a regression that ships out-of-band
+    # (worker rollback, prerender bug) still trips the alarm within the hour.
+    - cron: "43 * * * *"
+
+concurrency:
+  group: cache-guard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  assert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Fetch pre-rendered homepage
+        run: |
+          set -euo pipefail
+          curl -sSL --max-time 30 \
+            -H 'User-Agent: Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' \
+            'https://phlabs.co.uk/' -o /tmp/home.html
+          echo "Bytes: $(wc -c < /tmp/home.html)"
+
+      - name: Assert cache guard is present
+        run: |
+          set -euo pipefail
+          fail=0
+
+          if ! grep -q "phlabs_build_id_v3" /tmp/home.html; then
+            echo "::error::Missing cache guard storage key 'phlabs_build_id_v3' in pre-rendered HTML."
+            fail=1
+          fi
+
+          if ! grep -q "Cache guard active" /tmp/home.html; then
+            echo "::error::Missing cache guard boot log marker in pre-rendered HTML."
+            fail=1
+          fi
+
+          # BUILD_ID: string literal like var BUILD_ID="1720123456789-abc123"
+          if ! grep -qE 'var BUILD_ID="[^"]{4,}"' /tmp/home.html; then
+            echo "::error::Missing embedded BUILD_ID literal in pre-rendered HTML."
+            fail=1
+          fi
+
+          # x-build-id meta must also be present (already asserted by other
+          # jobs but keep here so a single check covers the guard end-to-end).
+          if ! grep -qE 'name="x-build-id"[^>]*content="[^"]{4,}"' /tmp/home.html; then
+            echo "::error::Missing <meta name=x-build-id> in pre-rendered HTML."
+            fail=1
+          fi
+
+          if [[ "$fail" -ne 0 ]]; then
+            echo "----- head slice -----"
+            sed -n '1,80p' /tmp/home.html
+            exit 1
+          fi
+
+          echo "Cache guard + BUILD_ID present. ✅"
