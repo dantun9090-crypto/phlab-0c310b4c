@@ -908,6 +908,7 @@ const STALE_ASSET_RECOVERY = `
     };
     var emit=function(evt,extra){ try{ var fn=window.__phlSwTelemetry; if(typeof fn==='function') fn(evt,extra||null); }catch(e){} };
     var hardReloadClean=function(){
+      try{ window.__phlHardReloadClean = hardReloadClean; }catch(_e){}
       emit('sw_cache_reset_clicked',{ path: location.pathname });
       try{ sessionStorage.setItem('phl-sw-cache-reset-pending',String(Date.now())); }catch(e){}
       clearAllStaleFlags();
