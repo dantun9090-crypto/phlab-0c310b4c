@@ -2,6 +2,12 @@
 // Hash-at-cache-miss, serve-raw-on-HIT. ALL HTML routes use this path.
 // Bot/prerender branch: UA sniff -> Prerender.io -> hash-CSP -> cache separately.
 // TTFB: ~50-80ms cache HIT (browser), ~75ms (prerender).
+//
+// Deploy version: 2026-07-12.02 — force redeploy so cache-headers-regression
+// tests see the fixed /downloads/* (no-store) + /assets/* (max-age=31536000,
+// immutable) headers. Commit 408d857 landed the source changes but the live
+// Worker still returned max-age=604800 for PDFs and max-age=2592000 for
+// hashed assets, indicating deploy-worker.yml did not re-run.
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ORIGIN & ROUTING
