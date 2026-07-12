@@ -1330,7 +1330,7 @@ function RootComponent() {
       fontLink.id = "gfonts";
       fontLink.rel = "stylesheet";
       fontLink.href =
-        "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700&display=swap";
+        "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700&display=optional";
       document.head.appendChild(fontLink);
     }
     return () => window.clearTimeout(stableLoadTimer);
