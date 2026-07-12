@@ -42,7 +42,7 @@ const FALLBACK_TEXTS = [
 
 test.describe("live smoke", () => {
   test("health endpoint reports healthy", async () => {
-    const ctx = await request.newContext();
+    const ctx = await request.newContext({ extraHTTPHeaders: { "user-agent": REAL_CHROME_UA } });
     const res = await ctx.get(`${BASE}/api/public/health`, { timeout: 15_000 });
     expect(res.status(), `health HTTP ${res.status()}`).toBe(200);
     const body = await res.json();
