@@ -463,6 +463,22 @@ export default {
       out.headers.delete("Expires");
       out.headers.delete("Age");
     }
+
+    // Populate the warm cache on successful HTML pass-through. We tee the
+    // body: one stream to the browser, one buffered into isolate memory.
+    const ctype = out.headers.get("Content-Type") || "";
+    if (wEligible && out.status === 200 && ctype.includes("text/html") && out.body) {
+      const [a, b] = out.body.tee();
+      ctx.waitUntil((async () => {
+        try {
+          const buf = await new Response(b).arrayBuffer();
+          warmCacheSet(wKey, buf, ctype);
+        } catch (e) {
+          console.warn("[PHL Worker] warm cache populate failed: " + (e && e.message));
+        }
+      })());
+      return new Response(a, { status: out.status, statusText: out.statusText, headers: out.headers });
+    }
     return out;
   },
 };
