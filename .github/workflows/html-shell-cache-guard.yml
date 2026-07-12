@@ -84,24 +84,27 @@ jobs:
               title: `HTML shell cache regression on ${sha}`,
               labels: ['regression', 'cache', 'post-deploy', 'critical'],
               body: [
-                `An HTML shell route is being edge-cached on the live site.`,
+                `An HTML shell cache-policy check failed on the live site.`,
                 ``,
-                `This is the exact regression that causes blank pages after a`,
-                `Lovable publish: the cached shell references hashed asset`,
-                `chunks that have been evicted from the new build.`,
+                `Either a public HTML shell stopped being edge-cached (Cache`,
+                `Rule 3 not matching → cf-cache-status DYNAMIC/MISS on warm`,
+                `probe), or a sensitive path started being edge-cached.`,
                 ``,
                 `Fix path:`,
-                `1. Purge the Cloudflare edge for phlabs.co.uk immediately.`,
-                `2. Confirm src/server.ts still emits \`cdn-cache-control: no-store\``,
-                `   and \`cloudflare-cdn-cache-control: no-store\` on HTML shells.`,
-                `3. Check for a new Cloudflare cache rule accidentally matching HTML.`,
+                `1. If a public shell shows DYNAMIC: verify the phlabs-prerender`,
+                `   Worker is passing non-bot traffic through unchanged, and`,
+                `   that Cache Rule 3 (edge TTL 14400s) still matches the path.`,
+                `2. If a sensitive path shows HIT: purge the Cloudflare edge`,
+                `   immediately and check for a cache rule accidentally`,
+                `   matching /admin, /cart, /checkout, /account, /login,`,
+                `   /register, /payment, /vip, or /api/*.`,
+                `3. Confirm src/server.ts still emits \`cache-control: no-store\``,
+                `   on HTML shells (origin invariant; CF Rule 3 overrides at edge).`,
                 ``,
                 `Download the \`html-shell-cache-report-${context.sha}\` artifact for the full report.`,
                 ``,
                 `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
               ].join('\n'),
-            });
 
-      - name: Fail on regression
         if: steps.scan.outputs.exit_code != '0'
         run: exit 1
