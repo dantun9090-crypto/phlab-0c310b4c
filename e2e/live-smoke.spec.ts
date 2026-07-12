@@ -12,6 +12,20 @@ import { test, expect, request } from "@playwright/test";
 
 const BASE = (process.env.SMOKE_BASE_URL || "https://phlabs.co.uk").replace(/\/+$/, "");
 
+// Cloudflare bot manager 403s the default Playwright "HeadlessChrome" UA on
+// every route except /. Present as a normal desktop Chrome browser so the
+// smoke test exercises the real user path.
+const REAL_CHROME_UA =
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+
+test.use({
+  userAgent: REAL_CHROME_UA,
+  extraHTTPHeaders: {
+    "user-agent": REAL_CHROME_UA,
+    "accept-language": "en-GB,en;q=0.9",
+  },
+});
+
 const CRITICAL_ROUTES = ["/", "/login", "/cart", "/products", "/about", "/contact", "/compound"];
 
 const FALLBACK_TEXTS = [
@@ -28,7 +42,7 @@ const FALLBACK_TEXTS = [
 
 test.describe("live smoke", () => {
   test("health endpoint reports healthy", async () => {
-    const ctx = await request.newContext();
+    const ctx = await request.newContext({ extraHTTPHeaders: { "user-agent": REAL_CHROME_UA } });
     const res = await ctx.get(`${BASE}/api/public/health`, { timeout: 15_000 });
     expect(res.status(), `health HTTP ${res.status()}`).toBe(200);
     const body = await res.json();
@@ -37,7 +51,7 @@ test.describe("live smoke", () => {
   });
 
   test("homepage carries CSP, cache-control, and build id headers", async () => {
-    const ctx = await request.newContext();
+    const ctx = await request.newContext({ extraHTTPHeaders: { "user-agent": REAL_CHROME_UA } });
     const res = await ctx.get(`${BASE}/`, { timeout: 30_000 });
     expect(res.ok(), `GET / HTTP ${res.status()}`).toBeTruthy();
 
