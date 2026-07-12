@@ -16,6 +16,8 @@ const PROXY_ROUTES = [
   "/_api/",
   "/api/",
   "/assets/",
+  "/_build/",
+  "/downloads/",
   "/favicon.ico",
   "/robots.txt",
   "/sitemap.xml",
@@ -28,7 +30,9 @@ const CACHE_TTL = {
                      // e2e/cache-headers-regression.spec.ts (max-age >= 31536000)
 };
 
-const BROWSER_HTML_CACHE_CONTROL = "no-cache, no-store, must-revalidate";
+const HTML_NO_STORE_CACHE_CONTROL = "no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
+const DOWNLOAD_NO_STORE_CACHE_CONTROL = "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0";
+const IMMUTABLE_BUILD_ASSET_CACHE_CONTROL = "public, max-age=" + CACHE_TTL.static + ", immutable";
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // WORKER-INTERNAL HTML WARM CACHE (Task 1.1)
@@ -45,7 +49,7 @@ const WARM_TTL_MS = 60_000;
 const WARM_MAX_ENTRIES = 64;
 const WARM_SKIP_PREFIXES = [
   "/admin", "/auth", "/login", "/logout", "/account",
-  "/cart", "/checkout", "/payment", "/register", "/api/",
+  "/cart", "/checkout", "/payment", "/register", "/api/", "/downloads/",
 ];
 /** @type {Map<string, { body: ArrayBuffer, contentType: string, expiresAt: number }>} */
 const htmlWarmCache = new Map();
@@ -196,47 +200,33 @@ function normalizeAssetContentType(path, headers) {
   headers.set("X-Content-Type-Options", "nosniff");
 }
 
-function applyBrowserHtmlNoCache(headers) {
-  headers.set("Cache-Control", BROWSER_HTML_CACHE_CONTROL);
+function hasPositiveHtmlCacheAge(headers) {
+  const combined = [
+    headers.get("Cache-Control") || headers.get("cache-control") || "",
+    headers.get("CDN-Cache-Control") || headers.get("cdn-cache-control") || "",
+    headers.get("Cloudflare-CDN-Cache-Control") || headers.get("cloudflare-cdn-cache-control") || "",
+    headers.get("Surrogate-Control") || headers.get("surrogate-control") || "",
+  ].join(",").toLowerCase();
+  return /(?:^|,)\s*(?:s-maxage|max-age)\s*=\s*[1-9]\d*/.test(combined) || /(?:^|,)\s*stale-while-revalidate(?:\s*=|\b)/.test(combined);
+}
+
+function applyBrowserHtmlNoCache(headers, path) {
+  if (path && hasPositiveHtmlCacheAge(headers)) {
+    console.log("[PHL Worker] Stripped positive cache age on HTML for " + path);
+  }
+  headers.set("Cache-Control", HTML_NO_STORE_CACHE_CONTROL);
   headers.set("CDN-Cache-Control", "no-store");
   headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+  headers.set("Surrogate-Control", "no-store");
   headers.set("Pragma", "no-cache");
   headers.set("Expires", "0");
+  headers.delete("Age");
   headers.set("Vary", "Cookie, Authorization");
 }
 
-// Public HTML pages (/, /products, /compound/*, /research/*, /landing/*, ...) —
-// origin marks them cacheable via `cdn-cache-control: public, ...`. We honour
-// that at the edge with short s-maxage + long SWR so repeat visits get
-// TTFB ~50-150ms (edge HIT) instead of ~1.8s (origin round-trip).
-function applyBrowserHtmlPublicCache(headers) {
-  headers.set("Cache-Control", "public, s-maxage=60, stale-while-revalidate=86400");
-  headers.set("CDN-Cache-Control", "public, max-age=60, stale-while-revalidate=86400");
-  headers.set("Cloudflare-CDN-Cache-Control", "public, max-age=60, stale-while-revalidate=86400");
-  headers.delete("Pragma");
-  headers.delete("Expires");
-  headers.delete("Surrogate-Control");
-  const existingVary = headers.get("Vary") || "";
-  if (!existingVary) {
-    headers.set("Vary", "Accept-Encoding");
-  } else if (!/\baccept-encoding\b/i.test(existingVary)) {
-    headers.set("Vary", existingVary + ", Accept-Encoding");
-  }
-}
-
-// Origin (src/server.ts) sets `cdn-cache-control: public, max-age=…` on public
-// HTML routes and `no-store` on sensitive routes (auth/checkout/admin/api).
-// Use that signal — no need to duplicate the route list in the Worker.
-function originMarksHtmlCacheable(originHeaders) {
-  const cdn = (originHeaders.get("CDN-Cache-Control") || originHeaders.get("cdn-cache-control") || "").toLowerCase();
-  if (!cdn) return false;
-  if (/\bno-store\b|\bno-cache\b|\bprivate\b/.test(cdn)) return false;
-  return /\bpublic\b/.test(cdn) || /\bmax-age\s*=\s*[1-9]/.test(cdn);
-}
-
-function withBrowserHtmlNoCache(response) {
+function withBrowserHtmlNoCache(response, path) {
   const headers = new Headers(response.headers);
-  applyBrowserHtmlNoCache(headers);
+  applyBrowserHtmlNoCache(headers, path);
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -244,7 +234,7 @@ function withBrowserHtmlNoCache(response) {
   });
 }
 
-async function buildBrowserResponse(response) {
+async function buildBrowserResponse(response, path) {
   const type = response.headers.get("Content-Type") || "";
   const headers = new Headers(response.headers);
   simplifyStrictDynamicCsp(headers);
@@ -266,7 +256,7 @@ async function buildBrowserResponse(response) {
   // survives a deploy and is served against evicted hashed chunks, producing
   // the "blank page after publish" regression. Contract enforced by
   // e2e/cache-headers-regression.spec.ts.
-  applyBrowserHtmlNoCache(headers);
+  applyBrowserHtmlNoCache(headers, path);
   return new Response(body, {
     status: response.status,
     statusText: response.statusText,
@@ -323,15 +313,36 @@ export default {
         statusText: response.statusText,
         headers: response.headers,
       });
-      if (assetRequest && cloned.status >= 400) {
+      if (path.startsWith("/downloads/")) {
+        cloned.headers.set("Cache-Control", DOWNLOAD_NO_STORE_CACHE_CONTROL);
+        cloned.headers.set("CDN-Cache-Control", "no-store");
+        cloned.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+        cloned.headers.set("Surrogate-Control", "no-store");
+        cloned.headers.set("Pragma", "no-cache");
+        cloned.headers.set("Expires", "0");
+        cloned.headers.delete("Age");
+        cloned.headers.delete("ETag");
+        cloned.headers.delete("Last-Modified");
+        normalizeAssetContentType(path, cloned.headers);
+      } else if (path === "/robots.txt") {
+        cloned.headers.set("Content-Type", "text/plain; charset=utf-8");
+        cloned.headers.set("Cache-Control", "public, max-age=300, must-revalidate");
+        cloned.headers.set("CDN-Cache-Control", "no-store");
+        cloned.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
+        cloned.headers.set("Surrogate-Control", "no-store");
+        cloned.headers.delete("X-Robots-Tag");
+        cloned.headers.delete("x-robots-tag");
+        cloned.headers.delete("Age");
+        cloned.headers.set("X-Content-Type-Options", "nosniff");
+      } else if (assetRequest && cloned.status >= 400) {
         cloned.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
         cloned.headers.set("CDN-Cache-Control", "no-store");
         cloned.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
         cloned.headers.set("X-Robots-Tag", "noindex, nofollow");
         cloned.headers.set("X-PHL-Via", "asset-miss-no-store");
         normalizeAssetContentType(path, cloned.headers);
-      } else if (path.startsWith("/assets/") || path.startsWith("/_img/") || path.startsWith("/_fonts/")) {
-        cloned.headers.set("Cache-Control", "public, max-age=" + CACHE_TTL.static + ", immutable");
+      } else if (path.startsWith("/assets/") || path.startsWith("/_build/") || path.startsWith("/_img/") || path.startsWith("/_fonts/")) {
+        cloned.headers.set("Cache-Control", IMMUTABLE_BUILD_ASSET_CACHE_CONTROL);
         normalizeAssetContentType(path, cloned.headers);
       }
       return cloned;
@@ -375,7 +386,7 @@ export default {
           cacheHeaders.set("X-PHL-Via", "hash-csp;bot=1;prerender=FAIL;cache=" + cacheStatus + ";origin=" + prerenderFetchMs + "ms;hash=" + hashComputeMs + "ms;total=" + (Date.now() - startTime) + "ms");
           ctx.waitUntil(cache.put(cacheKey, new Response(response.clone().body, { status: response.status, statusText: response.statusText, headers: cacheHeaders })));
           response.headers.set("X-PHL-Via", cacheHeaders.get("X-PHL-Via"));
-          applyBrowserHtmlNoCache(response.headers);
+          applyBrowserHtmlNoCache(response.headers, path);
           return response;
         }
 
@@ -395,7 +406,7 @@ export default {
         cacheHeaders.set("X-PHL-Via", "hash-csp;bot=1;prerender=OK;cache=" + cacheStatus + ";origin=" + prerenderFetchMs + "ms;hash=" + hashComputeMs + "ms;total=" + (Date.now() - startTime) + "ms");
         response.headers.set("X-Prerendered", "true");
         response.headers.set("X-PHL-Via", cacheHeaders.get("X-PHL-Via"));
-        applyBrowserHtmlNoCache(response.headers);
+        applyBrowserHtmlNoCache(response.headers, path);
         ctx.waitUntil(cache.put(cacheKey, new Response(response.clone().body, { status: response.status, statusText: response.statusText, headers: cacheHeaders })));
         return response;
       }
@@ -407,7 +418,7 @@ export default {
       });
       response.headers.set("X-PHL-Via", "hash-csp;bot=1;prerender=OK;cache=" + cacheStatus + ";origin=0ms;hash=0ms;total=" + (Date.now() - startTime) + "ms");
       response.headers.set("CF-Cache-Status", cacheStatus);
-      return withBrowserHtmlNoCache(response);
+      return withBrowserHtmlNoCache(response, path);
     }
 
     // ── 3. BROWSER branch: pass-through (origin serves SSR + nonce CSP) ─────
@@ -435,7 +446,7 @@ export default {
       console.log("[PHL Worker] htmlWarmCache miss for " + path);
     }
 
-    const passRes = await buildBrowserResponse(await fetch(request));
+    const passRes = await buildBrowserResponse(await fetch(request), path);
     const out = new Response(passRes.body, {
       status: passRes.status,
       statusText: passRes.statusText,
@@ -455,13 +466,15 @@ export default {
     // e2e/cache-headers-regression.spec.ts. Force CDN no-store + short
     // browser cache so a re-uploaded PDF is picked up on next request.
     if (path.startsWith("/downloads/") && out.status === 200) {
-      out.headers.set("Cache-Control", "public, max-age=300, must-revalidate");
+      out.headers.set("Cache-Control", DOWNLOAD_NO_STORE_CACHE_CONTROL);
       out.headers.set("CDN-Cache-Control", "no-store");
       out.headers.set("Cloudflare-CDN-Cache-Control", "no-store");
       out.headers.set("Surrogate-Control", "no-store");
-      out.headers.delete("Pragma");
-      out.headers.delete("Expires");
+      out.headers.set("Pragma", "no-cache");
+      out.headers.set("Expires", "0");
       out.headers.delete("Age");
+      out.headers.delete("ETag");
+      out.headers.delete("Last-Modified");
     }
 
     // Populate the warm cache on successful HTML pass-through. We tee the
