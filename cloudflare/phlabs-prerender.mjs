@@ -211,11 +211,11 @@ async function buildBrowserResponse(response) {
   headers.delete("content-encoding");
   headers.set("Content-Type", "text/html; charset=utf-8");
   headers.set("X-Content-Type-Options", "nosniff");
-  if (response.status === 200 && originMarksHtmlCacheable(response.headers)) {
-    applyBrowserHtmlPublicCache(headers);
-  } else {
-    applyBrowserHtmlNoCache(headers);
-  }
+  // HTML shells MUST be uncacheable on both browser and CDN — a cached shell
+  // survives a deploy and is served against evicted hashed chunks, producing
+  // the "blank page after publish" regression. Contract enforced by
+  // e2e/cache-headers-regression.spec.ts.
+  applyBrowserHtmlNoCache(headers);
   return new Response(body, {
     status: response.status,
     statusText: response.statusText,
