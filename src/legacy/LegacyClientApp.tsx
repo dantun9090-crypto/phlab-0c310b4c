@@ -31,6 +31,7 @@ export default function LegacyClientApp({
     }).then((outcome) => {
       if (controller.signal.aborted) return;
       if (outcome.ok) {
+        outcome.module.primeLegacyRouter?.();
         setLegacyApp(() => outcome.module.default);
         return;
       }
