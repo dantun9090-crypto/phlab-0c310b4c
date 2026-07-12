@@ -105,6 +105,9 @@ jobs:
                 ``,
                 `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
               ].join('\n'),
+            });
 
+      - name: Fail on regression
         if: steps.scan.outputs.exit_code != '0'
         run: exit 1
+
