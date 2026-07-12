@@ -11,7 +11,9 @@ import { Component, useEffect, useState, type ReactNode } from "react";
 
 import { PageTransition } from "@/components/PageTransition";
 import appCss from "../styles.css?url";
-import logoUrl from "@/assets/logo.webp";
+// logoUrl import removed — the previous data:URL preload of the inlined
+// logo wasted ~3 KB per SSR response (preloading a data URL is a no-op).
+
 import "@/lib/chunk-reload";
 import "@/lib/sw-register";
 import {
@@ -1219,10 +1221,12 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
         <meta httpEquiv="Pragma" content="no-cache" />
         <meta httpEquiv="Expires" content="0" />
-        {/* Logo is NOT the LCP element — keep its preload but at low priority so
-            it never contends with the banner-image high-priority preload wired
-            in src/routes/index.tsx. */}
-        <link rel="preload" as="image" href={logoUrl} type="image/webp" fetchPriority="low" />
+        {/* Logo asset is Vite-inlined as a data:image/webp URL (small file
+            under the assetsInlineLimit), so it ships inside the HTML shell
+            already. A <link rel=preload> pointing at that same data: URL
+            fetches nothing but adds ~3 KB of duplicated bytes to every SSR
+            response — removed for LCP. */}
+
 
         <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: CRITICAL_CSS }} />
         {/* These must run before HeadContent, because HeadContent emits
