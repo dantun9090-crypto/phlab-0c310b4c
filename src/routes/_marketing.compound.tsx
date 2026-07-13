@@ -1,9 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { lazy, Suspense } from "react";
-
-const PremiumLanding = lazy(() =>
-  import("@/components/PremiumLanding").then((m) => ({ default: m.PremiumLanding })),
-);
+import { PremiumLanding } from "@/components/PremiumLanding";
 
 const TITLE = "Premium Research Compounds for UK Laboratories | PH Labs";
 const DESCRIPTION =
@@ -117,17 +113,5 @@ export const Route = createFileRoute("/_marketing/compound")({
 });
 
 function CompoundPage() {
-  return (
-    <Suspense
-      fallback={
-        <div
-          aria-hidden="true"
-          className="min-h-screen w-full bg-[#060b18]"
-          style={{ contain: "strict" }}
-        />
-      }
-    >
-      <PremiumLanding eyebrow="UK Laboratory Supply" />
-    </Suspense>
-  );
+  return <PremiumLanding eyebrow="UK Laboratory Supply" />;
 }

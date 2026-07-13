@@ -3,8 +3,9 @@ import { Outlet, useRouterState } from "@tanstack/react-router";
 export function PageTransition() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isHome = pathname === "/";
+  const isMarketing = pathname === "/compound" || pathname.startsWith("/compound/");
 
-  if (isHome) {
+  if (isHome || isMarketing) {
     return <Outlet />;
   }
 

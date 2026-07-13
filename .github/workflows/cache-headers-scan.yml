@@ -71,7 +71,7 @@ jobs:
                 `Likely causes:`,
                 `- a sensitive path (/cart, /checkout, /login, /admin, …) started returning a cacheable cache-control / cdn-cache-control / surrogate-control header`,
                 `- cf-cache-status reported HIT/REVALIDATED/STALE on a sensitive path (user-specific HTML replayed from edge)`,
-                `- a public page exceeded the 1h effective TTL ceiling or lost all cache headers`,
+                `- a public HTML shell lost its no-store browser/CDN/proxy headers`,
                 ``,
                 `Download the \`cache-headers-report-${context.sha}\` artifact from the run for the full JSON + Markdown report.`,
                 ``,

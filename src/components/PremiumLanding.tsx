@@ -118,14 +118,14 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
 
       <style>{`
         html { scroll-behavior: smooth; }
-        @keyframes luxFadeUp { 0% { opacity:0; transform:translateY(40px); filter:blur(10px);} 100% { opacity:1; transform:translateY(0); filter:blur(0);} }
+        @keyframes luxFadeUp { 0% { opacity:1; transform:translateY(24px); filter:blur(4px);} 100% { opacity:1; transform:translateY(0); filter:blur(0);} }
         @keyframes luxLine { 0% { transform:scaleX(0);} 100% { transform:scaleX(1);} }
         @keyframes luxFade { 0% { opacity:0;} 100% { opacity:1;} }
         @keyframes luxFloat { 0%,100% { transform:translateY(0);} 50% { transform:translateY(-10px);} }
         @keyframes luxMarquee { 0% { transform:translateX(0);} 100% { transform:translateX(-50%);} }
         @keyframes luxKen { 0% { transform:scale(1.08);} 100% { transform:scale(1.18);} }
         @keyframes luxShimmer { 0% { background-position:-200% center;} 100% { background-position:200% center;} }
-        .lux-fade-up { opacity:0; animation: luxFadeUp 1.2s cubic-bezier(.22,.7,.2,1) forwards; }
+        .lux-fade-up { opacity:1; animation: luxFadeUp .7s cubic-bezier(.22,.7,.2,1) forwards; }
         .lux-line { transform-origin:left; animation: luxLine 1.4s cubic-bezier(.65,.2,.2,1) forwards; }
         .lux-fade { opacity:0; animation: luxFade 1.6s ease forwards; }
         .lux-float { animation: luxFloat 7s ease-in-out infinite; }
@@ -139,7 +139,7 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
         .display{font-family:'Cormorant Garamond','Times New Roman',serif}
         section[id]{scroll-margin-top:80px}
         @media (max-width: 767px) {
-          .lux-ken, .lux-float, .lux-shimmer, .lux-marquee { animation: none !important; }
+          .lux-ken, .lux-float, .lux-shimmer, .lux-marquee { animation: none !important; transform: none !important; }
           .lux-shimmer { display: none !important; }
           .mobile-no-blur { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
         }
@@ -189,9 +189,9 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           ) : null}
 
           <h1 className="display font-light tracking-tight text-white text-[2.8rem] leading-[1.02] sm:text-[4.2rem] md:text-[5.5rem] lg:text-[6.5rem]">
-            <span className="block lux-fade-up d2">Premium Research</span>
-            <span className="block lux-fade-up d3">Compounds for</span>
-            <span className="block lux-fade-up d4 italic gold-text">UK Laboratories</span>
+            <span className="block">Premium Research</span>
+            <span className="block">Compounds for</span>
+            <span className="block italic gold-text">UK Laboratories</span>
           </h1>
 
           <div className="mx-auto mt-8 h-px w-20 gold-bg lux-line d3" />
