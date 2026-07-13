@@ -22,7 +22,7 @@
  *
  * Exit code is non-zero on any violation so CI fails loudly.
  */
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, rmSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 const BASE = process.env.CACHE_SCAN_BASE_URL || process.env.TEST_BASE_URL || "https://phlabs.co.uk";
@@ -129,7 +129,7 @@ async function probe(path: string, kind: Kind): Promise<Probe> {
       const first = await fetchProbe(url);
       firstCf = (first.headers["cf-cache-status"] || "").toUpperCase();
       // small delay to let CF finalize the cache entry
-      await new Promise((r) => setTimeout(r, 800));
+      await new Promise((r) => setTimeout(r, 2000));
     }
     const res = await fetchProbe(url);
     status = res.status;
@@ -266,6 +266,7 @@ async function main() {
   ];
   const results = await Promise.all(work);
 
+  if (existsSync(OUT_DIR)) rmSync(OUT_DIR, { recursive: true, force: true });
   mkdirSync(OUT_DIR, { recursive: true });
   const jsonPath = join(OUT_DIR, "cache-headers-report.json");
   const mdPath = join(OUT_DIR, "cache-headers-report.md");

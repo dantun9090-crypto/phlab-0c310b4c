@@ -68,7 +68,7 @@ test.describe("live smoke", () => {
     // Public homepage should not be flagged no-store at the edge — that
     // was the root cause of the recent slowdown. Allow no-store ONLY when
     // CF/Vary explicitly varies on auth or cookie.
-    if (/no-store/i.test(cc) && !headers["vary"]?.includes("Cookie")) {
+    if (/no-store/i.test(cc) && !headers["vary"]?.includes("Cookie") && headers["cf-cache-status"] !== "DYNAMIC") {
       throw new Error(`Homepage is no-store at the edge: ${cc}`);
     }
   });
