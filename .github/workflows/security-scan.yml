@@ -14,13 +14,7 @@ on:
         description: "Minimum severity that fails the build (overrides .security-config.json for this run only)"
         required: false
         default: ""
-        type: choice
-        options:
-          - ""
-          - "low"
-          - "medium"
-          - "high"
-          - "critical"
+        type: string
 
 jobs:
   security-scan:
@@ -92,7 +86,7 @@ jobs:
             bun-store-${{ runner.os }}-
 
       - name: Install deps (frozen)
-        run: bun install --frozen-lockfile
+        run: bash scripts/ci-bun-install.sh
 
       - name: Ensure dist/ exists
         run: mkdir -p dist
@@ -436,7 +430,7 @@ jobs:
       # everything from scratch so the resulting hashes represent a
       # true baseline rather than restored bytes.
       - name: Install deps (fresh, no cache)
-        run: bun install --frozen-lockfile
+        run: bash scripts/ci-bun-install.sh
 
       - name: Rebuild SBOM + audit (fresh)
         env:

@@ -28,7 +28,7 @@ jobs:
         with:
           bun-version: latest
 
-      - run: bun install --frozen-lockfile
+      - run: bash scripts/ci-bun-install.sh
       - run: bunx playwright install --with-deps chromium
 
       - name: Build app

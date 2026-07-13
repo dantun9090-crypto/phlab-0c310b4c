@@ -23,7 +23,7 @@ jobs:
           bun-version: latest
 
       - name: Install deps
-        run: bun install --frozen-lockfile
+        run: bash scripts/ci-bun-install.sh
 
       # Strict TypeScript check — fails the build on any type error.
       - name: Typecheck (tsc --noEmit)
@@ -430,7 +430,7 @@ jobs:
 
       - name: Install deps
         if: steps.changes.outputs.checkout == 'true'
-        run: bun install --frozen-lockfile
+        run: bash scripts/ci-bun-install.sh
 
       - name: Run checkout + admin orders regression
         if: steps.changes.outputs.checkout == 'true'

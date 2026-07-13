@@ -28,7 +28,7 @@ jobs:
             ${{ runner.os }}-bun-
 
       - name: Install deps
-        run: bun install --frozen-lockfile
+        run: bash scripts/ci-bun-install.sh
 
       - name: Run server-schema suite
         run: bunx vitest run tests/create-order-schema-germany.test.ts
@@ -63,7 +63,7 @@ jobs:
             ${{ runner.os }}-bun-
 
       - name: Install deps
-        run: bun install --frozen-lockfile
+        run: bash scripts/ci-bun-install.sh
 
       # Cache the Playwright browser binaries per browser+version so cold
       # `playwright install` only downloads when the pinned version changes.

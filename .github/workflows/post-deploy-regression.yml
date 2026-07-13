@@ -37,7 +37,7 @@ jobs:
           bun-version: latest
 
       - name: Install deps (frozen)
-        run: bun install --frozen-lockfile
+        run: bash scripts/ci-bun-install.sh
 
       # Give a fresh push ~60s to propagate through Lovable + Cloudflare
       # before we start probing the live edge.

@@ -47,7 +47,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - run: bun install --frozen-lockfile
+      - run: bash scripts/ci-bun-install.sh
       - name: Verify catalogue PDF contents
         run: bunx vitest run tests/catalogue-pdf-contents.test.ts
 
@@ -68,7 +68,7 @@ jobs:
           bun-version: latest
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: bash scripts/ci-bun-install.sh
 
       - name: Install Playwright browser (${{ matrix.browser }})
         run: bunx playwright install --with-deps ${{ matrix.browser }}

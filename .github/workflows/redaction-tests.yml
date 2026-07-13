@@ -43,7 +43,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
-      - run: bun install --frozen-lockfile
+      - run: bash scripts/ci-bun-install.sh
 
       # Typecheck FIRST — if the redactor or its tests don't compile, fail
       # fast with a clear signal instead of a noisy vitest stack trace.
