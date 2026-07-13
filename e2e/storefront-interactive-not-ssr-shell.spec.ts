@@ -73,3 +73,25 @@ test("homepage boots real interactive store, not only SSR shell", async ({ page 
   expect(["HIT", "STALE", "REVALIDATED", "UPDATING"]).not.toContain(firstDoc!.cfCacheStatus);
   expect(fatalConsole, fatalConsole.join("\n")).toHaveLength(0);
 });
+
+test("homepage hero position does not jump after marketing data refetch", async ({ page }) => {
+  const res = await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded" });
+  expect(res?.status(), "homepage status").toBe(200);
+
+  await expect(page.locator("header.site-header")).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator("#hero")).toBeVisible({ timeout: 15_000 });
+
+  const gate = page.getByRole("button", { name: /confirm research use/i });
+  if (await gate.count()) await gate.first().click();
+  const modalCta = page.getByRole("button", { name: /i confirm/i });
+  if (await modalCta.count()) await modalCta.first().click();
+
+  const before = await page.locator("#hero").evaluate((el) => el.getBoundingClientRect().top);
+  await page.waitForTimeout(4_500);
+  const after = await page.locator("#hero").evaluate((el) => el.getBoundingClientRect().top);
+
+  expect(
+    Math.abs(after - before),
+    `#hero shifted after async marketing/banner data loaded (before=${before}, after=${after})`,
+  ).toBeLessThanOrEqual(16);
+});
