@@ -526,6 +526,25 @@ html.light [data-keep-dark] * {
   }
 }
 
+/* Mobile-friendly base typography: legible font size (≥16px) and generous
+   line-height on narrow screens so Lighthouse "font-size" and readability
+   heuristics pass without overriding component-level type scales. */
+@media (max-width: 640px) {
+  html { font-size: 16px; }
+  body {
+    font-size: 1rem;
+    line-height: 1.6;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+  p, li, dd, dt, blockquote, label, figcaption, small {
+    line-height: 1.6;
+  }
+  h1 { line-height: 1.2; }
+  h2, h3 { line-height: 1.25; }
+  h4, h5, h6 { line-height: 1.3; }
+}
+
 /* Kill the 300ms tap delay and double-tap-zoom on interactive elements,
    without disabling pinch-zoom for accessibility. */
 button,
