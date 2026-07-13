@@ -6,7 +6,6 @@ import { notifySsrError } from "./lib/ssr-alert";
 import { isGoneLegacyPath, resolveLegacyRedirect } from "./lib/legacy-redirects";
 
 import { extractClientIp, log, truncate } from "./lib/worker-log";
-import { getHtmlTtlSeconds } from "./lib/server/cache-config-server";
 
 
 type ServerEntry = {
@@ -1767,8 +1766,7 @@ export default {
       // 4. Normal SSR path
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      const htmlTtl = await getHtmlTtlSeconds().catch(() => 0);
-      let normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response, nonce, url.hostname, request, ctx), nonce, url.hostname, url.pathname, htmlTtl, request);
+      let normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response, nonce, url.hostname, request, ctx), nonce, url.hostname, url.pathname, 0, request);
 
       // Fix asset content-types that the static handler mis-detects.
       // `.webmanifest` is served as application/octet-stream by default, which
