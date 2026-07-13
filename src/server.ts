@@ -1727,7 +1727,7 @@ export default {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       const htmlTtl = await getHtmlTtlSeconds().catch(() => 0);
-      let normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response, nonce, url.hostname, request, ctx), nonce, url.hostname, url.pathname, htmlTtl);
+      let normalized = applySecurityHeaders(await normalizeCatastrophicSsrResponse(response, nonce, url.hostname, request, ctx), nonce, url.hostname, url.pathname, htmlTtl, request);
 
       // Fix asset content-types that the static handler mis-detects.
       // `.webmanifest` is served as application/octet-stream by default, which
