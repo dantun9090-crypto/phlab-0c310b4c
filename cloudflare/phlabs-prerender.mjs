@@ -3,8 +3,8 @@
 // Bot/prerender branch: UA sniff -> Prerender.io -> hash-CSP -> cache separately.
 // TTFB: ~50-80ms cache HIT (browser), ~75ms (prerender).
 //
-// Deploy version: 2026-07-12.03 — force redeploy of exact cache-header
-// contract for /downloads/*, immutable build assets, and HTML shells.
+// Deploy version: 2026-07-13.01 — disable browser HTML edge cache completely;
+// cached home shells were masking fresh publishes.
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ORIGIN & ROUTING
@@ -50,7 +50,7 @@ const HASHED_STATIC_ASSET_RE = /(?:^|\/)[^/?#]+(?:[-._][a-f0-9]{8,}|-[A-Za-z0-9_
 // SAFETY: Only cache successful (2xx) text/html responses on GET. Never cache
 // authenticated / sensitive paths — those are excluded by prefix below.
 // ═══════════════════════════════════════════════════════════════════════════════
-const WARM_TTL_MS = 60_000;
+const WARM_TTL_MS = 0;
 const WARM_MAX_ENTRIES = 64;
 const WARM_SKIP_PREFIXES = [
   "/admin", "/auth", "/login", "/logout", "/account",
@@ -85,22 +85,10 @@ function warmCacheSet(key, body, contentType) {
   htmlWarmCache.set(key, { body, contentType, expiresAt: Date.now() + WARM_TTL_MS });
 }
 
-function warmCacheEligible(path) {
-  // GET `/` is edge-cacheable via CF's shared cache (origin emits
-  // public, s-maxage=14400, SWR=86400). Serving it from the Worker warm
-  // cache would emit no-store instead and defeat the CDN cache — skip it.
-  if (path === "/") return false;
-  return !WARM_SKIP_PREFIXES.some((p) => path.startsWith(p));
-}
-
-// Task: home-page edge cache. GET `/` for browser UAs is intentionally
-// edge-cacheable. When origin returns a positive-age cache-control
-// (s-maxage or stale-while-revalidate) on `/`, preserve it end-to-end
-// instead of stamping no-store. Every other path stays no-store.
-function shouldPreserveEdgeCache(path, headers) {
-  if (path !== "/") return false;
-  const cc = (headers.get("Cache-Control") || headers.get("cache-control") || "").toLowerCase();
-  return /(?:^|,)\s*s-maxage\s*=\s*[1-9]\d*/.test(cc) || /(?:^|,)\s*stale-while-revalidate\b/.test(cc);
+function warmCacheEligible(_path) {
+  // Disabled while publishing/debugging: any Worker-isolate warm HTML cache can
+  // mask a fresh deployment for the next visitor on that isolate.
+  return false;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -286,36 +274,10 @@ async function buildBrowserResponse(response, path) {
   headers.delete("content-encoding");
   headers.set("Content-Type", "text/html; charset=utf-8");
   headers.set("X-Content-Type-Options", "nosniff");
-  // HTML shells MUST be uncacheable on both browser and CDN — a cached shell
-  // survives a deploy and is served against evicted hashed chunks, producing
-  // the "blank page after publish" regression. Contract enforced by
-  // e2e/cache-headers-regression.spec.ts.
-  //
-  // EXCEPTION — GET `/` from browser UAs is edge-cacheable when origin says
-  // so (public, s-maxage, SWR). The origin's per-request nonce CSP was
-  // simplified above via simplifyStrictDynamicCsp so the body is safe to
-  // cache. Preserve origin's cache-control and DO NOT stamp cdn/surrogate
-  // no-store — every other path falls through to strict no-store.
-  if (path === "/") {
-    // Home shell is intentionally edge-cacheable. Force the contract
-    // regardless of what the origin (Firebase static host) emits — its
-    // firebase.json stamps `no-cache, no-store, must-revalidate` on
-    // index.html, which would otherwise defeat CF's shared cache and
-    // fail e2e/cache-headers-regression.spec.ts.
-    headers.set("Cache-Control", "public, max-age=0, s-maxage=14400, stale-while-revalidate=86400");
-    headers.delete("Pragma");
-    headers.delete("pragma");
-    headers.delete("Expires");
-    headers.delete("expires");
-    headers.delete("CDN-Cache-Control");
-    headers.delete("cdn-cache-control");
-    headers.delete("Cloudflare-CDN-Cache-Control");
-    headers.delete("cloudflare-cdn-cache-control");
-    headers.delete("Surrogate-Control");
-    headers.delete("surrogate-control");
-  } else {
-    applyBrowserHtmlNoCache(headers, path);
-  }
+  // HTML shells must be uncacheable on both browser and CDN. The previous `/`
+  // exception forced `s-maxage=14400` + SWR and caused stale homepage HTML to
+  // hide fresh publishes; keep every human HTML route strict no-store.
+  applyBrowserHtmlNoCache(headers, path);
 
   return new Response(body, {
     status: response.status,
@@ -533,10 +495,8 @@ export default {
     // direct fetches, so we cannot cache/rewrite here without a loop. Browsers
     // keep using origin's per-request nonce CSP; hash-CSP applies to bots only.
     //
-    // Task 1.1: Worker-internal warm cache. On HIT we serve the sanitized
-    // body bytes from isolate memory (TTFB ~5–30ms) but STILL emit strict
-    // no-store headers so the CDN and browser never cache the shell — the
-    // regression contract in e2e/cache-headers-regression.spec.ts is preserved.
+    // Worker-internal warm cache is disabled while publish freshness is the
+    // priority; stale isolate memory must not mask a fresh deploy.
     const wKey = warmCacheKey(url);
     const wEligible = warmCacheEligible(path);
     if (wEligible) {
