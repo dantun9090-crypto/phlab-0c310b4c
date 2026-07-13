@@ -13,6 +13,7 @@
 set -uo pipefail
 
 BASE_URL="${BASE_URL:-https://phlabs.co.uk}"
+JSON_OUT="${AUDIT_JSON_OUT:-audit-cache-headers.json}"
 ROUTES=("/" "/products")
 UA="PHLabs-CacheAudit/1.0 (+github-actions)"
 
@@ -26,6 +27,9 @@ declare -a ALLOWED_CF_STATUS=("DYNAMIC" "BYPASS" "MISS" "EXPIRED")
 pass=0
 fail=0
 declare -a rows=()
+declare -a json_rows=()
+
+json_escape() { python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'; }
 
 lower() { tr '[:upper:]' '[:lower:]'; }
 
@@ -75,6 +79,7 @@ audit_route() {
     --max-time 15 \
     "$url") || {
       rows+=("| \`$path\` | ❌ | network error | — | — | — |")
+      json_rows+=("$(python3 -c "import json; print(json.dumps({'path':'$path','http':0,'cc':'','cdncc':'','cf':'','buildId':'','problems':['network error'],'ok':False}))")")
       fail=$((fail+1))
       rm -f "$tmp"
       return
@@ -117,9 +122,42 @@ audit_route() {
   if [ "$status_icon" = "❌" ]; then
     rows+=("| | | ${detail} | | | |")
   fi
+
+  # JSON row (safely escaped via python).
+  json_rows+=("$(PATH_="$path" HTTP_="$http_code" CC_="$cc" CDN_="$cdncc" CF_="$cf" BUILD_="$xbuild" DETAIL_="$detail" OK_="$([ "${#problems[@]}" -eq 0 ] && echo true || echo false)" python3 -c '
+import os, json
+print(json.dumps({
+  "path": os.environ["PATH_"],
+  "http": int(os.environ["HTTP_"] or 0),
+  "cc": os.environ["CC_"],
+  "cdncc": os.environ["CDN_"],
+  "cf": os.environ["CF_"],
+  "buildId": os.environ["BUILD_"],
+  "detail": os.environ["DETAIL_"],
+  "ok": os.environ["OK_"] == "true",
+}))'
+)")
 }
 
 for r in "${ROUTES[@]}"; do audit_route "$r"; done
+
+# Machine-readable JSON artifact (consumed by diff-cache-audit.py).
+BASE_URL="$BASE_URL" PASS="$pass" FAIL="$fail" JSON_OUT="$JSON_OUT" \
+  python3 -c "
+import json, os, sys
+rows = [json.loads(x) for x in sys.stdin.read().splitlines() if x.strip()]
+out = {
+  'schema': 1,
+  'ranAt': __import__('datetime').datetime.utcnow().isoformat() + 'Z',
+  'baseUrl': os.environ['BASE_URL'],
+  'passed': int(os.environ['PASS']),
+  'failed': int(os.environ['FAIL']),
+  'commit': os.environ.get('GITHUB_SHA', ''),
+  'runId': os.environ.get('GITHUB_RUN_ID', ''),
+  'routes': rows,
+}
+open(os.environ['JSON_OUT'], 'w').write(json.dumps(out, indent=2))
+" <<< "$(printf '%s\n' "${json_rows[@]}")"
 
 {
   echo "## 🧊 Post-Deploy Cache Header Audit"
@@ -137,6 +175,8 @@ for r in "${ROUTES[@]}"; do audit_route "$r"; done
   else
     echo "✅ All routes served with \`no-store\` — edge cache contract intact."
   fi
+  echo ""
+  echo "_Report JSON: \`${JSON_OUT}\` (uploaded as artifact for cross-deploy diff)._"
 } | tee -a "${GITHUB_STEP_SUMMARY:-/dev/stderr}"
 
 [ "$fail" -eq 0 ] || exit 1
