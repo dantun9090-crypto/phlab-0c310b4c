@@ -97,7 +97,19 @@ const PRODUCT_FIXTURES: Array<SeoProduct> = [
     visibility: "public",
     displayOrder: 5,
     stock: 50,
-  },
+    // Verified rating source (e.g. Google Customer Reviews sync).
+    aggregateRating: { ratingValue: 4.8, reviewCount: 42 },
+    reviews: [
+      {
+        author: "Dr. A. Researcher",
+        rating: 5,
+        body: "Consistent purity across batches; reliable for our in-vitro assays.",
+        verified: true,
+        datePublished: "2026-03-15",
+      },
+    ],
+  } as any,
+
 ];
 
 describe("Product JSON-LD snapshots", () => {
