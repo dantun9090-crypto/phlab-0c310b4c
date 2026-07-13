@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { LiveOrder } from '@/lib/orderFormatter';
+import { auth } from '@/lib/firebase';
+
 
 interface UseLiveOrdersResult {
   recentOrders: LiveOrder[];
