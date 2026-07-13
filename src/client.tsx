@@ -153,9 +153,11 @@ import { initSentry } from "./lib/sentry";
 import { installChunkAutoRecovery } from "./lib/chunk-auto-recovery";
 import { installImageErrorAutoReset } from "./lib/image-error-auto-reset";
 import { installBuildIdForceReload } from "./lib/build-id-force-reload";
+import { installBuildFreshnessCheck } from "./lib/build-freshness-check";
 
 try { installImageErrorAutoReset(); } catch { /* ignore */ }
 try { installBuildIdForceReload(); } catch { /* ignore */ }
+try { installBuildFreshnessCheck(); } catch { /* ignore */ }
 
 // Sentry init is heavy (tracing + session replay integrations patch fetch,
 // install observers, install listeners). Running synchronously before
