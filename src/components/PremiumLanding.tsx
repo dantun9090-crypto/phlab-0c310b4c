@@ -33,7 +33,7 @@ function BgPicture({ base, fallback, className, eager, width, height }: BgImgPro
         height={height}
         loading={eager ? "eager" : "lazy"}
         fetchPriority={eager ? "high" : "auto"}
-        decoding="async"
+        decoding={eager ? "auto" : "async"}
         className={className}
       />
     </picture>
@@ -189,9 +189,9 @@ export function PremiumLanding({ eyebrow }: { eyebrow?: string }) {
           ) : null}
 
           <h1 className="display font-light tracking-tight text-white text-[2.8rem] leading-[1.02] sm:text-[4.2rem] md:text-[5.5rem] lg:text-[6.5rem]">
-            <span className="block lux-fade-up d2">Premium Research</span>
-            <span className="block lux-fade-up d3">Compounds for</span>
-            <span className="block lux-fade-up d4 italic gold-text">UK Laboratories</span>
+            <span className="block">Premium Research</span>
+            <span className="block">Compounds for</span>
+            <span className="block italic gold-text">UK Laboratories</span>
           </h1>
 
           <div className="mx-auto mt-8 h-px w-20 gold-bg lux-line d3" />
