@@ -161,6 +161,14 @@ export default function HomePage() {
   const [banner, setBanner] = useState<any>(ssrBanner ?? null);
   const [bannerResolved, setBannerResolved] = useState<boolean>(!!ssrBanner);
   const [siteSettings, setSiteSettings] = useState<Record<string, string>>({});
+  const [showHeroEffects, setShowHeroEffects] = useState(false);
+  const [reserveHeroAdvert, setReserveHeroAdvert] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('php_adverts_hero_count') === '1';
+    } catch {
+      return false;
+    }
+  });
   // IMPORTANT: do NOT seed from localStorage in the lazy initializer — SSR
   // returns [] and the client's first render must match, otherwise React
   // throws hydration error #419 (recoverable hydration mismatch) and
@@ -225,6 +233,28 @@ export default function HomePage() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    let timer = 0;
+    let idle = 0;
+    const start = () => {
+      if (typeof requestIdleCallback !== 'undefined') {
+        idle = requestIdleCallback(() => setShowHeroEffects(true), { timeout: 3500 });
+      } else {
+        timer = window.setTimeout(() => setShowHeroEffects(true), 2500);
+      }
+    };
+    if (document.readyState === 'complete') {
+      timer = window.setTimeout(start, 1200);
+    } else {
+      window.addEventListener('load', start, { once: true });
+    }
+    return () => {
+      window.removeEventListener('load', start);
+      if (timer) window.clearTimeout(timer);
+      if (idle && typeof cancelIdleCallback !== 'undefined') cancelIdleCallback(idle);
+    };
+  }, []);
+
   // Refetch helpers — also invoked by useMarketingRevalidate when the admin
   // bumps settings/marketingVersion (banner/advert save).
   const refetchAdverts = useCallback(() => {
@@ -237,6 +267,7 @@ export default function HomePage() {
           .filter((a: any) => a.isActive === true || a.active === true);
         setAdverts(allAdverts);
         const heroCount = allAdverts.filter((a: any) => a.placement === 'homepage_hero').length;
+        setReserveHeroAdvert(heroCount > 0);
         localStorage.setItem('php_adverts_hero_count', heroCount > 0 ? '1' : '0');
         localStorage.setItem('php_adverts_cache', JSON.stringify({ ts: Date.now(), data: allAdverts }));
       } catch { /* ignore */ }
@@ -501,9 +532,9 @@ export default function HomePage() {
           Wrapper always reserves banner height to prevent CLS shift
           when async Firestore adverts arrive (banner is h-48/h-72 + py-6).
       ════════════════════════════════ */}
-      <div
+      {(reserveHeroAdvert || heroAdverts.length > 0) && <div
         className="container mx-auto px-6 py-6"
-        style={{ minHeight: 'clamp(240px, 26vw, 336px)' }}
+        style={{ minHeight: heroAdverts.length > 0 ? 'clamp(240px, 26vw, 336px)' : 0 }}
         data-advert-reserve="homepage_hero"
       >
         {heroAdverts.length > 0 && (
@@ -511,7 +542,7 @@ export default function HomePage() {
             <MarketingAdvertSlot adverts={heroAdverts} placement="homepage_hero" className="" eagerFirstImage />
           </Suspense>
         )}
-      </div>
+      </div>}
 
 
 
@@ -532,7 +563,7 @@ export default function HomePage() {
           paddingBottom: '4rem',
         }}
       >
-        <Suspense fallback={null}><AnimatedBackground variant="blue" /></Suspense>
+        {showHeroEffects && <Suspense fallback={null}><AnimatedBackground variant="blue" /></Suspense>}
 
         {/* Radial glow accent — pointer-events off, composited layer after LCP */}
         <div className="absolute pointer-events-none" style={{
