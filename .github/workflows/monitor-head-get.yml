@@ -77,8 +77,13 @@ jobs:
       - name: Enforce alert exit
         if: always()
         run: |
+          status="${{ steps.run.outputs.exit || '0' }}"
           if [ "${{ github.event.inputs.fail_on_alert || 'true' }}" = "false" ]; then
-            echo "fail_on_alert=false — ignoring exit code ${{ steps.run.outputs.exit }}"
+            echo "fail_on_alert=false — ignoring exit code ${status}"
             exit 0
           fi
-          exit ${{ steps.run.outputs.exit }}
+          case "$status" in
+            ''|*[!0-9]*) status=1 ;;
+          esac
+          if [ "$status" -gt 255 ]; then status=1; fi
+          exit "$status"
