@@ -1,0 +1,54 @@
+# Homepage cache-control regression guard.
+#
+# Fails the build if `/` cache-control on either the browser tier or the
+# Cloudflare CDN tier ever reintroduces:
+#   - s-maxage=N (N > 0), or
+#   - stale-while-revalidate
+#
+# Both directives are the direct cause of the "stale HTML shell served
+# after publish" incidents. Locking `/` to `no-store` on both tiers is a
+# non-negotiable production invariant — this workflow is the CI guard.
+name: Home cache-control guard (no s-maxage / SWR)
+
+on:
+  pull_request:
+    paths:
+      - "src/server.ts"
+      - "cloudflare/phlabs-prerender.mjs"
+      - "src/lib/no-store-headers.ts"
+      - "public/_headers"
+      - "wrangler.jsonc"
+      - "scripts/check-home-no-swr.sh"
+      - ".github/workflows/home-cache-no-swr-guard.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    # Hourly production canary — catches out-of-band regressions
+    # (worker rollback, CF cache-rule edit) inside the hour.
+    - cron: "17 * * * *"
+
+concurrency:
+  group: home-cache-no-swr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    strategy:
+      fail-fast: false
+      matrix:
+        base:
+          - https://phlabs.co.uk
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Probe ${{ matrix.base }}/ (5 cache-busted refreshes)
+        env:
+          BASE_URL: ${{ matrix.base }}
+          ATTEMPTS: "5"
+          RETRY_DELAY: "2"
+        run: |
+          chmod +x scripts/check-home-no-swr.sh
+          scripts/check-home-no-swr.sh
