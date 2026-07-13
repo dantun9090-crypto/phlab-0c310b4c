@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/base",
+  "_comment": "Routes audited by post-deploy-cache-audit + pre-release-cache-headers. Use ':slug' style placeholders; sample values are drawn from `slugs` below. All entries must be root-relative paths starting with '/'.",
+  "routes": [
+    "/",
+    "/products",
+    "/products/:slug"
+  ],
+  "slugs": {
+    "slug": [
+      "tirzepatide-research-peptide",
+      "bpc-157-research-peptide",
+      "retatrutide-research-peptide"
+    ]
+  }
+}

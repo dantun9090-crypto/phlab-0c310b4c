@@ -21,6 +21,14 @@ on:
         description: "Base URL to audit (default: https://phlabs.co.uk)"
         required: false
         default: "https://phlabs.co.uk"
+      routes:
+        description: "Optional override: newline- or comma-separated paths (e.g. `/`, `/products`, `/products/tirzepatide-research-peptide`). Overrides .github/cache-audit.routes.json for this run."
+        required: false
+        default: ""
+      routes_file:
+        description: "Path to routes config JSON (default: .github/cache-audit.routes.json)"
+        required: false
+        default: ".github/cache-audit.routes.json"
 
 concurrency:
   group: post-deploy-cache-audit
@@ -68,10 +76,12 @@ jobs:
           path: ./history
           if_no_artifact_found: warn
 
-      - name: Audit cache headers for / and /products
+      - name: Audit cache headers
         env:
           BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
           AUDIT_JSON_OUT: audit-cache-headers.json
+          AUDIT_ROUTES: ${{ github.event.inputs.routes }}
+          AUDIT_ROUTES_FILE: ${{ github.event.inputs.routes_file || '.github/cache-audit.routes.json' }}
         run: |
           chmod +x .github/workflows/scripts/audit-cache-headers.sh
           .github/workflows/scripts/audit-cache-headers.sh
