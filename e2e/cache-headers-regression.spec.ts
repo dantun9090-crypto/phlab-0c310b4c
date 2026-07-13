@@ -86,8 +86,11 @@ const NEVER_CF_HIT = ["HIT", "REVALIDATED", "STALE", "UPDATING"];
 // ---------------------------------------------------------------------------
 // 1. HTML shells — must never be edge-cached.
 // ---------------------------------------------------------------------------
+// NOTE: `/` intentionally omitted — GET `/` from browser UAs is edge-cacheable
+// (public, s-maxage=14400, stale-while-revalidate). The phlabs-prerender Worker
+// rewrites the per-request nonce CSP into a hash CSP at cache MISS so the body
+// is byte-identical across requests. Every other HTML shell stays no-store.
 const HTML_SHELLS = [
-  "/",
   "/products",
   "/compound",
   "/research",
