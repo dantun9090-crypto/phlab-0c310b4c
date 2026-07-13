@@ -494,8 +494,11 @@ export default function HomePage() {
           ADVERTS — HERO SLOT (moved to top)
       ════════════════════════════════ */}
       {heroAdverts.length > 0 && (
-        <MarketingAdvertSlot adverts={heroAdverts} placement="homepage_hero" className="container mx-auto px-6 py-6" eagerFirstImage />
+        <Suspense fallback={<div aria-hidden="true" style={{ minHeight: 120 }} />}>
+          <MarketingAdvertSlot adverts={heroAdverts} placement="homepage_hero" className="container mx-auto px-6 py-6" eagerFirstImage />
+        </Suspense>
       )}
+
 
 
 
