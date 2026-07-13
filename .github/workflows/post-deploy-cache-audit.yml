@@ -82,9 +82,11 @@ jobs:
           AUDIT_JSON_OUT: audit-cache-headers.json
           AUDIT_ROUTES: ${{ github.event.inputs.routes }}
           AUDIT_ROUTES_FILE: ${{ github.event.inputs.routes_file || '.github/cache-audit.routes.json' }}
+          VIOLATIONS_DIR: cache-audit-violations
         run: |
           chmod +x .github/workflows/scripts/audit-cache-headers.sh
-          .github/workflows/scripts/audit-cache-headers.sh
+          .github/workflows/scripts/audit-cache-headers.sh || audit_rc=$?
+          echo "AUDIT_RC=${audit_rc:-0}" >> "$GITHUB_ENV"
 
       - name: Diff against previous deploy
         if: always()
@@ -108,6 +110,24 @@ jobs:
           name: cache-audit-report
           path: audit-cache-headers.json
           retention-days: 90
+
+      # Uploaded only when the audit found at least one violation, so
+      # investigators get the raw HTTP response context (cf-ray, cf-request-id,
+      # full headers, first 4 KiB of body) without re-running the audit.
+      - name: Upload violation dumps
+        if: always() && env.AUDIT_RC != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cache-audit-violations
+          path: cache-audit-violations/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Fail job on audit violation
+        if: env.AUDIT_RC != '0' && env.AUDIT_RC != ''
+        run: |
+          echo "::error::Cache-header audit reported violations — see 'cache-audit-violations' artifact."
+          exit 1
 
       - name: Fail job on diff regression
         if: env.DIFF_RC == '1'
