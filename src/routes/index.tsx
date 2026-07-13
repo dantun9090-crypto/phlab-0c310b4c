@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import LegacyClientApp from "@/legacy/LegacyClientApp";
 import logoSrc from "@/assets/logo.webp";
-import type { fetchPromoBanner } from "@/lib/firestore-rest";
+import { fetchPromoBanner, type PromoBannerLite } from "@/lib/firestore-rest";
 
 
 
@@ -24,11 +24,11 @@ const HOME_FAQS: { q: string; a: string }[] = [
 ];
 
 export const Route = createFileRoute("/")({
-  // Non-blocking loader: return null banner immediately so the Worker can flush
-  // HTML with zero waiting. The client fetches the real banner post-hydration
-  // inside a requestIdleCallback (see src/pages/Home/index.tsx). This shaved
-  // ~350ms off cold-cache TTFB in Lighthouse desktop lab runs.
-  loader: () => ({ banner: null as Awaited<ReturnType<typeof fetchPromoBanner>> | null }),
+  // Keep SSR and hydrated first paint visually identical. If this returns null
+  // and the client later loads an active banner from Firestore, the first mobile
+  // viewport visibly jumps from the text hero to the promo image and looks like
+  // two cached pages alternating. The REST helper is explicitly no-store.
+  loader: async () => ({ banner: await fetchPromoBanner() }),
 
   // Public content routes must SSR a non-empty body. Do not disable SSR
   // here or wrap the route in deferred loading with an empty fallback; that combination
@@ -131,11 +131,45 @@ function LegacyMount() {
   );
 }
 
-function HomeSsrShell({ banner: _banner }: { banner: Awaited<ReturnType<typeof fetchPromoBanner>> | null }) {
+function HomeSsrShell({ banner }: { banner: PromoBannerLite | null }) {
   // Critical SSR shell: PageSpeed/Chrome field data was waiting for the legacy
   // client chunk before it could paint meaningful home content. Keep this
   // visually aligned with Layout + Home above-the-fold so FCP/LCP can happen
   // from HTML while the interactive app hydrates.
+  const bannerVisible = banner?.active !== false && banner?.isActive !== false && !!banner?.imageUrl;
+  const bannerHeight = banner?.heightPx || 320;
+  const bannerHrefRaw = banner?.ctaUrl || banner?.linkUrl || "";
+  const bannerHref = /^\//.test(bannerHrefRaw) || /^https?:\/\//i.test(bannerHrefRaw) ? bannerHrefRaw : "";
+  const bannerOverlayHeading = banner?.overlayText || banner?.overlayHeading || (banner?.textOverlayEnabled ? banner?.textOverlayHeading : "");
+  const bannerOverlaySubtext = banner?.overlaySubtext || banner?.overlaySubheading || (banner?.textOverlayEnabled ? banner?.textOverlaySubtext : "");
+  const bannerOverlayAlign = banner?.textOverlayAlign === "left"
+    ? "flex-start"
+    : banner?.textOverlayAlign === "right"
+      ? "flex-end"
+      : "center";
+  const bannerOverlayPosition = banner?.textOverlayPosition === "top"
+    ? "flex-start"
+    : banner?.textOverlayPosition === "bottom"
+      ? "flex-end"
+      : "center";
+  const bannerImg = bannerVisible ? (
+    <img
+      src={banner.imageUrl}
+      alt={banner.altText || [bannerOverlayHeading, bannerOverlaySubtext].filter(Boolean).join(" — ") || "PH Labs research peptides — homepage hero banner"}
+      width={1600}
+      height={bannerHeight}
+      fetchPriority="high"
+      decoding="async"
+      style={{
+        width: "100%",
+        height: bannerHeight,
+        objectFit: banner.objectFit || "cover",
+        objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`,
+        display: "block",
+      }}
+    />
+  ) : null;
+
   return (
     <div
       className="phl-home-ssr"
@@ -242,11 +276,74 @@ function HomeSsrShell({ banner: _banner }: { banner: Awaited<ReturnType<typeof f
       <main
         style={{
           minHeight: "100svh",
-          padding: "172px 16px 64px",
+          padding: bannerVisible ? "172px 0 64px" : "172px 16px 64px",
           background: "radial-gradient(ellipse 120% 80% at 60% 40%, #061428 0%, #030a14 60%)",
         }}
       >
-        <section style={{ maxWidth: 1280, margin: "0 auto" }}>
+        {bannerVisible && (
+          <div
+            style={{
+              position: "relative",
+              width: "100%",
+              minHeight: bannerHeight,
+              overflow: "hidden",
+              margin: "0 0 48px",
+            }}
+          >
+            {banner?.overlayEnabled && (
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 6,
+                  pointerEvents: "none",
+                  backgroundColor: banner.overlayColor ?? "#000000",
+                  opacity: (banner.overlayOpacity ?? 30) / 100,
+                }}
+              />
+            )}
+            {banner?.gradientEnabled !== false && (
+              <div
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 7,
+                  pointerEvents: "none",
+                  background: `linear-gradient(to top, ${banner?.gradientColor ?? "#040d1a"} 0%, transparent ${Math.round(((banner?.gradientIntensity ?? 60) / 100) * 100)}%)`,
+                }}
+              />
+            )}
+            {bannerHref ? <a href={bannerHref} style={{ display: "block" }}>{bannerImg}</a> : bannerImg}
+            {bannerOverlayHeading && (
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  zIndex: 10,
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: bannerOverlayPosition,
+                  alignItems: bannerOverlayAlign,
+                  padding: "24px",
+                  textAlign: bannerOverlayAlign === "center" ? "center" : bannerOverlayAlign === "flex-end" ? "right" : "left",
+                  pointerEvents: "none",
+                }}
+              >
+                <p style={{ margin: 0, maxWidth: 720, color: "#fff", fontSize: "clamp(1.5rem,4vw,3rem)", fontWeight: 900, lineHeight: 1.05, textShadow: "0 2px 24px rgba(0,0,0,0.7)" }}>
+                  {bannerOverlayHeading}
+                </p>
+                {bannerOverlaySubtext && (
+                  <p style={{ margin: "12px 0 0", maxWidth: 560, color: "rgba(255,255,255,0.82)", fontSize: 14, fontWeight: 600, textShadow: "0 1px 8px rgba(0,0,0,0.5)" }}>
+                    {bannerOverlaySubtext}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        <section style={{ maxWidth: 1280, margin: "0 auto", padding: bannerVisible ? "0 16px" : undefined }}>
           <div style={{ maxWidth: 680 }}>
             <div
               style={{

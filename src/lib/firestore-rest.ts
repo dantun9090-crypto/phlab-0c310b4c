@@ -312,6 +312,8 @@ export interface PromoBannerLite {
   gradientDirection?: string;
   gradientColor?: string;
   gradientIntensity?: number;
+  overlayHeading?: string;
+  overlaySubheading?: string;
   overlayText?: string;
   overlaySubtext?: string;
   textOverlayEnabled?: boolean;
@@ -327,7 +329,13 @@ export async function fetchPromoBanner(): Promise<PromoBannerLite | null> {
     // rejects them with 400. Use a no-cache header for freshness instead.
     const url = `${BASE}/settings/promoBanner?key=${API_KEY}`;
     const res = await fetch(url, {
-      headers: { accept: "application/json", "cache-control": "no-cache" },
+      cache: "no-store",
+      headers: {
+        accept: "application/json",
+        "cache-control": "no-store, no-cache, must-revalidate, max-age=0",
+        pragma: "no-cache",
+        "x-ph-cache-bust": buildCacheBust(),
+      },
     });
     if (!res.ok) return null;
     const json: any = await res.json();
@@ -353,6 +361,8 @@ export async function fetchPromoBanner(): Promise<PromoBannerLite | null> {
       gradientDirection: typeof f.gradientDirection === "string" ? f.gradientDirection : undefined,
       gradientColor: typeof f.gradientColor === "string" ? f.gradientColor : undefined,
       gradientIntensity: typeof f.gradientIntensity === "number" ? f.gradientIntensity : undefined,
+      overlayHeading: typeof f.overlayHeading === "string" ? f.overlayHeading : undefined,
+      overlaySubheading: typeof f.overlaySubheading === "string" ? f.overlaySubheading : undefined,
       overlayText: typeof f.overlayText === "string" ? f.overlayText : undefined,
       overlaySubtext: typeof f.overlaySubtext === "string" ? f.overlaySubtext : undefined,
       textOverlayEnabled: typeof f.textOverlayEnabled === "boolean" ? f.textOverlayEnabled : undefined,
