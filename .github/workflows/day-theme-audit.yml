@@ -41,7 +41,7 @@ jobs:
           bun-version: latest
 
       - name: Install deps
-        run: bun install --frozen-lockfile
+        run: bash scripts/ci-bun-install.sh
 
       - name: Install Playwright browsers
         # Day-theme audit spec runs on chromium AND firefox projects, so both

@@ -38,7 +38,7 @@ jobs:
           bun-version: latest
 
       - name: Install deps (frozen)
-        run: bun install --frozen-lockfile
+        run: bash scripts/ci-bun-install.sh
 
       - name: Build (production, retry + diagnostics)
         run: bun run build
