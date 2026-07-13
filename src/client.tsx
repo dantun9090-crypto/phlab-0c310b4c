@@ -192,11 +192,13 @@ const HYDRATION_ERROR_FLAG = "__phl_hydration_error_seen";
 // ENABLE_SSR_HYDRATION: master flag. false = CSR for everyone.
 // SSR_HYDRATION_ROUTES: when ENABLE_SSR_HYDRATION = true,
 //   only these paths hydrate via SSR. Empty array = ALL routes.
-// Keep homepage SSR hydrated instead of wiping the server HTML into CSR.
-// The home route now renders a stable SSR shell and upgrades LegacyApp after mount.
+// Emergency human-store boot: skip React hydration entirely and mount a fresh
+// client tree. Production was getting stuck on the SSR shell after React #418 /
+// removeChild recovery, so do not mix hydrateRoot + createRoot on the same
+// document for now.
 // ============================================================
-const ENABLE_SSR_HYDRATION = true;
-const SSR_HYDRATION_ROUTES: string[] = ["/"];
+const ENABLE_SSR_HYDRATION = false;
+const SSR_HYDRATION_ROUTES: string[] = [];
 
 function shouldHydrateCurrentRoute(): boolean {
   if (!ENABLE_SSR_HYDRATION) return false;
@@ -405,10 +407,12 @@ function renderCsr(error: unknown): void {
   if (switchedToCsr) return;
   switchedToCsr = true;
   markHydrationCrash(error);
-  try {
-    hydrationRoot?.unmount();
-  } catch (unmountError) {
-    console.error("[HYDRATION FALLBACK] Hydration root unmount failed", unmountError);
+  if (hydrationRoot) {
+    try {
+      hydrationRoot.unmount();
+    } catch (unmountError) {
+      console.error("[HYDRATION FALLBACK] Hydration root unmount failed", unmountError);
+    }
   }
   prepareDocumentForCsr();
   void (async () => {
