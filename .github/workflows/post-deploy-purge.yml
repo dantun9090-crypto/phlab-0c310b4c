@@ -50,3 +50,60 @@ jobs:
           echo "$headers" | grep -i '^cdn-cache-control:'
           echo "$headers" | grep -i '^cache-control:' | grep -qi 'no-store'
           echo "$headers" | grep -i '^cdn-cache-control:' | grep -qi 'no-store'
+
+      - name: Verify Cloudflare HTML edge cache rule is disabled
+        env:
+          CF_ZONE_ID: ${{ secrets.CF_ZONE_ID || secrets.CLOUDFLARE_ZONE_ID_PHLABS }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN || secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CF_ZONE_ID" ] || [ -z "$CF_API_TOKEN" ]; then
+            echo "::error::Cloudflare zone/token secret missing"
+            exit 1
+          fi
+          curl -sS -H "Authorization: Bearer ${CF_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "https://api.cloudflare.com/client/v4/zones/${CF_ZONE_ID}/rulesets" \
+            > /tmp/cf-rulesets.json
+          python3 - <<'PY'
+          import json, urllib.request, os, sys
+
+          token = os.environ['CF_API_TOKEN']
+          zone = os.environ['CF_ZONE_ID']
+          headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
+          summary = json.load(open('/tmp/cf-rulesets.json'))
+          offenders = []
+
+          for item in summary.get('result') or []:
+              if item.get('phase') != 'http_request_cache_settings':
+                  continue
+              url = f'https://api.cloudflare.com/client/v4/zones/{zone}/rulesets/{item["id"]}'
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req, timeout=20) as res:
+                  ruleset = json.load(res).get('result') or {}
+              for rule in ruleset.get('rules') or []:
+                  if rule.get('enabled') is False:
+                      continue
+                  expr = (rule.get('expression') or '').lower()
+                  params = rule.get('action_parameters') or {}
+                  params_text = json.dumps(params).lower()
+                  matches_html_roots = 'http.request.uri.path eq "/"' in expr or 'http.request.uri.path eq "/products"' in expr
+                  caches_html = params.get('cache') is True and (
+                      'edge_ttl' in params or 'browser_ttl' in params or 'serve_stale' in params or 'cache_ttl' in params_text
+                  )
+                  positive_ttl = any(s in params_text for s in ['"default": 1', '"default": 3', '"default": 6', '"default": 9', '14400', '3600', '86400'])
+                  stale_enabled = '"disable_stale_while_updating": false' in params_text
+                  if matches_html_roots and caches_html and (positive_ttl or stale_enabled):
+                      offenders.append({
+                          'ruleset': ruleset.get('name'),
+                          'rule': rule.get('description') or rule.get('id'),
+                          'expression': rule.get('expression'),
+                          'params': params,
+                      })
+
+          if offenders:
+              print('::error::Enabled Cloudflare HTML edge-cache rule found for / or /products')
+              print(json.dumps(offenders, indent=2)[:4000])
+              sys.exit(1)
+          print('Cloudflare HTML edge cache rule check passed — no enabled positive-TTL HTML cache for / or /products.')
+          PY
