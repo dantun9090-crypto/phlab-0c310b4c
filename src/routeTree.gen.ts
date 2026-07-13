@@ -131,6 +131,7 @@ import { Route as ApiPublicHooksBacklinkWatcherRouteImport } from './routes/api/
 import { Route as ApiPublicHealthBuildRouteImport } from './routes/api/public/health.build'
 import { Route as ApiPublicDiagCacheHeadersRouteImport } from './routes/api/public/diag.cache-headers'
 import { Route as ApiPublicDiagBuildStateRouteImport } from './routes/api/public/diag.build-state'
+import { Route as ApiPublicDiagBannerSourceRouteImport } from './routes/api/public/diag.banner-source'
 
 const Char123indexnowKeyChar125DottxtRoute =
   Char123indexnowKeyChar125DottxtRouteImport.update({
@@ -775,6 +776,12 @@ const ApiPublicDiagBuildStateRoute = ApiPublicDiagBuildStateRouteImport.update({
   path: '/api/public/diag/build-state',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicDiagBannerSourceRoute =
+  ApiPublicDiagBannerSourceRouteImport.update({
+    id: '/api/public/diag/banner-source',
+    path: '/api/public/diag/banner-source',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -874,6 +881,7 @@ export interface FileRoutesByFullPath {
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/products/category/$slug': typeof ProductsCategorySlugRoute
+  '/api/public/diag/banner-source': typeof ApiPublicDiagBannerSourceRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/health/build': typeof ApiPublicHealthBuildRoute
@@ -996,6 +1004,7 @@ export interface FileRoutesByTo {
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/products/category/$slug': typeof ProductsCategorySlugRoute
+  '/api/public/diag/banner-source': typeof ApiPublicDiagBannerSourceRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/health/build': typeof ApiPublicHealthBuildRoute
@@ -1121,6 +1130,7 @@ export interface FileRoutesById {
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
   '/products/category/$slug': typeof ProductsCategorySlugRoute
+  '/api/public/diag/banner-source': typeof ApiPublicDiagBannerSourceRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/health/build': typeof ApiPublicHealthBuildRoute
@@ -1246,6 +1256,7 @@ export interface FileRouteTypes {
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/products/category/$slug'
+    | '/api/public/diag/banner-source'
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
     | '/api/public/health/build'
@@ -1368,6 +1379,7 @@ export interface FileRouteTypes {
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/products/category/$slug'
+    | '/api/public/diag/banner-source'
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
     | '/api/public/health/build'
@@ -1492,6 +1504,7 @@ export interface FileRouteTypes {
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
     | '/products/category/$slug'
+    | '/api/public/diag/banner-source'
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
     | '/api/public/health/build'
@@ -1601,6 +1614,7 @@ export interface RootRouteChildren {
   ApiPublicStaleAssetReportRoute: typeof ApiPublicStaleAssetReportRoute
   ApiPublicWebVitalsRoute: typeof ApiPublicWebVitalsRoute
   ApiWebhooksWallidRoute: typeof ApiWebhooksWallidRoute
+  ApiPublicDiagBannerSourceRoute: typeof ApiPublicDiagBannerSourceRoute
   ApiPublicDiagBuildStateRoute: typeof ApiPublicDiagBuildStateRoute
   ApiPublicDiagCacheHeadersRoute: typeof ApiPublicDiagCacheHeadersRoute
   ApiPublicHooksBacklinkWatcherRoute: typeof ApiPublicHooksBacklinkWatcherRoute
@@ -2482,6 +2496,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicDiagBuildStateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/diag/banner-source': {
+      id: '/api/public/diag/banner-source'
+      path: '/api/public/diag/banner-source'
+      fullPath: '/api/public/diag/banner-source'
+      preLoaderRoute: typeof ApiPublicDiagBannerSourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -2653,6 +2674,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicStaleAssetReportRoute: ApiPublicStaleAssetReportRoute,
   ApiPublicWebVitalsRoute: ApiPublicWebVitalsRoute,
   ApiWebhooksWallidRoute: ApiWebhooksWallidRoute,
+  ApiPublicDiagBannerSourceRoute: ApiPublicDiagBannerSourceRoute,
   ApiPublicDiagBuildStateRoute: ApiPublicDiagBuildStateRoute,
   ApiPublicDiagCacheHeadersRoute: ApiPublicDiagCacheHeadersRoute,
   ApiPublicHooksBacklinkWatcherRoute: ApiPublicHooksBacklinkWatcherRoute,
