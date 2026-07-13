@@ -113,7 +113,7 @@ export default function LiveSalesPopup() {
   useEffect(() => {
     if (!latestNewOrder || !isHomePage) return;
     if (Date.now() < snoozeUntilRef.current) return;
-    if (currentUid && latestNewOrder.userId === currentUid) return;
+    // Own-order exclusion happens server-side; no client uid check needed.
     dlog('new order arrived:', latestNewOrder.id);
     showOrder(latestNewOrder);
     // eslint-disable-next-line react-hooks/exhaustive-deps
