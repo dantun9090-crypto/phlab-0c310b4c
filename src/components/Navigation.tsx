@@ -361,7 +361,7 @@ export function Navigation({
             HPLC ≥99% · UK Dispatch · CoA Included
           </span>
         </div>
-      </aside>
+      </div>
     </>
   );
 }
