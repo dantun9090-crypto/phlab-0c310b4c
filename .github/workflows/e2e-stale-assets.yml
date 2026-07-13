@@ -50,14 +50,15 @@ jobs:
 
       - name: Start preview server
         run: |
-          (bun run start &) > server.log 2>&1
-          for i in $(seq 1 60); do
+          nohup bun run dev --port 8080 --host > server.log 2>&1 &
+          for i in $(seq 1 120); do
             if curl -fsS -o /dev/null "http://localhost:8080/"; then
               echo "server up after ${i}s"; exit 0
             fi
             sleep 1
           done
           echo "server failed to start"; tail -n 200 server.log; exit 1
+
 
       - name: Run E2E stale-assets probe
         run: node scripts/e2e-stale-assets.mjs
