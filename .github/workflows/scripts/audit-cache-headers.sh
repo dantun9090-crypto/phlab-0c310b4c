@@ -97,43 +97,60 @@ check_in_list() {
   return 1
 }
 
+slugify() {
+  # Turn "/" -> "root", "/products/foo" -> "products_foo", etc.
+  local p="$1"
+  [ "$p" = "/" ] && { echo "root"; return; }
+  echo "${p#/}" | tr '/' '_' | tr -c 'A-Za-z0-9_.-' '_'
+}
+
 audit_route() {
   local path="$1"
   local url="${BASE_URL}${path}"
-  local tmp; tmp=$(mktemp)
-  local http_code
-  http_code=$(curl -sS -o /dev/null -D "$tmp" -w "%{http_code}" \
-    -H "User-Agent: $UA" \
-    -H "Accept: text/html" \
-    --max-time 15 \
-    "$url") || {
-      rows+=("| \`$path\` | ❌ | network error | — | — | — |")
-      json_rows+=("$(python3 -c "import json; print(json.dumps({'path':'$path','http':0,'cc':'','cdncc':'','cf':'','buildId':'','problems':['network error'],'ok':False}))")")
-      fail=$((fail+1))
-      rm -f "$tmp"
-      return
-    }
-  local headers; headers=$(cat "$tmp"); rm -f "$tmp"
+  local hdr_file body_file curl_meta
+  hdr_file=$(mktemp)
+  body_file=$(mktemp)
+  # -w captures machine-readable metadata (final URL, timings, remote IP)
+  # to correlate with Cloudflare cf-ray / cf-request-id in the violation dump.
+  local w_fmt='http_code=%{http_code}\nurl_effective=%{url_effective}\nremote_ip=%{remote_ip}\ntime_total=%{time_total}\ntime_namelookup=%{time_namelookup}\ntime_connect=%{time_connect}\ntime_appconnect=%{time_appconnect}\ntime_starttransfer=%{time_starttransfer}\nsize_download=%{size_download}\nnum_redirects=%{num_redirects}\n'
+  local http_code=0 network_error=""
+  if ! curl_meta=$(curl -sS -o "$body_file" -D "$hdr_file" -w "$w_fmt" \
+      -H "User-Agent: $UA" \
+      -H "Accept: text/html" \
+      --max-time 15 \
+      "$url" 2>&1); then
+    network_error="$curl_meta"
+    curl_meta=""
+  else
+    http_code=$(printf '%s\n' "$curl_meta" | awk -F= '/^http_code=/{print $2; exit}')
+  fi
+  local headers=""; [ -f "$hdr_file" ] && headers=$(cat "$hdr_file")
 
-  local cc cdncc cf xbuild
+  local cc cdncc cf xbuild cf_ray cf_req_id
   cc=$(header_value "$headers" "cache-control")
   cdncc=$(header_value "$headers" "cdn-cache-control")
   cf=$(header_value "$headers" "cf-cache-status")
   xbuild=$(header_value "$headers" "x-build-id")
+  cf_ray=$(header_value "$headers" "cf-ray")
+  cf_req_id=$(header_value "$headers" "cf-request-id")
 
   local problems=()
-
-  if [ "$http_code" != "200" ]; then
+  if [ -n "$network_error" ]; then
+    problems+=("network error: $network_error")
+  fi
+  if [ -z "$network_error" ] && [ "$http_code" != "200" ]; then
     problems+=("status=$http_code")
   fi
-  if ! check_contains "$cc" "no-store"; then
-    problems+=("cache-control missing no-store (got: '${cc:-<none>}')")
-  fi
-  if ! check_contains "$cdncc" "no-store"; then
-    problems+=("cdn-cache-control missing no-store (got: '${cdncc:-<none>}')")
-  fi
-  if [ -n "$cf" ] && ! check_in_list "$cf" "${ALLOWED_CF_STATUS[@]}"; then
-    problems+=("cf-cache-status='$cf' not in {${ALLOWED_CF_STATUS[*]}}")
+  if [ -z "$network_error" ]; then
+    if ! check_contains "$cc" "no-store"; then
+      problems+=("cache-control missing no-store (got: '${cc:-<none>}')")
+    fi
+    if ! check_contains "$cdncc" "no-store"; then
+      problems+=("cdn-cache-control missing no-store (got: '${cdncc:-<none>}')")
+    fi
+    if [ -n "$cf" ] && ! check_in_list "$cf" "${ALLOWED_CF_STATUS[@]}"; then
+      problems+=("cf-cache-status='$cf' not in {${ALLOWED_CF_STATUS[*]}}")
+    fi
   fi
 
   local status_icon detail
@@ -150,7 +167,55 @@ audit_route() {
   rows+=("| \`$path\` | $status_icon $http_code | \`${cc:-—}\` | \`${cdncc:-—}\` | \`${cf:-—}\` | ${xbuild:-—} |")
   if [ "$status_icon" = "❌" ]; then
     rows+=("| | | ${detail} | | | |")
+
+    # ---- Violation dump: preserved as CI artifact ------------------------
+    local slug dump
+    slug=$(slugify "$path")
+    dump="$VIOLATIONS_DIR/${slug}.md"
+    {
+      echo "# Cache-audit violation: \`$path\`"
+      echo ""
+      echo "- **URL:** \`$url\`"
+      echo "- **HTTP:** \`$http_code\`"
+      echo "- **cf-ray:** \`${cf_ray:-—}\`  |  **cf-request-id:** \`${cf_req_id:-—}\`  |  **x-build-id:** \`${xbuild:-—}\`"
+      echo "- **When:** \`$(date -u +%FT%TZ)\`  |  **Commit:** \`${GITHUB_SHA:-local}\`  |  **Run:** \`${GITHUB_RUN_ID:-local}\`"
+      echo ""
+      echo "## Problems"
+      for p in "${problems[@]}"; do echo "- $p"; done
+      echo ""
+      echo "## curl metadata"
+      echo '```'
+      printf '%s\n' "${curl_meta:-<network error: $network_error>}"
+      echo '```'
+      echo ""
+      echo "## Diagnostic response headers"
+      echo '```http'
+      for h in "${DIAG_HEADERS[@]}"; do
+        v=$(header_value "$headers" "$h")
+        [ -n "$v" ] && printf '%s: %s\n' "$h" "$v"
+      done
+      echo '```'
+      echo ""
+      echo "<details><summary>All response headers (raw)</summary>"
+      echo ""
+      echo '```http'
+      printf '%s\n' "${headers:-<no headers captured>}"
+      echo '```'
+      echo "</details>"
+      echo ""
+      echo "<details><summary>Response body (first 4 KiB)</summary>"
+      echo ""
+      echo '```html'
+      head -c 4096 "$body_file" 2>/dev/null || true
+      echo ""
+      echo '```'
+      echo "</details>"
+    } > "$dump"
+    echo "::error file=$dump::Cache-header violation on $path — see artifact $dump"
+    # ---------------------------------------------------------------------
   fi
+
+  rm -f "$hdr_file" "$body_file"
 
   # JSON row (safely escaped via python).
   json_rows+=("$(PATH_="$path" HTTP_="$http_code" CC_="$cc" CDN_="$cdncc" CF_="$cf" BUILD_="$xbuild" DETAIL_="$detail" OK_="$([ "${#problems[@]}" -eq 0 ] && echo true || echo false)" python3 -c '
