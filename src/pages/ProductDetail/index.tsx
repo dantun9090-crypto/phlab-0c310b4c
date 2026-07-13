@@ -2010,8 +2010,8 @@ export default function ProductDetail() {
                   >
                     <div className="aspect-square overflow-hidden" style={{ background: '#04101f' }}>
                       <img
-                        src={rpImg}
-                        alt={rp.name}
+                        {...cfImgProps(rpImg, { widths: [240, 360, 480, 640], sizes: '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 240px', quality: 82, fallbackWidth: 360 })}
+                        alt={`${rp.name} research peptide vial`}
                         loading="lazy"
                         decoding="async"
                         width="240"
