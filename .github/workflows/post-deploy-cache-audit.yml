@@ -55,6 +55,19 @@ jobs:
           path: ./previous
           if_no_artifact_found: warn
 
+      # Pull recent successful audit artifacts so we can render a multi-deploy
+      # trend (table + Mermaid chart) in the Summary tab. Failure is non-fatal.
+      - name: Download audit history (last 10 runs)
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          name: cache-audit-report
+          workflow: post-deploy-cache-audit.yml
+          workflow_conclusion: success
+          branch: main
+          path: ./history
+          if_no_artifact_found: warn
+
       - name: Audit cache headers for / and /products
         env:
           BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
@@ -70,6 +83,13 @@ jobs:
           [ -f "$prev" ] || prev="/dev/null"
           python3 .github/workflows/scripts/diff-cache-audit.py "$prev" audit-cache-headers.json || diff_rc=$?
           echo "DIFF_RC=${diff_rc:-0}" >> "$GITHUB_ENV"
+
+      - name: Render multi-deploy trend report (table + chart)
+        if: always()
+        continue-on-error: true
+        run: |
+          python3 .github/workflows/scripts/render-cache-trend.py \
+            audit-cache-headers.json ./history
 
       - name: Upload current audit report
         if: always()
