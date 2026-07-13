@@ -53,7 +53,9 @@ const startSharedListener = () => {
       inFlight?.abort();
       inFlight = new AbortController();
       const debug = isDebug();
-      const res = await fetch(`/api/public/live-orders?limit=20${debug ? '&debug=1' : ''}`, {
+      const uid = auth.currentUser?.uid;
+      const self = uid && /^[A-Za-z0-9_-]{1,64}$/.test(uid) ? `&self=${encodeURIComponent(uid)}` : '';
+      const res = await fetch(`/api/public/live-orders?limit=20${self}${debug ? '&debug=1' : ''}`, {
         cache: 'no-store',
         credentials: 'omit',
         signal: inFlight.signal,
