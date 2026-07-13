@@ -142,23 +142,6 @@ print(json.dumps({
 for r in "${ROUTES[@]}"; do audit_route "$r"; done
 
 # Machine-readable JSON artifact (consumed by diff-cache-audit.py).
-python3 -c "
-import json, os, sys
-rows = [json.loads(x) for x in sys.stdin.read().splitlines() if x.strip()]
-out = {
-  'schema': 1,
-  'ranAt': __import__('datetime').datetime.utcnow().isoformat() + 'Z',
-  'baseUrl': os.environ['BASE_URL'],
-  'passed': int(os.environ['PASS']),
-  'failed': int(os.environ['FAIL']),
-  'commit': os.environ.get('GITHUB_SHA', ''),
-  'runId': os.environ.get('GITHUB_RUN_ID', ''),
-  'routes': rows,
-}
-open(os.environ['JSON_OUT'], 'w').write(json.dumps(out, indent=2))
-" <<< "$(printf '%s\n' "${json_rows[@]}")" BASE_URL="$BASE_URL" PASS="$pass" FAIL="$fail" JSON_OUT="$JSON_OUT" || true
-# ^ Note: env vars for the python call are exported below (heredoc-style env
-# doesn't work with <<<); do it the portable way:
 BASE_URL="$BASE_URL" PASS="$pass" FAIL="$fail" JSON_OUT="$JSON_OUT" \
   python3 -c "
 import json, os, sys
