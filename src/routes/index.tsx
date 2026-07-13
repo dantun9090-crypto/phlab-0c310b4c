@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import LegacyClientApp from "@/legacy/LegacyClientApp";
 import { fetchPromoBanner } from "@/lib/firestore-rest";
-import { cfImgProps } from "@/lib/cf-image";
+
 
 const HOME_TITLE = "PHLabs — Pro Peptide Research Lab | Lab-Grade Compounds";
 const HOME_DESCRIPTION =
