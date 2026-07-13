@@ -30,7 +30,7 @@ export default function HomeSeoIndex() {
     >
       <div className="container mx-auto px-6">
         <div className="text-center mb-12">
-          <div className="text-[11px] font-bold tracking-[0.2em] uppercase mb-2" style={{ color: 'rgba(16,185,129,0.7)' }}>
+          <div className="text-[11px] font-bold tracking-[0.2em] uppercase mb-2" style={{ color: 'rgb(16,185,129)' }}>
             Full Catalogue
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-white">Browse Every Research Compound &amp; Resource</h2>
@@ -42,7 +42,7 @@ export default function HomeSeoIndex() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_0.7fr] gap-10">
           {/* Featured Research Compounds */}
           <div>
-            <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-[0.14em] uppercase mb-4" style={{ color: 'rgba(16,185,129,0.85)' }}>
+            <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-[0.14em] uppercase mb-4" style={{ color: 'rgb(16,185,129)' }}>
               <FlaskConical className="w-3.5 h-3.5" /> Featured Research Compounds
             </h3>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
@@ -63,7 +63,7 @@ export default function HomeSeoIndex() {
 
           {/* Research Resources */}
           <div>
-            <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-[0.14em] uppercase mb-4" style={{ color: 'rgba(59,130,246,0.85)' }}>
+            <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-[0.14em] uppercase mb-4" style={{ color: 'rgb(96,165,250)' }}>
               <BookOpen className="w-3.5 h-3.5" /> Research Library
             </h3>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
@@ -84,7 +84,7 @@ export default function HomeSeoIndex() {
 
           {/* About PH Labs */}
           <div>
-            <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-[0.14em] uppercase mb-4" style={{ color: 'rgba(168,85,247,0.85)' }}>
+            <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-[0.14em] uppercase mb-4" style={{ color: 'rgb(192,132,252)' }}>
               <Microscope className="w-3.5 h-3.5" /> About PH Labs
             </h3>
             <ul className="space-y-2">

@@ -443,7 +443,7 @@ export default function NewsletterPopup() {
                     config.buttonText
                   )}
                 </button>
-                <p className="text-xs text-slate-500 text-center">{config.finePrint}</p>
+                <p className="text-xs text-slate-400 text-center">{config.finePrint}</p>
               </form>
             </>
           )}
