@@ -582,7 +582,6 @@ export default function ResearchGate() {
             <button
               className="rg-dismiss"
               onClick={() => { setShowModal(false); notifyGateCleared(); }}
-              aria-label="Not interested — close"
               style={{
                 display: 'block', width: '100%',
                 marginTop: '12px', padding: '7px',
