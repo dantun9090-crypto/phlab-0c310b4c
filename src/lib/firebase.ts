@@ -33,7 +33,16 @@ import {
   User as FirebaseUser,
 } from 'firebase/auth';
 import { checkLockout, recordFailure, clearFailures, formatRemaining } from '@/lib/login-lockout';
-import { getStorage, ref as storageRef, uploadBytesResumable, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata } from 'firebase/storage';
+import { getStorage, ref as storageRef, uploadBytesResumable, uploadBytes, getDownloadURL, deleteObject, listAll, getMetadata as _getMetadata } from 'firebase/storage';
+
+// firebase/storage's SSR/Worker export shape may not expose getMetadata —
+// importing it can yield `undefined` at runtime, so any SSR-reachable call
+// site (Admin lazy routes) throws "ReferenceError: getMetadata is not defined".
+// Fall back to a no-op stub on the server; the client keeps the native impl.
+const getMetadata: typeof _getMetadata =
+  typeof _getMetadata === 'function'
+    ? _getMetadata
+    : ((async () => ({} as never)) as unknown as typeof _getMetadata);
 import { logAuthEvent, logAuthFailure } from '@/lib/auth-events';
 import { clearStoreCachesForNewBuild } from '@/lib/build-cache';
 // Email template builders are dynamically imported inside their send-helpers
