@@ -218,7 +218,7 @@ audit_route() {
   rm -f "$hdr_file" "$body_file"
 
   # JSON row (safely escaped via python).
-  json_rows+=("$(PATH_="$path" HTTP_="$http_code" CC_="$cc" CDN_="$cdncc" CF_="$cf" BUILD_="$xbuild" DETAIL_="$detail" OK_="$([ "${#problems[@]}" -eq 0 ] && echo true || echo false)" python3 -c '
+  json_rows+=("$(PATH_="$path" HTTP_="$http_code" CC_="$cc" CDN_="$cdncc" CF_="$cf" BUILD_="$xbuild" RAY_="$cf_ray" REQID_="$cf_req_id" DETAIL_="$detail" OK_="$([ "${#problems[@]}" -eq 0 ] && echo true || echo false)" python3 -c '
 import os, json
 print(json.dumps({
   "path": os.environ["PATH_"],
@@ -227,6 +227,8 @@ print(json.dumps({
   "cdncc": os.environ["CDN_"],
   "cf": os.environ["CF_"],
   "buildId": os.environ["BUILD_"],
+  "cfRay": os.environ["RAY_"],
+  "cfRequestId": os.environ["REQID_"],
   "detail": os.environ["DETAIL_"],
   "ok": os.environ["OK_"] == "true",
 }))'
