@@ -8,7 +8,6 @@ export interface LiveOrder {
   productName: string;   // "BPC-157 5mg"
   productImage?: string; // optional thumbnail
   createdAtMs: number;   // epoch ms
-  userId?: string;
   status?: string;
 }
 
