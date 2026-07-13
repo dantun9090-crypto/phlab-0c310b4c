@@ -13,6 +13,7 @@
 set -uo pipefail
 
 BASE_URL="${BASE_URL:-https://phlabs.co.uk}"
+JSON_OUT="${AUDIT_JSON_OUT:-audit-cache-headers.json}"
 ROUTES=("/" "/products")
 UA="PHLabs-CacheAudit/1.0 (+github-actions)"
 
