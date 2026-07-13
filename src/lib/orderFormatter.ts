@@ -67,7 +67,6 @@ export const mapRawOrderToLive = (raw: RawOrderLike): LiveOrder | null => {
     productName,
     productImage: item?.image || item?.imageUrl,
     createdAtMs,
-    userId: raw.customer?.uid || raw.userId,
     status: raw.status,
   };
 };
