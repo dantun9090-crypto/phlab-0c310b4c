@@ -86,7 +86,21 @@ function warmCacheSet(key, body, contentType) {
 }
 
 function warmCacheEligible(path) {
+  // GET `/` is edge-cacheable via CF's shared cache (origin emits
+  // public, s-maxage=14400, SWR=86400). Serving it from the Worker warm
+  // cache would emit no-store instead and defeat the CDN cache — skip it.
+  if (path === "/") return false;
   return !WARM_SKIP_PREFIXES.some((p) => path.startsWith(p));
+}
+
+// Task: home-page edge cache. GET `/` for browser UAs is intentionally
+// edge-cacheable. When origin returns a positive-age cache-control
+// (s-maxage or stale-while-revalidate) on `/`, preserve it end-to-end
+// instead of stamping no-store. Every other path stays no-store.
+function shouldPreserveEdgeCache(path, headers) {
+  if (path !== "/") return false;
+  const cc = (headers.get("Cache-Control") || headers.get("cache-control") || "").toLowerCase();
+  return /(?:^|,)\s*s-maxage\s*=\s*[1-9]\d*/.test(cc) || /(?:^|,)\s*stale-while-revalidate\b/.test(cc);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
