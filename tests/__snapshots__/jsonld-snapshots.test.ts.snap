@@ -68,6 +68,66 @@ exports[`Article JSON-LD snapshots > /resources/bpc-157-tissue-repair 1`] = `
 ]
 `;
 
+exports[`Article JSON-LD snapshots > /resources/bpc-157-vs-tb-500 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "description": "Bpc 157 Vs Tb 500: resource notes and references from PH Labs UK.",
+    "headline": "BPC-157 vs TB-500: Mechanisms, Pathways and Research Comparison",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "url": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/bpc-157-vs-tb-500",
+        "name": "BPC-157 vs TB-500: Mechanisms, Pathways and Research Comparison",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
 exports[`Article JSON-LD snapshots > /resources/bpc-157-vs-tb-500-comparison 1`] = `
 [
   {
@@ -537,6 +597,66 @@ exports[`Article JSON-LD snapshots > /resources/ghk-cu-copper-peptide-research 1
         "@type": "ListItem",
         "item": "https://phlabs.co.uk/resources/ghk-cu-copper-peptide-research",
         "name": "GHK-Cu: The Copper Tripeptide at the Intersection of Wound Healing, Gene Regulation, and Anti-Ageing Biology",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/ghk-cu-research-guide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/ghk-cu-research-guide#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "description": "Ghk Cu Research Guide: resource notes and references from PH Labs UK.",
+    "headline": "GHK-Cu Peptide: A Technical Research Guide for UK Laboratories",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/ghk-cu-research-guide",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "url": "https://phlabs.co.uk/resources/ghk-cu-research-guide",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/ghk-cu-research-guide",
+        "name": "GHK-Cu Peptide: A Technical Research Guide for UK Laboratories",
         "position": 3,
       },
     ],
@@ -1224,6 +1344,186 @@ exports[`Article JSON-LD snapshots > /resources/nad-nicotinamide-adenine-dinucle
 ]
 `;
 
+exports[`Article JSON-LD snapshots > /resources/peptide-categories-uk-research 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/peptide-categories-uk-research#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "description": "Peptide Categories Uk Research: resource notes and references from PH Labs UK.",
+    "headline": "Peptide Categories in UK Laboratory Research: 7 Classes Studied in Modern Labs",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/peptide-categories-uk-research",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "url": "https://phlabs.co.uk/resources/peptide-categories-uk-research",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/peptide-categories-uk-research",
+        "name": "Peptide Categories in UK Laboratory Research: 7 Classes Studied in Modern Labs",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/peptide-reconstitution-guide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/peptide-reconstitution-guide#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "description": "Peptide Reconstitution Guide: resource notes and references from PH Labs UK.",
+    "headline": "Peptide Reconstitution Guide for UK Laboratories: Bacteriostatic Water Protocol",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/peptide-reconstitution-guide",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "url": "https://phlabs.co.uk/resources/peptide-reconstitution-guide",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/peptide-reconstitution-guide",
+        "name": "Peptide Reconstitution Guide for UK Laboratories: Bacteriostatic Water Protocol",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/peptide-safety-legality-uk 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/peptide-safety-legality-uk#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "description": "Peptide Safety Legality Uk: resource notes and references from PH Labs UK.",
+    "headline": "The Safety and Legality of Buying Research Peptides in the UK",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/peptide-safety-legality-uk",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "url": "https://phlabs.co.uk/resources/peptide-safety-legality-uk",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/peptide-safety-legality-uk",
+        "name": "The Safety and Legality of Buying Research Peptides in the UK",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
 exports[`Article JSON-LD snapshots > /resources/peptide-storage-lyophilisation-science 1`] = `
 [
   {
@@ -1489,6 +1789,66 @@ exports[`Article JSON-LD snapshots > /resources/research-peptides-uk 1`] = `
         "@type": "ListItem",
         "item": "https://phlabs.co.uk/resources/research-peptides-uk",
         "name": "Research Peptides UK: The 2026 Sourcing Guide for British Laboratories",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/retatrutide-research-guide 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/retatrutide-research-guide#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "description": "Retatrutide Research Guide: resource notes and references from PH Labs UK.",
+    "headline": "Retatrutide Research Peptide: An Analytical Profile for UK Laboratories",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/retatrutide-research-guide",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "url": "https://phlabs.co.uk/resources/retatrutide-research-guide",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/retatrutide-research-guide",
+        "name": "Retatrutide Research Peptide: An Analytical Profile for UK Laboratories",
         "position": 3,
       },
     ],
@@ -1897,6 +2257,126 @@ exports[`Article JSON-LD snapshots > /resources/tirzepatide-dual-agonist-researc
         "@type": "ListItem",
         "item": "https://phlabs.co.uk/resources/tirzepatide-dual-agonist-research",
         "name": "Tirzepatide: Dual GIP/GLP-1 Receptor Agonism and Its Role in Metabolic Research",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/tirzepatide-vs-retatrutide-mechanism 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/tirzepatide-vs-retatrutide-mechanism#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "description": "Tirzepatide Vs Retatrutide Mechanism: resource notes and references from PH Labs UK.",
+    "headline": "Tirzepatide vs Retatrutide: Dual vs Triple Receptor Agonism in Research Models",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/tirzepatide-vs-retatrutide-mechanism",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "url": "https://phlabs.co.uk/resources/tirzepatide-vs-retatrutide-mechanism",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/tirzepatide-vs-retatrutide-mechanism",
+        "name": "Tirzepatide vs Retatrutide: Dual vs Triple Receptor Agonism in Research Models",
+        "position": 3,
+      },
+    ],
+  },
+]
+`;
+
+exports[`Article JSON-LD snapshots > /resources/what-are-peptides 1`] = `
+[
+  {
+    "@context": "https://schema.org",
+    "@id": "https://phlabs.co.uk/resources/what-are-peptides#article",
+    "@type": "Article",
+    "author": {
+      "@type": "Organization",
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "description": "What Are Peptides: resource notes and references from PH Labs UK.",
+    "headline": "What Are Peptides? A Comprehensive Guide for UK Researchers",
+    "image": [
+      "https://phlabs.co.uk/og-image.jpg",
+    ],
+    "inLanguage": "en-GB",
+    "isAccessibleForFree": true,
+    "mainEntityOfPage": {
+      "@id": "https://phlabs.co.uk/resources/what-are-peptides",
+      "@type": "WebPage",
+    },
+    "publisher": {
+      "@type": "Organization",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://phlabs.co.uk/og-image.jpg",
+      },
+      "name": "PH Labs UK",
+      "url": "https://phlabs.co.uk",
+    },
+    "url": "https://phlabs.co.uk/resources/what-are-peptides",
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk",
+        "name": "Home",
+        "position": 1,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources",
+        "name": "Resources",
+        "position": 2,
+      },
+      {
+        "@type": "ListItem",
+        "item": "https://phlabs.co.uk/resources/what-are-peptides",
+        "name": "What Are Peptides? A Comprehensive Guide for UK Researchers",
         "position": 3,
       },
     ],

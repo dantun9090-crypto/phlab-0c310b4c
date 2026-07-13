@@ -10,7 +10,7 @@
  * updates after review.
  */
 import { describe, it, expect } from "vitest";
-import { Route as ProductRoute } from "../src/routes/products.$slug";
+import { Route as ProductRoute } from "../src/routes/products_.$slug";
 import { Route as SplatRoute } from "../src/routes/$";
 import { articles } from "../src/pages/Resources/data/articles";
 import type { SeoProduct } from "../src/lib/firestore-rest";
