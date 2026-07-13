@@ -725,9 +725,16 @@ export default function HomePage() {
 
 
 
-      <Suspense fallback={<div aria-hidden="true" style={{ minHeight: 140 }} />}>
-        <MarketingAdvertSlot adverts={adverts} placement="homepage_mid" className="container mx-auto px-6 py-6" variant="card" />
-      </Suspense>
+      {/* Mid advert slot — reserves card banner height (h-64 + py-6) to prevent CLS. */}
+      <div
+        className="container mx-auto px-6 py-6"
+        style={{ minHeight: 'clamp(280px, 24vw, 320px)' }}
+        data-advert-reserve="homepage_mid"
+      >
+        <Suspense fallback={<div aria-hidden="true" style={{ minHeight: 256 }} />}>
+          <MarketingAdvertSlot adverts={adverts} placement="homepage_mid" className="" variant="card" />
+        </Suspense>
+      </div>
 
 
 
