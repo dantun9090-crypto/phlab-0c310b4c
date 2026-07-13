@@ -96,9 +96,12 @@ export default function ResearchGate() {
     setConfirmed(already);
     if (already || isExempt) return;
 
-    // Show gate on homepage AND on every product page (bramka wymagana).
+    // Keep the homepage interactive immediately. The persistent research-use
+    // banner still shows there, while the blocking confirmation modal is only
+    // used when a visitor opens an individual product page.
     const isHome = location.pathname === '/' || location.pathname === '';
-    if (!isHome && !isProductPage) return;
+    if (isHome) return;
+    if (!isProductPage) return;
 
     const timer = setTimeout(() => setShowModal(true), 400);
     return () => clearTimeout(timer);

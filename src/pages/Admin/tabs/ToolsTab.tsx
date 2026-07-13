@@ -414,7 +414,7 @@ export default function ToolsTab() {
           <div>
             <h3 className="text-[#f0f6ff] font-semibold">Browser Cache Safety</h3>
             <p className="text-[#9cb8d9] text-xs mt-0.5">
-              Service Worker registration is disabled. Returning browsers now receive service-worker cleanup, Cache Storage cleanup, no-store HTML, manual stale-asset recovery, and refresh-loop protection.
+              Service Worker registration is disabled. Returning browsers now receive service-worker cleanup, Cache Storage cleanup, no-store HTML, manual stale-asset recovery, refresh-loop protection, and a non-blocking homepage research banner.
             </p>
           </div>
         </div>
