@@ -75,6 +75,7 @@ import { Route as _e2ePaymentOptionsRouteImport } from './routes/__e2e.payment-o
 import { Route as _e2eOrdersModalRouteImport } from './routes/__e2e.orders-modal'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
+import { Route as ProductsCategorySlugRouteImport } from './routes/products.category.$slug'
 import { Route as ApiWebhooksWallidRouteImport } from './routes/api/webhooks/wallid'
 import { Route as ApiPublicWebVitalsRouteImport } from './routes/api/public/web-vitals'
 import { Route as ApiPublicStaleAssetReportRouteImport } from './routes/api/public/stale-asset-report'
@@ -471,6 +472,11 @@ const Char91DotmcpChar93ListToolsRoute =
     path: '/.mcp/list-tools',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ProductsCategorySlugRoute = ProductsCategorySlugRouteImport.update({
+  id: '/category/$slug',
+  path: '/category/$slug',
+  getParentRoute: () => ProductsRoute,
+} as any)
 const ApiWebhooksWallidRoute = ApiWebhooksWallidRouteImport.update({
   id: '/api/webhooks/wallid',
   path: '/api/webhooks/wallid',
@@ -789,7 +795,7 @@ export interface FileRoutesByFullPath {
   '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
-  '/products': typeof ProductsRoute
+  '/products': typeof ProductsRouteWithChildren
   '/quality-control': typeof QualityControlRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/request-catalog': typeof RequestCatalogRoute
@@ -867,6 +873,7 @@ export interface FileRoutesByFullPath {
   '/api/public/stale-asset-report': typeof ApiPublicStaleAssetReportRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
+  '/products/category/$slug': typeof ProductsCategorySlugRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/health/build': typeof ApiPublicHealthBuildRoute
@@ -911,7 +918,7 @@ export interface FileRoutesByTo {
   '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
-  '/products': typeof ProductsRoute
+  '/products': typeof ProductsRouteWithChildren
   '/quality-control': typeof QualityControlRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/request-catalog': typeof RequestCatalogRoute
@@ -988,6 +995,7 @@ export interface FileRoutesByTo {
   '/api/public/stale-asset-report': typeof ApiPublicStaleAssetReportRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
+  '/products/category/$slug': typeof ProductsCategorySlugRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/health/build': typeof ApiPublicHealthBuildRoute
@@ -1034,7 +1042,7 @@ export interface FileRoutesById {
   '/peptide-calculator': typeof PeptideCalculatorRoute
   '/privacy-policy': typeof PrivacyPolicyRoute
   '/privacy-requests': typeof PrivacyRequestsRoute
-  '/products': typeof ProductsRoute
+  '/products': typeof ProductsRouteWithChildren
   '/quality-control': typeof QualityControlRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/request-catalog': typeof RequestCatalogRoute
@@ -1112,6 +1120,7 @@ export interface FileRoutesById {
   '/api/public/stale-asset-report': typeof ApiPublicStaleAssetReportRoute
   '/api/public/web-vitals': typeof ApiPublicWebVitalsRoute
   '/api/webhooks/wallid': typeof ApiWebhooksWallidRoute
+  '/products/category/$slug': typeof ProductsCategorySlugRoute
   '/api/public/diag/build-state': typeof ApiPublicDiagBuildStateRoute
   '/api/public/diag/cache-headers': typeof ApiPublicDiagCacheHeadersRoute
   '/api/public/health/build': typeof ApiPublicHealthBuildRoute
@@ -1236,6 +1245,7 @@ export interface FileRouteTypes {
     | '/api/public/stale-asset-report'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
+    | '/products/category/$slug'
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
     | '/api/public/health/build'
@@ -1357,6 +1367,7 @@ export interface FileRouteTypes {
     | '/api/public/stale-asset-report'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
+    | '/products/category/$slug'
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
     | '/api/public/health/build'
@@ -1480,6 +1491,7 @@ export interface FileRouteTypes {
     | '/api/public/stale-asset-report'
     | '/api/public/web-vitals'
     | '/api/webhooks/wallid'
+    | '/products/category/$slug'
     | '/api/public/diag/build-state'
     | '/api/public/diag/cache-headers'
     | '/api/public/health/build'
@@ -1526,7 +1538,7 @@ export interface RootRouteChildren {
   PeptideCalculatorRoute: typeof PeptideCalculatorRoute
   PrivacyPolicyRoute: typeof PrivacyPolicyRoute
   PrivacyRequestsRoute: typeof PrivacyRequestsRoute
-  ProductsRoute: typeof ProductsRoute
+  ProductsRoute: typeof ProductsRouteWithChildren
   QualityControlRoute: typeof QualityControlRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
   RequestCatalogRoute: typeof RequestCatalogRoute
@@ -2078,6 +2090,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/products/category/$slug': {
+      id: '/products/category/$slug'
+      path: '/category/$slug'
+      fullPath: '/products/category/$slug'
+      preLoaderRoute: typeof ProductsCategorySlugRouteImport
+      parentRoute: typeof ProductsRoute
+    }
     '/api/webhooks/wallid': {
       id: '/api/webhooks/wallid'
       path: '/api/webhooks/wallid'
@@ -2498,6 +2517,18 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface ProductsRouteChildren {
+  ProductsCategorySlugRoute: typeof ProductsCategorySlugRoute
+}
+
+const ProductsRouteChildren: ProductsRouteChildren = {
+  ProductsCategorySlugRoute: ProductsCategorySlugRoute,
+}
+
+const ProductsRouteWithChildren = ProductsRoute._addFileChildren(
+  ProductsRouteChildren,
+)
+
 interface ResearchRouteChildren {
   ResearchBpc157Tb500SynergyRoute: typeof ResearchBpc157Tb500SynergyRoute
   ResearchBpc157UkRoute: typeof ResearchBpc157UkRoute
@@ -2557,7 +2588,7 @@ const rootRouteChildren: RootRouteChildren = {
   PeptideCalculatorRoute: PeptideCalculatorRoute,
   PrivacyPolicyRoute: PrivacyPolicyRoute,
   PrivacyRequestsRoute: PrivacyRequestsRoute,
-  ProductsRoute: ProductsRoute,
+  ProductsRoute: ProductsRouteWithChildren,
   QualityControlRoute: QualityControlRoute,
   RefundPolicyRoute: RefundPolicyRoute,
   RequestCatalogRoute: RequestCatalogRoute,
