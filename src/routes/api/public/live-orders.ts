@@ -78,6 +78,11 @@ async function fetchRecentOrderRows(): Promise<OrderRow[]> {
   return Array.from(merged.values()).sort((a, b) => rowTime(b) - rowTime(a));
 }
 
+function rowUid(row: OrderRow): string | undefined {
+  const customer = row.customer as { uid?: string } | undefined;
+  return customer?.uid || (typeof row.userId === 'string' ? row.userId : undefined);
+}
+
 export const Route = createFileRoute('/api/public/live-orders')({
   server: {
     handlers: {
