@@ -1336,13 +1336,12 @@ function RootComponent() {
     return () => window.clearTimeout(stableLoadTimer);
   }, []);
 
-  // Load GA4/GTM AFTER React hydration completes AND the main thread is idle.
-  // Deferring to requestIdleCallback (with a 4s fallback, or 1s on first user
-  // interaction) keeps gtag.js (~170 KB) out of the TBT window, which is the
-  // dominant mobile Lighthouse penalty on marketing/landing routes like
-  // /compound, /research and /landing/*. Conversion + page_view still fire,
-  // just a couple seconds later. Bootstrap stays inline so consent + dataLayer
-  // queue any early events before gtag.js resolves them.
+  // Load GA4/GTM AFTER hydration, AFTER LCP has been reported, AND when the
+  // main thread is idle. Firing during the LCP window on throttled mobile
+  // adds ~600ms of scripting that pushes LCP out — Lighthouse mobile lab
+  // showed GA scripting inside the LCP window even with rIC(timeout:4000).
+  // We now wait for a LargestContentfulPaint entry (or window load + 3s),
+  // then rIC with a long timeout, or first meaningful interaction.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if ((window as unknown as { __phlGaBootstrapped?: boolean }).__phlGaBootstrapped) return;
@@ -1359,21 +1358,38 @@ function RootComponent() {
       ext.src = 'https://www.googletagmanager.com/gtag/js?id=G-5HM4YT7HDW';
       document.body.appendChild(ext);
     };
-    const onInteract = () => window.setTimeout(loadExt, 800);
-    ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach((ev) =>
+    // Interaction (excluding scroll — fires from restoration on Firefox/iOS
+    // before the user actually interacts and defeats the deferral).
+    const onInteract = () => window.setTimeout(loadExt, 1500);
+    ['pointerdown', 'keydown', 'touchstart'].forEach((ev) =>
       window.addEventListener(ev, onInteract, { once: true, passive: true })
     );
-    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
-    if (typeof ric === 'function') ric(loadExt, { timeout: 4000 });
-    else window.setTimeout(loadExt, 3500);
+    // Fire after LCP + idle. If PerformanceObserver isn't available, fall
+    // back to window.load + long timeout.
+    const scheduleIdle = () => {
+      const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+      if (typeof ric === 'function') ric(loadExt, { timeout: 8000 });
+      else window.setTimeout(loadExt, 6000);
+    };
+    let lcpSeen = false;
+    try {
+      const po = new PerformanceObserver(() => {
+        if (lcpSeen) return;
+        lcpSeen = true;
+        po.disconnect();
+        window.setTimeout(scheduleIdle, 500);
+      });
+      po.observe({ type: 'largest-contentful-paint', buffered: true });
+    } catch { /* older browsers */ }
+    // Hard fallback: 10s after load, whatever happened.
+    const onLoad = () => window.setTimeout(() => { if (!loaded) scheduleIdle(); }, 4000);
+    if (document.readyState === 'complete') onLoad();
+    else window.addEventListener('load', onLoad, { once: true });
   }, []);
 
-  // Load Clarity / Taboola / Bing UET after hydration + idle, matching the
-  // GA loader above. These pixels were previously injected in SSR <head>
-  // scripts, each blocking parse for hundreds of ms on mobile (Clarity alone
-  // owned a 304ms long-task on /compound). Deferring them keeps TBT down
-  // without changing measurement semantics — pageviews still fire, a beat
-  // later. Consent-gated: skip marketing pixels unless the user opted in.
+  // Load Clarity / Taboola / Bing UET after LCP + idle, matching the GA
+  // loader above. Even further deferred than GA since these are recording/
+  // pixel scripts that don't need to fire early to be useful.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const w = window as unknown as { __phlThirdPartyBootstrapped?: boolean };
@@ -1411,13 +1427,29 @@ function RootComponent() {
         document.body.appendChild(bing);
       }
     };
-    const onInteract = () => window.setTimeout(loadAll, 1000);
-    ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach((ev) =>
+    // Later than GA — 2.5s after interaction, or LCP + 2s idle, or load+6s.
+    const onInteract = () => window.setTimeout(loadAll, 2500);
+    ['pointerdown', 'keydown', 'touchstart'].forEach((ev) =>
       window.addEventListener(ev, onInteract, { once: true, passive: true })
     );
-    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
-    if (typeof ric === 'function') ric(loadAll, { timeout: 5000 });
-    else window.setTimeout(loadAll, 4500);
+    const scheduleIdle = () => {
+      const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+      if (typeof ric === 'function') ric(loadAll, { timeout: 12000 });
+      else window.setTimeout(loadAll, 9000);
+    };
+    let lcpSeen = false;
+    try {
+      const po = new PerformanceObserver(() => {
+        if (lcpSeen) return;
+        lcpSeen = true;
+        po.disconnect();
+        window.setTimeout(scheduleIdle, 2000);
+      });
+      po.observe({ type: 'largest-contentful-paint', buffered: true });
+    } catch { /* older browsers */ }
+    const onLoad = () => window.setTimeout(() => { if (!loaded) scheduleIdle(); }, 6000);
+    if (document.readyState === 'complete') onLoad();
+    else window.addEventListener('load', onLoad, { once: true });
   }, []);
 
 

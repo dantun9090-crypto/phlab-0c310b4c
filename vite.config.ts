@@ -34,6 +34,29 @@ export default defineConfig({
           entryFileNames: "assets/[name]-[hash].js",
           chunkFileNames: "assets/[name]-[hash].js",
           assetFileNames: "assets/[name]-[hash][extname]",
+          // Split heavy vendor libraries into separate chunks so:
+          //  (1) the main app bundle (index-*.js) shrinks — currently ~505 KB
+          //      with ~240 KB unused, causing 3.5s scripting time on Lighthouse
+          //      mobile and pushing LCP past 11s;
+          //  (2) chunks load in parallel across HTTP/2 rather than serially;
+          //  (3) each vendor caches independently so most publishes only
+          //      invalidate the app chunk, not gigabytes of unchanged deps.
+          // Route-level code lives in per-route chunks (TanStack auto-split);
+          // this only groups shared node_modules.
+          manualChunks(id) {
+            if (!id.includes("node_modules")) return;
+            if (id.includes("/firebase/") || id.includes("@firebase/")) return "vendor-firebase";
+            if (id.includes("/@sentry/") || id.includes("/sentry-")) return "vendor-sentry";
+            if (id.includes("/recharts/") || id.includes("/d3-")) return "vendor-charts";
+            if (id.includes("/three/") || id.includes("/@react-three/")) return "vendor-three";
+            if (id.includes("/framer-motion/")) return "vendor-motion";
+            if (id.includes("/jspdf/") || id.includes("/pdfjs")) return "vendor-pdf";
+            if (id.includes("/@radix-ui/")) return "vendor-radix";
+            if (id.includes("/lucide-react/")) return "vendor-icons";
+            if (id.includes("/react-dom/") || id.includes("/react/") || id.includes("/scheduler/")) return "vendor-react";
+            if (id.includes("/@tanstack/")) return "vendor-tanstack";
+            // Everything else stays in the default vendor chunk.
+          },
         },
       },
     },
