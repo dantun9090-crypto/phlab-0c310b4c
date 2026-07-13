@@ -121,10 +121,25 @@ function CompoundPage() {
     <Suspense
       fallback={
         <div
-          aria-hidden="true"
-          className="min-h-screen w-full bg-[#060b18]"
+          className="min-h-screen w-full bg-[#060b18] flex flex-col items-center justify-center px-6 text-center"
           style={{ contain: "strict" }}
-        />
+        >
+          <h1
+            className="font-light text-white"
+            style={{
+              fontFamily: "'Cormorant Garamond','Times New Roman',serif",
+              fontSize: "clamp(2rem,5vw,5rem)",
+              lineHeight: 1.05,
+            }}
+          >
+            Premium Research Compounds
+            <br />
+            for{" "}
+            <span style={{ color: "#c9a44c", fontStyle: "italic" }}>
+              UK Laboratories
+            </span>
+          </h1>
+        </div>
       }
     >
       <PremiumLanding eyebrow="UK Laboratory Supply" />

@@ -466,11 +466,11 @@ export default function HomePage() {
           })()}
           {bannerHref ? (
             <a href={bannerHref} className="block">
-              <img {...cfImgProps(banner.imageUrl, { widths: [640, 960, 1280, 1600, 1920], sizes: '100vw', quality: 85 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
+              <img {...cfImgProps(banner.imageUrl, { widths: [640, 960, 1280, 1600, 1920], sizes: '100vw', quality: 85 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" width={1600} height={banner.heightPx || 320}
                 style={{ height: banner.heightPx ? `${banner.heightPx}px` : '320px', objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
             </a>
           ) : (
-              <img {...cfImgProps(banner.imageUrl, { widths: [640, 960, 1280, 1600, 1920], sizes: '100vw', quality: 85 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" decoding="async" width={1600} height={banner.heightPx || 320}
+              <img {...cfImgProps(banner.imageUrl, { widths: [640, 960, 1280, 1600, 1920], sizes: '100vw', quality: 85 })} alt={banner.altText || [banner.overlayHeading, banner.overlaySubheading].filter(Boolean).join(' — ') || 'PH Labs research peptides — homepage hero banner'} className="w-full" fetchPriority="high" width={1600} height={banner.heightPx || 320}
                 style={{ height: banner.heightPx ? `${banner.heightPx}px` : '320px', objectFit: banner.objectFit || 'cover', objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`, display: 'block' }} />
 
           )}
