@@ -77,7 +77,7 @@ jobs:
 
       # check-domains-allow-next-line
       - name: Purge Cloudflare Cache (legacy prohealth zone)
-        if: ${{ secrets.CLOUDFLARE_ZONE_ID_PROHEALTH != '' }}
+        if: ${{ env.CF_ZONE_ID != '' }}
         env:
           CF_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID_PROHEALTH }}

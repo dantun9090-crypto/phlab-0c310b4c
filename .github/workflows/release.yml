@@ -191,7 +191,7 @@ jobs:
     timeout-minutes: 5
     permissions:
       contents: write   # update README badge + re-upload report
-      id-token: read
+      id-token: write   # cosign keyless OIDC
     steps:
       - uses: actions/checkout@v5
 
