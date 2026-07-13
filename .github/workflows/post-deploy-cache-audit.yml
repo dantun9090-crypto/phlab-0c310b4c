@@ -76,10 +76,12 @@ jobs:
           path: ./history
           if_no_artifact_found: warn
 
-      - name: Audit cache headers for / and /products
+      - name: Audit cache headers
         env:
           BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
           AUDIT_JSON_OUT: audit-cache-headers.json
+          AUDIT_ROUTES: ${{ github.event.inputs.routes }}
+          AUDIT_ROUTES_FILE: ${{ github.event.inputs.routes_file || '.github/cache-audit.routes.json' }}
         run: |
           chmod +x .github/workflows/scripts/audit-cache-headers.sh
           .github/workflows/scripts/audit-cache-headers.sh
