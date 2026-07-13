@@ -52,6 +52,8 @@ jobs:
         profile: [desktop, mobile]
     steps:
       - uses: actions/checkout@v5
+      - name: Clean stale Lighthouse artifacts
+        run: rm -rf .lighthouseci
 
       - uses: actions/setup-node@v5
         with:
