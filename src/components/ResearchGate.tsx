@@ -553,19 +553,18 @@ export default function ResearchGate() {
               onMouseLeave={() => { setBtnHover(false); setBtnActive(false); }}
               onMouseDown={() => setBtnActive(true)}
               onMouseUp={() => setBtnActive(false)}
-              aria-label="Confirm research use and enter the store"
               style={{
                 display: 'block', width: '100%',
                 padding: '14px 24px',
                 fontSize: '12.5px', fontWeight: 800,
                 letterSpacing: '0.09em', textTransform: 'uppercase',
                 color: '#ffffff',
-                // Solid emerald — darker for WCAG AA contrast (4.5:1+) on white text
+                // Darkened emerald for WCAG AA (4.5:1+) with white text
                 background: btnActive
-                  ? '#076b46'
+                  ? '#065f46'
                   : btnHover
-                    ? '#0a8f5c'
-                    : '#0a8f5c',
+                    ? '#076b46'
+                    : '#076b46',
                 border: '1px solid rgba(16,185,129,0.4)',
                 borderRadius: '10px',
                 cursor: 'pointer',
