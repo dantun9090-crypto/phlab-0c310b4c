@@ -84,7 +84,7 @@ export default function HomeSeoIndex() {
 
           {/* About PH Labs */}
           <div>
-            <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-[0.14em] uppercase mb-4" style={{ color: 'rgba(168,85,247,0.85)' }}>
+            <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-[0.14em] uppercase mb-4" style={{ color: 'rgb(192,132,252)' }}>
               <Microscope className="w-3.5 h-3.5" /> About PH Labs
             </h3>
             <ul className="space-y-2">
