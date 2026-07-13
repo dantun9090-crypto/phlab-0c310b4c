@@ -7,7 +7,10 @@ import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { Link } from 'react-router-dom';
 const AnimatedBackground = lazy(() => import('@/components/AnimatedBackground').then(m => ({ default: m.AnimatedBackground })));
 import HomeSeoIndex from '@/components/HomeSeoIndex';
-import MarketingAdvertSlot from '@/components/MarketingAdvertSlot';
+// MarketingAdvertSlot is lazy — it renders in two slots (hero + mid), both
+// non-critical for LCP. Off the initial critical chunk on the home route.
+const MarketingAdvertSlot = lazy(() => import('@/components/MarketingAdvertSlot'));
+
 import { getProductImage } from '@/lib/productImages';
 import type { Product } from '@/lib/firebase';
 // Firebase is dynamically imported below to keep it off the home-route critical chunk.
