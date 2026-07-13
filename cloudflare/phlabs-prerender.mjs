@@ -86,7 +86,21 @@ function warmCacheSet(key, body, contentType) {
 }
 
 function warmCacheEligible(path) {
+  // GET `/` is edge-cacheable via CF's shared cache (origin emits
+  // public, s-maxage=14400, SWR=86400). Serving it from the Worker warm
+  // cache would emit no-store instead and defeat the CDN cache — skip it.
+  if (path === "/") return false;
   return !WARM_SKIP_PREFIXES.some((p) => path.startsWith(p));
+}
+
+// Task: home-page edge cache. GET `/` for browser UAs is intentionally
+// edge-cacheable. When origin returns a positive-age cache-control
+// (s-maxage or stale-while-revalidate) on `/`, preserve it end-to-end
+// instead of stamping no-store. Every other path stays no-store.
+function shouldPreserveEdgeCache(path, headers) {
+  if (path !== "/") return false;
+  const cc = (headers.get("Cache-Control") || headers.get("cache-control") || "").toLowerCase();
+  return /(?:^|,)\s*s-maxage\s*=\s*[1-9]\d*/.test(cc) || /(?:^|,)\s*stale-while-revalidate\b/.test(cc);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -276,7 +290,26 @@ async function buildBrowserResponse(response, path) {
   // survives a deploy and is served against evicted hashed chunks, producing
   // the "blank page after publish" regression. Contract enforced by
   // e2e/cache-headers-regression.spec.ts.
-  applyBrowserHtmlNoCache(headers, path);
+  //
+  // EXCEPTION — GET `/` from browser UAs is edge-cacheable when origin says
+  // so (public, s-maxage, SWR). The origin's per-request nonce CSP was
+  // simplified above via simplifyStrictDynamicCsp so the body is safe to
+  // cache. Preserve origin's cache-control and DO NOT stamp cdn/surrogate
+  // no-store — every other path falls through to strict no-store.
+  if (shouldPreserveEdgeCache(path, headers)) {
+    headers.delete("Pragma");
+    headers.delete("pragma");
+    headers.delete("Expires");
+    headers.delete("expires");
+    headers.delete("CDN-Cache-Control");
+    headers.delete("cdn-cache-control");
+    headers.delete("Cloudflare-CDN-Cache-Control");
+    headers.delete("cloudflare-cdn-cache-control");
+    headers.delete("Surrogate-Control");
+    headers.delete("surrogate-control");
+  } else {
+    applyBrowserHtmlNoCache(headers, path);
+  }
   return new Response(body, {
     status: response.status,
     statusText: response.statusText,
