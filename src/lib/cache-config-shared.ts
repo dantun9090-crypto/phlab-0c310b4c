@@ -4,9 +4,8 @@
  * 0  => caching disabled (origin and edge serve no-store).
  * >0 => max-age (seconds) used for HTML cdn-cache-control + Cache API put.
  *
- * IMPORTANT: We cap at 60s for HTML because a cached HTML shell referencing
- * old hashed JS chunks causes blank pages after deploy. 60s gives fast TTFB
- * (~50ms HIT) while bounding stale-asset risk.
+ * IMPORTANT: keep this Off by default. Cached HTML shells can hide fresh
+ * publishes and reference old hashed JS chunks after deploy.
  */
 
 export const CACHE_TTL_OPTIONS = [
@@ -15,7 +14,7 @@ export const CACHE_TTL_OPTIONS = [
   { value: 60, label: '1 minute (recommended)' },
 ] as const;
 
-export const DEFAULT_HTML_TTL_SECONDS = 60;
+export const DEFAULT_HTML_TTL_SECONDS = 0;
 
 export function isValidHtmlTtl(n: unknown): n is number {
   return (

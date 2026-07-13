@@ -872,36 +872,15 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   if (!contentType.includes("text/html")) return stripped;
 
   const htmlHeaders = new Headers(stripped.headers);
-  // Default: HTML shells NEVER edge-cached. Contract enforced by
-  // .github/workflows/html-shell-no-cache.yml + e2e/cache-headers-regression.
-  //
-  // EXCEPTION — GET `/` from browser UAs is edge-cacheable. The downstream
-  // phlabs-prerender Worker rewrites the per-request nonce CSP into a hash
-  // CSP at cache MISS, so the sanitised body is identical across requests
-  // and safe to store in CF's shared cache. Bots go through Prerender.io
-  // (separate cache key), and every other route keeps no-store.
-  const ua = request?.headers.get("user-agent") ?? "";
-  const isBotUa = RX_PRERENDER.test(ua) || RX_BLOCKED.test(ua);
-  const cacheableHome =
-    request != null &&
-    (request.method === "GET" || request.method === "HEAD") &&
-    _pathname === "/" &&
-    !isBotUa;
-  if (cacheableHome) {
-    htmlHeaders.set("cache-control", "public, max-age=0, s-maxage=14400, stale-while-revalidate=86400");
-    htmlHeaders.delete("cdn-cache-control");
-    htmlHeaders.delete("cloudflare-cdn-cache-control");
-    htmlHeaders.delete("surrogate-control");
-    htmlHeaders.delete("pragma");
-    htmlHeaders.delete("expires");
-  } else {
-    htmlHeaders.set("cache-control", HTML_NO_STORE_CACHE_CONTROL);
-    htmlHeaders.set("cdn-cache-control", "no-store");
-    htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
-    htmlHeaders.set("surrogate-control", "no-store");
-    htmlHeaders.set("pragma", "no-cache");
-    htmlHeaders.set("expires", "0");
-  }
+  // HTML shells must never be cached at browser/CDN/proxy layers. The former
+  // home-page exception (`s-maxage=14400`, SWR=86400) kept replaying stale
+  // HTML after publishes, making users see "0 changes" until a purge.
+  htmlHeaders.set("cache-control", HTML_NO_STORE_CACHE_CONTROL);
+  htmlHeaders.set("cdn-cache-control", "no-store");
+  htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
+  htmlHeaders.set("surrogate-control", "no-store");
+  htmlHeaders.set("pragma", "no-cache");
+  htmlHeaders.set("expires", "0");
   htmlHeaders.delete("cache-tag");
   void _pathname;
 
