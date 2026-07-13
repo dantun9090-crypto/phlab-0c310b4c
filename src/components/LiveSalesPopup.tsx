@@ -53,16 +53,16 @@ export default function LiveSalesPopup() {
   const isHomePage = pathname === '/' || pathname === '/index';
   const currentUid = auth.currentUser?.uid;
 
-  // Filter eligible orders (recent, not own). Refreshed live via sanitized API.
+  // Filter eligible orders by recency; own-order exclusion happens server-side via the `self` param.
   const eligible = useMemo(() => {
     const cutoff = Date.now() - MAX_AGE_MS;
     const list = recentOrders.filter((o) => {
       const hasUsableTime = Number.isFinite(o.createdAtMs) && o.createdAtMs > 0;
-      return (!hasUsableTime || o.createdAtMs >= cutoff) && (!currentUid || o.userId !== currentUid);
+      return !hasUsableTime || o.createdAtMs >= cutoff;
     });
     dlog('pool refresh — recentOrders:', recentOrders.length, 'eligible:', list.length, list);
     return list;
-  }, [recentOrders, currentUid]);
+  }, [recentOrders]);
 
   // Keep ref in sync so the rotation interval always sees the freshest pool
   // without tearing down on every snapshot.
