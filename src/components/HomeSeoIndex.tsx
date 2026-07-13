@@ -42,7 +42,7 @@ export default function HomeSeoIndex() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_0.7fr] gap-10">
           {/* Featured Research Compounds */}
           <div>
-            <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-[0.14em] uppercase mb-4" style={{ color: 'rgba(16,185,129,0.85)' }}>
+            <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-[0.14em] uppercase mb-4" style={{ color: 'rgb(16,185,129)' }}>
               <FlaskConical className="w-3.5 h-3.5" /> Featured Research Compounds
             </h3>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
