@@ -506,10 +506,26 @@ function escapeHtml(value: string): string {
 }
 
 function safeResetNext(url: URL): string {
-  const raw = url.searchParams.get("next") || "/";
-  if (/^\/[A-Za-z0-9\-._~!$&'()*+,;=:@/?%#]*$/.test(raw) && !raw.startsWith("//")) return raw;
+  const explicit = url.searchParams.get("next");
+  // Explicit next= wins when it's a same-origin path.
+  if (explicit && /^\/[A-Za-z0-9\-._~!$&'()*+,;=:@/?%#]*$/.test(explicit) && !explicit.startsWith("//")) {
+    return explicit;
+  }
+  // Fall back to the current pathname (with search preserved, minus the
+  // cache-guard/service-worker markers). The __root.tsx cache guard fires
+  // `location.replace(pathname+search+'?_bust=…')` without a next= param, so
+  // without this the interceptor would strand every returning visitor on `/`
+  // instead of the page they originally requested.
+  const path = url.pathname;
+  if (path === "/cache-reset" || path === "/api/public/hardreset") return "/";
+  const params = new URLSearchParams(url.search);
+  for (const key of ["_bust", "_t", "sw", "phl_sw_cleanup", "next"]) params.delete(key);
+  const qs = params.toString();
+  const candidate = qs ? `${path}?${qs}` : path;
+  if (/^\/[A-Za-z0-9\-._~!$&'()*+,;=:@/?%#]*$/.test(candidate) && !candidate.startsWith("//")) return candidate;
   return "/";
 }
+
 
 function browserCacheResetResponse(url: URL): Response {
   const next = safeResetNext(url);
