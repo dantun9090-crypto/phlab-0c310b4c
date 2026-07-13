@@ -296,7 +296,13 @@ async function buildBrowserResponse(response, path) {
   // simplified above via simplifyStrictDynamicCsp so the body is safe to
   // cache. Preserve origin's cache-control and DO NOT stamp cdn/surrogate
   // no-store — every other path falls through to strict no-store.
-  if (shouldPreserveEdgeCache(path, headers)) {
+  if (path === "/") {
+    // Home shell is intentionally edge-cacheable. Force the contract
+    // regardless of what the origin (Firebase static host) emits — its
+    // firebase.json stamps `no-cache, no-store, must-revalidate` on
+    // index.html, which would otherwise defeat CF's shared cache and
+    // fail e2e/cache-headers-regression.spec.ts.
+    headers.set("Cache-Control", "public, max-age=0, s-maxage=14400, stale-while-revalidate=86400");
     headers.delete("Pragma");
     headers.delete("pragma");
     headers.delete("Expires");
@@ -310,6 +316,7 @@ async function buildBrowserResponse(response, path) {
   } else {
     applyBrowserHtmlNoCache(headers, path);
   }
+
   return new Response(body, {
     status: response.status,
     statusText: response.statusText,
