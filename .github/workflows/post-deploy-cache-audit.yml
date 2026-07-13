@@ -55,6 +55,19 @@ jobs:
           path: ./previous
           if_no_artifact_found: warn
 
+      # Pull recent successful audit artifacts so we can render a multi-deploy
+      # trend (table + Mermaid chart) in the Summary tab. Failure is non-fatal.
+      - name: Download audit history (last 10 runs)
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          name: cache-audit-report
+          workflow: post-deploy-cache-audit.yml
+          workflow_conclusion: success
+          branch: main
+          path: ./history
+          if_no_artifact_found: warn
+
       - name: Audit cache headers for / and /products
         env:
           BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
