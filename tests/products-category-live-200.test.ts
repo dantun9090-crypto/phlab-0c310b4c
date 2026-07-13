@@ -10,7 +10,7 @@
  *      live home page, so newly added categories are covered automatically.
  *
  * Env overrides:
- *   BASE_URL                     Origin under test (default https://phlabs.co.uk)
+ *   CATEGORY_BASE_URL             Origin under test (default https://phlabs.co.uk)
  *   SKIP_LIVE_CATEGORY_CHECK=1   Bypass locally when offline
  *
  * Run: bunx vitest run tests/products-category-live-200.test.ts
