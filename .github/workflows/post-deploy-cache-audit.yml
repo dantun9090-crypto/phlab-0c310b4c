@@ -1,0 +1,46 @@
+name: Post-Deploy Cache Header Audit
+
+# Runs after every successful production deploy (Cloudflare Worker) and after
+# the post-deploy edge purge, to verify that `/` and `/products` are served
+# with `no-store` (never cached at the edge or browser).
+#
+# Report is written to the workflow Summary tab for readable CI output, and
+# the job fails hard if the contract is broken so regressions are caught
+# immediately after a deploy.
+
+on:
+  workflow_run:
+    workflows:
+      - "Deploy Cloudflare Worker"
+      - "Post-Deploy Edge Purge"
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Base URL to audit (default: https://phlabs.co.uk)"
+        required: false
+        default: "https://phlabs.co.uk"
+
+concurrency:
+  group: post-deploy-cache-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Wait for edge propagation (30s)
+        if: ${{ github.event_name == 'workflow_run' }}
+        run: sleep 30
+
+      - name: Audit cache headers for / and /products
+        env:
+          BASE_URL: ${{ github.event.inputs.base_url || 'https://phlabs.co.uk' }}
+        run: |
+          chmod +x .github/workflows/scripts/audit-cache-headers.sh
+          .github/workflows/scripts/audit-cache-headers.sh
