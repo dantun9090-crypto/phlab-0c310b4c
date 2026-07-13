@@ -63,17 +63,14 @@ jobs:
           python -m pip install playwright
           python -m playwright install --with-deps chromium
 
-      - name: Build app
-        run: bun run build
-
-      - name: Start preview server
+      - name: Start dev server
         run: |
-          # Boot the production preview in the background. The harness only
-          # needs HTTP endpoints to be reachable; the dev module-graph
-          # fallback is exercised only when you run locally with `bun dev`.
-          (bun run start &) > server.log 2>&1
-          # Wait for readiness — up to 60s.
-          for i in $(seq 1 60); do
+          # Boot the Vite dev server in the background. The harness only needs
+          # HTTP endpoints (server functions) to be reachable on :8080; a full
+          # production build is not required.
+          nohup bun run dev > server.log 2>&1 &
+          # Wait for readiness — up to 120s (first-run transform is slow).
+          for i in $(seq 1 120); do
             if curl -fsS -o /dev/null "http://localhost:8080/"; then
               echo "server up after ${i}s"; exit 0
             fi
