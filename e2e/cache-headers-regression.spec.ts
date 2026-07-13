@@ -86,11 +86,10 @@ const NEVER_CF_HIT = ["HIT", "REVALIDATED", "STALE", "UPDATING"];
 // ---------------------------------------------------------------------------
 // 1. HTML shells — must never be edge-cached.
 // ---------------------------------------------------------------------------
-// NOTE: `/` intentionally omitted — GET `/` from browser UAs is edge-cacheable
-// (public, s-maxage=14400, stale-while-revalidate). The phlabs-prerender Worker
-// rewrites the per-request nonce CSP into a hash CSP at cache MISS so the body
-// is byte-identical across requests. Every other HTML shell stays no-store.
+// `/` is included: every human HTML shell must be no-store so fresh publishes
+// cannot be hidden by stale Cloudflare HTML.
 const HTML_SHELLS = [
+  "/",
   "/products",
   "/compound",
   "/research",
@@ -127,33 +126,6 @@ test.describe("cache headers · HTML shells (must not edge-cache)", () => {
       expect(h.age, `age must be 0 (was ${h.age})`).toBe(0);
     });
   }
-});
-
-// ---------------------------------------------------------------------------
-// 1b. Cacheable HTML — GET `/` from browser UAs is intentionally edge-cached.
-// The phlabs-prerender Worker rewrites the per-request nonce CSP into a hash
-// CSP at cache MISS so the sanitised body is byte-identical across requests.
-// Contract: public, max-age=0, s-maxage=14400, stale-while-revalidate=86400.
-// ---------------------------------------------------------------------------
-test.describe("cache headers · cacheable HTML (must edge-cache)", () => {
-  test("shell / is edge-cacheable with 4h s-maxage + SWR", async ({ request }) => {
-    const h = await head(request, "/");
-    expect(h.status, "status for /").toBe(200);
-    expect(h.contentType, "content-type for /").toMatch(/text\/html/);
-
-    const cc = h.cacheControl.toLowerCase();
-    expect(cc, `cache-control on / (${cc})`).toContain("public");
-    expect(cc, `cache-control on / must not be no-store`).not.toContain("no-store");
-    expect(parseDirective(cc, "s-maxage"), "s-maxage on /").toBe(14400);
-    expect(
-      parseDirective(cc, "stale-while-revalidate"),
-      "stale-while-revalidate on /",
-    ).toBe(86400);
-
-    // Origin must not have shoved cdn-cache-control: no-store back on.
-    const cdnHeader = (h.cdn || h.surrogate).toLowerCase();
-    expect(cdnHeader, `cdn-cache-control on / (${cdnHeader})`).not.toContain("no-store");
-  });
 });
 
 // ---------------------------------------------------------------------------
