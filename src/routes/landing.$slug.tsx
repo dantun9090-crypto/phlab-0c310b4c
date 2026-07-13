@@ -1,6 +1,7 @@
 import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { db, doc, getDoc } from "@/lib/firebase";
+import { cfImgProps } from "@/lib/cf-image";
 
 interface Stat { value: string; label: string }
 interface Feature { icon: string; title: string; desc: string }
