@@ -209,15 +209,29 @@ export const Route = createFileRoute("/products_/$slug")({
     }
     if (product?.price) {
       const inStock = typeof product?.stock === "number" ? product.stock > 0 : true;
+      // Offer validity window — Google Merchant listings flag `validFrom` as
+      // "Missing" without it. Anchor to the first of the current month so the
+      // value is stable across renders and cacheable, and set `priceValidUntil`
+      // 12 months out (Google recommends <= 1 year).
+      const now = new Date();
+      const validFrom = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+        .toISOString()
+        .slice(0, 10);
+      const priceValidUntil = new Date(Date.UTC(now.getUTCFullYear() + 1, now.getUTCMonth(), 1))
+        .toISOString()
+        .slice(0, 10);
       jsonLd.offers = {
         "@type": "Offer",
         url,
         priceCurrency: "GBP",
         price: product.price.toFixed(2),
+        validFrom,
+        priceValidUntil,
         availability: inStock
           ? "https://schema.org/InStock"
           : "https://schema.org/OutOfStock",
         itemCondition: "https://schema.org/NewCondition",
+
         shippingDetails: {
           "@type": "OfferShippingDetails",
           shippingRate: {
