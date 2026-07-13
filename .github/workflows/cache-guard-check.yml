@@ -32,11 +32,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - name: Fetch pre-rendered homepage
+      - name: Fetch homepage (browser UA — bypasses Prerender.io which strips inline scripts)
         run: |
           set -euo pipefail
           curl -sSL --max-time 30 \
-            -H 'User-Agent: Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)' \
+            -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' \
             'https://phlabs.co.uk/' -o /tmp/home.html
           echo "Bytes: $(wc -c < /tmp/home.html)"
 
