@@ -30,7 +30,7 @@ jobs:
         id: smoke
         env:
           SMOKE_BASE_URL: https://phlabs.co.uk
-        run: bunx playwright test e2e/live-smoke.spec.ts --reporter=line
+        run: bunx playwright test e2e/live-smoke.spec.ts --project=chromium --reporter=line
 
       - name: Capture failing headers
         if: failure()
