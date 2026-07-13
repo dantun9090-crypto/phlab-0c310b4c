@@ -896,6 +896,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   // HTMLRewriter: only append build-id meta. Per-request nonce injection
   // removed so HTML bodies are identical across requests and edge-cacheable.
   type RwElement = {
+    getAttribute: (k: string) => string | null;
     setAttribute: (k: string, v: string) => void;
     append: (html: string, opts?: { html: boolean }) => void;
   };
@@ -917,6 +918,42 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   // Worker is absent (local dev / direct-to-origin) the nonce still works
   // for a single request — no placeholder leak, no fail-open.
   const nonceAttrValue = nonce;
+
+  // Cache-busting: chunk filenames already contain a content [hash], but
+  // every build gets a fresh `?v=<BUILD_ID>` appended to every asset URL
+  // rendered in the HTML shell. Rationale — a returning Chrome tab that
+  // held a cached HTML fragment (via bfcache, prefetch, or a paranoid
+  // corporate proxy) can never replay an old `<script src="/assets/…">`
+  // pointing at a hash the CDN has evicted: the query string alone makes
+  // the URL unique per publish, so the cache lookup misses and Chrome
+  // fetches the current chunk. Also blocks stale `modulepreload` warmups
+  // and `link[imagesrcset]` responsive images.
+  const ASSET_PATH_RE = /^\/(?:assets|_build)\//;
+  const versionUrl = (raw: string | null): string | null => {
+    if (!raw) return null;
+    if (!ASSET_PATH_RE.test(raw)) return null;
+    if (raw.includes("?v=") || raw.includes("&v=")) return null;
+    const sep = raw.includes("?") ? "&" : "?";
+    return `${raw}${sep}v=${encodeURIComponent(buildId)}`;
+  };
+  const versionSrcset = (raw: string | null): string | null => {
+    if (!raw) return null;
+    let touched = false;
+    const rewritten = raw
+      .split(",")
+      .map((part) => {
+        const trimmed = part.trim();
+        if (!trimmed) return part;
+        const [url, ...rest] = trimmed.split(/\s+/);
+        const next = versionUrl(url);
+        if (!next) return part;
+        touched = true;
+        return [next, ...rest].join(" ");
+      })
+      .join(", ");
+    return touched ? rewritten : null;
+  };
+
   if (RewriterCtor) {
     const rewriter: Rewriter = new RewriterCtor();
     let r = rewriter.on("head", {
@@ -924,6 +961,31 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
         el.append(`<meta name="build-id" content="${buildId}">`, { html: true });
         el.append(`<meta name="build-version" content="${buildId}">`, { html: true });
         el.append(`<meta name="release" content="${buildId}">`, { html: true });
+      },
+    });
+    r = r.on("script[src]", {
+      element(el) {
+        const next = versionUrl(el.getAttribute("src"));
+        if (next) el.setAttribute("src", next);
+      },
+    }).on("link[href]", {
+      element(el) {
+        const next = versionUrl(el.getAttribute("href"));
+        if (next) el.setAttribute("href", next);
+        const nextSet = versionSrcset(el.getAttribute("imagesrcset"));
+        if (nextSet) el.setAttribute("imagesrcset", nextSet);
+      },
+    }).on("img[src]", {
+      element(el) {
+        const next = versionUrl(el.getAttribute("src"));
+        if (next) el.setAttribute("src", next);
+        const nextSet = versionSrcset(el.getAttribute("srcset"));
+        if (nextSet) el.setAttribute("srcset", nextSet);
+      },
+    }).on("source[srcset]", {
+      element(el) {
+        const nextSet = versionSrcset(el.getAttribute("srcset"));
+        if (nextSet) el.setAttribute("srcset", nextSet);
       },
     });
     if (strict) {
