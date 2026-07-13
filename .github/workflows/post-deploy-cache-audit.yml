@@ -84,6 +84,13 @@ jobs:
           python3 .github/workflows/scripts/diff-cache-audit.py "$prev" audit-cache-headers.json || diff_rc=$?
           echo "DIFF_RC=${diff_rc:-0}" >> "$GITHUB_ENV"
 
+      - name: Render multi-deploy trend report (table + chart)
+        if: always()
+        continue-on-error: true
+        run: |
+          python3 .github/workflows/scripts/render-cache-trend.py \
+            audit-cache-headers.json ./history
+
       - name: Upload current audit report
         if: always()
         uses: actions/upload-artifact@v4
