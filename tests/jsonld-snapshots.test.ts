@@ -10,7 +10,7 @@
  * updates after review.
  */
 import { describe, it, expect } from "vitest";
-import { Route as ProductRoute } from "../src/routes/products.$slug";
+import { Route as ProductRoute } from "../src/routes/products_.$slug";
 import { Route as SplatRoute } from "../src/routes/$";
 import { articles } from "../src/pages/Resources/data/articles";
 import type { SeoProduct } from "../src/lib/firestore-rest";
@@ -97,7 +97,19 @@ const PRODUCT_FIXTURES: Array<SeoProduct> = [
     visibility: "public",
     displayOrder: 5,
     stock: 50,
-  },
+    // Verified rating source (e.g. Google Customer Reviews sync).
+    aggregateRating: { ratingValue: 4.8, reviewCount: 42 },
+    reviews: [
+      {
+        author: "Dr. A. Researcher",
+        rating: 5,
+        body: "Consistent purity across batches; reliable for our in-vitro assays.",
+        verified: true,
+        datePublished: "2026-03-15",
+      },
+    ],
+  } as any,
+
 ];
 
 describe("Product JSON-LD snapshots", () => {

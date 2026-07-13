@@ -188,11 +188,63 @@ export const Route = createFileRoute("/products_/$slug")({
           value: "false",
         },
       ],
-      // AggregateRating intentionally omitted — Google penalises self-published
-      // ratings without verified third-party source. Stars will be sourced from
-      // Google Customer Reviews (renderGoogleCustomerReviewsOptIn on
-      // /payment/success) and re-introduced here once we have a verified feed.
+      // AggregateRating + Review — only emitted below when the Firestore
+      // product doc carries VERIFIED rating data (synced from Google Customer
+      // Reviews or admin-moderated `reviews`). Never self-published: Google
+      // penalises unverified stars and it is a peptide-compliance risk.
     };
+    // Verified aggregate rating: product.aggregateRating =
+    //   { ratingValue: number, reviewCount: number, bestRating?, worstRating? }
+    const ar: any = (product as any)?.aggregateRating;
+    if (
+      ar &&
+      typeof ar.ratingValue === "number" &&
+      typeof ar.reviewCount === "number" &&
+      ar.reviewCount > 0 &&
+      ar.ratingValue >= 1 &&
+      ar.ratingValue <= 5
+    ) {
+      jsonLd.aggregateRating = {
+        "@type": "AggregateRating",
+        ratingValue: Number(ar.ratingValue).toFixed(1),
+        reviewCount: ar.reviewCount,
+        bestRating: ar.bestRating ?? 5,
+        worstRating: ar.worstRating ?? 1,
+      };
+    }
+    // Individual reviews — only verified entries with author + rating + body.
+    const rawReviews: any[] = Array.isArray((product as any)?.reviews)
+      ? (product as any).reviews
+      : [];
+    const reviewList = rawReviews
+      .filter(
+        (r) =>
+          r &&
+          typeof r.author === "string" &&
+          r.author.trim().length > 0 &&
+          typeof r.rating === "number" &&
+          r.rating >= 1 &&
+          r.rating <= 5 &&
+          typeof r.body === "string" &&
+          r.body.trim().length > 0 &&
+          r.verified === true,
+      )
+      .slice(0, 10)
+      .map((r) => ({
+        "@type": "Review",
+        author: { "@type": "Person", name: r.author },
+        reviewRating: {
+          "@type": "Rating",
+          ratingValue: Number(r.rating).toFixed(1),
+          bestRating: 5,
+          worstRating: 1,
+        },
+        reviewBody: String(r.body).slice(0, 1000),
+        ...(r.datePublished ? { datePublished: r.datePublished } : {}),
+      }));
+    if (reviewList.length > 0) {
+      jsonLd.review = reviewList;
+    }
     if (measure) {
       // Google Merchant unit-of-measure signals (size + weight + property).
       jsonLd.weight = {

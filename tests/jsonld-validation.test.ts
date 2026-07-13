@@ -10,7 +10,7 @@
  * Run with: bunx vitest run tests/jsonld-validation.test.ts
  */
 import { describe, it, expect } from "vitest";
-import { Route as ProductRoute } from "../src/routes/products.$slug";
+import { Route as ProductRoute } from "../src/routes/products_.$slug";
 import { Route as SplatRoute } from "../src/routes/$";
 import { articles } from "../src/pages/Resources/data/articles";
 import type { SeoProduct } from "../src/lib/firestore-rest";
@@ -64,7 +64,9 @@ const SAMPLE_PRODUCT: SeoProduct = {
   visibility: "public",
   displayOrder: 1,
   stock: 25,
-};
+  // Verified aggregate rating (e.g. Google Customer Reviews sync).
+  aggregateRating: { ratingValue: 4.8, reviewCount: 42 },
+} as any;
 
 describe("Product JSON-LD (/products/$slug)", () => {
   const head = callHead(ProductRoute, {
