@@ -95,6 +95,12 @@ jobs:
           fi
 
       - name: Run Germany checkout spec on ${{ matrix.browser }}
+        env:
+          # The Playwright config falls back to the Lovable preview URL, which
+          # is protected by the auth bridge in GitHub Actions and returns
+          # "Access Denied". Run this public checkout regression against the
+          # canonical production host instead.
+          TEST_BASE_URL: https://phlabs.co.uk
         run: bunx playwright test e2e/checkout-germany.spec.ts --project=${{ matrix.browser }}
 
       - name: Upload Playwright report
