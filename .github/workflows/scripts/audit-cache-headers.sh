@@ -79,6 +79,7 @@ audit_route() {
     --max-time 15 \
     "$url") || {
       rows+=("| \`$path\` | ❌ | network error | — | — | — |")
+      json_rows+=("$(python3 -c "import json; print(json.dumps({'path':'$path','http':0,'cc':'','cdncc':'','cf':'','buildId':'','problems':['network error'],'ok':False}))")")
       fail=$((fail+1))
       rm -f "$tmp"
       return
