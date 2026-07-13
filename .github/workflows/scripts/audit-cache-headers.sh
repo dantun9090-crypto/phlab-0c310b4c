@@ -27,6 +27,9 @@ declare -a ALLOWED_CF_STATUS=("DYNAMIC" "BYPASS" "MISS" "EXPIRED")
 pass=0
 fail=0
 declare -a rows=()
+declare -a json_rows=()
+
+json_escape() { python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'; }
 
 lower() { tr '[:upper:]' '[:lower:]'; }
 
