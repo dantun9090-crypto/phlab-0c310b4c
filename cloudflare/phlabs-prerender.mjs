@@ -516,14 +516,10 @@ export default {
     }
 
     const originStart = Date.now();
-    // Only `/` is intentionally edge-cacheable. For every other HTML shell,
-    // bypass CF's cache on the subrequest so a Cache Rule (or any inherited
-    // cache config) can't replay a stale shell — otherwise the response we
-    // return carries cf-cache-status=HIT even though we stamp no-store, and
-    // the cache-headers scan / regression suite flags it.
-    const originRes = path === "/"
-      ? await fetch(request)
-      : await fetch(request, { cf: { cacheTtl: 0, cacheEverything: false } });
+    // Bypass CF cache on every human HTML subrequest, including `/`. A cached
+    // homepage shell can keep the SSR fallback on screen after a publish even
+    // when this Worker stamps no-store on the outer response.
+    const originRes = await fetch(request, { cf: { cacheTtl: 0, cacheEverything: false } });
     const originMs = Date.now() - originStart;
     const passRes = await buildBrowserResponse(originRes, path);
     const out = new Response(passRes.body, {
@@ -533,13 +529,10 @@ export default {
     });
     out.headers.set("X-PHL-Via", "passthrough;bot=0;warm=" + (wEligible ? "miss" : "skip") + ";origin=" + originMs + "ms;total=" + (Date.now() - startTime) + "ms");
     out.headers.set("Server-Timing", `warm-cache;desc="${wEligible ? "MISS" : "SKIP"}", origin;dur=${originMs}, worker;dur=${Date.now() - startTime}`);
-    // Strip cf-cache-status on non-home HTML shells: we bypass CF cache on the
-    // origin subrequest for these paths and force no-store, so any residual
-    // cf-cache-status inherited from the subrequest is misleading and would
-    // trip the html-shell regression contract.
-    if (path !== "/") {
-      out.headers.delete("cf-cache-status");
-    }
+    // Strip inherited cf-cache-status on human HTML shells: the subrequest is
+    // forced no-cache and the outer response is no-store, so HIT/STALE here is
+    // misleading and can mask a stale shell problem.
+    out.headers.delete("cf-cache-status");
     // Mirror origin build id into cf-cache-build-id so the post-deploy health
     // check can confirm this Worker is on-path and its build tag reached the
     // browser through Cloudflare's cache layer.
