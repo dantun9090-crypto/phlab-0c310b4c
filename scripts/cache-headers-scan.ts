@@ -33,8 +33,11 @@ const TTL_CEILING = 3600;
 // at hashed JS/CSS chunks that may have been evicted from the new build,
 // producing blank pages until a purge. This scanner is the CI guardrail that
 // prevents that deploy-safety contract from regressing.
+// `/` intentionally excluded — GET `/` from browser UAs is edge-cacheable
+// (public, s-maxage=14400, SWR). The phlabs-prerender Worker rewrites the
+// per-request nonce CSP into a hash CSP at cache MISS, so the body is
+// byte-identical across requests. Every other HTML shell stays no-store.
 const HTML_SHELL_PATHS = [
-  "/",
   "/products",
   "/compound",
   "/research",
