@@ -30,7 +30,7 @@ export default function HomeSeoIndex() {
     >
       <div className="container mx-auto px-6">
         <div className="text-center mb-12">
-          <div className="text-[11px] font-bold tracking-[0.2em] uppercase mb-2" style={{ color: 'rgba(16,185,129,0.7)' }}>
+          <div className="text-[11px] font-bold tracking-[0.2em] uppercase mb-2" style={{ color: 'rgb(16,185,129)' }}>
             Full Catalogue
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold text-white">Browse Every Research Compound &amp; Resource</h2>
