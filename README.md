@@ -1,5 +1,5 @@
 # PH Labs — phlabs.co.uk
-<!-- GitHub sync verification edit: 2026-07-13 -->
+<!-- GitHub sync verification edit: 2026-07-13 (retest after ruleset fix) -->
 
 <!-- security-scan-status:start -->
 [![Security scan](https://github.com/phlabs-uk/phlabs/actions/workflows/security-scan.yml/badge.svg?branch=main)](https://github.com/phlabs-uk/phlabs/actions/workflows/security-scan.yml?query=branch%3Amain)
