@@ -7,7 +7,10 @@ import { useMarketingRevalidate } from '@/hooks/useMarketingRevalidate';
 import { Link } from 'react-router-dom';
 const AnimatedBackground = lazy(() => import('@/components/AnimatedBackground').then(m => ({ default: m.AnimatedBackground })));
 import HomeSeoIndex from '@/components/HomeSeoIndex';
-import MarketingAdvertSlot from '@/components/MarketingAdvertSlot';
+// MarketingAdvertSlot is lazy — it renders in two slots (hero + mid), both
+// non-critical for LCP. Off the initial critical chunk on the home route.
+const MarketingAdvertSlot = lazy(() => import('@/components/MarketingAdvertSlot'));
+
 import { getProductImage } from '@/lib/productImages';
 import type { Product } from '@/lib/firebase';
 // Firebase is dynamically imported below to keep it off the home-route critical chunk.
@@ -491,8 +494,11 @@ export default function HomePage() {
           ADVERTS — HERO SLOT (moved to top)
       ════════════════════════════════ */}
       {heroAdverts.length > 0 && (
-        <MarketingAdvertSlot adverts={heroAdverts} placement="homepage_hero" className="container mx-auto px-6 py-6" eagerFirstImage />
+        <Suspense fallback={<div aria-hidden="true" style={{ minHeight: 120 }} />}>
+          <MarketingAdvertSlot adverts={heroAdverts} placement="homepage_hero" className="container mx-auto px-6 py-6" eagerFirstImage />
+        </Suspense>
       )}
+
 
 
 
@@ -711,7 +717,10 @@ export default function HomePage() {
 
 
 
-      <MarketingAdvertSlot adverts={adverts} placement="homepage_mid" className="container mx-auto px-6 py-6" variant="card" />
+      <Suspense fallback={<div aria-hidden="true" style={{ minHeight: 140 }} />}>
+        <MarketingAdvertSlot adverts={adverts} placement="homepage_mid" className="container mx-auto px-6 py-6" variant="card" />
+      </Suspense>
+
 
 
       {/* ════════════════════════════════
