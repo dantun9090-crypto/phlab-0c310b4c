@@ -33,6 +33,33 @@ const results = new Map();
 const queue = ["/"];
 const seen = new Set(["/"]);
 
+// Seed with sitemap.xml URLs so pure SPA pages (that don't render <a href> on
+// the initial HTML) are still checked for 404s.
+try {
+  const smRes = await fetch(origin + "/sitemap.xml", { headers: { "user-agent": "phlabs-link-checker/1.0" } });
+  if (smRes.ok) {
+    const xml = await smRes.text();
+    const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+    let added = 0;
+    for (const loc of locs) {
+      try {
+        const u = new URL(loc);
+        if (u.origin !== origin) continue;
+        let p = u.pathname;
+        if (p.length > 1 && p.endsWith("/")) p = p.slice(0, -1);
+        if (!seen.has(p)) {
+          seen.add(p);
+          queue.push(p);
+          added++;
+        }
+      } catch {}
+    }
+    console.log(`Seeded ${added} URLs from /sitemap.xml`);
+  }
+} catch {
+  // sitemap optional
+}
+
 function shouldSkip(pathname) {
   return IGNORE.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
