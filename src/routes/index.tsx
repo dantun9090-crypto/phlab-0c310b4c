@@ -163,7 +163,7 @@ function HomeSsrShell({ banner }: { banner: PromoBannerLite | null }) {
       style={{
         width: "100%",
         height: bannerHeight,
-        objectFit: banner.objectFit || "cover",
+        objectFit: (banner.objectFit || "cover") as "cover" | "contain" | "fill" | "none" | "scale-down",
         objectPosition: `${banner.objectPositionX ?? 50}% ${banner.objectPositionY ?? 50}%`,
         display: "block",
       }}
