@@ -51,7 +51,7 @@ export default function LiveSalesPopup() {
   const reduced = useMemo(() => prefersReducedMotion(), []);
 
   const isHomePage = pathname === '/' || pathname === '/index';
-  const currentUid = auth.currentUser?.uid;
+  // Own-order exclusion is enforced server-side; no client uid required here.
 
   // Filter eligible orders by recency; own-order exclusion happens server-side via the `self` param.
   const eligible = useMemo(() => {
