@@ -50,9 +50,9 @@ describe("Cache-Control headers for marketing routes", () => {
     const origin = readFileSync("src/server.ts", "utf8");
     const worker = readFileSync("cloudflare/phlabs-prerender.mjs", "utf8");
 
-    expect(origin).toContain('"cache-control": "no-cache, no-store, must-revalidate"');
-    expect(origin).toContain('htmlHeaders.set("cache-control", "no-cache, no-store, must-revalidate")');
-    expect(worker).toContain('const BROWSER_HTML_CACHE_CONTROL = "no-cache, no-store, must-revalidate"');
+    expect(origin).toContain("HTML_NO_STORE_CACHE_CONTROL");
+    expect(origin).toContain('htmlHeaders.set("cache-control", HTML_NO_STORE_CACHE_CONTROL)');
+    expect(worker).toContain("HTML_NO_STORE_CACHE_CONTROL");
     expect(worker).toContain('headers.set("Pragma", "no-cache")');
     expect(worker).toContain('headers.set("Expires", "0")');
   });

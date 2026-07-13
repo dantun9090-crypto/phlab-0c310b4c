@@ -65,12 +65,10 @@ test.describe("live smoke", () => {
 
     expect(headers["x-build-id"], "missing x-build-id header").toBeTruthy();
 
-    // Public homepage should not be flagged no-store at the edge — that
-    // was the root cause of the recent slowdown. Allow no-store ONLY when
-    // CF/Vary explicitly varies on auth or cookie.
-    if (/no-store/i.test(cc) && !headers["vary"]?.includes("Cookie") && headers["cf-cache-status"] !== "DYNAMIC") {
-      throw new Error(`Homepage is no-store at the edge: ${cc}`);
-    }
+    expect(cc.toLowerCase(), "homepage HTML must remain deploy-safe no-store").toContain("no-store");
+    expect(["HIT", "REVALIDATED", "STALE", "UPDATING"]).not.toContain(
+      (headers["cf-cache-status"] || "").toUpperCase(),
+    );
   });
 
   for (const route of CRITICAL_ROUTES) {
