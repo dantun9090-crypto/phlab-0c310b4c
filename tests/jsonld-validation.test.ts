@@ -64,7 +64,9 @@ const SAMPLE_PRODUCT: SeoProduct = {
   visibility: "public",
   displayOrder: 1,
   stock: 25,
-};
+  // Verified aggregate rating (e.g. Google Customer Reviews sync).
+  aggregateRating: { ratingValue: 4.8, reviewCount: 42 },
+} as any;
 
 describe("Product JSON-LD (/products/$slug)", () => {
   const head = callHead(ProductRoute, {
