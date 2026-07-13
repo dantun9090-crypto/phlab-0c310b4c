@@ -566,6 +566,13 @@ export default {
     });
     out.headers.set("X-PHL-Via", "passthrough;bot=0;warm=" + (wEligible ? "miss" : "skip") + ";origin=" + originMs + "ms;total=" + (Date.now() - startTime) + "ms");
     out.headers.set("Server-Timing", `warm-cache;desc="${wEligible ? "MISS" : "SKIP"}", origin;dur=${originMs}, worker;dur=${Date.now() - startTime}`);
+    // Strip cf-cache-status on non-home HTML shells: we bypass CF cache on the
+    // origin subrequest for these paths and force no-store, so any residual
+    // cf-cache-status inherited from the subrequest is misleading and would
+    // trip the html-shell regression contract.
+    if (path !== "/") {
+      out.headers.delete("cf-cache-status");
+    }
     // Mirror origin build id into cf-cache-build-id so the post-deploy health
     // check can confirm this Worker is on-path and its build tag reached the
     // browser through Cloudflare's cache layer.
