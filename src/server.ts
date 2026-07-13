@@ -864,7 +864,7 @@ function isPublicEdgeCacheable(pathname: string): boolean {
 }
 
 
-function applySecurityHeaders(response: Response, nonce: string, hostname?: string, _pathname?: string, _htmlTtl: number = 0): Response {
+function applySecurityHeaders(response: Response, nonce: string, hostname?: string, _pathname?: string, _htmlTtl: number = 0, request?: Request): Response {
   const stripped = stripInternalHeaders(response);
   const contentType = stripped.headers.get("content-type") ?? "";
   // Only decorate HTML — leaving JSON/XML/asset responses untouched avoids
@@ -872,17 +872,36 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
   if (!contentType.includes("text/html")) return stripped;
 
   const htmlHeaders = new Headers(stripped.headers);
-  // HTML shells MUST NEVER be edge-cached. A cached shell survives a Lovable
-  // publish and points at hashed JS/CSS chunks evicted from the new build →
-  // blank pages until manual purge. Contract enforced by
+  // Default: HTML shells NEVER edge-cached. Contract enforced by
   // .github/workflows/html-shell-no-cache.yml + e2e/cache-headers-regression.
-  // Speed wins come from CSP-hash caching of assets, not from caching HTML.
-  htmlHeaders.set("cache-control", HTML_NO_STORE_CACHE_CONTROL);
-  htmlHeaders.set("cdn-cache-control", "no-store");
-  htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
-  htmlHeaders.set("surrogate-control", "no-store");
-  htmlHeaders.set("pragma", "no-cache");
-  htmlHeaders.set("expires", "0");
+  //
+  // EXCEPTION — GET `/` from browser UAs is edge-cacheable. The downstream
+  // phlabs-prerender Worker rewrites the per-request nonce CSP into a hash
+  // CSP at cache MISS, so the sanitised body is identical across requests
+  // and safe to store in CF's shared cache. Bots go through Prerender.io
+  // (separate cache key), and every other route keeps no-store.
+  const ua = request?.headers.get("user-agent") ?? "";
+  const isBotUa = RX_PRERENDER.test(ua) || RX_BLOCKED.test(ua);
+  const cacheableHome =
+    request != null &&
+    (request.method === "GET" || request.method === "HEAD") &&
+    _pathname === "/" &&
+    !isBotUa;
+  if (cacheableHome) {
+    htmlHeaders.set("cache-control", "public, max-age=0, s-maxage=14400, stale-while-revalidate=86400");
+    htmlHeaders.delete("cdn-cache-control");
+    htmlHeaders.delete("cloudflare-cdn-cache-control");
+    htmlHeaders.delete("surrogate-control");
+    htmlHeaders.delete("pragma");
+    htmlHeaders.delete("expires");
+  } else {
+    htmlHeaders.set("cache-control", HTML_NO_STORE_CACHE_CONTROL);
+    htmlHeaders.set("cdn-cache-control", "no-store");
+    htmlHeaders.set("cloudflare-cdn-cache-control", "no-store");
+    htmlHeaders.set("surrogate-control", "no-store");
+    htmlHeaders.set("pragma", "no-cache");
+    htmlHeaders.set("expires", "0");
+  }
   htmlHeaders.delete("cache-tag");
   void _pathname;
 
