@@ -404,10 +404,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // to prevent the third-party stylesheet from mutating <head> before
       // hydration completes, which was triggering React error #418
       // (hydration mismatch) in Chrome/Firefox/Edge.
-      // Analytics / Tag Manager — used sitewide; preconnect shaves ~150–300ms
-      // off the first GA/GTM request on slow mobile networks.
-      { rel: "preconnect", href: "https://www.googletagmanager.com", crossOrigin: "" },
-      { rel: "preconnect", href: "https://www.google-analytics.com", crossOrigin: "" },
+      // GA/GTM is deferred until after LCP + idle (see loader below), so we
+      // skip `preconnect` here — the connection would sit idle for 4–8s and
+      // the browser closes it before the script actually fetches. Keep only
+      // dns-prefetch to warm the DNS resolver cheaply.
       { rel: "dns-prefetch", href: "https://firestore.googleapis.com" },
       { rel: "dns-prefetch", href: "https://firebasestorage.googleapis.com" },
       { rel: "dns-prefetch", href: "https://fonts.googleapis.com" },
