@@ -46,21 +46,29 @@ jobs:
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
 
-      - name: Build app
-        run: bun run build
+      # No build step: the audit runs against `vite dev` (SSR), which
+      # transpiles on the fly. Skipping `bun run build` saves ~90s per run.
 
-      - name: Start preview server
+
+
+      - name: Start SSR dev server
+        # `vite preview` only serves the static `dist/client` output, so the
+        # SSR shell that injects the inline theme-boot script never runs and
+        # every day-theme test times out waiting for [data-theme-mode].
+        # `vite dev` (via the TanStack Start plugin) renders the SSR shell,
+        # which is exactly what the audit needs.
         run: |
-          bun run preview --host 127.0.0.1 --port 8080 &
-          for i in {1..60}; do
+          bun run dev --host 127.0.0.1 --port 8080 &
+          for i in {1..90}; do
             code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8080/ || echo 000)
             if [ "$code" != "000" ] && [ "$code" -lt 500 ]; then exit 0; fi
             sleep 1
           done
-          echo "preview server failed to start" >&2
+          echo "dev server failed to start" >&2
           exit 1
         env:
-          NODE_ENV: production
+          NODE_ENV: development
+
 
       - name: Run day-theme audit
         env:
