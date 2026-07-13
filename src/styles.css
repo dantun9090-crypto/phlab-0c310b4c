@@ -539,6 +539,38 @@ summary {
   touch-action: manipulation;
 }
 
+/* Mobile tap-target minimums (WCAG 2.5.5 / Lighthouse tap-targets).
+   Ensure interactive controls hit 44x44 CSS px on narrow screens, and
+   give adjacent links/buttons breathing room so they don't overlap. */
+@media (max-width: 640px) {
+  button,
+  a[role="button"],
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  summary {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  /* Inline text links inside prose keep their natural size, but standalone
+     nav/menu/list links get the 44px minimum via a generous line-height. */
+  nav a,
+  [role="menu"] a,
+  [role="menuitem"],
+  li > a:only-child {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  /* Spacing between stacked tap targets so fingertips don't hit two at once. */
+  nav a + a,
+  [role="menu"] a + a,
+  li + li > a {
+    margin-top: 4px;
+  }
+}
+
 /* Sticky header safety: in-page anchors and focused inputs must not
    land under the fixed header. Header is ~64px desktop / 56px mobile;
    --phl-disclaimer-h already accounts for the optional notice strip. */
