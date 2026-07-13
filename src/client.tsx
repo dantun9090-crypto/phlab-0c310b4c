@@ -152,8 +152,10 @@ import { initSwTelemetry } from "./lib/swTelemetry";
 import { initSentry } from "./lib/sentry";
 import { installChunkAutoRecovery } from "./lib/chunk-auto-recovery";
 import { installImageErrorAutoReset } from "./lib/image-error-auto-reset";
+import { installBuildIdForceReload } from "./lib/build-id-force-reload";
 
 try { installImageErrorAutoReset(); } catch { /* ignore */ }
+try { installBuildIdForceReload(); } catch { /* ignore */ }
 
 // Sentry init is heavy (tracing + session replay integrations patch fetch,
 // install observers, install listeners). Running synchronously before
