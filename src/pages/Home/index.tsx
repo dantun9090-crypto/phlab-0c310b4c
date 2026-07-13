@@ -492,12 +492,20 @@ export default function HomePage() {
 
       {/* ════════════════════════════════
           ADVERTS — HERO SLOT (moved to top)
+          Wrapper always reserves banner height to prevent CLS shift
+          when async Firestore adverts arrive (banner is h-48/h-72 + py-6).
       ════════════════════════════════ */}
-      {heroAdverts.length > 0 && (
-        <Suspense fallback={<div aria-hidden="true" style={{ minHeight: 120 }} />}>
-          <MarketingAdvertSlot adverts={heroAdverts} placement="homepage_hero" className="container mx-auto px-6 py-6" eagerFirstImage />
-        </Suspense>
-      )}
+      <div
+        className="container mx-auto px-6 py-6"
+        style={{ minHeight: 'clamp(240px, 26vw, 336px)' }}
+        data-advert-reserve="homepage_hero"
+      >
+        {heroAdverts.length > 0 && (
+          <Suspense fallback={<div aria-hidden="true" style={{ minHeight: 192 }} />}>
+            <MarketingAdvertSlot adverts={heroAdverts} placement="homepage_hero" className="" eagerFirstImage />
+          </Suspense>
+        )}
+      </div>
 
 
 
