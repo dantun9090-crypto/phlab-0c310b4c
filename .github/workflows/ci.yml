@@ -274,6 +274,7 @@ jobs:
         run: |
           cosign verify-blob-attestation \
             --signature dist/sbom.cdx.json.provenance.intoto.jsonl \
+            --certificate dist/sbom.cdx.json.provenance.pem \
             --type slsaprovenance1 \
             --certificate-identity-regexp "^https://github\.com/${GITHUB_REPOSITORY}/\.github/workflows/ci\.yml@" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
