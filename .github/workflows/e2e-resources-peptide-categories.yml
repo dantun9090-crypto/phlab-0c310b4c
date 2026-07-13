@@ -15,7 +15,7 @@ on:
       - "src/pages/Resources/data/articles-index.ts"
       - "src/lib/legacy-mount.tsx"
       - "src/lib/seo-meta.ts"
-      - "src/routes/sitemap[.]xml.ts"
+      - "src/routes/sitemap.xml.ts"
       - "e2e/resources-peptide-categories-visual.spec.ts"
       - "playwright.config.ts"
       - ".github/workflows/e2e-resources-peptide-categories.yml"
