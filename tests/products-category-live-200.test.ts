@@ -18,6 +18,9 @@
 import { describe, it, expect } from "vitest";
 
 const BASE = (process.env.BASE_URL || "https://phlabs.co.uk").replace(/\/$/, "");
+// eslint-disable-next-line no-console
+console.log("[category-regression] BASE =", JSON.stringify(BASE));
+
 const UA = "phlabs-category-regression/1.0";
 const PROBE_TIMEOUT_MS = 10_000;
 const CONCURRENCY = 6;
