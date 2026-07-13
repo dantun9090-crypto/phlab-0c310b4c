@@ -273,7 +273,35 @@ open(os.environ['JSON_OUT'], 'w').write(json.dumps(out, indent=2))
   fi
   echo ""
   echo "_Report JSON: \`${JSON_OUT}\` (uploaded as artifact for cross-deploy diff)._"
+  if [ "$fail" -gt 0 ]; then
+    echo ""
+    echo "### 🔍 Violation dumps"
+    echo "Detailed per-route dumps (status, cf-ray, cf-request-id, all response headers, first 4 KiB of body) are attached to this run as artifact \`cache-audit-violations\`:"
+    echo ""
+    for f in "$VIOLATIONS_DIR"/*.md; do
+      [ -f "$f" ] || continue
+      echo "- \`$(basename "$f")\`"
+    done
+  fi
 } | tee -a "${GITHUB_STEP_SUMMARY:-/dev/stderr}"
+
+# Write an index file inside the violations dir so the artifact is
+# self-describing when downloaded from the Actions UI.
+if [ "$fail" -gt 0 ]; then
+  {
+    echo "# Cache-audit violations — run ${GITHUB_RUN_ID:-local}"
+    echo ""
+    echo "Base: \`${BASE_URL}\`  |  Commit: \`${GITHUB_SHA:-local}\`  |  When: \`$(date -u +%FT%TZ)\`"
+    echo ""
+    for f in "$VIOLATIONS_DIR"/*.md; do
+      [ -f "$f" ] || continue
+      echo "- [\`$(basename "$f")\`](./$(basename "$f"))"
+    done
+  } > "$VIOLATIONS_DIR/README.md"
+else
+  # Nothing to dump — leave a placeholder so the upload step doesn't warn.
+  echo "No violations in this run." > "$VIOLATIONS_DIR/README.md"
+fi
 
 [ "$fail" -eq 0 ] || exit 1
 exit 0
