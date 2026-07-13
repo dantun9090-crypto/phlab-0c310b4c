@@ -155,8 +155,18 @@ import { installImageErrorAutoReset } from "./lib/image-error-auto-reset";
 
 try { installImageErrorAutoReset(); } catch { /* ignore */ }
 
-// Sentry first so it captures errors from every subsequent boot step.
-initSentry();
+// Sentry init is heavy (tracing + session replay integrations patch fetch,
+// install observers, install listeners). Running synchronously before
+// hydration cost ~500-1000ms TBT and ~1s LCP on throttled mobile.
+// Defer the init until after the browser is idle. Errors thrown before
+// then are still captured by the ErrorBoundary + client-error-reporter
+// path — they're just buffered until Sentry is ready.
+const kickSentry = () => { try { initSentry(); } catch { /* ignore */ } };
+if (typeof requestIdleCallback !== 'undefined') {
+  requestIdleCallback(kickSentry, { timeout: 4000 });
+} else {
+  setTimeout(kickSentry, 2500);
+}
 installClientErrorReporter();
 initSwTelemetry();
 // Auto-recover from stale-chunk failures after a deploy (countdown overlay,
