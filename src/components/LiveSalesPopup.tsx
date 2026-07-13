@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { X, Package } from 'lucide-react';
 import { useLiveOrders } from '@/hooks/useLiveOrders';
 import { formatLivePopupText, type LiveOrder } from '@/lib/orderFormatter';
-import { auth } from '@/lib/firebase';
+
 
 interface PopupState {
   order: LiveOrder | null;
