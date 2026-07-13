@@ -17,9 +17,10 @@
  */
 import { describe, it, expect } from "vitest";
 
-const BASE = (process.env.BASE_URL || "https://phlabs.co.uk").replace(/\/$/, "");
-// eslint-disable-next-line no-console
-console.log("[category-regression] BASE =", JSON.stringify(BASE));
+// NOTE: don't name this env var BASE_URL — Vite reserves that (defaults to "/")
+// and it leaks into process.env during vitest runs, wiping our default.
+const BASE = (process.env.CATEGORY_BASE_URL || "https://phlabs.co.uk").replace(/\/$/, "");
+
 
 const UA = "phlabs-category-regression/1.0";
 const PROBE_TIMEOUT_MS = 10_000;
