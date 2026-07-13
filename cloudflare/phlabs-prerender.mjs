@@ -28,7 +28,6 @@ const PROXY_ROUTES = [
 ];
 
 const CACHE_TTL = {
-  html: 86400,       // 24h for browser HTML
   prerender: 60,     // 60s for prerendered HTML (keep bot cache fresh after deploys)
   static: 31536000,  // 1 year for hashed immutable assets — required by
                      // e2e/cache-headers-regression.spec.ts (max-age >= 31536000)
