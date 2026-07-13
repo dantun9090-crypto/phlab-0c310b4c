@@ -17,7 +17,7 @@
  */
 import { describe, it, expect } from "vitest";
 
-const BASE = (process.env.BASE_URL ?? "https://phlabs.co.uk").replace(/\/$/, "");
+const BASE = (process.env.BASE_URL || "https://phlabs.co.uk").replace(/\/$/, "");
 const UA = "phlabs-category-regression/1.0";
 const PROBE_TIMEOUT_MS = 10_000;
 const CONCURRENCY = 6;
