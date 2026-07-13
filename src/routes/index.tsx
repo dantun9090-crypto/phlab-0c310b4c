@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import LegacyClientApp from "@/legacy/LegacyClientApp";
+import logoSrc from "@/assets/logo.webp";
 import type { fetchPromoBanner } from "@/lib/firestore-rest";
+
 
 
 const HOME_TITLE = "PHLabs — Pro Peptide Research Lab | Lab-Grade Compounds";
