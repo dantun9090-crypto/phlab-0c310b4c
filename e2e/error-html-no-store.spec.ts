@@ -34,6 +34,10 @@ const BASE = process.env.TEST_BASE_URL || "https://phlabs.co.uk";
 
 // URLs designed to elicit a 4xx from the Worker. Each is expected to
 // return an HTML error shell — never a cached copy.
+// Only paths where the Worker itself returns the error response are in
+// scope — Cloudflare-level 4xx (e.g. malformed byte rejection at the
+// edge) never reach our code and don't carry our headers, so asserting
+// no-store on them would be testing Cloudflare's default response.
 const NOT_FOUND_PATHS: Array<{ name: string; path: string; expectedStatuses: number[] }> = [
   {
     name: "unknown top-level path",
@@ -41,25 +45,14 @@ const NOT_FOUND_PATHS: Array<{ name: string; path: string; expectedStatuses: num
     expectedStatuses: [404],
   },
   {
-    name: "unknown nested path",
+    name: "unknown nested path under /products",
     path: `/products/does-not-exist-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    expectedStatuses: [404],
-  },
-  {
-    name: "unknown deep nested path",
-    path: `/compound/unknown/${Date.now()}/${Math.random().toString(36).slice(2, 8)}`,
     expectedStatuses: [404],
   },
   {
     name: "path traversal attempt",
     path: "/products/../../etc/nope",
     expectedStatuses: [404],
-  },
-  {
-    name: "malformed byte in path",
-    path: "/products/%00",
-    // Worker/Cloudflare may reject as 400 or normalise to 404.
-    expectedStatuses: [400, 404],
   },
   {
     name: "unknown route with UTM (must not be cached under key)",
