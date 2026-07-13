@@ -42,6 +42,22 @@ fail=0
 declare -a rows=()
 declare -a json_rows=()
 
+# Directory for verbose per-violation dumps (headers + response snippet).
+# Populated only when a route fails the cache contract; uploaded as an
+# artifact by the workflow for post-mortem inspection.
+VIOLATIONS_DIR="${VIOLATIONS_DIR:-cache-audit-violations}"
+mkdir -p "$VIOLATIONS_DIR"
+
+# Headers we deliberately capture in violation dumps because they reveal
+# how the request was routed / cached (Cloudflare, our worker, prerender).
+DIAG_HEADERS=(
+  cache-control cdn-cache-control pragma expires vary age
+  cf-cache-status cf-ray cf-request-id cf-worker cf-apo-via cf-edge-cache
+  x-build-id x-worker-version x-prerender x-prerender-cache x-prerendered
+  x-served-by x-request-id x-vercel-id x-forwarded-host
+  content-type content-length last-modified etag server via
+)
+
 json_escape() { python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))'; }
 
 lower() { tr '[:upper:]' '[:lower:]'; }
