@@ -4,7 +4,10 @@
  */
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { SITE_URL } from "@/lib/seo-meta";
 import type { ExclusionReason } from "@/lib/sitemap-policy";
+
+export const BASE_URL = SITE_URL;
 
 export const MAX_AUDIT_RUNS_PER_HOUR = 10;
 const HOUR_MS = 60 * 60 * 1000;
