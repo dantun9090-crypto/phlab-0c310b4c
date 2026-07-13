@@ -116,7 +116,7 @@ jobs:
   lighthouse:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: []
+    
     strategy:
       fail-fast: false
       matrix:
