@@ -22,12 +22,23 @@ const HOME_FAQS: { q: string; a: string }[] = [
 ];
 
 export const Route = createFileRoute("/")({
-  // Home is human-facing: skip the Firebase promo-banner fetch in the SSR
-  // loader so Worker TTFB isn't gated by Firestore RTT. The banner is
-  // fetched client-side in src/pages/Home/index.tsx (refetchBannerAndSettings)
-  // and bots receive the fully-rendered page via the phlabs-prerender Worker
-  // (Prerender.io executes JS, so SEO is unaffected).
-  loader: async () => ({ banner: null as Awaited<ReturnType<typeof fetchPromoBanner>> | null }),
+  // Fetch the promo banner in the SSR loader with a hard timeout so the LCP
+  // <link rel="preload"> below can emit and the hero <img> renders on first
+  // paint. Without this, the client had to boot JS → Firestore round-trip
+  // before requesting the LCP bytes (field LCP was 3.4s on mobile).
+  // The timeout keeps Worker TTFB bounded: if Firestore is slow we fall back
+  // to null, the client fetches it after hydration (existing behavior).
+  loader: async () => {
+    try {
+      const banner = await Promise.race([
+        fetchPromoBanner(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 350)),
+      ]);
+      return { banner };
+    } catch {
+      return { banner: null as Awaited<ReturnType<typeof fetchPromoBanner>> | null };
+    }
+  },
 
   // Public content routes must SSR a non-empty body. Do not disable SSR
   // here or wrap the route in deferred loading with an empty fallback; that combination
