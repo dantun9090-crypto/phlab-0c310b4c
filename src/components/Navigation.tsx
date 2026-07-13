@@ -4,7 +4,6 @@ import {
 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { getAllProducts } from '@/lib/firebase';
 import type { Product } from '@/lib/firebase';
 import InstallAppButton from '@/components/InstallAppButton';
 
@@ -50,7 +49,10 @@ function useNavLinks(): NavLink[] {
       // One-shot read (no realtime listener) — the category list rarely
       // changes and a long-lived Listen channel kept Firestore connected
       // on every page, hurting LCP/INP measurements.
-      getAllProducts()
+      // Dynamic import keeps firebase off the main bundle for landing routes
+      // that never open the mega-menu (e.g. LCP window on /).
+      import('@/lib/firebase')
+        .then(({ getAllProducts }) => getAllProducts())
         .then((prods: Product[]) => {
           if (cancelled) return;
           const active = prods.filter(p => p.isActive !== false && p.stock > 0 && p.category);

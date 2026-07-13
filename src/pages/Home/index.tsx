@@ -213,8 +213,14 @@ export default function HomePage() {
       }
     } catch { /* ignore */ }
 
-    refetchAdverts();
-    refetchBannerAndSettings();
+    // Defer live adverts/banner refetch past LCP window — the localStorage
+    // cache + SSR banner already give the first paint what it needs.
+    const kickRefetch = () => { if (!cancelled) { refetchAdverts(); refetchBannerAndSettings(); } };
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(kickRefetch, { timeout: 3000 });
+    } else {
+      setTimeout(kickRefetch, 800);
+    }
 
     return () => { cancelled = true; };
   }, []);
