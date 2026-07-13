@@ -178,21 +178,18 @@ function HomeSsrShell({ banner: _banner }: { banner: Awaited<ReturnType<typeof f
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-          <div
+          <img
+            src={logoSrc}
+            alt="PH Labs"
+            width={40}
+            height={40}
             style={{
-              width: 48,
-              height: 48,
-              borderRadius: 12,
-              border: "1px solid rgba(16,185,129,0.28)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#4ade80",
-              fontWeight: 900,
+              width: 40,
+              height: 40,
+              objectFit: "contain",
+              display: "block",
             }}
-          >
-            PH
-          </div>
+          />
           <div style={{ display: "flex", flexDirection: "column", lineHeight: 1.05 }}>
             <span style={{ color: "#fff", fontSize: 20, fontWeight: 800 }}>PH Labs</span>
             <span style={{ color: "rgba(74,222,128,0.9)", fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase" }}>
