@@ -63,7 +63,7 @@ export default function HomeSeoIndex() {
 
           {/* Research Resources */}
           <div>
-            <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-[0.14em] uppercase mb-4" style={{ color: 'rgba(59,130,246,0.85)' }}>
+            <h3 className="flex items-center gap-2 text-[11px] font-bold tracking-[0.14em] uppercase mb-4" style={{ color: 'rgb(96,165,250)' }}>
               <BookOpen className="w-3.5 h-3.5" /> Research Library
             </h3>
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
