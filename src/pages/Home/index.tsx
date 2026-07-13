@@ -586,7 +586,7 @@ export default function HomePage() {
               {/* CTAs */}
               <div className="flex flex-wrap gap-4">
                 <Link to="/products"
-                  aria-label="Peptide catalogue"
+                  aria-label="Browse Catalogue"
                   className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl font-bold text-sm text-white transition-all duration-300"
                   style={{
                     background: 'linear-gradient(135deg, #0ea572 0%, #10b981 50%, #059669 100%)',
