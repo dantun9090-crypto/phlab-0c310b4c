@@ -263,8 +263,8 @@ export default function CacheRecacheTab() {
           <code className="text-emerald-400">/sitemap.xml</code>. Every Lovable Publish auto-fires
           a full Cloudflare purge + Prerender desktop/mobile recache on first visitor request
           (build-id compared server-side via <code className="text-emerald-400">/api/public/post-publish-check</code>).
-          Public HTML cache is admin-controlled: <strong>Off</strong> (default), 30s or 1min.
-          When Off, every HTML response is served with <code>no-store</code> so stale shells cannot stick.
+          Origin HTML is now always served with <code>no-store</code> so stale shells cannot stick after a publish.
+          The TTL control is retained for the separate prerender/cache Worker only.
           Private routes, service workers, recovery URLs, and 404 HTML stay no-store regardless of the setting.
           Use the buttons below for ad-hoc purges or to re-trigger manually.
         </p>
@@ -279,9 +279,9 @@ export default function CacheRecacheTab() {
           <div className="flex-1">
             <h3 className="text-sm font-semibold text-white">HTML edge-cache TTL</h3>
             <p className="text-xs text-[#9cb8d9] mt-1">
-              Controls how long Cloudflare keeps cacheable HTML before re-fetching the origin. Keep this Off during publishes/debugging.
-              The setting is read by both the origin (<code className="text-emerald-400">src/server.ts</code>) and the{' '}
-              <code className="text-emerald-400">phlabs-prerender</code> Worker (60s in-memory config cache per cold start).
+              Controls the separate prerender/cache Worker HTML cache window. The origin app itself always sends no-store HTML.
+              Keep this Off during publishes/debugging. The setting is read by the{' '}
+              <code className="text-emerald-400">phlabs-prerender</code> Worker only (60s in-memory config cache per cold start).
               Saving the TTL also fires a full Cloudflare cache purge so the new value takes effect immediately.
             </p>
             <p className="text-xs text-amber-300/90 mt-2 flex items-start gap-1.5">

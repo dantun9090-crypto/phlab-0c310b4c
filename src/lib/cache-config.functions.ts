@@ -12,8 +12,8 @@ import { invalidateHtmlTtlCache } from './server/cache-config-server';
 /**
  * Admin-managed HTML edge-cache TTL.
  * Stored at Firestore `siteSettings/cacheConfig` with field
- * `htmlTtlSeconds` (integer). The origin and the Cloudflare Worker both
- * read this value to size the public HTML edge cache.
+ * `htmlTtlSeconds` (integer). The separate prerender/cache Worker reads this
+ * value; origin app HTML stays no-store to avoid stale post-publish shells.
  */
 
 const CF_ZONE_ID = 'ed093ef4578e8e3568e26c3e979558c6';
