@@ -1,8 +1,8 @@
 name: Post-Deploy Edge Purge
 
-# Automatically purge the Cloudflare edge cache and warm critical paths
-# after a successful production deploy. Chains onto the existing worker
-# deploy workflow so no manual step is required.
+# Automatically purge the Cloudflare edge cache after a successful production
+# deploy. Do not warm HTML shells here: public HTML is intentionally no-store,
+# and warming used to repopulate the old edge HTML cache rule.
 
 on:
   workflow_run:
@@ -42,12 +42,11 @@ jobs:
           fi
           echo "✅ Edge cache purged"
 
-      - name: Warm critical paths
+      - name: Verify homepage no-store after purge
         run: |
-          set +e
-          for path in "/" "/products" "/about" "/contact" "/resources"; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" \
-              -H "User-Agent: PHLabs-Warm/1.0" \
-              "https://phlabs.co.uk${path}")
-            echo "WARM ${path} -> ${code}"
-          done
+          set -euo pipefail
+          headers=$(curl -sSI -H "User-Agent: PHLabs-PostDeploy/1.0" https://phlabs.co.uk/)
+          echo "$headers" | grep -i '^cache-control:'
+          echo "$headers" | grep -i '^cdn-cache-control:'
+          echo "$headers" | grep -i '^cache-control:' | grep -qi 'no-store'
+          echo "$headers" | grep -i '^cdn-cache-control:' | grep -qi 'no-store'

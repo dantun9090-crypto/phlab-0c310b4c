@@ -9,8 +9,8 @@
  *   - surrogate-control      (reverse-proxy tier)
  *   - cf-cache-status        (what CF actually did)
  *
- * Public paths   → must have a bounded TTL (>0, ≤1h) on browser OR CDN
- *                  tier, and cf-cache-status must NOT be an error state.
+ * HTML shell paths → must be explicitly uncacheable at browser/CDN/proxy
+ *                    tiers and cf-cache-status must NOT indicate cached reuse.
  * Sensitive paths → every present cache-control header must be uncacheable
  *                   (no-store OR max-age=0+must-revalidate), s-maxage=0,
  *                   and cf-cache-status must NOT be HIT/REVALIDATED/
@@ -22,19 +22,17 @@
  *
  * Exit code is non-zero on any violation so CI fails loudly.
  */
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, rmSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 const BASE = process.env.CACHE_SCAN_BASE_URL || process.env.TEST_BASE_URL || "https://phlabs.co.uk";
 const OUT_DIR = process.env.CACHE_SCAN_OUT_DIR || "cache-headers-report";
 const TTL_CEILING = 3600;
 
-// HTML shells MUST NEVER be edge-cached. A cached shell after a Lovable
-// publish points at hashed JS/CSS chunks that have been evicted from the
-// new build, producing blank pages until a manual Cloudflare purge — the
-// exact regression fixed in src/server.ts (max-age=0, must-revalidate +
-// cdn-cache-control: no-store + cloudflare-cdn-cache-control: no-store).
-// This scanner is the CI guardrail that prevents that ever regressing.
+// HTML shells MUST NEVER be edge-cached. A cached shell after a publish points
+// at hashed JS/CSS chunks that may have been evicted from the new build,
+// producing blank pages until a purge. This scanner is the CI guardrail that
+// prevents that deploy-safety contract from regressing.
 const HTML_SHELL_PATHS = [
   "/",
   "/products",
@@ -124,12 +122,11 @@ async function probe(path: string, kind: Kind): Promise<Probe> {
 
   try {
     if (kind === "html-shell") {
-      // Warm the edge, then measure. CF Rule 3 caches public HTML for 4h;
-      // second probe must return HIT.
+      // Probe twice so a mistakenly-cacheable route has a chance to reveal a
+      // warm HIT/REVALIDATED/STALE on the measured response.
       const first = await fetchProbe(url);
       firstCf = (first.headers["cf-cache-status"] || "").toUpperCase();
-      // small delay to let CF finalize the cache entry
-      await new Promise((r) => setTimeout(r, 800));
+      await new Promise((r) => setTimeout(r, 2000));
     }
     const res = await fetchProbe(url);
     status = res.status;
@@ -172,39 +169,23 @@ async function probe(path: string, kind: Kind): Promise<Probe> {
       violations.push(`cf-cache-status=${cf} replays cached HTML on sensitive path`);
     }
   } else {
-    // html-shell: Cloudflare Cache Rule 3 intentionally caches public HTML
-    // at the edge for 4h. Origin still emits `no-store` (that's how CF
-    // handles a fresh publish → the shell overwrites on next MISS), but at
-    // the edge we REQUIRE cf-cache-status: HIT on the warm probe.
+    // html-shell: origin and edge must both keep the deploy shell uncacheable.
+    // Static assets carry the long immutable TTL; HTML carries build pointers
+    // and must always be fetched fresh after a publish.
     if (status !== 200 && status !== 301 && status !== 302) {
       violations.push(`unexpected status ${status}`);
     }
     if (status === 200) {
-      // Origin cache-control must remain no-store — the edge overrides via
-      // Cache Rule 3, but the origin invariant is the safety net.
-      if (!cc) warnings.push("missing cache-control on HTML shell (origin should emit no-store)");
-      else if (!isUncacheable(cc)) {
-        warnings.push(`origin cache-control not no-store: "${cc}"`);
-      }
-      // Edge must be caching this. Accept HIT/REVALIDATED/UPDATED/STALE as
-      // "edge-cached". Fail on DYNAMIC or MISS after warm-up.
-      const cached = ["HIT", "REVALIDATED", "UPDATING", "STALE"].includes(cf);
-      const warming = ["MISS", "EXPIRED"].includes(cf);
-      if (!cached) {
-        // MISS on second probe is a real problem (rule not matching).
-        if (warming) {
-          violations.push(
-            `cf-cache-status=${cf} on warm probe — Cache Rule 3 not caching HTML shell (first=${firstCf})`,
-          );
-        } else if (cf === "DYNAMIC") {
-          violations.push(
-            `cf-cache-status=DYNAMIC — Worker or origin marking HTML uncacheable, Cache Rule 3 bypassed`,
-          );
-        } else if (cf) {
-          violations.push(`cf-cache-status=${cf} — expected HIT on warm probe`);
-        } else {
-          violations.push(`cf-cache-status missing — cannot confirm edge caching`);
-        }
+      if (!cc) violations.push("missing cache-control on HTML shell");
+      else if (!isUncacheable(cc)) violations.push(`cache-control not uncacheable: "${cc}"`);
+      if (!cdn) violations.push("missing cdn-cache-control on HTML shell");
+      else if (!isUncacheable(cdn)) violations.push(`cdn-cache-control not uncacheable: "${cdn}"`);
+      if (!surrogate) warnings.push("missing surrogate-control on HTML shell");
+      else if (!isUncacheable(surrogate)) violations.push(`surrogate-control not uncacheable: "${surrogate}"`);
+      const sMax = parseDirective(cc, "s-maxage") ?? 0;
+      if (sMax > 0) violations.push(`s-maxage=${sMax} on HTML shell`);
+      if (["HIT", "REVALIDATED", "UPDATING", "STALE"].includes(cf)) {
+        violations.push(`cf-cache-status=${cf} replays cached HTML shell (first=${firstCf})`);
       }
     }
     void TTL_CEILING;
@@ -266,6 +247,7 @@ async function main() {
   ];
   const results = await Promise.all(work);
 
+  if (existsSync(OUT_DIR)) rmSync(OUT_DIR, { recursive: true, force: true });
   mkdirSync(OUT_DIR, { recursive: true });
   const jsonPath = join(OUT_DIR, "cache-headers-report.json");
   const mdPath = join(OUT_DIR, "cache-headers-report.md");

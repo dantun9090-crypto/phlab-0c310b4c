@@ -1,19 +1,12 @@
-name: HTML shell cache guard
+name: HTML shell no-cache guard
 
-# CI guardrail (post-policy-flip 2026-07): Cloudflare Cache Rule 3
-# intentionally caches public HTML shells at the edge for 4h. This job
-# probes the critical shell routes against the live edge after every
-# push to main and on a 15-min schedule, failing loudly if:
-#   - a public HTML shell stops being edge-cached (cf-cache-status !=
-#     HIT/REVALIDATED/UPDATING/STALE on the warm probe), OR
-#   - a sensitive path (/admin, /cart, /checkout, /account, /login,
-#     /register, /payment, /vip, /api/*) starts being edge-cached.
+# CI guardrail: public HTML shells must remain no-store at browser/CDN/proxy
+# tiers. Static assets carry long immutable caching; HTML carries hashed asset
+# pointers and must never be replayed from edge cache after a publish.
 #
 # Enforcement rules (see scripts/cache-headers-scan.ts):
-#   - html-shell paths: cf-cache-status MUST be HIT / REVALIDATED /
-#     UPDATING / STALE on the second (warm) probe. DYNAMIC or MISS fails.
-#   - sensitive paths: cache-control / cdn-cache-control / surrogate-
-#     control must all be uncacheable, s-maxage=0, cf-cache-status MUST
+#   - html-shell + sensitive paths: cache-control / cdn-cache-control /
+#     surrogate-control must be uncacheable, s-maxage=0, cf-cache-status MUST
 #     NOT be HIT / REVALIDATED / STALE / UPDATING.
 
 
@@ -86,20 +79,18 @@ jobs:
               body: [
                 `An HTML shell cache-policy check failed on the live site.`,
                 ``,
-                `Either a public HTML shell stopped being edge-cached (Cache`,
-                `Rule 3 not matching → cf-cache-status DYNAMIC/MISS on warm`,
-                `probe), or a sensitive path started being edge-cached.`,
+                `Either a public HTML shell lost its no-store headers, or a`,
+                `sensitive path started being edge-cached.`,
                 ``,
                 `Fix path:`,
-                `1. If a public shell shows DYNAMIC: verify the phlabs-prerender`,
-                `   Worker is passing non-bot traffic through unchanged, and`,
-                `   that Cache Rule 3 (edge TTL 14400s) still matches the path.`,
+                `1. If a public shell shows HIT/STALE/REVALIDATED: purge the`,
+                `   Cloudflare edge immediately and remove the cache rule match.`,
                 `2. If a sensitive path shows HIT: purge the Cloudflare edge`,
                 `   immediately and check for a cache rule accidentally`,
                 `   matching /admin, /cart, /checkout, /account, /login,`,
                 `   /register, /payment, /vip, or /api/*.`,
                 `3. Confirm src/server.ts still emits \`cache-control: no-store\``,
-                `   on HTML shells (origin invariant; CF Rule 3 overrides at edge).`,
+                `   plus \`cdn-cache-control: no-store\` on HTML shells.`,
                 ``,
                 `Download the \`html-shell-cache-report-${context.sha}\` artifact for the full report.`,
                 ``,

@@ -56,6 +56,7 @@ from playwright.async_api import async_playwright
 
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:8080").rstrip("/")
 REPORT_DIR = Path(os.environ.get("E2E_REPORT_DIR", "/tmp/e2e-survey-report"))
+if REPORT_DIR.exists(): shutil.rmtree(REPORT_DIR)
 REPORT_DIR.mkdir(parents=True, exist_ok=True)
 FAILURES: list[dict[str, Any]] = []
 

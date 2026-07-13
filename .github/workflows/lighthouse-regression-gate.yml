@@ -52,10 +52,12 @@ jobs:
         profile: [desktop, mobile]
     steps:
       - uses: actions/checkout@v5
+      - name: Clean stale Lighthouse artifacts
+        run: rm -rf .lighthouseci
 
       - uses: actions/setup-node@v5
         with:
-          node-version: "24"
+          node-version: "22"
 
       - name: Install Lighthouse CI
         run: npm i -g @lhci/cli@0.14.x
