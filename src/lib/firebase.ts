@@ -44,13 +44,13 @@ import {
   doc,
   setDoc,
   getDoc,
-  getDocFromServer,
+  getDocFromServer as _getDocFromServer,
   collection,
   addDoc,
   query,
   where,
   getDocs,
-  getDocsFromServer,
+  getDocsFromServer as _getDocsFromServer,
   orderBy,
   limit,
   Timestamp,
@@ -60,6 +60,19 @@ import {
   writeBatch,
   runTransaction,
 } from 'firebase/firestore';
+
+// firebase/firestore's SSR/Worker export shape does not expose
+// getDocFromServer / getDocsFromServer — importing them yields `undefined`
+// at runtime, so any SSR-reachable call site (e.g. ProductDetail lazy route,
+// getAllProducts) throws "ReferenceError: getDocFromServer is not defined".
+// On the server there is no local SDK cache, so falling back to getDoc /
+// getDocs is functionally equivalent (both hit the backend). On the client
+// the native server-variants stay in use, preserving the cache-bypass.
+const getDocFromServer: typeof _getDocFromServer =
+  typeof _getDocFromServer === 'function' ? _getDocFromServer : (getDoc as unknown as typeof _getDocFromServer);
+const getDocsFromServer: typeof _getDocsFromServer =
+  typeof _getDocsFromServer === 'function' ? _getDocsFromServer : (getDocs as unknown as typeof _getDocsFromServer);
+
 
 const firebaseConfig = {
   apiKey: "AIzaSyB5sWYCTkzeFFup0mqyg3PzCIzjP2oGJdM",
