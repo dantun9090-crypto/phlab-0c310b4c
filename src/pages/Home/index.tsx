@@ -717,7 +717,10 @@ export default function HomePage() {
 
 
 
-      <MarketingAdvertSlot adverts={adverts} placement="homepage_mid" className="container mx-auto px-6 py-6" variant="card" />
+      <Suspense fallback={<div aria-hidden="true" style={{ minHeight: 140 }} />}>
+        <MarketingAdvertSlot adverts={adverts} placement="homepage_mid" className="container mx-auto px-6 py-6" variant="card" />
+      </Suspense>
+
 
 
       {/* ════════════════════════════════
