@@ -60,7 +60,7 @@ jobs:
         working-directory: cloudflare
         # Deploy by name — preserves existing route bindings configured in the CF dashboard
         # (phlabs.co.uk/* on the phlabs zone; legacy domain proxies stay on the `phlab` worker).
-        run: npx --yes wrangler@3 deploy phlabs-prerender.mjs --name phlabs-prerender --compatibility-date 2025-09-24 --compatibility-flags nodejs_compat
+        run: bunx wrangler@3 deploy --config wrangler-phlabs-prerender.jsonc
 
 
       - name: Purge Cloudflare Cache (phlabs.co.uk)
