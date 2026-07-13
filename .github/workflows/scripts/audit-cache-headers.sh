@@ -14,7 +14,20 @@ set -uo pipefail
 
 BASE_URL="${BASE_URL:-https://phlabs.co.uk}"
 JSON_OUT="${AUDIT_JSON_OUT:-audit-cache-headers.json}"
-ROUTES=("/" "/products")
+
+# Route list is resolved by a Python helper: workflow_dispatch input
+# ($AUDIT_ROUTES) > config file ($AUDIT_ROUTES_FILE, default
+# .github/cache-audit.routes.json) > built-in defaults. Placeholders like
+# ':slug' in the config are expanded against the config's `slugs` map.
+RESOLVER="$(dirname "$0")/resolve-audit-routes.py"
+mapfile -t ROUTES < <(python3 "$RESOLVER") || {
+  echo "::error::Failed to resolve audit routes" >&2
+  exit 2
+}
+if [ "${#ROUTES[@]}" -eq 0 ]; then
+  echo "::error::Route list is empty" >&2
+  exit 2
+fi
 UA="PHLabs-CacheAudit/1.0 (+github-actions)"
 
 # Expected header contract for public HTML shells.
