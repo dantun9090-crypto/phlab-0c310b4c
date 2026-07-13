@@ -44,7 +44,10 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: bunx playwright install --with-deps chromium
+        # Day-theme audit spec runs on chromium AND firefox projects, so both
+        # browser binaries must be present or Firefox tests fail with
+        # "Executable doesn't exist at .../firefox".
+        run: bunx playwright install --with-deps chromium firefox
 
       # No build step: the audit runs against `vite dev` (SSR), which
       # transpiles on the fly. Skipping `bun run build` saves ~90s per run.
