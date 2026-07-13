@@ -139,7 +139,7 @@ jobs:
       # workflow_dispatch where there is no PR context.
       - name: Post vulnerability summary to PR + job summary
         if: always()
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         env:
           AUDIT_EXIT: ${{ steps.audit.outputs.exit_code }}
           ARTIFACT_ID: ${{ steps.upload_audit.outputs.artifact-id }}

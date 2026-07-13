@@ -81,7 +81,7 @@ jobs:
 
       - name: Open / update issue on diff
         if: failure() && github.event.inputs.update_snapshots != 'true'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const title = "Visual baseline diff: /research or /compound";
