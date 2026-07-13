@@ -549,7 +549,14 @@ export default {
     }
 
     const originStart = Date.now();
-    const originRes = await fetch(request);
+    // Only `/` is intentionally edge-cacheable. For every other HTML shell,
+    // bypass CF's cache on the subrequest so a Cache Rule (or any inherited
+    // cache config) can't replay a stale shell — otherwise the response we
+    // return carries cf-cache-status=HIT even though we stamp no-store, and
+    // the cache-headers scan / regression suite flags it.
+    const originRes = path === "/"
+      ? await fetch(request)
+      : await fetch(request, { cf: { cacheTtl: 0, cacheEverything: false } });
     const originMs = Date.now() - originStart;
     const passRes = await buildBrowserResponse(originRes, path);
     const out = new Response(passRes.body, {
