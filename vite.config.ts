@@ -7,10 +7,15 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 
-// Build-time identifier — changes on every Lovable Publish (new build = new
-// timestamp). Used by /api/public/post-publish-check to detect a fresh
-// deployment and fire Cloudflare purge + Prerender recache exactly once.
-const BUILD_ID = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+// Build-time identifier — changes on every Lovable Publish/deploy. CI passes
+// PHLABS_BUILD_ID from scripts/build-with-retry.ts so Vite, post-build SW
+// patching, HTML meta tags, and cache-busting asset URLs all share the exact
+// same version. Local/dev builds fall back to a fresh timestamp.
+const BUILD_ID =
+  process.env.PHLABS_BUILD_ID ||
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  process.env.GITHUB_SHA ||
+  `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 // No runtime PWA/app-shell Service Worker is registered. The static /sw.js and
 // /service-worker.js files are kill-switch replacements only, used to evict old

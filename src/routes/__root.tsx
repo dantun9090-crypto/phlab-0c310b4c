@@ -424,6 +424,46 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
+const BUILD_ID_CACHE_KILLER = `
+(function(){
+  'use strict';
+  if(window.__PHL_BUILD_GUARD_READY__) return;
+  window.__PHL_BUILD_GUARD_READY__ = true;
+  var buildId=${JSON.stringify(typeof __BUILD_ID__ === "string" ? __BUILD_ID__ : "dev")};
+  var KEY='phlabs_build_id_v4';
+  var LEGACY='phlabs_build_id_v3';
+  function get(k){ try{ return localStorage.getItem(k)||''; }catch(e){ return ''; } }
+  function set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  function clean(){
+    try{
+      if('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations){
+        navigator.serviceWorker.getRegistrations().then(function(regs){
+          regs.forEach(function(reg){ try{ reg.unregister(); }catch(e){} });
+        }).catch(function(){});
+      }
+    }catch(e){}
+    try{
+      if('caches' in window && caches.keys){
+        caches.keys().then(function(names){
+          return Promise.all(names.map(function(name){ return caches.delete(name).catch(function(){}); }));
+        }).catch(function(){});
+      }
+    }catch(e){}
+  }
+  var last=get(KEY)||get(LEGACY)||window.__LAST_BUILD_ID__||'';
+  window.__LAST_BUILD_ID__ = last;
+  window.__BUILD_ID__ = buildId;
+  window.__PHL_BUILD_ID__ = buildId;
+  set(KEY, buildId);
+  set(LEGACY, buildId);
+  clean();
+  if(last && last !== buildId && !/[?&]_bust=/.test(location.search)){
+    try{ sessionStorage.setItem('__phl_build_mismatch_reload_at', String(Date.now())); }catch(e){}
+    var sep=location.search?'&':'?';
+    location.replace(location.pathname+location.search+sep+'_bust='+encodeURIComponent(buildId)+'&_t='+Date.now()+location.hash);
+  }
+})();
+`;
 // Runs FIRST. Reads its own `nonce` attribute (stamped by HTMLRewriter in the
 // Worker) and monkey-patches `document.createElement` so every <script>
 // element created at runtime — Firebase SDK loader, GTM, recaptcha, any
@@ -1239,6 +1279,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 
         <style suppressHydrationWarning dangerouslySetInnerHTML={{ __html: CRITICAL_CSS }} />
+        <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: BUILD_ID_CACHE_KILLER }} />
         {/* These must run before HeadContent, because HeadContent emits
             modulepreload links for hashed bundles. Old service workers can
             otherwise intercept those requests before cleanup starts. */}
