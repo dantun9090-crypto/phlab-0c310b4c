@@ -1,6 +1,7 @@
 import { createBrowserRouter, createMemoryRouter, Outlet, Navigate, useLocation } from 'react-router-dom';
 import React, { useEffect, useState, Suspense } from 'react';
 import { Layout } from '@/components/Layout';
+import { PremiumLanding } from '@/components/PremiumLanding';
 import ScrollToTop from '@/components/ScrollToTop';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
@@ -141,6 +142,7 @@ const routes = [
       { path: 'products',                    element: <Products /> },
       { path: 'products/category/:slug',      element: <CategoryPage /> },
       { path: 'products/:id',                 element: <ProductDetail /> },
+      { path: 'compound',                     element: <PremiumLanding eyebrow="UK Laboratory Supply" /> },
       { path: 'search',            element: <SearchPage /> },
       { path: 'terms',             element: <Navigate to="/terms-and-conditions" replace /> },
       { path: 'storage-guide',     element: <StorageGuide /> },
