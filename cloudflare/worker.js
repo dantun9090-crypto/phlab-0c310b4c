@@ -880,8 +880,27 @@ export default {
       } else if (isFirebaseAuthHelperPath(url)) {
         noCache(h);
         h.delete("x-frame-options");
+      } else if (url.pathname.startsWith("/downloads/")) {
+        // /downloads/* is user-editable content — CDN must never hold a stale
+        // copy across a re-upload. STATIC_EXT_RX also matches .pdf so this
+        // branch must come before the generic isStatic branch.
+        h.set("cache-control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0");
+        h.set("cdn-cache-control", "no-store");
+        h.set("cloudflare-cdn-cache-control", "no-store");
+        h.set("surrogate-control", "no-store");
+        h.set("pragma", "no-cache");
+        h.set("expires", "0");
       } else if (isStatic) {
-        if (!h.has("cache-control")) h.set("cache-control", "public, max-age=31536000, immutable");
+        // Hashed build output (/assets/*, /_build/*) must always be 1-year
+        // immutable. Zone-level Browser Cache TTL rules can otherwise cap
+        // max-age to 30 days (2592000 s), breaking the immutable-asset
+        // contract — so we enforce it explicitly rather than deferring to
+        // whatever the origin returned.
+        if (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/_build/")) {
+          h.set("cache-control", "public, max-age=31536000, immutable");
+        } else if (!h.has("cache-control")) {
+          h.set("cache-control", "public, max-age=31536000, immutable");
+        }
       } else if (isXmlFeed) {
         // Sitemap + merchant feed: no edge/browser cache; origin sets item/debug headers.
         h.set("cache-control", "no-store, no-cache, must-revalidate, max-age=0");
