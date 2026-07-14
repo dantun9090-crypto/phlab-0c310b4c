@@ -1099,33 +1099,10 @@ const STALE_ASSET_RECOVERY = `
       }catch(e){}
     };
     var showLimit=function(){
-      // Prerender / SSR guard — never render the wall server-side.
       if(typeof window==='undefined') return;
-      // Session debounce: once shown in this tab, never again.
-      try{
-        if(sessionStorage.getItem(UPDATE_SHOWN_KEY)==='1'){ swLog('','','already-shown-this-session'); return; }
-      }catch(e){}
-      // Skip when the tab has just resumed from background — Chrome Android
-      // re-runs pageshow/asset checks and would otherwise false-positive.
-      if(__phlLastHiddenAt && (Date.now()-__phlLastHiddenAt)<3000){
-        swLog('','','recent-visibility-hidden');
-        return;
-      }
-      try{ console.error('[STALE_ASSET] Automatic reload blocked'); }catch(e){}
+      try{ console.warn('[STALE_ASSET] fetching fresh HTML instead of showing update wall'); }catch(e){}
       emit('sw_stale_reload_shown',{ path: location.pathname });
-      var reveal=function(){
-        // Re-check debounce + visibility right before rendering (5s later on Android).
-        try{ if(sessionStorage.getItem(UPDATE_SHOWN_KEY)==='1'){ swLog('','','already-shown-this-session'); return; } }catch(e){}
-        if(__phlLastHiddenAt && (Date.now()-__phlLastHiddenAt)<3000){ swLog('','','recent-visibility-hidden'); return; }
-        swLog('',true,'');
-        renderUpdateWall();
-      };
-      if(isChromeAndroid()){
-        swLog('',true,'chrome-android-delayed-5s');
-        setTimeout(reveal,5000);
-      }else{
-        reveal();
-      }
+      hardReloadClean();
     };
 
     var readCount=function(){
@@ -1177,7 +1154,7 @@ const STALE_ASSET_RECOVERY = `
               sessionStorage.setItem(KEY,String(Date.now()));
               sessionStorage.setItem(COUNT,String(count));
               sessionStorage.setItem(LEGACY_COUNT,String(count));
-              if(count<STALE_THRESHOLD){ try{ console.warn('[phlabs] stale asset 404 ('+count+'/'+STALE_THRESHOLD+'), automatic reload disabled:', src); }catch(e){} if(!requestHardReset('asset-404')) showLimit(); return; }
+              if(count<STALE_THRESHOLD){ try{ console.warn('[phlabs] stale asset 404 ('+count+'/'+STALE_THRESHOLD+'), fetching fresh HTML:', src); }catch(e){} if(!requestHardReset('asset-404')) showLimit(); return; }
             }catch(e){ showLimit(); return; }
             try{ console.warn('[phlabs] stale build asset 404, showing manual recovery:', src); }catch(e){}
             // Force-fire the auto-purge again (bypass throttle) — this visitor
