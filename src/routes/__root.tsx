@@ -972,7 +972,7 @@ const STALE_ASSET_RECOVERY = `
       emit('sw_cache_reset_clicked',{ path: location.pathname });
       try{
         var guard=Number(localStorage.getItem('phlFreshHtmlRecoveryAt')||'0');
-        if(guard && Date.now()-guard<60000){ location.replace('/'); return; }
+        if(guard && Date.now()-guard<60000){ return; }
         localStorage.setItem('phlFreshHtmlRecoveryAt',String(Date.now()));
       }catch(e){}
       try{ sessionStorage.setItem('phl-sw-cache-reset-pending',String(Date.now())); }catch(e){}

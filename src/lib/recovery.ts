@@ -278,13 +278,12 @@ export async function hardReload(options: HardReloadOptions = {}): Promise<void>
 
   if (options.clean) {
     try {
-      try {
-        const recent = Number(localStorage.getItem(FRESH_HTML_RECOVERY_KEY) || "0");
-        if (recent && Date.now() - recent < FRESH_HTML_RECOVERY_WINDOW_MS) {
-          return;
-        }
-        localStorage.setItem(FRESH_HTML_RECOVERY_KEY, String(Date.now()));
-      } catch { /* ignore */ }
+      const recent = Number(localStorage.getItem(FRESH_HTML_RECOVERY_KEY) || "0");
+      if (recent && Date.now() - recent < FRESH_HTML_RECOVERY_WINDOW_MS) return;
+      localStorage.setItem(FRESH_HTML_RECOVERY_KEY, String(Date.now()));
+    } catch { /* ignore */ }
+
+    try {
       await clearCacheStorageAndServiceWorkers(4000);
       await purgeRecoveryStorage();
       await fetchFreshRootHtml();
