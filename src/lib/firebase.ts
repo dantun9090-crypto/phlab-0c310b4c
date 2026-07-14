@@ -837,7 +837,18 @@ export const signInWithGoogle = async () => {
   let result;
   try {
     result = await signInWithPopup(auth, googleProvider);
-  } catch (err) {
+  } catch (err: any) {
+    // Popup blocked / closed / cancelled → fall back to full-page redirect flow.
+    const code = err?.code || '';
+    const fallback =
+      code === 'auth/popup-blocked' ||
+      code === 'auth/cancelled-popup-request' ||
+      code === 'auth/operation-not-supported-in-this-environment';
+    if (fallback) {
+      try { sessionStorage.setItem('phlabs_google_redirect_pending', '1'); } catch {}
+      await signInWithRedirect(auth, googleProvider);
+      return null as any;
+    }
     logAuthFailure('google_failure', err);
     throw err;
   }
