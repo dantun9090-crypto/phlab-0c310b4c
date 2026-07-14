@@ -133,6 +133,10 @@ const routes = [
       </ErrorBoundary>
     ),
   },
+  // /compound is a dedicated marketing route. Keep it outside the legacy
+  // shop Layout during emergency CSR boot so it never falls through to 404
+  // or renders a duplicate storefront header.
+  { path: '/compound', element: <PremiumLanding eyebrow="UK Laboratory Supply" /> },
   // ── All public routes — wrapped in Layout ──
   {
     path: '/',
@@ -142,7 +146,6 @@ const routes = [
       { path: 'products',                    element: <Products /> },
       { path: 'products/category/:slug',      element: <CategoryPage /> },
       { path: 'products/:id',                 element: <ProductDetail /> },
-      { path: 'compound',                     element: <PremiumLanding eyebrow="UK Laboratory Supply" /> },
       { path: 'search',            element: <SearchPage /> },
       { path: 'terms',             element: <Navigate to="/terms-and-conditions" replace /> },
       { path: 'storage-guide',     element: <StorageGuide /> },
