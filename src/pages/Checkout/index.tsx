@@ -24,6 +24,7 @@ import { useFreeGiftConfig, freeGiftApplies } from '@/lib/free-gift-config';
 import { trackAddPaymentInfo, trackBeginCheckout, trackViewCart, type GaItem } from '@/lib/analytics';
 import UkBankBadges from '@/components/UkBankBadges';
 import PaymentMethodOptions from '@/components/PaymentMethodOptions';
+import NoCacheHead from '@/components/NoCacheHead';
 
 
 interface CheckoutForm {
@@ -1084,6 +1085,8 @@ export default function CheckoutPage() {
     : null;
 
   return (
+    <>
+    <NoCacheHead title="Checkout — PH Labs" />
     <section id="checkout" className="min-h-screen bg-[#060f1e] pt-20 pb-16">
       <div className="max-w-5xl mx-auto px-4">
 
@@ -1986,5 +1989,6 @@ export default function CheckoutPage() {
 
       </div>
     </section>
+    </>
   );
 }
