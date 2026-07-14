@@ -397,7 +397,7 @@ const IMMUTABLE_BUILD_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable
 const HASHED_STATIC_ASSET_RE = /(?:^|\/)[^/?#]+(?:[-._][a-f0-9]{8,}|-[A-Za-z0-9_-]{8,})\.(?:js|mjs|css|woff2?|ttf|otf)$/i;
 
 function buildIdCacheKillerScript(buildId: string): string {
-  return `(function(){'use strict';if(window.__PHL_BUILD_GUARD_READY__)return;window.__PHL_BUILD_GUARD_READY__=true;var buildId=${JSON.stringify(buildId)};var KEY='phlabs_build_id_v4';var LEGACY='phlabs_build_id_v3';function get(k){try{return localStorage.getItem(k)||'';}catch(e){return '';}}function set(k,v){try{localStorage.setItem(k,v);}catch(e){}}window.__BUILD_ID__=buildId;window.__PHL_BUILD_ID__=buildId;set(KEY,buildId);set(LEGACY,buildId);})();`;
+  return `(function(){'use strict';if(window.__PHL_BUILD_GUARD_READY__)return;window.__PHL_BUILD_GUARD_READY__=true;var buildId=${JSON.stringify(buildId)};var KEY='phlabs_build_id_v4';var LEGACY='phlabs_build_id_v3';function get(k){try{return localStorage.getItem(k)||'';}catch(e){return '';}}function set(k,v){try{localStorage.setItem(k,v);}catch(e){}}window.__BUILD_ID__=buildId;window.__PHL_BUILD_ID__=buildId;set(KEY,buildId);set(LEGACY,buildId);try{console.log('[PHL] Cache guard active:',buildId);}catch(e){}})();`;
 }
 
 const STRICT_NO_STORE_HEADERS: Record<string, string> = {
