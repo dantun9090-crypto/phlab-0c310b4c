@@ -400,6 +400,10 @@ const DOWNLOAD_NO_STORE_CACHE_CONTROL = "no-store, no-cache, must-revalidate, pr
 const IMMUTABLE_BUILD_ASSET_CACHE_CONTROL = "public, max-age=31536000, immutable";
 const HASHED_STATIC_ASSET_RE = /(?:^|\/)[^/?#]+(?:[-._][a-f0-9]{8,}|-[A-Za-z0-9_-]{8,})\.(?:js|mjs|css|woff2?|ttf|otf)$/i;
 
+function buildIdCacheKillerScript(buildId: string): string {
+  return `(function(){'use strict';if(window.__PHL_BUILD_GUARD_READY__)return;window.__PHL_BUILD_GUARD_READY__=true;var buildId=${JSON.stringify(buildId)};var KEY='phlabs_build_id_v4';var LEGACY='phlabs_build_id_v3';function get(k){try{return localStorage.getItem(k)||'';}catch(e){return '';}}function set(k,v){try{localStorage.setItem(k,v);}catch(e){}}function clean(){try{if('serviceWorker'in navigator&&navigator.serviceWorker.getRegistrations){navigator.serviceWorker.getRegistrations().then(function(r){r.forEach(function(x){try{x.unregister();}catch(e){}});}).catch(function(){});}}catch(e){}try{if('caches'in window&&caches.keys){caches.keys().then(function(n){return Promise.all(n.map(function(x){return caches.delete(x).catch(function(){});}));}).catch(function(){});}}catch(e){}}var last=get(KEY)||get(LEGACY)||window.__LAST_BUILD_ID__||'';window.__LAST_BUILD_ID__=last;window.__BUILD_ID__=buildId;window.__PHL_BUILD_ID__=buildId;set(KEY,buildId);set(LEGACY,buildId);clean();if(last&&last!==buildId&&!/[?&]_bust=/.test(location.search)){try{sessionStorage.setItem('__phl_build_mismatch_reload_at',String(Date.now()));}catch(e){}var sep=location.search?'&':'?';location.replace(location.pathname+location.search+sep+'_bust='+encodeURIComponent(buildId)+'&_t='+Date.now()+location.hash);}})();`;
+}
+
 const STRICT_NO_STORE_HEADERS: Record<string, string> = {
   "cache-control": HTML_NO_STORE_CACHE_CONTROL,
   "cdn-cache-control": "no-store",
@@ -898,6 +902,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
     getAttribute: (k: string) => string | null;
     setAttribute: (k: string, v: string) => void;
     append: (html: string, opts?: { html: boolean }) => void;
+    prepend: (html: string, opts?: { html: boolean }) => void;
   };
   type Rewriter = {
     on: (selector: string, handlers: { element: (el: RwElement) => void }) => Rewriter;
@@ -957,6 +962,7 @@ function applySecurityHeaders(response: Response, nonce: string, hostname?: stri
     const rewriter: Rewriter = new RewriterCtor();
     let r = rewriter.on("head", {
       element(el) {
+        el.prepend(`<script nonce="${nonceAttrValue}" data-phl-build-killer>${buildIdCacheKillerScript(buildId)}</script>`, { html: true });
         el.append(`<meta name="build-id" content="${buildId}">`, { html: true });
         el.append(`<meta name="build-version" content="${buildId}">`, { html: true });
         el.append(`<meta name="release" content="${buildId}">`, { html: true });

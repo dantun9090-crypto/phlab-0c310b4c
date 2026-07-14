@@ -18,6 +18,15 @@ const runId = new Date().toISOString().replace(/[:.]/g, "-");
 const logDir = join(process.cwd(), BUILD_LOG_DIR, `prod-build-${runId}`);
 const summaryPath = join(logDir, "summary.md");
 const contextPath = join(logDir, "context.json");
+const PHLABS_BUILD_ID =
+  process.env.PHLABS_BUILD_ID ||
+  process.env.VERCEL_GIT_COMMIT_SHA ||
+  process.env.GITHUB_SHA ||
+  `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+// Make the build id stable across every phase in this process: Vite define(),
+// post-build service-worker patching, and diagnostics all read this same env.
+process.env.PHLABS_BUILD_ID = PHLABS_BUILD_ID;
 
 const transientPatterns = [
   /Temporary infrastructure issue/i,
@@ -58,7 +67,7 @@ function writeContext() {
     nodeVersion: process.version,
     platform: process.platform,
     arch: process.arch,
-    buildId: process.env.BUILD_ID || process.env.GITHUB_SHA || null,
+    buildId: PHLABS_BUILD_ID,
     github: {
       repository: process.env.GITHUB_REPOSITORY || null,
       ref: process.env.GITHUB_REF || null,
@@ -85,7 +94,7 @@ async function runPhase(phase: Phase, attempt: number): Promise<PhaseResult> {
   const logPath = join(logDir, `${label}.log`);
   const proc = Bun.spawn(phase.command, {
     cwd: process.cwd(),
-    env: process.env,
+    env: { ...process.env, PHLABS_BUILD_ID },
     stdout: "pipe",
     stderr: "pipe",
   });
