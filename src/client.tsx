@@ -692,7 +692,7 @@ if (shouldStartPhlClient) window.setTimeout(() => {
           try { localStorage.setItem(LAST_REPORT_KEY, String(Date.now())); } catch { /* ignore */ }
           reportClientError({
             source: "manual",
-            message: `[MOUNT-TIMEOUT] ${classified.code} — ${classified.reason} (bootVisible=${bootStillVisible}, bodyChildren=${bodyChildCount}, rootFound=${reactRootMounted})`,
+            message: `[MOUNT-TIMEOUT] ${classified.code} — ${classified.reason} (bootVisible=${bootStillVisible}, bodyChildren=${bodyChildCount}, rootChildren=${rootChildCount}, rootFound=${reactRootMounted})`,
             stack: [
               `code=${classified.code}`,
               `category=${classified.category}`,
