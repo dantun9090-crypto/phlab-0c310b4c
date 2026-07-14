@@ -584,33 +584,6 @@ const EMERGENCY_STALE_RELOAD = `
       shown=true;
       try{ console.warn('[PHL] Stale script detected — fetching fresh HTML:', reason, alreadyReloaded?'after legacy reload':''); }catch(e){}
       tryAutoReload(reason);
-      return;
-      try{
-        if(navigator.serviceWorker&&navigator.serviceWorker.ready){
-          navigator.serviceWorker.ready.then(function(reg){ try{ if(reg&&reg.active) reg.active.postMessage({type:'CLEAR_CACHE_AND_RELOAD'}); }catch(e){} }).catch(function(){});
-        }
-      }catch(e){}
-      try{
-        var p=[];
-        if(window.caches&&caches.keys){ p.push(caches.keys().then(function(keys){ return Promise.all(keys.map(function(k){ return caches.delete(k).catch(function(){}); })); })); }
-        if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations){ p.push(navigator.serviceWorker.getRegistrations().then(function(regs){ return Promise.all(regs.map(function(r){ return r.unregister().catch(function(){}); })); })); }
-        Promise.all(p).catch(function(){});
-      }catch(e){}
-      var render=function(){
-        try{
-          if(!document.body){ document.addEventListener('DOMContentLoaded',render,{once:true}); return; }
-          try{
-            if(window.__PHL_REACT_READY__) return;
-            var b=document.body;
-            if(b && b.querySelector('header, nav, main, footer, [data-phl-app-ready], [role="main"], [role="banner"], #root > *')) return;
-            var _t=(b&&(b.innerText||b.textContent)||'').replace(/\\s+/g,' ').trim();
-            if(_t.length>80) return;
-          }catch(_e){}
-          document.body.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#060f1e;color:#f0f6ff;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:24px"><div style="max-width:460px;text-align:center"><h1 style="font-size:22px;margin:0 0 10px;font-weight:800">PH Labs update ready</h1><p style="margin:0 0 22px;color:#9fb0c8;font-size:15px;line-height:1.55">Your browser has an old page file. Tap the button to load the fresh store.</p><button id="phl-stalescript-refresh" style="appearance:none;border:0;background:#10b981;color:#03140d;font-weight:800;padding:14px 18px;border-radius:8px;cursor:pointer;font-size:15px">Open fresh store</button></div></div>';
-          try{ var _b=document.getElementById('phl-stalescript-refresh'); if(_b && typeof window.__phlHardReloadClean==='function') _b.addEventListener('click',window.__phlHardReloadClean); else if(_b) _b.addEventListener('click',function(){ try{ location.reload(); }catch(_e){} }); }catch(_e){}
-        }catch(e){}
-      };
-      render();
     };
     window.addEventListener('error',function(e){
       var t=e&&e.target;
