@@ -430,7 +430,7 @@ class ClientRootErrorBoundary extends Component<{ children: ReactNode }, { hasEr
           </p>
           {this.state.error?.message ? (
             <pre style={{ margin: "0 0 18px", padding: 10, background: "#0b1a2e", border: "1px solid #1f2d44", borderRadius: 8, color: "#cdd9ea", fontSize: 12, textAlign: "left", overflow: "auto", maxHeight: 140 }}>
-              {String(this.state.error.message).slice(0, 400)}
+              {String(import.meta.env.DEV ? this.state.error.stack || this.state.error.message : this.state.error.message).slice(0, 1200)}
             </pre>
           ) : null}
           <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
