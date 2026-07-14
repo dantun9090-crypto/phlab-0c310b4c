@@ -142,8 +142,8 @@ try {
   }
 })();
 
-import { Component, StrictMode, startTransition, type ReactNode } from "react";
-import { createRoot, hydrateRoot, type Root } from "react-dom/client";
+import { Component, StrictMode, type ReactNode } from "react";
+import { createRoot } from "react-dom/client";
 import LegacyClientApp from "./legacy/LegacyClientApp";
 import { installClientErrorReporter, reportClientError } from "./lib/client-error-reporter";
 import { initSwTelemetry } from "./lib/swTelemetry";
@@ -498,18 +498,12 @@ function app() {
   );
 }
 
-let hydrationRoot: Root | undefined;
 let switchedToCsr = false;
 
 function renderCsr(error: unknown): void {
   if (switchedToCsr) return;
   switchedToCsr = true;
   markHydrationCrash(error);
-  try {
-    hydrationRoot?.unmount();
-  } catch (unmountError) {
-    console.error("[HYDRATION FALLBACK] Hydration root unmount failed", unmountError);
-  }
   prepareDocumentForCsr();
   void (async () => {
     try {
@@ -532,10 +526,6 @@ function renderCsr(error: unknown): void {
 
 }
 
-function hydrateOrFallback(): void {
-  renderCsr(new Error("SSR hydration disabled by flag"));
-}
-
 capturePreHydrationDom();
 const stopMutationLogger = installPreReactMutationLogger();
 window.__phlHydrationFallback = (error?: unknown) => renderCsr(error || new Error("External hydration fallback requested"));
@@ -551,15 +541,10 @@ window.addEventListener("unhandledrejection", (event) => {
   if (isHydrationCrash(event.reason)) renderCsr(event.reason);
 }, true);
 
-if (shouldHydrateCurrentRoute()) {
-  console.info(`[HYDRATION] SSR active on ${location.pathname}`);
-  startTransition(hydrateOrFallback);
-} else {
-  console.info(
-    `[HYDRATION] CSR mode on ${location.pathname} (ENABLE_SSR_HYDRATION=${ENABLE_SSR_HYDRATION}, allowed=${JSON.stringify(SSR_HYDRATION_ROUTES)})`,
-  );
-  renderCsr(new Error("SSR hydration disabled by flag"));
-}
+console.info(
+  `[HYDRATION] CSR mode on ${location.pathname} (ENABLE_SSR_HYDRATION=${ENABLE_SSR_HYDRATION}, allowed=${JSON.stringify(SSR_HYDRATION_ROUTES)})`,
+);
+renderCsr(new Error("SSR hydration disabled by flag"));
 
 window.setTimeout(() => {
   window.__PHL_REACT_READY__ = true;
