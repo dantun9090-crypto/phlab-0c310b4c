@@ -879,6 +879,12 @@ export const completeGoogleRedirect = async (): Promise<FirebaseUser | null> => 
       await upsertGoogleCustomer(result.user);
       return result.user;
     }
+    try { await auth.authStateReady(); } catch { /* ignore */ }
+    if (auth.currentUser && !auth.currentUser.isAnonymous) {
+      try { sessionStorage.removeItem('phlabs_google_redirect_pending'); } catch {}
+      await upsertGoogleCustomer(auth.currentUser);
+      return auth.currentUser;
+    }
     if (pending) {
       try { sessionStorage.removeItem('phlabs_google_redirect_pending'); } catch {}
     }

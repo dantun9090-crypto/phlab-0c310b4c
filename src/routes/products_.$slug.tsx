@@ -1,10 +1,10 @@
 import { createFileRoute, notFound, redirect } from "@tanstack/react-router";
 import LegacyApp from "@/legacy/LegacyApp";
 import {
-  fetchProductBySlugFn,
-  fetchProductByIdFn,
+  fetchProductBySlug,
+  fetchProductById,
   type SeoProduct,
-} from "@/lib/products-rest.functions";
+} from "@/lib/firestore-rest";
 import { SEO_LIMITS, SITE_URL, clamp } from "@/lib/seo-meta";
 import { RESEARCH_CONTENT } from "@/lib/research-content";
 import { PRODUCT_ID_TO_SLUG, resolveSlugFromId } from "@/lib/product-id-slug-map";
@@ -50,10 +50,10 @@ export const Route = createFileRoute("/products_/$slug")({
     //    <link> in head() still points to the real product slug for SEO.
     const dualTarget = DUAL_ENTRY_ALIASES[raw.toLowerCase()];
     if (dualTarget) {
-      let product = await fetchProductBySlugFn({ data: { slug: dualTarget } });
+      let product = await fetchProductBySlug(dualTarget);
       if (!product) {
         const knownId = knownProductIdForSlug(dualTarget);
-        if (knownId) product = await fetchProductByIdFn({ data: { id: knownId } });
+        if (knownId) product = await fetchProductById(knownId);
       }
       if (product) return { product, matchedBy: "id" as const, aliasInfo: getDualEntryAliasInfo(raw) };
       throw notFound();
@@ -71,7 +71,7 @@ export const Route = createFileRoute("/products_/$slug")({
           statusCode: 301,
         });
       }
-      const product = await fetchProductBySlugFn({ data: { slug: raw } });
+      const product = await fetchProductBySlug(raw);
       if (product) {
         if (product.slug !== raw) {
           throw redirect({
@@ -91,17 +91,17 @@ export const Route = createFileRoute("/products_/$slug")({
     //    still points to the slug version, so SEO consolidates correctly.
     const mappedSlug = resolveSlugFromId(raw);
     if (mappedSlug) {
-      let product = await fetchProductBySlugFn({ data: { slug: mappedSlug } });
+      let product = await fetchProductBySlug(mappedSlug);
       if (!product) {
         const knownId = knownProductIdForSlug(mappedSlug);
-        if (knownId) product = await fetchProductByIdFn({ data: { id: knownId } });
+        if (knownId) product = await fetchProductById(knownId);
       }
       if (product) return { product, matchedBy: "id" as const, aliasInfo: null };
     }
 
     // 3) Fallback: live Firestore lookup for IDs not yet in the static map.
     try {
-      const product = await fetchProductByIdFn({ data: { id: raw } });
+      const product = await fetchProductById(raw);
       if (product) return { product, matchedBy: "id" as const, aliasInfo: null };
     } catch {
       // swallow lookup errors and fall through to notFound
