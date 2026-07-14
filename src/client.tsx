@@ -154,6 +154,7 @@ import { installChunkAutoRecovery } from "./lib/chunk-auto-recovery";
 import { installImageErrorAutoReset } from "./lib/image-error-auto-reset";
 import { installBuildIdForceReload } from "./lib/build-id-force-reload";
 import { installBuildFreshnessCheck } from "./lib/build-freshness-check";
+import appCss from "./styles.css?url";
 
 try { installImageErrorAutoReset(); } catch { /* ignore */ }
 try { installBuildIdForceReload(); } catch { /* ignore */ }
@@ -323,11 +324,60 @@ function installPreReactMutationLogger(): () => void {
 function prepareDocumentForCsr(): void {
   try {
     document.documentElement.setAttribute("lang", "en-GB");
-    document.documentElement.innerHTML =
-      '<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="google" content="notranslate"><title>PH Labs UK</title><style>html,body{margin:0;min-height:100%;background:#060f1e;color:#f0f6ff;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}.phl-boot{display:flex;min-height:100vh;align-items:center;justify-content:center;color:#9fb0c8;font-size:14px}</style></head><body><div class="phl-boot" aria-live="polite">Loading PH Labs…</div></body>';
+
+    // Do not mount React on `document` in CSR recovery mode. Owning the whole
+    // Document lets third-party/head mutations race React's commit phase and
+    // causes the production NotFoundError/removeChild crash. Keep <head>
+    // intact (metadata + CSS) and mount into a normal app container only.
+    if (!document.head.querySelector('meta[charset]')) {
+      const charset = document.createElement("meta");
+      charset.setAttribute("charset", "utf-8");
+      document.head.prepend(charset);
+    }
+    if (!document.head.querySelector('meta[name="viewport"]')) {
+      const viewport = document.createElement("meta");
+      viewport.setAttribute("name", "viewport");
+      viewport.setAttribute("content", "width=device-width, initial-scale=1, viewport-fit=cover");
+      document.head.appendChild(viewport);
+    }
+    if (!document.head.querySelector('meta[name="google"]')) {
+      const google = document.createElement("meta");
+      google.setAttribute("name", "google");
+      google.setAttribute("content", "notranslate");
+      document.head.appendChild(google);
+    }
+    if (!document.title) document.title = "PH Labs UK";
+
+    const existingAppCss = document.getElementById("appcss") as HTMLLinkElement | null;
+    if (existingAppCss) {
+      existingAppCss.rel = "stylesheet";
+      existingAppCss.media = "all";
+    } else {
+      const link = document.createElement("link");
+      link.id = "appcss";
+      link.rel = "stylesheet";
+      link.href = appCss;
+      document.head.appendChild(link);
+    }
+
+    document.body.style.margin = "0";
+    document.body.style.backgroundColor = "#060f1e";
+    document.body.style.color = "#f0f6ff";
+    document.body.innerHTML =
+      '<div id="phl-csr-root"><div class="phl-boot" aria-live="polite" style="display:flex;min-height:100vh;align-items:center;justify-content:center;color:#9fb0c8;font-size:14px;font-family:Inter Tight,system-ui,-apple-system,Segoe UI,Roboto,sans-serif">Loading PH Labs…</div></div>';
   } catch (error) {
     console.error("[HYDRATION FALLBACK] Could not wipe SSR DOM", error);
   }
+}
+
+function getCsrMountNode(): HTMLElement {
+  let mountNode = document.getElementById("phl-csr-root");
+  if (!mountNode) {
+    mountNode = document.createElement("div");
+    mountNode.id = "phl-csr-root";
+    document.body.replaceChildren(mountNode);
+  }
+  return mountNode;
 }
 
 function attemptCacheBustReload(): boolean {
@@ -463,7 +513,7 @@ function renderCsr(error: unknown): void {
     }
 
     try {
-      createRoot(document, {
+      createRoot(getCsrMountNode(), {
         onUncaughtError: (rootError, info) => {
           console.error("[ROOT ERROR BOUNDARY] uncaught", rootError, info?.componentStack || "");
           showStaticFallback(rootError);
