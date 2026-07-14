@@ -232,7 +232,9 @@ export const runSitemapAudit = createServerFn({ method: "POST" })
 
     // Per-admin rate limit — 10 runs / hour, counted in Firestore so
     // Cloudflare Worker isolates share the same window.
+    const { checkAuditRateLimitPersistent } = await import("@/lib/sitemap-audit-rate-limit.server");
     const rl = await checkAuditRateLimitPersistent(user.uid);
+
     // Keep the cheap in-memory pre-check current too.
     checkAuditRateLimit(user.uid);
     if (!rl.allowed) {
