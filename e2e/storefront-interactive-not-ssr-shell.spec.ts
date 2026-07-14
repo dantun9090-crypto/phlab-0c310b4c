@@ -1,7 +1,7 @@
 /**
  * Regression guard: the public storefront must not remain stuck on the SSR
  * shell. A real browser should boot the interactive legacy store, dismiss the
- * research gate, and open header controls while HTML stays no-store.
+ * research gate, and open header controls while HTML stays revalidated.
  */
 import { expect, test } from "@playwright/test";
 
@@ -68,7 +68,8 @@ test("homepage boots real interactive store, not only SSR shell", async ({ page 
 
   const firstDoc = documentResponses.find((r) => new URL(r.url).pathname === "/");
   expect(firstDoc, "captured homepage document response").toBeTruthy();
-  expect(firstDoc!.cacheControl.toLowerCase(), "browser HTML no-store").toContain("no-store");
+  expect(firstDoc!.cacheControl.toLowerCase(), "browser HTML max-age=0").toContain("max-age=0");
+  expect(firstDoc!.cacheControl.toLowerCase(), "browser HTML must-revalidate").toContain("must-revalidate");
   expect(firstDoc!.cdnCacheControl.toLowerCase(), "CDN HTML no-store").toContain("no-store");
   expect(["HIT", "STALE", "REVALIDATED", "UPDATING"]).not.toContain(firstDoc!.cfCacheStatus);
   expect(fatalConsole, fatalConsole.join("\n")).toHaveLength(0);

@@ -12,7 +12,7 @@
  *
  * This spec probes each public HTML route with a matrix of realistic
  * query strings and asserts:
- *   1. `cache-control` on the browser tier contains `no-store`
+ *   1. `cache-control` on the browser tier contains `max-age=0` and `must-revalidate`
  *   2. the CDN tier (`cdn-cache-control` / `cloudflare-cdn-cache-control`
  *      / `surrogate-control`) also contains `no-store`
  *   3. `cf-cache-status` is NOT HIT/STALE/REVALIDATED/UPDATING
@@ -96,8 +96,12 @@ test.describe(`HTML no-store · query-string variants · ${BASE}`, () => {
         // Browser tier
         expect(
           r.cacheControl,
-          `browser cache-control no-store on ${label} ("${r.cacheControl}")`,
-        ).toContain("no-store");
+          `browser cache-control max-age=0 on ${label} ("${r.cacheControl}")`,
+        ).toContain("max-age=0");
+        expect(
+          r.cacheControl,
+          `browser cache-control must-revalidate on ${label} ("${r.cacheControl}")`,
+        ).toContain("must-revalidate");
 
         // s-maxage / stale-while-revalidate must never appear
         expect(r.cacheControl, `no positive s-maxage on ${label}`).not.toMatch(

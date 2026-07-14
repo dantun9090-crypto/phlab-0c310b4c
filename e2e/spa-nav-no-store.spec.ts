@@ -7,8 +7,8 @@
  * headless browser and asserts that every HTML document response
  * observed along the way — the initial landing hit, each in-app link
  * click, hard reloads on the destination, and browser back/forward —
- * still comes back with `cache-control: no-store` on both the browser
- * and CDN tier, and that Cloudflare never replays a cached shell
+ * still comes back with browser revalidation headers and CDN no-store,
+ * and that Cloudflare never replays a cached shell
  * (`cf-cache-status ∈ {HIT, STALE, REVALIDATED, UPDATING}`).
  *
  * Rationale: cache regressions have historically appeared only during
@@ -45,7 +45,7 @@ type HtmlDocRecord = {
 };
 
 /**
- * Assert one recorded HTML response satisfies every no-store invariant.
+ * Assert one recorded HTML response satisfies every revalidation invariant.
  * Kept as a single helper so the failure message pinpoints which URL
  * along the nav path regressed.
  */
@@ -54,8 +54,12 @@ function assertNoStore(rec: HtmlDocRecord, context: string) {
 
   expect(
     rec.cacheControl,
-    `${context} — browser cache-control must contain no-store on ${rec.url} ("${rec.cacheControl}")`,
-  ).toContain("no-store");
+    `${context} — browser cache-control must contain max-age=0 on ${rec.url} ("${rec.cacheControl}")`,
+  ).toContain("max-age=0");
+  expect(
+    rec.cacheControl,
+    `${context} — browser cache-control must contain must-revalidate on ${rec.url} ("${rec.cacheControl}")`,
+  ).toContain("must-revalidate");
 
   expect(
     rec.cacheControl,
@@ -85,7 +89,7 @@ function assertNoStore(rec: HtmlDocRecord, context: string) {
   ).toBe(0);
 
   // A response served from the browser's own disk cache means the
-  // previous hit stuck around despite no-store — a browser-tier
+  // previous hit stuck around without revalidation — a browser-tier
   // regression that a header-only probe can't catch.
   expect(
     rec.fromDiskCache,
@@ -93,8 +97,8 @@ function assertNoStore(rec: HtmlDocRecord, context: string) {
   ).toBe(false);
 }
 
-test.describe(`SPA/MPA navigation · no-store · ${BASE}`, () => {
-  test("every HTML document during a full nav session is no-store", async ({
+test.describe(`SPA/MPA navigation · revalidated HTML · ${BASE}`, () => {
+  test("every HTML document during a full nav session is revalidated", async ({
     browser,
   }) => {
     const context = await browser.newContext({

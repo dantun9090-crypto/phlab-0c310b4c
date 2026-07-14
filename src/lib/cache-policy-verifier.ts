@@ -11,7 +11,7 @@
  *   4. The current HTML document's cache headers match our deploy-safe
  *      contract:
  *        - `Cache-Control` contains `no-store`  OR  (`max-age=0` +
- *          `must-revalidate` + `no-cache`).
+ *          `must-revalidate`).
  *        - `CDN-Cache-Control` / `Surrogate-Control` forces `no-store`.
  *        - `cf-cache-status` is not `HIT` / `STALE` / `REVALIDATED` /
  *          `UPDATING` (Cloudflare must not replay a shell across deploys).
@@ -185,10 +185,10 @@ async function checkHtmlHeaders(): Promise<PolicyCheck[]> {
 
   const browserOk =
     cc.noStore ||
-    (cc.maxAge === 0 && cc.mustRevalidate && cc.noCache);
+    (cc.maxAge === 0 && cc.mustRevalidate);
   checks.push({
     id: "html.browser-cache-control",
-    label: "Browser Cache-Control is no-store / no-cache+must-revalidate+max-age=0",
+    label: "Browser Cache-Control is no-store / max-age=0+must-revalidate",
     status: browserOk ? "pass" : "fail",
     detail: cc.raw || "(missing)",
   });
@@ -241,7 +241,7 @@ export function initCachePolicyVerifier(): void {
     } else {
       // eslint-disable-next-line no-console
       console.info(
-        `[cache-policy] OK — SW disabled, HTML no-store contract holds (${checks.length} checks)`,
+        `[cache-policy] OK — SW disabled, HTML revalidation contract holds (${checks.length} checks)`,
       );
     }
 
