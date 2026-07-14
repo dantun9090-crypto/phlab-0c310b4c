@@ -33,7 +33,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_API }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_API }}
-          command: pages deploy dist --project-name=phlabs
+          command: pages deploy dist --project-name=phlabs --branch=main --commit-dirty=true
 
       - name: Purge Cloudflare edge cache
         if: success()
